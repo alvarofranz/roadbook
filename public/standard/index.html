@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>The .rdbk standard — RDBK.app</title>
+    <meta name="description" content="The open .rdbk standard: a single, self-contained JSON format for digital roadbooks, with embedded symbols, junction vectors and headings.">
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        .doc { max-width: 880px; margin: 0 auto; padding: 1.5rem 1.2rem 5rem; }
+        .doc h2 { margin: 2.4rem 0 .6rem; font-size: 1.5rem; scroll-margin-top: 70px; }
+        .doc p, .doc li { color: #c7ccd6; line-height: 1.65; }
+        .doc code { background: var(--card-2); padding: .1rem .35rem; border-radius: 6px; font-size: .9em; }
+        .doc pre { background: #0a0d12; border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; overflow-x: auto; font-size: .82rem; line-height: 1.55; }
+        .doc pre code { background: none; padding: 0; color: #d7dde7; }
+        .doc table { width: 100%; border-collapse: collapse; margin: .8rem 0; font-size: .9rem; }
+        .doc th, .doc td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+        .doc th { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; }
+        .doc td code { color: var(--sand-2); white-space: nowrap; }
+        .toc { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin: 1rem 0 1.5rem; }
+        .toc a { color: var(--sand-2); font-size: .9rem; }
+        .pill { display: inline-block; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; padding: .2rem .7rem; font-size: .78rem; color: var(--muted); margin-right: .4rem; }
+        .lead-spec { font-size: 1.15rem; color: var(--text); }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="doc">
+    <p><span class="pill">rdbk · v1.0</span><span class="pill">application/x-roadbook</span><span class="pill">.rdbk</span></p>
+    <h1>The <span class="accent">.rdbk</span> standard</h1>
+    <p class="lead-spec">An open, single-file format for digital roadbooks. One self-contained UTF-8 JSON document carries the whole route — track, notes, headings, junction diagrams <b>and its own symbols</b> — so a roadbook is just a file you can read, follow, share and archive, with nothing else attached.</p>
+
+    <div class="toc">
+        <a href="#why">Why .rdbk</a>
+        <a href="#structure">Structure</a>
+        <a href="#meta">meta</a>
+        <a href="#track">track</a>
+        <a href="#notes">notes</a>
+        <a href="#icons">symbols</a>
+        <a href="#roadtypes">road types</a>
+        <a href="#junctions">junctions</a>
+        <a href="#result">result QR</a>
+        <a href="#conformance">conformance</a>
+        <a href="#example">full example</a>
+    </div>
+
+    <h2 id="why">Why .rdbk</h2>
+    <ul>
+        <li><b>Self-contained.</b> A <code>.rdbk</code> embeds the symbols it uses (as data URIs), so it renders identically anywhere — offline, years later — with no external icon packs to lose.</li>
+        <li><b>One file, plain JSON.</b> Open it in any text editor, parse it with one line in any language, diff it in git.</li>
+        <li><b>Map-ready.</b> The full GPS track travels with the notes, so any reader can draw the route and place you on it.</li>
+        <li><b>Symbols are first-class.</b> Each note can carry positioned, rotated, scalable pictograms and colored junction vectors — not just a line of text.</li>
+    </ul>
+
+    <h2 id="structure">Document structure</h2>
+    <p>A <code>.rdbk</code> file is a single JSON object with four top-level keys:</p>
+    <pre><code>{
+  "meta":  { … },   // document metadata
+  "track": [ … ],   // the GPS polyline (ordered points)
+  "notes": [ … ],   // navigation notes, ordered along the track
+  "icons": { … }    // embedded symbol library (name → data URI)
+}</code></pre>
+    <p>Coordinates are WGS-84 decimal degrees. <b>Distances are integer metres.</b> Headings are degrees clockwise from true north (0–360). Symbol angles are degrees clockwise.</p>
+
+    <h2 id="meta">meta</h2>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+        <tr><td><code>title</code></td><td>string</td><td>Human-readable roadbook title.</td></tr>
+        <tr><td><code>total_distance</code></td><td>integer</td><td>Total route length in metres (derived from <code>track</code>).</td></tr>
+        <tr><td><code>note_count</code></td><td>integer</td><td>Number of notes.</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>Optional. Free text shown on the public challenge page.</td></tr>
+    </table>
+
+    <h2 id="track">track</h2>
+    <p>An ordered array of points describing the route polyline. Notes reference into it by index.</p>
+    <pre><code>"track": [
+  { "lat": 45.82712, "lon": 9.41164 },
+  { "lat": 45.82740, "lon": 9.41180 }
+]</code></pre>
+
+    <h2 id="notes">notes</h2>
+    <p>The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+        <tr><td><code>num</code></td><td>integer</td><td>1-based note number (display order).</td></tr>
+        <tr><td><code>idx</code></td><td>integer</td><td>Index into <code>track</code> where this note sits.</td></tr>
+        <tr><td><code>lat</code>, <code>lon</code></td><td>number</td><td>Note position (decimal degrees).</td></tr>
+        <tr><td><code>distance</code></td><td>integer</td><td>Cumulative distance from the start (metres).</td></tr>
+        <tr><td><code>partial_distance</code></td><td>integer</td><td>Distance from the previous note (metres).</td></tr>
+        <tr><td><code>text</code></td><td>string</td><td>The instruction / comment.</td></tr>
+        <tr><td><code>cap</code></td><td>integer | null</td><td>CAP — the heading in degrees (0–360) to hold to the next note, when shown.</td></tr>
+        <tr><td><code>cap_distance</code></td><td>integer | null</td><td>Straight-line distance to hold that heading (metres).</td></tr>
+        <tr><td><code>bearing_in</code></td><td>number</td><td>Track bearing arriving at the note (degrees).</td></tr>
+        <tr><td><code>bearing_out</code></td><td>number</td><td>Track bearing leaving the note (degrees).</td></tr>
+        <tr><td><code>road_type_in</code></td><td>0–4</td><td>Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
+        <tr><td><code>road_type_out</code></td><td>0–4</td><td>Surface leaving.</td></tr>
+        <tr><td><code>icons</code></td><td>array</td><td>Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
+        <tr><td><code>junctions</code></td><td>array | null</td><td>Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
+    </table>
+    <pre><code>{
+  "num": 12, "idx": 184,
+  "lat": 45.8321, "lon": 9.4002,
+  "distance": 8420, "partial_distance": 630,
+  "text": "Bear right onto the gravel track",
+  "cap": 247, "cap_distance": 300,
+  "bearing_in": 92, "bearing_out": 247,
+  "road_type_in": 2, "road_type_out": 3,
+  "icons": [
+    { "name": "s03_30km.png", "pos": [40, 22], "angle": 0, "size": 32, "flip_x": false }
+  ],
+  "junctions": [
+    { "pivot": [0, 0], "tip": [45, 25], "width": 3, "road_type": 3 }
+  ]
+}</code></pre>
+
+    <h2 id="icons">Symbols (note <code>icons</code> + top-level <code>icons</code> library)</h2>
+    <p>A note's <code>icons</code> array places pictograms on a fixed <b>230 × 162</b> reference box. The origin is the box centre; <code>+y</code> points <b>up</b>. This makes a note render the same at any display size.</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>Symbol key; looked up in <code>icons</code>.</td></tr>
+        <tr><td><code>pos</code></td><td>[x, y]</td><td>Centre position in reference units, from box centre, +y up.</td></tr>
+        <tr><td><code>size</code></td><td>number</td><td>Box size in reference units (square).</td></tr>
+        <tr><td><code>angle</code></td><td>number</td><td>Rotation, degrees clockwise.</td></tr>
+        <tr><td><code>flip_x</code></td><td>boolean</td><td>Horizontal mirror.</td></tr>
+    </table>
+    <p>The symbols themselves live <b>inside the file</b> in <code>icons</code>, a map from symbol name to a data URI. This is what makes a <code>.rdbk</code> portable: every symbol it draws is embedded.</p>
+    <pre><code>"icons": {
+  "s03_30km.png": "data:image/png;base64,iVBORw0KGgoAAAANS…",
+  "p07_ponte.png": "data:image/png;base64,iVBORw0KGgoAAAANS…"
+}</code></pre>
+    <p>Resolution order for a symbol: an inline <code>data:</code> URI on the icon → the file's <code>icons</code> (case-insensitive) → a host symbol set. A note may also carry a speed limit encoded in a symbol name (e.g. <code>s03_30km</code> ⇒ 30 km/h; <code>s99_end</code> clears it).</p>
+
+    <h2 id="roadtypes">Road types</h2>
+    <table>
+        <tr><th>id</th><th>Type</th><th>Rendering</th></tr>
+        <tr><td><code>0</code></td><td>Default</td><td>neutral</td></tr>
+        <tr><td><code>1</code></td><td>Motorway / paved fast</td><td>solid</td></tr>
+        <tr><td><code>2</code></td><td>Asphalt</td><td>solid</td></tr>
+        <tr><td><code>3</code></td><td>Track / piste</td><td>solid (default off-road)</td></tr>
+        <tr><td><code>4</code></td><td>Off-piste</td><td>dashed</td></tr>
+    </table>
+
+    <h2 id="junctions">Junction vectors (<code>junctions</code>)</h2>
+    <p>Beyond text, a note can draw the junction itself: one or more vectors on the same 230 × 162 box. Each goes from a <code>pivot</code> to a <code>tip</code> (arrow head), colored by road type and drawn with a stroke <code>width</code>.</p>
+    <pre><code>"junctions": [
+  { "pivot": [0, 0], "tip": [45, 25], "width": 3, "road_type": 3 },
+  { "pivot": [0, 0], "tip": [-30, 40], "width": 2, "road_type": 4 }
+]</code></pre>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+        <tr><td><code>pivot</code></td><td>[x, y]</td><td>Vector start (reference units, +y up).</td></tr>
+        <tr><td><code>tip</code></td><td>[x, y]</td><td>Vector tip / arrow head.</td></tr>
+        <tr><td><code>width</code></td><td>number</td><td>Stroke thickness.</td></tr>
+        <tr><td><code>road_type</code></td><td>0–4</td><td>Road type → vector color.</td></tr>
+    </table>
+
+    <h2 id="result">Result token (optional, for events)</h2>
+    <p>When a roadbook is followed competitively, a reader can emit a compact, fixed-width <b>49-character</b> result token (suitable for a QR code). It is a sequence of zero-padded numeric fields and carries no personal data:</p>
+    <table>
+        <tr><th>Field</th><th>Width</th><th>Meaning</th></tr>
+        <tr><td><code>team</code></td><td>3</td><td>Vehicle number.</td></tr>
+        <tr><td><code>date</code></td><td>6</td><td>Date DDMMYY.</td></tr>
+        <tr><td><code>start</code></td><td>6</td><td>Start time HHMMSS.</td></tr>
+        <tr><td><code>end</code></td><td>6</td><td>End time HHMMSS.</td></tr>
+        <tr><td><code>accuracy</code></td><td>4</td><td>Accuracy penalty.</td></tr>
+        <tr><td><code>skip</code></td><td>4</td><td>Skipped-note penalty.</td></tr>
+        <tr><td><code>extra</code></td><td>4</td><td>Overshoot penalty.</td></tr>
+        <tr><td><code>cap</code></td><td>4</td><td>Heading penalty.</td></tr>
+        <tr><td><code>speed</code></td><td>4</td><td>Speed penalty.</td></tr>
+        <tr><td><code>km</code></td><td>5</td><td>Distance, deci-km.</td></tr>
+        <tr><td><code>avg</code></td><td>3</td><td>Average speed, deci-km/h.</td></tr>
+    </table>
+    <p>The token may be appended with <code>-&lt;sig&gt;</code>, a truncated HMAC over the token, for tamper-evidence between the reader and the scorer.</p>
+
+    <h2 id="conformance">Conformance</h2>
+    <ul>
+        <li>Files are UTF-8 JSON, extension <code>.rdbk</code>, media type <code>application/x-roadbook</code>.</li>
+        <li>A conforming <b>reader</b> MUST render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
+        <li>A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so the file is self-contained.</li>
+        <li>Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
+    </ul>
+
+    <h2 id="example">Full minimal example</h2>
+    <pre><code>{
+  "meta": { "title": "Demo loop", "total_distance": 1210, "note_count": 2 },
+  "track": [
+    { "lat": 45.8271, "lon": 9.4116 },
+    { "lat": 45.8290, "lon": 9.4135 },
+    { "lat": 45.8305, "lon": 9.4150 }
+  ],
+  "notes": [
+    {
+      "num": 1, "idx": 0, "lat": 45.8271, "lon": 9.4116,
+      "distance": 0, "partial_distance": 0, "text": "Start",
+      "cap": null, "cap_distance": null, "bearing_in": 0, "bearing_out": 45,
+      "road_type_in": 3, "road_type_out": 3, "icons": [], "junctions": null
+    },
+    {
+      "num": 2, "idx": 2, "lat": 45.8305, "lon": 9.4150,
+      "distance": 1210, "partial_distance": 1210, "text": "Finish",
+      "cap": null, "cap_distance": null, "bearing_in": 45, "bearing_out": 0,
+      "road_type_in": 3, "road_type_out": 3,
+      "icons": [ { "name": "i01_arrivo.png", "pos": [0, 0], "angle": 0, "size": 40, "flip_x": false } ],
+      "junctions": null
+    }
+  ],
+  "icons": { "i01_arrivo.png": "data:image/png;base64,iVBORw0KGgoAAAANS…" }
+}</code></pre>
+
+    <p style="margin-top:2.5rem"><a class="btn btn-primary" href="../reader/"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
+</main>
+
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

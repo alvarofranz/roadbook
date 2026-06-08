@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+    <meta name="theme-color" content="#0e1116">
+    <title>Reader · RDBK.app</title>
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        /* top odometer bar */
+        .odobar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
+        .odo { display: flex; flex-direction: column; }
+        .odo.right { align-items: flex-end; }
+        .odo.brg { align-items: center; }
+        .odo .lbl { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+        .odo .v { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .odo .v.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
+        .odo .clk { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+        #noteList { padding-bottom: 8rem; }
+        /* bottom CAP bar */
+        .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+        .capbar .cap-arrow { font-size: 1.4rem; transition: transform .35s ease; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<!-- load -->
+<main id="loadScreen" class="wrap soon-wrap">
+    <div class="soon-card">
+        <div class="big"><i class="fa-solid fa-compass"></i></div>
+        <h1 data-i18n="Reader">Reader</h1>
+        <p class="muted">Load a roadbook and navigate with GPS, or use <b data-i18n="Tripmaster mode">Tripmaster mode</b> with no roadbook.</p>
+        <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
+        <div class="btnrow mt-2"><button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button></div>
+        <div class="btnrow">
+            <button class="btn btn-ghost" id="pickCh" data-i18n="Challenges"><i class="fa-solid fa-trophy"></i> Challenges</button>
+            <button class="btn btn-ghost" id="tripMode" data-i18n="Tripmaster mode"><i class="fa-solid fa-gauge-high"></i> Tripmaster mode</button>
+        </div>
+    </div>
+</main>
+
+<!-- navigation with a roadbook -->
+<div id="navScreen" hidden>
+    <!-- top odometer bar: total · bearing+clock · partial -->
+    <div class="odobar">
+        <div class="odo"><span class="lbl">prog.</span><span class="v" id="odoTotal">0.00</span></div>
+        <div class="odo brg"><span class="v boxed" id="odoBrg">—°</span><span class="clk" id="odoClock">--:--:--</span><span class="clk"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt">GPS…</span></span></div>
+        <div class="odo right"><span class="lbl">part.</span><span class="v" id="odoPartial">0.00</span></div>
+    </div>
+    <!-- 3-column note rows: distances | graphic | indications + coords -->
+    <div id="noteList"></div>
+    <!-- bottom CAP bar (appears when the active note has a CAP) -->
+    <div class="capbar" id="capbar" hidden>
+        <span class="cv" id="capHeading">—°</span>
+        <span class="cs" id="capSpeed">--</span>
+        <span class="cd" id="capDist">— km</span>
+        <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
+    </div>
+    <nav class="fabrow">
+        <button class="btn btn-ghost" id="autoBtn"><i class="fa-solid fa-robot"></i> Auto: off</button>
+        <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
+        <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
+    </nav>
+</div>
+
+<!-- Tripmaster mode (no roadbook) -->
+<div id="tripScreen" hidden>
+    <main class="wrap" style="max-width:560px;padding-top:1rem">
+        <div class="dash">
+            <div class="readout primary">
+                <div class="lbl" data-i18n="Trip">Trip</div>
+                <div><span class="num" id="tmPartial">0.00</span> <span class="unit">km</span></div>
+                <div class="btnrow">
+                    <button class="btn btn-ghost" id="tmMinus10">−10 m</button>
+                    <button class="btn btn-primary" id="tmResetPartial" data-i18n="Reset trip"><i class="fa-solid fa-rotate-left"></i> Reset trip</button>
+                    <button class="btn btn-ghost" id="tmPlus10">+10 m</button>
+                </div>
+            </div>
+            <div class="row3">
+                <div class="mini"><div class="v" id="tmTotal">0.00</div><div class="k" data-i18n="Total km">Total km</div></div>
+                <div class="mini"><div class="v" id="tmSpeed">0</div><div class="k">km/h</div></div>
+                <div class="mini"><div class="v" id="tmCap">—</div><div class="k">CAP °</div></div>
+            </div>
+            <div class="row3">
+                <div class="mini"><div class="v" id="tmClock">--:--</div><div class="k" data-i18n="Clock">Clock</div></div>
+                <div class="mini"><div class="v" id="tmTimer">0:00</div><div class="k" data-i18n="Timer">Timer</div></div>
+                <div class="mini"><div class="v" id="tmNotes">0</div><div class="k" data-i18n="Notes">Notes</div></div>
+            </div>
+            <div class="btnrow">
+                <button class="btn btn-ghost" id="tmTimerBtn" data-i18n="Timer"><i class="fa-solid fa-stopwatch"></i> Timer</button>
+                <button class="btn btn-ghost" id="tmNoteBtn" data-i18n="+Note"><i class="fa-solid fa-flag"></i> +Note</button>
+                <button class="btn btn-ghost" id="tmExit" data-i18n="Exit"><i class="fa-solid fa-arrow-left"></i> Exit</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- usage mode -->
+<div id="modeModal" class="modal" hidden>
+    <div class="modal-card">
+        <h2 style="margin-top:0" data-i18n="How will you use it?">How will you use it?</h2>
+        <div class="mode-grid">
+            <button class="mode-btn" id="modeViaje"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
+            <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
+        </div>
+    </div>
+</div>
+
+<!-- vehicle number -->
+<div id="teamModal" class="modal" hidden>
+    <div class="modal-card">
+        <h2 style="margin-top:0" data-i18n="Vehicle number"><i class="fa-solid fa-car-side" style="color:var(--sand)"></i> Vehicle number</h2>
+        <p class="muted small" data-i18n="Identify your team for the ranking.">Identify your team for the ranking.</p>
+        <input id="teamInput" type="number" min="1" max="999" value="1" inputmode="numeric">
+        <div class="btnrow" style="margin-top:1.1rem">
+            <button class="btn btn-ghost" id="teamCancel" data-i18n="Cancel">Cancel</button>
+            <button class="btn btn-primary" id="teamOk" data-i18n="Start"><i class="fa-solid fa-play"></i> Start</button>
+        </div>
+    </div>
+</div>
+
+<!-- final QR -->
+<div id="qrModal" class="modal" hidden>
+    <div class="modal-card" style="max-width:420px">
+        <h2 style="margin-top:0" data-i18n="Result">Result</h2>
+        <div id="qrImg" style="display:flex;justify-content:center;margin:.5rem 0"></div>
+        <div id="qrStats" class="muted small" style="text-align:left"></div>
+        <code id="qrMeta" style="display:block;word-break:break-all;background:var(--card-2);padding:.5rem;border-radius:8px;margin:.6rem 0;font-size:.72rem"></code>
+        <div class="btnrow">
+            <button class="btn btn-ghost" id="qrClose" data-i18n="Close">Close</button>
+            <button class="btn btn-ghost" id="qrShare" data-i18n="Share"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <button class="btn btn-primary" id="qrDownload" data-i18n="Save QR"><i class="fa-solid fa-download"></i> Save QR</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/roadbook-core.js"></script>
+<script src="../assets/js/note-canvas.js"></script>
+<script src="../assets/js/qrcode.min.js"></script>
+<script src="../assets/js/challenges.js"></script>
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="reader.js"></script>
+</body>
+</html>

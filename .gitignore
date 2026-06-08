@@ -1,0 +1,16 @@
+.DS_Store
+/.idea
+/.vscode
+/.fleet
+/.claude/settings.local.json
+/node_modules
+/source
+/public/assets/fontawesome
+/public/assets/js/config.js
+/.env
+/vendor
+/storage
+/public/avatars
+/public/photos
+/cron/cron.log
+/bashy

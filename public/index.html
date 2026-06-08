@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>RDBK.app — digital roadbooks for your adventures</title>
+    <meta name="description" content="Create, navigate, validate and rank roadbooks for any adventure. Free PWA and the open .rdbk format.">
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+    <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<header class="topbar"></header>
+
+<main>
+    <!-- HERO -->
+    <section class="hero">
+        <div class="wrap hero-grid">
+            <div class="hero-copy">
+                <h1 data-i18n-html="hero.title">Digital roadbooks for <span class="accent">your adventures</span></h1>
+                <p class="lead" data-i18n="hero.lead">Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.</p>
+                <div class="cta">
+                    <a class="btn btn-primary" href="editor/"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="hero.cta_tools">Open the Editor</span></a>
+                    <a class="btn btn-ghost" href="#gallery"><i class="fa-solid fa-trophy"></i> <span data-i18n="hero.cta_challenges">Challenges</span></a>
+                </div>
+            </div>
+            <img class="hero-mock" src="assets/mockup.png" alt="RDBK.app" width="440" height="440" loading="eager">
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="block" id="features">
+        <div class="wrap">
+            <div class="section-head">
+                <div class="kicker" data-i18n="flow.kicker">Features</div>
+                <h2 data-i18n="flow.title">Everything you need</h2>
+            </div>
+            <div class="flow">
+                <div class="step"><i class="fa-solid fa-map-location-dot"></i><h4 data-i18n="feat.1.t"></h4><p data-i18n="feat.1.d"></p></div>
+                <div class="step"><i class="fa-solid fa-circle-dot"></i><h4 data-i18n="feat.2.t"></h4><p data-i18n="feat.2.d"></p></div>
+                <div class="step"><i class="fa-solid fa-diagram-project"></i><h4 data-i18n="feat.3.t"></h4><p data-i18n="feat.3.d"></p></div>
+                <div class="step"><i class="fa-solid fa-compass"></i><h4 data-i18n="feat.4.t"></h4><p data-i18n="feat.4.d"></p></div>
+                <div class="step"><i class="fa-solid fa-gauge-high"></i><h4 data-i18n="feat.5.t"></h4><p data-i18n="feat.5.d"></p></div>
+                <div class="step"><i class="fa-solid fa-qrcode"></i><h4 data-i18n="feat.6.t"></h4><p data-i18n="feat.6.d"></p></div>
+                <div class="step"><i class="fa-solid fa-ranking-star"></i><h4 data-i18n="feat.7.t"></h4><p data-i18n="feat.7.d"></p></div>
+                <div class="step"><i class="fa-solid fa-globe"></i><h4 data-i18n="feat.8.t"></h4><p data-i18n="feat.8.d"></p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section class="block" id="gallery">
+        <div class="wrap">
+            <div class="section-head">
+                <div class="kicker" data-i18n="gallery.kicker">Galería</div>
+                <h2 data-i18n="gallery.title">Tracks de ejemplo</h2>
+            </div>
+            <div class="gallery" id="galleryGrid"><p class="gempty" data-i18n="gallery.loading">Cargando tracks…</p></div>
+        </div>
+    </section>
+
+</main>
+
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/challenges.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/home.js"></script>
+</body>
+</html>

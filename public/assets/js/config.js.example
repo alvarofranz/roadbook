@@ -1,0 +1,10 @@
+/* Plantilla de configuración del cliente.
+   Copia este fichero a `config.js` (gitignorado) y rellena tus valores.
+   En el VPS, `config.js` se coloca aparte (rsync) y sobrevive a los deploys. */
+window.RB_CONFIG = {
+    // Token Mapbox PÚBLICO (pk.*). Restríngelo por URL a rdbk.app en console.mapbox.com.
+    mapboxToken: 'pk.YOUR_PUBLIC_MAPBOX_TOKEN',
+    mapStyle: 'mapbox://styles/mapbox/satellite-streets-v12',
+    // Clave para firmar los QR (integridad). Reader y Ranking deben usar la MISMA.
+    signKey: 'change-me',
+};

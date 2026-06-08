@@ -1,0 +1,43 @@
+<?php
+require dirname(__DIR__, 2) . '/app/bootstrap.php';
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$d = $method === 'POST' ? json_in() : $_GET;
+$action = (string)($d['action'] ?? '');
+
+// Only these read-only actions may use GET; everything that changes state needs POST
+// (blocks CSRF via top-level GET navigation with a Lax session cookie).
+$readOnly = ['config', 'me', 'public_list', 'public_get'];
+if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
+// Same-origin guard for state-changing requests.
+if ($method === 'POST') {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
+}
+
+try {
+    switch ($action) {
+        case 'config':    json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'user' => current_user()]); break;
+        case 'register':  register_user($d); break;
+        case 'verify':    verify_email($d); break;
+        case 'login':     login_user($d); break;
+        case 'logout':    logout_user(); break;
+        case 'me':        json_out(['ok' => true, 'user' => current_user()]); break;
+        case 'forgot':    forgot_password($d); break;
+        case 'reset':     reset_password($d); break;
+        case 'profile':   update_profile(require_user(), $d); break;
+        case 'rb_list':   rb_list(require_user()); break;
+        case 'rb_get':    rb_get(require_user(), $d); break;
+        case 'rb_draft':  rb_draft(require_user()); break;
+        case 'rb_save':   rb_save(require_user(), $d); break;
+        case 'rb_delete': rb_delete(require_user(), $d); break;
+        case 'ph_list':     ph_list(current_user(), $d); break;
+        case 'ph_delete':   ph_delete(require_user(), $d); break;
+        case 'public_list': public_list(); break;
+        case 'public_get':  public_get($d); break;
+        default:            fail('Unknown action.', 404);
+    }
+} catch (Throwable $e) {
+    error_log('API error: ' . $e->getMessage());
+    fail('Server error.', 500);
+}

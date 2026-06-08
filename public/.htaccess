@@ -1,0 +1,17 @@
+# RDBK.app — tipo MIME propio para los ficheros de roadbook (.rdbk = JSON).
+AddType application/x-roadbook .rdbk
+
+# Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug> → the tool page
+# (only when the path isn't a real file or directory).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^challenge/[A-Za-z0-9_-]+/?$ /challenge/index.html [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^reader/[A-Za-z0-9_-]+/?$ /reader/index.html [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^editor/[A-Za-z0-9_-]+/?$ /editor/index.html [L]
+</IfModule>

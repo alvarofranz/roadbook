@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Ranking · RDBK.app</title>
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        table.rank { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        table.rank th, table.rank td { padding: .55rem .5rem; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+        table.rank th:first-child, table.rank td:first-child, table.rank th:nth-child(2), table.rank td:nth-child(2) { text-align: left; }
+        table.rank thead th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+        table.rank tr.top td { color: var(--sand); font-weight: 800; }
+        table.rank .fs { font-weight: 800; color: var(--sand); }
+        #video { width: 100%; max-height: 320px; border-radius: 12px; background: #000; display: block; }
+        .cfg input { width: 80px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .4rem; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap tool-page">
+    <section class="panel">
+        <h2>Add result</h2>
+        <div class="dl">
+            <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> Scan QR</button>
+            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here" style="flex:1;min-width:200px;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:.6rem">
+            <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <video id="video" hidden playsinline></video>
+        <div class="cfg dl" style="margin-top:.8rem;align-items:center">
+            <label class="muted small">Target average speed <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
+            <span class="muted small">(used for regularity if the QR doesn't carry it)</span>
+        </div>
+        <div id="msg" class="muted small" style="margin-top:.5rem"></div>
+    </section>
+
+    <section class="panel" style="margin-top:1rem">
+        <div class="card-head"><h2 style="margin:0" data-i18n="Overall ranking">Overall ranking</h2><div style="display:flex;gap:.5rem"><button class="btn btn-ghost" id="exportCsv" data-i18n="CSV"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
+        <div style="overflow-x:auto"><table class="rank" id="table"></table></div>
+        <p class="muted small" id="empty">No results yet. Scan or paste a QR.</p>
+    </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/roadbook-core.js"></script>
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="ranking.js"></script>
+</body>
+</html>

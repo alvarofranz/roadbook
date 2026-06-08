@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Challenge · RDBK.app</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <style>
+        #chWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
+        .ch-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .ch-head h1 { margin: 0; font-size: 1.8rem; }
+        .ch-owner { display: flex; gap: .6rem; align-items: center; }
+        .avatar-sm { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); background: var(--card-2); }
+        .ch-actions { display: flex; gap: .5rem; }
+        .ch-desc { color: #c7ccd6; line-height: 1.6; }
+        .ch-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; margin: 1rem 0; }
+        .ch-gallery img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); display: block; }
+        #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="chWrap">
+    <p id="chLoading" class="muted" style="padding:2rem 0">Loading…</p>
+    <article id="chContent" hidden>
+        <div class="ch-head">
+            <div>
+                <h1 id="chTitle"></h1>
+                <div class="ch-owner" style="margin-top:.5rem">
+                    <img id="chAvatar" class="avatar-sm" alt="">
+                    <div><b id="chOwner"></b><div class="muted small" id="chMeta"></div></div>
+                </div>
+            </div>
+            <div class="ch-actions">
+                <a class="btn btn-primary" id="chNav" data-i18n="Navigate"><i class="fa-solid fa-compass"></i> Navigate</a>
+                <a class="btn btn-ghost" id="chFork" data-i18n="Fork"><i class="fa-solid fa-code-branch"></i> Fork</a>
+            </div>
+        </div>
+        <p id="chDesc" class="ch-desc"></p>
+        <div id="chGallery" class="ch-gallery"></div>
+        <div class="icat" data-i18n="Notes">Notes</div>
+        <div id="chNotes"></div>
+    </article>
+</main>
+
+<script src="/assets/js/roadbook-core.js"></script>
+<script src="/assets/js/note-canvas.js"></script>
+<script src="/assets/js/challenges.js"></script>
+<script src="/assets/js/i18n.js"></script>
+<script src="/assets/js/app.js"></script>
+<script src="challenge.js"></script>
+</body>
+</html>
