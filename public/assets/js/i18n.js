@@ -35,7 +35,7 @@
             'feat.8.t': 'Cuentas y compartir', 'feat.8.d': 'Inicia sesión para guardar roadbooks y publicarlos como challenges públicos.',
             'gallery.kicker': 'Galería', 'gallery.title': 'Challenges públicos', 'gallery.loading': 'Cargando tracks…', 'gallery.empty': 'Aún no hay tracks.', 'gallery.notes': 'notas',
             // ---- tools (the English string is the key) ----
-            'Load from': 'Cargar desde', 'Import a GPS track → roadbook': 'Importa un track GPS → roadbook',
+            'Load from': 'Cargar desde', 'Import a GPS track': 'Importa un track GPS',
             'Open an existing roadbook': 'Abre un roadbook existente', 'Record route': 'Grabar ruta',
             'Record live with GPS': 'Graba en vivo con GPS', 'Start from a public one': 'Empieza desde uno público',
             'Finish': 'Finalizar', 'Export .rdbk': 'Exportar .rdbk', 'Save': 'Guardar', 'Saved': 'Guardado',
@@ -120,7 +120,7 @@
             'feat.8.t': 'Account e condivisione', 'feat.8.d': 'Accedi per salvare i roadbook e pubblicarli come challenge pubblici.',
             'gallery.kicker': 'Galleria', 'gallery.title': 'Challenge pubblici', 'gallery.loading': 'Caricamento…', 'gallery.empty': 'Ancora nessuna traccia.', 'gallery.notes': 'note',
             // ---- tools (the English string is the key) ----
-            'Load from': 'Carica da', 'Import a GPS track → roadbook': 'Importa una traccia GPS → roadbook',
+            'Load from': 'Carica da', 'Import a GPS track': 'Importa una traccia GPS',
             'Open an existing roadbook': 'Apri un roadbook esistente', 'Record route': 'Registra percorso',
             'Record live with GPS': 'Registra dal vivo col GPS', 'Start from a public one': 'Parti da uno pubblico',
             'Finish': 'Termina', 'Export .rdbk': 'Esporta .rdbk', 'Save': 'Salva', 'Saved': 'Salvato',

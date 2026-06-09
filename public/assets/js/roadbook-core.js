@@ -26,9 +26,9 @@
         const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
         return normDeg(toDeg(Math.atan2(y, x)));
     }
-    // punto destino a (lat,lon) yendo brg grados durante distM metros
-    function destPoint(lat, lon, brg, distM) {
-        const δ = distM / R_M, θ = toRad(brg), φ1 = toRad(lat), λ1 = toRad(lon);
+    // punto destino a (lat,lon) yendo heading grados durante distM metros
+    function destPoint(lat, lon, heading, distM) {
+        const δ = distM / R_M, θ = toRad(heading), φ1 = toRad(lat), λ1 = toRad(lon);
         const φ2 = Math.asin(Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ));
         const λ2 = λ1 + Math.atan2(Math.sin(θ) * Math.sin(δ) * Math.cos(φ1), Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2));
         return { lat: toDeg(φ2), lon: ((toDeg(λ2) + 540) % 360) - 180 };

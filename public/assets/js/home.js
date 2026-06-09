@@ -9,15 +9,15 @@
 
     fetch(ROOT + 'api/index.php?action=public_list').then((r) => r.json()).then((j) => {
         const rbs = (j && j.roadbooks) || [];
-        if (!rbs.length) { grid.innerHTML = `<p class="gempty">${t('gallery.empty', 'No public challenges yet.')}</p>`; return; }
+        if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty', 'No public challenges yet.')}</p>`; return; }
         grid.innerHTML = rbs.map((r) => `
-            <a class="gcard" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">
+            <a class="gallery-card" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">
                 ${r.thumb ? `<img class="thumb" src="${r.thumb}" alt="${esc(r.title)}" loading="lazy">`
                     : `<div class="thumb thumb-ph"><i class="fa-solid fa-map-location-dot"></i></div>`}
-                <div class="gbody">
+                <div class="gallery-body">
                     <h3>${esc(r.title)}</h3>
-                    <div class="gmeta">@${esc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${t('gallery.notes', 'notes')}</div>
+                    <div class="gallery-meta">@${esc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${t('gallery.notes', 'notes')}</div>
                 </div>
             </a>`).join('');
-    }).catch(() => { grid.innerHTML = `<p class="gempty">${t('gallery.empty', 'No public challenges yet.')}</p>`; });
+    }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty', 'No public challenges yet.')}</p>`; });
 })();

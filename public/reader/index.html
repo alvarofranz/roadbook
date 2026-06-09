@@ -12,14 +12,14 @@
     <link rel="stylesheet" href="../assets/css/app.css">
     <style>
         /* top odometer bar */
-        .odobar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
-        .odo { display: flex; flex-direction: column; }
-        .odo.right { align-items: flex-end; }
-        .odo.brg { align-items: center; }
-        .odo .lbl { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-        .odo .v { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-        .odo .v.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
-        .odo .clk { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
+        .odometer-item { display: flex; flex-direction: column; }
+        .odometer-item.right { align-items: flex-end; }
+        .odometer-item.heading { align-items: center; }
+        .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+        .odometer-item .v { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .odometer-item .v.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
+        .odometer-item .clock-text { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transition: transform .35s ease; }
@@ -31,33 +31,33 @@
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
         /* tripmaster */
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-        .mini-btn { cursor: pointer; font: inherit; }
-        .mini-btn:hover { border-color: var(--sand); }
+        .mini-button { cursor: pointer; font: inherit; }
+        .mini-button:hover { border-color: var(--sand); }
         #tmSpeed { transition: color .2s; }
         .hold-btn { position: relative; overflow: hidden; }
         .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
         .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
-        .hold-lbl { position: relative; z-index: 1; }
+        .hold-field-label { position: relative; z-index: 1; }
         body.trip-on header.topbar, body.trip-on footer.foot { display: none !important; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
         /* roadbook navigation rows — white "paper", fixed | fixed | dynamic | buttons */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
         .nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; }
         .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
-        .nrow .c-dist { display: flex; flex-direction: column; gap: .1rem; }
-        .nrow .c-dist .tot { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
-        .nrow .c-dist .par { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
-        .nrow .c-dist .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
-        .nrow .c-dist.close { background: #bfe3ff; } /* azzurro: < 50 m to the next note */
-        .nrow .c-vig { display: flex; align-items: center; justify-content: center; padding: .3rem; }
-        .nrow .c-vig svg { width: 100%; height: 100%; max-height: 122px; }
-        .nrow .c-txt { display: flex; flex-direction: column; font-size: .92rem; }
-        .nrow .c-txt .t { flex: 1; word-break: break-word; }
-        .nrow .c-txt .ncap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
-        .nrow .c-txt .co { color: #999; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
-        .nrow .c-btn { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
-        .nrow .c-btn .nbtn { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
-        .nrow .c-btn .nbtn.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
+        .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
+        .nrow .col-distance .tot { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+        .nrow .col-distance .par { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
+        .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
+        .nrow .col-distance.close { background: #bfe3ff; } /* azzurro: < 50 m to the next note */
+        .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
+        .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
+        .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
+        .nrow .col-text .t { flex: 1; word-break: break-word; }
+        .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
+        .nrow .col-text .co { color: #999; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
+        .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
+        .nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
+        .nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
         .nrow.done { background: #d6f5e0; }  /* verdino: reached */
         .nrow.up { background: #ffe1ec; }    /* rosa: not reached yet */
         .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
@@ -65,11 +65,11 @@
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         .nmap img { width: 100%; display: block; border-radius: 6px; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
-        .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-        .seg-b { flex: 1; background: var(--card-2); color: var(--muted); border: 0; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
-        .seg-b.on { background: var(--sand); color: #14100a; }
-        .chk { display: flex; align-items: center; gap: .5rem; font-size: .9rem; cursor: pointer; }
-        .chk input { width: 18px; height: 18px; accent-color: var(--sand); }
+        .segmented { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        .segment-button { flex: 1; background: var(--card-2); color: var(--muted); border: 0; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .segment-button.on { background: var(--sand); color: #14100a; }
+        .checkbox-row { display: flex; align-items: center; gap: .5rem; font-size: .9rem; cursor: pointer; }
+        .checkbox-row input { width: 18px; height: 18px; accent-color: var(--sand); }
     </style>
 </head>
 <body>
@@ -93,10 +93,10 @@
 <!-- navigation with a roadbook -->
 <div id="navScreen" hidden>
     <!-- top odometer bar: total · bearing+clock · partial -->
-    <div class="odobar">
-        <div class="odo"><span class="lbl">prog.</span><span class="v" id="odoTotal">0.00</span></div>
-        <div class="odo brg"><span class="v boxed" id="odoBrg">—°</span><span class="clk" id="odoClock">--:--:--</span><span class="clk"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt">GPS…</span></span></div>
-        <div class="odo right"><span class="lbl">part.</span><span class="v" id="odoPartial">0.00</span></div>
+    <div class="odometer-bar">
+        <div class="odometer-item"><span class="field-label">prog.</span><span class="v" id="odoTotal">0.00</span></div>
+        <div class="odometer-item heading"><span class="v boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt">GPS…</span></span></div>
+        <div class="odometer-item right"><span class="field-label">part.</span><span class="v" id="odoPartial">0.00</span></div>
     </div>
     <!-- 3-column note rows: distances | graphic | indications + coords -->
     <div id="noteList"></div>
@@ -121,20 +121,20 @@
     <main class="wrap trip-main">
         <div class="dash">
             <div class="readout primary">
-                <div class="lbl" data-i18n="Total">Total</div>
+                <div class="field-label" data-i18n="Total">Total</div>
                 <div><span class="num" id="tmTotal">0.00</span> <span class="unit">km</span></div>
             </div>
             <div class="readout">
-                <div class="lbl" data-i18n="Partial">Partial</div>
+                <div class="field-label" data-i18n="Partial">Partial</div>
                 <div><span class="num2" id="tmPartial">0.00</span> <span class="unit">km</span></div>
                 <div class="btnrow">
                     <button class="btn btn-ghost" id="tmMinus10">−10 m</button>
                     <button class="btn btn-ghost" id="tmPlus10">+10 m</button>
-                    <button class="btn btn-ghost hold-btn" id="tmReset"><span class="hold-fill"></span><span class="hold-lbl"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Reset (hold)">Reset (hold)</span></span></button>
+                    <button class="btn btn-ghost hold-btn" id="tmReset"><span class="hold-fill"></span><span class="hold-field-label"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Reset (hold)">Reset (hold)</span></span></button>
                 </div>
             </div>
             <div class="row3">
-                <button class="mini mini-btn" id="tmSpeedAlert"><div class="v" id="tmSpeed">0</div><div class="k" data-i18n="km/h · alert">km/h · alert</div></button>
+                <button class="mini mini-button" id="tmSpeedAlert"><div class="v" id="tmSpeed">0</div><div class="k" data-i18n="km/h · alert">km/h · alert</div></button>
                 <div class="mini"><div class="v" id="tmCap">—</div><div class="k">CAP °</div></div>
                 <div class="mini"><div class="v" id="tmClock">--:--</div><div class="k" data-i18n="Clock">Clock</div></div>
             </div>
@@ -161,12 +161,12 @@
         <h2 data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
             <label class="muted small" data-i18n="Advancement">Advancement</label>
-            <div class="seg">
-                <button type="button" class="seg-b on" id="advAuto" data-i18n="Automatic (GPS)">Automatic (GPS)</button>
-                <button type="button" class="seg-b" id="advManual" data-i18n="Manual (tap)">Manual (tap)</button>
+            <div class="segmented">
+                <button type="button" class="segment-button on" id="advAuto" data-i18n="Automatic (GPS)">Automatic (GPS)</button>
+                <button type="button" class="segment-button" id="advManual" data-i18n="Manual (tap)">Manual (tap)</button>
             </div>
-            <label class="chk"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
-            <label class="chk"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
         </div>
         <div class="mode-grid">
             <button class="mode-btn" id="modeViaje"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>

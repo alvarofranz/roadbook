@@ -17,8 +17,8 @@
         .ed-row select, .ed-row input[type=text], .ed-row textarea { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
         .ed-row.top { align-items: flex-start; }
         .ed-row.between { justify-content: space-between; }
-        #loadFrom .icat { margin-top: 0; }
-        .icat.flush { margin: 0; }
+        #loadFrom .icon-category { margin-top: 0; }
+        .icon-category.flush { margin: 0; }
         .notecount { text-transform: none; letter-spacing: 0; }
         .note-list { display: flex; flex-direction: column; gap: .4rem; }
         .rec-btns .btn-danger { flex: 0 0 auto; }
@@ -30,11 +30,11 @@
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
         .icon-grid button { position: relative; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
-        .icon-grid .icat { grid-column: 1 / -1; }
-        .icat { color: var(--sand); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .8rem 0 .3rem; }
+        .icon-grid .icon-category { grid-column: 1 / -1; }
+        .icon-category { color: var(--sand); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .8rem 0 .3rem; }
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .5rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
-        .note-mini .nn { font-weight: 800; color: var(--sand); }
+        .note-mini .note-number { font-weight: 800; color: var(--sand); }
         .note-mini .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border-radius: 50%; font-weight: 800; cursor: pointer; }
         .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
@@ -45,18 +45,18 @@
         .adv summary { cursor: pointer; font-weight: 700; color: var(--sand); padding: .5rem 0; list-style: none; }
         .adv summary::-webkit-details-marker { display: none; }
         .adv .ed-row label { min-width: 110px; }
-        .ncv { position: relative; width: 100%; max-width: 560px; margin: .2rem auto .4rem; aspect-ratio: 230/162; background: #11161f; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
+        .vignette-box { position: relative; width: 100%; max-width: 560px; margin: .2rem auto .4rem; aspect-ratio: 230/162; background: #11161f; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
         .btn-danger { background: rgba(255,90,69,.14); color: var(--track); border: 1px solid rgba(255,90,69,.32); }
         .btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }
-        .vig-addj { position: absolute; top: 8px; right: 8px; z-index: 4; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
-        .vig-addj:hover { background: rgba(14,17,22,.95); }
-        .ncv-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .ncv-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
-        .ncv-toolbar:empty { display: none; }
-        .ncv-toolbar button { width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--card-2); color: var(--text); cursor: pointer; font-size: .85rem; }
-        .ncv-toolbar button.on { background: var(--sand); color: #14100a; }
-        .ncv-toolbar button.dg { color: var(--track); }
-        .ncv-toolbar select { background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: .3rem; }
+        .add-junction { position: absolute; top: 8px; right: 8px; z-index: 4; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
+        .add-junction:hover { background: rgba(14,17,22,.95); }
+        .vignette-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .vignette-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
+        .vignette-toolbar:empty { display: none; }
+        .vignette-toolbar button { width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--card-2); color: var(--text); cursor: pointer; font-size: .85rem; }
+        .vignette-toolbar button.on { background: var(--sand); color: #14100a; }
+        .vignette-toolbar button.danger { color: var(--track); }
+        .vignette-toolbar select { background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: .3rem; }
         #viewMap, #viewNote { max-width: 720px; margin: 0 auto; }
         #loadFrom { margin-bottom: 1rem; }
         .load-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
@@ -65,7 +65,7 @@
         .load-card i { font-size: 1.3rem; color: var(--sand); margin-bottom: .15rem; }
         .load-card b { font-size: 1rem; }
         .load-card small { color: var(--muted); font-size: .76rem; }
-        .recbar { display: flex; flex-direction: column; gap: .55rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .65rem .9rem; margin-bottom: .8rem; }
+        .record-bar { display: flex; flex-direction: column; gap: .55rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .65rem .9rem; margin-bottom: .8rem; }
         .rec-status { display: flex; align-items: center; gap: .5rem; }
         .rec-btns { display: flex; gap: .45rem; }
         .rec-btns .btn { flex: 1; justify-content: center; padding: .6rem .4rem; }
@@ -73,14 +73,14 @@
         @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
         .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-        .vn-tabs { display: flex; gap: .4rem; margin: 1rem 0 .3rem; }
-        .vn-tab { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
-        .vn-tab.on { background: var(--sand); color: #14100a; border-color: var(--sand); }
+        .note-tabs { display: flex; gap: .4rem; margin: 1rem 0 .3rem; }
+        .note-tab { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .note-tab.on { background: var(--sand); color: #14100a; border-color: var(--sand); }
         .vis-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
         .vis-toggle .vis { background: var(--card-2); color: var(--muted); border: 0; padding: .55rem .8rem; cursor: pointer; font: inherit; font-weight: 600; }
         .vis-toggle .vis.on { background: var(--sand); color: #14100a; }
-        .fld { background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
-        .fld:focus { outline: 2px solid var(--sand); border-color: transparent; }
+        .field { background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
+        .field:focus { outline: 2px solid var(--sand); border-color: transparent; }
         @media (max-width: 600px) {
             .toolbar .wrap { height: auto; flex-wrap: wrap; gap: .35rem; padding: .45rem 0; }
             .toolbar .title { font-size: .95rem; }
@@ -99,15 +99,15 @@
     <!-- VIEW A: map + notes -->
     <section id="viewMap">
         <div id="loadFrom">
-            <div class="icat" data-i18n="Load from">Load from</div>
+            <div class="icon-category" data-i18n="Load from">Load from</div>
             <div class="load-opts">
-                <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track → roadbook">Import a GPS track → roadbook</small></button>
-                <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
+                <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
                 <button class="load-card" id="recordRoute"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record route">Record route</b><small data-i18n="Record live with GPS">Record live with GPS</small></button>
+                <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                 <button class="load-card" id="demos"><i class="fa-solid fa-trophy"></i><b data-i18n="Challenges">Challenges</b><small data-i18n="Start from a public one">Start from a public one</small></button>
             </div>
         </div>
-        <div id="recBar" class="recbar" hidden>
+        <div id="recBar" class="record-bar" hidden>
             <div class="rec-status"><span class="rec-dot"></span> <span id="recStats" class="muted small">Recording…</span></div>
             <div class="rec-btns">
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i></button>
@@ -131,10 +131,10 @@
                 </div>
             </div>
             <div class="ed-row"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
-            <div class="ed-row"><label>Title</label><input type="text" id="rbTitle" class="fld" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
-            <div class="ed-row top"><label>Description</label><textarea id="rbDesc" class="fld" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
-            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="fld" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
-            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="fld" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
+            <div class="ed-row"><label>Title</label><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
+            <div class="ed-row top"><label>Description</label><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
+            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
+            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
             <div class="ed-row"><label data-i18n="Event logo">Event logo</label>
                 <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
                 <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
@@ -143,11 +143,11 @@
             </div>
             <div class="ed-row"><label data-i18n="Last modified">Last modified</label><span id="rbModified" class="muted small">—</span></div>
             <div id="photosSection" hidden>
-                <div class="ed-row between"><div class="icat flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
+                <div class="ed-row between"><div class="icon-category flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
                 <input id="photoFile" type="file" accept="image/*" multiple hidden>
                 <div id="photoGrid" class="icon-grid"></div>
             </div>
-            <div class="icat">Notes <span class="muted small notecount" id="noteCount"></span></div>
+            <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
             <div id="noteList" class="note-list"></div>
         <details class="adv">
             <summary data-i18n="Advanced: splice another GPX track"><i class="fa-solid fa-wand-magic-sparkles"></i> Advanced: splice another GPX track</summary>
@@ -179,18 +179,18 @@
             </div>
         </div>
         <div id="editor"></div>
-        <div class="vn-tabs">
-            <button id="tabBtnVig" class="vn-tab on" data-i18n="Vignette"><i class="fa-solid fa-pen-ruler"></i> Vignette</button>
-            <button id="tabBtnMap" class="vn-tab" data-i18n="Map"><i class="fa-solid fa-location-dot"></i> Map</button>
+        <div class="note-tabs">
+            <button id="tabBtnVig" class="note-tab on" data-i18n="Vignette"><i class="fa-solid fa-pen-ruler"></i> Vignette</button>
+            <button id="tabBtnMap" class="note-tab" data-i18n="Map"><i class="fa-solid fa-location-dot"></i> Map</button>
         </div>
         <div id="tabVignette">
             <div id="canvasWrap">
                 <div id="noteCanvas"></div>
-                <button class="vig-addj" id="addBivio" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
+                <button class="add-junction" id="addBivio" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
             </div>
             <div id="noteToolbar"></div>
             <div class="ed-row between">
-                <div class="icat flush" data-i18n="Icons">Icons</div>
+                <div class="icon-category flush" data-i18n="Icons">Icons</div>
                 <button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button>
             </div>
             <input id="iconFile" type="file" accept="image/*" multiple hidden>

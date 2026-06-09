@@ -15,13 +15,13 @@
         });
         try { return await r.json(); } catch (e) { return { ok: false, error: 'Network error.' }; }
     };
-    const msg = (text, ok) => { const m = $('amsg'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'amsg ' + (ok ? 'ok' : 'err'); m.hidden = false; };
+    const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
     /* ---------- Turnstile ---------- */
     window.__tsReady = function renderTurnstile() {
         if (!tsSite || !window.turnstile) return;
-        document.querySelectorAll('.ts[data-ts]').forEach((el) => {
+        document.querySelectorAll('.turnstile[data-ts]').forEach((el) => {
             if (el.dataset.rendered) return; el.dataset.rendered = '1';
             const name = el.dataset.ts;
             window.turnstile.render(el, { sitekey: tsSite, theme: 'dark', callback: (t) => { tsTokens[name] = t; } });
@@ -33,7 +33,7 @@
         s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__tsReady';
         s.async = true; document.head.appendChild(s);
     }
-    function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.ts[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
+    function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
     /* ---------- routes ---------- */
     async function init() {
@@ -100,7 +100,7 @@
         const r = await api('rb_list');
         const list = $('rbList');
         if (!r.ok || !r.roadbooks || !r.roadbooks.length) { list.innerHTML = `<p class="muted small">${t('No roadbooks yet. Create one in the Editor.')}</p>`; return; }
-        list.innerHTML = r.roadbooks.map((rb) => `<div class="rbrow">
+        list.innerHTML = r.roadbooks.map((rb) => `<div class="roadbook-row">
             <div class="meta"><b>${esc(rb.title)}</b><small><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${(rb.total_distance / 1000).toFixed(1)} km · ${rb.note_count} notes</small></div>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="View"><i class="fa-solid fa-eye"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="Edit"><i class="fa-solid fa-pen"></i></a>

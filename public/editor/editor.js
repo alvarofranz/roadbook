@@ -39,12 +39,13 @@
         try {
             const p = RB.parseGPX(await g.text());
             if (w && (!p.wpts || !p.wpts.length)) p.wpts = RB.parseWPT(await w.text());
+            resetIdentity();
             setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts: p.trkpts, wpts: p.wpts }));
         } catch (err) { toast('Error: ' + err.message); }
     };
     $('jsonFile').onchange = async (e) => {
         const f = e.target.files[0]; if (!f) return;
-        try { const j = JSON.parse(await f.text()); if (!j.track || !j.notes) throw new Error('Not a roadbook'); setRoadbook(j); }
+        try { const j = JSON.parse(await f.text()); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
         catch (err) { toast('Error: ' + err.message); }
     };
     function setRoadbook(r) {
@@ -272,10 +273,16 @@
     $('visPrivate').onclick = () => { setVis(0); markDirty(); };
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
     function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); }
+    // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
+    function resetIdentity() { currentRbId = 0; setVis(0); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await apiPost({ action: 'rb_save', id: currentRbId, is_public: isPublic, roadbook: rb });
-        if (r.ok) { currentRbId = r.id; dirty = false; updatePhotos(); updateSaveBtn(); }
+        if (r.ok) {
+            currentRbId = r.id; dirty = false; updatePhotos(); updateSaveBtn();
+            // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
+            try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
+        }
         return r;
     }
     $('saveAccount').onclick = async () => {
@@ -324,7 +331,7 @@
     /* ---------- notas + selección ---------- */
     function renderNotes() {
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}">
-                <span class="nn">${n.num}</span>
+                <span class="note-number">${n.num}</span>
                 <span class="label">${n.text ? esc(n.text) : '<span class="muted">(no text)</span>'}</span>
                 <span class="muted small">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
             </div>`).join('');
@@ -423,8 +430,8 @@
         const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
         let html = '';
-        if (custom.length) html += `<div class="icat">Yours (in this roadbook)</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
-        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icat">${cat}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
+        if (custom.length) html += `<div class="icon-category">Yours (in this roadbook)</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
+        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category">${cat}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
         $('iconGrid').innerHTML = html || '<span class="muted small">No icons.</span>';
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);

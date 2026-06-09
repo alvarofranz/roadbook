@@ -88,7 +88,7 @@
             `<thead><tr><th>#</th><th>Vehicle</th><th>km</th><th>Accuracy</th><th>CAP</th><th>Speed</th><th>Regularity</th><th>Final</th><th></th></tr></thead>`
             + '<tbody>' + rows.map((r, i) =>
                 `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === false ? '<span title="Invalid signature" class="icon-danger">⚠</span> ' : ''}${r.team}</td><td>${r.km.toFixed(1)}</td>`
-                + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="fs">${r.finalScore}</td>`
+                + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="final-score">${r.finalScore}</td>`
                 + `<td><button class="link-delete" data-del="${r.ts}" title="Remove">✕</button></td></tr>`).join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {

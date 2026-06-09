@@ -11,23 +11,23 @@
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/app.css">
     <style>
-        .acard { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
-        .acard h1 { font-size: 1.5rem; margin: 0 0 1rem; }
-        .acard h2 { font-size: 1.05rem; margin: .4rem 0 .3rem; }
-        .fld { width: 100%; background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 11px; padding: .8rem .9rem; font-size: 1rem; margin: .35rem 0; }
-        .fld:focus { outline: 2px solid var(--sand); border-color: transparent; }
+        .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
+        .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+        .auth-card h2 { font-size: 1.05rem; margin: .4rem 0 .3rem; }
+        .field { width: 100%; background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 11px; padding: .8rem .9rem; font-size: 1rem; margin: .35rem 0; }
+        .field:focus { outline: 2px solid var(--sand); border-color: transparent; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-        .acard .btn { width: 100%; justify-content: center; margin-top: .8rem; }
-        .acard .links { margin-top: 1rem; font-size: .92rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-        .amsg { border-radius: 10px; padding: .7rem .9rem; margin: .2rem 0 1rem; font-size: .92rem; }
-        .amsg.ok { background: rgba(58,210,159,.14); color: var(--ok); }
-        .amsg.err { background: rgba(255,90,69,.14); color: var(--track); }
-        .ts { margin: .6rem 0; }
-        .rbrow { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
-        .rbrow .meta { flex: 1; min-width: 0; }
-        .rbrow .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rbrow .meta small { color: var(--muted); white-space: nowrap; }
-        .rbrow .btn { flex-shrink: 0; padding: .5rem .6rem; margin: 0; }
+        .auth-card .btn { width: 100%; justify-content: center; margin-top: .8rem; }
+        .auth-card .links { margin-top: 1rem; font-size: .92rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .auth-message { border-radius: 10px; padding: .7rem .9rem; margin: .2rem 0 1rem; font-size: .92rem; }
+        .auth-message.ok { background: rgba(58,210,159,.14); color: var(--ok); }
+        .auth-message.err { background: rgba(255,90,69,.14); color: var(--track); }
+        .turnstile { display: flex; justify-content: center; margin: .6rem 0; }
+        .roadbook-row { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
+        .roadbook-row .meta { flex: 1; min-width: 0; }
+        .roadbook-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .roadbook-row .meta small { color: var(--muted); white-space: nowrap; }
+        .roadbook-row .btn { flex-shrink: 0; padding: .5rem .6rem; margin: 0; }
         .avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
         #vAccount { max-width: 860px; margin: 0 auto; }
         .profile-head { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin: 1.2rem 0 .5rem; }
@@ -47,46 +47,46 @@
 <header class="topbar"></header>
 
 <main class="wrap">
-    <div id="amsg" class="amsg" hidden></div>
+    <div id="auth-message" class="auth-message" hidden></div>
 
     <!-- SIGN IN -->
-    <section id="vLogin" class="acard" hidden>
+    <section id="vLogin" class="auth-card" hidden>
         <h1 data-i18n="Your roadbooks">Your roadbooks</h1>
         <p class="muted intro-text" data-i18n-html="Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.">Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.</p>
         <h2 data-i18n="Sign in">Sign in</h2>
-        <input id="loginId" class="fld" placeholder="Email or username" data-i18n-ph="Email or username" autocomplete="username">
-        <input id="loginPass" class="fld" type="password" placeholder="Password" data-i18n-ph="Password" autocomplete="current-password">
-        <div class="ts" data-ts="login"></div>
+        <input id="loginId" class="field" placeholder="Email or username" data-i18n-ph="Email or username" autocomplete="username">
+        <input id="loginPass" class="field" type="password" placeholder="Password" data-i18n-ph="Password" autocomplete="current-password">
+        <div class="turnstile" data-ts="login"></div>
         <button class="btn btn-primary" id="loginBtn" data-i18n="Sign in"><i class="fa-solid fa-right-to-bracket"></i> Sign in</button>
         <div class="links"><a href="#" id="toRegister" data-i18n="Create account">Create account</a><a href="#" id="toForgot" data-i18n="Forgot password?">Forgot password?</a></div>
     </section>
 
     <!-- REGISTER -->
-    <section id="vRegister" class="acard" hidden>
+    <section id="vRegister" class="auth-card" hidden>
         <h1 data-i18n="Create account">Create account</h1>
-        <div class="row2"><input id="regFirst" class="fld" placeholder="First name" data-i18n-ph="First name"><input id="regLast" class="fld" placeholder="Last name" data-i18n-ph="Last name"></div>
-        <input id="regUser" class="fld" placeholder="Username" data-i18n-ph="Username" autocomplete="username">
-        <input id="regEmail" class="fld" type="email" placeholder="Email" data-i18n-ph="Email" autocomplete="email">
-        <input id="regPass" class="fld" type="password" placeholder="Password (min 8 chars)" data-i18n-ph="Password (min 8 chars)" autocomplete="new-password">
-        <div class="ts" data-ts="register"></div>
+        <div class="row2"><input id="regFirst" class="field" placeholder="First name" data-i18n-ph="First name"><input id="regLast" class="field" placeholder="Last name" data-i18n-ph="Last name"></div>
+        <input id="regUser" class="field" placeholder="Username" data-i18n-ph="Username" autocomplete="username">
+        <input id="regEmail" class="field" type="email" placeholder="Email" data-i18n-ph="Email" autocomplete="email">
+        <input id="regPass" class="field" type="password" placeholder="Password (min 8 chars)" data-i18n-ph="Password (min 8 chars)" autocomplete="new-password">
+        <div class="turnstile" data-ts="register"></div>
         <button class="btn btn-primary" id="regBtn" data-i18n="Create account"><i class="fa-solid fa-user-plus"></i> Create account</button>
         <div class="links"><a href="#" id="toLogin" data-i18n="Already have an account? Sign in">Already have an account? Sign in</a></div>
     </section>
 
     <!-- FORGOT -->
-    <section id="vForgot" class="acard" hidden>
+    <section id="vForgot" class="auth-card" hidden>
         <h1 data-i18n="Reset password">Reset password</h1>
         <p class="muted small" data-i18n-html="We’ll email you a link to set a new password.">We’ll email you a link to set a new password.</p>
-        <input id="forgotEmail" class="fld" type="email" placeholder="Your email" data-i18n-ph="Your email" autocomplete="email">
-        <div class="ts" data-ts="forgot"></div>
+        <input id="forgotEmail" class="field" type="email" placeholder="Your email" data-i18n-ph="Your email" autocomplete="email">
+        <div class="turnstile" data-ts="forgot"></div>
         <button class="btn btn-primary" id="forgotBtn" data-i18n="Send reset link"><i class="fa-solid fa-paper-plane"></i> Send reset link</button>
         <div class="links"><a href="#" id="toLogin2" data-i18n="Back to sign in">Back to sign in</a></div>
     </section>
 
     <!-- RESET -->
-    <section id="vReset" class="acard" hidden>
+    <section id="vReset" class="auth-card" hidden>
         <h1 data-i18n="Set a new password">Set a new password</h1>
-        <input id="resetPass" class="fld" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" autocomplete="new-password">
+        <input id="resetPass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" autocomplete="new-password">
         <button class="btn btn-primary" id="resetBtn" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
     </section>
 
@@ -105,10 +105,10 @@
             </div>
         </div>
 
-        <div id="profileForm" hidden class="acard profile-form">
+        <div id="profileForm" hidden class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
-            <textarea id="pfBio" class="fld" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" maxlength="500"></textarea>
+            <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" maxlength="500"></textarea>
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
         </div>
 

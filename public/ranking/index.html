@@ -16,11 +16,11 @@
         table.rank th:first-child, table.rank td:first-child, table.rank th:nth-child(2), table.rank td:nth-child(2) { text-align: left; }
         table.rank thead th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
         table.rank tr.top td { color: var(--sand); font-weight: 800; }
-        table.rank .fs { font-weight: 800; color: var(--sand); }
+        table.rank .final-score { font-weight: 800; color: var(--sand); }
         #video { width: 100%; max-height: 320px; border-radius: 12px; background: #000; display: block; }
-        .cfg input { width: 80px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .4rem; }
+        .config-row input { width: 80px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .4rem; }
         #manualMeta { flex: 1; min-width: 200px; width: auto; padding: .6rem; }
-        .cfg { margin-top: .8rem; align-items: center; }
+        .config-row { margin-top: .8rem; align-items: center; }
         #msg { margin-top: .5rem; }
         .rank-results { margin-top: 1rem; }
         .card-head h2 { margin: 0; }
@@ -33,13 +33,13 @@
 <main class="wrap tool-page">
     <section class="panel">
         <h2>Add result</h2>
-        <div class="dl">
+        <div class="action-row">
             <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> Scan QR</button>
             <input id="manualMeta" type="text" placeholder="…or paste the code (META) here">
             <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
         <video id="video" hidden playsinline></video>
-        <div class="cfg dl">
+        <div class="config-row action-row">
             <label class="muted small">Target average speed <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
             <span class="muted small">(used for regularity if the QR doesn't carry it)</span>
         </div>

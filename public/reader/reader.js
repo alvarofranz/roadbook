@@ -126,8 +126,8 @@
         // top odometer bar
         $('odoTotal').textContent = (tripTotalM / 1000).toFixed(2);
         $('odoPartial').textContent = (tripPartialM / 1000).toFixed(2);
-        const brg = an ? Math.round(RB.geo.bearingDeg(here, an)) : (tmCap != null ? Math.round(tmCap) : null);
-        $('odoBrg').textContent = brg == null ? '—°' : pad(brg, 3) + '°';
+        const heading = an ? Math.round(RB.geo.bearingDeg(here, an)) : (tmCap != null ? Math.round(tmCap) : null);
+        $('odoBrg').textContent = heading == null ? '—°' : pad(heading, 3) + '°';
         updateCapBar(here);
     }
     function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : 'GPS…'; }
@@ -144,14 +144,14 @@
             const warn = (auto && i === activeIdx && approaching) ? ' warn' : '';
             const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
             const hasVig = (n.icons && n.icons.length) || (n.junctions && n.junctions.length);
-            const cap = n.cap != null ? `<div class="ncap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
-            const reach = (!auto && i >= activeIdx) ? `<button class="nbtn reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
-            const mapb = showMap ? `<button class="nbtn" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
+            const reach = (!auto && i >= activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
             return `<div class="nrow ${st}${warn}" data-i="${i}">
-                <div class="c-dist${close}"><div class="tot">${fkm(n.distance)}</div><div class="par">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
-                <div class="c-vig">${hasVig ? NoteCanvas.toSVG(n, iconSrc) : ''}</div>
-                <div class="c-txt"><div class="t">${esc(n.text || '')}</div>${cap}<div class="co">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
-                <div class="c-btn">${reach}${mapb}</div>
+                <div class="col-distance${close}"><div class="tot">${fkm(n.distance)}</div><div class="par">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
+                <div class="col-vignette">${hasVig ? NoteCanvas.toSVG(n, iconSrc) : ''}</div>
+                <div class="col-text"><div class="t">${esc(n.text || '')}</div>${cap}<div class="co">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
+                <div class="col-buttons">${reach}${mapb}</div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
@@ -318,8 +318,8 @@
     const gpxName = () => 'RDBK_trip_' + ddmmyy(new Date()) + '_' + hhmmss(new Date());
     try { const g = JSON.parse(localStorage.getItem('rb_gpx_settings') || 'null'); if (g && g.freq) tripRecFreq = g.freq; } catch (e) {}
     function buildGpx(pts, name) {
-        const seg = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
-        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${(name || 'RDBK trip').replace(/[<>&]/g, '')}</name><trkseg>${seg}</trkseg></trk></gpx>`;
+        const segmented = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${(name || 'RDBK trip').replace(/[<>&]/g, '')}</name><trkseg>${segmented}</trkseg></trk></gpx>`;
     }
     function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
     async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(buildGpx(tripRecPts, tripRecName)); await w.close(); } catch (e) {} }
