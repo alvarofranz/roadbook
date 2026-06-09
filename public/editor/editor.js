@@ -5,7 +5,7 @@
  * AUTOCONTENIDO (iconos embebidos en icons → un único .json portable). */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = (k) => (window.RBi18n ? RBi18n.t(k) : k);
+    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
     const map = new RBMap('edMap', { zoom: 13 });
     let rb = null, sel = 0, std = null, spliceTrk = null, dirty = false, exported = false;
@@ -187,46 +187,36 @@
     $('recWaypoint').onclick = () => {
         if (!recHere) return toast('Waiting for a GPS fix…');
         const note = dropWaypoint(recHere.lat, recHere.lon, '');
-        const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:380px">
-            <h3 style="margin:0 0 .5rem">Waypoint ${note.num}</h3>
+        const d = RBModal(`<h3 style="margin:0 0 .5rem">Waypoint ${note.num}</h3>
             <input id="wfText" class="fld" style="width:100%" placeholder="${t('Quick note (optional)…')}" autocomplete="off">
-            <div class="btnrow" style="justify-content:flex-end;margin-top:.7rem"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>
-        </div>`;
-        document.body.appendChild(m);
-        const inp = m.querySelector('#wfText'), btn = m.querySelector('#wfBtn');
+            <div class="btnrow" style="justify-content:flex-end;margin-top:.7rem"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'max-width:380px', () => finish());
+        const inp = d.q('#wfText'), btn = d.q('#wfBtn');
         setTimeout(() => inp.focus(), 50);
         let n = 5, typed = false;
         const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${t('Edit later')} (${n})`; }, 1000);
-        function finish() { clearInterval(timer); note.text = inp.value.trim(); m.remove(); updateRecStats(); }
+        function finish() { clearInterval(timer); note.text = inp.value.trim(); d.close(); updateRecStats(); }
         inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = t('Save note'); } });
         inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
         btn.onclick = finish;
-        m.addEventListener('click', (e) => { if (e.target === m) finish(); });
     };
     // photo: camera → upload → shows the photo with OK / Convert into waypoint
     $('recPhoto').onclick = () => { if (!draftId) return RBNeedAuth('Sign in to attach photos.'); $('recPhotoFile').click(); };
     $('recPhotoFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
-        const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(draftId)); fd.append('photo', await RBImg.toBlob(f), 'photo.jpg');
-        if (recHere) { fd.append('lat', recHere.lat); fd.append('lon', recHere.lon); }
+        const fields = { type: 'photo', roadbook: String(draftId) };
+        if (recHere) { fields.lat = recHere.lat; fields.lon = recHere.lon; }
         toast('Uploading photo…');
-        const r = await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({}));
+        const r = await RBUpload(fields, f);
         if (!r.ok) return toast(r.error || 'Photo failed.');
         recPhotos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
         const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
-        const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:340px;text-align:center">
-            <img src="${r.url}" alt="" style="width:100%;border-radius:12px;max-height:48vh;object-fit:cover">
+        const d = RBModal(`<img src="${r.url}" alt="" style="width:100%;border-radius:12px;max-height:48vh;object-fit:cover">
             <div class="btnrow" style="justify-content:center;margin-top:.8rem">
                 <button class="btn btn-ghost" id="ptOk">OK</button>
                 <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${t('Convert into waypoint')}</button>
-            </div></div>`;
-        document.body.appendChild(m);
-        const close = () => m.remove();
-        m.querySelector('#ptOk').onclick = close;
-        m.querySelector('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } close(); };
-        m.addEventListener('click', (ev) => { if (ev.target === m) close(); });
+            </div>`, 'max-width:340px;text-align:center');
+        d.q('#ptOk').onclick = d.close;
+        d.q('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } d.close(); };
     };
     $('recStop').onclick = async () => {
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
@@ -317,8 +307,7 @@
     $('addPhotoBtn').onclick = () => { if (!currentRbId) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => {
         for (const f of e.target.files) {
-            const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(currentRbId)); fd.append('photo', await RBImg.toBlob(f), 'photo.jpg');
-            await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({}));
+            await RBUpload({ type: 'photo', roadbook: String(currentRbId) }, f);
         }
         e.target.value = ''; loadPhotos(); toast('Photos uploaded.');
     };
@@ -340,7 +329,7 @@
             const rt = RB.ROAD_TYPES[n.road_type_out] || RB.ROAD_TYPES[3];
             return `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}" style="--rt:${rt.color}">
                 <span class="nn">${n.num}</span>
-                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.text ? escapeHtml(n.text) : '<span class="muted">(no text)</span>'}</span>
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.text ? esc(n.text) : '<span class="muted">(no text)</span>'}</span>
                 <span class="muted small">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
             </div>`;
         }).join('');
@@ -516,13 +505,12 @@
         Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
     }
     async function urlToDataURL(url) { try { const res = await fetch(url); if (!res.ok) return null; const b = await res.blob(); return await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); } catch (e) { return null; } }
-    function download(obj, name) { const blob = new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); }
+    function download(obj, name) { RBDownload(new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }), name); }
 
     /* ---------- utils ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
-    const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     let toastT = null;
-    function toast(m) { if (window.RBi18n) m = RBi18n.t(m); const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2500); }
+    function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 
     renderIcons();
 })();

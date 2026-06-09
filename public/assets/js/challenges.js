@@ -41,21 +41,15 @@
     // Picker: choose a public challenge to open in the current tool.
     async function pick(onPick) {
         const rbs = await listPublic();
-        const ov = document.createElement('div');
-        ov.className = 'modal';
-        const L = (k) => (window.RBi18n ? RBi18n.t(k) : k);
-        ov.innerHTML = `<div class="modal-card" style="max-width:520px;max-height:80vh;overflow:auto">
-            <h2 style="margin-top:0">${L('Public challenges')}</h2>
-            ${rbs.length ? rbs.map((t) => `<button class="demo-row" data-s="${t.slug}">
-                ${t.thumb ? `<img src="${t.thumb}" alt="">` : `<span class="demo-ph"><i class="fa-solid fa-map-location-dot"></i></span>`}
-                <span><b>${t.title}</b><small>@${t.username} · ${(t.total_distance / 1000).toFixed(1)} km · ${t.note_count} ${L('notes')}</small></span>
-            </button>`).join('') : `<p class="muted">${L('No public challenges yet.')}</p>`}
-            <div class="btnrow" style="margin-top:1rem"><button class="btn btn-ghost" id="chCancel">${L('Close')}</button></div>
-        </div>`;
-        document.body.appendChild(ov);
-        ov.querySelector('#chCancel').onclick = () => ov.remove();
-        ov.querySelectorAll('.demo-row').forEach((b) => b.onclick = async () => {
-            ov.remove();
+        const d = RBModal(`<h2 style="margin-top:0">${RBt('Public challenges')}</h2>
+            ${rbs.length ? rbs.map((r) => `<button class="demo-row" data-s="${r.slug}">
+                ${r.thumb ? `<img src="${r.thumb}" alt="">` : `<span class="demo-ph"><i class="fa-solid fa-map-location-dot"></i></span>`}
+                <span><b>${r.title}</b><small>@${r.username} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${RBt('notes')}</small></span>
+            </button>`).join('') : `<p class="muted">${RBt('No public challenges yet.')}</p>`}
+            <div class="btnrow" style="margin-top:1rem"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`, 'max-width:520px;max-height:80vh;overflow:auto');
+        d.q('#chCancel').onclick = d.close;
+        d.el.querySelectorAll('.demo-row').forEach((b) => b.onclick = async () => {
+            d.close();
             try { const j = await loadPublic(b.dataset.s); onPick(j.roadbook, b.dataset.s); } catch (e) { console.error(e); }
         });
     }

@@ -4,6 +4,7 @@
  * firmado. Sin roadbook: modo Tripmaster (cuentakilómetros GPS). */
 (function () {
     const $ = (id) => document.getElementById(id);
+    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const C = RB.CONST;
 
     let mode = null; // 'nav' | 'trip'
@@ -18,7 +19,7 @@
     const AUTO_REACH_M = 50, WARN_M = 30; // auto-validate radius · approaching warning
     let lastPayload = '', lastQrUrl = '';
     // tripmaster
-    let tmTotal = 0, tmPartial = 0, tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
+    let tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
     let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLastT = 0;
     let tripRecFreq = 3000, tripRecName = '', tripRecHandle = null; // GPX logging: interval, file name, File System Access handle
 
@@ -110,7 +111,6 @@
         if (mode === 'trip') { if (speedKmh > tmMax) tmMax = speedKmh; renderTrip(); return; }
 
         // --- modo navegación ---
-        tmTotal = tripTotalM; tmPartial = tripPartialM;
         const over = curLimit && curLimit > 0 && speedKmh > curLimit;
         if (over) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
         const an = notes[activeIdx];
@@ -135,9 +135,10 @@
 
     /* ---------- navegación: notas ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
-    // Canonical roadbook layout (shared with the challenge page via NoteCanvas.rowCols):
-    // green = validated · yellow = active (centred) · white = upcoming.
+    // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
+    // done = green · active = red border · upcoming = pink · ≤50 m to next = blue · approaching (auto) = orange.
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
+    let lastScrollIdx = -1;
     function renderNotes() {
         $('noteList').innerHTML = notes.map((n, i) => {
             const st = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'up';
@@ -157,8 +158,8 @@
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
-        const act = $('noteList').querySelector('.nrow.active');
-        if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // only recentre when the active note actually changed (not on every approaching/redraw)
+        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = $('noteList').querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
         updateCapBar();
     }
     function toggleNoteMap(i) {
@@ -247,7 +248,7 @@
         $('qrModal').hidden = false;
     }
     $('qrClose').onclick = () => $('qrModal').hidden = true;
-    $('qrDownload').onclick = () => { const a = document.createElement('a'); a.href = lastQrUrl; a.download = 'RB_' + team + '_' + ddmmyy(new Date()) + '.png'; document.body.appendChild(a); a.click(); a.remove(); };
+    $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => {
         try {
             const blob = await (await fetch(lastQrUrl)).blob();
@@ -259,7 +260,6 @@
     };
 
     /* ---------- tripmaster ---------- */
-    const t = (k) => (window.RBi18n ? RBi18n.t(k) : k);
     const SA_COLORS = { green: 'var(--ok)', orange: '#ff9f1c', red: 'var(--track)' };
     let saLimit = 0, saColors = ['green', 'orange', 'red', 'red'];
     try { const s = JSON.parse(localStorage.getItem('rb_speedalert') || 'null'); if (s) { saLimit = s.limit || 0; saColors = s.colors || saColors; } } catch (e) {}
@@ -294,30 +294,24 @@
     // Speed alert settings
     $('tmSpeedAlert').onclick = () => {
         const opt = (sel) => ['green', 'orange', 'red'].map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${t(c)}</option>`).join('');
-        const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:360px">
-            <h3 style="margin:0 0 .5rem">${t('Speed alert')}</h3>
+        const d = RBModal(`<h3 style="margin:0 0 .5rem">${t('Speed alert')}</h3>
             <label class="muted small">${t('Speed to watch (km/h · 0 = off)')}</label>
-            <input id="saIn" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}" style="width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:.6rem;margin:.3rem 0 .6rem">
+            <input id="saIn" class="modal-in" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}">
             <div class="muted small">${t('Colours')}</div>
             <div style="display:grid;grid-template-columns:1fr auto;gap:.4rem .6rem;align-items:center;margin-top:.3rem">
-                <span>&lt; L−5</span><select id="sa0">${opt(saColors[0])}</select>
-                <span>L−5 … L</span><select id="sa1">${opt(saColors[1])}</select>
-                <span>L … L+5</span><select id="sa2">${opt(saColors[2])}</select>
-                <span>&gt; L+5</span><select id="sa3">${opt(saColors[3])}</select>
+                <span>&lt; L−5</span><select id="sa0" class="modal-in">${opt(saColors[0])}</select>
+                <span>L−5 … L</span><select id="sa1" class="modal-in">${opt(saColors[1])}</select>
+                <span>L … L+5</span><select id="sa2" class="modal-in">${opt(saColors[2])}</select>
+                <span>&gt; L+5</span><select id="sa3" class="modal-in">${opt(saColors[3])}</select>
             </div>
-            <div class="btnrow" style="justify-content:flex-end;margin-top:.9rem"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>
-        </div>`;
-        document.body.appendChild(m);
-        m.querySelectorAll('select').forEach((s) => { s.style.cssText = 'background:var(--card-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:.4rem'; });
-        m.querySelector('#saX').onclick = () => m.remove();
-        m.querySelector('#saS').onclick = () => {
-            saLimit = Math.max(0, Math.min(300, parseInt(m.querySelector('#saIn').value, 10) || 0));
-            saColors = ['sa0', 'sa1', 'sa2', 'sa3'].map((id) => m.querySelector('#' + id).value);
+            <div class="btnrow" style="justify-content:flex-end;margin-top:.9rem"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'max-width:360px');
+        d.q('#saX').onclick = d.close;
+        d.q('#saS').onclick = () => {
+            saLimit = Math.max(0, Math.min(300, parseInt(d.q('#saIn').value, 10) || 0));
+            saColors = ['sa0', 'sa1', 'sa2', 'sa3'].map((id) => d.q('#' + id).value);
             try { localStorage.setItem('rb_speedalert', JSON.stringify({ limit: saLimit, colors: saColors })); } catch (e) {}
-            m.remove(); renderTrip();
+            d.close(); renderTrip();
         };
-        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
     };
 
     /* ---------- GPX logging: frequency + file name/location + crash-safe ---------- */
@@ -331,39 +325,33 @@
     function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
     async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(buildGpx(tripRecPts, tripRecName)); await w.close(); } catch (e) {} }
     function persistGpx() { try { localStorage.setItem(GPX_KEY, JSON.stringify({ pts: tripRecPts, name: tripRecName })); } catch (e) {} writeHandle(); }
-    function downloadGpx(pts, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buildGpx(pts, name)], { type: 'application/gpx+xml' })); a.download = (name || gpxName()) + '.gpx'; document.body.appendChild(a); a.click(); a.remove(); }
+    function downloadGpx(pts, name) { RBDownload(new Blob([buildGpx(pts, name)], { type: 'application/gpx+xml' }), (name || gpxName()) + '.gpx'); }
 
     $('tmRecBtn').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
     function openGpxSettings() {
         const fsa = 'showSaveFilePicker' in window;
-        const m = document.createElement('div'); m.className = 'modal';
-        const inS = 'width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:.6rem;margin:.3rem 0 .6rem';
-        m.innerHTML = `<div class="modal-card" style="max-width:360px">
-            <h3 style="margin:0 0 .6rem">${t('Record GPX')}</h3>
+        const d = RBModal(`<h3 style="margin:0 0 .6rem">${t('Record GPX')}</h3>
             <label class="muted small">${t('Sample every (seconds)')}</label>
-            <input id="gxFreq" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(tripRecFreq / 1000)}" style="${inS}">
+            <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(tripRecFreq / 1000)}">
             <label class="muted small">${t('File name')}</label>
-            <input id="gxName" type="text" value="${gpxName()}" style="${inS}">
+            <input id="gxName" class="modal-in" type="text" value="${gpxName()}">
             <p class="muted small" id="gxLoc">${fsa ? t('Tip: choose a file to save live to disk (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
             <div class="btnrow" style="justify-content:space-between;margin-top:.4rem">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose file…')}</button>` : '<span></span>'}
                 <span style="display:flex;gap:.5rem"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
-            </div></div>`;
-        document.body.appendChild(m);
+            </div>`, 'max-width:360px');
         let picked = null;
-        const close = () => m.remove();
-        m.querySelector('#gxX').onclick = close;
-        if (fsa) m.querySelector('#gxPick').onclick = async () => {
-            try { picked = await window.showSaveFilePicker({ suggestedName: m.querySelector('#gxName').value + '.gpx', types: [{ description: 'GPX', accept: { 'application/gpx+xml': ['.gpx'] } }] }); m.querySelector('#gxLoc').textContent = '✓ ' + picked.name; m.querySelector('#gxName').value = picked.name.replace(/\.gpx$/i, ''); } catch (e) {}
+        d.q('#gxX').onclick = d.close;
+        if (fsa) d.q('#gxPick').onclick = async () => {
+            try { picked = await window.showSaveFilePicker({ suggestedName: d.q('#gxName').value + '.gpx', types: [{ description: 'GPX', accept: { 'application/gpx+xml': ['.gpx'] } }] }); d.q('#gxLoc').textContent = '✓ ' + picked.name; d.q('#gxName').value = picked.name.replace(/\.gpx$/i, ''); } catch (e) {}
         };
-        m.querySelector('#gxGo').onclick = () => {
-            tripRecFreq = Math.max(1, Math.min(60, parseInt(m.querySelector('#gxFreq').value, 10) || 3)) * 1000;
-            tripRecName = (m.querySelector('#gxName').value || gpxName()).trim();
+        d.q('#gxGo').onclick = () => {
+            tripRecFreq = Math.max(1, Math.min(60, parseInt(d.q('#gxFreq').value, 10) || 3)) * 1000;
+            tripRecName = (d.q('#gxName').value || gpxName()).trim();
             tripRecHandle = picked;
             try { localStorage.setItem('rb_gpx_settings', JSON.stringify({ freq: tripRecFreq })); } catch (e) {}
-            close(); beginGpxRec();
+            d.close(); beginGpxRec();
         };
-        m.addEventListener('click', (e) => { if (e.target === m) close(); });
     }
     function beginGpxRec() {
         tripRecOn = true; tripRecPts = []; tripRecLastT = 0;
@@ -372,32 +360,28 @@
         $('navGpx').classList.add('btn-primary');
         toast('Recording GPX track.');
     }
-    function stopGpxRec() {
+    async function stopGpxRec() {
         tripRecOn = false;
         $('tmRecBtn').classList.remove('btn-primary');
         $('tmRecBtn').querySelector('span').textContent = t('Record GPX');
         $('navGpx').classList.remove('btn-primary');
-        writeHandle(); // final flush to the live file
+        await writeHandle(); // final flush to the live file before we report "saved"
         const pts = tripRecPts.slice(), name = tripRecName, saved = !!tripRecHandle;
         tripRecHandle = null;
         try { localStorage.removeItem(GPX_KEY); } catch (e) {}
         if (pts.length >= 2) finishTripRec(pts, name, saved); else toast('Track too short.');
     }
     function finishTripRec(pts, name, savedToFile) {
-        const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:340px;text-align:center">
-            <h3 style="margin:0 0 .3rem">${t('Recorded track')}</h3>
+        const d = RBModal(`<h3 style="margin:0 0 .3rem">${t('Recorded track')}</h3>
             <p class="muted small">${pts.length} ${t('points')} · ${trackKm(pts).toFixed(2)} km${savedToFile ? '<br>✓ ' + t('Saved to file') : ''}</p>
             <div class="btnrow" style="justify-content:center;flex-wrap:wrap;margin-top:.6rem">
                 ${savedToFile ? '' : `<button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>`}
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <div class="btnrow" style="justify-content:center;margin-top:.4rem"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div></div>`;
-        document.body.appendChild(m);
-        const dl = m.querySelector('#trDl'); if (dl) dl.onclick = () => { downloadGpx(pts, name); m.remove(); };
-        m.querySelector('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
-        m.querySelector('#trClose').onclick = () => m.remove();
-        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
+            <div class="btnrow" style="justify-content:center;margin-top:.4rem"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div>`, 'max-width:340px;text-align:center');
+        const dl = d.q('#trDl'); if (dl) dl.onclick = () => { downloadGpx(pts, name); d.close(); };
+        d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
+        d.q('#trClose').onclick = d.close;
     }
     // recover an interrupted GPX recording (crash / closed tab)
     (function () {
@@ -410,12 +394,11 @@
     })();
 
     /* ---------- utils ---------- */
-    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const pad = (n, w) => String(n).padStart(w, '0');
     const ddmmyy = (d) => d ? pad(d.getDate(), 2) + pad(d.getMonth() + 1, 2) + pad(d.getFullYear() % 100, 2) : '000000';
     const hhmmss = (d) => d ? pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2) : '000000';
     let toastT = null;
-    function toast(m) { if (window.RBi18n) m = RBi18n.t(m); const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2500); }
+    function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
     async function requestWake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && watchId != null) requestWake(); });
 })();

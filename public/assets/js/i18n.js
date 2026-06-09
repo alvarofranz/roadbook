@@ -228,6 +228,8 @@
         lang: pickLang,
         t(key) { const v = tr(pickLang(), key); return v != null ? v : key; },
     };
+    // Global shorthand used across every page (falls back to the key if i18n is missing).
+    window.RBt = (k) => (window.RBi18n ? RBi18n.t(k) : k);
 
     document.addEventListener('DOMContentLoaded', () => window.RBi18n.init());
 })();

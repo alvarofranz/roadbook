@@ -4,7 +4,7 @@
  * when a site key is configured server-side. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = (k) => (window.RBi18n ? RBi18n.t(k) : k);
+    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const params = new URLSearchParams(location.search);
     let tsSite = '', tsTokens = {};
 
@@ -15,9 +15,8 @@
         });
         try { return await r.json(); } catch (e) { return { ok: false, error: 'Network error.' }; }
     };
-    const msg = (text, ok) => { const m = $('amsg'); if (!text) { m.hidden = true; return; } m.textContent = window.RBi18n ? RBi18n.t(text) : text; m.className = 'amsg ' + (ok ? 'ok' : 'err'); m.hidden = false; };
+    const msg = (text, ok) => { const m = $('amsg'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'amsg ' + (ok ? 'ok' : 'err'); m.hidden = false; };
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
-    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
     /* ---------- Turnstile ---------- */
     window.__tsReady = function renderTurnstile() {
@@ -90,8 +89,7 @@
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;
             msg('Uploading photo…', true);
-            const fd = new FormData(); fd.append('type', 'avatar'); fd.append('photo', await RBImg.toBlob(f), 'avatar.jpg');
-            const r = await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Upload failed.' }));
+            const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
             if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
         };
         $('pfSave').onclick = async () => { const r = await api('profile', { bio: $('pfBio').value }); msg(r.ok ? 'Profile saved.' : r.error, !!r.ok); };

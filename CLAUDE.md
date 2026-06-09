@@ -17,10 +17,24 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
   be discarded or clobber someone else's.
-- **Don't reinvent the wheel.** Search the whole codebase first and reuse what's there:
-  `RB.*` (geo, build, meta), `NoteCanvas.toSVG`/`rowCols`, `RBMap`, `RBi18n.t()`,
-  `RBConfirm`/`RBNeedAuth`, the global header/footer + version system in `app.js`, and the
-  shared CSS in `assets/css/app.css`. If two places need the same thing, factor it out.
+- **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
+  ONE place and are reused everywhere; never re-implement them per page. If you need a
+  new cross-cutting helper, add it here, don't copy-paste it.
+  - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardStyle, onDismiss)`
+    (every dialog — returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal),
+    `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
+    `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
+    `RBesc(str)` (HTML-escape), plus the global header/footer, version auto-refresh and install button.
+  - **`i18n.js`**: `RBt(key)` (translate; falls back to the key) + `data-i18n` / `data-i18n-html`
+    / `data-i18n-ph` in HTML. Keep `es`/`it` at full key parity with the English source strings.
+  - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
+    QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (reader)
+    / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (editor).
+  - **`app.css`**: shared design system — buttons (`.btn*`), `.modal`/`.modal-card`/`.modal-in`,
+    `.noterow`, etc. Don't inline styles that a class already covers.
+- **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `toast`, `msg`) stay
+  local and short; alias the globals at the top (`const t = RBt, esc = RBesc;`). Anything two
+  pages share becomes an `RB*` global — that's the naming convention (no lowercase/per-file copies).
 - **DRY, clean, and LIFT.** Keep code DRY and readable; follow LIFT — **L**ocate code
   easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
 - **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead

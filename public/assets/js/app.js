@@ -180,35 +180,54 @@
         async toDataURL(file, max = 256) { const c = await this._canvas(file, max); return c.toDataURL('image/png'); },
     };
 
-    /* ---------------- Styled confirm (no native dialogs) ---------------- */
-    window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
+    /* ---------------- Shared UI primitives (the one home for these) ----------------
+       Every page reuses these instead of re-implementing them — see CLAUDE.md. */
+    // Overlay modal. Pass the card's inner HTML (+ optional card style + backdrop-dismiss
+    // callback). Returns { el, q(sel), close }.
+    window.RBModal = (cardHtml, cardStyle, onDismiss) => {
         const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:360px">
-            <p style="margin:.2rem 0 1.1rem;font-size:1.05rem">${msg}</p>
+        m.innerHTML = `<div class="modal-card"${cardStyle ? ` style="${cardStyle}"` : ''}>${cardHtml}</div>`;
+        document.body.appendChild(m);
+        const close = () => m.remove();
+        m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
+        return { el: m, q: (s) => m.querySelector(s), close };
+    };
+    // HTML-escape for safe interpolation into innerHTML.
+    window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // Trigger a download from a Blob or a URL.
+    window.RBDownload = (data, filename) => {
+        const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+    };
+    // Upload one image (downscaled first) to upload.php. `fields` = extra form fields.
+    window.RBUpload = async (fields, file, name) => {
+        const fd = new FormData();
+        for (const k in fields) fd.append(k, fields[k]);
+        fd.append('photo', await RBImg.toBlob(file), name || 'photo.jpg');
+        try { return await (await fetch(ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd })).json(); }
+        catch (e) { return { ok: false, error: 'Upload failed.' }; }
+    };
+
+    /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
+    window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
+        const d = RBModal(`<p style="margin:.2rem 0 1.1rem;font-size:1.05rem">${msg}</p>
             <div class="btnrow" style="justify-content:flex-end">
                 <button class="btn btn-ghost" data-no>Cancel</button>
                 <button class="btn btn-primary" data-yes>${okLabel || 'OK'}</button>
-            </div></div>`;
-        document.body.appendChild(m);
-        const done = (v) => { m.remove(); resolve(v); };
-        m.querySelector('[data-yes]').onclick = () => done(true);
-        m.querySelector('[data-no]').onclick = () => done(false);
-        m.addEventListener('click', (e) => { if (e.target === m) done(false); });
+            </div>`, 'max-width:360px', () => resolve(false));
+        const done = (v) => { d.close(); resolve(v); };
+        d.q('[data-yes]').onclick = () => done(true);
+        d.q('[data-no]').onclick = () => done(false);
     });
-
-    /* ---------------- Auth prompt (DRY) ---------------- */
     window.RBNeedAuth = (msg) => {
-        const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card" style="max-width:380px;text-align:center">
-            <h2 style="margin-top:0"><i class="fa-solid fa-circle-user" style="color:var(--sand)"></i> Sign in</h2>
+        const d = RBModal(`<h2 style="margin-top:0"><i class="fa-solid fa-circle-user" style="color:var(--sand)"></i> Sign in</h2>
             <p class="muted">${msg || 'Create a free account to save and share your roadbooks.'}</p>
             <div class="btnrow" style="justify-content:center;margin-top:1rem">
                 <button class="btn btn-ghost" data-no>Not now</button>
                 <a class="btn btn-primary" href="${ROOT}account/"><i class="fa-solid fa-right-to-bracket"></i> Sign in / Create account</a>
-            </div></div>`;
-        document.body.appendChild(m);
-        m.querySelector('[data-no]').onclick = () => m.remove();
-        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
+            </div>`, 'max-width:380px;text-align:center');
+        d.q('[data-no]').onclick = d.close;
     };
 
     /* ---------------- Account control in the header ---------------- */

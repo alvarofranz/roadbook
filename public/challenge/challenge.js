@@ -3,7 +3,7 @@
  * layout + owner. Navigate (Reader) and Fork (Editor). Slug from /challenge/<slug>. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = (k) => (window.RBi18n ? RBi18n.t(k) : k);
+    const t = RBt; // shared helper (i18n.js)
     const parts = location.pathname.replace(/\/+$/, '').split('/');
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'challenge') { $('chLoading').textContent = t('Challenge not found.'); return; }
