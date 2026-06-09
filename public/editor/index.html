@@ -115,6 +115,15 @@
             <div class="ed-row" style="margin-top:.5rem"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
             <div class="ed-row" style="margin-top:.8rem"><label>Title</label><input type="text" id="rbTitle" class="fld" style="flex:1" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
             <div class="ed-row" style="align-items:flex-start"><label>Description</label><textarea id="rbDesc" class="fld" rows="2" style="flex:1" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
+            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="fld" style="flex:1" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
+            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="fld" style="flex:1" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
+            <div class="ed-row"><label data-i18n="Event logo">Event logo</label>
+                <img id="rbLogoPrev" alt="" style="width:46px;height:46px;object-fit:contain;border-radius:8px;background:var(--card-2);display:none">
+                <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
+                <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo"><i class="fa-solid fa-xmark"></i></button>
+                <input id="rbLogoFile" type="file" accept="image/*" hidden>
+            </div>
+            <div class="ed-row"><label data-i18n="Last modified">Last modified</label><span id="rbModified" class="muted small">—</span></div>
             <div id="photosSection" hidden>
                 <div class="ed-row" style="justify-content:space-between;margin:.6rem 0 .3rem"><div class="icat" style="margin:0" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
                 <input id="photoFile" type="file" accept="image/*" multiple hidden>

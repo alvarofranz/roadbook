@@ -52,6 +52,8 @@
         dirty = false;
         $('loadFrom').hidden = true; $('recBar').hidden = true; $('rbPanel').hidden = false;
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
+        $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
+        setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
         updatePhotos(); updateSaveBtn();
         map.showRoadbook(rb); renderNotes(); renderIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
@@ -59,6 +61,22 @@
     }
     $('rbTitle').oninput = (e) => { if (rb) { rb.meta.title = e.target.value; markDirty(); } };
     $('rbDesc').oninput = (e) => { if (rb) { rb.meta.description = e.target.value; markDirty(); } };
+    $('rbAuthor').oninput = (e) => { if (rb) { rb.meta.author = e.target.value; markDirty(); } };
+    $('rbOrg').oninput = (e) => { if (rb) { rb.meta.organization = e.target.value; markDirty(); } };
+    $('rbLogoBtn').onclick = () => $('rbLogoFile').click();
+    $('rbLogoClr').onclick = () => { if (rb) { delete rb.meta.logo; setLogoPreview(null); markDirty(); } };
+    $('rbLogoFile').onchange = async (e) => { const f = e.target.files[0]; if (f && rb) { rb.meta.logo = await imgToDataUrl(f, 256); setLogoPreview(rb.meta.logo); markDirty(); } e.target.value = ''; };
+    // event logo: embedded as a base64 data URI in meta.logo (self-contained, like the icons)
+    function userName() { if (!meUser) return ''; return (((meUser.first_name || '') + ' ' + (meUser.last_name || '')).trim()) || meUser.username || ''; }
+    function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.style.display = ''; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.style.display = 'none'; $('rbLogoClr').hidden = true; } }
+    function imgToDataUrl(file, max) {
+        return new Promise((res, rej) => {
+            const img = new Image();
+            img.onload = () => { const sc = Math.min(1, max / Math.max(img.width, img.height)); const w = Math.round(img.width * sc), h = Math.round(img.height * sc); const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); res(c.toDataURL('image/png')); };
+            img.onerror = rej; img.src = URL.createObjectURL(file);
+        });
+    }
+    function stampMeta() { if (!rb) return; rb.meta = rb.meta || {}; if (!rb.meta.author) rb.meta.author = userName(); rb.meta.modified = new Date().toISOString().slice(0, 10); $('rbModified').textContent = rb.meta.modified; if (rb.meta.author) $('rbAuthor').value = rb.meta.author; }
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
         $('viewNote').hidden = v !== 'note';
@@ -274,7 +292,7 @@
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
     function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); }
     async function doSave() {
-        RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
+        stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await apiPost({ action: 'rb_save', id: currentRbId, is_public: isPublic, roadbook: rb });
         if (r.ok) { currentRbId = r.id; dirty = false; updatePhotos(); updateSaveBtn(); }
         return r;
@@ -315,6 +333,7 @@
         const cfg = await apiPost({ action: 'config' });
         meUser = cfg.user || null;
         updateSaveBtn();
+        if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
         const ch = RBChallenges.publicFromUrl();
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
@@ -490,7 +509,7 @@
     /* ---------- export (self-contained .rdbk) ---------- */
     const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
-    $('save').onclick = async () => { if (!rb) return toast('Nothing to save.'); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
+    $('save').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
     // garantiza que TODOS los iconos usados estén embebidos (autocontenido) y poda los no usados
     async function embedUsed(r) {
         r.icons = r.icons || {};

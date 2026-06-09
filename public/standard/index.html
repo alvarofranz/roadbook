@@ -75,6 +75,10 @@
         <tr><td><code>total_distance</code></td><td>integer</td><td>Total route length in metres (derived from <code>track</code>).</td></tr>
         <tr><td><code>note_count</code></td><td>integer</td><td>Number of notes.</td></tr>
         <tr><td><code>description</code></td><td>string</td><td>Optional. Free text shown on the public challenge page.</td></tr>
+        <tr><td><code>author</code></td><td>string</td><td>Optional. Name of the roadbook author.</td></tr>
+        <tr><td><code>organization</code></td><td>string</td><td>Optional. Organizing club / event organizer.</td></tr>
+        <tr><td><code>modified</code></td><td>string</td><td>Optional. Last-modified date, ISO <code>YYYY-MM-DD</code>.</td></tr>
+        <tr><td><code>logo</code></td><td>string</td><td>Optional. Event logo as a base64 <code>data:</code> URI (embedded, self-contained — like the symbols in <code>icons</code>).</td></tr>
     </table>
 
     <h2 id="track">track</h2>
@@ -188,7 +192,9 @@
 
     <h2 id="example">Full minimal example</h2>
     <pre><code>{
-  "meta": { "title": "Demo loop", "total_distance": 1210, "note_count": 2 },
+  "meta": { "title": "Demo loop", "total_distance": 1210, "note_count": 2,
+            "author": "Alex Driver", "organization": "Rally Club", "modified": "2026-06-09",
+            "logo": "data:image/png;base64,iVBORw0KGgo…" },
   "track": [
     { "lat": 45.8271, "lon": 9.4116 },
     { "lat": 45.8290, "lon": 9.4135 },

@@ -18,6 +18,11 @@
         $('chMeta').textContent = '@' + (o.username || '') + ' · ' + (((rb.meta && rb.meta.total_distance) || 0) / 1000).toFixed(1) + ' km · ' + rb.notes.length + ' ' + t('notes') + (j.is_public ? '' : ' · 🔒 ' + t('Private'));
         if (o.avatar) $('chAvatar').src = o.avatar; else $('chAvatar').remove();
         $('chDesc').textContent = (rb.meta && rb.meta.description) || o.bio || '';
+        // roadbook-declared credit (author / organization / date) + event logo
+        const m = rb.meta || {};
+        const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · ');
+        if (credit) $('chMeta').textContent += ' · ' + credit;
+        if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.style.cssText = 'height:52px;width:auto;object-fit:contain;margin-bottom:.5rem'; $('chTitle').parentNode.insertBefore(img, $('chTitle')); }
         $('chNav').href = '/reader/' + encodeURIComponent(slug);
         if (j.is_owner) { const f = $('chFork'); f.href = '/editor/?rb=' + j.id; f.innerHTML = '<i class="fa-solid fa-pen"></i> Edit'; }
         else { $('chFork').href = '/editor/' + encodeURIComponent(slug); }
