@@ -1,7 +1,6 @@
 <?php
-/* RDBK.app cron — round-robin runner: runs every
- * minute and executes ONE task per minute, picked by minute % N, so tasks never
- * overlap. Runs every minute from the project user's crontab:
+/* RDBK.app cron — round-robin runner: executes ONE task per minute, picked by
+ * minute % N, so tasks never overlap. Schedule it once a minute via cron:
  *   * * * * * php <repo>/cron/cron.php >> <repo>/cron/cron.log 2>&1
  */
 if (php_sapi_name() !== 'cli') { die("CLI only\n"); }

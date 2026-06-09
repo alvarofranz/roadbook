@@ -77,14 +77,16 @@ cd public && python3 -m http.server 8000   # → http://localhost:8000/
 (copy `.env.example`); migrations live in `migrations/`.
 
 ## Releasing
-Pushing to `main` (a direct commit or a merged pull request) triggers the **Deploy**
-GitHub Action (`.github/workflows/deploy.yml`), which calls the production deploy hook —
-a single authenticated POST. It needs two repository secrets: `DEPLOY_URL` and
-`DEPLOY_KEY` (Settings → Secrets and variables → Actions). You can also run it manually
-from the Actions tab (`workflow_dispatch`). **Bump `public/version.json` on every
-release** — the app polls it and force-refreshes every open client (PWA or browser):
-clears caches, updates the SW, reloads. Gitignored assets (`public/assets/fontawesome/`,
-`public/assets/js/config.js`, `.env`, `vendor/`) live on the server and survive deploys.
+**To deploy: push to `main`. That is the whole deploy step — there is no manual server
+access and nothing else to run.** A push (a direct commit or a merged PR) triggers the
+**Deploy** GitHub Action (`.github/workflows/deploy.yml`), which fires the production
+deploy hook via one authenticated POST; the endpoint and key are repository secrets
+(`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
+about the host is in this repo. You can also run it from the Actions tab
+(`workflow_dispatch`). **Bump `public/version.json` on every release** — the app polls it
+and force-refreshes every open client (clears caches, updates the SW, reloads). Gitignored
+runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env`,
+`vendor/`) are not in git and persist across deploys.
 
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
