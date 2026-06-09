@@ -47,6 +47,14 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `toast`, `msg`) stay
   local and short; alias the globals at the top (`const t = RBt, esc = RBesc;`). Anything two
   pages share becomes an `RB*` global — that's the naming convention (no lowercase/per-file copies).
+- **Consistent, explicit naming.** Follow the names already used in the codebase — don't
+  invent a new convention each time. A name must say what the thing IS: `width` not `wd`,
+  no cryptic abbreviations or one-letter mystery vars (loop indices aside). If you find
+  something misnamed or inconsistent, rename it properly *everywhere* as part of your change.
+- **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names —
+  never `style="…"` attributes in HTML or in JS-built markup. Add a well-named class to
+  `app.css` (shared) or the page's `<style>` (page-specific) and use it. Inline styles are
+  treated as a bug.
 - **DRY, clean, and LIFT.** Keep code DRY and readable; follow LIFT — **L**ocate code
   easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
 - **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead
