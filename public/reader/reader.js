@@ -17,7 +17,8 @@
     let lastPayload = '', lastQrUrl = '';
     // tripmaster
     let tmTotal = 0, tmPartial = 0, tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
-    let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLast = null;
+    let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLastT = 0;
+    let tripRecFreq = 3000, tripRecName = '', tripRecHandle = null; // GPX logging: interval, file name, File System Access handle
 
     /* ---------- arranque ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
@@ -93,8 +94,9 @@
         if (c.heading != null && isFinite(c.heading)) { tmCap = c.heading; }
         if (mode === 'trip') {
             if (speedKmh > tmMax) tmMax = speedKmh;
-            if (tripRecOn && (c.accuracy == null || c.accuracy <= 35) && (!tripRecLast || RB.geo.haversineM(tripRecLast, here) >= 4)) {
-                tripRecPts.push({ lat: here.lat, lon: here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null }); tripRecLast = here;
+            if (tripRecOn && (c.accuracy == null || c.accuracy <= 35) && (tnow - tripRecLastT >= tripRecFreq)) {
+                tripRecPts.push({ lat: here.lat, lon: here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null, t: tnow });
+                tripRecLastT = tnow; persistGpx(); // crash-safe: localStorage + live file write
             }
             renderTrip(); return;
         }
@@ -273,34 +275,92 @@
         m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
     };
 
-    // Record a GPX track during the trip
-    $('tmRecBtn').onclick = () => {
-        tripRecOn = !tripRecOn;
-        $('tmRecBtn').classList.toggle('btn-primary', tripRecOn);
-        $('tmRecBtn').querySelector('span').textContent = t(tripRecOn ? 'Recording…' : 'Record GPX');
-        if (tripRecOn) { tripRecPts = []; tripRecLast = null; toast('Recording GPX track.'); }
-        else if (tripRecPts.length >= 2) finishTripRec(tripRecPts.slice());
-    };
+    /* ---------- GPX logging: frequency + file name/location + crash-safe ---------- */
+    const GPX_KEY = 'rb_trip_gpx';
+    const gpxName = () => 'RDBK_trip_' + ddmmyy(new Date()) + '_' + hhmmss(new Date());
+    try { const g = JSON.parse(localStorage.getItem('rb_gpx_settings') || 'null'); if (g && g.freq) tripRecFreq = g.freq; } catch (e) {}
+    function buildGpx(pts, name) {
+        const seg = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${(name || 'RDBK trip').replace(/[<>&]/g, '')}</name><trkseg>${seg}</trkseg></trk></gpx>`;
+    }
     function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
-    function finishTripRec(pts) {
+    async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(buildGpx(tripRecPts, tripRecName)); await w.close(); } catch (e) {} }
+    function persistGpx() { try { localStorage.setItem(GPX_KEY, JSON.stringify({ pts: tripRecPts, name: tripRecName })); } catch (e) {} writeHandle(); }
+    function downloadGpx(pts, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buildGpx(pts, name)], { type: 'application/gpx+xml' })); a.download = (name || gpxName()) + '.gpx'; document.body.appendChild(a); a.click(); a.remove(); }
+
+    $('tmRecBtn').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
+    function openGpxSettings() {
+        const fsa = 'showSaveFilePicker' in window;
+        const m = document.createElement('div'); m.className = 'modal';
+        const inS = 'width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:.6rem;margin:.3rem 0 .6rem';
+        m.innerHTML = `<div class="modal-card" style="max-width:360px">
+            <h3 style="margin:0 0 .6rem">${t('Record GPX')}</h3>
+            <label class="muted small">${t('Sample every (seconds)')}</label>
+            <input id="gxFreq" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(tripRecFreq / 1000)}" style="${inS}">
+            <label class="muted small">${t('File name')}</label>
+            <input id="gxName" type="text" value="${gpxName()}" style="${inS}">
+            <p class="muted small" id="gxLoc">${fsa ? t('Tip: choose a file to save live to disk (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
+            <div class="btnrow" style="justify-content:space-between;margin-top:.4rem">
+                ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose file…')}</button>` : '<span></span>'}
+                <span style="display:flex;gap:.5rem"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
+            </div></div>`;
+        document.body.appendChild(m);
+        let picked = null;
+        const close = () => m.remove();
+        m.querySelector('#gxX').onclick = close;
+        if (fsa) m.querySelector('#gxPick').onclick = async () => {
+            try { picked = await window.showSaveFilePicker({ suggestedName: m.querySelector('#gxName').value + '.gpx', types: [{ description: 'GPX', accept: { 'application/gpx+xml': ['.gpx'] } }] }); m.querySelector('#gxLoc').textContent = '✓ ' + picked.name; m.querySelector('#gxName').value = picked.name.replace(/\.gpx$/i, ''); } catch (e) {}
+        };
+        m.querySelector('#gxGo').onclick = () => {
+            tripRecFreq = Math.max(1, Math.min(60, parseInt(m.querySelector('#gxFreq').value, 10) || 3)) * 1000;
+            tripRecName = (m.querySelector('#gxName').value || gpxName()).trim();
+            tripRecHandle = picked;
+            try { localStorage.setItem('rb_gpx_settings', JSON.stringify({ freq: tripRecFreq })); } catch (e) {}
+            close(); beginGpxRec();
+        };
+        m.addEventListener('click', (e) => { if (e.target === m) close(); });
+    }
+    function beginGpxRec() {
+        tripRecOn = true; tripRecPts = []; tripRecLastT = 0;
+        $('tmRecBtn').classList.add('btn-primary');
+        $('tmRecBtn').querySelector('span').textContent = t('Recording…');
+        toast('Recording GPX track.');
+    }
+    function stopGpxRec() {
+        tripRecOn = false;
+        $('tmRecBtn').classList.remove('btn-primary');
+        $('tmRecBtn').querySelector('span').textContent = t('Record GPX');
+        writeHandle(); // final flush to the live file
+        const pts = tripRecPts.slice(), name = tripRecName, saved = !!tripRecHandle;
+        tripRecHandle = null;
+        try { localStorage.removeItem(GPX_KEY); } catch (e) {}
+        if (pts.length >= 2) finishTripRec(pts, name, saved); else toast('Track too short.');
+    }
+    function finishTripRec(pts, name, savedToFile) {
         const m = document.createElement('div'); m.className = 'modal';
         m.innerHTML = `<div class="modal-card" style="max-width:340px;text-align:center">
             <h3 style="margin:0 0 .3rem">${t('Recorded track')}</h3>
-            <p class="muted small">${pts.length} ${t('points')} · ${trackKm(pts).toFixed(2)} km</p>
+            <p class="muted small">${pts.length} ${t('points')} · ${trackKm(pts).toFixed(2)} km${savedToFile ? '<br>✓ ' + t('Saved to file') : ''}</p>
             <div class="btnrow" style="justify-content:center;flex-wrap:wrap;margin-top:.6rem">
-                <button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>
+                ${savedToFile ? '' : `<button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>`}
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
-            </div></div>`;
+            </div>
+            <div class="btnrow" style="justify-content:center;margin-top:.4rem"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div></div>`;
         document.body.appendChild(m);
-        m.querySelector('#trDl').onclick = () => { downloadGpx(pts); m.remove(); };
+        const dl = m.querySelector('#trDl'); if (dl) dl.onclick = () => { downloadGpx(pts, name); m.remove(); };
         m.querySelector('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
+        m.querySelector('#trClose').onclick = () => m.remove();
         m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
     }
-    function downloadGpx(pts) {
-        const seg = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
-        const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>RDBK trip</name><trkseg>${seg}</trkseg></trk></gpx>`;
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([gpx], { type: 'application/gpx+xml' })); a.download = 'RDBK_trip_' + ddmmyy(new Date()) + '.gpx'; document.body.appendChild(a); a.click(); a.remove();
-    }
+    // recover an interrupted GPX recording (crash / closed tab)
+    (function () {
+        let g; try { g = JSON.parse(localStorage.getItem(GPX_KEY) || 'null'); } catch (e) {}
+        if (!g || !g.pts || g.pts.length < 2) return;
+        RBConfirm(t('Recover unsaved GPX recording?') + ' (' + g.pts.length + ' ' + t('points') + ')', t('Recover')).then((yes) => {
+            try { localStorage.removeItem(GPX_KEY); } catch (e) {}
+            if (yes) finishTripRec(g.pts, g.name || gpxName(), false);
+        });
+    })();
 
     /* ---------- utils ---------- */
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

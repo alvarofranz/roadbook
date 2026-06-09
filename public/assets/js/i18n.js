@@ -97,6 +97,10 @@
             'Record GPX': 'Grabar GPX', 'Recording…': 'Grabando…', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
             'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook',
             'Exit Tripmaster?': '¿Salir del Tripmaster?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
+            'Sample every (seconds)': 'Cada cuántos segundos', 'File name': 'Nombre del archivo', 'Choose file…': 'Elegir archivo…', 'Saved to file': 'Guardado en el archivo', 'Track too short.': 'Traza demasiado corta.',
+            'Tip: choose a file to save live to disk (crash-safe).': 'Consejo: elige un archivo para guardar en vivo en disco (a prueba de crash).',
+            'Auto-saved while recording, recovered if the app closes.': 'Se guarda solo al grabar; se recupera si la app se cierra.',
+            'Recover unsaved GPX recording?': '¿Recuperar la grabación GPX sin guardar?', 'Recover': 'Recuperar',
         },
         it: {
             'hero.title': 'Roadbook digitali per le <span class="accent">tue avventure</span>',
@@ -175,6 +179,10 @@
             'Record GPX': 'Registra GPX', 'Recording…': 'Registrazione…', 'Speed alert': 'Allerta velocità', 'Speed to watch (km/h · 0 = off)': 'Velocità da controllare (km/h · 0 = off)', 'Colours': 'Colori',
             'green': 'verde', 'orange': 'arancione', 'red': 'rosso', 'Recorded track': 'Traccia registrata', 'points': 'punti', 'Download GPX': 'Scarica GPX', 'Convert into roadbook': 'Converti in roadbook',
             'Exit Tripmaster?': 'Uscire dal Tripmaster?', 'Trip reset.': 'Viaggio azzerato.', 'Recording GPX track.': 'Registrazione traccia GPX.', 'Could not load the recorded trip.': 'Impossibile caricare il trip registrato.',
+            'Sample every (seconds)': 'Ogni quanti secondi', 'File name': 'Nome del file', 'Choose file…': 'Scegli file…', 'Saved to file': 'Salvato nel file', 'Track too short.': 'Traccia troppo corta.',
+            'Tip: choose a file to save live to disk (crash-safe).': 'Suggerimento: scegli un file per salvare dal vivo su disco (a prova di crash).',
+            'Auto-saved while recording, recovered if the app closes.': 'Salvataggio automatico durante la registrazione; recuperato se l’app si chiude.',
+            'Recover unsaved GPX recording?': 'Recuperare la registrazione GPX non salvata?', 'Recover': 'Recupera',
         },
     };
 
