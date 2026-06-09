@@ -89,8 +89,8 @@
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;
-            const fd = new FormData(); fd.append('type', 'avatar'); fd.append('photo', f);
             msg('Uploading photo…', true);
+            const fd = new FormData(); fd.append('type', 'avatar'); fd.append('photo', await RBImg.toBlob(f), 'avatar.jpg');
             const r = await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Upload failed.' }));
             if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
         };

@@ -65,17 +65,10 @@
     $('rbOrg').oninput = (e) => { if (rb) { rb.meta.organization = e.target.value; markDirty(); } };
     $('rbLogoBtn').onclick = () => $('rbLogoFile').click();
     $('rbLogoClr').onclick = () => { if (rb) { delete rb.meta.logo; setLogoPreview(null); markDirty(); } };
-    $('rbLogoFile').onchange = async (e) => { const f = e.target.files[0]; if (f && rb) { rb.meta.logo = await imgToDataUrl(f, 256); setLogoPreview(rb.meta.logo); markDirty(); } e.target.value = ''; };
+    $('rbLogoFile').onchange = async (e) => { const f = e.target.files[0]; if (f && rb) { rb.meta.logo = await RBImg.toDataURL(f, 256); setLogoPreview(rb.meta.logo); markDirty(); } e.target.value = ''; };
     // event logo: embedded as a base64 data URI in meta.logo (self-contained, like the icons)
     function userName() { if (!meUser) return ''; return (((meUser.first_name || '') + ' ' + (meUser.last_name || '')).trim()) || meUser.username || ''; }
     function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.style.display = ''; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.style.display = 'none'; $('rbLogoClr').hidden = true; } }
-    function imgToDataUrl(file, max) {
-        return new Promise((res, rej) => {
-            const img = new Image();
-            img.onload = () => { const sc = Math.min(1, max / Math.max(img.width, img.height)); const w = Math.round(img.width * sc), h = Math.round(img.height * sc); const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); res(c.toDataURL('image/png')); };
-            img.onerror = rej; img.src = URL.createObjectURL(file);
-        });
-    }
     function stampMeta() { if (!rb) return; rb.meta = rb.meta || {}; if (!rb.meta.author) rb.meta.author = userName(); rb.meta.modified = new Date().toISOString().slice(0, 10); $('rbModified').textContent = rb.meta.modified; if (rb.meta.author) $('rbAuthor').value = rb.meta.author; }
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
@@ -215,7 +208,7 @@
     $('recPhoto').onclick = () => { if (!draftId) return RBNeedAuth('Sign in to attach photos.'); $('recPhotoFile').click(); };
     $('recPhotoFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
-        const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(draftId)); fd.append('photo', f);
+        const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(draftId)); fd.append('photo', await RBImg.toBlob(f), 'photo.jpg');
         if (recHere) { fd.append('lat', recHere.lat); fd.append('lon', recHere.lon); }
         toast('Uploading photo…');
         const r = await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({}));
@@ -324,7 +317,7 @@
     $('addPhotoBtn').onclick = () => { if (!currentRbId) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => {
         for (const f of e.target.files) {
-            const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(currentRbId)); fd.append('photo', f);
+            const fd = new FormData(); fd.append('type', 'photo'); fd.append('roadbook', String(currentRbId)); fd.append('photo', await RBImg.toBlob(f), 'photo.jpg');
             await fetch('../api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd }).then((x) => x.json()).catch(() => ({}));
         }
         e.target.value = ''; loadPhotos(); toast('Photos uploaded.');

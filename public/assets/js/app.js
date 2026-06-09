@@ -152,6 +152,34 @@
         m.hidden = false;
     }
 
+    /* ---------------- Client-side image downscaler ----------------
+       Shrinks photos in the browser BEFORE upload so they never hit PHP's
+       post_max_size and uploads stay tiny. Used by avatar + gallery + logo. */
+    window.RBImg = {
+        _canvas(file, max) {
+            return new Promise((res, rej) => {
+                const img = new Image();
+                img.onload = () => {
+                    const sc = Math.min(1, max / Math.max(img.width, img.height));
+                    const w = Math.max(1, Math.round(img.width * sc)), h = Math.max(1, Math.round(img.height * sc));
+                    const c = document.createElement('canvas'); c.width = w; c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    URL.revokeObjectURL(img.src); res(c);
+                };
+                img.onerror = (e) => { URL.revokeObjectURL(img.src); rej(e); };
+                img.src = URL.createObjectURL(file);
+            });
+        },
+        // → a small JPEG Blob (for upload). Falls back to the original file if anything fails.
+        async toBlob(file, max = 900, q = 0.82) {
+            if (!file || !/^image\//.test(file.type)) return file;
+            try { const c = await this._canvas(file, max); return await new Promise((r) => c.toBlob((b) => r(b || file), 'image/jpeg', q)); }
+            catch (e) { return file; }
+        },
+        // → a PNG data: URI (for embedding, e.g. the event logo — keeps transparency)
+        async toDataURL(file, max = 256) { const c = await this._canvas(file, max); return c.toDataURL('image/png'); },
+    };
+
     /* ---------------- Styled confirm (no native dialogs) ---------------- */
     window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
         const m = document.createElement('div'); m.className = 'modal';
