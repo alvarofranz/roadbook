@@ -26,11 +26,11 @@
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load: ' + err.message); } };
-    $('pickCh').onclick = () => RBChallenges.pick((r) => loadRb(r));
+    $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
     $('tripMode').onclick = startTrip;
     (function () {
         const pub = RBChallenges.publicFromUrl();
-        if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => {});
+        if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.'));
     })();
     // File Handling API (installed PWA): open a .rdbk straight from the OS.
     if ('launchQueue' in window && window.LaunchParams) {

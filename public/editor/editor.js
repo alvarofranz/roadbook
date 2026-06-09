@@ -31,7 +31,7 @@
     /* ---------- loading ---------- */
     $('loadGpx').onclick = () => $('gpxFile').click();
     $('loadJson').onclick = () => $('jsonFile').click();
-    $('demos').onclick = () => RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); // forking a challenge starts a NEW roadbook
+    $('pickChallenge').onclick = () => RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); // forking a challenge starts a NEW roadbook
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files);
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -66,7 +66,12 @@
     $('rbOrg').oninput = (e) => { if (rb) { rb.meta.organization = e.target.value; markDirty(); } };
     $('rbLogoBtn').onclick = () => $('rbLogoFile').click();
     $('rbLogoClr').onclick = () => { if (rb) { delete rb.meta.logo; setLogoPreview(null); markDirty(); } };
-    $('rbLogoFile').onchange = async (e) => { const f = e.target.files[0]; if (f && rb) { rb.meta.logo = await RBImg.toDataURL(f, 256); setLogoPreview(rb.meta.logo); markDirty(); } e.target.value = ''; };
+    $('rbLogoFile').onchange = async (e) => {
+        const f = e.target.files[0]; e.target.value = '';
+        if (!f || !rb) return;
+        try { rb.meta.logo = await RBImg.toDataURL(f, 256); setLogoPreview(rb.meta.logo); markDirty(); }
+        catch (err) { toast('Could not read the image.'); }
+    };
     // event logo: embedded as a base64 data URI in meta.logo (self-contained, like the icons)
     function userName() { if (!meUser) return ''; return (((meUser.first_name || '') + ' ' + (meUser.last_name || '')).trim()) || meUser.username || ''; }
     function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.hidden = false; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.hidden = true; $('rbLogoClr').hidden = true; } }
@@ -135,7 +140,7 @@
         $('recPause').innerHTML = '<i class="fa-solid fa-pause"></i>';
         $('loadFrom').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
         $('recPhoto').hidden = !meUser;
-        if (mode === 'adjust') { showView('map'); if (map) { map.showRoadbook(rb, false); map.setOverlay([]); } draftId = currentRbId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
+        if (mode === 'adjust') { showView('map'); if (map) { map.showRoadbook(rb, false); map.setOverlay([]); } draftId = currentRbId; $('recPhoto').hidden = !draftId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
         else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await apiPost({ action: 'rb_draft' }); if (r.ok) draftId = r.id; } }
         updateRecStats();
         try { if ('wakeLock' in navigator) recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
@@ -199,7 +204,11 @@
         btn.onclick = finish;
     };
     // photo: camera → upload → shows the photo with OK / Convert into waypoint
-    $('recPhoto').onclick = () => { if (!draftId) return RBNeedAuth('Sign in to attach photos.'); $('recPhotoFile').click(); };
+    $('recPhoto').onclick = () => {
+        if (!meUser) return RBNeedAuth('Sign in to attach photos.');
+        if (!draftId) return toast('Save to your profile first.');
+        $('recPhotoFile').click();
+    };
     $('recPhotoFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
         const fields = { type: 'photo', roadbook: String(draftId) };
@@ -311,10 +320,12 @@
     }
     $('addPhotoBtn').onclick = () => { if (!currentRbId) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => {
+        let failed = 0;
         for (const f of e.target.files) {
-            await RBUpload({ type: 'photo', roadbook: String(currentRbId) }, f);
+            const r = await RBUpload({ type: 'photo', roadbook: String(currentRbId) }, f);
+            if (!r.ok) failed++;
         }
-        e.target.value = ''; loadPhotos(); toast('Photos uploaded.');
+        e.target.value = ''; loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
     };
     (async function initAccount() {
         const cfg = await apiPost({ action: 'config' });
@@ -495,7 +506,7 @@
     /* ---------- export (self-contained .rdbk) ---------- */
     const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
-    $('save').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
+    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};

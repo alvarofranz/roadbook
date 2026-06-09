@@ -31,6 +31,8 @@ if ($type === 'photo') {
     if ((int)$cnt->fetch()['c'] >= 60) fail('Gallery is full (60 photos max).');
     $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
     $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
+    if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
+    if ($lon !== null && ($lon < -180 || $lon > 180)) $lon = null;
     db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)')->execute([$rbId, 'pending', $lat, $lon]);
     $pid = (int)db()->lastInsertId();
     $fn = bin2hex(random_bytes(8)) . '.avif'; // unguessable → private roadbook photos can't be enumerated
