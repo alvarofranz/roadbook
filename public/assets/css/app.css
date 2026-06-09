@@ -285,3 +285,6 @@ section.block { padding: 2.4rem 0; }
 @media (max-width: 720px) {
     .flow { grid-template-columns: repeat(2, 1fr); }
 }
+
+.btn-danger { background: rgba(255,90,69,.14); color: var(--track); border: 1px solid rgba(255,90,69,.32); }
+.btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }

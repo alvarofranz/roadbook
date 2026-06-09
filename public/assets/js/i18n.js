@@ -93,6 +93,10 @@
             'No roadbooks yet. Create one in the Editor.': 'Aún no tienes roadbooks. Crea uno en el Editor.', 'Photo updated.': 'Foto actualizada.', 'Profile saved.': 'Perfil guardado.', 'Upload failed.': 'Error al subir.', 'Network error.': 'Error de red.',
             'Challenge not found.': 'Challenge no encontrado.', 'This challenge does not exist or is private.': 'Este challenge no existe o es privado.',
             'Public challenges': 'Challenges públicos', 'No public challenges yet.': 'Aún no hay challenges públicos.', 'notes': 'notas',
+            'Total': 'Total', 'Partial': 'Parcial', 'Reset (hold)': 'Reiniciar (mantén)', 'km/h · alert': 'km/h · alerta', 'Max km/h': 'Máx km/h', 'Waypoints': 'Waypoints',
+            'Record GPX': 'Grabar GPX', 'Recording…': 'Grabando…', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
+            'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook',
+            'Exit Tripmaster?': '¿Salir del Tripmaster?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
         },
         it: {
             'hero.title': 'Roadbook digitali per le <span class="accent">tue avventure</span>',
@@ -167,6 +171,10 @@
             'No roadbooks yet. Create one in the Editor.': 'Ancora nessun roadbook. Creane uno nell’Editor.', 'Photo updated.': 'Foto aggiornata.', 'Profile saved.': 'Profilo salvato.', 'Upload failed.': 'Caricamento fallito.', 'Network error.': 'Errore di rete.',
             'Challenge not found.': 'Challenge non trovato.', 'This challenge does not exist or is private.': 'Questo challenge non esiste o è privato.',
             'Public challenges': 'Challenge pubblici', 'No public challenges yet.': 'Ancora nessun challenge pubblico.', 'notes': 'note',
+            'Total': 'Totale', 'Partial': 'Parziale', 'Reset (hold)': 'Azzera (tieni)', 'km/h · alert': 'km/h · allerta', 'Max km/h': 'Max km/h', 'Waypoints': 'Waypoint',
+            'Record GPX': 'Registra GPX', 'Recording…': 'Registrazione…', 'Speed alert': 'Allerta velocità', 'Speed to watch (km/h · 0 = off)': 'Velocità da controllare (km/h · 0 = off)', 'Colours': 'Colori',
+            'green': 'verde', 'orange': 'arancione', 'red': 'rosso', 'Recorded track': 'Traccia registrata', 'points': 'punti', 'Download GPX': 'Scarica GPX', 'Convert into roadbook': 'Converti in roadbook',
+            'Exit Tripmaster?': 'Uscire dal Tripmaster?', 'Trip reset.': 'Viaggio azzerato.', 'Recording GPX track.': 'Registrazione traccia GPX.', 'Could not load the recorded trip.': 'Impossibile caricare il trip registrato.',
         },
     };
 

@@ -17,6 +17,7 @@
     let lastPayload = '', lastQrUrl = '';
     // tripmaster
     let tmTotal = 0, tmPartial = 0, tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
+    let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLast = null;
 
     /* ---------- arranque ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
@@ -60,6 +61,7 @@
     }
     function startTrip() {
         mode = 'trip'; window.RB_BUSY = true;
+        document.body.classList.add('trip-on'); // hide global header + footer during the trip
         $('loadScreen').hidden = true; $('tripScreen').hidden = false;
         startGps();
         setInterval(() => {
@@ -89,7 +91,13 @@
         else if (lastSpeedPos && lastSpeedT) { const dt = (tnow - lastSpeedT) / 1000; if (dt > 0) speedKmh = RB.geo.haversineM(lastSpeedPos, here) / dt * 3.6; }
         lastSpeedPos = here; lastSpeedT = tnow;
         if (c.heading != null && isFinite(c.heading)) { tmCap = c.heading; }
-        if (mode === 'trip') { renderTrip(); return; }
+        if (mode === 'trip') {
+            if (speedKmh > tmMax) tmMax = speedKmh;
+            if (tripRecOn && (c.accuracy == null || c.accuracy <= 35) && (!tripRecLast || RB.geo.haversineM(tripRecLast, here) >= 4)) {
+                tripRecPts.push({ lat: here.lat, lon: here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null }); tripRecLast = here;
+            }
+            renderTrip(); return;
+        }
 
         // --- modo navegación ---
         tmTotal = tripTotalM; tmPartial = tripPartialM;
@@ -204,18 +212,95 @@
     };
 
     /* ---------- tripmaster ---------- */
+    const t = (k) => (window.RBi18n ? RBi18n.t(k) : k);
+    const SA_COLORS = { green: 'var(--ok)', orange: '#ff9f1c', red: 'var(--track)' };
+    let saLimit = 0, saColors = ['green', 'orange', 'red', 'red'];
+    try { const s = JSON.parse(localStorage.getItem('rb_speedalert') || 'null'); if (s) { saLimit = s.limit || 0; saColors = s.colors || saColors; } } catch (e) {}
+    function speedBandColor(v) {
+        if (!saLimit) return '';
+        const c = v < saLimit - 5 ? saColors[0] : v < saLimit ? saColors[1] : v < saLimit + 5 ? saColors[2] : saColors[3];
+        return SA_COLORS[c] || '';
+    }
     function renderTrip() {
-        $('tmPartial').textContent = (tripPartialM / 1000).toFixed(2);
         $('tmTotal').textContent = (tripTotalM / 1000).toFixed(2);
+        $('tmPartial').textContent = (tripPartialM / 1000).toFixed(2);
         $('tmSpeed').textContent = Math.round(speedKmh);
+        $('tmSpeed').style.color = speedBandColor(speedKmh);
+        $('tmMax').textContent = Math.round(tmMax);
         $('tmCap').textContent = tmCap == null ? '—' : Math.round(tmCap);
     }
-    $('tmResetPartial').onclick = () => { tripPartialM = 0; renderTrip(); };
     $('tmPlus10').onclick = () => { tripPartialM += 10; tripTotalM += 10; renderTrip(); };
     $('tmMinus10').onclick = () => { tripPartialM = Math.max(0, tripPartialM - 10); tripTotalM = Math.max(0, tripTotalM - 10); renderTrip(); };
     $('tmNoteBtn').onclick = () => { tmNotes++; $('tmNotes').textContent = tmNotes; tripPartialM = 0; renderTrip(); };
-    $('tmTimerBtn').onclick = () => { tmTimerOn = !tmTimerOn; if (tmTimerOn) tmTimerStart = Date.now(); else tmTimerAcc += Date.now() - tmTimerStart; };
-    $('tmExit').onclick = () => location.reload();
+    $('tmTimerBtn').onclick = () => { tmTimerOn = !tmTimerOn; if (tmTimerOn) tmTimerStart = Date.now(); else tmTimerAcc += Date.now() - tmTimerStart; $('tmTimerBtn').classList.toggle('btn-primary', tmTimerOn); };
+    $('tmExit').onclick = async () => { if (await RBConfirm(t('Exit Tripmaster?'), t('Exit'))) location.reload(); };
+
+    // hold-to-activate (5 s) for Reset — anti-accidental, works in browser + PWA
+    (function holdReset() {
+        const btn = $('tmReset'); let timer = null;
+        const start = (e) => { e.preventDefault(); btn.classList.add('holding'); timer = setTimeout(() => { btn.classList.remove('holding'); tripPartialM = 0; renderTrip(); toast('Trip reset.'); }, 5000); };
+        const cancel = () => { if (timer) clearTimeout(timer); timer = null; btn.classList.remove('holding'); };
+        btn.addEventListener('pointerdown', start);
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, cancel));
+    })();
+
+    // Speed alert settings
+    $('tmSpeedAlert').onclick = () => {
+        const opt = (sel) => ['green', 'orange', 'red'].map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${t(c)}</option>`).join('');
+        const m = document.createElement('div'); m.className = 'modal';
+        m.innerHTML = `<div class="modal-card" style="max-width:360px">
+            <h3 style="margin:0 0 .5rem">${t('Speed alert')}</h3>
+            <label class="muted small">${t('Speed to watch (km/h · 0 = off)')}</label>
+            <input id="saIn" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}" style="width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:.6rem;margin:.3rem 0 .6rem">
+            <div class="muted small">${t('Colours')}</div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.4rem .6rem;align-items:center;margin-top:.3rem">
+                <span>&lt; L−5</span><select id="sa0">${opt(saColors[0])}</select>
+                <span>L−5 … L</span><select id="sa1">${opt(saColors[1])}</select>
+                <span>L … L+5</span><select id="sa2">${opt(saColors[2])}</select>
+                <span>&gt; L+5</span><select id="sa3">${opt(saColors[3])}</select>
+            </div>
+            <div class="btnrow" style="justify-content:flex-end;margin-top:.9rem"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>
+        </div>`;
+        document.body.appendChild(m);
+        m.querySelectorAll('select').forEach((s) => { s.style.cssText = 'background:var(--card-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:.4rem'; });
+        m.querySelector('#saX').onclick = () => m.remove();
+        m.querySelector('#saS').onclick = () => {
+            saLimit = Math.max(0, Math.min(300, parseInt(m.querySelector('#saIn').value, 10) || 0));
+            saColors = ['sa0', 'sa1', 'sa2', 'sa3'].map((id) => m.querySelector('#' + id).value);
+            try { localStorage.setItem('rb_speedalert', JSON.stringify({ limit: saLimit, colors: saColors })); } catch (e) {}
+            m.remove(); renderTrip();
+        };
+        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
+    };
+
+    // Record a GPX track during the trip
+    $('tmRecBtn').onclick = () => {
+        tripRecOn = !tripRecOn;
+        $('tmRecBtn').classList.toggle('btn-primary', tripRecOn);
+        $('tmRecBtn').querySelector('span').textContent = t(tripRecOn ? 'Recording…' : 'Record GPX');
+        if (tripRecOn) { tripRecPts = []; tripRecLast = null; toast('Recording GPX track.'); }
+        else if (tripRecPts.length >= 2) finishTripRec(tripRecPts.slice());
+    };
+    function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
+    function finishTripRec(pts) {
+        const m = document.createElement('div'); m.className = 'modal';
+        m.innerHTML = `<div class="modal-card" style="max-width:340px;text-align:center">
+            <h3 style="margin:0 0 .3rem">${t('Recorded track')}</h3>
+            <p class="muted small">${pts.length} ${t('points')} · ${trackKm(pts).toFixed(2)} km</p>
+            <div class="btnrow" style="justify-content:center;flex-wrap:wrap;margin-top:.6rem">
+                <button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>
+                <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
+            </div></div>`;
+        document.body.appendChild(m);
+        m.querySelector('#trDl').onclick = () => { downloadGpx(pts); m.remove(); };
+        m.querySelector('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
+        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
+    }
+    function downloadGpx(pts) {
+        const seg = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
+        const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>RDBK trip</name><trkseg>${seg}</trkseg></trk></gpx>`;
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([gpx], { type: 'application/gpx+xml' })); a.download = 'RDBK_trip_' + ddmmyy(new Date()) + '.gpx'; document.body.appendChild(a); a.click(); a.remove();
+    }
 
     /* ---------- utils ---------- */
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
