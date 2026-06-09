@@ -184,7 +184,7 @@ window.NoteCanvas.rowCols = function (n, iconSrc, vigInline) {
         </div>
         <div class="col-center"${hasVig && !vigInline ? ' data-vig' : ''}>${centre}</div>
         <div class="col-right">
-            <div class="txt">${esc(n.text || '')}</div>${cap}
+            <div class="text">${esc(n.text || '')}</div>${cap}
             <div class="coords">${(+n.lat).toFixed(5)}<br>${(+n.lon).toFixed(5)}</div>
         </div>`;
 };

@@ -148,7 +148,7 @@ section.block { padding: 2.4rem 0; }
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
-.dl { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+.action-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
 .notes { margin-top: 1rem; max-height: 360px; overflow: auto; display: flex; flex-direction: column; gap: .4rem; }
 .map-panel { padding: .5rem; }
 @media (max-width: 860px) { .map-panel { order: -1; } }
@@ -162,8 +162,8 @@ section.block { padding: 2.4rem 0; }
 .readout.primary .num { color: #fff; }
 .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
 .mini { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .8rem .5rem; text-align: center; }
-.mini .v { font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
-.mini .k { color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; margin-top: .2rem; }
+.mini .value { font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+.mini .key { color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; margin-top: .2rem; }
 .btnrow { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; margin-top: .4rem; }
 .gps-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); vertical-align: middle; }
 .gps-dot.ok { background: var(--ok); } .gps-dot.bad { background: var(--track); }
@@ -191,7 +191,7 @@ section.block { padding: 2.4rem 0; }
 .noterow .col-center { border-left: 1px solid var(--line); border-right: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: .3rem; min-width: 0; overflow: hidden; }
 .noterow .col-center svg { width: 100%; height: 100%; display: block; }
 .noterow .col-right { padding: .5rem .65rem; display: flex; flex-direction: column; font-size: .82rem; }
-.noterow .col-right .txt { flex: 1; word-break: break-word; }
+.noterow .col-right .text { flex: 1; word-break: break-word; }
 .noterow .col-right .cap-indicator { color: var(--track); font-weight: 800; line-height: 1.2; margin-bottom: .3rem; }
 .noterow .col-right .coords { color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; margin-top: auto; }
 .gallery-card .gallery-body { padding: .9rem 1rem; }

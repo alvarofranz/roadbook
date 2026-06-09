@@ -17,8 +17,8 @@
         .odometer-item.right { align-items: flex-end; }
         .odometer-item.heading { align-items: center; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-        .odometer-item .v { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-        .odometer-item .v.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
+        .odometer-item .value { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .odometer-item .value.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
         .odometer-item .clock-text { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
@@ -45,16 +45,16 @@
         .nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; }
         .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
         .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
-        .nrow .col-distance .tot { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
-        .nrow .col-distance .par { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
+        .nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+        .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
         .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
         .nrow .col-distance.close { background: #bfe3ff; } /* azzurro: < 50 m to the next note */
         .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
         .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
         .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
-        .nrow .col-text .t { flex: 1; word-break: break-word; }
+        .nrow .col-text .text { flex: 1; word-break: break-word; }
         .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
-        .nrow .col-text .co { color: #999; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
+        .nrow .col-text .coords { color: #999; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
         .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
         .nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
         .nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
@@ -94,17 +94,17 @@
 <div id="navScreen" hidden>
     <!-- top odometer bar: total · bearing+clock · partial -->
     <div class="odometer-bar">
-        <div class="odometer-item"><span class="field-label">prog.</span><span class="v" id="odoTotal">0.00</span></div>
-        <div class="odometer-item heading"><span class="v boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt">GPS…</span></span></div>
-        <div class="odometer-item right"><span class="field-label">part.</span><span class="v" id="odoPartial">0.00</span></div>
+        <div class="odometer-item"><span class="field-label">prog.</span><span class="value" id="odoTotal">0.00</span></div>
+        <div class="odometer-item heading"><span class="value boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt">GPS…</span></span></div>
+        <div class="odometer-item right"><span class="field-label">part.</span><span class="value" id="odoPartial">0.00</span></div>
     </div>
     <!-- 3-column note rows: distances | graphic | indications + coords -->
     <div id="noteList"></div>
     <!-- bottom CAP bar (appears when the active note has a CAP) -->
     <div class="capbar" id="capbar" hidden>
-        <span class="cv" id="capHeading">—°</span>
-        <span class="cs" id="capSpeed">--</span>
-        <span class="cd" id="capDist">— km</span>
+        <span class="cap-heading" id="capHeading">—°</span>
+        <span class="cap-speed" id="capSpeed">--</span>
+        <span class="cap-dist" id="capDist">— km</span>
         <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
     </div>
     <nav class="fabrow">
@@ -134,14 +134,14 @@
                 </div>
             </div>
             <div class="row3">
-                <button class="mini mini-button" id="tmSpeedAlert"><div class="v" id="tmSpeed">0</div><div class="k" data-i18n="km/h · alert">km/h · alert</div></button>
-                <div class="mini"><div class="v" id="tmCap">—</div><div class="k">CAP °</div></div>
-                <div class="mini"><div class="v" id="tmClock">--:--</div><div class="k" data-i18n="Clock">Clock</div></div>
+                <button class="mini mini-button" id="tmSpeedAlert"><div class="value" id="tmSpeed">0</div><div class="key" data-i18n="km/h · alert">km/h · alert</div></button>
+                <div class="mini"><div class="value" id="tmCap">—</div><div class="key">CAP °</div></div>
+                <div class="mini"><div class="value" id="tmClock">--:--</div><div class="key" data-i18n="Clock">Clock</div></div>
             </div>
             <div class="row3">
-                <div class="mini"><div class="v" id="tmTimer">0:00</div><div class="k" data-i18n="Timer">Timer</div></div>
-                <div class="mini"><div class="v" id="tmMax">0</div><div class="k" data-i18n="Max km/h">Max km/h</div></div>
-                <div class="mini"><div class="v" id="tmNotes">0</div><div class="k" data-i18n="Waypoints">Waypoints</div></div>
+                <div class="mini"><div class="value" id="tmTimer">0:00</div><div class="key" data-i18n="Timer">Timer</div></div>
+                <div class="mini"><div class="value" id="tmMax">0</div><div class="key" data-i18n="Max km/h">Max km/h</div></div>
+                <div class="mini"><div class="value" id="tmNotes">0</div><div class="key" data-i18n="Waypoints">Waypoints</div></div>
             </div>
             <div class="btnrow">
                 <button class="btn btn-ghost" id="tmTimerBtn"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="Timer">Timer</span></button>
