@@ -12,6 +12,21 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   translation lives in `public/assets/js/i18n.js` (source-string keys; `data-i18n`,
   `data-i18n-html`, `data-i18n-ph` in HTML; `RBi18n.t()` + auto-translating `toast()` in JS).
 
+## Working guidelines (read first)
+- **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
+  copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
+  to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
+  be discarded or clobber someone else's.
+- **Don't reinvent the wheel.** Search the whole codebase first and reuse what's there:
+  `RB.*` (geo, build, meta), `NoteCanvas.toSVG`/`rowCols`, `RBMap`, `RBi18n.t()`,
+  `RBConfirm`/`RBNeedAuth`, the global header/footer + version system in `app.js`, and the
+  shared CSS in `assets/css/app.css`. If two places need the same thing, factor it out.
+- **DRY, clean, and LIFT.** Keep code DRY and readable; follow LIFT — **L**ocate code
+  easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
+- **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead
+  code and stale comments instead of leaving them.
+- **Commit messages are changelogs** — short English title + bullet points.
+
 ## Run locally
 ```
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
@@ -91,5 +106,4 @@ integer metres.** Spec page: `public/standard/index.html`.
   absolute `/assets/…`. `[hidden]{display:none!important}` in `app.css`.
 - Header and footer are rendered globally by `app.js` — pages ship empty `<header
   class="topbar">`.
-- **Commit messages are changelogs**: short title + bullet points, in English.
 - Keep the data model in clean English (no camelCase beyond unavoidable; metres, not km).
