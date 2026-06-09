@@ -247,3 +247,20 @@ section.block { padding: 2.4rem 0; }
 /* form fields inside modals (shared by every RBModal dialog) */
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
+/* modal-card size/align modifiers (passed to RBModal) */
+.modal-card.slim { max-width: 340px; }
+.modal-card.narrow { max-width: 360px; }
+.modal-card.wide { max-width: 520px; max-height: 80vh; overflow: auto; }
+.modal-card.center { text-align: center; }
+.modal-card h3 { margin: 0 0 .4rem; font-size: 1.05rem; }
+.modal-text { margin: .2rem 0 1.1rem; font-size: 1.05rem; }
+/* shared helpers */
+.icon-accent { color: var(--sand); }
+.btnrow.end { justify-content: flex-end; }
+.btnrow.center { justify-content: center; }
+.btnrow.between { justify-content: space-between; }
+.btnrow.spaced { margin-top: 1rem; }
+.btnrow.wrap { flex-wrap: wrap; }
+.btn-group { display: flex; gap: .5rem; }
+.field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
+.ios-steps { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }

@@ -23,12 +23,12 @@
     // Picker: choose a public challenge to open in the current tool.
     async function pick(onPick) {
         const rbs = await listPublic();
-        const d = RBModal(`<h2 style="margin-top:0">${RBt('Public challenges')}</h2>
+        const d = RBModal(`<h2>${RBt('Public challenges')}</h2>
             ${rbs.length ? rbs.map((r) => `<button class="demo-row" data-s="${r.slug}">
                 ${r.thumb ? `<img src="${r.thumb}" alt="">` : `<span class="demo-ph"><i class="fa-solid fa-map-location-dot"></i></span>`}
                 <span><b>${r.title}</b><small>@${r.username} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${RBt('notes')}</small></span>
             </button>`).join('') : `<p class="muted">${RBt('No public challenges yet.')}</p>`}
-            <div class="btnrow" style="margin-top:1rem"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`, 'max-width:520px;max-height:80vh;overflow:auto');
+            <div class="btnrow spaced"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`, 'wide');
         d.q('#chCancel').onclick = d.close;
         d.el.querySelectorAll('.demo-row').forEach((b) => b.onclick = async () => {
             d.close();

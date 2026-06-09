@@ -241,7 +241,7 @@
         lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
         const qr = qrcode(0, 'M'); qr.addData(lastPayload); qr.make();
         lastQrUrl = qr.createDataURL(6, 2);
-        $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" style="width:260px;height:260px;image-rendering:pixelated;border-radius:8px">`;
+        $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
         $('qrMeta').textContent = lastPayload;
         $('qrStats').innerHTML = `Vehicle <b>${team}</b> · ${km / 10} km<br>Accuracy ${Math.round(pen.acc)} · Skips ${pen.skip} · Extra ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · Speed ${pen.speed} pts`;
         $('qrModal').hidden = false;
@@ -293,17 +293,17 @@
     // Speed alert settings
     $('tmSpeedAlert').onclick = () => {
         const opt = (sel) => ['green', 'orange', 'red'].map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${t(c)}</option>`).join('');
-        const d = RBModal(`<h3 style="margin:0 0 .5rem">${t('Speed alert')}</h3>
+        const d = RBModal(`<h3>${t('Speed alert')}</h3>
             <label class="muted small">${t('Speed to watch (km/h · 0 = off)')}</label>
             <input id="saIn" class="modal-in" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}">
             <div class="muted small">${t('Colours')}</div>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:.4rem .6rem;align-items:center;margin-top:.3rem">
+            <div class="field-grid">
                 <span>&lt; L−5</span><select id="sa0" class="modal-in">${opt(saColors[0])}</select>
                 <span>L−5 … L</span><select id="sa1" class="modal-in">${opt(saColors[1])}</select>
                 <span>L … L+5</span><select id="sa2" class="modal-in">${opt(saColors[2])}</select>
                 <span>&gt; L+5</span><select id="sa3" class="modal-in">${opt(saColors[3])}</select>
             </div>
-            <div class="btnrow" style="justify-content:flex-end;margin-top:.9rem"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'max-width:360px');
+            <div class="btnrow end spaced"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'narrow');
         d.q('#saX').onclick = d.close;
         d.q('#saS').onclick = () => {
             saLimit = Math.max(0, Math.min(300, parseInt(d.q('#saIn').value, 10) || 0));
@@ -329,16 +329,16 @@
     $('tmRecBtn').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
     function openGpxSettings() {
         const fsa = 'showSaveFilePicker' in window;
-        const d = RBModal(`<h3 style="margin:0 0 .6rem">${t('Record GPX')}</h3>
+        const d = RBModal(`<h3>${t('Record GPX')}</h3>
             <label class="muted small">${t('Sample every (seconds)')}</label>
             <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(tripRecFreq / 1000)}">
             <label class="muted small">${t('File name')}</label>
             <input id="gxName" class="modal-in" type="text" value="${gpxName()}">
             <p class="muted small" id="gxLoc">${fsa ? t('Tip: choose a file to save live to disk (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
-            <div class="btnrow" style="justify-content:space-between;margin-top:.4rem">
+            <div class="btnrow between">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose file…')}</button>` : '<span></span>'}
-                <span style="display:flex;gap:.5rem"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
-            </div>`, 'max-width:360px');
+                <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
+            </div>`, 'narrow');
         let picked = null;
         d.q('#gxX').onclick = d.close;
         if (fsa) d.q('#gxPick').onclick = async () => {
@@ -371,13 +371,13 @@
         if (pts.length >= 2) finishTripRec(pts, name, saved); else toast('Track too short.');
     }
     function finishTripRec(pts, name, savedToFile) {
-        const d = RBModal(`<h3 style="margin:0 0 .3rem">${t('Recorded track')}</h3>
+        const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${pts.length} ${t('points')} · ${trackKm(pts).toFixed(2)} km${savedToFile ? '<br>✓ ' + t('Saved to file') : ''}</p>
-            <div class="btnrow" style="justify-content:center;flex-wrap:wrap;margin-top:.6rem">
+            <div class="btnrow center wrap">
                 ${savedToFile ? '' : `<button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>`}
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <div class="btnrow" style="justify-content:center;margin-top:.4rem"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div>`, 'max-width:340px;text-align:center');
+            <div class="btnrow center"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div>`, 'slim center');
         const dl = d.q('#trDl'); if (dl) dl.onclick = () => { downloadGpx(pts, name); d.close(); };
         d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
         d.q('#trClose').onclick = d.close;

@@ -16,12 +16,18 @@
         .ed-row label { color: var(--muted); font-size: .82rem; min-width: 90px; }
         .ed-row select, .ed-row input[type=text] { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
-        .icon-grid button { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
+        .icon-grid button { position: relative; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
+        .icon-grid .icat { grid-column: 1 / -1; }
         .icat { color: var(--sand); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .8rem 0 .3rem; }
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .5rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
         .note-mini .nn { font-weight: 800; color: var(--sand); }
+        .note-mini .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border-radius: 50%; font-weight: 800; cursor: pointer; }
+        .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
+        .photo-thumb { position: relative; }
+        .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
         #edMap { height: 60vh; min-height: 360px; }
         .adv { margin-top: 1rem; border: 1px solid var(--line); border-radius: 12px; padding: .3rem .8rem .6rem; background: var(--card-2); }
         .adv summary { cursor: pointer; font-weight: 700; color: var(--sand); padding: .5rem 0; list-style: none; }

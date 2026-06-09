@@ -136,14 +136,14 @@
             m = document.createElement('div');
             m.id = 'iosModal'; m.className = 'modal';
             m.innerHTML = `<div class="modal-card">
-                <h2 style="margin-top:0"><i class="fa-solid fa-mobile-screen" style="color:var(--sand)"></i> Install on iPhone</h2>
+                <h2><i class="fa-solid fa-mobile-screen icon-accent"></i> Install on iPhone</h2>
                 <p class="muted small">From Safari, in 3 steps:</p>
-                <ol style="line-height:1.9;padding-left:1.2rem;margin:.4rem 0">
-                    <li>Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket" style="color:var(--sand)"></i> in the bar.</li>
-                    <li>Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus" style="color:var(--sand)"></i>.</li>
+                <ol class="ios-steps">
+                    <li>Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.</li>
+                    <li>Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.</li>
                     <li>Tap <b>Add</b>. Done!</li>
                 </ol>
-                <div class="btnrow" style="margin-top:.8rem"><button class="btn btn-primary" id="iosClose">Got it</button></div>
+                <div class="btnrow"><button class="btn btn-primary" id="iosClose">Got it</button></div>
             </div>`;
             document.body.appendChild(m);
             m.querySelector('#iosClose').onclick = () => { m.hidden = true; };
@@ -184,9 +184,9 @@
        Every page reuses these instead of re-implementing them — see CLAUDE.md. */
     // Overlay modal. Pass the card's inner HTML (+ optional card style + backdrop-dismiss
     // callback). Returns { el, q(sel), close }.
-    window.RBModal = (cardHtml, cardStyle, onDismiss) => {
+    window.RBModal = (cardHtml, cardClass, onDismiss) => {
         const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card"${cardStyle ? ` style="${cardStyle}"` : ''}>${cardHtml}</div>`;
+        m.innerHTML = `<div class="modal-card${cardClass ? ' ' + cardClass : ''}">${cardHtml}</div>`;
         document.body.appendChild(m);
         const close = () => m.remove();
         m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
@@ -211,22 +211,22 @@
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
     window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
-        const d = RBModal(`<p style="margin:.2rem 0 1.1rem;font-size:1.05rem">${msg}</p>
-            <div class="btnrow" style="justify-content:flex-end">
+        const d = RBModal(`<p class="modal-text">${msg}</p>
+            <div class="btnrow end">
                 <button class="btn btn-ghost" data-no>Cancel</button>
                 <button class="btn btn-primary" data-yes>${okLabel || 'OK'}</button>
-            </div>`, 'max-width:360px', () => resolve(false));
+            </div>`, 'narrow', () => resolve(false));
         const done = (v) => { d.close(); resolve(v); };
         d.q('[data-yes]').onclick = () => done(true);
         d.q('[data-no]').onclick = () => done(false);
     });
     window.RBNeedAuth = (msg) => {
-        const d = RBModal(`<h2 style="margin-top:0"><i class="fa-solid fa-circle-user" style="color:var(--sand)"></i> Sign in</h2>
+        const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> Sign in</h2>
             <p class="muted">${msg || 'Create a free account to save and share your roadbooks.'}</p>
-            <div class="btnrow" style="justify-content:center;margin-top:1rem">
+            <div class="btnrow center spaced">
                 <button class="btn btn-ghost" data-no>Not now</button>
                 <a class="btn btn-primary" href="${ROOT}account/"><i class="fa-solid fa-right-to-bracket"></i> Sign in / Create account</a>
-            </div>`, 'max-width:380px;text-align:center');
+            </div>`, 'narrow center');
         d.q('[data-no]').onclick = d.close;
     };
 

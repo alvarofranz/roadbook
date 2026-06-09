@@ -68,7 +68,7 @@
     $('rbLogoFile').onchange = async (e) => { const f = e.target.files[0]; if (f && rb) { rb.meta.logo = await RBImg.toDataURL(f, 256); setLogoPreview(rb.meta.logo); markDirty(); } e.target.value = ''; };
     // event logo: embedded as a base64 data URI in meta.logo (self-contained, like the icons)
     function userName() { if (!meUser) return ''; return (((meUser.first_name || '') + ' ' + (meUser.last_name || '')).trim()) || meUser.username || ''; }
-    function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.style.display = ''; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.style.display = 'none'; $('rbLogoClr').hidden = true; } }
+    function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.hidden = false; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.hidden = true; $('rbLogoClr').hidden = true; } }
     function stampMeta() { if (!rb) return; rb.meta = rb.meta || {}; if (!rb.meta.author) rb.meta.author = userName(); rb.meta.modified = new Date().toISOString().slice(0, 10); $('rbModified').textContent = rb.meta.modified; if (rb.meta.author) $('rbAuthor').value = rb.meta.author; }
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
@@ -185,9 +185,9 @@
     $('recWaypoint').onclick = () => {
         if (!recHere) return toast('Waiting for a GPS fix…');
         const note = dropWaypoint(recHere.lat, recHere.lon, '');
-        const d = RBModal(`<h3 style="margin:0 0 .5rem">Waypoint ${note.num}</h3>
-            <input id="wfText" class="fld" style="width:100%" placeholder="${t('Quick note (optional)…')}" autocomplete="off">
-            <div class="btnrow" style="justify-content:flex-end;margin-top:.7rem"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'max-width:380px', () => finish());
+        const d = RBModal(`<h3>Waypoint ${note.num}</h3>
+            <input id="wfText" class="modal-in" placeholder="${t('Quick note (optional)…')}" autocomplete="off">
+            <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'narrow', () => finish());
         const inp = d.q('#wfText'), btn = d.q('#wfBtn');
         setTimeout(() => inp.focus(), 50);
         let n = 5, typed = false;
@@ -208,11 +208,11 @@
         if (!r.ok) return toast(r.error || 'Photo failed.');
         recPhotos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
         const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
-        const d = RBModal(`<img src="${r.url}" alt="" style="width:100%;border-radius:12px;max-height:48vh;object-fit:cover">
-            <div class="btnrow" style="justify-content:center;margin-top:.8rem">
+        const d = RBModal(`<img src="${r.url}" alt="" class="photo-preview">
+            <div class="btnrow center">
                 <button class="btn btn-ghost" id="ptOk">OK</button>
                 <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${t('Convert into waypoint')}</button>
-            </div>`, 'max-width:340px;text-align:center');
+            </div>`, 'slim center');
         d.q('#ptOk').onclick = d.close;
         d.q('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } d.close(); };
     };
@@ -294,7 +294,7 @@
         const r = await apiPost({ action: 'ph_list', roadbook: currentRbId });
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { g.innerHTML = '<span class="muted small">No photos yet.</span>'; if (map) map.setPhotos([]); return; }
-        g.innerHTML = r.photos.map((p) => `<div style="position:relative"><img src="${p.url}" style="width:100%;height:64px;object-fit:cover;border-radius:8px" alt=""><span data-delp="${p.id}" style="position:absolute;top:-6px;right:-6px;background:var(--track);color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;font-weight:800;cursor:pointer">×</span></div>`).join('');
+        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${p.url}" alt=""><span data-delp="${p.id}" class="del-badge">×</span></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await apiPost({ action: 'ph_delete', id: +s.dataset.delp }); loadPhotos(); });
         // pins on the map; tap a 📷 pin to promote it to a waypoint
         if (map) map.setPhotos(r.photos, (ph) => {
@@ -323,14 +323,13 @@
 
     /* ---------- notas + selección ---------- */
     function renderNotes() {
-        $('noteList').innerHTML = rb.notes.map((n, i) => {
-            const rt = RB.ROAD_TYPES[n.road_type_out] || RB.ROAD_TYPES[3];
-            return `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}" style="--rt:${rt.color}">
+        $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}">
                 <span class="nn">${n.num}</span>
-                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.text ? esc(n.text) : '<span class="muted">(no text)</span>'}</span>
+                <span class="label">${n.text ? esc(n.text) : '<span class="muted">(no text)</span>'}</span>
                 <span class="muted small">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
-            </div>`;
-        }).join('');
+            </div>`).join('');
+        // road-type accent colour is data-driven → set the CSS variable per row
+        $('noteList').querySelectorAll('.note-mini').forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         $('noteList').querySelectorAll('.note-mini').forEach((c) => c.onclick = () => select(+c.dataset.i));
         const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
         fillSplice();
@@ -424,8 +423,8 @@
         const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
         let html = '';
-        if (custom.length) html += `<div style="grid-column:1/-1" class="icat">Yours (in this roadbook)</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
-        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div style="grid-column:1/-1" class="icat">${cat}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
+        if (custom.length) html += `<div class="icat">Yours (in this roadbook)</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
+        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icat">${cat}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
         $('iconGrid').innerHTML = html || '<span class="muted small">No icons.</span>';
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);
@@ -439,7 +438,7 @@
         $('iconGrid').querySelectorAll('span[data-del]').forEach((s) => s.onclick = (ev) => { ev.stopPropagation(); delCustomIcon(s.dataset.del); });
     }
     const iconBtn = (name, src, rmv) =>
-        `<button data-add="${name}" title="${name}" style="position:relative">${rmv ? `<span data-del="${name}" style="position:absolute;top:-6px;right:-6px;background:var(--track);color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;font-weight:800;cursor:pointer">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
+        `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!rb) return toast('Load a roadbook first.');
         canvas.addIcon(mkIcon(name, [0, 0]));

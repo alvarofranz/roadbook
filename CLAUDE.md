@@ -52,9 +52,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   no cryptic abbreviations or one-letter mystery vars (loop indices aside). If you find
   something misnamed or inconsistent, rename it properly *everywhere* as part of your change.
 - **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names —
-  never `style="…"` attributes in HTML or in JS-built markup. Add a well-named class to
-  `app.css` (shared) or the page's `<style>` (page-specific) and use it. Inline styles are
-  treated as a bug.
+  never `style="…"` attributes in HTML or in JS-built markup. Inline styles are a bug.
+- **Reuse CSS, don't multiply it — real DRY.** BEFORE adding a class, read the existing
+  styles and reuse what fits. Name classes **abstractly** so they're reusable across features
+  (`.btnrow.center`, `.icon-accent`, `.field-grid`) — never a throwaway class per feature.
+  If two rules are nearly identical, factor the shared part out. Class names are explicit
+  words, never abbreviations (`.icon-accent`, not `.ic-sand`). DRY is the priority — for
+  real, not lip service.
 - **DRY, clean, and LIFT.** Keep code DRY and readable; follow LIFT — **L**ocate code
   easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
 - **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead
