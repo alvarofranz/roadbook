@@ -101,6 +101,8 @@
             'Tip: choose a file to save live to disk (crash-safe).': 'Consejo: elige un archivo para guardar en vivo en disco (a prueba de crash).',
             'Auto-saved while recording, recovered if the app closes.': 'Se guarda solo al grabar; se recupera si la app se cierra.',
             'Recover unsaved GPX recording?': '¿Recuperar la grabación GPX sin guardar?', 'Recover': 'Recuperar',
+            'Advancement': 'Avance', 'Automatic (GPS)': 'Automático (GPS)', 'Manual (tap)': 'Manual (toque)', 'Show map button per note': 'Botón de mapa por nota', 'Record a GPX track': 'Grabar una traza GPX',
+            'Note reached': 'Nota alcanzada', 'Open on map': 'Abrir en mapa', 'Load another roadbook?': '¿Cargar otro roadbook?', 'Load': 'Cargar', 'Map not configured.': 'Mapa no configurado.',
         },
         it: {
             'hero.title': 'Roadbook digitali per le <span class="accent">tue avventure</span>',
@@ -183,6 +185,8 @@
             'Tip: choose a file to save live to disk (crash-safe).': 'Suggerimento: scegli un file per salvare dal vivo su disco (a prova di crash).',
             'Auto-saved while recording, recovered if the app closes.': 'Salvataggio automatico durante la registrazione; recuperato se l’app si chiude.',
             'Recover unsaved GPX recording?': 'Recuperare la registrazione GPX non salvata?', 'Recover': 'Recupera',
+            'Advancement': 'Avanzamento', 'Automatic (GPS)': 'Automatico (GPS)', 'Manual (tap)': 'Manuale (tocco)', 'Show map button per note': 'Pulsante mappa per nota', 'Record a GPX track': 'Registra una traccia GPX',
+            'Note reached': 'Nota raggiunta', 'Open on map': 'Apri sulla mappa', 'Load another roadbook?': 'Caricare un altro roadbook?', 'Load': 'Carica', 'Map not configured.': 'Mappa non configurata.',
         },
     };
 

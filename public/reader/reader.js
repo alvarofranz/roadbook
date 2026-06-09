@@ -14,6 +14,8 @@
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, watchId = null, wakeLock = null;
+    let showMap = true, approaching = false; // showMap: per-note mini-map button · approaching: auto ≤30 m (orange)
+    const AUTO_REACH_M = 50, WARN_M = 30; // auto-validate radius · approaching warning
     let lastPayload = '', lastQrUrl = '';
     // tripmaster
     let tmTotal = 0, tmPartial = 0, tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
@@ -44,9 +46,13 @@
         rb = r; notes = r.notes;
         $('modeModal').hidden = false;
     }
-    $('modeViaje').onclick = () => { $('modeModal').hidden = true; startNav(false); };
+    $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); };
+    $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); };
+    let optGpx = false;
+    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked; optGpx = $('optGpx').checked; }
+    $('modeViaje').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); };
     $('modeComp').onclick = () => {
-        $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
+        readModeOpts(); $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
         setTimeout(() => { $('teamInput').focus(); $('teamInput').select(); }, 60);
     };
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; $('teamModal').hidden = true; startNav(true); };
@@ -55,9 +61,13 @@
     function startNav(comp) {
         competition = comp; mode = 'nav'; window.RB_BUSY = true; // don't auto-refresh mid-run
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
-        $('autoBtn').hidden = !comp; $('finishBtn').hidden = !comp;
+        $('finishBtn').hidden = !comp;
+        $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off');
+        $('autoBtn').classList.toggle('btn-primary', auto);
         $('validateBtn').innerHTML = comp ? '<i class="fa-solid fa-circle-check"></i> Validate' : '<i class="fa-solid fa-circle-check"></i> Note done';
+        $('navGpx').hidden = !optGpx;
         renderNotes(); startGps();
+        if (optGpx) beginGpxRec(); // start logging immediately if requested at setup
         setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2) + ':' + pad(now.getSeconds(), 2); }, 1000);
     }
     function startTrip() {
@@ -92,14 +102,12 @@
         else if (lastSpeedPos && lastSpeedT) { const dt = (tnow - lastSpeedT) / 1000; if (dt > 0) speedKmh = RB.geo.haversineM(lastSpeedPos, here) / dt * 3.6; }
         lastSpeedPos = here; lastSpeedT = tnow;
         if (c.heading != null && isFinite(c.heading)) { tmCap = c.heading; }
-        if (mode === 'trip') {
-            if (speedKmh > tmMax) tmMax = speedKmh;
-            if (tripRecOn && (c.accuracy == null || c.accuracy <= 35) && (tnow - tripRecLastT >= tripRecFreq)) {
-                tripRecPts.push({ lat: here.lat, lon: here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null, t: tnow });
-                tripRecLastT = tnow; persistGpx(); // crash-safe: localStorage + live file write
-            }
-            renderTrip(); return;
+        // GPX logging — works in both Tripmaster and navigation
+        if (tripRecOn && (c.accuracy == null || c.accuracy <= 35) && (tnow - tripRecLastT >= tripRecFreq)) {
+            tripRecPts.push({ lat: here.lat, lon: here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null, t: tnow });
+            tripRecLastT = tnow; persistGpx(); // crash-safe: localStorage + live file write
         }
+        if (mode === 'trip') { if (speedKmh > tmMax) tmMax = speedKmh; renderTrip(); return; }
 
         // --- modo navegación ---
         tmTotal = tripTotalM; tmPartial = tripPartialM;
@@ -111,7 +119,10 @@
             // P_extra: armado al entrar en 100 m; si te alejas, acumula el sobrepaso
             if (dist <= C.MANUAL_RADIUS_M) armed = true;
             else if (armed) extraAccum += disp;
-            if (competition && auto && dist <= C.AUTO_RADIUS_M) validateAt(activeIdx, here);
+            const wasApproaching = approaching;
+            approaching = auto && dist <= WARN_M; // orange warning band
+            if (auto && dist <= AUTO_REACH_M) validateAt(activeIdx, here); // auto-mark within 50 m
+            else if (approaching !== wasApproaching) renderNotes();
         }
         // top odometer bar
         $('odoTotal').textContent = (tripTotalM / 1000).toFixed(2);
@@ -126,15 +137,38 @@
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Canonical roadbook layout (shared with the challenge page via NoteCanvas.rowCols):
     // green = validated · yellow = active (centred) · white = upcoming.
+    const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     function renderNotes() {
         $('noteList').innerHTML = notes.map((n, i) => {
-            const cls = 'noterow' + (i === activeIdx ? ' active' : '') + (i < activeIdx ? ' done' : '');
-            return `<div class="${cls}" data-i="${i}">${NoteCanvas.rowCols(n, iconSrc, true)}</div>`;
+            const st = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'up';
+            const warn = (auto && i === activeIdx && approaching) ? ' warn' : '';
+            const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
+            const hasVig = (n.icons && n.icons.length) || (n.junctions && n.junctions.length);
+            const cap = n.cap != null ? `<div class="ncap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
+            const reach = (!auto && i >= activeIdx) ? `<button class="nbtn reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const mapb = showMap ? `<button class="nbtn" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            return `<div class="nrow ${st}${warn}" data-i="${i}">
+                <div class="c-dist${close}"><div class="tot">${fkm(n.distance)}</div><div class="par">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
+                <div class="c-vig">${hasVig ? NoteCanvas.toSVG(n, iconSrc) : ''}</div>
+                <div class="c-txt"><div class="t">${esc(n.text || '')}</div>${cap}<div class="co">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
+                <div class="c-btn">${reach}${mapb}</div>
+            </div><div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');
-        $('noteList').querySelectorAll('.noterow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
-        const act = $('noteList').querySelector('.noterow.active');
+        $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
+        $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
+        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
+        const act = $('noteList').querySelector('.nrow.active');
         if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' });
         updateCapBar();
+    }
+    function toggleNoteMap(i) {
+        const el = $('nmap' + i); if (!el) return;
+        if (!el.hidden) { el.hidden = true; el.innerHTML = ''; return; }
+        const n = notes[i], tok = (window.RB_CONFIG || {}).mapboxToken;
+        if (!tok) return toast('Map not configured.');
+        const ll = (+n.lon).toFixed(5) + ',' + (+n.lat).toFixed(5);
+        el.innerHTML = `<img alt="map" loading="lazy" src="https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/pin-s+ff2a2a(${ll})/${ll},15,0/440x220@2x?access_token=${tok}">`;
+        el.hidden = false;
     }
     // Bottom CAP bar: heading to hold (prev note's CAP) · speed · live distance to
     // destination · direction arrow. Appears only while a CAP is active.
@@ -150,6 +184,13 @@
             const rel = ((prev.cap - (tmCap != null ? tmCap : 0)) + 360) % 360;
             $('capArrow').style.transform = `rotate(${rel - 45}deg)`;
         }
+    }
+    // "Note reached" button: advance sequentially and mark green (both modes).
+    function markReached(i) {
+        if (competition) { tapNote(i); return; } // scored validation
+        tripPartialM = 0; approaching = false;
+        if (notes[i].distance != null) tripTotalM = notes[i].distance;
+        activeIdx = i + 1; renderNotes();
     }
     function tapNote(i) {
         if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Viaje: navegación libre, sin puntuar
@@ -172,14 +213,18 @@
         pen.extra += extraAccum; extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
         if (lim != null) { if (curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
-        tripPartialM = 0; activeIdx = i + 1; renderNotes();
+        tripPartialM = 0; approaching = false;
+        if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
+        activeIdx = i + 1; renderNotes();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
     $('validateBtn').onclick = () => {
         if (competition) { if (activeIdx < notes.length) tapNote(activeIdx); }
-        else if (activeIdx < notes.length - 1) { activeIdx++; tripPartialM = 0; renderNotes(); }
+        else if (activeIdx < notes.length) markReached(activeIdx);
     };
-    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off'); $('autoBtn').classList.toggle('btn-primary', auto); };
+    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off'); $('autoBtn').classList.toggle('btn-primary', auto); approaching = false; renderNotes(); };
+    $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) location.reload(); };
+    $('navGpx').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
 
     /* ---------- fin → META firmado + QR ---------- */
     $('finishBtn').onclick = finish;
@@ -324,12 +369,14 @@
         tripRecOn = true; tripRecPts = []; tripRecLastT = 0;
         $('tmRecBtn').classList.add('btn-primary');
         $('tmRecBtn').querySelector('span').textContent = t('Recording…');
+        $('navGpx').classList.add('btn-primary');
         toast('Recording GPX track.');
     }
     function stopGpxRec() {
         tripRecOn = false;
         $('tmRecBtn').classList.remove('btn-primary');
         $('tmRecBtn').querySelector('span').textContent = t('Record GPX');
+        $('navGpx').classList.remove('btn-primary');
         writeHandle(); // final flush to the live file
         const pts = tripRecPts.slice(), name = tripRecName, saved = !!tripRecHandle;
         tripRecHandle = null;

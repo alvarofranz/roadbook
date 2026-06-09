@@ -35,6 +35,36 @@
         .hold-lbl { position: relative; z-index: 1; }
         body.trip-on header.topbar, body.trip-on footer.foot { display: none !important; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
+        /* roadbook navigation rows — white "paper", fixed | fixed | dynamic | buttons */
+        #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
+        .nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; }
+        .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
+        .nrow .c-dist { display: flex; flex-direction: column; gap: .1rem; }
+        .nrow .c-dist .tot { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+        .nrow .c-dist .par { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
+        .nrow .c-dist .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
+        .nrow .c-dist.close { background: #bfe3ff; } /* azzurro: < 50 m to the next note */
+        .nrow .c-vig { display: flex; align-items: center; justify-content: center; padding: .3rem; }
+        .nrow .c-vig svg { width: 100%; height: 100%; max-height: 122px; }
+        .nrow .c-txt { display: flex; flex-direction: column; font-size: .92rem; }
+        .nrow .c-txt .t { flex: 1; word-break: break-word; }
+        .nrow .c-txt .ncap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
+        .nrow .c-txt .co { color: #999; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
+        .nrow .c-btn { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
+        .nrow .c-btn .nbtn { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
+        .nrow .c-btn .nbtn.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
+        .nrow.done { background: #d6f5e0; }  /* verdino: reached */
+        .nrow.up { background: #ffe1ec; }    /* rosa: not reached yet */
+        .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
+        .nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching (auto, ≤30 m) */
+        .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
+        .nmap img { width: 100%; display: block; border-radius: 6px; }
+        .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
+        .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        .seg-b { flex: 1; background: var(--card-2); color: var(--muted); border: 0; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
+        .seg-b.on { background: var(--sand); color: #14100a; }
+        .chk { display: flex; align-items: center; gap: .5rem; font-size: .9rem; cursor: pointer; }
+        .chk input { width: 18px; height: 18px; accent-color: var(--sand); }
     </style>
 </head>
 <body>
@@ -73,8 +103,10 @@
         <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
     </div>
     <nav class="fabrow">
+        <button class="btn btn-ghost" id="navLoad" title="Load roadbook"><i class="fa-solid fa-folder-open"></i></button>
         <button class="btn btn-ghost" id="autoBtn"><i class="fa-solid fa-robot"></i> Auto: off</button>
         <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
+        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
     </nav>
 </div>
@@ -122,7 +154,16 @@
 <div id="modeModal" class="modal" hidden>
     <div class="modal-card">
         <h2 style="margin-top:0" data-i18n="How will you use it?">How will you use it?</h2>
-        <div class="mode-grid">
+        <div class="opt-row">
+            <label class="muted small" data-i18n="Advancement">Advancement</label>
+            <div class="seg">
+                <button type="button" class="seg-b on" id="advAuto" data-i18n="Automatic (GPS)">Automatic (GPS)</button>
+                <button type="button" class="seg-b" id="advManual" data-i18n="Manual (tap)">Manual (tap)</button>
+            </div>
+            <label class="chk"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
+            <label class="chk"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
+        </div>
+        <div class="mode-grid" style="margin-top:1rem">
             <button class="mode-btn" id="modeViaje"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
             <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
         </div>
