@@ -32,8 +32,9 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
-  - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardStyle, onDismiss)`
-    (every dialog — returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal),
+  - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss)`
+    (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
+    returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal),
     `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), plus the global header/footer, version auto-refresh and install button.
@@ -42,8 +43,9 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
     QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (reader)
     / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (editor).
-  - **`app.css`**: shared design system — buttons (`.btn*`), `.modal`/`.modal-card`/`.modal-in`,
-    `.noterow`, etc. Don't inline styles that a class already covers.
+  - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
+    + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.icon-accent`/`.icon-danger`,
+    `.field-grid`, `.btn-group`, `.grow`, the note rows, etc.
 - **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `toast`, `msg`) stay
   local and short; alias the globals at the top (`const t = RBt, esc = RBesc;`). Anything two
   pages share becomes an `RB*` global — that's the naming convention (no lowercase/per-file copies).
@@ -85,32 +87,41 @@ clears caches, updates the SW, reloads. Gitignored assets (`public/assets/fontaw
 `public/assets/js/config.js`, `.env`, `vendor/`) live on the server and survive deploys.
 
 ## The tools (`public/<tool>/`)
-- **Editor** — the creation hub. Load from **GPX**, **`.rdbk`**, **Record route**
-  (live GPS: accuracy-aware sampling, pause/resume, autosave/recovery, smoothing,
-  altitude, geotagged photos via the camera, instant waypoints) or a public
+- **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
+  accuracy-aware sampling, pause/resume, autosave/recovery, smoothing, altitude,
+  geotagged photos via the camera, instant waypoints), **`.rdbk`** or a public
   **Challenge**. Edit notes (text, road type, CAP, icons), drag a note on the map to
   reposition, **splice** another GPX, **Adjust on the trail** (live re-record that
-  replaces a segment or the tail). Title/description, photo gallery, **Export `.rdbk`**
-  (self-contained) and **Save to profile** (public/private). Vignette editor in
+  replaces a segment or the tail). Title, description, author, organization, event logo
+  (downscaled, embedded) and a photo gallery; **Export `.rdbk`** (self-contained) and
+  **Save to profile** (public/private — saving pins `?rb=<id>` to the URL so re-saves
+  update the same roadbook; importing fresh content starts a new one). Vignette editor in
   `note-canvas.js` (drag/scale/rotate/flip icons + junction vectors).
-- **Reader** — the navigator (no map; the roadbook *is* the notes). Trip mode or
-  Competition mode (vehicle №, validation + penalties + HMAC-signed result QR).
-  Canonical 3-column layout (`NoteCanvas.rowCols`). No roadbook → Tripmaster (GPS
-  trip computer). Opens `.rdbk` from the OS on installed PWAs.
+- **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
+  `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
+  buttons), colour-coded by state (reached green · active red border · upcoming pink ·
+  <50 m to next blue · approaching orange) with an optional per-note Mapbox static
+  mini-map. The start modal sets Trip vs Competition mode, automatic (GPS, marks within
+  50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the per-note map
+  button and optional live GPX logging. Competition validates with penalties + an
+  HMAC-signed result QR; validating syncs the total odometer to the note's distance.
+  No roadbook → **Tripmaster** (GPS trip computer: speed alert with configurable bands,
+  hold-to-reset, GPX recording). Opens `.rdbk` from the OS on installed PWAs.
 - **Ranking** — scan/paste result QRs, verify the signature, build accuracy / CAP /
   speed / regularity rankings + a final score; per-row delete and CSV export.
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
-  `buildRoadbook`, `reduceTrack`, `recomputeMetrics`/`recomputeCaps`, speed-limit
-  helpers, `buildMeta`/`parseMeta` (49-char QR), `signMeta`/`verifyMeta` (HMAC-SHA256),
+  `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, speed-limit helpers,
+  `buildMeta`/`parseMeta` (49-char QR), `signMeta`/`verifyMeta` (HMAC-SHA256),
   `iconSrc`, `CONST`, `ROAD_TYPES`.
-- `note-canvas.js` — `NoteCanvas` (vignette editor) + `NoteCanvas.toSVG` / `.rowCols`
-  (static renders shared by Reader and the challenge page).
+- `note-canvas.js` — `NoteCanvas` (vignette editor) + two static renders: `NoteCanvas.toSVG`
+  (the vignette, used by the Reader rows) and `NoteCanvas.rowCols` (the 3-column row, used
+  by the challenge page).
 - `rbmap.js` (`RBMap`) — Mapbox GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker). Used by the **Editor only**.
-- `challenges.js` (`RBChallenges`) — public challenges (DB-backed): list/load/picker,
-  `publicFromUrl` (parses `/reader/<slug>`, `/editor/<slug>`, `?challenge=`).
+- `challenges.js` (`RBChallenges`) — public challenges (DB-backed): `listPublic`/`loadPublic`/
+  `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
 - `i18n.js`, `app.js` (global header/footer, SW + version auto-refresh, Install button,
   account control, styled modals), `config.js`, `qrcode.min.js`.
 
@@ -119,7 +130,9 @@ One self-contained UTF-8 JSON file (MIME `application/x-roadbook`). **All distan
 integer metres.** Spec page: `public/standard/index.html`.
 ```jsonc
 {
-  "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str },
+  "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str,
+             "author"?: str, "organization"?: str, "modified"?: str /* YYYY-MM-DD */,
+             "logo"?: str /* base64 data: URI, embedded like the icons */ },
   "track": [ { "lat": float, "lon": float, "ele"?: int } ],   // ordered polyline
   "notes": [ {
     "num": int, "idx": int,                                   // idx → index into track[]
