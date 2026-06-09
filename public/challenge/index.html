@@ -14,7 +14,8 @@
         #chWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
         .ch-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
         .ch-head h1 { margin: 0; font-size: 1.8rem; }
-        .ch-owner { display: flex; gap: .6rem; align-items: center; }
+        .ch-owner { display: flex; gap: .6rem; align-items: center; margin-top: .5rem; }
+        #chLoading { padding: 2rem 0; }
         .avatar-sm { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); background: var(--card-2); }
         .ch-actions { display: flex; gap: .5rem; }
         .ch-desc { color: #c7ccd6; line-height: 1.6; }
@@ -27,12 +28,12 @@
 <header class="topbar"></header>
 
 <main class="wrap" id="chWrap">
-    <p id="chLoading" class="muted" style="padding:2rem 0">Loading…</p>
+    <p id="chLoading" class="muted">Loading…</p>
     <article id="chContent" hidden>
         <div class="ch-head">
             <div>
                 <h1 id="chTitle"></h1>
-                <div class="ch-owner" style="margin-top:.5rem">
+                <div class="ch-owner">
                     <img id="chAvatar" class="avatar-sm" alt="">
                     <div><b id="chOwner"></b><div class="muted small" id="chMeta"></div></div>
                 </div>

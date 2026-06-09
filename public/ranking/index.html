@@ -19,6 +19,12 @@
         table.rank .fs { font-weight: 800; color: var(--sand); }
         #video { width: 100%; max-height: 320px; border-radius: 12px; background: #000; display: block; }
         .cfg input { width: 80px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .4rem; }
+        #manualMeta { flex: 1; min-width: 200px; width: auto; padding: .6rem; }
+        .cfg { margin-top: .8rem; align-items: center; }
+        #msg { margin-top: .5rem; }
+        .rank-results { margin-top: 1rem; }
+        .card-head h2 { margin: 0; }
+        .table-scroll { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -29,20 +35,20 @@
         <h2>Add result</h2>
         <div class="dl">
             <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> Scan QR</button>
-            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here" style="flex:1;min-width:200px;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:.6rem">
+            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here">
             <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
         <video id="video" hidden playsinline></video>
-        <div class="cfg dl" style="margin-top:.8rem;align-items:center">
+        <div class="cfg dl">
             <label class="muted small">Target average speed <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
             <span class="muted small">(used for regularity if the QR doesn't carry it)</span>
         </div>
-        <div id="msg" class="muted small" style="margin-top:.5rem"></div>
+        <div id="msg" class="muted small"></div>
     </section>
 
-    <section class="panel" style="margin-top:1rem">
-        <div class="card-head"><h2 style="margin:0" data-i18n="Overall ranking">Overall ranking</h2><div style="display:flex;gap:.5rem"><button class="btn btn-ghost" id="exportCsv" data-i18n="CSV"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
-        <div style="overflow-x:auto"><table class="rank" id="table"></table></div>
+    <section class="panel rank-results">
+        <div class="card-head"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv" data-i18n="CSV"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
+        <div class="table-scroll"><table class="rank" id="table"></table></div>
         <p class="muted small" id="empty">No results yet. Scan or paste a QR.</p>
     </section>
 </main>

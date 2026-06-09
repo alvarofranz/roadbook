@@ -14,7 +14,19 @@
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row label { color: var(--muted); font-size: .82rem; min-width: 90px; }
-        .ed-row select, .ed-row input[type=text] { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
+        .ed-row select, .ed-row input[type=text], .ed-row textarea { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
+        .ed-row.top { align-items: flex-start; }
+        .ed-row.between { justify-content: space-between; }
+        #loadFrom .icat { margin-top: 0; }
+        .icat.flush { margin: 0; }
+        .notecount { text-transform: none; letter-spacing: 0; }
+        .note-list { display: flex; flex-direction: column; gap: .4rem; }
+        .rec-btns .btn-danger { flex: 0 0 auto; }
+        .map-box { padding: 0; overflow: hidden; border-radius: 14px; }
+        #noteMap { height: 46vh; min-height: 300px; margin-top: .5rem; }
+        #canvasWrap { position: relative; max-width: 560px; margin: .4rem auto 0; }
+        .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
+        .adv p { margin: .5rem 0; }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
         .icon-grid button { position: relative; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
@@ -87,7 +99,7 @@
     <!-- VIEW A: map + notes -->
     <section id="viewMap">
         <div id="loadFrom">
-            <div class="icat" style="margin-top:0" data-i18n="Load from">Load from</div>
+            <div class="icat" data-i18n="Load from">Load from</div>
             <div class="load-opts">
                 <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track → roadbook">Import a GPS track → roadbook</small></button>
                 <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
@@ -101,12 +113,12 @@
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i></button>
                 <button class="btn btn-ghost" id="recWaypoint" data-i18n="Waypoint"><i class="fa-solid fa-location-dot"></i> Waypoint</button>
-                <button class="btn btn-danger" id="recDiscard" hidden title="Discard recording" style="flex:0 0 auto"><i class="fa-solid fa-trash-can"></i></button>
+                <button class="btn btn-danger" id="recDiscard" hidden title="Discard recording"><i class="fa-solid fa-trash-can"></i></button>
                 <button class="btn btn-primary" id="recStop" data-i18n="Finish"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
             </div>
         </div>
         <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
-        <div id="edMap" class="panel map-panel" style="padding:0;overflow:hidden;border-radius:14px"></div>
+        <div id="edMap" class="panel map-box"></div>
         <div id="rbPanel" hidden>
             <div class="rb-actions">
                 <button class="btn btn-primary" id="save" data-i18n="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> Export .rdbk</button>
@@ -118,28 +130,28 @@
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
             </div>
-            <div class="ed-row" style="margin-top:.5rem"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
-            <div class="ed-row" style="margin-top:.8rem"><label>Title</label><input type="text" id="rbTitle" class="fld" style="flex:1" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
-            <div class="ed-row" style="align-items:flex-start"><label>Description</label><textarea id="rbDesc" class="fld" rows="2" style="flex:1" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
-            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="fld" style="flex:1" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
-            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="fld" style="flex:1" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
+            <div class="ed-row"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
+            <div class="ed-row"><label>Title</label><input type="text" id="rbTitle" class="fld" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
+            <div class="ed-row top"><label>Description</label><textarea id="rbDesc" class="fld" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
+            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="fld" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
+            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="fld" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
             <div class="ed-row"><label data-i18n="Event logo">Event logo</label>
-                <img id="rbLogoPrev" alt="" style="width:46px;height:46px;object-fit:contain;border-radius:8px;background:var(--card-2);display:none">
+                <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
                 <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
                 <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo"><i class="fa-solid fa-xmark"></i></button>
                 <input id="rbLogoFile" type="file" accept="image/*" hidden>
             </div>
             <div class="ed-row"><label data-i18n="Last modified">Last modified</label><span id="rbModified" class="muted small">—</span></div>
             <div id="photosSection" hidden>
-                <div class="ed-row" style="justify-content:space-between;margin:.6rem 0 .3rem"><div class="icat" style="margin:0" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
+                <div class="ed-row between"><div class="icat flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
                 <input id="photoFile" type="file" accept="image/*" multiple hidden>
                 <div id="photoGrid" class="icon-grid"></div>
             </div>
-            <div class="icat" style="margin:.8rem 0 .3rem">Notes <span class="muted small" id="noteCount" style="text-transform:none;letter-spacing:0"></span></div>
-            <div id="noteList" style="display:flex;flex-direction:column;gap:.4rem"></div>
+            <div class="icat">Notes <span class="muted small notecount" id="noteCount"></span></div>
+            <div id="noteList" class="note-list"></div>
         <details class="adv">
             <summary data-i18n="Advanced: splice another GPX track"><i class="fa-solid fa-wand-magic-sparkles"></i> Advanced: splice another GPX track</summary>
-            <p class="muted small" style="margin:.5rem 0">Change part of the route without redoing it: <b>Detour</b> replaces the segment between two notes (e.g. a closed track) with another track; <b>Extension</b> lengthens the end. Km, bearings and CAP are recomputed automatically.</p>
+            <p class="muted small">Change part of the route without redoing it: <b>Detour</b> replaces the segment between two notes (e.g. a closed track) with another track; <b>Extension</b> lengthens the end. Km, bearings and CAP are recomputed automatically.</p>
             <div class="ed-row"><label data-i18n="Operation">Operation</label>
                 <select id="spliceOp"><option value="dev">Detour (replace a segment)</option><option value="ext">Extension (lengthen the end)</option></select>
             </div>
@@ -158,10 +170,10 @@
 
     <!-- VIEW B: note editor (props → vignette → icons) -->
     <section id="viewNote" hidden>
-        <div class="ed-row" style="justify-content:space-between;align-items:center;margin:0 0 .8rem">
+        <div class="ed-row between">
             <button class="btn btn-ghost" id="backToMap" data-i18n="Map &amp; notes"><i class="fa-solid fa-arrow-left"></i> Map &amp; notes</button>
             <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
-            <div style="display:flex;gap:.4rem">
+            <div class="btn-group">
                 <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
                 <button class="btn btn-ghost" id="nextNote" aria-label="Next note"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
@@ -172,13 +184,13 @@
             <button id="tabBtnMap" class="vn-tab" data-i18n="Map"><i class="fa-solid fa-location-dot"></i> Map</button>
         </div>
         <div id="tabVignette">
-            <div id="canvasWrap" style="position:relative;max-width:560px;margin:.4rem auto 0">
+            <div id="canvasWrap">
                 <div id="noteCanvas"></div>
                 <button class="vig-addj" id="addBivio" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
             </div>
             <div id="noteToolbar"></div>
-            <div class="ed-row" style="margin:1rem 0 .4rem;justify-content:space-between">
-                <div class="icat" style="margin:0" data-i18n="Icons">Icons</div>
+            <div class="ed-row between">
+                <div class="icat flush" data-i18n="Icons">Icons</div>
                 <button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button>
             </div>
             <input id="iconFile" type="file" accept="image/*" multiple hidden>
@@ -186,7 +198,7 @@
             <div id="iconGrid" class="icon-grid"></div>
         </div>
         <div id="tabMap" hidden>
-            <div id="noteMap" class="panel map-panel" style="padding:0;overflow:hidden;border-radius:14px;height:46vh;min-height:300px;margin-top:.5rem"></div>
+            <div id="noteMap" class="panel map-box"></div>
             <p class="muted small" data-i18n="Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.">Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.</p>
         </div>
     </section>

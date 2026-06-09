@@ -20,11 +20,15 @@
         .odo .v { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
         .odo .v.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
         .odo .clk { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-        #noteList { padding-bottom: 8rem; }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transition: transform .35s ease; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
+        .trip-main { max-width: 560px; padding-top: 1rem; }
+        .mode-grid { margin-top: 1rem; }
+        .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
+        .qr-stats { text-align: left; }
+        .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
         /* tripmaster */
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         .mini-btn { cursor: pointer; font: inherit; }
@@ -114,7 +118,7 @@
 
 <!-- Tripmaster mode (no roadbook) -->
 <div id="tripScreen" hidden>
-    <main class="wrap" style="max-width:560px;padding-top:1rem">
+    <main class="wrap trip-main">
         <div class="dash">
             <div class="readout primary">
                 <div class="lbl" data-i18n="Total">Total</div>
@@ -145,7 +149,7 @@
                 <button class="btn btn-ghost" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
             </div>
             <div class="btnrow">
-                <button class="btn btn-danger" id="tmExit" style="flex:1"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Exit">Exit</span></button>
+                <button class="btn btn-danger grow" id="tmExit"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Exit">Exit</span></button>
             </div>
         </div>
     </main>
@@ -154,7 +158,7 @@
 <!-- usage mode -->
 <div id="modeModal" class="modal" hidden>
     <div class="modal-card">
-        <h2 style="margin-top:0" data-i18n="How will you use it?">How will you use it?</h2>
+        <h2 data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
             <label class="muted small" data-i18n="Advancement">Advancement</label>
             <div class="seg">
@@ -164,7 +168,7 @@
             <label class="chk"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="chk"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
         </div>
-        <div class="mode-grid" style="margin-top:1rem">
+        <div class="mode-grid">
             <button class="mode-btn" id="modeViaje"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
             <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
         </div>
@@ -174,10 +178,10 @@
 <!-- vehicle number -->
 <div id="teamModal" class="modal" hidden>
     <div class="modal-card">
-        <h2 style="margin-top:0" data-i18n="Vehicle number"><i class="fa-solid fa-car-side" style="color:var(--sand)"></i> Vehicle number</h2>
+        <h2 data-i18n="Vehicle number"><i class="fa-solid fa-car-side icon-accent"></i> Vehicle number</h2>
         <p class="muted small" data-i18n="Identify your team for the ranking.">Identify your team for the ranking.</p>
         <input id="teamInput" type="number" min="1" max="999" value="1" inputmode="numeric">
-        <div class="btnrow" style="margin-top:1.1rem">
+        <div class="btnrow spaced">
             <button class="btn btn-ghost" id="teamCancel" data-i18n="Cancel">Cancel</button>
             <button class="btn btn-primary" id="teamOk" data-i18n="Start"><i class="fa-solid fa-play"></i> Start</button>
         </div>
@@ -186,11 +190,11 @@
 
 <!-- final QR -->
 <div id="qrModal" class="modal" hidden>
-    <div class="modal-card" style="max-width:420px">
-        <h2 style="margin-top:0" data-i18n="Result">Result</h2>
-        <div id="qrImg" style="display:flex;justify-content:center;margin:.5rem 0"></div>
-        <div id="qrStats" class="muted small" style="text-align:left"></div>
-        <code id="qrMeta" style="display:block;word-break:break-all;background:var(--card-2);padding:.5rem;border-radius:8px;margin:.6rem 0;font-size:.72rem"></code>
+    <div class="modal-card">
+        <h2 data-i18n="Result">Result</h2>
+        <div id="qrImg" class="qr-box"></div>
+        <div id="qrStats" class="muted small qr-stats"></div>
+        <code id="qrMeta" class="qr-code-text"></code>
         <div class="btnrow">
             <button class="btn btn-ghost" id="qrClose" data-i18n="Close">Close</button>
             <button class="btn btn-ghost" id="qrShare" data-i18n="Share"><i class="fa-solid fa-share-nodes"></i> Share</button>

@@ -7,7 +7,7 @@ window.RBMap = class RBMap {
         this.ready = false; this._pending = null; this._onWpt = null;
         const cont = document.getElementById(containerId);
         if (!window.mapboxgl || !window.RB_CONFIG || !RB_CONFIG.mapboxToken) {
-            if (cont) cont.innerHTML = '<div style="padding:1rem;color:#93a0b4">Map unavailable (Mapbox token).</div>';
+            if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (Mapbox token).</div>';
             return;
         }
         mapboxgl.accessToken = RB_CONFIG.mapboxToken;
