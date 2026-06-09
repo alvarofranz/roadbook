@@ -1,0 +1,36 @@
+name: Deploy
+
+# Deploys on every push to main (direct commit or merged pull request).
+# Reuses the same production deploy hook the rest of the site uses — a single
+# authenticated POST. The endpoint URL and key live in repository secrets, so
+# nothing about the server is committed to this public repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production   # gate the secret behind environment protection rules
+    steps:
+      - name: Trigger production deploy
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_URL" ] || [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::Set the DEPLOY_URL and DEPLOY_KEY repository secrets (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          resp=$(curl -fsS --max-time 120 -X POST \
+            -H "X-Admin-Key: $DEPLOY_KEY" \
+            -H "Accept: application/json" \
+            "$DEPLOY_URL")
+          echo "$resp"
+          echo "$resp" | grep -qE '"ok"[[:space:]]*:[[:space:]]*true' || { echo "::error::Deploy reported failure"; exit 1; }

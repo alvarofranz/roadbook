@@ -37,11 +37,14 @@ cd public && python3 -m http.server 8000   # → http://localhost:8000/
 (copy `.env.example`); migrations live in `migrations/`.
 
 ## Releasing
-`git push origin main`, then run the production deploy hook (handled outside this
-repo). **Bump `public/version.json` on every release** — the app polls it and force-
-refreshes every open client (PWA or browser): clears caches, updates the SW, reloads.
-Gitignored assets (`public/assets/fontawesome/`, `public/assets/js/config.js`,
-`.env`, `vendor/`) live on the server and survive deploys.
+Pushing to `main` (a direct commit or a merged pull request) triggers the **Deploy**
+GitHub Action (`.github/workflows/deploy.yml`), which calls the production deploy hook —
+a single authenticated POST. It needs two repository secrets: `DEPLOY_URL` and
+`DEPLOY_KEY` (Settings → Secrets and variables → Actions). You can also run it manually
+from the Actions tab (`workflow_dispatch`). **Bump `public/version.json` on every
+release** — the app polls it and force-refreshes every open client (PWA or browser):
+clears caches, updates the SW, reloads. Gitignored assets (`public/assets/fontawesome/`,
+`public/assets/js/config.js`, `.env`, `vendor/`) live on the server and survive deploys.
 
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **`.rdbk`**, **Record route**
