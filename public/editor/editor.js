@@ -1,8 +1,8 @@
 'use strict';
-/* Roadbook Editor — el HUB de creación/edición. Importa GPX (→ roadbook), carga
- * roadbook .json o un Challenge, edita notas (texto, tipo de pista, CAP, iconos),
- * añade/borra waypoints, empalma GPX (desvío/prolongación) y guarda un roadbook
- * AUTOCONTENIDO (iconos embebidos en icons → un único .json portable). */
+/* Roadbook Editor — the creation/editing hub. Imports GPX (→ roadbook), loads
+ * an .rdbk file or a Challenge, edits notes (text, road type, CAP, icons),
+ * adds/deletes waypoints, splices GPX (detour/extension) and exports a
+ * SELF-CONTAINED roadbook (icons embedded → a single portable .rdbk file). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
@@ -16,10 +16,10 @@
         if (currentRbId && !dirty) { b.innerHTML = '<i class="fa-solid fa-circle-check"></i> Saved'; b.classList.remove('btn-primary'); }
         else { b.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save'; b.classList.add('btn-primary'); }
     }
-    const mkIcon = (name, pos) => ({ file: 'icons/' + name, name, pos, angle: 0, size: 32, flip_x: false });
+    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
-    $('addBivio').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addBivio(); };
+    $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
     map.onWaypoint((i) => select(i));
     if (map.map) map.map.on('click', (e) => {
@@ -28,10 +28,10 @@
         addWaypointNear({ lat: e.lngLat.lat, lon: e.lngLat.lng });
     });
 
-    /* ---------- carga ---------- */
+    /* ---------- loading ---------- */
     $('loadGpx').onclick = () => $('gpxFile').click();
     $('loadJson').onclick = () => $('jsonFile').click();
-    $('demos').onclick = () => window.RBChallenges && RBChallenges.pick((r) => setRoadbook(r));
+    $('demos').onclick = () => RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); // forking a challenge starts a NEW roadbook
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files);
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -93,7 +93,7 @@
     const REC_KEY = 'rb_recording';
     const saveRec = () => { try { if (recMode === 'new') localStorage.setItem(REC_KEY, JSON.stringify({ track: recTrack, wpts: recWpts })); } catch (e) {} };
     const clearRec = () => { try { localStorage.removeItem(REC_KEY); } catch (e) {} };
-    // Light 3-point moving average — limes micro-zigzag from weak-signal fixes.
+    // Light 3-point moving average — trims micro-zigzag from weak-signal fixes.
     function smoothTrack(pts) {
         if (pts.length < 5) return pts;
         const out = pts.map((p) => ({ ...p }));
@@ -328,7 +328,7 @@
         if (id && meUser) { const r = await apiPost({ action: 'rb_get', id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
     })();
 
-    /* ---------- notas + selección ---------- */
+    /* ---------- notes + selection ---------- */
     function renderNotes() {
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}</span>
@@ -343,7 +343,7 @@
     }
     function fillSplice() {
         if (!rb) return;
-        const opt = (n) => `<option value="${n.num}">Note ${n.num}${n.text ? ' · ' + n.text.slice(0, 18) : ''}</option>`;
+        const opt = (n) => `<option value="${n.num}">Note ${n.num}${n.text ? ' · ' + esc(n.text.slice(0, 18)) : ''}</option>`;
         const a = $('spliceA'), b = $('spliceB');
         if (a) a.innerHTML = rb.notes.map(opt).join('');
         if (b) { b.innerHTML = rb.notes.map(opt).join(''); b.value = rb.notes[rb.notes.length - 1].num; }
@@ -366,7 +366,7 @@
         if (onMap) openNoteMap();
     }
     function openNoteMap() {
-        if (!window.RBMap || !rb) return;
+        if (!rb) return;
         if (!noteMap) {
             noteMap = new RBMap('noteMap', { zoom: 14 });
             // tapping another note on the map switches the one being edited, staying on the map
@@ -392,7 +392,7 @@
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${l}</option>`).join('');
         $('editor').innerHTML = `
             <div class="ed-row"><label>Note ${n.num}</label><span class="muted small">${((n.distance ?? 0) / 1000).toFixed(2)} km · trip +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span></div>
-            <div class="ed-row"><label>Text</label><input type="text" id="edText" value="${(n.text || '').replace(/"/g, '&quot;')}" placeholder="Description"></div>
+            <div class="ed-row"><label>Text</label><input type="text" id="edText" value="${esc(n.text || '')}" placeholder="Description"></div>
             <div class="ed-row"><label>Road in</label><select id="edRin">${opts(n.road_type_in)}</select></div>
             <div class="ed-row"><label>Road out</label><select id="edRout">${opts(n.road_type_out)}</select></div>
             <div class="ed-row"><label>Red CAP</label><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></div>`;
@@ -422,7 +422,7 @@
         toast('Waypoint added.');
     }
 
-    /* ---------- iconos (paleta estándar + tuyos, embebidos en el roadbook) ---------- */
+    /* ---------- icons (standard palette + yours, embedded in the roadbook) ---------- */
     async function loadStd() { if (std) return std; try { std = await (await fetch('../assets/icons/index.json')).json(); } catch (e) { std = { categories: {} }; } return std; }
     async function renderIcons() {
         await loadStd();
@@ -464,8 +464,8 @@
     const safeName = (n) => n.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileToDataURL = (f) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
 
-    /* ---------- empalme (desvío / prolongación) ---------- */
-    $('spliceOp').onchange = () => { $('spliceDev').style.display = $('spliceOp').value === 'dev' ? '' : 'none'; };
+    /* ---------- splicing (detour / extension) ---------- */
+    $('spliceOp').onchange = () => { $('spliceDev').hidden = $('spliceOp').value !== 'dev'; };
     $('spliceGpx').onclick = () => $('spliceFile').click();
     $('spliceFile').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { spliceTrk = RB.parseGPX(await f.text()).trkpts; $('spliceInfo').textContent = spliceTrk.length + ' pts'; } catch (err) { toast('GPX: ' + err.message); } };
     $('spliceApply').onclick = () => {
@@ -496,11 +496,11 @@
     const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
     $('save').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
-    // garantiza que TODOS los iconos usados estén embebidos (autocontenido) y poda los no usados
+    // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};
         const used = new Set();
-        r.notes.forEach((n) => (n.icons || []).forEach((ic) => used.add((ic.name || ic.file || '').split('/').pop())));
+        r.notes.forEach((n) => (n.icons || []).forEach((ic) => used.add((ic.name || '').split('/').pop())));
         for (const base of used) {
             if (!base) continue;
             if (Object.keys(r.icons).some((k) => k.toLowerCase() === base.toLowerCase())) continue;
@@ -512,7 +512,6 @@
     function download(obj, name) { RBDownload(new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }), name); }
 
     /* ---------- utils ---------- */
-    const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     let toastT = null;
     function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 

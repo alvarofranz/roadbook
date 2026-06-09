@@ -22,7 +22,7 @@
         const m = rb.meta || {};
         const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · ');
         if (credit) $('chMeta').textContent += ' · ' + credit;
-        if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.style.cssText = 'height:52px;width:auto;object-fit:contain;margin-bottom:.5rem'; $('chTitle').parentNode.insertBefore(img, $('chTitle')); }
+        if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.className = 'ch-logo'; $('chTitle').parentNode.insertBefore(img, $('chTitle')); }
         $('chNav').href = '/reader/' + encodeURIComponent(slug);
         if (j.is_owner) { const f = $('chFork'); f.href = '/editor/?rb=' + j.id; f.innerHTML = '<i class="fa-solid fa-pen"></i> Edit'; }
         else { $('chFork').href = '/editor/' + encodeURIComponent(slug); }

@@ -1,5 +1,5 @@
-/* RDBK.app — sistema de diseño compartido (todas las páginas lo usan).
-   Tema oscuro rally/desierto. Mobile-first. */
+/* RDBK.app — shared design system (every page uses it).
+   Dark rally/desert theme. Mobile-first. */
 :root {
     --bg: #0e1116;
     --bg-soft: #151a22;
@@ -8,10 +8,9 @@
     --line: rgba(255, 255, 255, .08);
     --text: #eef2f7;
     --muted: #93a0b4;
-    --sand: #e8b059;      /* acento principal (arena/duna) */
+    --sand: #e8b059;      /* primary accent (sand/dune) */
     --sand-2: #f2c879;
-    --rust: #d9663b;      /* acento secundario (tierra) */
-    --track: #ff5a45;     /* rojo traza, como el original */
+    --track: #ff5a45;     /* track red */
     --ok: #3ad29f;
     --info: #5aa9ff;
     --radius: 16px;
@@ -20,8 +19,8 @@
     color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-/* El atributo `hidden` debe ganar SIEMPRE a clases con display: (.soon-wrap,
-   .modal...). Sin esto, las pantallas/modales no se ocultan. */
+/* The `hidden` attribute must ALWAYS beat classes that set display (.center-screen,
+   .modal…). Without this, screens/modals would not hide. */
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
@@ -51,7 +50,6 @@ img { max-width: 100%; display: block; }
 .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 60px; }
 .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
-.brand b { color: var(--sand); }
 .topnav { display: flex; align-items: center; gap: .4rem; }
 .navtoggle { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); color: var(--text); border-radius: 10px; font-size: 1.05rem; cursor: pointer; }
 @media (max-width: 640px) {
@@ -98,60 +96,40 @@ section.block { padding: 2.4rem 0; }
 .section-head h2 { font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -.01em; margin: .2rem 0; }
 .section-head .kicker { color: var(--sand); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; }
 
-/* flow (cómo encaja todo) */
+/* features grid (home) */
 .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
 .flow .step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; text-align: center; position: relative; }
 .flow .step i { color: var(--sand); font-size: 1.5rem; }
 .flow .step h4 { margin: .5rem 0 .2rem; font-size: .98rem; }
 .flow .step p { margin: 0; font-size: .82rem; color: var(--muted); }
 
-/* tools grid */
-.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-.tool {
-    display: flex; flex-direction: column; background: linear-gradient(180deg, var(--card), var(--bg-soft));
-    border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow);
-    transition: transform .12s ease, border-color .15s ease;
-    text-decoration: none; color: inherit; cursor: pointer;
-}
-.tool:hover { transform: translateY(-3px); border-color: rgba(232, 176, 89, .4); text-decoration: none; }
+/* header controls */
 .install-btn { white-space: nowrap; order: 90; }
 @media (max-width: 560px) { .install-btn span { display: none; } }
-.acct-ctl { position: relative; order: 99; }
-.acct-ctl .btn, .acct-login { padding: .7rem 1.15rem; }
-.acct-btn span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acct-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
-.acct-menu a, .acct-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; }
-.acct-menu a:hover, .acct-menu button:hover { background: var(--card-2); text-decoration: none; }
-.tool .tool-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 13px; background: rgba(232, 176, 89, .12); color: var(--sand); font-size: 1.4rem; }
-.tool h3 { margin: .9rem 0 .25rem; font-size: 1.15rem; }
-.tool p { margin: 0 0 1rem; color: var(--muted); font-size: .92rem; flex: 1; }
-.tool .foot { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.account-control { position: relative; order: 99; }
+.account-control .btn, .account-login { padding: .7rem 1.15rem; }
+.account-button span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
+.account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; }
+.account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
 /* footer */
 .foot { border-top: 1px solid var(--line); margin-top: 2rem; padding: 2rem 0; color: var(--muted); font-size: .9rem; }
 .foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
 .foot a { color: var(--sand-2); }
 
-/* ---------- tool-page shell (subcarpetas) ---------- */
-.toolbar {
-    position: sticky; top: 0; z-index: 40; background: rgba(14, 17, 22, .82); backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--line);
-}
-.toolbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 56px; }
-.toolbar .title { font-weight: 800; display: inline-flex; align-items: center; gap: .5rem; }
-.toolbar .title i { color: var(--sand); }
-.soon-wrap { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 2rem 1rem; }
-.soon-card { max-width: 480px; }
-.soon-card .big { font-size: 3rem; color: var(--sand); }
-.soon-card h1 { margin: .6rem 0 .3rem; }
+/* ---------- centred single-card screen (Reader load screen) ---------- */
+.center-screen { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 2rem 1rem; }
+.center-card { max-width: 480px; }
+.center-card .big { font-size: 3rem; color: var(--sand); }
+.center-card h1 { margin: .6rem 0 .3rem; }
 
-/* ---------- tool pages (carga, mapa, listas) ---------- */
+/* ---------- tool pages ---------- */
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
 .action-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
-.notes { margin-top: 1rem; max-height: 360px; overflow: auto; display: flex; flex-direction: column; gap: .4rem; }
-.map-panel { padding: .5rem; }
-@media (max-width: 860px) { .map-panel { order: -1; } }
+/* small accent section heading (Editor panels, challenge page) */
+.icon-category { color: var(--sand); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .8rem 0 .3rem; }
 
 /* ---------- dashboard readouts (Tripmaster / Reader) ---------- */
 .dash { display: grid; gap: .8rem; padding-top: 1rem; }
@@ -176,8 +154,8 @@ section.block { padding: 2.4rem 0; }
 .gallery-card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
 .gallery-card:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
 .gallery-card .thumb { aspect-ratio: 16/10; width: 100%; object-fit: cover; background: var(--card-2); display: block; }
-.gallery-card .thumb-ph { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
-.demo-ph { width: 84px; height: 54px; border-radius: 8px; flex: 0 0 auto; background: var(--card); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.3rem; }
+.gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
+.challenge-row-placeholder { width: 84px; height: 54px; border-radius: 8px; flex: 0 0 auto; background: var(--card); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.3rem; }
 
 /* Canonical 3-column note row — shared by the Reader and the public challenge page. */
 .noterow { display: grid; grid-template-columns: 78px 1fr 118px; border-bottom: 1px solid var(--line); height: 200px; background: var(--card); transition: background .15s; }
@@ -198,14 +176,14 @@ section.block { padding: 2.4rem 0; }
 .gallery-card h3 { margin: 0 0 .2rem; font-size: 1.05rem; }
 .gallery-card .gallery-meta { color: var(--muted); font-size: .82rem; }
 .gallery-empty { color: var(--muted); }
-.demo-row { display: flex; gap: .8rem; align-items: center; width: 100%; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem; margin-bottom: .5rem; cursor: pointer; color: var(--text); }
-.demo-row:hover { border-color: var(--sand); }
-.demo-row img { width: 84px; height: 54px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; background: var(--card); }
-.demo-row span { display: flex; flex-direction: column; min-width: 0; }
-.demo-row b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.demo-row small { color: var(--muted); }
+.challenge-row { display: flex; gap: .8rem; align-items: center; width: 100%; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem; margin-bottom: .5rem; cursor: pointer; color: var(--text); }
+.challenge-row:hover { border-color: var(--sand); }
+.challenge-row img { width: 84px; height: 54px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; background: var(--card); }
+.challenge-row span { display: flex; flex-direction: column; min-width: 0; }
+.challenge-row b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.challenge-row small { color: var(--muted); }
 
-/* ---------- modales + toast (Reader/Editor/Ranking/Challenges) ---------- */
+/* ---------- modals + toast (Reader/Editor/Ranking/Challenges) ---------- */
 .modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
@@ -219,7 +197,7 @@ section.block { padding: 2.4rem 0; }
 .mode-btn b { font-size: 1.05rem; }
 .mode-btn small { color: var(--muted); }
 
-/* marca + hero a dos columnas + mockup */
+/* brand + two-column hero + mockup */
 .brand-logo { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; }
 .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2.5rem; align-items: center; }
 .hero-copy { text-align: left; }
@@ -236,7 +214,6 @@ section.block { padding: 2.4rem 0; }
 #appVersion { opacity: .6; }
 
 /* utils */
-.center { text-align: center; }
 .mt-2 { margin-top: 1.4rem; }
 @media (max-width: 720px) {
     .flow { grid-template-columns: repeat(2, 1fr); }

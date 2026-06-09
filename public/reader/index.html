@@ -33,7 +33,7 @@
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         .mini-button { cursor: pointer; font: inherit; }
         .mini-button:hover { border-color: var(--sand); }
-        #tmSpeed { transition: color .2s; }
+        #tmSpeed { transition: color .2s; color: var(--speed-band, var(--text)); }
         .hold-btn { position: relative; overflow: hidden; }
         .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
         .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
@@ -48,7 +48,7 @@
         .nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
         .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
         .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
-        .nrow .col-distance.close { background: #bfe3ff; } /* azzurro: < 50 m to the next note */
+        .nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
         .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
         .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
         .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
@@ -58,8 +58,8 @@
         .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
         .nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
         .nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
-        .nrow.done { background: #d6f5e0; }  /* verdino: reached */
-        .nrow.up { background: #ffe1ec; }    /* rosa: not reached yet */
+        .nrow.done { background: #d6f5e0; }  /* light green: reached */
+        .nrow.up { background: #ffe1ec; }    /* pink: not reached yet */
         .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
         .nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching (auto, ≤30 m) */
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
@@ -76,8 +76,8 @@
 <header class="topbar"></header>
 
 <!-- load -->
-<main id="loadScreen" class="wrap soon-wrap">
-    <div class="soon-card">
+<main id="loadScreen" class="wrap center-screen">
+    <div class="center-card">
         <div class="big"><i class="fa-solid fa-compass"></i></div>
         <h1 data-i18n="Reader">Reader</h1>
         <p class="muted" data-i18n-html="Load a roadbook and navigate with GPS, or use <b>Tripmaster mode</b> with no roadbook.">Load a roadbook and navigate with GPS, or use <b>Tripmaster mode</b> with no roadbook.</p>
@@ -169,7 +169,7 @@
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
         </div>
         <div class="mode-grid">
-            <button class="mode-btn" id="modeViaje"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
+            <button class="mode-btn" id="modeTrip"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
             <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
         </div>
     </div>

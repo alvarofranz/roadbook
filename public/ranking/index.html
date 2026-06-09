@@ -22,6 +22,8 @@
         #manualMeta { flex: 1; min-width: 200px; width: auto; padding: .6rem; }
         .config-row { margin-top: .8rem; align-items: center; }
         #msg { margin-top: .5rem; }
+        #msg.ok { color: var(--ok); }
+        #msg.err { color: var(--track); }
         .rank-results { margin-top: 1rem; }
         .card-head h2 { margin: 0; }
         .table-scroll { overflow-x: auto; }
@@ -47,7 +49,7 @@
     </section>
 
     <section class="panel rank-results">
-        <div class="card-head"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv" data-i18n="CSV"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
+        <div class="card-head"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
         <div class="table-scroll"><table class="rank" id="table"></table></div>
         <p class="muted small" id="empty">No results yet. Scan or paste a QR.</p>
     </section>

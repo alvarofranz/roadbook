@@ -1,7 +1,7 @@
 'use strict';
-/* RBMap — helper de mapa Mapbox reutilizable: pinta un roadbook (traza +
- * waypoints), permite seleccionar waypoints y resaltar el activo.
- * Usado por Insert&Add, Editor (y como base para previsualizaciones). */
+/* RBMap — Mapbox GL helper used by the Editor: draws a roadbook (track +
+ * waypoints), live recording, photo pins, a draggable edit marker, and lets
+ * you select waypoints and highlight the active one. */
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null;

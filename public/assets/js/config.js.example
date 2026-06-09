@@ -1,9 +1,9 @@
 /* Client config template.
    Copy this file to `config.js` (gitignored) and fill in your values. */
 window.RB_CONFIG = {
-    // Token Mapbox PÚBLICO (pk.*). Restríngelo por URL a rdbk.app en console.mapbox.com.
+    // PUBLIC Mapbox token (pk.*). Restrict it by URL to rdbk.app at console.mapbox.com.
     mapboxToken: 'pk.YOUR_PUBLIC_MAPBOX_TOKEN',
     mapStyle: 'mapbox://styles/mapbox/satellite-streets-v12',
-    // Clave para firmar los QR (integridad). Reader y Ranking deben usar la MISMA.
+    // Key used to sign result QRs (integrity). Reader and Ranking must use the SAME one.
     signKey: 'change-me',
 };

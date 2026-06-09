@@ -64,9 +64,10 @@ function rb_save(array $user, array $d): void {
         $row = $st->fetch();
         if (!$row) fail('Not found.', 404);
         $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
-        if (file_put_contents($dir . '/' . $row['filename'], json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
-        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, is_public = ?, slug = ? WHERE id = ?')
-            ->execute([$title, $dist, $nc, $isPublic, $slug, $id]);
+        $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
+        if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
+        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, is_public = ?, slug = ?, filename = ? WHERE id = ?')
+            ->execute([$title, $dist, $nc, $isPublic, $slug, $fn, $id]);
     } else {
         db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, is_public, filename) VALUES (?,?,?,?,?,?)')
             ->execute([$user['id'], $title, $dist, $nc, $isPublic, 'pending']);

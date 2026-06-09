@@ -1,10 +1,10 @@
-/* Shell común de la app (portada y herramientas). La raíz se deduce de la URL
-   de este script, así funciona igual en /roadbook/ y en sus subcarpetas.
-   - Service Worker (network-first) con auto-recarga al actualizar.
-   - Sistema de versión: si version.json cambia, refresca TODO (SW + cachés + app),
-     sea PWA o navegador.
-   - Botón Instalar en la cabecera (oculto si ya está instalada). En iPhone abre
-     un modal con las instrucciones de Safari. */
+/* Shared app shell (home page and every tool). The app root is derived from
+   this script's URL, so it works the same at the domain root and in subfolders.
+   - Service worker (network-first) with auto-reload on update.
+   - Version system: when version.json changes, refresh EVERYTHING (SW + caches
+     + app), installed PWA or plain browser alike.
+   - Install button in the header (hidden once installed). On iPhone it opens
+     a modal with the Safari instructions. */
 (function () {
     'use strict';
 
@@ -46,7 +46,7 @@
             </div>
             <div class="lang" role="group" aria-label="Language"><button data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="it">IT</button></div>
         </div>`;
-        if (!window.RBi18n) { const l = footer.querySelector('.lang'); if (l) l.style.display = 'none'; }
+        if (!window.RBi18n) { const l = footer.querySelector('.lang'); if (l) l.hidden = true; }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
@@ -69,7 +69,7 @@
             .catch((e) => console.warn('SW:', e));
     }
 
-    /* ---------------- Sistema de versión ---------------- */
+    /* ---------------- Version system ---------------- */
     let appVer = null, refreshing = false, pendingRefresh = false;
     async function checkVersion() {
         // Never reload in the middle of an active session (e.g. a competition run
@@ -79,13 +79,13 @@
             const v = (await (await fetch(ROOT + 'version.json', { cache: 'no-store' })).json()).version;
             if (!v) return;
             const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + v;
-            if (appVer == null) { appVer = v; return; }      // primera lectura: fija la referencia
+            if (appVer == null) { appVer = v; return; }      // first read: set the reference
             if (v !== appVer && !refreshing) {
                 appVer = v;
                 if (window.RB_BUSY) pendingRefresh = true;   // wait for the session to end
                 else { refreshing = true; await hardRefresh(); }
             }
-        } catch (e) { /* offline: reintenta luego */ }
+        } catch (e) { /* offline: retried on the next tick */ }
     }
     async function hardRefresh() {
         try { if (swReg) await swReg.update(); } catch (e) {}
@@ -96,7 +96,7 @@
     setInterval(checkVersion, 60000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 
-    /* ---------------- Instalar (PWA) + iOS ---------------- */
+    /* ---------------- Install (PWA) + iOS ---------------- */
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let deferred = null, installBtn = null;
@@ -127,29 +127,19 @@
         }
         if (isIOS()) showIosModal();
     }
-    // iOS Safari no emite beforeinstallprompt: si no está instalada, ofrece el botón.
+    // iOS Safari never fires beforeinstallprompt: offer the button when not installed.
     if (isIOS() && !isStandalone()) document.addEventListener('DOMContentLoaded', showInstall);
 
     function showIosModal() {
-        let m = document.getElementById('iosModal');
-        if (!m) {
-            m = document.createElement('div');
-            m.id = 'iosModal'; m.className = 'modal';
-            m.innerHTML = `<div class="modal-card">
-                <h2><i class="fa-solid fa-mobile-screen icon-accent"></i> Install on iPhone</h2>
-                <p class="muted small">From Safari, in 3 steps:</p>
-                <ol class="ios-steps">
-                    <li>Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.</li>
-                    <li>Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.</li>
-                    <li>Tap <b>Add</b>. Done!</li>
-                </ol>
-                <div class="btnrow"><button class="btn btn-primary" id="iosClose">Got it</button></div>
-            </div>`;
-            document.body.appendChild(m);
-            m.querySelector('#iosClose').onclick = () => { m.hidden = true; };
-            m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
-        }
-        m.hidden = false;
+        const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> Install on iPhone</h2>
+            <p class="muted small">From Safari, in 3 steps:</p>
+            <ol class="ios-steps">
+                <li>Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.</li>
+                <li>Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.</li>
+                <li>Tap <b>Add</b>. Done!</li>
+            </ol>
+            <div class="btnrow"><button class="btn btn-primary" data-ok>Got it</button></div>`);
+        d.q('[data-ok]').onclick = d.close;
     }
 
     /* ---------------- Client-side image downscaler ----------------
@@ -236,23 +226,23 @@
         try { user = (await (await fetch(ROOT + 'api/index.php?action=config', { credentials: 'same-origin' })).json()).user; } catch (e) {}
         const place = () => {
             const slot = document.querySelector('header .topnav') || document.querySelector('header .wrap');
-            if (!slot || slot.querySelector('.acct-ctl')) return;
-            const w = document.createElement('div'); w.className = 'acct-ctl';
+            if (!slot || slot.querySelector('.account-control')) return;
+            const w = document.createElement('div'); w.className = 'account-control';
             if (!user) {
-                w.innerHTML = `<a class="btn btn-ghost acct-login" href="${ROOT}account/" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
+                w.innerHTML = `<a class="btn btn-ghost account-login" href="${ROOT}account/" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
             } else {
-                w.innerHTML = `<button class="btn btn-ghost acct-btn"><i class="fa-solid fa-circle-user"></i> <span>${(user.username || '').replace(/[<>&]/g, '')}</span></button>
-                    <div class="acct-menu" hidden>
+                w.innerHTML = `<button class="btn btn-ghost account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
+                    <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> My account</a>
-                        <button id="acctLogout"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
                     </div>`;
             }
             slot.appendChild(w);
             if (user) {
-                const btn = w.querySelector('.acct-btn'), menu = w.querySelector('.acct-menu');
+                const btn = w.querySelector('.account-button'), menu = w.querySelector('.account-menu');
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
-                w.querySelector('#acctLogout').onclick = async () => {
+                w.querySelector('#accountLogout').onclick = async () => {
                     await fetch(ROOT + 'api/index.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) });
                     location.reload();
                 };

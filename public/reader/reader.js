@@ -1,7 +1,7 @@
 'use strict';
-/* RB Reader — navegador del copiloto. Con roadbook: nota activa centrada,
- * odómetro, CAP en vivo, validación manual/auto, motor de penalizaciones y QR
- * firmado. Sin roadbook: modo Tripmaster (cuentakilómetros GPS). */
+/* RDBK Reader — the co-pilot's navigator. With a roadbook: active note centred,
+ * odometer, live CAP, manual/auto validation, penalty engine and a signed result
+ * QR. Without one: Tripmaster mode (GPS trip computer). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
@@ -23,16 +23,16 @@
     let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLastT = 0;
     let tripRecFreq = 3000, tripRecName = '', tripRecHandle = null; // GPX logging: interval, file name, File System Access handle
 
-    /* ---------- arranque ---------- */
+    /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load: ' + err.message); } };
-    $('pickCh').onclick = () => window.RBChallenges && RBChallenges.pick((r) => loadRb(r));
+    $('pickCh').onclick = () => RBChallenges.pick((r) => loadRb(r));
     $('tripMode').onclick = startTrip;
     (function () {
-        const pub = window.RBChallenges && RBChallenges.publicFromUrl();
+        const pub = RBChallenges.publicFromUrl();
         if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => {});
     })();
-    // File Handling API (PWA): abrir un .rdbk desde el sistema operativo.
+    // File Handling API (installed PWA): open a .rdbk straight from the OS.
     if ('launchQueue' in window && window.LaunchParams) {
         launchQueue.setConsumer(async (params) => {
             if (!params.files || !params.files.length) return;
@@ -50,7 +50,7 @@
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); };
     let optGpx = false;
     function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked; optGpx = $('optGpx').checked; }
-    $('modeViaje').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); };
+    $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); };
     $('modeComp').onclick = () => {
         readModeOpts(); $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
         setTimeout(() => { $('teamInput').focus(); $('teamInput').select(); }, 60);
@@ -83,7 +83,7 @@
         }, 500);
     }
 
-    /* ---------- GPS común ---------- */
+    /* ---------- shared GPS ---------- */
     function startGps() {
         if (!navigator.geolocation) return toast('No geolocation');
         watchId = navigator.geolocation.watchPosition(onFix, () => setGps('bad'), { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
@@ -109,13 +109,13 @@
         }
         if (mode === 'trip') { if (speedKmh > tmMax) tmMax = speedKmh; renderTrip(); return; }
 
-        // --- modo navegación ---
+        // --- navigation mode ---
         const over = curLimit && curLimit > 0 && speedKmh > curLimit;
         if (over) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
         const an = notes[activeIdx];
         if (an) {
             const dist = RB.geo.haversineM(here, an);
-            // P_extra: armado al entrar en 100 m; si te alejas, acumula el sobrepaso
+            // P_extra: armed on entering the 100 m radius; moving away again accumulates the overshoot
             if (dist <= C.MANUAL_RADIUS_M) armed = true;
             else if (armed) extraAccum += disp;
             const wasApproaching = approaching;
@@ -132,7 +132,7 @@
     }
     function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : 'GPS…'; }
 
-    /* ---------- navegación: notas ---------- */
+    /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
     // done = green · active = red border · upcoming = pink · ≤50 m to next = blue · approaching (auto) = orange.
@@ -193,7 +193,7 @@
         activeIdx = i + 1; renderNotes();
     }
     function tapNote(i) {
-        if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Viaje: navegación libre, sin puntuar
+        if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Trip mode: free navigation, no scoring
         if (i < activeIdx) return;
         if (!lastPos) return toast('Waiting for GPS…');
         if (RB.geo.haversineM(lastPos, notes[i]) > C.MANUAL_RADIUS_M) return toast('Too far from note ' + notes[i].num);
@@ -226,7 +226,7 @@
     $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) location.reload(); };
     $('navGpx').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
 
-    /* ---------- fin → META firmado + QR ---------- */
+    /* ---------- finish → signed META + QR ---------- */
     $('finishBtn').onclick = finish;
     async function finish() {
         if (curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit);
@@ -271,7 +271,7 @@
         $('tmTotal').textContent = (tripTotalM / 1000).toFixed(2);
         $('tmPartial').textContent = (tripPartialM / 1000).toFixed(2);
         $('tmSpeed').textContent = Math.round(speedKmh);
-        $('tmSpeed').style.color = speedBandColor(speedKmh);
+        $('tmSpeed').style.setProperty('--speed-band', speedBandColor(speedKmh) || 'var(--text)'); // data-driven band colour
         $('tmMax').textContent = Math.round(tmMax);
         $('tmCap').textContent = tmCap == null ? '—' : Math.round(tmCap);
     }
@@ -319,7 +319,7 @@
     try { const g = JSON.parse(localStorage.getItem('rb_gpx_settings') || 'null'); if (g && g.freq) tripRecFreq = g.freq; } catch (e) {}
     function buildGpx(pts, name) {
         const segmented = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
-        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${(name || 'RDBK trip').replace(/[<>&]/g, '')}</name><trkseg>${segmented}</trkseg></trk></gpx>`;
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${esc(name || 'RDBK trip')}</name><trkseg>${segmented}</trkseg></trk></gpx>`;
     }
     function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
     async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(buildGpx(tripRecPts, tripRecName)); await w.close(); } catch (e) {} }

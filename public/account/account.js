@@ -78,7 +78,7 @@
     /* ---------- account ---------- */
     async function showAccount(user) {
         show('vAccount'); msg('');
-        $('accName').textContent = (user.first_name || '') + ' ' + (user.last_name || '') || user.username;
+        $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
         $('accBio').textContent = user.bio || '';
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg';

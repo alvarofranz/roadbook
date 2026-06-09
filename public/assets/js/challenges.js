@@ -24,13 +24,13 @@
     async function pick(onPick) {
         const rbs = await listPublic();
         const d = RBModal(`<h2>${RBt('Public challenges')}</h2>
-            ${rbs.length ? rbs.map((r) => `<button class="demo-row" data-s="${r.slug}">
-                ${r.thumb ? `<img src="${r.thumb}" alt="">` : `<span class="demo-ph"><i class="fa-solid fa-map-location-dot"></i></span>`}
-                <span><b>${r.title}</b><small>@${r.username} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${RBt('notes')}</small></span>
+            ${rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
+                ${r.thumb ? `<img src="${RBesc(r.thumb)}" alt="">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
+                <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${RBt('notes')}</small></span>
             </button>`).join('') : `<p class="muted">${RBt('No public challenges yet.')}</p>`}
             <div class="btnrow spaced"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`, 'wide');
         d.q('#chCancel').onclick = d.close;
-        d.el.querySelectorAll('.demo-row').forEach((b) => b.onclick = async () => {
+        d.el.querySelectorAll('.challenge-row').forEach((b) => b.onclick = async () => {
             d.close();
             try { const j = await loadPublic(b.dataset.s); onPick(j.roadbook, b.dataset.s); } catch (e) { console.error(e); }
         });

@@ -91,7 +91,7 @@ function login_user(array $d): void {
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
-    json_out(['ok' => true, 'user' => ['username' => $u['username'], 'email' => $u['email'], 'first_name' => $u['first_name']]]);
+    json_out(['ok' => true, 'user' => current_user()]);
 }
 
 function logout_user(): void { $_SESSION = []; session_destroy(); json_out(['ok' => true]); }

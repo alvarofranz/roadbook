@@ -7,7 +7,7 @@ $action = (string)($d['action'] ?? '');
 
 // Only these read-only actions may use GET; everything that changes state needs POST
 // (blocks CSRF via top-level GET navigation with a Lax session cookie).
-$readOnly = ['config', 'me', 'public_list', 'public_get'];
+$readOnly = ['config', 'public_list', 'public_get'];
 if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
 // Same-origin guard for state-changing requests.
 if ($method === 'POST') {
@@ -22,7 +22,6 @@ try {
         case 'verify':    verify_email($d); break;
         case 'login':     login_user($d); break;
         case 'logout':    logout_user(); break;
-        case 'me':        json_out(['ok' => true, 'user' => current_user()]); break;
         case 'forgot':    forgot_password($d); break;
         case 'reset':     reset_password($d); break;
         case 'profile':   update_profile(require_user(), $d); break;

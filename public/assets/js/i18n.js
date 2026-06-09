@@ -1,6 +1,6 @@
-/* i18n de RDBK.app. Aplica traducciones a [data-i18n] / [data-i18n-html] y
-   recuerda el idioma en localStorage. Auto-detecta el idioma del navegador y,
-   si no hay traducción, usa inglés por defecto. Idiomas: en (def) · es · it. */
+/* RDBK.app i18n. Applies translations to [data-i18n] / [data-i18n-html] /
+   [data-i18n-ph] and remembers the language in localStorage. Auto-detects the
+   browser language and falls back to English. Languages: en (default) · es · it. */
 (function () {
     'use strict';
 
@@ -8,7 +8,7 @@
         en: {
             'hero.title': 'Digital roadbooks for <span class="accent">your adventures</span>',
             'hero.lead': 'Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.',
-            'hero.cta_tools': 'See the tools', 'hero.cta_challenges': 'Challenges',
+            'hero.cta_tools': 'Open the Editor', 'hero.cta_challenges': 'Challenges',
             'flow.kicker': 'Features', 'flow.title': 'Everything you need',
             'feat.1.t': 'Editor', 'feat.1.d': 'Build a roadbook from a GPX and edit notes, road types and CAP on satellite maps.',
             'feat.2.t': 'Record route', 'feat.2.d': 'Record live with GPS, dropping waypoints as you go — no GPX needed.',
@@ -18,12 +18,12 @@
             'feat.6.t': 'Validate & QR', 'feat.6.d': 'Validate notes (manual or automatic) and emit a signed result QR.',
             'feat.7.t': 'Ranking', 'feat.7.d': 'Scan QRs and build accuracy, CAP, speed and regularity rankings.',
             'feat.8.t': 'Accounts & sharing', 'feat.8.d': 'Sign in to store roadbooks and publish them as public challenges.',
-            'gallery.kicker': 'Gallery', 'gallery.title': 'Public Challenges', 'gallery.loading': 'Loading tracks…', 'gallery.empty': 'No tracks yet.', 'gallery.notes': 'notes',
+            'gallery.kicker': 'Gallery', 'gallery.title': 'Public Challenges', 'gallery.loading': 'Loading challenges…', 'gallery.empty': 'No public challenges yet.', 'gallery.notes': 'notes',
         },
         es: {
             'hero.title': 'Roadbooks digitales para <span class="accent">tus aventuras</span>',
             'hero.lead': 'Crea un roadbook desde un GPX, síguelo con GPS y compártelo. 4x4, moto, bici, correr… cualquier aventura.',
-            'hero.cta_tools': 'Ver herramientas', 'hero.cta_challenges': 'Challenges',
+            'hero.cta_tools': 'Abrir el Editor', 'hero.cta_challenges': 'Challenges',
             'flow.kicker': 'Funciones', 'flow.title': 'Todo lo que necesitas',
             'feat.1.t': 'Editor', 'feat.1.d': 'Crea un roadbook desde un GPX y edita notas, tipo de pista y CAP sobre mapa satélite.',
             'feat.2.t': 'Grabar ruta', 'feat.2.d': 'Graba en vivo con GPS, soltando waypoints sobre la marcha — sin GPX.',
@@ -33,7 +33,7 @@
             'feat.6.t': 'Validar y QR', 'feat.6.d': 'Valida notas (manual o automática) y emite un QR de resultado firmado.',
             'feat.7.t': 'Clasificación', 'feat.7.d': 'Escanea los QR y genera clasificaciones de precisión, CAP, velocidad y regularidad.',
             'feat.8.t': 'Cuentas y compartir', 'feat.8.d': 'Inicia sesión para guardar roadbooks y publicarlos como challenges públicos.',
-            'gallery.kicker': 'Galería', 'gallery.title': 'Challenges públicos', 'gallery.loading': 'Cargando tracks…', 'gallery.empty': 'Aún no hay tracks.', 'gallery.notes': 'notas',
+            'gallery.kicker': 'Galería', 'gallery.title': 'Challenges públicos', 'gallery.loading': 'Cargando challenges…', 'gallery.empty': 'Aún no hay challenges públicos.', 'gallery.notes': 'notas',
             // ---- tools (the English string is the key) ----
             'Load from': 'Cargar desde', 'Import a GPS track': 'Importa un track GPS',
             'Open an existing roadbook': 'Abre un roadbook existente', 'Record route': 'Grabar ruta',
@@ -79,14 +79,11 @@
             'Create a waypoint at this photo?': '¿Crear un waypoint en esta foto?', 'Create': 'Crear', 'Delete this roadbook?': '¿Borrar este roadbook?',
             'Clear all results?': '¿Borrar todos los resultados?', 'Icon added — drag it on the vignette': 'Icono añadido — arrástralo en la viñeta',
             'Roadbook has no notes.': 'El roadbook no tiene notas.', 'Spliced · metrics recomputed.': 'Empalmado · métricas recalculadas.',
-            'Sign in': 'Entrar', 'Not now': 'Ahora no', 'Sign in / Create account': 'Entrar / Crear cuenta',
+            'Not now': 'Ahora no', 'Sign in / Create account': 'Entrar / Crear cuenta',
             'Create a free account to save and share your roadbooks.': 'Crea una cuenta gratis para guardar y compartir tus roadbooks.',
             'Roadbook title': 'Título del roadbook', 'Password (min 8 chars)': 'Contraseña (mín. 8)', 'New password (min 8 chars)': 'Nueva contraseña (mín. 8)',
             'Short bio…': 'Bio corta…', 'Quick note (optional)…': 'Nota rápida (opcional)…', 'Convert into waypoint': 'Convertir en waypoint',
             'Edit later': 'Editar luego', 'Save note': 'Guardar nota', 'Sign in to save': 'Inicia sesión para guardar',
-            'Follow the roadbook freely. No scoring.': 'Sigue el roadbook libremente. Sin puntuación.',
-            'Validate every note and get your result QR.': 'Valida cada nota y obtén tu QR de resultado.',
-            'Identify your team for the ranking.': 'Identifica tu equipo para la clasificación.',
             'Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.': 'Entra para <b>crear, editar y guardar</b> tus roadbooks, compartirlos como <b>challenges públicos</b>, forkear los de otros y crear tu perfil — gratis.',
             'We’ll email you a link to set a new password.': 'Te enviaremos un email con un enlace para poner una nueva contraseña.',
             'Discard this recording? It cannot be undone.': '¿Descartar esta grabación? No se puede deshacer.', 'Discard': 'Descartar', 'Recording discarded.': 'Grabación descartada.',
@@ -104,11 +101,22 @@
             'Advancement': 'Avance', 'Automatic (GPS)': 'Automático (GPS)', 'Manual (tap)': 'Manual (toque)', 'Show map button per note': 'Botón de mapa por nota', 'Record a GPX track': 'Grabar una traza GPX',
             'Note reached': 'Nota alcanzada', 'Open on map': 'Abrir en mapa', 'Load another roadbook?': '¿Cargar otro roadbook?', 'Load': 'Cargar', 'Map not configured.': 'Mapa no configurado.',
             'Author': 'Autor', 'Organization': 'Organización', 'Event logo': 'Logo del evento', 'Upload logo': 'Subir logo', 'Last modified': 'Última modificación', 'Author name': 'Nombre del autor',
+            'Photos uploaded.': 'Fotos subidas.', 'Save to your profile first.': 'Guarda primero en tu perfil.',
+            'Waiting for GPS…': 'Esperando GPS…', 'No geolocation': 'Sin geolocalización',
+            'Last note validated! Tap Finish.': '¡Última nota validada! Pulsa Finalizar.',
+            'Adjust cancelled — you never got on the trail.': 'Ajuste cancelado — nunca llegaste a la ruta.',
+            'Could not load challenge.': 'No se pudo cargar el challenge.',
+            'Sharing not supported here — use Save QR.': 'Compartir no está disponible aquí — usa Guardar QR.',
+            'Code not recognized.': 'Código no reconocido.',
+            'Your browser does not support camera scanning; paste the code by hand.': 'Tu navegador no soporta escaneo con cámara; pega el código a mano.',
+            'Load a roadbook.': 'Carga un roadbook.', 'Load the GPX to splice.': 'Carga el GPX a empalmar.',
+            'In use; remove it from the notes first.': 'En uso; quítalo antes de las notas.',
+            'Icon(s) uploaded — tap them to place.': 'Icono(s) subidos — tócalos para colocarlos.',
         },
         it: {
             'hero.title': 'Roadbook digitali per le <span class="accent">tue avventure</span>',
             'hero.lead': 'Crea un roadbook da un GPX, seguilo col GPS e condividilo. 4x4, moto, bici, corsa… ogni avventura.',
-            'hero.cta_tools': 'Vedi gli strumenti', 'hero.cta_challenges': 'Challenges',
+            'hero.cta_tools': 'Apri l’Editor', 'hero.cta_challenges': 'Challenges',
             'flow.kicker': 'Funzioni', 'flow.title': 'Tutto ciò che serve',
             'feat.1.t': 'Editor', 'feat.1.d': 'Crea un roadbook da un GPX e modifica note, tipo di fondo e CAP su mappa satellitare.',
             'feat.2.t': 'Registra percorso', 'feat.2.d': 'Registra dal vivo col GPS, aggiungendo waypoint strada facendo — senza GPX.',
@@ -118,7 +126,7 @@
             'feat.6.t': 'Convalida e QR', 'feat.6.d': 'Convalida le note (manuale o automatica) ed emetti un QR firmato.',
             'feat.7.t': 'Classifica', 'feat.7.d': 'Scansiona i QR e genera classifiche di precisione, CAP, velocità e regolarità.',
             'feat.8.t': 'Account e condivisione', 'feat.8.d': 'Accedi per salvare i roadbook e pubblicarli come challenge pubblici.',
-            'gallery.kicker': 'Galleria', 'gallery.title': 'Challenge pubblici', 'gallery.loading': 'Caricamento…', 'gallery.empty': 'Ancora nessuna traccia.', 'gallery.notes': 'note',
+            'gallery.kicker': 'Galleria', 'gallery.title': 'Challenge pubblici', 'gallery.loading': 'Caricamento challenge…', 'gallery.empty': 'Ancora nessun challenge pubblico.', 'gallery.notes': 'note',
             // ---- tools (the English string is the key) ----
             'Load from': 'Carica da', 'Import a GPS track': 'Importa una traccia GPS',
             'Open an existing roadbook': 'Apri un roadbook esistente', 'Record route': 'Registra percorso',
@@ -164,14 +172,11 @@
             'Create a waypoint at this photo?': 'Creare un waypoint su questa foto?', 'Create': 'Crea', 'Delete this roadbook?': 'Eliminare questo roadbook?',
             'Clear all results?': 'Cancellare tutti i risultati?', 'Icon added — drag it on the vignette': 'Icona aggiunta — trascinala sulla vignetta',
             'Roadbook has no notes.': 'Il roadbook non ha note.', 'Spliced · metrics recomputed.': 'Innestato · metriche ricalcolate.',
-            'Sign in': 'Accedi', 'Not now': 'Non ora', 'Sign in / Create account': 'Accedi / Crea account',
+            'Not now': 'Non ora', 'Sign in / Create account': 'Accedi / Crea account',
             'Create a free account to save and share your roadbooks.': 'Crea un account gratuito per salvare e condividere i tuoi roadbook.',
             'Roadbook title': 'Titolo del roadbook', 'Password (min 8 chars)': 'Password (min 8)', 'New password (min 8 chars)': 'Nuova password (min 8)',
             'Short bio…': 'Bio breve…', 'Quick note (optional)…': 'Nota rapida (opzionale)…', 'Convert into waypoint': 'Converti in waypoint',
             'Edit later': 'Modifica dopo', 'Save note': 'Salva nota', 'Sign in to save': 'Accedi per salvare',
-            'Follow the roadbook freely. No scoring.': 'Segui il roadbook liberamente. Senza punteggio.',
-            'Validate every note and get your result QR.': 'Convalida ogni nota e ottieni il QR del risultato.',
-            'Identify your team for the ranking.': 'Identifica la tua squadra per la classifica.',
             'Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.': 'Accedi per <b>creare, modificare e salvare</b> i tuoi roadbook, condividerli come <b>challenge pubblici</b>, forkare quelli altrui e creare il tuo profilo — gratis.',
             'We’ll email you a link to set a new password.': 'Ti invieremo via email un link per impostare una nuova password.',
             'Discard this recording? It cannot be undone.': 'Scartare questa registrazione? Non è reversibile.', 'Discard': 'Scarta', 'Recording discarded.': 'Registrazione scartata.',
@@ -189,6 +194,17 @@
             'Advancement': 'Avanzamento', 'Automatic (GPS)': 'Automatico (GPS)', 'Manual (tap)': 'Manuale (tocco)', 'Show map button per note': 'Pulsante mappa per nota', 'Record a GPX track': 'Registra una traccia GPX',
             'Note reached': 'Nota raggiunta', 'Open on map': 'Apri sulla mappa', 'Load another roadbook?': 'Caricare un altro roadbook?', 'Load': 'Carica', 'Map not configured.': 'Mappa non configurata.',
             'Author': 'Autore', 'Organization': 'Organizzazione', 'Event logo': 'Logo dell’evento', 'Upload logo': 'Carica logo', 'Last modified': 'Ultima modifica', 'Author name': 'Nome autore',
+            'Photos uploaded.': 'Foto caricate.', 'Save to your profile first.': 'Salva prima nel tuo profilo.',
+            'Waiting for GPS…': 'In attesa del GPS…', 'No geolocation': 'Niente geolocalizzazione',
+            'Last note validated! Tap Finish.': 'Ultima nota convalidata! Tocca Termina.',
+            'Adjust cancelled — you never got on the trail.': 'Regolazione annullata — non sei mai arrivato sul percorso.',
+            'Could not load challenge.': 'Impossibile caricare il challenge.',
+            'Sharing not supported here — use Save QR.': 'La condivisione non è supportata qui — usa Salva QR.',
+            'Code not recognized.': 'Codice non riconosciuto.',
+            'Your browser does not support camera scanning; paste the code by hand.': 'Il tuo browser non supporta la scansione con fotocamera; incolla il codice a mano.',
+            'Load a roadbook.': 'Carica un roadbook.', 'Load the GPX to splice.': 'Carica il GPX da innestare.',
+            'In use; remove it from the notes first.': 'In uso; rimuovilo prima dalle note.',
+            'Icon(s) uploaded — tap them to place.': 'Icona/e caricate — toccale per posizionarle.',
         },
     };
 
@@ -220,16 +236,13 @@
     }
 
     window.RBi18n = {
-        init() {
-            apply(pickLang());
-            document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.lang)));
-        },
-        apply,
-        lang: pickLang,
         t(key) { const v = tr(pickLang(), key); return v != null ? v : key; },
     };
     // Global shorthand used across every page (falls back to the key if i18n is missing).
     window.RBt = (k) => (window.RBi18n ? RBi18n.t(k) : k);
 
-    document.addEventListener('DOMContentLoaded', () => window.RBi18n.init());
+    document.addEventListener('DOMContentLoaded', () => {
+        apply(pickLang());
+        document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.lang)));
+    });
 })();

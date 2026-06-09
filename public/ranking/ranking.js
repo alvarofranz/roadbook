@@ -1,6 +1,6 @@
 'use strict';
-/* RB Ranking — recoge resultados (QR por cámara o pegados), calcula precisión,
- * CAP, velocidad y regularidad, y una puntuación final (menor = mejor). */
+/* RDBK Ranking — collects results (QR via camera or pasted), computes accuracy,
+ * CAP, speed and regularity, and a final score (lower = better). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const C = RB.CONST;
@@ -9,7 +9,7 @@
 
     if ('BarcodeDetector' in window) { try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {} }
 
-    /* ---------- añadir ---------- */
+    /* ---------- add ---------- */
     $('addManual').onclick = () => addMeta($('manualMeta').value.trim());
     $('manualMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') addMeta($('manualMeta').value.trim()); });
 
@@ -24,7 +24,7 @@
         msg((valid === false ? '⚠ INVALID signature · ' : valid === true ? '✓ ' : '') + 'Added vehicle ' + parseInt(m.team, 10), valid === false);
     }
 
-    /* ---------- cámara ---------- */
+    /* ---------- camera ---------- */
     $('scanBtn').onclick = async () => {
         if (scanning) return stopScan();
         if (!detector) { msg('Your browser does not support camera scanning; paste the code by hand.', true); return; }
@@ -54,7 +54,7 @@
         stream = null; $('video').hidden = true; $('scanBtn').innerHTML = '<i class="fa-solid fa-camera"></i> Scan QR';
     }
 
-    /* ---------- cálculo ---------- */
+    /* ---------- scoring ---------- */
     const toSec = (hhmmss) => { const s = String(hhmmss).padStart(6, '0'); return (+s.slice(0, 2)) * 3600 + (+s.slice(2, 4)) * 60 + (+s.slice(4, 6)); };
     function compute(e) {
         const m = e.m;
@@ -82,7 +82,7 @@
     function render() {
         const rows = entries.map((e) => Object.assign(compute(e), { ts: e.ts })).sort((a, b) => a.finalScore - b.finalScore);
         lastRows = rows;
-        $('empty').style.display = rows.length ? 'none' : '';
+        $('empty').hidden = !!rows.length;
         if (!rows.length) { $('table').innerHTML = ''; return; }
         $('table').innerHTML =
             `<thead><tr><th>#</th><th>Vehicle</th><th>km</th><th>Accuracy</th><th>CAP</th><th>Speed</th><th>Regularity</th><th>Final</th><th></th></tr></thead>`
@@ -92,7 +92,7 @@
                 + `<td><button class="link-delete" data-del="${r.ts}" title="Remove">✕</button></td></tr>`).join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirm('Remove vehicle ' + entries.find((e) => e.ts == b.dataset.del)?.m.team + '?', 'Remove')) {
+            if (await RBConfirm('Remove vehicle ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
                 entries = entries.filter((e) => String(e.ts) !== b.dataset.del); save(); render();
             }
         });
@@ -102,18 +102,14 @@
         if (!lastRows.length) return;
         const head = ['rank', 'vehicle', 'km', 'accuracy', 'cap', 'speed', 'regularity', 'final', 'valid'];
         const lines = lastRows.map((r, i) => [i + 1, r.team, r.km.toFixed(1), r.accuracy, r.cap, r.speed, r.reg, r.finalScore, r.valid === false ? 'no' : 'yes'].join(','));
-        const csv = head.join(',') + '\n' + lines.join('\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = 'rdbk-ranking.csv'; document.body.appendChild(a); a.click(); a.remove();
+        RBDownload(new Blob([head.join(',') + '\n' + lines.join('\n')], { type: 'text/csv' }), 'rdbk-ranking.csv');
     };
 
-    /* ---------- persistencia ---------- */
+    /* ---------- persistence ---------- */
     function load() { try { return JSON.parse(localStorage.getItem('rb_ranking') || '[]'); } catch (e) { return []; } }
     function save() { localStorage.setItem('rb_ranking', JSON.stringify(entries)); }
 
-    let toastT = null;
-    function msg(t, err) { $('msg').textContent = t; $('msg').style.color = err ? 'var(--track)' : 'var(--ok)'; }
+    function msg(text, err) { const el = $('msg'); el.textContent = RBt(text); el.classList.toggle('err', !!err); el.classList.toggle('ok', !err); }
 
     render();
 })();

@@ -1,12 +1,11 @@
-/* roadbook-core.js — librería compartida por TODAS las herramientas.
- * Modelo de datos (roadbook JSON), geo-matemática, parseo GPX/WPT, construcción
- * de roadbook, reducción de traza, y constantes (umbrales/penalizaciones) que
- * deben coincidir con el sistema original para compatibilidad de clasificaciones.
- * Expone un único global: window.RB  (sin módulos, para multipágina simple). */
+/* roadbook-core.js — library shared by ALL the tools.
+ * Data model (roadbook JSON), geo math, GPX/WPT parsing, roadbook building,
+ * metric recomputation and the scoring constants the Reader and Ranking share.
+ * Exposes a single global: window.RB (no modules — simple multi-page app). */
 (function () {
     'use strict';
 
-    const R_M = 6371000; // radio terrestre (m), como el original
+    const EARTH_RADIUS_M = 6371000;
 
     /* ---------------- geo ---------------- */
     const toRad = (d) => d * Math.PI / 180;
@@ -17,33 +16,33 @@
         const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
         const s = Math.sin(dLat / 2) ** 2 +
             Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
-        return 2 * R_M * Math.asin(Math.min(1, Math.sqrt(s)));
+        return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(s)));
     }
-    // rumbo brújula a→b, grados [0,360), 0=N 90=E
+    // compass bearing a→b, degrees [0,360), 0=N 90=E
     function bearingDeg(a, b) {
         const φ1 = toRad(a.lat), φ2 = toRad(b.lat), Δλ = toRad(b.lon - a.lon);
         const y = Math.sin(Δλ) * Math.cos(φ2);
         const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
         return normDeg(toDeg(Math.atan2(y, x)));
     }
-    // punto destino a (lat,lon) yendo heading grados durante distM metros
+    // destination point from (lat,lon) heading `heading` degrees for distM metres
     function destPoint(lat, lon, heading, distM) {
-        const δ = distM / R_M, θ = toRad(heading), φ1 = toRad(lat), λ1 = toRad(lon);
+        const δ = distM / EARTH_RADIUS_M, θ = toRad(heading), φ1 = toRad(lat), λ1 = toRad(lon);
         const φ2 = Math.asin(Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ));
         const λ2 = λ1 + Math.atan2(Math.sin(θ) * Math.sin(δ) * Math.cos(φ1), Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2));
         return { lat: toDeg(φ2), lon: ((toDeg(λ2) + 540) % 360) - 180 };
     }
 
-    /* ---------------- tipos de pista ---------------- */
+    /* ---------------- road types ---------------- */
     const ROAD_TYPES = [
-        { id: 0, key: 'default', color: '#9aa4b2', dashed: false },
-        { id: 1, key: 'autostrada', color: '#3b82f6', dashed: false },
-        { id: 2, key: 'asfalto', color: '#22c55e', dashed: false },
-        { id: 3, key: 'pista', color: '#ff5a45', dashed: false },
-        { id: 4, key: 'fuoripista', color: '#ff5a45', dashed: true },
+        { id: 0, color: '#9aa4b2', dashed: false }, // default
+        { id: 1, color: '#3b82f6', dashed: false }, // motorway
+        { id: 2, color: '#22c55e', dashed: false }, // asphalt
+        { id: 3, color: '#ff5a45', dashed: false }, // track
+        { id: 4, color: '#ff5a45', dashed: true },  // off-piste
     ];
 
-    /* ---------------- scoring constants ---------------- */
+    /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
@@ -51,11 +50,10 @@
         META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],
     };
 
-    /* ---------------- parseo GPX ---------------- */
+    /* ---------------- GPX parsing ---------------- */
     function parseGPX(text) {
         const doc = new DOMParser().parseFromString(text, 'application/xml');
-        if (doc.querySelector('parsererror')) throw new Error('GPX no válido (XML mal formado).');
-        const root = doc.documentElement;
+        if (doc.querySelector('parsererror')) throw new Error('Invalid GPX (malformed XML).');
         const name = (doc.querySelector('trk > name, metadata > name')?.textContent || '').trim();
 
         const trkpts = [];
@@ -72,7 +70,7 @@
             }
         });
 
-        // waypoints: <wpt>, o <trkpt> cuyo <cmt> empieza por "wpt"
+        // waypoints: <wpt>, or any <trkpt> whose <cmt> starts with "wpt"
         const wpts = [];
         doc.querySelectorAll('wpt').forEach((w) => {
             const lat = parseFloat(w.getAttribute('lat')), lon = parseFloat(w.getAttribute('lon'));
@@ -92,7 +90,7 @@
         const m = String(s || '').match(/(\d+)/);
         return m ? parseInt(m[1], 10) : null;
     }
-    // .wpt Garmin: líneas "W <name> ... lat lon" con sufijo N/S/E/W/O
+    // Garmin .wpt: "W <name> ... lat lon" lines with N/S/E/W/O hemisphere letters
     function parseWPT(text) {
         const out = [];
         text.split(/\r?\n/).forEach((line) => {
@@ -108,7 +106,7 @@
         return out;
     }
 
-    /* ---------------- construcción del roadbook ---------------- */
+    /* ---------------- roadbook building ---------------- */
     function nearestIdx(trkpts, pt) {
         let best = 0, bd = Infinity;
         for (let i = 0; i < trkpts.length; i++) {
@@ -124,23 +122,23 @@
         return cum;
     }
 
-    // Construye el roadbook JSON desde traza + waypoints.
+    // Build the roadbook JSON from a track + waypoints.
     function buildRoadbook({ name, trkpts, wpts }) {
-        if (!trkpts || trkpts.length < 2) throw new Error('La traza GPX no tiene puntos suficientes.');
+        if (!trkpts || trkpts.length < 2) throw new Error('The GPX track has too few points.');
         const cum = cumulativeM(trkpts);
         const totalM = cum[cum.length - 1];
 
-        // asegurar nota de inicio y fin
+        // guarantee a start note and an end note
         const pts = (wpts && wpts.length) ? wpts.slice() : [];
         const hasStart = pts.some((w) => nearestIdx(trkpts, w) === 0);
         const hasEnd = pts.some((w) => nearestIdx(trkpts, w) === trkpts.length - 1);
         if (!hasStart) pts.push({ lat: trkpts[0].lat, lon: trkpts[0].lon, name: 'start', num: 0 });
         if (!hasEnd) pts.push({ lat: trkpts[trkpts.length - 1].lat, lon: trkpts[trkpts.length - 1].lon, name: 'end', num: 9999 });
 
-        // resolver idx y ordenar por posición en la traza
+        // resolve each waypoint's track index and order along the track
         const withIdx = pts.map((w) => ({ ...w, idx: nearestIdx(trkpts, w) }))
             .sort((a, b) => a.idx - b.idx)
-            .filter((w, i, arr) => i === 0 || w.idx !== arr[i - 1].idx); // dedup por idx
+            .filter((w, i, arr) => i === 0 || w.idx !== arr[i - 1].idx); // dedup by idx
 
         const notes = withIdx.map((w, i) => {
             const idx = w.idx;
@@ -156,7 +154,7 @@
                 text: typeof w.text === 'string' ? w.text : '',
                 cap: null, cap_distance: null,
                 bearing_in: round3(bIn), bearing_out: round3(bOut),
-                road_type_in: 3, road_type_out: 3, // Pista por defecto
+                road_type_in: 3, road_type_out: 3, // track by default
                 junctions: null, icons: [],
             };
         });
@@ -168,8 +166,8 @@
         };
     }
 
-    /* ---------------- recálculo de métricas (tras editar/empalmar) ---------------- */
-    // Recalcula num, idx clamp, lat/lon, distance/partial_distance y bearings desde la traza.
+    /* ---------------- metric recomputation (after edit/splice) ---------------- */
+    // Recomputes num, clamped idx, lat/lon, distance/partial_distance and bearings from the track.
     function recomputeMetrics(rb) {
         const cum = cumulativeM(rb.track);
         rb.notes.sort((a, b) => a.idx - b.idx);
@@ -197,26 +195,26 @@
         }
         return rb;
     }
-    // límite de velocidad codificado en el nombre del icono (S01_10km → 10; S99_end → 0)
+    // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
     function speedLimitFromName(name) {
         if (!name) return null;
         if (/S99_end/i.test(name)) return 0;
         const m = String(name).match(/^S\d{2}_(\d{1,3})km/i);
         return m ? parseInt(m[1], 10) : null;
     }
-    // límite vigente en una nota (mira sus iconos; 0 = se levanta el límite)
+    // limit in force at a note (looks at its icons; 0 = limit lifted)
     function speedLimitOfNote(note) {
         let lim = null;
-        (note.icons || []).forEach((ic) => { const v = speedLimitFromName(ic.name || ic.file); if (v != null) lim = v; });
+        (note.icons || []).forEach((ic) => { const v = speedLimitFromName(ic.name); if (v != null) lim = v; });
         return lim;
     }
 
-    /* ---------------- QR META (49 chars) ---------------- */
+    /* ---------------- result META (49-char QR payload) ---------------- */
     const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg'];
     function buildMeta(f) {
         // Fixed-width numeric fields: clamp negatives to 0 and saturate to all-9s on
         // overflow (never let a '-' or a left-truncated value corrupt the string).
-        // padStart restores leading zeros for string fields like data/start/end.
+        // padStart restores leading zeros for fields like date/start/end.
         return META_KEYS.map((k, i) => {
             const w = CONST.META_WIDTHS[i];
             const v = Math.max(0, Math.round(Number(f[k]) || 0));
@@ -227,14 +225,14 @@
     }
     function parseMeta(str) {
         const out = {}; let o = 0;
-        META_KEYS.forEach((k, i) => { const w = CONST.META_WIDTHS[i]; out[k] = String(str).substr(o, w).trim(); o += w; });
+        META_KEYS.forEach((k, i) => { const w = CONST.META_WIDTHS[i]; out[k] = String(str).slice(o, o + w).trim(); o += w; });
         return out;
     }
 
-    /* ---------------- firma del QR (HMAC-SHA256) ---------------- */
-    // Nota: la clave vive en el cliente (config.js), así que la firma protege
-    // contra manipulación casual/accidental, no contra un falsificador decidido.
-    // Aun así es mejor que el QR en texto plano sin verificación del original.
+    /* ---------------- QR signature (HMAC-SHA256) ---------------- */
+    // The key lives in the client (config.js), so the signature protects against
+    // casual/accidental tampering, not a determined forger. Still far better than
+    // an unverifiable plain-text QR.
     async function hmacHex(msg, key) {
         const enc = new TextEncoder();
         const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -252,13 +250,13 @@
         catch (e) { return { meta, valid: false }; }
     }
 
-    /* ---------------- resolución de iconos ---------------- */
-    // Devuelve la fuente de un icono: data-URI directo, biblioteca embebida del
-    // roadbook (icons, case-insensitive) o ruta al set estándar.
+    /* ---------------- icon resolution ---------------- */
+    // Source for a note icon: direct data: URI, the roadbook's embedded library
+    // (rb.icons, case-insensitive) or the standard palette under basePath.
     function iconSrc(ic, rb, basePath) {
-        const f = ic.file || ic.name || '';
-        if (/^data:/.test(f)) return f;
-        const base = String(ic.name || f).split('/').pop();
+        const name = ic.name || '';
+        if (/^data:/.test(name)) return name;
+        const base = name.split('/').pop();
         if (rb && rb.icons) {
             if (rb.icons[base]) return rb.icons[base];
             const k = Object.keys(rb.icons).find((x) => x.toLowerCase() === base.toLowerCase());
@@ -267,17 +265,17 @@
         return (basePath || '') + base;
     }
 
-    /* ---------------- redondeos ---------------- */
+    /* ---------------- rounding ---------------- */
     const round3 = (n) => Math.round(n * 1000) / 1000;
     const round6 = (n) => Math.round(n * 1e6) / 1e6;
 
     /* ---------------- export ---------------- */
     window.RB = {
-        R_M, ROAD_TYPES, CONST,
-        geo: { toRad, toDeg, normDeg, haversineM, bearingDeg, destPoint },
+        ROAD_TYPES, CONST,
+        geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, cumulativeM, round3, round6,
+        nearestIdx, round6,
     };
 })();
