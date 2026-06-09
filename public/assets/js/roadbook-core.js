@@ -43,11 +43,9 @@
         { id: 4, key: 'fuoripista', color: '#ff5a45', dashed: true },
     ];
 
-    /* ---------------- constantes (idénticas al original) ---------------- */
+    /* ---------------- scoring constants ---------------- */
     const CONST = {
-        AUTO_RADIUS_M: 25, MANUAL_RADIUS_M: 100, MIN_DISP_M: 5,
-        SKIP_WARN_M: 30, CAP_TOL_M: 5, SPEED_MIN_VALID_MS: 0.8,
-        ADD_ON_LINE_M: 15, REDUCE_M: 10,
+        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
         META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],
@@ -170,38 +168,6 @@
         };
     }
 
-    /* ---------------- reducción de traza (Douglas–Peucker) ---------------- */
-    function reduceTrack(trkpts, epsM) {
-        if (trkpts.length < 3) return trkpts.slice();
-        const eps = epsM == null ? CONST.REDUCE_M : epsM;
-        const keep = new Array(trkpts.length).fill(false);
-        keep[0] = keep[trkpts.length - 1] = true;
-        const stack = [[0, trkpts.length - 1]];
-        while (stack.length) {
-            const [s, e] = stack.pop();
-            let dmax = 0, idx = -1;
-            for (let i = s + 1; i < e; i++) {
-                const d = perpDistM(trkpts[i], trkpts[s], trkpts[e]);
-                if (d > dmax) { dmax = d; idx = i; }
-            }
-            if (dmax > eps && idx > 0) { keep[idx] = true; stack.push([s, idx], [idx, e]); }
-        }
-        return trkpts.filter((_, i) => keep[i]);
-    }
-    function perpDistM(p, a, b) {
-        // proyección en metros (equirectangular local), suficiente a esta escala
-        const mPerDegLat = 111320, mPerDegLon = 111320 * Math.cos(toRad(a.lat));
-        const ax = a.lon * mPerDegLon, ay = a.lat * mPerDegLat;
-        const bx = b.lon * mPerDegLon, by = b.lat * mPerDegLat;
-        const px = p.lon * mPerDegLon, py = p.lat * mPerDegLat;
-        const dx = bx - ax, dy = by - ay;
-        const len2 = dx * dx + dy * dy || 1e-9;
-        let t = ((px - ax) * dx + (py - ay) * dy) / len2;
-        t = Math.max(0, Math.min(1, t));
-        const cx = ax + t * dx, cy = ay + t * dy;
-        return Math.hypot(px - cx, py - cy);
-    }
-
     /* ---------------- recálculo de métricas (tras editar/empalmar) ---------------- */
     // Recalcula num, idx clamp, lat/lon, distance/partial_distance y bearings desde la traza.
     function recomputeMetrics(rb) {
@@ -260,11 +226,8 @@
         }).join('');
     }
     function parseMeta(str) {
-        const parts = String(str).trim().split(/[\s,]+/);
-        let toks;
-        if (parts.length === META_KEYS.length) toks = parts;
-        else { toks = []; let o = 0; for (const w of CONST.META_WIDTHS) { toks.push(String(str).substr(o, w)); o += w; } }
-        const out = {}; META_KEYS.forEach((k, i) => { out[k] = (toks[i] || '').trim(); });
+        const out = {}; let o = 0;
+        META_KEYS.forEach((k, i) => { const w = CONST.META_WIDTHS[i]; out[k] = String(str).substr(o, w).trim(); o += w; });
         return out;
     }
 
@@ -283,10 +246,10 @@
     }
     async function verifyMeta(payload, key) {
         const i = String(payload).lastIndexOf('-');
-        if (i < 0) return { meta: String(payload).trim(), valid: null }; // QR antiguo sin firma
+        if (i < 0) return { meta: String(payload).trim(), valid: false }; // no signature → not a valid result
         const meta = payload.slice(0, i).trim(), sig = payload.slice(i + 1).trim();
         try { return { meta, valid: (await hmacHex(meta, key || '')).slice(0, 10) === sig }; }
-        catch (e) { return { meta, valid: null }; }
+        catch (e) { return { meta, valid: false }; }
     }
 
     /* ---------------- resolución de iconos ---------------- */
@@ -305,7 +268,6 @@
     }
 
     /* ---------------- redondeos ---------------- */
-    const round2 = (n) => Math.round(n * 100) / 100;
     const round3 = (n) => Math.round(n * 1000) / 1000;
     const round6 = (n) => Math.round(n * 1e6) / 1e6;
 
@@ -313,9 +275,9 @@
     window.RB = {
         R_M, ROAD_TYPES, CONST,
         geo: { toRad, toDeg, normDeg, haversineM, bearingDeg, destPoint },
-        parseGPX, parseWPT, buildRoadbook, reduceTrack,
+        parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, cumulativeM, round2, round3, round6,
+        nearestIdx, cumulativeM, round3, round6,
     };
 })();

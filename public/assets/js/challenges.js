@@ -1,27 +1,10 @@
 'use strict';
-/* RBChallenges — galería de challenges (roadbooks predefinidos autocontenidos).
- * Lee public/challenges/index.json. La raíz de la app se deduce de la URL de
- * este script (funciona en la home y en las subcarpetas de herramientas). */
+/* RBChallenges — public, DB-backed challenges (roadbooks shared by users).
+ * App root is derived from this script's URL (works on the home and tool subfolders). */
 (function () {
     const here = (document.currentScript && document.currentScript.src) || location.href;
     const ROOT = here.replace(/assets\/js\/challenges\.js.*$/, '');
-    let cache = null;
 
-    async function list() {
-        if (cache) return cache;
-        try { cache = (await (await fetch(ROOT + 'challenges/index.json', { cache: 'no-store' })).json()).tracks || []; }
-        catch (e) { cache = []; }
-        return cache;
-    }
-    async function load(slug) {
-        const r = await fetch(ROOT + 'challenges/' + slug + '/roadbook.rdbk', { cache: 'no-store' });
-        if (!r.ok) throw new Error('No encuentro el challenge ' + slug);
-        return r.json();
-    }
-    const thumb = (slug, file) => ROOT + 'challenges/' + slug + '/' + (file || 'thumb.jpg');
-    const fromUrl = () => new URLSearchParams(location.search).get('track');
-
-    // Public roadbooks (DB-backed challenges).
     async function listPublic() {
         try { return (await (await fetch(ROOT + 'api/index.php?action=public_list')).json()).roadbooks || []; }
         catch (e) { return []; }
@@ -31,9 +14,8 @@
         if (!j.ok) throw new Error(j.error || 'Not found');
         return j; // { slug, roadbook, photos, owner }
     }
+    // Slug from a friendly URL: /reader/<slug> or /editor/<slug>.
     const publicFromUrl = () => {
-        const q = new URLSearchParams(location.search).get('challenge');
-        if (q) return q;
         const m = location.pathname.match(/\/(?:reader|editor)\/([A-Za-z0-9_-]+)\/?$/);
         return m ? m[1] : null;
     };
@@ -54,5 +36,5 @@
         });
     }
 
-    window.RBChallenges = { list, load, thumb, fromUrl, listPublic, loadPublic, publicFromUrl, pick, ROOT };
+    window.RBChallenges = { listPublic, loadPublic, publicFromUrl, pick, ROOT };
 })();

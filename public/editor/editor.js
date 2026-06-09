@@ -80,8 +80,6 @@
     $('nextNote').onclick = () => select(sel + 1);
     $('delNote').onclick = delNote;
     window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { e.preventDefault(); e.returnValue = ''; } });
-    // ?track=<slug> → cargar challenge directo
-    (function () { const slug = window.RBChallenges && RBChallenges.fromUrl(); if (slug) RBChallenges.load(slug).then(setRoadbook).catch((e) => toast(e.message)); })();
     // ?trip=1 → a track recorded in the Tripmaster, handed over via sessionStorage
     (function () {
         if (!new URLSearchParams(location.search).get('trip')) return;

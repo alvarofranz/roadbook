@@ -30,8 +30,7 @@
     $('tripMode').onclick = startTrip;
     (function () {
         const pub = window.RBChallenges && RBChallenges.publicFromUrl();
-        if (pub) { RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => {}); return; }
-        const slug = window.RBChallenges && RBChallenges.fromUrl(); if (slug) RBChallenges.load(slug).then(loadRb).catch(() => {});
+        if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => {});
     })();
     // File Handling API (PWA): abrir un .rdbk desde el sistema operativo.
     if ('launchQueue' in window && window.LaunchParams) {

@@ -3,7 +3,7 @@
 (function () {
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
-    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const esc = RBesc; // shared helper (app.js)
     const t = (k, d) => (window.RBi18n ? RBi18n.t(k) : d);
     const ROOT = (window.RBChallenges && RBChallenges.ROOT) || '/';
 

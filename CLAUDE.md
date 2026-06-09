@@ -13,6 +13,18 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   `data-i18n-html`, `data-i18n-ph` in HTML; `RBi18n.t()` + auto-translating `toast()` in JS).
 
 ## Working guidelines (read first)
+- **Think, don't just obey.** Do NOT blindly do whatever the user says. If a request is
+  ambiguous, **ask for clarification before writing code** — a wrong guess wastes far more
+  than a question. If something is a bad idea, or there's a cleaner/simpler way, **say so**
+  with your reasoning. Proactively point out DRY/refactor opportunities you notice, even
+  when not asked — suggesting how to reuse and simplify is part of the job.
+- **No legacy / back-compat cruft — EVER.** When something changes, change it *properly*:
+  delete the old code, and rewrite the comments to describe the **current** reality as if it
+  had always been that way. NEVER leave "before this was X, now Y" notes, deprecation
+  shims, version notices, or `||` fallbacks for shapes the code no longer produces. There is
+  exactly one way to do each thing, and the codebase always reads fresh and clean — as if
+  written from scratch today. If a rename/refactor leaves dead code or stale comments, that's
+  not done until they're gone.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
