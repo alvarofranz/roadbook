@@ -2,14 +2,22 @@
 /* Roadbook Editor — the creation/editing hub. Imports GPX (→ roadbook), loads
  * an .rdbk file or a Challenge, edits notes (text, road type, CAP, icons),
  * adds/deletes waypoints, splices GPX (detour/extension) and exports a
- * SELF-CONTAINED roadbook (icons embedded → a single portable .rdbk file). */
+ * SELF-CONTAINED roadbook (icons embedded → a single portable .rdbk file).
+ * Unsaved work is checkpointed to localStorage and offered for recovery on the
+ * next visit, so a crash or an OS tab kill loses nothing. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
     const map = new RBMap('edMap', { zoom: 13 });
     let rb = null, sel = 0, std = null, spliceTrk = null, dirty = false, exported = false;
-    const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); };
+    // draft checkpoint: every edit schedules a debounced write of the whole working
+    // state; cleared once the work is safe (saved to profile or exported)
+    const DRAFT_KEY = 'rb_editor_draft';
+    let draftTimer = null;
+    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, isPublic })); } catch (e) {} };
+    const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
+    const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); };
     function updateSaveBtn() {
         const b = $('saveAccount'); if (!b) return;
         if (!meUser) { b.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Save'; b.classList.add('btn-primary'); return; }
@@ -85,12 +93,7 @@
     $('prevNote').onclick = () => select(sel - 1);
     $('nextNote').onclick = () => select(sel + 1);
     $('delNote').onclick = delNote;
-    window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { e.preventDefault(); e.returnValue = ''; } });
-    // ?trip=1 → a track recorded in the Tripmaster, handed over via sessionStorage
-    (function () {
-        if (!new URLSearchParams(location.search).get('trip')) return;
-        try { const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null'); sessionStorage.removeItem('rb_trip_track'); if (pts && pts.length >= 2) { setRoadbook(RB.buildRoadbook({ name: 'Recorded trip', trkpts: pts, wpts: [] })); markDirty(); } } catch (e) { toast('Could not load the recorded trip.'); }
-    })();
+    window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { saveDraft(); e.preventDefault(); e.returnValue = ''; } });
 
     /* ---------- record / adjust route (live GPS) ---------- */
     let recTrack = [], recWpts = [], recPhotos = [], recWatch = null, recLast = null, recHere = null, recWake = null, recPaused = false;
@@ -129,7 +132,8 @@
         toast('Recording discarded.');
     };
     document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState === 'visible' && recWatch != null && 'wakeLock' in navigator && (!recWake || recWake.released)) {
+        if (document.visibilityState === 'hidden') { if (rb && dirty) saveDraft(); return; } // flush the draft before a possible OS kill
+        if (recWatch != null && 'wakeLock' in navigator && (!recWake || recWake.released)) {
             try { recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         }
     });
@@ -265,16 +269,16 @@
         r.notes.forEach((n) => { n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }); });
         RB.recomputeMetrics(r); RB.recomputeCaps(r);
     }
-    // Recover an interrupted recording (crash/closed tab) on next visit.
-    function checkRecovery() {
+    // Recover an interrupted recording (crash/closed tab); true if a route was restored.
+    async function checkRecovery() {
         let s; try { s = JSON.parse(localStorage.getItem(REC_KEY) || 'null'); } catch (e) {}
-        if (!s || !s.track || s.track.length < 2) return;
-        RBConfirm(`Recover your unsaved recording (${s.track.length} points)?`, 'Recover').then((yes) => {
-            clearRec();
-            if (yes && !rb) { try { setRoadbook(RB.buildRoadbook({ name: 'Recovered route', trkpts: smoothTrack(s.track), wpts: s.wpts || [] })); markDirty(); } catch (e) {} }
-        });
+        if (!s || !s.track || s.track.length < 2) return false;
+        const yes = await RBConfirm(`Recover your unsaved recording (${s.track.length} points)?`, 'Recover');
+        clearRec();
+        if (!yes) return false;
+        try { setRoadbook(RB.buildRoadbook({ name: 'Recovered route', trkpts: smoothTrack(s.track), wpts: s.wpts || [] })); markDirty(); return true; }
+        catch (e) { return false; }
     }
-    checkRecovery();
 
     /* ---------- account: save to profile · public/private · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, isPublic = 0;
@@ -288,7 +292,7 @@
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await apiPost({ action: 'rb_save', id: currentRbId, is_public: isPublic, roadbook: rb });
         if (r.ok) {
-            currentRbId = r.id; dirty = false; updatePhotos(); updateSaveBtn();
+            currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
             try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
         }
@@ -327,17 +331,6 @@
         }
         e.target.value = ''; loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
     };
-    (async function initAccount() {
-        const cfg = await apiPost({ action: 'config' });
-        meUser = cfg.user || null;
-        updateSaveBtn();
-        if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
-        // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        const ch = RBChallenges.publicFromUrl();
-        if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
-        const id = +(new URLSearchParams(location.search).get('rb') || 0);
-        if (id && meUser) { const r = await apiPost({ action: 'rb_get', id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
-    })();
 
     /* ---------- notes + selection ---------- */
     function renderNotes() {
@@ -506,7 +499,7 @@
     /* ---------- export (self-contained .rdbk) ---------- */
     const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
-    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; };
+    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};
@@ -526,5 +519,35 @@
     let toastT = null;
     function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 
+    /* ---------- startup: trip handoff → draft → recording → challenge/?rb ---------- */
     renderIcons();
+    (async function startup() {
+        const account = apiPost({ action: 'config' }).then((cfg) => {
+            meUser = cfg.user || null;
+            updateSaveBtn();
+            if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
+        });
+        // ?trip=1 → a track recorded in the Tripmaster, handed over via sessionStorage
+        if (new URLSearchParams(location.search).get('trip')) {
+            try { const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null'); sessionStorage.removeItem('rb_trip_track'); if (pts && pts.length >= 2) { setRoadbook(RB.buildRoadbook({ name: 'Recorded trip', trkpts: pts, wpts: [] })); markDirty(); } } catch (e) { toast('Could not load the recorded trip.'); }
+            if (rb) return;
+        }
+        let draft; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+        if (draft && draft.rb && draft.rb.notes) {
+            // Declining keeps the draft — it is overwritten by the next checkpoint and
+            // cleared on save/export, so a mis-tap can't destroy unsaved work.
+            if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
+                currentRbId = draft.currentRbId || 0; setVis(draft.isPublic ? 1 : 0);
+                setRoadbook(draft.rb); markDirty();
+                return;
+            }
+        }
+        if (await checkRecovery()) return;
+        // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
+        const ch = RBChallenges.publicFromUrl();
+        if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
+        await account;
+        const id = +(new URLSearchParams(location.search).get('rb') || 0);
+        if (id && meUser) { const r = await apiPost({ action: 'rb_get', id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
+    })();
 })();
