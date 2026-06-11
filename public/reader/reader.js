@@ -1,7 +1,9 @@
 'use strict';
 /* RDBK Reader — the co-pilot's navigator. With a roadbook: active note centred,
  * odometer, live CAP, manual/auto validation, penalty engine and a signed result
- * QR. Without one: Tripmaster mode (GPS trip computer). */
+ * QR. Without one: Tripmaster mode (GPS trip computer). A run in progress is
+ * checkpointed to localStorage on every fix/state change and offered for resume
+ * on the next visit, so a call, a lock screen or an OS tab kill loses nothing. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
@@ -22,13 +24,39 @@
     let tmCap = null, tmNotes = 0, tmTimerOn = false, tmTimerStart = 0, tmTimerAcc = 0;
     let tmMax = 0, tripRecOn = false, tripRecPts = [], tripRecLastT = 0;
     let tripRecFreq = 3000, tripRecName = '', tripRecHandle = null; // GPX logging: interval, file name, File System Access handle
+    // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
+    const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
+    const GPX_KEY = 'rb_trip_gpx'; // crash-safe copy of an in-progress GPX log
 
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load: ' + err.message); } };
     $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
     $('tripMode').onclick = startTrip;
-    (function () {
+    // Resume an interrupted run first; otherwise fall back to a challenge passed
+    // in the URL, then to recovering an orphaned GPX recording.
+    (async function () {
+        let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+        let savedRb = null;
+        if (session && session.mode === 'nav') {
+            try { savedRb = JSON.parse(localStorage.getItem(SESSION_RB_KEY) || 'null'); } catch (e) {}
+            if (!savedRb || !savedRb.notes) session = null;
+        }
+        if (session) {
+            const what = session.mode === 'trip' ? 'Tripmaster'
+                : esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
+            // Declining does NOT delete the session — a mis-tap must never destroy a
+            // run; it is replaced when a new run starts or cleared on explicit exit.
+            // Its GPX log (if any) stays with it, so skip the recovery prompt too.
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km', t('Resume'))) resumeSession(session, savedRb);
+            return;
+        }
+        let g; try { g = JSON.parse(localStorage.getItem(GPX_KEY) || 'null'); } catch (e) {}
+        if (g && g.pts && g.pts.length >= 2) {
+            const yes = await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + g.pts.length + ' ' + t('points') + ')', t('Recover'));
+            try { localStorage.removeItem(GPX_KEY); } catch (e) {}
+            if (yes) finishTripRec(g.pts, g.name || gpxName(), false);
+        }
         const pub = RBChallenges.publicFromUrl();
         if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.'));
     })();
@@ -50,12 +78,12 @@
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); };
     let optGpx = false;
     function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked; optGpx = $('optGpx').checked; }
-    $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); };
+    $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); if (optGpx) beginGpxRec(); };
     $('modeComp').onclick = () => {
         readModeOpts(); $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
         setTimeout(() => { $('teamInput').focus(); $('teamInput').select(); }, 60);
     };
-    $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; $('teamModal').hidden = true; startNav(true); };
+    $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; $('teamModal').hidden = true; startNav(true); if (optGpx) beginGpxRec(); };
     $('teamCancel').onclick = () => { $('teamModal').hidden = true; $('modeModal').hidden = false; };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
@@ -66,14 +94,16 @@
         $('autoBtn').classList.toggle('btn-primary', auto);
         $('validateBtn').innerHTML = comp ? '<i class="fa-solid fa-circle-check"></i> Validate' : '<i class="fa-solid fa-circle-check"></i> Note done';
         $('navGpx').hidden = !optGpx;
+        try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes(); startGps();
-        if (optGpx) beginGpxRec(); // start logging immediately if requested at setup
         setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2) + ':' + pad(now.getSeconds(), 2); }, 1000);
     }
     function startTrip() {
         mode = 'trip'; window.RB_BUSY = true;
         document.body.classList.add('trip-on'); // hide global header + footer during the trip
         $('loadScreen').hidden = true; $('tripScreen').hidden = false;
+        try { localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} // a tripmaster session carries no roadbook
+        saveSession();
         startGps();
         setInterval(() => {
             const now = new Date();
@@ -81,6 +111,39 @@
             const ms = tmTimerAcc + (tmTimerOn ? Date.now() - tmTimerStart : 0), s = Math.floor(ms / 1000);
             $('tmTimer').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
         }, 500);
+    }
+
+    /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
+    function saveSession() {
+        if (!mode) return;
+        const s = mode === 'trip'
+            ? { mode, totalM: tripTotalM, partialM: tripPartialM, tmMax, tmNotes, timerAcc: tmTimerAcc, timerOn: tmTimerOn, timerStart: tmTimerStart, gpxRecording: tripRecOn, gpxFileName: tripRecName }
+            : { mode, competition, team, auto, showMap, gpxOption: optGpx, gpxRecording: tripRecOn, gpxFileName: tripRecName, activeIdx, totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+    }
+    function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
+    function resumeSession(s, savedRb) {
+        let gpxPts = [];
+        if (s.gpxRecording) { let g; try { g = JSON.parse(localStorage.getItem(GPX_KEY) || 'null'); } catch (e) {} gpxPts = (g && g.pts) || []; }
+        tripTotalM = s.totalM; tripPartialM = s.partialM;
+        if (s.mode === 'trip') {
+            tmMax = s.tmMax; tmNotes = s.tmNotes;
+            tmTimerAcc = s.timerAcc; tmTimerOn = s.timerOn; tmTimerStart = s.timerStart; // wall-clock: a running stopwatch keeps counting while the app is dead
+            startTrip();
+            $('tmNotes').textContent = tmNotes;
+            $('tmTimerBtn').classList.toggle('btn-primary', tmTimerOn);
+        } else {
+            rb = savedRb; notes = rb.notes;
+            team = s.team; auto = s.auto; showMap = s.showMap; optGpx = s.gpxOption;
+            activeIdx = s.activeIdx; pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
+            extraAccum = s.extraAccum; armed = s.armed;
+            startedAt = s.startedAt ? new Date(s.startedAt) : null;
+            endedAt = s.endedAt ? new Date(s.endedAt) : null;
+            startNav(s.competition);
+        }
+        // continue an interrupted GPX log (a live file handle cannot survive a reload)
+        if (s.gpxRecording) { tripRecName = s.gpxFileName || gpxName(); beginGpxRec(); tripRecPts = gpxPts; }
+        if (s.mode === 'trip') renderTrip();
     }
 
     /* ---------- shared GPS ---------- */
@@ -129,6 +192,7 @@
         const heading = an ? Math.round(RB.geo.bearingDeg(here, an)) : (tmCap != null ? Math.round(tmCap) : null);
         $('odoBrg').textContent = heading == null ? '—°' : pad(heading, 3) + '°';
         updateCapBar(here);
+        saveSession();
     }
     function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : 'GPS…'; }
 
@@ -160,6 +224,7 @@
         // only recentre when the active note actually changed (not on every approaching/redraw)
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = $('noteList').querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
         updateCapBar();
+        saveSession();
     }
     function toggleNoteMap(i) {
         const el = $('nmap' + i); if (!el) return;
@@ -223,27 +288,28 @@
         else if (activeIdx < notes.length) markReached(activeIdx);
     };
     $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off'); $('autoBtn').classList.toggle('btn-primary', auto); approaching = false; renderNotes(); };
-    $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) location.reload(); };
+    $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) { clearSession(); location.reload(); } };
     $('navGpx').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
 
     /* ---------- finish → signed META + QR ---------- */
     $('finishBtn').onclick = finish;
     async function finish() {
-        if (curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit);
+        // the open segment's speed penalty stays local so Finish is idempotent (re-tap, or resume + re-finish)
+        const penSpeed = pen.speed + ((curLimit && curLimit > 0 && maxSpdSeg > curLimit) ? C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit) : 0);
         const km = Math.round(tripTotalM / 1000 * 10);
         const durH = startedAt && endedAt ? (endedAt - startedAt) / 3600000 : 0;
         const avg = durH > 0 ? Math.round((tripTotalM / 1000 / durH) * 10) : 0;
         const meta = RB.buildMeta({
             team, date: ddmmyy(endedAt || new Date()), start: hhmmss(startedAt), end: hhmmss(endedAt),
             accuracy: Math.min(9999, Math.round(pen.acc)), skip: Math.min(9999, pen.skip), extra: Math.min(9999, Math.round(pen.extra)),
-            cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, pen.speed), km: Math.min(99999, km), avg: Math.min(999, avg),
+            cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, penSpeed), km: Math.min(99999, km), avg: Math.min(999, avg),
         });
         lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
         const qr = qrcode(0, 'M'); qr.addData(lastPayload); qr.make();
         lastQrUrl = qr.createDataURL(6, 2);
         $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
         $('qrMeta').textContent = lastPayload;
-        $('qrStats').innerHTML = `Vehicle <b>${team}</b> · ${km / 10} km<br>Accuracy ${Math.round(pen.acc)} · Skips ${pen.skip} · Extra ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · Speed ${pen.speed} pts`;
+        $('qrStats').innerHTML = `Vehicle <b>${team}</b> · ${km / 10} km<br>Accuracy ${Math.round(pen.acc)} · Skips ${pen.skip} · Extra ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · Speed ${penSpeed} pts`;
         $('qrModal').hidden = false;
     }
     $('qrClose').onclick = () => $('qrModal').hidden = true;
@@ -274,12 +340,13 @@
         $('tmSpeed').style.setProperty('--speed-band', speedBandColor(speedKmh) || 'var(--text)'); // data-driven band colour
         $('tmMax').textContent = Math.round(tmMax);
         $('tmCap').textContent = tmCap == null ? '—' : Math.round(tmCap);
+        saveSession();
     }
     $('tmPlus10').onclick = () => { tripPartialM += 10; tripTotalM += 10; renderTrip(); };
     $('tmMinus10').onclick = () => { tripPartialM = Math.max(0, tripPartialM - 10); tripTotalM = Math.max(0, tripTotalM - 10); renderTrip(); };
     $('tmNoteBtn').onclick = () => { tmNotes++; $('tmNotes').textContent = tmNotes; tripPartialM = 0; renderTrip(); };
-    $('tmTimerBtn').onclick = () => { tmTimerOn = !tmTimerOn; if (tmTimerOn) tmTimerStart = Date.now(); else tmTimerAcc += Date.now() - tmTimerStart; $('tmTimerBtn').classList.toggle('btn-primary', tmTimerOn); };
-    $('tmExit').onclick = async () => { if (await RBConfirm(t('Exit Tripmaster?'), t('Exit'))) location.reload(); };
+    $('tmTimerBtn').onclick = () => { tmTimerOn = !tmTimerOn; if (tmTimerOn) tmTimerStart = Date.now(); else tmTimerAcc += Date.now() - tmTimerStart; $('tmTimerBtn').classList.toggle('btn-primary', tmTimerOn); saveSession(); };
+    $('tmExit').onclick = async () => { if (await RBConfirm(t('Exit Tripmaster?'), t('Exit'))) { clearSession(); location.reload(); } };
 
     // hold-to-activate (5 s) for Reset — anti-accidental, works in browser + PWA
     (function holdReset() {
@@ -314,7 +381,6 @@
     };
 
     /* ---------- GPX logging: frequency + file name/location + crash-safe ---------- */
-    const GPX_KEY = 'rb_trip_gpx';
     const gpxName = () => 'RDBK_trip_' + ddmmyy(new Date()) + '_' + hhmmss(new Date());
     try { const g = JSON.parse(localStorage.getItem('rb_gpx_settings') || 'null'); if (g && g.freq) tripRecFreq = g.freq; } catch (e) {}
     function buildGpx(pts, name) {
@@ -358,6 +424,7 @@
         $('tmRecBtn').querySelector('span').textContent = t('Recording…');
         $('navGpx').classList.add('btn-primary');
         toast('Recording GPX track.');
+        saveSession();
     }
     async function stopGpxRec() {
         tripRecOn = false;
@@ -368,6 +435,7 @@
         const pts = tripRecPts.slice(), name = tripRecName, saved = !!tripRecHandle;
         tripRecHandle = null;
         try { localStorage.removeItem(GPX_KEY); } catch (e) {}
+        saveSession();
         if (pts.length >= 2) finishTripRec(pts, name, saved); else toast('Track too short.');
     }
     function finishTripRec(pts, name, savedToFile) {
@@ -382,15 +450,6 @@
         d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(pts)); } catch (e) {} location.href = '../editor/?trip=1'; };
         d.q('#trClose').onclick = d.close;
     }
-    // recover an interrupted GPX recording (crash / closed tab)
-    (function () {
-        let g; try { g = JSON.parse(localStorage.getItem(GPX_KEY) || 'null'); } catch (e) {}
-        if (!g || !g.pts || g.pts.length < 2) return;
-        RBConfirm(t('Recover unsaved GPX recording?') + ' (' + g.pts.length + ' ' + t('points') + ')', t('Recover')).then((yes) => {
-            try { localStorage.removeItem(GPX_KEY); } catch (e) {}
-            if (yes) finishTripRec(g.pts, g.name || gpxName(), false);
-        });
-    })();
 
     /* ---------- utils ---------- */
     const pad = (n, w) => String(n).padStart(w, '0');
