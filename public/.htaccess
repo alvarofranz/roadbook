@@ -1,6 +1,20 @@
 # RDBK.app — MIME type for roadbook files (.rdbk = JSON).
 AddType application/x-roadbook .rdbk
 
+# Cache policy: the app shell (HTML/JS/CSS/JSON/SVG) must follow deploys
+# IMMEDIATELY — always-revalidate (cheap 304s via Last-Modified/ETag) so neither
+# browsers nor the CDN edge ever pin an old mix of files. Without this the CDN
+# applies its default static TTL and a deploy ships new HTML with hours-old JS.
+# Uploaded media, pictogram PNGs and the vendored fonts change rarely → cache long.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|js|css|json|svg|rdbk)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+    <FilesMatch "\.(png|jpe?g|webp|gif|ico|woff2?|ttf)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
 # Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug> → the tool page
 # (only when the path isn't a real file or directory). The trailing-slash form
 # redirects to the canonical one first — the tool pages load their assets via
