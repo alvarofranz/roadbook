@@ -15,6 +15,7 @@
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row label { color: var(--muted); font-size: .82rem; min-width: 90px; }
         .ed-row select, .ed-row input[type=text], .ed-row textarea { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
+        .ed-row input[type=number] { width: 86px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
         .ed-row.top { align-items: flex-start; }
         .ed-row.between { justify-content: space-between; }
         #loadFrom .icon-category { margin-top: 0; }
@@ -119,8 +120,15 @@
         <div id="edMap" class="panel map-box"></div>
         <div id="rbPanel" hidden>
             <div class="rb-actions">
-                <button class="btn btn-primary" id="exportRdbk" data-i18n="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> Export .rdbk</button>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="exportRdbk" data-i18n="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> Export .rdbk</button>
+                    <button class="btn btn-ghost" id="exportGpx" title="Export GPX" aria-label="Export GPX"><i class="fa-solid fa-route"></i> GPX</button>
+                </div>
                 <div class="rb-actions-right">
+                    <div class="btn-group">
+                        <button class="btn btn-ghost" id="undoBtn" disabled title="Undo (Ctrl+Z)" aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                        <button class="btn btn-ghost" id="redoBtn" disabled title="Redo (Ctrl+Y)" aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+                    </div>
                     <div class="vis-toggle" role="group" aria-label="Visibility">
                         <button class="vis on" id="visPrivate" data-i18n="Private"><i class="fa-solid fa-lock"></i> Private</button>
                         <button class="vis" id="visPublic" data-i18n="Public"><i class="fa-solid fa-globe"></i> Public</button>
@@ -129,8 +137,8 @@
                 </div>
             </div>
             <div class="ed-row"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
-            <div class="ed-row"><label>Title</label><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
-            <div class="ed-row top"><label>Description</label><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
+            <div class="ed-row"><label data-i18n="Title">Title</label><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
+            <div class="ed-row top"><label data-i18n="Description">Description</label><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
             <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
             <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
             <div class="ed-row"><label data-i18n="Event logo">Event logo</label>
@@ -148,10 +156,22 @@
             <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
             <div id="noteList" class="note-list"></div>
         <details class="adv">
-            <summary data-i18n="Advanced: splice another GPX track"><i class="fa-solid fa-wand-magic-sparkles"></i> Advanced: splice another GPX track</summary>
-            <p class="muted small">Change part of the route without redoing it: <b>Detour</b> replaces the segment between two notes (e.g. a closed track) with another track; <b>Extension</b> lengthens the end. Km, bearings and CAP are recomputed automatically.</p>
-            <div class="ed-row"><label data-i18n="Operation">Operation</label>
-                <select id="spliceOp"><option value="dev">Detour (replace a segment)</option><option value="ext">Extension (lengthen the end)</option></select>
+            <summary data-i18n="Route tools"><i class="fa-solid fa-wand-magic-sparkles"></i> Route tools</summary>
+            <p class="muted small" data-i18n-html="Standard GPX editing: <b>Reverse</b> the direction of travel, <b>Simplify</b> away GPS noise, <b>Trim</b> to a segment, or <b>Splice</b> another track in. Km, bearings and CAP are recomputed automatically — and every change can be undone.">Standard GPX editing: <b>Reverse</b> the direction of travel, <b>Simplify</b> away GPS noise, <b>Trim</b> to a segment, or <b>Splice</b> another track in. Km, bearings and CAP are recomputed automatically — and every change can be undone.</p>
+            <div class="ed-row"><label data-i18n="Reverse">Reverse</label>
+                <button class="btn btn-ghost" id="reverseBtn" data-i18n="Flip the direction of travel"><i class="fa-solid fa-right-left"></i> Flip the direction of travel</button>
+            </div>
+            <div class="ed-row"><label data-i18n="Simplify">Simplify</label>
+                <input id="simplifyTol" type="number" min="0.5" max="50" step="0.5" value="2" inputmode="decimal"> m
+                <button class="btn btn-ghost" id="simplifyBtn" data-i18n="Remove noise points"><i class="fa-solid fa-broom"></i> Remove noise points</button>
+                <span id="simplifyInfo" class="muted small"></span>
+            </div>
+            <div class="ed-row"><label data-i18n="Trim">Trim</label>
+                <span data-i18n="keep from">keep from</span> <select id="trimA"></select> <span data-i18n="to">to</span> <select id="trimB"></select>
+                <button class="btn btn-ghost" id="trimApply" data-i18n="Trim ends"><i class="fa-solid fa-crop-simple"></i> Trim ends</button>
+            </div>
+            <div class="ed-row"><label data-i18n="Splice">Splice</label>
+                <select id="spliceOp"><option value="dev" data-i18n="Detour (replace a segment)">Detour (replace a segment)</option><option value="ext" data-i18n="Extension (lengthen the end)">Extension (lengthen the end)</option></select>
             </div>
             <div class="ed-row" id="spliceDev"><label data-i18n="Segment to replace">Segment to replace</label>
                 <span>from <select id="spliceA"></select> to <select id="spliceB"></select></span>
@@ -170,6 +190,11 @@
     <section id="viewNote" hidden>
         <div class="ed-row between">
             <button class="btn btn-ghost" id="backToMap" data-i18n="Map &amp; notes"><i class="fa-solid fa-arrow-left"></i> Map &amp; notes</button>
+            <div class="btn-group">
+                <button class="btn btn-ghost" id="copyVig" title="Copy vignette" aria-label="Copy vignette"><i class="fa-solid fa-copy"></i></button>
+                <button class="btn btn-ghost" id="cutVig" title="Cut vignette" aria-label="Cut vignette"><i class="fa-solid fa-scissors"></i></button>
+                <button class="btn btn-ghost" id="pasteVig" disabled title="Paste vignette" aria-label="Paste vignette"><i class="fa-solid fa-paste"></i></button>
+            </div>
             <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
             <div class="btn-group">
                 <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
@@ -193,6 +218,7 @@
             </div>
             <input id="iconFile" type="file" accept="image/*" multiple hidden>
             <p class="muted small" data-i18n-html="Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.">Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.</p>
+            <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" autocomplete="off"></div>
             <div id="iconGrid" class="icon-grid"></div>
         </div>
         <div id="tabMap" hidden>

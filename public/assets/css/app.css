@@ -172,6 +172,8 @@ section.block { padding: 2.4rem 0; }
 .noterow .col-right .text { flex: 1; word-break: break-word; }
 .noterow .col-right .cap-indicator { color: var(--track); font-weight: 800; line-height: 1.2; margin-bottom: .3rem; }
 .noterow .col-right .coords { color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; margin-top: auto; }
+/* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
+.vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
 .gallery-card .gallery-body { padding: .9rem 1rem; }
 .gallery-card h3 { margin: 0 0 .2rem; font-size: 1.05rem; }
 .gallery-card .gallery-meta { color: var(--muted); font-size: .82rem; }

@@ -76,6 +76,8 @@ window.NoteCanvas = class NoteCanvas {
                 });
             }
         });
+        const danger = dangerMarks(this.note);
+        if (danger) { const marks = svg('text', { class: 'vignette-box-dyn vignette-danger', x: 8, y: 40 }); marks.textContent = danger; this.svg.appendChild(marks); }
         // icons
         (this.note.icons || []).forEach((ic, i) => {
             const [cxi, cyi] = this.toV(ic.pos ? ic.pos[0] : 0, ic.pos ? ic.pos[1] : 0);
@@ -166,6 +168,8 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         const flip = ic.flip_x ? ` transform="translate(${2 * cxi} 0) scale(-1 1)"` : '';
         s += `<g transform="rotate(${ic.angle || 0} ${cxi} ${cyi})"><image x="${cxi - sz / 2}" y="${cyi - sz / 2}" width="${sz}" height="${sz}" href="${resolveIcon(ic)}"${flip} preserveAspectRatio="xMidYMid meet"/></g>`;
     });
+    const danger = dangerMarks(note);
+    if (danger) s += `<text x="8" y="40" class="vignette-danger">${danger}</text>`;
     return s + '</svg>';
 };
 
@@ -187,6 +191,9 @@ window.NoteCanvas.rowCols = function (n, iconSrc) {
         </div>`;
 };
 
+/* FIA-style danger grading: the note's `danger` (1-3) renders as '!' / '!!' /
+ * '!!!' in red INSIDE the diagram box (top-left), never in the text column. */
+function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repeat(Math.min(d, 3)) : ''; }
 /* The tulip trunk: the road you arrive FROM always enters from the bottom edge
  * to the box centre (styled by road_type_in) and the road you leave ON exits
  * from the centre to the top arrow (styled by road_type_out). Junction vectors

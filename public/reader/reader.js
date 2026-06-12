@@ -385,14 +385,10 @@
     /* ---------- GPX logging: frequency + file name/location + crash-safe ---------- */
     const gpxName = () => 'RDBK_trip_' + ddmmyy(new Date()) + '_' + hhmmss(new Date());
     try { const g = JSON.parse(localStorage.getItem('rb_gpx_settings') || 'null'); if (g && g.freq) tripRecFreq = g.freq; } catch (e) {}
-    function buildGpx(pts, name) {
-        const segmented = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
-        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${esc(name || 'RDBK trip')}</name><trkseg>${segmented}</trkseg></trk></gpx>`;
-    }
     function trackKm(pts) { let m = 0; for (let i = 1; i < pts.length; i++) m += RB.geo.haversineM(pts[i - 1], pts[i]); return m / 1000; }
-    async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(buildGpx(tripRecPts, tripRecName)); await w.close(); } catch (e) {} }
+    async function writeHandle() { if (!tripRecHandle) return; try { const w = await tripRecHandle.createWritable(); await w.write(RB.gpxDocument(tripRecName, tripRecPts)); await w.close(); } catch (e) {} }
     function persistGpx() { try { localStorage.setItem(GPX_KEY, JSON.stringify({ pts: tripRecPts, name: tripRecName })); } catch (e) {} writeHandle(); }
-    function downloadGpx(pts, name) { RBDownload(new Blob([buildGpx(pts, name)], { type: 'application/gpx+xml' }), (name || gpxName()) + '.gpx'); }
+    function downloadGpx(pts, name) { RBDownload(new Blob([RB.gpxDocument(name || gpxName(), pts)], { type: 'application/gpx+xml' }), (name || gpxName()) + '.gpx'); }
 
     $('tmRecBtn').onclick = () => { if (tripRecOn) stopGpxRec(); else openGpxSettings(); };
     function openGpxSettings() {

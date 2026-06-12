@@ -204,6 +204,73 @@
         }
         return rb;
     }
+    /* ---------------- route operations (editor tools) ---------------- */
+    // Douglas-Peucker simplification with a tolerance in METRES, iterative (no
+    // recursion limit) on a local equirectangular projection. Indices listed in
+    // `keepIdx` (note anchors) always survive.
+    function simplifyTrack(trkpts, toleranceM, keepIdx) {
+        if (!trkpts || trkpts.length < 3) return (trkpts || []).slice();
+        const lat0 = toRad(trkpts[0].lat);
+        const xy = trkpts.map((p) => ({ x: toRad(p.lon) * Math.cos(lat0) * EARTH_RADIUS_M, y: toRad(p.lat) * EARTH_RADIUS_M }));
+        const segDist = (p, a, b) => {
+            const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+            const t = l2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+            return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+        };
+        const keep = new Uint8Array(trkpts.length);
+        keep[0] = keep[trkpts.length - 1] = 1;
+        (keepIdx || []).forEach((i) => { if (i >= 0 && i < keep.length) keep[i] = 1; });
+        const stack = [[0, trkpts.length - 1]];
+        while (stack.length) {
+            const [a, b] = stack.pop();
+            if (b - a < 2) continue;
+            let worst = -1, worstDist = 0;
+            for (let i = a + 1; i < b; i++) {
+                const d = segDist(xy[i], xy[a], xy[b]);
+                if (d > worstDist) { worstDist = d; worst = i; }
+            }
+            if (worstDist > toleranceM) { keep[worst] = 1; stack.push([a, worst], [worst, b]); }
+        }
+        return trkpts.filter((_, i) => keep[i]);
+    }
+    // Simplify rb.track (notes' anchor points always survive), then re-anchor and recompute.
+    function simplifyRoadbook(rb, toleranceM) {
+        rb.track = simplifyTrack(rb.track, toleranceM, rb.notes.map((n) => n.idx));
+        rb.notes.forEach((n) => { n.idx = nearestIdx(rb.track, n); });
+        recomputeMetrics(rb); recomputeCaps(rb);
+        return rb;
+    }
+    // Reverse the direction of travel: track flipped, notes re-anchored and
+    // re-ordered, road in/out swapped, metrics/bearings/CAPs recomputed.
+    function reverseRoadbook(rb) {
+        const last = rb.track.length - 1;
+        rb.track.reverse();
+        rb.notes.forEach((n) => {
+            n.idx = last - n.idx;
+            const roadIn = n.road_type_in; n.road_type_in = n.road_type_out; n.road_type_out = roadIn;
+        });
+        recomputeMetrics(rb); recomputeCaps(rb);
+        return rb;
+    }
+    // Crop the route to the segment between two notes (inclusive); notes outside are dropped.
+    function trimRoadbook(rb, numA, numB) {
+        const A = rb.notes.find((n) => n.num === numA), B = rb.notes.find((n) => n.num === numB);
+        if (!A || !B) throw new Error('Notes not found.');
+        if (A.idx >= B.idx) throw new Error('The start note must come before the end note.');
+        rb.track = rb.track.slice(A.idx, B.idx + 1);
+        rb.notes = rb.notes.filter((n) => n.idx >= A.idx && n.idx <= B.idx);
+        rb.notes.forEach((n) => { n.idx -= A.idx; });
+        recomputeMetrics(rb); recomputeCaps(rb);
+        return rb;
+    }
+    // Serialize a GPX 1.1 document: a track (points may carry ele/t) + optional named waypoints.
+    function gpxDocument(name, pts, wpts) {
+        const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+        const trkpts = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
+        const wptXml = (wpts || []).map((w) => `<wpt lat="${w.lat}" lon="${w.lon}">${w.name ? '<name>' + x(w.name) + '</name>' : ''}</wpt>`).join('');
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(name || 'RDBK route')}</name></metadata>${wptXml}<trk><name>${x(name || 'RDBK route')}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
+    }
+
     // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
     function speedLimitFromName(name) {
         if (!name) return null;
@@ -284,6 +351,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
+        simplifyTrack, simplifyRoadbook, reverseRoadbook, trimRoadbook, gpxDocument,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6,
     };

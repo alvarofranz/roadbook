@@ -17,7 +17,7 @@
     let draftTimer = null;
     const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, isPublic })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
-    const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); };
+    const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     function updateSaveBtn() {
         const b = $('saveAccount'); if (!b) return;
         if (!meUser) { b.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Save'; b.classList.add('btn-primary'); return; }
@@ -66,8 +66,46 @@
         updatePhotos(); updateSaveBtn();
         map.showRoadbook(rb); renderNotes(); renderIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
+        histReset();
         showView('map'); // start on the map + notes; tap a note to edit it
     }
+
+    /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
+    const HIST_MAX = 30;
+    let histPast = [], histFuture = [], histTimer = null;
+    const histSnap = () => JSON.stringify({ rb, sel });
+    function histReset() { clearTimeout(histTimer); histPast = [histSnap()]; histFuture = []; updateHistBtns(); }
+    function histPushNow() {
+        const snap = histSnap();
+        if (snap === histPast[histPast.length - 1]) return;
+        histPast.push(snap); if (histPast.length > HIST_MAX) histPast.shift();
+        histFuture = []; updateHistBtns();
+    }
+    function histPush() { clearTimeout(histTimer); histTimer = setTimeout(histPushNow, 400); }
+    function histApply(snap) {
+        const st = JSON.parse(snap);
+        rb = st.rb; sel = Math.max(0, Math.min(st.sel, rb.notes.length - 1));
+        dirty = true; exported = false; updateSaveBtn();
+        clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000);
+        $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
+        $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
+        setLogoPreview(rb.meta.logo);
+        map.showRoadbook(rb); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
+        $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
+        updateHistBtns();
+    }
+    function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
+    function redo() { if (!histFuture.length) return; const snap = histFuture.pop(); histPast.push(snap); histApply(snap); }
+    function updateHistBtns() { $('undoBtn').disabled = histPast.length < 2; $('redoBtn').disabled = !histFuture.length; }
+    $('undoBtn').onclick = undo;
+    $('redoBtn').onclick = redo;
+    window.addEventListener('keydown', (e) => {
+        // leave native text-field undo alone; never undo mid-recording
+        if (!(e.ctrlKey || e.metaKey) || !rb || recWatch != null || e.target.matches('input, textarea, select')) return;
+        const key = e.key.toLowerCase();
+        if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        else if (key === 'y' || (key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+    });
     $('rbTitle').oninput = (e) => { if (rb) { rb.meta.title = e.target.value; markDirty(); } };
     $('rbDesc').oninput = (e) => { if (rb) { rb.meta.description = e.target.value; markDirty(); } };
     $('rbAuthor').oninput = (e) => { if (rb) { rb.meta.author = e.target.value; markDirty(); } };
@@ -343,14 +381,16 @@
         $('noteList').querySelectorAll('.note-mini').forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         $('noteList').querySelectorAll('.note-mini').forEach((c) => c.onclick = () => select(+c.dataset.i));
         const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
-        fillSplice();
+        fillNoteSelects();
     }
-    function fillSplice() {
+    // note pickers used by the route tools (splice segment + trim range)
+    function fillNoteSelects() {
         if (!rb) return;
-        const opt = (n) => `<option value="${n.num}">Note ${n.num}${n.text ? ' · ' + esc(n.text.slice(0, 18)) : ''}</option>`;
-        const a = $('spliceA'), b = $('spliceB');
-        if (a) a.innerHTML = rb.notes.map(opt).join('');
-        if (b) { b.innerHTML = rb.notes.map(opt).join(''); b.value = rb.notes[rb.notes.length - 1].num; }
+        const opts = rb.notes.map((n) => `<option value="${n.num}">Note ${n.num}${n.text ? ' · ' + esc(n.text.slice(0, 18)) : ''}</option>`).join('');
+        const lastNum = rb.notes[rb.notes.length - 1].num;
+        [['spliceA', null], ['spliceB', lastNum], ['trimA', null], ['trimB', lastNum]].forEach(([id, value]) => {
+            const el = $(id); el.innerHTML = opts; if (value != null) el.value = value;
+        });
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
@@ -393,16 +433,19 @@
     }
     function renderEditor() {
         const n = rb.notes[sel];
-        const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${l}</option>`).join('');
+        const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
+        const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
         $('editor').innerHTML = `
-            <div class="ed-row"><label>Note ${n.num}</label><span class="muted small">${((n.distance ?? 0) / 1000).toFixed(2)} km · trip +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span></div>
-            <div class="ed-row"><label>Text</label><input type="text" id="edText" value="${esc(n.text || '')}" placeholder="Description"></div>
-            <div class="ed-row"><label>Road in</label><select id="edRin">${opts(n.road_type_in)}</select></div>
-            <div class="ed-row"><label>Road out</label><select id="edRout">${opts(n.road_type_out)}</select></div>
-            <div class="ed-row"><label>Red CAP</label><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></div>`;
+            <div class="ed-row"><label>${t('Note')} ${n.num}</label><span class="muted small">${((n.distance ?? 0) / 1000).toFixed(2)} km · trip +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span></div>
+            <div class="ed-row"><label>${t('Text')}</label><input type="text" id="edText" value="${esc(n.text || '')}" placeholder="${t('Description')}"></div>
+            <div class="ed-row"><label>${t('Road in')}</label><select id="edRin">${opts(n.road_type_in)}</select></div>
+            <div class="ed-row"><label>${t('Road out')}</label><select id="edRout">${opts(n.road_type_out)}</select></div>
+            <div class="ed-row"><label>${t('Danger')}</label><select id="edDanger">${dangerOpts}</select></div>
+            <div class="ed-row"><label>${t('Red CAP')}</label><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></div>`;
         $('edText').oninput = (e) => { n.text = e.target.value; renderNotes(); markDirty(); };
         $('edRin').onchange = (e) => { n.road_type_in = +e.target.value; canvas.render(); renderNotes(); map.showRoadbook(rb); markDirty(); };
         $('edRout').onchange = (e) => { n.road_type_out = +e.target.value; canvas.render(); renderNotes(); map.showRoadbook(rb); markDirty(); };
+        $('edDanger').onchange = (e) => { const v = +e.target.value; if (v) n.danger = v; else delete n.danger; canvas.render(); markDirty(); };
         $('edCap').onchange = (e) => { toggleCap(e.target.checked); markDirty(); };
     }
     function toggleCap(on) {
@@ -434,8 +477,8 @@
         const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
         let html = '';
-        if (custom.length) html += `<div class="icon-category">Yours (in this roadbook)</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
-        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category">${cat}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
+        if (custom.length) html += `<div class="icon-category">${t('Yours (in this roadbook)')}</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
+        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
         $('iconGrid').innerHTML = html || '<span class="muted small">No icons.</span>';
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);
@@ -447,6 +490,24 @@
             });
         });
         $('iconGrid').querySelectorAll('span[data-del]').forEach((s) => s.onclick = (ev) => { ev.stopPropagation(); delCustomIcon(s.dataset.del); });
+        filterIcons();
+    }
+    // live palette filter: match icon names, hide emptied categories
+    $('iconSearch').oninput = filterIcons;
+    function filterIcons() {
+        const q = $('iconSearch').value.trim().toLowerCase();
+        let category = null, categoryHasHits = false;
+        [...$('iconGrid').children].forEach((el) => {
+            if (el.classList.contains('icon-category')) {
+                if (category) category.hidden = !categoryHasHits;
+                category = el; categoryHasHits = false;
+                return;
+            }
+            const hit = !q || (el.dataset.add || '').toLowerCase().includes(q);
+            el.hidden = !hit;
+            if (hit) categoryHasHits = true;
+        });
+        if (category) category.hidden = !categoryHasHits;
     }
     const iconBtn = (name, src, rmv) =>
         `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
@@ -467,6 +528,64 @@
     };
     const safeName = (n) => n.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileToDataURL = (f) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
+
+    /* ---------- route tools: reverse · simplify · trim ---------- */
+    // refresh everything after a whole-route operation
+    function routeChanged(toastMsg) {
+        sel = Math.min(sel, rb.notes.length - 1);
+        map.showRoadbook(rb); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
+        if (toastMsg) toast(toastMsg);
+    }
+    $('reverseBtn').onclick = () => {
+        if (!rb) return toast('Load a roadbook first.');
+        RB.reverseRoadbook(rb); sel = 0;
+        routeChanged('Route reversed — review the vignettes.');
+    };
+    $('simplifyBtn').onclick = () => {
+        if (!rb) return toast('Load a roadbook first.');
+        const tolerance = Math.max(0.5, Math.min(50, parseFloat($('simplifyTol').value) || 2));
+        const before = rb.track.length;
+        RB.simplifyRoadbook(rb, tolerance);
+        $('simplifyInfo').textContent = before + ' → ' + rb.track.length + ' pts';
+        routeChanged('Removed ' + (before - rb.track.length) + ' points.');
+    };
+    $('trimApply').onclick = async () => {
+        if (!rb) return toast('Load a roadbook first.');
+        if (!(await RBConfirm(t('Trim the route?') + ' ' + t('Everything outside the selected notes is deleted.'), t('Trim')))) return;
+        try { RB.trimRoadbook(rb, +$('trimA').value, +$('trimB').value); } catch (e) { return toast('Error: ' + e.message); }
+        sel = 0;
+        routeChanged('Route trimmed · metrics recomputed.');
+    };
+
+    /* ---------- vignette clipboard: copy / cut / paste between notes ---------- */
+    // The clipboard carries the drawing (icons + junctions) plus the data URIs of
+    // any custom symbols, so a paste stays self-contained even across roadbooks.
+    let vigClip = null;
+    const deepClone = (v) => JSON.parse(JSON.stringify(v));
+    function copyVignette(cut) {
+        if (!rb) return;
+        const n = rb.notes[sel], lib = {};
+        (n.icons || []).forEach((ic) => {
+            const base = (ic.name || '').split('/').pop();
+            const k = Object.keys(rb.icons).find((x) => x.toLowerCase() === base.toLowerCase());
+            if (k) lib[k] = rb.icons[k];
+        });
+        vigClip = deepClone({ icons: n.icons || [], junctions: n.junctions || null, lib });
+        if (cut) { n.icons = []; n.junctions = null; canvas.setNote(n); markDirty(); }
+        $('pasteVig').disabled = false;
+        toast(cut ? 'Vignette cut.' : 'Vignette copied.');
+    }
+    $('copyVig').onclick = () => copyVignette(false);
+    $('cutVig').onclick = () => copyVignette(true);
+    $('pasteVig').onclick = () => {
+        if (!vigClip || !rb) return;
+        const n = rb.notes[sel];
+        n.icons = deepClone(vigClip.icons);
+        n.junctions = vigClip.junctions ? deepClone(vigClip.junctions) : null;
+        Object.assign(rb.icons, deepClone(vigClip.lib));
+        canvas.setNote(n); renderIcons(); markDirty();
+        toast('Vignette pasted.');
+    };
 
     /* ---------- splicing (detour / extension) ---------- */
     $('spliceOp').onchange = () => { $('spliceDev').hidden = $('spliceOp').value !== 'dev'; };
@@ -500,6 +619,12 @@
     const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
     $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
+    // round-trip back to GPX: the track + every note as a named waypoint
+    $('exportGpx').onclick = () => {
+        if (!rb) return toast('Nothing to save.');
+        const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: n.text || 'wpt' + n.num }));
+        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), slugify(rb.meta?.title) + '_' + stamp() + '.gpx');
+    };
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};
