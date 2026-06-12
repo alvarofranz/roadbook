@@ -11,7 +11,10 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
-    const map = new RBMap('edMap', { zoom: 13 });
+    // base map style: satellite photo, or terrain (detailed off-road tracks + contours)
+    const MAP_STYLES = { satellite: 'mapbox://styles/mapbox/satellite-streets-v12', terrain: 'mapbox://styles/mapbox/outdoors-v12' };
+    let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
     let rb = null, sel = 0, std = null, dirty = false, exported = false;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
@@ -89,7 +92,8 @@
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
-            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', toolMax: maxed ? 'Exit full screen' : 'Maximize',
+            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
+            toolLayers: 'Satellite / terrain map', toolMax: maxed ? 'Exit full screen' : 'Maximize',
         };
         Object.entries(tips).forEach(([id, key]) => $(id).setAttribute('data-tip', t(key)));
     }
@@ -103,6 +107,15 @@
         if (map.map) setTimeout(() => map.map.resize(), 60);
     }
     $('toolMax').onclick = () => setMax(!$('mapEditor').classList.contains('max'));
+    $('toolLayers').onclick = () => {
+        mapStyle = mapStyle === 'satellite' ? 'terrain' : 'satellite';
+        try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
+        map.setBaseStyle(MAP_STYLES[mapStyle], () => {
+            if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
+            if (rb) refreshMap(true);
+            if (currentRbId > 0) loadPhotos();
+        });
+    };
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMax(false); setMapTool('pan'); } });
     // Draw mode: every tap extends the route from the nearest OPEN end — the
     // finish, the start, or either edge of an open cut (tapping on the opposite
@@ -628,7 +641,7 @@
     function openNoteMap() {
         if (!rb) return;
         if (!noteMap) {
-            noteMap = new RBMap('noteMap', { zoom: 14 });
+            noteMap = new RBMap('noteMap', { zoom: 14, style: MAP_STYLES[mapStyle] });
             // tapping another note on the map switches the one being edited, staying on the map
             noteMap.onWaypoint((i) => { sel = i; renderEditor(); canvas.setNote(rb.notes[i]); placeEditMarker(); });
         }

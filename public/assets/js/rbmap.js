@@ -23,7 +23,24 @@ window.RBMap = class RBMap {
         }
         this.map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
         this.map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }));
-        this.map.on('load', () => { this._init(); this._terrain(); this.ready = true; this.map.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } });
+        // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
+        const m = this.map;
+        m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
+        m.on('click', 'rb-photos', (e) => { if (this._onPhoto && e.features[0]) this._onPhoto(JSON.parse(e.features[0].properties.d)); });
+        m.on('mouseenter', 'rb-wpts', () => m.getCanvas().style.cursor = 'pointer');
+        m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
+        m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
+        m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = this._baseCursor);
+        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } });
+    }
+    // Swap the base style (satellite ↔ terrain). Mapbox wipes every custom
+    // source/layer on setStyle, so everything is rebuilt and the caller repaints
+    // its data in onReady.
+    setBaseStyle(styleUrl, onReady) {
+        if (!this.map) return;
+        this.ready = false;
+        this.map.setStyle(styleUrl);
+        this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; if (onReady) onReady(); });
     }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
@@ -54,12 +71,6 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': '📷', 'text-size': 11 } });
         m.addSource('rb-pos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
-        m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
-        m.on('click', 'rb-photos', (e) => { if (this._onPhoto && e.features[0]) this._onPhoto(JSON.parse(e.features[0].properties.d)); });
-        m.on('mouseenter', 'rb-wpts', () => m.getCanvas().style.cursor = 'pointer');
-        m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
-        m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
-        m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = this._baseCursor);
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).
     setCursor(cursor) { this._baseCursor = cursor || ''; if (this.map) this.map.getCanvas().style.cursor = this._baseCursor; }

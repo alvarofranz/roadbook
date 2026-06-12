@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.12-11">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.12-12">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.12-11">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.12-12">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -105,6 +105,16 @@
             .vig-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 1.2rem; align-items: start; }
             .vig-icons .icon-grid { max-height: 58vh; }
         }
+        /* big desktop: RB-suite layout — the map pinned on the left, the notes
+           and details editing column on the right */
+        @media (min-width: 1100px) {
+            main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
+            #viewMap { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; }
+            #loadFrom, #recBar { grid-column: 1 / -1; }
+            .map-editor { position: sticky; top: 66px; }
+            #edMap { height: calc(100vh - 112px); }
+            .rb-actions { margin-top: 0; }
+        }
         @media (max-width: 600px) {
             #edMap { height: 46vh; }
             .icon-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); max-height: 38vh; }
@@ -159,6 +169,7 @@
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
                 <span class="map-tools-sep"></span>
+                <button class="map-tool" id="toolLayers" aria-label="Satellite / terrain map"><i class="fa-solid fa-layer-group"></i></button>
                 <button class="map-tool" id="toolMax" aria-label="Maximize"><i class="fa-solid fa-expand"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
@@ -250,14 +261,14 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.12-11"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.12-11"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.12-11"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.12-11"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.12-11"></script>
-<script src="../assets/js/challenges.js?v=2026.06.12-11"></script>
-<script src="../assets/js/i18n.js?v=2026.06.12-11"></script>
-<script src="../assets/js/app.js?v=2026.06.12-11"></script>
-<script src="editor.js?v=2026.06.12-11"></script>
+<script src="../assets/js/config.js?v=2026.06.12-12"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.12-12"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.12-12"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.12-12"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.12-12"></script>
+<script src="../assets/js/challenges.js?v=2026.06.12-12"></script>
+<script src="../assets/js/i18n.js?v=2026.06.12-12"></script>
+<script src="../assets/js/app.js?v=2026.06.12-12"></script>
+<script src="editor.js?v=2026.06.12-12"></script>
 </body>
 </html>
