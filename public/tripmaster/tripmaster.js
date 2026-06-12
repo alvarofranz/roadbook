@@ -6,7 +6,7 @@
  * call, a lock screen or an OS tab kill loses nothing. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt; // shared helper (i18n.js)
+    const t = RBt, toast = RBToast; // shared helpers (app.js / i18n.js)
     const SESSION_KEY = 'rb_tripmaster_session';
 
     let totalM = 0, partialM = 0, maxKmh = 0, waypoints = 0;
@@ -136,6 +136,4 @@
     });
     $('tmRecBtn').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
-    let toastT = null;
-    function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 })();

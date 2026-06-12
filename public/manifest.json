@@ -1,10 +1,12 @@
 {
+    "id": "./",
     "name": "RDBK.app",
     "short_name": "RDBK",
     "description": "Digital roadbooks for any adventure: create, navigate, validate and rank. The open .rdbk format.",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
+    "launch_handler": { "client_mode": "navigate-existing" },
     "background_color": "#0e1116",
     "theme_color": "#0e1116",
     "icons": [
@@ -14,5 +16,10 @@
     ],
     "file_handlers": [
         { "action": "./reader/", "accept": { "application/x-roadbook": [".rdbk"] } }
+    ],
+    "shortcuts": [
+        { "name": "Editor", "url": "./editor/", "icons": [{ "src": "assets/web-app-manifest-192x192.png", "sizes": "192x192" }] },
+        { "name": "Reader", "url": "./reader/", "icons": [{ "src": "assets/web-app-manifest-192x192.png", "sizes": "192x192" }] },
+        { "name": "Tripmaster", "url": "./tripmaster/", "icons": [{ "src": "assets/web-app-manifest-192x192.png", "sizes": "192x192" }] }
     ]
 }

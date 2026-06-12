@@ -9,7 +9,7 @@
  * checkpointed to localStorage and offered for recovery on the next visit. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
+    const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
     const map = new RBMap('edMap', { zoom: 13 });
     let rb = null, sel = 0, std = null, dirty = false, exported = false;
@@ -386,7 +386,7 @@
         if (!(await RBConfirm('Discard this recording? It cannot be undone.', 'Discard'))) return;
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
         if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
-        if (draftId) { apiPost({ action: 'rb_delete', id: draftId }); draftId = 0; }
+        if (draftId) { RBApi('rb_delete', { id: draftId }); draftId = 0; }
         recPaused = false; recTrack = []; recWpts = []; recPhotos = []; clearRec();
         await RBGpxRecorder.finish(); // discard releases the live file + checkpoint too
         if (map) map.setLiveTrack([], [], []);
@@ -407,7 +407,7 @@
         $('loadFrom').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
         $('recPhoto').hidden = !meUser;
         if (mode === 'adjust') { showView('map'); if (map) { refreshMap(false); map.setOverlay([]); } draftId = currentRbId; $('recPhoto').hidden = !draftId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
-        else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await apiPost({ action: 'rb_draft' }); if (r.ok) draftId = r.id; } }
+        else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await RBApi('rb_draft'); if (r.ok) draftId = r.id; } }
         updateRecStats();
         try { if ('wakeLock' in navigator) recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         recWatch = navigator.geolocation.watchPosition(onRecFix, (e) => toast('GPS: ' + e.message), { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
@@ -546,7 +546,6 @@
 
     /* ---------- account: save to profile · public/private · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, isPublic = 0;
-    const apiPost = (body) => fetch('../api/index.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json()).catch(() => ({ ok: false, error: 'Network error.' }));
     $('visPrivate').onclick = () => { setVis(0); markDirty(); };
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
     function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); }
@@ -554,7 +553,7 @@
     function resetIdentity() { currentRbId = 0; setVis(0); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const r = await apiPost({ action: 'rb_save', id: currentRbId, is_public: isPublic, roadbook: rb });
+        const r = await RBApi('rb_save', { id: currentRbId, is_public: isPublic, roadbook: rb });
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
@@ -576,11 +575,11 @@
         else { $('photosSection').hidden = true; $('photoGrid').innerHTML = ''; }
     }
     async function loadPhotos() {
-        const r = await apiPost({ action: 'ph_list', roadbook: currentRbId });
+        const r = await RBApi('ph_list', { roadbook: currentRbId });
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { g.innerHTML = '<span class="muted small">No photos yet.</span>'; if (map) map.setPhotos([]); return; }
         g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${p.url}" alt=""><span data-delp="${p.id}" class="del-badge">×</span></div>`).join('');
-        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await apiPost({ action: 'ph_delete', id: +s.dataset.delp }); loadPhotos(); });
+        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
         // pins on the map; tap a 📷 pin to promote it to a waypoint
         if (map) map.setPhotos(r.photos, (ph) => {
             if (ph.lat == null) return;
@@ -791,14 +790,11 @@
     async function urlToDataURL(url) { try { const res = await fetch(url); if (!res.ok) return null; const b = await res.blob(); return await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); } catch (e) { return null; } }
     function download(obj, name) { RBDownload(new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }), name); }
 
-    /* ---------- utils ---------- */
-    let toastT = null;
-    function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 
     /* ---------- startup: trip handoff → draft → recording → challenge/?rb ---------- */
     renderIcons();
     (async function startup() {
-        const account = apiPost({ action: 'config' }).then((cfg) => {
+        const account = RBApi('config').then((cfg) => {
             meUser = cfg.user || null;
             updateSaveBtn();
             if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
@@ -826,6 +822,6 @@
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;
         const id = +(new URLSearchParams(location.search).get('rb') || 0);
-        if (id && meUser) { const r = await apiPost({ action: 'rb_get', id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
+        if (id && meUser) { const r = await RBApi('rb_get', { id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
     })();
 })();

@@ -6,7 +6,7 @@
  * nothing. GPS plumbing lives in RBGpsMeter; GPX logging in RBGpxRecorder. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
+    const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const C = RB.CONST;
 
     let rb = null, notes = [], activeIdx = 0, team = '0';
@@ -193,7 +193,7 @@
             const dist = RB.geo.haversineM(here, an);
             $('capDist').textContent = dist >= 1000 ? (dist / 1000).toFixed(2) + ' km' : Math.round(dist) + ' m';
             const rel = ((prev.cap - (meter.heading != null ? meter.heading : 0)) + 360) % 360;
-            $('capArrow').style.transform = `rotate(${rel - 45}deg)`;
+            $('capArrow').style.setProperty('--cap-rotation', (rel - 45) + 'deg'); // data-driven arrow direction
         }
     }
     // "Note reached" button: advance sequentially and mark green (both modes).
@@ -274,6 +274,4 @@
     const pad = (n, w) => String(n).padStart(w, '0');
     const ddmmyy = (d) => d ? pad(d.getDate(), 2) + pad(d.getMonth() + 1, 2) + pad(d.getFullYear() % 100, 2) : '000000';
     const hhmmss = (d) => d ? pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2) : '000000';
-    let toastT = null;
-    function toast(m) { const el = $('toast'); el.textContent = RBt(m); el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2500); }
 })();

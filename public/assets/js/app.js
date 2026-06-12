@@ -190,6 +190,18 @@
     };
     // HTML-escape for safe interpolation into innerHTML.
     window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // Translated toast (every tool page ships an empty #toast element).
+    let toastTimer = null;
+    window.RBToast = (msg) => {
+        const el = document.getElementById('toast'); if (!el) return;
+        el.textContent = RBt(msg); el.hidden = false;
+        clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
+    };
+    // JSON POST to the API → the parsed response ({ ok: false, … } on network failure).
+    window.RBApi = (action, body) => fetch(ROOT + 'api/index.php', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ action }, body || {})),
+    }).then((r) => r.json()).catch(() => ({ ok: false, error: 'Network error.' }));
     // Trigger a download from a Blob or a URL.
     window.RBDownload = (data, filename) => {
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
@@ -230,8 +242,7 @@
 
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
-        let user = null;
-        try { user = (await (await fetch(ROOT + 'api/index.php?action=config', { credentials: 'same-origin' })).json()).user; } catch (e) {}
+        const user = (await RBApi('config')).user || null;
         const place = () => {
             const slot = document.querySelector('header .topnav') || document.querySelector('header .wrap');
             if (!slot || slot.querySelector('.account-control')) return;
@@ -250,10 +261,7 @@
                 const btn = w.querySelector('.account-button'), menu = w.querySelector('.account-menu');
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
-                w.querySelector('#accountLogout').onclick = async () => {
-                    await fetch(ROOT + 'api/index.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) });
-                    location.reload();
-                };
+                w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();

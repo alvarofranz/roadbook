@@ -93,7 +93,7 @@ window.RBMap = class RBMap {
             type: 'FeatureCollection',
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
-        if (!noFit) this.fit(rb);
+        if (!noFit) this._fit(rb);
     }
     // Live recording: draw the growing track + waypoint + geolocated-photo markers.
     setLiveTrack(pts, wpts, photos) {
@@ -124,7 +124,7 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-sel').setData(note ? { type: 'Feature', geometry: { type: 'Point', coordinates: [note.lon, note.lat] } } : this._empty());
         if (note && !noEase) this.map.easeTo({ center: [note.lon, note.lat], duration: 500 });
     }
-    fit(rb) {
+    _fit(rb) {
         if (!this.map || !rb.track.length) return;
         const lons = rb.track.map((p) => p.lon), lats = rb.track.map((p) => p.lat);
         this.map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 40, duration: 600 });

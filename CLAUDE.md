@@ -10,7 +10,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - Repo: GitHub `alvarofranz/roadbook`. License **WTFPL**.
 - UI languages: **English (default) · Spanish · Italian**, browser auto-detected. All
   translation lives in `public/assets/js/i18n.js` (source-string keys; `data-i18n`,
-  `data-i18n-html`, `data-i18n-ph` in HTML; `RBi18n.t()` + auto-translating `toast()` in JS).
+  `data-i18n-html`, `data-i18n-ph` in HTML; `RBi18n.t()` + auto-translating `RBToast()` in JS).
 
 ## Working guidelines (read first)
 - **Think, don't just obey.** Do NOT blindly do whatever the user says. If a request is
@@ -34,21 +34,26 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   new cross-cutting helper, add it here, don't copy-paste it.
   - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss)`
     (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
-    returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal),
-    `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
+    returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
+    `RBToast(msg)` (translated toast into the page's `#toast`), `RBApi(action, body)` (JSON POST
+    to the API), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
-    `RBesc(str)` (HTML-escape), plus the global header/footer, version auto-refresh and install button.
+    `RBesc(str)` (HTML-escape), plus the global header/footer (minimal nav, full-viewport
+    mobile menu), version auto-refresh and install button.
   - **`i18n.js`**: `RBt(key)` (translate; falls back to the key) + `data-i18n` / `data-i18n-html`
     / `data-i18n-ph` in HTML. Keep `es`/`it` at full key parity with the English source strings.
   - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
     QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (reader)
     / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (editor).
+    **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
+    GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.icon-accent`/`.icon-danger`,
     `.field-grid`, `.btn-group`, `.grow`, the note rows, etc.
-- **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `toast`, `msg`) stay
-  local and short; alias the globals at the top (`const t = RBt, esc = RBesc;`). Anything two
-  pages share becomes an `RB*` global — that's the naming convention (no lowercase/per-file copies).
+- **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `msg`) stay local
+  and short; alias the globals at the top (`const t = RBt, esc = RBesc, toast = RBToast;`).
+  Anything two pages share becomes an `RB*` global — that's the naming convention (no
+  lowercase/per-file copies).
 - **Consistent, explicit naming.** Follow the names already used in the codebase — don't
   invent a new convention each time. A name must say what the thing IS: `width` not `wd`,
   no cryptic abbreviations or one-letter mystery vars (loop indices aside). If you find

@@ -359,7 +359,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitOfNote,
-        simplifyTrack, simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6,
     };

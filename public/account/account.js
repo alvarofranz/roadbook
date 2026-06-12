@@ -8,13 +8,7 @@
     const params = new URLSearchParams(location.search);
     let tsSite = '', tsTokens = {};
 
-    const api = async (action, body) => {
-        const r = await fetch('../api/index.php', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-            body: JSON.stringify(Object.assign({ action }, body || {})),
-        });
-        try { return await r.json(); } catch (e) { return { ok: false, error: 'Network error.' }; }
-    };
+    const api = RBApi; // shared helper (app.js)
     const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
