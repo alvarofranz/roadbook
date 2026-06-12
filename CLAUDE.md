@@ -103,8 +103,7 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
   otherwise auto-oriented join to the nearest end) · reverse · simplify
   (Douglas-Peucker, note anchors kept) · adjust on the trail (live re-record) ·
   undo/redo (debounced snapshots, Ctrl+Z/Y)*. Whatever the source pieces, the route
-  is always ONE continuous track. **Vignette clipboard** (copy/cut/paste a note's
-  drawing between notes/roadbooks, custom symbols carried along). Title, description,
+  is always ONE continuous track. Title, description,
   author, organization, event logo (downscaled, embedded) and a photo gallery;
   **Export `.rdbk`** (self-contained), **Export GPX** (track + notes as named
   waypoints) and **Save to profile** (public/private — saving pins `?rb=<id>` to the

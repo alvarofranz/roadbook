@@ -95,9 +95,13 @@
         .meta-field.full { grid-column: 1 / -1; }
         .meta-value { padding: .45rem 0; }
         .logo-row { display: flex; gap: .5rem; align-items: center; }
-        /* desktop split view: vignette canvas left · icon palette right */
+        /* in-map hint for the note-reposition view */
+        .note-map-wrap { position: relative; }
+        .map-hint { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; margin: 0; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 10px; padding: .4rem .75rem; font-size: .78rem; color: var(--text); width: max-content; max-width: 92%; text-align: center; pointer-events: none; }
+        /* desktop: wider editor, split vignette view, the five load cards on one line */
         @media (min-width: 900px) {
-            #viewNote { max-width: 1100px; }
+            #viewMap, #viewNote { max-width: 1100px; }
+            .load-opts { grid-template-columns: repeat(5, 1fr); }
             .vig-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 1.2rem; align-items: start; }
             .vig-icons .icon-grid { max-height: 58vh; }
         }
@@ -173,6 +177,8 @@
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
             </div>
+            <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
+            <div id="noteList" class="note-list"></div>
             <div class="meta-card">
                 <div class="meta-grid">
                     <label class="meta-field full"><span data-i18n="Title">Title</span><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></label>
@@ -195,8 +201,6 @@
                 <input id="photoFile" type="file" accept="image/*" multiple hidden>
                 <div id="photoGrid" class="icon-grid"></div>
             </div>
-            <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
-            <div id="noteList" class="note-list"></div>
         </div><!-- /#rbPanel -->
     </section>
 
@@ -205,12 +209,7 @@
         <div class="ed-row between">
             <button class="btn btn-ghost" id="backToMap" data-i18n="Map &amp; notes"><i class="fa-solid fa-arrow-left"></i> Map &amp; notes</button>
             <div class="btn-group">
-                <button class="btn btn-ghost" id="copyVig" title="Copy vignette" aria-label="Copy vignette"><i class="fa-solid fa-copy"></i></button>
-                <button class="btn btn-ghost" id="cutVig" title="Cut vignette" aria-label="Cut vignette"><i class="fa-solid fa-scissors"></i></button>
-                <button class="btn btn-ghost" id="pasteVig" disabled title="Paste vignette" aria-label="Paste vignette"><i class="fa-solid fa-paste"></i></button>
-            </div>
-            <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
-            <div class="btn-group">
+                <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
                 <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
                 <button class="btn btn-ghost" id="nextNote" aria-label="Next note"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
@@ -240,8 +239,10 @@
             </div>
         </div>
         <div id="tabMap" hidden>
-            <div id="noteMap" class="panel map-box"></div>
-            <p class="muted small" data-i18n="Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.">Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.</p>
+            <div class="note-map-wrap">
+                <div id="noteMap" class="panel map-box"></div>
+                <p class="map-hint" data-i18n="Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.">Drag the highlighted note to reposition it — its order is recomputed automatically. Tap another note to edit it.</p>
+            </div>
         </div>
     </section>
 </main>

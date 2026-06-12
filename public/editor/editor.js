@@ -732,36 +732,6 @@
         if (toastMsg) toast(toastMsg);
     }
 
-    /* ---------- vignette clipboard: copy / cut / paste between notes ---------- */
-    // The clipboard carries the drawing (icons + junctions) plus the data URIs of
-    // any custom symbols, so a paste stays self-contained even across roadbooks.
-    let vigClip = null;
-    const deepClone = (v) => JSON.parse(JSON.stringify(v));
-    function copyVignette(cut) {
-        if (!rb) return;
-        const n = rb.notes[sel], lib = {};
-        (n.icons || []).forEach((ic) => {
-            const base = (ic.name || '').split('/').pop();
-            const k = Object.keys(rb.icons).find((x) => x.toLowerCase() === base.toLowerCase());
-            if (k) lib[k] = rb.icons[k];
-        });
-        vigClip = deepClone({ icons: n.icons || [], junctions: n.junctions || null, lib });
-        if (cut) { n.icons = []; n.junctions = null; canvas.setNote(n); markDirty(); }
-        $('pasteVig').disabled = false;
-        toast(cut ? 'Vignette cut.' : 'Vignette copied.');
-    }
-    $('copyVig').onclick = () => copyVignette(false);
-    $('cutVig').onclick = () => copyVignette(true);
-    $('pasteVig').onclick = () => {
-        if (!vigClip || !rb) return;
-        const n = rb.notes[sel];
-        n.icons = deepClone(vigClip.icons);
-        n.junctions = vigClip.junctions ? deepClone(vigClip.junctions) : null;
-        Object.assign(rb.icons, deepClone(vigClip.lib));
-        canvas.setNote(n); renderIcons(); markDirty();
-        toast('Vignette pasted.');
-    };
-
     // lengthen the route with another track; an end note rides the new finish
     function extension(r, trk) {
         const nt = r.track.concat(trk.slice(1).map((p) => ({ lat: p.lat, lon: p.lon })));

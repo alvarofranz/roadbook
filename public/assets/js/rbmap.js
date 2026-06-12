@@ -134,7 +134,7 @@ window.RBMap = class RBMap {
     setEditMarker(note, onDragEnd) {
         if (!this.map || !this.ready) return;
         if (this._editMarker) this._editMarker.remove();
-        this._editMarker = new mapboxgl.Marker({ draggable: true, color: '#e8b059' }).setLngLat([note.lon, note.lat]).addTo(this.map);
+        this._editMarker = new mapboxgl.Marker({ draggable: true, color: '#ff2a2a', scale: 1.2 }).setLngLat([note.lon, note.lat]).addTo(this.map);
         this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
         this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }
