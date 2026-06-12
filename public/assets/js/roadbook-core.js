@@ -233,6 +233,25 @@
         }
         return trkpts.filter((_, i) => keep[i]);
     }
+    // Closest position ON the track polyline (not just a vertex): the segment
+    // index `i` (between points i and i+1), the fraction `t` along it, the
+    // projected point and its distance in metres.
+    function nearestOnTrack(trkpts, pt) {
+        if (!trkpts || trkpts.length < 2) return null;
+        const lat0 = toRad(pt.lat);
+        const proj = (p) => ({ x: toRad(p.lon) * Math.cos(lat0) * EARTH_RADIUS_M, y: toRad(p.lat) * EARTH_RADIUS_M });
+        const P = proj(pt);
+        let best = null;
+        for (let i = 0; i < trkpts.length - 1; i++) {
+            const A = proj(trkpts[i]), B = proj(trkpts[i + 1]);
+            const dx = B.x - A.x, dy = B.y - A.y, l2 = dx * dx + dy * dy;
+            const t = l2 ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / l2)) : 0;
+            const dist = Math.hypot(P.x - (A.x + t * dx), P.y - (A.y + t * dy));
+            if (!best || dist < best.dist) best = { i, t, dist };
+        }
+        const a = trkpts[best.i], b = trkpts[best.i + 1];
+        return { i: best.i, t: best.t, dist: best.dist, lat: round6(a.lat + (b.lat - a.lat) * best.t), lon: round6(a.lon + (b.lon - a.lon) * best.t) };
+    }
     // Simplify rb.track (notes' anchor points always survive), then re-anchor and recompute.
     function simplifyRoadbook(rb, toleranceM) {
         rb.track = simplifyTrack(rb.track, toleranceM, rb.notes.map((n) => n.idx));
@@ -340,7 +359,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
-        simplifyTrack, simplifyRoadbook, reverseRoadbook, gpxDocument,
+        simplifyTrack, simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6,
     };

@@ -153,11 +153,26 @@
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes(); markDirty();
     }
+    // Track index exactly at the tapped position: when the tap lands between two
+    // points, the nearest segment is split there with a new point — you cut and
+    // place notes ANYWHERE on the route, not just on existing vertices. The
+    // dashed connector of an open cut is never split (it is not a real segment).
+    function splitTrackAt(p) {
+        const hit = RB.nearestOnTrack(rb.track, p);
+        if (!hit) return RB.nearestIdx(rb.track, p);
+        if (new Set(gapIdxs()).has(hit.i)) return hit.t < 0.5 ? hit.i : hit.i + 1;
+        if (hit.t < 0.001) return hit.i;
+        if (hit.t > 0.999) return hit.i + 1;
+        rb.track.splice(hit.i + 1, 0, { lat: hit.lat, lon: hit.lon });
+        rb.notes.forEach((n) => { if (n.idx > hit.i) n.idx++; });
+        if (cutFromIdx > hit.i) cutFromIdx++; // keep a pending first cut anchored
+        return hit.i + 1;
+    }
     // Cut mode: tap two points — at the ends it trims; in the middle it removes
     // the span and leaves an OPEN cut (dashed connector) to fill by drawing.
     function cutPoint(p) {
         if (!rb) return toast('Load a roadbook first.');
-        const idx = RB.nearestIdx(rb.track, p);
+        const idx = splitTrackAt(p);
         if (cutFromIdx < 0) { cutFromIdx = idx; map.setPin(rb.track[idx]); toast('Now tap the other end of the cut.'); return; }
         const a = Math.min(cutFromIdx, idx), b = Math.max(cutFromIdx, idx);
         cutFromIdx = -1; map.setPin(null);
@@ -658,7 +673,7 @@
         refreshMap(true); select(Math.min(sel, rb.notes.length - 1));
     }
     function addWaypointNear(pt) {
-        const idx = RB.nearestIdx(rb.track, pt);
+        const idx = splitTrackAt(pt);
         if (rb.notes.some((n) => n.idx === idx)) return toast('There is already a note here.');
         rb.notes.push(makeNote(rb, idx, 3));
         RB.recomputeMetrics(rb); refreshMap(true); renderNotes(); markDirty();

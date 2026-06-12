@@ -96,9 +96,10 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
   type, FIA danger grading `!`/`!!`/`!!!`, CAP, icons); drag a note on the map to
   reposition. **The GPX is edited ON the map** via a vertical tool bar (translated
   hover tooltips, maximizable): mode tools *pan · add note · draw (tap to extend the
-  nearest open end) · cut (tap two points — trims at the ends; in the middle it
-  leaves a real OPEN cut, dashed on the map, that you fill by drawing or that closes
-  straight on export/save after a confirm)* plus
+  nearest open end) · cut (tap any two spots — the track is split exactly there,
+  inserting points as needed; trims at the ends, and in the middle it leaves a real
+  OPEN cut, dashed on the map, that you fill by drawing or that closes straight on
+  export/save after a confirm)* plus
   one-shot *add GPX (smart join: detour-replace if both ends touch the route,
   otherwise auto-oriented join to the nearest end) · reverse · simplify
   (Douglas-Peucker, note anchors kept) · adjust on the trail (live re-record) ·
