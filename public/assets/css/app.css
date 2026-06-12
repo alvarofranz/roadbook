@@ -40,6 +40,13 @@ a:hover { text-decoration: underline; }
 img { max-width: 100%; display: block; }
 .muted { color: var(--muted); }
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1.1rem; }
+/* keyboard accessibility: a clear ring on focus-visible only (no mouse-click rings) */
+:focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+/* vestibular accessibility: stand still when the user asks for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 
 /* ---------- topbar ---------- */
 .topbar {
