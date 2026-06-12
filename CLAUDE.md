@@ -101,10 +101,11 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
   `note-canvas.js` (drag/scale/rotate/flip icons + junction vectors).
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
-  buttons), colour-coded by state (reached green · active red border · upcoming pink ·
-  <50 m to next blue · approaching orange) with an optional per-note Mapbox static
-  mini-map. The start modal sets Trip vs Competition mode, automatic (GPS, marks within
-  50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the per-note map
+  buttons), colour-coded by state (reached green · skipped pink · active red border ·
+  upcoming white · <50 m to next blue · approaching orange) with an optional per-note
+  Mapbox static mini-map. The start modal sets Trip vs Competition mode, automatic (GPS,
+  marks within 50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the
+  per-note map
   button and optional live GPX logging. Competition validates with penalties + an
   HMAC-signed result QR; validating syncs the total odometer to the note's distance.
   No roadbook → **Tripmaster** (GPS trip computer: speed alert with configurable bands,

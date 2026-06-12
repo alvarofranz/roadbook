@@ -34,12 +34,14 @@
     }
 
     /* ---------------- road types ---------------- */
+    // width: stroke width in vignette reference units — indicative of the road
+    // type (motorway widest, off-piste thinnest).
     const ROAD_TYPES = [
-        { id: 0, color: '#9aa4b2', dashed: false }, // default
-        { id: 1, color: '#3b82f6', dashed: false }, // motorway
-        { id: 2, color: '#22c55e', dashed: false }, // asphalt
-        { id: 3, color: '#ff5a45', dashed: false }, // track
-        { id: 4, color: '#ff5a45', dashed: true },  // off-piste
+        { id: 0, color: '#9aa4b2', width: 5, dashed: false }, // default
+        { id: 1, color: '#3b82f6', width: 9, dashed: false }, // motorway
+        { id: 2, color: '#22c55e', width: 7, dashed: false }, // asphalt
+        { id: 3, color: '#ff5a45', width: 5, dashed: false }, // track
+        { id: 4, color: '#ff5a45', width: 4, dashed: true },  // off-piste
     ];
 
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
@@ -89,6 +91,13 @@
     function numFromName(s) {
         const m = String(s || '').match(/(\d+)/);
         return m ? parseInt(m[1], 10) : null;
+    }
+    // A waypoint's name (street, landmark…) is real content and becomes the note
+    // text; auto-generated labels (wptN / start / end / bare numbers) do not.
+    function wptText(w) {
+        if (typeof w.text === 'string' && w.text) return w.text;
+        const name = String(w.name || '').trim();
+        return /^(wpt\s*\d*|start|end|\d+)$/i.test(name) ? '' : name;
     }
     // Garmin .wpt: "W <name> ... lat lon" lines with N/S/E/W/O hemisphere letters
     function parseWPT(text) {
@@ -151,7 +160,7 @@
                 distance: Math.round(cum[idx]),
                 partial_distance: Math.round(prevIdx == null ? 0 : Math.max(0, cum[idx] - cum[prevIdx])),
                 lat: round6(tp.lat), lon: round6(tp.lon),
-                text: typeof w.text === 'string' ? w.text : '',
+                text: wptText(w),
                 cap: null, cap_distance: null,
                 bearing_in: round3(bIn), bearing_out: round3(bOut),
                 road_type_in: 3, road_type_out: 3, // track by default

@@ -31,6 +31,6 @@
             $('chGallery').innerHTML = j.photos.map((u) => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" loading="lazy" alt=""></a>`).join('');
         }
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
-        $('chNotes').innerHTML = rb.notes.map((n) => `<div class="noterow">${NoteCanvas.rowCols(n, iconSrc, true)}</div>`).join('');
+        $('chNotes').innerHTML = rb.notes.map((n) => `<div class="noterow">${NoteCanvas.rowCols(n, iconSrc)}</div>`).join('');
     }).catch(() => { $('chLoading').textContent = t('This challenge does not exist or is private.'); });
 })();

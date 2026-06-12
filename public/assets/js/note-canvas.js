@@ -52,9 +52,12 @@ window.NoteCanvas = class NoteCanvas {
     render() {
         [...this.svg.querySelectorAll('.vignette-box-dyn')].forEach((n) => n.remove());
         if (!this.note) { this.toolbarEl.innerHTML = ''; return; }
-        const cx = this.REF_W / 2;
         this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn vignette-box-bg', x: 0, y: 0, width: this.REF_W, height: this.REF_H, fill: 'transparent' }));
-        this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: cx, y1: this.REF_H - 8, x2: cx, y2: 18, stroke: 'rgba(255,255,255,.22)', 'stroke-width': 3, 'marker-end': 'url(#vignette-box-arrow)' }));
+        trunkSegments(this.note).forEach((s) => {
+            const attrs = { class: 'vignette-box-dyn', x1: s.x, y1: s.y1, x2: s.x, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
+            if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
+            this.svg.appendChild(svg('line', attrs));
+        });
         // junctions
         (this.note.junctions || []).forEach((b, i) => {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
@@ -137,7 +140,8 @@ window.NoteCanvas = class NoteCanvas {
     addIcon(ic) { this.note.icons.push(ic); this.sel = { type: 'icon', i: this.note.icons.length - 1 }; this._chg(); }
     addJunction() {
         this.note.junctions = this.note.junctions || [];
-        this.note.junctions.push({ pivot: [0, 0], tip: [45, 25], width: 3, road_type: this.note.road_type_out ?? 3 });
+        const roadType = this.note.road_type_out ?? 3;
+        this.note.junctions.push({ pivot: [0, 0], tip: [45, 25], width: (RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[3]).width, road_type: roadType });
         this.sel = { type: 'junctions', i: this.note.junctions.length - 1 }; this._chg();
     }
 };
@@ -148,8 +152,10 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     const toV = (px, py) => [cx + px, cy - py];
     resolveIcon = resolveIcon || ((ic) => ic.name);
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
-        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`
-        + `<line x1="${cx}" y1="${H - 8}" x2="${cx}" y2="18" stroke="rgba(255,255,255,.22)" stroke-width="3" marker-end="url(#vig-arr)"/>`;
+        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`;
+    trunkSegments(note).forEach((g) => {
+        s += `<line x1="${g.x}" y1="${g.y1}" x2="${g.x}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+    });
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
         const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
@@ -164,26 +170,35 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
 };
 
 /* 3-column note row content (total/partial+number · vignette · comments) — the
- * public challenge page's canonical layout. `vigInline` renders the vignette
- * SVG now; otherwise the centre cell is left empty for lazy fill. */
-window.NoteCanvas.rowCols = function (n, iconSrc, vigInline) {
+ * public challenge page's canonical layout. */
+window.NoteCanvas.rowCols = function (n, iconSrc) {
     const esc = RBesc;
-    const hasVig = (n.icons && n.icons.length) || (n.junctions && n.junctions.length);
     const cap = n.cap != null ? `<div class="cap-indicator">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? '<br>km ' + (n.cap_distance / 1000).toFixed(2) : ''}</div>` : '';
     const bearing = (n.cap == null && n.bearing_out != null && n.num > 1) ? `<div class="bearing">${Math.round(n.bearing_out)}°</div>` : '';
-    const centre = hasVig ? (vigInline ? window.NoteCanvas.toSVG(n, iconSrc) : '') : '';
     return `<div class="col-left">
             <div class="dist-total">${((n.distance ?? 0) / 1000).toFixed(2)}</div>
             <div class="dist-partial">${((n.partial_distance ?? 0) / 1000).toFixed(2)}</div>
             <div class="note-num">${n.num}</div>${bearing}
         </div>
-        <div class="col-center"${hasVig && !vigInline ? ' data-vig' : ''}>${centre}</div>
+        <div class="col-center">${window.NoteCanvas.toSVG(n, iconSrc)}</div>
         <div class="col-right">
             <div class="text">${esc(n.text || '')}</div>${cap}
             <div class="coords">${(+n.lat).toFixed(5)}<br>${(+n.lon).toFixed(5)}</div>
         </div>`;
 };
 
+/* The tulip trunk: the road you arrive FROM always enters from the bottom edge
+ * to the box centre (styled by road_type_in) and the road you leave ON exits
+ * from the centre to the top arrow (styled by road_type_out). Junction vectors
+ * branch from the centre. Stroke width is indicative of the road type. */
+function trunkSegments(note) {
+    const cx = 115, cy = 81; // centre of the 230×162 reference box
+    const seg = (roadType, y1, y2, arrow) => {
+        const rt = RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0];
+        return { x: cx, y1, y2, color: rt.color, width: rt.width, dashed: rt.dashed, arrow };
+    };
+    return [seg(note.road_type_in, 154, cy, false), seg(note.road_type_out, cy, 18, true)];
+}
 function svg(tag, attrs) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
 function btn(icon, action, active, danger) { return `<button data-a="${action}" class="${active ? 'on' : ''} ${danger ? 'danger' : ''}"><i class="fa-solid ${icon}"></i></button>`; }
 function r1(n) { return Math.round(n); }

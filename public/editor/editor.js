@@ -401,8 +401,8 @@
             <div class="ed-row"><label>Road out</label><select id="edRout">${opts(n.road_type_out)}</select></div>
             <div class="ed-row"><label>Red CAP</label><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></div>`;
         $('edText').oninput = (e) => { n.text = e.target.value; renderNotes(); markDirty(); };
-        $('edRin').onchange = (e) => { n.road_type_in = +e.target.value; renderNotes(); map.showRoadbook(rb); markDirty(); };
-        $('edRout').onchange = (e) => { n.road_type_out = +e.target.value; renderNotes(); map.showRoadbook(rb); markDirty(); };
+        $('edRin').onchange = (e) => { n.road_type_in = +e.target.value; canvas.render(); renderNotes(); map.showRoadbook(rb); markDirty(); };
+        $('edRout').onchange = (e) => { n.road_type_out = +e.target.value; canvas.render(); renderNotes(); map.showRoadbook(rb); markDirty(); };
         $('edCap').onchange = (e) => { toggleCap(e.target.checked); markDirty(); };
     }
     function toggleCap(on) {

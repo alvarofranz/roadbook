@@ -144,12 +144,13 @@
     <h2 id="roadtypes">Road types</h2>
     <table>
         <tr><th>id</th><th>Type</th><th>Rendering</th></tr>
-        <tr><td><code>0</code></td><td>Default</td><td>neutral</td></tr>
-        <tr><td><code>1</code></td><td>Motorway / paved fast</td><td>solid</td></tr>
-        <tr><td><code>2</code></td><td>Asphalt</td><td>solid</td></tr>
-        <tr><td><code>3</code></td><td>Track / piste</td><td>solid (default off-road)</td></tr>
-        <tr><td><code>4</code></td><td>Off-piste</td><td>dashed</td></tr>
+        <tr><td><code>0</code></td><td>Default</td><td>neutral, medium stroke</td></tr>
+        <tr><td><code>1</code></td><td>Motorway / paved fast</td><td>solid, widest stroke</td></tr>
+        <tr><td><code>2</code></td><td>Asphalt</td><td>solid, wide stroke</td></tr>
+        <tr><td><code>3</code></td><td>Track / piste</td><td>solid, medium stroke (default off-road)</td></tr>
+        <tr><td><code>4</code></td><td>Off-piste</td><td>dashed, thinnest stroke</td></tr>
     </table>
+    <p>A note's vignette is a tulip: the road you arrive from always enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre to an arrow at the top (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Stroke width is indicative of the road type.</p>
 
     <h2 id="junctions">Junction vectors (<code>junctions</code>)</h2>
     <p>Beyond text, a note can draw the junction itself: one or more vectors on the same 230 × 162 box. Each goes from a <code>pivot</code> to a <code>tip</code> (arrow head), colored by road type and drawn with a stroke <code>width</code>.</p>

@@ -11,6 +11,7 @@
 
     let mode = null; // 'nav' | 'trip'
     let rb = null, notes = [], activeIdx = 0, team = '0';
+    let reached = new Set(); // indices actually validated — a passed-over note that is not in here was skipped
     let lastPos = null, tripTotalM = 0, tripPartialM = 0, speedKmh = 0;
     let lastSpeedPos = null, lastSpeedT = null; // for speed-from-displacement when GPS speed is null
     let curLimit = null, maxSpdSeg = 0;
@@ -118,7 +119,7 @@
         if (!mode) return;
         const s = mode === 'trip'
             ? { mode, totalM: tripTotalM, partialM: tripPartialM, tmMax, tmNotes, timerAcc: tmTimerAcc, timerOn: tmTimerOn, timerStart: tmTimerStart, gpxRecording: tripRecOn, gpxFileName: tripRecName }
-            : { mode, competition, team, auto, showMap, gpxOption: optGpx, gpxRecording: tripRecOn, gpxFileName: tripRecName, activeIdx, totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+            : { mode, competition, team, auto, showMap, gpxOption: optGpx, gpxRecording: tripRecOn, gpxFileName: tripRecName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -135,7 +136,7 @@
         } else {
             rb = savedRb; notes = rb.notes;
             team = s.team; auto = s.auto; showMap = s.showMap; optGpx = s.gpxOption;
-            activeIdx = s.activeIdx; pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
+            activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
             extraAccum = s.extraAccum; armed = s.armed;
             startedAt = s.startedAt ? new Date(s.startedAt) : null;
             endedAt = s.endedAt ? new Date(s.endedAt) : null;
@@ -199,21 +200,22 @@
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
-    // done = green · active = red border · upcoming = pink · ≤50 m to next = blue · approaching (auto) = orange.
+    // reached = green · skipped (passed over, never reached) = pink · active = red border ·
+    // upcoming = white · ≤50 m to next = blue · approaching (auto) = orange.
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     let lastScrollIdx = -1;
     function renderNotes() {
         $('noteList').innerHTML = notes.map((n, i) => {
-            const st = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'up';
-            const warn = (auto && i === activeIdx && approaching) ? ' warn' : '';
+            const cls = ['nrow'];
+            if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
+            if (i === activeIdx) { cls.push('active'); if (auto && approaching) cls.push('warn'); }
             const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
-            const hasVig = (n.icons && n.icons.length) || (n.junctions && n.junctions.length);
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
-            const reach = (!auto && i >= activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const reach = (!auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
             const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
-            return `<div class="nrow ${st}${warn}" data-i="${i}">
+            return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${close}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
-                <div class="col-vignette">${hasVig ? NoteCanvas.toSVG(n, iconSrc) : ''}</div>
+                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
                 <div class="col-buttons">${reach}${mapb}</div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
@@ -253,7 +255,7 @@
     // "Note reached" button: advance sequentially and mark green (both modes).
     function markReached(i) {
         if (competition) { tapNote(i); return; } // scored validation
-        tripPartialM = 0; approaching = false;
+        reached.add(i); tripPartialM = 0; approaching = false;
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; renderNotes();
     }
@@ -278,7 +280,7 @@
         pen.extra += extraAccum; extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
         if (lim != null) { if (curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
-        tripPartialM = 0; approaching = false;
+        reached.add(i); tripPartialM = 0; approaching = false;
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; renderNotes();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
