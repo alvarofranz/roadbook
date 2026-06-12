@@ -366,7 +366,14 @@
         }
         return out;
     }
-    $('recordRoute').onclick = () => startRecording('new');
+    // Record route: the shared GPX-recorder settings modal first (file name +
+    // live-to-disk file when the device supports it; the Editor samples by
+    // distance itself, so no interval field), then the live recording starts.
+    RBGpxRecorder.init({ toast });
+    $('recordRoute').onclick = () => RBGpxRecorder.settings({
+        sampleRate: false,
+        onStart: () => { RBGpxRecorder.begin({ checkpoint: false }); startRecording('new'); },
+    });
     $('recPause').onclick = () => {
         recPaused = !recPaused;
         $('recPause').innerHTML = recPaused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
@@ -381,6 +388,7 @@
         if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
         if (draftId) { apiPost({ action: 'rb_delete', id: draftId }); draftId = 0; }
         recPaused = false; recTrack = []; recWpts = []; recPhotos = []; clearRec();
+        await RBGpxRecorder.finish(); // discard releases the live file + checkpoint too
         if (map) map.setLiveTrack([], [], []);
         $('recDiscard').hidden = true; $('recBar').hidden = true; $('loadFrom').hidden = false;
         toast('Recording discarded.');
@@ -426,6 +434,7 @@
         }
         if (!recLast || RB.geo.haversineM(recLast, here) >= step) {
             recTrack.push(here); recLast = here;
+            RBGpxRecorder.add(here, Date.now()); // mirrors the route to the live GPX file
             if (map) map.setLiveTrack(recTrack, recWpts, recPhotos);
             if (recTrack.length % 5 === 0) saveRec(); // auto-save for crash recovery
         }
@@ -490,9 +499,10 @@
         recPaused = false; $('recBar').hidden = true;
         if (map) map.setOverlay([]);
         if (recMode === 'adjust') return finishAdjust();
+        const gpx = await RBGpxRecorder.finish(); // final flush; its name titles the roadbook
         if (recTrack.length < 2) { clearRec(); $('loadFrom').hidden = false; return toast('Route too short to save.'); }
         try {
-            setRoadbook(RB.buildRoadbook({ name: 'Recorded route', trkpts: smoothTrack(recTrack), wpts: recWpts }));
+            setRoadbook(RB.buildRoadbook({ name: gpx.name || 'Recorded route', trkpts: smoothTrack(recTrack), wpts: recWpts }));
             if (draftId) { currentRbId = draftId; setVis(0); await doSave(); } // persist the draft (photos already attached)
             markDirty(); clearRec(); toast('Route recorded · edit and save.');
         } catch (e) { $('loadFrom').hidden = false; toast('Error: ' + e.message); }

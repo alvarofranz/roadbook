@@ -8,6 +8,7 @@
 window.RBGpxRecorder = (() => {
     const CHECKPOINT_KEY = 'rb_trip_gpx', SETTINGS_KEY = 'rb_gpx_settings';
     let on = false, pts = [], lastT = 0, sampleMs = 3000, fileName = '', fileHandle = null;
+    let useCheckpoint = true, lastFileWrite = 0;
     let onChange = () => {}, toast = () => {};
     try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (s && s.freq) sampleMs = s.freq; } catch (e) {}
 
@@ -19,22 +20,35 @@ window.RBGpxRecorder = (() => {
     const trackKm = (p) => { let m = 0; for (let i = 1; i < p.length; i++) m += RB.geo.haversineM(p[i - 1], p[i]); return m / 1000; };
     const download = (p, name) => RBDownload(new Blob([RB.gpxDocument(name || defaultName(), p)], { type: 'application/gpx+xml' }), (name || defaultName()) + '.gpx');
     async function writeFile() { if (!fileHandle) return; try { const w = await fileHandle.createWritable(); await w.write(RB.gpxDocument(fileName, pts)); await w.close(); } catch (e) {} }
-    function checkpoint() { try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ pts, name: fileName })); } catch (e) {} writeFile(); }
+    function persist(tnow) {
+        if (useCheckpoint) { try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ pts, name: fileName })); } catch (e) {} }
+        if (tnow - lastFileWrite >= 3000) { lastFileWrite = tnow; writeFile(); } // live file flush, throttled
+    }
 
-    function begin() { on = true; pts = []; lastT = 0; onChange(true); toast('Recording GPX track.'); }
-    // every fix lands here; points are sampled on the configured interval, junk fixes dropped
+    // checkpoint: false → the caller keeps its own richer crash checkpoint (the
+    // Editor's route recording does), so this one stays out of its way.
+    function begin(opts = {}) { on = true; pts = []; lastT = 0; lastFileWrite = 0; useCheckpoint = opts.checkpoint !== false; onChange(true); toast('Recording GPX track.'); }
+    // sampled intake (Tripmaster + Reader): one point per interval, junk fixes dropped
     function feed(coords, here, tnow) {
         if (!on || (coords.accuracy != null && coords.accuracy > 35) || tnow - lastT < sampleMs) return;
         pts.push({ lat: here.lat, lon: here.lon, ele: (coords.altitude != null && isFinite(coords.altitude)) ? coords.altitude : null, t: tnow });
-        lastT = tnow; checkpoint(); // crash-safe: localStorage + live file write
+        lastT = tnow; persist(tnow); // crash-safe: localStorage + live file write
     }
-    async function stop() {
+    // direct intake (Editor route recording): the caller already decided this point belongs
+    function add(here, tnow) { if (!on) return; pts.push({ lat: here.lat, lon: here.lon, ele: here.ele ?? null, t: tnow }); persist(tnow); }
+    // end the log and hand the result to the caller — no UI
+    async function finish() {
         on = false; onChange(false);
         await writeFile(); // final flush to the live file before we report "saved"
-        const finished = pts.slice(), name = fileName, savedToFile = !!fileHandle;
+        const result = { pts: pts.slice(), name: fileName, savedToFile: !!fileHandle };
         fileHandle = null;
         try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
-        if (finished.length >= 2) finishedModal(finished, name, savedToFile); else toast('Track too short.');
+        return result;
+    }
+    // end the log and offer the standard finished-track modal
+    async function stop() {
+        const r = await finish();
+        if (r.pts.length >= 2) finishedModal(r.pts, r.name, r.savedToFile); else toast('Track too short.');
     }
     // continue an interrupted log after a reload (a live file handle cannot survive one)
     function resume(savedName) {
@@ -51,11 +65,14 @@ window.RBGpxRecorder = (() => {
         try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
         if (yes) finishedModal(saved.pts, saved.name || defaultName(), false);
     }
-    function settings() {
-        const t = RBt, fsa = 'showSaveFilePicker' in window;
+    // opts.sampleRate: false hides the interval field (the Editor samples by
+    // distance itself) · opts.onStart replaces the default begin()
+    function settings(opts = {}) {
+        const t = RBt, fsa = 'showSaveFilePicker' in window; // file picker ONLY when this device supports it
+        const rateField = opts.sampleRate === false ? '' : `<label class="muted small">${t('Sample every (seconds)')}</label>
+            <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}">`;
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
-            <label class="muted small">${t('Sample every (seconds)')}</label>
-            <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}">
+            ${rateField}
             <label class="muted small">${t('File name')}</label>
             <input id="gxName" class="modal-in" type="text" value="${defaultName()}">
             <p class="muted small" id="gxLoc">${fsa ? t('Tip: choose a file to save live to disk (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
@@ -73,11 +90,14 @@ window.RBGpxRecorder = (() => {
             } catch (e) {}
         };
         d.q('#gxGo').onclick = () => {
-            sampleMs = Math.max(1, Math.min(60, parseInt(d.q('#gxFreq').value, 10) || 3)) * 1000;
+            const freqInput = d.q('#gxFreq');
+            if (freqInput) {
+                sampleMs = Math.max(1, Math.min(60, parseInt(freqInput.value, 10) || 3)) * 1000;
+                try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ freq: sampleMs })); } catch (e) {}
+            }
             fileName = (d.q('#gxName').value || defaultName()).trim();
             fileHandle = picked;
-            try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ freq: sampleMs })); } catch (e) {}
-            d.close(); begin();
+            d.close(); (opts.onStart || begin)();
         };
     }
     function finishedModal(finished, name, savedToFile) {
@@ -95,7 +115,7 @@ window.RBGpxRecorder = (() => {
     }
 
     return {
-        settings, begin, stop, feed, resume, offerRecovery,
+        settings, begin, stop, finish, feed, add, resume, offerRecovery,
         get recording() { return on; },
         get fileName() { return fileName; },
         init(opts) { onChange = opts.onChange || onChange; toast = opts.toast || toast; },

@@ -30,7 +30,7 @@
                 totalM = session.totalM; partialM = session.partialM; maxKmh = session.maxKmh; waypoints = session.waypoints;
                 timerAcc = session.timerAcc; timerOn = session.timerOn; timerStart = session.timerStart;
                 $('tmNotes').textContent = waypoints;
-                $('tmTimerBtn').classList.toggle('btn-primary', timerOn);
+                renderTimerButton();
                 if (session.gpxRecording) RBGpxRecorder.resume(session.gpxFileName);
             }
         } else {
@@ -79,14 +79,25 @@
     $('tmPlus10').onclick = () => { partialM += 10; totalM += 10; render(); };
     $('tmMinus10').onclick = () => { partialM = Math.max(0, partialM - 10); totalM = Math.max(0, totalM - 10); render(); };
     $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoints; partialM = 0; render(); };
-    $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; $('tmTimerBtn').classList.toggle('btn-primary', timerOn); saveSession(); };
+    // stopwatch: the button is Start/Pause; a reset button appears once it holds any time
+    function renderTimerButton() {
+        $('tmTimerBtn').innerHTML = timerOn ? `<i class="fa-solid fa-pause"></i> <span>${t('Pause')}</span>` : `<i class="fa-solid fa-stopwatch"></i> <span>${t('Timer')}</span>`;
+        $('tmTimerBtn').classList.toggle('btn-primary', timerOn);
+        $('tmTimerReset').hidden = !timerOn && timerAcc === 0;
+    }
+    $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimerButton(); saveSession(); };
+    $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
     $('tmExit').onclick = async () => { if (await RBConfirm(t('End the trip and reset everything?'), t('End the trip'))) { clearSession(); location.reload(); } };
 
-    // hold-to-activate (5 s) for Reset — anti-accidental, works in browser + PWA
+    // hold-to-activate (5 s) for Reset — anti-accidental, works in browser + PWA;
+    // a quick tap-and-release explains the gesture instead of doing nothing
     (function holdReset() {
-        const btn = $('tmReset'); let timer = null;
-        const start = (e) => { e.preventDefault(); btn.classList.add('holding'); timer = setTimeout(() => { btn.classList.remove('holding'); partialM = 0; render(); toast('Trip reset.'); }, 5000); };
-        const cancel = () => { if (timer) clearTimeout(timer); timer = null; btn.classList.remove('holding'); };
+        const btn = $('tmReset'); let timer = null, heldAt = 0;
+        const start = (e) => { e.preventDefault(); heldAt = Date.now(); btn.classList.add('holding'); timer = setTimeout(() => { timer = null; btn.classList.remove('holding'); partialM = 0; render(); toast('Trip reset.'); }, 5000); };
+        const cancel = () => {
+            if (timer) { clearTimeout(timer); if (Date.now() - heldAt < 600) toast('Hold to reset.'); }
+            timer = null; btn.classList.remove('holding');
+        };
         btn.addEventListener('pointerdown', start);
         ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, cancel));
     })();
@@ -117,9 +128,9 @@
     /* ---------- GPX recording ---------- */
     RBGpxRecorder.init({
         toast,
-        onChange: (recording) => {
-            $('tmRecBtn').classList.toggle('btn-primary', recording);
-            $('tmRecBtn').querySelector('span').textContent = recording ? t('Recording…') : t('Record GPX');
+        onChange: (recording) => { // recording = an unmistakable red STOP button
+            $('tmRecBtn').classList.toggle('btn-danger', recording);
+            $('tmRecBtn').innerHTML = recording ? `<i class="fa-solid fa-stop"></i> <span>${t('Stop recording')}</span>` : `<i class="fa-solid fa-circle-dot"></i> <span>${t('Record GPX')}</span>`;
             saveSession();
         },
     });

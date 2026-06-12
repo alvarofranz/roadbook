@@ -47,20 +47,22 @@ img { max-width: 100%; display: block; }
     background: rgba(14, 17, 22, .8); backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--line);
 }
-.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 60px; }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 56px; }
 .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
-.topnav { display: flex; align-items: center; gap: .4rem; }
-.navtoggle { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); color: var(--text); border-radius: 10px; font-size: 1.05rem; cursor: pointer; }
-@media (max-width: 640px) {
-    .topbar .wrap { position: relative; }
-    .navtoggle { display: inline-flex; }
-    .topnav {
-        position: absolute; top: calc(100% + 8px); right: 1.1rem; flex-direction: column; align-items: stretch; gap: .4rem;
-        background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .6rem; box-shadow: var(--shadow); min-width: 190px; display: none; z-index: 50;
-    }
-    .topnav.open { display: flex; }
-    .topnav .btn { justify-content: flex-start; }
+/* minimal nav: plain text links, the active tool in sand */
+.topnav { display: flex; align-items: center; gap: 1.5rem; }
+.nav-link { background: none; border: 0; padding: .2rem 0; color: var(--muted); font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer; text-decoration: none; transition: color .15s; }
+.nav-link:hover { color: var(--text); text-decoration: none; }
+.nav-link.active { color: var(--sand); }
+.navtoggle { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; background: none; color: var(--text); font-size: 1.25rem; cursor: pointer; }
+@media (max-width: 760px) {
+    .navtoggle { display: inline-flex; position: relative; z-index: 90; }
+    .topnav { display: none; }
+    /* full-viewport menu: big centred type, nothing else */
+    .topbar.nav-open { backdrop-filter: none; background: var(--bg); }
+    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; background: var(--bg); }
+    .topnav.open .nav-link { font-size: 1.55rem; font-weight: 700; }
 }
 
 /* language switcher */
@@ -105,9 +107,7 @@ section.block { padding: 2.4rem 0; }
 
 /* header controls */
 .install-btn { white-space: nowrap; order: 90; }
-@media (max-width: 560px) { .install-btn span { display: none; } }
-.account-control { position: relative; order: 99; }
-.account-control .btn, .account-login { padding: .7rem 1.15rem; }
+.account-control { position: relative; order: 99; display: flex; }
 .account-button span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
 .account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; }

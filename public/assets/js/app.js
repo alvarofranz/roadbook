@@ -23,17 +23,22 @@
             <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
             <button class="navtoggle" id="navToggle" aria-label="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <nav class="topnav" id="topnav">
-                <a class="btn btn-ghost${active('editor')}" href="${ROOT}editor/"><i class="fa-solid fa-map-location-dot"></i> Editor</a>
-                <a class="btn btn-ghost${active('reader')}" href="${ROOT}reader/"><i class="fa-solid fa-compass"></i> Reader</a>
-                <a class="btn btn-ghost${active('tripmaster')}" href="${ROOT}tripmaster/"><i class="fa-solid fa-gauge-high"></i> Tripmaster</a>
-                <a class="btn btn-ghost${active('ranking')}" href="${ROOT}ranking/"><i class="fa-solid fa-ranking-star"></i> Ranking</a>
+                <a class="nav-link${active('editor')}" href="${ROOT}editor/">Editor</a>
+                <a class="nav-link${active('reader')}" href="${ROOT}reader/">Reader</a>
+                <a class="nav-link${active('tripmaster')}" href="${ROOT}tripmaster/">Tripmaster</a>
+                <a class="nav-link${active('ranking')}" href="${ROOT}ranking/">Ranking</a>
             </nav>
         </div>`;
-        const t = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
-        const close = () => { nav.classList.remove('open'); t.setAttribute('aria-expanded', 'false'); };
-        t.addEventListener('click', (e) => { e.stopPropagation(); const o = nav.classList.toggle('open'); t.setAttribute('aria-expanded', o ? 'true' : 'false'); });
-        document.addEventListener('click', (e) => { if (!nav.contains(e.target) && e.target !== t) close(); });
-        nav.querySelectorAll('a').forEach((a) => a.addEventListener('click', close));
+        const toggle = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
+        const setOpen = (open) => {
+            nav.classList.toggle('open', open);
+            header.classList.toggle('nav-open', open); // drops the blur so the menu can cover the viewport
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+        };
+        toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!nav.classList.contains('open')); });
+        document.addEventListener('click', (e) => { if (!nav.contains(e.target) && !toggle.contains(e.target)) setOpen(false); });
+        nav.addEventListener('click', (e) => { if (e.target.closest('a, button:not(.account-button)')) setOpen(false); });
 
         let footer = document.querySelector('footer.foot');
         if (!footer) { footer = document.createElement('footer'); footer.className = 'foot'; document.body.appendChild(footer); }
@@ -111,8 +116,8 @@
         if (!slot) return null;
         installBtn = document.createElement('button');
         installBtn.id = 'installBtn';
-        installBtn.className = 'btn btn-ghost install-btn';
-        installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> <span>${RBt('Install')}</span>`;
+        installBtn.className = 'nav-link install-btn';
+        installBtn.textContent = RBt('Install');
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
         slot.appendChild(installBtn);
@@ -232,9 +237,9 @@
             if (!slot || slot.querySelector('.account-control')) return;
             const w = document.createElement('div'); w.className = 'account-control';
             if (!user) {
-                w.innerHTML = `<a class="btn btn-ghost account-login" href="${ROOT}account/" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
+                w.innerHTML = `<a class="nav-link account-login" href="${ROOT}account/" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
             } else {
-                w.innerHTML = `<button class="btn btn-ghost account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
+                w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
                     <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My account')}</a>
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>

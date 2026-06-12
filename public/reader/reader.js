@@ -26,7 +26,12 @@
     $('pickRb').onclick = () => $('rbFile').click();
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load: ' + err.message); } };
     $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
-    RBGpxRecorder.init({ toast, onChange: (recording) => { $('navGpx').classList.toggle('btn-primary', recording); saveSession(); } });
+    RBGpxRecorder.init({ toast, onChange: (recording) => { // recording = an unmistakable red STOP button
+        const b = $('navGpx');
+        b.classList.toggle('btn-danger', recording);
+        b.innerHTML = recording ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-circle-dot"></i>';
+        saveSession();
+    } });
     // Resume an interrupted run first; otherwise fall back to a challenge passed
     // in the URL, then to rescuing an orphaned GPX recording.
     (async function () {
