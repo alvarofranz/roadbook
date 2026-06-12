@@ -83,10 +83,13 @@ access and nothing else to run.** A push (a direct commit or a merged PR) trigge
 deploy hook via one authenticated POST; the endpoint and key are repository secrets
 (`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
 about the host is in this repo. You can also run it from the Actions tab
-(`workflow_dispatch`). **Bump `public/version.json` on every release** — the app polls it
-and force-refreshes every open client (clears caches, updates the SW, reloads). Gitignored
-runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env`,
-`vendor/`) are not in git and persist across deploys.
+(`workflow_dispatch`). **On every release run `node source/stamp-version.mjs <version>`**
+(e.g. `2026.06.13-1`) — it writes `public/version.json` (the app polls it and
+force-refreshes every open client) AND stamps the `?v=` cache-buster on every first-party
+script/style URL in the HTML, so each release gets fresh asset URLs through every cache
+layer (browser, CDN edge, the host's static-file cache — which ignores `.htaccess` and
+pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fontawesome/`,
+`public/assets/js/config.js`, `.env`, `vendor/`) are not in git and persist across deploys.
 
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
