@@ -13,9 +13,6 @@
     <link rel="stylesheet" href="../assets/css/app.css">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
-        .ed-row label { color: var(--muted); font-size: .82rem; min-width: 90px; }
-        .ed-row select, .ed-row input[type=text], .ed-row textarea { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
-        .ed-row.top { align-items: flex-start; }
         .ed-row.between { justify-content: space-between; }
         #loadFrom .icon-category { margin-top: 0; }
         .icon-category.flush { margin: 0; }
@@ -43,8 +40,9 @@
         .map-editor { position: relative; }
         .map-editor.max { position: fixed; inset: 0; z-index: 80; background: var(--bg); }
         .map-editor.max #edMap { height: 100%; min-height: 0; border-radius: 0; }
-        .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 3px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 5px; max-height: calc(100% - 20px); overflow-y: auto; }
-        .map-tool { position: relative; width: 38px; height: 38px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .95rem; }
+        /* no overflow clipping here — the hover tooltips render outside the bar */
+        .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+        .map-tool { position: relative; width: 35px; height: 35px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: #14100a; }
         .map-tool:disabled { opacity: .35; cursor: default; }
@@ -88,9 +86,26 @@
         .vis-toggle .vis.on { background: var(--sand); color: #14100a; }
         .field { background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
         .field:focus { outline: 2px solid var(--sand); border-color: transparent; }
+        /* labelled field cards (roadbook details + note properties) */
+        .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
+        .meta-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
+        .meta-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+        .meta-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+        .meta-field.full { grid-column: 1 / -1; }
+        .meta-value { padding: .45rem 0; }
+        .logo-row { display: flex; gap: .5rem; align-items: center; }
+        /* desktop split view: vignette canvas left · icon palette right */
+        @media (min-width: 900px) {
+            #viewNote { max-width: 1100px; }
+            .vig-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 1.2rem; align-items: start; }
+            .vig-icons .icon-grid { max-height: 58vh; }
+        }
         @media (max-width: 600px) {
             #edMap { height: 46vh; }
             .icon-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); max-height: 38vh; }
+            .map-tools { max-height: calc(100% - 20px); overflow-y: auto; } /* touch: no hover tooltips, scrolling wins */
+            .meta-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -158,17 +173,23 @@
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
             </div>
-            <div class="ed-row"><label data-i18n="Title">Title</label><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
-            <div class="ed-row top"><label data-i18n="Description">Description</label><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
-            <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
-            <div class="ed-row"><label data-i18n="Organization">Organization</label><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></div>
-            <div class="ed-row"><label data-i18n="Event logo">Event logo</label>
-                <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
-                <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
-                <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo"><i class="fa-solid fa-xmark"></i></button>
-                <input id="rbLogoFile" type="file" accept="image/*" hidden>
+            <div class="meta-card">
+                <div class="meta-grid">
+                    <label class="meta-field full"><span data-i18n="Title">Title</span><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></label>
+                    <label class="meta-field full"><span data-i18n="Description">Description</span><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></label>
+                    <label class="meta-field"><span data-i18n="Author">Author</span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
+                    <label class="meta-field"><span data-i18n="Organization">Organization</span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
+                    <div class="meta-field"><span data-i18n="Event logo">Event logo</span>
+                        <div class="logo-row">
+                            <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
+                            <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
+                            <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo"><i class="fa-solid fa-xmark"></i></button>
+                            <input id="rbLogoFile" type="file" accept="image/*" hidden>
+                        </div>
+                    </div>
+                    <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
+                </div>
             </div>
-            <div class="ed-row"><label data-i18n="Last modified">Last modified</label><span id="rbModified" class="muted small">—</span></div>
             <div id="photosSection" hidden>
                 <div class="ed-row between"><div class="icon-category flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
                 <input id="photoFile" type="file" accept="image/*" multiple hidden>
@@ -199,20 +220,24 @@
             <button id="tabBtnVig" class="note-tab on" data-i18n="Vignette"><i class="fa-solid fa-pen-ruler"></i> Vignette</button>
             <button id="tabBtnMap" class="note-tab" data-i18n="Map"><i class="fa-solid fa-location-dot"></i> Map</button>
         </div>
-        <div id="tabVignette">
-            <div id="canvasWrap">
-                <div id="noteCanvas"></div>
-                <button class="add-junction" id="addJunction" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
+        <div id="tabVignette" class="vig-split">
+            <div class="vig-canvas">
+                <div id="canvasWrap">
+                    <div id="noteCanvas"></div>
+                    <button class="add-junction" id="addJunction" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
+                </div>
+                <div id="noteToolbar"></div>
             </div>
-            <div id="noteToolbar"></div>
-            <div class="ed-row between">
-                <div class="icon-category flush" data-i18n="Icons">Icons</div>
-                <button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button>
+            <div class="vig-icons">
+                <div class="ed-row between">
+                    <div class="icon-category flush" data-i18n="Icons">Icons</div>
+                    <button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button>
+                </div>
+                <input id="iconFile" type="file" accept="image/*" multiple hidden>
+                <p class="muted small" data-i18n-html="Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.">Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.</p>
+                <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" autocomplete="off"></div>
+                <div id="iconGrid" class="icon-grid"></div>
             </div>
-            <input id="iconFile" type="file" accept="image/*" multiple hidden>
-            <p class="muted small" data-i18n-html="Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.">Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.</p>
-            <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" autocomplete="off"></div>
-            <div id="iconGrid" class="icon-grid"></div>
         </div>
         <div id="tabMap" hidden>
             <div id="noteMap" class="panel map-box"></div>

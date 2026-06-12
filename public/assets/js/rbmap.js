@@ -23,7 +23,7 @@ window.RBMap = class RBMap {
         }
         this.map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
         this.map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }));
-        this.map.on('load', () => { this._init(); this._terrain(); this.ready = true; this.map.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit); this._pending = null; } });
+        this.map.on('load', () => { this._init(); this._terrain(); this.ready = true; this.map.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } });
     }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
@@ -40,6 +40,8 @@ window.RBMap = class RBMap {
         const m = this.map;
         m.addSource('rb-track', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-track', type: 'line', source: 'rb-track', paint: { 'line-color': '#ff5a45', 'line-width': 4 } });
+        m.addSource('rb-gap', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-gap', type: 'line', source: 'rb-gap', paint: { 'line-color': '#e8b059', 'line-width': 2, 'line-dasharray': [2, 2] } });
         m.addSource('rb-sel', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(232,176,89,.35)', 'circle-stroke-color': '#e8b059', 'circle-stroke-width': 3 } });
         m.addSource('rb-wpts', { type: 'geojson', data: this._empty() });
@@ -73,10 +75,20 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-pos').setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] } });
         if (follow) this.map.easeTo({ center: [lon, lat], duration: 400 });
     }
-    showRoadbook(rb, noFit) {
+    // `gapIdx` (editor): track indexes whose following segment is an OPEN cut —
+    // the line splits there and a dashed connector shows the unfilled hole.
+    showRoadbook(rb, noFit, gapIdx) {
         if (!this.map) return;
-        if (!this.ready) { this._pending = rb; this._pendingNoFit = noFit; return; }
-        this.map.getSource('rb-track').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: rb.track.map((p) => [p.lon, p.lat]) } });
+        if (!this.ready) { this._pending = rb; this._pendingNoFit = noFit; this._pendingGaps = gapIdx; return; }
+        const coords = rb.track.map((p) => [p.lon, p.lat]);
+        const cuts = (gapIdx || []).slice().sort((a, b) => a - b);
+        const pieces = []; let from = 0;
+        cuts.forEach((i) => { pieces.push(coords.slice(from, i + 1)); from = i + 1; });
+        pieces.push(coords.slice(from));
+        this.map.getSource('rb-track').setData({ type: 'Feature', geometry: { type: 'MultiLineString', coordinates: pieces.filter((c) => c.length > 1) } });
+        this.map.getSource('rb-gap').setData(cuts.length
+            ? { type: 'Feature', geometry: { type: 'MultiLineString', coordinates: cuts.map((i) => [coords[i], coords[i + 1]]) } }
+            : this._empty());
         this.map.getSource('rb-wpts').setData({
             type: 'FeatureCollection',
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
