@@ -15,7 +15,6 @@
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row label { color: var(--muted); font-size: .82rem; min-width: 90px; }
         .ed-row select, .ed-row input[type=text], .ed-row textarea { flex: 1; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
-        .ed-row input[type=number] { width: 86px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: .5rem; }
         .ed-row.top { align-items: flex-start; }
         .ed-row.between { justify-content: space-between; }
         #loadFrom .icon-category { margin-top: 0; }
@@ -27,7 +26,6 @@
         #noteMap { height: 46vh; min-height: 300px; margin-top: .5rem; }
         #canvasWrap { position: relative; max-width: 560px; margin: .4rem auto 0; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
-        .adv p { margin: .5rem 0; }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
         .icon-grid button { position: relative; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
@@ -41,10 +39,17 @@
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
         #edMap { height: 60vh; min-height: 360px; }
-        .adv { margin-top: 1rem; border: 1px solid var(--line); border-radius: 12px; padding: .3rem .8rem .6rem; background: var(--card-2); }
-        .adv summary { cursor: pointer; font-weight: 700; color: var(--sand); padding: .5rem 0; list-style: none; }
-        .adv summary::-webkit-details-marker { display: none; }
-        .adv .ed-row label { min-width: 110px; }
+        /* the GPX editor: map + vertical tool bar (overlaid left, like the Mapbox controls) */
+        .map-editor { position: relative; }
+        .map-editor.max { position: fixed; inset: 0; z-index: 80; background: var(--bg); }
+        .map-editor.max #edMap { height: 100%; min-height: 0; border-radius: 0; }
+        .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 3px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 5px; max-height: calc(100% - 20px); overflow-y: auto; }
+        .map-tool { position: relative; width: 38px; height: 38px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .95rem; }
+        .map-tool:hover { background: var(--card-2); }
+        .map-tool.on { background: var(--sand); color: #14100a; }
+        .map-tool:disabled { opacity: .35; cursor: default; }
+        .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
+        .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         .vignette-box { position: relative; width: 100%; max-width: 560px; margin: .2rem auto .4rem; aspect-ratio: 230/162; background: #11161f; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
         .vignette-box-junctions { cursor: pointer; }
         .vignette-box-icon { cursor: grab; }
@@ -102,6 +107,7 @@
             <div class="load-opts">
                 <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
                 <button class="load-card" id="recordRoute"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record route">Record route</b><small data-i18n="Record live with GPS">Record live with GPS</small></button>
+                <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
                 <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                 <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Challenges">Challenges</b><small data-i18n="Start from a public one">Start from a public one</small></button>
             </div>
@@ -117,18 +123,34 @@
             </div>
         </div>
         <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
-        <div id="edMap" class="panel map-box"></div>
+        <input id="addGpxFile" type="file" accept=".gpx" hidden>
+        <!-- the GPX editor: the map + its vertical tool bar (modes left, actions below) -->
+        <div id="mapEditor" class="map-editor">
+            <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
+                <button class="map-tool on" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
+                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note"><i class="fa-solid fa-map-pin"></i></button>
+                <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
+                <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut"><i class="fa-solid fa-scissors"></i></button>
+                <span class="map-tools-sep"></span>
+                <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track"><i class="fa-solid fa-file-circle-plus"></i></button>
+                <button class="map-tool" id="toolReverse" aria-label="Reverse direction"><i class="fa-solid fa-right-left"></i></button>
+                <button class="map-tool" id="toolSimplify" aria-label="Simplify"><i class="fa-solid fa-broom"></i></button>
+                <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail"><i class="fa-solid fa-location-crosshairs"></i></button>
+                <span class="map-tools-sep"></span>
+                <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+                <span class="map-tools-sep"></span>
+                <button class="map-tool" id="toolMax" aria-label="Maximize"><i class="fa-solid fa-expand"></i></button>
+            </div>
+            <div id="edMap" class="panel map-box"></div>
+        </div>
         <div id="rbPanel" hidden>
             <div class="rb-actions">
                 <div class="btn-group">
                     <button class="btn btn-primary" id="exportRdbk" data-i18n="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> Export .rdbk</button>
-                    <button class="btn btn-ghost" id="exportGpx" title="Export GPX" aria-label="Export GPX"><i class="fa-solid fa-route"></i> GPX</button>
+                    <button class="btn btn-ghost" id="exportGpx" data-i18n="Export GPX"><i class="fa-solid fa-route"></i> Export GPX</button>
                 </div>
                 <div class="rb-actions-right">
-                    <div class="btn-group">
-                        <button class="btn btn-ghost" id="undoBtn" disabled title="Undo (Ctrl+Z)" aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-                        <button class="btn btn-ghost" id="redoBtn" disabled title="Redo (Ctrl+Y)" aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
-                    </div>
                     <div class="vis-toggle" role="group" aria-label="Visibility">
                         <button class="vis on" id="visPrivate" data-i18n="Private"><i class="fa-solid fa-lock"></i> Private</button>
                         <button class="vis" id="visPublic" data-i18n="Public"><i class="fa-solid fa-globe"></i> Public</button>
@@ -136,7 +158,6 @@
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
             </div>
-            <div class="ed-row"><button class="btn btn-ghost" id="adjustBtn" data-i18n="Adjust on the trail (live GPS)"><i class="fa-solid fa-route"></i> Adjust on the trail (live GPS)</button></div>
             <div class="ed-row"><label data-i18n="Title">Title</label><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></div>
             <div class="ed-row top"><label data-i18n="Description">Description</label><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></div>
             <div class="ed-row"><label data-i18n="Author">Author</label><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></div>
@@ -155,34 +176,6 @@
             </div>
             <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
             <div id="noteList" class="note-list"></div>
-        <details class="adv">
-            <summary data-i18n="Route tools"><i class="fa-solid fa-wand-magic-sparkles"></i> Route tools</summary>
-            <p class="muted small" data-i18n-html="Standard GPX editing: <b>Reverse</b> the direction of travel, <b>Simplify</b> away GPS noise, <b>Trim</b> to a segment, or <b>Splice</b> another track in. Km, bearings and CAP are recomputed automatically — and every change can be undone.">Standard GPX editing: <b>Reverse</b> the direction of travel, <b>Simplify</b> away GPS noise, <b>Trim</b> to a segment, or <b>Splice</b> another track in. Km, bearings and CAP are recomputed automatically — and every change can be undone.</p>
-            <div class="ed-row"><label data-i18n="Reverse">Reverse</label>
-                <button class="btn btn-ghost" id="reverseBtn" data-i18n="Flip the direction of travel"><i class="fa-solid fa-right-left"></i> Flip the direction of travel</button>
-            </div>
-            <div class="ed-row"><label data-i18n="Simplify">Simplify</label>
-                <input id="simplifyTol" type="number" min="0.5" max="50" step="0.5" value="2" inputmode="decimal"> m
-                <button class="btn btn-ghost" id="simplifyBtn" data-i18n="Remove noise points"><i class="fa-solid fa-broom"></i> Remove noise points</button>
-                <span id="simplifyInfo" class="muted small"></span>
-            </div>
-            <div class="ed-row"><label data-i18n="Trim">Trim</label>
-                <span data-i18n="keep from">keep from</span> <select id="trimA"></select> <span data-i18n="to">to</span> <select id="trimB"></select>
-                <button class="btn btn-ghost" id="trimApply" data-i18n="Trim ends"><i class="fa-solid fa-crop-simple"></i> Trim ends</button>
-            </div>
-            <div class="ed-row"><label data-i18n="Splice">Splice</label>
-                <select id="spliceOp"><option value="dev" data-i18n="Detour (replace a segment)">Detour (replace a segment)</option><option value="ext" data-i18n="Extension (lengthen the end)">Extension (lengthen the end)</option></select>
-            </div>
-            <div class="ed-row" id="spliceDev"><label data-i18n="Segment to replace">Segment to replace</label>
-                <span>from <select id="spliceA"></select> to <select id="spliceB"></select></span>
-            </div>
-            <div class="ed-row">
-                <button class="btn btn-ghost" id="spliceGpx" data-i18n="Load GPX"><i class="fa-solid fa-route"></i> Load GPX</button>
-                <span id="spliceInfo" class="muted small"></span>
-                <button class="btn btn-primary" id="spliceApply" data-i18n="Apply">Apply</button>
-            </div>
-            <input id="spliceFile" type="file" accept=".gpx" hidden>
-        </details>
         </div><!-- /#rbPanel -->
     </section>
 

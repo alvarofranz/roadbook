@@ -252,17 +252,6 @@
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
-    // Crop the route to the segment between two notes (inclusive); notes outside are dropped.
-    function trimRoadbook(rb, numA, numB) {
-        const A = rb.notes.find((n) => n.num === numA), B = rb.notes.find((n) => n.num === numB);
-        if (!A || !B) throw new Error('Notes not found.');
-        if (A.idx >= B.idx) throw new Error('The start note must come before the end note.');
-        rb.track = rb.track.slice(A.idx, B.idx + 1);
-        rb.notes = rb.notes.filter((n) => n.idx >= A.idx && n.idx <= B.idx);
-        rb.notes.forEach((n) => { n.idx -= A.idx; });
-        recomputeMetrics(rb); recomputeCaps(rb);
-        return rb;
-    }
     // Serialize a GPX 1.1 document: a track (points may carry ele/t) + optional named waypoints.
     function gpxDocument(name, pts, wpts) {
         const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
@@ -351,7 +340,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
         recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
-        simplifyTrack, simplifyRoadbook, reverseRoadbook, trimRoadbook, gpxDocument,
+        simplifyTrack, simplifyRoadbook, reverseRoadbook, gpxDocument,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6,
     };

@@ -4,17 +4,23 @@
  * you select waypoints and highlight the active one. */
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
-        this.ready = false; this._pending = null; this._onWpt = null;
+        this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
         const cont = document.getElementById(containerId);
         if (!window.mapboxgl || !window.RB_CONFIG || !RB_CONFIG.mapboxToken) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (Mapbox token).</div>';
             return;
         }
         mapboxgl.accessToken = RB_CONFIG.mapboxToken;
-        this.map = new mapboxgl.Map(Object.assign({
-            container: containerId, style: RB_CONFIG.mapStyle || 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: [-3.6, 37.178], zoom: 12, attributionControl: true,
-        }, opts));
+        try {
+            this.map = new mapboxgl.Map(Object.assign({
+                container: containerId, style: RB_CONFIG.mapStyle || 'mapbox://styles/mapbox/satellite-streets-v12',
+                center: [-3.6, 37.178], zoom: 12, attributionControl: true,
+            }, opts));
+        } catch (e) { // no WebGL on this device — degrade to a placeholder, never kill the page
+            if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (WebGL).</div>';
+            this.map = null;
+            return;
+        }
         this.map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
         this.map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }));
         this.map.on('load', () => { this._init(); this._terrain(); this.ready = true; this.map.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit); this._pending = null; } });
@@ -49,9 +55,17 @@ window.RBMap = class RBMap {
         m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
         m.on('click', 'rb-photos', (e) => { if (this._onPhoto && e.features[0]) this._onPhoto(JSON.parse(e.features[0].properties.d)); });
         m.on('mouseenter', 'rb-wpts', () => m.getCanvas().style.cursor = 'pointer');
-        m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = '');
+        m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
         m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
-        m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = '');
+        m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = this._baseCursor);
+    }
+    // Base cursor for the editor's map tools (crosshair while drawing/cutting).
+    setCursor(cursor) { this._baseCursor = cursor || ''; if (this.map) this.map.getCanvas().style.cursor = this._baseCursor; }
+    // One-off pin (draw seed / cut anchor); pass null to clear.
+    setPin(pt) {
+        if (!this.map) return;
+        if (this._pin) { this._pin.remove(); this._pin = null; }
+        if (pt) this._pin = new mapboxgl.Marker({ color: '#e8b059', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
     }
     // "you are here" dot; follow=true recenters on it.
     setPosition(lat, lon, follow) {

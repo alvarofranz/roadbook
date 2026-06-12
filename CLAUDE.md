@@ -91,19 +91,24 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
   accuracy-aware sampling, pause/resume, autosave/recovery, smoothing, altitude,
-  geotagged photos via the camera, instant waypoints), **`.rdbk`** or a public
-  **Challenge**. Edit notes (text, road type, FIA danger grading `!`/`!!`/`!!!`, CAP,
-  icons), drag a note on the map to reposition, **Adjust on the trail** (live re-record
-  that replaces a segment or the tail). **Route tools**: reverse, simplify
-  (Douglas-Peucker, note anchors kept), trim to a segment, splice another GPX.
-  **Undo/redo** (debounced snapshots, Ctrl+Z/Y) and a **vignette clipboard**
-  (copy/cut/paste a note's drawing between notes/roadbooks, custom symbols carried
-  along). Title, description, author, organization, event logo (downscaled, embedded)
-  and a photo gallery; **Export `.rdbk`** (self-contained), **Export GPX** (track +
-  notes as named waypoints) and **Save to profile** (public/private — saving pins
-  `?rb=<id>` to the URL so re-saves update the same roadbook; importing fresh content
-  starts a new one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons +
-  junction vectors); searchable icon palette.
+  geotagged photos via the camera, instant waypoints), **Draw on the map** (sketch a
+  route from scratch), **`.rdbk`** or a public **Challenge**. Edit notes (text, road
+  type, FIA danger grading `!`/`!!`/`!!!`, CAP, icons); drag a note on the map to
+  reposition. **The GPX is edited ON the map** via a vertical tool bar (translated
+  hover tooltips, maximizable): mode tools *pan · add note · draw (tap to extend) ·
+  cut (tap two points — trims at the ends, straight seam in the middle)* plus
+  one-shot *add GPX (smart join: detour-replace if both ends touch the route,
+  otherwise auto-oriented join to the nearest end) · reverse · simplify
+  (Douglas-Peucker, note anchors kept) · adjust on the trail (live re-record) ·
+  undo/redo (debounced snapshots, Ctrl+Z/Y)*. Whatever the source pieces, the route
+  is always ONE continuous track. **Vignette clipboard** (copy/cut/paste a note's
+  drawing between notes/roadbooks, custom symbols carried along). Title, description,
+  author, organization, event logo (downscaled, embedded) and a photo gallery;
+  **Export `.rdbk`** (self-contained), **Export GPX** (track + notes as named
+  waypoints) and **Save to profile** (public/private — saving pins `?rb=<id>` to the
+  URL so re-saves update the same roadbook; importing fresh content starts a new
+  one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons + junction
+  vectors); searchable icon palette.
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
@@ -121,7 +126,7 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
   `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
-  (`simplifyTrack`/`simplifyRoadbook`, `reverseRoadbook`, `trimRoadbook`),
+  (`simplifyTrack`/`simplifyRoadbook`, `reverseRoadbook`),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   speed-limit helpers, `buildMeta`/`parseMeta` (49-char QR), `signMeta`/`verifyMeta`
   (HMAC-SHA256), `iconSrc`, `CONST`, `ROAD_TYPES`.

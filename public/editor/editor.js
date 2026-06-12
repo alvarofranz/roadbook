@@ -1,16 +1,18 @@
 'use strict';
 /* Roadbook Editor — the creation/editing hub. Imports GPX (→ roadbook), loads
- * an .rdbk file or a Challenge, edits notes (text, road type, CAP, icons),
- * adds/deletes waypoints, splices GPX (detour/extension) and exports a
- * SELF-CONTAINED roadbook (icons embedded → a single portable .rdbk file).
- * Unsaved work is checkpointed to localStorage and offered for recovery on the
- * next visit, so a crash or an OS tab kill loses nothing. */
+ * an .rdbk file or a Challenge, records or draws a route, edits notes (text,
+ * road type, danger, CAP, icons). The GPX itself is edited ON the map via the
+ * tool bar (add note · draw · cut · add GPX · reverse · simplify · adjust on
+ * the trail), with undo/redo; whatever the source pieces, the route is always
+ * kept as ONE continuous track. Exports a SELF-CONTAINED roadbook (icons
+ * embedded → a single portable .rdbk file) or a plain GPX. Unsaved work is
+ * checkpointed to localStorage and offered for recovery on the next visit. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
     const map = new RBMap('edMap', { zoom: 13 });
-    let rb = null, sel = 0, std = null, spliceTrk = null, dirty = false, exported = false;
+    let rb = null, sel = 0, std = null, dirty = false, exported = false;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
@@ -25,16 +27,155 @@
         else { b.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save'; b.classList.add('btn-primary'); }
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
+    // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
+    const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
-    map.onWaypoint((i) => select(i));
+    map.onWaypoint((i) => { if (mapTool === 'pan') select(i); }); // other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
-        if (!rb) return;
+        if (!map.ready || recWatch != null) return; // never edit mid-recording
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
-        addWaypointNear({ lat: e.lngLat.lat, lon: e.lngLat.lng });
+        const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+        if (mapTool === 'note') { if (rb) addWaypointNear(here); else toast('Load a roadbook first.'); }
+        else if (mapTool === 'draw') drawPoint(here);
+        else if (mapTool === 'cut') cutPoint(here);
     });
+
+    /* ---------- map tool bar: the GPX is edited right on the map ---------- */
+    // mode tools (pan · add note · draw · cut) are exclusive toggles; the rest are one-shot
+    let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
+    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolCut'];
+    function setMapTool(tool) {
+        mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
+        MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
+        map.setCursor(tool === 'pan' ? '' : 'crosshair');
+    }
+    MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
+    // translated hover tooltips (refreshed on language switch)
+    function applyToolTips() {
+        const maxed = $('mapEditor').classList.contains('max');
+        const tips = {
+            toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
+            toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
+            toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
+            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', toolMax: maxed ? 'Exit full screen' : 'Maximize',
+        };
+        Object.entries(tips).forEach(([id, key]) => $(id).setAttribute('data-tip', t(key)));
+    }
+    applyToolTips();
+    window.addEventListener('rb-lang', applyToolTips);
+    // maximize the GPX editor (map + tool bar); Esc restores
+    function setMax(on) {
+        $('mapEditor').classList.toggle('max', on);
+        $('toolMax').innerHTML = on ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
+        applyToolTips();
+        if (map.map) setTimeout(() => map.map.resize(), 60);
+    }
+    $('toolMax').onclick = () => setMax(!$('mapEditor').classList.contains('max'));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMax(false); setMapTool('pan'); } });
+    // Draw mode: every tap extends the route; with nothing loaded, the first two
+    // taps create a fresh roadbook (start/end notes ride the growing track).
+    function drawPoint(p) {
+        const pt = { lat: RB.round6(p.lat), lon: RB.round6(p.lon) };
+        if (!rb) {
+            drawSeed.push(pt); map.setPin(drawSeed[0]);
+            if (drawSeed.length === 2) {
+                const seed = drawSeed;
+                resetIdentity(); setRoadbook(RB.buildRoadbook({ name: t('Drawn route'), trkpts: seed }));
+                markDirty(); setMapTool('draw'); // stay in draw mode to keep sketching
+            }
+            return;
+        }
+        const lastIdx = rb.track.length - 1;
+        rb.track.push(pt);
+        const endNote = rb.notes[rb.notes.length - 1];
+        if (endNote && endNote.idx === lastIdx) endNote.idx = rb.track.length - 1; // the finish note rides the tip
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        map.showRoadbook(rb, true); renderNotes(); markDirty();
+    }
+    // Cut mode: tap two points — at the ends it trims, in the middle it removes
+    // the span and closes with a straight seam. The route always stays ONE track.
+    function cutPoint(p) {
+        if (!rb) return toast('Load a roadbook first.');
+        const idx = RB.nearestIdx(rb.track, p);
+        if (cutFromIdx < 0) { cutFromIdx = idx; map.setPin(rb.track[idx]); toast('Now tap the other end of the cut.'); return; }
+        const a = Math.min(cutFromIdx, idx), b = Math.max(cutFromIdx, idx);
+        cutFromIdx = -1; map.setPin(null);
+        if (b - a < 1) return toast('Nothing to cut.');
+        if (a === 0 && b === rb.track.length - 1) return toast('Nothing would remain.');
+        if (a === 0) { // trim the head
+            rb.track = rb.track.slice(b);
+            rb.notes = rb.notes.filter((n) => n.idx >= b);
+            rb.notes.forEach((n) => { n.idx -= b; });
+        } else if (b === rb.track.length - 1) { // trim the tail
+            rb.track = rb.track.slice(0, a + 1);
+            rb.notes = rb.notes.filter((n) => n.idx <= a);
+        } else { // interior span → straight seam
+            rb.track.splice(a + 1, b - a - 1);
+            rb.notes = rb.notes.filter((n) => n.idx <= a || n.idx >= b);
+            rb.notes.forEach((n) => { if (n.idx >= b) n.idx -= b - a - 1; });
+        }
+        const last = rb.track.length - 1;
+        if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(makeNote(rb, 0, rb.notes[0] ? rb.notes[0].road_type_in : 3));
+        if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(makeNote(rb, last, 3));
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        sel = 0; routeChanged('Cut applied · metrics recomputed.');
+    }
+    // Add GPX: if both ends of the piece touch the route it offers a detour
+    // (replace the matching segment); otherwise it joins the piece to the nearest
+    // end, auto-orienting it. Either way the route stays ONE track.
+    $('toolAddGpx').onclick = () => { if (!rb) return toast('Load a roadbook first.'); $('addGpxFile').click(); };
+    $('addGpxFile').onchange = async (e) => {
+        const f = e.target.files[0]; e.target.value = '';
+        if (!f || !rb) return;
+        try { await addGpxTrack(RB.parseGPX(await f.text()).trkpts); } catch (err) { toast('Error: ' + err.message); }
+    };
+    async function addGpxTrack(trkpts) {
+        if (!trkpts || trkpts.length < 2) return toast('The GPX track has too few points.');
+        const D = RB.geo.haversineM, NEAR_M = 200;
+        const pieceStart = trkpts[0], pieceEnd = trkpts[trkpts.length - 1];
+        const iS = RB.nearestIdx(rb.track, pieceStart), iE = RB.nearestIdx(rb.track, pieceEnd);
+        if (D(rb.track[iS], pieceStart) < NEAR_M && D(rb.track[iE], pieceEnd) < NEAR_M && Math.abs(iE - iS) > 2) {
+            let piece = trkpts, i1 = iS, i2 = iE;
+            if (i1 > i2) { piece = trkpts.slice().reverse(); i1 = iE; i2 = iS; }
+            if (!(await RBConfirm(t('Both ends of the loaded track touch the route — replace the segment between them?'), t('Replace')))) return;
+            spliceByIndex(rb, piece, i1, i2);
+            sel = 0; routeChanged('Spliced · metrics recomputed.');
+            return;
+        }
+        const joinAtStart = Math.min(D(rb.track[0], pieceStart), D(rb.track[0], pieceEnd))
+            < Math.min(D(rb.track[rb.track.length - 1], pieceStart), D(rb.track[rb.track.length - 1], pieceEnd));
+        if (joinAtStart) RB.reverseRoadbook(rb); // join at the start = extend the reversed route
+        const anchor = rb.track[rb.track.length - 1];
+        extension(rb, D(anchor, pieceStart) <= D(anchor, pieceEnd) ? trkpts : trkpts.slice().reverse());
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        if (joinAtStart) RB.reverseRoadbook(rb);
+        sel = 0; routeChanged('Track joined to the route.');
+    }
+    $('toolReverse').onclick = () => {
+        if (!rb) return toast('Load a roadbook first.');
+        RB.reverseRoadbook(rb); sel = 0;
+        routeChanged('Route reversed — review the vignettes.');
+    };
+    $('toolSimplify').onclick = () => {
+        if (!rb) return toast('Load a roadbook first.');
+        const d = RBModal(`<h3>${t('Simplify')}</h3>
+            <label class="muted small">${t('Tolerance (metres) — higher removes more points')}</label>
+            <input id="simpTol" class="modal-in" type="number" min="0.5" max="50" step="0.5" value="2" inputmode="decimal">
+            <p class="muted small">${rb.track.length} ${t('points')}</p>
+            <div class="btnrow end spaced"><button class="btn btn-ghost" id="simpX">${t('Cancel')}</button><button class="btn btn-primary" id="simpGo">${t('Apply')}</button></div>`, 'narrow');
+        d.q('#simpX').onclick = d.close;
+        d.q('#simpGo').onclick = () => {
+            const tolerance = Math.max(0.5, Math.min(50, parseFloat(d.q('#simpTol').value) || 2));
+            const before = rb.track.length;
+            RB.simplifyRoadbook(rb, tolerance);
+            d.close(); routeChanged('Removed ' + (before - rb.track.length) + ' points.');
+        };
+    };
+    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMax(false); setMapTool('pan'); startRecording('adjust'); };
+    $('drawRoute').onclick = () => { setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
     $('loadGpx').onclick = () => $('gpxFile').click();
@@ -66,7 +207,7 @@
         updatePhotos(); updateSaveBtn();
         map.showRoadbook(rb); renderNotes(); renderIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
-        histReset();
+        histReset(); setMapTool('pan');
         showView('map'); // start on the map + notes; tap a note to edit it
     }
 
@@ -150,7 +291,6 @@
         return out;
     }
     $('recordRoute').onclick = () => startRecording('new');
-    $('adjustBtn').onclick = () => { if (!rb) return toast('Load a roadbook first.'); startRecording('adjust'); };
     $('recPause').onclick = () => {
         recPaused = !recPaused;
         $('recPause').innerHTML = recPaused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
@@ -291,7 +431,7 @@
         // merge any waypoints dropped during the adjust session (snap to the new track)
         recWpts.forEach((w) => {
             const idx = RB.nearestIdx(rb.track, w);
-            if (!rb.notes.some((n) => n.idx === idx)) rb.notes.push({ num: 0, idx, distance: 0, partial_distance: 0, lat: w.lat, lon: w.lon, text: w.text || '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: 3, road_type_out: 3, junctions: null, icons: [] });
+            if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, 3); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0; map.showRoadbook(rb); renderNotes(); renderEditor(); canvas.setNote(rb.notes[0]); updatePhotos(); markDirty();
@@ -301,9 +441,9 @@
         const nt = r.track.slice(0, i1 + 1).concat(newTrk.map((p) => ({ lat: RB.round6(p.lat), lon: RB.round6(p.lon) }))).concat(i2 != null ? r.track.slice(i2) : []);
         const last = r.notes[r.notes.length - 1];
         r.notes = r.notes.filter((n) => n.idx <= i1 || (i2 != null && n.idx >= i2));
-        // tail replace (no rejoin): keep an end note at the new finish
-        if (i2 == null) { const e = nt[nt.length - 1]; r.notes.push({ num: 0, idx: nt.length - 1, distance: 0, partial_distance: 0, lat: e.lat, lon: e.lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: last ? last.road_type_out : 3, road_type_out: last ? last.road_type_out : 3, junctions: null, icons: [] }); }
         r.track = nt;
+        // tail replace (no rejoin): keep an end note at the new finish
+        if (i2 == null) r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));
         r.notes.forEach((n) => { n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }); });
         RB.recomputeMetrics(r); RB.recomputeCaps(r);
     }
@@ -381,16 +521,6 @@
         $('noteList').querySelectorAll('.note-mini').forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         $('noteList').querySelectorAll('.note-mini').forEach((c) => c.onclick = () => select(+c.dataset.i));
         const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
-        fillNoteSelects();
-    }
-    // note pickers used by the route tools (splice segment + trim range)
-    function fillNoteSelects() {
-        if (!rb) return;
-        const opts = rb.notes.map((n) => `<option value="${n.num}">Note ${n.num}${n.text ? ' · ' + esc(n.text.slice(0, 18)) : ''}</option>`).join('');
-        const lastNum = rb.notes[rb.notes.length - 1].num;
-        [['spliceA', null], ['spliceB', lastNum], ['trimA', null], ['trimB', lastNum]].forEach(([id, value]) => {
-            const el = $(id); el.innerHTML = opts; if (value != null) el.value = value;
-        });
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
@@ -462,10 +592,8 @@
     function addWaypointNear(pt) {
         const idx = RB.nearestIdx(rb.track, pt);
         if (rb.notes.some((n) => n.idx === idx)) return toast('There is already a note here.');
-        const tp = rb.track[idx];
-        rb.notes.push({ num: 0, idx, distance: 0, partial_distance: 0, lat: tp.lat, lon: tp.lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: 3, road_type_out: 3, junctions: null, icons: [] });
-        RB.recomputeMetrics(rb); map.showRoadbook(rb); renderNotes(); markDirty();
-        select(Math.max(0, rb.notes.findIndex((n) => n.idx === idx)));
+        rb.notes.push(makeNote(rb, idx, 3));
+        RB.recomputeMetrics(rb); map.showRoadbook(rb, true); renderNotes(); markDirty();
         toast('Waypoint added.');
     }
 
@@ -529,33 +657,12 @@
     const safeName = (n) => n.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileToDataURL = (f) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
 
-    /* ---------- route tools: reverse · simplify · trim ---------- */
     // refresh everything after a whole-route operation
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
-        map.showRoadbook(rb); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
+        map.showRoadbook(rb, true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
         if (toastMsg) toast(toastMsg);
     }
-    $('reverseBtn').onclick = () => {
-        if (!rb) return toast('Load a roadbook first.');
-        RB.reverseRoadbook(rb); sel = 0;
-        routeChanged('Route reversed — review the vignettes.');
-    };
-    $('simplifyBtn').onclick = () => {
-        if (!rb) return toast('Load a roadbook first.');
-        const tolerance = Math.max(0.5, Math.min(50, parseFloat($('simplifyTol').value) || 2));
-        const before = rb.track.length;
-        RB.simplifyRoadbook(rb, tolerance);
-        $('simplifyInfo').textContent = before + ' → ' + rb.track.length + ' pts';
-        routeChanged('Removed ' + (before - rb.track.length) + ' points.');
-    };
-    $('trimApply').onclick = async () => {
-        if (!rb) return toast('Load a roadbook first.');
-        if (!(await RBConfirm(t('Trim the route?') + ' ' + t('Everything outside the selected notes is deleted.'), t('Trim')))) return;
-        try { RB.trimRoadbook(rb, +$('trimA').value, +$('trimB').value); } catch (e) { return toast('Error: ' + e.message); }
-        sel = 0;
-        routeChanged('Route trimmed · metrics recomputed.');
-    };
 
     /* ---------- vignette clipboard: copy / cut / paste between notes ---------- */
     // The clipboard carries the drawing (icons + junctions) plus the data URIs of
@@ -587,32 +694,12 @@
         toast('Vignette pasted.');
     };
 
-    /* ---------- splicing (detour / extension) ---------- */
-    $('spliceOp').onchange = () => { $('spliceDev').hidden = $('spliceOp').value !== 'dev'; };
-    $('spliceGpx').onclick = () => $('spliceFile').click();
-    $('spliceFile').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { spliceTrk = RB.parseGPX(await f.text()).trkpts; $('spliceInfo').textContent = spliceTrk.length + ' pts'; } catch (err) { toast('GPX: ' + err.message); } };
-    $('spliceApply').onclick = () => {
-        if (!rb) return toast('Load a roadbook.');
-        if (!spliceTrk || spliceTrk.length < 2) return toast('Load the GPX to splice.');
-        try {
-            if ($('spliceOp').value === 'dev') deviation(rb, spliceTrk, +$('spliceA').value, +$('spliceB').value);
-            else extension(rb, spliceTrk);
-            RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-            map.showRoadbook(rb); renderNotes(); select(0); toast('Spliced · metrics recomputed.');
-        } catch (err) { toast('Error: ' + err.message); }
-    };
-    function deviation(r, trk, a, b) {
-        const A = r.notes.find((n) => n.num === a), B = r.notes.find((n) => n.num === b);
-        if (!A || !B) throw new Error('Notes A/B not found'); if (A.idx >= B.idx) throw new Error('A must come before B');
-        const nt = r.track.slice(0, A.idx + 1).concat(trk.map((p) => ({ lat: p.lat, lon: p.lon }))).concat(r.track.slice(B.idx));
-        r.notes = r.notes.filter((n) => n.idx <= A.idx || n.idx >= B.idx); r.track = nt;
-        r.notes.forEach((n) => n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }));
-    }
+    // lengthen the route with another track; an end note rides the new finish
     function extension(r, trk) {
         const nt = r.track.concat(trk.slice(1).map((p) => ({ lat: p.lat, lon: p.lon })));
-        const last = r.notes[r.notes.length - 1], e = nt[nt.length - 1];
+        const last = r.notes[r.notes.length - 1];
         r.track = nt; r.notes.forEach((n) => n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }));
-        r.notes.push({ num: 0, idx: nt.length - 1, distance: 0, partial_distance: 0, lat: e.lat, lon: e.lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: last ? last.road_type_out : 3, road_type_out: last ? last.road_type_out : 3, junctions: null, icons: [] });
+        r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));
     }
 
     /* ---------- export (self-contained .rdbk) ---------- */
