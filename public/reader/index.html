@@ -24,21 +24,10 @@
         .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transition: transform .35s ease; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
-        .trip-main { max-width: 560px; padding-top: 1rem; }
         .mode-grid { margin-top: 1rem; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
         .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
-        /* tripmaster */
-        .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-        .mini-button { cursor: pointer; font: inherit; }
-        .mini-button:hover { border-color: var(--sand); }
-        #tmSpeed { transition: color .2s; color: var(--speed-band, var(--text)); }
-        .hold-btn { position: relative; overflow: hidden; }
-        .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
-        .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
-        .hold-field-label { position: relative; z-index: 1; }
-        body.trip-on header.topbar, body.trip-on footer.foot { display: none !important; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
         /* roadbook navigation rows — white "paper", fixed | fixed | dynamic | buttons */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
@@ -78,12 +67,11 @@
     <div class="center-card">
         <div class="big"><i class="fa-solid fa-compass"></i></div>
         <h1 data-i18n="Reader">Reader</h1>
-        <p class="muted" data-i18n-html="Load a roadbook and navigate with GPS, or use <b>Tripmaster mode</b> with no roadbook.">Load a roadbook and navigate with GPS, or use <b>Tripmaster mode</b> with no roadbook.</p>
+        <p class="muted" data-i18n="Load a roadbook and navigate it with GPS.">Load a roadbook and navigate it with GPS.</p>
         <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
         <div class="btnrow mt-2"><button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button></div>
         <div class="btnrow">
             <button class="btn btn-ghost" id="pickChallenge" data-i18n="Challenges"><i class="fa-solid fa-trophy"></i> Challenges</button>
-            <button class="btn btn-ghost" id="tripMode" data-i18n="Tripmaster mode"><i class="fa-solid fa-gauge-high"></i> Tripmaster mode</button>
         </div>
     </div>
 </main>
@@ -112,45 +100,6 @@
         <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
     </nav>
-</div>
-
-<!-- Tripmaster mode (no roadbook) -->
-<div id="tripScreen" hidden>
-    <main class="wrap trip-main">
-        <div class="dash">
-            <div class="readout primary">
-                <div class="field-label" data-i18n="Total">Total</div>
-                <div><span class="num" id="tmTotal">0.00</span> <span class="unit">km</span></div>
-            </div>
-            <div class="readout">
-                <div class="field-label" data-i18n="Partial">Partial</div>
-                <div><span class="num2" id="tmPartial">0.00</span> <span class="unit">km</span></div>
-                <div class="btnrow">
-                    <button class="btn btn-ghost" id="tmMinus10">−10 m</button>
-                    <button class="btn btn-ghost" id="tmPlus10">+10 m</button>
-                    <button class="btn btn-ghost hold-btn" id="tmReset"><span class="hold-fill"></span><span class="hold-field-label"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Reset (hold)">Reset (hold)</span></span></button>
-                </div>
-            </div>
-            <div class="row3">
-                <button class="mini mini-button" id="tmSpeedAlert"><div class="value" id="tmSpeed">0</div><div class="key" data-i18n="km/h · alert">km/h · alert</div></button>
-                <div class="mini"><div class="value" id="tmCap">—</div><div class="key">CAP °</div></div>
-                <div class="mini"><div class="value" id="tmClock">--:--</div><div class="key" data-i18n="Clock">Clock</div></div>
-            </div>
-            <div class="row3">
-                <div class="mini"><div class="value" id="tmTimer">0:00</div><div class="key" data-i18n="Timer">Timer</div></div>
-                <div class="mini"><div class="value" id="tmMax">0</div><div class="key" data-i18n="Max km/h">Max km/h</div></div>
-                <div class="mini"><div class="value" id="tmNotes">0</div><div class="key" data-i18n="Waypoints">Waypoints</div></div>
-            </div>
-            <div class="btnrow">
-                <button class="btn btn-ghost" id="tmTimerBtn"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="Timer">Timer</span></button>
-                <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
-                <button class="btn btn-ghost" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
-            </div>
-            <div class="btnrow">
-                <button class="btn btn-danger grow" id="tmExit"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Exit">Exit</span></button>
-            </div>
-        </div>
-    </main>
 </div>
 
 <!-- usage mode -->
@@ -205,6 +154,8 @@
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/roadbook-core.js"></script>
+<script src="../assets/js/gps-meter.js"></script>
+<script src="../assets/js/gpx-recorder.js"></script>
 <script src="../assets/js/note-canvas.js"></script>
 <script src="../assets/js/qrcode.min.js"></script>
 <script src="../assets/js/challenges.js"></script>

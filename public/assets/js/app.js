@@ -25,6 +25,7 @@
             <nav class="topnav" id="topnav">
                 <a class="btn btn-ghost${active('editor')}" href="${ROOT}editor/"><i class="fa-solid fa-map-location-dot"></i> Editor</a>
                 <a class="btn btn-ghost${active('reader')}" href="${ROOT}reader/"><i class="fa-solid fa-compass"></i> Reader</a>
+                <a class="btn btn-ghost${active('tripmaster')}" href="${ROOT}tripmaster/"><i class="fa-solid fa-gauge-high"></i> Tripmaster</a>
                 <a class="btn btn-ghost${active('ranking')}" href="${ROOT}ranking/"><i class="fa-solid fa-ranking-star"></i> Ranking</a>
             </nav>
         </div>`;
@@ -111,7 +112,7 @@
         installBtn = document.createElement('button');
         installBtn.id = 'installBtn';
         installBtn.className = 'btn btn-ghost install-btn';
-        installBtn.innerHTML = '<i class="fa-solid fa-circle-down"></i> <span>Install</span>';
+        installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> <span>${RBt('Install')}</span>`;
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
         slot.appendChild(installBtn);
@@ -131,14 +132,14 @@
     if (isIOS() && !isStandalone()) document.addEventListener('DOMContentLoaded', showInstall);
 
     function showIosModal() {
-        const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> Install on iPhone</h2>
-            <p class="muted small">From Safari, in 3 steps:</p>
+        const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> ${RBt('Install on iPhone')}</h2>
+            <p class="muted small">${RBt('From Safari, in 3 steps:')}</p>
             <ol class="ios-steps">
-                <li>Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.</li>
-                <li>Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.</li>
-                <li>Tap <b>Add</b>. Done!</li>
+                <li>${RBt('Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.')}</li>
+                <li>${RBt('Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.')}</li>
+                <li>${RBt('Tap <b>Add</b>. Done!')}</li>
             </ol>
-            <div class="btnrow"><button class="btn btn-primary" data-ok>Got it</button></div>`);
+            <div class="btnrow"><button class="btn btn-primary" data-ok>${RBt('Got it')}</button></div>`);
         d.q('[data-ok]').onclick = d.close;
     }
 
@@ -200,22 +201,24 @@
     };
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
+    // msg and okLabel run through RBt: plain English keys translate, already-
+    // translated or composed strings fall through unchanged.
     window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
-        const d = RBModal(`<p class="modal-text">${msg}</p>
+        const d = RBModal(`<p class="modal-text">${RBt(msg)}</p>
             <div class="btnrow end">
-                <button class="btn btn-ghost" data-no>Cancel</button>
-                <button class="btn btn-primary" data-yes>${okLabel || 'OK'}</button>
+                <button class="btn btn-ghost" data-no>${RBt('Cancel')}</button>
+                <button class="btn btn-primary" data-yes>${RBt(okLabel || 'OK')}</button>
             </div>`, 'narrow', () => resolve(false));
         const done = (v) => { d.close(); resolve(v); };
         d.q('[data-yes]').onclick = () => done(true);
         d.q('[data-no]').onclick = () => done(false);
     });
     window.RBNeedAuth = (msg) => {
-        const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> Sign in</h2>
-            <p class="muted">${msg || 'Create a free account to save and share your roadbooks.'}</p>
+        const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> ${RBt('Sign in')}</h2>
+            <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>
             <div class="btnrow center spaced">
-                <button class="btn btn-ghost" data-no>Not now</button>
-                <a class="btn btn-primary" href="${ROOT}account/"><i class="fa-solid fa-right-to-bracket"></i> Sign in / Create account</a>
+                <button class="btn btn-ghost" data-no>${RBt('Not now')}</button>
+                <a class="btn btn-primary" href="${ROOT}account/"><i class="fa-solid fa-right-to-bracket"></i> ${RBt('Sign in / Create account')}</a>
             </div>`, 'narrow center');
         d.q('[data-no]').onclick = d.close;
     };
@@ -233,8 +236,8 @@
             } else {
                 w.innerHTML = `<button class="btn btn-ghost account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
                     <div class="account-menu" hidden>
-                        <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> My account</a>
-                        <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+                        <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My account')}</a>
+                        <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
             slot.appendChild(w);

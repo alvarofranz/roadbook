@@ -138,5 +138,4 @@ window.RBMap = class RBMap {
         this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
         this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }
-    clearEditMarker() { if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; } }
 };

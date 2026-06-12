@@ -117,11 +117,13 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
   upcoming white · <50 m to next blue · approaching orange) with an optional per-note
   Mapbox static mini-map. The start modal sets Trip vs Competition mode, automatic (GPS,
   marks within 50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the
-  per-note map
-  button and optional live GPX logging. Competition validates with penalties + an
-  HMAC-signed result QR; validating syncs the total odometer to the note's distance.
-  No roadbook → **Tripmaster** (GPS trip computer: speed alert with configurable bands,
-  hold-to-reset, GPX recording). Opens `.rdbk` from the OS on installed PWAs.
+  per-note map button and optional live GPX logging. Competition validates with
+  penalties + an HMAC-signed result QR; validating syncs the total odometer to the
+  note's distance. Opens `.rdbk` from the OS on installed PWAs.
+- **Tripmaster** — a GPS trip computer with no roadbook: total/partial odometer with
+  ±10 m corrections and hold-to-reset, speed with configurable alert bands, heading,
+  stopwatch, waypoint counter and crash-safe GPX recording; the session checkpoints
+  to localStorage and resumes after a kill.
 - **Ranking** — scan/paste result QRs, verify the signature, build accuracy / CAP /
   speed / regularity rankings + a final score; per-row delete and CSV export.
 
@@ -137,6 +139,11 @@ runtime files (`public/assets/fontawesome/`, `public/assets/js/config.js`, `.env
   by the challenge page).
 - `rbmap.js` (`RBMap`) — Mapbox GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker). Used by the **Editor only**.
+- `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
+  position watch + wake lock, one clean `{here, disp, speedKmh, heading}` per fix.
+- `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
+  settings modal, localStorage checkpoint with recovery, live file handle, finished-track
+  modal (download / convert into a roadbook).
 - `challenges.js` (`RBChallenges`) — public challenges (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
 - `i18n.js`, `app.js` (global header/footer, SW + version auto-refresh, Install button,

@@ -101,7 +101,7 @@
         const list = $('rbList');
         if (!r.ok || !r.roadbooks || !r.roadbooks.length) { list.innerHTML = `<p class="muted small">${t('No roadbooks yet. Create one in the Editor.')}</p>`; return; }
         list.innerHTML = r.roadbooks.map((rb) => `<div class="roadbook-row">
-            <div class="meta"><b>${esc(rb.title)}</b><small><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${(rb.total_distance / 1000).toFixed(1)} km · ${rb.note_count} notes</small></div>
+            <div class="meta"><b>${esc(rb.title)}</b><small><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${(rb.total_distance / 1000).toFixed(1)} km · ${rb.note_count} ${t('notes')}</small></div>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="View"><i class="fa-solid fa-eye"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="Edit"><i class="fa-solid fa-pen"></i></a>
             <button class="btn btn-ghost" data-del="${rb.id}" title="Delete"><i class="fa-solid fa-trash-can icon-danger"></i></button>

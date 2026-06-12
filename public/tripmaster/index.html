@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+    <meta name="theme-color" content="#0e1116">
+    <title>Tripmaster · RDBK.app</title>
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        .trip-main { max-width: 560px; padding-top: 1rem; }
+        .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .mini-button { cursor: pointer; font: inherit; }
+        .mini-button:hover { border-color: var(--sand); }
+        #tmSpeed { transition: color .2s; color: var(--speed-band, var(--text)); }
+        .hold-btn { position: relative; overflow: hidden; }
+        .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
+        .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
+        .hold-field-label { position: relative; z-index: 1; }
+        @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap trip-main">
+    <div class="dash">
+        <div class="readout primary">
+            <div class="field-label" data-i18n="Total">Total</div>
+            <div><span class="num" id="tmTotal">0.00</span> <span class="unit">km</span></div>
+        </div>
+        <div class="readout">
+            <div class="field-label" data-i18n="Partial">Partial</div>
+            <div><span class="num2" id="tmPartial">0.00</span> <span class="unit">km</span></div>
+            <div class="btnrow">
+                <button class="btn btn-ghost" id="tmMinus10">−10 m</button>
+                <button class="btn btn-ghost" id="tmPlus10">+10 m</button>
+                <button class="btn btn-ghost hold-btn" id="tmReset"><span class="hold-fill"></span><span class="hold-field-label"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Reset (hold)">Reset (hold)</span></span></button>
+            </div>
+        </div>
+        <div class="row3">
+            <button class="mini mini-button" id="tmSpeedAlert"><div class="value" id="tmSpeed">0</div><div class="key" data-i18n="km/h · alert">km/h · alert</div></button>
+            <div class="mini"><div class="value" id="tmCap">—</div><div class="key">CAP °</div></div>
+            <div class="mini"><div class="value" id="tmClock">--:--</div><div class="key" data-i18n="Clock">Clock</div></div>
+        </div>
+        <div class="row3">
+            <div class="mini"><div class="value" id="tmTimer">0:00</div><div class="key" data-i18n="Timer">Timer</div></div>
+            <div class="mini"><div class="value" id="tmMax">0</div><div class="key" data-i18n="Max km/h">Max km/h</div></div>
+            <div class="mini"><div class="value" id="tmNotes">0</div><div class="key" data-i18n="Waypoints">Waypoints</div></div>
+        </div>
+        <div class="btnrow">
+            <button class="btn btn-ghost" id="tmTimerBtn"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="Timer">Timer</span></button>
+            <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
+            <button class="btn btn-ghost" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
+        </div>
+        <div class="btnrow">
+            <button class="btn btn-danger grow" id="tmExit"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="End the trip">End the trip</span></button>
+        </div>
+    </div>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../assets/js/roadbook-core.js"></script>
+<script src="../assets/js/gps-meter.js"></script>
+<script src="../assets/js/gpx-recorder.js"></script>
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="tripmaster.js"></script>
+</body>
+</html>

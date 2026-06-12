@@ -4,10 +4,9 @@
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
     const esc = RBesc, t = RBt; // shared helpers (app.js / i18n.js)
-    const ROOT = (window.RBChallenges && RBChallenges.ROOT) || '/';
+    const ROOT = RBChallenges.ROOT;
 
-    fetch(ROOT + 'api/index.php?action=public_list').then((r) => r.json()).then((j) => {
-        const rbs = (j && j.roadbooks) || [];
+    RBChallenges.listPublic().then((rbs) => {
         if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; return; }
         grid.innerHTML = rbs.map((r) => `
             <a class="gallery-card" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">

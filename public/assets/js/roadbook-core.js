@@ -358,7 +358,7 @@
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
-        recomputeMetrics, recomputeCaps, speedLimitFromName, speedLimitOfNote,
+        recomputeMetrics, recomputeCaps, speedLimitOfNote,
         simplifyTrack, simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6,

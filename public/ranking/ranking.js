@@ -31,7 +31,7 @@
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             const v = $('video'); v.hidden = false; v.srcObject = stream; await v.play();
-            scanning = true; $('scanBtn').innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+            scanning = true; $('scanBtn').innerHTML = `<i class="fa-solid fa-stop"></i> ${RBt('Stop')}`;
             loopScan();
         } catch (e) { msg('Could not open the camera: ' + e.message, true); }
     };
@@ -51,7 +51,7 @@
     function stopScan() {
         scanning = false;
         if (stream) stream.getTracks().forEach((t) => t.stop());
-        stream = null; $('video').hidden = true; $('scanBtn').innerHTML = '<i class="fa-solid fa-camera"></i> Scan QR';
+        stream = null; $('video').hidden = true; $('scanBtn').innerHTML = `<i class="fa-solid fa-camera"></i> ${RBt('Scan QR')}`;
     }
 
     /* ---------- scoring ---------- */
@@ -85,7 +85,7 @@
         $('empty').hidden = !!rows.length;
         if (!rows.length) { $('table').innerHTML = ''; return; }
         $('table').innerHTML =
-            `<thead><tr><th>#</th><th>Vehicle</th><th>km</th><th>Accuracy</th><th>CAP</th><th>Speed</th><th>Regularity</th><th>Final</th><th></th></tr></thead>`
+            `<thead><tr><th>#</th><th>${RBt('Vehicle')}</th><th>km</th><th>${RBt('Accuracy')}</th><th>CAP</th><th>${RBt('Speed')}</th><th>${RBt('Regularity')}</th><th>${RBt('Final')}</th><th></th></tr></thead>`
             + '<tbody>' + rows.map((r, i) =>
                 `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === false ? '<span title="Invalid signature" class="icon-danger">⚠</span> ' : ''}${r.team}</td><td>${r.km.toFixed(1)}</td>`
                 + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="final-score">${r.finalScore}</td>`
