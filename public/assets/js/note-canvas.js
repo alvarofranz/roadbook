@@ -168,8 +168,10 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         const flip = ic.flip_x ? ` transform="translate(${2 * cxi} 0) scale(-1 1)"` : '';
         s += `<g transform="rotate(${ic.angle || 0} ${cxi} ${cyi})"><image x="${cxi - sz / 2}" y="${cyi - sz / 2}" width="${sz}" height="${sz}" href="${resolveIcon(ic)}"${flip} preserveAspectRatio="xMidYMid meet"/></g>`;
     });
+    // Danger marks carry their own presentation attributes so the SVG is fully
+    // self-contained (renders identically standalone — PDF — and inside the DOM).
     const danger = dangerMarks(note);
-    if (danger) s += `<text x="8" y="40" class="vignette-danger">${danger}</text>`;
+    if (danger) s += `<text x="8" y="40" fill="#e01414" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="38" letter-spacing="2">${danger}</text>`;
     return s + '</svg>';
 };
 

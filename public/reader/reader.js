@@ -16,7 +16,8 @@
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null;
-    let showMap = true, approaching = false; // showMap: per-note mini-map button · approaching: auto ≤30 m (orange)
+    let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto ≤30 m (orange)
+    let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
     const AUTO_REACH_M = 50, WARN_M = 30; // auto-validate radius · approaching warning
     let lastPayload = '', lastQrUrl = '';
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
@@ -66,12 +67,16 @@
     function loadRb(r) {
         if (!r.notes || !r.notes.length) return toast('Roadbook has no notes.');
         rb = r; notes = r.notes;
+        // "Map access from player" is a roadbook-level setting (default allowed when absent)
+        $('optMap').checked = mapAllowed();
+        $('optMapRow').hidden = !mapAllowed();
         $('modeModal').hidden = false;
     }
+    const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); };
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); };
     let optGpx = false;
-    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked; optGpx = $('optGpx').checked; }
+    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; }
     $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); if (optGpx) RBGpxRecorder.begin(); };
     $('modeComp').onclick = () => {
         readModeOpts(); $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
@@ -104,7 +109,7 @@
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
-        team = s.team; auto = s.auto; showMap = s.showMap; optGpx = s.gpxOption;
+        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
@@ -149,6 +154,7 @@
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     let lastScrollIdx = -1;
     function renderNotes() {
+        closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
             const cls = ['nrow'];
             if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
@@ -172,14 +178,23 @@
         updateCapBar();
         saveSession();
     }
+    // One interactive map at a time: zoom buttons + satellite/topo toggle (RBMap),
+    // centred on the note at zoom ~13, with the whole route + pins for context.
     function toggleNoteMap(i) {
+        if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
+        closeInlineMap();
+        if (!window.mapboxgl || !(window.RB_CONFIG || {}).mapboxToken) return toast('Map not configured.');
         const el = $('nmap' + i); if (!el) return;
-        if (!el.hidden) { el.hidden = true; el.innerHTML = ''; return; }
-        const n = notes[i], tok = (window.RB_CONFIG || {}).mapboxToken;
-        if (!tok) return toast('Map not configured.');
-        const ll = (+n.lon).toFixed(5) + ',' + (+n.lat).toFixed(5);
-        el.innerHTML = `<img alt="map" loading="lazy" src="https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/pin-s+ff2a2a(${ll})/${ll},15,0/440x220@2x?access_token=${tok}">`;
-        el.hidden = false;
+        const n = notes[i];
+        el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
+        el.hidden = false; inlineMapIdx = i;
+        inlineMap = new RBMap('nmapMap', { zoom: 13, center: [+n.lon, +n.lat], layerToggle: true });
+        inlineMap.showRoadbook(rb, true); // no auto-fit: keep our centre on this note
+        inlineMap.select(n, true);        // highlight the note
+    }
+    function closeInlineMap() {
+        if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
+        if (inlineMapIdx >= 0) { const el = $('nmap' + inlineMapIdx); if (el) { el.hidden = true; el.innerHTML = ''; } inlineMapIdx = -1; }
     }
     // Bottom CAP bar: heading to hold (prev note's CAP) · speed · live distance to
     // destination · direction arrow. Appears only while a CAP is active.

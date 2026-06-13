@@ -353,6 +353,9 @@
     const round3 = (n) => Math.round(n * 1000) / 1000;
     const round6 = (n) => Math.round(n * 1e6) / 1e6;
 
+    // URL/filename-safe slug from a title (lowercase, single dashes, ≤60 chars).
+    const slug = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
+
     /* ---------------- export ---------------- */
     window.RB = {
         ROAD_TYPES, CONST,
@@ -361,6 +364,6 @@
         recomputeMetrics, recomputeCaps, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6,
+        nearestIdx, round6, slug,
     };
 })();

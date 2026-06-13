@@ -3,7 +3,6 @@
 window.RB_CONFIG = {
     // PUBLIC Mapbox token (pk.*). Restrict it by URL to rdbk.app at console.mapbox.com.
     mapboxToken: 'pk.YOUR_PUBLIC_MAPBOX_TOKEN',
-    mapStyle: 'mapbox://styles/mapbox/satellite-streets-v12',
     // Key used to sign result QRs (integrity). Reader and Ranking must use the SAME one.
     signKey: 'change-me',
 };

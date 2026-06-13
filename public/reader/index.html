@@ -8,8 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.12-13">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.12-13">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-1">
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-1">
     <style>
         /* top odometer bar */
         .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -52,7 +53,8 @@
         .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
         .nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching (auto, ≤30 m) */
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
-        .nmap img { width: 100%; display: block; border-radius: 6px; }
+        /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
+        .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
         .segmented { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
         .segment-button { flex: 1; background: var(--card-2); color: var(--muted); border: 0; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
@@ -112,7 +114,7 @@
                 <button type="button" class="segment-button on" id="advAuto" data-i18n="Automatic (GPS)">Automatic (GPS)</button>
                 <button type="button" class="segment-button" id="advManual" data-i18n="Manual (tap)">Manual (tap)</button>
             </div>
-            <label class="checkbox-row"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
+            <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
         </div>
         <div class="mode-grid">
@@ -152,15 +154,17 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/config.js?v=2026.06.12-13"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.12-13"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.12-13"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.12-13"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.12-13"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.06.12-13"></script>
-<script src="../assets/js/challenges.js?v=2026.06.12-13"></script>
-<script src="../assets/js/i18n.js?v=2026.06.12-13"></script>
-<script src="../assets/js/app.js?v=2026.06.12-13"></script>
-<script src="reader.js?v=2026.06.12-13"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+<script src="../assets/js/config.js?v=2026.06.13-1"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-1"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.13-1"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.13-1"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-1"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.13-1"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.06.13-1"></script>
+<script src="../assets/js/challenges.js?v=2026.06.13-1"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-1"></script>
+<script src="../assets/js/app.js?v=2026.06.13-1"></script>
+<script src="reader.js?v=2026.06.13-1"></script>
 </body>
 </html>

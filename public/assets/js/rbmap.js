@@ -1,10 +1,15 @@
 'use strict';
-/* RBMap — Mapbox GL helper used by the Editor: draws a roadbook (track +
- * waypoints), live recording, photo pins, a draggable edit marker, and lets
- * you select waypoints and highlight the active one. */
+/* RBMap — Mapbox GL helper used by the Editor (full roadbook editing) and the
+ * Reader (the interactive per-note map): draws a roadbook (track + waypoints),
+ * live recording, photo pins, a draggable edit marker, a satellite ↔ topo layer
+ * toggle, and lets you select waypoints and highlight the active one. */
+// The two base styles the built-in layer toggle flips between (satellite photo ↔ topo).
+const STYLE_SATELLITE = 'mapbox://styles/mapbox/satellite-streets-v12';
+const STYLE_TOPO = 'mapbox://styles/mapbox/outdoors-v12';
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
+        const { layerToggle, ...mapOpts } = opts; // layerToggle is ours, not a Mapbox option
         const cont = document.getElementById(containerId);
         if (!window.mapboxgl || !window.RB_CONFIG || !RB_CONFIG.mapboxToken) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (Mapbox token).</div>';
@@ -13,16 +18,18 @@ window.RBMap = class RBMap {
         mapboxgl.accessToken = RB_CONFIG.mapboxToken;
         try {
             this.map = new mapboxgl.Map(Object.assign({
-                container: containerId, style: RB_CONFIG.mapStyle || 'mapbox://styles/mapbox/satellite-streets-v12',
+                container: containerId, style: STYLE_SATELLITE,
                 center: [-3.6, 37.178], zoom: 12, attributionControl: true,
-            }, opts));
+            }, mapOpts));
         } catch (e) { // no WebGL on this device — degrade to a placeholder, never kill the page
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (WebGL).</div>';
             this.map = null;
             return;
         }
+        this._topo = /outdoors/.test(mapOpts.style || ''); // tracks which base style is live
         this.map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
         this.map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }));
+        if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
         m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
@@ -31,17 +38,29 @@ window.RBMap = class RBMap {
         m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
         m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
         m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = this._baseCursor);
-        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } });
+        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
-    // Swap the base style (satellite ↔ terrain). Mapbox wipes every custom
+    // Swap the base style (satellite ↔ topo). Mapbox wipes every custom
     // source/layer on setStyle, so everything is rebuilt and the caller repaints
     // its data in onReady.
     setBaseStyle(styleUrl, onReady) {
         if (!this.map) return;
         this.ready = false;
+        this._topo = /outdoors/.test(styleUrl);
         this.map.setStyle(styleUrl);
         this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; if (onReady) onReady(); });
     }
+    // Built-in layer toggle (satellite photo ↔ topo): swap the base style and
+    // repaint the last roadbook + selection. Simple consumers (the Reader) get
+    // this for free via `{ layerToggle: true }`.
+    toggleBaseStyle() {
+        this.setBaseStyle(this._topo ? STYLE_SATELLITE : STYLE_TOPO, () => {
+            if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
+            if (this._lastSel) this.select(this._lastSel, true);
+        });
+    }
+    // Tear down the GL context (Reader closes the inline note map this way).
+    destroy() { if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
     _terrain() {
@@ -90,6 +109,7 @@ window.RBMap = class RBMap {
     // the line splits there and a dashed connector shows the unfilled hole.
     showRoadbook(rb, noFit, gapIdx) {
         if (!this.map) return;
+        this._lastRb = rb; this._lastGaps = gapIdx; // remembered so a style swap can repaint
         if (!this.ready) { this._pending = rb; this._pendingNoFit = noFit; this._pendingGaps = gapIdx; return; }
         const coords = rb.track.map((p) => [p.lon, p.lat]);
         const cuts = (gapIdx || []).slice().sort((a, b) => a - b);
@@ -131,6 +151,7 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-live').setData(pts && pts.length ? { type: 'Feature', geometry: { type: 'LineString', coordinates: pts.map((p) => [p.lon, p.lat]) } } : this._empty());
     }
     select(note, noEase) {
+        this._lastSel = note; // remembered so a style swap can re-highlight
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-sel').setData(note ? { type: 'Feature', geometry: { type: 'Point', coordinates: [note.lon, note.lat] } } : this._empty());
         if (note && !noEase) this.map.easeTo({ center: [note.lon, note.lat], duration: 500 });
@@ -142,11 +163,35 @@ window.RBMap = class RBMap {
     }
     onWaypoint(cb) { this._onWpt = cb; }
     // Draggable marker for the note being edited; onDragEnd(lat, lon) fires on drop.
-    setEditMarker(note, onDragEnd) {
-        if (!this.map || !this.ready) return;
-        if (this._editMarker) this._editMarker.remove();
+    // Pass note=null to clear it; noEase keeps the current view (the Editor's main
+    // map already shows the whole route, so it must not jump on every selection).
+    setEditMarker(note, onDragEnd, noEase) {
+        if (!this.map) return;
+        if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; }
+        if (!note || !this.ready) return;
         this._editMarker = new mapboxgl.Marker({ draggable: true, color: '#ff2a2a', scale: 1.2 }).setLngLat([note.lon, note.lat]).addTo(this.map);
         this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
-        this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
+        if (!noEase) this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }
 };
+// A small Mapbox control button that flips the base style (satellite ↔ topo).
+function layerToggleControl(rbmap) {
+    return {
+        onAdd() {
+            const c = document.createElement('div');
+            c.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.title = window.RBt ? RBt('Map style') : 'Map style';
+            b.setAttribute('aria-label', b.title);
+            b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i>';
+            b.onclick = () => rbmap.toggleBaseStyle();
+            c.appendChild(b); this._c = c;
+            return c;
+        },
+        onRemove() { this._c.remove(); },
+    };
+}
+// The canonical base-style URLs, exposed so the Editor's own toggle reuses them.
+window.RBMap.STYLE_SATELLITE = STYLE_SATELLITE;
+window.RBMap.STYLE_TOPO = STYLE_TOPO;

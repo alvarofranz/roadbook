@@ -11,8 +11,9 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
-    // base map style: satellite photo, or terrain (detailed off-road tracks + contours)
-    const MAP_STYLES = { satellite: 'mapbox://styles/mapbox/satellite-streets-v12', terrain: 'mapbox://styles/mapbox/outdoors-v12' };
+    // base map style: satellite photo, or terrain (detailed off-road tracks + contours).
+    // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
+    const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
     let rb = null, sel = 0, std = null, dirty = false, exported = false;
@@ -83,6 +84,7 @@
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' ? '' : 'crosshair');
+        placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     // translated hover tooltips (refreshed on language switch)
@@ -112,7 +114,7 @@
         try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
         map.setBaseStyle(MAP_STYLES[mapStyle], () => {
             if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
-            if (rb) refreshMap(true);
+            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); placeMainEditMarker(); } // setStyle wiped the selection layer
             if (currentRbId > 0) loadPhotos();
         });
     };
@@ -289,15 +291,16 @@
     function setRoadbook(r) {
         rb = r; rb.icons = rb.icons || {}; rb.meta = rb.meta || {};
         dirty = false; gaps = [];
-        $('loadFrom').hidden = true; $('recBar').hidden = true; $('rbPanel').hidden = false;
+        $('loadFrom').hidden = true; $('recBar').hidden = true; $('rbPanel').hidden = false; $('noteEditZone').hidden = true;
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
+        $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
         updatePhotos(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
         histReset(); setMapTool('pan');
-        showView('map'); // start on the map + notes; tap a note to edit it
+        showView('map'); // start on the map + notes; tap a note to open its editor below
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -319,8 +322,9 @@
         clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000);
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
-        setLogoPreview(rb.meta.logo);
+        setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false;
         refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
+        map.select(rb.notes[sel], true); placeMainEditMarker();
         $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
         updateHistBtns();
     }
@@ -354,10 +358,12 @@
     function stampMeta() { if (!rb) return; rb.meta = rb.meta || {}; if (!rb.meta.author) rb.meta.author = userName(); rb.meta.modified = new Date().toISOString().slice(0, 10); $('rbModified').textContent = rb.meta.modified; if (rb.meta.author) $('rbAuthor').value = rb.meta.author; }
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
-        $('viewNote').hidden = v !== 'note';
-        if (v === 'map' && map && map.map) setTimeout(() => map.map.resize(), 60);
+        $('viewConfig').hidden = v !== 'config';
+        if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); placeMainEditMarker(); }
     }
     $('backToMap').onclick = () => showView('map');
+    $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
+    $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
     $('prevNote').onclick = () => select(sel - 1);
     $('nextNote').onclick = () => select(sel + 1);
     $('delNote').onclick = delNote;
@@ -623,42 +629,30 @@
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
-        sel = i; renderNotes(); map.select(rb.notes[i]); renderEditor();
-        canvas.setNote(rb.notes[i]); showView('note'); showNoteTab('vig');
+        sel = i; renderNotes(); renderEditor(); canvas.setNote(rb.notes[i]);
+        $('noteEditZone').hidden = false;
+        map.select(rb.notes[i]); placeMainEditMarker();
         $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
+        // stacked layout (mobile/tablet): bring the just-opened editor into view below the list
+        if (!window.matchMedia('(min-width: 1100px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    /* ---------- viewNote tabs: Vignette ↔ Map (drag to reposition) ---------- */
-    let noteMap = null;
-    $('tabBtnVig').onclick = () => showNoteTab('vig');
-    $('tabBtnMap').onclick = () => showNoteTab('map');
-    function showNoteTab(which) {
-        const onMap = which === 'map';
-        $('tabVignette').hidden = onMap; $('tabMap').hidden = !onMap;
-        $('tabBtnVig').classList.toggle('on', !onMap); $('tabBtnMap').classList.toggle('on', onMap);
-        if (onMap) openNoteMap();
-    }
-    function openNoteMap() {
-        if (!rb) return;
-        if (!noteMap) {
-            noteMap = new RBMap('noteMap', { zoom: 14, style: MAP_STYLES[mapStyle] });
-            // tapping another note on the map switches the one being edited, staying on the map
-            noteMap.onWaypoint((i) => { sel = i; renderEditor(); canvas.setNote(rb.notes[i]); placeEditMarker(); });
-        }
-        noteMap.showRoadbook(rb, true, gapIdxs());
-        placeEditMarker();
-        setTimeout(() => { if (noteMap.map) noteMap.map.resize(); }, 60);
-    }
-    function placeEditMarker() {
-        if (!noteMap || !rb.notes[sel]) return;
-        noteMap.setEditMarker(rb.notes[sel], (lat, lon) => {
-            const note = rb.notes[sel];
+    /* ---------- reposition the selected note ON the main map (drag its red marker) ----------
+     * The map sits right beside the note editor, so a note is repositioned on the
+     * very map it describes — no separate mini-map. The marker shows only while a
+     * note is open and the Pan tool is active (it must not fight draw/cut/note). */
+    function placeMainEditMarker() {
+        if (!rb || !map.map) return;
+        const note = rb.notes[sel];
+        const editable = !$('viewMap').hidden && !$('noteEditZone').hidden && mapTool === 'pan' && note;
+        if (!editable) return map.setEditMarker(null);
+        map.setEditMarker(note, (lat, lon) => {
             note.idx = RB.nearestIdx(rb.track, { lat, lon });
             RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
             sel = rb.notes.indexOf(note);
-            noteMap.showRoadbook(rb, true, gapIdxs()); placeEditMarker();
-            renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]);
-        });
+            refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]);
+            map.select(rb.notes[sel], true); placeMainEditMarker();
+        }, true);
     }
     function renderEditor() {
         const n = rb.notes[sel];
@@ -766,6 +760,7 @@
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
         refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
+        map.select(rb.notes[sel], true); placeMainEditMarker();
         if (toastMsg) toast(toastMsg);
     }
 
@@ -778,15 +773,23 @@
     }
 
     /* ---------- export (self-contained .rdbk) ---------- */
-    const slugify = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
     const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
-    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); if (!(await confirmOpenCuts())) return; stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, slugify(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
+    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); if (!(await confirmOpenCuts())) return; stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
+    // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js
+    $('exportPdf').onclick = async () => {
+        if (!rb) return toast('Nothing to save.');
+        if (!(await confirmOpenCuts())) return;
+        stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        toast('Generating PDF…');
+        try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/' }); }
+        catch (e) { toast(e.message || 'Could not generate the PDF.'); }
+    };
     // round-trip back to GPX: the track + every note as a named waypoint
     $('exportGpx').onclick = async () => {
         if (!rb) return toast('Nothing to save.');
         if (!(await confirmOpenCuts())) return;
         const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: n.text || 'wpt' + n.num }));
-        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), slugify(rb.meta?.title) + '_' + stamp() + '.gpx');
+        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '.gpx');
     };
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {

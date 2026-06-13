@@ -44,7 +44,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
     / `data-i18n-ph` in HTML. Keep `es`/`it` at full key parity with the English source strings.
   - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
     QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (reader)
-    / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (editor).
+    / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (Editor + Reader map).
     **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
@@ -146,7 +146,8 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   (the vignette, used by the Reader rows) and `NoteCanvas.rowCols` (the 3-column row, used
   by the challenge page).
 - `rbmap.js` (`RBMap`) — Mapbox GL helper (track, waypoints, live recording, photo
-  pins, draggable edit marker). Used by the **Editor only**.
+  pins, draggable edit marker, satellite↔topo layer toggle). Used by the **Editor**
+  (full editing) and the **Reader** (the interactive per-note map).
 - `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
   position watch + wake lock, one clean `{here, disp, speedKmh, heading}` per fix.
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
@@ -164,7 +165,8 @@ integer metres.** Spec page: `public/standard/index.html`.
 {
   "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str,
              "author"?: str, "organization"?: str, "modified"?: str /* YYYY-MM-DD */,
-             "logo"?: str /* base64 data: URI, embedded like the icons */ },
+             "logo"?: str /* base64 data: URI, embedded like the icons */,
+             "map_access"?: bool /* may the Reader show a map? absent/true = yes, false = hidden */ },
   "track": [ { "lat": float, "lon": float, "ele"?: int } ],   // ordered polyline
   "notes": [ {
     "num": int, "idx": int,                                   // idx → index into track[]

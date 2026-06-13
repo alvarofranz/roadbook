@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.12-13">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.12-13">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-1">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-1">
     <style>
         .doc { max-width: 880px; margin: 0 auto; padding: 1.5rem 1.2rem 5rem; }
         .doc h2 { margin: 2.4rem 0 .6rem; font-size: 1.5rem; scroll-margin-top: 70px; }
@@ -81,6 +81,7 @@
         <tr><td><code>organization</code></td><td>string</td><td>Optional. Organizing club / event organizer.</td></tr>
         <tr><td><code>modified</code></td><td>string</td><td>Optional. Last-modified date, ISO <code>YYYY-MM-DD</code>.</td></tr>
         <tr><td><code>logo</code></td><td>string</td><td>Optional. Event logo as a base64 <code>data:</code> URI (embedded, self-contained — like the symbols in <code>icons</code>).</td></tr>
+        <tr><td><code>map_access</code></td><td>boolean</td><td>Optional. Whether a reader may show a map of the route while navigating. Absent or <code>true</code> = allowed; <code>false</code> hides the map (e.g. competitions where map-reading would be cheating).</td></tr>
     </table>
 
     <h2 id="track">track</h2>
@@ -227,7 +228,7 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.js?v=2026.06.12-13"></script>
-<script src="../assets/js/app.js?v=2026.06.12-13"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-1"></script>
+<script src="../assets/js/app.js?v=2026.06.13-1"></script>
 </body>
 </html>

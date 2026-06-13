@@ -256,3 +256,5 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .icon-danger { color: var(--track); }
 .link-delete { background: none; border: 0; color: var(--track); cursor: pointer; }
 .map-placeholder { padding: 1rem; color: var(--muted); }
+/* RBMap's layer-toggle control: centre the FontAwesome glyph in the Mapbox button */
+.mapboxgl-ctrl-group button i { line-height: 29px; font-size: .95rem; color: #333; }
