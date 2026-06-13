@@ -40,6 +40,8 @@
     };
     async function loopScan() {
         if (!scanning) return;
+        const track = stream && stream.getVideoTracks()[0];
+        if (!track || track.readyState === 'ended') { stopScan(); msg('Camera stopped.', true); return; } // permission revoked / camera lost
         try {
             const codes = await detector.detect($('video'));
             if (codes && codes.length) {

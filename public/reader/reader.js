@@ -9,6 +9,12 @@
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const C = RB.CONST;
 
+    // The Reader's dialogs are static markup; give them the shared focus trap
+    // (focus in · Tab confined · Escape → the dialog's own cancel/close action).
+    let modalTrap = null;
+    function openModal(id, onEscape) { const el = $(id); el.hidden = false; if (modalTrap) modalTrap(); modalTrap = RBFocusTrap(el.querySelector('.modal-card'), onEscape || (() => {})); }
+    function closeModal(id) { $(id).hidden = true; if (modalTrap) { modalTrap(); modalTrap = null; } }
+
     let rb = null, notes = [], activeIdx = 0, team = '0';
     let reached = new Set(); // indices actually validated — a passed-over note that is not in here was skipped
     let tripTotalM = 0, tripPartialM = 0;
@@ -70,20 +76,21 @@
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();
         $('optMapRow').hidden = !mapAllowed();
-        $('modeModal').hidden = false;
+        openModal('modeModal');
     }
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); $('advAuto').setAttribute('aria-pressed', 'true'); $('advManual').setAttribute('aria-pressed', 'false'); };
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); $('advManual').setAttribute('aria-pressed', 'true'); $('advAuto').setAttribute('aria-pressed', 'false'); };
     let optGpx = false;
     function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; }
-    $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); if (optGpx) RBGpxRecorder.begin(); };
+    $('modeTrip').onclick = () => { readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin(); };
     $('modeComp').onclick = () => {
-        readModeOpts(); $('modeModal').hidden = true; $('teamModal').hidden = false; $('teamInput').value = '1';
-        setTimeout(() => { $('teamInput').focus(); $('teamInput').select(); }, 60);
+        readModeOpts(); closeModal('modeModal'); $('teamInput').value = '1';
+        openModal('teamModal', () => $('teamCancel').click());
+        setTimeout(() => $('teamInput').select(), 60);
     };
-    $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; $('teamModal').hidden = true; startNav(true); if (optGpx) RBGpxRecorder.begin(); };
-    $('teamCancel').onclick = () => { $('teamModal').hidden = true; $('modeModal').hidden = false; };
+    $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startNav(true); if (optGpx) RBGpxRecorder.begin(); };
+    $('teamCancel').onclick = () => { closeModal('teamModal'); openModal('modeModal'); };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
@@ -274,9 +281,9 @@
         $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
         $('qrMeta').textContent = lastPayload;
         $('qrStats').innerHTML = `${esc(t('Vehicle'))} <b>${team}</b> · ${km / 10} km<br>${esc(t('Accuracy'))} ${Math.round(pen.acc)} · ${esc(t('Skips'))} ${pen.skip} · ${esc(t('Extra'))} ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · ${esc(t('Speed'))} ${penSpeed} ${esc(t('pts'))}`;
-        $('qrModal').hidden = false;
+        openModal('qrModal', () => $('qrClose').click());
     }
-    $('qrClose').onclick = () => $('qrModal').hidden = true;
+    $('qrClose').onclick = () => closeModal('qrModal');
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => {
         try {

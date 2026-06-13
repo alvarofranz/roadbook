@@ -267,7 +267,7 @@
             const tolerance = Math.max(0.5, Math.min(50, parseFloat(d.q('#simpTol').value) || 2));
             const before = rb.track.length;
             RB.simplifyRoadbook(rb, tolerance);
-            d.close(); routeChanged('Removed ' + (before - rb.track.length) + ' points.');
+            d.close(); routeChanged(t('Removed') + ' ' + (before - rb.track.length) + ' ' + t('points') + '.');
         };
     };
     $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMax(false); setMapTool('pan'); startRecording('adjust'); };
@@ -562,7 +562,7 @@
     async function checkRecovery() {
         let s; try { s = JSON.parse(localStorage.getItem(REC_KEY) || 'null'); } catch (e) {}
         if (!s || !s.track || s.track.length < 2) return false;
-        const yes = await RBConfirm(`Recover your unsaved recording (${s.track.length} points)?`, 'Recover');
+        const yes = await RBConfirm(t('Recover your unsaved recording?') + ' (' + s.track.length + ' ' + t('points') + ')', 'Recover');
         clearRec();
         if (!yes) return false;
         try { setRoadbook(RB.buildRoadbook({ name: 'Recovered route', trkpts: smoothTrack(s.track), wpts: s.wpts || [] })); markDirty(); return true; }
