@@ -25,7 +25,7 @@
 
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
-    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load: ' + err.message); } };
+    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load the roadbook.'); } };
     $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
     RBGpxRecorder.init({ toast, onChange: (recording) => { // recording = an unmistakable red STOP button
         const b = $('navGpx');
@@ -73,8 +73,8 @@
         $('modeModal').hidden = false;
     }
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
-    $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); };
-    $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); };
+    $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); $('advAuto').setAttribute('aria-pressed', 'true'); $('advManual').setAttribute('aria-pressed', 'false'); };
+    $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); $('advManual').setAttribute('aria-pressed', 'true'); $('advAuto').setAttribute('aria-pressed', 'false'); };
     let optGpx = false;
     function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; }
     $('modeTrip').onclick = () => { readModeOpts(); $('modeModal').hidden = true; startNav(false); if (optGpx) RBGpxRecorder.begin(); };
@@ -90,7 +90,7 @@
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
         $('autoBtn').innerHTML = autoLabel();
-        $('autoBtn').classList.toggle('btn-primary', auto);
+        $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto));
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
@@ -144,7 +144,7 @@
         updateCapBar(here);
         saveSession();
     }
-    function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : 'GPS…'; }
+    function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
@@ -222,7 +222,7 @@
         if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Trip mode: free navigation, no scoring
         if (i < activeIdx) return;
         if (!meter || !meter.lastPos) return toast('Waiting for GPS…');
-        if (RB.geo.haversineM(meter.lastPos, notes[i]) > C.MANUAL_RADIUS_M) return toast('Too far from note ' + notes[i].num);
+        if (RB.geo.haversineM(meter.lastPos, notes[i]) > C.MANUAL_RADIUS_M) return toast(t('Too far from note') + ' ' + notes[i].num);
         if (i > activeIdx) { pen.skip += C.P_SKIP * (i - activeIdx); extraAccum = 0; armed = false; } // overshoot belonged to the skipped note
         validateAt(i, meter.lastPos);
     }
@@ -249,7 +249,9 @@
         else if (activeIdx < notes.length) markReached(activeIdx);
     };
     const autoLabel = () => `<i class="fa-solid fa-robot"></i> ${esc(t('Auto'))}: ${auto ? 'ON' : 'off'}`;
-    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = autoLabel(); $('autoBtn').classList.toggle('btn-primary', auto); approaching = false; renderNotes(); };
+    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = autoLabel(); $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto)); approaching = false; renderNotes(); };
+    // re-render the translated note rows when the language changes mid-session
+    window.addEventListener('rb-lang', () => { if (notes.length && !$('navScreen').hidden) renderNotes(); });
     $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) { clearSession(); location.reload(); } };
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 

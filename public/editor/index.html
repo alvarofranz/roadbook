@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-4">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-5">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-5">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -30,7 +30,7 @@
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
         .note-mini .note-number { font-weight: 800; color: var(--sand); }
         .note-mini .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border-radius: 50%; font-weight: 800; cursor: pointer; }
+        .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-weight: 800; cursor: pointer; }
         .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
@@ -87,7 +87,7 @@
         .vis-toggle .vis { background: var(--card-2); color: var(--muted); border: 0; padding: .55rem .8rem; cursor: pointer; font: inherit; font-weight: 600; }
         .vis-toggle .vis.on { background: var(--sand); color: #14100a; }
         .field { background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
-        .field:focus { outline: 2px solid var(--sand); border-color: transparent; }
+        .field:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
         .meta-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
@@ -146,7 +146,7 @@
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i></button>
                 <button class="btn btn-ghost" id="recWaypoint" data-i18n="Waypoint"><i class="fa-solid fa-location-dot"></i> Waypoint</button>
-                <button class="btn btn-danger" id="recDiscard" hidden title="Discard recording"><i class="fa-solid fa-trash-can"></i></button>
+                <button class="btn btn-danger" id="recDiscard" hidden title="Discard recording" data-i18n-title="Discard recording" aria-label="Discard recording" data-i18n-aria="Discard recording"><i class="fa-solid fa-trash-can"></i></button>
                 <button class="btn btn-primary" id="recStop" data-i18n="Finish"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
             </div>
         </div>
@@ -156,14 +156,14 @@
         <div id="mapEditor" class="map-editor">
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
                 <button class="map-tool on" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
-                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note"><i class="fa-solid fa-map-pin"></i></button>
+                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
-                <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut"><i class="fa-solid fa-scissors"></i></button>
+                <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>
-                <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track"><i class="fa-solid fa-file-circle-plus"></i></button>
-                <button class="map-tool" id="toolReverse" aria-label="Reverse direction"><i class="fa-solid fa-right-left"></i></button>
-                <button class="map-tool" id="toolSimplify" aria-label="Simplify"><i class="fa-solid fa-broom"></i></button>
-                <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail"><i class="fa-solid fa-location-crosshairs"></i></button>
+                <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
+                <button class="map-tool" id="toolReverse" aria-label="Reverse direction" disabled><i class="fa-solid fa-right-left"></i></button>
+                <button class="map-tool" id="toolSimplify" aria-label="Simplify" disabled><i class="fa-solid fa-broom"></i></button>
+                <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail" disabled><i class="fa-solid fa-location-crosshairs"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
@@ -183,8 +183,8 @@
                 </div>
                 <div class="rb-actions-right">
                     <div class="vis-toggle" role="group" aria-label="Visibility">
-                        <button class="vis on" id="visPrivate" data-i18n="Private"><i class="fa-solid fa-lock"></i> Private</button>
-                        <button class="vis" id="visPublic" data-i18n="Public"><i class="fa-solid fa-globe"></i> Public</button>
+                        <button class="vis on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
+                        <button class="vis" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
                     </div>
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
@@ -209,7 +209,7 @@
                     <div class="vig-canvas">
                         <div id="canvasWrap">
                             <div id="noteCanvas"></div>
-                            <button class="add-junction" id="addJunction" aria-label="Add junction" title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
+                            <button class="add-junction" id="addJunction" aria-label="Add junction" data-i18n-aria="Add junction" title="Add junction" data-i18n-title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
                         </div>
                         <div id="noteToolbar"></div>
                     </div>
@@ -220,7 +220,7 @@
                         </div>
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
                         <p class="muted small" data-i18n-html="Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.">Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.</p>
-                        <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" autocomplete="off"></div>
+                        <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
                         <div id="iconGrid" class="icon-grid"></div>
                     </div>
                 </div>
@@ -244,7 +244,7 @@
                     <div class="logo-row">
                         <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
                         <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
-                        <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-xmark"></i></button>
                         <input id="rbLogoFile" type="file" accept="image/*" hidden>
                     </div>
                 </div>
@@ -265,15 +265,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.13-4"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-4"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.13-4"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-4"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.13-4"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.13-4"></script>
-<script src="../assets/js/challenges.js?v=2026.06.13-4"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-4"></script>
-<script src="../assets/js/app.js?v=2026.06.13-4"></script>
-<script src="editor.js?v=2026.06.13-4"></script>
+<script src="../assets/js/config.js?v=2026.06.13-5"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-5"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.13-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-5"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.13-5"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.13-5"></script>
+<script src="../assets/js/challenges.js?v=2026.06.13-5"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-5"></script>
+<script src="../assets/js/app.js?v=2026.06.13-5"></script>
+<script src="editor.js?v=2026.06.13-5"></script>
 </body>
 </html>

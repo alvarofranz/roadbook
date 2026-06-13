@@ -97,10 +97,15 @@
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
             toolLayers: 'Satellite / terrain map', toolMax: maxed ? 'Exit full screen' : 'Maximize',
         };
-        Object.entries(tips).forEach(([id, key]) => $(id).setAttribute('data-tip', t(key)));
+        // the same translated string drives the hover tooltip AND the screen-reader name
+        Object.entries(tips).forEach(([id, key]) => { const v = t(key); $(id).setAttribute('data-tip', v); $(id).setAttribute('aria-label', v); });
     }
     applyToolTips();
-    window.addEventListener('rb-lang', applyToolTips);
+    // re-render translated UI (tooltips + dynamic note list/editor/save button) on language change
+    window.addEventListener('rb-lang', () => {
+        applyToolTips();
+        if (rb) { renderNotes(); updateSaveBtn(); if (!$('noteEditZone').hidden) { renderEditor(); canvas.render(); } }
+    });
     // maximize the GPX editor (map + tool bar); Esc restores
     function setMax(on) {
         $('mapEditor').classList.toggle('max', on);
@@ -292,6 +297,7 @@
         rb = r; rb.icons = rb.icons || {}; rb.meta = rb.meta || {};
         dirty = false; gaps = [];
         $('loadFrom').hidden = true; $('recBar').hidden = true; $('rbPanel').hidden = false; $('noteEditZone').hidden = true;
+        ['toolNote', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -424,9 +430,9 @@
         adjP1 = -1; adjP2 = -1; draftId = 0;
         $('recPause').innerHTML = '<i class="fa-solid fa-pause"></i>';
         $('loadFrom').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
-        $('recPhoto').hidden = !meUser;
+        $('recPhoto').hidden = true; // shown only once a draft id exists (so the camera never errors)
         if (mode === 'adjust') { showView('map'); if (map) { refreshMap(false); map.setOverlay([]); } draftId = currentRbId; $('recPhoto').hidden = !draftId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
-        else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await RBApi('rb_draft'); if (r.ok) draftId = r.id; } }
+        else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await RBApi('rb_draft'); if (r.ok) draftId = r.id; } $('recPhoto').hidden = !draftId; }
         updateRecStats();
         try { if ('wakeLock' in navigator) recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         recWatch = navigator.geolocation.watchPosition(onRecFix, (e) => toast('GPS: ' + e.message), { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
@@ -567,7 +573,7 @@
     let meUser = null, currentRbId = 0, isPublic = 0;
     $('visPrivate').onclick = () => { setVis(0); markDirty(); };
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
-    function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); }
+    function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); $('visPrivate').setAttribute('aria-pressed', String(!v)); $('visPublic').setAttribute('aria-pressed', String(!!v)); }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
     function resetIdentity() { currentRbId = 0; setVis(0); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
@@ -597,7 +603,7 @@
         const r = await RBApi('ph_list', { roadbook: currentRbId });
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); return; }
-        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${p.url}" alt=""><span data-delp="${p.id}" class="del-badge">×</span></div>`).join('');
+        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt=""><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
         // pins on the map; tap a 📷 pin to promote it to a waypoint
         if (map) map.setPhotos(r.photos, (ph) => {
@@ -676,6 +682,7 @@
         $('edRout').onchange = (e) => { n.road_type_out = +e.target.value; canvas.render(); renderNotes(); markDirty(); };
         $('edDanger').onchange = (e) => { const v = +e.target.value; if (v) n.danger = v; else delete n.danger; canvas.render(); markDirty(); };
         $('edCap').onchange = (e) => { toggleCap(e.target.checked); markDirty(); };
+        $('edCap').disabled = sel >= rb.notes.length - 1; // CAP needs a following note
     }
     function toggleCap(on) {
         const n = rb.notes[sel], nx = rb.notes[sel + 1];
@@ -716,7 +723,11 @@
                 const img = b.querySelector('img'); if (img) e.dataTransfer.setDragImage(img, 18, 18);
             });
         });
-        $('iconGrid').querySelectorAll('span[data-del]').forEach((s) => s.onclick = (ev) => { ev.stopPropagation(); delCustomIcon(s.dataset.del); });
+        $('iconGrid').querySelectorAll('span[data-del]').forEach((s) => {
+            const del = (ev) => { ev.stopPropagation(); ev.preventDefault(); delCustomIcon(s.dataset.del); };
+            s.onclick = del;
+            s.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') del(ev); };
+        });
         filterIcons();
     }
     // live palette filter: match icon names, hide emptied categories
@@ -737,7 +748,7 @@
         if (category) category.hidden = !categoryHasHits;
     }
     const iconBtn = (name, src, rmv) =>
-        `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
+        `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!rb) return toast('Load a roadbook first.');
         canvas.addIcon(mkIcon(name, [0, 0]));

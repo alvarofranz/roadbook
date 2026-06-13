@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-4">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-5">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-5">
     <style>
         /* top odometer bar */
         .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -22,14 +22,14 @@
         .odometer-item .value.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
         .odometer-item .clock-text { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
         /* bottom CAP bar */
-        .capbar { position: fixed; bottom: 62px; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+        .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transform: rotate(var(--cap-rotation, -45deg)); transition: transform .35s ease; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
         .mode-grid { margin-top: 1rem; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
         .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
-        @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
+        @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } .odometer-bar { top: 0; } }
         /* roadbook navigation rows — white "paper", fixed | fixed | dynamic | buttons */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
         .nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; }
@@ -83,7 +83,7 @@
     <!-- top odometer bar: total · bearing+clock · partial -->
     <div class="odometer-bar">
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
-        <div class="odometer-item heading"><span class="value boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text"><span id="gpsDot" class="gps-dot"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span></div>
+        <div class="odometer-item heading"><span class="value boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text" role="status" aria-live="polite"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span></div>
         <div class="odometer-item right"><span class="field-label" data-i18n="part.">part.</span><span class="value" id="odoPartial">0.00</span></div>
     </div>
     <!-- 3-column note rows: distances | graphic | indications + coords -->
@@ -96,23 +96,23 @@
         <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
     </div>
     <nav class="fabrow">
-        <button class="btn btn-ghost" id="navLoad" title="Load roadbook"><i class="fa-solid fa-folder-open"></i></button>
+        <button class="btn btn-ghost" id="navLoad" title="Load roadbook" data-i18n-title="Load roadbook" aria-label="Load roadbook" data-i18n-aria="Load roadbook"><i class="fa-solid fa-folder-open"></i></button>
         <button class="btn btn-ghost" id="autoBtn"><i class="fa-solid fa-robot"></i> Auto: off</button>
         <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
-        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
+        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
     </nav>
 </div>
 
 <!-- usage mode -->
 <div id="modeModal" class="modal" hidden>
-    <div class="modal-card">
-        <h2 data-i18n="How will you use it?">How will you use it?</h2>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
+        <h2 id="modeTitle" data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
             <label class="muted small" data-i18n="Advancement">Advancement</label>
-            <div class="segmented">
-                <button type="button" class="segment-button on" id="advAuto" data-i18n="Automatic (GPS)">Automatic (GPS)</button>
-                <button type="button" class="segment-button" id="advManual" data-i18n="Manual (tap)">Manual (tap)</button>
+            <div class="segmented" role="group" aria-label="Advancement" data-i18n-aria="Advancement">
+                <button type="button" class="segment-button on" id="advAuto" data-i18n="Automatic (GPS)" aria-pressed="true">Automatic (GPS)</button>
+                <button type="button" class="segment-button" id="advManual" data-i18n="Manual (tap)" aria-pressed="false">Manual (tap)</button>
             </div>
             <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
@@ -126,8 +126,8 @@
 
 <!-- vehicle number -->
 <div id="teamModal" class="modal" hidden>
-    <div class="modal-card">
-        <h2 data-i18n="Vehicle number"><i class="fa-solid fa-car-side icon-accent"></i> Vehicle number</h2>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
+        <h2 id="teamTitle" data-i18n="Vehicle number"><i class="fa-solid fa-car-side icon-accent"></i> Vehicle number</h2>
         <p class="muted small" data-i18n="Identify your team for the ranking.">Identify your team for the ranking.</p>
         <input id="teamInput" type="number" min="1" max="999" value="1" inputmode="numeric">
         <div class="btnrow spaced">
@@ -139,8 +139,8 @@
 
 <!-- final QR -->
 <div id="qrModal" class="modal" hidden>
-    <div class="modal-card">
-        <h2 data-i18n="Result">Result</h2>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+        <h2 id="qrTitle" data-i18n="Result">Result</h2>
         <div id="qrImg" class="qr-box"></div>
         <div id="qrStats" class="muted small qr-stats"></div>
         <code id="qrMeta" class="qr-code-text"></code>
@@ -155,16 +155,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.13-4"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-4"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.13-4"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.13-4"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-4"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.13-4"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.06.13-4"></script>
-<script src="../assets/js/challenges.js?v=2026.06.13-4"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-4"></script>
-<script src="../assets/js/app.js?v=2026.06.13-4"></script>
-<script src="reader.js?v=2026.06.13-4"></script>
+<script src="../assets/js/config.js?v=2026.06.13-5"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-5"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.13-5"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.13-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-5"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.13-5"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.06.13-5"></script>
+<script src="../assets/js/challenges.js?v=2026.06.13-5"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-5"></script>
+<script src="../assets/js/app.js?v=2026.06.13-5"></script>
+<script src="reader.js?v=2026.06.13-5"></script>
 </body>
 </html>
