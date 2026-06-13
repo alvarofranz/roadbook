@@ -3,6 +3,7 @@
  * CAP, speed and regularity, and a final score (lower = better). */
 (function () {
     const $ = (id) => document.getElementById(id);
+    const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
     const C = RB.CONST;
     let entries = load();
     let stream = null, scanning = false, detector = null;
@@ -12,6 +13,7 @@
     /* ---------- add ---------- */
     $('addManual').onclick = () => addMeta($('manualMeta').value.trim());
     $('manualMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') addMeta($('manualMeta').value.trim()); });
+    $('targetAvg').addEventListener('input', render); // live-recompute the regularity column
 
     async function addMeta(str) {
         if (!str) return;
@@ -21,7 +23,8 @@
         entries.push({ raw: str, m, valid, ts: Date.now() + '.' + Math.floor(Math.random() * 1e6) });
         save(); render();
         $('manualMeta').value = '';
-        msg((valid === false ? '⚠ INVALID signature · ' : valid === true ? '✓ ' : '') + 'Added vehicle ' + parseInt(m.team, 10), valid === false);
+        const added = t('Added vehicle') + ' ' + parseInt(m.team, 10);
+        msg(valid === false ? '⚠ ' + t('Invalid signature') + ' · ' + added : (valid === true ? '✓ ' : '') + added, valid === false);
     }
 
     /* ---------- camera ---------- */
@@ -33,7 +36,7 @@
             const v = $('video'); v.hidden = false; v.srcObject = stream; await v.play();
             scanning = true; $('scanBtn').innerHTML = `<i class="fa-solid fa-stop"></i> ${RBt('Stop')}`;
             loopScan();
-        } catch (e) { msg('Could not open the camera: ' + e.message, true); }
+        } catch (e) { msg(t('Could not open the camera') + ': ' + e.message, true); }
     };
     async function loopScan() {
         if (!scanning) return;
@@ -87,12 +90,12 @@
         $('table').innerHTML =
             `<thead><tr><th>#</th><th>${RBt('Vehicle')}</th><th>km</th><th>${RBt('Accuracy')}</th><th>CAP</th><th>${RBt('Speed')}</th><th>${RBt('Regularity')}</th><th>${RBt('Final')}</th><th></th></tr></thead>`
             + '<tbody>' + rows.map((r, i) =>
-                `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === false ? '<span title="Invalid signature" class="icon-danger">⚠</span> ' : ''}${r.team}</td><td>${r.km.toFixed(1)}</td>`
+                `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === false ? `<span title="${t('Invalid signature')}" aria-label="${t('Invalid signature')}" class="icon-danger">⚠</span> ` : ''}${r.team}</td><td>${r.km.toFixed(1)}</td>`
                 + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="final-score">${r.finalScore}</td>`
-                + `<td><button class="link-delete" data-del="${r.ts}" title="Remove">✕</button></td></tr>`).join('')
+                + `<td><button class="link-delete" data-del="${r.ts}" title="${t('Remove')}" aria-label="${t('Remove')}">✕</button></td></tr>`).join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirm('Remove vehicle ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
+            if (await RBConfirm(t('Remove vehicle') + ' ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
                 entries = entries.filter((e) => String(e.ts) !== b.dataset.del); save(); render();
             }
         });

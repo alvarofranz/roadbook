@@ -3,7 +3,7 @@
  * layout + owner. Navigate (Reader) and Fork (Editor). Slug from /challenge/<slug>. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt; // shared helper (i18n.js)
+    const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
     const parts = location.pathname.replace(/\/+$/, '').split('/');
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'challenge') { $('chLoading').textContent = t('Challenge not found.'); return; }
@@ -24,11 +24,11 @@
         if (credit) $('chMeta').textContent += ' · ' + credit;
         if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.className = 'ch-logo'; $('chTitle').parentNode.insertBefore(img, $('chTitle')); }
         $('chNav').href = '/reader/' + encodeURIComponent(slug);
-        if (j.is_owner) { const f = $('chFork'); f.href = '/editor/?rb=' + j.id; f.innerHTML = '<i class="fa-solid fa-pen"></i> Edit'; }
+        if (j.is_owner) { const f = $('chFork'); f.href = '/editor/?rb=' + j.id; f.setAttribute('data-i18n', 'Edit'); f.innerHTML = '<i class="fa-solid fa-pen"></i> ' + esc(t('Edit')); }
         else { $('chFork').href = '/editor/' + encodeURIComponent(slug); }
 
         if (j.photos && j.photos.length) {
-            $('chGallery').innerHTML = j.photos.map((u) => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" loading="lazy" alt=""></a>`).join('');
+            $('chGallery').innerHTML = j.photos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" loading="lazy" alt=""></a>`).join('');
         }
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         $('chNotes').innerHTML = rb.notes.map((n) => `<div class="noterow">${NoteCanvas.rowCols(n, iconSrc)}</div>`).join('');

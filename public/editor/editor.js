@@ -26,9 +26,9 @@
     const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     function updateSaveBtn() {
         const b = $('saveAccount'); if (!b) return;
-        if (!meUser) { b.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Save'; b.classList.add('btn-primary'); return; }
-        if (currentRbId && !dirty) { b.innerHTML = '<i class="fa-solid fa-circle-check"></i> Saved'; b.classList.remove('btn-primary'); }
-        else { b.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save'; b.classList.add('btn-primary'); }
+        if (!meUser) { b.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${esc(t('Save'))}`; b.classList.add('btn-primary'); return; }
+        if (currentRbId && !dirty) { b.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t('Saved'))}`; b.classList.remove('btn-primary'); }
+        else { b.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> ${esc(t('Save'))}`; b.classList.add('btn-primary'); }
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
@@ -461,7 +461,7 @@
     }
     function updateRecStats(acc) {
         let m = 0; for (let i = 1; i < recTrack.length; i++) m += RB.geo.haversineM(recTrack[i - 1], recTrack[i]);
-        const head = recPaused ? 'Paused ·' : (recMode === 'adjust' ? (adjP1 < 0 ? 'Adjust: get on the trail…' : (adjP2 >= 0 ? 'Adjust · will rejoin' : 'Adjust · recording')) : 'Recording…');
+        const head = recPaused ? t('Paused ·') : (recMode === 'adjust' ? (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording'))) : t('Recording…'));
         $('recStats').textContent = `${head} ${recTrack.length} pts · ${(m / 1000).toFixed(2)} km · ${recWpts.length} wpt · ${recPhotos.length} 📷${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
     }
     // drop a waypoint (shared by the button and "convert photo → waypoint")
@@ -585,7 +585,7 @@
         if (!rb) return toast('Nothing to save.');
         if (!(await confirmOpenCuts())) return;
         const r = await doSave();
-        toast(r.ok ? (isPublic && r.slug ? 'Saved · public at /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
+        toast(r.ok ? (isPublic && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
     };
 
     /* ---------- photo gallery (saved roadbook) ---------- */
@@ -596,7 +596,7 @@
     async function loadPhotos() {
         const r = await RBApi('ph_list', { roadbook: currentRbId });
         const g = $('photoGrid');
-        if (!r.ok || !r.photos.length) { g.innerHTML = '<span class="muted small">No photos yet.</span>'; if (map) map.setPhotos([]); return; }
+        if (!r.ok || !r.photos.length) { g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); return; }
         g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${p.url}" alt=""><span data-delp="${p.id}" class="del-badge">×</span></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
         // pins on the map; tap a 📷 pin to promote it to a waypoint
@@ -619,7 +619,7 @@
     function renderNotes() {
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}</span>
-                <span class="label">${n.text ? esc(n.text) : '<span class="muted">(no text)</span>'}</span>
+                <span class="label">${n.text ? esc(n.text) : `<span class="muted">${esc(t('(no text)'))}</span>`}</span>
                 <span class="muted small">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
             </div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row
@@ -706,7 +706,7 @@
         let html = '';
         if (custom.length) html += `<div class="icon-category">${t('Yours (in this roadbook)')}</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
         html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
-        $('iconGrid').innerHTML = html || '<span class="muted small">No icons.</span>';
+        $('iconGrid').innerHTML = html || `<span class="muted small">${esc(t('No icons.'))}</span>`;
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);
             b.draggable = true;
@@ -799,11 +799,10 @@
         for (const base of used) {
             if (!base) continue;
             if (Object.keys(r.icons).some((k) => k.toLowerCase() === base.toLowerCase())) continue;
-            const u = await urlToDataURL('../assets/icons/' + base); if (u) r.icons[base] = u;
+            const u = await RB.urlToDataURL('../assets/icons/' + base); if (u) r.icons[base] = u;
         }
         Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
     }
-    async function urlToDataURL(url) { try { const res = await fetch(url); if (!res.ok) return null; const b = await res.blob(); return await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); } catch (e) { return null; } }
     function download(obj, name) { RBDownload(new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }), name); }
 
 

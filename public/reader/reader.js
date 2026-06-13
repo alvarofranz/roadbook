@@ -89,9 +89,9 @@
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
-        $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off');
+        $('autoBtn').innerHTML = autoLabel();
         $('autoBtn').classList.toggle('btn-primary', auto);
-        $('validateBtn').innerHTML = comp ? '<i class="fa-solid fa-circle-check"></i> Validate' : '<i class="fa-solid fa-circle-check"></i> Note done';
+        $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();
@@ -248,7 +248,8 @@
         if (competition) { if (activeIdx < notes.length) tapNote(activeIdx); }
         else if (activeIdx < notes.length) markReached(activeIdx);
     };
-    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = '<i class="fa-solid fa-robot"></i> Auto: ' + (auto ? 'ON' : 'off'); $('autoBtn').classList.toggle('btn-primary', auto); approaching = false; renderNotes(); };
+    const autoLabel = () => `<i class="fa-solid fa-robot"></i> ${esc(t('Auto'))}: ${auto ? 'ON' : 'off'}`;
+    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = autoLabel(); $('autoBtn').classList.toggle('btn-primary', auto); approaching = false; renderNotes(); };
     $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) { clearSession(); location.reload(); } };
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
@@ -270,7 +271,7 @@
         lastQrUrl = qr.createDataURL(6, 2);
         $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
         $('qrMeta').textContent = lastPayload;
-        $('qrStats').innerHTML = `Vehicle <b>${team}</b> · ${km / 10} km<br>Accuracy ${Math.round(pen.acc)} · Skips ${pen.skip} · Extra ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · Speed ${penSpeed} pts`;
+        $('qrStats').innerHTML = `${esc(t('Vehicle'))} <b>${team}</b> · ${km / 10} km<br>${esc(t('Accuracy'))} ${Math.round(pen.acc)} · ${esc(t('Skips'))} ${pen.skip} · ${esc(t('Extra'))} ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · ${esc(t('Speed'))} ${penSpeed} ${esc(t('pts'))}`;
         $('qrModal').hidden = false;
     }
     $('qrClose').onclick = () => $('qrModal').hidden = true;

@@ -181,11 +181,27 @@
     // Overlay modal. Pass the card's inner HTML (+ optional card style + backdrop-dismiss
     // callback). Returns { el, q(sel), close }.
     window.RBModal = (cardHtml, cardClass, onDismiss) => {
+        const prevFocus = document.activeElement; // restored on close
         const m = document.createElement('div'); m.className = 'modal';
-        m.innerHTML = `<div class="modal-card${cardClass ? ' ' + cardClass : ''}">${cardHtml}</div>`;
+        const card = document.createElement('div');
+        card.className = 'modal-card' + (cardClass ? ' ' + cardClass : '');
+        card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.tabIndex = -1;
+        card.innerHTML = cardHtml;
+        m.appendChild(card);
         document.body.appendChild(m);
-        const close = () => m.remove();
+        const focusable = () => [...card.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')];
+        const close = () => { document.removeEventListener('keydown', onKey, true); m.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
+        function onKey(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); if (onDismiss) onDismiss(); return; }
+            if (e.key !== 'Tab') return; // trap Tab within the dialog
+            const f = focusable(); if (!f.length) { e.preventDefault(); card.focus(); return; }
+            const first = f[0], last = f[f.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+        document.addEventListener('keydown', onKey, true);
         m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
+        setTimeout(() => { const f = focusable(); (f[0] || card).focus(); }, 0); // move focus into the dialog
         return { el: m, q: (s) => m.querySelector(s), close };
     };
     // HTML-escape for safe interpolation into innerHTML.
@@ -194,6 +210,7 @@
     let toastTimer = null;
     window.RBToast = (msg) => {
         const el = document.getElementById('toast'); if (!el) return;
+        el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); // announce to screen readers
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
     };

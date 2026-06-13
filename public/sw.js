@@ -17,6 +17,9 @@ self.addEventListener('fetch', (e) => {
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
 
+    // Cross-origin (Mapbox SDK/tiles, etc.) — let the browser handle it; never put it in our cache.
+    if (url.origin !== location.origin) return;
+
     // Dynamic endpoints (auth/account, uploads, version) — always network, never cache.
     if (url.pathname.includes('/api/') || url.pathname.endsWith('/version.json')) { e.respondWith(fetch(request)); return; }
 

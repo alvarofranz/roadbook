@@ -356,6 +356,13 @@
     // URL/filename-safe slug from a title (lowercase, single dashes, ≤60 chars).
     const slug = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
 
+    // Fetch a (same-origin) URL and return it as a data: URI — null on failure.
+    // Used to embed assets self-contained (icons into .rdbk / the PDF).
+    async function urlToDataURL(url) {
+        try { const r = await fetch(url); if (!r.ok) return null; const b = await r.blob(); return await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); }); }
+        catch (e) { return null; }
+    }
+
     /* ---------------- export ---------------- */
     window.RB = {
         ROAD_TYPES, CONST,
@@ -364,6 +371,6 @@
         recomputeMetrics, recomputeCaps, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug,
+        nearestIdx, round6, slug, urlToDataURL,
     };
 })();

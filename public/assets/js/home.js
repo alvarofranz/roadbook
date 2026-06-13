@@ -10,7 +10,7 @@
         if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; return; }
         grid.innerHTML = rbs.map((r) => `
             <a class="gallery-card" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">
-                ${r.thumb ? `<img class="thumb" src="${r.thumb}" alt="${esc(r.title)}" loading="lazy">`
+                ${r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                     : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
                 <div class="gallery-body">
                     <h3>${esc(r.title)}</h3>

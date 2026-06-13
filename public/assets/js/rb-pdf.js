@@ -29,10 +29,6 @@
 
     /* ---------- assets: icons → data URIs, tulip SVG → PNG ---------- */
     const loadImage = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
-    async function urlToDataURL(url) {
-        try { const r = await fetch(url); if (!r.ok) return null; const b = await r.blob(); return await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); }); }
-        catch (e) { return null; }
-    }
     // Every used icon resolved to a data: URI WITHOUT mutating the roadbook — an
     // SVG loaded as an <image> only renders inline data, never external URLs.
     async function resolveIcons(rb, basePath) {
@@ -41,7 +37,7 @@
         for (const name of used) {
             if (!name) continue;
             const src = RB.iconSrc({ name }, rb, basePath);
-            map[name] = /^data:/.test(src) ? src : (await urlToDataURL(src) || src);
+            map[name] = /^data:/.test(src) ? src : (await RB.urlToDataURL(src) || src);
         }
         return map;
     }

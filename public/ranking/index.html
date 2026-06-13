@@ -8,8 +8,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-2">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-2">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-3">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-3">
     <style>
         table.rank { width: 100%; border-collapse: collapse; font-size: .9rem; }
         table.rank th, table.rank td { padding: .55rem .5rem; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
@@ -34,16 +34,16 @@
 
 <main class="wrap tool-page">
     <section class="panel">
-        <h2>Add result</h2>
+        <h2 data-i18n="Add result">Add result</h2>
         <div class="action-row">
-            <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> Scan QR</button>
-            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here">
-            <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> Add</button>
+            <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> <span data-i18n="Scan QR">Scan QR</span></button>
+            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here" data-i18n-ph="…or paste the code (META) here" aria-label="…or paste the code (META) here">
+            <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> <span data-i18n="Add">Add</span></button>
         </div>
         <video id="video" hidden playsinline></video>
         <div class="config-row action-row">
-            <label class="muted small">Target average speed <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
-            <span class="muted small">(used for regularity if the QR doesn't carry it)</span>
+            <label class="muted small"><span data-i18n="Target average speed">Target average speed</span> <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
+            <span class="muted small" data-i18n="(used for regularity if the QR doesn't carry it)">(used for regularity if the QR doesn't carry it)</span>
         </div>
         <div id="msg" class="muted small"></div>
     </section>
@@ -51,16 +51,16 @@
     <section class="panel rank-results">
         <div class="card-head"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
         <div class="table-scroll"><table class="rank" id="table"></table></div>
-        <p class="muted small" id="empty">No results yet. Scan or paste a QR.</p>
+        <p class="muted small" id="empty" data-i18n="No results yet. Scan or paste a QR.">No results yet. Scan or paste a QR.</p>
     </section>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/config.js?v=2026.06.13-2"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-2"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-2"></script>
-<script src="../assets/js/app.js?v=2026.06.13-2"></script>
-<script src="ranking.js?v=2026.06.13-2"></script>
+<script src="../assets/js/config.js?v=2026.06.13-3"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-3"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-3"></script>
+<script src="../assets/js/app.js?v=2026.06.13-3"></script>
+<script src="ranking.js?v=2026.06.13-3"></script>
 </body>
 </html>
