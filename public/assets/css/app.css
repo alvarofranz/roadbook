@@ -87,7 +87,7 @@ img { max-width: 100%; display: block; }
     transition: transform .08s ease, filter .15s ease, background .15s ease;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: linear-gradient(180deg, var(--sand-2), var(--sand)); color: #14100a; font-weight: 800; text-shadow: 0 1px 0 rgba(255, 255, 255, .25); box-shadow: 0 8px 22px rgba(232, 176, 89, .3); }
+.btn-primary { background: linear-gradient(180deg, var(--sand-2), var(--sand)); color: #14100a; font-weight: 800; text-shadow: 0 1px 0 rgba(255, 255, 255, .25); }
 .btn-primary:hover { filter: brightness(1.05); text-decoration: none; }
 .btn-ghost { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--line); }
 .btn-ghost:hover { background: rgba(255, 255, 255, .12); text-decoration: none; }
