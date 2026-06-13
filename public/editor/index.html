@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-6">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-7">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-6">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-7">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -41,7 +41,7 @@
         .map-editor.max #edMap { height: 100%; min-height: 0; border-radius: 0; }
         /* no overflow clipping here — the hover tooltips render outside the bar */
         .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
-        .map-tool { position: relative; width: 35px; height: 35px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
+        .map-tool { position: relative; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: #14100a; }
         .map-tool:disabled { opacity: .35; cursor: default; }
@@ -53,7 +53,7 @@
         .vignette-box-icon { cursor: grab; }
         .vignette-drag-handle { cursor: move; }
         .vignette-resize-handle { cursor: nwse-resize; }
-        .add-junction { position: absolute; top: 8px; right: 8px; z-index: 4; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
+        .add-junction { position: absolute; top: 8px; right: 8px; z-index: 4; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
         .add-junction:hover { background: rgba(14,17,22,.95); }
         .vignette-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
         .vignette-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
@@ -83,11 +83,6 @@
         @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
         .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-        .vis-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-        .vis-toggle .vis { background: var(--card-2); color: var(--muted); border: 0; padding: .55rem .8rem; cursor: pointer; font: inherit; font-weight: 600; }
-        .vis-toggle .vis.on { background: var(--sand); color: #14100a; }
-        .field { background: var(--card-2); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
-        .field:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
         .meta-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
@@ -182,9 +177,9 @@
                     <button class="btn btn-ghost" id="exportPdf" data-i18n="Generate PDF"><i class="fa-solid fa-file-pdf"></i> Generate PDF</button>
                 </div>
                 <div class="rb-actions-right">
-                    <div class="vis-toggle" role="group" aria-label="Visibility">
-                        <button class="vis on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
-                        <button class="vis" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
+                    <div class="segmented" role="group" aria-label="Visibility">
+                        <button class="segment on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
+                        <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
                     </div>
                     <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
@@ -265,15 +260,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.13-6"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-6"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.13-6"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-6"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.13-6"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.13-6"></script>
-<script src="../assets/js/challenges.js?v=2026.06.13-6"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-6"></script>
-<script src="../assets/js/app.js?v=2026.06.13-6"></script>
-<script src="editor.js?v=2026.06.13-6"></script>
+<script src="../assets/js/config.js?v=2026.06.13-7"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-7"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.13-7"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-7"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.13-7"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.13-7"></script>
+<script src="../assets/js/challenges.js?v=2026.06.13-7"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-7"></script>
+<script src="../assets/js/app.js?v=2026.06.13-7"></script>
+<script src="editor.js?v=2026.06.13-7"></script>
 </body>
 </html>

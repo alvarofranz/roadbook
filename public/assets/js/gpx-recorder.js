@@ -12,7 +12,7 @@ window.RBGpxRecorder = (() => {
     let onChange = () => {}, toast = () => {};
     try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (s && s.freq) sampleMs = s.freq; } catch (e) {}
 
-    const pad2 = (n) => String(n).padStart(2, '0');
+    const pad2 = RB.pad2; // shared zero-pad (roadbook-core)
     const defaultName = () => {
         const d = new Date();
         return 'RDBK_trip_' + pad2(d.getDate()) + pad2(d.getMonth() + 1) + pad2(d.getFullYear() % 100) + '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());

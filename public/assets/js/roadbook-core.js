@@ -355,6 +355,8 @@
 
     // URL/filename-safe slug from a title (lowercase, single dashes, ≤60 chars).
     const slug = (s) => (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'roadbook');
+    // Zero-pad to two digits (shared by the timestamped filename helpers).
+    const pad2 = (n) => String(n).padStart(2, '0');
 
     // Fetch a (same-origin) URL and return it as a data: URI — null on failure.
     // Used to embed assets self-contained (icons into .rdbk / the PDF).
@@ -371,6 +373,6 @@
         recomputeMetrics, recomputeCaps, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL,
+        nearestIdx, round6, slug, urlToDataURL, pad2,
     };
 })();

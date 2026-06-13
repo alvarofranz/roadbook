@@ -536,7 +536,11 @@
         $('rbPanel').hidden = false; showView('map');
         if (adjP1 < 0 || recTrack.length < 2) { if (map) refreshMap(false); return toast('Adjust cancelled — you never got on the trail.'); }
         const rejoin = adjP2 >= 0;
-        const ok = await RBConfirm(rejoin ? `Replace the trail between points ${adjP1} and ${adjP2} with your ${recTrack.length}-point variant?` : `Replace everything after point ${adjP1} with your new ${recTrack.length}-point ending?`, 'Apply');
+        const msg = (rejoin
+            ? t('Replace the trail between points {a} and {b} with your {n}-point variant?').replace('{a}', adjP1).replace('{b}', adjP2)
+            : t('Replace everything after point {a} with your new {n}-point ending?').replace('{a}', adjP1)
+        ).replace('{n}', recTrack.length);
+        const ok = await RBConfirm(msg, 'Apply');
         if (!ok) { if (map) refreshMap(false); return; }
         spliceByIndex(rb, smoothTrack(recTrack), adjP1, rejoin ? adjP2 : null);
         // merge any waypoints dropped during the adjust session (snap to the new track)
@@ -784,7 +788,7 @@
     }
 
     /* ---------- export (self-contained .rdbk) ---------- */
-    const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
+    const stamp = () => { const d = new Date(), p = RB.pad2; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
     $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); if (!(await confirmOpenCuts())) return; stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
     // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js
     $('exportPdf').onclick = async () => {

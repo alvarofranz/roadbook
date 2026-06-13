@@ -23,8 +23,16 @@ self.addEventListener('fetch', (e) => {
     // Dynamic endpoints (auth/account, uploads, version) — always network, never cache.
     if (url.pathname.includes('/api/') || url.pathname.endsWith('/version.json')) { e.respondWith(fetch(request)); return; }
 
-    // Images (avatars, photos, thumbnails, mockups) are content, not shell — serve
-    // from the network and never cache them (cache-busted avatar URLs would pile up).
+    // Standard palette icons (immutable) are rendered into note vignettes — cache
+    // them first so an installed Reader shows them offline (like FontAwesome).
+    if (url.pathname.includes('/assets/icons/')) {
+        e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((res) => {
+            const copy = res.clone(); caches.open(CACHE).then((c) => c.put(request, copy)); return res;
+        })));
+        return;
+    }
+    // Other images (avatars, photos, thumbnails, mockups) are content, not shell —
+    // serve from the network and never cache them (cache-busted URLs would pile up).
     if (request.destination === 'image') { e.respondWith(fetch(request).catch(() => caches.match(request))); return; }
 
     // Immutable: FontAwesome (CSS + webfonts) → cache-first.

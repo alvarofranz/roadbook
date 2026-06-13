@@ -27,7 +27,7 @@
         d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public challenges')}</h2>
             ${rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
                 ${r.thumb ? `<img src="${RBesc(r.thumb)}" alt="">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
-                <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${RBt('notes')}</small></span>
+                <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</small></span>
             </button>`).join('') : `<p class="muted">${RBt('No public challenges yet.')}</p>`}
             <div class="btnrow spaced"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`;
         d.q('#chCancel').onclick = d.close;

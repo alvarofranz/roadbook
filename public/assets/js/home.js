@@ -16,7 +16,7 @@
                     : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
                 <div class="gallery-body">
                     <h3>${esc(r.title)}</h3>
-                    <div class="gallery-meta">@${esc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${t('gallery.notes')}</div>
+                    <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div>
                 </div>
             </a>`).join('');
     };

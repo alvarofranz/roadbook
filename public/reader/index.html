@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-6">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-7">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-6">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-7">
     <style>
         /* top odometer bar */
         .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -56,9 +56,6 @@
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
-        .segmented { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-        .segment-button { flex: 1; background: var(--card-2); color: var(--muted); border: 0; padding: .55rem; font: inherit; font-weight: 700; cursor: pointer; }
-        .segment-button.on { background: var(--sand); color: #14100a; }
     </style>
 </head>
 <body>
@@ -110,9 +107,9 @@
         <h2 id="modeTitle" data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
             <label class="muted small" data-i18n="Advancement">Advancement</label>
-            <div class="segmented" role="group" aria-label="Advancement" data-i18n-aria="Advancement">
-                <button type="button" class="segment-button on" id="advAuto" data-i18n="Automatic (GPS)" aria-pressed="true">Automatic (GPS)</button>
-                <button type="button" class="segment-button" id="advManual" data-i18n="Manual (tap)" aria-pressed="false">Manual (tap)</button>
+            <div class="segmented fill" role="group" aria-label="Advancement" data-i18n-aria="Advancement">
+                <button type="button" class="segment on" id="advAuto" data-i18n="Automatic (GPS)" aria-pressed="true">Automatic (GPS)</button>
+                <button type="button" class="segment" id="advManual" data-i18n="Manual (tap)" aria-pressed="false">Manual (tap)</button>
             </div>
             <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
@@ -129,7 +126,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
         <h2 id="teamTitle" data-i18n="Vehicle number"><i class="fa-solid fa-car-side icon-accent"></i> Vehicle number</h2>
         <p class="muted small" data-i18n="Identify your team for the ranking.">Identify your team for the ranking.</p>
-        <input id="teamInput" type="number" min="1" max="999" value="1" inputmode="numeric">
+        <input id="teamInput" class="modal-in" type="number" min="1" max="999" value="1" inputmode="numeric">
         <div class="btnrow spaced">
             <button class="btn btn-ghost" id="teamCancel" data-i18n="Cancel">Cancel</button>
             <button class="btn btn-primary" id="teamOk" data-i18n="Start"><i class="fa-solid fa-play"></i> Start</button>
@@ -155,16 +152,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.13-6"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-6"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.13-6"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.13-6"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-6"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.13-6"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.06.13-6"></script>
-<script src="../assets/js/challenges.js?v=2026.06.13-6"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-6"></script>
-<script src="../assets/js/app.js?v=2026.06.13-6"></script>
-<script src="reader.js?v=2026.06.13-6"></script>
+<script src="../assets/js/config.js?v=2026.06.13-7"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-7"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.13-7"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.13-7"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-7"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.13-7"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.06.13-7"></script>
+<script src="../assets/js/challenges.js?v=2026.06.13-7"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-7"></script>
+<script src="../assets/js/app.js?v=2026.06.13-7"></script>
+<script src="reader.js?v=2026.06.13-7"></script>
 </body>
 </html>

@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-6">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-6">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-7">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-7">
     <style>
         .doc { max-width: 880px; margin: 0 auto; padding: 1.5rem 1.2rem 5rem; }
         .doc h2 { margin: 2.4rem 0 .6rem; font-size: 1.5rem; scroll-margin-top: 70px; }
@@ -35,81 +35,81 @@
 
 <main class="doc">
     <p><span class="pill">rdbk · v1.0</span><span class="pill">application/x-roadbook</span><span class="pill">.rdbk</span></p>
-    <h1>The <span class="accent">.rdbk</span> standard</h1>
-    <p class="lead-spec">An open, single-file format for digital roadbooks. One self-contained UTF-8 JSON document carries the whole route — track, notes, headings, junction diagrams <b>and its own symbols</b> — so a roadbook is just a file you can read, follow, share and archive, with nothing else attached.</p>
+    <h1 data-i18n-html="title.h1">The <span class="accent">.rdbk</span> standard</h1>
+    <p class="lead-spec" data-i18n-html="lead.spec">An open, single-file format for digital roadbooks. One self-contained UTF-8 JSON document carries the whole route — track, notes, headings, junction diagrams <b>and its own symbols</b> — so a roadbook is just a file you can read, follow, share and archive, with nothing else attached.</p>
 
     <div class="toc">
-        <a href="#why">Why .rdbk</a>
-        <a href="#structure">Structure</a>
+        <a href="#why" data-i18n="Why .rdbk">Why .rdbk</a>
+        <a href="#structure" data-i18n="Structure">Structure</a>
         <a href="#meta">meta</a>
         <a href="#track">track</a>
         <a href="#notes">notes</a>
-        <a href="#icons">symbols</a>
-        <a href="#roadtypes">road types</a>
+        <a href="#icons" data-i18n="symbols">symbols</a>
+        <a href="#roadtypes" data-i18n="road types">road types</a>
         <a href="#junctions">junctions</a>
-        <a href="#result">result QR</a>
-        <a href="#conformance">conformance</a>
-        <a href="#example">full example</a>
+        <a href="#result" data-i18n="result QR">result QR</a>
+        <a href="#conformance" data-i18n="conformance">conformance</a>
+        <a href="#example" data-i18n="full example">full example</a>
     </div>
 
-    <h2 id="why">Why .rdbk</h2>
+    <h2 id="why" data-i18n="Why .rdbk">Why .rdbk</h2>
     <ul>
-        <li><b>Self-contained.</b> A <code>.rdbk</code> embeds the symbols it uses (as data URIs), so it renders identically anywhere — offline, years later — with no external icon packs to lose.</li>
-        <li><b>One file, plain JSON.</b> Open it in any text editor, parse it with one line in any language, diff it in git.</li>
-        <li><b>Map-ready.</b> The full GPS track travels with the notes, so any reader can draw the route and place you on it.</li>
-        <li><b>Symbols are first-class.</b> Each note can carry positioned, rotated, scalable pictograms and colored junction vectors — not just a line of text.</li>
+        <li data-i18n-html="why.selfcontained"><b>Self-contained.</b> A <code>.rdbk</code> embeds the symbols it uses (as data URIs), so it renders identically anywhere — offline, years later — with no external icon packs to lose.</li>
+        <li data-i18n-html="why.onefile"><b>One file, plain JSON.</b> Open it in any text editor, parse it with one line in any language, diff it in git.</li>
+        <li data-i18n-html="why.mapready"><b>Map-ready.</b> The full GPS track travels with the notes, so any reader can draw the route and place you on it.</li>
+        <li data-i18n-html="why.symbols"><b>Symbols are first-class.</b> Each note can carry positioned, rotated, scalable pictograms and colored junction vectors — not just a line of text.</li>
     </ul>
 
-    <h2 id="structure">Document structure</h2>
-    <p>A <code>.rdbk</code> file is a single JSON object with four top-level keys:</p>
+    <h2 id="structure" data-i18n="Document structure">Document structure</h2>
+    <p data-i18n-html="structure.intro">A <code>.rdbk</code> file is a single JSON object with four top-level keys:</p>
     <pre><code>{
   "meta":  { … },   // document metadata
   "track": [ … ],   // the GPS polyline (ordered points)
   "notes": [ … ],   // navigation notes, ordered along the track
   "icons": { … }    // embedded symbol library (name → data URI)
 }</code></pre>
-    <p>Coordinates are WGS-84 decimal degrees. <b>Distances are integer metres.</b> Headings are degrees clockwise from true north (0–360). Symbol angles are degrees clockwise.</p>
+    <p data-i18n-html="structure.units">Coordinates are WGS-84 decimal degrees. <b>Distances are integer metres.</b> Headings are degrees clockwise from true north (0–360). Symbol angles are degrees clockwise.</p>
 
     <h2 id="meta">meta</h2>
     <table>
-        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
-        <tr><td><code>title</code></td><td>string</td><td>Human-readable roadbook title.</td></tr>
-        <tr><td><code>total_distance</code></td><td>integer</td><td>Total route length in metres (derived from <code>track</code>).</td></tr>
-        <tr><td><code>note_count</code></td><td>integer</td><td>Number of notes.</td></tr>
-        <tr><td><code>description</code></td><td>string</td><td>Optional. Free text shown on the public challenge page.</td></tr>
-        <tr><td><code>author</code></td><td>string</td><td>Optional. Name of the roadbook author.</td></tr>
-        <tr><td><code>organization</code></td><td>string</td><td>Optional. Organizing club / event organizer.</td></tr>
-        <tr><td><code>modified</code></td><td>string</td><td>Optional. Last-modified date, ISO <code>YYYY-MM-DD</code>.</td></tr>
-        <tr><td><code>logo</code></td><td>string</td><td>Optional. Event logo as a base64 <code>data:</code> URI (embedded, self-contained — like the symbols in <code>icons</code>).</td></tr>
-        <tr><td><code>map_access</code></td><td>boolean</td><td>Optional. Whether a reader may show a map of the route while navigating. Absent or <code>true</code> = allowed; <code>false</code> hides the map (e.g. competitions where map-reading would be cheating).</td></tr>
+        <tr><th data-i18n="Field">Field</th><th data-i18n="Type">Type</th><th data-i18n="Meaning">Meaning</th></tr>
+        <tr><td><code>title</code></td><td>string</td><td data-i18n="Human-readable roadbook title.">Human-readable roadbook title.</td></tr>
+        <tr><td><code>total_distance</code></td><td>integer</td><td data-i18n-html="meta.total_distance">Total route length in metres (derived from <code>track</code>).</td></tr>
+        <tr><td><code>note_count</code></td><td>integer</td><td data-i18n="Number of notes.">Number of notes.</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td data-i18n="Optional. Free text shown on the public challenge page.">Optional. Free text shown on the public challenge page.</td></tr>
+        <tr><td><code>author</code></td><td>string</td><td data-i18n="Optional. Name of the roadbook author.">Optional. Name of the roadbook author.</td></tr>
+        <tr><td><code>organization</code></td><td>string</td><td data-i18n="Optional. Organizing club / event organizer.">Optional. Organizing club / event organizer.</td></tr>
+        <tr><td><code>modified</code></td><td>string</td><td data-i18n-html="meta.modified">Optional. Last-modified date, ISO <code>YYYY-MM-DD</code>.</td></tr>
+        <tr><td><code>logo</code></td><td>string</td><td data-i18n-html="meta.logo">Optional. Event logo as a base64 <code>data:</code> URI (embedded, self-contained — like the symbols in <code>icons</code>).</td></tr>
+        <tr><td><code>map_access</code></td><td>boolean</td><td data-i18n-html="meta.map_access">Optional. Whether a reader may show a map of the route while navigating. Absent or <code>true</code> = allowed; <code>false</code> hides the map (e.g. competitions where map-reading would be cheating).</td></tr>
     </table>
 
     <h2 id="track">track</h2>
-    <p>An ordered array of points describing the route polyline. Notes reference into it by index. Each point may carry an optional <code>ele</code> — the elevation in integer metres.</p>
+    <p data-i18n-html="track.intro">An ordered array of points describing the route polyline. Notes reference into it by index. Each point may carry an optional <code>ele</code> — the elevation in integer metres.</p>
     <pre><code>"track": [
   { "lat": 45.82712, "lon": 9.41164, "ele": 1245 },
   { "lat": 45.82740, "lon": 9.41180 }
 ]</code></pre>
 
     <h2 id="notes">notes</h2>
-    <p>The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.</p>
+    <p data-i18n="The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.">The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.</p>
     <table>
-        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
-        <tr><td><code>num</code></td><td>integer</td><td>1-based note number (display order).</td></tr>
-        <tr><td><code>idx</code></td><td>integer</td><td>Index into <code>track</code> where this note sits.</td></tr>
-        <tr><td><code>lat</code>, <code>lon</code></td><td>number</td><td>Note position (decimal degrees).</td></tr>
-        <tr><td><code>distance</code></td><td>integer</td><td>Cumulative distance from the start (metres).</td></tr>
-        <tr><td><code>partial_distance</code></td><td>integer</td><td>Distance from the previous note (metres).</td></tr>
-        <tr><td><code>text</code></td><td>string</td><td>The instruction / comment.</td></tr>
-        <tr><td><code>cap</code></td><td>integer | null</td><td>CAP — the heading in degrees (0–360) to hold to the next note, when shown.</td></tr>
-        <tr><td><code>cap_distance</code></td><td>integer | null</td><td>Straight-line distance to hold that heading (metres).</td></tr>
-        <tr><td><code>bearing_in</code></td><td>number</td><td>Track bearing arriving at the note (degrees).</td></tr>
-        <tr><td><code>bearing_out</code></td><td>number</td><td>Track bearing leaving the note (degrees).</td></tr>
-        <tr><td><code>road_type_in</code></td><td>0–4</td><td>Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
-        <tr><td><code>road_type_out</code></td><td>0–4</td><td>Surface leaving.</td></tr>
-        <tr><td><code>danger</code></td><td>1–3, optional</td><td>FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
-        <tr><td><code>icons</code></td><td>array</td><td>Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
-        <tr><td><code>junctions</code></td><td>array | null</td><td>Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
+        <tr><th data-i18n="Field">Field</th><th data-i18n="Type">Type</th><th data-i18n="Meaning">Meaning</th></tr>
+        <tr><td><code>num</code></td><td>integer</td><td data-i18n="1-based note number (display order).">1-based note number (display order).</td></tr>
+        <tr><td><code>idx</code></td><td>integer</td><td data-i18n-html="notes.idx">Index into <code>track</code> where this note sits.</td></tr>
+        <tr><td><code>lat</code>, <code>lon</code></td><td>number</td><td data-i18n="Note position (decimal degrees).">Note position (decimal degrees).</td></tr>
+        <tr><td><code>distance</code></td><td>integer</td><td data-i18n="Cumulative distance from the start (metres).">Cumulative distance from the start (metres).</td></tr>
+        <tr><td><code>partial_distance</code></td><td>integer</td><td data-i18n="Distance from the previous note (metres).">Distance from the previous note (metres).</td></tr>
+        <tr><td><code>text</code></td><td>string</td><td data-i18n="The instruction / comment.">The instruction / comment.</td></tr>
+        <tr><td><code>cap</code></td><td>integer | null</td><td data-i18n="CAP — the heading in degrees (0–360) to hold to the next note, when shown.">CAP — the heading in degrees (0–360) to hold to the next note, when shown.</td></tr>
+        <tr><td><code>cap_distance</code></td><td>integer | null</td><td data-i18n="Straight-line distance to hold that heading (metres).">Straight-line distance to hold that heading (metres).</td></tr>
+        <tr><td><code>bearing_in</code></td><td>number</td><td data-i18n="Track bearing arriving at the note (degrees).">Track bearing arriving at the note (degrees).</td></tr>
+        <tr><td><code>bearing_out</code></td><td>number</td><td data-i18n="Track bearing leaving the note (degrees).">Track bearing leaving the note (degrees).</td></tr>
+        <tr><td><code>road_type_in</code></td><td>0–4</td><td data-i18n-html="notes.road_type_in">Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
+        <tr><td><code>road_type_out</code></td><td>0–4</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
+        <tr><td><code>danger</code></td><td>1–3, optional</td><td data-i18n-html="notes.danger">FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
+        <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
+        <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
     </table>
     <pre><code>{
   "num": 12, "idx": 184,
@@ -128,75 +128,75 @@
   ]
 }</code></pre>
 
-    <h2 id="icons">Symbols (note <code>icons</code> + top-level <code>icons</code> library)</h2>
-    <p>A note's <code>icons</code> array places pictograms on a fixed <b>230 × 162</b> reference box. The origin is the box centre; <code>+y</code> points <b>up</b>. This makes a note render the same at any display size.</p>
+    <h2 id="icons" data-i18n-html="icons.h2">Symbols (note <code>icons</code> + top-level <code>icons</code> library)</h2>
+    <p data-i18n-html="icons.intro">A note's <code>icons</code> array places pictograms on a fixed <b>230 × 162</b> reference box. The origin is the box centre; <code>+y</code> points <b>up</b>. This makes a note render the same at any display size.</p>
     <table>
-        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
-        <tr><td><code>name</code></td><td>string</td><td>Symbol key; looked up in <code>icons</code>.</td></tr>
-        <tr><td><code>pos</code></td><td>[x, y]</td><td>Centre position in reference units, from box centre, +y up.</td></tr>
-        <tr><td><code>size</code></td><td>number</td><td>Box size in reference units (square).</td></tr>
-        <tr><td><code>angle</code></td><td>number</td><td>Rotation, degrees clockwise.</td></tr>
-        <tr><td><code>flip_x</code></td><td>boolean</td><td>Horizontal mirror.</td></tr>
+        <tr><th data-i18n="Field">Field</th><th data-i18n="Type">Type</th><th data-i18n="Meaning">Meaning</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td data-i18n-html="icons.name">Symbol key; looked up in <code>icons</code>.</td></tr>
+        <tr><td><code>pos</code></td><td>[x, y]</td><td data-i18n="Centre position in reference units, from box centre, +y up.">Centre position in reference units, from box centre, +y up.</td></tr>
+        <tr><td><code>size</code></td><td>number</td><td data-i18n="Box size in reference units (square).">Box size in reference units (square).</td></tr>
+        <tr><td><code>angle</code></td><td>number</td><td data-i18n="Rotation, degrees clockwise.">Rotation, degrees clockwise.</td></tr>
+        <tr><td><code>flip_x</code></td><td>boolean</td><td data-i18n="Horizontal mirror.">Horizontal mirror.</td></tr>
     </table>
-    <p>The symbols themselves live <b>inside the file</b> in <code>icons</code>, a map from symbol name to a data URI. This is what makes a <code>.rdbk</code> portable: every symbol it draws is embedded.</p>
+    <p data-i18n-html="icons.embedded">The symbols themselves live <b>inside the file</b> in <code>icons</code>, a map from symbol name to a data URI. This is what makes a <code>.rdbk</code> portable: every symbol it draws is embedded.</p>
     <pre><code>"icons": {
   "S03_30km.svg": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0i…",
   "P07_ponte.png": "data:image/png;base64,iVBORw0KGgoAAAANS…"
 }</code></pre>
-    <p>Resolution order for a symbol: an inline <code>data:</code> URI on the icon → the file's <code>icons</code> (case-insensitive) → a host symbol set. A note may also carry a speed limit encoded in a symbol name (e.g. <code>S03_30km</code> ⇒ 30 km/h; <code>S99_end</code> clears it).</p>
+    <p data-i18n-html="icons.resolution">Resolution order for a symbol: an inline <code>data:</code> URI on the icon → the file's <code>icons</code> (case-insensitive) → a host symbol set. A note may also carry a speed limit encoded in a symbol name (e.g. <code>S03_30km</code> ⇒ 30 km/h; <code>S99_end</code> clears it).</p>
 
-    <h2 id="roadtypes">Road types</h2>
+    <h2 id="roadtypes" data-i18n="Road types">Road types</h2>
     <table>
-        <tr><th>id</th><th>Type</th><th>Rendering</th></tr>
-        <tr><td><code>0</code></td><td>Default</td><td>neutral, medium stroke</td></tr>
-        <tr><td><code>1</code></td><td>Motorway / paved fast</td><td>solid, widest stroke</td></tr>
-        <tr><td><code>2</code></td><td>Asphalt</td><td>solid, wide stroke</td></tr>
-        <tr><td><code>3</code></td><td>Track / piste</td><td>solid, medium stroke (default off-road)</td></tr>
-        <tr><td><code>4</code></td><td>Off-piste</td><td>dashed, thinnest stroke</td></tr>
+        <tr><th data-i18n="id">id</th><th data-i18n="Type">Type</th><th data-i18n="Rendering">Rendering</th></tr>
+        <tr><td><code>0</code></td><td data-i18n="Default">Default</td><td data-i18n="neutral, medium stroke">neutral, medium stroke</td></tr>
+        <tr><td><code>1</code></td><td data-i18n="Motorway / paved fast">Motorway / paved fast</td><td data-i18n="solid, widest stroke">solid, widest stroke</td></tr>
+        <tr><td><code>2</code></td><td data-i18n="Asphalt">Asphalt</td><td data-i18n="solid, wide stroke">solid, wide stroke</td></tr>
+        <tr><td><code>3</code></td><td data-i18n="Track / piste">Track / piste</td><td data-i18n="solid, medium stroke (default off-road)">solid, medium stroke (default off-road)</td></tr>
+        <tr><td><code>4</code></td><td data-i18n="Off-piste">Off-piste</td><td data-i18n="dashed, thinnest stroke">dashed, thinnest stroke</td></tr>
     </table>
-    <p>A note's vignette is a tulip: the road you arrive from always enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre to an arrow at the top (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Stroke width is indicative of the road type.</p>
+    <p data-i18n-html="roadtypes.tulip">A note's vignette is a tulip: the road you arrive from always enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre to an arrow at the top (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Stroke width is indicative of the road type.</p>
 
-    <h2 id="junctions">Junction vectors (<code>junctions</code>)</h2>
-    <p>Beyond text, a note can draw the junction itself: one or more vectors on the same 230 × 162 box. Each goes from a <code>pivot</code> to a <code>tip</code> (arrow head), colored by road type and drawn with a stroke <code>width</code>.</p>
+    <h2 id="junctions" data-i18n-html="junctions.h2">Junction vectors (<code>junctions</code>)</h2>
+    <p data-i18n-html="junctions.intro">Beyond text, a note can draw the junction itself: one or more vectors on the same 230 × 162 box. Each goes from a <code>pivot</code> to a <code>tip</code> (arrow head), colored by road type and drawn with a stroke <code>width</code>.</p>
     <pre><code>"junctions": [
   { "pivot": [0, 0], "tip": [45, 25], "width": 3, "road_type": 3 },
   { "pivot": [0, 0], "tip": [-30, 40], "width": 2, "road_type": 4 }
 ]</code></pre>
     <table>
-        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
-        <tr><td><code>pivot</code></td><td>[x, y]</td><td>Vector start (reference units, +y up).</td></tr>
-        <tr><td><code>tip</code></td><td>[x, y]</td><td>Vector tip / arrow head.</td></tr>
-        <tr><td><code>width</code></td><td>number</td><td>Stroke thickness.</td></tr>
-        <tr><td><code>road_type</code></td><td>0–4</td><td>Road type → vector color.</td></tr>
+        <tr><th data-i18n="Field">Field</th><th data-i18n="Type">Type</th><th data-i18n="Meaning">Meaning</th></tr>
+        <tr><td><code>pivot</code></td><td>[x, y]</td><td data-i18n="Vector start (reference units, +y up).">Vector start (reference units, +y up).</td></tr>
+        <tr><td><code>tip</code></td><td>[x, y]</td><td data-i18n="Vector tip / arrow head.">Vector tip / arrow head.</td></tr>
+        <tr><td><code>width</code></td><td>number</td><td data-i18n="Stroke thickness.">Stroke thickness.</td></tr>
+        <tr><td><code>road_type</code></td><td>0–4</td><td data-i18n="Road type → vector color.">Road type → vector color.</td></tr>
     </table>
 
-    <h2 id="result">Result token (optional, for events)</h2>
-    <p>When a roadbook is followed competitively, a reader can emit a compact, fixed-width <b>49-character</b> result token (suitable for a QR code). It is a sequence of zero-padded numeric fields and carries no personal data:</p>
+    <h2 id="result" data-i18n="Result token (optional, for events)">Result token (optional, for events)</h2>
+    <p data-i18n-html="result.intro">When a roadbook is followed competitively, a reader can emit a compact, fixed-width <b>49-character</b> result token (suitable for a QR code). It is a sequence of zero-padded numeric fields and carries no personal data:</p>
     <table>
-        <tr><th>Field</th><th>Width</th><th>Meaning</th></tr>
-        <tr><td><code>team</code></td><td>3</td><td>Vehicle number.</td></tr>
-        <tr><td><code>date</code></td><td>6</td><td>Date DDMMYY.</td></tr>
-        <tr><td><code>start</code></td><td>6</td><td>Start time HHMMSS.</td></tr>
-        <tr><td><code>end</code></td><td>6</td><td>End time HHMMSS.</td></tr>
-        <tr><td><code>accuracy</code></td><td>4</td><td>Accuracy penalty.</td></tr>
-        <tr><td><code>skip</code></td><td>4</td><td>Skipped-note penalty.</td></tr>
-        <tr><td><code>extra</code></td><td>4</td><td>Overshoot penalty.</td></tr>
-        <tr><td><code>cap</code></td><td>4</td><td>Heading penalty.</td></tr>
-        <tr><td><code>speed</code></td><td>4</td><td>Speed penalty.</td></tr>
-        <tr><td><code>km</code></td><td>5</td><td>Distance, deci-km.</td></tr>
-        <tr><td><code>avg</code></td><td>3</td><td>Average speed, deci-km/h.</td></tr>
+        <tr><th data-i18n="Field">Field</th><th data-i18n="Width">Width</th><th data-i18n="Meaning">Meaning</th></tr>
+        <tr><td><code>team</code></td><td>3</td><td data-i18n="Vehicle number.">Vehicle number.</td></tr>
+        <tr><td><code>date</code></td><td>6</td><td data-i18n="Date DDMMYY.">Date DDMMYY.</td></tr>
+        <tr><td><code>start</code></td><td>6</td><td data-i18n="Start time HHMMSS.">Start time HHMMSS.</td></tr>
+        <tr><td><code>end</code></td><td>6</td><td data-i18n="End time HHMMSS.">End time HHMMSS.</td></tr>
+        <tr><td><code>accuracy</code></td><td>4</td><td data-i18n="Accuracy penalty.">Accuracy penalty.</td></tr>
+        <tr><td><code>skip</code></td><td>4</td><td data-i18n="Skipped-note penalty.">Skipped-note penalty.</td></tr>
+        <tr><td><code>extra</code></td><td>4</td><td data-i18n="Overshoot penalty.">Overshoot penalty.</td></tr>
+        <tr><td><code>cap</code></td><td>4</td><td data-i18n="Heading penalty.">Heading penalty.</td></tr>
+        <tr><td><code>speed</code></td><td>4</td><td data-i18n="Speed penalty.">Speed penalty.</td></tr>
+        <tr><td><code>km</code></td><td>5</td><td data-i18n="Distance, deci-km.">Distance, deci-km.</td></tr>
+        <tr><td><code>avg</code></td><td>3</td><td data-i18n="Average speed, deci-km/h.">Average speed, deci-km/h.</td></tr>
     </table>
-    <p>The token may be appended with <code>-&lt;sig&gt;</code>, a truncated HMAC over the token, for tamper-evidence between the reader and the scorer.</p>
+    <p data-i18n-html="result.sig">The token may be appended with <code>-&lt;sig&gt;</code>, a truncated HMAC over the token, for tamper-evidence between the reader and the scorer.</p>
 
-    <h2 id="conformance">Conformance</h2>
+    <h2 id="conformance" data-i18n="Conformance">Conformance</h2>
     <ul>
-        <li>Files are UTF-8 JSON, extension <code>.rdbk</code>, media type <code>application/x-roadbook</code>.</li>
-        <li>A conforming <b>reader</b> MUST render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
-        <li>A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so the file is self-contained.</li>
-        <li>Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
+        <li data-i18n-html="conformance.files">Files are UTF-8 JSON, extension <code>.rdbk</code>, media type <code>application/x-roadbook</code>.</li>
+        <li data-i18n-html="conformance.reader">A conforming <b>reader</b> MUST render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
+        <li data-i18n-html="conformance.writer">A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so the file is self-contained.</li>
+        <li data-i18n="Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).">Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
     </ul>
 
-    <h2 id="example">Full minimal example</h2>
+    <h2 id="example" data-i18n="Full minimal example">Full minimal example</h2>
     <pre><code>{
   "meta": { "title": "Demo loop", "total_distance": 1210, "note_count": 2,
             "author": "Alex Driver", "organization": "Rally Club", "modified": "2026-06-09",
@@ -225,10 +225,10 @@
   "icons": { "i01_arrivo.png": "data:image/png;base64,iVBORw0KGgoAAAANS…" }
 }</code></pre>
 
-    <p class="cta-row"><a class="btn btn-primary" href="../reader/"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
+    <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.js?v=2026.06.13-6"></script>
-<script src="../assets/js/app.js?v=2026.06.13-6"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-7"></script>
+<script src="../assets/js/app.js?v=2026.06.13-7"></script>
 </body>
 </html>

@@ -10,6 +10,7 @@
     --muted: #93a0b4;
     --sand: #e8b059;      /* primary accent (sand/dune) */
     --sand-2: #f2c879;
+    --on-sand: #14100a;   /* ink/text that sits on a sand fill */
     --track: #ff5a45;     /* track red */
     --ok: #3ad29f;
     --info: #5aa9ff;
@@ -39,6 +40,7 @@ a { color: var(--sand-2); text-decoration: none; }
 a:hover { text-decoration: underline; }
 img { max-width: 100%; display: block; }
 .muted { color: var(--muted); }
+.small { font-size: .85rem; }
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1.1rem; }
 /* keyboard accessibility: a clear ring on focus-visible only (no mouse-click rings) */
 :focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
@@ -78,7 +80,7 @@ img { max-width: 100%; display: block; }
     border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; font-size: .8rem;
     padding: .3rem .6rem; border-radius: 99px; cursor: pointer;
 }
-.lang button.active { background: var(--sand); color: #2a1c05; }
+.lang button.active { background: var(--sand); color: var(--on-sand); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -87,7 +89,7 @@ img { max-width: 100%; display: block; }
     transition: transform .08s ease, filter .15s ease, background .15s ease;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: linear-gradient(180deg, var(--sand-2), var(--sand)); color: #14100a; font-weight: 800; text-shadow: 0 1px 0 rgba(255, 255, 255, .25); }
+.btn-primary { background: linear-gradient(180deg, var(--sand-2), var(--sand)); color: var(--on-sand); font-weight: 800; text-shadow: 0 1px 0 rgba(255, 255, 255, .25); }
 .btn-primary:hover { filter: brightness(1.05); text-decoration: none; }
 .btn-ghost { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--line); }
 .btn-ghost:hover { background: rgba(255, 255, 255, .12); text-decoration: none; }
@@ -196,8 +198,6 @@ section.block { padding: 2.4rem 0; }
 .modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
-.modal-card input[type=text], .modal-card input[type=number] { width: 100%; background: var(--card-2); border: 1px solid rgba(255, 255, 255, .14); color: var(--text); border-radius: 12px; padding: .8rem .9rem; font-size: 1.1rem; margin-top: .6rem; }
-.modal-card input:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
 .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
 .mode-grid { display: grid; gap: .7rem; margin-top: .8rem; }
 .mode-btn { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; color: var(--text); cursor: pointer; transition: border-color .15s; }
@@ -230,9 +230,18 @@ section.block { padding: 2.4rem 0; }
 
 .btn-danger { background: rgba(255,90,69,.14); color: var(--track); border: 1px solid rgba(255,90,69,.32); }
 .btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }
+/* canonical text input/select (page forms: editor, account, …) */
+.field { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
 /* form fields inside modals (shared by every RBModal dialog) */
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
+.field:focus-visible, .modal-in:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
+/* segmented two-state toggle (Reader advancement · Editor visibility); .fill stretches to full width */
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.segmented.fill { display: flex; }
+.segment { background: var(--card-2); color: var(--muted); border: 0; padding: .55rem .8rem; font: inherit; font-weight: 600; cursor: pointer; }
+.segmented.fill .segment { flex: 1; text-align: center; }
+.segment.on { background: var(--sand); color: var(--on-sand); }
 /* modal-card size/align modifiers (passed to RBModal) */
 .modal-card.slim { max-width: 340px; }
 .modal-card.narrow { max-width: 360px; }

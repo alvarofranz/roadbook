@@ -15,7 +15,7 @@
         $('chTitle').textContent = title;
         document.title = title + ' · RDBK.app';
         $('chOwner').textContent = o.name || ('@' + (o.username || ''));
-        $('chMeta').textContent = '@' + (o.username || '') + ' · ' + (((rb.meta && rb.meta.total_distance) || 0) / 1000).toFixed(1) + ' km · ' + rb.notes.length + ' ' + t('notes') + (j.is_public ? '' : ' · 🔒 ' + t('Private'));
+        $('chMeta').textContent = '@' + (o.username || '') + ' · ' + RBSummary((rb.meta && rb.meta.total_distance) || 0, rb.notes.length) + (j.is_public ? '' : ' · 🔒 ' + t('Private'));
         if (o.avatar) $('chAvatar').src = o.avatar; else $('chAvatar').remove();
         $('chDesc').textContent = (rb.meta && rb.meta.description) || '';
         // roadbook-declared credit (author / organization / date) + event logo
