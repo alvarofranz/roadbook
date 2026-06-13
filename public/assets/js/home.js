@@ -5,10 +5,12 @@
     if (!grid) return;
     const esc = RBesc, t = RBt; // shared helpers (app.js / i18n.js)
     const ROOT = RBChallenges.ROOT;
+    let cards = null; // cached list so a language switch re-renders without refetching
 
-    RBChallenges.listPublic().then((rbs) => {
-        if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; return; }
-        grid.innerHTML = rbs.map((r) => `
+    const render = () => {
+        if (!cards) return;
+        if (!cards.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; return; }
+        grid.innerHTML = cards.map((r) => `
             <a class="gallery-card" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">
                 ${r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                     : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
@@ -17,5 +19,9 @@
                     <div class="gallery-meta">@${esc(r.username)} · ${(r.total_distance / 1000).toFixed(1)} km · ${r.note_count} ${t('gallery.notes')}</div>
                 </div>
             </a>`).join('');
-    }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; });
+    };
+
+    window.addEventListener('rb-lang', render);
+    RBChallenges.listPublic().then((rbs) => { cards = rbs; render(); })
+        .catch(() => { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; });
 })();

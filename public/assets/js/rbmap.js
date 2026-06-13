@@ -3,6 +3,7 @@
  * Reader (the interactive per-note map): draws a roadbook (track + waypoints),
  * live recording, photo pins, a draggable edit marker, a satellite ↔ topo layer
  * toggle, and lets you select waypoints and highlight the active one. */
+(function () {
 // The two base styles the built-in layer toggle flips between (satellite photo ↔ topo).
 const STYLE_SATELLITE = 'mapbox://styles/mapbox/satellite-streets-v12';
 const STYLE_TOPO = 'mapbox://styles/mapbox/outdoors-v12';
@@ -195,3 +196,4 @@ function layerToggleControl(rbmap) {
 // The canonical base-style URLs, exposed so the Editor's own toggle reuses them.
 window.RBMap.STYLE_SATELLITE = STYLE_SATELLITE;
 window.RBMap.STYLE_TOPO = STYLE_TOPO;
+})();

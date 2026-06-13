@@ -62,6 +62,8 @@
             'Saved · public at': 'Guardado · público en', 'Auto': 'Auto', 'Skips': 'Saltos', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'parc.', 'GPS…': 'GPS…',
             'Add result': 'Añadir resultado', 'Add': 'Añadir', 'Target average speed': 'Velocidad media objetivo', "(used for regularity if the QR doesn't carry it)": '(se usa para la regularidad si el QR no la incluye)',
             '…or paste the code (META) here': '…o pega aquí el código (META)', 'Added vehicle': 'Vehículo añadido', 'Invalid signature': 'Firma no válida', 'Could not open the camera': 'No se pudo abrir la cámara', 'Remove vehicle': 'Eliminar vehículo',
+            'Reset the partial trip?': '¿Poner a cero el parcial?', 'Colour for the band {band}': 'Color para la banda {band}', 'Show password': 'Mostrar contraseña', 'Hide password': 'Ocultar contraseña', 'photo': 'foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
+            'Smaller': 'Más pequeño', 'Bigger': 'Más grande', 'Rotate left': 'Girar a la izquierda', 'Rotate right': 'Girar a la derecha', 'Flip': 'Voltear', 'Thinner': 'Más fino', 'Thicker': 'Más grueso', 'Road type': 'Tipo de vía', 'Reset timer': 'Reiniciar cronómetro',
             'Navigate': 'Navegar', 'Add note (tap the route)': 'Añadir nota (toca la ruta)',
             'Draw route (tap to extend)': 'Dibujar ruta (toca para alargar)', 'Cut (tap two points)': 'Cortar (toca dos puntos)',
             'Add a GPX track': 'Añadir un track GPX', 'Reverse direction': 'Invertir sentido',
@@ -96,7 +98,7 @@
             'Reset password': 'Restablecer contraseña', 'Your email': 'Tu email', 'Send reset link': 'Enviar enlace', 'Back to sign in': 'Volver a entrar',
             'Set a new password': 'Pon una nueva contraseña', 'Update password': 'Actualizar contraseña',
             'Edit profile': 'Editar perfil', 'Sign out': 'Cerrar sesión', 'New roadbook': 'Nuevo roadbook', 'My roadbooks': 'Mis roadbooks',
-            'Change photo': 'Cambiar foto', 'Save profile': 'Guardar perfil', 'Loading…': 'Cargando…', 'Navigate': 'Navegar', 'Fork': 'Fork', 'Edit': 'Editar',
+            'Change photo': 'Cambiar foto', 'Save profile': 'Guardar perfil', 'Loading…': 'Cargando…', 'Fork': 'Fork', 'Edit': 'Editar',
             // toasts
             'Load a roadbook first.': 'Carga primero un roadbook.', 'Nothing to save.': 'Nada que guardar.',
             'Route too short to save.': 'Ruta demasiado corta para guardar.', 'Route recorded · edit and save.': 'Ruta grabada · edita y guarda.',
@@ -196,6 +198,8 @@
             'Saved · public at': 'Salvato · pubblico su', 'Auto': 'Auto', 'Skips': 'Salti', 'Extra': 'Extra', 'pts': 'pti', 'prog.': 'prog.', 'part.': 'parz.', 'GPS…': 'GPS…',
             'Add result': 'Aggiungi risultato', 'Add': 'Aggiungi', 'Target average speed': 'Velocità media obiettivo', "(used for regularity if the QR doesn't carry it)": '(usata per la regolarità se il QR non la include)',
             '…or paste the code (META) here': '…o incolla qui il codice (META)', 'Added vehicle': 'Veicolo aggiunto', 'Invalid signature': 'Firma non valida', 'Could not open the camera': 'Impossibile aprire la fotocamera', 'Remove vehicle': 'Rimuovi veicolo',
+            'Reset the partial trip?': 'Azzerare il parziale?', 'Colour for the band {band}': 'Colore per la fascia {band}', 'Show password': 'Mostra password', 'Hide password': 'Nascondi password', 'photo': 'foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
+            'Smaller': 'Più piccolo', 'Bigger': 'Più grande', 'Rotate left': 'Ruota a sinistra', 'Rotate right': 'Ruota a destra', 'Flip': 'Capovolgi', 'Thinner': 'Più sottile', 'Thicker': 'Più spesso', 'Road type': 'Tipo di strada', 'Reset timer': 'Azzera cronometro',
             'Navigate': 'Naviga', 'Add note (tap the route)': 'Aggiungi nota (tocca il percorso)',
             'Draw route (tap to extend)': 'Disegna percorso (tocca per allungare)', 'Cut (tap two points)': 'Taglia (tocca due punti)',
             'Add a GPX track': 'Aggiungi una traccia GPX', 'Reverse direction': 'Inverti il senso',
@@ -230,7 +234,7 @@
             'Reset password': 'Reimposta password', 'Your email': 'La tua email', 'Send reset link': 'Invia link', 'Back to sign in': 'Torna ad accedere',
             'Set a new password': 'Imposta una nuova password', 'Update password': 'Aggiorna password',
             'Edit profile': 'Modifica profilo', 'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook',
-            'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Navigate': 'Naviga', 'Fork': 'Fork', 'Edit': 'Modifica',
+            'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts
             'Load a roadbook first.': 'Carica prima un roadbook.', 'Nothing to save.': 'Niente da salvare.',
             'Route too short to save.': 'Percorso troppo corto per salvare.', 'Route recorded · edit and save.': 'Percorso registrato · modifica e salva.',
@@ -312,6 +316,9 @@
         });
         document.querySelectorAll('[data-i18n-html]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-html')); if (v != null) el.innerHTML = v; });
         document.querySelectorAll('[data-i18n-ph]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-ph')); if (v != null) el.setAttribute('placeholder', v); });
+        // accessibility attributes: title + aria-label translate declaratively too
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-title')); if (v != null) el.setAttribute('title', v); });
+        document.querySelectorAll('[data-i18n-aria]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-aria')); if (v != null) el.setAttribute('aria-label', v); });
         document.querySelectorAll('.lang button').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
         localStorage.setItem('rb_lang', lang);
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));

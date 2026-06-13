@@ -8,14 +8,15 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-3">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-3">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-4">
     <style>
         .trip-main { max-width: 560px; padding-top: 1rem; }
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         .mini-button { cursor: pointer; font: inherit; }
         .mini-button:hover { border-color: var(--sand); }
         #tmSpeed { transition: color .2s; color: var(--speed-band, var(--text)); }
+        #tmSpeed.over::after { content: "\f071"; font-family: "Font Awesome 6 Pro"; font-weight: 900; font-size: .5em; margin-left: .35em; vertical-align: middle; }
         .hold-btn { position: relative; overflow: hidden; }
         .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
         .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
@@ -42,7 +43,7 @@
             </div>
         </div>
         <div class="row3">
-            <button class="mini mini-button" id="tmSpeedAlert"><div class="value" id="tmSpeed">0</div><div class="key" data-i18n="km/h · alert">km/h · alert</div></button>
+            <button class="mini mini-button" id="tmSpeedAlert" data-i18n-aria="Speed alert" aria-label="Speed alert"><div class="value" id="tmSpeed">0</div><div class="key" data-i18n="km/h · alert">km/h · alert</div></button>
             <div class="mini"><div class="value" id="tmCap">—</div><div class="key">CAP °</div></div>
             <div class="mini"><div class="value" id="tmClock">--:--</div><div class="key" data-i18n="Clock">Clock</div></div>
         </div>
@@ -53,7 +54,7 @@
         </div>
         <div class="btnrow">
             <button class="btn btn-ghost" id="tmTimerBtn"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="Timer">Timer</span></button>
-            <button class="btn btn-ghost" id="tmTimerReset" hidden aria-label="Reset timer"><i class="fa-solid fa-rotate-left"></i></button>
+            <button class="btn btn-ghost" id="tmTimerReset" hidden data-i18n-aria="Reset timer" aria-label="Reset timer"><i class="fa-solid fa-rotate-left"></i></button>
             <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
             <button class="btn btn-ghost" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
         </div>
@@ -65,11 +66,11 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-3"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.13-3"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-3"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-3"></script>
-<script src="../assets/js/app.js?v=2026.06.13-3"></script>
-<script src="tripmaster.js?v=2026.06.13-3"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.13-4"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.13-4"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.13-4"></script>
+<script src="../assets/js/i18n.js?v=2026.06.13-4"></script>
+<script src="../assets/js/app.js?v=2026.06.13-4"></script>
+<script src="tripmaster.js?v=2026.06.13-4"></script>
 </body>
 </html>

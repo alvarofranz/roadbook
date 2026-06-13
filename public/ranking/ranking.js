@@ -88,7 +88,7 @@
         $('empty').hidden = !!rows.length;
         if (!rows.length) { $('table').innerHTML = ''; return; }
         $('table').innerHTML =
-            `<thead><tr><th>#</th><th>${RBt('Vehicle')}</th><th>km</th><th>${RBt('Accuracy')}</th><th>CAP</th><th>${RBt('Speed')}</th><th>${RBt('Regularity')}</th><th>${RBt('Final')}</th><th></th></tr></thead>`
+            `<thead><tr><th scope="col">${RBt('Rank')}</th><th scope="col">${RBt('Vehicle')}</th><th scope="col">km</th><th scope="col">${RBt('Accuracy')}</th><th scope="col">CAP</th><th scope="col">${RBt('Speed')}</th><th scope="col">${RBt('Regularity')}</th><th scope="col">${RBt('Final')}</th><th scope="col"></th></tr></thead>`
             + '<tbody>' + rows.map((r, i) =>
                 `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === false ? `<span title="${t('Invalid signature')}" aria-label="${t('Invalid signature')}" class="icon-danger">⚠</span> ` : ''}${r.team}</td><td>${r.km.toFixed(1)}</td>`
                 + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="final-score">${r.finalScore}</td>`

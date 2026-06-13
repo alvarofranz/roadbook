@@ -197,7 +197,7 @@ section.block { padding: 2.4rem 0; }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .modal-card input[type=text], .modal-card input[type=number] { width: 100%; background: var(--card-2); border: 1px solid rgba(255, 255, 255, .14); color: var(--text); border-radius: 12px; padding: .8rem .9rem; font-size: 1.1rem; margin-top: .6rem; }
-.modal-card input:focus { outline: 2px solid var(--sand); border-color: transparent; }
+.modal-card input:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
 .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
 .mode-grid { display: grid; gap: .7rem; margin-top: .8rem; }
 .mode-btn { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; color: var(--text); cursor: pointer; transition: border-color .15s; }

@@ -4,6 +4,7 @@
  * 230×162 (+y up, relative to the centre), matching the roadbook model. All
  * SVG (auto-scales). The toolbar lives OUTSIDE the canvas (opts.toolbarEl).
  * Accepts icons dropped from the palette (drag & drop) as well as click-to-add. */
+(function () {
 window.NoteCanvas = class NoteCanvas {
     constructor(container, opts = {}) {
         this.REF_W = 230; this.REF_H = 162;
@@ -127,8 +128,8 @@ window.NoteCanvas = class NoteCanvas {
             t.querySelector('[data-a="flip"]').onclick = () => { ic.flip_x = !ic.flip_x; this._chg(); };
             t.querySelector('[data-a="del"]').onclick = () => { this.note.icons.splice(this.sel.i, 1); this.sel = null; this._chg(); };
         } else {
-            const b = this.note.junctions[this.sel.i];
-            t.innerHTML = `<select class="vignette-box-rt" title="Road type">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'][k]}</option>`).join('')}</select>`
+            const b = this.note.junctions[this.sel.i], rtLabel = RBt('Road type');
+            t.innerHTML = `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(RT_LABELS[k])}</option>`).join('')}</select>`
                 + btn('fa-minus', 'th-') + btn('fa-plus', 'th+') + btn('fa-trash-can', 'del', false, true);
             t.querySelector('.vignette-box-rt').onchange = (e) => { b.road_type = +e.target.value; this._chg(); };
             t.querySelector('[data-a="th-"]').onclick = () => { b.width = Math.max(1, (b.width || 3) - 1); this._chg(); };
@@ -209,6 +210,12 @@ function trunkSegments(note) {
     return [seg(note.road_type_in, 154, cy, false), seg(note.road_type_out, cy, 18, true)];
 }
 function svg(tag, attrs) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-function btn(icon, action, active, danger) { return `<button data-a="${action}" class="${active ? 'on' : ''} ${danger ? 'danger' : ''}"><i class="fa-solid ${icon}"></i></button>`; }
+const RT_LABELS = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste']; // road-type names, by RB.ROAD_TYPES index
+const BTN_LABELS = { 'sz-': 'Smaller', 'sz+': 'Bigger', 'rot-': 'Rotate left', 'rot+': 'Rotate right', flip: 'Flip', del: 'Delete', 'th-': 'Thinner', 'th+': 'Thicker' };
+function btn(icon, action, active, danger) {
+    const label = window.RBt ? RBt(BTN_LABELS[action] || action) : (BTN_LABELS[action] || action);
+    return `<button type="button" data-a="${action}" class="${active ? 'on' : ''} ${danger ? 'danger' : ''}" aria-label="${label}" title="${label}"><i class="fa-solid ${icon}"></i></button>`;
+}
 function r1(n) { return Math.round(n); }
 function clampIconSize(n) { return Math.max(10, Math.min(120, n)); }
+})();

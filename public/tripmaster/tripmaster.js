@@ -72,12 +72,13 @@
         $('tmPartial').textContent = (partialM / 1000).toFixed(2);
         $('tmSpeed').textContent = Math.round(speedKmh);
         $('tmSpeed').style.setProperty('--speed-band', speedBandColor(speedKmh) || 'var(--text)'); // data-driven band colour
+        $('tmSpeed').classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
         $('tmMax').textContent = Math.round(maxKmh);
         $('tmCap').textContent = meter && meter.heading != null ? Math.round(meter.heading) : '—';
         saveSession();
     }
     $('tmPlus10').onclick = () => { partialM += 10; totalM += 10; render(); };
-    $('tmMinus10').onclick = () => { partialM = Math.max(0, partialM - 10); totalM = Math.max(0, totalM - 10); render(); };
+    $('tmMinus10').onclick = () => { const d = Math.min(10, partialM); partialM -= d; totalM = Math.max(0, totalM - d); render(); };
     $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoints; partialM = 0; render(); };
     // stopwatch: the button is Start/Pause; a reset button appears once it holds any time
     function renderTimerButton() {
@@ -89,31 +90,43 @@
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
     $('tmExit').onclick = async () => { if (await RBConfirm(t('End the trip and reset everything?'), t('End the trip'))) { clearSession(); location.reload(); } };
 
-    // hold-to-activate (5 s) for Reset — anti-accidental, works in browser + PWA;
-    // a quick tap-and-release explains the gesture instead of doing nothing
+    // Reset the partial trip. Pointer: hold 5 s (anti-accidental, browser + PWA);
+    // a quick tap-and-release explains the gesture instead of doing nothing.
+    // Keyboard (Enter/Space): confirm via a dialog, since a hold gesture is
+    // unreachable without a pointer.
+    function doReset() { partialM = 0; render(); toast('Trip reset.'); }
     (function holdReset() {
-        const btn = $('tmReset'); let timer = null, heldAt = 0;
-        const start = (e) => { e.preventDefault(); heldAt = Date.now(); btn.classList.add('holding'); timer = setTimeout(() => { timer = null; btn.classList.remove('holding'); partialM = 0; render(); toast('Trip reset.'); }, 5000); };
+        const btn = $('tmReset'); let timer = null, heldAt = 0, viaKeyboard = false;
+        const start = (e) => { e.preventDefault(); heldAt = Date.now(); btn.classList.add('holding'); timer = setTimeout(() => { timer = null; btn.classList.remove('holding'); doReset(); }, 5000); };
         const cancel = () => {
             if (timer) { clearTimeout(timer); if (Date.now() - heldAt < 600) toast('Hold to reset.'); }
             timer = null; btn.classList.remove('holding');
         };
         btn.addEventListener('pointerdown', start);
         ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, cancel));
+        // Keyboard activation fires keydown then a synthetic click; handle it on
+        // keydown and swallow the trailing click so it can't double-fire.
+        btn.addEventListener('keydown', (e) => {
+            if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return;
+            e.preventDefault(); viaKeyboard = true;
+            RBConfirm(t('Reset the partial trip?'), t('Reset')).then((ok) => { if (ok) doReset(); });
+        });
+        btn.addEventListener('click', (e) => { if (viaKeyboard) { viaKeyboard = false; e.preventDefault(); } });
     })();
 
     // Speed alert settings
     $('tmSpeedAlert').onclick = () => {
         const opt = (sel) => ['green', 'orange', 'red'].map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${t(c)}</option>`).join('');
+        const band = (label) => t('Colour for the band {band}').replace('{band}', label);
         const d = RBModal(`<h3>${t('Speed alert')}</h3>
             <label class="muted small">${t('Speed to watch (km/h · 0 = off)')}</label>
-            <input id="saIn" class="modal-in" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}">
+            <input id="saIn" class="modal-in" type="number" min="0" max="300" inputmode="numeric" value="${saLimit}" aria-label="${t('Speed to watch (km/h · 0 = off)')}">
             <div class="muted small">${t('Colours')}</div>
             <div class="field-grid">
-                <span>&lt; L−5</span><select id="sa0" class="modal-in">${opt(saColors[0])}</select>
-                <span>L−5 … L</span><select id="sa1" class="modal-in">${opt(saColors[1])}</select>
-                <span>L … L+5</span><select id="sa2" class="modal-in">${opt(saColors[2])}</select>
-                <span>&gt; L+5</span><select id="sa3" class="modal-in">${opt(saColors[3])}</select>
+                <span>&lt; L−5</span><select id="sa0" class="modal-in" aria-label="${band('< L−5')}">${opt(saColors[0])}</select>
+                <span>L−5 … L</span><select id="sa1" class="modal-in" aria-label="${band('L−5 … L')}">${opt(saColors[1])}</select>
+                <span>L … L+5</span><select id="sa2" class="modal-in" aria-label="${band('L … L+5')}">${opt(saColors[2])}</select>
+                <span>&gt; L+5</span><select id="sa3" class="modal-in" aria-label="${band('> L+5')}">${opt(saColors[3])}</select>
             </div>
             <div class="btnrow end spaced"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'narrow');
         d.q('#saX').onclick = d.close;

@@ -29,6 +29,31 @@
     }
     function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
+    /* Submit on Enter / button: run the handler, never reload the page. */
+    function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
+
+    /* Show/hide eye toggle for every password field. */
+    function wirePasswordToggles() {
+        document.querySelectorAll('input[type="password"]').forEach((input) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'pass-wrap';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pass-toggle';
+            btn.setAttribute('aria-label', t('Show password'));
+            btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            btn.onclick = () => {
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.setAttribute('aria-label', t(show ? 'Hide password' : 'Show password'));
+                btn.innerHTML = `<i class="fa-solid fa-eye${show ? '-slash' : ''}"></i>`;
+            };
+            wrap.appendChild(btn);
+        });
+    }
+
     /* ---------- routes ---------- */
     async function init() {
         const cfg = await api('config');
@@ -41,10 +66,10 @@
         }
         if (params.get('reset')) {
             show('vReset');
-            $('resetBtn').onclick = async () => {
+            onSubmit('resetForm', async () => {
                 const r = await api('reset', { token: params.get('reset'), password: $('resetPass').value });
                 msg(r.message || r.error, !!r.ok); if (r.ok) { history.replaceState(null, '', location.pathname); show('vLogin'); }
-            };
+            });
             return;
         }
         if (cfg.user) return showAccount(cfg.user);
@@ -56,18 +81,19 @@
     $('toLogin2').onclick = (e) => { e.preventDefault(); msg(''); show('vLogin'); };
     $('toForgot').onclick = (e) => { e.preventDefault(); msg(''); show('vForgot'); };
 
-    $('loginBtn').onclick = async () => {
+    onSubmit('loginForm', async () => {
         const r = await api('login', { email: $('loginId').value, password: $('loginPass').value, turnstile: tsTokens.login });
         if (r.ok) showAccount(r.user); else { msg(r.error, false); resetTs('login'); }
-    };
-    $('regBtn').onclick = async () => {
+    });
+    onSubmit('registerForm', async () => {
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, turnstile: tsTokens.register });
         msg(r.message || r.error, !!r.ok); if (r.ok) show('vLogin'); else resetTs('register');
-    };
-    $('forgotBtn').onclick = async () => {
+    });
+    onSubmit('forgotForm', async () => {
         const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot });
         msg(r.message || r.error, !!r.ok); resetTs('forgot');
-    };
+    });
+    wirePasswordToggles();
 
     /* ---------- account ---------- */
     async function showAccount(user) {
@@ -75,7 +101,7 @@
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
         $('accBio').textContent = user.bio || '';
-        $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg';
+        $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
         $('editProfileBtn').onclick = () => { $('profileForm').hidden = !$('profileForm').hidden; };
         $('pfBio').value = user.bio || '';

@@ -23,6 +23,10 @@ self.addEventListener('fetch', (e) => {
     // Dynamic endpoints (auth/account, uploads, version) — always network, never cache.
     if (url.pathname.includes('/api/') || url.pathname.endsWith('/version.json')) { e.respondWith(fetch(request)); return; }
 
+    // Images (avatars, photos, thumbnails, mockups) are content, not shell — serve
+    // from the network and never cache them (cache-busted avatar URLs would pile up).
+    if (request.destination === 'image') { e.respondWith(fetch(request).catch(() => caches.match(request))); return; }
+
     // Immutable: FontAwesome (CSS + webfonts) → cache-first.
     if (url.pathname.includes('/fontawesome/')) {
         e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((res) => {
