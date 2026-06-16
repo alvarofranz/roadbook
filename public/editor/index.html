@@ -20,7 +20,16 @@
         .note-list { display: flex; flex-direction: column; gap: .4rem; }
         .rec-btns .btn-danger { flex: 0 0 auto; }
         .map-box { padding: 0; overflow: hidden; border-radius: 14px; }
-        #canvasWrap { position: relative; max-width: 560px; margin: .4rem auto 0; }
+        /* every row shows its vignette between distance and text; the open row hosts the live editor canvas */
+        #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
+        .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
+        .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+        #noteProps { margin-top: .5rem; }
+        /* Danger + Red CAP share one inline line; Road appears below only when a line is selected */
+        .prop-line { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
+        .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
+        .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+        .prop-field.note-road { margin-top: .5rem; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
         /* icons live on a white tile so dark line-art symbols stay legible */
@@ -34,9 +43,22 @@
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .35rem .5rem .35rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
         .note-mini .note-number { font-weight: 800; color: var(--sand); flex-shrink: 0; }
-        /* the note's text is edited right here in the row (no separate field) */
-        .note-mini .note-title { flex: 1; min-width: 0; margin: 0; padding: .3rem .5rem; }
-        .note-mini .note-km { flex-shrink: 0; }
+        /* the text cell: the editable comment, with the CAP (red) + coordinates below it */
+        .note-mini .note-textcell { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
+        .note-mini .note-title { width: 100%; min-width: 0; margin: 0; padding: .3rem .5rem; }
+        .note-mini .note-meta { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: 0 .2rem; }
+        /* Red CAP on/off toggle: muted when off, red when on */
+        .note-mini .note-meta .note-cap { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: .05rem .35rem; font: inherit; font-size: .64rem; font-weight: 800; letter-spacing: .04em; cursor: pointer; }
+        .note-mini .note-meta .note-cap.on { color: var(--track); border-color: var(--track); }
+        .note-mini .note-meta .note-coords { margin-left: auto; color: var(--muted); font-size: .68rem; font-variant-numeric: tabular-nums; }
+        /* distance cell sits right after the number: total km (bold) + partial leg (muted) */
+        .note-mini .note-km { flex-shrink: 0; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 3.4rem; }
+        .note-mini .note-km b { display: block; font-size: .82rem; font-weight: 800; color: var(--text); }
+        /* compact text buttons living in a note row: delete (X) + prev/next navigation */
+        .note-mini .note-del, .note-mini .note-nav { flex-shrink: 0; display: inline-flex; background: none; border: 0; padding: .25rem .4rem; font: inherit; cursor: pointer; }
+        .note-mini .note-del { font-size: .8rem; font-weight: 800; }
+        .note-mini .note-nav { font-size: .95rem; font-weight: 700; line-height: 1; color: var(--muted); }
+        .note-mini .note-nav:disabled { opacity: .3; cursor: default; }
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
         .note-edit-slot:empty { display: none; }
         .note-edit-slot { margin: .1rem 0 .5rem; }
@@ -47,8 +69,6 @@
         #edMap { height: 60vh; min-height: 360px; }
         /* the GPX editor: map + vertical tool bar (overlaid left, like the Mapbox controls) */
         .map-editor { position: relative; }
-        .map-editor.max { position: fixed; inset: 0; z-index: 80; background: var(--bg); }
-        .map-editor.max #edMap { height: 100%; min-height: 0; border-radius: 0; }
         /* no overflow clipping here — the hover tooltips render outside the bar */
         .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
         .map-tool { position: relative; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
@@ -58,12 +78,12 @@
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
         .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         /* white vignette: shows EXACTLY what gets produced/printed (matches the Reader + PDF) */
-        .vignette-box { position: relative; width: 100%; max-width: 560px; margin: .2rem auto .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
+        .vignette-box { position: relative; width: 100%; max-width: 170px; margin: .2rem 0 .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
         .vignette-box-junctions { cursor: pointer; }
         .vignette-box-icon { cursor: grab; }
         .vignette-drag-handle { cursor: move; }
         .vignette-resize-handle { cursor: nwse-resize; }
-        .add-junction { position: absolute; top: 8px; right: 8px; z-index: 4; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
+        .add-junction { position: absolute; top: 4px; right: 4px; z-index: 4; width: 26px; height: 26px; font-size: .72rem; border-radius: 7px; border: 1px solid var(--line); background: rgba(14,17,22,.82); color: var(--text); cursor: pointer; }
         .add-junction:hover { background: rgba(14,17,22,.95); }
         .vignette-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
         .vignette-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
@@ -101,7 +121,7 @@
         .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--track); animation: recpulse 1.2s infinite; flex-shrink: 0; }
         @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
-        .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+        .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 260px; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
         .meta-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
@@ -120,7 +140,9 @@
            left, the notes + inline editor column on the right */
         @media (min-width: 1024px) {
             main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
-            #viewMap { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; }
+            /* span the page padding so the map sits flush against the left edge (and the panel against the right) */
+            #viewMap { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; margin: 0 -1.1rem; }
+            .map-box { border-radius: 0; }
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
             #edMap { height: calc(100vh - 112px); }
@@ -189,24 +211,24 @@
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="toolLayers" aria-label="Satellite / terrain map"><i class="fa-solid fa-layer-group"></i></button>
-                <button class="map-tool" id="toolMax" aria-label="Maximize"><i class="fa-solid fa-expand"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
         </div>
         <div id="rbPanel" hidden>
             <div class="rb-actions">
                 <div class="btn-group">
-                    <button class="btn btn-ghost" id="openConfig" data-i18n="Settings"><i class="fa-solid fa-sliders"></i> Settings</button>
-                    <button class="btn btn-primary" id="exportRdbk" data-i18n="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> Export .rdbk</button>
-                    <button class="btn btn-ghost" id="exportGpx" data-i18n="Export GPX"><i class="fa-solid fa-route"></i> Export GPX</button>
-                    <button class="btn btn-ghost" id="exportPdf" data-i18n="Generate PDF"><i class="fa-solid fa-file-pdf"></i> Generate PDF</button>
+                    <button class="btn btn-ghost" id="openConfig" title="Settings" data-i18n-title="Settings" aria-label="Settings" data-i18n-aria="Settings"><i class="fa-solid fa-sliders"></i></button>
+                    <button class="btn btn-primary" id="exportRdbk" title="Export .rdbk" data-i18n-title="Export .rdbk" aria-label="Export .rdbk" data-i18n-aria="Export .rdbk"><i class="fa-solid fa-floppy-disk"></i> .rdbk</button>
+                    <button class="btn btn-ghost" id="exportGpx" title="Export GPX" data-i18n-title="Export GPX" aria-label="Export GPX" data-i18n-aria="Export GPX"><i class="fa-solid fa-route"></i> GPX</button>
+                    <button class="btn btn-ghost" id="exportPdf" title="Generate PDF" data-i18n-title="Generate PDF" aria-label="Generate PDF" data-i18n-aria="Generate PDF"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
                 </div>
                 <div class="rb-actions-right">
-                    <div class="segmented" role="group" aria-label="Visibility">
-                        <button class="segment on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
-                        <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
-                    </div>
-                    <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
+                    <input type="text" id="rbTitle" class="field grow" placeholder="Roadbook title" data-i18n-ph="Roadbook title">
+                    <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
+                    <button class="btn btn-ghost" id="rbLogoBtn" title="Upload logo" data-i18n-title="Upload logo" aria-label="Upload logo" data-i18n-aria="Upload logo"><i class="fa-solid fa-image"></i></button>
+                    <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-xmark"></i></button>
+                    <input id="rbLogoFile" type="file" accept="image/*" hidden>
                 </div>
             </div>
             <!-- ZONE 1: the notes list (its own scroll area) -->
@@ -216,29 +238,25 @@
             </div>
             <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
             <div id="noteEditZone" class="note-edit-zone" hidden>
-                <div class="btnrow end">
-                    <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
-                    <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="btn btn-ghost" id="nextNote" aria-label="Next note"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-                <div id="editor"></div>
                 <div class="vig-split">
                     <div class="vig-canvas">
-                        <div id="canvasWrap">
-                            <div id="noteCanvas"></div>
-                            <button class="add-junction" id="addJunction" aria-label="Add junction" data-i18n-aria="Add junction" title="Add junction" data-i18n-title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
-                        </div>
                         <div id="noteToolbar"></div>
+                        <!-- note properties: Danger + Red CAP on one line, Road only while a line is selected -->
+                        <div id="noteProps"></div>
                     </div>
                     <div class="vig-icons">
-                        <div class="icon-category flush" data-i18n="Icons">Icons</div>
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
+                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
                         <div class="btnrow end"><button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button></div>
                     </div>
                 </div>
+            </div>
+            <!-- the tulip editor canvas: JS parks it here and moves it INTO the selected note's row (between distance and text) -->
+            <div id="canvasWrap" hidden>
+                <div id="noteCanvas"></div>
+                <button class="add-junction" id="addJunction" aria-label="Add junction" data-i18n-aria="Add junction" title="Add junction" data-i18n-title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
             </div>
         </div><!-- /#rbPanel -->
     </section>
@@ -251,18 +269,15 @@
         </div>
         <div class="meta-card">
             <div class="meta-grid">
-                <label class="meta-field full"><span data-i18n="Title">Title</span><input type="text" id="rbTitle" class="field" placeholder="Roadbook title" data-i18n-ph="Roadbook title"></label>
+                <div class="meta-field full"><span data-i18n="Visibility">Visibility</span>
+                    <div class="segmented" role="group" aria-label="Visibility">
+                        <button class="segment on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
+                        <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
+                    </div>
+                </div>
                 <label class="meta-field full"><span data-i18n="Description">Description</span><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></label>
                 <label class="meta-field"><span data-i18n="Author">Author</span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
                 <label class="meta-field"><span data-i18n="Organization">Organization</span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
-                <div class="meta-field"><span data-i18n="Event logo">Event logo</span>
-                    <div class="logo-row">
-                        <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
-                        <button class="btn btn-ghost" id="rbLogoBtn" data-i18n="Upload logo"><i class="fa-solid fa-image"></i> Upload logo</button>
-                        <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-xmark"></i></button>
-                        <input id="rbLogoFile" type="file" accept="image/*" hidden>
-                    </div>
-                </div>
                 <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
                 <div class="meta-field full"><span data-i18n="Map access from player">Map access from player</span>
                     <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span></label>

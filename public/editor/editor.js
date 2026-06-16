@@ -33,7 +33,9 @@
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
-    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
+    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), onSelect: showRoadForSelection, resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
+    // the note's Road combo (below the tulip) shows only while a line is selected
+    function showRoadForSelection(sel) { const f = $('noteProps') && $('noteProps').querySelector('.note-road'); if (f) f.hidden = !(sel && sel.type === 'junctions'); }
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
@@ -107,14 +109,13 @@
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
-        const maxed = $('mapEditor').classList.contains('max');
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
             toolPoints: 'Move points (drag any track point)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
-            toolLayers: 'Satellite / terrain map', toolMax: maxed ? 'Exit full screen' : 'Maximize',
+            toolLayers: 'Satellite / terrain map',
         };
         // the same translated string drives the hover tooltip AND the screen-reader name
         Object.entries(tips).forEach(([id, key]) => { const v = t(key); $(id).setAttribute('data-tip', v); $(id).setAttribute('aria-label', v); });
@@ -125,14 +126,6 @@
         applyToolTips();
         if (rb) { renderNotes(); renderIcons(); updateSaveBtn(); if (editorOpen) { renderEditor(); canvas.render(); } }
     });
-    // maximize the GPX editor (map + tool bar); Esc restores
-    function setMax(on) {
-        $('mapEditor').classList.toggle('max', on);
-        $('toolMax').innerHTML = on ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
-        applyToolTips();
-        if (map.map) setTimeout(() => map.map.resize(), 60);
-    }
-    $('toolMax').onclick = () => setMax(!$('mapEditor').classList.contains('max'));
     $('toolLayers').onclick = () => {
         mapStyle = mapStyle === 'satellite' ? 'terrain' : 'satellite';
         try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
@@ -142,7 +135,7 @@
             if (currentRbId > 0) loadPhotos();
         });
     };
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMax(false); setMapTool('pan'); } });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMapTool('pan'); });
     // Draw mode: every tap extends the route from the nearest OPEN end — the
     // finish, the start, or either edge of an open cut (tapping on the opposite
     // edge closes the cut). With nothing loaded, the first two taps create a
@@ -289,7 +282,7 @@
             d.close(); routeChanged(t('Removed') + ' ' + (before - rb.track.length) + ' ' + t('points') + '.');
         };
     };
-    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMax(false); setMapTool('pan'); startRecording('adjust'); };
+    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording('adjust'); };
     $('drawRoute').onclick = () => { showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
@@ -390,7 +383,6 @@
         setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false;
         refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
         map.select(rb.notes[sel], true); placeMainEditMarker();
-        $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
         updateHistBtns();
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
@@ -429,9 +421,6 @@
     $('backToMap').onclick = () => showView('map');
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
     $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
-    $('prevNote').onclick = () => select(sel - 1);
-    $('nextNote').onclick = () => select(sel + 1);
-    $('delNote').onclick = delNote;
     window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { saveDraft(); e.preventDefault(); e.returnValue = ''; } });
 
     /* ---------- record / adjust route (live GPS) ---------- */
@@ -711,16 +700,34 @@
      * row's slot — like the Reader's per-note map). Each note's text is edited in
      * the row itself, so a full list rebuild only happens on structural changes. */
     function renderNotes() {
-        $('rbPanel').appendChild($('noteEditZone')); // park the editor before wiping the list (innerHTML would destroy it)
+        parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}</span>
-                <input class="note-title field" data-i="${i}" value="${esc(n.text || '')}" placeholder="${esc(t('(no text)'))}" autocomplete="off">
-                <span class="muted small note-km">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
+                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span>
+                <span class="note-tulip" id="tulipSlot${i}"></span>
+                <div class="note-textcell">
+                    <input class="note-title field" data-i="${i}" value="${esc(n.text || '')}" placeholder="${esc(t('(no text)'))}" autocomplete="off">
+                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
+                </div>
+                <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
+                <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
+                <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
             </div><div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row
         const rows = $('noteList').querySelectorAll('.note-mini');
         rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
-        rows.forEach((el) => el.onclick = (e) => { if (!e.target.closest('.note-title')) toggleNote(+el.dataset.i); });
+        rows.forEach((el) => el.onclick = (e) => {
+            const capBtn = e.target.closest('[data-cap]');
+            if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
+            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav')) toggleNote(+el.dataset.i);
+        });
+        $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
+            e.stopPropagation();
+            if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
+            if (await RBConfirm('Delete this note?', 'Delete')) delNote(+b.dataset.del);
+        });
+        $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
+        $('noteList').querySelectorAll('[data-down]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.down + 1); });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
             inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };
@@ -728,27 +735,51 @@
         });
         const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
+        placeTulips();
     }
-    // Move the (single) editor element under row i and reveal it.
+    // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
+    const noteMetaHTML = (n, i) => {
+        const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
+            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">CAP${n.cap != null ? ' ' + Math.round(n.cap) + '°' : ''}</button>`;
+        return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
+    };
+    function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i], i); }
+    // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
+    const tulipSVG = (n) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'));
+    function placeTulips() {
+        $('noteList').querySelectorAll('.note-tulip').forEach((slot) => {
+            const i = +slot.id.slice(9); // 'tulipSlot'.length
+            if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
+            slot.innerHTML = tulipSVG(rb.notes[i]);
+        });
+    }
+    // The editor lives in two movable pieces: the tulip canvas goes INTO the selected
+    // row (between distance and text), and the rest (toolbar, props, icons) expands in
+    // the slot below it. Both are parked back in rbPanel before any list rebuild.
+    function parkEditor() { $('rbPanel').appendChild($('noteEditZone')); $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; }
     function openEditZoneAt(i) {
-        const slot = $('editSlot' + i);
+        const slot = $('editSlot' + i), tulip = $('tulipSlot' + i);
         if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
+        if (tulip && $('canvasWrap').parentNode !== tulip) { tulip.innerHTML = ''; tulip.appendChild($('canvasWrap')); } // drop the static preview, host the live canvas
+        $('canvasWrap').hidden = false;
         $('noteEditZone').hidden = false;
     }
     function markSelectedRow() { $('noteList').querySelectorAll('.note-mini').forEach((el) => el.classList.toggle('sel', editorOpen && +el.dataset.i === sel)); }
     function toggleNote(i) { if (editorOpen && sel === i) closeEditor(); else select(i); }
     function closeEditor() {
         editorOpen = false; $('noteEditZone').hidden = true;
-        $('rbPanel').appendChild($('noteEditZone')); // park it back so a list rebuild can't destroy it
+        parkEditor(); // park both pieces back so a list rebuild can't destroy them
+        placeTulips(); // restore the static vignette in the row the canvas just left
         markSelectedRow(); placeMainEditMarker(); // drops the draggable note marker
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true;
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
-        markSelectedRow();
-        map.select(rb.notes[i]); placeMainEditMarker();
-        $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
+        markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
+        map.select(rb.notes[i], true); placeMainEditMarker();
+        // clicking a note centres (and zooms in to) the map on that note
+        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), duration: 450 });
         // stacked layout (mobile/tablet): bring the just-opened editor into view
         if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -777,36 +808,32 @@
         // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        $('editor').innerHTML = `
-            <div class="meta-card">
-                <div class="meta-head"><b>${t('Note')} ${n.num}</b><span class="muted small">${((n.distance ?? 0) / 1000).toFixed(2)} km · trip +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span></div>
-                <div class="meta-grid">
-                    <label class="meta-field"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>
-                    <label class="meta-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>
-                    <div class="meta-field full"><span>${t('Red CAP')}</span>
-                        <label class="checkbox-row"><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></label>
-                    </div>
-                </div>
-            </div>`;
+        // Danger here; the Red CAP on/off toggle lives in the note row (left of the
+        // coordinates); Road (road_type_out) shows only while a line is selected.
+        $('noteProps').innerHTML = `
+            <div class="prop-line">
+                <label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>
+            </div>
+            <label class="prop-field note-road"${canvas.sel && canvas.sel.type === 'junctions' ? '' : ' hidden'}><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('edRout').onchange = (e) => {
             n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
             const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent
             if (row) row.style.setProperty('--rt', (RB.ROAD_TYPES[n.road_type_out] || RB.ROAD_TYPES[3]).color);
         };
         $('edDanger').onchange = (e) => { const v = +e.target.value; if (v) n.danger = v; else delete n.danger; canvas.render(); markDirty(); };
-        $('edCap').onchange = (e) => { toggleCap(e.target.checked); markDirty(); };
-        $('edCap').disabled = sel >= rb.notes.length - 1; // CAP needs a following note
     }
-    function toggleCap(on) {
-        const n = rb.notes[sel], nx = rb.notes[sel + 1];
-        if (on && nx) { n.cap = Math.round(RB.geo.bearingDeg(n, nx)); n.cap_distance = Math.round(RB.geo.haversineM(n, nx)); }
+    // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).
+    function toggleCapAt(i) {
+        const n = rb.notes[i], nx = rb.notes[i + 1];
+        if (!nx) return; // the last note has no following note to head toward
+        if (n.cap == null) { n.cap = Math.round(RB.geo.bearingDeg(n, nx)); n.cap_distance = Math.round(RB.geo.haversineM(n, nx)); }
         else { n.cap = null; n.cap_distance = null; }
-        renderEditor();
+        markDirty(); refreshRowMeta(i);
     }
-    function delNote() {
-        if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        rb.notes.splice(sel, 1); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-        refreshMap(true); renderNotes(); select(Math.min(sel, rb.notes.length - 1));
+    // The minimum-notes guard and the confirm prompt live in the row's click handler.
+    function delNote(i) {
+        rb.notes.splice(i, 1); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
+        refreshMap(true); renderNotes(); select(Math.min(i, rb.notes.length - 1));
     }
     // Road type in force at a track index = the road_out of the nearest preceding
     // note. A note inserted here continues on that road by default (road_out =
@@ -861,8 +888,9 @@
         const cats = Object.keys(std.categories || {});
         if ((iconCat === '__yours' && !hasCustom) || (iconCat && iconCat !== '__yours' && !cats.includes(iconCat))) iconCat = '';
         const chip = (key, label) => `<button type="button" class="icon-cat-chip${iconCat === key ? ' on' : ''}" data-cat="${esc(key)}">${esc(label)}</button>`;
-        $('iconCats').innerHTML = chip('', t('All')) + (hasCustom ? chip('__yours', t('Yours')) : '') + cats.map((c) => chip(c, t(c))).join('');
-        $('iconCats').querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { iconCat = b.dataset.cat; renderIconCats(hasCustom); filterIcons(); });
+        $('iconCats').innerHTML = (hasCustom ? chip('__yours', t('Yours')) : '') + cats.map((c) => chip(c, t(c))).join('');
+        // no "All" chip: clicking the active category again clears the filter (shows all)
+        $('iconCats').querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { iconCat = iconCat === b.dataset.cat ? '' : b.dataset.cat; renderIconCats(hasCustom); filterIcons(); });
     }
     // live palette filter: active category chip AND the search box; hide emptied categories
     $('iconSearch').oninput = filterIcons;

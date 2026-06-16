@@ -10,6 +10,7 @@ window.NoteCanvas = class NoteCanvas {
         this.REF_W = 230; this.REF_H = 162;
         this.el = container;
         this.onChange = opts.onChange || (() => {});
+        this.onSelect = opts.onSelect || (() => {}); // notified whenever the selected element changes
         this.resolveIcon = opts.resolveIcon || ((ic) => ic.name);
         this.toolbarEl = opts.toolbarEl || null;
         this._onDrop = null;
@@ -49,7 +50,7 @@ window.NoteCanvas = class NoteCanvas {
             note.icons = Array.isArray(note.icons) ? note.icons : [];
             note.junctions = Array.isArray(note.junctions) ? note.junctions : null;
         }
-        this.sel = null; this.render();
+        this.sel = null; this.render(); this.onSelect(this.sel);
     }
     onDropIcon(cb) { this._onDrop = cb; }
 
@@ -114,7 +115,7 @@ window.NoteCanvas = class NoteCanvas {
         const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); this.onChange(); };
         window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
     }
-    select(sel) { this.sel = sel; this.render(); }
+    select(sel) { this.sel = sel; this.render(); this.onSelect(this.sel); }
 
     _toolbar() {
         const t = this.toolbarEl;
@@ -140,7 +141,7 @@ window.NoteCanvas = class NoteCanvas {
             t.querySelector('[data-a="del"]').onclick = () => { this.note.junctions.splice(this.sel.i, 1); this.sel = null; this._chg(); };
         }
     }
-    _chg() { this.render(); this.onChange(); }
+    _chg() { this.render(); this.onChange(); this.onSelect(this.sel); }
 
     /* ---- public API ---- */
     addIcon(ic) { this.note.icons.push(ic); this.sel = { type: 'icon', i: this.note.icons.length - 1 }; this._chg(); }
