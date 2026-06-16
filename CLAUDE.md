@@ -57,8 +57,8 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Consistent, explicit naming.** Follow the names already used in the codebase — don't
   invent a new convention each time. A name must say what the thing IS: `width` not `wd`,
   no cryptic abbreviations or one-letter mystery vars (loop indices aside). If you find
-  something misnamed or inconsistent, rename it properly *everywhere* as part of your change.
-- **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names —
+  something misnamed or inconsistent, rename it properly *everywhere* as part of your change. 
+- **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names -—
   never `style="…"` attributes in HTML or in JS-built markup. Inline styles are a bug.
 - **Reuse CSS, don't multiply it — real DRY.** BEFORE adding a class, read the existing
   styles and reuse what fits. Name classes **abstractly** so they're reusable across features
