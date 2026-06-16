@@ -218,7 +218,10 @@ function trunkSegments(note) {
     const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     return [
-        seg(note.road_type_in, cx, 154, cx, cy, false, false),
+        // incoming (provenance): styled by road_type_in — which normalizeRoadTypes
+        // derives from the PREVIOUS note's road_type_out — and drawn blue like the
+        // road to follow, except on the first note (which has no real provenance).
+        seg(note.road_type_in, cx, 154, cx, cy, false, note.num > 1),
         seg(note.road_type_out, cx, cy, cx + Math.sin(θ) * L, cy - Math.cos(θ) * L, true, true),
     ];
 }

@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-1">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-4">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-1">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-4">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -20,6 +20,10 @@
         .note-list { display: flex; flex-direction: column; gap: .4rem; }
         .rec-btns .btn-danger { flex: 0 0 auto; }
         .map-box { padding: 0; overflow: hidden; border-radius: 14px; }
+        /* right-click map popup → Google Maps link for the clicked point */
+        .map-ctx-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; color: #1a73e8; text-decoration: none; }
+        .map-ctx-link:hover { text-decoration: underline; }
+        .map-ctx-coords { display: block; margin-top: .25rem; color: #555; font-size: .72rem; font-variant-numeric: tabular-nums; }
         /* every row shows its vignette between distance and text; the open row hosts the live editor canvas */
         #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
@@ -43,9 +47,9 @@
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .35rem .5rem .35rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
         .note-mini .note-number { font-weight: 800; color: var(--sand); flex-shrink: 0; }
-        /* the text cell: the editable comment, with the CAP (red) + coordinates below it */
-        .note-mini .note-textcell { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
-        .note-mini .note-title { width: 100%; min-width: 0; margin: 0; padding: .3rem .5rem; }
+        /* the text cell: the editable comment (fills the row height), with CAP + coordinates below it */
+        .note-mini .note-textcell { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: .25rem; }
+        .note-mini .note-title { flex: 1; width: 100%; min-width: 0; min-height: 2.2rem; margin: 0; padding: .3rem .5rem; resize: none; }
         .note-mini .note-meta { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: 0 .2rem; }
         /* Red CAP on/off toggle: muted when off, red when on */
         .note-mini .note-meta .note-cap { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: .05rem .35rem; font: inherit; font-size: .64rem; font-weight: 800; letter-spacing: .04em; cursor: pointer; }
@@ -54,7 +58,8 @@
         /* distance cell sits right after the number: total km (bold) + partial leg (muted) */
         .note-mini .note-km { flex-shrink: 0; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 3.4rem; }
         .note-mini .note-km b { display: block; font-size: .82rem; font-weight: 800; color: var(--text); }
-        /* compact text buttons living in a note row: delete (X) + prev/next navigation */
+        /* delete + up/down stacked in a vertical column on the right of the row */
+        .note-mini .note-actions { flex-shrink: 0; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; }
         .note-mini .note-del, .note-mini .note-nav { flex-shrink: 0; display: inline-flex; background: none; border: 0; padding: .25rem .4rem; font: inherit; cursor: pointer; }
         .note-mini .note-del { font-size: .8rem; font-weight: 800; }
         .note-mini .note-nav { font-size: .95rem; font-weight: 700; line-height: 1; color: var(--muted); }
@@ -279,7 +284,7 @@
                 <label class="meta-field"><span data-i18n="Author">Author</span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
                 <label class="meta-field"><span data-i18n="Organization">Organization</span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
                 <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
-                <div class="meta-field full"><span data-i18n="Map access from player">Map access from player</span>
+                <div class="meta-field full">
                     <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span></label>
                 </div>
             </div>
@@ -295,15 +300,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.16-1"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.16-1"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.16-1"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.16-1"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.16-1"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.16-1"></script>
-<script src="../assets/js/challenges.js?v=2026.06.16-1"></script>
-<script src="../assets/js/i18n.js?v=2026.06.16-1"></script>
-<script src="../assets/js/app.js?v=2026.06.16-1"></script>
-<script src="editor.js?v=2026.06.16-1"></script>
+<script src="../assets/js/config.js?v=2026.06.16-4"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.16-4"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.16-4"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.16-4"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.16-4"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.16-4"></script>
+<script src="../assets/js/challenges.js?v=2026.06.16-4"></script>
+<script src="../assets/js/i18n.js?v=2026.06.16-4"></script>
+<script src="../assets/js/app.js?v=2026.06.16-4"></script>
+<script src="editor.js?v=2026.06.16-4"></script>
 </body>
 </html>

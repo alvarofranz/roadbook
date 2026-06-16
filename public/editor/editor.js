@@ -16,6 +16,16 @@
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
+    // Right-click anywhere on the map → a popup with a Google Maps link to that point.
+    if (map.map) map.map.on('contextmenu', (e) => {
+        e.preventDefault();
+        const lat = e.lngLat.lat.toFixed(6), lon = e.lngLat.lng.toFixed(6);
+        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+        new mapboxgl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
+            .setLngLat(e.lngLat)
+            .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a><span class="map-ctx-coords">${lat}, ${lon}</span>`)
+            .addTo(map.map);
+    });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
@@ -706,12 +716,14 @@
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
-                    <input class="note-title field" data-i="${i}" value="${esc(n.text || '')}" placeholder="${esc(t('(no text)'))}" autocomplete="off">
+                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
                 </div>
-                <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
-                <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
-                <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
+                <div class="note-actions">
+                    <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
+                    <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
+                    <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
+                </div>
             </div><div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row
         const rows = $('noteList').querySelectorAll('.note-mini');
@@ -740,7 +752,7 @@
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
         const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
-            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">CAP${n.cap != null ? ' ' + Math.round(n.cap) + '°' : ''}</button>`;
+            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : 'CAP DISABLED'}</button>`;
         return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
     };
     function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i], i); }
