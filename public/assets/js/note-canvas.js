@@ -45,7 +45,10 @@ window.NoteCanvas = class NoteCanvas {
 
     setNote(note) {
         this.note = note;
-        if (note) { note.icons = note.icons || []; note.junctions = note.junctions || []; }
+        if (note) {
+            note.icons = Array.isArray(note.icons) ? note.icons : [];
+            note.junctions = Array.isArray(note.junctions) ? note.junctions : null;
+        }
         this.sel = null; this.render();
     }
     onDropIcon(cb) { this._onDrop = cb; }
@@ -64,7 +67,7 @@ window.NoteCanvas = class NoteCanvas {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
             const [tx, ty] = this.toV(b.tip[0], b.tip[1]);
             const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: rt.color, 'stroke-width': b.width || 3, 'stroke-linecap': 'round', 'marker-end': 'url(#vignette-box-arrow)', 'stroke-dasharray': rt.dashed ? '6 4' : '' });
+            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: '#9aa4b2', 'stroke-width': b.width || 3, 'stroke-linecap': 'round', 'marker-end': 'url(#vignette-box-arrow)', 'stroke-dasharray': rt.dashed ? '6 4' : '' });
             ln.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.select({ type: 'junctions', i }); });
             this.svg.appendChild(ln);
             if (this.sel && this.sel.type === 'junctions' && this.sel.i === i) {
@@ -162,7 +165,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
         const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="${rt.color}" stroke-width="${b.width || 3}" stroke-linecap="round" marker-end="url(#vig-arr)"${rt.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#9aa4b2" stroke-width="${b.width || 3}" stroke-linecap="round" marker-end="url(#vig-arr)"${rt.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
     });
     (note.icons || []).forEach((ic) => {
         const [cxi, cyi] = toV(ic.pos ? ic.pos[0] : 0, ic.pos ? ic.pos[1] : 0), sz = ic.size || 32;
@@ -207,15 +210,15 @@ function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repea
  * indicative of the road type. */
 function trunkSegments(note) {
     const cx = 115, cy = 81, L = 63; // centre of the 230×162 reference box; exit length
-    const seg = (roadType, x1, y1, x2, y2, arrow) => {
+    const seg = (roadType, x1, y1, x2, y2, arrow, primary) => {
         const rt = RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0];
-        return { x1, y1, x2, y2, color: rt.color, width: rt.width, dashed: rt.dashed, arrow };
+        return { x1, y1, x2, y2, color: primary ? '#3b82f6' : '#9aa4b2', width: rt.width, dashed: rt.dashed, arrow };
     };
     const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     return [
-        seg(note.road_type_in, cx, 154, cx, cy, false),
-        seg(note.road_type_out, cx, cy, cx + Math.sin(θ) * L, cy - Math.cos(θ) * L, true),
+        seg(note.road_type_in, cx, 154, cx, cy, false, false),
+        seg(note.road_type_out, cx, cy, cx + Math.sin(θ) * L, cy - Math.cos(θ) * L, true, true),
     ];
 }
 function svg(tag, attrs) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }

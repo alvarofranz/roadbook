@@ -324,6 +324,33 @@
         if (rb.meta.titolo && !rb.meta.title) rb.meta.title = rb.meta.titolo;
         if (rb.meta.km_totali && !rb.meta.total_distance) rb.meta.total_distance = Math.round(parseFloat(rb.meta.km_totali) * 1000);
         if (rb.meta.note_count && !rb.meta.note_count) rb.meta.note_count = rb.meta.note_count;
+        // Migrate note fields: testo → text
+        rb.notes = (rb.notes || []).map((n) => {
+            if (n.testo && !n.text) n.text = n.testo;
+            // Ensure junctions stay null or array, never undefined
+            if (n.junctions === undefined) n.junctions = null;
+            return n;
+        });
+        // Pre-load all embedded icons as data URIs so they render in the editor
+        (rb.notes || []).forEach((n) => {
+            (n.icons || []).forEach((ic) => {
+                if (ic.name && !rb.icons[ic.name]) {
+                    const src = RB.iconSrc(ic, rb, '../assets/icons/');
+                    if (!/^data:/.test(src)) {
+                        try {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', src, false);
+                            xhr.overrideMimeType('text/plain; charset=x-user-defined');
+                            xhr.send();
+                            if (xhr.status === 200) {
+                                const binary = String.fromCharCode.apply(null, Array.from(xhr.responseText).map(c => c.charCodeAt(0)));
+                                rb.icons[ic.name] = 'data:' + (src.endsWith('.svg') ? 'image/svg+xml' : 'image/png') + ';base64,' + btoa(binary);
+                            }
+                        } catch (e) {}
+                    }
+                }
+            });
+        });
 
         dirty = false; gaps = [];
         showEditing();
