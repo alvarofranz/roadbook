@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.13-7">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-1">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.13-7">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-1">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -23,13 +23,23 @@
         #canvasWrap { position: relative; max-width: 560px; margin: .4rem auto 0; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
-        .icon-grid button { position: relative; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
+        /* icons live on a white tile so dark line-art symbols stay legible */
+        .icon-grid button { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
         .icon-grid .icon-category { grid-column: 1 / -1; }
-        .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .5rem .7rem; cursor: pointer; }
+        /* icon category filter chips — jump between groups without scrolling */
+        .icon-cats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .1rem 0 .5rem; }
+        .icon-cat-chip { background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: .25rem .65rem; font-size: .72rem; font-weight: 700; cursor: pointer; }
+        .icon-cat-chip.on { background: var(--sand); color: #14100a; border-color: var(--sand); }
+        .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .35rem .5rem .35rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
-        .note-mini .note-number { font-weight: 800; color: var(--sand); }
-        .note-mini .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-mini .note-number { font-weight: 800; color: var(--sand); flex-shrink: 0; }
+        /* the note's text is edited right here in the row (no separate field) */
+        .note-mini .note-title { flex: 1; min-width: 0; margin: 0; padding: .3rem .5rem; }
+        .note-mini .note-km { flex-shrink: 0; }
+        /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
+        .note-edit-slot:empty { display: none; }
+        .note-edit-slot { margin: .1rem 0 .5rem; }
         .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-weight: 800; cursor: pointer; }
         .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
         .photo-thumb { position: relative; }
@@ -64,11 +74,20 @@
         .vignette-toolbar select { background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: .3rem; }
         #viewMap, #viewConfig { max-width: 720px; margin: 0 auto; }
         #loadFrom { margin-bottom: 1rem; }
-        /* the map view's right column = two zones: notes list (scrolls) + the note editor below */
-        .note-list-zone { max-height: 36vh; overflow: auto; margin-top: .3rem; }
-        .note-edit-zone { border-top: 1px solid var(--line); margin-top: .6rem; padding-top: .4rem; }
+        /* the opening screen lists the user's saved roadbooks (tap to keep editing) */
+        .rb-open-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+        .rb-open-row { display: flex; align-items: center; gap: .6rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; cursor: pointer; color: var(--text); text-align: left; }
+        .rb-open-row:hover { border-color: var(--sand); }
+        .rb-open-row .meta { flex: 1; min-width: 0; }
+        .rb-open-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rb-open-row .meta small { color: var(--muted); white-space: nowrap; }
+        /* the map view's right column: the notes list, each row expanding its editor inline */
+        .note-list-zone { margin-top: .3rem; }
+        .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
         .note-edit-zone .icon-grid { max-height: 28vh; }
         .note-edit-zone .vignette-toolbar { max-width: none; }
+        /* canvas above, icon palette below — keeps both usable in the narrow column */
+        .vig-split { display: flex; flex-direction: column; gap: .4rem; }
         .load-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
         .load-card { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; cursor: pointer; color: var(--text); text-align: left; transition: border-color .15s, transform .1s; }
         .load-card:hover { border-color: var(--sand); transform: translateY(-1px); }
@@ -92,19 +111,17 @@
         .meta-field.full { grid-column: 1 / -1; }
         .meta-value { padding: .45rem 0; }
         .logo-row { display: flex; gap: .5rem; align-items: center; }
-        /* desktop: wider editor, split vignette view, the five load cards on one line */
+        /* desktop: wider editor, the five load cards on one line */
         @media (min-width: 900px) {
             #viewMap { max-width: 1100px; }
             .load-opts { grid-template-columns: repeat(5, 1fr); }
-            .vig-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 1rem; align-items: start; }
-            .note-edit-zone .vig-icons .icon-grid { max-height: 34vh; }
         }
-        /* big desktop: RB-suite layout — the map pinned on the left, the notes
-           and details editing column on the right */
-        @media (min-width: 1100px) {
+        /* tablet landscape (iPad) and up: RB-suite split — the map pinned on the
+           left, the notes + inline editor column on the right */
+        @media (min-width: 1024px) {
             main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
             #viewMap { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; }
-            #loadFrom, #recBar { grid-column: 1 / -1; }
+            #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
             #edMap { height: calc(100vh - 112px); }
             .rb-actions { margin-top: 0; }
@@ -125,14 +142,21 @@
 <main class="wrap tool-page">
     <!-- VIEW A: map + notes -->
     <section id="viewMap">
-        <div id="loadFrom">
-            <div class="icon-category" data-i18n="Load from">Load from</div>
-            <div class="load-opts">
-                <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
-                <button class="load-card" id="recordRoute"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record route">Record route</b><small data-i18n="Record live with GPS">Record live with GPS</small></button>
-                <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
-                <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
-                <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Challenges">Challenges</b><small data-i18n="Start from a public one">Start from a public one</small></button>
+        <!-- opening screen: the user's saved roadbooks first, then ways to start a new one -->
+        <div id="landing">
+            <div id="myRoadbooksSection" hidden>
+                <div class="icon-category" data-i18n="My roadbooks">My roadbooks</div>
+                <div id="myRoadbooks" class="rb-open-list"></div>
+            </div>
+            <div id="loadFrom">
+                <div class="icon-category" data-i18n="Load from">Load from</div>
+                <div class="load-opts">
+                    <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
+                    <button class="load-card" id="recordRoute"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record route">Record route</b><small data-i18n="Record live with GPS">Record live with GPS</small></button>
+                    <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
+                    <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
+                    <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Challenges">Challenges</b><small data-i18n="Start from a public one">Start from a public one</small></button>
+                </div>
             </div>
         </div>
         <div id="recBar" class="record-bar" hidden>
@@ -148,11 +172,12 @@
         <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
         <input id="addGpxFile" type="file" accept=".gpx" hidden>
         <!-- the GPX editor: the map + its vertical tool bar (modes left, actions below) -->
-        <div id="mapEditor" class="map-editor">
+        <div id="mapEditor" class="map-editor" hidden>
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
                 <button class="map-tool on" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
                 <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
+                <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
@@ -189,15 +214,12 @@
                 <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
                 <div id="noteList" class="note-list"></div>
             </div>
-            <!-- ZONE 2: the selected note's editor — right beside the map it describes -->
+            <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
             <div id="noteEditZone" class="note-edit-zone" hidden>
-                <div class="ed-row between">
-                    <div class="icon-category flush" data-i18n="Edit note">Edit note</div>
-                    <div class="btn-group">
-                        <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
-                        <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button class="btn btn-ghost" id="nextNote" aria-label="Next note"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
+                <div class="btnrow end">
+                    <button class="btn btn-danger" id="delNote" data-i18n="Delete"><i class="fa-solid fa-trash-can"></i> Delete</button>
+                    <button class="btn btn-ghost" id="prevNote" aria-label="Previous note"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="btn btn-ghost" id="nextNote" aria-label="Next note"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
                 <div id="editor"></div>
                 <div class="vig-split">
@@ -209,14 +231,12 @@
                         <div id="noteToolbar"></div>
                     </div>
                     <div class="vig-icons">
-                        <div class="ed-row between">
-                            <div class="icon-category flush" data-i18n="Icons">Icons</div>
-                            <button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button>
-                        </div>
+                        <div class="icon-category flush" data-i18n="Icons">Icons</div>
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <p class="muted small" data-i18n-html="Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.">Tap an icon to add it; drag it on the vignette to place it. Uploads are saved <b>inside this roadbook</b>.</p>
                         <div class="ed-row"><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
+                        <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
+                        <div class="btnrow end"><button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button></div>
                     </div>
                 </div>
             </div>
@@ -260,15 +280,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.13-7"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.13-7"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.13-7"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.13-7"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.13-7"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.13-7"></script>
-<script src="../assets/js/challenges.js?v=2026.06.13-7"></script>
-<script src="../assets/js/i18n.js?v=2026.06.13-7"></script>
-<script src="../assets/js/app.js?v=2026.06.13-7"></script>
-<script src="editor.js?v=2026.06.13-7"></script>
+<script src="../assets/js/config.js?v=2026.06.16-1"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.16-1"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.16-1"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.16-1"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.16-1"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.16-1"></script>
+<script src="../assets/js/challenges.js?v=2026.06.16-1"></script>
+<script src="../assets/js/i18n.js?v=2026.06.16-1"></script>
+<script src="../assets/js/app.js?v=2026.06.16-1"></script>
+<script src="editor.js?v=2026.06.16-1"></script>
 </body>
 </html>

@@ -176,6 +176,15 @@
     }
 
     /* ---------------- metric recomputation (after edit/splice) ---------------- */
+    // The road you ARRIVE on at a note is the road the previous note LEAVES on, so
+    // road_type_in is always derived from the previous note's road_type_out (the
+    // first note has no predecessor, so it arrives on the road it leaves on). Only
+    // road_type_out is authored per note — the road simply continues until a note
+    // changes it. Run after every edit so the invariant always holds.
+    function normalizeRoadTypes(rb) {
+        rb.notes.forEach((n, i) => { n.road_type_in = i > 0 ? rb.notes[i - 1].road_type_out : n.road_type_out; });
+        return rb;
+    }
     // Recomputes num, clamped idx, lat/lon, distance/partial_distance and bearings from the track.
     function recomputeMetrics(rb) {
         const cum = cumulativeM(rb.track);
@@ -192,6 +201,7 @@
             const bOut = idx < rb.track.length - 1 ? bearingDeg(tp, rb.track[idx + 1]) : bIn;
             n.bearing_in = round3(bIn); n.bearing_out = round3(bOut);
         });
+        normalizeRoadTypes(rb);
         rb.meta.total_distance = Math.round(cum[cum.length - 1] || 0);
         rb.meta.note_count = rb.notes.length;
         return rb;
@@ -260,14 +270,13 @@
         return rb;
     }
     // Reverse the direction of travel: track flipped, notes re-anchored and
-    // re-ordered, road in/out swapped, metrics/bearings/CAPs recomputed.
+    // re-ordered. The road a note now LEAVES on is the one it used to arrive on,
+    // so road_type_out becomes the old road_type_in; recomputeMetrics re-derives
+    // road_type_in (and bearings/CAPs follow).
     function reverseRoadbook(rb) {
         const last = rb.track.length - 1;
         rb.track.reverse();
-        rb.notes.forEach((n) => {
-            n.idx = last - n.idx;
-            const roadIn = n.road_type_in; n.road_type_in = n.road_type_out; n.road_type_out = roadIn;
-        });
+        rb.notes.forEach((n) => { n.idx = last - n.idx; n.road_type_out = n.road_type_in; });
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
@@ -370,7 +379,7 @@
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook,
-        recomputeMetrics, recomputeCaps, speedLimitOfNote,
+        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2,

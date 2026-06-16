@@ -55,7 +55,7 @@ window.NoteCanvas = class NoteCanvas {
         if (!this.note) { this.toolbarEl.innerHTML = ''; return; }
         this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn vignette-box-bg', x: 0, y: 0, width: this.REF_W, height: this.REF_H, fill: 'transparent' }));
         trunkSegments(this.note).forEach((s) => {
-            const attrs = { class: 'vignette-box-dyn', x1: s.x, y1: s.y1, x2: s.x, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
+            const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
             this.svg.appendChild(svg('line', attrs));
         });
@@ -157,7 +157,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`;
     trunkSegments(note).forEach((g) => {
-        s += `<line x1="${g.x}" y1="${g.y1}" x2="${g.x}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
     });
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
@@ -197,17 +197,26 @@ window.NoteCanvas.rowCols = function (n, iconSrc) {
 /* FIA-style danger grading: the note's `danger` (1-3) renders as '!' / '!!' /
  * '!!!' in red INSIDE the diagram box (top-left), never in the text column. */
 function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repeat(Math.min(d, 3)) : ''; }
-/* The tulip trunk: the road you arrive FROM always enters from the bottom edge
- * to the box centre (styled by road_type_in) and the road you leave ON exits
- * from the centre to the top arrow (styled by road_type_out). Junction vectors
- * branch from the centre. Stroke width is indicative of the road type. */
+/* The tulip trunk: the road you arrive FROM always enters straight from the
+ * bottom edge to the box centre (styled by road_type_in). The road you leave ON
+ * exits from the centre with an arrow, auto-oriented to the real turn — its
+ * angle is (bearing_out − bearing_in), i.e. the heading change across the three
+ * track points (previous · note · next), so the diagram already shows the
+ * direction to follow (straight up = carry on, right = turn right, …). Styled by
+ * road_type_out. Junction vectors branch from the centre. Stroke width is
+ * indicative of the road type. */
 function trunkSegments(note) {
-    const cx = 115, cy = 81; // centre of the 230×162 reference box
-    const seg = (roadType, y1, y2, arrow) => {
+    const cx = 115, cy = 81, L = 63; // centre of the 230×162 reference box; exit length
+    const seg = (roadType, x1, y1, x2, y2, arrow) => {
         const rt = RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0];
-        return { x: cx, y1, y2, color: rt.color, width: rt.width, dashed: rt.dashed, arrow };
+        return { x1, y1, x2, y2, color: rt.color, width: rt.width, dashed: rt.dashed, arrow };
     };
-    return [seg(note.road_type_in, 154, cy, false), seg(note.road_type_out, cy, 18, true)];
+    const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
+    const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
+    return [
+        seg(note.road_type_in, cx, 154, cx, cy, false),
+        seg(note.road_type_out, cx, cy, cx + Math.sin(θ) * L, cy - Math.cos(θ) * L, true),
+    ];
 }
 function svg(tag, attrs) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
 const RT_LABELS = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste']; // road-type names, by RB.ROAD_TYPES index

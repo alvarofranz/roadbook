@@ -39,6 +39,22 @@ window.RBMap = class RBMap {
         m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
         m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
         m.on('mouseleave', 'rb-photos', () => m.getCanvas().style.cursor = this._baseCursor);
+        m.on('mouseenter', 'rb-verts', () => { if (this._vertOnDrag) m.getCanvas().style.cursor = 'grab'; });
+        m.on('mouseleave', 'rb-verts', () => { if (this._vertDrag < 0) m.getCanvas().style.cursor = this._baseCursor; });
+        // Track-vertex dragging (the editor's "move points" tool). Registered once
+        // so it survives style swaps; inert until setVertexEditor() arms it.
+        this._vertDrag = -1;
+        const vertDown = (e) => {
+            if (!this._vertOnDrag || !e.features[0]) return;
+            e.preventDefault(); this._vertDrag = parseInt(e.features[0].properties.i, 10);
+            m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
+        };
+        const vertMove = (e) => { if (this._vertDrag >= 0) this._vertOnDrag(this._vertDrag, e.lngLat.lat, e.lngLat.lng); };
+        const vertUp = () => { if (this._vertDrag < 0) return; this._vertDrag = -1; m.dragPan.enable(); m.getCanvas().style.cursor = this._baseCursor; if (this._vertOnCommit) this._vertOnCommit(); };
+        m.on('mousedown', 'rb-verts', vertDown);
+        m.on('touchstart', 'rb-verts', vertDown);
+        m.on('mousemove', vertMove); m.on('touchmove', vertMove);
+        m.on('mouseup', vertUp); m.on('touchend', vertUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
     // Swap the base style (satellite ↔ topo). Mapbox wipes every custom
@@ -91,6 +107,10 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': '📷', 'text-size': 11 } });
         m.addSource('rb-pos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
+        // Track vertices (move-points tool) — topmost so they stay grabbable; empty until armed.
+        m.addSource('rb-verts', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } });
+        if (this._vertOnDrag && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).
     setCursor(cursor) { this._baseCursor = cursor || ''; if (this.map) this.map.getCanvas().style.cursor = this._baseCursor; }
@@ -163,6 +183,22 @@ window.RBMap = class RBMap {
         this.map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 40, duration: 600 });
     }
     onWaypoint(cb) { this._onWpt = cb; }
+    // Arm/disarm the move-points tool: pass the track + callbacks to show every
+    // vertex as a draggable handle (onDrag(i, lat, lon) fires live while dragging,
+    // onCommit() on release); pass null to clear it.
+    setVertexEditor(track, onDrag, onCommit) {
+        this._vertOnDrag = onDrag || null; this._vertOnCommit = onCommit || null;
+        this._paintVerts(this._vertOnDrag ? track : null);
+    }
+    // Repaint the vertex handles (used live while a point is being dragged).
+    refreshVertices(track) { if (this._vertOnDrag) this._paintVerts(track); }
+    _paintVerts(track) {
+        if (!this.map || !this.ready) return;
+        this.map.getSource('rb-verts').setData(track ? {
+            type: 'FeatureCollection',
+            features: track.map((p, i) => ({ type: 'Feature', properties: { i: String(i) }, geometry: { type: 'Point', coordinates: [p.lon, p.lat] } })),
+        } : this._empty());
+    }
     // Draggable marker for the note being edited; onDragEnd(lat, lon) fires on drop.
     // Pass note=null to clear it; noEase keeps the current view (the Editor's main
     // map already shows the whole route, so it must not jump on every selection).

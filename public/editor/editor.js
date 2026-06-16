@@ -16,7 +16,7 @@
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
-    let rb = null, sel = 0, std = null, dirty = false, exported = false;
+    let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
@@ -46,6 +46,22 @@
         else if (mapTool === 'draw') drawPoint(here);
         else if (mapTool === 'cut') cutPoint(here);
     });
+
+    /* ---------- move points: drag any track vertex to reshape the route ---------- */
+    // Live drag updates the dragged point (rAF-coalesced repaint of the line +
+    // handles); the metrics/notes recompute once, on release.
+    function onVertexDrag(i, lat, lon) {
+        if (!rb || i < 0 || i >= rb.track.length) return;
+        rb.track[i] = { lat: RB.round6(lat), lon: RB.round6(lon) };
+        if (vertRaf) return;
+        vertRaf = requestAnimationFrame(() => { vertRaf = 0; refreshMap(true); map.refreshVertices(rb.track); });
+    }
+    function onVertexCommit() {
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        refreshMap(true); map.refreshVertices(rb.track); renderNotes();
+        if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
+        markDirty();
+    }
 
     /* ---------- map tool bar: the GPX is edited right on the map ---------- */
     // Open cuts: a cut in the middle leaves a real hole — stored as the pair of
@@ -77,13 +93,15 @@
         if (!resolveGaps().length) return true;
         return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'), t('Continue'));
     }
-    // mode tools (pan · add note · draw · cut) are exclusive toggles; the rest are one-shot
+    // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolCut'];
+    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolPoints', 'toolCut'];
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
-        map.setCursor(tool === 'pan' ? '' : 'crosshair');
+        map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
+        if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit);
+        else map.setVertexEditor(null);
         placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
@@ -92,6 +110,7 @@
         const maxed = $('mapEditor').classList.contains('max');
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
+            toolPoints: 'Move points (drag any track point)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
@@ -104,7 +123,7 @@
     // re-render translated UI (tooltips + dynamic note list/editor/save button) on language change
     window.addEventListener('rb-lang', () => {
         applyToolTips();
-        if (rb) { renderNotes(); updateSaveBtn(); if (!$('noteEditZone').hidden) { renderEditor(); canvas.render(); } }
+        if (rb) { renderNotes(); renderIcons(); updateSaveBtn(); if (editorOpen) { renderEditor(); canvas.render(); } }
     });
     // maximize the GPX editor (map + tool bar); Esc restores
     function setMax(on) {
@@ -214,8 +233,8 @@
             toastMsg = 'Cut open — draw to fill it, or it closes straight on export.';
         }
         const last = rb.track.length - 1;
-        if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(makeNote(rb, 0, rb.notes[0] ? rb.notes[0].road_type_in : 3));
-        if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(makeNote(rb, last, 3));
+        if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(makeNote(rb, 0, roadOutBefore(0)));
+        if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(makeNote(rb, last, roadOutBefore(last)));
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0; routeChanged(toastMsg);
     }
@@ -271,7 +290,7 @@
         };
     };
     $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMax(false); setMapTool('pan'); startRecording('adjust'); };
-    $('drawRoute').onclick = () => { setMapTool('draw'); toast('Tap the map to draw your route.'); };
+    $('drawRoute').onclick = () => { showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
     $('loadGpx').onclick = () => $('gpxFile').click();
@@ -293,11 +312,19 @@
         try { const j = JSON.parse(await f.text()); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
         catch (err) { toast('Error: ' + err.message); }
     };
+    // Toggle between the opening screen (saved roadbooks + load options) and the
+    // editing surface (the map + tool bar). The map is built up front but stays
+    // hidden until there's a roadbook to edit, so the editor never opens on a
+    // blank map.
+    function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
+    function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; refreshMyRoadbooks(); }
     function setRoadbook(r) {
         rb = r; rb.icons = rb.icons || {}; rb.meta = rb.meta || {};
         dirty = false; gaps = [];
-        $('loadFrom').hidden = true; $('recBar').hidden = true; $('rbPanel').hidden = false; $('noteEditZone').hidden = true;
-        ['toolNote', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        showEditing();
+        $('recBar').hidden = true; $('rbPanel').hidden = false;
+        closeEditor(); // park the inline editor; tap a note to open it
+        ['toolNote', 'toolPoints', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -306,7 +333,7 @@
         refreshMap(false); renderNotes(); renderIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
         histReset(); setMapTool('pan');
-        showView('map'); // start on the map + notes; tap a note to open its editor below
+        showView('map'); // tap a note to open its editor inline below the row
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -415,7 +442,7 @@
         recPaused = false; recTrack = []; recWpts = []; recPhotos = []; clearRec();
         await RBGpxRecorder.finish(); // discard releases the live file + checkpoint too
         if (map) map.setLiveTrack([], [], []);
-        $('recDiscard').hidden = true; $('recBar').hidden = true; $('loadFrom').hidden = false;
+        $('recDiscard').hidden = true; showLanding();
         toast('Recording discarded.');
     };
     document.addEventListener('visibilitychange', async () => {
@@ -429,7 +456,7 @@
         recMode = mode; recTrack = []; recWpts = []; recPhotos = []; recLast = null; recHere = null; recPaused = false;
         adjP1 = -1; adjP2 = -1; draftId = 0;
         $('recPause').innerHTML = '<i class="fa-solid fa-pause"></i>';
-        $('loadFrom').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
+        showEditing(); $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
         $('recPhoto').hidden = true; // shown only once a draft id exists (so the camera never errors)
         if (mode === 'adjust') { showView('map'); if (map) { refreshMap(false); map.setOverlay([]); } draftId = currentRbId; $('recPhoto').hidden = !draftId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
         else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await RBApi('rb_draft'); if (r.ok) draftId = r.id; } $('recPhoto').hidden = !draftId; }
@@ -525,12 +552,12 @@
         if (map) map.setOverlay([]);
         if (recMode === 'adjust') return finishAdjust();
         const gpx = await RBGpxRecorder.finish(); // final flush; its name titles the roadbook
-        if (recTrack.length < 2) { clearRec(); $('loadFrom').hidden = false; return toast('Route too short to save.'); }
+        if (recTrack.length < 2) { clearRec(); showLanding(); return toast('Route too short to save.'); }
         try {
             setRoadbook(RB.buildRoadbook({ name: gpx.name || 'Recorded route', trkpts: smoothTrack(recTrack), wpts: recWpts }));
             if (draftId) { currentRbId = draftId; setVis(0); await doSave(); } // persist the draft (photos already attached)
             markDirty(); clearRec(); toast('Route recorded · edit and save.');
-        } catch (e) { $('loadFrom').hidden = false; toast('Error: ' + e.message); }
+        } catch (e) { showLanding(); toast('Error: ' + e.message); }
     };
     async function finishAdjust() {
         $('rbPanel').hidden = false; showView('map');
@@ -546,7 +573,7 @@
         // merge any waypoints dropped during the adjust session (snap to the new track)
         recWpts.forEach((w) => {
             const idx = RB.nearestIdx(rb.track, w);
-            if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, 3); note.text = w.text || ''; rb.notes.push(note); }
+            if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0; refreshMap(false); renderNotes(); renderEditor(); canvas.setNote(rb.notes[0]); updatePhotos(); markDirty();
@@ -575,6 +602,27 @@
 
     /* ---------- account: save to profile · public/private · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, isPublic = 0;
+    // The opening screen lists the signed-in user's saved roadbooks so they can
+    // jump straight back into one (loading it pins ?rb so re-saves update it).
+    async function refreshMyRoadbooks() {
+        if (!meUser) { $('myRoadbooksSection').hidden = true; return; }
+        const r = await RBApi('rb_list');
+        if (!r.ok || !r.roadbooks || !r.roadbooks.length) { $('myRoadbooksSection').hidden = true; return; }
+        $('myRoadbooksSection').hidden = false;
+        $('myRoadbooks').innerHTML = r.roadbooks.map((m) => `<button type="button" class="rb-open-row" data-open="${m.id}">
+                <i class="fa-solid fa-${m.is_public ? 'globe' : 'lock'} icon-accent"></i>
+                <span class="meta"><b>${esc(m.title)}</b><small>${RBSummary(m.total_distance, m.note_count)}</small></span>
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            </button>`).join('');
+        $('myRoadbooks').querySelectorAll('[data-open]').forEach((b) => b.onclick = () => openSaved(+b.dataset.open));
+    }
+    async function openSaved(id) {
+        const r = await RBApi('rb_get', { id });
+        if (r.ok && r.roadbook) {
+            currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook);
+            try { history.replaceState(null, '', location.pathname + '?rb=' + id); } catch (e) {}
+        } else toast(r.error || 'Could not open the roadbook.');
+    }
     $('visPrivate').onclick = () => { setVis(0); markDirty(); };
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
     function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); $('visPrivate').setAttribute('aria-pressed', String(!v)); $('visPublic').setAttribute('aria-pressed', String(!!v)); }
@@ -625,26 +673,52 @@
         e.target.value = ''; loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
     };
 
-    /* ---------- notes + selection ---------- */
+    /* ---------- notes + selection ----------
+     * The list is a column of rows; tapping a row expands the editor INLINE right
+     * below it (the single #noteEditZone element is physically moved into that
+     * row's slot — like the Reader's per-note map). Each note's text is edited in
+     * the row itself, so a full list rebuild only happens on structural changes. */
     function renderNotes() {
-        $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini ${i === sel ? 'sel' : ''}" data-i="${i}">
+        $('rbPanel').appendChild($('noteEditZone')); // park the editor before wiping the list (innerHTML would destroy it)
+        $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}</span>
-                <span class="label">${n.text ? esc(n.text) : `<span class="muted">${esc(t('(no text)'))}</span>`}</span>
-                <span class="muted small">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
-            </div>`).join('');
+                <input class="note-title field" data-i="${i}" value="${esc(n.text || '')}" placeholder="${esc(t('(no text)'))}" autocomplete="off">
+                <span class="muted small note-km">${((n.distance ?? 0) / 1000).toFixed(1)}km</span>
+            </div><div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row
-        $('noteList').querySelectorAll('.note-mini').forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
-        $('noteList').querySelectorAll('.note-mini').forEach((c) => c.onclick = () => select(+c.dataset.i));
+        const rows = $('noteList').querySelectorAll('.note-mini');
+        rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
+        rows.forEach((el) => el.onclick = (e) => { if (!e.target.closest('.note-title')) toggleNote(+el.dataset.i); });
+        // the title is edited in place — update the model only (no rebuild, so focus is kept)
+        $('noteList').querySelectorAll('.note-title').forEach((inp) => {
+            inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };
+            inp.oninput = () => { rb.notes[+inp.dataset.i].text = inp.value; markDirty(); };
+        });
         const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
+        if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
+    }
+    // Move the (single) editor element under row i and reveal it.
+    function openEditZoneAt(i) {
+        const slot = $('editSlot' + i);
+        if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
+        $('noteEditZone').hidden = false;
+    }
+    function markSelectedRow() { $('noteList').querySelectorAll('.note-mini').forEach((el) => el.classList.toggle('sel', editorOpen && +el.dataset.i === sel)); }
+    function toggleNote(i) { if (editorOpen && sel === i) closeEditor(); else select(i); }
+    function closeEditor() {
+        editorOpen = false; $('noteEditZone').hidden = true;
+        $('rbPanel').appendChild($('noteEditZone')); // park it back so a list rebuild can't destroy it
+        markSelectedRow(); placeMainEditMarker(); // drops the draggable note marker
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
-        sel = i; renderNotes(); renderEditor(); canvas.setNote(rb.notes[i]);
-        $('noteEditZone').hidden = false;
+        sel = i; editorOpen = true;
+        openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
+        markSelectedRow();
         map.select(rb.notes[i]); placeMainEditMarker();
         $('prevNote').disabled = sel <= 0; $('nextNote').disabled = sel >= rb.notes.length - 1;
-        // stacked layout (mobile/tablet): bring the just-opened editor into view below the list
-        if (!window.matchMedia('(min-width: 1100px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // stacked layout (mobile/tablet): bring the just-opened editor into view
+        if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     /* ---------- reposition the selected note ON the main map (drag its red marker) ----------
@@ -666,24 +740,27 @@
     }
     function renderEditor() {
         const n = rb.notes[sel];
+        // Only the road you LEAVE on is authored: the road you arrive on is the
+        // previous note's road_out (derived in recomputeMetrics/normalizeRoadTypes),
+        // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
         $('editor').innerHTML = `
             <div class="meta-card">
                 <div class="meta-head"><b>${t('Note')} ${n.num}</b><span class="muted small">${((n.distance ?? 0) / 1000).toFixed(2)} km · trip +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span></div>
                 <div class="meta-grid">
-                    <label class="meta-field full"><span>${t('Text')}</span><input type="text" id="edText" class="field" value="${esc(n.text || '')}" placeholder="${t('Description')}"></label>
-                    <label class="meta-field"><span>${t('Road in')}</span><select id="edRin" class="field">${opts(n.road_type_in)}</select></label>
-                    <label class="meta-field"><span>${t('Road out')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>
+                    <label class="meta-field"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>
                     <label class="meta-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>
-                    <div class="meta-field"><span>${t('Red CAP')}</span>
+                    <div class="meta-field full"><span>${t('Red CAP')}</span>
                         <label class="checkbox-row"><input type="checkbox" id="edCap" ${n.cap != null ? 'checked' : ''}> <span class="muted small">${n.cap != null ? Math.round(n.cap) + '° · ' + ((n.cap_distance || 0) / 1000).toFixed(2) + ' km' : 'off'}</span></label>
                     </div>
                 </div>
             </div>`;
-        $('edText').oninput = (e) => { n.text = e.target.value; renderNotes(); markDirty(); };
-        $('edRin').onchange = (e) => { n.road_type_in = +e.target.value; canvas.render(); renderNotes(); markDirty(); };
-        $('edRout').onchange = (e) => { n.road_type_out = +e.target.value; canvas.render(); renderNotes(); markDirty(); };
+        $('edRout').onchange = (e) => {
+            n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
+            const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent
+            if (row) row.style.setProperty('--rt', (RB.ROAD_TYPES[n.road_type_out] || RB.ROAD_TYPES[3]).color);
+        };
         $('edDanger').onchange = (e) => { const v = +e.target.value; if (v) n.danger = v; else delete n.danger; canvas.render(); markDirty(); };
         $('edCap').onchange = (e) => { toggleCap(e.target.checked); markDirty(); };
         $('edCap').disabled = sel >= rb.notes.length - 1; // CAP needs a following note
@@ -697,17 +774,29 @@
     function delNote() {
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
         rb.notes.splice(sel, 1); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-        refreshMap(true); select(Math.min(sel, rb.notes.length - 1));
+        refreshMap(true); renderNotes(); select(Math.min(sel, rb.notes.length - 1));
+    }
+    // Road type in force at a track index = the road_out of the nearest preceding
+    // note. A note inserted here continues on that road by default (road_out =
+    // road_in), so the surface only changes where the author explicitly sets it.
+    function roadOutBefore(idx) {
+        let rt = 3, best = -1;
+        rb.notes.forEach((n) => { if (n.idx <= idx && n.idx > best) { best = n.idx; rt = n.road_type_out; } });
+        return rt;
     }
     function addWaypointNear(pt) {
         const idx = splitTrackAt(pt);
         if (rb.notes.some((n) => n.idx === idx)) return toast('There is already a note here.');
-        rb.notes.push(makeNote(rb, idx, 3));
-        RB.recomputeMetrics(rb); refreshMap(true); renderNotes(); markDirty();
+        const cur = editorOpen ? rb.notes[sel] : null; // keep editing the same note across the re-sort
+        rb.notes.push(makeNote(rb, idx, roadOutBefore(idx)));
+        RB.recomputeMetrics(rb);
+        if (cur) sel = rb.notes.indexOf(cur);
+        refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
     }
 
     /* ---------- icons (standard palette + yours, embedded in the roadbook) ---------- */
+    let iconCat = ''; // active category filter: '' = all · '__yours' = custom · else a palette category key
     async function loadStd() { if (std) return std; try { std = await (await fetch('../assets/icons/index.json')).json(); } catch (e) { std = { categories: {} }; } return std; }
     async function renderIcons() {
         await loadStd();
@@ -715,8 +804,8 @@
         const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
         let html = '';
-        if (custom.length) html += `<div class="icon-category">${t('Yours (in this roadbook)')}</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
-        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
+        if (custom.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
+        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
         $('iconGrid').innerHTML = html || `<span class="muted small">${esc(t('No icons.'))}</span>`;
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);
@@ -732,24 +821,33 @@
             s.onclick = del;
             s.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') del(ev); };
         });
+        renderIconCats(custom.length > 0);
         filterIcons();
     }
-    // live palette filter: match icon names, hide emptied categories
+    // Category chips: jump straight to a group instead of scrolling the palette.
+    function renderIconCats(hasCustom) {
+        const cats = Object.keys(std.categories || {});
+        if ((iconCat === '__yours' && !hasCustom) || (iconCat && iconCat !== '__yours' && !cats.includes(iconCat))) iconCat = '';
+        const chip = (key, label) => `<button type="button" class="icon-cat-chip${iconCat === key ? ' on' : ''}" data-cat="${esc(key)}">${esc(label)}</button>`;
+        $('iconCats').innerHTML = chip('', t('All')) + (hasCustom ? chip('__yours', t('Yours')) : '') + cats.map((c) => chip(c, t(c))).join('');
+        $('iconCats').querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { iconCat = b.dataset.cat; renderIconCats(hasCustom); filterIcons(); });
+    }
+    // live palette filter: active category chip AND the search box; hide emptied categories
     $('iconSearch').oninput = filterIcons;
     function filterIcons() {
         const q = $('iconSearch').value.trim().toLowerCase();
-        let category = null, categoryHasHits = false;
+        let header = null, curCat = '', headerHits = false;
         [...$('iconGrid').children].forEach((el) => {
             if (el.classList.contains('icon-category')) {
-                if (category) category.hidden = !categoryHasHits;
-                category = el; categoryHasHits = false;
+                if (header) header.hidden = !headerHits;
+                header = el; curCat = el.dataset.cat || ''; headerHits = false;
                 return;
             }
-            const hit = !q || (el.dataset.add || '').toLowerCase().includes(q);
+            const hit = (!iconCat || curCat === iconCat) && (!q || (el.dataset.add || '').toLowerCase().includes(q));
             el.hidden = !hit;
-            if (hit) categoryHasHits = true;
+            if (hit) headerHits = true;
         });
-        if (category) category.hidden = !categoryHasHits;
+        if (header) header.hidden = !headerHits;
     }
     const iconBtn = (name, src, rmv) =>
         `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
@@ -853,5 +951,6 @@
         await account;
         const id = +(new URLSearchParams(location.search).get('rb') || 0);
         if (id && meUser) { const r = await RBApi('rb_get', { id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
+        if (!rb) refreshMyRoadbooks(); // nothing auto-loaded → land on the user's saved roadbooks
     })();
 })();
