@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-5">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-9">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-5">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-9">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -157,6 +157,12 @@
             #edMap { height: calc(100vh - 112px); }
             .rb-actions { margin-top: 0; }
         }
+        /* phones & portrait tablets (stacked): pin the map at the top of the screen and let
+           the notes scroll beneath it — editing a note always keeps its map in view */
+        @media (max-width: 1023px) {
+            .map-editor { position: sticky; top: 56px; z-index: 20; }
+            #edMap { height: 40vh; min-height: 240px; }
+        }
         @media (max-width: 600px) {
             #edMap { height: 46vh; }
             .icon-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); max-height: 38vh; }
@@ -184,10 +190,9 @@
                 <div id="myRoadbooks" class="rb-open-list"></div>
             </div>
             <div id="loadFrom">
-                <div class="icon-category" data-i18n="Load from">Load from</div>
+                <div class="icon-category" data-i18n="Start new Roadbook from:">Start new Roadbook from:</div>
                 <div class="load-opts">
                     <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
-                    <button class="load-card" id="recordRoute"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record route">Record route</b><small data-i18n="Record live with GPS">Record live with GPS</small></button>
                     <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                     <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Challenges">Challenges</b><small data-i18n="Start from a public one">Start from a public one</small></button>
@@ -213,6 +218,7 @@
                 <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
                 <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
+                <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-arrows-to-dot"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
@@ -308,15 +314,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.16-5"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.16-5"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.16-5"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.16-5"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.16-5"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.16-5"></script>
-<script src="../assets/js/challenges.js?v=2026.06.16-5"></script>
-<script src="../assets/js/i18n.js?v=2026.06.16-5"></script>
-<script src="../assets/js/app.js?v=2026.06.16-5"></script>
-<script src="editor.js?v=2026.06.16-5"></script>
+<script src="../assets/js/config.js?v=2026.06.16-9"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.16-9"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.16-9"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.16-9"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.16-9"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.16-9"></script>
+<script src="../assets/js/challenges.js?v=2026.06.16-9"></script>
+<script src="../assets/js/i18n.js?v=2026.06.16-9"></script>
+<script src="../assets/js/app.js?v=2026.06.16-9"></script>
+<script src="editor.js?v=2026.06.16-9"></script>
 </body>
 </html>

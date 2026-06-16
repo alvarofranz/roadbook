@@ -23,6 +23,7 @@
             <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
             <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <nav class="topnav" id="topnav">
+                <a class="nav-link${active('recorder')}" href="${ROOT}recorder/">Recorder</a>
                 <a class="nav-link${active('editor')}" href="${ROOT}editor/">Editor</a>
                 <a class="nav-link${active('reader')}" href="${ROOT}reader/">Reader</a>
                 <a class="nav-link${active('tripmaster')}" href="${ROOT}tripmaster/">Tripmaster</a>

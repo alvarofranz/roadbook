@@ -56,6 +56,7 @@
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         if (mapTool === 'note') { if (rb) addWaypointNear(here); else toast('Load a roadbook first.'); }
         else if (mapTool === 'draw') drawPoint(here);
+        else if (mapTool === 'insert') { if (rb) insertMidpoint(here); else toast('Load a roadbook first.'); }
         else if (mapTool === 'cut') cutPoint(here);
     });
 
@@ -107,7 +108,7 @@
     }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolPoints', 'toolCut'];
+    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolPoints', 'toolInsert', 'toolCut'];
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
@@ -121,7 +122,7 @@
     function applyToolTips() {
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
-            toolPoints: 'Move points (drag any track point)',
+            toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap a segment — adds its midpoint)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
@@ -209,6 +210,19 @@
         rb.notes.forEach((n) => { if (n.idx > hit.i) n.idx++; });
         if (cutFromIdx > hit.i) cutFromIdx++; // keep a pending first cut anchored
         return hit.i + 1;
+    }
+    // Insert-point tool: tap a segment and a new vertex is born at its MIDPOINT,
+    // ready to drag with "move points". The dashed connector of an open cut is skipped.
+    function insertMidpoint(p) {
+        const hit = RB.nearestOnTrack(rb.track, p);
+        if (!hit) return toast('Tap on the route to insert a point.');
+        if (new Set(gapIdxs()).has(hit.i)) return toast('Cannot insert on an open cut.');
+        const a = rb.track[hit.i], b = rb.track[hit.i + 1];
+        rb.track.splice(hit.i + 1, 0, { lat: RB.round6((a.lat + b.lat) / 2), lon: RB.round6((a.lon + b.lon) / 2) });
+        rb.notes.forEach((n) => { if (n.idx > hit.i) n.idx++; });
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        refreshMap(true); renderNotes(); markDirty();
+        toast('Point inserted.');
     }
     // Cut mode: tap two points — at the ends it trims; in the middle it removes
     // the span and leaves an OPEN cut (dashed connector) to fill by drawing.
@@ -359,7 +373,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolNote', 'toolPoints', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolNote', 'toolPoints', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -449,14 +463,8 @@
         }
         return out;
     }
-    // Record route: the shared GPX-recorder settings modal first (file name +
-    // live-to-disk file when the device supports it; the Editor samples by
-    // distance itself, so no interval field), then the live recording starts.
-    RBGpxRecorder.init({ toast });
-    $('recordRoute').onclick = () => RBGpxRecorder.settings({
-        sampleRate: false,
-        onStart: () => { RBGpxRecorder.begin({ checkpoint: false }); startRecording('new'); },
-    });
+    // Recording a NEW route now lives in the dedicated Recorder tool. The recording
+    // bar below is reused by "Adjust on the trail" (live re-record of a segment).
     $('recPause').onclick = () => {
         recPaused = !recPaused;
         $('recPause').innerHTML = recPaused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
@@ -996,9 +1004,21 @@
             updateSaveBtn();
             if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
         });
-        // ?trip=1 → a track recorded in the Tripmaster, handed over via sessionStorage
+        // ?trip=1 → a track recorded in the Recorder/Tripmaster, handed over via
+        // sessionStorage (the Recorder also carries its waypoints and, when signed
+        // in, the draft roadbook that already holds the geotagged photos).
         if (new URLSearchParams(location.search).get('trip')) {
-            try { const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null'); sessionStorage.removeItem('rb_trip_track'); if (pts && pts.length >= 2) { setRoadbook(RB.buildRoadbook({ name: 'Recorded trip', trkpts: pts, wpts: [] })); markDirty(); } } catch (e) { toast('Could not load the recorded trip.'); }
+            try {
+                const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null');
+                const wpts = JSON.parse(sessionStorage.getItem('rb_trip_wpts') || '[]') || [];
+                const tripDraft = +(sessionStorage.getItem('rb_trip_draft') || 0);
+                ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft'].forEach((k) => sessionStorage.removeItem(k));
+                if (pts && pts.length >= 2) {
+                    setRoadbook(RB.buildRoadbook({ name: 'Recorded trip', trkpts: pts, wpts }));
+                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setVis(0); loadPhotos(); } } // adopt the draft that holds the photos
+                    markDirty();
+                }
+            } catch (e) { toast('Could not load the recorded trip.'); }
             if (rb) return;
         }
         let draft; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
