@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-4">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-5">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-5">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -29,6 +29,10 @@
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
         .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
         #noteProps { margin-top: .5rem; }
+        /* Danger sits to the right of the icon search; the search shrinks to make room */
+        #iconSearch { min-width: 0; }
+        #dangerSlot { flex-shrink: 0; }
+        #dangerSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
         /* Danger + Red CAP share one inline line; Road appears below only when a line is selected */
         .prop-line { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
         .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
@@ -158,6 +162,10 @@
             .icon-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); max-height: 38vh; }
             .map-tools { max-height: calc(100% - 20px); overflow-y: auto; } /* touch: no hover tooltips, scrolling wins */
             .meta-grid { grid-template-columns: 1fr; }
+            /* phones: the text takes the row; the tulip drops to its own line below it */
+            .note-mini { flex-wrap: wrap; }
+            .note-mini .note-tulip { order: 9; flex-basis: 100%; width: auto; }
+            .note-mini .note-tulip > svg { max-width: 160px; }
         }
     </style>
 </head>
@@ -251,7 +259,7 @@
                     </div>
                     <div class="vig-icons">
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
+                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"><span id="dangerSlot"></span></div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
                         <div class="btnrow end"><button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button></div>
@@ -300,15 +308,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.16-4"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.16-4"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.16-4"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.16-4"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.16-4"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.16-4"></script>
-<script src="../assets/js/challenges.js?v=2026.06.16-4"></script>
-<script src="../assets/js/i18n.js?v=2026.06.16-4"></script>
-<script src="../assets/js/app.js?v=2026.06.16-4"></script>
-<script src="editor.js?v=2026.06.16-4"></script>
+<script src="../assets/js/config.js?v=2026.06.16-5"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.16-5"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.16-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.16-5"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.16-5"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.16-5"></script>
+<script src="../assets/js/challenges.js?v=2026.06.16-5"></script>
+<script src="../assets/js/i18n.js?v=2026.06.16-5"></script>
+<script src="../assets/js/app.js?v=2026.06.16-5"></script>
+<script src="editor.js?v=2026.06.16-5"></script>
 </body>
 </html>

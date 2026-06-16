@@ -820,13 +820,10 @@
         // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        // Danger here; the Red CAP on/off toggle lives in the note row (left of the
-        // coordinates); Road (road_type_out) shows only while a line is selected.
-        $('noteProps').innerHTML = `
-            <div class="prop-line">
-                <label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>
-            </div>
-            <label class="prop-field note-road"${canvas.sel && canvas.sel.type === 'junctions' ? '' : ' hidden'}><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
+        // Danger lives in the icon-search row; the Red CAP on/off toggle is in the note
+        // row (left of the coordinates); Road (road_type_out) shows only while a line is selected.
+        $('dangerSlot').innerHTML = `<label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
+        $('noteProps').innerHTML = `<label class="prop-field note-road"${canvas.sel && canvas.sel.type === 'junctions' ? '' : ' hidden'}><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('edRout').onchange = (e) => {
             n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
             const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent
