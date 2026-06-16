@@ -56,7 +56,7 @@ Place this project directory within your web server's root folder (e.g., `/var/w
 
 ##### Windows 11
 from console
-> python3 -m http.server 8000
+   > python3 -m http.server 8000
 
 ## 🗺️ Directory Structure Overview
 
@@ -67,5 +67,6 @@ from console
 *   `tools/`: Utility scripts and helpers.
 
 ---
-**Project Maintainer:** [Your Name/Team]
+**Project Maintainer:** Alvaro, Maurizio, inspired by works from Massimiliano of [RoadBook System](https://www.roadbook-system.com/)
+
 **License:** See `LICENSE` file for details.
