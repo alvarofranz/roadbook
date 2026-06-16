@@ -320,6 +320,11 @@
     function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; refreshMyRoadbooks(); }
     function setRoadbook(r) {
         rb = r; rb.icons = rb.icons || {}; rb.meta = rb.meta || {};
+        // Migrate legacy fields: titolo → title, km_totali → total_distance (convert km to meters)
+        if (rb.meta.titolo && !rb.meta.title) rb.meta.title = rb.meta.titolo;
+        if (rb.meta.km_totali && !rb.meta.total_distance) rb.meta.total_distance = Math.round(parseFloat(rb.meta.km_totali) * 1000);
+        if (rb.meta.note_count && !rb.meta.note_count) rb.meta.note_count = rb.meta.note_count;
+
         dirty = false; gaps = [];
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
