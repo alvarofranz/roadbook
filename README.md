@@ -1,8 +1,8 @@
-# Roadbook Challenge Platform
+# Roadbook Record, Edit and Use platform
 
 ## 🛣️ Project Description
 
-This is a robust web application designed for managing, sharing, and viewing rally roadbooks. It serves as a comprehensive platform for motorsport enthusiasts, organizers, and participants to digitally capture detailed race course notes (roadbooks) and challenge themselves using the recorded data.
+This is a  web application designed for managing, sharing, and viewing rally roadbooks. It serves as a comprehensive platform for motorsport enthusiasts, organizers, and participants to digitally capture detailed race course notes (roadbooks) and challenge themselves using the recorded data.
 
 The platform emphasizes offline capability by implementing Progressive Web App (PWA) features, making it reliable for use in remote areas with poor connectivity.
 
