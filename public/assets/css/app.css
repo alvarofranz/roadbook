@@ -96,30 +96,18 @@ img { max-width: 100%; display: block; }
 .btn-ghost { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--line); }
 .btn-ghost:hover { background: rgba(255, 255, 255, .12); text-decoration: none; }
 
-/* ---------- hero ---------- */
-.hero { padding: 3.4rem 0 2rem; }
-.hero h1 { font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; letter-spacing: -.02em; margin: .6rem 0 .8rem; }
-.hero h1 .accent { color: var(--sand); }
-.hero p.lead { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--muted); max-width: 60ch; }
-.hero .cta { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.6rem; }
+/* ---------- home launcher ---------- */
+.launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
+.launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
+.launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+.launch-tile i { color: var(--sand); font-size: 2rem; }
+.launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
+.launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
 
 /* ---------- sections ---------- */
 section.block { padding: 2.4rem 0; }
 .section-head { margin-bottom: 1.4rem; }
 .section-head h2 { font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -.01em; margin: .2rem 0; }
-.section-head .kicker { color: var(--sand); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; }
-/* install / cross-platform band */
-#install .section-head { text-align: center; }
-#install .install-lead { max-width: 70ch; margin: .6rem auto 0; }
-.platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 1.4rem; margin-top: 1.2rem; color: var(--muted); font-weight: 700; }
-.platforms i { color: var(--sand); margin-right: .35rem; }
-
-/* features grid (home) */
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
-.flow .step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; text-align: center; position: relative; }
-.flow .step i { color: var(--sand); font-size: 1.5rem; }
-.flow .step h4 { margin: .5rem 0 .2rem; font-size: .98rem; }
-.flow .step p { margin: 0; font-size: .82rem; color: var(--muted); }
 
 /* header controls */
 .install-btn { white-space: nowrap; order: 90; }
@@ -223,33 +211,14 @@ section.block { padding: 2.4rem 0; }
 .mode-btn b { font-size: 1.05rem; }
 .mode-btn small { color: var(--muted); }
 
-/* brand + two-column hero + mockup */
+/* brand logo (global header) */
 .brand-logo { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; }
-.hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2.5rem; align-items: center; }
-.hero-copy { text-align: left; }
-.hero-mock { width: 100%; max-width: 460px; height: auto; border-radius: 28px; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); justify-self: end; }
-/* hero workflow strip: record → build → ride → event */
-.workflow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin-top: 1.6rem; }
-.workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
-.workflow .wf-step i { font-size: 1.7rem; color: var(--sand); }
-.workflow .wf-step span { font-size: .82rem; font-weight: 700; max-width: 12ch; }
-.workflow .wf-arrow { color: var(--muted); font-size: 1.3rem; font-weight: 700; }
-@media (max-width: 860px) {
-    .hero-grid { grid-template-columns: 1fr; text-align: center; }
-    .hero-copy { text-align: center; }
-    .hero-copy .cta, .hero-copy .workflow { justify-content: center; }
-    .hero-copy p.lead { margin-left: auto; margin-right: auto; }
-    .hero-mock { max-width: 340px; margin: 1.6rem auto 0; justify-self: center; }
-}
 .foot-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; }
 .foot-links a { color: var(--sand-2); }
 #appVersion { opacity: .6; }
 
 /* utils */
 .mt-2 { margin-top: 1.4rem; }
-@media (max-width: 720px) {
-    .flow { grid-template-columns: repeat(2, 1fr); }
-}
 
 .btn-danger { background: rgba(255,90,69,.14); color: var(--track); border: 1px solid rgba(255,90,69,.32); }
 .btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }
