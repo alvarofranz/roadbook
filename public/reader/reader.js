@@ -22,10 +22,16 @@
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null;
-    let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto ≤30 m (orange)
+    let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto, in reach and closing (orange)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
-    const AUTO_REACH_M = 50, WARN_M = 30; // auto-validate radius · approaching warning
+    // Auto-validation is by closest approach, not by entering a fixed bubble: a note is
+    // marked the moment you pass its nearest point (distance bottomed out, then rose again)
+    // having come within its reach. So clustered notes validate one by one as you drive past
+    // each, never all at once. The reach is a per-note gate, capped to half the smaller gap to
+    // a neighbour (so two notes' reaches can't overlap) and floored above GPS noise.
+    const REACH_MAX_M = 50, REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate, in metres: max where notes are spread out · min so we never demand sub-GPS precision · how far past the closest point confirms a pass
+    let approachIdx = -1, approachMin = Infinity, approachPos = null; // pass-by tracker for the active note: closest distance + the fix where it happened
     let lastPayload = '', lastQrUrl = '';
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
@@ -152,10 +158,7 @@
             // P_extra: armed on entering the 100 m radius; moving away again accumulates the overshoot
             if (dist <= C.MANUAL_RADIUS_M) armed = true;
             else if (armed) extraAccum += disp;
-            const wasApproaching = approaching;
-            approaching = auto && dist <= WARN_M; // orange warning band
-            if (auto && dist <= AUTO_REACH_M) validateAt(activeIdx, here); // auto-mark within 50 m
-            else if (approaching !== wasApproaching) renderNotes();
+            if (auto) autoAdvance(dist, here);
         }
         // top odometer bar
         $('odoTotal').textContent = (tripTotalM / 1000).toFixed(2);
@@ -166,6 +169,28 @@
         saveSession();
     }
     function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
+    // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
+    // (partial_distance is the metres from the previous note) so reaches never overlap, then
+    // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
+    function reachRadius(i) {
+        const gapPrev = notes[i].partial_distance || Infinity;
+        const gapNext = notes[i + 1] ? (notes[i + 1].partial_distance || Infinity) : Infinity;
+        return Math.max(REACH_MIN_M, Math.min(REACH_MAX_M, Math.min(gapPrev, gapNext) / 2));
+    }
+    // Closest-approach auto-validation. Track the smallest distance seen for the active note;
+    // once we've come within its reach AND moved PASS_MARGIN_M past that nearest point, we've passed
+    // it → validate. Speed-independent (no fix-to-fix delta) and immune to the cascade, since the
+    // next note's tracker only starts after this one advances.
+    function autoAdvance(dist, here) {
+        if (activeIdx !== approachIdx) { approachIdx = activeIdx; approachMin = Infinity; approachPos = null; } // new active note → fresh tracker
+        if (dist < approachMin) { approachMin = dist; approachPos = here; }
+        const reach = reachRadius(activeIdx);
+        const passed = approachMin <= reach && dist > approachMin + PASS_MARGIN_M;
+        const wasApproaching = approaching;
+        approaching = dist <= reach && !passed; // orange while in reach and still closing on the note
+        if (passed) validateAt(activeIdx, approachPos); // score against the closest point we hit; renderNotes() happens inside
+        else if (approaching !== wasApproaching) renderNotes();
+    }
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
