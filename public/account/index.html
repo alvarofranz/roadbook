@@ -27,6 +27,10 @@
         .roadbook-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .roadbook-row .meta small { color: var(--muted); white-space: nowrap; }
         .roadbook-row .btn { flex-shrink: 0; padding: .5rem .6rem; margin: 0; }
+        /* public/private pill — green globe when shared, muted lock when private */
+        .rb-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line); }
+        .rb-badge.public { color: var(--ok); border-color: var(--ok); }
+        .rb-badge.private { color: var(--muted); }
         .avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
         #vAccount { max-width: 860px; margin: 0 auto; }
         .profile-head { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin: 1.2rem 0 .5rem; }
@@ -133,8 +137,8 @@
     </section>
 </main>
 
-<script src="../assets/js/i18n.js?v=2026.06.16-1"></script>
+<script src="../assets/js/i18n.js?v=2026.06.17-6"></script>
 <script src="../assets/js/app.js?v=2026.06.16-1"></script>
-<script src="account.js?v=2026.06.16-1"></script>
+<script src="account.js?v=2026.06.17-6"></script>
 </body>
 </html>

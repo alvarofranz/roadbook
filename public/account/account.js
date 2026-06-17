@@ -121,7 +121,8 @@
         const list = $('rbList');
         if (!r.ok || !r.roadbooks || !r.roadbooks.length) { list.innerHTML = `<p class="muted small">${t('No roadbooks yet. Create one in the Editor.')}</p>`; return; }
         list.innerHTML = r.roadbooks.map((rb) => `<div class="roadbook-row">
-            <div class="meta"><b>${esc(rb.title)}</b><small><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBSummary(rb.total_distance, rb.note_count)}</small></div>
+            <div class="meta"><b>${esc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)}</small></div>
+            <span class="rb-badge ${rb.is_public ? 'public' : 'private'}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${esc(t(rb.is_public ? 'Public' : 'Private'))}</span>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <button class="btn btn-ghost" data-del="${rb.id}" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>

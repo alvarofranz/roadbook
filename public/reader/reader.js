@@ -23,6 +23,7 @@
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null;
     let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto ≤30 m (orange)
+    let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
     const AUTO_REACH_M = 50, WARN_M = 30; // auto-validate radius · approaching warning
     let lastPayload = '', lastQrUrl = '';
@@ -94,6 +95,7 @@
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
+        buildScored();
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
         $('autoBtn').innerHTML = autoLabel();
@@ -237,27 +239,50 @@
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; renderNotes();
     }
+    // Scored sections (rally special stages): only notes between a START icon and the
+    // next FINISH icon (both inclusive) are penalised; the liaison/transfer notes
+    // outside them are not. A roadbook with no START marker is scored end to end.
+    const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
+    const hasIcon = (n, name) => (n.icons || []).some((ic) => ic.name === name);
+    function buildScored() {
+        if (!notes.some((n) => hasIcon(n, START_ICON))) { scoredSet = null; return; }
+        scoredSet = new Set();
+        let inStage = false;
+        notes.forEach((n, i) => { if (hasIcon(n, START_ICON)) inStage = true; if (inStage) scoredSet.add(i); if (hasIcon(n, FINISH_ICON)) inStage = false; });
+    }
+    const isScored = (i) => scoredSet === null || scoredSet.has(i);
+
     function tapNote(i) {
         if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Trip mode: free navigation, no scoring
         if (i < activeIdx) return;
-        if (!meter || !meter.lastPos) return toast('Waiting for GPS…');
-        if (RB.geo.haversineM(meter.lastPos, notes[i]) > C.MANUAL_RADIUS_M) return toast(t('Too far from note') + ' ' + notes[i].num);
-        if (i > activeIdx) { pen.skip += C.P_SKIP * (i - activeIdx); extraAccum = 0; armed = false; } // overshoot belonged to the skipped note
-        validateAt(i, meter.lastPos);
+        // Manual tracking works with NO GPS at all; when a fix IS present, keep the
+        // 100 m proximity gate so a validation can't be faked far from the note.
+        const here = meter && meter.lastPos;
+        if (here && RB.geo.haversineM(here, notes[i]) > C.MANUAL_RADIUS_M) return toast(t('Too far from note') + ' ' + notes[i].num);
+        if (i > activeIdx) { // overshoot belonged to the skipped notes — only count skips inside a scored section
+            let skips = 0; for (let k = activeIdx; k < i; k++) if (isScored(k)) skips++;
+            pen.skip += C.P_SKIP * skips; extraAccum = 0; armed = false;
+        }
+        validateAt(i, here || null);
     }
     function validateAt(i, here) {
         const n = notes[i], now = new Date();
         if (startedAt == null) startedAt = now; // first validated note starts the clock (even if note 0 was skipped)
         endedAt = now;
-        if (i > 0) pen.acc += RB.geo.haversineM(here, n);
+        // Penalties accrue only inside a start→finish section, and only the
+        // position-based ones (accuracy/CAP) when an actual GPS fix is available —
+        // a manual run with no GPS simply has nothing to measure against.
+        const scored = isScored(i);
+        if (scored && here && i > 0) pen.acc += RB.geo.haversineM(here, n);
         const prev = notes[i - 1];
-        if (prev && prev.cap != null && prev.cap_distance != null) {
+        if (scored && here && prev && prev.cap != null && prev.cap_distance != null) {
             const tgt = RB.geo.destPoint(prev.lat, prev.lon, prev.cap, prev.cap_distance);
             pen.cap += RB.geo.haversineM(here, tgt);
         }
-        pen.extra += extraAccum; extraAccum = 0; armed = false;
+        if (scored) pen.extra += extraAccum;
+        extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
-        if (lim != null) { if (curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
+        if (lim != null) { if (scored && curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
         reached.add(i); tripPartialM = 0; approaching = false;
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; renderNotes();

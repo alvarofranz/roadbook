@@ -23,7 +23,8 @@ window.NoteCanvas = class NoteCanvas {
         this.svg = svg('svg', { viewBox: `0 0 ${this.REF_W} ${this.REF_H}`, class: 'vignette-svg' });
         this.el.appendChild(this.svg);
         const defs = svg('defs', {});
-        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`;
+        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
+            + `<marker id="vignette-box-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"></path></marker>`;
         this.svg.appendChild(defs);
         if (!this.toolbarEl) { this.toolbarEl = document.createElement('div'); this.el.parentNode.insertBefore(this.toolbarEl, this.el.nextSibling); }
         this.toolbarEl.classList.add('vignette-toolbar');
@@ -70,12 +71,12 @@ window.NoteCanvas = class NoteCanvas {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
             const [tx, ty] = this.toV(b.tip[0], b.tip[1]);
             const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: '#9aa4b2', 'stroke-width': b.width || 3, 'stroke-linecap': 'round', 'marker-end': 'url(#vignette-box-arrow)', 'stroke-dasharray': rt.dashed ? '6 4' : '' });
+            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: '#9aa4b2', 'stroke-width': b.width || 3, 'stroke-linecap': 'round', 'marker-end': 'url(#vignette-box-tick)', 'stroke-dasharray': rt.dashed ? '6 4' : '' });
             ln.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.select({ type: 'junctions', i }); });
             this.svg.appendChild(ln);
             if (this.sel && this.sel.type === 'junctions' && this.sel.i === i) {
                 this._handle(px, py, (vx, vy) => { const m = this.toM(vx, vy); b.pivot = [r1(m[0]), r1(m[1])]; });
-                // tip handle sits just BEYOND the arrowhead so your finger never covers it.
+                // tip handle sits just BEYOND the end tick so your finger never covers it.
                 const dx = tx - px, dy = ty - py, dl = Math.hypot(dx, dy) || 1;
                 this._handle(tx + dx / dl * 11, ty + dy / dl * 11, (vx, vy) => {
                     const ax = vx - px, ay = vy - py, al = Math.hypot(ax, ay) || 1;
@@ -161,7 +162,8 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     const toV = (px, py) => [cx + px, cy - py];
     resolveIcon = resolveIcon || ((ic) => ic.name);
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
-        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`;
+        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
+        + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
     trunkSegments(note).forEach((g) => {
         s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
         if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(3, g.width * 0.3)}" stroke-linecap="round"/>`; // motorway: white centre → double line
@@ -169,7 +171,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
         const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#9aa4b2" stroke-width="${b.width || 3}" stroke-linecap="round" marker-end="url(#vig-arr)"${rt.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#9aa4b2" stroke-width="${b.width || 3}" stroke-linecap="round" marker-end="url(#vig-tick)"${rt.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
     });
     (note.icons || []).forEach((ic) => {
         const [cxi, cyi] = toV(ic.pos ? ic.pos[0] : 0, ic.pos ? ic.pos[1] : 0), sz = ic.size || 32;

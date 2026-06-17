@@ -81,8 +81,9 @@
         $('tmCap').textContent = meter && meter.heading != null ? Math.round(meter.heading) : '—';
         saveSession();
     }
-    $('tmPlus10').onclick = () => { partialM += 10; totalM += 10; render(); };
-    $('tmMinus10').onclick = () => { const d = Math.min(10, partialM); partialM -= d; totalM = Math.max(0, totalM - d); render(); };
+    // partial ±10 m correctors adjust the partial trip ONLY — the lifetime total is untouched
+    $('tmPlus10').onclick = () => { partialM += 10; render(); };
+    $('tmMinus10').onclick = () => { partialM = Math.max(0, partialM - 10); render(); };
     // total has its own ±10 m correctors (adjust the lifetime total only)
     $('tmTotPlus10').onclick = () => { totalM += 10; render(); };
     $('tmTotMinus10').onclick = () => { totalM = Math.max(0, totalM - 10); render(); };
