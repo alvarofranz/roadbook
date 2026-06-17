@@ -10,28 +10,71 @@
     <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96x96.png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=2026.06.17-3">
-    <link rel="stylesheet" href="assets/css/app.css?v=2026.06.17-3">
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=2026.06.17-4">
+    <link rel="stylesheet" href="assets/css/app.css?v=2026.06.17-4">
 </head>
 <body>
 <header class="topbar"></header>
 
 <main>
-    <!-- TOOL LAUNCHER -->
-    <section class="block">
-        <nav class="wrap launcher" aria-label="RDBK tools">
-            <a class="launch-tile" href="recorder/"><i class="fa-solid fa-circle-dot"></i><span class="launch-name">Recorder</span><span class="launch-sub" data-i18n="Record a GPS track">Record a GPS track</span></a>
-            <a class="launch-tile" href="editor/"><i class="fa-solid fa-pen-ruler"></i><span class="launch-name">Editor</span><span class="launch-sub" data-i18n="Build a roadbook">Build a roadbook</span></a>
-            <a class="launch-tile" href="reader/"><i class="fa-solid fa-compass"></i><span class="launch-name">Reader</span><span class="launch-sub" data-i18n="Navigate a roadbook">Navigate a roadbook</span></a>
-            <a class="launch-tile" href="tripmaster/"><i class="fa-solid fa-gauge-high"></i><span class="launch-name">Tripmaster</span><span class="launch-sub" data-i18n="GPS trip computer">GPS trip computer</span></a>
-            <a class="launch-tile" href="ranking/"><i class="fa-solid fa-ranking-star"></i><span class="launch-name">Ranking</span><span class="launch-sub" data-i18n="Build result rankings">Build result rankings</span></a>
-        </nav>
+    <!-- HERO -->
+    <section class="hero">
+        <div class="wrap hero-grid">
+            <div class="hero-copy">
+                <h1 data-i18n-html="hero.title">Digital roadbooks for <span class="accent">your adventures</span></h1>
+                <p class="lead" data-i18n="hero.lead">Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.</p>
+                <div class="workflow" aria-label="Workflow">
+                    <div class="wf-step"><i class="fa-solid fa-circle-dot"></i><span data-i18n="flow.s1">Record a route</span></div>
+                    <span class="wf-arrow">→</span>
+                    <div class="wf-step"><i class="fa-solid fa-pen-ruler"></i><span data-i18n="flow.s2">Build a roadbook</span></div>
+                    <span class="wf-arrow">→</span>
+                    <div class="wf-step"><i class="fa-solid fa-users"></i><span data-i18n="flow.s3">Use it with friends</span></div>
+                    <span class="wf-arrow">→</span>
+                    <div class="wf-step"><i class="fa-solid fa-trophy"></i><span data-i18n="flow.s4">Run an event</span></div>
+                </div>
+            </div>
+            <img class="hero-mock" src="assets/mockup.png" alt="RDBK.app" width="440" height="440" loading="eager">
+        </div>
     </section>
 
-    <!-- PUBLIC CHALLENGES -->
+    <!-- FEATURES -->
+    <section class="block" id="features">
+        <div class="wrap">
+            <div class="section-head">
+                <div class="kicker" data-i18n="flow.kicker">Features</div>
+                <h2 data-i18n="flow.title">Everything you need</h2>
+            </div>
+            <div class="flow">
+                <div class="step"><i class="fa-solid fa-circle-dot"></i><h4 data-i18n="feat.2.t">Record route</h4><p data-i18n="feat.2.d">Record live with GPS, dropping waypoints as you go, add Way points with voice recognition.</p></div>
+                <div class="step"><i class="fa-solid fa-map-location-dot"></i><h4 data-i18n="feat.1.t">Editor</h4><p data-i18n="feat.1.d">Build a roadbook from a GPX, Design each note with rally standards.</p></div>
+                <div class="step"><i class="fa-solid fa-compass"></i><h4 data-i18n="feat.4.t">Roadbook reader</h4><p data-i18n="feat.4.d">Navigate with odometer, bearing, a live map and the CAP direction bar.</p></div>
+                <div class="step"><i class="fa-solid fa-gauge-high"></i><h4 data-i18n="feat.5.t">Tripmaster</h4><p data-i18n="feat.5.d">A precise GPS odometer with no roadbook — partial and total distance.</p></div>
+                <div class="step"><i class="fa-solid fa-qrcode"></i><h4 data-i18n="feat.6.t">Validate &amp; QR</h4><p data-i18n="feat.6.d">Validate notes (manual or automatic) and emit a signed result QR.</p></div>
+                <div class="step"><i class="fa-solid fa-ranking-star"></i><h4 data-i18n="feat.7.t">Ranking</h4><p data-i18n="feat.7.d">Scan QRs and build accuracy, CAP, speed and regularity rankings.</p></div>
+                <div class="step"><i class="fa-solid fa-globe"></i><h4 data-i18n="feat.8.t">Accounts &amp; sharing</h4><p data-i18n="feat.8.d">Sign in to store roadbooks and publish them as public challenges.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INSTALL / CROSS-PLATFORM -->
+    <section class="block" id="install">
+        <div class="wrap section-head">
+            <div class="kicker" data-i18n="install.kicker">Cross-platform</div>
+            <h2 data-i18n="install.title">Install it on any device</h2>
+            <p class="lead install-lead" data-i18n="install.text">Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.</p>
+            <div class="platforms">
+                <span><i class="fa-brands fa-windows"></i> Windows</span>
+                <span><i class="fa-brands fa-apple"></i> macOS / iOS</span>
+                <span><i class="fa-brands fa-android"></i> Android</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- GALLERY -->
     <section class="block" id="gallery">
         <div class="wrap">
             <div class="section-head">
+                <div class="kicker" data-i18n="gallery.kicker">Gallery</div>
                 <h2 data-i18n="gallery.title">Public Challenges</h2>
             </div>
             <div class="gallery" id="galleryGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading challenges…</p></div>
@@ -40,9 +83,9 @@
 
 </main>
 
-<script src="assets/js/i18n.js?v=2026.06.17-3"></script>
-<script src="assets/js/challenges.js?v=2026.06.17-3"></script>
-<script src="assets/js/app.js?v=2026.06.17-3"></script>
-<script src="assets/js/home.js?v=2026.06.17-3"></script>
+<script src="assets/js/i18n.js?v=2026.06.17-4"></script>
+<script src="assets/js/challenges.js?v=2026.06.17-4"></script>
+<script src="assets/js/app.js?v=2026.06.17-4"></script>
+<script src="assets/js/home.js?v=2026.06.17-4"></script>
 </body>
 </html>
