@@ -108,6 +108,11 @@ section.block { padding: 2.4rem 0; }
 .section-head { margin-bottom: 1.4rem; }
 .section-head h2 { font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -.01em; margin: .2rem 0; }
 .section-head .kicker { color: var(--sand); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; }
+/* install / cross-platform band */
+#install .section-head { text-align: center; }
+#install .install-lead { max-width: 70ch; margin: .6rem auto 0; }
+.platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 1.4rem; margin-top: 1.2rem; color: var(--muted); font-weight: 700; }
+.platforms i { color: var(--sand); margin-right: .35rem; }
 
 /* features grid (home) */
 .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
@@ -168,21 +173,31 @@ section.block { padding: 2.4rem 0; }
 .gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
 .challenge-row-placeholder { width: 84px; height: 54px; border-radius: 8px; flex: 0 0 auto; background: var(--card); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.3rem; }
 
-/* Canonical 3-column note row — shared by the Reader and the public challenge page. */
-.noterow { display: grid; grid-template-columns: 78px 1fr 118px; border-bottom: 1px solid var(--line); height: 200px; background: var(--card); transition: background .15s; }
-.noterow.done { background: rgba(58, 210, 159, .12); }
-.noterow.active { background: rgba(232, 176, 89, .18); box-shadow: inset 0 0 0 2px var(--sand); }
-.noterow .col-left { padding: .5rem .35rem .5rem .8rem; display: flex; flex-direction: column; gap: .05rem; }
-.noterow .dist-total { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.noterow .dist-partial { font-size: .85rem; color: var(--muted); }
-.noterow .note-num { margin-top: .25rem; align-self: flex-start; border: 1px solid var(--line); border-radius: 6px; padding: 0 .45rem; font-weight: 700; font-size: .85rem; }
-.noterow .bearing { color: var(--track); font-weight: 800; font-size: .9rem; margin-top: auto; }
-.noterow .col-center { border-left: 1px solid var(--line); border-right: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: .3rem; min-width: 0; overflow: hidden; }
-.noterow .col-center svg { width: 100%; height: 100%; display: block; }
-.noterow .col-right { padding: .5rem .65rem; display: flex; flex-direction: column; font-size: .82rem; }
-.noterow .col-right .text { flex: 1; word-break: break-word; }
-.noterow .col-right .cap-indicator { color: var(--track); font-weight: 800; line-height: 1.2; margin-bottom: .3rem; }
-.noterow .col-right .coords { color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; margin-top: auto; }
+/* White "paper" roadbook note row — shared by the Reader and the public challenge page
+   (distance | vignette | comments | buttons). Read-only views add .readonly to drop the
+   buttons column; the colour-coded state classes are set by the Reader only. */
+.nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
+.nrow.readonly { grid-template-columns: 96px 124px 1fr; }
+.nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
+.nrow.readonly .col-text { border-right: 0; }
+.nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
+.nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
+.nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
+.nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
+.nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
+.nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
+.nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
+.nrow .col-text .text { flex: 1; word-break: break-word; }
+.nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
+.nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
+.nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
+.nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
+.nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
+.nrow.done { background: #d6f5e0; }     /* light green: reached */
+.nrow.skipped { background: #ffe1ec; }  /* pink: passed over without being reached */
+.nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
+.nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching */
 /* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
 .vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
 .gallery-card .gallery-body { padding: .9rem 1rem; }
@@ -213,10 +228,16 @@ section.block { padding: 2.4rem 0; }
 .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2.5rem; align-items: center; }
 .hero-copy { text-align: left; }
 .hero-mock { width: 100%; max-width: 460px; height: auto; border-radius: 28px; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); justify-self: end; }
+/* hero workflow strip: record → build → ride → event */
+.workflow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin-top: 1.6rem; }
+.workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
+.workflow .wf-step i { font-size: 1.7rem; color: var(--sand); }
+.workflow .wf-step span { font-size: .82rem; font-weight: 700; max-width: 12ch; }
+.workflow .wf-arrow { color: var(--muted); font-size: 1.3rem; font-weight: 700; }
 @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
     .hero-copy { text-align: center; }
-    .hero-copy .cta { justify-content: center; }
+    .hero-copy .cta, .hero-copy .workflow { justify-content: center; }
     .hero-copy p.lead { margin-left: auto; margin-right: auto; }
     .hero-mock { max-width: 340px; margin: 1.6rem auto 0; justify-self: center; }
 }

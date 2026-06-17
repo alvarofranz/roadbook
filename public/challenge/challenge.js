@@ -31,6 +31,15 @@
             $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');
         }
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
-        $('chNotes').innerHTML = rb.notes.map((n) => `<div class="noterow">${NoteCanvas.rowCols(n, iconSrc)}</div>`).join('');
+        const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
+        // same white "paper" rows as the Reader (read-only: no buttons/state)
+        $('chNotes').innerHTML = rb.notes.map((n) => {
+            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
+            return `<div class="nrow readonly">
+                <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
+                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
+            </div>`;
+        }).join('');
     }).catch(() => { $('chLoading').textContent = t('This challenge does not exist or is private.'); });
 })();

@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.17-1">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.17-2">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.17-1">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.17-2">
     <style>
         /* top odometer bar */
         .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -30,28 +30,9 @@
         .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } .odometer-bar { top: 0; } }
-        /* roadbook navigation rows — white "paper", fixed | fixed | dynamic | buttons */
+        /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
+           (done/skipped/active/warn/close) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
-        .nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; }
-        .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
-        .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
-        .nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
-        .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
-        .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
-        .nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
-        .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
-        .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
-        .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
-        .nrow .col-text .text { flex: 1; word-break: break-word; }
-        .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
-        .nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
-        .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
-        .nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
-        .nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
-        .nrow.done { background: #d6f5e0; }     /* light green: reached */
-        .nrow.skipped { background: #ffe1ec; }  /* pink: passed over without being reached */
-        .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
-        .nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching (auto, ≤30 m) */
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
@@ -152,16 +133,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.17-1"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.17-1"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.17-1"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.17-1"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.17-1"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.17-1"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.06.17-1"></script>
-<script src="../assets/js/challenges.js?v=2026.06.17-1"></script>
-<script src="../assets/js/i18n.js?v=2026.06.17-1"></script>
-<script src="../assets/js/app.js?v=2026.06.17-1"></script>
-<script src="reader.js?v=2026.06.17-1"></script>
+<script src="../assets/js/config.js?v=2026.06.17-2"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.17-2"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.17-2"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.17-2"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.17-2"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.17-2"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.06.17-2"></script>
+<script src="../assets/js/challenges.js?v=2026.06.17-2"></script>
+<script src="../assets/js/i18n.js?v=2026.06.17-2"></script>
+<script src="../assets/js/app.js?v=2026.06.17-2"></script>
+<script src="reader.js?v=2026.06.17-2"></script>
 </body>
 </html>

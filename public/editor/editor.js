@@ -43,9 +43,7 @@
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
-    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), onSelect: showRoadForSelection, resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
-    // the note's Road combo (below the tulip) shows only while a line is selected
-    function showRoadForSelection(sel) { const f = $('noteProps') && $('noteProps').querySelector('.note-road'); if (f) f.hidden = !(sel && sel.type === 'junctions'); }
+    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
@@ -641,6 +639,7 @@
 
     /* ---------- account: save to profile · public/private · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, isPublic = 0;
+    let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
     // The opening screen lists the signed-in user's saved roadbooks so they can
     // jump straight back into one (loading it pins ?rb so re-saves update it).
     async function refreshMyRoadbooks() {
@@ -693,7 +692,8 @@
     async function loadPhotos() {
         const r = await RBApi('ph_list', { roadbook: currentRbId });
         const g = $('photoGrid');
-        if (!r.ok || !r.photos.length) { g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); return; }
+        if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
+        notePhotos = r.photos;
         g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt=""><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
         // pins on the map; tap a 📷 pin to promote it to a waypoint
@@ -701,6 +701,7 @@
             if (ph.lat == null) return;
             RBConfirm('Create a waypoint at this photo?', 'Create').then((yes) => { if (yes && rb) addWaypointNear({ lat: ph.lat, lon: ph.lon }); });
         });
+        if (rb) renderNotes(); // refresh the per-note 📷 indicators
     }
     $('addPhotoBtn').onclick = () => { if (!currentRbId) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => {
@@ -719,9 +720,18 @@
      * the row itself, so a full list rebuild only happens on structural changes. */
     function renderNotes() {
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
+        // geotagged photos belong to their nearest note (within 80 m) → a 📷 under the km
+        const photosByNote = {};
+        notePhotos.forEach((p) => {
+            if (p.lat == null) return;
+            const pt = { lat: +p.lat, lon: +p.lon };
+            let best = -1, bd = Infinity;
+            rb.notes.forEach((n, k) => { const d = RB.geo.haversineM(n, pt); if (d < bd) { bd = d; best = k; } });
+            if (best >= 0 && bd <= 80) (photosByNote[best] = photosByNote[best] || []).push(p);
+        });
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}</span>
-                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}</span>
+                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">📷</button>` : ''}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
@@ -748,6 +758,12 @@
         });
         $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
         $('noteList').querySelectorAll('[data-down]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.down + 1); });
+        // tap the 📷 under the km to view the note's photo(s)
+        $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
+            e.stopPropagation();
+            const ph = photosByNote[+b.dataset.photo] || [];
+            if (ph.length) RBModal(ph.map((p) => `<img src="${esc(p.url)}" alt="" class="photo-preview">`).join(''), 'slim center');
+        });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
             inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };
@@ -828,10 +844,10 @@
         // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        // Danger lives in the icon-search row; the Red CAP on/off toggle is in the note
-        // row (left of the coordinates); Road (road_type_out) shows only while a line is selected.
+        // Danger lives in the icon-search row; the Red CAP on/off toggle is in the note row
+        // (left of the coordinates); Road = the road type of the segment to follow (road_type_out).
         $('dangerSlot').innerHTML = `<label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
-        $('noteProps').innerHTML = `<label class="prop-field note-road"${canvas.sel && canvas.sel.type === 'junctions' ? '' : ' hidden'}><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
+        $('noteProps').innerHTML = `<label class="prop-field note-road"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('edRout').onchange = (e) => {
             n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
             const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent

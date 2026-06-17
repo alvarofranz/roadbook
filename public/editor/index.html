@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-10">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.16-12">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-10">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.16-12">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
@@ -62,6 +62,8 @@
         /* distance cell sits right after the number: total km (bold) + partial leg (muted) */
         .note-mini .note-km { flex-shrink: 0; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 3.4rem; }
         .note-mini .note-km b { display: block; font-size: .82rem; font-weight: 800; color: var(--text); }
+        /* a photo was taken near this note → tap the 📷 (under the km) to view it */
+        .note-mini .note-km .note-photo { display: block; margin-top: .25rem; background: none; border: 0; padding: 0; font: inherit; font-size: 1rem; line-height: 1; cursor: pointer; }
         /* delete + up/down stacked in a vertical column on the right of the row */
         .note-mini .note-actions { flex-shrink: 0; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; }
         .note-mini .note-del, .note-mini .note-nav { flex-shrink: 0; display: inline-flex; background: none; border: 0; padding: .25rem .4rem; font: inherit; cursor: pointer; }
@@ -130,6 +132,7 @@
         .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--track); animation: recpulse 1.2s infinite; flex-shrink: 0; }
         @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
+        .rb-actions .btn-group { flex-wrap: wrap; } /* phones: action buttons wrap instead of overflowing off-screen */
         .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 260px; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
@@ -314,15 +317,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.16-10"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.16-10"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.16-10"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.16-10"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.16-10"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.06.16-10"></script>
-<script src="../assets/js/challenges.js?v=2026.06.16-10"></script>
-<script src="../assets/js/i18n.js?v=2026.06.16-10"></script>
-<script src="../assets/js/app.js?v=2026.06.16-10"></script>
-<script src="editor.js?v=2026.06.16-10"></script>
+<script src="../assets/js/config.js?v=2026.06.16-12"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.16-12"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.16-12"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.16-12"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.16-12"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.06.16-12"></script>
+<script src="../assets/js/challenges.js?v=2026.06.16-12"></script>
+<script src="../assets/js/i18n.js?v=2026.06.16-12"></script>
+<script src="../assets/js/app.js?v=2026.06.16-12"></script>
+<script src="editor.js?v=2026.06.16-12"></script>
 </body>
 </html>

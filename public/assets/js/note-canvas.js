@@ -62,6 +62,8 @@ window.NoteCanvas = class NoteCanvas {
             const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
             this.svg.appendChild(svg('line', attrs));
+            // motorway: a thin white centre line splits the thick stroke into a DOUBLE line
+            if (s.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: '#fff', 'stroke-width': Math.max(1.5, s.width * 0.4), 'stroke-linecap': 'round' }));
         });
         // junctions
         (this.note.junctions || []).forEach((b, i) => {
@@ -162,6 +164,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`;
     trunkSegments(note).forEach((g) => {
         s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(1.5, g.width * 0.4)}" stroke-linecap="round"/>`; // motorway: white centre → double line
     });
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
@@ -180,24 +183,6 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     return s + '</svg>';
 };
 
-/* 3-column note row content (total/partial+number · vignette · comments) — the
- * public challenge page's canonical layout. */
-window.NoteCanvas.rowCols = function (n, iconSrc) {
-    const esc = RBesc;
-    const cap = n.cap != null ? `<div class="cap-indicator">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? '<br>km ' + (n.cap_distance / 1000).toFixed(2) : ''}</div>` : '';
-    const bearing = (n.cap == null && n.bearing_out != null && n.num > 1) ? `<div class="bearing">${Math.round(n.bearing_out)}°</div>` : '';
-    return `<div class="col-left">
-            <div class="dist-total">${((n.distance ?? 0) / 1000).toFixed(2)}</div>
-            <div class="dist-partial">${((n.partial_distance ?? 0) / 1000).toFixed(2)}</div>
-            <div class="note-num">${n.num}</div>${bearing}
-        </div>
-        <div class="col-center">${window.NoteCanvas.toSVG(n, iconSrc)}</div>
-        <div class="col-right">
-            <div class="text">${esc(n.text || '')}</div>${cap}
-            <div class="coords">${(+n.lat).toFixed(5)}<br>${(+n.lon).toFixed(5)}</div>
-        </div>`;
-};
-
 /* FIA-style danger grading: the note's `danger` (1-3) renders as '!' / '!!' /
  * '!!!' in red INSIDE the diagram box (top-left), never in the text column. */
 function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repeat(Math.min(d, 3)) : ''; }
@@ -207,13 +192,22 @@ function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repea
  * angle is (bearing_out − bearing_in), i.e. the heading change across the three
  * track points (previous · note · next), so the diagram already shows the
  * direction to follow (straight up = carry on, right = turn right, …). Styled by
- * road_type_out. Junction vectors branch from the centre. Stroke width is
- * indicative of the road type. */
+ * road_type_out. Junction vectors branch from the centre. Each road type renders
+ * to its own standard: motorway = thick DOUBLE line, asphalt = thick single,
+ * track = thin single, off-piste = thin dashed. */
+// tulip road rendering per type (independent of the map's ROAD_TYPES line widths)
+const ROAD_STYLE = {
+    1: { width: 9, dashed: false, double: true },  // motorway: thick double line
+    2: { width: 8, dashed: false, double: false }, // asphalt: thick single line
+    3: { width: 4, dashed: false, double: false }, // track: thin line
+    4: { width: 4, dashed: true, double: false },  // off-piste: thin dashed line
+};
+const roadStyle = (rt) => ROAD_STYLE[rt] || ROAD_STYLE[3];
 function trunkSegments(note) {
     const cx = 115, cy = 81, L = 63; // centre of the 230×162 reference box; exit length
     const seg = (roadType, x1, y1, x2, y2, arrow, primary) => {
-        const rt = RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0];
-        return { x1, y1, x2, y2, color: primary ? '#3b82f6' : '#9aa4b2', width: rt.width, dashed: rt.dashed, arrow };
+        const st = roadStyle(roadType);
+        return { x1, y1, x2, y2, color: primary ? '#3b82f6' : '#9aa4b2', width: st.width, dashed: st.dashed, double: st.double, arrow };
     };
     const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
