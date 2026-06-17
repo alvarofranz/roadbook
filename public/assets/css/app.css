@@ -72,6 +72,8 @@ img { max-width: 100%; display: block; }
     .topbar.nav-open { backdrop-filter: none; background: var(--bg); }
     .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; background: var(--bg); }
     .topnav.open .nav-link { font-size: 1.55rem; font-weight: 700; }
+    /* keep the brand logo visible at the top of the open full-viewport menu */
+    .topbar.nav-open .brand { position: relative; z-index: 90; }
 }
 
 /* language switcher */
@@ -267,3 +269,11 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .map-placeholder { padding: 1rem; color: var(--muted); }
 /* RBMap's layer-toggle control: centre the FontAwesome glyph in the Mapbox button */
 .mapboxgl-ctrl-group button i { line-height: 29px; font-size: .95rem; color: #333; }
+
+/* ---------- shared GPS status bar (RBStatusBar): clock · battery · satellite/GPS ---------- */
+.status-bar { position: sticky; top: 56px; z-index: 30; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+.status-bar .status-cell { display: flex; align-items: center; justify-content: center; gap: .3rem; min-width: 0; background: var(--bg); padding: .85rem .2rem; font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.status-bar .status-cell i { font-size: clamp(.95rem, 4vw, 1.25rem); color: var(--muted); }
+.status-bar .status-cell.ok i, .status-bar .status-cell.ok span { color: var(--ok); }
+.status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: #ff9f1c; }
+.status-bar .status-cell.bad i, .status-bar .status-cell.bad span { color: var(--track); }

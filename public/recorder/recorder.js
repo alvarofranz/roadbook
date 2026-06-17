@@ -2,10 +2,11 @@
 /* RDBK Recorder — a dedicated live GPX track recorder. Records a route with the
  * shared GPS loop (RBGpsMeter) and crash-safe GPX logging (RBGpxRecorder), shows
  * it live on a map (RBMap), and lets you drop named waypoints and snap geotagged
- * photos along the way. A sticky header bar shows the clock, battery,
- * satellite/GPS status and the kilometres recorded. On Finish you can download
- * the GPX or convert the whole thing (track + waypoints + photos) into a roadbook
- * in the Editor. The session is checkpointed so a reload or an OS kill can resume. */
+ * photos along the way. The shared status bar (RBStatusBar) shows the clock,
+ * battery and satellite/GPS status; the recorded kilometres show in the dashboard.
+ * On Finish you can download the GPX or convert the whole thing (track + waypoints
+ * + photos) into a roadbook in the Editor. The session is checkpointed so a reload
+ * or an OS kill can resume. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, toast = RBToast;
@@ -16,19 +17,6 @@
     let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null;
     let track = [], wpts = [], photos = [];
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
-
-    /* ---------- battery (best-effort; not all browsers expose the API) ---------- */
-    let battery = null;
-    if ('getBattery' in navigator) {
-        try { navigator.getBattery().then((b) => { battery = b; ['levelchange', 'chargingchange'].forEach((ev) => b.addEventListener(ev, renderBar)); renderBar(); }).catch(() => {}); } catch (e) {}
-    }
-    const battIcon = (pct) => pct > 80 ? 'fa-battery-full' : pct > 55 ? 'fa-battery-three-quarters' : pct > 30 ? 'fa-battery-half' : pct > 10 ? 'fa-battery-quarter' : 'fa-battery-empty';
-    // The Geolocation API exposes accuracy, not a satellite count — show signal quality.
-    function gpsStatus(acc) {
-        if (acc == null) return { cls: 'bad', txt: t('No fix') };
-        const cls = acc <= 15 ? 'ok' : acc <= 35 ? 'mid' : 'bad';
-        return { cls, txt: '±' + Math.round(acc) + ' m' };
-    }
 
     /* ---------- map ---------- */
     map = new RBMap('recMap', { zoom: 15 });
@@ -45,9 +33,9 @@
         toast,
         onChange: (recording) => {
             window.RB_BUSY = recording; // never auto-refresh mid-recording
-            $('recBar').hidden = !recording;
             $('recIdle').hidden = recording;
             $('recRunning').hidden = !recording;
+            if (recording) RBStatusBar.show(); else RBStatusBar.hide();
             if (recording && map && map.map) setTimeout(() => map.map.resize(), 60);
         },
     });
@@ -93,7 +81,7 @@
     }
     function onFix(fix) {
         const c = fix.coords;
-        lastAcc = c.accuracy;
+        lastAcc = c.accuracy; RBStatusBar.setGps(lastAcc);
         if (map) map.setPosition(fix.here.lat, fix.here.lon, true);
         if (c.accuracy != null && c.accuracy > 35) { renderBar(); return; } // drop junk fixes
         here = { lat: fix.here.lat, lon: fix.here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
@@ -144,8 +132,10 @@
     $('recWpt').onclick = () => {
         if (!here) return toast(t('Waiting for a GPS fix…'));
         const note = dropWaypoint(here.lat, here.lon, '');
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition; // speech-to-text where supported
+        const micBtn = SR ? `<button class="btn btn-ghost" type="button" id="wfMic" aria-label="${t('Dictate')}" title="${t('Dictate')}"><i class="fa-solid fa-microphone"></i></button>` : '';
         const d = RBModal(`<h3>${t('Waypoint')} ${note.num}</h3>
-            <input id="wfText" class="modal-in" placeholder="${t('Quick note (optional)…')}" autocomplete="off">
+            <div class="wf-row"><input id="wfText" class="field" placeholder="${t('Quick note (optional)…')}" autocomplete="off">${micBtn}</div>
             <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'narrow', () => finish());
         const inp = d.q('#wfText'), btn = d.q('#wfBtn');
         setTimeout(() => inp.focus(), 50);
@@ -155,6 +145,21 @@
         inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = t('Save note'); } });
         inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
         btn.onclick = finish;
+        // dictate the note straight into the field (tap to start, tap to stop)
+        if (SR) {
+            const mic = d.q('#wfMic'); let rec = null;
+            mic.onclick = () => {
+                if (rec) { rec.stop(); return; }
+                rec = new SR();
+                const ui = document.documentElement.lang;
+                rec.lang = ui === 'it' ? 'it-IT' : ui === 'es' ? 'es-ES' : ui === 'en' ? 'en-US' : (navigator.language || 'en-US');
+                rec.interimResults = true;
+                rec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; inp.value = txt; typed = true; btn.textContent = t('Save note'); };
+                const done = () => { mic.classList.remove('on'); rec = null; };
+                rec.onend = done; rec.onerror = done;
+                mic.classList.add('on'); try { rec.start(); } catch (e) { done(); }
+            };
+        }
     };
 
     /* ---------- photos (signed-in: camera → upload → geotagged pin) ---------- */
@@ -208,22 +213,9 @@
         d.q('#rfClose').onclick = d.close;
     }
 
-    /* ---------- the live header bar + dashboard ---------- */
+    /* ---------- the running dashboard (the clock/battery/GPS bar is RBStatusBar) ---------- */
     function renderBar() {
-        const now = new Date();
-        $('rbClock').textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
-
-        if (battery) {
-            const pct = Math.round(battery.level * 100);
-            $('rbBatt').textContent = pct + '%';
-            $('rbBattIcon').className = 'fa-solid ' + (battery.charging ? 'fa-bolt' : battIcon(pct));
-        } else $('rbBatt').textContent = 'N/A';
-
-        const g = gpsStatus(lastAcc); // signal quality from the latest fix accuracy
-        $('rbGpsCell').className = 'rec-cell ' + g.cls;
-        $('rbGps').textContent = g.txt;
-
-        $('rbKm').textContent = (recordedM / 1000).toFixed(2);
+        $('rbKmBox').textContent = (recordedM / 1000).toFixed(2);
         $('rbSpeed').textContent = meter ? Math.round(meter.speedKmh) : 0;
         $('rbWptsN').textContent = wpts.length;
         const s = Math.floor(elapsed() / 1000);

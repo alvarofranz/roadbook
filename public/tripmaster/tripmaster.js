@@ -41,6 +41,7 @@
 
     function start() {
         window.RB_BUSY = true; // never auto-refresh mid-trip
+        RBStatusBar.show(); // shared bar: clock · battery · satellite/GPS
         meter = new RBGpsMeter(onFix, () => toast('No geolocation'));
         setInterval(() => {
             const now = new Date();
@@ -51,6 +52,7 @@
         render();
     }
     function onFix(fix) {
+        RBStatusBar.setGps(fix.coords.accuracy);
         totalM += fix.disp; partialM += fix.disp;
         if (fix.speedKmh > maxKmh) maxKmh = fix.speedKmh;
         RBGpxRecorder.feed(fix.coords, fix.here, fix.tnow);
@@ -68,21 +70,28 @@
     }
     function render() {
         const speedKmh = meter ? meter.speedKmh : 0;
+        const band = speedBandColor(speedKmh);
         $('tmTotal').textContent = (totalM / 1000).toFixed(2);
         $('tmPartial').textContent = (partialM / 1000).toFixed(2);
         $('tmSpeed').textContent = Math.round(speedKmh);
-        $('tmSpeed').style.setProperty('--speed-band', speedBandColor(speedKmh) || 'var(--text)'); // data-driven band colour
+        $('tmSpeed').style.setProperty('--speed-band', band || 'var(--text)'); // data-driven band colour
         $('tmSpeed').classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
+        $('tmMain').style.background = band || ''; // tint the central column with the alert colour
         $('tmMax').textContent = Math.round(maxKmh);
         $('tmCap').textContent = meter && meter.heading != null ? Math.round(meter.heading) : '—';
         saveSession();
     }
     $('tmPlus10').onclick = () => { partialM += 10; totalM += 10; render(); };
     $('tmMinus10').onclick = () => { const d = Math.min(10, partialM); partialM -= d; totalM = Math.max(0, totalM - d); render(); };
+    // total has its own ±10 m correctors (adjust the lifetime total only)
+    $('tmTotPlus10').onclick = () => { totalM += 10; render(); };
+    $('tmTotMinus10').onclick = () => { totalM = Math.max(0, totalM - 10); render(); };
     $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoints; partialM = 0; render(); };
     // stopwatch: the button is Start/Pause; a reset button appears once it holds any time
     function renderTimerButton() {
-        $('tmTimerBtn').innerHTML = timerOn ? `<i class="fa-solid fa-pause"></i> <span>${t('Pause')}</span>` : `<i class="fa-solid fa-stopwatch"></i> <span>${t('Timer')}</span>`;
+        $('tmTimerBtn').innerHTML = timerOn ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-stopwatch"></i>';
+        const lbl = t(timerOn ? 'Pause' : 'Timer');
+        $('tmTimerBtn').setAttribute('aria-label', lbl); $('tmTimerBtn').setAttribute('title', lbl);
         $('tmTimerBtn').classList.toggle('btn-primary', timerOn);
         $('tmTimerReset').hidden = !timerOn && timerAcc === 0;
     }

@@ -75,9 +75,9 @@ window.RBGpxRecorder = (() => {
             ${rateField}
             <label class="muted small">${t('File name')}</label>
             <input id="gxName" class="modal-in" type="text" value="${defaultName()}">
-            <p class="muted small" id="gxLoc">${fsa ? t('Tip: choose a file to save live to disk (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
+            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
             <div class="btnrow between">
-                ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose file…')}</button>` : '<span></span>'}
+                ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
             </div>`, 'narrow');
         let picked = null;
