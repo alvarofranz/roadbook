@@ -327,12 +327,12 @@
         try { const j = JSON.parse(await f.text()); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
         catch (err) { toast('Error: ' + err.message); }
     };
-    // Toggle between the opening screen (saved roadbooks + load options) and the
+    // Toggle between the opening screen (ways to start a new roadbook) and the
     // editing surface (the map + tool bar). The map is built up front but stays
     // hidden until there's a roadbook to edit, so the editor never opens on a
     // blank map.
     function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
-    function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; refreshMyRoadbooks(); }
+    function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; }
     function setRoadbook(r) {
         rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
         // Pre-load all embedded icons as data URIs so they render in the editor
@@ -629,27 +629,6 @@
     /* ---------- account: save to profile · public/private · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, isPublic = 0;
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
-    // The opening screen lists the signed-in user's saved roadbooks so they can
-    // jump straight back into one (loading it pins ?rb so re-saves update it).
-    async function refreshMyRoadbooks() {
-        if (!meUser) { $('myRoadbooksSection').hidden = true; return; }
-        const r = await RBApi('rb_list');
-        if (!r.ok || !r.roadbooks || !r.roadbooks.length) { $('myRoadbooksSection').hidden = true; return; }
-        $('myRoadbooksSection').hidden = false;
-        $('myRoadbooks').innerHTML = r.roadbooks.map((m) => `<button type="button" class="rb-open-row" data-open="${m.id}">
-                <i class="fa-solid fa-${m.is_public ? 'globe' : 'lock'} icon-accent"></i>
-                <span class="meta"><b>${esc(m.title)}</b><small>${RBSummary(m.total_distance, m.note_count)}</small></span>
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-            </button>`).join('');
-        $('myRoadbooks').querySelectorAll('[data-open]').forEach((b) => b.onclick = () => openSaved(+b.dataset.open));
-    }
-    async function openSaved(id) {
-        const r = await RBApi('rb_get', { id });
-        if (r.ok && r.roadbook) {
-            currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook);
-            try { history.replaceState(null, '', location.pathname + '?rb=' + id); } catch (e) {}
-        } else toast(r.error || 'Could not open the roadbook.');
-    }
     $('visPrivate').onclick = () => { setVis(0); markDirty(); };
     $('visPublic').onclick = () => { setVis(1); markDirty(); };
     function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); $('visPrivate').setAttribute('aria-pressed', String(!v)); $('visPublic').setAttribute('aria-pressed', String(!!v)); }
@@ -1045,6 +1024,5 @@
         await account;
         const id = +(new URLSearchParams(location.search).get('rb') || 0);
         if (id && meUser) { const r = await RBApi('rb_get', { id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
-        if (!rb) refreshMyRoadbooks(); // nothing auto-loaded → land on the user's saved roadbooks
     })();
 })();

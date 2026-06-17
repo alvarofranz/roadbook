@@ -102,13 +102,6 @@
         .vignette-toolbar select { background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: .3rem; }
         #viewMap, #viewConfig { max-width: 720px; margin: 0 auto; }
         #loadFrom { margin-bottom: 1rem; }
-        /* the opening screen lists the user's saved roadbooks (tap to keep editing) */
-        .rb-open-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
-        .rb-open-row { display: flex; align-items: center; gap: .6rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; cursor: pointer; color: var(--text); text-align: left; }
-        .rb-open-row:hover { border-color: var(--sand); }
-        .rb-open-row .meta { flex: 1; min-width: 0; }
-        .rb-open-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rb-open-row .meta small { color: var(--muted); white-space: nowrap; }
         /* the map view's right column: the notes list, each row expanding its editor inline */
         .note-list-zone { margin-top: .3rem; }
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
@@ -183,12 +176,8 @@
 <main class="wrap tool-page">
     <!-- VIEW A: map + notes -->
     <section id="viewMap">
-        <!-- opening screen: the user's saved roadbooks first, then ways to start a new one -->
+        <!-- opening screen: ways to start a new roadbook (existing ones are re-opened from the profile) -->
         <div id="landing">
-            <div id="myRoadbooksSection" hidden>
-                <div class="icon-category" data-i18n="My roadbooks">My roadbooks</div>
-                <div id="myRoadbooks" class="rb-open-list"></div>
-            </div>
             <div id="loadFrom">
                 <div class="icon-category" data-i18n="Start new Roadbook from:">Start new Roadbook from:</div>
                 <div class="load-opts">
@@ -321,6 +310,6 @@
 <script src="../assets/js/challenges.js?v=2026.06.17-3"></script>
 <script src="../assets/js/i18n.js?v=2026.06.17-3"></script>
 <script src="../assets/js/app.js?v=2026.06.17-3"></script>
-<script src="editor.js?v=2026.06.17-3"></script>
+<script src="editor.js?v=2026.06.17-4"></script>
 </body>
 </html>
