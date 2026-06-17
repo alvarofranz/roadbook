@@ -80,6 +80,46 @@ function rb_save(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'is_public' => $isPublic]);
 }
 
+// Duplicate a roadbook the user owns: copies the .rdbk file, the DB row and the
+// photo gallery (files + rows) into a brand-new roadbook. The copy starts private
+// and gets its own title ("… (copy)") and slug.
+function rb_duplicate(array $user, array $d): void {
+    global $CFG;
+    $srcId = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT title, total_distance, note_count, filename FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st->execute([$srcId, $user['id']]);
+    $src = $st->fetch();
+    if (!$src) fail('Not found.', 404);
+    $dir = rb_dir((int)$user['id']);
+    $srcPath = $dir . '/' . $src['filename'];
+    if (!is_file($srcPath)) fail('File missing.', 404);
+
+    $title = substr(trim((string)$src['title']) . ' (copy)', 0, 200);
+    db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, is_public, filename) VALUES (?,?,?,?,?,?)')
+        ->execute([$user['id'], $title, (int)$src['total_distance'], (int)$src['note_count'], 0, 'pending']);
+    $newId = (int)db()->lastInsertId();
+    $fn = $newId . '.rdbk';
+    if (!@copy($srcPath, $dir . '/' . $fn)) fail('Could not copy the roadbook file.', 500);
+    $slug = rb_slug($title, $newId);
+    db()->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $newId]);
+
+    // carry the gallery over: copy each photo file and its row
+    $p = db()->prepare('SELECT filename, lat, lon, sort FROM roadbook_photos WHERE roadbook_id = ? ORDER BY sort, id');
+    $p->execute([$srcId]);
+    $photos = $p->fetchAll();
+    if ($photos) {
+        $srcPhotoDir = $CFG['photos_dir'] . '/' . $srcId;
+        $dstPhotoDir = $CFG['photos_dir'] . '/' . $newId;
+        if (!is_dir($dstPhotoDir)) mkdir($dstPhotoDir, 0755, true);
+        $ins = db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,?)');
+        foreach ($photos as $ph) {
+            @copy($srcPhotoDir . '/' . $ph['filename'], $dstPhotoDir . '/' . $ph['filename']);
+            $ins->execute([$newId, $ph['filename'], $ph['lat'], $ph['lon'], $ph['sort']]);
+        }
+    }
+    json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
+}
+
 function ph_list(?array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
     $st = db()->prepare('SELECT user_id, is_public FROM roadbooks WHERE id = ?');

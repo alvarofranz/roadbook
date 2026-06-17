@@ -651,6 +651,19 @@
         const r = await doSave();
         toast(r.ok ? (isPublic && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
     };
+    // "Save as": store the current content as a NEW roadbook (the original is left
+    // untouched). The copy starts private and gets a "… (copy)" title; the editor
+    // then keeps editing the copy. Photos stay with the original (they live server-side).
+    $('saveAsAccount').onclick = async () => {
+        if (!meUser) return RBNeedAuth('Sign in to save this roadbook to your profile.');
+        if (!rb) return toast('Nothing to save.');
+        if (!(await confirmOpenCuts())) return;
+        rb.meta.title = ((rb.meta.title || 'Untitled') + ' (copy)').slice(0, 200);
+        $('rbTitle').value = rb.meta.title;
+        currentRbId = 0; setVis(0); // new identity, private
+        const r = await doSave();
+        toast(r.ok ? 'Saved as a new roadbook.' : (r.error || 'Could not save.'));
+    };
 
     /* ---------- photo gallery (saved roadbook) ---------- */
     function updatePhotos() {
