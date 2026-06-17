@@ -31,4 +31,9 @@ window.RBGpsMeter = class RBGpsMeter {
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this.watchId != null) this._wake(); });
     }
     async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+    // Stop the position watch and release the screen wake lock.
+    stop() {
+        if (this.watchId != null) { navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
+        if (this._wakeLock) { this._wakeLock.release().catch(() => {}); this._wakeLock = null; }
+    }
 };

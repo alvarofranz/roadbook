@@ -78,7 +78,8 @@
 
     let competition = false;
     function loadRb(r) {
-        if (!r.notes || !r.notes.length) return toast('Roadbook has no notes.');
+        r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
+        if (!r.notes.length) return toast('Roadbook has no notes.');
         rb = r; notes = r.notes;
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();

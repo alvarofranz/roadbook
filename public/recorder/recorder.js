@@ -76,7 +76,7 @@
         tick = setInterval(renderBar, 1000);
     }
     function stopMeter() {
-        if (meter && meter.watchId != null) navigator.geolocation.clearWatch(meter.watchId);
+        if (meter) meter.stop();
         meter = null; clearInterval(tick); tick = null;
     }
     function onFix(fix) {

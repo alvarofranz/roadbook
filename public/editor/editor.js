@@ -334,20 +334,9 @@
     function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
     function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; refreshMyRoadbooks(); }
     function setRoadbook(r) {
-        rb = r; rb.icons = rb.icons || {}; rb.meta = rb.meta || {};
-        // Migrate legacy fields: titolo → title, km_totali → total_distance (convert km to meters)
-        if (rb.meta.titolo && !rb.meta.title) rb.meta.title = rb.meta.titolo;
-        if (rb.meta.km_totali && !rb.meta.total_distance) rb.meta.total_distance = Math.round(parseFloat(rb.meta.km_totali) * 1000);
-        if (rb.meta.note_count && !rb.meta.note_count) rb.meta.note_count = rb.meta.note_count;
-        // Migrate note fields: testo → text
-        rb.notes = (rb.notes || []).map((n) => {
-            if (n.testo && !n.text) n.text = n.testo;
-            // Ensure junctions stay null or array, never undefined
-            if (n.junctions === undefined) n.junctions = null;
-            return n;
-        });
+        rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
         // Pre-load all embedded icons as data URIs so they render in the editor
-        (rb.notes || []).forEach((n) => {
+        rb.notes.forEach((n) => {
             (n.icons || []).forEach((ic) => {
                 if (ic.name && !rb.icons[ic.name]) {
                     const src = RB.iconSrc(ic, rb, '../assets/icons/');

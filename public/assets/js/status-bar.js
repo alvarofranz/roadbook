@@ -5,7 +5,7 @@
  * each fix via setGps(). The bar is created once, just below the global header. */
 window.RBStatusBar = (function () {
     let el = null, clockTimer = null, battery = null, gpsCls = 'bad', gpsTxt = '—';
-    const pad2 = (n) => String(n).padStart(2, '0');
+    const pad2 = RB.pad2; // shared zero-pad (roadbook-core)
     const battIcon = (p) => p > 80 ? 'fa-battery-full' : p > 55 ? 'fa-battery-three-quarters' : p > 30 ? 'fa-battery-half' : p > 10 ? 'fa-battery-quarter' : 'fa-battery-empty';
     function ensure() {
         if (el) return el;

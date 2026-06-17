@@ -175,6 +175,25 @@
         };
     }
 
+    // Import a just-loaded roadbook into the canonical schema. RDBK's pre-standard files
+    // used Italian field names (titolo / km_totali / testo); we deliberately keep opening
+    // them, so this is a permanent, intentional importer — not back-compat cruft. It renames
+    // those keys to the English standard and drops the originals, then fills in the structural
+    // defaults (meta, icons, per-note junctions) a hand-made or foreign file may omit.
+    // Idempotent: a file already in the standard shape passes through unchanged.
+    function importRoadbook(rb) {
+        const meta = rb.meta || (rb.meta = {});
+        if (meta.titolo != null) { meta.title ??= meta.titolo; delete meta.titolo; }
+        if (meta.km_totali != null) { meta.total_distance ??= Math.round(parseFloat(meta.km_totali) * 1000); delete meta.km_totali; }
+        rb.notes = (rb.notes || []).map((n) => {
+            if (n.testo != null) { n.text ??= n.testo; delete n.testo; }
+            if (n.junctions === undefined) n.junctions = null;
+            return n;
+        });
+        rb.icons = rb.icons || {};
+        return rb;
+    }
+
     /* ---------------- metric recomputation (after edit/splice) ---------------- */
     // The road you ARRIVE on at a note is the road the previous note LEAVES on, so
     // road_type_in is always derived from the previous note's road_type_out (the
@@ -378,7 +397,7 @@
     window.RB = {
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
-        parseGPX, parseWPT, buildRoadbook,
+        parseGPX, parseWPT, buildRoadbook, importRoadbook,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,

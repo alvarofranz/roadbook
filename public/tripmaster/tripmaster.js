@@ -6,7 +6,7 @@
  * call, a lock screen or an OS tab kill loses nothing. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt, toast = RBToast; // shared helpers (app.js / i18n.js)
+    const t = RBt, toast = RBToast, pad2 = RB.pad2; // shared helpers (app.js / i18n.js / roadbook-core)
     const SESSION_KEY = 'rb_tripmaster_session';
 
     let totalM = 0, partialM = 0, maxKmh = 0, waypoints = 0;
@@ -45,9 +45,9 @@
         meter = new RBGpsMeter(onFix, () => toast('No geolocation'));
         setInterval(() => {
             const now = new Date();
-            $('tmClock').textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            $('tmClock').textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
             const ms = timerAcc + (timerOn ? Date.now() - timerStart : 0), s = Math.floor(ms / 1000);
-            $('tmTimer').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+            $('tmTimer').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         }, 500);
         render();
     }

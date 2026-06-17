@@ -61,8 +61,8 @@
 
     /* ---------- scoring ---------- */
     const toSec = (hhmmss) => { const s = String(hhmmss).padStart(6, '0'); return (+s.slice(0, 2)) * 3600 + (+s.slice(2, 4)) * 60 + (+s.slice(4, 6)); };
-    function compute(e) {
-        const m = e.m;
+    function compute(entry) {
+        const m = entry.m;
         const accuracy = num(m.accuracy) + num(m.skip) + num(m.extra);
         const cap = num(m.cap);
         const speed = num(m.speed);
@@ -78,7 +78,7 @@
             reg = early + Math.max(0, late - C.REG_GRACE_S);
         }
         const finalScore = accuracy + cap + speed + reg;
-        return { team: parseInt(m.team, 10), km, accuracy, cap, speed, reg, finalScore, valid: e.valid };
+        return { team: parseInt(m.team, 10), km, accuracy, cap, speed, reg, finalScore, valid: entry.valid };
     }
     const num = (x) => { const n = parseInt(x, 10); return isFinite(n) ? n : 0; };
 
