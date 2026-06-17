@@ -844,10 +844,10 @@
         // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        // Danger lives in the icon-search row; the Red CAP on/off toggle is in the note row
-        // (left of the coordinates); Road = the road type of the segment to follow (road_type_out).
+        // Road (the road type of the segment to follow = road_type_out) and Danger both sit in
+        // the icon-search row (Road between the search and Danger); Red CAP toggle is in the note row.
+        $('roadSlot').innerHTML = `<label class="prop-field"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('dangerSlot').innerHTML = `<label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
-        $('noteProps').innerHTML = `<label class="prop-field note-road"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('edRout').onchange = (e) => {
             n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
             const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent

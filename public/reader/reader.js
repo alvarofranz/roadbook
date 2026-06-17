@@ -103,7 +103,19 @@
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
-        setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2) + ':' + pad(now.getSeconds(), 2); }, 1000);
+        setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
+        startBattery();
+    }
+    // battery charge in the indicator row (best-effort; not all browsers expose the API)
+    const battIcon = (p) => p > 80 ? 'fa-battery-full' : p > 55 ? 'fa-battery-three-quarters' : p > 30 ? 'fa-battery-half' : p > 10 ? 'fa-battery-quarter' : 'fa-battery-empty';
+    function startBattery() {
+        if (!('getBattery' in navigator)) { $('odoBatt').textContent = 'N/A'; return; }
+        try {
+            navigator.getBattery().then((b) => {
+                const upd = () => { const p = Math.round(b.level * 100); $('odoBatt').textContent = p + '%'; $('odoBattIcon').className = 'fa-solid ' + (b.charging ? 'fa-bolt' : battIcon(p)); };
+                ['levelchange', 'chargingchange'].forEach((e) => b.addEventListener(e, upd)); upd();
+            }).catch(() => {});
+        } catch (e) {}
     }
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */

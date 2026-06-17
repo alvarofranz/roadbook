@@ -8,19 +8,19 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.17-2">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.17-5">
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.17-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.17-5">
     <style>
-        /* top odometer bar */
-        .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
+        /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
+        .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item.right { align-items: flex-end; }
-        .odometer-item.heading { align-items: center; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-        .odometer-item .value.boxed { font-size: 1.25rem; border: 2px solid var(--text); border-radius: 8px; padding: .02rem .5rem; }
-        .odometer-item .clock-text { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+        /* CAP / clock / GPS / battery indicators, at the km value font size */
+        .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transform: rotate(var(--cap-rotation, -45deg)); transition: transform .35s ease; }
@@ -59,9 +59,12 @@
 <!-- navigation with a roadbook -->
 <div id="navScreen" hidden>
     <!-- top odometer bar: total · bearing+clock · partial -->
-    <div class="odometer-bar">
+    <div class="odometer-bar" role="status" aria-live="polite">
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
-        <div class="odometer-item heading"><span class="value boxed" id="odoBrg">—°</span><span class="clock-text" id="odoClock">--:--:--</span><span class="clock-text" role="status" aria-live="polite"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span></div>
+        <span class="ind"><i class="fa-solid fa-compass"></i> <span id="odoBrg">—°</span></span>
+        <span class="ind"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>
+        <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
+        <span class="ind"><i class="fa-solid fa-battery-half" id="odoBattIcon"></i> <span id="odoBatt">—</span></span>
         <div class="odometer-item right"><span class="field-label" data-i18n="part.">part.</span><span class="value" id="odoPartial">0.00</span></div>
     </div>
     <!-- 3-column note rows: distances | graphic | indications + coords -->
@@ -133,16 +136,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.06.17-2"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.06.17-2"></script>
-<script src="../assets/js/rbmap.js?v=2026.06.17-2"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.17-2"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.06.17-2"></script>
-<script src="../assets/js/note-canvas.js?v=2026.06.17-2"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.06.17-2"></script>
-<script src="../assets/js/challenges.js?v=2026.06.17-2"></script>
-<script src="../assets/js/i18n.js?v=2026.06.17-2"></script>
-<script src="../assets/js/app.js?v=2026.06.17-2"></script>
-<script src="reader.js?v=2026.06.17-2"></script>
+<script src="../assets/js/config.js?v=2026.06.17-5"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.17-5"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.17-5"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.17-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.06.17-5"></script>
+<script src="../assets/js/note-canvas.js?v=2026.06.17-5"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.06.17-5"></script>
+<script src="../assets/js/challenges.js?v=2026.06.17-5"></script>
+<script src="../assets/js/i18n.js?v=2026.06.17-5"></script>
+<script src="../assets/js/app.js?v=2026.06.17-5"></script>
+<script src="reader.js?v=2026.06.17-5"></script>
 </body>
 </html>

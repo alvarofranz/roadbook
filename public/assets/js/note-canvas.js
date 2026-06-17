@@ -62,8 +62,8 @@ window.NoteCanvas = class NoteCanvas {
             const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
             this.svg.appendChild(svg('line', attrs));
-            // motorway: a thin white centre line splits the thick stroke into a DOUBLE line
-            if (s.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: '#fff', 'stroke-width': Math.max(1.5, s.width * 0.4), 'stroke-linecap': 'round' }));
+            // motorway: a white centre line splits the thick stroke into a DOUBLE line
+            if (s.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: '#fff', 'stroke-width': Math.max(3, s.width * 0.3), 'stroke-linecap': 'round' }));
         });
         // junctions
         (this.note.junctions || []).forEach((b, i) => {
@@ -164,7 +164,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>`;
     trunkSegments(note).forEach((g) => {
         s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
-        if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(1.5, g.width * 0.4)}" stroke-linecap="round"/>`; // motorway: white centre → double line
+        if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(3, g.width * 0.3)}" stroke-linecap="round"/>`; // motorway: white centre → double line
     });
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
@@ -197,7 +197,7 @@ function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repea
  * track = thin single, off-piste = thin dashed. */
 // tulip road rendering per type (independent of the map's ROAD_TYPES line widths)
 const ROAD_STYLE = {
-    1: { width: 9, dashed: false, double: true },  // motorway: thick double line
+    1: { width: 12, dashed: false, double: true }, // motorway: thick double line
     2: { width: 8, dashed: false, double: false }, // asphalt: thick single line
     3: { width: 4, dashed: false, double: false }, // track: thin line
     4: { width: 4, dashed: true, double: false },  // off-piste: thin dashed line
