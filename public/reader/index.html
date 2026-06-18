@@ -18,8 +18,13 @@
         .odometer-item.right { align-items: flex-end; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        /* roadbook title: its own full-width line at the top of the (sticky) bar, so it's always visible */
+        .odo-title { flex: 1 0 100%; text-align: center; font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .odo-title:empty { display: none; }
         /* CAP / clock / GPS / battery indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        /* bearing indicator: a directional arrow (0° = up = straight ahead) that rotates toward the next note relative to your heading */
+        .odometer-bar .odo-arrow { color: var(--sand); transform: rotate(var(--cap-rotation, 0deg)); transition: transform .35s ease; }
         .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
@@ -60,8 +65,9 @@
 <div id="navScreen" hidden>
     <!-- top odometer bar: total · bearing+clock · partial -->
     <div class="odometer-bar" role="status" aria-live="polite">
+        <div class="odo-title" id="navTitle"></div>
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
-        <span class="ind"><i class="fa-solid fa-compass"></i> <span id="odoBrg">—°</span></span>
+        <span class="ind"><i class="fa-solid fa-arrow-up odo-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
         <span class="ind"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind"><i class="fa-solid fa-battery-half" id="odoBattIcon"></i> <span id="odoBatt">—</span></span>
@@ -77,11 +83,12 @@
         <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
     </div>
     <nav class="fabrow">
-        <button class="btn btn-ghost" id="navLoad" title="Load roadbook" data-i18n-title="Load roadbook" aria-label="Load roadbook" data-i18n-aria="Load roadbook"><i class="fa-solid fa-folder-open"></i></button>
-        <button class="btn btn-ghost" id="autoBtn"><i class="fa-solid fa-robot"></i> Auto: off</button>
+        <button class="btn btn-ghost" id="autoBtn" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> Auto: off</button>
         <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
+        <button class="btn btn-ghost" id="pauseBtn" title="Pause" data-i18n-title="Pause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
         <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
+        <button class="btn btn-ghost" id="endBtn" title="End navigation" data-i18n-title="End navigation" aria-label="End navigation" data-i18n-aria="End navigation"><i class="fa-solid fa-right-from-bracket icon-danger"></i></button>
     </nav>
 </div>
 
@@ -139,13 +146,13 @@
 <script src="../assets/js/config.js?v=2026.06.17-4"></script>
 <script src="../assets/js/roadbook-core.js?v=2026.06.17-4"></script>
 <script src="../assets/js/rbmap.js?v=2026.06.17-4"></script>
-<script src="../assets/js/gps-meter.js?v=2026.06.17-4"></script>
+<script src="../assets/js/gps-meter.js?v=2026.06.17-6"></script>
 <script src="../assets/js/gpx-recorder.js?v=2026.06.17-4"></script>
 <script src="../assets/js/note-canvas.js?v=2026.06.17-4"></script>
 <script src="../assets/js/qrcode.min.js?v=2026.06.17-4"></script>
 <script src="../assets/js/challenges.js?v=2026.06.17-4"></script>
-<script src="../assets/js/i18n.js?v=2026.06.17-4"></script>
+<script src="../assets/js/i18n.js?v=2026.06.17-6"></script>
 <script src="../assets/js/app.js?v=2026.06.17-4"></script>
-<script src="reader.js?v=2026.06.17-5"></script>
+<script src="reader.js?v=2026.06.17-6"></script>
 </body>
 </html>

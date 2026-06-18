@@ -78,7 +78,12 @@
         $('tmSpeed').classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
         $('tmMain').style.background = band || ''; // tint the central column with the alert colour
         $('tmMax').textContent = Math.round(maxKmh);
-        $('tmCap').textContent = meter && meter.heading != null ? Math.round(meter.heading) : '—';
+        const hdg = meter && meter.heading != null ? Math.round(meter.heading) : null;
+        $('tmCap').textContent = hdg == null ? '—' : hdg;
+        // directional needle: 0° = up = North, rotates to the travel heading
+        const arr = $('tmCapArrow');
+        arr.style.visibility = hdg == null ? 'hidden' : 'visible';
+        if (hdg != null) arr.style.setProperty('--cap-rotation', hdg + 'deg');
         saveSession();
     }
     // partial ±10 m correctors adjust the partial trip ONLY — the lifetime total is untouched

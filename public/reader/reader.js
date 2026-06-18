@@ -21,7 +21,7 @@
     let curLimit = null, maxSpdSeg = 0;
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
-    let startedAt = null, endedAt = null, auto = false, meter = null;
+    let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
     let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto, in reach and closing (orange)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
@@ -112,8 +112,10 @@
         $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto));
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
+        $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();
+        paused = false; updatePauseBtn();
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
         setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
         startBattery();
@@ -167,8 +169,12 @@
         // top odometer bar
         $('odoTotal').textContent = (tripTotalM / 1000).toFixed(2);
         $('odoPartial').textContent = (tripPartialM / 1000).toFixed(2);
-        const heading = an ? Math.round(RB.geo.bearingDeg(here, an)) : (meter.heading != null ? Math.round(meter.heading) : null);
-        $('odoBrg').textContent = heading == null ? '—°' : pad(heading, 3) + '°';
+        // bearing readout (to the next note, else device heading) + a directional arrow
+        // that points relative to where you're pointing: 0° = up = straight ahead.
+        const brg = an ? RB.geo.bearingDeg(here, an) : meter.heading;
+        $('odoBrg').textContent = brg == null ? '—°' : pad(Math.round(brg), 3) + '°';
+        const relBrg = brg == null ? 0 : (an ? ((brg - (meter.heading != null ? meter.heading : 0)) + 360) % 360 : 0);
+        $('odoBrgArrow').style.setProperty('--cap-rotation', relBrg + 'deg');
         updateCapBar(here);
         saveSession();
     }
@@ -325,7 +331,25 @@
     $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = autoLabel(); $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto)); approaching = false; renderNotes(); };
     // re-render the translated note rows when the language changes mid-session
     window.addEventListener('rb-lang', () => { if (notes.length && !$('navScreen').hidden) renderNotes(); });
-    $('navLoad').onclick = async () => { if (await RBConfirm(t('Load another roadbook?'), t('Load'))) { clearSession(); location.reload(); } };
+    // Pause: stop the GPS watch and release the wake lock to save battery (e.g. a lunch
+    // stop). Resume restarts the same meter. The odometer simply doesn't move while paused.
+    function updatePauseBtn() {
+        $('pauseBtn').innerHTML = paused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+        const lbl = t(paused ? 'Resume' : 'Pause');
+        $('pauseBtn').title = lbl; $('pauseBtn').setAttribute('aria-label', lbl);
+        $('pauseBtn').classList.toggle('btn-primary', paused);
+    }
+    $('pauseBtn').onclick = () => {
+        if (!meter) return;
+        paused = !paused;
+        if (paused) { meter.stop(); setGps('bad'); $('gpsTxt').textContent = t('Paused'); } else meter.resume();
+        updatePauseBtn();
+    };
+    // End navigation: leave the run and return to the load screen. The note progress
+    // (reached/skipped) is discarded — warn before doing it.
+    $('endBtn').onclick = async () => {
+        if (await RBConfirm(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) { clearSession(); location.reload(); }
+    };
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
     /* ---------- finish → signed META + QR ---------- */

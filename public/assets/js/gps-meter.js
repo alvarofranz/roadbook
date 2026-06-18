@@ -8,9 +8,17 @@
 window.RBGpsMeter = class RBGpsMeter {
     // onFix({ here, coords, disp, speedKmh, heading, tnow }) · onError() once if unavailable/denied
     constructor(onFix, onError) {
+        this._onFix = onFix; this._onError = onError;
         this.lastPos = null; this.speedKmh = 0; this.heading = null; this.watchId = null;
         this._lastSpeedPos = null; this._lastSpeedT = null; this._wakeLock = null;
         if (!navigator.geolocation) { if (onError) onError(); return; }
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this.watchId != null) this._wake(); });
+        this.resume();
+    }
+    // (Re)start the position watch and re-acquire the screen wake lock — also used
+    // to resume after stop() (e.g. the Reader's Pause button). No-op if already running.
+    resume() {
+        if (!navigator.geolocation || this.watchId != null) return;
         this.watchId = navigator.geolocation.watchPosition((pos) => {
             const c = pos.coords, here = { lat: c.latitude, lon: c.longitude }, tnow = Date.now();
             let disp = 0;
@@ -25,10 +33,9 @@ window.RBGpsMeter = class RBGpsMeter {
             }
             this._lastSpeedPos = here; this._lastSpeedT = tnow;
             if (c.heading != null && isFinite(c.heading)) this.heading = c.heading;
-            onFix({ here, coords: c, disp, speedKmh: this.speedKmh, heading: this.heading, tnow });
-        }, onError || (() => {}), { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+            this._onFix({ here, coords: c, disp, speedKmh: this.speedKmh, heading: this.heading, tnow });
+        }, this._onError || (() => {}), { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
         this._wake();
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this.watchId != null) this._wake(); });
     }
     async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
     // Stop the position watch and release the screen wake lock.
