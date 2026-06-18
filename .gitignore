@@ -26,3 +26,5 @@
 /android/local.properties
 /android/.idea
 /android/capacitor-cordova-android-plugins
+/android/keystore.properties
+/android/rdbk-upload.jks
