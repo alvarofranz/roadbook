@@ -181,13 +181,37 @@
     // those keys to the English standard and drops the originals, then fills in the structural
     // defaults (meta, icons, per-note junctions) a hand-made or foreign file may omit.
     // Idempotent: a file already in the standard shape passes through unchanged.
+    // Normalize a roadbook into the canonical .rdbk schema in place. Besides the
+    // structural defaults, this is where pre-standard files exported by Roadbook
+    // Suite (Italian keys, km units, `bivio` junctions) are translated — so they
+    // open identically in the Editor and the Reader. Each legacy key is mapped by
+    // presence and then dropped, leaving a clean canonical object (no cruft).
     function importRoadbook(rb) {
         const meta = rb.meta || (rb.meta = {});
-        if (meta.titolo != null) { meta.title ??= meta.titolo; delete meta.titolo; }
-        if (meta.km_totali != null) { meta.total_distance ??= Math.round(parseFloat(meta.km_totali) * 1000); delete meta.km_totali; }
+        if (meta.titolo != null) meta.title ??= meta.titolo;
+        if (meta.km_totali != null && isFinite(parseFloat(meta.km_totali))) meta.total_distance ??= Math.round(parseFloat(meta.km_totali) * 1000);
+        delete meta.titolo; delete meta.km_totali;
+        delete meta.logo_path; // server-side path from the suite — not embeddable, not part of the format
         rb.notes = (rb.notes || []).map((n) => {
-            if (n.testo != null) { n.text ??= n.testo; delete n.testo; }
+            if ('testo' in n) { n.text ??= n.testo; delete n.testo; }
+            if ('km_prog' in n) { n.distance ??= Math.round((n.km_prog || 0) * 1000); delete n.km_prog; }
+            if ('km_parz' in n) { n.partial_distance ??= Math.round((n.km_parz || 0) * 1000); delete n.km_parz; }
+            if ('cap_hdr' in n) { n.cap ??= (n.cap_hdr == null ? null : Math.round(n.cap_hdr)); delete n.cap_hdr; }
+            if ('cap_km' in n) { n.cap_distance ??= (n.cap_km == null ? null : Math.round(n.cap_km * 1000)); delete n.cap_km; }
+            delete n.cap_small; delete n.hide_cap_btm; // suite-only CAP display fields, no canonical equivalent
+            // bivio[] {punta, th, rt} → junctions[] {tip, width, road_type}
+            if ('bivio' in n) {
+                if (n.junctions == null) n.junctions = Array.isArray(n.bivio)
+                    ? n.bivio.map((b) => ({ pivot: b.pivot, tip: b.punta, width: b.th, road_type: b.rt }))
+                    : null;
+                delete n.bivio;
+            }
             if (n.junctions === undefined) n.junctions = null;
+            (n.icons || []).forEach((ic) => { // pre-standard icon keys: file (path) / flipX → name / flip_x
+                if (ic.name == null && ic.file) ic.name = String(ic.file).split('/').pop();
+                if ('flipX' in ic) { ic.flip_x ??= !!ic.flipX; delete ic.flipX; }
+                delete ic.file;
+            });
             return n;
         });
         rb.icons = rb.icons || {};
