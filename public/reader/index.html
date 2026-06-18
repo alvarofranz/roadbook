@@ -17,7 +17,7 @@
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item.right { align-items: flex-end; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-        .odometer-item .value { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
         /* roadbook title: its own full-width line at the top of the (sticky) bar, so it's always visible */
         .odo-title { flex: 1 0 100%; text-align: center; font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .odo-title:empty { display: none; }
@@ -38,6 +38,9 @@
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
            (done/skipped/active/warn/close) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
+        /* larger per-note readouts: partial km just under the total, coordinates legible */
+        #noteList .col-distance .partial { font-size: 1.4rem; }
+        #noteList .col-text .coords { font-size: .9rem; }
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }

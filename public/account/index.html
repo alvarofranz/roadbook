@@ -30,7 +30,6 @@
         .profile-id h1 { font-size: 1.6rem; margin: 0; }
         .profile-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
         .intro-text { margin-top: -.4rem; }
-        #accBio { margin: .4rem 0 0; }
         .profile-form { max-width: none; margin: .4rem 0 0; }
         .pass-wrap { position: relative; }
         .pass-wrap .field { padding-right: 2.8rem; }
@@ -102,15 +101,13 @@
             <div class="profile-id">
                 <h1 id="accName"></h1>
                 <div class="muted" id="accHandle"></div>
-                <p class="muted" id="accBio"></p>
             </div>
             <div class="profile-actions">
-                <button class="btn btn-ghost" id="editProfileBtn" data-i18n="Edit profile"><i class="fa-solid fa-user-pen"></i> Edit profile</button>
                 <button class="btn btn-ghost" id="logoutBtn" data-i18n="Sign out"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
             </div>
         </div>
 
-        <div id="profileForm" hidden class="auth-card profile-form">
+        <div id="profileForm" class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
             <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" data-i18n-aria="Short bio…" maxlength="500"></textarea>
@@ -125,6 +122,6 @@
 
 <script src="../assets/js/i18n.js?v=2026.06.18-2"></script>
 <script src="../assets/js/app.js?v=2026.06.18-2"></script>
-<script src="account.js?v=2026.06.18-2"></script>
+<script src="account.js?v=2026.06.18-3"></script>
 </body>
 </html>

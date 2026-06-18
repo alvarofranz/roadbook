@@ -213,7 +213,7 @@
             'Username': 'Usuario', 'Email': 'Email', 'Already have an account? Sign in': '¿Ya tienes cuenta? Entra',
             'Reset password': 'Restablecer contraseña', 'Your email': 'Tu email', 'Send reset link': 'Enviar enlace', 'Back to sign in': 'Volver a entrar',
             'Set a new password': 'Pon una nueva contraseña', 'Update password': 'Actualizar contraseña',
-            'Edit profile': 'Editar perfil', 'Sign out': 'Cerrar sesión', 'New roadbook': 'Nuevo roadbook', 'My roadbooks': 'Mis roadbooks',
+            'Sign out': 'Cerrar sesión', 'New roadbook': 'Nuevo roadbook', 'My roadbooks': 'Mis roadbooks',
             'Save as': 'Guardar como', 'Roadbook duplicated.': 'Roadbook duplicado.', 'Could not duplicate.': 'No se pudo duplicar.',
             'Change photo': 'Cambiar foto', 'Save profile': 'Guardar perfil', 'Loading…': 'Cargando…', 'Fork': 'Fork', 'Edit': 'Editar',
             // toasts
@@ -464,7 +464,7 @@
             'Username': 'Username', 'Email': 'Email', 'Already have an account? Sign in': 'Hai già un account? Accedi',
             'Reset password': 'Reimposta password', 'Your email': 'La tua email', 'Send reset link': 'Invia link', 'Back to sign in': 'Torna ad accedere',
             'Set a new password': 'Imposta una nuova password', 'Update password': 'Aggiorna password',
-            'Edit profile': 'Modifica profilo', 'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook',
+            'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook',
             'Save as': 'Salva come', 'Roadbook duplicated.': 'Roadbook duplicato.', 'Could not duplicate.': 'Impossibile duplicare.',
             'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts

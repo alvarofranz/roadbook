@@ -101,10 +101,8 @@
         show('vAccount'); msg('');
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
-        $('accBio').textContent = user.bio || '';
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
-        $('editProfileBtn').onclick = () => { $('profileForm').hidden = !$('profileForm').hidden; };
         $('pfBio').value = user.bio || '';
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
