@@ -47,7 +47,7 @@ subito), mostra la superficie di editing e fa il primo render.
 |---------------------|------------------------------------------------------------------------|---------|
 | **GPX** (`+ .wpt`)  | `$('gpxFile').onchange` ([editor.js:314](../public/editor/editor.js#L314)) | `RB.parseGPX` (+ `RB.parseWPT` se manca) → `RB.buildRoadbook` |
 | **Draw on the map** | `$('drawRoute').onclick` ([editor.js:308](../public/editor/editor.js#L308)) | apre la mappa in modalità `draw`; i primi due tap creano il roadbook |
-| **.rdbk**           | `$('jsonFile').onchange` ([editor.js:325](../public/editor/editor.js#L325)) | `JSON.parse`, valida `track`+`notes`, `setRoadbook` |
+| **.rdbk**           | `$('jsonFile').onchange` ([editor.js:325](../public/editor/editor.js#L325)) | `JSON.parse`, valida `track`+`notes`, `setRoadbook` — dettaglio e fedeltà per il Ranking in **§9** |
 | **Challenge**       | `$('pickChallenge').onclick` ([editor.js:313](../public/editor/editor.js#L313)) | `RBChallenges.pick` → fork come **nuovo** roadbook |
 
 Le sorgenti che importano contenuto *fresco* (GPX, .rdbk, challenge) chiamano prima
@@ -269,7 +269,66 @@ precisa:
 
 ---
 
-## 9. Limiti e quirk da segnalare
+## 9. Importazione di file JSON predisposti da RB Suite (`.rdbk`)
+
+I file JSON prodotti dalla suite RDBK sono i `.rdbk`: un unico file UTF-8 auto-contenuto con
+`meta` · `track` · `notes` · `icons` (lo schema completo è in [rdbk-format.md](rdbk-format.md)).
+Questo capitolo documenta cosa succede quando se ne **importa uno nell'Editor** e — punto
+chiave — **se sopravvivono le informazioni che serviranno poi al Ranking**.
+
+### 9.1 Il percorso di import
+La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
+([editor.js:325](../public/editor/editor.js#L325)):
+
+1. `JSON.parse` del testo del file;
+2. validazione minima: devono esserci `track` **e** `notes`, altrimenti `throw 'Not a roadbook'`;
+3. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
+4. `setRoadbook(j)` ([editor.js:336](../public/editor/editor.js#L336)).
+
+`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js#L184), che
+**normalizza solo le vecchie chiavi italiane pre-standard** (`titolo→title`, `testo→text`,
+`km_totali→total_distance`) e mette i default strutturali (`junctions: null`, `rb.icons`).
+Poi pre-carica via XHR ogni icona embedded come data-URI. **In import non gira alcun
+ricalcolo**: tutti gli altri campi delle note restano **identici al file**.
+
+### 9.2 Fedeltà dei dati per il Ranking
+Il Ranking non legge il `.rdbk`: legge la stringa META firmata che il **Reader** produce a
+fine prova (vedi [ranking-model.md](ranking-model.md)). Ma il Reader calcola le penalità da
+campi per-nota che devono quindi essere presenti nel `.rdbk` importato. Verifica campo per
+campo:
+
+| Dato usato dal Ranking (via Reader) | A cosa serve | Importato dall'Editor? |
+|---|---|---|
+| `lat` / `lon` | penalità *accuracy* ed *extra* | ✅ preservati in import; in export agganciati alla traccia da [`recomputeMetrics`](../public/assets/js/roadbook-core.js#L208) |
+| `cap` / `cap_distance` | penalità *CAP* (proiezione `destPoint` dalla nota precedente) | ✅ preservati; [`recomputeCaps`](../public/assets/js/roadbook-core.js#L229) ricalcola **solo dove `cap != null`**, mantenendo il flag |
+| `distance` / `partial_distance` | `km`, raggio di reach, sezione | ✅ ricalcolati dalla traccia importata (intatta) |
+| `icons` con `I02_partenza` / `I01_arrivo` | delimitano la **sezione a punteggio** (`scoredSet`) | ✅ array `icons` per-nota preservato; in export embeddato da [`embedUsed`](../public/editor/editor.js#L982) |
+| `icons` con limiti `Sxx_*` | penalità *speed* (`speedLimitOfNote`) | ✅ stesso percorso delle icone |
+
+`danger` non è usato dal Ranking. La stringa META (team, tempi, penalità) **non** è nel
+`.rdbk`: nasce nel Reader al `Finish`, quindi non è oggetto dell'import.
+
+**Conclusione:** importando un `.rdbk` nell'Editor, tutte le informazioni che servono al
+Ranking vengono importate e preservate.
+
+### 9.3 Cosa cambia in export/save (e perché è coerente)
+A differenza dell'import, **export e Save ricalcolano** prima di scrivere
+([editor.js:964](../public/editor/editor.js#L964)): `recomputeMetrics` aggancia ogni nota al
+punto-traccia più vicino (`idx`) — `lat/lon`, `distance`, `partial_distance` e bearing
+derivano dalla traccia — e `recomputeCaps` riallinea heading/distanza-CAP alla geometria dove
+il CAP è attivo. Le note **stanno sulla traccia per definizione**, quindi questo non perde
+nulla di rilevante per il punteggio: rende solo i valori internamente coerenti.
+
+### 9.4 Condizione sul contenuto del file
+Sezione cronometrata e penalità velocità esistono **solo se** il file contiene davvero le
+icone di partenza/arrivo e i cartelli di limite. Un `.rdbk` privo dell'icona di partenza fa
+considerare al Reader **l'intero roadbook** come a punteggio (`scoredSet = null`, vedi §3 di
+[ranking-model.md](ranking-model.md)); senza cartelli di limite non c'è penalità velocità. È
+una proprietà del contenuto del file, non una perdita in fase di import.
+
+---
+
+## 10. Limiti e quirk da segnalare
 
 - **XHR sincrono in `setRoadbook`.** Le icone embedded mancanti vengono risolte con
   `XMLHttpRequest` **sincrono** ([editor.js:346](../public/editor/editor.js#L346)): blocca il

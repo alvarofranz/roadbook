@@ -10,6 +10,8 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public challenges. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
+  DB schema = `migrations/*.sql` (source of truth); 4 tables: `users`, `roadbooks`,
+  `roadbook_photos`, `api_tokens`.
 - Repo: GitHub `alvarofranz/roadbook`. License **WTFPL**.
 - UI languages: **English (default) · Spanish · Italian**, browser auto-detected. All
   translation lives in `public/assets/js/i18n.js` (source-string keys; `data-i18n`,
