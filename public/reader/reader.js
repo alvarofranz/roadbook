@@ -56,17 +56,20 @@
             if (!savedRb || !savedRb.notes) session = null;
         } else session = null;
         if (!session) clearSession(); // an unrecoverable checkpoint is just litter
+        // A roadbook opened explicitly via the URL (e.g. the challenge "Navigate" button → /reader/<slug>).
+        const pub = RBChallenges.publicFromUrl();
+        const loadFromUrl = () => { if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.')); };
         if (session) {
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
             // Declining does NOT delete the session — a mis-tap must never destroy a
             // run; it is replaced when a new run starts or cleared on explicit exit.
             // Its GPX log (if any) stays with it, so skip the recovery prompt too.
-            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km', t('Resume'))) resumeSession(session, savedRb);
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km', t('Resume'))) { resumeSession(session, savedRb); return; }
+            loadFromUrl(); // declined → still navigate the roadbook the user explicitly opened
             return;
         }
         await RBGpxRecorder.offerRecovery();
-        const pub = RBChallenges.publicFromUrl();
-        if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.'));
+        loadFromUrl();
     })();
     // File Handling API (installed PWA): open a .rdbk straight from the OS.
     if ('launchQueue' in window && window.LaunchParams) {

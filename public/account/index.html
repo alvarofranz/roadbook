@@ -38,7 +38,8 @@
         .profile-id { flex: 1; min-width: 200px; }
         .profile-id h1 { font-size: 1.6rem; margin: 0; }
         .profile-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-        .rb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .6rem; }
+        /* single full-width column: one roadbook per row, readable on wide and narrow screens alike */
+        .rb-grid { display: flex; flex-direction: column; gap: .6rem; }
         .intro-text { margin-top: -.4rem; }
         #accBio { margin: .4rem 0 0; }
         .profile-form { max-width: none; margin: .4rem 0 0; }
