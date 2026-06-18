@@ -38,6 +38,7 @@
             'feat.8.t': 'Cuentas y compartir', 'feat.8.d': 'Inicia sesión para guardar roadbooks y publicarlos como challenges públicos.',
             'install.kicker': 'Multiplataforma', 'install.title': 'Instálala en cualquier dispositivo', 'install.text': 'Todas las funciones de RDBK.app están también disponibles como web app instalable (PWA) gratuita — en PC Windows y Mac, Android e iOS. Sin tienda de apps: añádela a la pantalla de inicio y úsala como una app nativa, incluso sin conexión.',
             'gallery.kicker': 'Galería', 'gallery.title': 'Challenges públicos', 'gallery.loading': 'Cargando challenges…', 'gallery.empty': 'Aún no hay challenges públicos.', 'gallery.notes': 'notas',
+            'Navigate a roadbook': 'Navega un roadbook', 'GPS trip computer': 'Ordenador de viaje GPS', 'Record a GPS track': 'Graba una traza GPS',
             // ---- tools (the English string is the key) ----
             'Start new Roadbook from:': 'Crear un nuevo roadbook desde:', 'Import a GPS track': 'Importa un track GPS',
             'Open an existing roadbook': 'Abre un roadbook existente', 'Record route': 'Grabar ruta',
@@ -288,6 +289,7 @@
             'feat.8.t': 'Account e condivisione', 'feat.8.d': 'Accedi per salvare i roadbook e pubblicarli come challenge pubblici.',
             'install.kicker': 'Multipiattaforma', 'install.title': 'Installala su qualsiasi dispositivo', 'install.text': 'Tutte le funzionalità di RDBK.app sono disponibili anche come web app installabile (PWA) gratuita — su PC Windows e Mac, Android e iOS. Nessuno store: aggiungila alla schermata Home e usala come un’app nativa, anche offline.',
             'gallery.kicker': 'Galleria', 'gallery.title': 'Challenge pubblici', 'gallery.loading': 'Caricamento challenge…', 'gallery.empty': 'Ancora nessun challenge pubblico.', 'gallery.notes': 'note',
+            'Navigate a roadbook': 'Naviga un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS',
             // ---- tools (the English string is the key) ----
             'Start new Roadbook from:': 'Crea un nuovo roadbook da:', 'Import a GPS track': 'Importa una traccia GPS',
             'Open an existing roadbook': 'Apri un roadbook esistente', 'Record route': 'Registra percorso',

@@ -247,6 +247,20 @@ section.block { padding: 2.4rem 0; }
 
 /* utils */
 .mt-2 { margin-top: 1.4rem; }
+
+/* ---------- home: marketing landing on the web, launcher in the native app ---------- */
+/* The same index.html serves both; the Capacitor shell adds `.native` (set before paint),
+   which swaps the marketing sections for the field-tool launcher. No second page, no redirect. */
+.app-only { display: none; }
+.native .app-only { display: block; }
+.native .web-only { display: none; }
+.native .topbar { padding-top: env(safe-area-inset-top); } /* notch / status bar, viewport-fit=cover */
+.launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
+.launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
+.launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+.launch-tile i { color: var(--sand); font-size: 2rem; }
+.launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
+.launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
 @media (max-width: 720px) {
     .flow { grid-template-columns: repeat(2, 1fr); }
 }
