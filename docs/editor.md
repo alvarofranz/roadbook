@@ -285,11 +285,23 @@ La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
 3. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
 4. `setRoadbook(j)` ([editor.js:336](../public/editor/editor.js#L336)).
 
-`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js#L184), che
-**normalizza solo le vecchie chiavi italiane pre-standard** (`titolo→title`, `testo→text`,
-`km_totali→total_distance`) e mette i default strutturali (`junctions: null`, `rb.icons`).
-Poi pre-carica via XHR ogni icona embedded come data-URI. **In import non gira alcun
-ricalcolo**: tutti gli altri campi delle note restano **identici al file**.
+`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js#L205), che
+porta il file allo schema canonico. Per un `.rdbk` **già canonico** non tocca nulla. Per un
+file **Roadbook Suite** (riconosciuto da un marcatore legacy: `titolo`, `testo`, `bivio`,
+`cap_hdr`, `km_prog`…) applica le conversioni specifiche:
+
+- chiavi italiane → canoniche (`titolo→title`, `testo→text`, `km_totali/km_prog/km_parz` in
+  metri, `cap_hdr/cap_km→cap/cap_distance`);
+- `bivio[]→junctions[]` con **flip dell'asse Y** (la Suite usa +y verso il basso, la vignetta
+  +y verso l'alto); le **icone** oltre al flip Y vengono **ri-centrate** (la Suite le ancora
+  all'angolo in alto a sinistra, RDBK al centro) e **ingrandite** ×1.5 (×3 per `partenza`/`arrivo`);
+- **ricalcolo metriche dalla traccia** (`recomputeMetrics`): bearing, distanze e tipi-strada
+  vengono ri-derivati dalla polilinea, che è la fonte autorevole. Questo raddrizza, fra
+  l'altro, la freccia della **nota di partenza** (la Suite vi mette un `bearing_in` placeholder
+  che, con la resa a *svolta relativa*, punterebbe all'indietro).
+
+Per un `.rdbk` canonico, invece, **in import non gira alcun ricalcolo**: i campi restano
+identici al file.
 
 ### 9.2 Fedeltà dei dati per il Ranking
 Il Ranking non legge il `.rdbk`: legge la stringa META firmata che il **Reader** produce a
@@ -325,6 +337,42 @@ icone di partenza/arrivo e i cartelli di limite. Un `.rdbk` privo dell'icona di 
 considerare al Reader **l'intero roadbook** come a punteggio (`scoredSet = null`, vedi §3 di
 [ranking-model.md](ranking-model.md)); senza cartelli di limite non c'è penalità velocità. È
 una proprietà del contenuto del file, non una perdita in fase di import.
+
+### 9.5 Mappatura delle icone
+I nomi-icona di Roadbook Suite spesso differiscono da quelli della palette standard. La
+traduzione avviene in due punti.
+
+**(a) Rinomine 1:1** — in [`importRoadbook`](../public/assets/js/roadbook-core.js#L190)
+(quindi valgono sia Editor sia Reader):
+
+| Roadbook Suite | → Palette | Regola |
+|---|---|---|
+| `S01_10km.png` … `S09_90km.png`, `S99_end.png` | `…​.svg` | limiti di velocità: la Suite li esporta PNG, la palette li ha SVG (la penalità velocità funziona comunque, va per nome) |
+| `p36_gruppo_case.png` | `P02_gruppo_case.png` | stesso soggetto, numero diverso |
+| `p14_lago.png` | `P14_estanque.png` | lago ≈ estanque |
+| `S10_stop.png` | `B02_stop.svg` | cartello: stop |
+| `S11_precedenza.png` | `B01_give_way.svg` | cartello: dare precedenza |
+| `S12_divieto_passaggio.png` | `C01_no_entry.svg` | cartello: divieto di passaggio |
+| `S19_pericolo_generico.png` | `W28_general_danger.svg` | cartello: pericolo generico |
+| `S20_rotatoria.png` | `D06_roundabout.svg` | cartello: rotatoria |
+
+> ⚠️ **Collisione serie `S`:** la Suite usa `S10`/`S11`/`S12`/`S19`/`S20` per *cartelli*
+> (stop, precedenza, divieto, pericolo, rotatoria), mentre la palette usa la serie `S` solo
+> per i *limiti* (`S10_100km`…). Per questo i cartelli sono mappati per **significato** (tabella
+> sopra) e la regola dei limiti è ristretta a `S0x` (un solo zero), così non si toccano a vicenda.
+
+**(b) Icone senza file → fallback + nota** — in [`flagUnresolvedIcons`](../public/editor/editor.js#L880)
+(solo Editor, dopo `loadStd`): per ogni icona il cui **file non esiste** su disco si sostituisce
+il nome con un segnaposto (`W28_general_danger.svg`) e si **aggiunge al testo della nota**
+`Nota: aggiungere icona <nome originale>`, così l'autore sa cosa rimpiazzare. L'esistenza è
+verificata con un `HEAD` su `assets/icons/<nome>` (deduplicato), **non** con `index.json`: il
+picker omette alcuni file realmente presenti (es. `T05_rambla.png`, `t04_river.png`,
+`T02_terreno_inondato.png`), che quindi renderizzano e **non** vengono flaggati. È idempotente
+(il nome originale sparisce dopo lo swap; la nota si aggiunge una volta sola).
+
+**Senza alcun equivalente** (ricadono nel fallback (b) finché non si aggiungono le icone):
+`p24_cassonetto`, `p26_estatua_monumento`, `p44_campo_coltivo`, e i segnaposto generici della
+Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
 
 ---
 

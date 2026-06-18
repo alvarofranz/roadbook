@@ -176,8 +176,8 @@ section.block { padding: 2.4rem 0; }
 /* White "paper" roadbook note row — shared by the Reader and the public challenge page
    (distance | vignette | comments | buttons). Read-only views add .readonly to drop the
    buttons column; the colour-coded state classes are set by the Reader only. */
-.nrow { display: grid; grid-template-columns: 96px 124px 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
-.nrow.readonly { grid-template-columns: 96px 124px 1fr; }
+.nrow { display: grid; grid-template-columns: 96px clamp(124px, 26vw, 178px) 1fr 56px; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
+.nrow.readonly { grid-template-columns: 96px clamp(124px, 26vw, 178px) 1fr; }
 .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
 .nrow.readonly .col-text { border-right: 0; }
 .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
@@ -185,8 +185,8 @@ section.block { padding: 2.4rem 0; }
 .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
 .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
 .nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
-.nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .3rem; }
-.nrow .col-vignette svg { width: 100%; height: 100%; max-height: 122px; }
+.nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
+.nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }
 .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
 .nrow .col-text .text { flex: 1; word-break: break-word; }
 .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }

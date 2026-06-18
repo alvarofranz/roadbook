@@ -366,7 +366,7 @@
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
         $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
         updatePhotos(); updateSaveBtn();
-        refreshMap(false); renderNotes(); renderIcons();
+        refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
         histReset(); setMapTool('pan');
         showView('map'); // tap a note to open its editor inline below the row
@@ -750,7 +750,11 @@
             inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };
             inp.oninput = () => { rb.notes[+inp.dataset.i].text = inp.value; markDirty(); };
         });
-        const nc = $('noteCount'); if (nc) nc.textContent = rb.notes.length ? '· ' + rb.notes.length : '';
+        const nc = $('noteCount');
+        if (nc) {
+            const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
+            nc.textContent = rb.notes.length ? `· ${rb.notes.length} · KM: ${(totalM / 1000).toFixed(1)}` : '';
+        }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
     }
@@ -871,6 +875,35 @@
     /* ---------- icons (standard palette + yours, embedded in the roadbook) ---------- */
     let iconCat = ''; // active category filter: '' = all · '__yours' = custom · else a palette category key
     async function loadStd() { if (std) return std; try { std = await (await fetch('../assets/icons/index.json')).json(); } catch (e) { std = { categories: {} }; } return std; }
+    // Icons whose symbol file doesn't exist (e.g. Roadbook Suite pictograms with no
+    // standard equivalent): show a fallback marker and flag it in the note text so the
+    // author adds the real symbol. Existence is probed on disk (HEAD) — index.json is
+    // only the picker and omits some real files, so it can't decide this. Idempotent:
+    // the original name is gone once swapped, and the flag is appended only if absent.
+    const MISSING_ICON_FALLBACK = 'W28_general_danger.svg';
+    async function flagUnresolvedIcons() {
+        if (!rb) return;
+        await loadStd();
+        const palette = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
+        const lib = rb.icons || {};
+        const known = (name) => /^data:/.test(name) || palette.has(name.toLowerCase()) || Object.keys(lib).some((k) => k.toLowerCase() === name.toLowerCase());
+        // probe only the uncertain names (deduped): not embedded and not already in the picker
+        const candidates = new Set();
+        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => { const nm = ic.name || ''; if (nm && nm !== MISSING_ICON_FALLBACK && !known(nm)) candidates.add(nm); }));
+        const missing = new Set();
+        await Promise.all([...candidates].map(async (nm) => {
+            try { const r = await fetch('../assets/icons/' + nm, { method: 'HEAD' }); if (!r.ok) missing.add(nm); } catch (e) { missing.add(nm); }
+        }));
+        if (!missing.size) return;
+        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => {
+            if (!missing.has(ic.name)) return;
+            const orig = ic.name;
+            ic.name = MISSING_ICON_FALLBACK;
+            const flag = t('Note: add icon') + ' ' + orig;
+            if (!(n.text || '').includes(flag)) n.text = n.text ? n.text + '\n' + flag : flag;
+        }));
+        markDirty(); renderNotes(); if (rb.notes[sel]) { canvas.setNote(rb.notes[sel]); renderEditor(); }
+    }
     async function renderIcons() {
         await loadStd();
         const lib = rb ? rb.icons || {} : {};

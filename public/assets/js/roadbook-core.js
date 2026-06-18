@@ -181,13 +181,34 @@
     // those keys to the English standard and drops the originals, then fills in the structural
     // defaults (meta, icons, per-note junctions) a hand-made or foreign file may omit.
     // Idempotent: a file already in the standard shape passes through unchanged.
+    // Roadbook Suite pictograms that map 1:1 to a differently-named palette icon.
+    // Speed-limit signs (S0x_*km / S99_end) are handled by rule in the loop below: the
+    // suite ships them as PNG, the palette as SVG. Names with no palette equivalent at
+    // all (p24_cassonetto, the generic *_icona placeholders, …) are left untouched and
+    // flagged in the Editor instead. See docs/editor.md §9.5.
+    const SUITE_ICON_ALIASES = {
+        'p36_gruppo_case.png': 'P02_gruppo_case.png',
+        'p14_lago.png': 'P14_estanque.png',
+        // traffic signs: the suite's S10/S11/S12/S19/S20 numbering is unrelated to the
+        // palette's S-series (speed limits), so these are mapped by meaning, not number.
+        's10_stop.png': 'B02_stop.svg',
+        's11_precedenza.png': 'B01_give_way.svg',
+        's12_divieto_passaggio.png': 'C01_no_entry.svg',
+        's19_pericolo_generico.png': 'W28_general_danger.svg',
+        's20_rotatoria.png': 'D06_roundabout.svg',
+    };
     // Normalize a roadbook into the canonical .rdbk schema in place. Besides the
     // structural defaults, this is where pre-standard files exported by Roadbook
-    // Suite (Italian keys, km units, `bivio` junctions) are translated — so they
-    // open identically in the Editor and the Reader. Each legacy key is mapped by
-    // presence and then dropped, leaving a clean canonical object (no cruft).
+    // Suite (Italian keys, km units, `bivio` junctions, +y-down geometry) are
+    // translated — so they open identically in the Editor and the Reader. Each legacy
+    // key is mapped by presence and then dropped, leaving a clean canonical object.
     function importRoadbook(rb) {
         const meta = rb.meta || (rb.meta = {});
+        // A Roadbook Suite file is detected by any of its legacy markers; only then do
+        // we apply suite-specific conversions (axis flip, metric recompute) so canonical
+        // .rdbk files are never touched.
+        const suite = meta.titolo != null || meta.km_totali != null ||
+            (rb.notes || []).some((n) => 'testo' in n || 'bivio' in n || 'cap_hdr' in n || 'km_prog' in n || 'km_parz' in n);
         if (meta.titolo != null) meta.title ??= meta.titolo;
         if (meta.km_totali != null && isFinite(parseFloat(meta.km_totali))) meta.total_distance ??= Math.round(parseFloat(meta.km_totali) * 1000);
         delete meta.titolo; delete meta.km_totali;
@@ -199,10 +220,11 @@
             if ('cap_hdr' in n) { n.cap ??= (n.cap_hdr == null ? null : Math.round(n.cap_hdr)); delete n.cap_hdr; }
             if ('cap_km' in n) { n.cap_distance ??= (n.cap_km == null ? null : Math.round(n.cap_km * 1000)); delete n.cap_km; }
             delete n.cap_small; delete n.hide_cap_btm; // suite-only CAP display fields, no canonical equivalent
-            // bivio[] {punta, th, rt} → junctions[] {tip, width, road_type}
+            // bivio[] {punta, th, rt} → junctions[] {tip, width, road_type}; suite y is
+            // screen-down, the vignette box is +y-up, so the y of every vector is flipped.
             if ('bivio' in n) {
                 if (n.junctions == null) n.junctions = Array.isArray(n.bivio)
-                    ? n.bivio.map((b) => ({ pivot: b.pivot, tip: b.punta, width: b.th, road_type: b.rt }))
+                    ? n.bivio.map((b) => ({ pivot: [b.pivot[0], -b.pivot[1]], tip: [b.punta[0], -b.punta[1]], width: b.th, road_type: b.rt }))
                     : null;
                 delete n.bivio;
             }
@@ -211,10 +233,28 @@
                 if (ic.name == null && ic.file) ic.name = String(ic.file).split('/').pop();
                 if ('flipX' in ic) { ic.flip_x ??= !!ic.flipX; delete ic.flipX; }
                 delete ic.file;
+                if (suite && Array.isArray(ic.pos) && typeof ic.pos[0] === 'number' && typeof ic.pos[1] === 'number') {
+                    // suite anchors a symbol at its TOP-LEFT corner in a +y-down box; RDBK centers it
+                    // in a +y-up box — so flip y and shift the anchor to the centre (half a symbol).
+                    const half = (typeof ic.size === 'number' ? ic.size : 32) / 2;
+                    ic.pos = [ic.pos[0] + half, -ic.pos[1] - half];
+                }
+                if (suite && typeof ic.size === 'number') { // suite symbols import a touch small; start/finish markers want extra presence
+                    const startFinish = ['i01_arrivo.png', 'i02_partenza.png'].includes((ic.name || '').toLowerCase());
+                    ic.size = Math.min(120, Math.round(ic.size * (startFinish ? 3 : 1.5)));
+                }
+                if (ic.name) { // Roadbook Suite icon names → standard palette (safe 1:1 only)
+                    if (/^S0\d_\d{1,3}km\.png$/i.test(ic.name) || /^S99_end\.png$/i.test(ic.name)) ic.name = ic.name.replace(/\.png$/i, '.svg');
+                    else if (SUITE_ICON_ALIASES[ic.name.toLowerCase()]) ic.name = SUITE_ICON_ALIASES[ic.name.toLowerCase()];
+                }
             });
             return n;
         });
         rb.icons = rb.icons || {};
+        // The suite's bearings use a different reference (e.g. the start note's bogus
+        // bearing_in points the trunk arrow backwards); the track is authoritative, so
+        // re-derive bearings/distances/road-types from it — exactly as buildRoadbook does.
+        if (suite && Array.isArray(rb.track) && rb.track.length >= 2) recomputeMetrics(rb);
         return rb;
     }
 
