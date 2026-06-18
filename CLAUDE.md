@@ -43,8 +43,8 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   - **`i18n.js`**: `RBt(key)` (translate; falls back to the key) + `data-i18n` / `data-i18n-html`
     / `data-i18n-ph` in HTML. Keep `es`/`it` at full key parity with the English source strings.
   - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
-    QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (reader)
-    / `rowCols` (challenge page). **`rbmap.js`** (`RBMap`): Mapbox helper (Editor + Reader map).
+    QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (the
+    vignette, used by the Reader rows and the challenge page). **`rbmap.js`** (`RBMap`): MapLibre helper (Editor + Reader map).
     **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
@@ -77,7 +77,8 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
 ```
 `node --check <file>.js` for syntax; `roadbook-core.js` has node-testable functions.
-`public/assets/js/config.js` (gitignored) holds a public Mapbox token + a `signKey`
+`public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
+style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
 (copy `.env.example`); migrations live in `migrations/`.
 
@@ -123,7 +124,7 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
   upcoming white · <50 m to next blue · approaching orange) with an optional per-note
-  Mapbox static mini-map. The start modal sets Trip vs Competition mode, automatic (GPS,
+  MapLibre mini-map. The start modal sets Trip vs Competition mode, automatic (GPS,
   marks within 50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the
   per-note map button and optional live GPX logging. Competition validates with
   penalties + an HMAC-signed result QR; validating syncs the total odometer to the
@@ -142,10 +143,9 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   speed-limit helpers, `buildMeta`/`parseMeta` (49-char QR), `signMeta`/`verifyMeta`
   (HMAC-SHA256), `iconSrc`, `CONST`, `ROAD_TYPES`.
-- `note-canvas.js` — `NoteCanvas` (vignette editor) + two static renders: `NoteCanvas.toSVG`
-  (the vignette, used by the Reader rows) and `NoteCanvas.rowCols` (the 3-column row, used
-  by the challenge page).
-- `rbmap.js` (`RBMap`) — Mapbox GL helper (track, waypoints, live recording, photo
+- `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
+  (the vignette, used by both the Reader rows and the challenge page).
+- `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker, satellite↔topo layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
 - `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
