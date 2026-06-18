@@ -14,3 +14,15 @@
 /public/photos
 /cron/cron.log
 /bashy
+
+# Capacitor — the android/ (and ios/) projects are committed, but these are generated:
+/public/assets/js/native.bundle.js
+/ios/App/Pods
+/ios/App/App/public
+/android/.gradle
+/android/build
+/android/app/build
+/android/app/src/main/assets/public
+/android/local.properties
+/android/.idea
+/android/capacitor-cordova-android-plugins

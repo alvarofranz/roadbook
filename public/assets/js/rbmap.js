@@ -1,24 +1,25 @@
 'use strict';
-/* RBMap — Mapbox GL helper used by the Editor (full roadbook editing) and the
+/* RBMap — MapLibre GL helper used by the Editor (full roadbook editing) and the
  * Reader (the interactive per-note map): draws a roadbook (track + waypoints),
  * live recording, photo pins, a draggable edit marker, a satellite ↔ topo layer
  * toggle, and lets you select waypoints and highlight the active one. */
 (function () {
 // The two base styles the built-in layer toggle flips between (satellite photo ↔ topo).
-const STYLE_SATELLITE = 'mapbox://styles/mapbox/satellite-streets-v12';
-const STYLE_TOPO = 'mapbox://styles/mapbox/outdoors-v12';
+// Free, no-key defaults (MapLibre + OpenFreeMap); override via RB_CONFIG — point
+// styleSatellite at a licensed provider (e.g. a MapTiler satellite style URL) for real imagery.
+const STYLE_TOPO = (window.RB_CONFIG && RB_CONFIG.styleTopo) || 'https://tiles.openfreemap.org/styles/liberty';
+const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || STYLE_TOPO;
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
-        const { layerToggle, ...mapOpts } = opts; // layerToggle is ours, not a Mapbox option
+        const { layerToggle, ...mapOpts } = opts; // layerToggle is ours, not a MapLibre option
         const cont = document.getElementById(containerId);
-        if (!window.mapboxgl || !window.RB_CONFIG || !RB_CONFIG.mapboxToken) {
-            if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (Mapbox token).</div>';
+        if (!window.maplibregl) {
+            if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable.</div>';
             return;
         }
-        mapboxgl.accessToken = RB_CONFIG.mapboxToken;
         try {
-            this.map = new mapboxgl.Map(Object.assign({
+            this.map = new maplibregl.Map(Object.assign({
                 container: containerId, style: STYLE_SATELLITE,
                 center: [-3.6, 37.178], zoom: 12, attributionControl: true,
             }, mapOpts));
@@ -27,9 +28,9 @@ window.RBMap = class RBMap {
             this.map = null;
             return;
         }
-        this._topo = /outdoors/.test(mapOpts.style || ''); // tracks which base style is live
-        this.map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
-        this.map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }));
+        this._topo = (mapOpts.style || STYLE_SATELLITE) === STYLE_TOPO; // tracks which base style is live
+        this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+        this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
         if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
@@ -57,13 +58,13 @@ window.RBMap = class RBMap {
         m.on('mouseup', vertUp); m.on('touchend', vertUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
-    // Swap the base style (satellite ↔ topo). Mapbox wipes every custom
+    // Swap the base style (satellite ↔ topo). MapLibre wipes every custom
     // source/layer on setStyle, so everything is rebuilt and the caller repaints
     // its data in onReady.
     setBaseStyle(styleUrl, onReady) {
         if (!this.map) return;
         this.ready = false;
-        this._topo = /outdoors/.test(styleUrl);
+        this._topo = (styleUrl === STYLE_TOPO);
         this.map.setStyle(styleUrl);
         this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; if (onReady) onReady(); });
     }
@@ -83,9 +84,9 @@ window.RBMap = class RBMap {
     _terrain() {
         const m = this.map;
         try {
-            if (!m.getSource('mapbox-dem')) m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
-            m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.3 });
-            if (!m.getLayer('sky')) m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun-intensity': 12 } });
+            // Free, no-key elevation (AWS open Terrarium tiles) for 3D relief.
+            if (!m.getSource('rb-dem')) m.addSource('rb-dem', { type: 'raster-dem', tiles: ['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'], encoding: 'terrarium', tileSize: 256, maxzoom: 14 });
+            m.setTerrain({ source: 'rb-dem', exaggeration: 1.3 });
             m.setMaxPitch(80);
         } catch (e) { /* terrain unavailable offline */ }
     }
@@ -118,7 +119,7 @@ window.RBMap = class RBMap {
     setPin(pt) {
         if (!this.map) return;
         if (this._pin) { this._pin.remove(); this._pin = null; }
-        if (pt) this._pin = new mapboxgl.Marker({ color: '#e8b059', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
+        if (pt) this._pin = new maplibregl.Marker({ color: '#e8b059', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
     }
     // "you are here" dot; follow=true recenters on it.
     setPosition(lat, lon, follow) {
@@ -206,17 +207,17 @@ window.RBMap = class RBMap {
         if (!this.map) return;
         if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; }
         if (!note || !this.ready) return;
-        this._editMarker = new mapboxgl.Marker({ draggable: true, color: '#ff2a2a', scale: 1.2 }).setLngLat([note.lon, note.lat]).addTo(this.map);
+        this._editMarker = new maplibregl.Marker({ draggable: true, color: '#ff2a2a', scale: 1.2 }).setLngLat([note.lon, note.lat]).addTo(this.map);
         this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
         if (!noEase) this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }
 };
-// A small Mapbox control button that flips the base style (satellite ↔ topo).
+// A small MapLibre control button that flips the base style (satellite ↔ topo).
 function layerToggleControl(rbmap) {
     return {
         onAdd() {
             const c = document.createElement('div');
-            c.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+            c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
             const b = document.createElement('button');
             b.type = 'button';
             b.title = window.RBt ? RBt('Map style') : 'Map style';

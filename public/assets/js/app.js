@@ -11,24 +11,36 @@
     const here = (document.currentScript && document.currentScript.src) || location.href;
     const ROOT = here.replace(/assets\/js\/app\.js.*$/, ''); // .../roadbook/
 
+    // True only inside a Capacitor native shell (available synchronously at startup).
+    const isNativeApp = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+
+    // Native shell: load the native capability bridge (RBNative) and flag the document
+    // for safe-area styling. Never runs in a plain browser — the PWA stays unchanged.
+    if (isNativeApp()) {
+        document.documentElement.classList.add('native');
+        const nativeBridge = document.createElement('script');
+        nativeBridge.src = ROOT + 'assets/js/native.bundle.js';
+        document.head.appendChild(nativeBridge);
+    }
+
     /* ---------------- Global header + footer (same on every page) ---------------- */
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
         const active = (p) => rel.indexOf(p) === 0 ? ' active' : '';
+        // The native app is a field companion: Reader · Tripmaster · Recorder only (Editor and
+        // Ranking stay web-only). The website keeps the full set.
+        const tools = isNativeApp()
+            ? [['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Recorder']]
+            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking']];
+        const navLinks = tools.map(([p, label]) => `<a class="nav-link${active(p)}" href="${ROOT}${p}/">${label}</a>`).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
             <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
             <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-            <nav class="topnav" id="topnav">
-                <a class="nav-link${active('recorder')}" href="${ROOT}recorder/">Recorder</a>
-                <a class="nav-link${active('editor')}" href="${ROOT}editor/">Editor</a>
-                <a class="nav-link${active('reader')}" href="${ROOT}reader/">Reader</a>
-                <a class="nav-link${active('tripmaster')}" href="${ROOT}tripmaster/">Tripmaster</a>
-                <a class="nav-link${active('ranking')}" href="${ROOT}ranking/">Ranking</a>
-            </nav>
+            <nav class="topnav" id="topnav">${navLinks}</nav>
         </div>`;
         const toggle = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
         const setOpen = (open) => {
@@ -225,11 +237,28 @@
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
     };
+    // API auth: a Capacitor webview can't carry the cross-origin session cookie, so in the
+    // native apps login returns a Bearer token we store and replay on every call. In the
+    // browser this is completely inert — the httponly session cookie is used as before and
+    // no token is ever read, stored or sent.
+    const RB_TOKEN_KEY = 'rb_token';
+    const rbAuthHeaders = (base) => {
+        if (!isNativeApp()) return base;
+        try { const t = localStorage.getItem(RB_TOKEN_KEY); if (t) return Object.assign({ Authorization: 'Bearer ' + t }, base); } catch (e) {}
+        return base;
+    };
+    const rbCaptureToken = (action, json) => {
+        if (isNativeApp()) try {
+            if (json && json.token) localStorage.setItem(RB_TOKEN_KEY, json.token);
+            else if (action === 'logout') localStorage.removeItem(RB_TOKEN_KEY);
+        } catch (e) {}
+        return json;
+    };
     // JSON POST to the API → the parsed response ({ ok: false, … } on network failure).
     window.RBApi = (action, body) => fetch(ROOT + 'api/index.php', {
-        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(Object.assign({ action }, body || {})),
-    }).then((r) => r.json()).catch(() => ({ ok: false, error: 'Network error.' }));
+    }).then((r) => r.json()).then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
     // Trigger a download from a Blob or a URL.
     window.RBDownload = (data, filename) => {
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
@@ -241,7 +270,7 @@
         const fd = new FormData();
         for (const k in fields) fd.append(k, fields[k]);
         fd.append('photo', await RBImg.toBlob(file), name || 'photo.jpg');
-        try { return await (await fetch(ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', body: fd })).json(); }
+        try { return await (await fetch(ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({}), body: fd })).json(); }
         catch (e) { return { ok: false, error: 'Upload failed.' }; }
     };
 

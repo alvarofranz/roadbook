@@ -7,10 +7,36 @@ function valid_email(string $e): bool { return filter_var($e, FILTER_VALIDATE_EM
 function new_token(): string { return bin2hex(random_bytes(32)); }
 function token_hash(string $t): string { global $CFG; return hash('sha256', $t . '|' . $CFG['app_secret']); }
 
+// Bearer API token: the native apps authenticate with this instead of the session
+// cookie (which a Capacitor webview can't carry across its origin). The web is unaffected —
+// it has a session and never reaches the token path.
+function bearer_token(): ?string {
+    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if ($h === '' && function_exists('apache_request_headers')) {
+        $hs = apache_request_headers();
+        $h = $hs['Authorization'] ?? $hs['authorization'] ?? '';
+    }
+    return preg_match('/^Bearer\s+(\S+)$/i', trim((string)$h), $m) ? $m[1] : null;
+}
+function issue_api_token(int $uid): string {
+    $raw = new_token();
+    db()->prepare('INSERT INTO api_tokens (token_hash, user_id) VALUES (?, ?)')->execute([token_hash($raw), $uid]);
+    return $raw;
+}
+
 function current_user(): ?array {
-    if (empty($_SESSION['uid'])) return null;
+    $uid = !empty($_SESSION['uid']) ? (int)$_SESSION['uid'] : 0;
+    if (!$uid && ($tok = bearer_token())) {            // no cookie session → try a Bearer token (native apps)
+        $st = db()->prepare('SELECT user_id FROM api_tokens WHERE token_hash = ?');
+        $st->execute([token_hash($tok)]);
+        if ($row = $st->fetch()) {
+            $uid = (int)$row['user_id'];
+            db()->prepare('UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = ?')->execute([token_hash($tok)]);
+        }
+    }
+    if (!$uid) return null;
     $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, bio, avatar FROM users WHERE id = ?');
-    $st->execute([$_SESSION['uid']]);
+    $st->execute([$uid]);
     return $st->fetch() ?: null;
 }
 
@@ -91,10 +117,16 @@ function login_user(array $d): void {
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
-    json_out(['ok' => true, 'user' => current_user()]);
+    // Also hand back a Bearer token for the native apps (the browser ignores it and uses the cookie).
+    json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
 }
 
-function logout_user(): void { $_SESSION = []; session_destroy(); json_out(['ok' => true]); }
+function logout_user(): void {
+    if ($tok = bearer_token()) db()->prepare('DELETE FROM api_tokens WHERE token_hash = ?')->execute([token_hash($tok)]);
+    $_SESSION = [];
+    if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
+    json_out(['ok' => true]);
+}
 
 function forgot_password(array $d): void {
     rate_limit('forgot_' . client_ip(), 8, 900);

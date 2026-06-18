@@ -239,7 +239,7 @@
     function toggleNoteMap(i) {
         if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
         closeInlineMap();
-        if (!window.mapboxgl || !(window.RB_CONFIG || {}).mapboxToken) return toast('Map not configured.');
+        if (!window.maplibregl) return toast('Map not configured.');
         const el = $('nmap' + i); if (!el) return;
         const n = notes[i];
         el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';

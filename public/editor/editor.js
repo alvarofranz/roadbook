@@ -21,7 +21,7 @@
         e.preventDefault();
         const lat = e.lngLat.lat.toFixed(6), lon = e.lngLat.lng.toFixed(6);
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-        new mapboxgl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
+        new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
             .setLngLat(e.lngLat)
             .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a><span class="map-ctx-coords">${lat}, ${lon}</span>`)
             .addTo(map.map);

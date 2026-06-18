@@ -1,8 +1,12 @@
 /* Client config template.
    Copy this file to `config.js` (gitignored) and fill in your values. */
 window.RB_CONFIG = {
-    // PUBLIC Mapbox token (pk.*). Restrict it by URL to rdbk.app at console.mapbox.com.
-    mapboxToken: 'pk.YOUR_PUBLIC_MAPBOX_TOKEN',
     // Key used to sign result QRs (integrity). Reader and Ranking must use the SAME one.
     signKey: 'change-me',
+    // Maps use MapLibre with a free, no-key topo style by default — nothing required here.
+    // Optional overrides:
+    //   styleTopo:      MapLibre style URL for the base/topo layer (defaults to OpenFreeMap).
+    //   styleSatellite: MapLibre style URL for the satellite layer, e.g. MapTiler:
+    //     'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAPTILER_KEY'
+    //     (if unset, the satellite toggle falls back to the topo style).
 };

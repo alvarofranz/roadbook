@@ -4,42 +4,58 @@
  * when the tab becomes visible again) and reports one clean object per fix:
  * position, odometer-grade displacement (gated by RB.CONST.MIN_DISP_M), speed
  * (the GPS value, or derived from displacement so it never sticks when the
- * device stops reporting) and the device heading when available. */
+ * device stops reporting) and the device heading when available. Inside a
+ * Capacitor app the watch is the native background-capable one (logging survives
+ * a locked screen); in the browser it's the standard Web Geolocation watch. */
 window.RBGpsMeter = class RBGpsMeter {
     // onFix({ here, coords, disp, speedKmh, heading, tnow }) · onError() once if unavailable/denied
     constructor(onFix, onError) {
-        this._onFix = onFix; this._onError = onError;
+        this._onFix = onFix; this._onError = onError || (() => {});
         this.lastPos = null; this.speedKmh = 0; this.heading = null; this.watchId = null;
         this._lastSpeedPos = null; this._lastSpeedT = null; this._wakeLock = null;
-        if (!navigator.geolocation) { if (onError) onError(); return; }
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this.watchId != null) this._wake(); });
+        this._native = !!(window.RBNative && RBNative.available); this._running = false;
+        if (!this._native && !navigator.geolocation) { this._onError(); return; }
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this._running) this._wake(); });
         this.resume();
     }
-    // (Re)start the position watch and re-acquire the screen wake lock — also used
-    // to resume after stop() (e.g. the Reader's Pause button). No-op if already running.
+    // (Re)start the watch and re-acquire the screen wake lock — also used to resume after
+    // stop() (e.g. the Reader's Pause button). No-op if already running. Native and web both
+    // feed _fix() a GeolocationCoordinates-shaped object, so the rest is identical.
     resume() {
-        if (!navigator.geolocation || this.watchId != null) return;
-        this.watchId = navigator.geolocation.watchPosition((pos) => {
-            const c = pos.coords, here = { lat: c.latitude, lon: c.longitude }, tnow = Date.now();
-            let disp = 0;
-            if (this.lastPos) {
-                const d = RB.geo.haversineM(this.lastPos, here);
-                if (d >= RB.CONST.MIN_DISP_M) { disp = d; this.lastPos = here; }
-            } else this.lastPos = here;
-            if (c.speed != null && isFinite(c.speed) && c.speed >= 0) this.speedKmh = c.speed * 3.6;
-            else if (this._lastSpeedPos && this._lastSpeedT) {
-                const dt = (tnow - this._lastSpeedT) / 1000;
-                if (dt > 0) this.speedKmh = RB.geo.haversineM(this._lastSpeedPos, here) / dt * 3.6;
-            }
-            this._lastSpeedPos = here; this._lastSpeedT = tnow;
-            if (c.heading != null && isFinite(c.heading)) this.heading = c.heading;
-            this._onFix({ here, coords: c, disp, speedKmh: this.speedKmh, heading: this.heading, tnow });
-        }, this._onError || (() => {}), { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+        if (this._running) return;
+        this._running = true;
+        if (this._native) {
+            RBNative.geo.start((c) => this._fix(c, Date.now()), this._onError);
+        } else {
+            this.watchId = navigator.geolocation.watchPosition(
+                (pos) => this._fix(pos.coords, Date.now()), this._onError,
+                { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+        }
         this._wake();
     }
+    // One position fix from either source (coords: latitude, longitude, accuracy, altitude,
+    // speed in m/s, heading in degrees).
+    _fix(c, tnow) {
+        const here = { lat: c.latitude, lon: c.longitude };
+        let disp = 0;
+        if (this.lastPos) {
+            const d = RB.geo.haversineM(this.lastPos, here);
+            if (d >= RB.CONST.MIN_DISP_M) { disp = d; this.lastPos = here; }
+        } else this.lastPos = here;
+        if (c.speed != null && isFinite(c.speed) && c.speed >= 0) this.speedKmh = c.speed * 3.6;
+        else if (this._lastSpeedPos && this._lastSpeedT) {
+            const dt = (tnow - this._lastSpeedT) / 1000;
+            if (dt > 0) this.speedKmh = RB.geo.haversineM(this._lastSpeedPos, here) / dt * 3.6;
+        }
+        this._lastSpeedPos = here; this._lastSpeedT = tnow;
+        if (c.heading != null && isFinite(c.heading)) this.heading = c.heading;
+        this._onFix({ here, coords: c, disp, speedKmh: this.speedKmh, heading: this.heading, tnow });
+    }
     async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
-    // Stop the position watch and release the screen wake lock.
+    // Stop the watch and release the screen wake lock.
     stop() {
+        this._running = false;
+        if (this._native) RBNative.geo.stop();
         if (this.watchId != null) { navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
         if (this._wakeLock) { this._wakeLock.release().catch(() => {}); this._wakeLock = null; }
     }
