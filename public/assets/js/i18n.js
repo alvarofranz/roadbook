@@ -282,6 +282,7 @@
             'flow.s1': 'Registra il percorso', 'flow.s2': 'Prepara un roadbook', 'flow.s3': 'Usalo con gli amici', 'flow.s4': 'Organizza un evento ',
             'feat.1.t': 'Editor', 'feat.1.d': 'Crea un roadbook da un GPX e crea le note con gli standard dei Rally.',
             'feat.2.t': 'Registra percorso', 'feat.2.d': 'Registra traccia GPX, aggiungendo waypoint con riconoscimento vocale e foto.',
+            'feat.3.t': 'Disegno del roadbook', 'feat.3.d': 'Disegna ogni nota: vettori di giunzione, icone ridimensionabili e i tuoi simboli.',
             'feat.4.t': 'Roadbook reader', 'feat.4.d': 'Naviga con odometro, rotta, mappa dal vivo e la barra di direzione CAP.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odometro GPS preciso senza roadbook — distanza parziale e totale.',
             'feat.6.t': 'Convalida e QR', 'feat.6.d': 'Convalida le note (manuale o automatica) ed emetti un QR firmato.',
