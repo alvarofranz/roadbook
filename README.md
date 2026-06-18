@@ -29,6 +29,18 @@ The platform emphasizes offline capability by implementing Progressive Web App (
 
 Follow these steps to get the application running locally:
 
+#### Local development with DDEV (recommended)
+
+[DDEV](https://ddev.com/) spins up the full stack (PHP 8.1 + MariaDB + web server) in Docker with one command — no local PHP or database setup.
+
+1. Install [Docker](https://docs.docker.com/get-docker/) and [DDEV](https://ddev.com/get-started/).
+2. From the repo root, run **`ddev start`**. On the first start it automatically installs the Composer deps, creates `public/assets/js/config.js` from the example, and applies every `migrations/*.sql` to a fresh database.
+3. Open it with **`ddev launch`** → `https://rdbk.ddev.site`
+
+Handy: `ddev mysql` (DB shell), `ddev ssh` (web container), `ddev composer install`, `ddev stop`. Re-apply the migrations on a wiped DB with `for f in migrations/*.sql; do ddev mysql < "$f"; done`. The base map uses free, no-key MapLibre tiles; for satellite imagery add a MapTiler `styleSatellite` URL to `public/assets/js/config.js`.
+
+The rest of this section covers the **manual** setup, if you prefer not to use DDEV.
+
 #### Prerequisites
 1.  PHP (Version compatible with project requirements)
 2.  Composer (PHP Dependency Manager)
