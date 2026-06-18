@@ -2,7 +2,7 @@
 /.idea
 /.vscode
 /.fleet
-/.claude/settings.local.json
+/.claude
 /node_modules
 /source
 /public/assets/fontawesome
