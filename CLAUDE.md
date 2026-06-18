@@ -3,7 +3,10 @@
 A free PWA suite for **digital roadbooks** for any adventure (4x4, moto, bike,
 running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/**.
 
-- Front-end: vanilla HTML/CSS/JS PWA (no build step), web root `public/`.
+- Front-end: vanilla HTML/CSS/JS PWA, web root `public/` (no build step on the web).
+- Native apps: the same `public/` is wrapped by **Capacitor** into iOS + Android (one
+  codebase). The only built artifact is the native bridge (`native/src/native.js` →
+  `public/assets/js/native.bundle.js`, esbuild). See **Native apps** below and `NATIVE.md`.
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public challenges. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
@@ -73,6 +76,9 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Commit messages are changelogs** — short English title + bullet points.
 
 ## Run locally
+**Full stack (PHP 8.1 + MariaDB) in Docker — recommended:** `ddev start` then `ddev launch`
+(first start installs Composer deps, seeds `config.js` from the example and applies every
+`migrations/*.sql`; details in the README). Front-end only, no back-end:
 ```
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
 ```
@@ -96,6 +102,9 @@ script/style URL in the HTML, so each release gets fresh asset URLs through ever
 layer (browser, CDN edge, the host's static-file cache — which ignores `.htaccess` and
 pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fontawesome/`,
 `public/assets/js/config.js`, `.env`, `vendor/`) are not in git and persist across deploys.
+**Native app releases are separate** — built on a Mac (signed Android AAB / iOS via Xcode)
+and uploaded to the stores; the web deploy serves `public/` and ignores the `android/`/`ios/`
+projects. See `NATIVE.md`.
 
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
@@ -120,6 +129,9 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   URL so re-saves update the same roadbook; importing fresh content starts a new
   one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons + junction
   vectors); searchable icon palette.
+- **Recorder** — a standalone live-GPS route recorder (accuracy-aware sampling, pause/resume,
+  crash-safe GPX, geotagged photos via the camera); signed-in, it saves the route as a draft
+  roadbook to edit later. (The Editor's "Record route" is the same capture, done in-place.)
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
@@ -149,7 +161,8 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   pins, draggable edit marker, satellite↔topo layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
 - `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
-  position watch + wake lock, one clean `{here, disp, speedKmh, heading}` per fix.
+  position watch + wake lock, one clean `{here, disp, speedKmh, heading}` per fix. In the
+  native app it uses RBNative's background-capable watch (logging survives a locked screen).
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
   settings modal, localStorage checkpoint with recovery, live file handle, finished-track
   modal (download / convert into a roadbook).
@@ -157,6 +170,23 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
 - `i18n.js`, `app.js` (global header/footer, SW + version auto-refresh, Install button,
   account control, styled modals), `config.js`, `qrcode.min.js`.
+
+## Native apps (iOS + Android)
+Capacitor wraps `public/` into native shells; the web stays the single source of truth.
+Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Capacitor 8).
+- **Bridge.** `native/src/native.js` → `public/assets/js/native.bundle.js` (esbuild, `npm run
+  build:native`; git-ignored). `app.js` loads it and adds `.native` to `<html>` **only inside
+  the app**, so the PWA is byte-for-byte unchanged in a browser.
+- **Background GPS** (the reason to go native): `RBGpsMeter` uses RBNative's foreground-service
+  watch in the app, the Web Geolocation watch otherwise.
+- **One contextual home:** `index.html` shows the marketing landing on the web and the
+  field-tool launcher in the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second
+  page. App scope: **Reader · Tripmaster · Recorder** (Editor and Ranking stay web-only).
+- **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
+  client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token
+  only inside the app.
+- **Projects:** `android/` is committed (build artifacts git-ignored); generate iOS with
+  `npx cap add ios` on a Mac with Xcode.
 
 ## The `.rdbk` format (open standard, documented at /standard)
 One self-contained UTF-8 JSON file (MIME `application/x-roadbook`). **All distances are
