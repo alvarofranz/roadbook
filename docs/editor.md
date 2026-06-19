@@ -234,14 +234,22 @@ mostra **tutte** le foto come **pin sulla mappa** (la mappa *è* la galleria) e 
 
 Nessuna foto viene salvata senza coordinate.
 
-**Tre punti di upload:** il bottone *Add photos* nei Settings, e — nel **menu contestuale della
-mappa** (tasto destro, [editor.js:21](../public/editor/editor.js#L21)) — la voce *Upload a photo
-here*, che geotagga sul punto cliccato (nessun EXIF: la posizione è scelta).
+**Punti di upload:** il bottone *Add photos* nei Settings; nel **menu contestuale della
+mappa** (tasto destro, [editor.js:21](../public/editor/editor.js#L21)) la voce *Upload a photo
+here*, che geotagga sul punto cliccato (nessun EXIF: la posizione è scelta); e **copia-incolla**
+(Ctrl/Cmd+V di un'immagine dagli appunti, listener `paste`) che segue il normale flusso
+EXIF/pin. Tutti convergono su `addPhotos`.
 
-**Lightbox** (`openLightbox`, [editor.js:736](../public/editor/editor.js#L736)): un tap su un **pin**
-o su una **miniatura** apre un visore a tutta pagina che sfoglia *tutte* le foto del roadbook —
-frecce ‹/›, `←`/`→` e `Esc` da tastiera, e un bottone **Waypoint** che crea un waypoint sulla
-posizione della foto (sostituisce il vecchio "promuovi a waypoint" del pin).
+**Lightbox** (`openLightbox`): un tap su un **pin** o su una **miniatura** apre il visore che
+sfoglia *tutte* le foto del roadbook. Il visore **copre solo la mappa** (`#lightbox` è dentro
+`#mapEditor`, posizione assoluta), **non** il pannello note → si può **continuare a editare** mentre
+si guarda una foto; le frecce da tastiera sono ignorate quando il focus è in un campo di testo.
+Frecce ‹/›, `←`/`→` e `Esc`, più una riga azioni:
+- **Waypoint** — crea un waypoint sulla posizione della foto (sostituisce il vecchio "promuovi a
+  waypoint" del pin);
+- **Move on map** — entra in modalità *posiziona* (`startMovePhoto`): il prossimo tap sulla mappa
+  aggiorna le coordinate della foto via l'endpoint **`ph_move`** ([roadbooks.php](../app/roadbooks.php), `UPDATE … SET lat,lon`, con check proprietà);
+- **Delete** — elimina la foto (`ph_delete`, con conferma) e aggiorna lightbox + pin.
 
 ---
 

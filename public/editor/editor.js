@@ -695,9 +695,18 @@
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
     // map to set its position (one tap per queued photo). No photo is stored without coords.
-    let photoPlacing = false, photoQueue = [];
+    let photoPlacing = false, photoQueue = [], photoMoveId = 0;
     $('addPhotoBtn').onclick = () => { if (!(currentRbId > 0)) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => { const files = [...e.target.files]; e.target.value = ''; addPhotos(files); };
+    // paste an image from the clipboard (Ctrl/Cmd+V) → upload it like any photo (EXIF or place on map)
+    document.addEventListener('paste', (e) => {
+        if (!rb) return;
+        const files = [...(e.clipboardData?.items || [])].filter((it) => /^image\//.test(it.type)).map((it) => it.getAsFile()).filter(Boolean);
+        if (!files.length) return; // plain text/other paste → leave it to the browser
+        e.preventDefault();
+        if (!(currentRbId > 0)) return toast('Save to your profile first.');
+        addPhotos(files);
+    });
     const uploadPhoto = (file, lat, lon) => RBUpload({ type: 'photo', roadbook: String(currentRbId), lat: String(lat), lon: String(lon) }, file);
     // map context-menu upload: photos geotagged at the right-clicked point
     $('ctxPhotoFile').onchange = async (e) => {
@@ -725,18 +734,36 @@
         toast(t('Tap the map to place the photo') + (photoQueue.length > 1 ? ' (' + photoQueue.length + ')' : ''));
     }
     async function placePhotoHere(here) {
+        if (photoMoveId) { // repositioning an existing photo, not uploading a new one
+            const id = photoMoveId; photoMoveId = 0; photoPlacing = false;
+            document.body.classList.remove('placing-photo');
+            const r = await RBApi('ph_move', { id, lat: here.lat, lon: here.lon });
+            await loadPhotos();
+            toast(r.ok ? 'Photo moved.' : 'Could not move the photo.');
+            return;
+        }
         const r = await uploadPhoto(photoQueue.shift(), here.lat, here.lon);
         await loadPhotos();
         if (photoQueue.length) toast(t('Tap the map to place the photo') + ' (' + photoQueue.length + ')');
         else { photoPlacing = false; document.body.classList.remove('placing-photo'); toast(r.ok ? 'Photos uploaded.' : 'Some photos failed.'); }
     }
+    function startMovePhoto(id) {
+        closeLightbox();
+        photoMoveId = id; photoPlacing = true;
+        showView('map'); setMapTool('pan');
+        document.body.classList.add('placing-photo');
+        toast(t('Tap the map to move the photo'));
+    }
 
     /* ---------- lightbox: browse all the roadbook's photos ---------- */
     let lbList = [], lbIdx = -1;
-    function openLightbox(id) {
-        lbList = notePhotos.slice();
-        lbIdx = lbList.findIndex((p) => +p.id === +id);
-        if (lbIdx < 0) return;
+    // Open the viewer. `list` scopes which photos to browse (e.g. a note's nearby ones);
+    // omit it to browse all the roadbook's photos.
+    function openLightbox(id, list) {
+        lbList = (list && list.length ? list : notePhotos).slice();
+        if (!lbList.length) return;
+        lbIdx = lbList.findIndex((p) => +p.id === +id); if (lbIdx < 0) lbIdx = 0;
+        showView('map'); // the viewer overlays the map, so make sure the map view is shown
         $('lbImg').src = lbList[lbIdx].url; $('lightbox').hidden = false;
     }
     function lbStep(d) { if (!lbList.length) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; $('lbImg').src = lbList[lbIdx].url; }
@@ -745,8 +772,21 @@
     $('lbPrev').onclick = () => lbStep(-1);
     $('lbNext').onclick = () => lbStep(1);
     $('lbWaypoint').onclick = () => { const p = lbList[lbIdx]; if (p && p.lat != null && rb) { addWaypointNear({ lat: +p.lat, lon: +p.lon }); closeLightbox(); } };
+    $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(+p.id); };
+    $('lbDelete').onclick = async () => {
+        const p = lbList[lbIdx]; if (!p) return;
+        if (!(await RBConfirm(t('Delete this photo?'), t('Delete')))) return;
+        const keep = new Set(lbList.map((x) => +x.id)); keep.delete(+p.id); // stay within the current set (all, or a note's group)
+        await RBApi('ph_delete', { id: +p.id });
+        await loadPhotos();
+        lbList = notePhotos.filter((x) => keep.has(+x.id));
+        if (!lbList.length) return closeLightbox();
+        lbIdx = Math.min(lbIdx, lbList.length - 1); $('lbImg').src = lbList[lbIdx].url;
+    };
     document.addEventListener('keydown', (e) => {
         if ($('lightbox').hidden) return;
+        const tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return; // editing text: don't hijack arrows
         if (e.key === 'Escape') closeLightbox(); else if (e.key === 'ArrowLeft') lbStep(-1); else if (e.key === 'ArrowRight') lbStep(1);
     });
 
@@ -799,7 +839,7 @@
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
             const ph = photosByNote[+b.dataset.photo] || [];
-            if (ph.length) RBModal(ph.map((p) => `<img src="${esc(p.url)}" alt="" class="photo-preview">`).join(''), 'slim center');
+            if (ph.length) openLightbox(ph[0].id, ph); // same viewer, scoped to this note's nearby photos
         });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {

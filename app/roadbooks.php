@@ -145,6 +145,19 @@ function ph_delete(array $user, array $d): void {
     json_out(['ok' => true]);
 }
 
+// Reposition a photo's pin on the map (update its lat/lon).
+function ph_move(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $lat = isset($d['lat']) && $d['lat'] !== '' ? (float)$d['lat'] : null;
+    $lon = isset($d['lon']) && $d['lon'] !== '' ? (float)$d['lon'] : null;
+    if ($lat === null || $lon === null || $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) fail('Bad coordinates.');
+    $st = db()->prepare('SELECT p.id FROM roadbook_photos p JOIN roadbooks r ON r.id = p.roadbook_id WHERE p.id = ? AND r.user_id = ?');
+    $st->execute([$id, $user['id']]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare('UPDATE roadbook_photos SET lat = ?, lon = ? WHERE id = ?')->execute([$lat, $lon, $id]);
+    json_out(['ok' => true]);
+}
+
 /* ---- public (no auth): home gallery + challenge page ---- */
 function public_list(): void {
     $st = db()->query('SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username,

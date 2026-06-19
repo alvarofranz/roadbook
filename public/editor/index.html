@@ -77,15 +77,17 @@
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
-        /* lightbox: full-screen photo browser (a map pin or a thumbnail opens it) */
-        #lightbox { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
-        #lightbox img { max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 8px; }
+        /* hint pinned to the bottom of the map */
+        .map-hint { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 5; display: inline-flex; align-items: center; gap: .4rem; max-width: calc(100% - 20px); background: rgba(14, 17, 22, .82); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .7rem; font-size: .72rem; font-weight: 600; pointer-events: none; }
+        /* photo viewer: overlays ONLY the map box (so the notes panel stays editable) */
+        #lightbox { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
+        #lightbox img { max-width: 94%; max-height: 88%; object-fit: contain; border-radius: 8px; }
         .lb-close, .lb-nav { position: absolute; border: 0; background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer; border-radius: 50%; }
         .lb-close { top: 1rem; right: 1rem; width: 44px; height: 44px; font-size: 1.2rem; }
         .lb-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; font-size: 1.6rem; }
         .lb-prev { left: 1rem; } .lb-next { right: 1rem; }
         .lb-close:hover, .lb-nav:hover { background: rgba(255, 255, 255, .26); }
-        .lb-waypoint { position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%); }
+        .lb-actions { position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%); display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
         /* the GPX editor: map + vertical tool bar (overlaid left, like the Mapbox controls) */
         .map-editor { position: relative; }
         /* no overflow clipping here — the hover tooltips render outside the bar */
@@ -233,6 +235,19 @@
                 <button class="map-tool" id="toolLayers" aria-label="Satellite / terrain map"><i class="fa-solid fa-layer-group"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
+            <div class="map-hint"><i class="fa-solid fa-paste"></i> <span data-i18n="Paste an image on the map to add it to the roadbook">Paste an image on the map to add it to the roadbook</span></div>
+            <!-- photo viewer: overlays ONLY the map, so the notes panel stays editable -->
+            <div id="lightbox" hidden>
+                <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
+                <button type="button" id="lbPrev" class="lb-nav lb-prev" aria-label="Previous" data-i18n-aria="Previous">‹</button>
+                <img id="lbImg" alt="">
+                <button type="button" id="lbNext" class="lb-nav lb-next" aria-label="Next" data-i18n-aria="Next">›</button>
+                <div class="lb-actions">
+                    <button type="button" id="lbMove" class="btn btn-ghost"><i class="fa-solid fa-up-down-left-right"></i> <span data-i18n="Move on map">Move on map</span></button>
+                    <button type="button" id="lbWaypoint" class="btn btn-primary"><i class="fa-solid fa-map-pin"></i> <span data-i18n="Waypoint">Waypoint</span></button>
+                    <button type="button" id="lbDelete" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete">Delete</span></button>
+                </div>
+            </div>
         </div>
         <div id="rbPanel" hidden>
             <div class="rb-actions">
@@ -311,13 +326,6 @@
     </section>
 </main>
 
-<div id="lightbox" hidden>
-    <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
-    <button type="button" id="lbPrev" class="lb-nav lb-prev" aria-label="Previous" data-i18n-aria="Previous">‹</button>
-    <img id="lbImg" alt="">
-    <button type="button" id="lbNext" class="lb-nav lb-next" aria-label="Next" data-i18n-aria="Next">›</button>
-    <button type="button" id="lbWaypoint" class="btn btn-primary lb-waypoint"><i class="fa-solid fa-map-pin"></i> <span data-i18n="Waypoint">Waypoint</span></button>
-</div>
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
