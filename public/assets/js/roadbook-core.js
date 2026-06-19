@@ -194,8 +194,17 @@
         's10_stop.png': 'B02_stop.svg',
         's11_precedenza.png': 'B01_give_way.svg',
         's12_divieto_passaggio.png': 'C01_no_entry.svg',
+        's14_strettoia.png': 'W07_road_narrows.svg',
+        's15_curva_pericolosa_dx.png': 'W01_curve_right.svg',
+        's16_curva_pericolosa_sx.png': 'W02_curve_left.svg',
+        's17_sdrucciolevole.png': 'W11_slippery_road.svg',
+        's18_frana.png': 'W13_falling_rocks.svg',
         's19_pericolo_generico.png': 'W28_general_danger.svg',
         's20_rotatoria.png': 'D06_roundabout.svg',
+        's20_strada_tortuosa.png': 'W03_double_curve_right.svg',
+        's21_attraversamanto_senza_barriere.png': 'W24_level_crossing.svg',
+        's24_attenzione.png': 'W28_general_danger.svg',
+        's25_trattori.png': 'W27_agricultural_vehicles.svg',
     };
     // Normalize a roadbook into the canonical .rdbk schema in place. Besides the
     // structural defaults, this is where pre-standard files exported by Roadbook

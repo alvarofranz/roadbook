@@ -387,22 +387,33 @@ traduzione avviene in due punti.
 | `S10_stop.png` | `B02_stop.svg` | cartello: stop |
 | `S11_precedenza.png` | `B01_give_way.svg` | cartello: dare precedenza |
 | `S12_divieto_passaggio.png` | `C01_no_entry.svg` | cartello: divieto di passaggio |
+| `S14_strettoia.png` | `W07_road_narrows.svg` | cartello: strettoia |
+| `S15_curva_pericolosa_dx.png` | `W01_curve_right.svg` | cartello: curva pericolosa a destra |
+| `S16_curva_pericolosa_sx.png` | `W02_curve_left.svg` | cartello: curva pericolosa a sinistra |
+| `S17_sdrucciolevole.png` | `W11_slippery_road.svg` | cartello: fondo sdrucciolevole |
+| `S18_frana.png` | `W13_falling_rocks.svg` | cartello: frana / caduta massi |
 | `S19_pericolo_generico.png` | `W28_general_danger.svg` | cartello: pericolo generico |
 | `S20_rotatoria.png` | `D06_roundabout.svg` | cartello: rotatoria |
+| `s20_strada_tortuosa.png` | `W03_double_curve_right.svg` | cartello: strada con molte curve |
+| `s21_attraversamanto_senza_barriere.png` | `W24_level_crossing.svg` | cartello: passaggio a livello senza barriere |
+| `s24_attenzione.png` | `W28_general_danger.svg` | cartello: attenzione (pericolo generico) |
+| `s25_trattori.png` | `W27_agricultural_vehicles.svg` | cartello: mezzi agricoli |
 
-> ⚠️ **Collisione serie `S`:** la Suite usa `S10`/`S11`/`S12`/`S19`/`S20` per *cartelli*
-> (stop, precedenza, divieto, pericolo, rotatoria), mentre la palette usa la serie `S` solo
-> per i *limiti* (`S10_100km`…). Per questo i cartelli sono mappati per **significato** (tabella
-> sopra) e la regola dei limiti è ristretta a `S0x` (un solo zero), così non si toccano a vicenda.
+> ⚠️ **Collisione serie `S`:** la Suite usa `S10`…`S20` per *cartelli* (stop, precedenza,
+> divieto, curve, frana, rotatoria, …), mentre la palette usa la serie `S` solo per i *limiti*
+> (`S10_100km`…). Per questo i cartelli sono mappati per **significato** (tabella sopra) e la
+> regola dei limiti è ristretta a `S0x` (un solo zero), così non si toccano a vicenda. Tutti i
+> cartelli della Suite trovano un equivalente del set Vienna in palette (`W*`/`B*`/`C*`/`D*`).
 
 **(b) Icone senza file → fallback + nota** — in [`flagUnresolvedIcons`](../public/editor/editor.js#L880)
 (solo Editor, dopo `loadStd`): per ogni icona il cui **file non esiste** su disco si sostituisce
 il nome con un segnaposto (`W28_general_danger.svg`) e si **aggiunge al testo della nota**
 `Nota: aggiungere icona <nome originale>`, così l'autore sa cosa rimpiazzare. L'esistenza è
-verificata con un `HEAD` su `assets/icons/<nome>` (deduplicato), **non** con `index.json`: il
-picker omette alcuni file realmente presenti (es. `T05_rambla.png`, `t04_river.png`,
-`T02_terreno_inondato.png`), che quindi renderizzano e **non** vengono flaggati. È idempotente
-(il nome originale sparisce dopo lo swap; la nota si aggiunge una volta sola).
+verificata con un `HEAD` su `assets/icons/<nome>` (deduplicato), **non** con `index.json`:
+così un file realmente presente ma non listato nel picker renderizza comunque e **non** viene
+flaggato. È idempotente (il nome originale sparisce dopo lo swap; la nota si aggiunge una volta
+sola). *(Le icone di superficie del terreno — `T01`/`T02`/`T05`/`t03`/`t04`/`t06` — sono ora
+anche nella palette ricercabile, categoria Terrain.)*
 
 **Senza alcun equivalente** (ricadono nel fallback (b) finché non si aggiungono le icone):
 `p24_cassonetto`, `p26_estatua_monumento`, `p44_campo_coltivo`, e i segnaposto generici della
