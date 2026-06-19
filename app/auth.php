@@ -35,16 +35,60 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, bio, avatar FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar FROM users WHERE id = ?');
     $st->execute([$uid]);
-    return $st->fetch() ?: null;
+    $u = $st->fetch() ?: null;
+    if ($u) {
+        $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
+        $u['email_verified'] = (int)$u['email_verified'];
+        $u['must_change_password'] = (int)$u['must_change_password']; // int, so the JS truthiness check is right
+    }
+    return $u;
 }
 
 function require_user(): array { $u = current_user(); if (!$u) fail('Not signed in.', 401); return $u; }
 
+// Effective admin = the DB flag, or an email listed in .env ADMIN_EMAILS (the bootstrap admins,
+// who stay admin even if "demoted" in the panel — that's the failsafe for the owner).
+function is_admin(?array $u): bool {
+    global $CFG;
+    if (!$u) return false;
+    if ((int)($u['is_admin'] ?? 0) === 1) return true;
+    return in_array(strtolower((string)($u['email'] ?? '')), $CFG['admin_emails'], true);
+}
+function require_admin(): array { $u = require_user(); if (!is_admin($u)) fail('Admins only.', 403); return $u; }
+
 function update_profile(array $user, array $d): void {
     $bio = substr(trim((string)($d['bio'] ?? '')), 0, 500);
     db()->prepare('UPDATE users SET bio = ? WHERE id = ?')->execute([$bio, $user['id']]);
+    json_out(['ok' => true]);
+}
+
+// Change password while signed in. Normally the current password is required; a user the
+// admin flagged must_change_password sets a new one WITHOUT it (the admin gave a temp one).
+// Either way the flag is cleared.
+function change_password(array $user, array $d): void {
+    $new = (string)($d['new'] ?? '');
+    if (strlen($new) < 8) fail('Password must be at least 8 characters.');
+    if (empty($user['must_change_password'])) {
+        $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
+        $h = $st->fetchColumn();
+        if (!$h || !password_verify((string)($d['current'] ?? ''), $h)) fail('Current password is wrong.', 403);
+    }
+    db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
+    json_out(['ok' => true, 'message' => 'Password updated.']);
+}
+
+// Self-service account deletion (requires the current password). Removes the user's files
+// then the row — roadbooks/photos rows go via ON DELETE CASCADE. purge_user_files: roadbooks.php.
+function account_delete(array $user, array $d): void {
+    $pass = (string)($d['password'] ?? '');
+    $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
+    $h = $st->fetchColumn();
+    if (!$h || !password_verify($pass, $h)) fail('Wrong password.', 403);
+    purge_user_files((int)$user['id']);
+    db()->prepare('DELETE FROM users WHERE id = ?')->execute([$user['id']]);
+    $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
     json_out(['ok' => true]);
 }
 
@@ -114,6 +158,7 @@ function login_user(array $d): void {
     $st->execute([$id, $id]);
     $u = $st->fetch();
     if (!$u || !password_verify($pass, $u['password_hash'])) fail('Wrong email/username or password.', 401);
+    if ((int)($u['blocked'] ?? 0)) fail('Your account has been blocked — contact the administrator.', 403);
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];

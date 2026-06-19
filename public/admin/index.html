@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Admin · RDBK.app</title>
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.19-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.19-2">
+    <style>
+        #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
+        .table-scroll { overflow-x: auto; }
+        .users-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .users-table th, .users-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+        .users-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+        .users-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; }
+        .u-badge { display: inline-block; font-size: .66rem; font-weight: 800; padding: .05rem .4rem; border-radius: 6px; letter-spacing: .03em; }
+        .u-admin { background: var(--sand); color: #14100a; }
+        .u-unverified { background: rgba(255, 90, 69, .18); color: var(--track); }
+        .u-blocked { background: var(--track); color: #fff; }
+        .u-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
+        .u-actions .btn { padding: .25rem .55rem; font-size: .78rem; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="adminWrap">
+    <h1 data-i18n="User management">User management</h1>
+    <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
+    <div class="table-scroll" id="usersBox" hidden>
+        <table class="users-table">
+            <thead><tr>
+                <th data-i18n="User">User</th>
+                <th data-i18n="Email">Email</th>
+                <th class="num" data-i18n="Roadbooks">Roadbooks</th>
+                <th class="num" data-i18n="Disk">Disk</th>
+                <th></th>
+            </tr></thead>
+            <tbody id="usersBody"></tbody>
+        </table>
+    </div>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../assets/js/i18n.js?v=2026.06.19-2"></script>
+<script src="../assets/js/app.js?v=2026.06.19-2"></script>
+<script src="admin.js?v=2026.06.19-2"></script>
+</body>
+</html>

@@ -269,6 +269,9 @@ section.block { padding: 2.4rem 0; }
 .btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }
 /* canonical text input/select (page forms: editor, account, …) */
 .field { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
+/* stacked form label above a .field, and small helper text below it */
+.field-label { display: block; font-size: .8rem; font-weight: 700; color: var(--muted); margin: .6rem 0 .2rem; }
+.hint { font-size: .82rem; color: var(--muted); margin: .3rem 0 .2rem; }
 /* form fields inside modals (shared by every RBModal dialog) */
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }

@@ -19,6 +19,7 @@ $CFG = [
     'app_secret'       => $_ENV['APP_SECRET'] ?? '',
     'turnstile_site'   => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
     'turnstile_secret' => $_ENV['TURNSTILE_SECRET'] ?? '',
+    'admin_emails'     => array_values(array_filter(array_map('trim', explode(',', strtolower($_ENV['ADMIN_EMAILS'] ?? ''))))),
     'storage'          => $ROOT . '/storage/users',   // per-user private storage (volume-backed)
     'avatars_dir'      => $ROOT . '/public/avatars',  // public avatars (web: /avatars/)
     'photos_dir'       => $ROOT . '/public/photos',   // public photos (web: /photos/)
@@ -28,6 +29,7 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/mail.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/roadbooks.php';
+require __DIR__ . '/admin.php';
 
 // Long-lived, SLIDING session — feels like a native app: stays signed in and
 // the window extends on every use (in the browser and the installed PWA alike).

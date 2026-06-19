@@ -11,7 +11,7 @@
 
     const api = RBApi; // shared helper (app.js)
     const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
-    const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
+    const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vForce', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
     /* ---------- Turnstile ---------- */
     window.__tsReady = function renderTurnstile() {
@@ -73,9 +73,12 @@
             });
             return;
         }
-        if (cfg.user) return showAccount(cfg.user);
+        if (cfg.user) return cfg.user.must_change_password ? showForce() : showAccount(cfg.user);
         show('vLogin');
     }
+
+    // Admin gave a temporary password → force a new one before the profile is reachable.
+    function showForce() { show('vForce'); msg(''); }
 
     $('toRegister').onclick = (e) => { e.preventDefault(); msg(''); show('vRegister'); };
     $('toLogin').onclick = (e) => { e.preventDefault(); msg(''); show('vLogin'); };
@@ -84,7 +87,12 @@
 
     onSubmit('loginForm', async () => {
         const r = await api('login', { email: $('loginId').value, password: $('loginPass').value, turnstile: tsTokens.login });
-        if (r.ok) showAccount(r.user); else { msg(r.error, false); resetTs('login'); }
+        if (r.ok) (r.user.must_change_password ? showForce() : showAccount(r.user)); else { msg(r.error, false); resetTs('login'); }
+    });
+    // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
+    onSubmit('forceForm', async () => {
+        const r = await api('change_password', { new: $('forcePass').value });
+        if (r.ok) { const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, turnstile: tsTokens.register });
@@ -94,11 +102,24 @@
         const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot });
         msg(r.message || r.error, !!r.ok); resetTs('forgot');
     });
+    // change password (signed in) + delete account — bound once; the forms live in #vAccount
+    onSubmit('pwForm', async () => {
+        const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
+        RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
+        if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; }
+    });
+    onSubmit('delForm', async () => {
+        if (!(await RBConfirm(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
+        const r = await api('account_delete', { password: $('delPass').value });
+        if (r.ok) location.href = '../'; else RBToast(r.error);
+    });
     wirePasswordToggles();
 
     /* ---------- account ---------- */
     async function showAccount(user) {
         show('vAccount'); msg('');
+        $('adminLink').hidden = !user.is_admin; // the admin panel link, only for admins
+
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh

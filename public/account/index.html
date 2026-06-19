@@ -8,8 +8,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.19-1">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.19-1">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.19-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.19-2">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -47,9 +47,8 @@
 
     <!-- SIGN IN -->
     <section id="vLogin" class="auth-card" hidden>
-        <h1 data-i18n="Your roadbooks">Your roadbooks</h1>
+        <h1 data-i18n="Sign in">Sign in</h1>
         <p class="muted intro-text" data-i18n-html="Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.">Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public challenges</b>, fork others’ and build your profile — free.</p>
-        <h2 data-i18n="Sign in">Sign in</h2>
         <form id="loginForm">
             <input id="loginId" class="field" placeholder="Email or username" data-i18n-ph="Email or username" data-i18n-aria="Email or username" autocomplete="username">
             <input id="loginPass" class="field" type="password" placeholder="Password" data-i18n-ph="Password" data-i18n-aria="Password" autocomplete="current-password">
@@ -63,10 +62,16 @@
     <section id="vRegister" class="auth-card" hidden>
         <h1 data-i18n="Create account">Create account</h1>
         <form id="registerForm">
-            <div class="row2"><input id="regFirst" class="field" placeholder="First name" data-i18n-ph="First name" data-i18n-aria="First name"><input id="regLast" class="field" placeholder="Last name" data-i18n-ph="Last name" data-i18n-aria="Last name"></div>
-            <input id="regUser" class="field" placeholder="Username" data-i18n-ph="Username" data-i18n-aria="Username" autocomplete="username">
-            <input id="regEmail" class="field" type="email" placeholder="Email" data-i18n-ph="Email" data-i18n-aria="Email" autocomplete="email">
-            <input id="regPass" class="field" type="password" placeholder="Password (min 8 chars)" data-i18n-ph="Password (min 8 chars)" data-i18n-aria="Password (min 8 chars)" autocomplete="new-password">
+            <div class="row2">
+                <div><label class="field-label" for="regFirst" data-i18n="First name">First name</label><input id="regFirst" class="field" autocomplete="given-name"></div>
+                <div><label class="field-label" for="regLast" data-i18n="Last name">Last name</label><input id="regLast" class="field" autocomplete="family-name"></div>
+            </div>
+            <label class="field-label" for="regUser" data-i18n="Username">Username</label>
+            <input id="regUser" class="field" autocomplete="username">
+            <label class="field-label" for="regEmail" data-i18n="Email">Email</label>
+            <input id="regEmail" class="field" type="email" autocomplete="email">
+            <label class="field-label" for="regPass" data-i18n="Password (min 8 chars)">Password (min 8 chars)</label>
+            <input id="regPass" class="field" type="password" autocomplete="new-password">
             <div class="turnstile" data-ts="register"></div>
             <button class="btn btn-primary" id="regBtn" type="submit" data-i18n="Create account"><i class="fa-solid fa-user-plus"></i> Create account</button>
         </form>
@@ -94,6 +99,16 @@
         </form>
     </section>
 
+    <!-- FORCED CHANGE (admin set a temporary password) -->
+    <section id="vForce" class="auth-card" hidden>
+        <h1 data-i18n="Set a new password">Set a new password</h1>
+        <p class="muted small" data-i18n="An administrator set a temporary password. Please choose a new one to continue.">An administrator set a temporary password. Please choose a new one to continue.</p>
+        <form id="forceForm">
+            <input id="forcePass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
+            <button class="btn btn-primary" id="forceBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
+        </form>
+    </section>
+
     <!-- ACCOUNT / PROFILE -->
     <section id="vAccount" hidden>
         <div class="profile-head">
@@ -103,6 +118,7 @@
                 <div class="muted" id="accHandle"></div>
             </div>
             <div class="profile-actions">
+                <a class="btn btn-ghost" id="adminLink" href="../admin/" hidden data-i18n="Admin"><i class="fa-solid fa-users-gear"></i> Admin</a>
                 <button class="btn btn-ghost" id="logoutBtn" data-i18n="Sign out"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
             </div>
         </div>
@@ -114,14 +130,35 @@
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
         </div>
 
+        <div class="auth-card profile-form">
+            <h2 data-i18n="Change password">Change password</h2>
+            <form id="pwForm">
+                <label class="field-label" for="pwCurrent" data-i18n="Current password">Current password</label>
+                <input id="pwCurrent" class="field" type="password" autocomplete="current-password">
+                <label class="field-label" for="pwNew" data-i18n="New password (min 8 chars)">New password (min 8 chars)</label>
+                <input id="pwNew" class="field" type="password" autocomplete="new-password">
+                <button class="btn btn-primary" id="pwSave" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
+            </form>
+        </div>
+
+        <div class="auth-card profile-form">
+            <h2 data-i18n="Delete account">Delete account</h2>
+            <p class="muted small" data-i18n="This permanently deletes your account, roadbooks and photos.">This permanently deletes your account, roadbooks and photos.</p>
+            <form id="delForm">
+                <label class="field-label" for="delPass" data-i18n="Password">Password</label>
+                <input id="delPass" class="field" type="password" autocomplete="current-password">
+                <button class="btn btn-danger" id="delBtn" type="submit" data-i18n="Delete account"><i class="fa-solid fa-trash-can"></i> Delete account</button>
+            </form>
+        </div>
+
         <div class="btnrow mt-2"><a class="btn btn-primary" href="../myroadbooks/" data-i18n="My roadbooks"><i class="fa-solid fa-book"></i> My roadbooks</a></div>
     </section>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/i18n.js?v=2026.06.19-1"></script>
-<script src="../assets/js/app.js?v=2026.06.19-1"></script>
-<script src="account.js?v=2026.06.19-1"></script>
+<script src="../assets/js/i18n.js?v=2026.06.19-2"></script>
+<script src="../assets/js/app.js?v=2026.06.19-2"></script>
+<script src="account.js?v=2026.06.19-2"></script>
 </body>
 </html>
