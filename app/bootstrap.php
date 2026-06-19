@@ -33,12 +33,18 @@ require __DIR__ . '/roadbooks.php';
 // the window extends on every use (in the browser and the installed PWA alike).
 const SESSION_LIFETIME = 60 * 24 * 3600; // 60 days
 if (PHP_SAPI !== 'cli' && session_status() !== PHP_SESSION_ACTIVE) {
+    // Secure cookie on real HTTPS only. Behind a TLS-terminating router (ddev locally,
+    // the proxy in production) the internal hop to PHP is plain HTTP, so trust
+    // X-Forwarded-Proto: this keeps the cookie Secure in production (https) while letting
+    // it work on a local http ddev URL — otherwise the session is dropped over http.
+    $https = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
+        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     @ini_set('session.gc_maxlifetime', (string)SESSION_LIFETIME);
-    session_set_cookie_params(['lifetime' => SESSION_LIFETIME, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+    session_set_cookie_params(['lifetime' => SESSION_LIFETIME, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
     session_name('rdbksid');
     session_start();
     if (!empty($_SESSION['uid'])) { // refresh the cookie expiry on each request
-        setcookie(session_name(), session_id(), ['expires' => time() + SESSION_LIFETIME, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+        setcookie(session_name(), session_id(), ['expires' => time() + SESSION_LIFETIME, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
     }
 }
 
