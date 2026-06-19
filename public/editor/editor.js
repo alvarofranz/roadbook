@@ -16,15 +16,24 @@
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
-    // Right-click anywhere on the map → a popup with a Google Maps link to that point.
+    // Right-click anywhere on the map → a popup: a Google Maps link + "upload a photo here".
+    let ctxPhotoPoint = null; // the map point a context-menu photo upload is geotagged at
     if (map.map) map.map.on('contextmenu', (e) => {
         e.preventDefault();
-        const lat = e.lngLat.lat.toFixed(6), lon = e.lngLat.lng.toFixed(6);
+        const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+        const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-        new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
+        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
             .setLngLat(e.lngLat)
-            .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a><span class="map-ctx-coords">${lat}, ${lon}</span>`)
+            .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a>`
+                + `<button type="button" class="map-ctx-link map-ctx-photo"><i class="fa-solid fa-camera"></i> ${esc(t('Upload a photo here'))}</button>`
+                + `<span class="map-ctx-coords">${lat}, ${lon}</span>`)
             .addTo(map.map);
+        const btn = popup.getElement().querySelector('.map-ctx-photo');
+        if (btn) btn.onclick = () => {
+            if (!(currentRbId > 0)) return toast('Save to your profile first.');
+            ctxPhotoPoint = here; popup.remove(); $('ctxPhotoFile').click();
+        };
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
@@ -50,8 +59,9 @@
     map.onWaypoint((i) => { if (mapTool === 'pan') select(i); }); // other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
         if (!map.ready || recWatch != null) return; // never edit mid-recording
-        if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+        if (photoPlacing) { placePhotoHere(here); return; } // setting the position of a photo with no EXIF GPS
+        if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
         if (mapTool === 'note') { if (rb) addWaypointNear(here); else toast('Load a roadbook first.'); }
         else if (mapTool === 'draw') drawPoint(here);
         else if (mapTool === 'insert') { if (rb) insertMidpoint(here); else toast('Load a roadbook first.'); }
@@ -675,24 +685,70 @@
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
         notePhotos = r.photos;
-        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt=""><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
-        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async () => { await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
-        // pins on the map; tap a 📷 pin to promote it to a waypoint
-        if (map) map.setPhotos(r.photos, (ph) => {
-            if (ph.lat == null) return;
-            RBConfirm('Create a waypoint at this photo?', 'Create').then((yes) => { if (yes && rb) addWaypointNear({ lat: ph.lat, lon: ph.lon }); });
-        });
+        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
+        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => { e.stopPropagation(); await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
+        g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
+        // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
+        if (map) map.setPhotos(r.photos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note 📷 indicators
     }
-    $('addPhotoBtn').onclick = () => { if (!currentRbId) return toast('Save to your profile first.'); $('photoFile').click(); };
-    $('photoFile').onchange = async (e) => {
+    /* ---------- photo upload: every photo needs coordinates ---------- */
+    // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
+    // map to set its position (one tap per queued photo). No photo is stored without coords.
+    let photoPlacing = false, photoQueue = [];
+    $('addPhotoBtn').onclick = () => { if (!(currentRbId > 0)) return toast('Save to your profile first.'); $('photoFile').click(); };
+    $('photoFile').onchange = async (e) => { const files = [...e.target.files]; e.target.value = ''; addPhotos(files); };
+    const uploadPhoto = (file, lat, lon) => RBUpload({ type: 'photo', roadbook: String(currentRbId), lat: String(lat), lon: String(lon) }, file);
+    // map context-menu upload: photos geotagged at the right-clicked point
+    $('ctxPhotoFile').onchange = async (e) => {
+        const files = [...e.target.files]; e.target.value = '';
+        const p = ctxPhotoPoint; if (!p || !(currentRbId > 0)) return;
         let failed = 0;
-        for (const f of e.target.files) {
-            const r = await RBUpload({ type: 'photo', roadbook: String(currentRbId) }, f);
-            if (!r.ok) failed++;
-        }
-        e.target.value = ''; loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
+        for (const f of files) { if (!(await uploadPhoto(f, p.lat, p.lon)).ok) failed++; }
+        await loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
     };
+    async function addPhotos(files) {
+        if (!(currentRbId > 0)) return toast('Save to your profile first.');
+        let failed = 0;
+        for (const f of files) {
+            const g = await RBImg.gps(f);
+            if (g) { if (!(await uploadPhoto(f, g.lat, g.lon)).ok) failed++; }
+            else photoQueue.push(f);
+        }
+        await loadPhotos();
+        if (failed) toast('Some photos failed.');
+        if (photoQueue.length) promptPlacePhoto(); else if (!failed) toast('Photos uploaded.');
+    }
+    function promptPlacePhoto() {
+        photoPlacing = true; showView('map'); setMapTool('pan');
+        document.body.classList.add('placing-photo');
+        toast(t('Tap the map to place the photo') + (photoQueue.length > 1 ? ' (' + photoQueue.length + ')' : ''));
+    }
+    async function placePhotoHere(here) {
+        const r = await uploadPhoto(photoQueue.shift(), here.lat, here.lon);
+        await loadPhotos();
+        if (photoQueue.length) toast(t('Tap the map to place the photo') + ' (' + photoQueue.length + ')');
+        else { photoPlacing = false; document.body.classList.remove('placing-photo'); toast(r.ok ? 'Photos uploaded.' : 'Some photos failed.'); }
+    }
+
+    /* ---------- lightbox: browse all the roadbook's photos ---------- */
+    let lbList = [], lbIdx = -1;
+    function openLightbox(id) {
+        lbList = notePhotos.slice();
+        lbIdx = lbList.findIndex((p) => +p.id === +id);
+        if (lbIdx < 0) return;
+        $('lbImg').src = lbList[lbIdx].url; $('lightbox').hidden = false;
+    }
+    function lbStep(d) { if (!lbList.length) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; $('lbImg').src = lbList[lbIdx].url; }
+    function closeLightbox() { $('lightbox').hidden = true; $('lbImg').removeAttribute('src'); }
+    $('lbClose').onclick = closeLightbox;
+    $('lbPrev').onclick = () => lbStep(-1);
+    $('lbNext').onclick = () => lbStep(1);
+    $('lbWaypoint').onclick = () => { const p = lbList[lbIdx]; if (p && p.lat != null && rb) { addWaypointNear({ lat: +p.lat, lon: +p.lon }); closeLightbox(); } };
+    document.addEventListener('keydown', (e) => {
+        if ($('lightbox').hidden) return;
+        if (e.key === 'Escape') closeLightbox(); else if (e.key === 'ArrowLeft') lbStep(-1); else if (e.key === 'ArrowRight') lbStep(1);
+    });
 
     /* ---------- notes + selection ----------
      * The list is a column of rows; tapping a row expands the editor INLINE right

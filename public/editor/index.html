@@ -24,6 +24,7 @@
         .map-ctx-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; color: #1a73e8; text-decoration: none; }
         .map-ctx-link:hover { text-decoration: underline; }
         .map-ctx-coords { display: block; margin-top: .25rem; color: #555; font-size: .72rem; font-variant-numeric: tabular-nums; }
+        button.map-ctx-photo { display: flex; margin-top: .4rem; background: none; border: 0; padding: 0; font: inherit; font-weight: 700; cursor: pointer; }
         /* every row shows its vignette between distance and text; the open row hosts the live editor canvas */
         #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
@@ -75,6 +76,16 @@
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
         #edMap { height: 60vh; min-height: 360px; }
+        body.placing-photo #edMap { cursor: crosshair; }
+        /* lightbox: full-screen photo browser (a map pin or a thumbnail opens it) */
+        #lightbox { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
+        #lightbox img { max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 8px; }
+        .lb-close, .lb-nav { position: absolute; border: 0; background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer; border-radius: 50%; }
+        .lb-close { top: 1rem; right: 1rem; width: 44px; height: 44px; font-size: 1.2rem; }
+        .lb-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; font-size: 1.6rem; }
+        .lb-prev { left: 1rem; } .lb-next { right: 1rem; }
+        .lb-close:hover, .lb-nav:hover { background: rgba(255, 255, 255, .26); }
+        .lb-waypoint { position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%); }
         /* the GPX editor: map + vertical tool bar (overlaid left, like the Mapbox controls) */
         .map-editor { position: relative; }
         /* no overflow clipping here — the hover tooltips render outside the bar */
@@ -200,6 +211,7 @@
         </div>
         <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
         <input id="addGpxFile" type="file" accept=".gpx" hidden>
+        <input id="ctxPhotoFile" type="file" accept="image/*" multiple hidden>
         <!-- the GPX editor: the map + its vertical tool bar (modes left, actions below) -->
         <div id="mapEditor" class="map-editor" hidden>
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
@@ -299,6 +311,13 @@
     </section>
 </main>
 
+<div id="lightbox" hidden>
+    <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
+    <button type="button" id="lbPrev" class="lb-nav lb-prev" aria-label="Previous" data-i18n-aria="Previous">‹</button>
+    <img id="lbImg" alt="">
+    <button type="button" id="lbNext" class="lb-nav lb-next" aria-label="Next" data-i18n-aria="Next">›</button>
+    <button type="button" id="lbWaypoint" class="btn btn-primary lb-waypoint"><i class="fa-solid fa-map-pin"></i> <span data-i18n="Waypoint">Waypoint</span></button>
+</div>
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>

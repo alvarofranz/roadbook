@@ -187,7 +187,43 @@
         },
         // → a PNG data: URI (for embedding, e.g. the event logo — keeps transparency)
         async toDataURL(file, max = 256) { const c = await this._canvas(file, max); return c.toDataURL('image/png'); },
+        // → {lat, lon} from a JPEG's EXIF GPS, or null. Only JPEG exposes readable EXIF
+        // here; PNG/HEIC return null (the caller then asks the user to place it on the map).
+        async gps(file) {
+            if (!file || !/jpe?g/i.test(file.type || '')) return null;
+            try {
+                const v = new DataView(await file.slice(0, 262144).arrayBuffer());
+                if (v.getUint16(0) !== 0xFFD8) return null; // not a JPEG
+                for (let off = 2; off + 4 < v.byteLength;) {
+                    const marker = v.getUint16(off);
+                    if ((marker & 0xFF00) !== 0xFF00) break;
+                    if (marker === 0xFFE1 && v.getUint32(off + 4) === 0x45786966) return exifGps(v, off + 10); // APP1 "Exif"
+                    off += 2 + v.getUint16(off + 2);
+                }
+            } catch (e) {}
+            return null;
+        },
     };
+    // Parse the GPS IFD of an EXIF/TIFF block starting at `tiff`. Lat/Lon are 3 rationals
+    // (deg, min, sec) with an N/S · E/W ref; returns decimal degrees or null.
+    function exifGps(v, tiff) {
+        const little = v.getUint16(tiff) === 0x4949;
+        const u16 = (o) => v.getUint16(o, little), u32 = (o) => v.getUint32(o, little);
+        if (v.getUint16(tiff + 2, little) !== 0x002A) return null;
+        const ifd0 = tiff + u32(tiff + 4);
+        let gpsIfd = 0;
+        for (let i = 0, n = u16(ifd0); i < n; i++) { const e = ifd0 + 2 + i * 12; if (u16(e) === 0x8825) { gpsIfd = tiff + u32(e + 8); break; } }
+        if (!gpsIfd) return null;
+        const g = {};
+        for (let i = 0, n = u16(gpsIfd); i < n; i++) {
+            const e = gpsIfd + 2 + i * 12, tag = u16(e);
+            if (tag === 1 || tag === 3) g[tag] = String.fromCharCode(v.getUint8(e + 8)); // lat/lon ref
+            else if (tag === 2 || tag === 4) { const p = tiff + u32(e + 8), rat = (o) => u32(o + 4) ? u32(o) / u32(o + 4) : 0; g[tag] = rat(p) + rat(p + 8) / 60 + rat(p + 16) / 3600; } // 3 rationals
+        }
+        if (g[2] == null || g[4] == null) return null;
+        let lat = g[1] === 'S' ? -g[2] : g[2], lon = g[3] === 'W' ? -g[4] : g[4];
+        return (isFinite(lat) && isFinite(lon) && (lat || lon)) ? { lat, lon } : null;
+    }
 
     /* ---------------- Shared UI primitives (the one home for these) ----------------
        Every page reuses these instead of re-implementing them — see CLAUDE.md. */

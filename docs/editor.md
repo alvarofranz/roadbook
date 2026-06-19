@@ -210,12 +210,38 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
 - **Visibilità** — segmented Private/Public → `setVis` ([editor.js:634](../public/editor/editor.js#L634)).
 - **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`
   ([editor.js:434](../public/editor/editor.js#L434)).
-- **Galleria foto** — visibile solo per un roadbook salvato (`currentRbId > 0`); `loadPhotos`
-  ([editor.js:673](../public/editor/editor.js#L673)) elenca le foto server-side, le mostra come
-  pin sulla mappa (tap → promuovi a waypoint) e come indicatore 📷 per-nota (entro 80 m).
+- **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
 
 > Le foto sono **una feature dell'app, mai dentro il `.rdbk`** (vivono lato server). Coerente
 > con lo standard.
+
+### 6.1 Foto: galleria sulla mappa, upload geolocalizzato, lightbox
+Le foto sono **server-side, geotaggate, legate al roadbook** (tabella `roadbook_photos`, API
+`ph_list`/`ph_delete`, upload `RBUpload` → `upload.php`, AVIF, max 60/roadbook — vedi
+[backend-api.md](backend-api.md)). Richiedono un roadbook **salvato** (`currentRbId > 0`) o un
+draft, e il login.
+
+**Ogni foto ha coordinate (requisito).** `loadPhotos` ([editor.js:673](../public/editor/editor.js#L673))
+mostra **tutte** le foto come **pin sulla mappa** (la mappa *è* la galleria) e come indicatore
+📷 per-nota (nota più vicina entro 80 m). L'upload (`addPhotos`,
+[editor.js:710](../public/editor/editor.js#L710)) raccoglie le coordinate in due modi:
+
+1. **da EXIF** — `RBImg.gps(file)` ([app.js:192](../public/assets/js/app.js#L192)) legge il GPS
+   dall'EXIF del JPEG in vanilla JS (primi 256 KB). Se presente, upload immediato con quelle coord.
+2. **a mano sulla mappa** — se l'EXIF manca (PNG/HEIC o foto senza GPS) la foto va in coda e
+   `promptPlacePhoto` ([editor.js:722](../public/editor/editor.js#L722)) entra in modalità
+   *posiziona*: un tap su `edMap` ne fissa la posizione (cursore a mirino, un tap per foto in coda).
+
+Nessuna foto viene salvata senza coordinate.
+
+**Tre punti di upload:** il bottone *Add photos* nei Settings, e — nel **menu contestuale della
+mappa** (tasto destro, [editor.js:21](../public/editor/editor.js#L21)) — la voce *Upload a photo
+here*, che geotagga sul punto cliccato (nessun EXIF: la posizione è scelta).
+
+**Lightbox** (`openLightbox`, [editor.js:736](../public/editor/editor.js#L736)): un tap su un **pin**
+o su una **miniatura** apre un visore a tutta pagina che sfoglia *tutte* le foto del roadbook —
+frecce ‹/›, `←`/`→` e `Esc` da tastiera, e un bottone **Waypoint** che crea un waypoint sulla
+posizione della foto (sostituisce il vecchio "promuovi a waypoint" del pin).
 
 ---
 
