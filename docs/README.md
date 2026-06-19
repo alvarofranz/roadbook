@@ -33,6 +33,9 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 ## Backend
 - [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto,
   challenge, schema DB.
+- [user-management](user-management.md) — gestione utenti: pannello admin (`/admin`), modello
+  permessi (`is_admin` + `ADMIN_EMAILS`), azioni admin (attiva/modifica/blocca/elimina),
+  self-service (cambio password forzato, elimina account), migrazioni e note di deploy.
 
 ## Il formato
 - [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` e la pagina `/standard`.
