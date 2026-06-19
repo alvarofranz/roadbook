@@ -39,6 +39,8 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 
 ## Il formato
 - [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` e la pagina `/standard`.
+- [fia-lexicon-compliance](fia-lexicon-compliance.md) — confronto col lexicon roadbook FIA
+  cross-country (issue #9): cosa copriamo come icona, come dato, o non ancora.
 
 ---
 
