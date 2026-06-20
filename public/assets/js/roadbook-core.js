@@ -380,6 +380,31 @@
         return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(name || 'RDBK route')}</name></metadata>${wptXml}<trk><name>${x(name || 'RDBK route')}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
     }
 
+    // OpenRally export: a GPX 1.1 file carrying the route as a <trk> and every note as a
+    // <wpt> with openrally: extensions (distance·cap·danger·speed·tulip). The vignette is a
+    // pre-rendered SVG passed in via opts.tulips[noteIndex] (the caller renders it with
+    // NoteCanvas.toSVG, which this DOM-free module can't do). Spec: github.com/openrally/openrally.
+    function openRallyDocument(rb, opts) {
+        opts = opts || {};
+        const tulips = opts.tulips || [];
+        const NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
+        const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+        const name = (rb.meta && rb.meta.title) || 'RDBK roadbook';
+        const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
+        const wpts = (rb.notes || []).map((n, i) => {
+            const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
+            if (n.cap != null) ext.push(`<openrally:cap>${Math.round(n.cap)}</openrally:cap>`);
+            if (n.danger) ext.push(`<openrally:danger>${n.danger}</openrally:danger>`);
+            const spd = speedLimitOfNote(n);
+            if (spd) ext.push(`<openrally:speed>${spd}</openrally:speed>`); // 0 = lifted → no positive value to emit
+            if (tulips[i]) ext.push(`<openrally:tulip><![CDATA[${tulips[i]}]]></openrally:tulip>`);
+            return `<wpt lat="${n.lat}" lon="${n.lon}"><name>${x(n.num != null ? n.num : i + 1)}</name><extensions>${ext.join('')}</extensions></wpt>`;
+        }).join('');
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1" xmlns:openrally="${NS}">`
+            + `<metadata><name>${x(name)}</name><extensions><openrally:units>metric</openrally:units></extensions></metadata>`
+            + `${wpts}<trk><name>${x(name)}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
+    }
+
     // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
     function speedLimitFromName(name) {
         if (!name) return null;
@@ -472,7 +497,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
-        simplifyRoadbook, reverseRoadbook, gpxDocument, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2,
     };

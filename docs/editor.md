@@ -263,10 +263,18 @@ ricalcolano le metriche.
 | **.rdbk**     | `$('exportRdbk')` ([editor.js:964](../public/editor/editor.js#L964)) | JSON auto-contenuto; `embedUsed` embedda ogni icona usata e pota le inutilizzate |
 | **GPX**       | `$('exportGpx')` ([editor.js:975](../public/editor/editor.js#L975)) | `RB.gpxDocument`: traccia + ogni nota come waypoint nominato |
 | **PDF**       | `$('exportPdf')` ([editor.js:966](../public/editor/editor.js#L966)) | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
+| **OpenRally** | `$('exportOpenRally')` | `RB.openRallyDocument`: GPX 1.1 + namespace `openrally:` — traccia come `<trk>`, ogni nota come `<wpt>` con `distance·cap·danger·speed` e la vignette come `<openrally:tulip>` SVG |
 
 `embedUsed` ([editor.js:982](../public/editor/editor.js#L982)) garantisce la regola
 auto-contenuta del formato: ogni simbolo usato finisce in `rb.icons` come data-URI; le icone
 non più referenziate vengono rimosse.
+
+> **Export OpenRally (prototipo, issue #13).** Riusa `embedUsed` (così i simboli del tulip
+> sono data-URI portabili) e `NoteCanvas.toSVG` per renderizzare ogni vignette dentro
+> `<openrally:tulip>`. Mappatura: `distance` (km), `cap`, `danger` (identico), `speed` (dal
+> nome icona via `speedLimitOfNote`). Campi che oggi RDBK non emette ancora — tipo waypoint,
+> zone/controlli di gara — dipendono dalle estensioni `.rdbk` proposte in #9. L'**import**
+> OpenRally è separato e con perdita (il tulip è un'immagine opaca): vedi #13.
 
 **Save to profile.** `doSave` ([editor.js:637](../public/editor/editor.js#L637)) timbra il
 meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo registra

@@ -1107,6 +1107,16 @@
         const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: n.text || 'wpt' + n.num }));
         RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '.gpx');
     };
+    // OpenRally GPX: track + one wpt/note with openrally: extensions; each vignette rendered
+    // to an embedded SVG tulip. embedUsed first, so the tulip's icons resolve to data URIs
+    // (portable, no external files). See RB.openRallyDocument + github.com/openrally/openrally.
+    $('exportOpenRally').onclick = async () => {
+        if (!rb) return toast('Nothing to save.');
+        if (!(await confirmOpenCuts())) return;
+        stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
+        const tulips = rb.notes.map((n) => tulipSVG(n));
+        RBDownload(new Blob([RB.openRallyDocument(rb, { tulips })], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '_openrally.gpx');
+    };
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};
