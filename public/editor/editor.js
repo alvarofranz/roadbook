@@ -1308,5 +1308,6 @@
         await account;
         const id = +(new URLSearchParams(location.search).get('rb') || 0);
         if (id && meUser) { const r = await RBApi('rb_get', { id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
+        if (!rb && meUser) { const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; } // landing → list the user's saved roadbooks
     })();
 })();

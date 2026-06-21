@@ -14,17 +14,7 @@
         #myRoadbooks { max-width: 860px; margin: 0 auto; }
         .section-bar { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 1.4rem 0 .6rem; }
         .section-bar h1 { margin: 0; font-size: 1.6rem; }
-        /* single full-width column: one roadbook per row, readable on wide and narrow screens alike */
-        .rb-grid { display: flex; flex-direction: column; gap: .6rem; }
-        .roadbook-row { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
-        .roadbook-row .meta { flex: 1; min-width: 0; }
-        .roadbook-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .roadbook-row .meta small { color: var(--muted); white-space: nowrap; }
-        .roadbook-row .btn { flex-shrink: 0; padding: .5rem .6rem; margin: 0; }
-        /* public/private pill — green globe when shared, muted lock when private */
-        .rb-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line); }
-        .rb-badge.public { color: var(--ok); border-color: var(--ok); }
-        .rb-badge.private { color: var(--muted); }
+        /* the roadbook list (.rb-grid / .roadbook-row / .rb-badge) is shared — see app.css */
     </style>
 </head>
 <body>
