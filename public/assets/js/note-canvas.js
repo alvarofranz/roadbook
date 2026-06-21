@@ -66,6 +66,8 @@ window.NoteCanvas = class NoteCanvas {
             // motorway: a white centre line splits the thick stroke into a DOUBLE line
             if (s.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: '#fff', 'stroke-width': Math.max(3, s.width * 0.3), 'stroke-linecap': 'round' }));
         });
+        // validation point: a small open circle where the two trunk segments meet (the note's spot)
+        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#0e1116', 'stroke-width': 2.5 })); }
         // junctions
         (this.note.junctions || []).forEach((b, i) => {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
