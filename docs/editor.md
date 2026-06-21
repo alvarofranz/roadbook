@@ -255,26 +255,51 @@ Frecce ‹/›, `←`/`→` e `Esc`, più una riga azioni:
 
 ## 7. Export e "Save to profile"
 
-Tutti gli export, prima, chiamano `confirmOpenCuts()` (chiudono i tagli aperti su conferma) e
-ricalcolano le metriche.
+Un unico pulsante **Export** (`#exportBtn`) apre una pop-up (`openExportModal`, `RBModal`) con
+tutti i formati; **Save** (salvataggio sul profilo) resta separato. Ogni voce chiude la pop-up,
+conferma **una sola volta** i tagli aperti (`confirmOpenCuts`) e ricalcola le metriche prima di
+scrivere — così una scelta GPX multipla non ripete il prompt.
 
-| Azione        | Handler                                                            | Output |
-|---------------|-------------------------------------------------------------------|--------|
-| **.rdbk**     | `$('exportRdbk')` ([editor.js:964](../public/editor/editor.js#L964)) | JSON auto-contenuto; `embedUsed` embedda ogni icona usata e pota le inutilizzate |
-| **GPX**       | `$('exportGpx')` ([editor.js:975](../public/editor/editor.js#L975)) | `RB.gpxDocument`: traccia + ogni nota come waypoint nominato |
-| **PDF**       | `$('exportPdf')` ([editor.js:966](../public/editor/editor.js#L966)) | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
-| **OpenRally** | `$('exportOpenRally')` | `RB.openRallyDocument`: GPX 1.1 + namespace `openrally:` — traccia come `<trk>`, ogni nota come `<wpt>` con `distance·cap·danger·speed` e la vignette come `<openrally:tulip>` SVG |
+| Formato | Funzione | Output |
+|---------|----------|--------|
+| **.rdbk** | `exportRdbk` | JSON auto-contenuto; `embedUsed` embedda ogni icona usata e pota le inutilizzate |
+| **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
+| **GPX** | un pulsante con **checkbox** per le tipologie (esporta ognuna spuntata): | |
+| · Track | `exportTrack` | `RB.gpxDocument`: **solo la traccia GPS**, niente waypoint |
+| · Track + WPT | `exportGpx` | `RB.gpxDocument`: traccia + ogni nota come waypoint nominato |
+| · OpenRally | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto) |
 
-`embedUsed` ([editor.js:982](../public/editor/editor.js#L982)) garantisce la regola
-auto-contenuta del formato: ogni simbolo usato finisce in `rb.icons` come data-URI; le icone
-non più referenziate vengono rimosse.
+`embedUsed` garantisce la regola auto-contenuta del formato: ogni simbolo usato finisce in
+`rb.icons` come data-URI; le icone non più referenziate vengono rimosse.
 
-> **Export OpenRally (prototipo, issue #13).** Riusa `embedUsed` (così i simboli del tulip
-> sono data-URI portabili) e `NoteCanvas.toSVG` per renderizzare ogni vignette dentro
-> `<openrally:tulip>`. Mappatura: `distance` (km), `cap`, `danger` (identico), `speed` (dal
-> nome icona via `speedLimitOfNote`). Campi che oggi RDBK non emette ancora — tipo waypoint,
-> zone/controlli di gara — dipendono dalle estensioni `.rdbk` proposte in #9. L'**import**
-> OpenRally è separato e con perdita (il tulip è un'immagine opaca): vedi #13.
+> **OpenRally import/export (issue #13).** Standard:
+> [github.com/openrally/openrally](https://github.com/openrally/openrally) (XSD:
+> [`cross-country/openrally.xsd`](https://github.com/openrally/openrally/blob/master/cross-country/openrally.xsd)).
+> GPX 1.1 + namespace `openrally:`; round-trip validato contro l'XSD ufficiale
+> (`cross-country/test_wrapper.xsd`) con `xmllint --schema`.
+>
+> **Export** (`RB.openRallyDocument`): traccia come `<trk>`, ogni nota come `<wpt>`; `distance`
+> in km (+ il totale a livello `<metadata>`) e la vignette rigenerata da `NoteCanvas.toSVG` in
+> `<openrally:tulip>`. Per una nota **importata** i parametri OpenRally sono riemessi *verbatim*
+> dal passthrough; per una nota **nativa** si emette il set calcolato (`cap`/`danger`/`speed`).
+>
+> **Import** (`RB.parseOpenRally`): l'handler GPX rileva il namespace `openrally:` e instrada
+> qui. Geometria: `<trk>` reale → usata; coordinate `<wpt>` reali → traccia costruita da esse;
+> **solo-distanza** (l'example ufficiale, wpt a 0,0) → **traccia segnaposto** spaziata per
+> `openrally:distance`, con avviso a ridisegnarla sulla mappa.
+>
+> **Passthrough completo:** ogni elemento `openrally:` del wpt **tranne** `distance`/`tulip`
+> (rigenerati) è conservato verbatim in **`note.openrally`** — `cap`, `danger`, `speed`, tipi
+> WP (`wpm/wpe/wps/wpc/wpv/wpp/wpn`), zone (`dss/ass/dz/fz/dt/ft/fn/checkpoint/stop/timecontrol/
+> neutralization/fuel/reset`), `show_coordinates`, `notes`. Essendo dentro il JSON del roadbook,
+> **sopravvive a save/reimport** (sia `.rdbk` sia profilo server) e viene riemesso all'export.
+>
+> **Tulip importato:** è un'immagine opaca → diventa un'icona **`cover`** che `NoteCanvas.toSVG`
+> rende a tutto-box, da sola (vale anche per Reader e PDF). Nel picker "Tuoi (in questo
+> roadbook)" appare **solo quello della nota corrente**, con tooltip *"Cancellami per esportare
+> il tulip modificato"*: cancellandolo la vignetta torna editabile e l'export emette quella
+> nativa. I controlli/zone di gara strutturati restano un passthrough (non editabili in RDBK);
+> la loro modellazione nativa dipende dalle estensioni `.rdbk` proposte in #9.
 
 **Save to profile.** `doSave` ([editor.js:637](../public/editor/editor.js#L637)) timbra il
 meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo registra

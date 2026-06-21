@@ -65,6 +65,7 @@
             'Default': 'Normal', 'Motorway': 'Autopista', 'Asphalt': 'Asfalto', 'Track': 'Pista', 'Off-piste': 'Fuera de pista',
             'Draw on the map': 'Dibujar en el mapa', 'Sketch a route tapping the map': 'Esboza una ruta tocando el mapa',
             'Export GPX': 'Exportar GPX', 'Export OpenRally GPX': 'Exportar GPX OpenRally',
+            'Export': 'Exportar', '.rdbk file': 'Archivo .rdbk', 'Track': 'Traza', 'Track + WPT': 'Traza + WPT', 'Pick at least one GPX type.': 'Elige al menos un tipo de GPX.', 'Delete me to export the edited tulip': 'Bórrame para exportar el tulip editado',
             'Settings': 'Ajustes', 'Generate PDF': 'Generar PDF', 'Roadbook configuration': 'Configuración del roadbook',
             'Map access from player': 'Acceso al mapa desde el player', 'Allow the map in the Reader': 'Permitir el mapa en el Reader',
             'Map style': 'Estilo de mapa', 'Page': 'Página', 'of': 'de', 'Total km': 'Km totales', 'Generating PDF…': 'Generando PDF…',
@@ -218,6 +219,7 @@
             'Change photo': 'Cambiar foto', 'Save profile': 'Guardar perfil', 'Loading…': 'Cargando…', 'Fork': 'Fork', 'Edit': 'Editar',
             // toasts
             'Load a roadbook first.': 'Carga primero un roadbook.', 'Nothing to save.': 'Nada que guardar.',
+            'Distance-only OpenRally: a placeholder track was inserted — redraw it on the map.': 'OpenRally solo-distancia: se insertó una traza de marcador — redibújala en el mapa.', 'OpenRally track built from the waypoint coordinates.': 'Traza OpenRally construida desde las coordenadas de los waypoints.',
             'Route too short to save.': 'Ruta demasiado corta para guardar.', 'Route recorded · edit and save.': 'Ruta grabada · edita y guarda.',
             'Waiting for a GPS fix…': 'Esperando señal GPS…', 'No geolocation on this device.': 'Este dispositivo no tiene geolocalización.',
             'Photo failed.': 'Error con la foto.', 'Waypoint dropped': 'Waypoint añadido', 'Uploading photo…': 'Subiendo foto…',
@@ -320,6 +322,7 @@
             'Default': 'Standard', 'Motorway': 'Autostrada', 'Asphalt': 'Asfalto', 'Track': 'Pista', 'Off-piste': 'Fuoripista',
             'Draw on the map': 'Disegna sulla mappa', 'Sketch a route tapping the map': 'Traccia un percorso toccando la mappa',
             'Export GPX': 'Esporta GPX', 'Export OpenRally GPX': 'Esporta GPX OpenRally',
+            'Export': 'Esporta', '.rdbk file': 'File .rdbk', 'Track': 'Traccia', 'Track + WPT': 'Traccia + WPT', 'Pick at least one GPX type.': 'Scegli almeno un tipo di GPX.', 'Delete me to export the edited tulip': 'Cancellami per esportare il tulip modificato',
             'Settings': 'Impostazioni', 'Generate PDF': 'Genera PDF', 'Roadbook configuration': 'Configurazione roadbook',
             'Map access from player': 'Accesso alla mappa dal player', 'Allow the map in the Reader': 'Consenti la mappa nel Reader',
             'Map style': 'Stile mappa', 'Page': 'Pagina', 'of': 'di', 'Total km': 'Km totali', 'Generating PDF…': 'Generazione PDF…',
@@ -473,6 +476,7 @@
             'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts
             'Load a roadbook first.': 'Carica prima un roadbook.', 'Nothing to save.': 'Niente da salvare.',
+            'Distance-only OpenRally: a placeholder track was inserted — redraw it on the map.': 'OpenRally solo-distanza: inserita una traccia segnaposto — ridisegnala sulla mappa.', 'OpenRally track built from the waypoint coordinates.': 'Traccia OpenRally costruita dalle coordinate dei waypoint.',
             'Route too short to save.': 'Percorso troppo corto per salvare.', 'Route recorded · edit and save.': 'Percorso registrato · modifica e salva.',
             'Waiting for a GPS fix…': 'In attesa del segnale GPS…', 'No geolocation on this device.': 'Questo dispositivo non ha geolocalizzazione.',
             'Photo failed.': 'Errore con la foto.', 'Waypoint dropped': 'Waypoint aggiunto', 'Uploading photo…': 'Caricamento foto…',

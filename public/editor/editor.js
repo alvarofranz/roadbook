@@ -326,7 +326,15 @@
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
         const w = files.find((f) => /\.wpt$/i.test(f.name));
         try {
-            const p = RB.parseGPX(await g.text());
+            const text = await g.text();
+            if (/openrally/i.test(text)) { // OpenRally GPX (openrally: extensions) → dedicated importer
+                const { rb: orRb, warnings } = RB.parseOpenRally(text);
+                resetIdentity(); setRoadbook(orRb);
+                if (warnings.includes('placeholderTrack')) toast('Distance-only OpenRally: a placeholder track was inserted — redraw it on the map.');
+                else if (warnings.includes('builtTrackFromWaypoints')) toast('OpenRally track built from the waypoint coordinates.');
+                return;
+            }
+            const p = RB.parseGPX(text);
             if (w && (!p.wpts || !p.wpts.length)) p.wpts = RB.parseWPT(await w.text());
             resetIdentity();
             setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts: p.trkpts, wpts: p.wpts }));
@@ -893,6 +901,7 @@
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true;
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
+        renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); placeMainEditMarker();
         // clicking a note centres (and zooms in to) the map on that note
@@ -1005,8 +1014,14 @@
         const lib = rb ? rb.icons || {} : {};
         const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
+        // `cover` icons are per-note opaque vignettes (e.g. imported OpenRally tulips), not
+        // shared palette items — list only the current note's, never every note's.
+        const coverAll = new Set();
+        (rb?.notes || []).forEach((n) => (n.icons || []).forEach((ic) => { if (ic.cover && ic.name) coverAll.add(ic.name.toLowerCase()); }));
+        const curCover = new Set(((editorOpen && rb?.notes[sel]?.icons) || []).filter((ic) => ic.cover).map((ic) => (ic.name || '').toLowerCase()));
+        const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; });
         let html = '';
-        if (custom.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + custom.map((n) => iconBtn(n, lib[n], true)).join('');
+        if (yours.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + yours.map((n) => iconBtn(n, lib[n], true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
         html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
         $('iconGrid').innerHTML = html || `<span class="muted small">${esc(t('No icons.'))}</span>`;
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
@@ -1023,7 +1038,7 @@
             s.onclick = del;
             s.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') del(ev); };
         });
-        renderIconCats(custom.length > 0);
+        renderIconCats(yours.length > 0);
         filterIcons();
     }
     // Category chips: jump straight to a group instead of scrolling the palette.
@@ -1052,15 +1067,26 @@
         });
         if (header) header.hidden = !headerHits;
     }
-    const iconBtn = (name, src, rmv) =>
-        `<button data-add="${name}" title="${name}">${rmv ? `<span data-del="${name}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
+    const iconBtn = (name, src, rmv, title) =>
+        `<button data-add="${name}" title="${esc(title || name)}">${rmv ? `<span data-del="${name}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!rb) return toast('Load a roadbook first.');
         canvas.addIcon(mkIcon(name, [0, 0]));
         toast('Icon added — drag it on the vignette');
     }
     function delCustomIcon(name) {
-        if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === name.toLowerCase()))) return toast('In use; remove it from the notes first.');
+        const low = name.toLowerCase();
+        // A `cover` tulip (imported OpenRally vignette) is meant to be deletable in place: drop it
+        // from its note too, so the vignette reverts to the editable one and export emits that.
+        const isCover = rb.notes.some((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
+        if (isCover) {
+            rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
+            delete rb.icons[name];
+            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { canvas.setNote(rb.notes[sel]); renderEditor(); }
+            renderIcons();
+            return;
+        }
+        if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
         delete rb.icons[name]; renderIcons();
     }
     $('addIconBtn').onclick = () => $('iconFile').click();
@@ -1088,35 +1114,63 @@
         r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));
     }
 
-    /* ---------- export (self-contained .rdbk) ---------- */
+    /* ---------- export (single button → popup with every format) ----------
+     * The export fns assume open cuts are already confirmed — the modal does that
+     * ONCE before running, so a GPX multi-pick never re-prompts per file. */
     const stamp = () => { const d = new Date(), p = RB.pad2; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
-    $('exportRdbk').onclick = async () => { if (!rb) return toast('Nothing to save.'); if (!(await confirmOpenCuts())) return; stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); };
+    // Self-contained .rdbk: every used icon embedded as a data URI.
+    async function exportRdbk() { stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); }
     // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js
-    $('exportPdf').onclick = async () => {
-        if (!rb) return toast('Nothing to save.');
-        if (!(await confirmOpenCuts())) return;
+    async function exportPdf() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         toast('Generating PDF…');
         try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/' }); }
         catch (e) { toast(e.message || 'Could not generate the PDF.'); }
-    };
-    // round-trip back to GPX: the track + every note as a named waypoint
-    $('exportGpx').onclick = async () => {
-        if (!rb) return toast('Nothing to save.');
-        if (!(await confirmOpenCuts())) return;
+    }
+    // plain GPX: just the GPS track, no waypoints
+    function exportTrack() {
+        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, [])], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '_track.gpx');
+    }
+    // GPX round-trip: the track + every note as a named waypoint (WPT)
+    function exportGpx() {
         const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: n.text || 'wpt' + n.num }));
         RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '.gpx');
-    };
+    }
     // OpenRally GPX: track + one wpt/note with openrally: extensions; each vignette rendered
     // to an embedded SVG tulip. embedUsed first, so the tulip's icons resolve to data URIs
     // (portable, no external files). See RB.openRallyDocument + github.com/openrally/openrally.
-    $('exportOpenRally').onclick = async () => {
-        if (!rb) return toast('Nothing to save.');
-        if (!(await confirmOpenCuts())) return;
+    async function exportOpenRally() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const tulips = rb.notes.map((n) => tulipSVG(n));
         RBDownload(new Blob([RB.openRallyDocument(rb, { tulips })], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '_openrally.gpx');
-    };
+    }
+    // One Export button → a popup: .rdbk / PDF buttons, and GPX as a single button whose
+    // typologies (track · track+WPT · OpenRally) are picked with checkboxes.
+    function openExportModal() {
+        if (!rb) return toast('Nothing to save.');
+        const m = RBModal(`<h2>${esc(t('Export'))}</h2>
+            <div class="btn-group col">
+                <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-floppy-disk"></i> ${esc(t('.rdbk file'))}</button>
+                <button class="btn btn-ghost" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
+            </div>
+            <h3>${esc(t('GPX'))}</h3>
+            <label class="checkbox-row"><input type="checkbox" data-g="track"> ${esc(t('Track'))}</label>
+            <label class="checkbox-row"><input type="checkbox" data-g="gpx" checked> ${esc(t('Track + WPT'))}</label>
+            <label class="checkbox-row"><input type="checkbox" data-g="openrally"> ${esc(t('OpenRally'))}</label>
+            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-route"></i> ${esc(t('Export GPX'))}</button></div>`, 'narrow scroll');
+        const run = async (fn) => { if (!(await confirmOpenCuts())) return; await fn(); };
+        m.q('[data-x="rdbk"]').onclick = () => { m.close(); run(exportRdbk); };
+        m.q('[data-x="pdf"]').onclick = () => { m.close(); run(exportPdf); };
+        m.q('[data-x="gpx"]').onclick = async () => {
+            const want = ['track', 'gpx', 'openrally'].filter((g) => m.q(`[data-g="${g}"]`).checked);
+            if (!want.length) return toast('Pick at least one GPX type.');
+            m.close();
+            if (!(await confirmOpenCuts())) return;
+            const fns = { track: exportTrack, gpx: exportGpx, openrally: exportOpenRally };
+            for (const g of want) await fns[g]();
+        };
+    }
+    $('exportBtn').onclick = openExportModal;
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};

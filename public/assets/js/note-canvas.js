@@ -161,6 +161,12 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     const W = 230, H = 162, cx = W / 2, cy = H / 2;
     const toV = (px, py) => [cx + px, cy - py];
     resolveIcon = resolveIcon || ((ic) => ic.name);
+    // A `cover` icon IS the whole vignette (an opaque imported tulip — e.g. OpenRally):
+    // render it full-box and nothing else (no generated trunk/junctions). The danger marks
+    // are skipped too, since the imported drawing already bakes them in.
+    const cover = (note.icons || []).find((ic) => ic.cover);
+    if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
+        + `<image x="0" y="0" width="${W}" height="${H}" href="${resolveIcon(cover)}" preserveAspectRatio="xMidYMid meet"/></svg>`;
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
         + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;

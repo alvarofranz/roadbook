@@ -92,6 +92,104 @@
         const m = String(s || '').match(/(\d+)/);
         return m ? parseInt(m[1], 10) : null;
     }
+
+    // OpenRally GPX import (github.com/openrally/openrally): GPX 1.1 + openrally: extensions.
+    // Each <wpt> becomes a note (distance·cap·danger·tulip). The tulip is an opaque drawing →
+    // imported as ONE full-box icon (it can't be decomposed into RDBK icons/junctions).
+    // Three geometry cases: a real <trk>; else real <wpt> coords → a track through them; else a
+    // distance-only roadbook (the official example: wpts at 0,0 with only a distance) → a
+    // placeholder line spaced by openrally:distance, flagged so the author re-draws it on the
+    // map. Returns { rb, warnings }. Needs a DOMParser (browser), like parseGPX.
+    const OPENRALLY_NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
+    function parseOpenRally(text) {
+        const doc = new DOMParser().parseFromString(text, 'application/xml');
+        if (doc.querySelector('parsererror')) throw new Error('Invalid GPX (malformed XML).');
+        const orFirst = (el, local) => el.getElementsByTagNameNS(OPENRALLY_NS, local)[0] || null;
+        const orNum = (el, local) => { const n = orFirst(el, local); const v = n ? parseFloat(n.textContent) : NaN; return isFinite(v) ? v : null; };
+        // Capture every openrally: child of a <wpt>'s <extensions> EXCEPT distance/tulip (both
+        // regenerated on export) — wp types, zones, speed, show_coordinates, notes, … — so the
+        // full set of OpenRally parameters round-trips verbatim through import → save → export.
+        const captureOr = (w) => {
+            const ext = w.getElementsByTagName('extensions')[0]; if (!ext) return [];
+            const out = [];
+            Array.from(ext.childNodes).forEach((c) => {
+                if (c.nodeType !== 1 || c.namespaceURI !== OPENRALLY_NS || c.localName === 'distance' || c.localName === 'tulip') return;
+                const attrs = {}; Array.from(c.attributes).forEach((a) => { attrs[a.localName] = a.value; });
+                out.push({ tag: c.localName, attrs, text: (c.textContent || '').trim() });
+            });
+            return out;
+        };
+        const tulipToDataURL = (s) => {
+            s = String(s || '').trim(); if (!s) return null;
+            if (/^data:/i.test(s)) return s;
+            if (/<svg[\s>]/i.test(s) || /^<\?xml/i.test(s)) return 'data:image/svg+xml,' + encodeURIComponent(s);
+            return 'data:image/png;base64,' + s.replace(/\s+/g, ''); // otherwise assume a base64 PNG
+        };
+
+        const name = (doc.querySelector('metadata > name, trk > name')?.textContent || '').trim() || 'OpenRally roadbook';
+        const trkpts = [];
+        doc.querySelectorAll('trkpt').forEach((p) => {
+            const lat = parseFloat(p.getAttribute('lat')), lon = parseFloat(p.getAttribute('lon'));
+            if (isFinite(lat) && isFinite(lon)) { const ele = parseFloat(p.querySelector('ele')?.textContent); trkpts.push({ lat, lon, ele: isFinite(ele) ? ele : null }); }
+        });
+        const raws = [];
+        doc.querySelectorAll('wpt').forEach((w) => {
+            const lat = parseFloat(w.getAttribute('lat')), lon = parseFloat(w.getAttribute('lon'));
+            const tulipEl = orFirst(w, 'tulip');
+            const distKm = orNum(w, 'distance');
+            raws.push({
+                lat, lon, distM: distKm != null ? Math.round(distKm * 1000) : null,
+                cap: orNum(w, 'cap'), danger: orNum(w, 'danger'),
+                tulip: tulipEl ? (tulipEl.getAttribute('href') || tulipEl.textContent || '') : '',
+                name: (w.querySelector('name')?.textContent || '').trim(),
+                or: captureOr(w),
+            });
+        });
+        if (!raws.length) throw new Error('No OpenRally waypoints found.');
+
+        const warnings = [];
+        const realCoords = (r) => isFinite(r.lat) && isFinite(r.lon) && !(r.lat === 0 && r.lon === 0);
+        let track, idxOf;
+        if (trkpts.length >= 2) {
+            track = trkpts;
+            const cum = cumulativeM(track);
+            const nearestByDist = (distM) => { if (distM == null) return 0; let best = 0, bd = Infinity; cum.forEach((c, i) => { const d = Math.abs(c - distM); if (d < bd) { bd = d; best = i; } }); return best; };
+            idxOf = (r) => realCoords(r) ? nearestIdx(track, r) : nearestByDist(r.distM);
+        } else if (raws.some(realCoords)) {
+            track = raws.map((r) => ({ lat: r.lat, lon: r.lon, ele: null }));
+            idxOf = (r, i) => i;
+            warnings.push('builtTrackFromWaypoints');
+        } else {
+            // distance-only: a placeholder line east of (0,0) spaced by cumulative distance (~m → lon°)
+            let prev = -1;
+            const dists = raws.map((r) => { let d = r.distM == null ? prev + 1 : r.distM; if (d <= prev) d = prev + 1; prev = d; return d; });
+            track = dists.map((d) => ({ lat: 0, lon: d / 111320, ele: null }));
+            idxOf = (r, i) => i;
+            warnings.push('placeholderTrack');
+        }
+
+        const icons = {};
+        const notes = raws.map((r, i) => {
+            const note = {
+                num: i + 1, idx: idxOf(r, i), lat: r.lat, lon: r.lon,
+                distance: r.distM != null ? r.distM : 0, partial_distance: 0,
+                text: /^(wpt\s*\d*|start|end|\d+)$/i.test(r.name) ? '' : r.name,
+                cap: r.cap != null ? Math.round(r.cap) : null, cap_distance: null,
+                bearing_in: 0, bearing_out: 0, road_type_in: 0, road_type_out: 0,
+                icons: [], junctions: null,
+            };
+            if (r.danger >= 1 && r.danger <= 3) note.danger = Math.round(r.danger);
+            if (r.or.length) note.openrally = r.or; // verbatim passthrough of every other openrally: param
+            const t = tulipToDataURL(r.tulip);
+            // The tulip is the whole vignette → a `cover` icon (NoteCanvas renders it full-box, alone).
+            if (t) { const key = 'tulip-' + (i + 1) + (/^data:image\/png/i.test(t) ? '.png' : '.svg'); icons[key] = t; note.icons.push({ name: key, cover: true }); }
+            return note;
+        });
+
+        const rb = { meta: { title: name }, track, notes, icons };
+        recomputeMetrics(rb); // fills num/idx/lat/lon/distance/partial/bearings/road_type from the track; leaves cap (OpenRally-authored) untouched — no recomputeCaps
+        return { rb, warnings };
+    }
     // A waypoint's name (street, landmark…) is real content and becomes the note
     // text; auto-generated labels (wptN / start / end / bare numbers) do not.
     function wptText(w) {
@@ -390,18 +488,30 @@
         const NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
         const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
         const name = (rb.meta && rb.meta.title) || 'RDBK roadbook';
+        // re-emit one preserved openrally: element (from an imported note's passthrough) verbatim
+        const emitOr = (e) => {
+            const at = Object.entries(e.attrs || {}).map(([k, v]) => ` ${k}="${x(v)}"`).join('');
+            return e.text ? `<openrally:${e.tag}${at}><![CDATA[${e.text}]]></openrally:${e.tag}>` : `<openrally:${e.tag}${at}/>`;
+        };
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
-            if (n.cap != null) ext.push(`<openrally:cap>${Math.round(n.cap)}</openrally:cap>`);
-            if (n.danger) ext.push(`<openrally:danger>${n.danger}</openrally:danger>`);
-            const spd = speedLimitOfNote(n);
-            if (spd) ext.push(`<openrally:speed>${spd}</openrally:speed>`); // 0 = lifted → no positive value to emit
+            if (Array.isArray(n.openrally) && n.openrally.length) {
+                // imported note: re-emit every preserved param verbatim (cap·danger·speed·wp types·zones·…)
+                n.openrally.forEach((e) => ext.push(emitOr(e)));
+            } else {
+                // RDBK-native note: the computed set
+                if (n.cap != null) ext.push(`<openrally:cap>${Math.round(n.cap)}</openrally:cap>`);
+                if (n.danger) ext.push(`<openrally:danger>${n.danger}</openrally:danger>`);
+                const spd = speedLimitOfNote(n);
+                if (spd) ext.push(`<openrally:speed>${spd}</openrally:speed>`); // 0 = lifted → no positive value to emit
+            }
             if (tulips[i]) ext.push(`<openrally:tulip><![CDATA[${tulips[i]}]]></openrally:tulip>`);
             return `<wpt lat="${n.lat}" lon="${n.lon}"><name>${x(n.num != null ? n.num : i + 1)}</name><extensions>${ext.join('')}</extensions></wpt>`;
         }).join('');
+        const totalM = (rb.track && rb.track.length > 1) ? cumulativeM(rb.track)[rb.track.length - 1] : (rb.meta && rb.meta.total_distance) || 0;
         return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1" xmlns:openrally="${NS}">`
-            + `<metadata><name>${x(name)}</name><extensions><openrally:units>metric</openrally:units></extensions></metadata>`
+            + `<metadata><name>${x(name)}</name><extensions><openrally:units>metric</openrally:units><openrally:distance>${(totalM / 1000).toFixed(3)}</openrally:distance></extensions></metadata>`
             + `${wpts}<trk><name>${x(name)}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
     }
 
@@ -495,7 +605,7 @@
     window.RB = {
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
-        parseGPX, parseWPT, buildRoadbook, importRoadbook,
+        parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,

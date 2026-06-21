@@ -286,6 +286,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .modal-card.slim { max-width: 340px; }
 .modal-card.narrow { max-width: 360px; }
 .modal-card.wide { max-width: 520px; max-height: 80vh; overflow: auto; }
+.modal-card.scroll { max-height: 85vh; overflow: auto; } /* keep a tall card within the viewport (composes with any width) */
 .modal-card.center { text-align: center; }
 .modal-card h3 { margin: 0 0 .4rem; font-size: 1.05rem; }
 .modal-text { margin: .2rem 0 1.1rem; font-size: 1.05rem; }
@@ -297,6 +298,9 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .btnrow.spaced { margin-top: 1rem; }
 .btnrow.wrap { flex-wrap: wrap; }
 .btn-group { display: flex; gap: .5rem; }
+/* stacked variant (e.g. an action list in a modal): full-width, left-aligned buttons */
+.btn-group.col { flex-direction: column; align-items: stretch; }
+.btn-group.col .btn { justify-content: flex-start; }
 .checkbox-row { display: flex; align-items: center; gap: .5rem; font-size: .9rem; cursor: pointer; }
 .checkbox-row input { width: 18px; height: 18px; accent-color: var(--sand); }
 .field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
