@@ -18,22 +18,52 @@
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
     // Right-click anywhere on the map → a popup: a Google Maps link + "upload a photo here".
     let ctxPhotoPoint = null; // the map point a context-menu photo upload is geotagged at
+    let pastePoint = null;    // the point a context-menu "Paste photo" armed; the next Ctrl+V drops the image here
     if (map.map) map.map.on('contextmenu', (e) => {
         e.preventDefault();
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
         const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+        // point operations appear only when a route is loaded (they act on the nearest track point)
+        const pointOps = rb ? `<button type="button" class="map-ctx-link map-ctx-addnote"><i class="fa-solid fa-map-pin"></i> ${esc(t('Add note here'))}</button>`
+            + `<button type="button" class="map-ctx-link map-ctx-delpt"><i class="fa-solid fa-circle-minus"></i> ${esc(t('Delete this point'))}</button>` : '';
         const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
             .setLngLat(e.lngLat)
             .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a>`
+                + pointOps
                 + `<button type="button" class="map-ctx-link map-ctx-photo"><i class="fa-solid fa-camera"></i> ${esc(t('Upload a photo here'))}</button>`
+                + `<button type="button" class="map-ctx-link map-ctx-paste"><i class="fa-solid fa-paste"></i> ${esc(t('Paste photo'))}</button>`
                 + `<span class="map-ctx-coords">${lat}, ${lon}</span>`)
             .addTo(map.map);
-        const btn = popup.getElement().querySelector('.map-ctx-photo');
-        if (btn) btn.onclick = () => {
+        const el = popup.getElement();
+        const photoBtn = el.querySelector('.map-ctx-photo');
+        if (photoBtn) photoBtn.onclick = () => {
             if (!(currentRbId > 0)) return toast('Save to your profile first.');
             ctxPhotoPoint = here; popup.remove(); $('ctxPhotoFile').click();
         };
+        const pasteBtn = el.querySelector('.map-ctx-paste');
+        if (pasteBtn) pasteBtn.onclick = async () => {
+            popup.remove();
+            if (!(currentRbId > 0)) return toast('Save to your profile first.');
+            try { // one-click: read the clipboard image and drop it on the point
+                window.focus(); // clipboard.read() needs the document focused
+                let blob = null;
+                for (const it of await navigator.clipboard.read()) {
+                    const ty = it.types.find((x) => /^image\//.test(x));
+                    if (ty) { blob = await it.getType(ty); break; }
+                }
+                if (!blob) return toast('No image in the clipboard.');
+                const ok = (await uploadPhoto(new File([blob], 'pasted.png', { type: blob.type }), here.lat, here.lon)).ok;
+                await loadPhotos(); toast(ok ? 'Photos uploaded.' : 'Some photos failed.');
+            } catch (err) { // clipboard blocked (permission/focus) → fall back to the working Ctrl+V flow
+                pastePoint = here;
+                toast('Press Ctrl+V to paste the photo here');
+            }
+        };
+        const addBtn = el.querySelector('.map-ctx-addnote');
+        if (addBtn) addBtn.onclick = () => { popup.remove(); addWaypointNear(here); };
+        const delBtn = el.querySelector('.map-ctx-delpt');
+        if (delBtn) delBtn.onclick = () => { popup.remove(); deleteTrackPointNear(here); };
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
@@ -131,10 +161,9 @@
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
             toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap a segment — adds its midpoint)',
-            toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track', toolReverse: 'Reverse direction',
+            toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
-            toolLayers: 'Satellite / terrain map',
         };
         // the same translated string drives the hover tooltip AND the screen-reader name
         Object.entries(tips).forEach(([id, key]) => { const v = t(key); $(id).setAttribute('data-tip', v); $(id).setAttribute('aria-label', v); });
@@ -145,7 +174,7 @@
         applyToolTips();
         if (rb) { renderNotes(); renderIcons(); updateSaveBtn(); if (editorOpen) { renderEditor(); canvas.render(); } }
     });
-    $('toolLayers').onclick = () => {
+    function toggleMapStyle() {
         mapStyle = mapStyle === 'satellite' ? 'terrain' : 'satellite';
         try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
         map.setBaseStyle(MAP_STYLES[mapStyle], () => {
@@ -153,7 +182,26 @@
             if (rb) { refreshMap(true); map.select(rb.notes[sel], true); placeMainEditMarker(); } // setStyle wiped the selection layer
             if (currentRbId > 0) loadPhotos();
         });
-    };
+    }
+    // Top-right map control (beside the zoom buttons): satellite/terrain toggle + live zoom level.
+    if (map.map) map.map.addControl({
+        onAdd(m) {
+            const c = document.createElement('div');
+            c.className = 'maplibregl-ctrl maplibregl-ctrl-group rb-mapctl';
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'rb-mapctl-layers';
+            b.title = t('Satellite / terrain map'); b.setAttribute('aria-label', b.title);
+            b.innerHTML = '<i class="fa-solid fa-layer-group"></i>';
+            b.onclick = toggleMapStyle;
+            const z = document.createElement('div');
+            z.className = 'rb-mapctl-zoom'; z.setAttribute('aria-hidden', 'true');
+            this._upd = () => { z.textContent = 'z' + m.getZoom().toFixed(1); };
+            m.on('zoom', this._upd); this._upd(); this._m = m;
+            c.append(b, z);
+            return c;
+        },
+        onRemove() { if (this._m && this._upd) this._m.off('zoom', this._upd); },
+    }, 'top-right');
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMapTool('pan'); });
     // Draw mode: every tap extends the route from the nearest OPEN end — the
     // finish, the start, or either edge of an open cut (tapping on the opposite
@@ -294,8 +342,10 @@
         if (joinAtStart) RB.reverseRoadbook(rb);
         sel = 0; routeChanged('Track joined to the route.');
     }
-    $('toolReverse').onclick = () => {
+    // Reverse lives in the roadbook settings (it flips the whole route) and asks first.
+    $('cfgReverse').onclick = async () => {
         if (!rb) return toast('Load a roadbook first.');
+        if (!(await RBConfirm(t('Reverse the whole route? Start and finish swap, and every vignette is recomputed.'), t('Reverse direction')))) return;
         RB.reverseRoadbook(rb); sel = 0;
         routeChanged('Route reversed — review the vignettes.');
     };
@@ -378,7 +428,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolNote', 'toolPoints', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolReverse', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolNote', 'toolPoints', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -386,7 +436,7 @@
         updatePhotos(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
         sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
-        histReset(); setMapTool('pan');
+        histReset(); setMapTool('points'); // default to moving points on a loaded route (draw re-sets itself)
         showView('map'); // tap a note to open its editor inline below the row
     }
 
@@ -707,12 +757,19 @@
     $('addPhotoBtn').onclick = () => { if (!(currentRbId > 0)) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => { const files = [...e.target.files]; e.target.value = ''; addPhotos(files); };
     // paste an image from the clipboard (Ctrl/Cmd+V) → upload it like any photo (EXIF or place on map)
-    document.addEventListener('paste', (e) => {
+    document.addEventListener('paste', async (e) => {
         if (!rb) return;
         const files = [...(e.clipboardData?.items || [])].filter((it) => /^image\//.test(it.type)).map((it) => it.getAsFile()).filter(Boolean);
         if (!files.length) return; // plain text/other paste → leave it to the browser
         e.preventDefault();
-        if (!(currentRbId > 0)) return toast('Save to your profile first.');
+        if (!(currentRbId > 0)) { pastePoint = null; return toast('Save to your profile first.'); }
+        if (pastePoint) { // a context-menu "Paste photo" armed a point → geotag the image there
+            const p = pastePoint; pastePoint = null;
+            let failed = 0;
+            for (const f of files) if (!(await uploadPhoto(f, p.lat, p.lon)).ok) failed++;
+            await loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
+            return;
+        }
         addPhotos(files);
     });
     const uploadPhoto = (file, lat, lon) => RBUpload({ type: 'photo', roadbook: String(currentRbId), lat: String(lat), lon: String(lon) }, file);
@@ -893,6 +950,7 @@
     function toggleNote(i) { if (editorOpen && sel === i) closeEditor(); else select(i); }
     function closeEditor() {
         editorOpen = false; $('noteEditZone').hidden = true;
+        if (map.map && map.ready && map.map.getBearing()) map.map.easeTo({ bearing: 0, duration: 300 }); // back to north-up
         parkEditor(); // park both pieces back so a list rebuild can't destroy them
         placeTulips(); // restore the static vignette in the row the canvas just left
         markSelectedRow(); placeMainEditMarker(); // drops the draggable note marker
@@ -904,8 +962,9 @@
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); placeMainEditMarker();
-        // clicking a note centres (and zooms in to) the map on that note
-        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), duration: 450 });
+        // clicking a note centres (and zooms in to) the map on that note and rotates it to the
+        // heading being followed (bearing_out) so "up" is the direction of travel
+        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: +rb.notes[i].bearing_out || 0, duration: 450 });
         // stacked layout (mobile/tablet): bring the just-opened editor into view
         if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -975,6 +1034,23 @@
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
+    }
+    // Delete the single track point nearest the given map point. If that point carries a note,
+    // confirm first (deleting it removes the note too). Later notes' idx shift down by one.
+    async function deleteTrackPointNear(pt) {
+        if (!rb || !rb.track || rb.track.length < 2) return;
+        const k = RB.nearestIdx(rb.track, pt);
+        const isNote = rb.notes.some((n) => n.idx === k);
+        if (isNote) {
+            if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
+            if (!(await RBConfirm(t('This point is a note — delete the point and its note?'), t('Delete')))) return;
+        }
+        if (rb.track.length <= 2) return toast('At least 2 points must remain.');
+        rb.track.splice(k, 1);
+        rb.notes = rb.notes.filter((n) => n.idx !== k);
+        rb.notes.forEach((n) => { if (n.idx > k) n.idx -= 1; });
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        routeChanged('Point deleted.');
     }
 
     /* ---------- icons (standard palette + yours, embedded in the roadbook) ---------- */

@@ -24,7 +24,8 @@
         .map-ctx-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; color: #1a73e8; text-decoration: none; }
         .map-ctx-link:hover { text-decoration: underline; }
         .map-ctx-coords { display: block; margin-top: .25rem; color: #555; font-size: .72rem; font-variant-numeric: tabular-nums; }
-        button.map-ctx-photo { display: flex; margin-top: .4rem; background: none; border: 0; padding: 0; font: inherit; font-weight: 700; cursor: pointer; }
+        button.map-ctx-link { display: flex; width: 100%; margin-top: .4rem; background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: #1a73e8; text-align: left; cursor: pointer; }
+        .map-ctx-delpt { color: var(--track); }
         /* every row shows its vignette between distance and text; the open row hosts the live editor canvas */
         #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
@@ -95,8 +96,14 @@
         .map-tool { position: relative; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: #14100a; }
+        /* highlight the main interaction tools (navigate + move + add note) so they stand out */
+        #toolPan i, #toolPoints i, #toolNote i { color: var(--track); }
         .map-tool:disabled { opacity: .35; cursor: default; }
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
+        /* top-right map control (next to the zoom buttons): satellite/terrain toggle + zoom level */
+        .rb-mapctl-layers { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: 0; cursor: pointer; color: #333; }
+        .rb-mapctl-layers:hover { background: #f2f2f2; }
+        .rb-mapctl-zoom { background: #fff; color: #333; font-size: .6rem; font-weight: 700; text-align: center; padding: 1px 2px 2px; font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
         .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         /* white vignette: shows EXACTLY what gets produced/printed (matches the Reader + PDF) */
         .vignette-box { position: relative; width: 100%; max-width: 170px; margin: .2rem 0 .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
@@ -221,18 +228,15 @@
                 <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
                 <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
-                <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-arrows-to-dot"></i></button>
+                <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-circle-plus"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
-                <button class="map-tool" id="toolReverse" aria-label="Reverse direction" disabled><i class="fa-solid fa-right-left"></i></button>
                 <button class="map-tool" id="toolSimplify" aria-label="Simplify" disabled><i class="fa-solid fa-broom"></i></button>
                 <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail" disabled><i class="fa-solid fa-location-crosshairs"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
-                <span class="map-tools-sep"></span>
-                <button class="map-tool" id="toolLayers" aria-label="Satellite / terrain map"><i class="fa-solid fa-layer-group"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
             <div class="map-hint"><i class="fa-solid fa-paste"></i> <span data-i18n="Paste an image on the map to add it to the roadbook">Paste an image on the map to add it to the roadbook</span></div>
@@ -313,6 +317,9 @@
                 <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
                 <div class="meta-field full">
                     <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span></label>
+                </div>
+                <div class="meta-field full"><span data-i18n="Route">Route</span>
+                    <button class="btn btn-ghost" id="cfgReverse" data-i18n="Reverse direction"><i class="fa-solid fa-right-left"></i> Reverse direction</button>
                 </div>
             </div>
         </div>

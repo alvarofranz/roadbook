@@ -47,6 +47,7 @@ window.RBMap = class RBMap {
         this._vertDrag = -1;
         const vertDown = (e) => {
             if (!this._vertOnDrag || !e.features[0]) return;
+            if (e.originalEvent && e.originalEvent.button !== 0) return; // only the left button drags; right-click → context menu
             e.preventDefault(); this._vertDrag = parseInt(e.features[0].properties.i, 10);
             m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
         };
@@ -99,8 +100,8 @@ window.RBMap = class RBMap {
         m.addSource('rb-sel', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(232,176,89,.35)', 'circle-stroke-color': '#e8b059', 'circle-stroke-width': 3 } });
         m.addSource('rb-wpts', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-wpts', type: 'circle', source: 'rb-wpts', paint: { 'circle-radius': 6, 'circle-color': '#e8b059', 'circle-stroke-color': '#0e1116', 'circle-stroke-width': 2 } });
-        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-size': 11, 'text-offset': [0, -1.3] }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 1.4 } });
+        m.addLayer({ id: 'rb-wpts', type: 'circle', source: 'rb-wpts', paint: { 'circle-radius': 9, 'circle-color': '#3b82f6', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-size': 12, 'text-offset': [0, -1.4] }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 1.4 } });
         m.addSource('rb-live', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-live', type: 'line', source: 'rb-live', paint: { 'line-color': '#3ad29f', 'line-width': 4 } });
         m.addSource('rb-photos', { type: 'geojson', data: this._empty() });
