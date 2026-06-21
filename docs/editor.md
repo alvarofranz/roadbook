@@ -60,8 +60,13 @@ mentre si edita un roadbook salvato fa partire una nuova entità, non sovrascriv
 ## 3. La barra strumenti: il GPX si edita sulla mappa
 
 La traccia non si edita in un editor a parte: si edita **direttamente sulla mappa** tramite
-la barra verticale `.map-tools` ([index.html:205](../public/editor/index.html#L205)). I tool
+la barra verticale `.map-tools` ([index.html](../public/editor/index.html)). I tool
 si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate).
+
+> Caricata una rotta, il tool attivo di **default** è **move points** (`setMapTool('points')`
+> in `setRoadbook`). **Navigate** e **Add note** non stanno nella barra ma in un menu a comparsa
+> **☰** (`#mapMenuToggle`/`#mapMenuPanel`); **Reverse** è stato spostato nei *Settings* del
+> roadbook (§7). Vedi §3.3 per l'intero comportamento della mappa.
 
 ### 3.1 Mode tool
 
@@ -101,12 +106,12 @@ dopo una conferma (`confirmOpenCuts`, [editor.js:103](../public/editor/editor.js
 
 | Tool         | Handler                                                  | Funzione |
 |--------------|----------------------------------------------------------|----------|
-| **add GPX**  | `$('toolAddGpx')` → `addGpxTrack` ([editor.js:265](../public/editor/editor.js#L265)) | join intelligente |
-| **reverse**  | `$('toolReverse')` ([editor.js:287](../public/editor/editor.js#L287)) | `RB.reverseRoadbook` |
-| **simplify** | `$('toolSimplify')` ([editor.js:292](../public/editor/editor.js#L292)) | modale tolleranza → `RB.simplifyRoadbook` (Douglas-Peucker, ancore-nota mantenute) |
-| **adjust**   | `$('toolAdjust')` ([editor.js:307](../public/editor/editor.js#L307)) | re-record live di un tratto (§5) |
-| **undo/redo**| `undo`/`redo` ([editor.js:399](../public/editor/editor.js#L399)) | snapshot debounced |
-| **layers**   | `$('toolLayers')` ([editor.js:138](../public/editor/editor.js#L138)) | satellite ↔ terreno (persistito in `localStorage`) |
+| **add GPX**  | `$('toolAddGpx')` → `addGpxTrack` | join intelligente |
+| **simplify** | `$('toolSimplify')` | modale tolleranza → `RB.simplifyRoadbook` (Douglas-Peucker, ancore-nota mantenute) |
+| **adjust**   | `$('toolAdjust')` | re-record live di un tratto (§5) |
+| **undo/redo**| `undo`/`redo` | snapshot debounced |
+
+*(L'inversione percorso è nei Settings, non più qui; il toggle satellite/terreno è un controllo della mappa in alto a destra — vedi §3.3.)*
 
 **add GPX** (`addGpxTrack`, [editor.js:265](../public/editor/editor.js#L265)): se **entrambe**
 le estremità del pezzo toccano la rotta (entro 200 m) offre la **sostituzione del tratto**
@@ -120,8 +125,31 @@ rotta resta una sola traccia.
 Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js:404](../public/editor/editor.js#L404)), disabilitate
 dentro campi testo e durante un recording.
 
-I mode tool sono `disabled` finché non c'è una rotta; `setRoadbook` li abilita
-([editor.js:363](../public/editor/editor.js#L363)). `Escape` torna a `pan`.
+I mode tool sono `disabled` finché non c'è una rotta; `setRoadbook` li abilita.
+`Escape` torna a `pan`.
+
+### 3.3 Comportamento della mappa
+
+La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)) — vedi
+[rbmap](rbmap.md). Specifico dell'Editor:
+
+- **Basemap & controllo in alto a destra.** Le viste base sono raster gratuite senza chiave:
+  **ESRI World Imagery** (satellite) e **CyclOSM** (terreno con isoipse + sterrate/sentieri),
+  con `glyphs` OpenFreeMap per il testo dei layer. Un controllo MapLibre in alto a destra
+  (accanto ai tasti zoom) unisce il **toggle satellite/terreno** (`toggleMapStyle`, persistito
+  in `localStorage`) e l'indicatore del **livello di zoom**.
+- **Default move points + pallini.** Le note sono pallini **blu** (`rb-wpts`), sempre visibili.
+  I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move mode) hanno
+  `minzoom: 14` → compaiono solo a zoom alto, per non intasare l'overview.
+- **Rotazione.** Selezionando una nota la mappa ruota su `bearing_out` (direzione di marcia);
+  torna a nord alla chiusura dell'editor.
+- **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
+  un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
+- **Menu contestuale (tasto destro).** `map.map.on('contextmenu')` apre un popup: *Open in
+  Google Maps* · — con una rotta caricata — *Add note here* (`addWaypointNear`) · *Delete this
+  point* (`deleteTrackPointNear`; se è una nota chiede conferma, min 2 punti/2 note) · *Upload a
+  photo here* · *Paste photo* (un-click `clipboard.read()`, con fallback Ctrl+V). Funziona anche
+  in move mode (il tasto destro non avvia il drag del vertice).
 
 ---
 

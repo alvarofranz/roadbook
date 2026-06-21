@@ -61,8 +61,8 @@
         /* distance cell sits right after the number: total km (bold) + partial leg (muted) */
         .note-mini .note-km { flex-shrink: 0; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 3.4rem; }
         .note-mini .note-km b { display: block; font-size: .82rem; font-weight: 800; color: var(--text); }
-        /* a photo was taken near this note → tap the 📷 (under the km) to view it */
-        .note-mini .note-km .note-photo { display: block; margin-top: .25rem; background: none; border: 0; padding: 0; font: inherit; font-size: 1rem; line-height: 1; cursor: pointer; }
+        /* a photo was taken near this note → tap the "IMG" pill (under the km) to view it */
+        .note-mini .note-km .note-photo { display: inline-block; margin-top: .25rem; padding: .05rem .35rem; background: none; border: 1px solid #3a8dff; border-radius: 6px; color: #3a8dff; font: inherit; font-size: .62rem; font-weight: 800; letter-spacing: .04em; line-height: 1.4; cursor: pointer; }
         /* delete + up/down stacked in a vertical column on the right of the row */
         .note-mini .note-actions { flex-shrink: 0; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; }
         .note-mini .note-del, .note-mini .note-nav { flex-shrink: 0; display: inline-flex; background: none; border: 0; padding: .25rem .4rem; font: inherit; cursor: pointer; }
@@ -204,7 +204,7 @@
                     <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
                     <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
-                    <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Start from a public roadbook">Start from a public roadbook</b><small data-i18n="Public challenges">Public challenges</small></button>
+                    <button class="load-card" id="pickChallenge"><i class="fa-solid fa-trophy"></i><b data-i18n="Start from a public RB">Start from a public RB</b><small data-i18n="Public Roadbooks">Public Roadbooks</small></button>
                 </div>
             </div>
             <div id="myRbSection" hidden>

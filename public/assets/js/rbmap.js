@@ -11,6 +11,7 @@
 // MapLibre accepts both, so the identity-based topo check still holds.
 const RASTER_TOPO = {
     version: 8,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', // fonts for the symbol-text layers (note numbers, photo "IMG")
     sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 20,
         tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'],
         attribution: '© OpenStreetMap · CyclOSM' } },
@@ -18,6 +19,7 @@ const RASTER_TOPO = {
 };
 const RASTER_SATELLITE = {
     version: 8,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', // fonts for the symbol-text layers (note numbers, photo "IMG")
     sources: { esri: { type: 'raster', tileSize: 256, maxzoom: 19,
         tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
         attribution: 'Imagery © Esri' } },
@@ -117,17 +119,17 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(232,176,89,.35)', 'circle-stroke-color': '#e8b059', 'circle-stroke-width': 3 } });
         m.addSource('rb-wpts', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-wpts', type: 'circle', source: 'rb-wpts', paint: { 'circle-radius': 9, 'circle-color': '#3b82f6', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
-        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-size': 12, 'text-offset': [0, -1.4] }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 1.4 } });
+        m.addLayer({ id: 'rb-wpts-l', type: 'symbol', source: 'rb-wpts', layout: { 'text-field': ['get', 'num'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-offset': [0, -1.4] }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 1.4 } });
         m.addSource('rb-live', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-live', type: 'line', source: 'rb-live', paint: { 'line-color': '#3ad29f', 'line-width': 4 } });
         m.addSource('rb-photos', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-photos', type: 'circle', source: 'rb-photos', paint: { 'circle-radius': 7, 'circle-color': '#3a8dff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
-        m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': '📷', 'text-size': 11 } });
+        m.addLayer({ id: 'rb-photos', type: 'circle', source: 'rb-photos', paint: { 'circle-radius': 12, 'circle-color': '#3a8dff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+        m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': 'IMG', 'text-font': ['Noto Sans Bold'], 'text-size': 10, 'text-allow-overlap': true }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 0.8 } });
         m.addSource('rb-pos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
         // Track vertices (move-points tool) — topmost so they stay grabbable; empty until armed.
         m.addSource('rb-verts', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } });
+        m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', minzoom: 14, paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } }); // non-note track points: only at high zoom (hidden ≤ ~14 to avoid clutter)
         if (this._vertOnDrag && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).

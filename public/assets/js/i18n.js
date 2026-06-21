@@ -40,7 +40,7 @@
             'gallery.kicker': 'Galería', 'gallery.title': 'Challenges públicos', 'gallery.loading': 'Cargando challenges…', 'gallery.empty': 'Aún no hay challenges públicos.', 'gallery.notes': 'notas',
             'Navigate a roadbook': 'Navega un roadbook', 'GPS trip computer': 'Ordenador de viaje GPS', 'Record a GPS track': 'Graba una traza GPS',
             // ---- tools (the English string is the key) ----
-            'Start new Roadbook from:': 'Crear un nuevo roadbook desde:', 'Import a GPS track': 'Importa un track GPS',
+            'Start new Roadbook from:': 'Crear un nuevo roadbook desde:', 'Start from a public RB': 'Parte de un RB público', 'Public Roadbooks': 'Roadbooks públicos', 'Import a GPS track': 'Importa un track GPS',
             'Open an existing roadbook': 'Abre un roadbook existente', 'Record route': 'Grabar ruta',
             'Record live with GPS': 'Graba en vivo con GPS', 'Start from a public one': 'Empieza desde uno público',
             'Finish': 'Finalizar', 'Export .rdbk': 'Exportar .rdbk', 'Save': 'Guardar', 'Saved': 'Guardado',
@@ -299,7 +299,7 @@
             'gallery.kicker': 'Galleria', 'gallery.title': 'Challenge pubblici', 'gallery.loading': 'Caricamento challenge…', 'gallery.empty': 'Ancora nessun challenge pubblico.', 'gallery.notes': 'note',
             'Navigate a roadbook': 'Naviga un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS',
             // ---- tools (the English string is the key) ----
-            'Start new Roadbook from:': 'Crea un nuovo roadbook da:', 'Import a GPS track': 'Importa una traccia GPS',
+            'Start new Roadbook from:': 'Crea un nuovo roadbook da:', 'Start from a public RB': 'Parti da un RB pubblico', 'Public Roadbooks': 'Roadbook pubblici', 'Import a GPS track': 'Importa una traccia GPS',
             'Open an existing roadbook': 'Apri un roadbook esistente', 'Record route': 'Registra percorso',
             'Record live with GPS': 'Registra dal vivo col GPS', 'Start from a public one': 'Parti da uno pubblico',
             'Finish': 'Termina', 'Export .rdbk': 'Esporta .rdbk', 'Save': 'Salva', 'Saved': 'Salvato',
