@@ -5,10 +5,26 @@
  * toggle, and lets you select waypoints and highlight the active one. */
 (function () {
 // The two base styles the built-in layer toggle flips between (satellite photo ↔ topo).
-// Free, no-key defaults (MapLibre + OpenFreeMap); override via RB_CONFIG — point
-// styleSatellite at a licensed provider (e.g. a MapTiler satellite style URL) for real imagery.
-const STYLE_TOPO = (window.RB_CONFIG && RB_CONFIG.styleTopo) || 'https://tiles.openfreemap.org/styles/liberty';
-const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || STYLE_TOPO;
+// Free, no-key raster defaults: ESRI World Imagery (satellite) and CyclOSM (topo with
+// contours + tracks/trails). Override via RB_CONFIG.styleSatellite / styleTopo (a MapLibre
+// style URL or spec) for licensed providers. A style can be a URL string OR a spec object;
+// MapLibre accepts both, so the identity-based topo check still holds.
+const RASTER_TOPO = {
+    version: 8,
+    sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 20,
+        tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'],
+        attribution: '© OpenStreetMap · CyclOSM' } },
+    layers: [{ id: 'cyclosm', type: 'raster', source: 'cyclosm' }],
+};
+const RASTER_SATELLITE = {
+    version: 8,
+    sources: { esri: { type: 'raster', tileSize: 256, maxzoom: 19,
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        attribution: 'Imagery © Esri' } },
+    layers: [{ id: 'esri', type: 'raster', source: 'esri' }],
+};
+const STYLE_TOPO = (window.RB_CONFIG && RB_CONFIG.styleTopo) || RASTER_TOPO;
+const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || RASTER_SATELLITE;
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
