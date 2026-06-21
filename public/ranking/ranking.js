@@ -67,7 +67,8 @@
         const cap = num(m.cap);
         const speed = num(m.speed);
         const km = num(m.km) / 10;
-        const avg = num(m.avg) > 0 ? num(m.avg) / 10 : (parseFloat($('targetAvg').value) || 30);
+        // Regularity reference = the organizer-set target average; the run's own m.avg is informational only.
+        const avg = parseFloat($('targetAvg').value) || num(m.avg) / 10 || 30;
         let reg = 0;
         let actual = toSec(m.end) - toSec(m.start);
         if (actual < 0) actual += 86400; // run crossed midnight

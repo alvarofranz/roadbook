@@ -141,7 +141,7 @@ e il punteggio finale da ogni risultato.
 La regolarità premia chi percorre la sezione nel **tempo atteso** per una certa velocità media.
 
 ```js
-avg      = m.avg>0 ? m.avg/10 : (targetAvg dell'interfaccia || 30)   // km/h
+avg      = targetAvg dell'interfaccia || m.avg/10 || 30               // km/h
 expected = round(3600 * km / avg)                                    // secondi attesi
 actual   = end - start   (+86400 se ha passato la mezzanotte)        // secondi reali
 early    = max(0, expected - actual)        // arrivato troppo presto
@@ -149,20 +149,12 @@ late     = max(0, actual - expected)        // arrivato troppo tardi
 reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 ```
 
+- La velocità di riferimento è il **`targetAvg` impostato dall'organizzatore** (default 30 km/h);
+  la media effettivamente raggiunta (`m.avg`) è solo informativa. Così il `targetAvg` governa
+  davvero la penalità di regolarità per i risultati scansionati.
 - **In anticipo**: penalizzato 1 punto/secondo, **senza tolleranza**.
 - **In ritardo**: 59 secondi di **tolleranza** (`REG_GRACE_S`), poi 1 punto/secondo.
 - Il campo `targetAvg` nell'interfaccia ricalcola la colonna in tempo reale.
-
-### ⚠ Quirk da segnalare (probabile bug di precedenza)
-La velocità di riferimento usa **prima `m.avg` (la media *raggiunta* dal veicolo)** e solo in
-mancanza ricade sul `targetAvg` impostato dall'organizzatore. Ma poiché
-`avg_raggiunta = km / durata`, si ha `expected = 3600·km / (km/durata) ≈ actual`, quindi
-**`reg ≈ 0` per ogni risultato firmato** (che ha sempre `avg` valorizzato). In pratica la
-colonna Regolarità è *neutralizzata* per i QR scansionati, e il `targetAvg` non ha effetto.
-
-Se l'intento è una regolarità "alla media decisa dall'organizzatore", la precedenza va
-**invertita**: usare `targetAvg` come riferimento e tenere `m.avg` solo come informazione.
-Da confermare con la logica di gara desiderata prima di toccarlo.
 
 ---
 
