@@ -96,8 +96,8 @@
         .map-tool { position: relative; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: #14100a; }
-        /* highlight the main interaction tools (navigate + move + add note) so they stand out */
-        #toolPan i, #toolPoints i, #toolNote i { color: var(--track); }
+        /* collapsible "more tools" menu (Navigate + Add note) flying out to the right of the bar */
+        .map-tools-menu { position: absolute; left: calc(100% + 6px); top: 4px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 7; }
         .map-tool:disabled { opacity: .35; cursor: default; }
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
         /* top-right map control (next to the zoom buttons): satellite/terrain toggle + zoom level */
@@ -224,10 +224,13 @@
         <!-- the GPX editor: the map + its vertical tool bar (modes left, actions below) -->
         <div id="mapEditor" class="map-editor" hidden>
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
-                <button class="map-tool on" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
-                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
-                <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
+                <button class="map-tool" id="mapMenuToggle" aria-label="More tools"><i class="fa-solid fa-bars"></i></button>
+                <div class="map-tools-menu" id="mapMenuPanel" hidden>
+                    <button class="map-tool" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
+                    <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
+                </div>
                 <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
+                <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
                 <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-circle-plus"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>

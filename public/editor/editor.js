@@ -153,9 +153,11 @@
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
         if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit);
         else map.setVertexEditor(null);
+        $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
         placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
+    $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
         const tips = {
@@ -163,7 +165,7 @@
             toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap a segment — adds its midpoint)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
-            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)',
+            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
         };
         // the same translated string drives the hover tooltip AND the screen-reader name
         Object.entries(tips).forEach(([id, key]) => { const v = t(key); $(id).setAttribute('data-tip', v); $(id).setAttribute('aria-label', v); });

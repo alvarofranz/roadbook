@@ -163,6 +163,7 @@ window.RBMap = class RBMap {
             type: 'FeatureCollection',
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
+        if (this._vertOnDrag) this._paintVerts(rb.track); // keep the Move-points handles in sync (and visible on first load)
         if (!noFit) this._fit(rb);
     }
     // Live recording: draw the growing track + waypoint + geolocated-photo markers.
