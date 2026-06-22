@@ -95,7 +95,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 ```
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
 ```
-`node --check <file>.js` for syntax; `roadbook-core.js` has node-testable functions.
+`node --check <file>.js` for syntax. **Unit tests:** `npm install` then `npm test`
+(Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
+GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
+the 49-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
+(`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
+tests can import it — no build step is introduced on the web. Tests live in `tests/`; CI
+runs them on every push/PR via `.github/workflows/test.yml`.
 `public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
 style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`

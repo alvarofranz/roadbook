@@ -1,0 +1,25 @@
+name: Tests
+
+# Unit tests (Vitest) + a syntax check of the shared front-end scripts. The
+# quality signal for branches and PRs. `main` is intentionally excluded: the
+# Deploy workflow runs the same suite there as a gate before production, so
+# testing it here too would just duplicate that job.
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Syntax-check the shared front-end scripts
+        run: for f in public/assets/js/*.js; do node --check "$f"; done
+      - run: npm test

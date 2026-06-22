@@ -692,7 +692,7 @@
     }
 
     /* ---------------- export ---------------- */
-    window.RB = {
+    const RB = {
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
@@ -701,4 +701,7 @@
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2,
     };
+    // The browser uses the global; Node (the test runner) imports the same object.
+    if (typeof window !== 'undefined') window.RB = RB;
+    if (typeof module !== 'undefined' && module.exports) module.exports = RB;
 })();
