@@ -15,7 +15,7 @@
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.
@@ -102,6 +102,7 @@
             openCtxMenu(e.lngLat, [maps,
                 ...(rb ? [
                     { id: 'note', icon: 'fa-map-pin', label: 'Add note here', run: () => addNoteAtExact(here) },
+                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', run: () => addPointAtExact(here) },
                     { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
@@ -162,7 +163,7 @@
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
         if (mapTool === 'note') { if (rb) addWaypointNear(here); else toast('Load a roadbook first.'); }
         else if (mapTool === 'draw') drawPoint(here);
-        else if (mapTool === 'insert') { if (rb) insertMidpoint(here); else toast('Load a roadbook first.'); }
+        else if (mapTool === 'insert') { if (rb) insertPointOnLine(here); else toast('Load a roadbook first.'); }
         else if (mapTool === 'cut') cutPoint(here);
     });
 
@@ -278,6 +279,7 @@
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
         if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect);
+        else if (tool === 'insert' && rb) map.showVertices(rb.track); // dots visible (read-only) so you see where you insert
         else map.setVertexEditor(null);
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
         placeMainEditMarker(); // the reposition marker rides the Pan tool only
@@ -288,7 +290,7 @@
     function applyToolTips() {
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
-            toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap a segment — adds its midpoint)',
+            toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap the route where you want it)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
@@ -397,12 +399,13 @@
     }
     // Insert-point tool: tap a segment and a new vertex is born at its MIDPOINT,
     // ready to drag with "move points". The dashed connector of an open cut is skipped.
-    function insertMidpoint(p) {
+    // Add a track point exactly where you tap ON the route (the projection onto the nearest
+    // segment), so it lands where you can see it — not at the segment's midpoint.
+    function insertPointOnLine(p) {
         const hit = RB.nearestOnTrack(rb.track, p);
         if (!hit) return toast('Tap on the route to insert a point.');
         if (new Set(gapIdxs()).has(hit.i)) return toast('Cannot insert on an open cut.');
-        const a = rb.track[hit.i], b = rb.track[hit.i + 1];
-        rb.track.splice(hit.i + 1, 0, { lat: RB.round6((a.lat + b.lat) / 2), lon: RB.round6((a.lon + b.lon) / 2) });
+        rb.track.splice(hit.i + 1, 0, { lat: RB.round6(hit.lat), lon: RB.round6(hit.lon) });
         rb.notes.forEach((n) => { if (n.idx > hit.i) n.idx++; });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes(); markDirty();
@@ -1172,21 +1175,33 @@
         refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
     }
-    // "Add note here" (generic right-click): the note lands at the EXACT clicked point — insert it
-    // into the track at the nearest segment (a small detour) rather than snapping onto the route.
-    function addNoteAtExact(pt) {
-        if (!rb) return;
+    // Insert the EXACT clicked point into the track at the nearest segment (a small detour off the
+    // route, rather than snapping onto it); returns its new track index. Used by the off-track menu.
+    function insertPointAtExact(pt) {
         const hit = RB.nearestOnTrack(rb.track, pt);
         const at = hit ? hit.i + 1 : rb.track.length;
         rb.track.splice(at, 0, { lat: RB.round6(pt.lat), lon: RB.round6(pt.lon) });
         rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
         if (cutFromIdx >= at) cutFromIdx++; // keep a pending cut anchored
+        return at;
+    }
+    // "Add note here": the note lands at the exact clicked point.
+    function addNoteAtExact(pt) {
+        if (!rb) return;
+        const at = insertPointAtExact(pt);
         const cur = editorOpen ? rb.notes[sel] : null;
         rb.notes.push(makeNote(rb, at, roadOutBefore(at)));
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
+    }
+    // "Add point here": just a track point at the exact clicked point, no note.
+    function addPointAtExact(pt) {
+        if (!rb) return;
+        insertPointAtExact(pt);
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        routeChanged('Point added.');
     }
     // Delete the single track point nearest the given map point. If that point carries a note,
     // confirm first (deleting it removes the note too). Later notes' idx shift down by one.

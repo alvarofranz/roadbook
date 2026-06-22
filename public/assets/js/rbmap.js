@@ -30,7 +30,7 @@ const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || RASTER
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
-        const { layerToggle, ...mapOpts } = opts; // layerToggle is ours, not a MapLibre option
+        const { layerToggle, geolocate, ...mapOpts } = opts; // layerToggle/geolocate are ours, not MapLibre options
         const cont = document.getElementById(containerId);
         if (!window.maplibregl) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable.</div>';
@@ -48,6 +48,8 @@ window.RBMap = class RBMap {
         }
         this._topo = (mapOpts.style || STYLE_SATELLITE) === STYLE_TOPO; // tracks which base style is live
         this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+        // "centre on my position" button, sitting just under the zoom controls (top-right)
+        if (geolocate) this.map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false, showUserLocation: true }), 'top-right');
         this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
         if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
@@ -136,7 +138,7 @@ window.RBMap = class RBMap {
         m.addSource('rb-vsel', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-vsel', type: 'circle', source: 'rb-vsel', minzoom: 13, paint: { 'circle-radius': 9, 'circle-color': 'rgba(232,140,40,.35)', 'circle-stroke-color': '#ff8c28', 'circle-stroke-width': 3 } });
         m.moveLayer('rb-wpts'); m.moveLayer('rb-wpts-l'); // note markers + their numbers always in front of verts/photos/position
-        if (this._vertOnDrag && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
+        if (this._vertShow && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).
     setCursor(cursor) { this._baseCursor = cursor || ''; if (this.map) this.map.getCanvas().style.cursor = this._baseCursor; }
@@ -172,7 +174,7 @@ window.RBMap = class RBMap {
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
         this._noteIdx = new Set(rb.notes.map((n) => n.idx)); // points carrying a note get the blue marker, not a white vertex dot
-        if (this._vertOnDrag) this._paintVerts(rb.track); // keep the Move-points handles in sync (and visible on first load)
+        if (this._vertShow) this._paintVerts(rb.track); // keep the vertex dots in sync (and visible on first load)
         if (!noFit) this._fit(rb);
     }
     // Live recording: draw the growing track + waypoint + geolocated-photo markers.
@@ -217,7 +219,16 @@ window.RBMap = class RBMap {
     setVertexEditor(track, onDrag, onCommit, onSelect) {
         this._vertOnDrag = onDrag || null; this._vertOnCommit = onCommit || null; this._onVert = onSelect || null;
         if (!this._vertOnDrag) this.setSelectedVertex(null); // disarming clears any selection ring
-        this._paintVerts(this._vertOnDrag ? track : null);
+        this._vertShow = track || null; // the dots to paint (decoupled from interactivity)
+        this._paintVerts(this._vertShow);
+    }
+    // Show the track-point dots read-only (no drag/select) — e.g. for the Insert tool, so you can
+    // still see the existing points while adding one.
+    showVertices(track) {
+        this._vertOnDrag = null; this._vertOnCommit = null; this._onVert = null;
+        this.setSelectedVertex(null);
+        this._vertShow = track || null;
+        this._paintVerts(this._vertShow);
     }
     // Highlight a single track point (the tap-selected vertex); pass null to clear.
     setSelectedVertex(pt) {
@@ -225,7 +236,7 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-vsel').setData(pt ? { type: 'Feature', geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] } } : this._empty());
     }
     // Repaint the vertex handles (used live while a point is being dragged).
-    refreshVertices(track) { if (this._vertOnDrag) this._paintVerts(track); }
+    refreshVertices(track) { if (this._vertShow) this._paintVerts(track); }
     _paintVerts(track) {
         if (!this.map || !this.ready) return;
         const skip = this._noteIdx || new Set(); // note points show their blue marker, not a white dot

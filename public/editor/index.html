@@ -176,8 +176,13 @@
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
             #edMap { height: calc(100vh - 112px); }
-            /* keep the command bar pinned at the top of the notes column while the notes scroll under it */
-            .rb-actions { margin-top: 0; position: sticky; top: 66px; z-index: 6; background: var(--bg); padding-bottom: .6rem; }
+            /* the notes column is its own pane: commands + "Notes" heading stay fixed, the list
+               scrolls inside its own area (like an iframe) and ends at the pane's bottom edge */
+            #rbPanel { position: sticky; top: 66px; height: calc(100vh - 112px); display: flex; flex-direction: column; }
+            .rb-actions { margin-top: 0; flex-shrink: 0; }
+            .note-list-zone { margin-top: .2rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            .note-list-zone .icon-category { margin-top: .2rem; flex-shrink: 0; }
+            #noteList { flex: 1; min-height: 0; overflow-y: auto; }
         }
         /* phones & portrait tablets (stacked): pin the map at the top of the screen and let
            the notes scroll beneath it — editing a note always keeps its map in view */
