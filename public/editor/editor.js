@@ -964,9 +964,12 @@
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); placeMainEditMarker();
-        // clicking a note centres (and zooms in to) the map on that note and rotates it to the
-        // heading being followed (bearing_out) so "up" is the direction of travel
-        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: +rb.notes[i].bearing_out || 0, duration: 450 });
+        // clicking a note centres (and zooms in to) the map and orients it so the segment from the
+        // PREVIOUS note is vertical at the bottom ("you arrive from below", like the vignette): use
+        // the arrival heading bearing_in. The FIRST note has no provenance, so it keeps the outgoing
+        // heading bearing_out. easeTo rotates the shortest way there.
+        const heading = (i === 0 ? +rb.notes[i].bearing_out : +rb.notes[i].bearing_in) || 0;
+        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
         // stacked layout (mobile/tablet): bring the just-opened editor into view
         if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
