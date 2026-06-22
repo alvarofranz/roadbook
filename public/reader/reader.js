@@ -30,7 +30,7 @@
     // having come within its reach. So clustered notes validate one by one as you drive past
     // each, never all at once. The reach is a per-note gate, capped to half the smaller gap to
     // a neighbour (so two notes' reaches can't overlap) and floored above GPS noise.
-    const REACH_MAX_M = 50, REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate, in metres: max where notes are spread out · min so we never demand sub-GPS precision · how far past the closest point confirms a pass
+    const REACH_MAX_M = 20, REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate, in metres: max where notes are spread out · min so we never demand sub-GPS precision · how far past the closest point confirms a pass
     let approachIdx = -1, approachMin = Infinity, approachPos = null; // pass-by tracker for the active note: closest distance + the fix where it happened
     let lastPayload = '', lastQrUrl = '';
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
@@ -92,8 +92,20 @@
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); $('advAuto').setAttribute('aria-pressed', 'true'); $('advManual').setAttribute('aria-pressed', 'false'); };
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); $('advManual').setAttribute('aria-pressed', 'true'); $('advAuto').setAttribute('aria-pressed', 'false'); };
-    let optGpx = false;
-    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; }
+    let optGpx = false, sound = true, audioCtx = null;
+    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked; }
+    // Short beep when a note is reached (WebAudio — no asset, CSP-safe). The context is created
+    // on the start tap (a user gesture) so it can later sound on a GPS auto-validation.
+    function beep() {
+        if (!sound) return;
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t0 = audioCtx.currentTime;
+            o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+            g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+            o.start(t0); o.stop(t0 + 0.2);
+        } catch (e) { /* audio unavailable */ }
+    }
     $('modeTrip').onclick = () => { readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin(); };
     $('modeComp').onclick = () => {
         readModeOpts(); closeModal('modeModal'); $('teamInput').value = '1';
@@ -105,6 +117,7 @@
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
+        if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         buildScored();
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
@@ -135,14 +148,14 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { competition, team, auto, showMap, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
-        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption;
+        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
@@ -270,7 +283,7 @@
     // "Note reached" button: advance sequentially and mark green (both modes).
     function markReached(i) {
         if (competition) { tapNote(i); return; } // scored validation
-        reached.add(i); tripPartialM = 0; approaching = false;
+        reached.add(i); tripPartialM = 0; approaching = false; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; renderNotes();
     }
@@ -318,7 +331,7 @@
         extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
         if (lim != null) { if (scored && curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
-        reached.add(i); tripPartialM = 0; approaching = false;
+        reached.add(i); tripPartialM = 0; approaching = false; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; renderNotes();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');

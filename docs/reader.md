@@ -64,7 +64,7 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 | Colonna | Classe | Contenuto |
 |---------|--------|-----------|
 | 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota |
-| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc)` |
+| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc)`; linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
 | 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale · coordinate `lat, lon` |
 | 4 — Pulsanti | `.col-buttons` | pulsante "raggiunta" (solo manuale, nota attiva) · pulsante mappa (se attivo) |
 
@@ -156,6 +156,10 @@ opzioni di sessione, lette da `readModeOpts` ([reader.js:96](../public/reader/re
 - **Mostra pulsante mappa per nota** (`#optMap`) — solo se `mapAllowed()`; controlla `showMap`.
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
   start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
+- **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
+  (sia trip `markReached` sia competition `validateAt`, auto o manuale) parte un breve **beep**
+  WebAudio (`beep()`, ~880 Hz, nessun file → CSP-safe). Il contesto audio viene sbloccato sul
+  tap di avvio (un gesto utente) così può suonare anche su una convalida GPS automatica.
 
 Poi si sceglie la **modalità**:
 
@@ -173,8 +177,9 @@ piccolo** verso un vicino (usando `partial_distance`, così i reach di due note 
 sovrapporsi), poi lo *flooring* sopra il rumore GPS:
 
 ```
-reach = clamp(min(gapPrev, gapNext) / 2, REACH_MIN_M=18, REACH_MAX_M=50)
+reach = clamp(min(gapPrev, gapNext) / 2, REACH_MIN_M=18, REACH_MAX_M=20)
 ```
+Il cap a **20 m** tiene la convalida automatica stretta sul punto (era 50 m).
 
 Note rally fitte ottengono un gate stretto; sentieri radi ottengono il cap di 50 m.
 

@@ -208,10 +208,10 @@ function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repea
  * track = thin single, off-piste = thin dashed. */
 // tulip road rendering per type (independent of the map's ROAD_TYPES line widths)
 const ROAD_STYLE = {
-    1: { width: 12, dashed: false, double: true }, // motorway: thick double line
-    2: { width: 8, dashed: false, double: false }, // asphalt: thick single line
-    3: { width: 4, dashed: false, double: false }, // track: thin line
-    4: { width: 4, dashed: true, double: false },  // off-piste: thin dashed line
+    1: { width: 14, dashed: false, double: true }, // motorway: thick double line
+    2: { width: 10, dashed: false, double: false }, // asphalt: thick single line
+    3: { width: 6, dashed: false, double: false }, // track: medium line
+    4: { width: 6, dashed: true, double: false },  // off-piste: medium dashed line
 };
 const roadStyle = (rt) => ROAD_STYLE[rt] || ROAD_STYLE[3];
 function trunkSegments(note) {

@@ -187,6 +187,12 @@ section.block { padding: 2.4rem 0; }
 .nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
 .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
 .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }
+/* phones: give the tulip more room (it's the thing you read while driving) */
+@media (max-width: 600px) {
+    .nrow { grid-template-columns: 64px minmax(150px, 44vw) 1fr 44px; }
+    .nrow.readonly { grid-template-columns: 64px minmax(150px, 44vw) 1fr; }
+    .nrow .col-vignette svg { max-height: 170px; }
+}
 .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
 .nrow .col-text .text { flex: 1; word-break: break-word; }
 .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
