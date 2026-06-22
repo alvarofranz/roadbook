@@ -21,7 +21,7 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden`
 - **`recIdle`** — schermata di avvio con il solo pulsante *Start recording*.
 - **`recRunning`** — dashboard live: quattro readout (tempo trascorso, velocità,
   numero waypoint, km registrati), la fila di pulsanti azione (Pause · Waypoint ·
-  Photo), la mappa live e il pulsante *Finish*.
+  WP audio · WP Foto), la mappa live e il pulsante *Finish*.
 
 La barra di stato globale (orologio, batteria, stato satellite/GPS) è `RBStatusBar`,
 mostrata solo durante la registrazione ([recorder.js:38](../public/recorder/recorder.js#L38)).
@@ -136,7 +136,16 @@ Se il browser espone `SpeechRecognition`/`webkitSpeechRecognition`, compare un p
 microfono che detta direttamente nel campo (tap per avviare, tap per fermare)
 ([recorder.js:149-162](../public/recorder/recorder.js#L149)). La lingua del
 riconoscimento segue l'UI: `it-IT`, `es-ES`, `en-US`, altrimenti `navigator.language`.
-Il microfono pulsa mentre ascolta (classe `.on`, [index.html:33](../public/recorder/index.html#L33)).
+Il microfono pulsa mentre ascolta (classe `.on`, [index.html](../public/recorder/index.html)).
+
+### "WP audio" (dettatura diretta)
+Oltre al *Waypoint* col modale, un pulsante **"WP audio"** (`#recWptAudio`, visibile solo
+dove lo speech-to-text è supportato) fa tutto in un tap, **senza modale**: rilascia un
+waypoint alla posizione corrente **e** avvia subito la dettatura; il testo riconosciuto
+diventa la nota del waypoint in tempo reale. Pulsa in rosso mentre ascolta; un secondo tap
+ferma. È il flusso pensato per l'uso col telefono in movimento.
+
+> Il pulsante foto è etichettato **"WP Foto"**.
 
 ---
 

@@ -162,6 +162,27 @@
         }
     };
 
+    // "WP audio": one tap drops a waypoint AND dictates its note straight away (no modal).
+    // Tap again to stop; only shown where speech-to-text is supported.
+    const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR_REC) $('recWptAudio').hidden = false;
+    let audioRec = null, audioNote = null;
+    $('recWptAudio').onclick = () => {
+        if (!SR_REC) return;
+        if (audioRec) { audioRec.stop(); return; } // tap again → stop listening
+        if (!here) return toast(t('Waiting for a GPS fix…'));
+        audioNote = dropWaypoint(here.lat, here.lon, '');
+        const ui = document.documentElement.lang;
+        audioRec = new SR_REC();
+        audioRec.lang = ui === 'it' ? 'it-IT' : ui === 'es' ? 'es-ES' : ui === 'en' ? 'en-US' : (navigator.language || 'en-US');
+        audioRec.interimResults = true;
+        audioRec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; if (audioNote) { audioNote.text = txt; saveSession(); } };
+        const done = () => { $('recWptAudio').classList.remove('on'); audioRec = null; audioNote = null; refreshMap(); };
+        audioRec.onend = done; audioRec.onerror = done;
+        $('recWptAudio').classList.add('on'); toast(t('Listening… tap again to stop'));
+        try { audioRec.start(); } catch (e) { done(); }
+    };
+
     /* ---------- photos (signed-in: camera → upload → geotagged pin) ---------- */
     $('recPhoto').onclick = () => {
         if (!meUser) return RBNeedAuth(t('Sign in to attach photos.'));

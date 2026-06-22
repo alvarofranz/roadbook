@@ -30,7 +30,7 @@
         /* waypoint quick-note: text field + dictation mic; the mic pulses while listening */
         .wf-row { display: flex; gap: .5rem; align-items: center; }
         .wf-row .field { flex: 1; min-width: 0; }
-        #wfMic.on { color: var(--track); animation: recpulse 1.2s infinite; }
+        #wfMic.on, #recWptAudio.on { color: var(--track); animation: recpulse 1.2s infinite; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
     </style>
 </head>
@@ -60,7 +60,8 @@
             <div class="btnrow">
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span id="recPauseTxt" data-i18n="Pause">Pause</span></button>
                 <button class="btn btn-ghost" id="recWpt"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
-                <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="Photo">Photo</span></button>
+                <button class="btn btn-ghost" id="recWptAudio" hidden><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
+                <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="WP photo">WP photo</span></button>
             </div>
             <div id="recMap" class="rec-map panel"></div>
             <div class="btnrow">
