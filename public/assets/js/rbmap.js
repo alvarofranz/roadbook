@@ -135,6 +135,7 @@ window.RBMap = class RBMap {
         // selected track vertex (tap-select for the per-point menu) — orange, above the others
         m.addSource('rb-vsel', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-vsel', type: 'circle', source: 'rb-vsel', minzoom: 13, paint: { 'circle-radius': 9, 'circle-color': 'rgba(232,140,40,.35)', 'circle-stroke-color': '#ff8c28', 'circle-stroke-width': 3 } });
+        m.moveLayer('rb-wpts'); m.moveLayer('rb-wpts-l'); // note markers + their numbers always in front of verts/photos/position
         if (this._vertOnDrag && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).
@@ -170,6 +171,7 @@ window.RBMap = class RBMap {
             type: 'FeatureCollection',
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
+        this._noteIdx = new Set(rb.notes.map((n) => n.idx)); // points carrying a note get the blue marker, not a white vertex dot
         if (this._vertOnDrag) this._paintVerts(rb.track); // keep the Move-points handles in sync (and visible on first load)
         if (!noFit) this._fit(rb);
     }
@@ -226,9 +228,11 @@ window.RBMap = class RBMap {
     refreshVertices(track) { if (this._vertOnDrag) this._paintVerts(track); }
     _paintVerts(track) {
         if (!this.map || !this.ready) return;
+        const skip = this._noteIdx || new Set(); // note points show their blue marker, not a white dot
         this.map.getSource('rb-verts').setData(track ? {
             type: 'FeatureCollection',
-            features: track.map((p, i) => ({ type: 'Feature', properties: { i: String(i) }, geometry: { type: 'Point', coordinates: [p.lon, p.lat] } })),
+            features: track.map((p, i) => ({ p, i })).filter((x) => !skip.has(x.i))
+                .map((x) => ({ type: 'Feature', properties: { i: String(x.i) }, geometry: { type: 'Point', coordinates: [x.p.lon, x.p.lat] } })),
         } : this._empty());
     }
     // Draggable marker for the note being edited; onDragEnd(lat, lon) fires on drop.
@@ -238,7 +242,11 @@ window.RBMap = class RBMap {
         if (!this.map) return;
         if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; }
         if (!note || !this.ready) return;
-        this._editMarker = new maplibregl.Marker({ draggable: true, color: '#ff2a2a', scale: 1.2 }).setLngLat([note.lon, note.lat]).addTo(this.map);
+        // a red disc carrying the note number on top, so the number stays readable while selected
+        const el = document.createElement('div');
+        el.className = 'rb-edit-pin';
+        el.textContent = note.num != null ? String(note.num) : '';
+        this._editMarker = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([note.lon, note.lat]).addTo(this.map);
         this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
         if (!noEase) this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }

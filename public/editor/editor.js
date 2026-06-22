@@ -16,54 +16,122 @@
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
     const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle] });
-    // Right-click anywhere on the map → a popup: a Google Maps link + "upload a photo here".
+    // Right-click on the map → a context popup whose commands depend on what's under the cursor:
+    // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
+    // Every point command also has a one-key shortcut (#35), shown to the right of its label.
     let ctxPhotoPoint = null; // the map point a context-menu photo upload is geotagged at
     let pastePoint = null;    // the point a context-menu "Paste photo" armed; the next Ctrl+V drops the image here
+    let ctxMenu = null;       // the open context popup + its key→action map
+    let selVertex = -1;       // the tap-selected track vertex (Move-points tool); the target of the W/M/A/L/Del shortcuts
+    function uploadPhotoHere(p) {
+        if (!(currentRbId > 0)) return toast('Save to your profile first.');
+        ctxPhotoPoint = p; $('ctxPhotoFile').click();
+    }
+    async function pastePhotoHere(p) {
+        if (!(currentRbId > 0)) return toast('Save to your profile first.');
+        try { // one-click: read the clipboard image and drop it on the point
+            window.focus(); // clipboard.read() needs the document focused
+            let blob = null;
+            for (const it of await navigator.clipboard.read()) {
+                const ty = it.types.find((x) => /^image\//.test(x));
+                if (ty) { blob = await it.getType(ty); break; }
+            }
+            if (!blob) return toast('No image in the clipboard.');
+            const ok = (await uploadPhoto(new File([blob], 'pasted.png', { type: blob.type }), p.lat, p.lon)).ok;
+            await loadPhotos(); toast(ok ? 'Photos uploaded.' : 'Some photos failed.');
+        } catch (err) { // clipboard blocked (permission/focus) → fall back to the working Ctrl+V flow
+            pastePoint = p;
+            toast('Press Ctrl+V to paste the photo here');
+        }
+    }
+    function closeCtxMenu() { if (ctxMenu) { ctxMenu.popup.remove(); ctxMenu = null; } }
+    // Build a context popup from a list of items: { id, icon, label, key?, cls?, href?, run?, coords? }.
+    // pastePt arms Ctrl+V to drop a clipboard photo at that point while the menu is open.
+    function openCtxMenu(lngLat, items, pastePt) {
+        closeCtxMenu();
+        const html = items.map((it) => {
+            if (it.coords) return `<span class="map-ctx-coords">${it.coords}</span>`;
+            const inner = `<i class="fa-solid ${it.icon}"></i> ${esc(t(it.label))}${it.key ? `<span class="map-ctx-key">${it.key}</span>` : ''}`;
+            return it.href
+                ? `<a class="map-ctx-link" href="${it.href}" target="_blank" rel="noopener">${inner}</a>`
+                : `<button type="button" class="map-ctx-link ${it.cls || ''}" data-k="${it.id}">${inner}</button>`;
+        }).join('');
+        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 }).setLngLat(lngLat).setHTML(html).addTo(map.map);
+        const el = popup.getElement(), keys = {};
+        items.forEach((it) => {
+            if (!it.run) return;
+            const b = el.querySelector(`[data-k="${it.id}"]`);
+            if (b) b.onclick = () => { popup.remove(); it.run(); };
+            if (it.key) keys[it.key.toLowerCase()] = it.run;
+        });
+        popup.on('close', () => { if (ctxMenu && ctxMenu.popup === popup) ctxMenu = null; });
+        ctxMenu = { popup, keys, pastePoint: pastePt || null };
+    }
     if (map.map) map.map.on('contextmenu', (e) => {
         e.preventDefault();
+        if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
-        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-        // point operations appear only when a route is loaded (they act on the nearest track point)
-        const pointOps = rb ? `<button type="button" class="map-ctx-link map-ctx-addnote"><i class="fa-solid fa-map-pin"></i> ${esc(t('Add note here'))}</button>`
-            + `<button type="button" class="map-ctx-link map-ctx-delpt"><i class="fa-solid fa-circle-minus"></i> ${esc(t('Delete this point'))}</button>` : '';
-        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 })
-            .setLngLat(e.lngLat)
-            .setHTML(`<a class="map-ctx-link" href="${url}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> ${esc(t('Open in Google Maps'))}</a>`
-                + pointOps
-                + `<button type="button" class="map-ctx-link map-ctx-photo"><i class="fa-solid fa-camera"></i> ${esc(t('Upload a photo here'))}</button>`
-                + `<button type="button" class="map-ctx-link map-ctx-paste"><i class="fa-solid fa-paste"></i> ${esc(t('Paste photo'))}</button>`
-                + `<span class="map-ctx-coords">${lat}, ${lon}</span>`)
-            .addTo(map.map);
-        const el = popup.getElement();
-        const photoBtn = el.querySelector('.map-ctx-photo');
-        if (photoBtn) photoBtn.onclick = () => {
-            if (!(currentRbId > 0)) return toast('Save to your profile first.');
-            ctxPhotoPoint = here; popup.remove(); $('ctxPhotoFile').click();
-        };
-        const pasteBtn = el.querySelector('.map-ctx-paste');
-        if (pasteBtn) pasteBtn.onclick = async () => {
-            popup.remove();
-            if (!(currentRbId > 0)) return toast('Save to your profile first.');
-            try { // one-click: read the clipboard image and drop it on the point
-                window.focus(); // clipboard.read() needs the document focused
-                let blob = null;
-                for (const it of await navigator.clipboard.read()) {
-                    const ty = it.types.find((x) => /^image\//.test(x));
-                    if (ty) { blob = await it.getType(ty); break; }
-                }
-                if (!blob) return toast('No image in the clipboard.');
-                const ok = (await uploadPhoto(new File([blob], 'pasted.png', { type: blob.type }), here.lat, here.lon)).ok;
-                await loadPhotos(); toast(ok ? 'Photos uploaded.' : 'Some photos failed.');
-            } catch (err) { // clipboard blocked (permission/focus) → fall back to the working Ctrl+V flow
-                pastePoint = here;
-                toast('Press Ctrl+V to paste the photo here');
-            }
-        };
-        const addBtn = el.querySelector('.map-ctx-addnote');
-        if (addBtn) addBtn.onclick = () => { popup.remove(); addWaypointNear(here); };
-        const delBtn = el.querySelector('.map-ctx-delpt');
-        if (delBtn) delBtn.onclick = () => { popup.remove(); deleteTrackPointNear(here); };
+        const maps = { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` };
+        const photo = (p) => [
+            { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
+            { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
+        ];
+        const coords = { coords: `${lat}, ${lon}` };
+        const wf = rb && map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] })[0];
+        const vf = rb && !wf && map.map.queryRenderedFeatures(e.point, { layers: ['rb-verts'] })[0];
+        if (wf) {                                   // a note (waypoint)
+            const ni = parseInt(wf.properties.i, 10);
+            openCtxMenu(e.lngLat, [maps,
+                { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => moveNote(ni) },
+                { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
+                ...photo(rb.notes[ni]),
+                { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
+                coords], rb.notes[ni]);
+        } else if (vf) {                            // a plain track point
+            const ti = parseInt(vf.properties.i, 10);
+            openCtxMenu(e.lngLat, [maps,
+                { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
+                { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => vertexAction('move', ti) },
+                { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
+                { id: 'line', icon: 'fa-plus', label: 'Add point on line', key: 'L', run: () => vertexAction('line', ti) },
+                ...photo(rb.track[ti]),
+                { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
+                coords], rb.track[ti]);
+        } else {                                    // empty ground (route ops act on the nearest point)
+            openCtxMenu(e.lngLat, [maps,
+                ...(rb ? [
+                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', run: () => addNoteAtExact(here) },
+                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
+                ] : []),
+                ...photo(here),
+                coords], here);
+        }
+    });
+    // Editor shortcuts (#35): the context menu's commands accelerate while it's open; otherwise the
+    // W/M/A/L/T/Del keys act on the current selection (a tap-selected track vertex, else the open note).
+    window.addEventListener('keydown', (e) => {
+        if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
+            if (ctxMenu && ctxMenu.pastePoint && (e.key === 'v' || e.key === 'V')) { pastePoint = ctxMenu.pastePoint; closeCtxMenu(); }
+            return; // leave undo/redo and the browser's own paste alone
+        }
+        const k = (e.key === 'Delete' || e.key === 'Backspace') ? 'del' : e.key.toLowerCase();
+        if (ctxMenu) { // menu open: its commands are the accelerators
+            const run = ctxMenu.keys[k];
+            if (!run) return;
+            e.preventDefault(); closeCtxMenu(); run();
+        } else if (selVertex >= 0) { // a track vertex is selected
+            const act = { w: 'note', m: 'move', a: 'mid', l: 'line', del: 'del' }[k];
+            if (!act) return;
+            e.preventDefault();
+            const i = selVertex; selVertex = -1; // the index goes stale once the route changes
+            vertexAction(act, i);
+        } else if (editorOpen && sel >= 0) { // a note is selected
+            if (k === 'm') { e.preventDefault(); moveNote(sel); }
+            else if (k === 't') { e.preventDefault(); transformNote(sel); }
+            else if (k === 'del') { e.preventDefault(); deleteNoteConfirm(sel); }
+        }
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
@@ -113,21 +181,62 @@
         if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
         markDirty();
     }
-    // Tap a track point (high zoom, move-points tool) → highlight it and open a per-point menu (#32).
+    // Tap a track point (high zoom, move-points tool) → just highlight it; its command menu
+    // (with shortcuts) opens on a right-click of the marker — see the map contextmenu handler.
     function onVertexSelect(i) {
         if (!rb || i < 0 || i >= rb.track.length) return;
+        const tp = rb.track[i];
+        selVertex = i; // the W/M/A/L/Del shortcuts now target this point
+        map.setSelectedVertex(tp);
+        // centre + rotate to the heading at this point, like selecting a note (arrival heading)
+        const heading = i > 0 ? RB.geo.bearingDeg(rb.track[i - 1], tp)
+            : (i < rb.track.length - 1 ? RB.geo.bearingDeg(tp, rb.track[i + 1]) : 0);
+        if (map.map && map.ready) map.map.easeTo({ center: [tp.lon, tp.lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
+    }
+    // Track-point context commands (from the menu, or its keyboard shortcut). #35
+    function vertexAction(act, i) {
+        if (!rb || i < 0 || i >= rb.track.length) return;
         const pt = rb.track[i];
-        map.setSelectedVertex(pt);
-        const done = () => map.setSelectedVertex(null);
-        const m = RBModal(`<h3>${esc(t('Track point'))}</h3>
-            <div class="btn-group col">
-                <button class="btn btn-ghost" data-v="note"><i class="fa-solid fa-map-pin"></i> ${esc(t('Add note here'))}</button>
-                <button class="btn btn-ghost" data-v="move"><i class="fa-solid fa-up-down-left-right"></i> ${esc(t('Move the point'))}</button>
-                <button class="btn btn-ghost" data-v="img"><i class="fa-solid fa-camera"></i> ${esc(t('Add image here'))}</button>
-            </div>`, 'narrow', done);
-        m.q('[data-v="note"]').onclick = () => { m.close(); done(); addWaypointNear(pt); };
-        m.q('[data-v="move"]').onclick = () => { m.close(); done(); toast('Drag the point to move it.'); };
-        m.q('[data-v="img"]').onclick = () => { m.close(); done(); if (!(currentRbId > 0)) return toast('Save to your profile first.'); ctxPhotoPoint = { lat: pt.lat, lon: pt.lon }; $('ctxPhotoFile').click(); };
+        if (act === 'note') {
+            if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
+            addWaypointNear(pt);
+        } else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
+        else if (act === 'mid') { addMidpointAfter(i); }
+        else if (act === 'line') { setMapTool('insert'); toast('Tap the route to add a point.'); }
+        else if (act === 'del') { deleteTrackPointNear(pt); }
+    }
+    // A: insert a track point at the midpoint of the segment that follows point i.
+    function addMidpointAfter(i) {
+        if (i >= rb.track.length - 1) return toast('No point follows this one.');
+        const a = rb.track[i], b = rb.track[i + 1];
+        const mid = { lat: (a.lat + b.lat) / 2, lon: (a.lon + b.lon) / 2 };
+        if (a.ele != null && b.ele != null) mid.ele = Math.round((a.ele + b.ele) / 2);
+        rb.track.splice(i + 1, 0, mid);
+        rb.notes.forEach((n) => { if (n.idx > i) n.idx += 1; });
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        routeChanged('Point added.');
+    }
+    // Note (waypoint) context commands. Move reuses the note's draggable red edit marker.
+    function moveNote(ni) {
+        if (!rb || ni < 0 || ni >= rb.notes.length) return;
+        setMapTool('pan'); select(ni); // the red edit marker rides the open note on the Pan tool — drag it
+        toast('Drag the red marker to move the note.');
+    }
+    // T: drop the note but keep its track point (waypoint → plain track point), with a confirm.
+    async function transformNote(ni) {
+        if (!rb || ni < 0 || ni >= rb.notes.length) return;
+        if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
+        if (!(await RBConfirm(t('Turn this waypoint into a plain track point? Its note will be removed.'), t('Transform')))) return;
+        rb.notes.splice(ni, 1);
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        routeChanged('Waypoint turned into a track point.');
+    }
+    async function deleteNoteConfirm(ni) {
+        if (!rb || ni < 0 || ni >= rb.notes.length) return;
+        if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
+        const n = rb.notes[ni], label = '#' + n.num + (n.text ? ' — ' + n.text : '');
+        if (!(await RBConfirm(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
+        delNote(ni);
     }
 
     /* ---------- map tool bar: the GPX is edited right on the map ---------- */
@@ -164,7 +273,8 @@
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
     const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolPoints', 'toolInsert', 'toolCut'];
     function setMapTool(tool) {
-        mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
+        mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
+        if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
         if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect);
@@ -771,7 +881,7 @@
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
     // map to set its position (one tap per queued photo). No photo is stored without coords.
-    let photoPlacing = false, photoQueue = [], photoMoveId = 0;
+    let photoPlacing = false, photoQueue = [], photoMoveMarker = null;
     $('addPhotoBtn').onclick = () => { if (!(currentRbId > 0)) return toast('Save to your profile first.'); $('photoFile').click(); };
     $('photoFile').onchange = async (e) => { const files = [...e.target.files]; e.target.value = ''; addPhotos(files); };
     // paste an image from the clipboard (Ctrl/Cmd+V) → upload it like any photo (EXIF or place on map)
@@ -817,25 +927,31 @@
         toast(t('Tap the map to place the photo') + (photoQueue.length > 1 ? ' (' + photoQueue.length + ')' : ''));
     }
     async function placePhotoHere(here) {
-        if (photoMoveId) { // repositioning an existing photo, not uploading a new one
-            const id = photoMoveId; photoMoveId = 0; photoPlacing = false;
-            document.body.classList.remove('placing-photo');
-            const r = await RBApi('ph_move', { id, lat: here.lat, lon: here.lon });
-            await loadPhotos();
-            toast(r.ok ? 'Photo moved.' : 'Could not move the photo.');
-            return;
-        }
         const r = await uploadPhoto(photoQueue.shift(), here.lat, here.lon);
         await loadPhotos();
         if (photoQueue.length) toast(t('Tap the map to place the photo') + ' (' + photoQueue.length + ')');
         else { photoPlacing = false; document.body.classList.remove('placing-photo'); toast(r.ok ? 'Photos uploaded.' : 'Some photos failed.'); }
     }
-    function startMovePhoto(id) {
+    // Move an existing photo by dragging its icon on the map (a draggable marker that follows the
+    // pointer); the new position is saved on drop. Pass the photo (needs its current lat/lon + id).
+    function startMovePhoto(photo) {
         closeLightbox();
-        photoMoveId = id; photoPlacing = true;
-        showView('map'); setMapTool('pan');
-        document.body.classList.add('placing-photo');
-        toast(t('Tap the map to move the photo'));
+        if (!photo || photo.lat == null || !map.map) return;
+        if (photoMoveMarker) photoMoveMarker.remove();
+        showView('map');
+        const el = document.createElement('div');
+        el.className = 'rb-photo-pin';
+        el.textContent = 'IMG';
+        const mk = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([+photo.lon, +photo.lat]).addTo(map.map);
+        photoMoveMarker = mk;
+        toast(t('Drag the marker to move the photo, then drop it.'));
+        mk.on('dragend', async () => {
+            const l = mk.getLngLat(); mk.remove(); photoMoveMarker = null;
+            const r = await RBApi('ph_move', { id: +photo.id, lat: l.lat, lon: l.lng });
+            await loadPhotos();
+            toast(r.ok ? 'Photo moved.' : 'Could not move the photo.');
+        });
+        map.map.easeTo({ center: [+photo.lon, +photo.lat], zoom: Math.max(map.map.getZoom(), 14), duration: 400 });
     }
 
     /* ---------- lightbox: browse all the roadbook's photos ---------- */
@@ -855,7 +971,7 @@
     $('lbPrev').onclick = () => lbStep(-1);
     $('lbNext').onclick = () => lbStep(1);
     $('lbWaypoint').onclick = () => { const p = lbList[lbIdx]; if (p && p.lat != null && rb) { addWaypointNear({ lat: +p.lat, lon: +p.lon }); closeLightbox(); } };
-    $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(+p.id); };
+    $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(p); };
     $('lbDelete').onclick = async () => {
         const p = lbList[lbIdx]; if (!p) return;
         if (!(await RBConfirm(t('Delete this photo?'), t('Delete')))) return;
@@ -975,7 +1091,7 @@
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
-        sel = i; editorOpen = true;
+        sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
@@ -1051,6 +1167,22 @@
         if (rb.notes.some((n) => n.idx === idx)) return toast('There is already a note here.');
         const cur = editorOpen ? rb.notes[sel] : null; // keep editing the same note across the re-sort
         rb.notes.push(makeNote(rb, idx, roadOutBefore(idx)));
+        RB.recomputeMetrics(rb);
+        if (cur) sel = rb.notes.indexOf(cur);
+        refreshMap(true); renderNotes(); markDirty();
+        toast('Waypoint added.');
+    }
+    // "Add note here" (generic right-click): the note lands at the EXACT clicked point — insert it
+    // into the track at the nearest segment (a small detour) rather than snapping onto the route.
+    function addNoteAtExact(pt) {
+        if (!rb) return;
+        const hit = RB.nearestOnTrack(rb.track, pt);
+        const at = hit ? hit.i + 1 : rb.track.length;
+        rb.track.splice(at, 0, { lat: RB.round6(pt.lat), lon: RB.round6(pt.lon) });
+        rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
+        if (cutFromIdx >= at) cutFromIdx++; // keep a pending cut anchored
+        const cur = editorOpen ? rb.notes[sel] : null;
+        rb.notes.push(makeNote(rb, at, roadOutBefore(at)));
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();

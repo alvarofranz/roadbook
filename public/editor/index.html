@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.22-5">
     <style>
-        .ed-row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; flex-wrap: wrap; }
+        .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         .ed-row.between { justify-content: space-between; }
         #loadFrom .icon-category { margin-top: 0; }
         .icon-category.flush { margin: 0; }
@@ -42,9 +42,9 @@
         /* icons live on a white tile so dark line-art symbols stay legible */
         .icon-grid button { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
-        .icon-grid .icon-category { grid-column: 1 / -1; }
+        .icon-grid .icon-category { grid-column: 1 / -1; margin-top: .25rem; }
         /* icon category filter chips — jump between groups without scrolling */
-        .icon-cats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .1rem 0 .5rem; }
+        .icon-cats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .1rem 0 .25rem; }
         .icon-cat-chip { background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: .25rem .65rem; font-size: .72rem; font-weight: 700; cursor: pointer; }
         .icon-cat-chip.on { background: var(--sand); color: #14100a; border-color: var(--sand); }
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .35rem .5rem .35rem .7rem; cursor: pointer; }
@@ -106,6 +106,12 @@
         .rb-mapctl-zoom { background: #fff; color: #333; font-size: .6rem; font-weight: 700; text-align: center; padding: 1px 2px 2px; font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
         /* export popup: indent the GPX waypoint-icon sub-options under "Waypoints" */
         .gpx-sub { margin-left: 1.5rem; }
+        /* map context menu: the keyboard-shortcut hint, pushed to the right of each command */
+        .map-ctx-key { margin-left: auto; padding-left: 1.5rem; color: #999; font-size: .82em; font-weight: 700; }
+        /* selected-note edit marker: a red disc with the note number on top (number stays readable) */
+        .rb-edit-pin { width: 30px; height: 30px; border-radius: 50%; background: #ff2a2a; border: 2px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.55); color: #fff; font-weight: 800; font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: grab; }
+        /* draggable marker shown while moving a photo on the map */
+        .rb-photo-pin { padding: 0 7px; height: 26px; border-radius: 13px; background: #3a8dff; border: 2px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.55); color: #fff; font-weight: 800; font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: grab; }
         .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         /* white vignette: shows EXACTLY what gets produced/printed (matches the Reader + PDF) */
         .vignette-box { position: relative; width: 100%; max-width: 170px; margin: .2rem 0 .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
@@ -130,7 +136,7 @@
         .note-edit-zone .icon-grid { max-height: 28vh; }
         .note-edit-zone .vignette-toolbar { max-width: none; }
         /* canvas above, icon palette below — keeps both usable in the narrow column */
-        .vig-split { display: flex; flex-direction: column; gap: .4rem; }
+        .vig-split { display: flex; flex-direction: column; gap: .2rem; }
         .load-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
         .load-card { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; cursor: pointer; color: var(--text); text-align: left; transition: border-color .15s, transform .1s; }
         .load-card:hover { border-color: var(--sand); transform: translateY(-1px); }
@@ -170,7 +176,8 @@
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
             #edMap { height: calc(100vh - 112px); }
-            .rb-actions { margin-top: 0; }
+            /* keep the command bar pinned at the top of the notes column while the notes scroll under it */
+            .rb-actions { margin-top: 0; position: sticky; top: 66px; z-index: 6; background: var(--bg); padding-bottom: .6rem; }
         }
         /* phones & portrait tablets (stacked): pin the map at the top of the screen and let
            the notes scroll beneath it — editing a note always keeps its map in view */

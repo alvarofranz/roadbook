@@ -30,6 +30,11 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   exactly one way to do each thing, and the codebase always reads fresh and clean — as if
   written from scratch today. If a rename/refactor leaves dead code or stale comments, that's
   not done until they're gone.
+- **Confirm before destroying data.** ANY action that loses or overwrites user data
+  (deleting a note/point, transforming something in a lossy way, clearing/replacing content,
+  discarding unsaved work…) MUST ask for confirmation first via `RBConfirm` before it runs.
+  No silent data loss, ever. A **deletion** confirm MUST name the object being deleted in its
+  message (e.g. the note number + text), so the user knows exactly what they're removing.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
