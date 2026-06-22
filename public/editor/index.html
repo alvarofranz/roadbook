@@ -97,7 +97,7 @@
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: #14100a; }
         /* collapsible "more tools" menu (Navigate + Add note) flying out to the right of the bar */
-        .map-tools-menu { position: absolute; left: calc(100% + 6px); top: 4px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 7; }
+        .map-tools-menu { position: absolute; top: 14px; left: 60px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 8; }
         .map-tool:disabled { opacity: .35; cursor: default; }
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
         /* top-right map control (next to the zoom buttons): satellite/terrain toggle + zoom level */
@@ -243,10 +243,6 @@
         <div id="mapEditor" class="map-editor" hidden>
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
                 <button class="map-tool" id="mapMenuToggle" aria-label="More tools"><i class="fa-solid fa-bars"></i></button>
-                <div class="map-tools-menu" id="mapMenuPanel" hidden>
-                    <button class="map-tool" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
-                    <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
-                </div>
                 <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
                 <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-circle-plus"></i></button>
@@ -258,6 +254,11 @@
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+            </div>
+            <!-- ☰ submenu: a sibling of the toolbar (NOT inside it) so the toolbar's overflow never clips it -->
+            <div class="map-tools-menu" id="mapMenuPanel" hidden>
+                <button class="map-tool" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
+                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
             <div class="map-hint"><i class="fa-solid fa-paste"></i> <span data-i18n="Paste an image on the map to add it to the roadbook">Paste an image on the map to add it to the roadbook</span></div>
