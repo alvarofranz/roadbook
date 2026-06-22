@@ -212,8 +212,11 @@
             const nums = line.match(/[-+]?\d+\.\d+/g);
             if (!nums || nums.length < 2) return;
             let lat = parseFloat(nums[nums.length - 2]), lon = parseFloat(nums[nums.length - 1]);
-            if (/\bS\b/.test(line)) lat = -Math.abs(lat);
-            if (/\b[WO]\b/.test(line)) lon = -Math.abs(lon);
+            // Hemisphere letters sit with the coordinates; strip the leading "W <name>"
+            // record marker first so the record-type "W" is never read as West longitude.
+            const coords = line.replace(/^\s*W\s+\S+/i, '');
+            if (/\bS\b/.test(coords)) lat = -Math.abs(lat);
+            if (/\b[WO]\b/.test(coords)) lon = -Math.abs(lon);
             const nm = (line.split(/\s+/)[1] || '').trim();
             out.push({ lat, lon, name: nm, num: numFromName(nm) });
         });
