@@ -138,9 +138,13 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   con `glyphs` OpenFreeMap per il testo dei layer. Un controllo MapLibre in alto a destra
   (accanto ai tasti zoom) unisce il **toggle satellite/terreno** (`toggleMapStyle`, persistito
   in `localStorage`) e l'indicatore del **livello di zoom**.
-- **Default move points + pallini.** Le note sono pallini **blu** (`rb-wpts`), sempre visibili.
-  I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move mode) hanno
-  `minzoom: 14` → compaiono solo a zoom alto, per non intasare l'overview.
+- **Default move points + pallini.** Le note sono pallini **blu** (`rb-wpts`), **sempre**
+  visibili. I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move
+  mode) hanno `minzoom: 13` → compaiono solo a zoom alto, per non intasare l'overview.
+- **Selezione vertice (#32).** Un **tap** su un vertice (senza trascinare) lo seleziona
+  (anello **arancione**, layer `rb-vsel`) e apre un menu per-punto: *Aggiungi nota qui ·
+  Sposta il punto · Aggiungi immagine qui* (`onVertexSelect` → `RBModal`). Il trascinamento
+  resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
 - **Rotazione.** Selezionando una nota la mappa ruota su `bearing_out` (direzione di marcia);
   torna a nord alla chiusura dell'editor.
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
@@ -292,10 +296,8 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 |---------|----------|--------|
 | **.rdbk** | `exportRdbk` | JSON auto-contenuto; `embedUsed` embedda ogni icona usata e pota le inutilizzate |
 | **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
-| **GPX** | un pulsante con **checkbox** per le tipologie (esporta ognuna spuntata): | |
-| · Track | `exportTrack` | `RB.gpxDocument`: **solo la traccia GPS**, niente waypoint |
-| · Track + WPT | `exportGpx` | `RB.gpxDocument`: traccia + ogni nota come waypoint nominato |
-| · OpenRally | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto) |
+| **GPX** | `exportCustomGpx` | un set di checkbox componibili (vedi §7.1) |
+| **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto); file `…_OR.gpx` |
 
 `embedUsed` garantisce la regola auto-contenuta del formato: ogni simbolo usato finisce in
 `rb.icons` come data-URI; le icone non più referenziate vengono rimosse.
@@ -328,6 +330,64 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 > il tulip modificato"*: cancellandolo la vignetta torna editabile e l'export emette quella
 > nativa. I controlli/zone di gara strutturati restano un passthrough (non editabili in RDBK);
 > la loro modellazione nativa dipende dalle estensioni `.rdbk` proposte in #9.
+
+### 7.1 Opzioni GPX e naming — issue #34
+
+Il GPX si compone con dei **checkbox** nella pop-up (`exportCustomGpx`), con le combinazioni
+impossibili **inibite** a runtime:
+
+| Opzione | Effetto |
+|---|---|
+| **Traccia** | include il `<trk>` (omesso se off → GPX solo-waypoint) |
+| **Waypoint (note)** | ogni nota come `<wpt>` |
+| **Garmin icons** | aggiunge `<sym>` ai waypoint — *attiva solo se Waypoint è ON* |
+| **OSMAnd icons** | aggiunge le estensioni `osmand:` ai waypoint — *attiva solo se Waypoint è ON* |
+| **OpenRally** | esporta in più il formato OpenRally (file separato `…_OR.gpx`) |
+
+`syncIcons()` disabilita/azzera Garmin/OSMAnd quando "Waypoint" è OFF; "Esporta GPX" rifiuta se
+non è selezionato né Traccia né Waypoint né OpenRally. Garmin e OSMAnd **convivono in un solo
+file** (ognuna ignora i tag dell'altra).
+
+**Naming** — al nome base `slug_<data>` si aggiungono suffissi sintetici sul contenuto:
+`_WPT` (con waypoint) · `_trk` (solo traccia) · `_grm` (icone Garmin) · `_osm` (icone OSMAnd) ·
+`_OR` (OpenRally). Es.: traccia + waypoint + Garmin + OSMAnd → `nomeroadbook_20260622_WPT_grm_osm.gpx`.
+
+**Naming dei waypoint** (come nei file di riferimento Garmin/OSMAnd): `<name>` = **testo
+della nota** (es. `1.004 INIZIO PISTA`), senza `<desc>` separato; per le note senza testo
+il `<name>` ripiega sul numero zero-pad a 3 cifre (`001`). Il `<name>` interno del GPX
+(`<metadata>`/`<trk>`) usa invece la stringa del filename (naming convention).
+
+Le icone app (un solo file, allineato agli export di riferimento):
+- **Garmin** — `<sym>` standard + `<type>user</type>` + `gpxx:WaypointExtension/DisplayMode =
+  SymbolAndName` (così Garmin mostra simbolo **e** nome).
+- **OSMAnd** — `<osmand:icon>` + `<osmand:background>circle</osmand:background>` +
+  `<osmand:color>` (rosso se `danger`) + `<osmand:displaymode>SymbolAndName</osmand:displaymode>`.
+
+L'icona della nota → simbolo app è scelta da `RB.appWaypointSymbol(note)`: si guarda la prima
+icona riconosciuta della nota; le **note con `danger`** diventano rosse a prescindere; tutto ciò
+che non è mappato ricade sul **generico** (Garmin *Flag, Blue* · OSMAnd `special_point`, blu).
+
+| RDBK (icona nota) | Garmin `<sym>` | OSMAnd `osmand:icon` | colore |
+|---|---|---|---|
+| <img src="../public/assets/icons/I01_arrivo.png" width="30"> `I01` arrivo | `Flag, Checkered` | `special_flag_finish` | green |
+| <img src="../public/assets/icons/I02_partenza.png" width="30"> `I02` partenza | `Flag, Green` | `special_flag_start` | green |
+| <img src="../public/assets/icons/I03_animali.png" width="30"> `I03` animali | `Animal` | `animals` | default |
+| <img src="../public/assets/icons/I04_persone.png" width="30"> `I04` escursionisti | `Trail Head` | `special_trekking` | default |
+| <img src="../public/assets/icons/I05_biciclette_moto.png" width="30"> `I05` bici/moto | `Bike Trail` | `special_bicycle` | default |
+| <img src="../public/assets/icons/I06_no_potabile.png" width="30"> `I06` acqua non potabile | `Drinking Water` | `water` | blue |
+| <img src="../public/assets/icons/I07_acqua_potabile.png" width="30"> `I07` acqua potabile | `Drinking Water` | `drinking_water` | blue |
+| <img src="../public/assets/icons/I08_meccanico.png" width="30"> `I08` meccanico | `Mechanic` | `car_repair` | default |
+| <img src="../public/assets/icons/I09_parcheggio.png" width="30"> `I09` parcheggio | `Parking Area` | `parking` | default |
+| <img src="../public/assets/icons/I10_stazione_servizio.png" width="30"> `I10` carburante | `Gas Station` | `fuel` | default |
+| <img src="../public/assets/icons/I11_ristorante.png" width="30"> `I11` ristorante | `Restaurant` | `restaurants` | default |
+| <img src="../public/assets/icons/I12_servizio_%2Cmedico.png" width="30"> `I12` medico | `First Aid` | `first_aid` | red |
+| nota con `danger` 1–3 (es. `!!!`) | `Dangerous Area` | `special_marker` | red |
+| *(qualsiasi altra icona)* | `Flag, Blue` | `special_point` | blue |
+
+> I nomi `<sym>` Garmin e `osmand:icon` sono quelli riconosciuti dalle rispettive app; dove un
+> nome non è supportato l'app mostra comunque un waypoint generico col colore indicato. La
+> tabella è curata sulle icone "POI" (serie `I*`) — il resto del set RDBK (segnali, terreno…)
+> usa il generico, perché non ha un equivalente diretto in Garmin/OSMAnd.
 
 **Save to profile.** `doSave` ([editor.js:637](../public/editor/editor.js#L637)) timbra il
 meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo registra

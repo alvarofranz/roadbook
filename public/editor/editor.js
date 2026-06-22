@@ -113,6 +113,22 @@
         if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
         markDirty();
     }
+    // Tap a track point (high zoom, move-points tool) → highlight it and open a per-point menu (#32).
+    function onVertexSelect(i) {
+        if (!rb || i < 0 || i >= rb.track.length) return;
+        const pt = rb.track[i];
+        map.setSelectedVertex(pt);
+        const done = () => map.setSelectedVertex(null);
+        const m = RBModal(`<h3>${esc(t('Track point'))}</h3>
+            <div class="btn-group col">
+                <button class="btn btn-ghost" data-v="note"><i class="fa-solid fa-map-pin"></i> ${esc(t('Add note here'))}</button>
+                <button class="btn btn-ghost" data-v="move"><i class="fa-solid fa-up-down-left-right"></i> ${esc(t('Move the point'))}</button>
+                <button class="btn btn-ghost" data-v="img"><i class="fa-solid fa-camera"></i> ${esc(t('Add image here'))}</button>
+            </div>`, 'narrow', done);
+        m.q('[data-v="note"]').onclick = () => { m.close(); done(); addWaypointNear(pt); };
+        m.q('[data-v="move"]').onclick = () => { m.close(); done(); toast('Drag the point to move it.'); };
+        m.q('[data-v="img"]').onclick = () => { m.close(); done(); if (!(currentRbId > 0)) return toast('Save to your profile first.'); ctxPhotoPoint = { lat: pt.lat, lon: pt.lon }; $('ctxPhotoFile').click(); };
+    }
 
     /* ---------- map tool bar: the GPX is edited right on the map ---------- */
     // Open cuts: a cut in the middle leaves a real hole — stored as the pair of
@@ -151,7 +167,7 @@
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null);
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
-        if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit);
+        if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect);
         else map.setVertexEditor(null);
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
         placeMainEditMarker(); // the reposition marker rides the Pan tool only
@@ -1208,14 +1224,30 @@
         try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/' }); }
         catch (e) { toast(e.message || 'Could not generate the PDF.'); }
     }
-    // plain GPX: just the GPS track, no waypoints
-    function exportTrack() {
-        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, [])], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '_track.gpx');
-    }
-    // GPX round-trip: the track + every note as a named waypoint (WPT)
-    function exportGpx() {
-        const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: n.text || 'wpt' + n.num }));
-        RBDownload(new Blob([RB.gpxDocument(rb.meta?.title, rb.track, wpts)], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '.gpx');
+    // One GPX per the chosen options (#34): track on/off · waypoints on/off · Garmin/OSMAnd
+    // icons on the waypoints. The filename carries synthetic suffixes for the content.
+    function exportCustomGpx(o) {
+        const pts = o.track ? rb.track : [];
+        const wpts = o.wpt ? rb.notes.map((n) => {
+            const w = { lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }; // name = note text (examples), number as fallback
+            if (o.grm || o.osm) {
+                const a = n.appwpt || {};               // imported icon re-emitted verbatim where present…
+                const c = RB.appWaypointSymbol(n);       // …else mapped from the RDBK icon (generic fallback), per field
+                const sym = a.sym || c.sym, osmandIcon = a.osmandIcon || c.osmandIcon;
+                if (o.grm && sym) w.sym = sym;
+                if (o.osm && osmandIcon) {
+                    w.osmandIcon = osmandIcon;
+                    const color = n.appwpt ? a.color : c.color; // imported: source/sym colour (may be none); native: mapped colour
+                    if (color) w.color = color;
+                }
+            }
+            return w;
+        }) : [];
+        let sfx = o.wpt ? '_WPT' : '_trk'; // waypoints present → _WPT, else track-only → _trk
+        if (o.grm) sfx += '_grm';
+        if (o.osm) sfx += '_osm';
+        const base = RB.slug(rb.meta?.title) + '_' + stamp() + sfx; // the GPX's internal <name> follows the same naming convention as the file
+        RBDownload(new Blob([RB.gpxDocument(base, pts, wpts)], { type: 'application/gpx+xml' }), base + '.gpx');
     }
     // OpenRally GPX: track + one wpt/note with openrally: extensions; each vignette rendered
     // to an embedded SVG tulip. embedUsed first, so the tulip's icons resolve to data URIs
@@ -1223,7 +1255,8 @@
     async function exportOpenRally() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const tulips = rb.notes.map((n) => tulipSVG(n));
-        RBDownload(new Blob([RB.openRallyDocument(rb, { tulips })], { type: 'application/gpx+xml' }), RB.slug(rb.meta?.title) + '_' + stamp() + '_openrally.gpx');
+        const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_OR';
+        RBDownload(new Blob([RB.openRallyDocument(rb, { tulips, name: base })], { type: 'application/gpx+xml' }), base + '.gpx');
     }
     // One Export button → a popup: .rdbk / PDF buttons, and GPX as a single button whose
     // typologies (track · track+WPT · OpenRally) are picked with checkboxes.
@@ -1235,20 +1268,24 @@
                 <button class="btn btn-ghost" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
             </div>
             <h3>${esc(t('GPX'))}</h3>
-            <label class="checkbox-row"><input type="checkbox" data-g="track"> ${esc(t('Track'))}</label>
-            <label class="checkbox-row"><input type="checkbox" data-g="gpx" checked> ${esc(t('Track + WPT'))}</label>
+            <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track'))}</label>
+            <label class="checkbox-row"><input type="checkbox" data-g="wpt" checked> ${esc(t('Waypoints (notes)'))}</label>
+            <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
+            <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>
             <label class="checkbox-row"><input type="checkbox" data-g="openrally"> ${esc(t('OpenRally'))}</label>
             <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-route"></i> ${esc(t('Export GPX'))}</button></div>`, 'narrow scroll');
-        const run = async (fn) => { if (!(await confirmOpenCuts())) return; await fn(); };
-        m.q('[data-x="rdbk"]').onclick = () => { m.close(); run(exportRdbk); };
-        m.q('[data-x="pdf"]').onclick = () => { m.close(); run(exportPdf); };
+        const cb = (g) => m.q(`[data-g="${g}"]`);
+        const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
+        cb('wpt').onchange = syncIcons; syncIcons();
+        m.q('[data-x="rdbk"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportRdbk(); };
+        m.q('[data-x="pdf"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportPdf(); };
         m.q('[data-x="gpx"]').onclick = async () => {
-            const want = ['track', 'gpx', 'openrally'].filter((g) => m.q(`[data-g="${g}"]`).checked);
-            if (!want.length) return toast('Pick at least one GPX type.');
+            const o = { track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked, or: cb('openrally').checked };
+            if (!o.track && !o.wpt && !o.or) return toast('Pick at least one GPX type.');
             m.close();
             if (!(await confirmOpenCuts())) return;
-            const fns = { track: exportTrack, gpx: exportGpx, openrally: exportOpenRally };
-            for (const g of want) await fns[g]();
+            if (o.track || o.wpt) exportCustomGpx(o);
+            if (o.or) await exportOpenRally();
         };
     }
     $('exportBtn').onclick = openExportModal;

@@ -62,19 +62,21 @@ window.RBMap = class RBMap {
         m.on('mouseleave', 'rb-verts', () => { if (this._vertDrag < 0) m.getCanvas().style.cursor = this._baseCursor; });
         // Track-vertex dragging (the editor's "move points" tool). Registered once
         // so it survives style swaps; inert until setVertexEditor() arms it.
-        this._vertDrag = -1;
+        this._vertDrag = -1; this._vertMoved = false;
         const vertDown = (e) => {
             if (!this._vertOnDrag || !e.features[0]) return;
             if (e.originalEvent && e.originalEvent.button !== 0) return; // only the left button drags; right-click → context menu
-            e.preventDefault(); this._vertDrag = parseInt(e.features[0].properties.i, 10);
+            e.preventDefault(); this._vertDrag = parseInt(e.features[0].properties.i, 10); this._vertMoved = false;
             m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
         };
-        const vertMove = (e) => { if (this._vertDrag >= 0) this._vertOnDrag(this._vertDrag, e.lngLat.lat, e.lngLat.lng); };
-        const vertUp = () => { if (this._vertDrag < 0) return; this._vertDrag = -1; m.dragPan.enable(); m.getCanvas().style.cursor = this._baseCursor; if (this._vertOnCommit) this._vertOnCommit(); };
+        const vertMove = (e) => { if (this._vertDrag >= 0) { this._vertMoved = true; this._vertOnDrag(this._vertDrag, e.lngLat.lat, e.lngLat.lng); } };
+        const vertUp = () => { if (this._vertDrag < 0) return; const moved = this._vertMoved; this._vertDrag = -1; m.dragPan.enable(); m.getCanvas().style.cursor = this._baseCursor; if (moved && this._vertOnCommit) this._vertOnCommit(); };
         m.on('mousedown', 'rb-verts', vertDown);
         m.on('touchstart', 'rb-verts', vertDown);
         m.on('mousemove', vertMove); m.on('touchmove', vertMove);
         m.on('mouseup', vertUp); m.on('touchend', vertUp);
+        // a tap on a vertex (no drag) selects it → the editor opens a per-point menu
+        m.on('click', 'rb-verts', (e) => { if (this._vertMoved || !this._onVert || !e.features[0]) return; this._onVert(parseInt(e.features[0].properties.i, 10)); });
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
     // Swap the base style (satellite ↔ topo). MapLibre wipes every custom
@@ -129,7 +131,10 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
         // Track vertices (move-points tool) — topmost so they stay grabbable; empty until armed.
         m.addSource('rb-verts', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', minzoom: 14, paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } }); // non-note track points: only at high zoom (hidden ≤ ~14 to avoid clutter)
+        m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', minzoom: 13, paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } }); // non-note track points: only at high zoom (hidden below ~13 to avoid clutter)
+        // selected track vertex (tap-select for the per-point menu) — orange, above the others
+        m.addSource('rb-vsel', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-vsel', type: 'circle', source: 'rb-vsel', minzoom: 13, paint: { 'circle-radius': 9, 'circle-color': 'rgba(232,140,40,.35)', 'circle-stroke-color': '#ff8c28', 'circle-stroke-width': 3 } });
         if (this._vertOnDrag && this._lastRb) this._paintVerts(this._lastRb.track); // restore after a style swap
     }
     // Base cursor for the editor's map tools (crosshair while drawing/cutting).
@@ -207,9 +212,15 @@ window.RBMap = class RBMap {
     // Arm/disarm the move-points tool: pass the track + callbacks to show every
     // vertex as a draggable handle (onDrag(i, lat, lon) fires live while dragging,
     // onCommit() on release); pass null to clear it.
-    setVertexEditor(track, onDrag, onCommit) {
-        this._vertOnDrag = onDrag || null; this._vertOnCommit = onCommit || null;
+    setVertexEditor(track, onDrag, onCommit, onSelect) {
+        this._vertOnDrag = onDrag || null; this._vertOnCommit = onCommit || null; this._onVert = onSelect || null;
+        if (!this._vertOnDrag) this.setSelectedVertex(null); // disarming clears any selection ring
         this._paintVerts(this._vertOnDrag ? track : null);
+    }
+    // Highlight a single track point (the tap-selected vertex); pass null to clear.
+    setSelectedVertex(pt) {
+        if (!this.map || !this.ready) return;
+        this.map.getSource('rb-vsel').setData(pt ? { type: 'Feature', geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] } } : this._empty());
     }
     // Repaint the vertex handles (used live while a point is being dragged).
     refreshVertices(track) { if (this._vertOnDrag) this._paintVerts(track); }

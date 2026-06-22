@@ -104,6 +104,8 @@
         .rb-mapctl-layers { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: 0; cursor: pointer; color: #333; }
         .rb-mapctl-layers:hover { background: #f2f2f2; }
         .rb-mapctl-zoom { background: #fff; color: #333; font-size: .6rem; font-weight: 700; text-align: center; padding: 1px 2px 2px; font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
+        /* export popup: indent the GPX waypoint-icon sub-options under "Waypoints" */
+        .gpx-sub { margin-left: 1.5rem; }
         .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         /* white vignette: shows EXACTLY what gets produced/printed (matches the Reader + PDF) */
         .vignette-box { position: relative; width: 100%; max-width: 170px; margin: .2rem 0 .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }

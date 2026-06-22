@@ -78,7 +78,14 @@
             const lat = parseFloat(w.getAttribute('lat')), lon = parseFloat(w.getAttribute('lon'));
             if (isFinite(lat) && isFinite(lon)) {
                 const nm = (w.querySelector('name')?.textContent || '').trim();
-                wpts.push({ lat, lon, name: nm, num: numFromName(nm) });
+                const sym = (w.querySelector('sym')?.textContent || '').trim();
+                const all = [...w.getElementsByTagName('*')];
+                // OSMAnd icon/colour live in <osmand:icon>/<osmand:color>; match the qualified
+                // name first (parser-independent), then fall back to prefix/namespace.
+                const osmand = (local) => all.find((e) => e.nodeName === 'osmand:' + local
+                    || (e.localName === local && (e.prefix === 'osmand' || /osmand/i.test(e.namespaceURI || ''))))?.textContent;
+                const r = appwptFromImport(sym, osmand('icon'), osmand('color'));
+                wpts.push({ lat, lon, name: nm, num: numFromName(nm), icon: r.icon || null, danger: r.danger || null, appwpt: r.appwpt || null });
             }
         });
         if (!wpts.length) {
@@ -253,7 +260,7 @@
             const tp = trkpts[idx];
             const bIn = idx > 0 ? bearingDeg(trkpts[idx - 1], tp) : (idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : 0);
             const bOut = idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : bIn;
-            return {
+            const note = {
                 num: i + 1, idx,
                 distance: Math.round(cum[idx]),
                 partial_distance: Math.round(prevIdx == null ? 0 : Math.max(0, cum[idx] - cum[prevIdx])),
@@ -262,8 +269,12 @@
                 cap: null, cap_distance: null,
                 bearing_in: round3(bIn), bearing_out: round3(bOut),
                 road_type_in: 3, road_type_out: 3, // track by default
-                junctions: null, icons: [],
+                junctions: null,
+                icons: w.icon ? [{ name: w.icon, pos: [0, 0], angle: 0, size: 40, flip_x: false }] : [],
             };
+            if (w.danger) note.danger = w.danger;       // recovered from an imported special_marker
+            if (w.appwpt) note.appwpt = w.appwpt;        // unmapped Garmin/OSMAnd icon, re-emitted verbatim
+            return note;
         });
 
         return {
@@ -474,8 +485,84 @@
     function gpxDocument(name, pts, wpts) {
         const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
         const trkpts = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
-        const wptXml = (wpts || []).map((w) => `<wpt lat="${w.lat}" lon="${w.lon}">${w.name ? '<name>' + x(w.name) + '</name>' : ''}</wpt>`).join('');
-        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(name || 'RDBK route')}</name></metadata>${wptXml}<trk><name>${x(name || 'RDBK route')}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
+        // a wpt may carry app icons: `sym` = Garmin standard symbol (+ a gpxx WaypointExtension so
+        // Garmin shows symbol+name) · `osmandIcon`/`color` = OSMAnd extensions. Both tag sets live
+        // in one file (each app ignores the other's) — matches the reference Garmin/OSMAnd exports.
+        const hasOsm = (wpts || []).some((w) => w.osmandIcon);
+        const hasSym = (wpts || []).some((w) => w.sym);
+        const wptXml = (wpts || []).map((w) => {
+            let inner = w.name ? '<name>' + x(w.name) + '</name>' : '';   // the note NUMBER
+            if (w.desc) inner += '<desc>' + x(w.desc) + '</desc>';        // the note comment
+            if (w.sym) inner += '<sym>' + x(w.sym) + '</sym><type>user</type>';
+            let ext = '';
+            if (w.osmandIcon) ext += '<osmand:icon>' + x(w.osmandIcon) + '</osmand:icon><osmand:background>circle</osmand:background>' + (w.color ? '<osmand:color>' + x(w.color) + '</osmand:color>' : '') + '<osmand:displaymode>SymbolAndName</osmand:displaymode>';
+            if (w.sym) ext += '<gpxx:WaypointExtension><gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode></gpxx:WaypointExtension>';
+            if (ext) inner += '<extensions>' + ext + '</extensions>';
+            return `<wpt lat="${w.lat}" lon="${w.lon}">${inner}</wpt>`;
+        }).join('');
+        const ns = (hasOsm ? ' xmlns:osmand="https://osmand.net"' : '') + (hasSym ? ' xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3"' : '');
+        const trk = (pts && pts.length) ? `<trk><name>${x(name || 'RDBK route')}</name><trkseg>${trkpts}</trkseg></trk>` : ''; // omit the track for a waypoints-only GPX
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"${ns}><metadata><name>${x(name || 'RDBK route')}</name></metadata>${wptXml}${trk}</gpx>`;
+    }
+    // Map a note to a Garmin <sym> + OSMAnd icon/colour for GPX export (issue #33). Curated for
+    // the POI-like Info icons; a note with `danger` is always red; everything else is generic.
+    const APP_WPT = {
+        'I01_arrivo.png': { sym: 'Flag, Checkered', osmandIcon: 'special_flag_finish', color: 'green' },
+        'I02_partenza.png': { sym: 'Flag, Green', osmandIcon: 'special_flag_start', color: 'green' },
+        'I03_animali.png': { sym: 'Animal', osmandIcon: 'animals', color: 'default' },
+        'I04_persone.png': { sym: 'Trail Head', osmandIcon: 'special_trekking', color: 'default' },
+        'I05_biciclette_moto.png': { sym: 'Bike Trail', osmandIcon: 'special_bicycle', color: 'default' },
+        'I06_no_potabile.png': { sym: 'Drinking Water', osmandIcon: 'water', color: 'blue' },
+        'I07_acqua_potabile.png': { sym: 'Drinking Water', osmandIcon: 'drinking_water', color: 'blue' },
+        'I08_meccanico.png': { sym: 'Mechanic', osmandIcon: 'car_repair', color: 'default' },
+        'I09_parcheggio.png': { sym: 'Parking Area', osmandIcon: 'parking', color: 'default' },
+        'I10_stazione_servizio.png': { sym: 'Gas Station', osmandIcon: 'fuel', color: 'default' },
+        'I11_ristorante.png': { sym: 'Restaurant', osmandIcon: 'restaurants', color: 'default' },
+        'I12_servizio_,medico.png': { sym: 'First Aid', osmandIcon: 'first_aid', color: 'red' },
+    };
+    const APP_DANGER = { sym: 'Dangerous Area', osmandIcon: 'special_marker', color: 'red' };
+    const APP_DEFAULT = { sym: 'Flag, Blue', osmandIcon: 'special_point', color: 'blue' };
+    const APP_COLOR_HEX = { green: '#2ca02c', blue: '#3a8dff', red: '#e01414' };
+    // Lowercase index so a note's icon name matches regardless of case.
+    const APP_WPT_LC = {}; for (const [k, v] of Object.entries(APP_WPT)) APP_WPT_LC[k.toLowerCase()] = v;
+    function appWaypointSymbol(note) {
+        let m = null;
+        for (const ic of (note.icons || [])) { const k = (ic.name || '').split('/').pop().toLowerCase(); if (APP_WPT_LC[k]) { m = APP_WPT_LC[k]; break; } }
+        if (!m) m = note.danger ? APP_DANGER : APP_DEFAULT;
+        const colorName = note.danger ? 'red' : m.color; // a danger note is always red
+        return { sym: m.sym, osmandIcon: m.osmandIcon, color: APP_COLOR_HEX[colorName] || '' };
+    }
+
+    // Reverse of APP_WPT: recover a note's RDBK icon (or danger flag) from an imported GPX
+    // waypoint's OSMAnd <osmand:icon> or Garmin <sym>, so a Garmin/OSMAnd round-trip keeps its
+    // pictograms. OSMAnd icon wins (more specific); the Garmin sym is the fallback.
+    const REV_OSM = {}, REV_SYM = {};
+    for (const [file, m] of Object.entries(APP_WPT)) {
+        if (m.osmandIcon && !(m.osmandIcon in REV_OSM)) REV_OSM[m.osmandIcon] = file;
+        const sk = m.sym.toLowerCase();
+        if (!(sk in REV_SYM)) REV_SYM[sk] = file;
+    }
+    // Garmin <sym> → OSMAnd icon, matching how Garmin Desktop fills <osmand:icon>. Lets a
+    // Garmin-only file (e.g. QMapShack, which writes no <osmand:icon>) still export the right
+    // OSMAnd icons. Syms with no clean OSMAnd equivalent (Triangle Blue, Dot White) stay generic.
+    const SYM_OSMAND = {
+        'tall tower': 'man_made_mast', 'lodge': 'topo_shelter', 'civil': 'house', 'waypoint': 'waypoint',
+        'circle, red': 'circle', 'circle, green': 'circle', 'navaid, red': 'circle',
+        'flag, blue': 'special_flag_stroke', 'flag, red': 'special_flag_stroke', 'flag, green': 'special_flag_stroke',
+    };
+    // The colour word in a Garmin <sym> ("Circle, Green") → the OSMAnd colour Garmin Desktop
+    // writes in <osmand:color>. Garmin's gpxx carries no colour tag — the sym name holds it.
+    const SYM_COLOR = { green: '#00842b', red: '#d00d0d', blue: '#1010a0' };
+    const colorFromSym = (sym) => SYM_COLOR[(sym.split(',').pop() || '').trim().toLowerCase()] || null;
+    function appwptFromImport(sym, osmandIcon, color) {
+        const oi = (osmandIcon || '').trim(), sy = (sym || '').trim();
+        if (oi === 'special_marker' || sy === 'Dangerous Area') return { danger: 3 };
+        const icon = REV_OSM[oi.toLowerCase()] || REV_SYM[sy.toLowerCase()] || null;
+        if (icon) return { icon };                          // recognised → map back to an RDBK icon
+        const osm = oi || SYM_OSMAND[sy.toLowerCase()] || null; // source OSMAnd icon, else derived from the Garmin sym
+        const col = (color || '').trim() || colorFromSym(sy); // source colour, else derived from the sym's colour word
+        if (osm || sy) return { appwpt: { sym: sy || null, osmandIcon: osm, color: col } };
+        return {};                                          // plain waypoint, no icon at all
     }
 
     // OpenRally export: a GPX 1.1 file carrying the route as a <trk> and every note as a
@@ -487,7 +574,7 @@
         const tulips = opts.tulips || [];
         const NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
         const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
-        const name = (rb.meta && rb.meta.title) || 'RDBK roadbook';
+        const name = opts.name || (rb.meta && rb.meta.title) || 'RDBK roadbook';
         // re-emit one preserved openrally: element (from an imported note's passthrough) verbatim
         const emitOr = (e) => {
             const at = Object.entries(e.attrs || {}).map(([k, v]) => ` ${k}="${x(v)}"`).join('');
@@ -607,7 +694,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
-        simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2,
     };
