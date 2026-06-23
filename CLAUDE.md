@@ -39,6 +39,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
   be discarded or clobber someone else's.
+- **Taking on a GitHub issue → assign it + mark it in progress.** As soon as you start
+  working on an issue, run `gh issue edit <n> --repo alvarofranz/roadbook --add-assignee
+  @me --add-label "in lavorazione"`. `@me` assigns it to whoever is authenticated with `gh`
+  (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
+  shows who owns it and that it is being worked on; the `in lavorazione` label drops off
+  when the issue is closed.
 - **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
