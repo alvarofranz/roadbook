@@ -1,7 +1,8 @@
 /* roadbook-core.js — library shared by ALL the tools.
  * Data model (roadbook JSON), geo math, GPX/WPT parsing, roadbook building,
  * metric recomputation and the scoring constants the Reader and Ranking share.
- * Exposes a single global: window.RB (no modules — simple multi-page app). */
+ * The browser uses the global window.RB; Node (the test runner) imports the same
+ * object via module.exports — see the export at the bottom of the file. */
 (function () {
     'use strict';
 
@@ -692,7 +693,7 @@
     }
 
     /* ---------------- export ---------------- */
-    window.RB = {
+    const RB = {
         ROAD_TYPES, CONST,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
@@ -701,4 +702,7 @@
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2,
     };
+    // The browser uses the global; Node (the test runner) imports the same object.
+    if (typeof window !== 'undefined') window.RB = RB;
+    if (typeof module !== 'undefined' && module.exports) module.exports = RB;
 })();

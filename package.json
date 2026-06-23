@@ -5,6 +5,8 @@
   "description": "RDBK.app — native shells (iOS + Android) for the rdbk.app PWA, via Capacitor. The web app in public/ stays the single source of truth.",
   "license": "WTFPL",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build:native": "esbuild native/src/native.js --bundle --format=iife --outfile=public/assets/js/native.bundle.js --target=es2019",
     "sync": "npm run build:native && cap sync",
     "add:ios": "cap add ios",
@@ -25,6 +27,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "happy-dom": "^15.11.7",
+    "vitest": "^2.1.8"
   }
 }

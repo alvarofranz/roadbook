@@ -45,6 +45,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
   shows who owns it and that it is being worked on; the `in lavorazione` label drops off
   when the issue is closed.
+- **Process/architecture changes need an Alvaro review — ASK FIRST.** Any change that
+  touches server-side processes (deploy, CI, the PHP API, the DB schema/migrations) or the
+  project's architecture or way of working MUST NOT go straight to `main` on your own:
+  first ASK the user whether they want a pull request reviewed by Alvaro, and wait for the
+  answer. Pure client-side bug fixes that don't touch processes or architecture can proceed
+  normally.
 - **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
@@ -95,7 +101,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 ```
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
 ```
-`node --check <file>.js` for syntax; `roadbook-core.js` has node-testable functions.
+`node --check <file>.js` for syntax. **Unit tests:** `npm install` then `npm test`
+(Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
+GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
+the 49-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
+(`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
+tests can import it — no build step is introduced on the web. Tests live in `tests/`; CI
+runs them on every push/PR via `.github/workflows/test.yml`.
 `public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
 style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
