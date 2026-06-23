@@ -15,6 +15,12 @@
 /cron/cron.log
 /bashy
 
+# Server-side DB dump endpoint + the private DB ops doc (DB.md): deployed /
+# handed over out-of-band, never in this PUBLIC repo. Security rests on the
+# 256-bit secret, not on the path being hidden.
+/public/dumpeadora-magica.php
+/DB.md
+
 # Capacitor — the android/ (and ios/) projects are committed, but these are generated:
 /public/assets/js/native.bundle.js
 /ios/App/Pods
