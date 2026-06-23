@@ -76,6 +76,11 @@
         .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
+        /* voice-note rows: nearest-note label · audio player · delete */
+        .audio-item { display: flex; align-items: center; gap: .5rem; }
+        .audio-item .audio-note { flex-shrink: 0; min-width: 2.2rem; font-weight: 800; color: var(--sand); font-size: .8rem; }
+        .audio-item audio { flex: 1; min-width: 0; height: 34px; }
+        .audio-item .del-badge { position: static; width: 22px; height: 22px; line-height: 22px; flex-shrink: 0; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
         /* hint pinned to the bottom of the map */
@@ -354,6 +359,10 @@
             <div class="ed-row between"><div class="icon-category flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
             <input id="photoFile" type="file" accept="image/*" multiple hidden>
             <div id="photoGrid" class="icon-grid"></div>
+        </div>
+        <div id="audioSection" hidden>
+            <div class="ed-row between"><div class="icon-category flush" data-i18n="Voice notes">Voice notes</div></div>
+            <div id="audioList" class="note-list"></div>
         </div>
     </section>
 </main>

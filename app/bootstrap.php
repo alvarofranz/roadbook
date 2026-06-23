@@ -23,6 +23,7 @@ $CFG = [
     'storage'          => $ROOT . '/storage/users',   // per-user private storage (volume-backed)
     'avatars_dir'      => $ROOT . '/public/avatars',  // public avatars (web: /avatars/)
     'photos_dir'       => $ROOT . '/public/photos',   // public photos (web: /photos/)
+    'audio_dir'        => $ROOT . '/public/audio',    // public voice notes (web: /audio/)
 ];
 
 require __DIR__ . '/db.php';

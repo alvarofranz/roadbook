@@ -328,12 +328,21 @@
         document.body.appendChild(a); a.click(); a.remove();
     };
     // Upload one image (downscaled first) to upload.php. `fields` = extra form fields.
-    window.RBUpload = async (fields, file, name) => {
+    // POST a multipart upload to upload.php. Photos go through the image downscale; voice
+    // notes upload the recorded blob as-is.
+    const rbPostUpload = async (fields, fieldName, blob, name) => {
         const fd = new FormData();
         for (const k in fields) fd.append(k, fields[k]);
-        fd.append('photo', await RBImg.toBlob(file), name || 'photo.jpg');
+        fd.append(fieldName, blob, name);
         try { return await (await fetch(ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({}), body: fd })).json(); }
         catch (e) { return { ok: false, error: 'Upload failed.' }; }
+    };
+    window.RBUpload = async (fields, file, name) => rbPostUpload(fields, 'photo', await RBImg.toBlob(file), name || 'photo.jpg');
+    // The filename extension follows the blob's MIME (MediaRecorder output differs by browser)
+    // so the server stores it under a type it can serve back.
+    window.RBUploadAudio = async (fields, blob, name) => {
+        const ext = ({ 'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(blob.type || '').split(';')[0]] || 'webm';
+        return rbPostUpload(fields, 'audio', blob, name || ('audio.' + ext));
     };
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */

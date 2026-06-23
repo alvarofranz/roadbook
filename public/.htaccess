@@ -1,6 +1,12 @@
 # RDBK.app — MIME type for roadbook files (.rdbk = JSON).
 AddType application/x-roadbook .rdbk
 
+# Voice notes (recorded WP audio): explicit MIME so every host serves them playable.
+AddType audio/webm .webm
+AddType audio/mp4 .m4a
+AddType audio/ogg .ogg
+AddType audio/mpeg .mp3
+
 # Cache policy: the app shell (HTML/JS/CSS/JSON/SVG) must follow deploys
 # IMMEDIATELY — always-revalidate (cheap 304s via Last-Modified/ETag) so neither
 # browsers nor the CDN edge ever pin an old mix of files. Without this the CDN

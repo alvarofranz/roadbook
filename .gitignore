@@ -14,6 +14,7 @@
 /storage
 /public/avatars
 /public/photos
+/public/audio
 /cron/cron.log
 /bashy
 

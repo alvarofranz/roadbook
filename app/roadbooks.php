@@ -123,6 +123,20 @@ function rb_duplicate(array $user, array $d): void {
             $ins->execute([$newId, $ph['filename'], $ph['lat'], $ph['lon'], $ph['sort']]);
         }
     }
+    // carry the voice notes over: copy each clip and its row
+    $a = db()->prepare('SELECT filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
+    $a->execute([$srcId]);
+    $clips = $a->fetchAll();
+    if ($clips) {
+        $srcAudioDir = $CFG['audio_dir'] . '/' . $srcId;
+        $dstAudioDir = $CFG['audio_dir'] . '/' . $newId;
+        if (!is_dir($dstAudioDir)) mkdir($dstAudioDir, 0755, true);
+        $insA = db()->prepare('INSERT INTO roadbook_audio (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)');
+        foreach ($clips as $cl) {
+            @copy($srcAudioDir . '/' . $cl['filename'], $dstAudioDir . '/' . $cl['filename']);
+            $insA->execute([$newId, $cl['filename'], $cl['lat'], $cl['lon']]);
+        }
+    }
     json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
 }
 
@@ -161,6 +175,32 @@ function ph_move(array $user, array $d): void {
     $st->execute([$id, $user['id']]);
     if (!$st->fetch()) fail('Not found.', 404);
     db()->prepare('UPDATE roadbook_photos SET lat = ?, lon = ? WHERE id = ?')->execute([$lat, $lon, $id]);
+    json_out(['ok' => true]);
+}
+
+/* ---- waypoint voice notes (recorded audio kept alongside the transcription) ---- */
+function audio_list(?array $user, array $d): void {
+    $rbId = (int)($d['roadbook'] ?? 0);
+    $st = db()->prepare('SELECT user_id, is_public FROM roadbooks WHERE id = ?');
+    $st->execute([$rbId]);
+    $rb = $st->fetch();
+    if (!$rb) fail('Not found.', 404);
+    if (!(int)$rb['is_public'] && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
+    $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
+    $a->execute([$rbId]);
+    $audio = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/audio/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $a->fetchAll());
+    json_out(['ok' => true, 'audio' => $audio]);
+}
+
+function audio_delete(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT a.filename, a.roadbook_id FROM roadbook_audio a JOIN roadbooks r ON r.id = a.roadbook_id WHERE a.id = ? AND r.user_id = ?');
+    $st->execute([$id, $user['id']]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    global $CFG;
+    @unlink($CFG['audio_dir'] . '/' . $row['roadbook_id'] . '/' . $row['filename']);
+    db()->prepare('DELETE FROM roadbook_audio WHERE id = ?')->execute([$id]);
     json_out(['ok' => true]);
 }
 
