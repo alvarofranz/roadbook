@@ -1143,8 +1143,9 @@
         // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        // Road (the road type of the segment to follow = road_type_out) and Danger both sit in
-        // the icon-search row (Road between the search and Danger); Red CAP toggle is in the note row.
+        // The note's segment/CAP attributes all live in the icon-search row: Road (the road type
+        // followed = road_type_out), Danger, the declarative Speed limit and the CAP-type qualifier.
+        // The Red CAP toggle itself is in the note row.
         $('roadSlot').innerHTML = `<label class="prop-field"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('dangerSlot').innerHTML = `<label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
         $('edRout').onchange = (e) => {
@@ -1153,14 +1154,27 @@
             if (row) row.style.setProperty('--rt', (RB.ROAD_TYPES[n.road_type_out] || RB.ROAD_TYPES[3]).color);
         };
         $('edDanger').onchange = (e) => { const v = +e.target.value; if (v) n.danger = v; else delete n.danger; canvas.render(); markDirty(); };
+        // Declarative speed limit: '' = none, a number = km/h in force, 0 = limit lifted.
+        const speedOpts = `<option value="" ${n.speed_limit == null ? 'selected' : ''}>—</option>`
+            + [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130].map((v) => `<option value="${v}" ${n.speed_limit === v ? 'selected' : ''}>${v}</option>`).join('')
+            + `<option value="0" ${n.speed_limit === 0 ? 'selected' : ''}>${t('End of limit')}</option>`;
+        $('speedSlot').innerHTML = `<label class="prop-field"><span>${t('Speed')}</span><select id="edSpeed" class="field">${speedOpts}</select></label>`;
+        $('edSpeed').onchange = (e) => { const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v; markDirty(); };
+        // CAP type qualifies an existing CAP (FIA: exit/average/calculated/turning); exit is the
+        // implicit default, stored absent. Disabled until the note carries a CAP.
+        const capTypeOpts = [['', 'Exit'], ['average', 'Average'], ['calculated', 'Calculated'], ['turning', 'Turning']]
+            .map(([v, l]) => `<option value="${v}" ${(n.cap_type || '') === v ? 'selected' : ''}>${t(l)}</option>`).join('');
+        $('capTypeSlot').innerHTML = `<label class="prop-field"><span>${t('CAP type')}</span><select id="edCapType" class="field"${n.cap == null ? ' disabled' : ''}>${capTypeOpts}</select></label>`;
+        $('edCapType').onchange = (e) => { const v = e.target.value; if (v) n.cap_type = v; else delete n.cap_type; markDirty(); };
     }
     // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).
     function toggleCapAt(i) {
         const n = rb.notes[i], nx = rb.notes[i + 1];
         if (!nx) return; // the last note has no following note to head toward
         if (n.cap == null) { n.cap = Math.round(RB.geo.bearingDeg(n, nx)); n.cap_distance = Math.round(RB.geo.haversineM(n, nx)); }
-        else { n.cap = null; n.cap_distance = null; }
+        else { n.cap = null; n.cap_distance = null; delete n.cap_type; } // no CAP → its type qualifier is meaningless
         markDirty(); refreshRowMeta(i);
+        if (i === sel) renderEditor(); // keep the CAP-type control's enabled state in sync
     }
     // The minimum-notes guard and the confirm prompt live in the row's click handler.
     function delNote(i) {

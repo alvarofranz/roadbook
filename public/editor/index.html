@@ -30,11 +30,11 @@
         #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
         .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
-        /* Road + Danger sit to the right of the icon search; the search shrinks to make room */
+        /* Road, Danger, Speed and CAP type sit to the right of the icon search; the search shrinks to make room */
         #iconSearch { min-width: 0; }
-        #roadSlot, #dangerSlot { flex-shrink: 0; }
-        #roadSlot select, #dangerSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
-        /* Road / Danger labelled selects (in the icon-search row) */
+        #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot { flex-shrink: 0; }
+        #roadSlot select, #dangerSlot select, #speedSlot select, #capTypeSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
+        /* Labelled selects in the icon-search row (Road / Danger / Speed / CAP type) */
         .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
         .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
@@ -308,7 +308,7 @@
                     </div>
                     <div class="vig-icons">
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"><span id="roadSlot"></span><span id="dangerSlot"></span></div>
+                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span></div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
                         <div class="btnrow end"><button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button></div>

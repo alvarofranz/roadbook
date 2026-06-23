@@ -242,8 +242,10 @@ integer metres.** Spec page: `public/standard/index.html`.
     "distance": int, "partial_distance": int,                 // metres
     "text": str,
     "cap": int|null, "cap_distance": int|null,                // CAP heading (deg) + metres
+    "cap_type"?: "exit"|"average"|"calculated"|"turning",     // FIA CAP qualifier (exit = default); rendered next to the CAP
     "bearing_in": float, "bearing_out": float,
     "road_type_in": 0..4, "road_type_out": 0..4,
+    "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
     "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..4 } ]
