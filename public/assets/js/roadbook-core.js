@@ -1,7 +1,8 @@
 /* roadbook-core.js — library shared by ALL the tools.
  * Data model (roadbook JSON), geo math, GPX/WPT parsing, roadbook building,
  * metric recomputation and the scoring constants the Reader and Ranking share.
- * Exposes a single global: window.RB (no modules — simple multi-page app). */
+ * The browser uses the global window.RB; Node (the test runner) imports the same
+ * object via module.exports — see the export at the bottom of the file. */
 (function () {
     'use strict';
 

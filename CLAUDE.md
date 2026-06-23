@@ -45,6 +45,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
   shows who owns it and that it is being worked on; the `in lavorazione` label drops off
   when the issue is closed.
+- **Process/architecture changes need an Alvaro review — ASK FIRST.** Any change that
+  touches server-side processes (deploy, CI, the PHP API, the DB schema/migrations) or the
+  project's architecture or way of working MUST NOT go straight to `main` on your own:
+  first ASK the user whether they want a pull request reviewed by Alvaro, and wait for the
+  answer. Pure client-side bug fixes that don't touch processes or architecture can proceed
+  normally.
 - **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
