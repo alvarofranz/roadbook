@@ -344,11 +344,14 @@
     };
     function drawPoint(p) {
         const pt = { lat: RB.round6(p.lat), lon: RB.round6(p.lon) };
-        if (!rb) {
+        if (!rb || rb.track.length < 2) {     // seed the first segment of a brand-new or routeless roadbook
             drawSeed.push(pt); map.setPin(drawSeed[0]);
             if (drawSeed.length === 2) {
-                const seed = drawSeed;
-                resetIdentity(); setRoadbook(RB.buildRoadbook({ name: t('Drawn route'), trkpts: seed }));
+                const meta = rb && rb.meta;       // a loaded routeless roadbook keeps its identity, title and metadata
+                if (!rb) resetIdentity();
+                const drawn = RB.buildRoadbook({ name: (meta && meta.title) || t('Drawn route'), trkpts: drawSeed });
+                if (meta) drawn.meta = { ...meta, ...drawn.meta };
+                setRoadbook(drawn);
                 markDirty(); setMapTool('draw'); // stay in draw mode to keep sketching
             }
             return;
@@ -566,9 +569,13 @@
         $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
         updatePhotos(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
-        sel = 0; canvas.setNote(rb.notes[0]); renderEditor();
-        histReset(); setMapTool('points'); // default to moving points on a loaded route (draw re-sets itself)
+        sel = 0;
+        if (rb.notes.length) { canvas.setNote(rb.notes[0]); renderEditor(); } else canvas.setNote(null);
+        histReset();
+        const routeless = rb.track.length < 2;
+        setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to moving points
         showView('map'); // tap a note to open its editor inline below the row
+        if (routeless) toast('Tap the map to draw your route.');
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -1539,8 +1546,16 @@
             } catch (e) { toast('Could not load the recorded trip.'); }
             if (rb) return;
         }
+        // Explicit open target: a public-challenge fork or a saved ?rb=id. The session-recovery
+        // prompts below must not shadow it — offer recovery only when there is no explicit target,
+        // or when the draft belongs to the very roadbook being opened (?rb=id), i.e. a crash mid-edit.
+        const ch = RBChallenges.publicFromUrl();
+        const id = +(new URLSearchParams(location.search).get('rb') || 0);
+        const explicitTarget = !!ch || id > 0;
+
         let draft; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
-        if (draft && draft.rb && draft.rb.notes) {
+        const draftFits = draft && draft.rb && draft.rb.notes && (!explicitTarget || (id > 0 && draft.currentRbId === id));
+        if (draftFits) {
             // Declining keeps the draft — it is overwritten by the next checkpoint and
             // cleared on save/export, so a mis-tap can't destroy unsaved work.
             if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
@@ -1551,13 +1566,21 @@
                 return;
             }
         }
-        if (await checkRecovery()) return;
+        if (!explicitTarget && await checkRecovery()) return;
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        const ch = RBChallenges.publicFromUrl();
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;
-        const id = +(new URLSearchParams(location.search).get('rb') || 0);
-        if (id && meUser) { const r = await RBApi('rb_get', { id }); if (r.ok && r.roadbook) { currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook); } }
+        if (id && meUser) {
+            const r = await RBApi('rb_get', { id });
+            if (r.ok && r.roadbook) {
+                // A roadbook saved with no route yet would open on an empty map: warn, and on
+                // Continue load it straight into draw mode (Cancel falls through to the list).
+                const hasRoute = (r.roadbook.track || []).length >= 2;
+                if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
+                    currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook);
+                }
+            }
+        }
         if (!rb && meUser) { const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; } // landing → list the user's saved roadbooks
     })();
 })();

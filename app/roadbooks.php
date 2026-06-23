@@ -18,13 +18,19 @@ function rb_list(array $user): void {
 
 function rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT filename, is_public, slug FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st = db()->prepare('SELECT filename, is_public, slug, title FROM roadbooks WHERE id = ? AND user_id = ?');
     $st->execute([$id, $user['id']]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
-    $path = rb_dir((int)$user['id']) . '/' . $row['filename'];
-    if (!is_file($path)) fail('File missing.', 404);
-    $rb = json_decode((string)file_get_contents($path), true);
+    // A recording draft that never got a route has no file yet (filename = 'pending'): hand back
+    // an empty skeleton so the Editor can open it and draw the route (the first save writes the file).
+    if ($row['filename'] === 'pending') {
+        $rb = ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
+    } else {
+        $path = rb_dir((int)$user['id']) . '/' . $row['filename'];
+        if (!is_file($path)) fail('File missing.', 404);
+        $rb = json_decode((string)file_get_contents($path), true);
+    }
     json_out(['ok' => true, 'id' => $id, 'is_public' => (int)$row['is_public'], 'slug' => $row['slug'], 'roadbook' => $rb]);
 }
 
