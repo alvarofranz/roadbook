@@ -39,6 +39,8 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 
 ## Il formato
 - [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` e la pagina `/standard`.
+- [roadbook-specs](roadbook_specs.md) — convenzioni di resa del roadbook (tulip) e decisioni
+  di design: colori RB System, tipi strada per spessore (dash/double), trunk, bivi, CAP, danger.
 - [fia-lexicon-compliance](fia-lexicon-compliance.md) — confronto col lexicon roadbook FIA
   cross-country (issue #9): cosa copriamo come icona, come dato, o non ancora.
 
