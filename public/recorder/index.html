@@ -28,12 +28,18 @@
         .rec-readouts .mini.speed .value { font-size: 1.75rem; color: var(--sand); }
         #recRunning .btnrow { flex-wrap: nowrap; }
         #recRunning .btnrow .btn { flex: 1; min-width: 0; justify-content: center; padding: 1rem .5rem; font-size: 1.05rem; }
-        /* narrow/tall phones: shrink so four readouts + action buttons stay on one row each */
+        /* narrow/tall phones: shrink so four readouts + action buttons stay on one row each,
+           and tighten the vertical rhythm so the map gets more of the screen */
         @media (max-width: 430px) {
             .rec-readouts { gap: .45rem; }
             .rec-main .row3 .value { font-size: 1rem; }
             .rec-readouts .mini.speed .value { font-size: 1.4rem; }
             #recRunning .btnrow .btn { padding: .85rem .3rem; font-size: .82rem; gap: .25rem; }
+            .rec-main { padding-top: .35rem; }
+            .rec-main .dash { padding-top: .35rem; gap: .5rem; } /* one uniform gap between sections */
+            #recRunning .btnrow { margin-top: 0; }
+            .rec-lastwp { margin-bottom: 0; padding: .45rem .6rem; } /* spacing handled by .dash gap */
+            .rec-map { margin-bottom: 0; }
         }
         .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
         /* waypoint quick-note: text field + dictation mic; the mic pulses while listening */
@@ -71,7 +77,7 @@
             <div class="btnrow">
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span id="recPauseTxt" data-i18n="Pause">Pause</span></button>
                 <button class="btn btn-ghost" id="recWpt"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
-                <button class="btn btn-ghost" id="recWptAudio" hidden><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
+                <button class="btn btn-accent" id="recWptAudio" hidden><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="WP photo">WP photo</span></button>
             </div>
             <div id="recLastWp" class="rec-lastwp" hidden></div>
