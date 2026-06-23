@@ -567,7 +567,7 @@
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
         $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
-        updatePhotos(); updateSaveBtn();
+        updatePhotos(); updateAudio(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
         sel = 0;
         if (rb.notes.length) { canvas.setNote(rb.notes[0]); renderEditor(); } else canvas.setNote(null);
@@ -808,7 +808,7 @@
             if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        sel = 0; refreshMap(false); renderNotes(); renderEditor(); canvas.setNote(rb.notes[0]); updatePhotos(); markDirty();
+        sel = 0; refreshMap(false); renderNotes(); renderEditor(); canvas.setNote(rb.notes[0]); updatePhotos(); updateAudio(); markDirty();
         toast('Trail adjusted · metrics recomputed.');
     }
     function spliceByIndex(r, newTrk, i1, i2) {
@@ -844,7 +844,7 @@
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await RBApi('rb_save', { id: currentRbId, is_public: isPublic, roadbook: rb });
         if (r.ok) {
-            currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateSaveBtn();
+            currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateAudio(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
             try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
         }
@@ -889,6 +889,32 @@
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
         if (map) map.setPhotos(r.photos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note 📷 indicators
+    }
+    /* ---------- voice notes (recorded WP audio, played back here) ---------- */
+    function updateAudio() {
+        if (currentRbId > 0) { $('audioSection').hidden = false; loadAudio(); }
+        else { $('audioSection').hidden = true; $('audioList').innerHTML = ''; }
+    }
+    // Each clip was recorded at a waypoint, so it's labelled with (and ordered by) the nearest note.
+    const nearestNote = (a) => {
+        if (a.lat == null || a.lon == null || !rb || !rb.notes.length) return null;
+        let best = null, bestD = Infinity;
+        rb.notes.forEach((n) => { const dM = RB.geo.haversineM(a, n); if (dM < bestD) { bestD = dM; best = n; } });
+        return best;
+    };
+    async function loadAudio() {
+        const r = await RBApi('audio_list', { roadbook: currentRbId });
+        const g = $('audioList');
+        if (!r.ok || !r.audio.length) { g.innerHTML = `<span class="muted small">${esc(t('No voice notes yet.'))}</span>`; return; }
+        g.innerHTML = r.audio.map((a) => {
+            const n = nearestNote(a), label = n ? '#' + n.num : '';
+            return `<div class="audio-item"><span class="audio-note">${esc(label)}</span><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" data-dela="${a.id}" data-note="${esc(label)}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`;
+        }).join('');
+        g.querySelectorAll('[data-dela]').forEach((s) => s.onclick = async (e) => {
+            e.stopPropagation();
+            const ref = s.dataset.note ? ' (' + s.dataset.note + ')' : '';
+            if (await RBConfirm(t('Delete this voice note?') + ref, t('Delete'), true)) { await RBApi('audio_delete', { id: +s.dataset.dela }); loadAudio(); }
+        });
     }
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the

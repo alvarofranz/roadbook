@@ -44,6 +44,8 @@ try {
         case 'ph_list':     ph_list(current_user(), $d); break;
         case 'ph_delete':   ph_delete(require_user(), $d); break;
         case 'ph_move':     ph_move(require_user(), $d); break;
+        case 'audio_list':   audio_list(current_user(), $d); break;
+        case 'audio_delete': audio_delete(require_user(), $d); break;
         case 'public_list': public_list(); break;
         case 'public_get':  public_get($d); break;
         default:            fail('Unknown action.', 404);
