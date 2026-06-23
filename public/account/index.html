@@ -127,6 +127,13 @@
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
             <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" data-i18n-aria="Short bio…" maxlength="500"></textarea>
+            <label class="muted small" for="pfVoiceLang"><span data-i18n="Voice note language">Voice note language</span></label>
+            <select id="pfVoiceLang" class="field">
+                <option value="" data-i18n="Automatic (device)">Automatic (device)</option>
+                <option value="en-US">English</option>
+                <option value="es-ES">Español</option>
+                <option value="it-IT">Italiano</option>
+            </select>
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
         </div>
 

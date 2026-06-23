@@ -35,7 +35,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
@@ -60,7 +60,10 @@ function require_admin(): array { $u = require_user(); if (!is_admin($u)) fail('
 
 function update_profile(array $user, array $d): void {
     $bio = substr(trim((string)($d['bio'] ?? '')), 0, 500);
-    db()->prepare('UPDATE users SET bio = ? WHERE id = ?')->execute([$bio, $user['id']]);
+    // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
+    $voice = (string)($d['voice_lang'] ?? '');
+    if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
+    db()->prepare('UPDATE users SET bio = ?, voice_lang = ? WHERE id = ?')->execute([$bio, $voice, $user['id']]);
     json_out(['ok' => true]);
 }
 
