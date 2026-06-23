@@ -109,7 +109,7 @@
         if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; }
     });
     onSubmit('delForm', async () => {
-        if (!(await RBConfirm(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
+        if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
         const r = await api('account_delete', { password: $('delPass').value });
         if (r.ok) location.href = '../'; else RBToast(r.error);
     });

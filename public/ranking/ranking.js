@@ -98,12 +98,12 @@
                 + `<td><button class="link-delete" data-del="${r.ts}" title="${t('Remove')}" aria-label="${t('Remove')}">✕</button></td></tr>`).join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirm(t('Remove vehicle') + ' ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
+            if (await RBConfirmDanger(t('Remove vehicle') + ' ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
                 entries = entries.filter((e) => String(e.ts) !== b.dataset.del); save(); render();
             }
         });
     }
-    $('clearAll').onclick = async () => { if (await RBConfirm('Clear all results?', 'Clear')) { entries = []; save(); render(); } };
+    $('clearAll').onclick = async () => { if (await RBConfirmDanger('Clear all results?', 'Clear')) { entries = []; save(); render(); } };
     $('exportCsv').onclick = () => {
         if (!lastRows.length) return;
         const head = ['rank', 'vehicle', 'km', 'accuracy', 'cap', 'speed', 'regularity', 'final', 'valid'];

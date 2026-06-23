@@ -103,7 +103,7 @@
     }
     $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimerButton(); saveSession(); };
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
-    $('tmExit').onclick = async () => { if (await RBConfirm(t('End the trip and reset everything?'), t('End the trip'))) { clearSession(); location.reload(); } };
+    $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'), t('End the trip'))) { clearSession(); location.reload(); } };
 
     // Reset the partial trip. Pointer: hold 5 s (anti-accidental, browser + PWA);
     // a quick tap-and-release explains the gesture instead of doing nothing.
@@ -124,7 +124,7 @@
         btn.addEventListener('keydown', (e) => {
             if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return;
             e.preventDefault(); viaKeyboard = true;
-            RBConfirm(t('Reset the partial trip?'), t('Reset')).then((ok) => { if (ok) doReset(); });
+            RBConfirmDanger(t('Reset the partial trip?'), t('Reset')).then((ok) => { if (ok) doReset(); });
         });
         btn.addEventListener('click', (e) => { if (viaKeyboard) { viaKeyboard = false; e.preventDefault(); } });
     })();

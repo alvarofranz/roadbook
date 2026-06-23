@@ -227,7 +227,7 @@
     async function transformNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        if (!(await RBConfirm(t('Turn this waypoint into a plain track point? Its note will be removed.'), t('Transform')))) return;
+        if (!(await RBConfirmDanger(t('Turn this waypoint into a plain track point? Its note will be removed.'), t('Transform')))) return;
         rb.notes.splice(ni, 1);
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Waypoint turned into a track point.');
@@ -236,7 +236,7 @@
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
         const n = rb.notes[ni], label = '#' + n.num + (n.text ? ' — ' + n.text : '');
-        if (!(await RBConfirm(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
         delNote(ni);
     }
 
@@ -660,7 +660,7 @@
     };
     $('recDiscard').onclick = async () => {
         if (recMode !== 'new') return; // never delete an existing roadbook from an adjust session
-        if (!(await RBConfirm('Discard this recording? It cannot be undone.', 'Discard'))) return;
+        if (!(await RBConfirmDanger('Discard this recording? It cannot be undone.', 'Discard'))) return;
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
         if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
         if (draftId) { RBApi('rb_delete', { id: draftId }); draftId = 0; }
@@ -979,7 +979,7 @@
     $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(p); };
     $('lbDelete').onclick = async () => {
         const p = lbList[lbIdx]; if (!p) return;
-        if (!(await RBConfirm(t('Delete this photo?'), t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete this photo?'), t('Delete')))) return;
         const keep = new Set(lbList.map((x) => +x.id)); keep.delete(+p.id); // stay within the current set (all, or a note's group)
         await RBApi('ph_delete', { id: +p.id });
         await loadPhotos();
@@ -1035,7 +1035,8 @@
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
             if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            if (await RBConfirm('Delete this note?', 'Delete')) delNote(+b.dataset.del);
+            const dn = rb.notes[+b.dataset.del], dlabel = dn ? '#' + dn.num + (dn.text ? ' — ' + dn.text : '') : '';
+            if (await RBConfirmDanger(t('Delete note') + ' ' + dlabel + '?', 'Delete')) delNote(+b.dataset.del);
         });
         $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
         $('noteList').querySelectorAll('[data-down]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.down + 1); });
@@ -1213,7 +1214,7 @@
         const isNote = rb.notes.some((n) => n.idx === k);
         if (isNote) {
             if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            if (!(await RBConfirm(t('This point is a note — delete the point and its note?'), t('Delete')))) return;
+            if (!(await RBConfirmDanger(t('This point is a note — delete the point and its note?'), t('Delete')))) return;
         }
         if (rb.track.length <= 2) return toast('At least 2 points must remain.');
         rb.track.splice(k, 1);

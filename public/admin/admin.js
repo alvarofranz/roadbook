@@ -84,7 +84,7 @@
         });
         $('usersBody').querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
         $('usersBody').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirm(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')', t('Delete')))) return;
+            if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')', t('Delete')))) return;
             const x = await api('admin_delete', { id: +b.dataset.del });
             x.ok ? load() : toast(x.error || 'Could not delete.');
         });

@@ -280,14 +280,14 @@
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Save as'))}" aria-label="${RBesc(RBt('Save as'))}"><i class="fa-solid fa-clone"></i></button>
-            <button class="btn btn-ghost" data-del="${rb.id}" title="${RBesc(RBt('Delete'))}" aria-label="${RBesc(RBt('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
+            <button class="btn btn-ghost" data-del="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Delete'))}" aria-label="${RBesc(RBt('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('');
         container.querySelectorAll('[data-dup]').forEach((b) => b.onclick = async () => {
             const x = await RBApi('rb_duplicate', { id: +b.dataset.dup });
             if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container); } else RBToast(x.error || 'Could not duplicate.');
         });
         container.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirm('Delete this roadbook?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
+            if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
         });
         return r.roadbooks.length;
     };
@@ -339,16 +339,22 @@
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
     // msg and okLabel run through RBt: plain English keys translate, already-
     // translated or composed strings fall through unchanged.
-    window.RBConfirm = (msg, okLabel) => new Promise((resolve) => {
+    window.RBConfirm = (msg, okLabel, danger) => new Promise((resolve) => {
+        const ok = danger
+            ? `<button class="btn btn-danger" data-yes><i class="fa-solid fa-triangle-exclamation"></i> ${RBt(okLabel || 'OK')}</button>`
+            : `<button class="btn btn-primary" data-yes>${RBt(okLabel || 'OK')}</button>`;
         const d = RBModal(`<p class="modal-text">${RBt(msg)}</p>
             <div class="btnrow end">
                 <button class="btn btn-ghost" data-no>${RBt('Cancel')}</button>
-                <button class="btn btn-primary" data-yes>${RBt(okLabel || 'OK')}</button>
+                ${ok}
             </div>`, 'narrow', () => resolve(false));
         const done = (v) => { d.close(); resolve(v); };
         d.q('[data-yes]').onclick = () => done(true);
         d.q('[data-no]').onclick = () => done(false);
     });
+    // Confirm for a destructive/data-losing action: same as RBConfirm but a red button + warning
+    // icon. Use it for anything that deletes or overwrites; name the object in `msg` (e.g. its title).
+    window.RBConfirmDanger = (msg, okLabel) => window.RBConfirm(msg, okLabel, true);
     window.RBNeedAuth = (msg) => {
         const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> ${RBt('Sign in')}</h2>
             <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>
