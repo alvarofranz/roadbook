@@ -19,7 +19,16 @@
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
 
     /* ---------- map ---------- */
-    map = new RBMap('recMap', { zoom: 15 });
+    map = new RBMap('recMap', { zoom: 15, headingToggle: true });
+    let course = null, lastHeadingPos = null; // smoothed travel heading for the heading-up map
+
+    // Smooth a compass heading (deg) toward a new sample along the shortest arc, so the
+    // map turns gently instead of snapping on every noisy fix.
+    function smoothHeading(prev, next) {
+        if (prev == null) return next;
+        const d = ((next - prev + 540) % 360) - 180;
+        return (prev + d * 0.35 + 360) % 360;
+    }
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ----------
        The track itself is checkpointed by RBGpxRecorder; here we keep the meta. */
@@ -64,6 +73,7 @@
 
     function begin() {
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
+        course = null; lastHeadingPos = null;
         track = []; wpts = []; photos = []; draftId = 0;
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
@@ -82,7 +92,15 @@
     function onFix(fix) {
         const c = fix.coords;
         lastAcc = c.accuracy; RBStatusBar.setGps(lastAcc);
-        if (map) map.setPosition(fix.here.lat, fix.here.lon, true);
+        // course for the heading-up map: the GPS heading while moving, else the bearing of
+        // recent travel; smoothed against jitter and frozen when stopped (no value → no turn).
+        const cur = { lat: fix.here.lat, lon: fix.here.lon };
+        let h = null;
+        if (fix.speedKmh > 3 && fix.heading != null && isFinite(fix.heading)) h = fix.heading;
+        else if (lastHeadingPos && RB.geo.haversineM(lastHeadingPos, cur) > 4) h = RB.geo.bearingDeg(lastHeadingPos, cur);
+        if (h != null) course = smoothHeading(course, h);
+        if (!lastHeadingPos || RB.geo.haversineM(lastHeadingPos, cur) > 4) lastHeadingPos = cur;
+        if (map) map.setPosition(fix.here.lat, fix.here.lon, true, course);
         if (c.accuracy != null && c.accuracy > 35) { renderBar(); return; } // drop junk fixes
         here = { lat: fix.here.lat, lon: fix.here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
         if (paused) { renderBar(); return; }

@@ -30,7 +30,8 @@ const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || RASTER
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
-        const { layerToggle, geolocate, ...mapOpts } = opts; // layerToggle/geolocate are ours, not MapLibre options
+        this._headingUp = true; this._posArrow = null; // heading-up rotation (opt-in), live-position chevron
+        const { layerToggle, geolocate, headingToggle, ...mapOpts } = opts; // ours, not MapLibre options
         const cont = document.getElementById(containerId);
         if (!window.maplibregl) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable.</div>';
@@ -52,6 +53,7 @@ window.RBMap = class RBMap {
         if (geolocate) this.map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false, showUserLocation: true }), 'top-right');
         this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
         if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
+        if (headingToggle) this.map.addControl(headingToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
         m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
@@ -101,7 +103,9 @@ window.RBMap = class RBMap {
         });
     }
     // Tear down the GL context (Reader closes the inline note map this way).
-    destroy() { if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
+    setHeadingUp(on) { this._headingUp = !!on; if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
     _terrain() {
@@ -148,11 +152,28 @@ window.RBMap = class RBMap {
         if (this._pin) { this._pin.remove(); this._pin = null; }
         if (pt) this._pin = new maplibregl.Marker({ color: '#e8b059', scale: 0.8 }).setLngLat([pt.lon, pt.lat]).addTo(this.map);
     }
-    // "you are here" dot; follow=true recenters on it.
-    setPosition(lat, lon, follow) {
+    // "you are here" marker; follow=true recenters on it. With a `heading` (course in
+    // degrees) the dot becomes a chevron pointing that way and — unless north is locked
+    // via the heading toggle — the map rotates so the direction of travel is up.
+    setPosition(lat, lon, follow, heading) {
         if (!this.map || !this.ready) return;
-        this.map.getSource('rb-pos').setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] } });
-        if (follow) this.map.easeTo({ center: [lon, lat], duration: 400 });
+        const hasHeading = heading != null && isFinite(heading);
+        // a plain dot when the course is unknown (e.g. the Editor); a chevron otherwise
+        this.map.getSource('rb-pos').setData(hasHeading ? this._empty()
+            : { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] } });
+        if (hasHeading) {
+            if (!this._posArrow) {
+                const el = document.createElement('div');
+                el.className = 'rb-pos-arrow';
+                // rotationAlignment 'map' anchors the chevron to map space, so it reads as
+                // "up" under heading-up and points to the true course when north is locked.
+                this._posArrow = new maplibregl.Marker({ element: el, rotationAlignment: 'map' }).setLngLat([lon, lat]).addTo(this.map);
+            }
+            this._posArrow.setLngLat([lon, lat]).setRotation(heading);
+        } else if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; }
+        const view = { center: [lon, lat], duration: 400 };
+        if (follow && hasHeading && this._headingUp) view.bearing = heading;
+        if (follow) this.map.easeTo(view);
     }
     // `gapIdx` (editor): track indexes whose following segment is an OPEN cut —
     // the line splits there and a dashed connector shows the unfilled hole.
@@ -274,6 +295,26 @@ function layerToggleControl(rbmap) {
             b.setAttribute('aria-label', b.title);
             b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i>';
             b.onclick = () => rbmap.toggleBaseStyle();
+            c.appendChild(b); this._c = c;
+            return c;
+        },
+        onRemove() { this._c.remove(); },
+    };
+}
+// A control button that toggles heading-up (map rotates with the course) ↔ north-locked.
+function headingToggleControl(rbmap) {
+    return {
+        onAdd() {
+            const c = document.createElement('div');
+            c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.title = window.RBt ? RBt('Heading up') : 'Heading up';
+            b.setAttribute('aria-label', b.title);
+            b.innerHTML = '<i class="fa-solid fa-location-arrow" aria-hidden="true"></i>';
+            const sync = () => b.classList.toggle('rb-ctrl-on', rbmap._headingUp);
+            b.onclick = () => { rbmap.setHeadingUp(!rbmap._headingUp); sync(); };
+            sync();
             c.appendChild(b); this._c = c;
             return c;
         },

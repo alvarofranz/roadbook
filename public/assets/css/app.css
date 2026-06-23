@@ -161,6 +161,10 @@ section.block { padding: 2.4rem 0; }
 .btnrow { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; margin-top: .4rem; }
 .gps-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); vertical-align: middle; }
 .gps-dot.ok { background: var(--ok); } .gps-dot.bad { background: var(--track); }
+/* live-position chevron on a heading-up map: a triangle pointing along the course */
+.rb-pos-arrow { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 18px solid var(--info); filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+/* a map control button in its active state (e.g. heading-up engaged) */
+.maplibregl-ctrl button.rb-ctrl-on { color: var(--sand); }
 
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; gap: .6rem; padding: .7rem 1rem; padding-bottom: calc(.7rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
 .fabrow .btn { flex: 1; justify-content: center; }

@@ -122,8 +122,13 @@ GPS ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
 - `photos` (opzionale) → delega a `setPhotos`.
 
 Metodi correlati:
-- **`setPosition(lat, lon, follow)`** — il puntino "sei qui" su `rb-pos`; `follow=true`
-  ricentra con `easeTo` ([rbmap.js:125](../public/assets/js/rbmap.js#L125)).
+- **`setPosition(lat, lon, follow[, heading])`** — il marker "sei qui"; `follow=true`
+  ricentra con `easeTo`. Con un `heading` (rotta in gradi) il puntino diventa un chevron
+  direzionale (`.rb-pos-arrow`, `rotationAlignment:'map'`) e — se l'heading-up è attivo —
+  la mappa ruota in modo che la marcia sia in alto. Senza `heading` resta il puntino tondo
+  (es. l'Editor) ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
+- **`setHeadingUp(on)`** + opzione costruttore **`{headingToggle:true}`** — bottone di
+  controllo che alterna heading-up ↔ nord bloccato (off → torna a nord). Usato dal Recorder.
 - **`setOverlay(pts)`** — overlay verde su `rb-live` per una sub-traccia "adjust on the
   trail" in corso, mantenendo visibile la traccia base
   ([rbmap.js:171](../public/assets/js/rbmap.js#L171)).

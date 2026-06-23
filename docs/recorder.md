@@ -105,10 +105,13 @@ versione a metà sessione ([recorder.js:35](../public/recorder/recorder.js#L35))
 
 ## 3. La mappa live
 
-`RBMap('recMap', { zoom: 15 })` è istanziata all'avvio del modulo
+`RBMap('recMap', { zoom: 15, headingToggle: true })` è istanziata all'avvio del modulo
 ([recorder.js:22](../public/recorder/recorder.js#L22)). Ad ogni fix la posizione
-corrente aggiorna il marker (`map.setPosition`, anche per i fix scartati dalla traccia)
-([recorder.js:85](../public/recorder/recorder.js#L85)); ad ogni nuovo campione/waypoint/foto,
+corrente aggiorna il marker (`map.setPosition`, anche per i fix scartati dalla traccia),
+passando una **rotta smussata** (`course`): l'heading GPS quando ci si muove, altrimenti il
+bearing del tragitto recente. La mappa è **heading-up** (marcia in alto) con un toggle per
+bloccarla a nord; il puntino diventa un chevron direzionale
+([recorder.js:82](../public/recorder/recorder.js#L82)). Ad ogni nuovo campione/waypoint/foto,
 `refreshMap()` ridisegna traccia + waypoint + foto via
 `map.setLiveTrack(track, wpts, photos)` ([recorder.js:123](../public/recorder/recorder.js#L123)).
 
