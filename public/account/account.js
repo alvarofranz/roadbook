@@ -125,6 +125,7 @@
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
         $('pfBio').value = user.bio || '';
+        $('pfVoiceLang').value = user.voice_lang || '';
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;
@@ -132,7 +133,7 @@
             const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
             if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
         };
-        $('pfSave').onclick = async () => { const r = await api('profile', { bio: $('pfBio').value }); msg(r.ok ? 'Profile saved.' : r.error, !!r.ok); };
+        $('pfSave').onclick = async () => { const r = await api('profile', { bio: $('pfBio').value, voice_lang: $('pfVoiceLang').value }); msg(r.ok ? 'Profile saved.' : r.error, !!r.ok); };
     }
 
     init();
