@@ -1537,9 +1537,10 @@
                 const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null');
                 const wpts = JSON.parse(sessionStorage.getItem('rb_trip_wpts') || '[]') || [];
                 const tripDraft = +(sessionStorage.getItem('rb_trip_draft') || 0);
-                ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft'].forEach((k) => sessionStorage.removeItem(k));
+                const tripName = sessionStorage.getItem('rb_trip_name') || t('Recorded trip'); // name chosen in the Recorder (#54)
+                ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft', 'rb_trip_name'].forEach((k) => sessionStorage.removeItem(k));
                 if (pts && pts.length >= 2) {
-                    setRoadbook(RB.buildRoadbook({ name: 'Recorded trip', trkpts: pts, wpts }));
+                    setRoadbook(RB.buildRoadbook({ name: tripName, trkpts: pts, wpts }));
                     if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setVis(0); loadPhotos(); } } // adopt the draft that holds the photos
                     markDirty();
                 }

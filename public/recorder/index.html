@@ -40,6 +40,8 @@
         .wf-row { display: flex; gap: .5rem; align-items: center; }
         .wf-row .field { flex: 1; min-width: 0; }
         #wfMic.on, #recWptAudio.on { color: var(--track); animation: recpulse 1.2s infinite; }
+        /* latest waypoint note (incl. live dictated audio text) shown while recording */
+        .rec-lastwp { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .8rem; font-size: .9rem; color: var(--text); }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
     </style>
 </head>
@@ -72,6 +74,7 @@
                 <button class="btn btn-ghost" id="recWptAudio" hidden><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="WP photo">WP photo</span></button>
             </div>
+            <div id="recLastWp" class="rec-lastwp" hidden></div>
             <div id="recMap" class="rec-map panel"></div>
             <div class="btnrow">
                 <button class="btn btn-danger grow" id="recStop"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>

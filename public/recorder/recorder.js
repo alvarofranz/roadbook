@@ -12,6 +12,8 @@
     const t = RBt, toast = RBToast;
     const pad2 = RB.pad2;
     const SESSION_KEY = 'rb_recorder_session';
+    // Default roadbook name proposed when a recording starts: "REC YYYY-MM-DD HH-MM" (#54).
+    const recName = () => { const d = new Date(); return 'REC ' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()); };
 
     let meter = null, map = null, meUser = null, draftId = 0;
     let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null;
@@ -69,12 +71,12 @@
     })();
 
     /* ---------- start / pause / finish ---------- */
-    $('recStart').onclick = () => RBGpxRecorder.settings({ onStart: begin });
+    $('recStart').onclick = () => RBGpxRecorder.settings({ defaultName: recName(), nameLabel: t('Roadbook name'), onStart: begin });
 
     function begin() {
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
         course = null; lastHeadingPos = null;
-        track = []; wpts = []; photos = []; draftId = 0;
+        track = []; wpts = []; photos = []; draftId = 0; showWpText(null);
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
         // a draft roadbook holds the geotagged photos (signed-in only); the camera appears once it exists
@@ -145,6 +147,12 @@
         wpts.push(note); refreshMap(); saveSession(); renderBar();
         return note;
     }
+    // #53: surface the latest waypoint's note (especially the dictated audio text) on the running screen.
+    function showWpText(note) {
+        const el = $('recLastWp');
+        if (note && note.text) { el.textContent = t('Waypoint') + ' ' + note.num + ': ' + note.text; el.hidden = false; }
+        else el.hidden = true;
+    }
     // Waypoint: drops instantly, then a no-pressure quick-text modal that auto-dismisses
     // after 5 s ("Edit later (5)…") — unless you start typing, then it waits for you.
     $('recWpt').onclick = () => {
@@ -159,7 +167,7 @@
         setTimeout(() => inp.focus(), 50);
         let n = 5, typed = false;
         const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${t('Edit later')} (${n})`; }, 1000);
-        function finish() { clearInterval(timer); note.text = inp.value.trim(); d.close(); }
+        function finish() { clearInterval(timer); note.text = inp.value.trim(); showWpText(note); d.close(); }
         inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = t('Save note'); } });
         inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
         btn.onclick = finish;
@@ -194,7 +202,7 @@
         audioRec = new SR_REC();
         audioRec.lang = ui === 'it' ? 'it-IT' : ui === 'es' ? 'es-ES' : ui === 'en' ? 'en-US' : (navigator.language || 'en-US');
         audioRec.interimResults = true;
-        audioRec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; if (audioNote) { audioNote.text = txt; saveSession(); } };
+        audioRec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; if (audioNote) { audioNote.text = txt; saveSession(); showWpText(audioNote); } };
         const done = () => { $('recWptAudio').classList.remove('on'); audioRec = null; audioNote = null; refreshMap(); };
         audioRec.onend = done; audioRec.onerror = done;
         $('recWptAudio').classList.add('on'); toast(t('Listening… tap again to stop'));
@@ -245,6 +253,7 @@
             try {
                 sessionStorage.setItem('rb_trip_track', JSON.stringify(pts));
                 sessionStorage.setItem('rb_trip_wpts', JSON.stringify(wpts));
+                if (name) sessionStorage.setItem('rb_trip_name', name); // carry the chosen roadbook name (#54)
                 if (draftId) sessionStorage.setItem('rb_trip_draft', String(draftId));
             } catch (e) {}
             location.href = '../editor/?trip=1';

@@ -69,12 +69,14 @@ window.RBGpxRecorder = (() => {
     // distance itself) · opts.onStart replaces the default begin()
     function settings(opts = {}) {
         const t = RBt, fsa = 'showSaveFilePicker' in window; // file picker ONLY when this device supports it
+        // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
+        const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
         const rateField = opts.sampleRate === false ? '' : `<label class="muted small">${t('Sample every (seconds)')}</label>
             <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}">`;
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
             ${rateField}
-            <label class="muted small">${t('File name')}</label>
-            <input id="gxName" class="modal-in" type="text" value="${defaultName()}">
+            <label class="muted small">${nameLabel}</label>
+            <input id="gxName" class="modal-in" type="text" value="${startName}">
             <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
             <div class="btnrow between">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
@@ -95,7 +97,7 @@ window.RBGpxRecorder = (() => {
                 sampleMs = Math.max(1, Math.min(60, parseInt(freqInput.value, 10) || 3)) * 1000;
                 try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ freq: sampleMs })); } catch (e) {}
             }
-            fileName = (d.q('#gxName').value || defaultName()).trim();
+            fileName = (d.q('#gxName').value || startName).trim();
             fileHandle = picked;
             d.close(); (opts.onStart || begin)();
         };
