@@ -21,7 +21,9 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden`
 - **`recIdle`** — schermata di avvio con il solo pulsante *Start recording*.
 - **`recRunning`** — dashboard live: quattro readout (tempo trascorso, velocità,
   numero waypoint, km registrati), la fila di pulsanti azione (Pause · Waypoint ·
-  WP audio · WP Foto), la mappa live e il pulsante *Finish*.
+  WP audio · WP Foto), la mappa live e il pulsante *Finish*. Su smartphone (≤430px)
+  la spaziatura verticale è compatta (padding ridotto, gap unico della `.dash`,
+  margini ridondanti azzerati) così la mappa guadagna schermo.
 
 La barra di stato globale (orologio, batteria, stato satellite/GPS) è `RBStatusBar`,
 mostrata solo durante la registrazione ([recorder.js:38](../public/recorder/recorder.js#L38)).
@@ -143,7 +145,8 @@ Il microfono pulsa mentre ascolta (classe `.on`, [index.html](../public/recorder
 
 ### "WP audio" (dettatura diretta)
 Oltre al *Waypoint* col modale, un pulsante **"WP audio"** (`#recWptAudio`, visibile solo
-dove lo speech-to-text è supportato) fa tutto in un tap, **senza modale**: rilascia un
+dove lo speech-to-text è supportato — evidenziato con `.btn-accent`, tinta sand, per
+distinguerlo dai ghost button vicini) fa tutto in un tap, **senza modale**: rilascia un
 waypoint alla posizione corrente **e** avvia subito la dettatura; il testo riconosciuto
 diventa la nota del waypoint in tempo reale. Pulsa in rosso mentre ascolta; un secondo tap
 ferma. È il flusso pensato per l'uso col telefono in movimento.

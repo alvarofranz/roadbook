@@ -277,6 +277,9 @@ section.block { padding: 2.4rem 0; }
 
 .btn-danger { background: rgba(255,90,69,.14); color: var(--track); border: 1px solid rgba(255,90,69,.32); }
 .btn-danger:hover { background: rgba(255,90,69,.24); text-decoration: none; }
+/* accent-tinted action: stands out from ghost buttons without being a full primary CTA */
+.btn-accent { background: rgba(232,176,89,.16); color: var(--sand-2); border: 1px solid rgba(232,176,89,.40); }
+.btn-accent:hover { background: rgba(232,176,89,.26); border-color: var(--sand); text-decoration: none; }
 /* canonical text input/select (page forms: editor, account, …) */
 .field { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem; }
 /* stacked form label above a .field, and small helper text below it */
