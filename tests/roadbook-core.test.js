@@ -209,6 +209,13 @@ describe('speed limits', () => {
         expect(RB.speedLimitOfNote({ icons: [{ name: 'W01_curve_right.svg' }] })).toBeNull();
         expect(RB.speedLimitOfNote({ icons: [] })).toBeNull();
     });
+    it('prefers the declarative speed_limit field over the icon name (0 = lifted)', () => {
+        expect(RB.speedLimitOfNote({ speed_limit: 50, icons: [{ name: 'S03_30km.svg' }] })).toBe(50);
+        expect(RB.speedLimitOfNote({ speed_limit: 0, icons: [{ name: 'S03_30km.svg' }] })).toBe(0);
+        expect(RB.speedLimitOfNote({ speed_limit: 90, icons: [] })).toBe(90);
+        // unset field → falls back to the icon-name rule
+        expect(RB.speedLimitOfNote({ icons: [{ name: 'S03_30km.svg' }] })).toBe(30);
+    });
 });
 
 describe('QR meta payload', () => {

@@ -221,6 +221,7 @@
     // reached = green · skipped (passed over, never reached) = pink · active = red border ·
     // upcoming = white · ≤50 m to next = blue · approaching (auto) = orange.
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
+    const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
@@ -229,13 +230,15 @@
             if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
             if (i === activeIdx) { cls.push('active'); if (auto && approaching) cls.push('warn'); }
             const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
-            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
+            const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
+            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
+            const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
             const reach = (!auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
             const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
             return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${close}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
-                <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
+                <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
                 <div class="col-buttons">${reach}${mapb}</div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');

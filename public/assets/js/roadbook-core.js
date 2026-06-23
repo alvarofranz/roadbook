@@ -613,8 +613,10 @@
         const m = String(name).match(/^S\d{2}_(\d{1,3})km/i);
         return m ? parseInt(m[1], 10) : null;
     }
-    // limit in force at a note (looks at its icons; 0 = limit lifted)
+    // limit in force at a note (0 = limit lifted). The declarative speed_limit field is the
+    // source of truth; a limit encoded in an icon name (imported roadbooks) is the fallback.
     function speedLimitOfNote(note) {
+        if (note.speed_limit != null) return note.speed_limit;
         let lim = null;
         (note.icons || []).forEach((ic) => { const v = speedLimitFromName(ic.name); if (v != null) lim = v; });
         return lim;

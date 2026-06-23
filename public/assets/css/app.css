@@ -200,6 +200,9 @@ section.block { padding: 2.4rem 0; }
 .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
 .nrow .col-text .text { flex: 1; word-break: break-word; }
 .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
+.nrow .col-text .note-speed { margin-top: .25rem; }
+.nrow .col-text .note-speed .lim { display: inline-flex; align-items: center; justify-content: center; min-width: 1.9rem; height: 1.9rem; padding: 0 .25rem; border: 3px solid #c0392b; border-radius: 50%; font-weight: 800; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.nrow .col-text .note-speed .lim.lifted { border-color: #777; color: #777; }
 .nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
 .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
 .nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }

@@ -103,10 +103,12 @@
         <tr><td><code>text</code></td><td>string</td><td data-i18n="The instruction / comment.">The instruction / comment.</td></tr>
         <tr><td><code>cap</code></td><td>integer | null</td><td data-i18n="CAP — the heading in degrees (0–360) to hold to the next note, when shown.">CAP — the heading in degrees (0–360) to hold to the next note, when shown.</td></tr>
         <tr><td><code>cap_distance</code></td><td>integer | null</td><td data-i18n="Straight-line distance to hold that heading (metres).">Straight-line distance to hold that heading (metres).</td></tr>
+        <tr><td><code>cap_type</code></td><td>string, optional</td><td data-i18n="Optional. Qualifies the CAP: exit (default), average, calculated or turning.">Optional. Qualifies the CAP: exit (default), average, calculated or turning.</td></tr>
         <tr><td><code>bearing_in</code></td><td>number</td><td data-i18n="Track bearing arriving at the note (degrees).">Track bearing arriving at the note (degrees).</td></tr>
         <tr><td><code>bearing_out</code></td><td>number</td><td data-i18n="Track bearing leaving the note (degrees).">Track bearing leaving the note (degrees).</td></tr>
         <tr><td><code>road_type_in</code></td><td>0–4</td><td data-i18n-html="notes.road_type_in">Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
         <tr><td><code>road_type_out</code></td><td>0–4</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
+        <tr><td><code>speed_limit</code></td><td>integer, optional</td><td data-i18n="Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.">Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.</td></tr>
         <tr><td><code>danger</code></td><td>1–3, optional</td><td data-i18n-html="notes.danger">FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
         <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
         <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
@@ -116,9 +118,10 @@
   "lat": 45.8321, "lon": 9.4002,
   "distance": 8420, "partial_distance": 630,
   "text": "Bear right onto the gravel track",
-  "cap": 247, "cap_distance": 300,
+  "cap": 247, "cap_distance": 300, "cap_type": "average",
   "bearing_in": 92, "bearing_out": 247,
   "road_type_in": 2, "road_type_out": 3,
+  "speed_limit": 30,
   "danger": 2,
   "icons": [
     { "name": "S03_30km.svg", "pos": [40, 22], "angle": 0, "size": 32, "flip_x": false }
