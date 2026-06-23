@@ -101,6 +101,19 @@ style URL for satellite imagery; the base map runs on free, no-key MapLibre tile
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
 (copy `.env.example`); migrations live in `migrations/`.
 
+## Production DB (migrations + fresh pull) → `DB.md`
+Anything that touches the **production** database — applying a schema migration to
+prod, or pulling a fresh copy of prod data into your local DDEV — is documented in
+**`DB.md`**. That file is **private and gitignored on purpose** (it holds production
+access keys), so it is NOT in this repo: ask the maintainer for it, and read it
+before any prod-DB work. Golden rule for schema changes — **schema first, code
+second**: a new column/table must exist in prod *before* the code that reads it is
+deployed, or production login breaks. So a schema change ships as its own
+migration-only PR (merging it auto-deploys the `.sql`), is then applied as `DB.md`
+describes, and only after that does the PR with the code that uses it merge.
+**Never commit `DB.md` or paste its contents anywhere public — it stays
+out-of-band.**
+
 ## Releasing
 **To deploy: push to `main`. That is the whole deploy step — there is no manual server
 access and nothing else to run.** A push (a direct commit or a merged PR) triggers the
