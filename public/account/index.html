@@ -95,6 +95,7 @@
         <h1 data-i18n="Set a new password">Set a new password</h1>
         <form id="resetForm">
             <input id="resetPass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
+            <input id="resetPass2" class="field" type="password" placeholder="Confirm new password" data-i18n-ph="Confirm new password" data-i18n-aria="Confirm new password" autocomplete="new-password">
             <button class="btn btn-primary" id="resetBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
         </form>
     </section>
@@ -105,6 +106,7 @@
         <p class="muted small" data-i18n="An administrator set a temporary password. Please choose a new one to continue.">An administrator set a temporary password. Please choose a new one to continue.</p>
         <form id="forceForm">
             <input id="forcePass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
+            <input id="forcePass2" class="field" type="password" placeholder="Confirm new password" data-i18n-ph="Confirm new password" data-i18n-aria="Confirm new password" autocomplete="new-password">
             <button class="btn btn-primary" id="forceBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
         </form>
     </section>
@@ -126,6 +128,11 @@
         <div id="profileForm" class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
+            <div class="row2">
+                <div><label class="field-label" for="pfFirst" data-i18n="First name">First name</label><input id="pfFirst" class="field" autocomplete="given-name" maxlength="80"></div>
+                <div><label class="field-label" for="pfLast" data-i18n="Last name">Last name</label><input id="pfLast" class="field" autocomplete="family-name" maxlength="80"></div>
+            </div>
+            <label class="field-label" for="pfBio" data-i18n="Bio">Bio</label>
             <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" data-i18n-aria="Short bio…" maxlength="500"></textarea>
             <label class="muted small" for="pfVoiceLang"><span data-i18n="Voice note language">Voice note language</span></label>
             <select id="pfVoiceLang" class="field">
@@ -144,6 +151,8 @@
                 <input id="pwCurrent" class="field" type="password" autocomplete="current-password">
                 <label class="field-label" for="pwNew" data-i18n="New password (min 8 chars)">New password (min 8 chars)</label>
                 <input id="pwNew" class="field" type="password" autocomplete="new-password">
+                <label class="field-label" for="pwNew2" data-i18n="Confirm new password">Confirm new password</label>
+                <input id="pwNew2" class="field" type="password" autocomplete="new-password">
                 <button class="btn btn-primary" id="pwSave" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
             </form>
         </div>

@@ -68,6 +68,7 @@
         if (params.get('reset')) {
             show('vReset');
             onSubmit('resetForm', async () => {
+                if ($('resetPass').value !== $('resetPass2').value) return msg("Passwords don't match.", false);
                 const r = await api('reset', { token: params.get('reset'), password: $('resetPass').value });
                 msg(r.message || r.error, !!r.ok); if (r.ok) { history.replaceState(null, '', location.pathname); show('vLogin'); }
             });
@@ -91,6 +92,7 @@
     });
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
+        if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
         const r = await api('change_password', { new: $('forcePass').value });
         if (r.ok) { const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
     });
@@ -104,9 +106,10 @@
     });
     // change password (signed in) + delete account — bound once; the forms live in #vAccount
     onSubmit('pwForm', async () => {
+        if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
         RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
-        if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; }
+        if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
     });
     onSubmit('delForm', async () => {
         if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
@@ -124,6 +127,8 @@
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
+        $('pfFirst').value = user.first_name || '';
+        $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
         $('pfVoiceLang').value = user.voice_lang || '';
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
@@ -133,7 +138,11 @@
             const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
             if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
         };
-        $('pfSave').onclick = async () => { const r = await api('profile', { bio: $('pfBio').value, voice_lang: $('pfVoiceLang').value }); msg(r.ok ? 'Profile saved.' : r.error, !!r.ok); };
+        $('pfSave').onclick = async () => {
+            const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, voice_lang: $('pfVoiceLang').value });
+            if (r.ok) $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; // keep the header name in sync
+            msg(r.ok ? 'Profile saved.' : r.error, !!r.ok);
+        };
     }
 
     init();

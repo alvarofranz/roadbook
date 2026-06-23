@@ -59,11 +59,14 @@ function is_admin(?array $u): bool {
 function require_admin(): array { $u = require_user(); if (!is_admin($u)) fail('Admins only.', 403); return $u; }
 
 function update_profile(array $user, array $d): void {
-    $bio = substr(trim((string)($d['bio'] ?? '')), 0, 500);
+    $first = mb_substr(trim((string)($d['first_name'] ?? '')), 0, 80);
+    $last  = mb_substr(trim((string)($d['last_name'] ?? '')), 0, 80);
+    if ($first === '' || $last === '') fail('First and last name are required.');
+    $bio = mb_substr(trim((string)($d['bio'] ?? '')), 0, 500);
     // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
     $voice = (string)($d['voice_lang'] ?? '');
     if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
-    db()->prepare('UPDATE users SET bio = ?, voice_lang = ? WHERE id = ?')->execute([$bio, $voice, $user['id']]);
+    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $voice, $user['id']]);
     json_out(['ok' => true]);
 }
 
