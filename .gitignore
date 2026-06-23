@@ -4,7 +4,9 @@
 /.fleet
 /.claude
 /node_modules
-/source
+# /source holds local-only dev scripts, except the versioned release stamper
+/source/*
+!/source/stamp-version.mjs
 /public/assets/fontawesome
 /public/assets/js/config.js
 /.env
