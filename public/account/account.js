@@ -74,6 +74,13 @@
             });
             return;
         }
+        if (params.get('verifyemail')) {
+            const r = await api('verify_email_change', { token: params.get('verifyemail') });
+            history.replaceState(null, '', location.pathname);
+            const c = await api('config'); // email may have changed → re-read the user
+            if (c.user) { showAccount(c.user); RBToast(r.message || r.error); } else { show('vLogin'); msg(r.message || r.error, !!r.ok); }
+            return;
+        }
         if (cfg.user) return cfg.user.must_change_password ? showForce() : showAccount(cfg.user);
         show('vLogin');
     }
@@ -110,6 +117,13 @@
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
         RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
         if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
+    });
+    // change email (signed in): re-verifies the new address — see change_email() server-side
+    onSubmit('emailForm', async () => {
+        if ($('emNew').value.trim().toLowerCase() !== $('emNew2').value.trim().toLowerCase()) return RBToast("Emails don't match.");
+        const r = await api('change_email', { email: $('emNew').value });
+        RBToast(r.message || r.error);
+        if (r.ok) { $('emNew').value = ''; $('emNew2').value = ''; }
     });
     onSubmit('delForm', async () => {
         if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;

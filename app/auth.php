@@ -208,3 +208,41 @@ function reset_password(array $d): void {
     db()->prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $u['id']]);
     json_out(['ok' => true, 'message' => 'Password updated — you can sign in now.']);
 }
+
+// Change the account email, re-verifying ownership of the new address: the new email is
+// stored as pending_email and a confirmation link is sent to it; the address only switches
+// once that link is opened (verify_email_change). The current email stays active until then.
+// The confirmation link reuses verify_token/verify_expires (free on a verified account).
+function change_email(array $user, array $d): void {
+    $email = strtolower(trim((string)($d['email'] ?? '')));
+    if (!valid_email($email)) fail('Please enter a valid email.');
+    if ($email === strtolower((string)$user['email'])) fail('That is already your email.');
+    $st = db()->prepare('SELECT id FROM users WHERE (email = ? OR pending_email = ?) AND id <> ?');
+    $st->execute([$email, $email, $user['id']]);
+    if ($st->fetch()) fail('That email is already in use.');
+    $raw = new_token();
+    db()->prepare('UPDATE users SET pending_email = ?, verify_token = ?, verify_expires = DATE_ADD(NOW(), INTERVAL 24 HOUR) WHERE id = ?')
+        ->execute([$email, token_hash($raw), $user['id']]);
+    global $CFG;
+    $link = $CFG['base_url'] . '/account/?verifyemail=' . $raw;
+    send_mail($email, $user['first_name'], 'Confirm your new RDBK.app email',
+        mail_html('Confirm your new email', '<p>Confirm this address to use it for your RDBK.app account:</p>' . mail_button($link, 'Confirm new email') . '<p style="font-size:12px;color:#93a0b4">This link expires in 24 hours. Your current email stays active until you confirm.</p>'));
+    json_out(['ok' => true, 'message' => 'Check your new inbox to confirm the change.']);
+}
+
+// Open the confirmation link from change_email: switch email → pending_email. Token-based
+// (no session needed, like reset). Guards against the address being taken in the meantime.
+function verify_email_change(array $d): void {
+    $t = (string)($d['token'] ?? '');
+    if ($t === '') fail('Missing token.');
+    $st = db()->prepare('SELECT id, pending_email FROM users WHERE verify_token = ? AND verify_expires > NOW() AND pending_email IS NOT NULL');
+    $st->execute([token_hash($t)]);
+    $u = $st->fetch();
+    if (!$u) fail('That confirmation link is invalid or has expired.');
+    $chk = db()->prepare('SELECT id FROM users WHERE email = ? AND id <> ?');
+    $chk->execute([$u['pending_email'], $u['id']]);
+    if ($chk->fetch()) fail('That email is now in use by another account.');
+    db()->prepare('UPDATE users SET email = ?, pending_email = NULL, email_verified = 1, verify_token = NULL, verify_expires = NULL WHERE id = ?')
+        ->execute([$u['pending_email'], $u['id']]);
+    json_out(['ok' => true, 'message' => 'Email updated.']);
+}

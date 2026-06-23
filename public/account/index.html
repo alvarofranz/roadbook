@@ -145,6 +145,18 @@
         </div>
 
         <div class="auth-card profile-form">
+            <h2 data-i18n="Change email">Change email</h2>
+            <p class="muted small" data-i18n="We’ll email a confirmation link to the new address; it changes only once you confirm.">We’ll email a confirmation link to the new address; it changes only once you confirm.</p>
+            <form id="emailForm">
+                <label class="field-label" for="emNew" data-i18n="New email">New email</label>
+                <input id="emNew" class="field" type="email" autocomplete="email">
+                <label class="field-label" for="emNew2" data-i18n="Confirm new email">Confirm new email</label>
+                <input id="emNew2" class="field" type="email" autocomplete="email">
+                <button class="btn btn-primary" id="emSave" type="submit" data-i18n="Update email"><i class="fa-solid fa-envelope"></i> Update email</button>
+            </form>
+        </div>
+
+        <div class="auth-card profile-form">
             <h2 data-i18n="Change password">Change password</h2>
             <form id="pwForm">
                 <label class="field-label" for="pwCurrent" data-i18n="Current password">Current password</label>

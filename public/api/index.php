@@ -26,6 +26,8 @@ try {
         case 'reset':     reset_password($d); break;
         case 'profile':   update_profile(require_user(), $d); break;
         case 'change_password': change_password(require_user(), $d); break;
+        case 'change_email':        change_email(require_user(), $d); break;
+        case 'verify_email_change': verify_email_change($d); break;
         case 'account_delete':  account_delete(require_user(), $d); break;
         case 'admin_users':     admin_users(require_admin()); break;
         case 'admin_set_role':  admin_set_role(require_admin(), $d); break;
