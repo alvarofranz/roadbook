@@ -108,6 +108,9 @@
         .gpx-sub { margin-left: 1.5rem; }
         /* map context menu: the keyboard-shortcut hint, pushed to the right of each command */
         .map-ctx-key { margin-left: auto; padding-left: 1.5rem; color: #999; font-size: .82em; font-weight: 700; }
+        /* raw JSON/GPX editor (#28) */
+        .raw-edit { width: 100%; height: 55vh; min-height: 240px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .76rem; line-height: 1.4; white-space: pre; overflow: auto; background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; }
+        .ok-msg { color: #3ad29f; } .err-msg { color: var(--track); }
         /* selected-note edit marker: a red disc with the note number on top (number stays readable) */
         .rb-edit-pin { width: 30px; height: 30px; border-radius: 50%; background: #ff2a2a; border: 2px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.55); color: #fff; font-weight: 800; font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: grab; }
         /* draggable marker shown while moving a photo on the map */
@@ -279,8 +282,9 @@
             <div class="rb-actions">
                 <div class="btn-group">
                     <button class="btn btn-ghost" id="openConfig" title="Settings" data-i18n-title="Settings" aria-label="Settings" data-i18n-aria="Settings"><i class="fa-solid fa-sliders"></i></button>
-                    <button class="btn btn-primary" id="exportBtn" data-i18n="Export"><i class="fa-solid fa-file-export"></i> Export</button>
-                    <button class="btn btn-ghost" id="saveAccount" data-i18n="Save"><i class="fa-solid fa-cloud-arrow-up"></i> Save</button>
+                    <button class="btn btn-primary" id="exportBtn" title="Export" data-i18n-title="Export" aria-label="Export" data-i18n-aria="Export"><i class="fa-solid fa-file-export"></i></button>
+                    <button class="btn btn-primary" id="rawJsonBtn" title="Raw JSON" data-i18n-title="Raw JSON" aria-label="Raw JSON" data-i18n-aria="Raw JSON"><i class="fa-solid fa-code"></i></button>
+                    <button class="btn btn-primary" id="saveAccount" title="Save" data-i18n-title="Save" aria-label="Save" data-i18n-aria="Save"><i class="fa-solid fa-floppy-disk"></i></button>
                     <button class="btn btn-ghost" id="saveAsAccount" title="Save as" data-i18n-title="Save as" aria-label="Save as" data-i18n-aria="Save as"><i class="fa-solid fa-clone"></i></button>
                 </div>
                 <div class="rb-actions-right">
@@ -324,6 +328,7 @@
         <div class="ed-row between">
             <button class="btn btn-ghost" id="backToMap" data-i18n="Back"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <div class="icon-category flush" data-i18n="Roadbook configuration">Roadbook configuration</div>
+            <button class="btn btn-primary" id="cfgSave"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
         </div>
         <div class="meta-card">
             <div class="meta-grid">

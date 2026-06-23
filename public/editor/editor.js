@@ -142,11 +142,11 @@
     const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, isPublic, gaps })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
     const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
+    // Floppy save button: clickable only when there's something to save (a new roadbook, or
+    // pending edits) — disabled once it's saved to the profile with no further changes.
     function updateSaveBtn() {
-        const b = $('saveAccount'); if (!b) return;
-        if (!meUser) { b.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${esc(t('Save'))}`; b.classList.add('btn-primary'); return; }
-        if (currentRbId && !dirty) { b.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t('Saved'))}`; b.classList.remove('btn-primary'); }
-        else { b.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> ${esc(t('Save'))}`; b.classList.add('btn-primary'); }
+        const dis = !!(currentRbId && !dirty);
+        ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
@@ -843,13 +843,15 @@
         }
         return r;
     }
-    $('saveAccount').onclick = async () => {
+    async function saveRoadbook() {
         if (!meUser) return RBNeedAuth('Sign in to save this roadbook to your profile.');
         if (!rb) return toast('Nothing to save.');
         if (!(await confirmOpenCuts())) return;
         const r = await doSave();
         toast(r.ok ? (isPublic && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
-    };
+    }
+    $('saveAccount').onclick = saveRoadbook;
+    $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
     // "Save as": store the current content as a NEW roadbook (the original is left
     // untouched). The copy starts private and gets a "… (copy)" title; the editor
     // then keeps editing the copy. Photos stay with the original (they live server-side).
@@ -1412,7 +1414,7 @@
         const m = RBModal(`<h2>${esc(t('Export'))}</h2>
             <div class="btn-group col">
                 <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-floppy-disk"></i> ${esc(t('.rdbk file'))}</button>
-                <button class="btn btn-ghost" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
+                <button class="btn btn-primary" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
             </div>
             <h3>${esc(t('GPX'))}</h3>
             <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track'))}</label>
@@ -1436,6 +1438,66 @@
         };
     }
     $('exportBtn').onclick = openExportModal;
+    $('rawJsonBtn').onclick = openRawJson;
+    // Raw editor (#28): the whole roadbook as pretty JSON — inspect/copy, validate and apply back.
+    // The embedded icons (base64 blobs) show as placeholders and are preserved on save.
+    function openRawJson() {
+        if (!rb) return toast('Load a roadbook first.');
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        const display = Object.assign({}, rb, { icons: Object.fromEntries(Object.keys(rb.icons || {}).map((k) => [k, 'data:…(embedded)'])) });
+        const jsonText = () => JSON.stringify(display, null, 2);
+        // indent compact XML one tag per line, for a readable GPX preview
+        const prettyXml = (xml) => {
+            let pad = 0; const out = [];
+            xml.replace(/>\s*</g, '>\n<').split('\n').forEach((raw) => {
+                const line = raw.trim(); if (!line) return;
+                if (/^<\//.test(line)) pad--;
+                out.push('  '.repeat(Math.max(0, pad)) + line);
+                if (/^<[^!?/]/.test(line) && !/\/>$/.test(line) && !/<\/.+>$/.test(line)) pad++;
+            });
+            return out.join('\n');
+        };
+        const gpxText = () => {
+            const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
+            return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
+        };
+        const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>
+            <div class="ed-row"><input type="search" id="rawSearch" class="field grow" placeholder="${esc(t('Find in text (Enter)…'))}" spellcheck="false" autocomplete="off"></div>
+            <textarea id="rawJson" class="raw-edit" spellcheck="false" readonly></textarea>
+            <p id="rawMsg" class="small"></p>
+            <div class="btnrow end">
+                <button class="btn btn-ghost" data-x="gpx">${esc(t('View GPX'))}</button>
+                <button class="btn btn-primary" data-x="copy"><i class="fa-solid fa-copy"></i> ${esc(t('Copy'))}</button>
+            </div>`, 'wide');
+        const ta = m.q('#rawJson'), msg = m.q('#rawMsg'), gpxBtn = m.q('[data-x="gpx"]');
+        let gpxMode = false;
+        ta.value = jsonText();
+        const setMsg = (txt, ok) => { msg.textContent = txt; msg.className = 'small ' + (ok ? 'ok-msg' : 'err-msg'); };
+        // Enter in the search box → jump to the next occurrence (wraps), scrolling it into view.
+        m.q('#rawSearch').onkeydown = (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const q = e.target.value; if (!q) return;
+            const hay = ta.value.toLowerCase(), needle = q.toLowerCase();
+            let idx = hay.indexOf(needle, ta.selectionEnd || 0);
+            if (idx < 0) idx = hay.indexOf(needle, 0); // wrap to the top
+            if (idx < 0) { setMsg(t('Not found.'), false); return; }
+            const full = ta.value;
+            ta.value = full.slice(0, idx); ta.scrollTop = ta.scrollHeight; ta.value = full; // force the match into view
+            ta.setSelectionRange(idx, idx + q.length);
+            msg.textContent = '';
+        };
+        gpxBtn.onclick = () => {
+            gpxMode = !gpxMode;
+            gpxBtn.textContent = t(gpxMode ? 'View JSON' : 'View GPX');
+            ta.value = gpxMode ? gpxText() : jsonText();
+            ta.scrollTop = 0; msg.textContent = '';
+        };
+        m.q('[data-x="copy"]').onclick = async () => {
+            try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+            setMsg(t('Copied.'), true);
+        };
+    }
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
     async function embedUsed(r) {
         r.icons = r.icons || {};
