@@ -14,6 +14,9 @@
     const SESSION_KEY = 'rb_recorder_session';
 
     let meter = null, map = null, meUser = null, draftId = 0;
+    // Speech-to-text language for voice notes: the signed-in user's account preference
+    // (set in /account/), or the device language when unset or signed out.
+    const voiceLang = () => (meUser && meUser.voice_lang) || navigator.language || 'en-US';
     let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null;
     let track = [], wpts = [], photos = [];
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
@@ -169,8 +172,7 @@
             mic.onclick = () => {
                 if (rec) { rec.stop(); return; }
                 rec = new SR();
-                const ui = document.documentElement.lang;
-                rec.lang = ui === 'it' ? 'it-IT' : ui === 'es' ? 'es-ES' : ui === 'en' ? 'en-US' : (navigator.language || 'en-US');
+                rec.lang = voiceLang();
                 rec.interimResults = true;
                 rec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; inp.value = txt; typed = true; btn.textContent = t('Save note'); };
                 const done = () => { mic.classList.remove('on'); rec = null; };
@@ -190,9 +192,8 @@
         if (audioRec) { audioRec.stop(); return; } // tap again → stop listening
         if (!here) return toast(t('Waiting for a GPS fix…'));
         audioNote = dropWaypoint(here.lat, here.lon, '');
-        const ui = document.documentElement.lang;
         audioRec = new SR_REC();
-        audioRec.lang = ui === 'it' ? 'it-IT' : ui === 'es' ? 'es-ES' : ui === 'en' ? 'en-US' : (navigator.language || 'en-US');
+        audioRec.lang = voiceLang();
         audioRec.interimResults = true;
         audioRec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; if (audioNote) { audioNote.text = txt; saveSession(); } };
         const done = () => { $('recWptAudio').classList.remove('on'); audioRec = null; audioNote = null; refreshMap(); };
