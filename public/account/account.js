@@ -132,6 +132,45 @@
     });
     wirePasswordToggles();
 
+    /* ---------- default map location picker (a draggable pin on a mini-map) ---------- */
+    let locMap = null, locMarker = null, locLat = null, locLon = null;
+    function fmtCoord(lat, lon) {
+        if (lat == null) return t('Not set');
+        const ew = lon >= 0 ? 'E' : t('W'); // West is "O" (Oeste/Ovest) in es/it
+        return `${Math.abs(lat).toFixed(5)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(5)}° ${ew}`;
+    }
+    function renderLoc() { $('pfLocCoords').textContent = fmtCoord(locLat, locLon); $('pfLocClear').hidden = locLat == null; }
+    function setLoc(lat, lon) {
+        locLat = lat; locLon = lon;
+        if (lat == null) { if (locMarker) { locMarker.remove(); locMarker = null; } return renderLoc(); }
+        if (!locMarker) {
+            locMarker = new maplibregl.Marker({ draggable: true, color: '#e8b059' }).setLngLat([lon, lat]).addTo(locMap.map);
+            locMarker.on('dragend', () => { const p = locMarker.getLngLat(); setLoc(+p.lat.toFixed(7), +p.lng.toFixed(7)); });
+        } else locMarker.setLngLat([lon, lat]);
+        renderLoc();
+    }
+    function initLocPicker(lat, lon) {
+        const has = lat != null && lon != null;
+        if (!locMap) {
+            locMap = new RBMap('pfLocMap', { style: RBMap.STYLE_TOPO, zoom: has ? 11 : 3, geolocate: true, center: has ? [lon, lat] : [0, 20] });
+            locMap.map.on('click', (e) => setLoc(+e.lngLat.lat.toFixed(7), +e.lngLat.lng.toFixed(7)));
+            $('pfLocClear').onclick = () => setLoc(null, null);
+            $('pfLocSave').onclick = async () => {
+                const r = await api('save_location', { default_lat: locLat, default_lon: locLon });
+                RBToast(r.ok ? 'Location saved.' : r.error);
+            };
+            $('pfLocHere').onclick = () => {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition((p) => {
+                    setLoc(+p.coords.latitude.toFixed(7), +p.coords.longitude.toFixed(7));
+                    locMap.map.flyTo({ center: [locLon, locLat], zoom: 13 });
+                }, () => RBToast('Could not get your location.'), { enableHighAccuracy: true, timeout: 10000 });
+            };
+        } else if (has) locMap.map.jumpTo({ center: [lon, lat], zoom: 11 });
+        setTimeout(() => locMap.map.resize(), 80); // the card was display:none until the account view showed
+        if (has) setLoc(+lat, +lon); else setLoc(null, null);
+    }
+
     /* ---------- account ---------- */
     async function showAccount(user) {
         show('vAccount'); msg('');
@@ -145,6 +184,7 @@
         $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
         $('pfVoiceLang').value = user.voice_lang || '';
+        initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;

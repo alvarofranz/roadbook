@@ -55,7 +55,12 @@
     });
 
     /* ---------- startup: know the user, then resume → rescue → idle ---------- */
-    RBApi('config').then((c) => { meUser = c.user || null; }).catch(() => {});
+    RBApi('config').then((c) => {
+        meUser = c.user || null;
+        // Before the first fix, centre on the user's saved default location if they set one.
+        if (meUser && meUser.default_lat != null && meUser.default_lon != null && !here && map && map.map)
+            map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 13 });
+    }).catch(() => {});
     (async function () {
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         if (session && session.recording) {

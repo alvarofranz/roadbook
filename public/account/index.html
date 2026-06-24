@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.24-7">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.24-7">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
@@ -16,6 +17,8 @@
         .auth-card h2 { font-size: 1.05rem; margin: .4rem 0 .3rem; }
         .field { margin: .35rem 0; } /* base input style is shared in app.css; account just adds stacking space */
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+        .loc-picker-map { height: 220px; border-radius: 12px; overflow: hidden; margin: .5rem 0 .2rem; }
+        .auth-card .btnrow .btn { width: auto; margin-top: 0; } /* the location row keeps its small buttons inline */
         .auth-card .btn { width: 100%; justify-content: center; margin-top: .8rem; }
         .auth-card .links { margin-top: 1rem; font-size: .92rem; display: flex; gap: 1rem; flex-wrap: wrap; }
         .auth-message { border-radius: 10px; padding: .7rem .9rem; margin: .2rem 0 1rem; font-size: .92rem; }
@@ -145,6 +148,18 @@
         </div>
 
         <div class="auth-card profile-form">
+            <h2 data-i18n="Default map location">Default map location</h2>
+            <p class="muted small" data-i18n="Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.">Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.</p>
+            <div id="pfLocMap" class="loc-picker-map"></div>
+            <div class="btnrow">
+                <span id="pfLocCoords" class="muted small grow"></span>
+                <button class="btn btn-ghost" id="pfLocHere" type="button"><i class="fa-solid fa-location-crosshairs"></i> <span data-i18n="Use my location">Use my location</span></button>
+                <button class="btn btn-ghost" id="pfLocClear" type="button" hidden><i class="fa-solid fa-xmark"></i> <span data-i18n="Clear">Clear</span></button>
+            </div>
+            <button class="btn btn-primary" id="pfLocSave" data-i18n="Save location">Save location</button>
+        </div>
+
+        <div class="auth-card profile-form">
             <h2 data-i18n="Change email">Change email</h2>
             <p class="muted small" data-i18n="We’ll email a confirmation link to the new address; it changes only once you confirm.">We’ll email a confirmation link to the new address; it changes only once you confirm.</p>
             <form id="emailForm">
@@ -185,6 +200,9 @@
 
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="../assets/js/config.js?v=2026.06.24-7"></script>
+<script src="../assets/js/rbmap.js?v=2026.06.24-7"></script>
 <script src="../assets/js/i18n.js?v=2026.06.24-7"></script>
 <script src="../assets/js/app.js?v=2026.06.24-7"></script>
 <script src="account.js?v=2026.06.24-7"></script>

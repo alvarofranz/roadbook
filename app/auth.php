@@ -35,13 +35,16 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang, default_lat, default_lon FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
         $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
         $u['email_verified'] = (int)$u['email_verified'];
         $u['must_change_password'] = (int)$u['must_change_password']; // int, so the JS truthiness check is right
+        // Default map location → numbers (or null), never DECIMAL strings, for the client.
+        $u['default_lat'] = $u['default_lat'] !== null ? (float)$u['default_lat'] : null;
+        $u['default_lon'] = $u['default_lon'] !== null ? (float)$u['default_lon'] : null;
     }
     return $u;
 }
@@ -67,6 +70,17 @@ function update_profile(array $user, array $d): void {
     $voice = (string)($d['voice_lang'] ?? '');
     if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
     db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $voice, $user['id']]);
+    json_out(['ok' => true]);
+}
+
+// Default map location (its own profile card): a valid lat/lon pair, or NULL to clear it
+// (anything missing or out of range clears it). Used to centre the map when there's no GPS
+// fix yet — opening the Recorder, or drawing a new route from scratch in the Editor.
+function save_location(array $user, array $d): void {
+    $lat = $d['default_lat'] ?? null; $lon = $d['default_lon'] ?? null;
+    $hasLoc = is_numeric($lat) && is_numeric($lon) && abs((float)$lat) <= 90 && abs((float)$lon) <= 180;
+    db()->prepare('UPDATE users SET default_lat = ?, default_lon = ? WHERE id = ?')
+        ->execute([$hasLoc ? (float)$lat : null, $hasLoc ? (float)$lon : null, $user['id']]);
     json_out(['ok' => true]);
 }
 

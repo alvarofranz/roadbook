@@ -1650,6 +1650,10 @@
                 }
             }
         }
-        if (!rb && meUser) { const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; } // landing → list the user's saved roadbooks
+        if (!rb && meUser) {
+            const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; // landing → list the user's saved roadbooks
+            // Empty start (e.g. "Draw on the map"): centre on the user's saved default location.
+            if (meUser.default_lat != null && meUser.default_lon != null) map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 12 });
+        }
     })();
 })();
