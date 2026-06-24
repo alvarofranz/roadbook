@@ -56,7 +56,7 @@
                 ? `<a class="map-ctx-link" href="${it.href}" target="_blank" rel="noopener">${inner}</a>`
                 : `<button type="button" class="map-ctx-link ${it.cls || ''}" data-k="${it.id}">${inner}</button>`;
         }).join('');
-        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8 }).setLngLat(lngLat).setHTML(html).addTo(map.map);
+        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8, maxWidth: 'none' }).setLngLat(lngLat).setHTML(html).addTo(map.map); // size to content so the coords line never wraps
         const el = popup.getElement(), keys = {};
         items.forEach((it) => {
             if (!it.run) return;
@@ -80,7 +80,8 @@
             { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
             { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
         ];
-        const coords = { coords: `Coords Lat/Lng: ${here.lat >= 0 ? 'N' : 'S'} ${Math.abs(here.lat).toFixed(6)} ${Math.abs(here.lon).toFixed(6)} ${here.lon >= 0 ? 'E' : 'W'}` };
+        const card = { es: 'NSEO', it: 'NSEO' }[document.documentElement.lang] || 'NSEW'; // N·S·E·W, but West → O in it/es (Ovest/Oeste)
+        const coords = { coords: `${t('Coords Lat/Lng:')} ${here.lat >= 0 ? card[0] : card[1]} ${Math.abs(here.lat).toFixed(6)} ${Math.abs(here.lon).toFixed(6)} ${here.lon >= 0 ? card[2] : card[3]}` };
         const wf = rb && map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] })[0];
         const vf = rb && !wf && map.map.queryRenderedFeatures(e.point, { layers: ['rb-verts'] })[0];
         if (wf) {                                   // a note (waypoint)
