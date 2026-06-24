@@ -148,17 +148,13 @@ Metodi correlati:
 
 ---
 
-## 6. Marker di edit trascinabile (`setEditMarker`)
+## 6. Trascinamento di vertici e note (tool Move)
 
-`setEditMarker(note, onDragEnd, noEase)` mette un `maplibregl.Marker` rosso e
-**trascinabile** sulla nota in editing ([rbmap.js:206](../public/assets/js/rbmap.js#L206)).
+Nel tool **Move** (`points`) sia i punti traccia sia le **note** (waypoint) sono
+trascinabili. Il vecchio marker rosso pan-only è stato rimosso (#61): la nota si sposta
+trascinando direttamente il suo marker blu, esattamente come un punto traccia.
 
-- Al rilascio, `onDragEnd(lat, lon)` riceve la nuova posizione.
-- `note=null` rimuove il marker.
-- `noEase` mantiene la vista corrente: l'Editor mostra già tutto il percorso, quindi non
-  deve saltare a ogni cambio di selezione; senza `noEase` fa `easeTo` con zoom minimo 14.
-
-### Editing dei vertici della traccia (move-points tool)
+### Vertici traccia e note (move-points tool)
 - **`setVertexEditor(track, onDrag, onCommit)`** — arma/disarma lo strumento: con `track`
   + callback mostra ogni vertice come maniglia trascinabile; con `null` lo azzera
   ([rbmap.js:190](../public/assets/js/rbmap.js#L190)).
@@ -167,6 +163,9 @@ Metodi correlati:
   registrati una sola volta ([rbmap.js:48-58](../public/assets/js/rbmap.js#L48)).
 - **`refreshVertices(track)`** ridisegna le maniglie (usato live durante il drag,
   [rbmap.js:195](../public/assets/js/rbmap.js#L195)).
+- **`setWaypointEditor(onDrag, onCommit)`** — arma/disarma il drag delle **note** (layer
+  `rb-wpts`): `onDrag(noteIndex, lat, lon)` live, `onCommit()` al rilascio. L'Editor sposta
+  il vertice traccia sotto la nota, così la linea la segue (la nota è mobile come un trk, #61).
 - **`setCursor(cursor)`** imposta il cursore base della mappa (es. crosshair mentre si
   disegna o si taglia) ([rbmap.js:117](../public/assets/js/rbmap.js#L117)).
 - **`setPin(pt)`** mette un singolo marker sabbia (seed di disegno / ancora di taglio);
@@ -201,7 +200,7 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 
 | Consumatore | Uso |
 |-------------|-----|
-| **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setEditMarker`, `setVertexEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile proprio via `RBMap.STYLE_*`. |
+| **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setVertexEditor`/`setWaypointEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile proprio via `RBMap.STYLE_*`. |
 | **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true}` per avere il toggle gratis, `showRoadbook` + `select`, `setPosition` per il "sei qui", `destroy` alla chiusura. |
 
 ---
@@ -221,6 +220,6 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 - **Coda a un solo elemento.** Solo `showRoadbook` è messa in coda prima del `ready`; gli
   altri metodi (posizione, foto, overlay, selezione) chiamati troppo presto sono no-op
   silenziosi e vanno richiamati dopo il load.
-- **Pulizia manuale dei marker DOM.** `setPin`, `setEditMarker` usano `maplibregl.Marker`
+- **Pulizia manuale dei marker DOM.** `setPin` usa `maplibregl.Marker`
   (nodi DOM), non layer GeoJSON: vanno rimossi esplicitamente (passando `null`) — non
   spariscono da soli a uno swap di stile come fanno invece le source.

@@ -286,21 +286,6 @@ window.RBMap = class RBMap {
                 .map((x) => ({ type: 'Feature', properties: { i: String(x.i) }, geometry: { type: 'Point', coordinates: [x.p.lon, x.p.lat] } })),
         } : this._empty());
     }
-    // Draggable marker for the note being edited; onDragEnd(lat, lon) fires on drop.
-    // Pass note=null to clear it; noEase keeps the current view (the Editor's main
-    // map already shows the whole route, so it must not jump on every selection).
-    setEditMarker(note, onDragEnd, noEase) {
-        if (!this.map) return;
-        if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; }
-        if (!note || !this.ready) return;
-        // a red disc carrying the note number on top, so the number stays readable while selected
-        const el = document.createElement('div');
-        el.className = 'rb-edit-pin';
-        el.textContent = note.num != null ? String(note.num) : '';
-        this._editMarker = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([note.lon, note.lat]).addTo(this.map);
-        this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
-        if (!noEase) this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
-    }
 };
 // A small MapLibre control button that flips the base style (satellite ↔ topo).
 function layerToggleControl(rbmap) {

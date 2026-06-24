@@ -238,8 +238,8 @@
     // Note (waypoint) context commands. Move reuses the note's draggable red edit marker.
     function moveNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
-        setMapTool('pan'); select(ni); // the red edit marker rides the open note on the Pan tool — drag it
-        toast('Drag the red marker to move the note.');
+        setMapTool('points'); select(ni); // Move tool: drag the note's blue marker to reposition it
+        toast('Drag the note to move it.');
     }
     // T: drop the note but keep its track point (waypoint → plain track point), with a confirm.
     async function transformNote(ni) {
@@ -300,7 +300,6 @@
         else if (tool === 'insert' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see where you insert
         else { map.setVertexEditor(null); map.setWaypointEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
-        placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
@@ -327,7 +326,7 @@
         try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
         map.setBaseStyle(MAP_STYLES[mapStyle], () => {
             if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
-            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); placeMainEditMarker(); } // setStyle wiped the selection layer
+            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); } // setStyle wiped the selection layer
             if (currentRbId > 0) loadPhotos();
         });
     }
@@ -621,7 +620,7 @@
         $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false;
         refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
-        map.select(rb.notes[sel], true); placeMainEditMarker();
+        map.select(rb.notes[sel], true);
         updateHistBtns();
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
@@ -655,7 +654,7 @@
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
         $('viewConfig').hidden = v !== 'config';
-        if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); placeMainEditMarker(); }
+        if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); }
     }
     $('backToMap').onclick = () => showView('map');
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
@@ -1148,7 +1147,7 @@
         if (map.map && map.ready && map.map.getBearing()) map.map.easeTo({ bearing: 0, duration: 300 }); // back to north-up
         parkEditor(); // park both pieces back so a list rebuild can't destroy them
         placeTulips(); // restore the static vignette in the row the canvas just left
-        markSelectedRow(); placeMainEditMarker(); // drops the draggable note marker
+        markSelectedRow();
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
@@ -1156,7 +1155,7 @@
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
-        map.select(rb.notes[i], true); placeMainEditMarker();
+        map.select(rb.notes[i], true);
         // clicking a note centres (and zooms in to) the map and orients it so the segment from the
         // PREVIOUS note is vertical at the bottom ("you arrive from below", like the vignette): use
         // the arrival heading bearing_in. The FIRST note has no provenance, so it keeps the outgoing
@@ -1167,23 +1166,6 @@
         if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    /* ---------- reposition the selected note ON the main map (drag its red marker) ----------
-     * The map sits right beside the note editor, so a note is repositioned on the
-     * very map it describes — no separate mini-map. The marker shows only while a
-     * note is open and the Pan tool is active (it must not fight draw/cut/note). */
-    function placeMainEditMarker() {
-        if (!rb || !map.map) return;
-        const note = rb.notes[sel];
-        const editable = !$('viewMap').hidden && !$('noteEditZone').hidden && mapTool === 'pan' && note;
-        if (!editable) return map.setEditMarker(null);
-        map.setEditMarker(note, (lat, lon) => {
-            rb.track[note.idx] = { lat: RB.round6(lat), lon: RB.round6(lon) }; // move the vertex → the track line drags with the note (#61)
-            RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-            sel = rb.notes.indexOf(note);
-            refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]);
-            map.select(rb.notes[sel], true); placeMainEditMarker();
-        }, true);
-    }
     function renderEditor() {
         const n = rb.notes[sel];
         // Only the road you LEAVE on is authored: the road you arrive on is the
@@ -1429,7 +1411,7 @@
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
         refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
-        map.select(rb.notes[sel], true); placeMainEditMarker();
+        map.select(rb.notes[sel], true);
         if (toastMsg) toast(toastMsg);
     }
 

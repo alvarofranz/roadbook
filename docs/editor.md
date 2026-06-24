@@ -183,10 +183,11 @@ Campi editabili di una nota:
 - **Icone / vignette** — gestite da `NoteCanvas` su `#noteCanvas`
   ([editor.js:46](../public/editor/editor.js#L46)); palette in §4.1.
 
-**Drag sulla mappa.** Mentre una nota è aperta e il tool è `pan`, `placeMainEditMarker`
-([editor.js:808](../public/editor/editor.js#L808)) mette un marker rosso trascinabile: al
-rilascio riaggancia la nota al vertice più vicino (`RB.nearestIdx`) e ricalcola le metriche —
-la nota si riposiziona sulla stessa mappa che descrive, senza mini-mappa separata.
+**Drag sulla mappa.** Nel tool **Move** (`points`, default a roadbook caricato) la nota si
+trascina direttamente dal suo marker blu (`onWptDrag`/`onWptCommit` armati via
+`map.setWaypointEditor`): il drag sposta il **vertice traccia** sotto la nota, così la linea
+la segue — la nota è mobile esattamente come un punto traccia (#61). Niente più marker rosso
+pan-only né mini-mappa separata.
 
 Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 ([editor.js:848](../public/editor/editor.js#L848)); la guardia impone **almeno 2 note**
