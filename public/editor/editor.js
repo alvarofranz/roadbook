@@ -112,8 +112,16 @@
                 coords], here);
         }
     });
+    // Live mouse position on the map → the add/delete shortcuts can act there directly, without
+    // first opening the context menu (#35/#61).
+    let hoverPt = null;
+    if (map.map) {
+        map.map.on('mousemove', (e) => { hoverPt = { lat: e.lngLat.lat, lon: e.lngLat.lng }; });
+        map.map.on('mouseout', () => { hoverPt = null; });
+    }
     // Editor shortcuts (#35): the context menu's commands accelerate while it's open; otherwise the
-    // W/M/A/L/T/Del keys act on the current selection (a tap-selected track vertex, else the open note).
+    // keys act on the current selection (a tap-selected track vertex, else the open note), and with
+    // nothing selected W/L/Del add or delete at the mouse position.
     window.addEventListener('keydown', (e) => {
         if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
@@ -135,6 +143,10 @@
             if (k === 'm') { e.preventDefault(); moveNote(sel); }
             else if (k === 't') { e.preventDefault(); transformNote(sel); }
             else if (k === 'del') { e.preventDefault(); deleteNoteConfirm(sel); }
+        } else if (hoverPt) { // nothing selected → act at the mouse position (no menu needed)
+            if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
+            else if (k === 'l') { e.preventDefault(); addPointAtExact(hoverPt); }
+            else if (k === 'del') { e.preventDefault(); deleteTrackPointNear(hoverPt); }
         }
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
@@ -1162,8 +1174,13 @@
         // heading bearing_out. easeTo rotates the shortest way there.
         const heading = (i === 0 ? +rb.notes[i].bearing_out : +rb.notes[i].bearing_in) || 0;
         if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
-        // stacked layout (mobile/tablet): bring the just-opened editor into view
-        if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // bring the selection into view: the list row on desktop (side column), the just-opened
+        // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
+        // to its line.
+        if (window.matchMedia('(min-width: 1024px)').matches) {
+            const row = $('noteList').querySelector('.note-mini[data-i="' + i + '"]');
+            if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function renderEditor() {
