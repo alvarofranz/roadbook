@@ -250,7 +250,15 @@
         <div id="mapEditor" class="map-editor" hidden>
             <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
                 <button class="map-tool" id="mapMenuToggle" aria-label="More tools"><i class="fa-solid fa-bars"></i></button>
-                <button class="map-tool" id="toolPoints" data-tool="points" aria-label="Move points" disabled><i class="fa-solid fa-up-down-left-right"></i></button>
+                <span class="map-tools-sep"></span>
+                <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+            </div>
+            <!-- ☰ submenu (sibling of the toolbar so its overflow never clips it): every tool lives here.
+                 Move is the default map mode (no button); only the menu toggle + undo/redo stay on the bar (#61). -->
+            <div class="map-tools-menu" id="mapMenuPanel" hidden>
+                <button class="map-tool" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
+                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolDraw" data-tool="draw" aria-label="Draw route"><i class="fa-solid fa-pencil"></i></button>
                 <button class="map-tool" id="toolInsert" data-tool="insert" aria-label="Insert point on segment" disabled><i class="fa-solid fa-circle-plus"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
@@ -258,14 +266,6 @@
                 <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
                 <button class="map-tool" id="toolSimplify" aria-label="Simplify" disabled><i class="fa-solid fa-broom"></i></button>
                 <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail" disabled><i class="fa-solid fa-location-crosshairs"></i></button>
-                <span class="map-tools-sep"></span>
-                <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-                <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
-            </div>
-            <!-- ☰ submenu: a sibling of the toolbar (NOT inside it) so the toolbar's overflow never clips it -->
-            <div class="map-tools-menu" id="mapMenuPanel" hidden>
-                <button class="map-tool" id="toolPan" data-tool="pan" aria-label="Navigate"><i class="fa-solid fa-arrow-pointer"></i></button>
-                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
             <div class="map-hint"><i class="fa-solid fa-paste"></i> <span data-i18n="Paste an image on the map to add it to the roadbook">Paste an image on the map to add it to the roadbook</span></div>

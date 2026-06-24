@@ -87,7 +87,6 @@
         if (wf) {                                   // a note (waypoint)
             const ni = parseInt(wf.properties.i, 10);
             openCtxMenu(e.lngLat, [
-                { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => moveNote(ni) },
                 { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
                 ...photo(rb.notes[ni]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
@@ -96,7 +95,6 @@
             const ti = parseInt(vf.properties.i, 10);
             openCtxMenu(e.lngLat, [
                 { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
-                { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => vertexAction('move', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
                 { id: 'line', icon: 'fa-plus', label: 'Add point on line', key: 'L', run: () => vertexAction('line', ti) },
                 ...photo(rb.track[ti]),
@@ -135,14 +133,13 @@
             if (!run) return;
             e.preventDefault(); closeCtxMenu(); run();
         } else if (selVertex >= 0) { // a track vertex is selected
-            const act = { w: 'note', m: 'move', a: 'mid', l: 'line', del: 'del' }[k];
+            const act = { w: 'note', a: 'mid', l: 'line', del: 'del' }[k];
             if (!act) return;
             e.preventDefault();
             const i = selVertex; selVertex = -1; // the index goes stale once the route changes
             vertexAction(act, i);
         } else if (editorOpen && sel >= 0) { // a note is selected
-            if (k === 'm') { e.preventDefault(); moveNote(sel); }
-            else if (k === 't') { e.preventDefault(); transformNote(sel); }
+            if (k === 't') { e.preventDefault(); transformNote(sel); }
             else if (k === 'del') { e.preventDefault(); deleteNoteConfirm(sel); }
         } else if (hoverPt) { // nothing selected → act at the mouse position (no menu needed)
             if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
@@ -231,7 +228,6 @@
         if (!rb || i < 0 || i >= rb.track.length) return;
         const pt = rb.track[i];
         if (act === 'note') { promoteVertex(i); } // attach a note to THIS vertex — no new geometry (#61)
-        else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
         else if (act === 'mid') { addMidpointAfter(i); }
         else if (act === 'line') { setMapTool('insert'); toast('Tap the route to add a point.'); }
         else if (act === 'del') { deleteTrackPointNear(pt); }
@@ -247,12 +243,6 @@
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Point added.');
         selVertex = i + 1; map.setSelectedVertex(rb.track[i + 1]); // keep the new point selected so repeated A chains (#61)
-    }
-    // Note (waypoint) context commands. Move reuses the note's draggable red edit marker.
-    function moveNote(ni) {
-        if (!rb || ni < 0 || ni >= rb.notes.length) return;
-        setMapTool('points'); select(ni); // Move tool: drag the note's blue marker to reposition it
-        toast('Drag the note to move it.');
     }
     // T: drop the note but keep its track point (waypoint → plain track point), with a confirm.
     async function transformNote(ni) {
@@ -303,7 +293,7 @@
     }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolPoints', 'toolInsert', 'toolCut'];
+    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolInsert', 'toolCut']; // Move ('points') is the default — no button
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
@@ -320,7 +310,7 @@
     function applyToolTips() {
         const tips = {
             toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
-            toolPoints: 'Move points (drag any track point)', toolInsert: 'Insert a point (tap the route where you want it)',
+            toolInsert: 'Insert a point (tap the route where you want it)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
@@ -362,7 +352,7 @@
         },
         onRemove() { if (this._m && this._upd) this._m.off('zoom', this._upd); },
     }, 'top-right');
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMapTool('pan'); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMapTool('points'); }); // Escape → back to the default Move tool
     // Draw mode: every tap extends the route from the nearest OPEN end — the
     // finish, the start, or either edge of an open cut (tapping on the opposite
     // edge closes the cut). With nothing loaded, the first two taps create a
@@ -473,7 +463,7 @@
         if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(makeNote(rb, 0, roadOutBefore(0)));
         if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(makeNote(rb, last, roadOutBefore(last)));
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        sel = 0; routeChanged(toastMsg);
+        sel = 0; routeChanged(toastMsg); setMapTool('points'); // cut done → back to the default Move tool
     }
     // Add GPX: if both ends of the piece touch the route it offers a detour
     // (replace the matching segment); otherwise it joins the piece to the nearest
@@ -596,7 +586,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolNote', 'toolPoints', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolNote', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
