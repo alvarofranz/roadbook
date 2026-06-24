@@ -160,6 +160,7 @@
     function updateSaveBtn() {
         const dis = !!(currentRbId && !dirty);
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
+        const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0); // delete only exists once it's saved
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
@@ -900,6 +901,16 @@
         currentRbId = 0; setVis(0); // new identity, private
         const r = await doSave();
         toast(r.ok ? 'Saved as a new roadbook.' : (r.error || 'Could not save.'));
+    };
+    // Delete the saved roadbook (the button only shows once it exists on the server). Names it
+    // in the confirm, then sends the user back to their list — the editor content is gone.
+    $('deleteRb').onclick = async () => {
+        if (!(currentRbId > 0)) return;
+        const title = (rb && rb.meta && rb.meta.title) || 'Untitled';
+        if (!(await RBConfirmDanger(t('Delete roadbook') + ' “' + esc(title) + '”?', t('Delete')))) return;
+        const r = await RBApi('rb_delete', { id: currentRbId });
+        if (r.ok) { clearDraft(); location.href = '../myroadbooks/'; }
+        else toast(r.error || 'Could not delete.');
     };
 
     /* ---------- photo gallery (saved roadbook) ---------- */
