@@ -217,6 +217,7 @@
         rb.notes.forEach((n) => { if (n.idx > i) n.idx += 1; });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Point added.');
+        selVertex = i + 1; map.setSelectedVertex(rb.track[i + 1]); // keep the new point selected so repeated A chains (#61)
     }
     // Note (waypoint) context commands. Move reuses the note's draggable red edit marker.
     function moveNote(ni) {
