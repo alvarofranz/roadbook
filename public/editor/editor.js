@@ -73,6 +73,9 @@
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
         const maps = { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` };
+        // Google Earth alongside Maps (#69): one window that recentres + 3D/Street View and historical
+        // imagery — handy for spotting tracks hidden under foliage (leaf-off views).
+        const earth = { id: 'earth', icon: 'fa-earth-americas', label: 'Open in Google Earth', href: `https://earth.google.com/web/search/${lat},${lon}` };
         const photo = (p) => [
             { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
             { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
@@ -82,7 +85,7 @@
         const vf = rb && !wf && map.map.queryRenderedFeatures(e.point, { layers: ['rb-verts'] })[0];
         if (wf) {                                   // a note (waypoint)
             const ni = parseInt(wf.properties.i, 10);
-            openCtxMenu(e.lngLat, [maps,
+            openCtxMenu(e.lngLat, [maps, earth,
                 { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => moveNote(ni) },
                 { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
                 ...photo(rb.notes[ni]),
@@ -90,7 +93,7 @@
                 coords], rb.notes[ni]);
         } else if (vf) {                            // a plain track point
             const ti = parseInt(vf.properties.i, 10);
-            openCtxMenu(e.lngLat, [maps,
+            openCtxMenu(e.lngLat, [maps, earth,
                 { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
                 { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => vertexAction('move', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
@@ -99,7 +102,7 @@
                 { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
                 coords], rb.track[ti]);
         } else {                                    // empty ground (route ops act on the nearest point)
-            openCtxMenu(e.lngLat, [maps,
+            openCtxMenu(e.lngLat, [maps, earth,
                 ...(rb ? [
                     { id: 'note', icon: 'fa-map-pin', label: 'Add note here', run: () => addNoteAtExact(here) },
                     { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', run: () => addPointAtExact(here) },
@@ -499,12 +502,16 @@
         };
     };
     $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording('adjust'); };
-    $('drawRoute').onclick = () => { showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
+    $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
-    $('loadGpx').onclick = () => $('gpxFile').click();
-    $('loadJson').onclick = () => $('jsonFile').click();
-    $('pickChallenge').onclick = () => RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); // forking a challenge starts a NEW roadbook
+    // The opening screen is interactive immediately, while startup() is still running its async
+    // crash-recovery prompts. Once the user picks a source here, suppress those prompts so a
+    // recovery confirm can't pop on top of (e.g.) the public-challenge picker (#68).
+    let loadStarted = false;
+    $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
+    $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
+    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); }; // forking a challenge starts a NEW roadbook
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files);
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -1596,7 +1603,7 @@
 
         let draft; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
         const draftFits = draft && draft.rb && draft.rb.notes && (!explicitTarget || (id > 0 && draft.currentRbId === id));
-        if (draftFits) {
+        if (draftFits && !loadStarted) {
             // Declining keeps the draft — it is overwritten by the next checkpoint and
             // cleared on save/export, so a mis-tap can't destroy unsaved work.
             if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
@@ -1607,7 +1614,7 @@
                 return;
             }
         }
-        if (!explicitTarget && await checkRecovery()) return;
+        if (!explicitTarget && !loadStarted && await checkRecovery()) return;
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;

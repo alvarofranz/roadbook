@@ -23,8 +23,11 @@ window.NoteCanvas = class NoteCanvas {
         this.svg = svg('svg', { viewBox: `0 0 ${this.REF_W} ${this.REF_H}`, class: 'vignette-svg' });
         this.el.appendChild(this.svg);
         const defs = svg('defs', {});
-        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
-            + `<marker id="vignette-box-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"></path></marker>`;
+        // Arrow is a FIXED ~33px (markerUnits=userSpaceOnUse) so every road type gets the SAME
+        // arrowhead, big enough to protrude past even the width-14 motorway line. The junction
+        // end-tick stays proportional to its (thin) line.
+        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
+            + `<marker id="vignette-box-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"></path></marker>`;
         this.svg.appendChild(defs);
         if (!this.toolbarEl) { this.toolbarEl = document.createElement('div'); this.el.parentNode.insertBefore(this.toolbarEl, this.el.nextSibling); }
         this.toolbarEl.classList.add('vignette-toolbar');
@@ -60,7 +63,7 @@ window.NoteCanvas = class NoteCanvas {
         if (!this.note) { this.toolbarEl.innerHTML = ''; return; }
         this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn vignette-box-bg', x: 0, y: 0, width: this.REF_W, height: this.REF_H, fill: 'transparent' }));
         trunkSegments(this.note).forEach((s) => {
-            const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': 'round', 'stroke-dasharray': s.dashed ? '6 4' : '' };
+            const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': s.dashed ? 'butt' : 'round', 'stroke-dasharray': s.dashed ? DASH : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
             this.svg.appendChild(svg('line', attrs));
             // motorway: a white centre line splits the thick stroke into a DOUBLE line
@@ -72,10 +75,12 @@ window.NoteCanvas = class NoteCanvas {
         (this.note.junctions || []).forEach((b, i) => {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
             const [tx, ty] = this.toV(b.tip[0], b.tip[1]);
-            const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: '#9aa4b2', 'stroke-width': b.width || 3, 'stroke-linecap': 'round', 'marker-end': 'url(#vignette-box-tick)', 'stroke-dasharray': rt.dashed ? '6 4' : '' });
+            const st = roadStyle(b.road_type), w = b.width || st.width; // off-route → grey; road type shown by width/dash/double
+            const ln = svg('line', { class: 'vignette-box-dyn vignette-box-junctions', 'data-i': i, x1: px, y1: py, x2: tx, y2: ty, stroke: '#9aa4b2', 'stroke-width': w, 'stroke-linecap': st.dashed ? 'butt' : 'round', 'marker-end': 'url(#vignette-box-tick)', 'stroke-dasharray': st.dashed ? DASH : '' });
             ln.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.select({ type: 'junctions', i }); });
             this.svg.appendChild(ln);
+            // motorway: a white centre line splits the thick stroke into a DOUBLE line
+            if (st.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: px, y1: py, x2: tx, y2: ty, stroke: '#fff', 'stroke-width': Math.max(3, w * 0.3), 'stroke-linecap': 'round', 'pointer-events': 'none' }));
             if (this.sel && this.sel.type === 'junctions' && this.sel.i === i) {
                 this._handle(px, py, (vx, vy) => { const m = this.toM(vx, vy); b.pivot = [r1(m[0]), r1(m[1])]; });
                 // tip handle sits just BEYOND the end tick so your finger never covers it.
@@ -140,7 +145,7 @@ window.NoteCanvas = class NoteCanvas {
             const b = this.note.junctions[this.sel.i], rtLabel = RBt('Road type');
             t.innerHTML = `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(RT_LABELS[k])}</option>`).join('')}</select>`
                 + btn('fa-minus', 'th-') + btn('fa-plus', 'th+') + btn('fa-trash-can', 'del', false, true);
-            t.querySelector('.vignette-box-rt').onchange = (e) => { b.road_type = +e.target.value; this._chg(); };
+            t.querySelector('.vignette-box-rt').onchange = (e) => { b.road_type = +e.target.value; b.width = roadStyle(b.road_type).width; this._chg(); };
             t.querySelector('[data-a="th-"]').onclick = () => { b.width = Math.max(1, (b.width || 3) - 1); this._chg(); };
             t.querySelector('[data-a="th+"]').onclick = () => { b.width = Math.min(10, (b.width || 3) + 1); this._chg(); };
             t.querySelector('[data-a="del"]').onclick = () => { this.note.junctions.splice(this.sel.i, 1); this.sel = null; this._chg(); };
@@ -153,7 +158,7 @@ window.NoteCanvas = class NoteCanvas {
     addJunction() {
         this.note.junctions = this.note.junctions || [];
         const roadType = this.note.road_type_out ?? 3;
-        this.note.junctions.push({ pivot: [0, 0], tip: [45, 25], width: (RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[3]).width, road_type: roadType });
+        this.note.junctions.push({ pivot: [0, 0], tip: [45, 25], width: roadStyle(roadType).width, road_type: roadType });
         this.sel = { type: 'junctions', i: this.note.junctions.length - 1 }; this._chg();
     }
 };
@@ -170,17 +175,18 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<image x="0" y="0" width="${W}" height="${H}" href="${resolveIcon(cover)}" preserveAspectRatio="xMidYMid meet"/></svg>`;
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
-        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
-        + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
+        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
+        + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
     trunkSegments(note).forEach((g) => {
-        s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="round"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="${g.dashed ? 'butt' : 'round'}"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="' + DASH + '"' : ''}/>`;
         if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(3, g.width * 0.3)}" stroke-linecap="round"/>`; // motorway: white centre → double line
     });
     s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#0e1116" stroke-width="2.5"/>`; // validation point (where the trunk segments meet)
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
-        const rt = RB.ROAD_TYPES[b.road_type] || RB.ROAD_TYPES[3];
-        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#9aa4b2" stroke-width="${b.width || 3}" stroke-linecap="round" marker-end="url(#vig-tick)"${rt.dashed ? ' stroke-dasharray="6 4"' : ''}/>`;
+        const st = roadStyle(b.road_type), w = b.width || st.width;
+        s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#9aa4b2" stroke-width="${w}" stroke-linecap="${st.dashed ? 'butt' : 'round'}" marker-end="url(#vig-tick)"${st.dashed ? ' stroke-dasharray="' + DASH + '"' : ''}/>`;
+        if (st.double) s += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#fff" stroke-width="${Math.max(3, w * 0.3)}" stroke-linecap="round"/>`; // motorway double
     });
     (note.icons || []).forEach((ic) => {
         const [cxi, cyi] = toV(ic.pos ? ic.pos[0] : 0, ic.pos ? ic.pos[1] : 0), sz = ic.size || 32;
@@ -203,29 +209,35 @@ function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repea
  * angle is (bearing_out − bearing_in), i.e. the heading change across the three
  * track points (previous · note · next), so the diagram already shows the
  * direction to follow (straight up = carry on, right = turn right, …). Styled by
- * road_type_out. Junction vectors branch from the centre. Each road type renders
- * to its own standard: motorway = thick DOUBLE line, asphalt = thick single,
- * track = thin single, off-piste = thin dashed. */
+ * road_type_out. Junction vectors branch from the centre. Widths step up clearly
+ * so the road type reads from thickness alone: off-piste = thin dashed, track =
+ * medium, asphalt = thick, motorway = thickest DOUBLE line. Colours stay the RB
+ * System palette (RB.ROAD_TYPES.color), only the thickness/dash/double encode type. */
 // tulip road rendering per type (independent of the map's ROAD_TYPES line widths)
 const ROAD_STYLE = {
-    1: { width: 14, dashed: false, double: true }, // motorway: thick double line
-    2: { width: 10, dashed: false, double: false }, // asphalt: thick single line
-    3: { width: 6, dashed: false, double: false }, // track: medium line
-    4: { width: 6, dashed: true, double: false },  // off-piste: medium dashed line
+    0: { width: 6, dashed: false, double: false },  // default: medium line
+    1: { width: 14, dashed: false, double: true },  // motorway: thickest DOUBLE line
+    2: { width: 11, dashed: false, double: false }, // asphalt: thick single line
+    3: { width: 8, dashed: false, double: false },  // track: medium-thick single line
+    4: { width: 5, dashed: true, double: false },   // off-piste: thin dashed line
 };
 const roadStyle = (rt) => ROAD_STYLE[rt] || ROAD_STYLE[3];
+// off-piste dash: red dash 12 / white gap 9. Dashed lines use butt caps — round caps would
+// swallow the gap at these widths. One source for all render spots.
+const DASH = '12 9';
 function trunkSegments(note) {
     const cx = 115, cy = 81, L = 63; // centre of the 230×162 reference box; exit length
-    const seg = (roadType, x1, y1, x2, y2, arrow, primary) => {
+    const seg = (roadType, x1, y1, x2, y2, arrow, onRoute) => {
         const st = roadStyle(roadType);
-        return { x1, y1, x2, y2, color: primary ? '#3b82f6' : '#9aa4b2', width: st.width, dashed: st.dashed, double: st.double, arrow };
+        // ONLY the route to follow is coloured by its road type (default 0 = grey); off-route stays grey
+        return { x1, y1, x2, y2, color: onRoute ? (RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0]).color : '#9aa4b2', width: st.width, dashed: st.dashed, double: st.double, arrow };
     };
     const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     return [
         // incoming (provenance): styled by road_type_in — which normalizeRoadTypes
-        // derives from the PREVIOUS note's road_type_out — and drawn blue like the
-        // road to follow, except on the first note (which has no real provenance).
+        // derives from the PREVIOUS note's road_type_out — and coloured by road type
+        // like the rest of the route, except on the first note (no real provenance → grey).
         seg(note.road_type_in, cx, 154, cx, cy, false, note.num > 1),
         seg(note.road_type_out, cx, cy, cx + Math.sin(θ) * L, cy - Math.cos(θ) * L, true, true),
     ];
