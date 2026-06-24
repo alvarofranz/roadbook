@@ -104,16 +104,24 @@
         } else {                                    // empty ground (route ops act on the nearest point)
             openCtxMenu(e.lngLat, [maps, earth,
                 ...(rb ? [
-                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', run: () => addNoteAtExact(here) },
-                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', run: () => addPointAtExact(here) },
-                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
+                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
+                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', key: 'L', run: () => addPointAtExact(here) },
+                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
                 coords], here);
         }
     });
+    // Live mouse position on the map → the add/delete shortcuts can act there directly, without
+    // first opening the context menu (#35/#61).
+    let hoverPt = null;
+    if (map.map) {
+        map.map.on('mousemove', (e) => { hoverPt = { lat: e.lngLat.lat, lon: e.lngLat.lng }; });
+        map.map.on('mouseout', () => { hoverPt = null; });
+    }
     // Editor shortcuts (#35): the context menu's commands accelerate while it's open; otherwise the
-    // W/M/A/L/T/Del keys act on the current selection (a tap-selected track vertex, else the open note).
+    // keys act on the current selection (a tap-selected track vertex, else the open note), and with
+    // nothing selected W/L/Del add or delete at the mouse position.
     window.addEventListener('keydown', (e) => {
         if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
@@ -135,6 +143,10 @@
             if (k === 'm') { e.preventDefault(); moveNote(sel); }
             else if (k === 't') { e.preventDefault(); transformNote(sel); }
             else if (k === 'del') { e.preventDefault(); deleteNoteConfirm(sel); }
+        } else if (hoverPt) { // nothing selected → act at the mouse position (no menu needed)
+            if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
+            else if (k === 'l') { e.preventDefault(); addPointAtExact(hoverPt); }
+            else if (k === 'del') { e.preventDefault(); deleteTrackPointNear(hoverPt); }
         }
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
@@ -158,7 +170,7 @@
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
-    map.onWaypoint((i) => { if (mapTool === 'pan') select(i); }); // other tools keep you on the map
+    map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
         if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
@@ -185,6 +197,22 @@
         if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
         markDirty();
     }
+    // Waypoint drag (default Move): the blue note marker moves its underlying track vertex, so the
+    // track line drags with it — a wpt is movable exactly like a trk (#61). Live, then commit on release.
+    function onWptDrag(ni, lat, lon) {
+        if (!rb || ni < 0 || ni >= rb.notes.length) return;
+        const n = rb.notes[ni];
+        rb.track[n.idx] = { lat: RB.round6(lat), lon: RB.round6(lon) };
+        n.lat = rb.track[n.idx].lat; n.lon = rb.track[n.idx].lon; // keep the marker + line together while dragging
+        if (vertRaf) return;
+        vertRaf = requestAnimationFrame(() => { vertRaf = 0; refreshMap(true); });
+    }
+    function onWptCommit() {
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        refreshMap(true); renderNotes();
+        if (editorOpen && sel >= 0) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
+        markDirty();
+    }
     // Tap a track point (high zoom, move-points tool) → just highlight it; its command menu
     // (with shortcuts) opens on a right-click of the marker — see the map contextmenu handler.
     function onVertexSelect(i) {
@@ -201,10 +229,8 @@
     function vertexAction(act, i) {
         if (!rb || i < 0 || i >= rb.track.length) return;
         const pt = rb.track[i];
-        if (act === 'note') {
-            if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
-            addWaypointNear(pt);
-        } else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
+        if (act === 'note') { promoteVertex(i); } // attach a note to THIS vertex — no new geometry (#61)
+        else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
         else if (act === 'mid') { addMidpointAfter(i); }
         else if (act === 'line') { setMapTool('insert'); toast('Tap the route to add a point.'); }
         else if (act === 'del') { deleteTrackPointNear(pt); }
@@ -219,12 +245,13 @@
         rb.notes.forEach((n) => { if (n.idx > i) n.idx += 1; });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Point added.');
+        selVertex = i + 1; map.setSelectedVertex(rb.track[i + 1]); // keep the new point selected so repeated A chains (#61)
     }
     // Note (waypoint) context commands. Move reuses the note's draggable red edit marker.
     function moveNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
-        setMapTool('pan'); select(ni); // the red edit marker rides the open note on the Pan tool — drag it
-        toast('Drag the red marker to move the note.');
+        setMapTool('points'); select(ni); // Move tool: drag the note's blue marker to reposition it
+        toast('Drag the note to move it.');
     }
     // T: drop the note but keep its track point (waypoint → plain track point), with a confirm.
     async function transformNote(ni) {
@@ -281,11 +308,10 @@
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
-        if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect);
-        else if (tool === 'insert' && rb) map.showVertices(rb.track); // dots visible (read-only) so you see where you insert
-        else map.setVertexEditor(null);
+        if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); } // Move: drag trk OR wpt
+        else if (tool === 'insert' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see where you insert
+        else { map.setVertexEditor(null); map.setWaypointEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
-        placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
@@ -312,7 +338,7 @@
         try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
         map.setBaseStyle(MAP_STYLES[mapStyle], () => {
             if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
-            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); placeMainEditMarker(); } // setStyle wiped the selection layer
+            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); } // setStyle wiped the selection layer
             if (currentRbId > 0) loadPhotos();
         });
     }
@@ -606,7 +632,7 @@
         $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false;
         refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
-        map.select(rb.notes[sel], true); placeMainEditMarker();
+        map.select(rb.notes[sel], true);
         updateHistBtns();
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
@@ -640,7 +666,7 @@
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
         $('viewConfig').hidden = v !== 'config';
-        if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); placeMainEditMarker(); }
+        if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); }
     }
     $('backToMap').onclick = () => showView('map');
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
@@ -1133,7 +1159,7 @@
         if (map.map && map.ready && map.map.getBearing()) map.map.easeTo({ bearing: 0, duration: 300 }); // back to north-up
         parkEditor(); // park both pieces back so a list rebuild can't destroy them
         placeTulips(); // restore the static vignette in the row the canvas just left
-        markSelectedRow(); placeMainEditMarker(); // drops the draggable note marker
+        markSelectedRow();
     }
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
@@ -1141,34 +1167,22 @@
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
-        map.select(rb.notes[i], true); placeMainEditMarker();
+        map.select(rb.notes[i], true);
         // clicking a note centres (and zooms in to) the map and orients it so the segment from the
         // PREVIOUS note is vertical at the bottom ("you arrive from below", like the vignette): use
         // the arrival heading bearing_in. The FIRST note has no provenance, so it keeps the outgoing
         // heading bearing_out. easeTo rotates the shortest way there.
         const heading = (i === 0 ? +rb.notes[i].bearing_out : +rb.notes[i].bearing_in) || 0;
         if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
-        // stacked layout (mobile/tablet): bring the just-opened editor into view
-        if (!window.matchMedia('(min-width: 1024px)').matches) $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // bring the selection into view: the list row on desktop (side column), the just-opened
+        // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
+        // to its line.
+        if (window.matchMedia('(min-width: 1024px)').matches) {
+            const row = $('noteList').querySelector('.note-mini[data-i="' + i + '"]');
+            if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    /* ---------- reposition the selected note ON the main map (drag its red marker) ----------
-     * The map sits right beside the note editor, so a note is repositioned on the
-     * very map it describes — no separate mini-map. The marker shows only while a
-     * note is open and the Pan tool is active (it must not fight draw/cut/note). */
-    function placeMainEditMarker() {
-        if (!rb || !map.map) return;
-        const note = rb.notes[sel];
-        const editable = !$('viewMap').hidden && !$('noteEditZone').hidden && mapTool === 'pan' && note;
-        if (!editable) return map.setEditMarker(null);
-        map.setEditMarker(note, (lat, lon) => {
-            note.idx = RB.nearestIdx(rb.track, { lat, lon });
-            RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-            sel = rb.notes.indexOf(note);
-            refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]);
-            map.select(rb.notes[sel], true); placeMainEditMarker();
-        }, true);
-    }
     function renderEditor() {
         const n = rb.notes[sel];
         // Only the road you LEAVE on is authored: the road you arrive on is the
@@ -1221,6 +1235,17 @@
         let rt = 3, best = -1;
         rb.notes.forEach((n) => { if (n.idx <= idx && n.idx > best) { best = n.idx; rt = n.road_type_out; } });
         return rt;
+    }
+    // Promote an existing track vertex to a waypoint (note) IN PLACE — no splitTrackAt, so a trk
+    // and a wpt never share coordinates (#61). Opens the new note so it can be filled straight away.
+    function promoteVertex(i) {
+        if (i < 0 || i >= rb.track.length) return;
+        if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
+        rb.notes.push(makeNote(rb, i, roadOutBefore(i)));
+        RB.recomputeMetrics(rb); markDirty();
+        refreshMap(true); renderNotes();
+        select(rb.notes.findIndex((n) => n.idx === i)); // open the new note to fill it in
+        toast('Waypoint added.');
     }
     function addWaypointNear(pt) {
         const idx = splitTrackAt(pt);
@@ -1403,7 +1428,7 @@
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
         refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
-        map.select(rb.notes[sel], true); placeMainEditMarker();
+        map.select(rb.notes[sel], true);
         if (toastMsg) toast(toastMsg);
     }
 

@@ -56,7 +56,7 @@ window.RBMap = class RBMap {
         if (headingToggle) this.map.addControl(headingToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
-        m.on('click', 'rb-wpts', (e) => { if (this._onWpt && e.features[0]) this._onWpt(parseInt(e.features[0].properties.i, 10)); });
+        m.on('click', 'rb-wpts', (e) => { if (this._wptMoved || !this._onWpt || !e.features[0]) return; this._onWpt(parseInt(e.features[0].properties.i, 10)); });
         m.on('click', 'rb-photos', (e) => { if (this._onPhoto && e.features[0]) this._onPhoto(JSON.parse(e.features[0].properties.d)); });
         m.on('mouseenter', 'rb-wpts', () => m.getCanvas().style.cursor = 'pointer');
         m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
@@ -81,6 +81,22 @@ window.RBMap = class RBMap {
         m.on('mouseup', vertUp); m.on('touchend', vertUp);
         // a tap on a vertex (no drag) selects it → the editor opens a per-point menu
         m.on('click', 'rb-verts', (e) => { if (this._vertMoved || !this._onVert || !e.features[0]) return; this._onVert(parseInt(e.features[0].properties.i, 10)); });
+        // Waypoint dragging (the editor's default Move): blue note markers move exactly like
+        // track vertices. Inert until setWaypointEditor() arms it. The feature's `i` is the NOTE
+        // index; the editor maps it to that note's track vertex.
+        this._wptDrag = -1; this._wptMoved = false;
+        const wptDown = (e) => {
+            if (!this._wptOnDrag || !e.features[0]) return;
+            if (e.originalEvent && e.originalEvent.button !== 0) return; // left button only; right-click → context menu
+            e.preventDefault(); this._wptDrag = parseInt(e.features[0].properties.i, 10); this._wptMoved = false;
+            m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
+        };
+        const wptMove = (e) => { if (this._wptDrag >= 0) { this._wptMoved = true; this._wptOnDrag(this._wptDrag, e.lngLat.lat, e.lngLat.lng); } };
+        const wptUp = () => { if (this._wptDrag < 0) return; const moved = this._wptMoved; this._wptDrag = -1; m.dragPan.enable(); m.getCanvas().style.cursor = this._baseCursor; if (moved && this._wptOnCommit) this._wptOnCommit(); };
+        m.on('mousedown', 'rb-wpts', wptDown);
+        m.on('touchstart', 'rb-wpts', wptDown);
+        m.on('mousemove', wptMove); m.on('touchmove', wptMove);
+        m.on('mouseup', wptUp); m.on('touchend', wptUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
     // Swap the base style (satellite ↔ topo). MapLibre wipes every custom
@@ -234,6 +250,9 @@ window.RBMap = class RBMap {
         this.map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 40, duration: 600 });
     }
     onWaypoint(cb) { this._onWpt = cb; }
+    // Arm/disarm waypoint dragging (the blue note markers). onDrag(noteIndex, lat, lon) fires
+    // live, onCommit() on release; pass null to clear. The markers are painted by showRoadbook.
+    setWaypointEditor(onDrag, onCommit) { this._wptOnDrag = onDrag || null; this._wptOnCommit = onCommit || null; }
     // Arm/disarm the move-points tool: pass the track + callbacks to show every
     // vertex as a draggable handle (onDrag(i, lat, lon) fires live while dragging,
     // onCommit() on release); pass null to clear it.
@@ -266,21 +285,6 @@ window.RBMap = class RBMap {
             features: track.map((p, i) => ({ p, i })).filter((x) => !skip.has(x.i))
                 .map((x) => ({ type: 'Feature', properties: { i: String(x.i) }, geometry: { type: 'Point', coordinates: [x.p.lon, x.p.lat] } })),
         } : this._empty());
-    }
-    // Draggable marker for the note being edited; onDragEnd(lat, lon) fires on drop.
-    // Pass note=null to clear it; noEase keeps the current view (the Editor's main
-    // map already shows the whole route, so it must not jump on every selection).
-    setEditMarker(note, onDragEnd, noEase) {
-        if (!this.map) return;
-        if (this._editMarker) { this._editMarker.remove(); this._editMarker = null; }
-        if (!note || !this.ready) return;
-        // a red disc carrying the note number on top, so the number stays readable while selected
-        const el = document.createElement('div');
-        el.className = 'rb-edit-pin';
-        el.textContent = note.num != null ? String(note.num) : '';
-        this._editMarker = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([note.lon, note.lat]).addTo(this.map);
-        this._editMarker.on('dragend', () => { const l = this._editMarker.getLngLat(); onDragEnd(l.lat, l.lng); });
-        if (!noEase) this.map.easeTo({ center: [note.lon, note.lat], zoom: Math.max(this.map.getZoom(), 14), duration: 400 });
     }
 };
 // A small MapLibre control button that flips the base style (satellite ↔ topo).
