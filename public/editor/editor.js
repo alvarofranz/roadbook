@@ -300,7 +300,7 @@
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
         if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); } // Move: drag trk OR wpt
-        else if (tool === 'insert' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see where you insert
+        else if ((tool === 'insert' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see the points while inserting/drawing (#52)
         else { map.setVertexEditor(null); map.setWaypointEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
     }
@@ -545,7 +545,12 @@
             const p = RB.parseGPX(text);
             if (w && (!p.wpts || !p.wpts.length)) p.wpts = RB.parseWPT(await w.text());
             resetIdentity();
-            setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts: p.trkpts, wpts: p.wpts }));
+            // GPX with waypoints but no track (#56): build the route THROUGH the waypoints so it opens
+            // as an editable roadbook — the user can then redraw/refine the track.
+            let trkpts = p.trkpts, fromWpts = false;
+            if ((!trkpts || trkpts.length < 2) && p.wpts && p.wpts.length >= 2) { trkpts = p.wpts.map((wp) => ({ lat: wp.lat, lon: wp.lon })); fromWpts = true; }
+            setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts, wpts: p.wpts }));
+            if (fromWpts) toast('No track in the GPX — built a route through the waypoints; redraw or refine it as needed.');
         } catch (err) { toast('Error: ' + err.message); }
     };
     $('jsonFile').onchange = async (e) => {
