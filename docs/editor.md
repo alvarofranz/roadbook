@@ -63,10 +63,12 @@ La traccia non si edita in un editor a parte: si edita **direttamente sulla mapp
 la barra verticale `.map-tools` ([index.html](../public/editor/index.html)). I tool
 si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate).
 
-> Caricata una rotta, il tool attivo di **default** è **move points** (`setMapTool('points')`
-> in `setRoadbook`). **Navigate** e **Add note** non stanno nella barra ma in un menu a comparsa
-> **☰** (`#mapMenuToggle`/`#mapMenuPanel`); **Reverse** è stato spostato nei *Settings* del
-> roadbook (§7). Vedi §3.3 per l'intero comportamento della mappa.
+> Caricata una rotta, il tool attivo di **default** è **Move** (`setMapTool('points')` in
+> `setRoadbook`): si trascina qualunque punto — traccia **o** nota — e la linea segue (#61).
+> La barra mostra **solo** ☰ · Undo · Redo; **tutti** gli strumenti (Navigate, Add note, Draw,
+> Insert, Cut, Add GPX, Simplify, Adjust) stanno nel menu **☰** (`#mapMenuToggle`/`#mapMenuPanel`).
+> Non esiste un pulsante Move: **Esc** (o il completamento di un taglio) riporta a Move. **Reverse**
+> è nei *Settings* del roadbook (§7). Vedi §3.3 per l'intero comportamento della mappa.
 
 ### 3.1 Mode tool
 
@@ -76,10 +78,10 @@ mappa è in `map.map.on('click', …)` ([editor.js:51](../public/editor/editor.j
 
 | Tool       | `mapTool` | Funzione                                                  | Comportamento |
 |------------|-----------|-----------------------------------------------------------|---------------|
-| **pan**    | `pan`     | `select` su waypoint ([editor.js:50](../public/editor/editor.js#L50)) | naviga; tap su una nota la apre; il marker rosso di riposizionamento è attivo solo qui |
+| **Navigate** | `pan`   | `select` su waypoint ([editor.js:50](../public/editor/editor.js#L50)) | naviga la mappa; tap su una nota la apre |
 | **add note** | `note`  | `addWaypointNear` ([editor.js:860](../public/editor/editor.js#L860)) | inserisce una nota dove tocchi (split del segmento se serve) |
 | **draw**   | `draw`    | `drawPoint` ([editor.js:157](../public/editor/editor.js#L157)) | ogni tap estende dall'estremità **aperta più vicina** |
-| **move points** | `points` | `setVertexEditor` + `onVertexDrag`/`onVertexCommit` ([editor.js:64](../public/editor/editor.js#L64)) | trascina qualunque vertice; metriche/note ricalcolate al rilascio |
+| **Move** (default, no button) | `points` | `setVertexEditor` + `setWaypointEditor` → `onVertexDrag`/`onWptDrag` ([editor.js:64](../public/editor/editor.js#L64)) | trascina qualunque punto, **traccia o nota** (sposta il vertice, la linea segue); metriche ricalcolate al rilascio |
 | **insert** | `insert`  | `insertMidpoint` ([editor.js:214](../public/editor/editor.js#L214)) | tap su un segmento → nuovo vertice al suo punto medio |
 | **cut**    | `cut`     | `cutPoint` ([editor.js:227](../public/editor/editor.js#L227)) | tap due punti → taglia |
 
@@ -142,8 +144,9 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   visibili. I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move
   mode) hanno `minzoom: 13` → compaiono solo a zoom alto, per non intasare l'overview.
 - **Selezione vertice (#32).** Un **tap** su un vertice (senza trascinare) lo seleziona
-  (anello **arancione**, layer `rb-vsel`) e apre un menu per-punto: *Aggiungi nota qui ·
-  Sposta il punto · Aggiungi immagine qui* (`onVertexSelect` → `RBModal`). Il trascinamento
+  (anello **arancione**, layer `rb-vsel`) e abilita le shortcut W/A/L/Del al punto; il menu
+  per-punto (tasto destro) offre *Aggiungi nota · Aggiungi punto · Cancella · immagine* — non
+  più "Sposta il punto", visto che Move è il default e si trascina direttamente. Il trascinamento
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
 - **Rotazione.** Selezionando una nota la mappa ruota su `bearing_out` (direzione di marcia);
   torna a nord alla chiusura dell'editor.

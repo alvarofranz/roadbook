@@ -181,6 +181,19 @@ describe('simplifyRoadbook', () => {
         // every note still resolves to a valid track index
         rb.notes.forEach((n) => expect(n.idx).toBeLessThan(rb.track.length));
     });
+    it('keeps the significant corner between waypoints, drops the collinear runs', () => {
+        const trkpts = [
+            { lat: 0, lon: 0 }, { lat: 0, lon: 0.0001 }, { lat: 0, lon: 0.0002 }, { lat: 0, lon: 0.0003 }, // straight east leg
+            { lat: 0.0001, lon: 0.0003 }, { lat: 0.0002, lon: 0.0003 }, { lat: 0.0003, lon: 0.0003 },       // straight north leg
+        ];
+        const rb = RB.buildRoadbook({ name: 'T', trkpts });
+        RB.simplifyRoadbook(rb, 2); // 2 m tolerance
+        // the sharp corner (the bend) survives — a significant NON-waypoint point is not stripped...
+        expect(rb.track.some((p) => Math.abs(p.lat) < 1e-7 && Math.abs(p.lon - 0.0003) < 1e-7)).toBe(true);
+        // ...while the redundant collinear points on the two straight legs are dropped
+        expect(rb.track.length).toBeLessThan(trkpts.length);
+        expect(rb.track.length).toBeGreaterThanOrEqual(3);
+    });
 });
 
 describe('gpxDocument round-trips through parseGPX', () => {
