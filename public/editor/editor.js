@@ -158,7 +158,7 @@
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
 
-    map.onWaypoint((i) => { if (mapTool === 'pan') select(i); }); // other tools keep you on the map
+    map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
         if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
@@ -183,6 +183,22 @@
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); map.refreshVertices(rb.track); renderNotes();
         if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
+        markDirty();
+    }
+    // Waypoint drag (default Move): the blue note marker moves its underlying track vertex, so the
+    // track line drags with it — a wpt is movable exactly like a trk (#61). Live, then commit on release.
+    function onWptDrag(ni, lat, lon) {
+        if (!rb || ni < 0 || ni >= rb.notes.length) return;
+        const n = rb.notes[ni];
+        rb.track[n.idx] = { lat: RB.round6(lat), lon: RB.round6(lon) };
+        n.lat = rb.track[n.idx].lat; n.lon = rb.track[n.idx].lon; // keep the marker + line together while dragging
+        if (vertRaf) return;
+        vertRaf = requestAnimationFrame(() => { vertRaf = 0; refreshMap(true); });
+    }
+    function onWptCommit() {
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        refreshMap(true); renderNotes();
+        if (editorOpen && sel >= 0) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
         markDirty();
     }
     // Tap a track point (high zoom, move-points tool) → just highlight it; its command menu
@@ -280,9 +296,9 @@
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
-        if (tool === 'points' && rb) map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect);
-        else if (tool === 'insert' && rb) map.showVertices(rb.track); // dots visible (read-only) so you see where you insert
-        else map.setVertexEditor(null);
+        if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); } // Move: drag trk OR wpt
+        else if (tool === 'insert' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see where you insert
+        else { map.setVertexEditor(null); map.setWaypointEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
         placeMainEditMarker(); // the reposition marker rides the Pan tool only
     }
