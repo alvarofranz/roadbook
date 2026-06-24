@@ -80,36 +80,36 @@
             { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
             { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
         ];
-        const coords = { coords: `${lat}, ${lon}` };
+        const coords = { coords: `Coords Lat/Lng: ${here.lat >= 0 ? 'N' : 'S'} ${Math.abs(here.lat).toFixed(6)} ${Math.abs(here.lon).toFixed(6)} ${here.lon >= 0 ? 'E' : 'W'}` };
         const wf = rb && map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] })[0];
         const vf = rb && !wf && map.map.queryRenderedFeatures(e.point, { layers: ['rb-verts'] })[0];
         if (wf) {                                   // a note (waypoint)
             const ni = parseInt(wf.properties.i, 10);
-            openCtxMenu(e.lngLat, [maps, earth,
+            openCtxMenu(e.lngLat, [
                 { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => moveNote(ni) },
                 { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
                 ...photo(rb.notes[ni]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
-                coords], rb.notes[ni]);
+                maps, earth, coords], rb.notes[ni]);
         } else if (vf) {                            // a plain track point
             const ti = parseInt(vf.properties.i, 10);
-            openCtxMenu(e.lngLat, [maps, earth,
+            openCtxMenu(e.lngLat, [
                 { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
                 { id: 'move', icon: 'fa-up-down-left-right', label: 'Move the point', key: 'M', run: () => vertexAction('move', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
                 { id: 'line', icon: 'fa-plus', label: 'Add point on line', key: 'L', run: () => vertexAction('line', ti) },
                 ...photo(rb.track[ti]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
-                coords], rb.track[ti]);
+                maps, earth, coords], rb.track[ti]);
         } else {                                    // empty ground (route ops act on the nearest point)
-            openCtxMenu(e.lngLat, [maps, earth,
+            openCtxMenu(e.lngLat, [
                 ...(rb ? [
                     { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
                     { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', key: 'L', run: () => addPointAtExact(here) },
                     { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
-                coords], here);
+                maps, earth, coords], here);
         }
     });
     // Live mouse position on the map → the add/delete shortcuts can act there directly, without
