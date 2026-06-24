@@ -26,6 +26,7 @@ try {
         case 'reset':     reset_password($d); break;
         case 'profile':   update_profile(require_user(), $d); break;
         case 'save_location': save_location(require_user(), $d); break;
+        case 'set_lang':  set_lang(require_user(), $d); break;
         case 'change_password': change_password(require_user(), $d); break;
         case 'change_email':        change_email(require_user(), $d); break;
         case 'verify_email_change': verify_email_change($d); break;

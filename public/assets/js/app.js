@@ -40,7 +40,7 @@
         header.innerHTML = `<div class="wrap">
             <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
             <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-            <nav class="topnav" id="topnav">${navLinks}</nav>
+            <nav class="topnav" id="topnav">${navLinks}<div class="lang lang-top" role="group" aria-label="Language" data-i18n-aria="Language"><button data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="it">IT</button></div></nav>
         </div>`;
         const toggle = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
         const setOpen = (open) => {
@@ -377,6 +377,16 @@
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
         const user = (await RBApi('config')).user || null;
+        // A signed-in user's language preference follows them across devices: apply it on
+        // connect, and persist any later switch from the header selector.
+        if (user && window.RBi18n) {
+            if (user.ui_lang && user.ui_lang !== RBi18n.current()) RBi18n.set(user.ui_lang);
+            window.addEventListener('rb-lang', (e) => {
+                if (e.detail === user.ui_lang) return; // no-op echo (e.g. the apply above)
+                user.ui_lang = e.detail;
+                RBApi('set_lang', { lang: e.detail }).catch(() => {});
+            });
+        }
         const place = () => {
             const slot = document.querySelector('header .topnav') || document.querySelector('header .wrap');
             if (!slot || slot.querySelector('.account-control')) return;

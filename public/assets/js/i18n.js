@@ -604,6 +604,8 @@
 
     window.RBi18n = {
         t(key) { const v = tr(pickLang(), key); return v != null ? v : key; },
+        current() { return document.documentElement.lang || pickLang(); },
+        set(lang) { if (T[lang]) apply(lang); }, // programmatic switch (e.g. a signed-in user's saved preference)
     };
     // Global shorthand used across every page (falls back to the key if i18n is missing).
     window.RBt = (k) => (window.RBi18n ? RBi18n.t(k) : k);

@@ -35,7 +35,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang, default_lat, default_lon FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
@@ -70,6 +70,15 @@ function update_profile(array $user, array $d): void {
     $voice = (string)($d['voice_lang'] ?? '');
     if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
     db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $voice, $user['id']]);
+    json_out(['ok' => true]);
+}
+
+// Preferred UI language for a signed-in user, set from the header language switcher so the
+// choice follows them across devices. Whitelisted to the UI languages.
+function set_lang(array $user, array $d): void {
+    $lang = (string)($d['lang'] ?? '');
+    if (!in_array($lang, ['en', 'es', 'it'], true)) fail('Unsupported language.');
+    db()->prepare('UPDATE users SET ui_lang = ? WHERE id = ?')->execute([$lang, $user['id']]);
     json_out(['ok' => true]);
 }
 

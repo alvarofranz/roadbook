@@ -83,6 +83,10 @@ img { max-width: 100%; display: block; }
     padding: .3rem .6rem; border-radius: 99px; cursor: pointer;
 }
 .lang button.active { background: var(--sand); color: var(--on-sand); }
+/* The selector lives in the top bar on desktop and in the footer on mobile — one per breakpoint. */
+.lang-top { margin-left: .5rem; }
+@media (min-width: 761px) { .foot .lang { display: none; } }
+@media (max-width: 760px) { .lang-top { display: none; } }
 
 /* ---------- buttons ---------- */
 .btn {
