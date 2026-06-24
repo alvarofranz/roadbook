@@ -104,9 +104,9 @@
         } else {                                    // empty ground (route ops act on the nearest point)
             openCtxMenu(e.lngLat, [maps, earth,
                 ...(rb ? [
-                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', run: () => addNoteAtExact(here) },
-                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', run: () => addPointAtExact(here) },
-                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
+                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
+                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', key: 'L', run: () => addPointAtExact(here) },
+                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
                 coords], here);
@@ -201,10 +201,8 @@
     function vertexAction(act, i) {
         if (!rb || i < 0 || i >= rb.track.length) return;
         const pt = rb.track[i];
-        if (act === 'note') {
-            if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
-            addWaypointNear(pt);
-        } else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
+        if (act === 'note') { promoteVertex(i); } // attach a note to THIS vertex — no new geometry (#61)
+        else if (act === 'move') { setMapTool('points'); toast('Drag the point to move it.'); }
         else if (act === 'mid') { addMidpointAfter(i); }
         else if (act === 'line') { setMapTool('insert'); toast('Tap the route to add a point.'); }
         else if (act === 'del') { deleteTrackPointNear(pt); }
@@ -1162,7 +1160,7 @@
         const editable = !$('viewMap').hidden && !$('noteEditZone').hidden && mapTool === 'pan' && note;
         if (!editable) return map.setEditMarker(null);
         map.setEditMarker(note, (lat, lon) => {
-            note.idx = RB.nearestIdx(rb.track, { lat, lon });
+            rb.track[note.idx] = { lat: RB.round6(lat), lon: RB.round6(lon) }; // move the vertex → the track line drags with the note (#61)
             RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
             sel = rb.notes.indexOf(note);
             refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]);
@@ -1221,6 +1219,17 @@
         let rt = 3, best = -1;
         rb.notes.forEach((n) => { if (n.idx <= idx && n.idx > best) { best = n.idx; rt = n.road_type_out; } });
         return rt;
+    }
+    // Promote an existing track vertex to a waypoint (note) IN PLACE — no splitTrackAt, so a trk
+    // and a wpt never share coordinates (#61). Opens the new note so it can be filled straight away.
+    function promoteVertex(i) {
+        if (i < 0 || i >= rb.track.length) return;
+        if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
+        rb.notes.push(makeNote(rb, i, roadOutBefore(i)));
+        RB.recomputeMetrics(rb); markDirty();
+        refreshMap(true); renderNotes();
+        select(rb.notes.findIndex((n) => n.idx === i)); // open the new note to fill it in
+        toast('Waypoint added.');
     }
     function addWaypointNear(pt) {
         const idx = splitTrackAt(pt);
