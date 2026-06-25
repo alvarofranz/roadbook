@@ -694,6 +694,13 @@
         catch (e) { return null; }
     }
 
+    // Filter a roadbook list (My roadbooks / Editor landing) by a free-text query, matched
+    // case-insensitively against the title; a blank query returns the list unchanged.
+    function filterRoadbooks(list, query) {
+        const q = String(query || '').trim().toLowerCase();
+        return q ? (list || []).filter((rb) => String(rb.title || '').toLowerCase().includes(q)) : (list || []).slice();
+    }
+
     /* ---------------- export ---------------- */
     const RB = {
         ROAD_TYPES, CONST,
@@ -702,7 +709,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL, pad2,
+        nearestIdx, round6, slug, urlToDataURL, pad2, filterRoadbooks,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

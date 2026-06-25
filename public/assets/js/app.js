@@ -273,23 +273,52 @@
         if (!container) return 0;
         const fmtDate = (s) => { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleDateString(); };
         const r = await RBApi('rb_list');
-        if (!r.ok || !r.roadbooks || !r.roadbooks.length) { container.innerHTML = `<p class="muted small">${RBesc(RBt('No roadbooks yet. Create one in the Editor.'))}</p>`; return 0; }
-        container.innerHTML = r.roadbooks.map((rb) => `<div class="roadbook-row">
+        const all = (r.ok && r.roadbooks) || [];
+        if (!all.length) { container.innerHTML = `<p class="muted small">${RBesc(RBt('No roadbooks yet. Create one in the Editor.'))}</p>`; return 0; }
+        const PER = 12;
+        let page = 1, q = '';
+        // Search box only once the list is long enough to need it; the pager appears only past one page.
+        container.innerHTML =
+            (all.length > 5 ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search roadbooks…'))}" autocomplete="off" spellcheck="false"></div>` : '') +
+            `<div class="rb-rows"></div><div class="rb-pager"></div>`;
+        const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');
+        const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${fmtDate(rb.updated_at)}</small></div>
             <span class="rb-badge ${rb.is_public ? 'public' : 'private'}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBesc(RBt(rb.is_public ? 'Public' : 'Private'))}</span>
+            <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
+            <a class="btn btn-ghost" href="../editor/?rb=${rb.id}&export=1" title="${RBesc(RBt('Export'))}" aria-label="${RBesc(RBt('Export'))}"><i class="fa-solid fa-file-export"></i></a>
             <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Save as'))}" aria-label="${RBesc(RBt('Save as'))}"><i class="fa-solid fa-clone"></i></button>
             <button class="btn btn-ghost" data-del="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Delete'))}" aria-label="${RBesc(RBt('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
-        </div>`).join('');
-        container.querySelectorAll('[data-dup]').forEach((b) => b.onclick = async () => {
-            const x = await RBApi('rb_duplicate', { id: +b.dataset.dup });
-            if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container); } else RBToast(x.error || 'Could not duplicate.');
-        });
-        container.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
-        });
-        return r.roadbooks.length;
+        </div>`;
+        const wireRows = () => {
+            rowsEl.querySelectorAll('[data-dup]').forEach((b) => b.onclick = async () => {
+                const x = await RBApi('rb_duplicate', { id: +b.dataset.dup });
+                if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container); } else RBToast(x.error || 'Could not duplicate.');
+            });
+            rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
+            });
+        };
+        const render = () => {
+            const filtered = (window.RB && RB.filterRoadbooks) ? RB.filterRoadbooks(all, q) : all;
+            const pages = Math.max(1, Math.ceil(filtered.length / PER));
+            if (page > pages) page = pages;
+            const slice = filtered.slice((page - 1) * PER, page * PER);
+            rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('No matching roadbooks.'))}</p>`;
+            pagerEl.innerHTML = pages > 1
+                ? `<button class="btn btn-ghost rb-prev"${page <= 1 ? ' disabled' : ''} aria-label="${RBesc(RBt('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button><span class="muted small">${page} / ${pages}</span><button class="btn btn-ghost rb-next"${page >= pages ? ' disabled' : ''} aria-label="${RBesc(RBt('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
+                : '';
+            wireRows();
+            const prev = pagerEl.querySelector('.rb-prev'), next = pagerEl.querySelector('.rb-next');
+            if (prev) prev.onclick = () => { if (page > 1) { page--; render(); } };
+            if (next) next.onclick = () => { if (page < pages) { page++; render(); } };
+        };
+        const search = container.querySelector('.rb-search');
+        if (search) search.oninput = () => { q = search.value; page = 1; render(); };
+        render();
+        return all.length;
     };
     // Translated toast (every tool page ships an empty #toast element).
     let toastTimer = null;

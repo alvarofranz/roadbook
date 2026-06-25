@@ -338,6 +338,12 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .rb-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line); }
 .rb-badge.public { color: var(--ok); border-color: var(--ok); }
 .rb-badge.private { color: var(--muted); }
+/* My roadbooks / Editor landing: search box + paged rows + pager */
+.rb-toolbar { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .35rem .8rem; margin-bottom: .6rem; color: var(--muted); }
+.rb-toolbar .rb-search { flex: 1; min-width: 0; margin: 0; border: 0; background: none; padding: .35rem 0; }
+.rb-rows { display: flex; flex-direction: column; gap: .6rem; }
+.rb-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
+.rb-pager .btn { margin: 0; }
 .link-delete { background: none; border: 0; color: var(--track); cursor: pointer; }
 .map-placeholder { padding: 1rem; color: var(--muted); }
 /* RBMap's layer-toggle control: centre the FontAwesome glyph in the Mapbox button */

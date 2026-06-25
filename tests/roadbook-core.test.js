@@ -320,3 +320,31 @@ describe('importRoadbook (legacy Roadbook Suite → canonical)', () => {
         expect(once.notes[0].junctions).toBeNull();
     });
 });
+
+describe('filterRoadbooks (My roadbooks search)', () => {
+    const list = [
+        { id: 1, title: 'Alquería Vélez Rubio' },
+        { id: 2, title: 'Casa a Casa' },
+        { id: 3, title: 'Drawn route' },
+        { id: 4, title: '' },
+    ];
+    it('returns a copy of the whole list for a blank/whitespace query', () => {
+        expect(RB.filterRoadbooks(list, '')).toHaveLength(4);
+        expect(RB.filterRoadbooks(list, '   ')).toHaveLength(4);
+        expect(RB.filterRoadbooks(list, '')).not.toBe(list); // copy, not the same array
+    });
+    it('matches the title case-insensitively, anywhere in the string', () => {
+        expect(RB.filterRoadbooks(list, 'casa').map((r) => r.id)).toEqual([2]);
+        expect(RB.filterRoadbooks(list, 'CASA').map((r) => r.id)).toEqual([2]);
+        expect(RB.filterRoadbooks(list, 'rubio').map((r) => r.id)).toEqual([1]);
+    });
+    it('trims the query and returns [] when nothing matches', () => {
+        expect(RB.filterRoadbooks(list, '  casa  ').map((r) => r.id)).toEqual([2]);
+        expect(RB.filterRoadbooks(list, 'zzz')).toEqual([]);
+    });
+    it('is null-safe on the list and on missing titles', () => {
+        expect(RB.filterRoadbooks(null, 'x')).toEqual([]);
+        expect(RB.filterRoadbooks(undefined, '')).toEqual([]);
+        expect(RB.filterRoadbooks(list, 'x')).toEqual([]); // title:'' doesn't match 'x'
+    });
+});

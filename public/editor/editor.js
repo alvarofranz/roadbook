@@ -1661,5 +1661,10 @@
             // Empty start (e.g. "Draw on the map"): centre on the user's saved default location.
             if (meUser.default_lat != null && meUser.default_lon != null) map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 12 });
         }
+        // Opened from My roadbooks "Export" (?export=1): pop the same Export popup straight away.
+        if (rb && new URLSearchParams(location.search).get('export') === '1') {
+            try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {} // drop the flag so a refresh won't re-open it
+            openExportModal();
+        }
     })();
 })();
