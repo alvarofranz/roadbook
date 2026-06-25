@@ -451,3 +451,41 @@ describe('NoteCanvas.toSVG (vignette render)', () => {
         expect(s).toContain('>!!</text>');
     });
 });
+
+describe('deleteNote (remove a note and its track vertex, #65)', () => {
+    it('removes the note + its vertex, reconnects the route, and shifts later idx down', () => {
+        const rb = {
+            meta: {},
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }, { lat: 0, lon: 2 }, { lat: 0, lon: 3 }],
+            notes: [{ idx: 0, road_type_out: 3 }, { idx: 1, road_type_out: 3 }, { idx: 3, road_type_out: 3 }],
+        };
+        RB.recomputeMetrics(rb);
+        const removed = RB.deleteNote(rb, 1); // delete the middle note (sits on vertex idx 1)
+        expect(removed).toBe(1);
+        expect(rb.track.map((p) => p.lon)).toEqual([0, 2, 3]); // the lon=1 vertex is gone — route straightened
+        expect(rb.notes.map((n) => n.idx)).toEqual([0, 2]);    // the note that was at idx 3 shifted to 2
+    });
+    it('keeps the vertex (note-only removal) when the track would fall below 2 points', () => {
+        const rb = {
+            meta: {},
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }],
+            notes: [{ idx: 0, road_type_out: 3 }, { idx: 1, road_type_out: 3 }],
+        };
+        RB.recomputeMetrics(rb);
+        const removed = RB.deleteNote(rb, 0);
+        expect(removed).toBe(-1);
+        expect(rb.track).toHaveLength(2); // vertex kept — route geometry intact
+        expect(rb.notes).toHaveLength(1);
+    });
+    it('does not touch a vertex before the deleted note', () => {
+        const rb = {
+            meta: {},
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }, { lat: 0, lon: 2 }],
+            notes: [{ idx: 0, road_type_out: 3 }, { idx: 2, road_type_out: 3 }],
+        };
+        RB.recomputeMetrics(rb);
+        RB.deleteNote(rb, 1); // delete the note at idx 2 (the end)
+        expect(rb.track.map((p) => p.lon)).toEqual([0, 1]); // lon=2 removed; earlier points untouched
+        expect(rb.notes.map((n) => n.idx)).toEqual([0]);
+    });
+});

@@ -1226,9 +1226,15 @@
         if (i === sel) renderEditor(); // keep the CAP-type control's enabled state in sync
     }
     // The minimum-notes guard and the confirm prompt live in the row's click handler.
+    // Deleting a waypoint removes the note AND its own track vertex (the route reconnects between
+    // its neighbours) — a wpt occupies its point, so it disappears with the wpt (#65). To keep the
+    // point as a plain track vertex instead, use "Transform". RB.deleteNote does the splice + idx
+    // shift; here we just keep a pending cut anchored across the shift, then repaint.
     function delNote(i) {
-        rb.notes.splice(i, 1); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); markDirty();
-        refreshMap(true); renderNotes(); select(Math.min(i, rb.notes.length - 1));
+        if (!rb || i < 0 || i >= rb.notes.length) return;
+        const removed = RB.deleteNote(rb, i);
+        if (removed >= 0 && cutFromIdx > removed) cutFromIdx -= 1;
+        markDirty(); refreshMap(true); renderNotes(); select(Math.min(i, rb.notes.length - 1));
     }
     // Road type in force at a track index = the road_out of the nearest preceding
     // note. A note inserted here continues on that road by default (road_out =

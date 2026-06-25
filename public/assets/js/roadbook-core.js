@@ -694,6 +694,24 @@
         catch (e) { return null; }
     }
 
+    // Delete note `i` AND the track vertex it sits on, reconnecting the route between its
+    // neighbours; notes after it shift down one index. The vertex is kept (note-only removal)
+    // when the track would drop below 2 points. Returns the removed vertex index, or -1 if the
+    // vertex was kept / nothing was deleted. (The Editor's "Transform" keeps the point instead.)
+    function deleteNote(rb, i) {
+        if (!rb || i < 0 || i >= rb.notes.length) return -1;
+        const idx = rb.notes[i].idx;
+        rb.notes.splice(i, 1);
+        let removed = -1;
+        if (rb.track.length > 2) {
+            rb.track.splice(idx, 1);
+            rb.notes.forEach((n) => { if (n.idx > idx) n.idx -= 1; });
+            removed = idx;
+        }
+        recomputeMetrics(rb); recomputeCaps(rb);
+        return removed;
+    }
+
     // Filter a roadbook list (My roadbooks / Editor landing) by a free-text query, matched
     // case-insensitively against the title; a blank query returns the list unchanged.
     function filterRoadbooks(list, query) {
@@ -709,7 +727,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL, pad2, filterRoadbooks,
+        nearestIdx, round6, slug, urlToDataURL, pad2, filterRoadbooks, deleteNote,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;
