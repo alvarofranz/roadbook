@@ -8,6 +8,7 @@
     const t = RBt; // shared helpers (app.js / i18n.js)
     const params = new URLSearchParams(location.search);
     let tsSite = '', tsTokens = {};
+    let me = null; // the signed-in user (held so the change-password handler knows the credential id)
 
     const api = RBApi; // shared helper (app.js)
     const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
@@ -32,6 +33,16 @@
 
     /* Submit on Enter / button: run the handler, never reload the page. */
     function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
+
+    /* Our forms post by fetch (no navigation), so the browser never sees a credential
+     * submission and won't offer to save/update the password. The Credential Management
+     * API is the explicit trigger: after a successful login or change we hand the
+     * credential to the password manager, which then prompts. Needs HTTPS + a Chromium
+     * browser; a silent no-op elsewhere. (#78) */
+    async function storeCredential(id, password) {
+        if (!window.PasswordCredential || !id || !password) return;
+        try { await navigator.credentials.store(new PasswordCredential({ id: String(id), password })); } catch (e) {}
+    }
 
     /* Show/hide eye toggle for every password field. */
     function wirePasswordToggles() {
@@ -81,7 +92,7 @@
             if (c.user) { showAccount(c.user); RBToast(r.message || r.error); } else { show('vLogin'); msg(r.message || r.error, !!r.ok); }
             return;
         }
-        if (cfg.user) return cfg.user.must_change_password ? showForce() : showAccount(cfg.user);
+        if (cfg.user) { me = cfg.user; return me.must_change_password ? showForce() : showAccount(me); }
         show('vLogin');
     }
 
@@ -94,14 +105,16 @@
     $('toForgot').onclick = (e) => { e.preventDefault(); msg(''); show('vForgot'); };
 
     onSubmit('loginForm', async () => {
-        const r = await api('login', { email: $('loginId').value, password: $('loginPass').value, turnstile: tsTokens.login });
-        if (r.ok) (r.user.must_change_password ? showForce() : showAccount(r.user)); else { msg(r.error, false); resetTs('login'); }
+        const pass = $('loginPass').value;
+        const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
+        if (r.ok) { me = r.user; await storeCredential(me.email, pass); me.must_change_password ? showForce() : showAccount(me); }
+        else { msg(r.error, false); resetTs('login'); }
     });
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
         if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
         const r = await api('change_password', { new: $('forcePass').value });
-        if (r.ok) { const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
+        if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, turnstile: tsTokens.register });
@@ -116,7 +129,7 @@
         if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
         RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
-        if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
+        if (r.ok) { await storeCredential(me && me.email, $('pwNew').value); $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
     });
     // change email (signed in): re-verifies the new address — see change_email() server-side
     onSubmit('emailForm', async () => {
@@ -173,6 +186,7 @@
 
     /* ---------- account ---------- */
     async function showAccount(user) {
+        me = user;
         show('vAccount'); msg('');
         $('adminLink').hidden = !user.is_admin; // the admin panel link, only for admins
 
