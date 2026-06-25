@@ -712,12 +712,16 @@
         return removed;
     }
 
-    // Filter a roadbook list (My roadbooks / Editor landing) by a free-text query, matched
-    // case-insensitively against the title; a blank query returns the list unchanged.
-    function filterRoadbooks(list, query) {
+    // Generic free-text filter: keep items where ANY of `fields` contains `query`
+    // (case-insensitive); a blank query returns a copy of the whole list. Null-safe.
+    function filterByText(list, query, fields) {
         const q = String(query || '').trim().toLowerCase();
-        return q ? (list || []).filter((rb) => String(rb.title || '').toLowerCase().includes(q)) : (list || []).slice();
+        if (!q) return (list || []).slice();
+        const fs = fields || [];
+        return (list || []).filter((item) => fs.some((f) => String(item && item[f] != null ? item[f] : '').toLowerCase().includes(q)));
     }
+    // Filter a roadbook list (My roadbooks / Editor landing) by title.
+    function filterRoadbooks(list, query) { return filterByText(list, query, ['title']); }
 
     /* ---------------- export ---------------- */
     const RB = {
@@ -727,7 +731,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL, pad2, filterRoadbooks, deleteNote,
+        nearestIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

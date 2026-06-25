@@ -489,3 +489,29 @@ describe('deleteNote (remove a note and its track vertex, #65)', () => {
         expect(rb.notes.map((n) => n.idx)).toEqual([0]);
     });
 });
+
+describe('filterByText (generic multi-field search, #79)', () => {
+    const users = [
+        { id: 1, username: 'maxcroll', email: 'm_sabattini@hotmail.com', first_name: 'Max' },
+        { id: 2, username: 'elena.rosa', email: 'elena.rosa.lc@gmail.com', first_name: 'Elena' },
+    ];
+    it('matches ANY of the given fields, case-insensitively', () => {
+        expect(RB.filterByText(users, 'HOTMAIL', ['username', 'email']).map((u) => u.id)).toEqual([1]);
+        expect(RB.filterByText(users, 'elena', ['username', 'email', 'first_name']).map((u) => u.id)).toEqual([2]);
+        expect(RB.filterByText(users, 'max', ['first_name']).map((u) => u.id)).toEqual([1]);
+    });
+    it('blank query returns a copy of the whole list', () => {
+        expect(RB.filterByText(users, '  ', ['username'])).toHaveLength(2);
+        expect(RB.filterByText(users, '', ['username'])).not.toBe(users);
+    });
+    it('is null-safe (list, fields, missing values) and returns [] on no match', () => {
+        expect(RB.filterByText(null, 'x', ['username'])).toEqual([]);
+        expect(RB.filterByText(users, 'zzz', ['username', 'email'])).toEqual([]);
+        expect(RB.filterByText(users, 'max', ['nope'])).toEqual([]); // field absent on the items
+    });
+    it('still backs filterRoadbooks (title-only) unchanged', () => {
+        const rbs = [{ title: 'Casa' }, { title: 'Drawn route' }];
+        expect(RB.filterRoadbooks(rbs, 'casa').map((r) => r.title)).toEqual(['Casa']);
+        expect(RB.filterRoadbooks(rbs, '')).toHaveLength(2);
+    });
+});

@@ -5,7 +5,8 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
-    let me = 0;
+    const PER = 25; // users per page
+    let me = 0, allUsers = [], byId = {}, page = 1, query = '';
 
     function rowHtml(u) {
         const isMe = u.id === me;
@@ -62,38 +63,66 @@
         };
     }
 
-    async function load() {
-        const r = await api('admin_users');
-        if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
-        me = r.me;
-        const byId = {};
-        r.users.forEach((u) => byId[u.id] = u);
-        $('adminMsg').hidden = true; $('usersBox').hidden = false;
-        $('usersBody').innerHTML = r.users.map(rowHtml).join('');
-        $('usersBody').querySelectorAll('[data-role]').forEach((b) => b.onclick = async () => {
+    // Re-bind the per-row action buttons (called after every render of #usersBody). Each
+    // mutating action re-fetches via load(); the current search + page are preserved.
+    function wireRows() {
+        const body = $('usersBody');
+        body.querySelectorAll('[data-role]').forEach((b) => b.onclick = async () => {
             const x = await api('admin_set_role', { id: +b.dataset.role, is_admin: +b.dataset.make });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
-        $('usersBody').querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {
+        body.querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {
             const x = await api('admin_verify', { id: +b.dataset.verify });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
-        $('usersBody').querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
+        body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
             const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
-        $('usersBody').querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
-        $('usersBody').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+        body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
+        body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')', t('Delete')))) return;
             const x = await api('admin_delete', { id: +b.dataset.del });
             x.ok ? load() : toast(x.error || 'Could not delete.');
         });
     }
 
+    // Filter (by username/email/name) → paginate (25/page) → draw the visible rows + pager.
+    function render() {
+        const filtered = (window.RB && RB.filterByText)
+            ? RB.filterByText(allUsers, query, ['username', 'email', 'first_name', 'last_name', 'name'])
+            : allUsers;
+        const pages = Math.max(1, Math.ceil(filtered.length / PER));
+        if (page > pages) page = pages;
+        const slice = filtered.slice((page - 1) * PER, page * PER);
+        $('usersBody').innerHTML = slice.length
+            ? slice.map(rowHtml).join('')
+            : `<tr><td colspan="5" class="muted">${esc(t('No matching users.'))}</td></tr>`;
+        wireRows();
+        const pager = $('usersPager');
+        pager.innerHTML = pages > 1
+            ? `<button class="btn btn-ghost" id="uPrev"${page <= 1 ? ' disabled' : ''} aria-label="${esc(t('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button><span class="muted small">${page} / ${pages} · ${filtered.length} ${esc(t('users'))}</span><button class="btn btn-ghost" id="uNext"${page >= pages ? ' disabled' : ''} aria-label="${esc(t('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
+            : (filtered.length ? `<span class="muted small">${filtered.length} ${esc(t('users'))}</span>` : '');
+        const prev = $('uPrev'), next = $('uNext');
+        if (prev) prev.onclick = () => { if (page > 1) { page--; render(); } };
+        if (next) next.onclick = () => { if (page < pages) { page++; render(); } };
+    }
+
+    async function load() {
+        const r = await api('admin_users');
+        if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
+        me = r.me;
+        allUsers = r.users || [];
+        byId = {}; allUsers.forEach((u) => byId[u.id] = u);
+        $('adminMsg').hidden = true; $('usersBox').hidden = false;
+        render(); // keeps the current search + page across reloads
+    }
+
     async function init() {
         const cfg = await api('config');
         if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../account/">${esc(t('Sign in'))}</a>`; return; }
         if (!cfg.user.is_admin) { $('adminMsg').textContent = t('Admins only.'); return; }
+        $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
         load();
     }
     init();
