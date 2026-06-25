@@ -84,8 +84,6 @@
         .audio-item .del-badge { position: static; width: 22px; height: 22px; line-height: 22px; flex-shrink: 0; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
-        /* hint pinned to the bottom of the map */
-        .map-hint { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 5; display: inline-flex; align-items: center; gap: .4rem; max-width: calc(100% - 20px); background: rgba(14, 17, 22, .82); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .7rem; font-size: .72rem; font-weight: 600; pointer-events: none; }
         /* photo viewer: overlays ONLY the map box (so the notes panel stays editable) */
         #lightbox { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
         #lightbox img { max-width: 94%; max-height: 88%; object-fit: contain; border-radius: 8px; }
@@ -268,7 +266,6 @@
                 <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail" disabled><i class="fa-solid fa-location-crosshairs"></i></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
-            <div class="map-hint"><i class="fa-solid fa-paste"></i> <span data-i18n="Paste an image on the map to add it to the roadbook">Paste an image on the map to add it to the roadbook</span></div>
             <!-- photo viewer: overlays ONLY the map, so the notes panel stays editable -->
             <div id="lightbox" hidden>
                 <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
