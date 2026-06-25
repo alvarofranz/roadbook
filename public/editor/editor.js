@@ -1174,13 +1174,8 @@
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
-        map.select(rb.notes[i], true);
-        // clicking a note centres (and zooms in to) the map and orients it so the segment from the
-        // PREVIOUS note is vertical at the bottom ("you arrive from below", like the vignette): use
-        // the arrival heading bearing_in. The FIRST note has no provenance, so it keeps the outgoing
-        // heading bearing_out. easeTo rotates the shortest way there.
-        const heading = (i === 0 ? +rb.notes[i].bearing_out : +rb.notes[i].bearing_in) || 0;
-        if (map.map && map.ready) map.map.easeTo({ center: [+rb.notes[i].lon, +rb.notes[i].lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
+        map.select(rb.notes[i], true); // highlight only — selecting a note deliberately does NOT
+        // recentre / zoom / rotate the map, so editing (and deleting) never loses your place on it (#65).
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.
