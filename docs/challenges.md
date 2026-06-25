@@ -114,8 +114,9 @@ Chi lo usa all'avvio della pagina:
 
 `public/challenge/index.html` + `public/challenge/challenge.js` — la vetrina pubblica di una
 singola sfida. Usa percorsi **assoluti** `/assets/…`
-([index.html:54-59](../public/challenge/index.html#L54)), diversamente dai tool a un livello
-di profondità.
+([index.html:57-65](../public/challenge/index.html#L57)), diversamente dai tool a un livello
+di profondità. Oltre al core la pagina carica anche **maplibre-gl**, `config.js` e `rbmap.js`
+([index.html:57-61](../public/challenge/index.html#L57)) per la mappa di anteprima (vedi sotto).
 
 ### Risoluzione dello slug
 ([challenge.js:7-9](../public/challenge/challenge.js#L7)) — prima il query param `?s=`, poi
@@ -135,7 +136,21 @@ popola:
 - **descrizione** e una **gallery di foto** (le foto sono una feature server-side, mai dentro
   il `.rdbk`) come link che aprono l'immagine a piena risoluzione
   ([challenge.js:30-32](../public/challenge/challenge.js#L30));
+- una **mappa di anteprima** in cima (vedi sotto);
 - la **tabella delle note** nel layout canonico bianco "paper" del Reader, in sola lettura.
+
+### La mappa di anteprima
+([challenge.js:48-55](../public/challenge/challenge.js#L48)) — sopra la tabella, la pagina
+mostra il tracciato con i marker numerati delle note via `RBMap.showRoadbook(rb)`, su tile
+gratuite `RBMap.STYLE_TOPO` (nessuna chiave). **Toccare un marker** scrolla alla riga della
+nota corrispondente (`map.onWaypoint(i)` → `chNotes.children[i].scrollIntoView`). Il container
+`#chMap` parte `hidden`: viene mostrato e poi `resize`-ato perché era appena reso visibile.
+
+La mappa compare **solo** quando entrambe le condizioni sono vere:
+
+- il roadbook **consente la mappa**: `meta.map_access !== false` — un roadbook che la nasconde
+  (es. una gara che tiene segreto il percorso) non mostra alcuna anteprima;
+- c'è una **traccia reale** (`rb.track.length >= 2`); senza percorso vero la mappa è saltata.
 
 ### Le note via `NoteCanvas`
 ([challenge.js:36-43](../public/challenge/challenge.js#L36)) — ogni nota è una `.nrow readonly`

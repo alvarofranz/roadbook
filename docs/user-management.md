@@ -2,8 +2,8 @@
 
 Come funziona la **gestione utenti** di RDBK: il pannello admin (`/admin`), il modello di
 permessi, le azioni amministrative sugli account e le funzioni self-service (cambio password,
-eliminazione account, cambio password forzato). Documento di riferimento per chi tocca
-auth/admin lato back-end o le pagine relative.
+cambio email con ri-verifica, eliminazione account, cambio password forzato). Documento di
+riferimento per chi tocca auth/admin lato back-end o le pagine relative.
 
 > Il dominio è diviso tra back-end e front-end. Lato server vive in
 > [app/auth.php](../app/auth.php) (autenticazione + permessi) e
@@ -55,13 +55,17 @@ Una volta che quell'account può accedere al pannello, può promuovere altri tra
 
 ## 2. Modello dati
 
-Lo schema `users` è esteso da due migrazioni (vedi anche [backend-api](backend-api.md) §schema):
+Lo schema `users` è esteso da diverse migrazioni (vedi anche [backend-api](backend-api.md) §schema):
 
 | Migrazione | Colonna aggiunta | Tipo | Significato |
 |---|---|---|---|
 | [008_admin.sql](../migrations/008_admin.sql) | `is_admin` | `TINYINT(1)` def. 0 | ruolo amministratore (flag DB) |
 | [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `must_change_password` | `TINYINT(1)` def. 0 | l'utente deve cambiare password al prossimo accesso |
 | [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `blocked` | `TINYINT(1)` def. 0 | account bloccato (login rifiutato) |
+| [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `voice_lang` | `VARCHAR(16)` def. `''` | lingua speech-to-text delle note vocali (`''` = segue il dispositivo) |
+| [011_pending_email.sql](../migrations/011_pending_email.sql) | `pending_email` | `VARCHAR(190)` NULL | nuovo indirizzo email in attesa di conferma (cambio email) |
+| [013_default_location.sql](../migrations/013_default_location.sql) | `default_lat` / `default_lon` | `DECIMAL(10,7)` NULL | posizione mappa di default dell'utente |
+| [014_ui_lang.sql](../migrations/014_ui_lang.sql) | `ui_lang` | `VARCHAR(5)` NULL | lingua UI preferita (`en`/`es`/`it`; NULL = segue il browser) |
 
 Colonne preesistenti rilevanti: `email_verified` (verifica email), `password_hash`
 (bcrypt via `password_hash`).
@@ -95,11 +99,11 @@ Dettagli rilevanti:
 - **`admin_block`**: imposta `blocked`. Non puoi bloccare te stesso né un superuser `.env`.
 - **Eliminazione dati.** Le funzioni di cleanup file (`purge_user_files`, `user_disk_bytes`,
   `dir_size`, `rrmdir`) vivono in admin.php; rimuovono i file *prima* della riga DB così i
-  roadbook risolvono ancora i path. Le righe collegate (roadbook/foto/token) cadono per
-  `ON DELETE CASCADE`.
+  roadbook risolvono ancora i path. Le righe collegate (roadbook/foto/note vocali/token) cadono
+  per `ON DELETE CASCADE`.
 
 ### Login: account bloccato
-In `login_user()` ([app/auth.php:161](../app/auth.php#L161)) il controllo del blocco sta
+In `login_user()` ([app/auth.php:190](../app/auth.php#L190)) il controllo del blocco sta
 **dopo** la verifica della password e **prima** di quella sull'email verificata:
 
 ```php
@@ -112,16 +116,24 @@ if (!(int)$u['email_verified']) fail('Please verify your email first (check your
 
 ## 4. Self-service dell'utente
 
-In [app/auth.php](../app/auth.php), esposte da `change_password` / `account_delete`, e legate
-dalla pagina account.
+In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email` /
+`verify_email_change` / `account_delete`, e legate dalla pagina account.
 
 - **`current_user()`** ([app/auth.php:27](../app/auth.php#L27)) restituisce sempre
   `is_admin`, `email_verified` e `must_change_password` come interi, così il front-end può
-  fare check di verità affidabili.
-- **`change_password()`** ([app/auth.php:70](../app/auth.php#L70)): normalmente richiede la
+  fare check di verità affidabili; include anche le preferenze `ui_lang`, `voice_lang` e la
+  posizione di default `default_lat`/`default_lon` (numeri o `null`).
+- **`change_password()`** ([app/auth.php:99](../app/auth.php#L99)): normalmente richiede la
   password attuale; se l'utente ha `must_change_password` attivo la imposta **senza** la
   attuale (l'admin gliene ha data una temporanea). In entrambi i casi il flag viene azzerato.
-- **`account_delete()`** ([app/auth.php:84](../app/auth.php#L84)): verifica la password,
+- **Cambio email con ri-verifica.** [`change_email()`](../app/auth.php#L239) valida il nuovo
+  indirizzo, ne controlla l'unicità (anche contro i `pending_email` altrui) e lo salva in
+  **`pending_email`**, poi invia un link di conferma `/account/?verifyemail=<raw>` **al nuovo
+  indirizzo** (token 24 h che riusa `verify_token`/`verify_expires`). L'email attuale resta
+  attiva finché la conferma non avviene. [`verify_email_change()`](../app/auth.php#L258) apre il
+  link (basato su token, senza sessione, come il reset), rifà il controllo di unicità e fa lo
+  switch `email ← pending_email`. È self-service: lo username, invece, lo cambia solo un admin.
+- **`account_delete()`** ([app/auth.php:113](../app/auth.php#L113)): verifica la password,
   cancella i file (`purge_user_files`) e la riga, e distrugge la sessione.
 
 ---
@@ -157,8 +169,12 @@ Oltre a login/register/forgot/reset:
 - **`#vForce`** — cambio password **forzato**: se al login (o in `config`)
   `user.must_change_password` è attivo, si mostra questa vista *prima* del profilo; invia
   `change_password` con la sola nuova password, poi ricarica nel profilo.
-- **Cambio password** (`#pwForm`) e **Elimina account** (`#delForm`) nel profilo, con feedback
-  via `RBToast` (visibile anche scrollati in basso).
+- **Cambio password** (`#pwForm`), **Cambio email** (`#emailForm`, doppio campo per evitare
+  refusi → `change_email`) e **Elimina account** (`#delForm`, con `RBConfirmDanger`) nel
+  profilo, con feedback via `RBToast` (visibile anche scrollati in basso).
+- **Conferma del nuovo indirizzo:** se la pagina account viene aperta con `?verifyemail=<raw>`
+  (il link inviato al nuovo indirizzo), `init()` chiama `verify_email_change`, rilegge l'utente
+  via `config` e mostra il profilo aggiornato.
 - **Link al pannello admin** (`#adminLink`) mostrato solo se `user.is_admin`.
 
 ---
@@ -168,9 +184,11 @@ Oltre a login/register/forgot/reset:
 Il deploy è un push su `main` (vedi [CLAUDE.md](../CLAUDE.md)). Due cose **non** sono coperte
 dal deploy automatico:
 
-1. **Migrazioni su DB esistente.** Applicare a mano, una volta, su produzione:
-   `migrations/008_admin.sql` poi `migrations/009_admin_user_flags.sql`. Senza queste colonne
-   il login e il pannello vanno in errore SQL.
+1. **Migrazioni su DB esistente.** Applicare a mano, una volta e in ordine, ogni nuova
+   migrazione su produzione (`migrations/008_admin.sql`, `009_admin_user_flags.sql`,
+   `010_voice_lang.sql`, `011_pending_email.sql`, `012_roadbook_audio.sql`,
+   `013_default_location.sql`, `014_ui_lang.sql`). Senza le colonne che il codice legge il
+   login e il pannello vanno in errore SQL.
 2. **`ADMIN_EMAILS` nel `.env` di produzione.** Va valorizzato con l'email del primo admin;
    il `.env` non è nel repo e non viene toccato dal deploy. Finché è vuoto, in produzione
    nessuno è admin e `/admin` resta inaccessibile.
@@ -184,7 +202,8 @@ dal deploy automatico:
 - **Un solo livello di ruolo.** `is_admin` è binario; non esistono permessi granulari.
 - **Password temporanea in chiaro nel form.** Il campo password dell'edit-utente è di tipo
   testo (l'admin deve poterla comunicare); viene comunque salvata solo come hash.
-- **Migrazioni non idempotenti.** Rieseguire 008/009 su un DB dove le colonne esistono dà
-  errore "column exists" — vanno lanciate una sola volta (vedi §7).
+- **Migrazioni non idempotenti.** Rieseguire una `ALTER TABLE ... ADD COLUMN` (008–014) su un
+  DB dove la colonna esiste già dà errore "column exists" — vanno lanciate una sola volta
+  (vedi §7).
 - **Bootstrap del primo admin solo via `.env`.** È voluto (failsafe), ma significa che senza
   accesso al `.env` di produzione non si può aprire il pannello la prima volta.

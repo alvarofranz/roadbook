@@ -72,8 +72,8 @@ verifica, login, recupero/reset password e profilo (avatar + bio); i roadbook sa
 
 ### 3.1 Le viste
 
-La pagina contiene cinque sezioni mutuamente esclusive; `show(id)` ne mostra una sola
-nascondendo le altre ([account.js:14](../public/account/account.js#L14)):
+La pagina contiene sei sezioni mutuamente esclusive; `show(id)` ne mostra una sola
+nascondendo le altre ([account.js:15](../public/account/account.js#L15)):
 
 | Vista | id | Scopo |
 |-------|------|-------|
@@ -81,115 +81,162 @@ nascondendo le altre ([account.js:14](../public/account/account.js#L14)):
 | Create account | `vRegister` | nome, cognome, username, email, password (min 8) |
 | Reset password | `vForgot` | invio link di reset via email |
 | Set a new password | `vReset` | nuova password (raggiunta dal link `?reset=…`) |
+| Forced change | `vForce` | cambio password obbligato quando un admin ha impostato una password temporanea (`must_change_password`) |
 | Account / profilo | `vAccount` | il profilo vero e proprio |
 
-`init()` ([account.js:59](../public/account/account.js#L59)) decide quale mostrare: legge
-`RBApi('config')`, gestisce i parametri URL `?verify=…` e `?reset=…`, e **se `cfg.user`
-esiste salta dritto al profilo** (`showAccount`). Altrimenti mostra il login.
+`init()` ([account.js:87](../public/account/account.js#L87)) decide quale mostrare: legge
+`RBApi('config')`, gestisce i parametri URL `?verify=…`, `?reset=…` e `?verifyemail=…`
+(conferma del cambio email, §3.4), e **se `cfg.user` esiste salta dritto al profilo**
+(`showAccount`, o `showForce` se deve ancora cambiare la password temporanea). Altrimenti
+mostra il login.
 
 ### 3.2 Si apre già in modifica
 
 Non c'è una modalità "sola lettura": appena loggato, `showAccount(user)`
-([account.js:100](../public/account/account.js#L100)) mostra subito il form modificabile.
+([account.js:206](../public/account/account.js#L206)) mostra subito il form modificabile.
 Popola l'intestazione e i campi:
 
 | Elemento | Origine dato |
 |----------|--------------|
 | Nome visualizzato (`accName`) | `first_name + last_name`, fallback su `username` |
 | Handle (`accHandle`) | `@username · email` |
-| Avatar (`accAvatar`) | `user.avatar` con `?v=Date.now()` per **bustare la cache** HTTP/CDN dopo un re-upload ([account.js:104](../public/account/account.js#L104)); fallback `../assets/icon.svg` |
+| Avatar (`accAvatar`) | `user.avatar` con `?v=Date.now()` per **bustare la cache** HTTP/CDN dopo un re-upload ([account.js:213](../public/account/account.js#L213)); fallback `../assets/icon.svg` |
+| Nome / cognome (`pfFirst` / `pfLast`) | `user.first_name` / `user.last_name`, `maxlength="80"` |
 | Bio (`pfBio`) | `user.bio`, textarea `maxlength="500"` |
+| Lingua note vocali (`pfVoiceLang`) | `user.voice_lang` (vuoto = "Automatic (device)") |
+| Posizione di default (`pfLocMap`) | `user.default_lat` / `user.default_lon` (§3.3) |
+| Link Admin (`adminLink`) | visibile solo se `user.is_admin` |
 
-### 3.3 Le azioni del profilo
+### 3.3 Le card del profilo
+
+Il profilo è una pila di card (`.auth-card.profile-form`); ciascuna è autonoma, con il
+proprio bottone di salvataggio — non esiste un unico "Save" globale.
 
 - **Cambia foto** — `pfAvatarBtn` fa scattare l'`<input type=file>` nascosto; al `change`
   l'immagine sale con `RBUpload({type:'avatar'}, f, 'avatar.jpg')` e, se ok, l'avatar viene
-  aggiornato in pagina ([account.js:107](../public/account/account.js#L107)).
-- **Save profile** — `pfSave` invia `RBApi('profile', { bio })`
-  ([account.js:114](../public/account/account.js#L114)). **Salva solo la bio**: nome,
-  username ed email non sono modificabili da qui (non hanno campi nel form).
-- **Sign out** — `RBApi('logout')` poi reload ([account.js:105](../public/account/account.js#L105)).
+  aggiornato in pagina ([account.js:221](../public/account/account.js#L221)).
+- **Save profile** — `pfSave` invia `RBApi('profile', { first_name, last_name, bio,
+  voice_lang })` ([account.js:227](../public/account/account.js#L227)). Salva quindi
+  **nome, cognome, bio e lingua delle note vocali** in un colpo solo, e ri-sincronizza il
+  nome mostrato nell'intestazione. Lingua note vocali = preferenza per-account usata dal
+  Recorder per il riconoscimento vocale ([recorder.js:21](../public/recorder/recorder.js#L21));
+  con valore vuoto ricade sulla lingua del dispositivo.
+- **Default map location** — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
+  `RBMap.STYLE_TOPO`, tile topografiche gratuite) e un pin trascinabile
+  ([account.js:183](../public/account/account.js#L183)). Si imposta toccando la mappa,
+  trascinando il pin, con **Use my location** (GPS via `navigator.geolocation`) o si svuota
+  con **Clear**; le coordinate scelte si salvano col proprio bottone **Save location** via
+  `RBApi('save_location', { default_lat, default_lon })`
+  ([account.js:189](../public/account/account.js#L189)). La posizione salvata centra l'Editor
+  a partenza vuota (es. "Draw on the map", [editor.js:1662](../public/editor/editor.js#L1662))
+  e il Recorder prima del primo fix GPS ([recorder.js:61](../public/recorder/recorder.js#L61)).
+- **Change email** — emaila un link di conferma al **nuovo** indirizzo; l'email cambia solo
+  dopo la conferma (§3.4). Doppio campo (new + confirm) con controllo di uguaglianza, poi
+  `RBApi('change_email', { email })` ([account.js:153](../public/account/account.js#L153)).
+- **Change password** — current + new + confirm (con conferma di uguaglianza), via
+  `RBApi('change_password', { current, new })`; al successo memorizza la nuova credenziale
+  nel password manager (§3.5) e svuota i campi ([account.js:146](../public/account/account.js#L146)).
+- **Delete account** — chiede conferma con `RBConfirmDanger` (che nomina l'azione
+  irreversibile), poi `RBApi('account_delete', { password })` e, se ok, torna alla home
+  ([account.js:159](../public/account/account.js#L159)).
+- **Sign out** — `RBApi('logout')` poi reload ([account.js:214](../public/account/account.js#L214)).
 - In fondo, un bottone **My roadbooks** verso `../myroadbooks/`
-  ([index.html:117](../public/account/index.html#L117)).
+  ([index.html:197](../public/account/index.html#L197)).
 
-### 3.4 Endpoint API usati
+### 3.4 Cambio email con ri-verifica
 
-`config`, `verify`, `reset`, `login`, `register`, `forgot`, `logout`, `profile`, più
-l'upload avatar via `RBUpload` (→ `upload.php`). Tutto attraverso `RBApi`/`RBUpload`.
+Il cambio email è a **due fasi**, per non lasciare l'account agganciato a un indirizzo non
+provato. Inviato `change_email`, il server NON sostituisce l'email: la mette da parte (in
+`pending_email`) e spedisce un link di conferma al nuovo indirizzo. Aprendo quel link si
+torna su `/account/?verifyemail=…`; `init()` chiama
+`RBApi('verify_email_change', { token })` ([account.js:105](../public/account/account.js#L105)),
+ri-legge `config` (l'email può essere cambiata) e rientra nel profilo aggiornato. Solo a
+questo punto l'email è effettivamente cambiata.
 
-### 3.5 Dettagli onesti
+### 3.5 Salvataggio nel password manager
+
+I form di RDBK postano via `fetch` (nessuna navigazione), quindi il browser non vede mai
+una submission di credenziali e da solo non offrirebbe di salvare/aggiornare la password.
+`storeCredential(id, password)` ([account.js:42](../public/account/account.js#L42)) è il
+trigger esplicito: dopo un login andato a buon fine e dopo un cambio password (anche quello
+forzato) chiama `navigator.credentials.store(new PasswordCredential({ id, password }))`, e il
+gestore password del browser propone di salvare/aggiornare. Richiede **HTTPS + un browser
+Chromium**; altrove è un no-op silenzioso (manca `window.PasswordCredential`).
+
+### 3.6 Endpoint API usati
+
+`config`, `verify`, `verify_email_change`, `reset`, `login`, `register`, `forgot`, `logout`,
+`profile`, `save_location`, `change_email`, `change_password`, `account_delete`, più l'upload
+avatar via `RBUpload` (→ `upload.php`). Tutto attraverso `RBApi`/`RBUpload`.
+
+### 3.7 Dettagli onesti
 
 - **Cloudflare Turnstile** (anti-bot) è renderizzato su login/register/forgot **solo se**
-  il server espone una site key in `config` ([account.js:17](../public/account/account.js#L17));
+  il server espone una site key in `config` ([account.js:18](../public/account/account.js#L18));
   senza configurazione i widget restano vuoti e inerti.
 - Ogni campo password riceve un toggle "occhio" mostra/nascondi iniettato a runtime
-  ([account.js:37](../public/account/account.js#L37)).
+  ([account.js:65](../public/account/account.js#L65)).
 - I form usano `submit` con `preventDefault` per non ricaricare mai la pagina
-  ([account.js:34](../public/account/account.js#L34)).
+  ([account.js:35](../public/account/account.js#L35)).
+- **Rate limiting del login.** Su un 429 del server (`retry_after`), il bottone Sign in si
+  disabilita con un conto alla rovescia live finché la finestra non si libera
+  ([account.js:50](../public/account/account.js#L50)).
 
 ---
 
 ## 4. I miei roadbook (`/myroadbooks/`)
 
 La lista dei roadbook salvati dall'utente loggato. Markup in
-[index.html](../public/myroadbooks/index.html), logica in
-[myroadbooks.js](../public/myroadbooks/myroadbooks.js).
+[index.html](../public/myroadbooks/index.html); [myroadbooks.js](../public/myroadbooks/myroadbooks.js)
+si limita a **verificare la sessione** (`RBApi('config')`; senza utente **reindirizza a
+`../account/`**) e poi monta la lista con l'helper condiviso `RBRoadbookList`.
 
-**Richiede una sessione**: all'avvio legge `RBApi('config')` e, se non c'è utente,
-**reindirizza a `../account/`** per il login ([myroadbooks.js:33](../public/myroadbooks/myroadbooks.js#L33)).
+**La lista è `RBRoadbookList`** (in `app.js`, riusato anche dalla landing dell'Editor): fa
+`RBApi('rb_list')` e disegna una riga per roadbook. Ricerca, paginazione e azioni sono
+documentate in dettaglio una volta sola in [app-shell](app-shell.md); qui il riassunto.
 
 ### 4.1 Il layout
 
-Una **singola colonna a piena larghezza**, una riga per roadbook (leggibile sia su schermi
-larghi sia stretti — `.rb-grid` è un `flex-direction: column`,
-[index.html:18](../public/myroadbooks/index.html#L18)). In cima una barra con il titolo e il
-bottone **New roadbook** verso l'Editor ([index.html:37](../public/myroadbooks/index.html#L37)).
+Una **singola colonna a piena larghezza**, una riga per roadbook (`.rb-grid` è
+`flex-direction: column`). In cima una barra con il titolo e il bottone **New roadbook** verso
+l'Editor. Oltre i cinque roadbook compare una **casella di ricerca** (filtro per titolo via
+`RB.filterRoadbooks`); oltre una pagina compare un **paginatore** (12 per pagina). Ricerca e
+paginatore ridisegnano solo le righe, non la casella.
 
 ### 4.2 Ogni riga
 
-`loadRoadbooks()` ([myroadbooks.js:10](../public/myroadbooks/myroadbooks.js#L10)) chiama
-`RBApi('rb_list')` e disegna per ogni roadbook ([myroadbooks.js:14](../public/myroadbooks/myroadbooks.js#L14)):
-
 | Elemento | Contenuto |
 |----------|-----------|
-| Titolo + meta | `title`; sotto, riepilogo distanza/note (`RBSummary`) e **data ultima modifica** (`updated_at`, formattata nella locale del visitatore) |
-| Badge | pillola **Public** (globo verde) o **Private** (lucchetto, muted) secondo `is_public` |
-| Azione View | `<i fa-eye>` → `../challenge/<slug>` (anteprima pubblica) |
-| Azione Edit | `<i fa-pen>` → `../editor/?rb=<id>` (apre nell'Editor per modifica) |
-| Azione Save as | `<i fa-clone>` → duplica (vedi sotto) |
-| Azione Delete | `<i fa-trash>` rosso → elimina (vedi sotto) |
-
-La data viene formattata da `fmtDate`, che converte il DATETIME MySQL
-(`YYYY-MM-DD HH:MM:SS`) in `Date` e poi in `toLocaleDateString()`
-([myroadbooks.js:8](../public/myroadbooks/myroadbooks.js#L8)).
+| Titolo + meta | `title`; sotto, riepilogo distanza/note (`RBSummary`) e **data ultima modifica** (`updated_at`, nella locale del visitatore) |
+| Badge | pillola **Public** (globo verde) o **Private** (lucchetto) secondo `is_public` |
+| Read | `<i fa-book-open>` → `../reader/?rb=<id>` — apre nel **Reader**, anche i roadbook **privati** del proprietario |
+| View | `<i fa-eye>` → `../challenge/<slug>` (anteprima pubblica) |
+| Edit | `<i fa-pen>` → `../editor/?rb=<id>` |
+| Export | `<i fa-file-export>` → `../editor/?rb=<id>&export=1` (apre l'Editor e fa partire subito il popup di export) |
+| Save as | `<i fa-clone>` → duplica lato server (`rb_duplicate`) |
+| Delete | `<i fa-trash>` rosso → conferma che **nomina il roadbook** (`RBConfirmDanger`), poi `rb_delete` |
 
 Se la lista è vuota, mostra "No roadbooks yet. Create one in the Editor."
-([myroadbooks.js:13](../public/myroadbooks/myroadbooks.js#L13)).
 
 ### 4.3 Duplica ("Save as")
 
-Il bottone clone invoca `RBApi('rb_duplicate', { id })`; al successo mostra un toast e
-ricarica la lista ([myroadbooks.js:22](../public/myroadbooks/myroadbooks.js#L22)). È una
-copia lato server — utile come "salva come" per partire da un roadbook esistente senza
-toccare l'originale.
+Il bottone clone invoca `RBApi('rb_duplicate', { id })`; al successo un toast e la lista si
+ricarica. È una copia lato server — utile come "salva come" per partire da un roadbook
+esistente senza toccare l'originale.
 
 ### 4.4 Elimina
 
-Il cestino chiede conferma con `RBConfirm('Delete this roadbook?', 'Delete')` e, solo se
-confermato, chiama `RBApi('rb_delete', { id })` e ricarica
-([myroadbooks.js:26](../public/myroadbooks/myroadbooks.js#L26)).
+Il cestino chiede conferma con `RBConfirmDanger` (la conferma **nomina il roadbook**) e, solo se
+confermato, chiama `RBApi('rb_delete', { id })` e ricarica.
 
 ### 4.5 Aprire in Reader / pubblico / Editor
 
-- **Edit** porta nell'Editor con `?rb=<id>`: salvare lì re-aggancia lo stesso roadbook
-  (il `?rb=<id>` fa sì che i salvataggi successivi aggiornino lo stesso record, vedi
-  CLAUDE.md / Editor).
-- **View** porta alla pagina **challenge** via `slug` — l'anteprima pubblica del roadbook,
-  da cui poi si apre nel Reader.
+- **Read** apre direttamente il **Reader** sul roadbook (`../reader/?rb=<id>`), anche se privato:
+  il proprietario è autorizzato lato server (`rb_get` gated su id + user_id).
+- **Edit** porta nell'Editor con `?rb=<id>`: salvare lì re-aggancia lo stesso roadbook (i
+  salvataggi successivi aggiornano lo stesso record).
+- **View** porta alla pagina **challenge** via `slug` — l'anteprima pubblica del roadbook.
 - La voce "i miei roadbook" del menu e il bottone in fondo al profilo puntano entrambi qui.
-
-> Nota: la riga non ha un link "apri nel Reader con `?rb=`" diretto; l'accesso da
-> proprietario passa per Editor (modifica) o per la pagina challenge (anteprima).
 
 ### 4.6 Endpoint API usati
 
@@ -221,13 +268,18 @@ Riassunto del contenuto (data ultimo aggiornamento: 18 giugno 2026):
 
 ## 6. Limiti e quirk da segnalare
 
-- **Profilo modificabile solo nella bio + avatar.** Nome, cognome, username ed email sono
-  mostrati ma non hanno campi di modifica: `RBApi('profile', …)` invia solo `bio`
-  ([account.js:114](../public/account/account.js#L114)). Per cambiarli serve un'azione di
-  backend non esposta in questa UI.
-- **Una pagina, cinque viste.** `/account/` è insieme login, registrazione, recupero
-  password e profilo: lo stato dipende da `RBApi('config')` e dai parametri URL, non da
-  route separate.
+- **Username non modificabile.** Avatar, nome, cognome, bio, lingua note vocali, posizione
+  di default, email e password si cambiano da qui; lo **username** è mostrato (`@handle`) ma
+  non ha campo di modifica — per cambiarlo serve un'azione di backend non esposta in questa UI.
+- **Cambio email differito.** L'email non cambia all'invio del form: resta `pending_email`
+  finché non si apre il link di conferma sul nuovo indirizzo (§3.4). Se non si conferma,
+  l'account tiene l'email vecchia.
+- **Salvataggio password manager solo su Chromium/HTTPS.** `storeCredential` usa la
+  Credential Management API; su Firefox/Safari o su http è un no-op silenzioso (§3.5) — il
+  prompt "salva password" semplicemente non appare.
+- **Una pagina, sei viste.** `/account/` è insieme login, registrazione, recupero
+  password, cambio forzato e profilo: lo stato dipende da `RBApi('config')` e dai parametri
+  URL (`?verify`, `?reset`, `?verifyemail`), non da route separate.
 - **Turnstile è condizionale.** Se il server non fornisce la site key, i widget anti-bot
   restano vuoti — comportamento atteso in locale, da tenere presente quando si testano i
   form.

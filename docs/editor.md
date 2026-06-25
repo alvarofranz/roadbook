@@ -148,8 +148,13 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   per-punto (tasto destro) offre *Aggiungi nota · Aggiungi punto · Cancella · immagine* — non
   più "Sposta il punto", visto che Move è il default e si trascina direttamente. Il trascinamento
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
-- **Rotazione.** Selezionando una nota la mappa ruota su `bearing_out` (direzione di marcia);
-  torna a nord alla chiusura dell'editor.
+- **Selezione nota = solo evidenziazione (#65).** Selezionare una nota — dalla riga lista
+  **o** dal marker sulla mappa — la evidenzia (`map.select(note, true)`), apre il suo editor
+  inline e porta la riga in vista, ma **non** ricentra, **non** zooma e **non** ruota la mappa
+  ([editor.js:1177](../public/editor/editor.js#L1177)): così editare (e **cancellare**) una nota
+  non fa più "saltare" la vista al punto successivo. L'unico movimento automatico residuo è il
+  ritorno **a nord** alla chiusura dell'editor (`closeEditor`,
+  [editor.js:1166](../public/editor/editor.js#L1166)), se la mappa era ruotata.
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro).** `map.map.on('contextmenu')` apre un popup: *Open in
@@ -194,7 +199,8 @@ pan-only né mini-mappa separata.
 
 Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 ([editor.js:848](../public/editor/editor.js#L848)); la guardia impone **almeno 2 note**
-([editor.js:737](../public/editor/editor.js#L737)).
+([editor.js:737](../public/editor/editor.js#L737)). Poiché `select` non muove più la mappa
+(#65, §3.3), cancellare una nota e selezionare la successiva **non ricentra la vista**.
 
 ### 4.1 Palette icone
 
@@ -247,6 +253,13 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
 - **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`
   ([editor.js:434](../public/editor/editor.js#L434)).
 - **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
+- **Cancella roadbook (#81)** — una sezione *danger* (`#deleteSection`) col pulsante
+  *Delete roadbook* (`#deleteRb`, [editor.js:907](../public/editor/editor.js#L907)) compare
+  **solo per un roadbook salvato** (`currentRbId > 0`, mostrata/nascosta in `updateSaveBtn`,
+  [editor.js:163](../public/editor/editor.js#L163)). Chiede conferma **nominando il roadbook**
+  (`RBConfirmDanger` col titolo), poi chiama `rb_delete` e, al successo, pulisce il draft e
+  riporta a *My roadbooks*. I roadbook non ancora salvati non hanno nulla da cancellare lato
+  server, quindi il pulsante non c'è.
 
 > Le foto sono **una feature dell'app, mai dentro il `.rdbk`** (vivono lato server). Coerente
 > con lo standard.
@@ -425,6 +438,17 @@ precisa:
 4. **`checkRecovery`** — un recording GPS interrotto.
 5. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.
 6. **`?rb=<id>`** — carica un roadbook salvato dal profilo (richiede login).
+
+Risolta la sorgente, due rifiniture finali della startup:
+
+- **`?export=1`** ([editor.js:1665](../public/editor/editor.js#L1665)) — è la query con cui il
+  pulsante *Export* di *My roadbooks* apre l'Editor: a roadbook caricato fa partire subito la
+  pop-up Export (`openExportModal`) e ripulisce il flag dall'URL (lasciando solo `?rb=<id>`),
+  così un reload non la riapre.
+- **Posizione di default sulla mappa (#74)** ([editor.js:1661](../public/editor/editor.js#L1661))
+  — su un avvio "vuoto" (nessuna rotta caricata, es. *Draw on the map*), se l'utente loggato ha
+  salvato una posizione di default nel profilo (`meUser.default_lat/default_lon`) la mappa ci
+  centra (`jumpTo`, zoom 12) invece di partire sulla vista mondo.
 
 ---
 

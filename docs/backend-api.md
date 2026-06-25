@@ -63,28 +63,42 @@ switch ci sono i guard di metodo e di origine.
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
 | `config` | Restituisce la chiave Turnstile (sito) e l'utente corrente — bootstrap del front-end ([index.php:20](../public/api/index.php#L20)) | nessuna |
-| `register` | Crea l'account e invia la mail di verifica ([auth.php:68](../app/auth.php#L68)) | nessuna |
-| `verify` | Verifica l'email tramite token ([auth.php:97](../app/auth.php#L97)) | nessuna |
-| `login` | Login, rigenera la sessione, restituisce anche un Bearer token ([auth.php:108](../app/auth.php#L108)) | nessuna |
-| `logout` | Distrugge la sessione e revoca il Bearer token usato ([auth.php:124](../app/auth.php#L124)) | sessione |
-| `forgot` | Invia la mail di reset password (risposta sempre positiva) ([auth.php:131](../app/auth.php#L131)) | nessuna |
-| `reset` | Imposta una nuova password tramite token ([auth.php:149](../app/auth.php#L149)) | nessuna |
-| `profile` | Aggiorna la bio dell'utente ([auth.php:45](../app/auth.php#L45)) | **richiesta** |
+| `register` | Crea l'account e invia la mail di verifica ([auth.php:141](../app/auth.php#L141)) | nessuna |
+| `verify` | Verifica l'email tramite token ([auth.php:170](../app/auth.php#L170)) | nessuna |
+| `login` | Login, rigenera la sessione, restituisce anche un Bearer token ([auth.php:181](../app/auth.php#L181)) | nessuna |
+| `logout` | Distrugge la sessione e revoca il Bearer token usato ([auth.php:198](../app/auth.php#L198)) | sessione |
+| `forgot` | Invia la mail di reset password (risposta sempre positiva) ([auth.php:205](../app/auth.php#L205)) | nessuna |
+| `reset` | Imposta una nuova password tramite token ([auth.php:223](../app/auth.php#L223)) | nessuna |
+| `profile` | Aggiorna nome/cognome/bio e la lingua delle note vocali (`voice_lang`) ([auth.php:64](../app/auth.php#L64)) | **richiesta** |
+| `save_location` | Salva la posizione mappa di default dell'utente (`default_lat`/`default_lon`); una coppia non valida o mancante la azzera ([auth.php:88](../app/auth.php#L88)) | **richiesta** |
+| `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`) ([auth.php:78](../app/auth.php#L78)) | **richiesta** |
+| `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)) ([auth.php:99](../app/auth.php#L99)) | **richiesta** |
+| `change_email` | Avvia il cambio email con ri-verifica del nuovo indirizzo (`pending_email` + link) ([auth.php:239](../app/auth.php#L239)) | **richiesta** |
+| `verify_email_change` | Conferma il nuovo indirizzo dal link e fa lo switch ([auth.php:258](../app/auth.php#L258)) | nessuna |
+| `account_delete` | Elimina il proprio account (vedi [user-management](user-management.md)) ([auth.php:113](../app/auth.php#L113)) | **richiesta** |
 | `rb_list` | Elenca i roadbook dell'utente (metadati) ([roadbooks.php:13](../app/roadbooks.php#L13)) | **richiesta** |
-| `rb_get` | Carica un proprio roadbook (JSON `.rdbk` completo) ([roadbooks.php:19](../app/roadbooks.php#L19)) | **richiesta** |
-| `rb_draft` | Crea una bozza vuota per agganciarvi le foto durante la registrazione ([roadbooks.php:45](../app/roadbooks.php#L45)) | **richiesta** |
-| `rb_save` | Salva/aggiorna un roadbook (pubblico o privato) ([roadbooks.php:51](../app/roadbooks.php#L51)) | **richiesta** |
+| `rb_get` | Carica un proprio roadbook (JSON `.rdbk` completo), gated su proprietario ([roadbooks.php:19](../app/roadbooks.php#L19)) | **richiesta** |
+| `rb_draft` | Crea una bozza vuota per agganciarvi le foto durante la registrazione ([roadbooks.php:51](../app/roadbooks.php#L51)) | **richiesta** |
+| `rb_save` | Salva/aggiorna un roadbook (pubblico o privato) ([roadbooks.php:57](../app/roadbooks.php#L57)) | **richiesta** |
 | `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria) ([roadbooks.php:86](../app/roadbooks.php#L86)) | **richiesta** |
 | `rb_delete` | Elimina un proprio roadbook (file + riga) ([roadbooks.php:183](../app/roadbooks.php#L183)) | **richiesta** |
 | `ph_list` | Elenca le foto di un roadbook (pubblico, o proprio se privato) ([roadbooks.php:123](../app/roadbooks.php#L123)) | opzionale |
 | `ph_delete` | Elimina una foto di un proprio roadbook ([roadbooks.php:136](../app/roadbooks.php#L136)) | **richiesta** |
-| `public_list` | Galleria pubblica home: ultimi 60 roadbook pubblici ([roadbooks.php:149](../app/roadbooks.php#L149)) | nessuna |
-| `public_get` | Carica un roadbook pubblico via slug (o proprio se privato) ([roadbooks.php:162](../app/roadbooks.php#L162)) | opzionale |
+| `ph_move` | Aggiorna il geotag (lat/lon) di una foto di un proprio roadbook ([roadbooks.php:169](../app/roadbooks.php#L169)) | **richiesta** |
+| `audio_list` | Elenca le note vocali di un roadbook (pubblico, o proprio se privato) ([roadbooks.php:182](../app/roadbooks.php#L182)) | opzionale |
+| `audio_delete` | Elimina una nota vocale di un proprio roadbook ([roadbooks.php:195](../app/roadbooks.php#L195)) | **richiesta** |
+| `public_list` | Galleria pubblica home: ultimi 60 roadbook pubblici ([roadbooks.php:208](../app/roadbooks.php#L208)) | nessuna |
+| `public_get` | Carica un roadbook pubblico via slug (o proprio se privato) ([roadbooks.php:221](../app/roadbooks.php#L221)) | opzionale |
 
-Le action che chiamano `require_user()` ([auth.php:43](../app/auth.php#L43)) rispondono `401`
+Le action che chiamano `require_user()` ([auth.php:52](../app/auth.php#L52)) rispondono `401`
 se non c'è una sessione né un Bearer token valido. Quelle con auth *opzionale* usano
 `current_user()`: funzionano da anonimo ma elevano i permessi se l'utente è loggato (es.
-vedere i propri roadbook privati).
+vedere i propri roadbook privati, foto e note vocali).
+
+`current_user()` ([auth.php:27](../app/auth.php#L27)) — il payload restituito da `config` e da
+`login` — include anche le preferenze utente: `ui_lang` (lingua UI scelta), `voice_lang`
+(lingua delle note vocali) e la posizione mappa di default `default_lat`/`default_lon`,
+normalizzate a numero o `null` (mai stringhe `DECIMAL`), così il front-end le applica subito.
 
 L'upload immagini **non** è un'action di `index.php`: è il file separato `upload.php`
 (vedi §6), invocato dal front-end via `RBUpload`.
@@ -105,7 +119,7 @@ se manca) e costruisce l'array `$CFG`:
 | `app_secret` | `APP_SECRET` | pepper per l'hashing dei token |
 | `turnstile_site`, `turnstile_secret` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` | Cloudflare Turnstile |
 | `storage` | — (`<root>/storage/users`) | file `.rdbk` privati per-utente |
-| `avatars_dir`, `photos_dir` | — (`public/avatars`, `public/photos`) | immagini servite via web |
+| `avatars_dir`, `photos_dir`, `audio_dir` | — (`public/avatars`, `public/photos`, `public/audio`) | immagini e note vocali servite via web |
 
 ### Sessione (sliding, 60 giorni)
 Cookie `rdbksid` con `SESSION_LIFETIME = 60 giorni`, `Secure` + `HttpOnly` + `SameSite=Lax`
@@ -123,9 +137,12 @@ false`). Tutte le query passano da prepared statement: non c'è concatenazione d
 - `json_out($data, $code)` / `json_in()` / `fail($msg, $code)` — I/O JSON
   ([bootstrap.php:45](../app/bootstrap.php#L45)).
 - `rate_limit($key, $max, $window)` — rate limit leggero via **APCu**; è un **no-op se
-  l'estensione non è caricata** ([bootstrap.php:55](../app/bootstrap.php#L55)). Usato su
-  `register` (10/h), `login` (20/15min), `forgot` (8/15min) per IP.
-- `client_ip()` — legge `REMOTE_ADDR` ([bootstrap.php:60](../app/bootstrap.php#L60)).
+  l'estensione non è caricata** ([bootstrap.php:66](../app/bootstrap.php#L66)). Usato su
+  `register` (10/h), `login` (20/15min), `forgot` (8/15min) per IP. Al primo hit della
+  finestra registra quando scade, così la risposta `429` include `retry_after` (secondi
+  da attendere) oltre a `{ok:false, error:'Too many attempts. Please wait a moment.'}` — il
+  form di login lo trasforma in un countdown.
+- `client_ip()` — legge `REMOTE_ADDR` ([bootstrap.php:77](../app/bootstrap.php#L77)).
 
 ---
 
@@ -139,14 +156,14 @@ esiste solo nella mail o sul dispositivo. Le password usano `password_hash`/`pas
 (bcrypt di default).
 
 ### Registrazione e verifica email
-[`register_user`](../app/auth.php#L68): valida nome/cognome, username (`^[a-zA-Z0-9_.-]{3,40}$`),
+[`register_user`](../app/auth.php#L141): valida nome/cognome, username (`^[a-zA-Z0-9_.-]{3,40}$`),
 email e password (≥ 8 caratteri), passa per Turnstile, controlla unicità di username/email,
 crea l'utente non verificato con un `verify_token` valido 24 h, e invia la mail con link
-`/account/?verify=<raw>`. [`verify_email`](../app/auth.php#L97) consuma il token (controllo
+`/account/?verify=<raw>`. [`verify_email`](../app/auth.php#L170) consuma il token (controllo
 scadenza) e setta `email_verified = 1`.
 
 ### Login e sessione
-[`login_user`](../app/auth.php#L108): accetta **email *oppure* username** nello stesso campo,
+[`login_user`](../app/auth.php#L181): accetta **email *oppure* username** nello stesso campo,
 verifica la password, **rifiuta gli account non verificati** (`403`), poi
 `session_regenerate_id(true)` (anti session-fixation) e salva `$_SESSION['uid']`. Restituisce
 anche un **Bearer token** ([`issue_api_token`](../app/auth.php#L21)) — vedi sotto.
@@ -157,13 +174,34 @@ autenticano con un Bearer token (tabella `api_tokens`). [`current_user`](../app/
 prima prova la sessione, poi ricade su `Authorization: Bearer <token>`
 ([`bearer_token`](../app/auth.php#L13), che legge anche `REDIRECT_HTTP_AUTHORIZATION` /
 `apache_request_headers`), aggiornando `last_used_at`. Il web non tocca mai questo percorso.
-`logout` revoca il token usato ([auth.php:125](../app/auth.php#L125)).
+`logout` revoca il token usato ([auth.php:199](../app/auth.php#L199)).
 
 ### Reset password
-[`forgot_password`](../app/auth.php#L131): genera un `reset_token` valido 1 h e invia la mail,
+[`forgot_password`](../app/auth.php#L205): genera un `reset_token` valido 1 h e invia la mail,
 ma **risponde sempre positivamente** per non rivelare se un'email è registrata
-([auth.php:145](../app/auth.php#L145)). [`reset_password`](../app/auth.php#L149) consuma il
+([auth.php:220](../app/auth.php#L220)). [`reset_password`](../app/auth.php#L223) consuma il
 token e aggiorna l'hash.
+
+### Cambio email (con ri-verifica del nuovo indirizzo)
+[`change_email`](../app/auth.php#L239) (da loggati): valida il nuovo indirizzo, ne controlla
+l'unicità (anche contro i `pending_email` altrui), lo salva in **`pending_email`** e invia un
+link di conferma `/account/?verifyemail=<raw>` **al nuovo indirizzo** (token valido 24 h, che
+riusa `verify_token`/`verify_expires`, liberi su un account già verificato). **L'email attuale
+resta attiva finché la conferma non avviene.** [`verify_email_change`](../app/auth.php#L258)
+apre il link (basato su token, senza sessione, come il reset): rifa il controllo di unicità e
+fa lo switch `email ← pending_email`, azzerando `pending_email` e i token. Questo chiude il
+vecchio limite "niente cambio email da loggati".
+
+### Preferenze utente (lingua + posizione di default)
+- [`set_lang`](../app/auth.php#L78): salva la lingua UI preferita in **`ui_lang`** (whitelist
+  `en`/`es`/`it`), così la scelta dal selettore di lingua dell'header segue l'utente tra
+  dispositivi. Valore non nella whitelist → `400`.
+- [`save_location`](../app/auth.php#L88): salva la posizione mappa di default in
+  **`default_lat`/`default_lon`**. Valida la coppia (numerica, `|lat| ≤ 90`, `|lon| ≤ 180`):
+  se manca o è fuori range, **azzera** entrambe a `NULL`. Serve a centrare la mappa quando non
+  c'è ancora un fix GPS (apertura del Recorder, o disegno di una rotta da zero nell'Editor).
+- [`update_profile`](../app/auth.php#L64) gestisce nome/cognome/bio e la lingua delle note
+  vocali **`voice_lang`** (whitelist `''`/`en-US`/`es-ES`/`it-IT`; `''` = segue il dispositivo).
 
 ### Account reviewer pre-verificato
 La migrazione [007](../migrations/007_reviewer_account.sql) inserisce un utente
@@ -173,7 +211,7 @@ fare solo ciò che può un qualsiasi utente loggato. L'upsert (`ON DUPLICATE KEY
 password se rieseguita.
 
 ### Cloudflare Turnstile
-[`verify_turnstile`](../app/auth.php#L52) protegge `register`/`login`/`forgot`. È un **no-op se
+[`verify_turnstile`](../app/auth.php#L125) protegge `register`/`login`/`forgot`. È un **no-op se
 `turnstile_secret` è vuoto** (feature non ancora attivata): in locale e senza configurazione,
 i form passano senza challenge.
 
@@ -187,7 +225,7 @@ i form passano senza challenge.
 attraverso questi endpoint autenticati.
 
 ### Salvataggio (`rb_save`)
-[`rb_save`](../app/roadbooks.php#L51) valida che il payload abbia `notes` e `track`, deriva
+[`rb_save`](../app/roadbooks.php#L57) valida che il payload abbia `notes` e `track`, deriva
 titolo/distanza/conteggio note dal `meta`, e:
 - **con `id > 0`:** aggiorna la riga e riscrive il file dell'utente (controllo di proprietà
   `user_id`); la prima salvata di una bozza (`filename = 'pending'`) materializza
@@ -200,7 +238,7 @@ DB (`uq_slug`). Lo slug esiste anche per i privati (la pagina di vista funziona 
 privato per il proprietario). Il flag `is_public` distingue pubblico/privato.
 
 ### Bozza per le foto live (`rb_draft`)
-[`rb_draft`](../app/roadbooks.php#L45) crea una riga vuota (`note_count = 0`, titolo
+[`rb_draft`](../app/roadbooks.php#L51) crea una riga vuota (`note_count = 0`, titolo
 "Recording…", `filename = 'pending'`) all'avvio della registrazione, così le foto scattate dal
 vivo si agganciano subito a un `roadbook_id`. Le bozze mai finite vengono ripulite da un cron
 (menzionato nel commento, non presente in questo repo).
@@ -208,7 +246,11 @@ vivo si agganciano subito a un `roadbook_id`. Le bozze mai finite vengono ripuli
 ### Lista, lettura, duplicazione, eliminazione
 - [`rb_list`](../app/roadbooks.php#L13): metadati dei propri roadbook ordinati per
   `updated_at`.
-- [`rb_get`](../app/roadbooks.php#L19): legge il file `.rdbk` di un roadbook **proprio**.
+- [`rb_get`](../app/roadbooks.php#L19): legge il file `.rdbk` di un roadbook **proprio**
+  (gated su `id` + `user_id`). Lo usa il Reader via `/reader/?rb=<id>` per aprire un proprio
+  roadbook personale/non pubblico, oltre all'Editor (per una bozza senza file restituisce uno
+  scheletro vuoto da disegnare). Per i roadbook pubblici la lettura passa invece da
+  `public_get` via slug.
 - [`rb_duplicate`](../app/roadbooks.php#L86): copia file `.rdbk`, riga DB **e** intera galleria
   foto (file + righe) in un nuovo roadbook; la copia parte **privata**, con titolo
   "… (copy)" e slug proprio.
@@ -216,40 +258,50 @@ vivo si agganciano subito a un `roadbook_id`. Le bozze mai finite vengono ripuli
   cascata via FK).
 
 ### Endpoint pubblici (challenge / community)
-- [`public_list`](../app/roadbooks.php#L149): join `roadbooks ⨝ users`, solo `is_public = 1`
+- [`public_list`](../app/roadbooks.php#L208): join `roadbooks ⨝ users`, solo `is_public = 1`
   con slug, ultimi 60, con una thumbnail (prima foto della galleria). Alimenta la galleria
   della home.
-- [`public_get`](../app/roadbooks.php#L162): carica un roadbook via **slug**. Se è privato, lo
+- [`public_get`](../app/roadbooks.php#L221): carica un roadbook via **slug**. Se è privato, lo
   serve **solo al proprietario** (`403` altrimenti), e include il `.rdbk`, la lista foto e i
   dati pubblici dell'autore (username, nome, bio, avatar). È la base della pagina challenge /
   vista pubblica.
 
 ---
 
-## 6. Upload e pipeline immagini (upload.php + images.php)
+## 6. Upload e pipeline media (upload.php + images.php)
 
-### upload.php — i due tipi di upload
+### upload.php — i tre tipi di upload
 [`upload.php`](../public/api/upload.php) richiede sempre un utente loggato
-([upload.php:9](../public/api/upload.php#L9)) e accetta `multipart` con il campo file `photo`
-(max **12 MB**, deve essere un vero `is_uploaded_file`):
+([upload.php:10](../public/api/upload.php#L10)) e applica lo stesso same-origin guard del
+router ([upload.php:11](../public/api/upload.php#L11)). Accetta `multipart` con un campo file
+(`photo` per immagini, `audio` per le note vocali; max **12 MB**, deve essere un vero
+`is_uploaded_file`):
 
-- **`type=avatar`** ([upload.php:17](../public/api/upload.php#L17)) → AVIF quadrato 256px in
+- **`type=avatar`** ([upload.php:45](../public/api/upload.php#L45)) → AVIF quadrato 256px in
   `public/avatars/<user_id>.avif`; aggiorna `users.avatar` e risponde con l'URL cache-busted.
-- **`type=photo` + `roadbook=<id>`** ([upload.php:25](../public/api/upload.php#L25)) → foto
+- **`type=photo` + `roadbook=<id>`** ([upload.php:53](../public/api/upload.php#L53)) → foto
   galleria, max 1600px. Verifica la proprietà del roadbook, impone un tetto di **60 foto** per
   galleria, e accetta `lat`/`lon` opzionali (geotag) clampati al range valido. La riga viene
   inserita come `pending`, poi il file prende un nome **non indovinabile**
   (`bin2hex(random_bytes(8)).avif`) così le foto di roadbook privati non sono enumerabili; se
   l'elaborazione fallisce la riga viene rimossa.
+- **`type=audio` + `roadbook=<id>`** ([upload.php:14](../public/api/upload.php#L14)) → nota
+  vocale di un waypoint, **archiviata così com'è (nessun transcoding)** accanto alla sua
+  trascrizione, così una trascrizione errata si può riascoltare. Verifica la proprietà del
+  roadbook, impone un tetto di **200 note** per roadbook, accetta `lat`/`lon` opzionali, deriva
+  l'estensione dal MIME del browser (`webm`/`ogg`/`m4a`/`mp3`/`wav`, default `webm`) e usa lo
+  stesso nome **non indovinabile** in `public/audio/<roadbook_id>/`. Inserisce la riga in
+  `roadbook_audio`. Gestita lato JSON da `audio_list`/`audio_delete` (vedi §2).
 
 ### images.php — decodifica → AVIF
 [`process_to_avif`](../app/images.php#L6) (GD): decodifica qualsiasi immagine, **scarta gli
 input oltre 50 MP** (guardia anti decompression-bomb), corregge l'orientamento da EXIF,
 opzionalmente ritaglia in quadrato, ridimensiona per stare entro `maxDim` e scrive un **AVIF
-compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso).
+compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso). Le note
+vocali non passano da qui: l'audio è conservato tal quale.
 
-> Le foto sono una **funzione solo dell'app** (storage lato server, geotaggate): non finiscono
-> mai dentro il file `.rdbk`, che resta autocontenuto e portabile (vedi `CLAUDE.md`).
+> Foto e note vocali sono una **funzione solo dell'app** (storage lato server, geotaggate): non
+> finiscono mai dentro il file `.rdbk`, che resta autocontenuto e portabile (vedi `CLAUDE.md`).
 
 ---
 
@@ -277,11 +329,18 @@ loro somma.
 | [005_photo_geo.sql](../migrations/005_photo_geo.sql) | `roadbook_photos.lat` / `lon` (geotag) |
 | [006_api_tokens.sql](../migrations/006_api_tokens.sql) | tabella `api_tokens` (Bearer per le app native) |
 | [007_reviewer_account.sql](../migrations/007_reviewer_account.sql) | utente reviewer pre-verificato (upsert) |
+| [008_admin.sql](../migrations/008_admin.sql) · [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `users.is_admin`; `users.must_change_password` / `blocked` (vedi [user-management](user-management.md)) |
+| [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `users.voice_lang` (lingua speech-to-text delle note vocali) |
+| [011_pending_email.sql](../migrations/011_pending_email.sql) | `users.pending_email` (cambio email in attesa di conferma) |
+| [012_roadbook_audio.sql](../migrations/012_roadbook_audio.sql) | tabella `roadbook_audio` (note vocali, FK + cascade, geotag) |
+| [013_default_location.sql](../migrations/013_default_location.sql) | `users.default_lat` / `default_lon` (posizione mappa di default) |
+| [014_ui_lang.sql](../migrations/014_ui_lang.sql) | `users.ui_lang` (lingua UI preferita, `en`/`es`/`it`) |
 
-**Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `api_tokens`. I token (verify/reset/api)
-sono colonne/righe `CHAR(64)` con **solo l'hash**. Le FK sono `ON DELETE CASCADE`: cancellare
-un utente porta via i suoi roadbook, e cancellare un roadbook porta via le sue foto e
-(idealmente) i suoi token restano legati all'utente.
+**Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `api_tokens`. I token
+(verify/reset/api) sono colonne/righe `CHAR(64)` con **solo l'hash**; `pending_email` tiene il
+nuovo indirizzo finché il cambio non è confermato. Le FK sono `ON DELETE CASCADE`: cancellare
+un utente porta via i suoi roadbook, e cancellare un roadbook porta via le sue foto e note
+vocali; i suoi token restano legati all'utente.
 
 ---
 
@@ -293,13 +352,13 @@ un utente porta via i suoi roadbook, e cancellare un roadbook porta via le sue f
   [index.php:15](../public/api/index.php#L15) salta il guard se `Origin` è assente).
 - **Rate limiting:** dipende da **APCu**; se l'estensione non è installata, `rate_limit` è un
   **silenzioso no-op** e register/login/forgot non hanno alcun freno
-  ([bootstrap.php:56](../app/bootstrap.php#L56)).
+  ([bootstrap.php:66](../app/bootstrap.php#L66)).
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,
   nessuna concatenazione.
-- **Foto priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in `public/photos/` e
-  sono servite staticamente dal web server. La protezione è il **nome casuale a 16 hex**
-  (non enumerabile), non un controllo di accesso. Chi ha l'URL vede la foto anche se il
-  roadbook è privato.
+- **Foto e note vocali priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in
+  `public/photos/` e `public/audio/` e sono servite staticamente dal web server. La protezione
+  è il **nome casuale a 16 hex** (non enumerabile), non un controllo di accesso. Chi ha l'URL
+  vede/ascolta il media anche se il roadbook è privato.
 - **Avatar prevedibili:** l'avatar è `public/avatars/<user_id>.avif`, cioè un URL pubblico e
   indovinabile dato l'`id` — accettabile perché l'avatar è per natura pubblico.
 - **Firma del Bearer token:** è un segreto opaco hashato con pepper; la revoca è per-token su
@@ -313,16 +372,17 @@ un utente porta via i suoi roadbook, e cancellare un roadbook porta via le sue f
 
 ## 10. Limiti
 
-- **Niente endpoint per cancellare l'account** né per cambiare email/username/password da
-  loggati (esiste solo `profile` per la bio); la password si cambia solo via flusso
-  forgot/reset.
+- **Username non modificabile dall'utente:** da loggati si può cambiare email (con
+  ri-verifica), password ed eliminare l'account (vedi [user-management](user-management.md)),
+  ma lo **username** lo cambia solo un admin (`admin_update`).
 - **Niente re-invio della mail di verifica:** se il link a 24 h scade, l'account resta
   inattivabile dai soli endpoint qui presenti.
 - **Rate limit fragile:** assente senza APCu (vedi §9).
-- **Storage non quotato per utente:** tetto di 60 foto *per galleria* e 12 MB *per upload*, ma
-  nessun limite sul numero di roadbook né sullo spazio totale per account.
-- **Le foto private non sono davvero private** a livello di accesso (vedi §9): la riservatezza
-  è "by obscurity" via nome file casuale.
+- **Storage non quotato per utente:** tetto di 60 foto *per galleria*, 200 note vocali *per
+  roadbook* e 12 MB *per upload*, ma nessun limite sul numero di roadbook né sullo spazio
+  totale per account.
+- **Foto e note vocali private non sono davvero private** a livello di accesso (vedi §9): la
+  riservatezza è "by obscurity" via nome file casuale.
 - **Pulizia bozze esternalizzata a un cron** non incluso nel repo: le bozze
   `rb_draft` mai finite (`note_count = 0`) restano finché un job esterno non le purga.
 - **Un solo livello di condivisione** (pubblico/privato): niente link non-listati, niente

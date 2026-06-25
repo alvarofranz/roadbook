@@ -7,29 +7,33 @@ pericolo. Documento di riferimento per il modulo
 
 > Una vignetta è **icone + giunzioni su un box di riferimento 230×162**, con origine al
 > **centro** e asse **+y verso l'alto**, angoli **orari** — esattamente il modello del
-> formato `.rdbk`. Il modulo offre UN editor interattivo (`NoteCanvas`) e DUE render
-> statici di sola lettura (`NoteCanvas.toSVG`, `NoteCanvas.rowCols`).
+> formato `.rdbk`. Il modulo offre UN editor interattivo (`NoteCanvas`) e UN render
+> statico di sola lettura (`NoteCanvas.toSVG`).
 
 ---
 
 ## 1. Cosa contiene il modulo
 
-Una sola IIFE espone tre superfici pubbliche più alcuni helper privati:
+Una sola IIFE espone due superfici pubbliche più alcuni helper privati:
 
 | Nome | Tipo | Usato da |
 |------|------|----------|
 | `NoteCanvas` (classe) | editor interattivo SVG | Editor |
-| `NoteCanvas.toSVG(note, resolveIcon)` | render statico → stringa SVG | Reader, pagina challenge |
-| `NoteCanvas.rowCols(...)` | render statico → riga a 3 colonne | pagina challenge |
+| `NoteCanvas.toSVG(note, resolveIcon)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
 | `trunkSegments` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
 
 Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che poi
 `toSVG` ripropone in sola lettura, perciò ciò che si vede nell'Editor è ciò che vede il
 navigatore nel Reader.
 
-> Nota di accuratezza: nel file presente è definita la classe `NoteCanvas` e
-> `NoteCanvas.toSVG`. `NoteCanvas.rowCols`, citata da CLAUDE.md come terza superficie, non
-> compare in questa versione del sorgente. Vedi §9.
+> **Importabile da Node (per i test).** In coda al file
+> [note-canvas.js:256](../public/assets/js/note-canvas.js#L256), `if (typeof module !== 'undefined'
+> && module.exports) module.exports = window.NoteCanvas;` — un **no-op nel browser** (dove `module`
+> non esiste, e resta solo il global `window.NoteCanvas`), ma nel runner Vitest esporta la classe
+> così com'è. È lo stesso schema di `roadbook-core.js`
+> ([roadbook-core.js:716](../public/assets/js/roadbook-core.js#L716)): nessuno step di build sul
+> web, e `NoteCanvas.toSVG` diventa testabile in unità (vedi `tests/roadbook-core.test.js`, che
+> importa la classe e copre il render della vignetta).
 
 ---
 
@@ -53,8 +57,8 @@ schermo del puntatore in coordinate viewBox passando per la matrice inversa dell
 il drag funziona a qualsiasi scala/zoom del contenitore.
 
 Lo stesso schema si ripete (privato) dentro `toSVG`
-([note-canvas.js:161](../public/assets/js/note-canvas.js#L161)) con `cx=115, cy=81` e un
-`toV` locale: i due render restano allineati perché condividono la stessa convenzione.
+([note-canvas.js:168](../public/assets/js/note-canvas.js#L168)) con `cx=W/2` (115), `cy=H/2`
+(81) e un `toV` locale: i due render restano allineati perché condividono la stessa convenzione.
 
 ---
 
@@ -209,19 +213,14 @@ colonna di testo ([note-canvas.js:88](../public/assets/js/note-canvas.js#L88) pe
 
 ---
 
-## 9. I due render statici
+## 9. Il render statico `NoteCanvas.toSVG`
 
 ### `NoteCanvas.toSVG(note, resolveIcon)` → stringa SVG
-([note-canvas.js:160](../public/assets/js/note-canvas.js#L160)) Render di sola lettura,
+([note-canvas.js:167](../public/assets/js/note-canvas.js#L167)) Render di sola lettura,
 identico per geometria all'editor: stessi `trunkSegments`, stesse giunzioni, stesse icone,
 stesso pericolo, ma come **stringa** `<svg>…</svg>` da iniettare. È quello che mostra ogni
-riga `.nrow` del Reader e la pagina challenge.
-
-### `NoteCanvas.rowCols(...)` → riga a 3 colonne
-Documentata da CLAUDE.md come render per la pagina challenge (la riga numero · vignetta ·
-commenti). **In questa versione del sorgente la funzione non è presente**: il file definisce
-solo `NoteCanvas` e `NoteCanvas.toSVG`. Da verificare se `rowCols` è stata rimossa,
-rinominata o se vive altrove prima di documentarne i dettagli.
+riga `.nrow` del Reader, la pagina challenge e l'export PDF. È l'unico render statico del
+modulo: la classe interattiva e questa funzione sono le sole superfici pubbliche (§1).
 
 ---
 
@@ -239,8 +238,6 @@ rinominata o se vive altrove prima di documentarne i dettagli.
   è voluto, ma può sorprendere chi confronta la nota 1 con le altre.
 - **Nessuna palette qui dentro**: la ricerca/elenco icone è responsabilità del chiamante;
   NoteCanvas riceve solo nomi già scelti.
-- **`rowCols` assente** nel sorgente corrente nonostante sia citata nella documentazione di
-  progetto (vedi §9).
 - **`toSVG` non valida la nota**: campi mancanti vengono trattati con default (`pos:[0,0]`,
   `size:32`, `angle:0`); un `name` icona non risolvibile produce un `<image>` con `href`
   rotto, non un placeholder.

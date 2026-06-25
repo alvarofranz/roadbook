@@ -42,8 +42,15 @@ ordine di priorità:
    accettata, fa `resumeSession`. Rifiutare **non** cancella la sessione (un tap sbagliato
    non deve distruggere una gara): viene sostituita all'avvio di una nuova corsa o cancellata
    solo all'uscita esplicita.
-2. **Sfida da URL** — un roadbook aperto via `/reader/<slug>` (es. il pulsante "Naviga" di una
-   sfida): `RBChallenges.publicFromUrl` + `loadPublic`.
+2. **Roadbook da URL** (`loadFromUrl`, [reader.js:62](../public/reader/reader.js#L62)) — due
+   forme:
+   - **Sfida pubblica** via `/reader/<slug>` (es. il pulsante "Naviga" di una sfida):
+     `RBChallenges.publicFromUrl` + `loadPublic`.
+   - **Roadbook personale/privato per id (#71)** via `/reader/?rb=<id>`
+     ([reader.js:61](../public/reader/reader.js#L61), [:64](../public/reader/reader.js#L64)): lo
+     carica dal profilo con `RBApi('rb_get', { id })` — endpoint **gated sul proprietario**,
+     così solo il titolare apre i propri roadbook privati per navigarli. Affianca il percorso
+     pubblico `<slug>` e l'upload del file.
 3. **Recupero di un GPX orfano** — `RBGpxRecorder.offerRecovery`.
 
 ### Apertura `.rdbk` dal sistema operativo (PWA installata)

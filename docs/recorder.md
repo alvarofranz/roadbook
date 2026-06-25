@@ -121,6 +121,13 @@ bloccarla a nord; il puntino diventa un chevron direzionale
 autorevole vive in `RBGpxRecorder`. Dopo un resume parte vuota e si ricostruisce dai
 fix successivi.
 
+### Posizione di default prima del primo fix (#74)
+All'avvio, `RBApi('config')` identifica l'utente; se è loggato e ha salvato una posizione
+di default nel profilo (`meUser.default_lat`/`default_lon`) — e non c'è ancora un fix GPS —
+la mappa ci centra subito (`map.map.jumpTo`, zoom 13,
+[recorder.js:60-62](../public/recorder/recorder.js#L60)), così non si parte sulla vista mondo
+in attesa del satellite. Il primo fix reale prende poi il sopravvento sul marker.
+
 ---
 
 ## 4. Waypoint con testo (e dettatura)

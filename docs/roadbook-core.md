@@ -32,6 +32,7 @@ Le funzioni geo stanno in un sotto-oggetto `RB.geo`; tutto il resto è in cima a
 | `gpxDocument`     | serializzatore GPX 1.1 (§7) |
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
 | `iconSrc`         | risoluzione sorgente di un'icona (§10) |
+| `filterRoadbooks` | filtro testuale di una lista di roadbook (§11) |
 | `nearestIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |
 
 Quasi tutte le funzioni di mutazione (`recompute*`, `simplify*`, `reverse*`, `importRoadbook`,
@@ -265,6 +266,11 @@ Helper finali:
 - [`urlToDataURL(url)`](../public/assets/js/roadbook-core.js#L391) — fetch (same-origin) →
   data: URI, `null` in caso di errore; serve a incorporare asset self-contained (icone nel
   `.rdbk` / nel PDF).
+- [`filterRoadbooks(list, query)`](../public/assets/js/roadbook-core.js#L699) — filtra una
+  lista di roadbook per `query` testuale, match **case-insensitive sul solo titolo**
+  (`rb.title`). Una `query` vuota ritorna una **copia** dell'intera lista (`slice()`, non
+  l'originale); è null-safe su `list`, `query` e i titoli mancanti. Usata dalla ricerca della
+  lista condivisa `RBRoadbookList` (vedi `docs/app-shell.md`).
 
 ---
 

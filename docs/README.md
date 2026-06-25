@@ -46,10 +46,6 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 
 ---
 
-### Discrepanze note tra documentazione e codice
-Emerse durante la stesura, da decidere se correggere nel codice o nelle note:
-- **Mappa**: il codice di [rbmap](rbmap.md) usa **MapLibre GL**, non Mapbox come dice CLAUDE.md.
-- **note-canvas**: `NoteCanvas.rowCols` è citata in CLAUDE.md ma **non esiste** nel sorgente attuale.
-- **i18n**: il dizionario `it` ha un buco di parità (chiavi `feat.3.*` mancanti) — vedi [i18n](i18n.md).
+### Comportamenti da tenere a mente
 - **Ranking**: la colonna *Regolarità* è di fatto neutralizzata per i risultati firmati — vedi
   [ranking-model](ranking-model.md) §5.

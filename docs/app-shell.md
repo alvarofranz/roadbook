@@ -85,6 +85,13 @@ Il menu si apre col click sul pulsante (con `stopPropagation` così il listener 
 richiude subito) e si chiude cliccando altrove ([app.js:320](../public/assets/js/app.js#L320)).
 *Sign out* chiama `RBApi('logout')` e ricarica la pagina.
 
+> Il **login vero e proprio** vive nella pagina account, non qui (vedi `docs/account-pages.md`).
+> Vale la pena ricordare un dettaglio del flusso: quando l'API risponde con un 429 di
+> rate-limit, la risposta porta un `retry_after` (secondi) e `account.js` (`rateLimited`,
+> [account.js:50](../public/account/account.js#L50)) mostra un toast e avvia un **conto alla
+> rovescia live "Try again in M:SS"** sul bottone Sign in, tenendolo disabilitato finché la
+> finestra non si esaurisce.
+
 ---
 
 ## 4. Service worker
@@ -228,6 +235,35 @@ in `innerHTML`.
 #### `RBSummary(distanceM, noteCount) → string`
 ([app.js:231](../public/assets/js/app.js#L231)) — Sottotitolo one-liner di un roadbook:
 `"12.3 km · 45 notes"` (la parola unità è tradotta via `RBt`).
+
+### Lista roadbook condivisa
+
+#### `RBRoadbookList(container) → Promise<number>`
+([app.js:272](../public/assets/js/app.js#L272)) — La lista dei roadbook salvati dell'utente
+loggato, **condivisa** da *My roadbooks* e dalla landing dell'Editor (lì non c'è una seconda
+implementazione: entrambe chiamano questo helper). Fa `RBApi('rb_list')`, e se non c'è nessun
+roadbook scrive un messaggio tradotto e ritorna `0`. Altrimenti ritorna il numero di roadbook
+e disegna, per ogni riga (`rowHtml`, [app.js:285](../public/assets/js/app.js#L285)):
+
+- un badge **Public/Private** (`rb.is_public`) e il riassunto `RBSummary` + data ultima modifica;
+- sei azioni, tutte con percorsi relativi (funzionano da `/editor/` come da `/myroadbooks/`):
+  - **Read** → `../reader/?rb=<id>` — apre quel roadbook nel Reader, **anche se privato/personale**
+    (il Reader serve l'owner);
+  - **View** → `../challenge/<slug>` — la vetrina pubblica della sfida;
+  - **Edit** → `../editor/?rb=<id>`;
+  - **Export** → `../editor/?rb=<id>&export=1` — apre l'Editor su quel roadbook e fa **scattare
+    subito il popup Export** (l'Editor toglie poi il flag `export=1` dall'URL, così un refresh
+    non lo riapre — [editor.js:1665](../public/editor/editor.js#L1665));
+  - **Save as** (duplica) e **Delete** (con conferma `RBConfirmDanger` che **nomina il titolo**
+    del roadbook, [app.js:300](../public/assets/js/app.js#L300)).
+
+**Ricerca + paginazione** ([app.js:278-321](../public/assets/js/app.js#L278)). La barra di ricerca
+viene mostrata **solo se la lista ha più di 5 voci** ([app.js:282](../public/assets/js/app.js#L282));
+filtra in locale via `RB.filterRoadbooks(all, q)` (match case-insensitive sul titolo). La
+paginazione è **client-side a 12 per pagina**, e il pager (precedente / `pagina / totale` /
+successivo) appare **solo oltre la prima pagina**. `render()` ridisegna solo le righe e il pager
+ad ogni ricerca/cambio pagina, **senza ricostruire la barra di ricerca** (così il focus e il
+testo digitato non si perdono); duplica/elimina invece ri-chiamano `RBRoadbookList` per intero.
 
 ---
 
