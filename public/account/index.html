@@ -108,6 +108,7 @@
         <h1 data-i18n="Set a new password">Set a new password</h1>
         <p class="muted small" data-i18n="An administrator set a temporary password. Please choose a new one to continue.">An administrator set a temporary password. Please choose a new one to continue.</p>
         <form id="forceForm">
+            <input id="forceUser" type="text" autocomplete="username" hidden> <!-- lets the password manager associate/update the right credential -->
             <input id="forcePass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
             <input id="forcePass2" class="field" type="password" placeholder="Confirm new password" data-i18n-ph="Confirm new password" data-i18n-aria="Confirm new password" autocomplete="new-password">
             <button class="btn btn-primary" id="forceBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
@@ -174,6 +175,7 @@
         <div class="auth-card profile-form">
             <h2 data-i18n="Change password">Change password</h2>
             <form id="pwForm">
+                <input id="pwUser" type="text" autocomplete="username" hidden> <!-- lets the password manager associate/update the right credential -->
                 <label class="field-label" for="pwCurrent" data-i18n="Current password">Current password</label>
                 <input id="pwCurrent" class="field" type="password" autocomplete="current-password">
                 <label class="field-label" for="pwNew" data-i18n="New password (min 8 chars)">New password (min 8 chars)</label>

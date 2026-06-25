@@ -33,6 +33,13 @@
     /* Submit on Enter / button: run the handler, never reload the page. */
     function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
 
+    /* Our forms submit by fetch (no navigation), so the browser's password-change detection
+     * never fires — it only triggers on a real navigation (that's why it prompted at logout,
+     * never on the in-page change). So after a successful change we reload: the password
+     * manager then offers to update the stored credential. A toast is stashed across the
+     * reload so the user still sees confirmation. (#78) */
+    function reloadWithToast(message) { try { sessionStorage.setItem('rbToast', message || ''); } catch (e) {} location.reload(); }
+
     /* Show/hide eye toggle for every password field. */
     function wirePasswordToggles() {
         document.querySelectorAll('input[type="password"]').forEach((input) => {
@@ -81,12 +88,12 @@
             if (c.user) { showAccount(c.user); RBToast(r.message || r.error); } else { show('vLogin'); msg(r.message || r.error, !!r.ok); }
             return;
         }
-        if (cfg.user) return cfg.user.must_change_password ? showForce() : showAccount(cfg.user);
+        if (cfg.user) return cfg.user.must_change_password ? showForce(cfg.user) : showAccount(cfg.user);
         show('vLogin');
     }
 
     // Admin gave a temporary password → force a new one before the profile is reachable.
-    function showForce() { show('vForce'); msg(''); }
+    function showForce(user) { show('vForce'); msg(''); if (user) $('forceUser').value = user.email || user.username || ''; }
 
     $('toRegister').onclick = (e) => { e.preventDefault(); msg(''); show('vRegister'); };
     $('toLogin').onclick = (e) => { e.preventDefault(); msg(''); show('vLogin'); };
@@ -95,13 +102,16 @@
 
     onSubmit('loginForm', async () => {
         const r = await api('login', { email: $('loginId').value, password: $('loginPass').value, turnstile: tsTokens.login });
-        if (r.ok) (r.user.must_change_password ? showForce() : showAccount(r.user)); else { msg(r.error, false); resetTs('login'); }
+        // Reload on success: the navigation is what lets the password manager offer to save the
+        // login — a fetch with no navigation never triggers it. init() then shows the profile
+        // (or the forced-change view). (#78)
+        if (r.ok) location.reload(); else { msg(r.error, false); resetTs('login'); }
     });
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
         if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
         const r = await api('change_password', { new: $('forcePass').value });
-        if (r.ok) { const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
+        if (r.ok) reloadWithToast(r.message); else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, turnstile: tsTokens.register });
@@ -115,8 +125,7 @@
     onSubmit('pwForm', async () => {
         if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
-        RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
-        if (r.ok) { $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
+        if (r.ok) reloadWithToast(r.message); else RBToast(r.message || r.error);
     });
     // change email (signed in): re-verifies the new address — see change_email() server-side
     onSubmit('emailForm', async () => {
@@ -174,12 +183,14 @@
     /* ---------- account ---------- */
     async function showAccount(user) {
         show('vAccount'); msg('');
+        try { const m = sessionStorage.getItem('rbToast'); if (m != null) { sessionStorage.removeItem('rbToast'); if (m) RBToast(m); } } catch (e) {} // confirmation carried across a reload (e.g. after a password change)
         $('adminLink').hidden = !user.is_admin; // the admin panel link, only for admins
 
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
         $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
+        $('pwUser').value = user.email || user.username || ''; // hidden field so the pw manager updates the right credential
         $('pfFirst').value = user.first_name || '';
         $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
