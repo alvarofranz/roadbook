@@ -41,5 +41,17 @@
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
             </div>`;
         }).join('');
+
+        // A map of the route + note markers on top — unless the roadbook hides the map
+        // (map_access:false, e.g. a competition that keeps the route secret). Tapping a
+        // marker scrolls to its note row.
+        const mapAllowed = !rb.meta || rb.meta.map_access !== false;
+        if (mapAllowed && rb.track && rb.track.length >= 2) {
+            $('chMap').hidden = false;
+            const map = new RBMap('chMap', { style: RBMap.STYLE_TOPO });
+            map.showRoadbook(rb);
+            map.onWaypoint((i) => { const row = $('chNotes').children[i]; if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            setTimeout(() => map.map && map.map.resize(), 60); // the container was just unhidden
+        }
     }).catch(() => { $('chLoading').textContent = t('This challenge does not exist or is private.'); });
 })();

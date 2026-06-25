@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=2026.06.25-6">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <link rel="stylesheet" href="/assets/css/app.css?v=2026.06.25-6">
     <style>
         #chWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
@@ -22,6 +23,7 @@
         .ch-desc { color: var(--text); line-height: 1.6; }
         .ch-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; margin: 1rem 0; }
         .ch-gallery img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); display: block; }
+        .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     </style>
 </head>
@@ -45,14 +47,18 @@
             </div>
         </div>
         <p id="chDesc" class="ch-desc"></p>
+        <div id="chMap" class="ch-map" hidden></div>
         <div id="chGallery" class="ch-gallery"></div>
         <div class="icon-category" data-i18n="Notes">Notes</div>
         <div id="chNotes"></div>
     </article>
 </main>
 
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="/assets/js/config.js?v=2026.06.25-6"></script>
 <script src="/assets/js/roadbook-core.js?v=2026.06.25-6"></script>
 <script src="/assets/js/note-canvas.js?v=2026.06.25-6"></script>
+<script src="/assets/js/rbmap.js?v=2026.06.25-6"></script>
 <script src="/assets/js/challenges.js?v=2026.06.25-6"></script>
 <script src="/assets/js/i18n.js?v=2026.06.25-6"></script>
 <script src="/assets/js/app.js?v=2026.06.25-6"></script>
