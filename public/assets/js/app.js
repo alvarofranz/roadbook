@@ -427,6 +427,7 @@
                     <div class="account-menu" hidden>
                         <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
+                        ${user.is_admin ? `<a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('Admin')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
