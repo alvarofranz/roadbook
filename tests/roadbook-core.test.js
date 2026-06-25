@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import RB from '../public/assets/js/roadbook-core.js';
+import NoteCanvas from '../public/assets/js/note-canvas.js';
+globalThis.RB = RB; // NoteCanvas.toSVG reads the global RB.ROAD_TYPES for the trunk colour
 
 // One metre on the equator is ~111195 m per degree at this Earth radius — handy for
 // building tracks with predictable lengths.
@@ -346,5 +348,106 @@ describe('filterRoadbooks (My roadbooks search)', () => {
         expect(RB.filterRoadbooks(null, 'x')).toEqual([]);
         expect(RB.filterRoadbooks(undefined, '')).toEqual([]);
         expect(RB.filterRoadbooks(list, 'x')).toEqual([]); // title:'' doesn't match 'x'
+    });
+});
+
+describe('appWaypointSymbol (Garmin/OSMAnd mapping for GPX export, #34)', () => {
+    it('maps a known RDBK icon to its Garmin sym + OSMAnd icon + colour', () => {
+        const r = RB.appWaypointSymbol({ icons: [{ name: 'I07_acqua_potabile.png' }] });
+        expect(r.sym).toBe('Drinking Water');
+        expect(r.osmandIcon).toBe('drinking_water');
+        expect(r.color).toBe('#3a8dff'); // blue
+    });
+    it('matches the icon name case-insensitively and ignores any path prefix', () => {
+        const r = RB.appWaypointSymbol({ icons: [{ name: 'sub/dir/I10_STAZIONE_servizio.PNG' }] });
+        expect(r.sym).toBe('Gas Station');
+        expect(r.osmandIcon).toBe('fuel');
+    });
+    it('keeps a recognised icon’s sym but forces red on a danger note', () => {
+        const r = RB.appWaypointSymbol({ danger: 3, icons: [{ name: 'I07_acqua_potabile.png' }] });
+        expect(r.sym).toBe('Drinking Water'); // the icon still wins for the sym
+        expect(r.color).toBe('#e01414');      // danger only overrides the colour → red
+    });
+    it('uses the Dangerous Area marker for a danger note with no recognised icon', () => {
+        const r = RB.appWaypointSymbol({ danger: 2, icons: [] });
+        expect(r.sym).toBe('Dangerous Area');
+        expect(r.color).toBe('#e01414');
+    });
+    it('falls back to the default blue flag for a note with no recognised icon', () => {
+        const r = RB.appWaypointSymbol({ icons: [] });
+        expect(r.sym).toBe('Flag, Blue');
+        expect(r.osmandIcon).toBe('special_point');
+        expect(r.color).toBe('#3a8dff'); // blue
+    });
+});
+
+describe('nearestOnTrack (project a point onto the polyline)', () => {
+    const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }]; // 1° eastward segment on the equator
+    it('returns null for a track with fewer than two points', () => {
+        expect(RB.nearestOnTrack([], { lat: 0, lon: 0 })).toBeNull();
+        expect(RB.nearestOnTrack([{ lat: 0, lon: 0 }], { lat: 0, lon: 0 })).toBeNull();
+    });
+    it('projects a point on the segment back onto it (t in the middle, ~0 distance)', () => {
+        const r = RB.nearestOnTrack(track, { lat: 0, lon: 0.5 });
+        expect(r.i).toBe(0);
+        expect(r.t).toBeCloseTo(0.5, 3);
+        expect(r.lon).toBeCloseTo(0.5, 4);
+        expect(r.dist).toBeCloseTo(0, 0);
+    });
+    it('clamps to the start when the point is before the segment', () => {
+        const r = RB.nearestOnTrack(track, { lat: 0, lon: -1 });
+        expect(r.t).toBe(0);
+        expect(r.lon).toBeCloseTo(0, 6);
+    });
+    it('reports the perpendicular offset for an off-track point (~1.1 km for 0.01°)', () => {
+        const r = RB.nearestOnTrack(track, { lat: 0.01, lon: 0.5 });
+        expect(r.lon).toBeCloseTo(0.5, 4);
+        expect(r.dist).toBeGreaterThan(1000);
+        expect(r.dist).toBeLessThan(1200);
+    });
+});
+
+describe('OpenRally round-trip (openRallyDocument → parseOpenRally)', () => {
+    // The track + waypoint coordinates + names round-trip through plain (non-namespaced) GPX.
+    // The openrally: <extensions> values (cap/danger/tulip) DO round-trip in a real browser, but
+    // happy-dom's getElementsByTagNameNS doesn't read namespaced children, so they aren't asserted here.
+    it('preserves the track and the note coordinates/count through build→serialize→parse', () => {
+        const track = [{ lat: 45, lon: 9 }, { lat: 45, lon: 9.001 }, { lat: 45.001, lon: 9.002 }];
+        const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
+        const back = RB.parseOpenRally(RB.openRallyDocument(rb, { tulips: [], name: 'RT roundtrip' }));
+        expect(back.warnings).not.toContain('placeholderTrack');
+        expect(back.warnings).not.toContain('builtTrackFromWaypoints'); // a real track survives as the track
+        expect(back.rb.meta.title).toBe('RT roundtrip');
+        expect(back.rb.track).toHaveLength(track.length);
+        expect(back.rb.track[2].lat).toBeCloseTo(45.001, 5);
+        expect(back.rb.track[2].lon).toBeCloseTo(9.002, 5);
+        expect(back.rb.notes).toHaveLength(rb.notes.length);
+        expect(back.rb.notes[1].lat).toBeCloseTo(rb.notes[1].lat, 5);
+        expect(back.rb.notes[1].lon).toBeCloseTo(rb.notes[1].lon, 5);
+    });
+});
+
+describe('NoteCanvas.toSVG (vignette render)', () => {
+    const baseNote = { num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 3, road_type_out: 3, icons: [], junctions: null };
+    it('renders an <svg> with the central validation circle and an exit arrow', () => {
+        const s = NoteCanvas.toSVG(baseNote);
+        expect(s.startsWith('<svg')).toBe(true);
+        expect(s.trimEnd().endsWith('</svg>')).toBe(true);
+        expect(s).toContain('<circle cx="115" cy="81" r="6"'); // validation point
+        expect(s).toContain('marker-end="url(#vig-arr)"');      // the exit arrow
+    });
+    it('renders a cover icon full-box and nothing else (no trunk/validation circle)', () => {
+        const s = NoteCanvas.toSVG({ icons: [{ name: 'or.svg', cover: true }] }, (ic) => 'DATA:' + ic.name);
+        expect(s).toContain('width="230" height="162" href="DATA:or.svg"');
+        expect(s).not.toContain('#vig-arr');
+        expect(s).not.toContain('r="6"');
+    });
+    it('resolves placed-icon hrefs through resolveIcon', () => {
+        const s = NoteCanvas.toSVG({ ...baseNote, icons: [{ name: 'a.png', pos: [0, 0], size: 32 }] }, (ic) => 'RES:' + ic.name);
+        expect(s).toContain('href="RES:a.png"');
+    });
+    it('shows FIA danger marks (!!) for a danger-2 note', () => {
+        const s = NoteCanvas.toSVG({ ...baseNote, danger: 2 });
+        expect(s).toContain('>!!</text>');
     });
 });

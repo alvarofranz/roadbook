@@ -251,4 +251,7 @@ function btn(icon, action, active, danger) {
 }
 function r1(n) { return Math.round(n); }
 function clampIconSize(n) { return Math.max(10, Math.min(120, n)); }
+
+// Node (the test runner) imports the same class; the browser keeps using window.NoteCanvas.
+if (typeof module !== 'undefined' && module.exports) module.exports = window.NoteCanvas;
 })();
