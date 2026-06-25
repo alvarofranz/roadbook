@@ -39,8 +39,8 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
   be discarded or clobber someone else's.
-- **Taking on a GitHub issue → assign it + mark it in progress.** As soon as you start
-  working on an issue, run `gh issue edit <n> --repo alvarofranz/roadbook --add-assignee
+- **Taking on a GitHub issue → assign it + mark it in progress.** The moment you start on an
+  issue — including scoping/investigation, BEFORE writing any code — run `gh issue edit <n> --repo alvarofranz/roadbook --add-assignee
   @me --add-label "in lavorazione"`. `@me` assigns it to whoever is authenticated with `gh`
   (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
   shows who owns it and that it is being worked on; the `in lavorazione` label drops off
@@ -92,6 +92,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
 - **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead
   code and stale comments instead of leaving them.
+- **Automated tests before manual testing.** Before asking the user to test a change by hand,
+  ADD or extend automated tests (Vitest in `tests/`) that cover the change and get `npm test`
+  green. Prefer testing pure logic in `roadbook-core.js` — and *extract* logic there so it is
+  testable, rather than leaving it untestable inside a page IIFE. For server-side PHP or purely
+  visual UI the harness can't unit-test, say so explicitly and state what you verified instead
+  (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
+  untested logic.
 - **Commit messages are changelogs** — short English title + bullet points.
 
 ## Run locally
