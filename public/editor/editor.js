@@ -212,6 +212,20 @@
         if (editorOpen && sel >= 0) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
         markDirty();
     }
+    // Photo pins drag exactly like waypoints in Move mode (#41): move the pin live, then persist
+    // the new position on release via ph_move. Photo position is server-side (not in the roadbook).
+    function onPhotoDrag(photo, lat, lon) {
+        const p = (notePhotos || []).find((x) => +x.id === +photo.id);
+        if (!p) return;
+        p.lat = RB.round6(lat); p.lon = RB.round6(lon);
+        map.setPhotos(notePhotos); // repaint the pin at the pointer (keeps the existing tap handler)
+    }
+    async function onPhotoCommit(photo) {
+        const p = (notePhotos || []).find((x) => +x.id === +photo.id) || photo;
+        const r = await RBApi('ph_move', { id: +photo.id, lat: +p.lat, lon: +p.lon });
+        await loadPhotos();
+        toast(r.ok ? 'Photo moved.' : 'Could not move the photo.');
+    }
     // Tap a track point (high zoom, move-points tool) → just highlight it; its command menu
     // (with shortcuts) opens on a right-click of the marker — see the map contextmenu handler.
     function onVertexSelect(i) {
@@ -300,9 +314,9 @@
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
-        if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); } // Move: drag trk OR wpt
-        else if ((tool === 'insert' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); } // dots visible (read-only) so you see the points while inserting/drawing (#52)
-        else { map.setVertexEditor(null); map.setWaypointEditor(null); }
+        if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); map.setPhotoEditor(onPhotoDrag, onPhotoCommit); } // Move: drag trk · wpt · photo
+        else if ((tool === 'insert' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) so you see the points while inserting/drawing (#52)
+        else { map.setVertexEditor(null); map.setWaypointEditor(null); map.setPhotoEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));

@@ -57,7 +57,7 @@ window.RBMap = class RBMap {
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
         m.on('click', 'rb-wpts', (e) => { if (this._wptMoved || !this._onWpt || !e.features[0]) return; this._onWpt(parseInt(e.features[0].properties.i, 10)); });
-        m.on('click', 'rb-photos', (e) => { if (this._onPhoto && e.features[0]) this._onPhoto(JSON.parse(e.features[0].properties.d)); });
+        m.on('click', 'rb-photos', (e) => { if (this._photoMoved || !this._onPhoto || !e.features[0]) return; this._onPhoto(JSON.parse(e.features[0].properties.d)); });
         m.on('mouseenter', 'rb-wpts', () => m.getCanvas().style.cursor = 'pointer');
         m.on('mouseleave', 'rb-wpts', () => m.getCanvas().style.cursor = this._baseCursor);
         m.on('mouseenter', 'rb-photos', () => m.getCanvas().style.cursor = 'pointer');
@@ -97,6 +97,21 @@ window.RBMap = class RBMap {
         m.on('touchstart', 'rb-wpts', wptDown);
         m.on('mousemove', wptMove); m.on('touchmove', wptMove);
         m.on('mouseup', wptUp); m.on('touchend', wptUp);
+        // Photo dragging (Move tool): the IMG pins reposition exactly like waypoints. Inert until
+        // setPhotoEditor() arms it. The dragged photo (id + coords) comes from the feature's `d`.
+        this._photoDrag = null; this._photoMoved = false;
+        const photoDown = (e) => {
+            if (!this._photoOnDrag || !e.features[0]) return;
+            if (e.originalEvent && e.originalEvent.button !== 0) return; // left button only; right-click → context menu
+            e.preventDefault(); this._photoDrag = JSON.parse(e.features[0].properties.d); this._photoMoved = false;
+            m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
+        };
+        const photoMove = (e) => { if (this._photoDrag) { this._photoMoved = true; this._photoOnDrag(this._photoDrag, e.lngLat.lat, e.lngLat.lng); } };
+        const photoUp = () => { if (!this._photoDrag) return; const p = this._photoDrag, moved = this._photoMoved; this._photoDrag = null; m.dragPan.enable(); m.getCanvas().style.cursor = this._baseCursor; if (moved && this._photoOnCommit) this._photoOnCommit(p); };
+        m.on('mousedown', 'rb-photos', photoDown);
+        m.on('touchstart', 'rb-photos', photoDown);
+        m.on('mousemove', photoMove); m.on('touchmove', photoMove);
+        m.on('mouseup', photoUp); m.on('touchend', photoUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
     // Swap the base style (satellite ↔ topo). MapLibre wipes every custom
@@ -253,6 +268,9 @@ window.RBMap = class RBMap {
     // Arm/disarm waypoint dragging (the blue note markers). onDrag(noteIndex, lat, lon) fires
     // live, onCommit() on release; pass null to clear. The markers are painted by showRoadbook.
     setWaypointEditor(onDrag, onCommit) { this._wptOnDrag = onDrag || null; this._wptOnCommit = onCommit || null; }
+    // Arm/disarm photo-pin dragging (the IMG markers). onDrag(photo, lat, lon) fires live,
+    // onCommit(photo) on release; pass null to clear. Pins are painted by setPhotos.
+    setPhotoEditor(onDrag, onCommit) { this._photoOnDrag = onDrag || null; this._photoOnCommit = onCommit || null; }
     // Arm/disarm the move-points tool: pass the track + callbacks to show every
     // vertex as a draggable handle (onDrag(i, lat, lon) fires live while dragging,
     // onCommit() on release); pass null to clear it.
