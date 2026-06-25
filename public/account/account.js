@@ -44,6 +44,23 @@
         try { await navigator.credentials.store(new PasswordCredential({ id: String(id), password })); } catch (e) {}
     }
 
+    /* Too many login attempts (server 429 with retry_after secs): toast + a live countdown on
+     * the Sign in button, disabled until the window clears. */
+    let rlTimer = null;
+    function rateLimited(seconds) {
+        RBToast('Too many attempts. Please wait a moment.');
+        const btn = $('loginBtn'); if (!btn) return;
+        if (rlTimer) clearInterval(rlTimer);
+        let left = Math.max(1, Math.ceil(seconds));
+        btn.disabled = true;
+        const render = () => { const m = Math.floor(left / 60), s = left % 60; btn.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${t('Try again in')} ${m}:${String(s).padStart(2, '0')}`; };
+        render();
+        rlTimer = setInterval(() => {
+            if (--left <= 0) { clearInterval(rlTimer); rlTimer = null; btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${t('Sign in')}`; }
+            else render();
+        }, 1000);
+    }
+
     /* Show/hide eye toggle for every password field. */
     function wirePasswordToggles() {
         document.querySelectorAll('input[type="password"]').forEach((input) => {
@@ -108,6 +125,7 @@
         const pass = $('loginPass').value;
         const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
         if (r.ok) { me = r.user; await storeCredential(me.email, pass); me.must_change_password ? showForce() : showAccount(me); }
+        else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
     });
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.

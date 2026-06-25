@@ -60,10 +60,18 @@ function json_out($data, int $code = 200): void {
 function json_in(): array { $d = json_decode(file_get_contents('php://input'), true); return is_array($d) ? $d : []; }
 function fail(string $msg, int $code = 400): void { json_out(['ok' => false, 'error' => $msg], $code); }
 
-// Light rate limit via APCu (no-op if the extension isn't loaded).
+// Light rate limit via APCu (no-op if the extension isn't loaded). On the first hit of a
+// window we record when it ends, so a blocked response can tell the client how long to wait
+// (retry_after, seconds) — the login form turns that into a countdown.
 function rate_limit(string $key, int $max, int $window): void {
     if (!function_exists('apcu_inc')) return;
-    $n = apcu_inc('rl_' . sha1($key), 1, $ok, $window);
-    if ($n > $max) fail('Too many attempts. Please wait a moment.', 429);
+    $k = 'rl_' . sha1($key);
+    $n = apcu_inc($k, 1, $ok, $window);
+    if ($n === 1) apcu_store($k . '_exp', time() + $window, $window);
+    if ($n > $max) {
+        $exp = (int) apcu_fetch($k . '_exp');
+        $retry = $exp ? max(1, $exp - time()) : $window;
+        json_out(['ok' => false, 'error' => 'Too many attempts. Please wait a moment.', 'retry_after' => $retry], 429);
+    }
 }
 function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
