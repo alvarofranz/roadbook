@@ -67,10 +67,11 @@
         popup.on('close', () => { if (ctxMenu && ctxMenu.popup === popup) ctxMenu = null; });
         ctxMenu = { popup, keys, pastePoint: pastePt || null };
     }
-    if (map.map) map.map.on('contextmenu', (e) => {
-        e.preventDefault();
+    // The map context menu — right-click on desktop, long-press on touch (#83). Its command set
+    // depends on what's under the point: a note, a plain track point, or empty ground.
+    function openMapMenu(lngLat, point) {
         if (!map.ready || recWatch != null) return; // never edit mid-recording
-        const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+        const here = { lat: lngLat.lat, lon: lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
         const maps = { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` };
         // Google Earth alongside Maps (#69): one window that recentres + 3D/Street View and historical
@@ -82,18 +83,18 @@
         ];
         const card = { es: 'NSEO', it: 'NSEO' }[document.documentElement.lang] || 'NSEW'; // N·S·E·W, but West → O in it/es (Ovest/Oeste)
         const coords = { coords: `${t('Coords Lat/Lng:')} ${here.lat >= 0 ? card[0] : card[1]} ${Math.abs(here.lat).toFixed(6)} ${Math.abs(here.lon).toFixed(6)} ${here.lon >= 0 ? card[2] : card[3]}` };
-        const wf = rb && map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] })[0];
-        const vf = rb && !wf && map.map.queryRenderedFeatures(e.point, { layers: ['rb-verts'] })[0];
+        const wf = rb && map.map.queryRenderedFeatures(point, { layers: ['rb-wpts'] })[0];
+        const vf = rb && !wf && map.map.queryRenderedFeatures(point, { layers: ['rb-verts'] })[0];
         if (wf) {                                   // a note (waypoint)
             const ni = parseInt(wf.properties.i, 10);
-            openCtxMenu(e.lngLat, [
+            openCtxMenu(lngLat, [
                 { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
                 ...photo(rb.notes[ni]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
                 maps, earth, coords], rb.notes[ni]);
         } else if (vf) {                            // a plain track point
             const ti = parseInt(vf.properties.i, 10);
-            openCtxMenu(e.lngLat, [
+            openCtxMenu(lngLat, [
                 { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
                 { id: 'line', icon: 'fa-plus', label: 'Add point on line', key: 'L', run: () => vertexAction('line', ti) },
@@ -101,7 +102,7 @@
                 { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
                 maps, earth, coords], rb.track[ti]);
         } else {                                    // empty ground (route ops act on the nearest point)
-            openCtxMenu(e.lngLat, [
+            openCtxMenu(lngLat, [
                 ...(rb ? [
                     { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
                     { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', key: 'L', run: () => addPointAtExact(here) },
@@ -110,7 +111,22 @@
                 ...photo(here),
                 maps, earth, coords], here);
         }
-    });
+    }
+    if (map.map) {
+        map.map.on('contextmenu', (e) => { e.preventDefault(); openMapMenu(e.lngLat, e.point); });
+        // No right-click on touch (iPad/phones): a ~500 ms long-press held still opens the same menu (#83).
+        let lpTimer = null, lpAt = null;
+        const lpCancel = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+        map.map.on('touchstart', (e) => {
+            lpCancel();
+            if (e.points && e.points.length > 1) return; // pinch / multi-touch is not a long-press
+            const ll = e.lngLat, pt = e.point; lpAt = pt;
+            lpTimer = setTimeout(() => { lpTimer = null; openMapMenu(ll, pt); }, 500);
+        });
+        map.map.on('touchmove', (e) => { if (lpAt && e.point && (Math.abs(e.point.x - lpAt.x) > 10 || Math.abs(e.point.y - lpAt.y) > 10)) lpCancel(); });
+        map.map.on('touchend', lpCancel);
+        map.map.on('touchcancel', lpCancel);
+    }
     // Live mouse position on the map → the add/delete shortcuts can act there directly, without
     // first opening the context menu (#35/#61).
     let hoverPt = null;
