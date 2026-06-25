@@ -351,6 +351,42 @@ describe('filterRoadbooks (My roadbooks search)', () => {
     });
 });
 
+describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
+    const draft = { rb_editor_draft: { rb: { meta: { title: 'My route' }, notes: [{}, {}, {}] } } };
+    const rec = { rb_recorder_session: { recording: true, recordedM: 3210 } };
+    const tm = { rb_tripmaster_session: { totalM: 5120, waypoints: 0, timerOn: false, timerAcc: 0 } };
+    const nav = { rb_session: { pen: {}, activeIdx: 4, totalM: 8300 }, rb_session_roadbook: { meta: { title: 'Rally X' }, notes: new Array(20) } };
+
+    it('returns [] for an empty / all-null snapshot', () => {
+        expect(RB.pendingWork({})).toEqual([]);
+        expect(RB.pendingWork()).toEqual([]);
+        expect(RB.pendingWork({ rb_editor_draft: null, rb_session: null })).toEqual([]);
+    });
+    it('describes an unsaved editor draft (title + note count)', () => {
+        const [d] = RB.pendingWork(draft);
+        expect(d).toMatchObject({ tool: 'editor', url: 'editor/', kind: 'draft', title: 'My route', noteCount: 3, keys: ['rb_editor_draft'] });
+    });
+    it('describes a recorder recording only while it is recording', () => {
+        expect(RB.pendingWork(rec)).toEqual([{ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording', distanceM: 3210 }]);
+        expect(RB.pendingWork({ rb_recorder_session: { recording: false, recordedM: 99 } })).toEqual([]);
+    });
+    it('describes a tripmaster run when any counter/timer/GPX is active, not when idle', () => {
+        expect(RB.pendingWork(tm)[0]).toMatchObject({ tool: 'tripmaster', kind: 'run', distanceM: 5120 });
+        expect(RB.pendingWork({ rb_tripmaster_session: { totalM: 0, waypoints: 0, timerOn: false, timerAcc: 0, gpxRecording: false } })).toEqual([]);
+        expect(RB.pendingWork({ rb_tripmaster_session: { totalM: 0, waypoints: 0, gpxRecording: true } })).toHaveLength(1);
+    });
+    it('describes a reader run with note progress, and needs BOTH the session and its roadbook', () => {
+        const [n] = RB.pendingWork(nav);
+        expect(n).toMatchObject({ tool: 'reader', kind: 'navigation', title: 'Rally X', distanceM: 8300, noteIdx: 4, noteTotal: 20, keys: ['rb_session', 'rb_session_roadbook'] });
+        expect(RB.pendingWork({ rb_session: { pen: {}, activeIdx: 1 } })).toEqual([]); // no roadbook → not resumable
+        expect(RB.pendingWork({ rb_session: { activeIdx: 1 }, rb_session_roadbook: { notes: [] } })).toEqual([]); // no pen → not a real run
+    });
+    it('lists every pending item together', () => {
+        const all = RB.pendingWork({ ...draft, ...rec, ...tm, ...nav });
+        expect(all.map((i) => i.tool)).toEqual(['editor', 'recorder', 'tripmaster', 'reader']);
+    });
+});
+
 describe('appWaypointSymbol (Garmin/OSMAnd mapping for GPX export, #34)', () => {
     it('maps a known RDBK icon to its Garmin sym + OSMAnd icon + colour', () => {
         const r = RB.appWaypointSymbol({ icons: [{ name: 'I07_acqua_potabile.png' }] });

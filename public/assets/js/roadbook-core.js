@@ -723,6 +723,40 @@
     // Filter a roadbook list (My roadbooks / Editor landing) by title.
     function filterRoadbooks(list, query) { return filterByText(list, query, ['title']); }
 
+    // Cross-tool "unsaved work" scan. Each tool crash-saves its in-progress work to
+    // localStorage and prompts to resume on its OWN page; this turns a snapshot of those
+    // keys into a flat list so the shell can surface work left in OTHER tools. `snap` is the
+    // already-parsed value of each key (null when absent). Returns one descriptor per pending
+    // item — { tool, url, keys[], kind, title?, noteCount?, distanceM?, noteIdx?, noteTotal? }
+    // — the same "is this resumable?" guard each tool applies to its own checkpoint. The
+    // shell formats the human label/detail (i18n stays out of the core).
+    function pendingWork(snap) {
+        snap = snap || {};
+        const out = [];
+        const draft = snap.rb_editor_draft;
+        if (draft && draft.rb && draft.rb.meta && Array.isArray(draft.rb.notes)) {
+            out.push({ tool: 'editor', url: 'editor/', keys: ['rb_editor_draft'], kind: 'draft',
+                title: draft.rb.meta.title || '', noteCount: draft.rb.notes.length });
+        }
+        const rec = snap.rb_recorder_session;
+        if (rec && rec.recording) {
+            out.push({ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording',
+                distanceM: rec.recordedM || 0 });
+        }
+        const tm = snap.rb_tripmaster_session;
+        if (tm && (tm.totalM > 0 || tm.waypoints > 0 || tm.timerOn || tm.timerAcc > 0 || tm.gpxRecording)) {
+            out.push({ tool: 'tripmaster', url: 'tripmaster/', keys: ['rb_tripmaster_session'], kind: 'run',
+                distanceM: tm.totalM || 0 });
+        }
+        const nav = snap.rb_session, navRb = snap.rb_session_roadbook;
+        if (nav && nav.pen && navRb && Array.isArray(navRb.notes)) {
+            out.push({ tool: 'reader', url: 'reader/', keys: ['rb_session', 'rb_session_roadbook'], kind: 'navigation',
+                title: (navRb.meta && navRb.meta.title) || '', distanceM: nav.totalM || 0,
+                noteIdx: nav.activeIdx || 0, noteTotal: navRb.notes.length });
+        }
+        return out;
+    }
+
     /* ---------------- export ---------------- */
     const RB = {
         ROAD_TYPES, CONST,
@@ -731,7 +765,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote,
+        nearestIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

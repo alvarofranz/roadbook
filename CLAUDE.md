@@ -43,8 +43,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   issue — including scoping/investigation, BEFORE writing any code — run `gh issue edit <n> --repo alvarofranz/roadbook --add-assignee
   @me --add-label "in lavorazione"`. `@me` assigns it to whoever is authenticated with `gh`
   (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
-  shows who owns it and that it is being worked on; the `in lavorazione` label drops off
-  when the issue is closed.
+  shows who owns it and that it is being worked on.
+- **Closing an issue → drop the WIP tag in the same step.** GitHub does NOT auto-remove
+  labels on close, so closing without clearing it leaves `in lavorazione` stuck on done work.
+  Whenever you close an issue, remove the label as part of the same action: `gh issue close
+  <n> --repo alvarofranz/roadbook` together with `gh issue edit <n> --repo
+  alvarofranz/roadbook --remove-label "in lavorazione"`. The `in lavorazione` label must
+  reflect only what is genuinely being worked right now — never a closed issue.
 - **Process/architecture changes need an Alvaro review — ASK FIRST.** Any change that
   touches server-side processes (deploy, CI, the PHP API, the DB schema/migrations) or the
   project's architecture or way of working MUST NOT go straight to `main` on your own:

@@ -441,4 +441,67 @@
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
     })();
+
+    /* ---------------- Unsaved-work guard (cross-tool) ----------------
+       Every tool crash-saves its in-progress work to localStorage and prompts to resume on
+       its OWN page. This surfaces that work EVERYWHERE ELSE: a header pill (shown only when
+       something is pending in another tool) opens a list to resume or discard each item — so a
+       recording, a run or an unsaved draft left in one tool is never silently orphaned. */
+    const PENDING_KEYS = ['rb_editor_draft', 'rb_recorder_session', 'rb_tripmaster_session', 'rb_session', 'rb_session_roadbook'];
+    const PENDING_LABEL = { editor: 'Unsaved draft', recorder: 'Recording in progress', tripmaster: 'Tripmaster run', reader: 'Run in progress' };
+    const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-book-open' };
+    const curTool = (location.pathname.slice(new URL(ROOT, location.href).pathname.length).replace(/^\/+/, '').split('/')[0]) || '';
+    const km = (m) => (m / 1000).toFixed(2) + ' km';
+    // The work left in OTHER tools (the current tool already prompts to resume its own work).
+    function listPending() {
+        if (!window.RB || !RB.pendingWork) return [];
+        const snap = {};
+        for (const k of PENDING_KEYS) { try { snap[k] = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { snap[k] = null; } }
+        return RB.pendingWork(snap).filter((it) => it.tool !== curTool);
+    }
+    function pendingDetail(it) {
+        if (it.kind === 'draft') return (it.title || RBt('Untitled')) + ' · ' + it.noteCount + ' ' + RBt('notes');
+        if (it.kind === 'navigation') return (it.title || RBt('Roadbook')) + ' · ' + it.noteIdx + '/' + it.noteTotal + ' ' + RBt('notes') + ' · ' + km(it.distanceM);
+        return km(it.distanceM); // recording · run
+    }
+    function openPendingModal() {
+        const d = RBModal(`<h2><i class="fa-solid fa-floppy-disk icon-accent"></i> ${RBt('Unsaved work')}</h2>
+            <p class="muted small">${RBt('Work left in progress in other tools. Resume it, or discard it.')}</p>
+            <div class="pending-list"></div>`, 'narrow');
+        const listEl = d.q('.pending-list');
+        const draw = () => {
+            const items = listPending();
+            if (!items.length) { d.close(); refreshPendingPill(); return; }
+            listEl.innerHTML = items.map((it, i) => `<div class="roadbook-row" data-i="${i}">
+                <i class="fa-solid ${PENDING_ICON[it.tool]} icon-accent"></i>
+                <div class="meta"><b>${RBesc(RBt(PENDING_LABEL[it.tool]))}</b><small>${RBesc(pendingDetail(it))}</small></div>
+                <a class="btn btn-primary" href="${ROOT}${it.url}">${RBt('Resume')}</a>
+                <button class="btn btn-ghost" data-discard><i class="fa-solid fa-trash-can icon-danger"></i></button>
+            </div>`).join('');
+            listEl.querySelectorAll('[data-discard]').forEach((b) => b.onclick = async () => {
+                const it = items[+b.closest('[data-i]').dataset.i];
+                if (!(await RBConfirmDanger(RBt('Discard') + ' “' + RBt(PENDING_LABEL[it.tool]) + ' · ' + pendingDetail(it) + '”?', 'Discard'))) return;
+                it.keys.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
+                RBToast('Discarded.'); draw(); refreshPendingPill();
+            });
+        };
+        draw();
+    }
+    function refreshPendingPill() {
+        const slot = document.querySelector('header.topbar .wrap');
+        if (!slot) return;
+        const n = listPending().length;
+        let pill = slot.querySelector('#pendingPill');
+        if (!n) { if (pill) pill.hidden = true; return; }
+        if (!pill) {
+            pill = document.createElement('button');
+            pill.id = 'pendingPill'; pill.className = 'pending-pill';
+            pill.setAttribute('aria-label', RBt('Unsaved work'));
+            pill.onclick = openPendingModal;
+            slot.insertBefore(pill, slot.querySelector('#navToggle'));
+        }
+        pill.hidden = false;
+        pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshPendingPill); else refreshPendingPill();
 })();

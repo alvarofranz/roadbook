@@ -154,7 +154,49 @@ Su iOS non standalone il pulsante viene mostrato già a `DOMContentLoaded`
 
 ---
 
-## 7. Gli helper globali `RB*`
+## 7. Il guardiano del lavoro non salvato (cross-tool)
+
+Ogni tool fa il **checkpoint** del proprio lavoro in corso su `localStorage` e, **sulla propria
+pagina**, propone di riprenderlo all'avvio (il Recorder, il Tripmaster, il Reader con un
+`RBConfirm("Resume…")`, l'Editor con il recupero della bozza). Il problema che questo risolve è la
+**visibilità tra tool diversi**: se inizi una registrazione e poi passi al Reader, quella
+registrazione resterebbe orfana e invisibile. Il guscio la fa emergere **ovunque tranne** nel tool
+che la possiede.
+
+**Pillola in header.** `refreshPendingPill()` ([app.js:490](../public/assets/js/app.js#L490))
+inserisce nella barra — **dentro `.wrap`, non nella `.topnav`**, così resta visibile anche col menu
+mobile chiuso — una pillola **"Unsaved work · N"** che compare **solo** se c'è lavoro in sospeso in
+un *altro* tool. Cliccandola si apre una `RBModal` (`openPendingModal`,
+[app.js:467](../public/assets/js/app.js#L467)) con una riga per ciascun lavoro:
+
+- **Resume** → un link al tool relativo (`reader/`, `recorder/`, …), che poi esegue il **proprio**
+  flusso di recupero;
+- **Discard** → `RBConfirmDanger` che **nomina** l'elemento (tipo + descrizione), poi rimuove le sue
+  chiavi da `localStorage` e ridisegna la lista (regola "conferma prima di distruggere dati").
+
+**La logica pura sta nel core.** `listPending()` ([app.js:456](../public/assets/js/app.js#L456))
+legge le chiavi di `PENDING_KEYS` ([app.js:450](../public/assets/js/app.js#L450)), le passa a
+**`RB.pendingWork(snapshot)`** ([roadbook-core.js:733](../public/assets/js/roadbook-core.js#L733)) e
+**filtra via il tool corrente** (quello già si occupa del proprio recupero). `pendingWork` applica
+lo **stesso** guard "è recuperabile?" che ogni tool usa sul proprio checkpoint e ritorna un
+descrittore per voce — `{ tool, url, keys[], kind, title?, noteCount?, distanceM?, noteIdx?,
+noteTotal? }` — senza i18n (il guscio formatta etichetta e dettaglio via `RBt`). È funzione pura e
+**testata** in `tests/roadbook-core.test.js`.
+
+| Chiave `localStorage` | Tool | Guard "in sospeso" | Dettaglio mostrato |
+|---|---|---|---|
+| `rb_editor_draft` | Editor | bozza con `rb.meta` + `notes[]` | titolo · N note |
+| `rb_recorder_session` | Recorder | `recording === true` | km registrati |
+| `rb_tripmaster_session` | Tripmaster | un contatore/timer/GPX attivo | km |
+| `rb_session` + `rb_session_roadbook` | Reader | `pen` presente **e** roadbook con `notes[]` | titolo · nota N/tot · km |
+
+> Poiché la pillola dipende da `RB.pendingWork`, `roadbook-core.js` è caricato **su ogni pagina con
+> l'header** — incluse home, account, privacy e standard, che prima non lo caricavano — così il
+> guardiano funziona dappertutto.
+
+---
+
+## 8. Gli helper globali `RB*`
 
 Ogni pagina riusa questi invece di reimplementarli. Firme reali:
 
@@ -267,7 +309,7 @@ testo digitato non si perdono); duplica/elimina invece ri-chiamano `RBRoadbookLi
 
 ---
 
-## 8. `home.js` — la galleria della home
+## 9. `home.js` — la galleria della home
 
 [home.js](../public/assets/js/home.js) anima la **galleria di roadbook pubblici (challenge)** in
 homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
@@ -284,7 +326,7 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
 
 ---
 
-## 9. Limiti e quirk
+## 10. Limiti e quirk
 
 - **Un solo IIFE, niente export.** Tutto vive su `window.RB*`; non c'è modularità a moduli ES.
   L'ordine di caricamento conta: `RBModal`/`RBesc`/`RBt` devono esistere prima dell'uso (l'header
