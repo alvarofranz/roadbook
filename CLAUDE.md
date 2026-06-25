@@ -120,23 +120,52 @@ style URL for satellite imagery; the base map runs on free, no-key MapLibre tile
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
 (copy `.env.example`); migrations live in `migrations/`.
 
-## Production DB (migrations + fresh pull) → `DB.md`
-Anything that touches the **production** database — applying a schema migration to
-prod, or pulling a fresh copy of prod data into your local DDEV — is documented in
-**`DB.md`**. That file is **private and gitignored on purpose** (it holds production
-access keys), so it is NOT in this repo: ask the maintainer for it, and read it
-before any prod-DB work. Golden rule for schema changes — **schema first, code
-second**: a new column/table must exist in prod *before* the code that reads it is
-deployed, or production login breaks. So a schema change ships as its own
-migration-only PR (merging it auto-deploys the `.sql`), is then applied as `DB.md`
-describes, and only after that does the PR with the code that uses it merge.
-**Never commit `DB.md` or paste its contents anywhere public — it stays
-out-of-band.**
+## Production DB (migrations + fresh pull)
+Both prod-DB workflows — **pulling a fresh copy of prod into local dev** and
+**applying a schema migration to prod** — go through the **VPS panel** with a
+single key, the rdbk-scoped **`VPS_ADMIN_KEY`** (panel slug `rdbk`). That one key
+covers DB dump + migrate; there is no separate dump secret. Keep it in
+`.claude/settings.local.json` under `env` (gitignored) so Claude always has it;
+the live value is handed over out-of-band (it is a secret, never in this public
+repo), and the longer ops note `DB.md` is likewise private/gitignored.
+
+**Fresh prod DB → local.** Replaces your local DB with a current copy of prod
+(real users, roadbooks, photo metadata) — keep that copy private.
+- **Mac (DDEV):** download from the panel dump route, then import:
+  ```bash
+  curl -fsSL -H "X-Admin-Key: $VPS_ADMIN_KEY" \
+    https://alvarofranz.com/api/projects/rdbk/dump -o /tmp/rdbk-fresh.sql.gz
+  ddev import-db --file=/tmp/rdbk-fresh.sql.gz && rm -f /tmp/rdbk-fresh.sql.gz
+  ```
+  or the helper that does exactly this: `bash bashy/pull-fresh-db-rdbk.sh`.
+- **On the VPS (Blink/SSH dev box):** `dev-sync rdbk rdbk_dev` (clones prod into
+  the on-box dev DB; no HTTPS round-trip).
+
+**Migrations.** List pending and apply through the same panel key:
+```bash
+curl -fsS -H "X-Admin-Key: $VPS_ADMIN_KEY" \
+  https://alvarofranz.com/api/projects/rdbk/migrations | jq '.parsed'
+curl -sS -X POST -H "X-Admin-Key: $VPS_ADMIN_KEY" \
+  https://alvarofranz.com/api/projects/rdbk/migrations/<file.sql>/apply | jq -r '.stdout // .'
+```
+or the helpers `bash bashy/migrations-pending-rdbk.sh` /
+`bash bashy/migrations-apply-rdbk.sh <file.sql>`. The panel always takes a gzipped
+`mysqldump` backup **before** applying, records each file's sha256 (refusing to
+re-apply, or to apply a file edited after it was applied), and records success so
+it never re-runs.
+
+Golden rule for schema changes — **schema first, code second**: a new
+column/table must exist in prod *before* the code that reads it ships, or
+production login breaks. So a schema change ships on its own first (push the
+migration-only `.sql` to `main`, which auto-deploys it, then apply it as above),
+and only after that does the code that uses the column ship.
 
 ## Releasing
-**To deploy: push to `main`. That is the whole deploy step — there is no manual server
-access and nothing else to run.** A push (a direct commit or a merged PR) triggers the
-**Deploy** GitHub Action (`.github/workflows/deploy.yml`), which fires the production
+**Trunk-based: deploy by pushing `main`. That is the whole deploy step — there is no
+manual server access and nothing else to run.** Work straight on `main`: commit, then
+`git pull --ff-only` and `git push origin main` (rebase + retry if the push is rejected
+as non-fast-forward; never force-push). The push triggers the **Deploy** GitHub Action
+(`.github/workflows/deploy.yml`), which runs the unit tests and then fires the production
 deploy hook via one authenticated POST; the endpoint and key are repository secrets
 (`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
 about the host is in this repo. You can also run it from the Actions tab
