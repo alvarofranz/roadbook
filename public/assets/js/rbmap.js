@@ -69,7 +69,7 @@ window.RBMap = class RBMap {
         this._vertDrag = -1; this._vertMoved = false;
         const vertDown = (e) => {
             if (!this._vertOnDrag || !e.features[0]) return;
-            if (e.originalEvent && e.originalEvent.button !== 0) return; // only the left button drags; right-click → context menu
+            if (e.originalEvent && (e.originalEvent.button || 0) !== 0) return; // only the left button drags; right-click → context menu
             e.preventDefault(); this._vertDrag = parseInt(e.features[0].properties.i, 10); this._vertMoved = false;
             m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
         };
@@ -87,7 +87,7 @@ window.RBMap = class RBMap {
         this._wptDrag = -1; this._wptMoved = false;
         const wptDown = (e) => {
             if (!this._wptOnDrag || !e.features[0]) return;
-            if (e.originalEvent && e.originalEvent.button !== 0) return; // left button only; right-click → context menu
+            if (e.originalEvent && (e.originalEvent.button || 0) !== 0) return; // left button only; right-click → context menu
             e.preventDefault(); this._wptDrag = parseInt(e.features[0].properties.i, 10); this._wptMoved = false;
             m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
         };
@@ -102,7 +102,7 @@ window.RBMap = class RBMap {
         this._photoDrag = null; this._photoMoved = false;
         const photoDown = (e) => {
             if (!this._photoOnDrag || !e.features[0]) return;
-            if (e.originalEvent && e.originalEvent.button !== 0) return; // left button only; right-click → context menu
+            if (e.originalEvent && (e.originalEvent.button || 0) !== 0) return; // left button only; right-click → context menu
             e.preventDefault(); this._photoDrag = JSON.parse(e.features[0].properties.d); this._photoMoved = false;
             m.dragPan.disable(); m.getCanvas().style.cursor = 'grabbing';
         };
