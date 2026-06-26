@@ -256,7 +256,7 @@ section.block { padding: 2.4rem 0; }
 .brand-logo { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; }
 .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2.5rem; align-items: center; }
 .hero-copy { text-align: left; }
-.hero-mock { width: 100%; max-width: 460px; height: auto; border-radius: 28px; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); justify-self: end; }
+.hero-mock { width: 100%; max-width: 276px; height: auto; border-radius: 28px; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); justify-self: end; }
 /* hero workflow strip: record → build → ride → event */
 .workflow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin-top: 1.6rem; }
 .workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
@@ -268,7 +268,7 @@ section.block { padding: 2.4rem 0; }
     .hero-copy { text-align: center; }
     .hero-copy .cta, .hero-copy .workflow { justify-content: center; }
     .hero-copy p.lead { margin-left: auto; margin-right: auto; }
-    .hero-mock { max-width: 340px; margin: 1.6rem auto 0; justify-self: center; }
+    .hero-mock { max-width: 204px; margin: 1.6rem auto 0; justify-self: center; }
 }
 .foot-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; }
 .foot-links a { color: var(--sand-2); }

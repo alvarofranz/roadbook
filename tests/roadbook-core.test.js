@@ -321,6 +321,34 @@ describe('importRoadbook (legacy Roadbook Suite → canonical)', () => {
         expect(once.notes[0].text).toBe('start');
         expect(once.notes[0].junctions).toBeNull();
     });
+
+    it('tags a note carrying a speed-limit sign as a speed-controlled zone (#94)', () => {
+        const rb = RB.importRoadbook({
+            meta: { title: 'T' },
+            notes: [
+                { num: 1, idx: 0, junctions: null, icons: [{ name: 'S03_30km.svg' }] }, // 30 km/h sign
+                { num: 2, idx: 1, junctions: null, icons: [{ name: 'S99_end.svg' }] },   // end of limit
+                { num: 3, idx: 2, junctions: null, icons: [{ name: 'I02_partenza.png' }] }, // no speed sign
+            ],
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
+        });
+        expect(rb.notes[0].speed_limit).toBe(30);
+        expect(rb.notes[0].wp_type).toBe('dz');   // a positive limit → zone start
+        expect(rb.notes[1].speed_limit).toBe(0);
+        expect(rb.notes[1].wp_type).toBe('fz');   // end of limit → zone end
+        expect(rb.notes[2].speed_limit).toBeUndefined();
+        expect(rb.notes[2].wp_type).toBeUndefined();
+    });
+
+    it('does not override a speed_limit / wp_type a file already declares', () => {
+        const rb = RB.importRoadbook({
+            meta: { title: 'T' },
+            notes: [{ num: 1, idx: 0, junctions: null, speed_limit: 50, wp_type: 'masked', icons: [{ name: 'S03_30km.svg' }] }],
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }],
+        });
+        expect(rb.notes[0].speed_limit).toBe(50);      // kept
+        expect(rb.notes[0].wp_type).toBe('masked');    // kept
+    });
 });
 
 describe('filterRoadbooks (My roadbooks search)', () => {

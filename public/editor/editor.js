@@ -187,6 +187,13 @@
         const name = n.speed_limit == null ? null : SPEED_ICON[n.speed_limit];
         if (name) n.icons.push(mkIcon(name, [0, 0]));
     }
+    // A speed limit defines a controlled zone (#94): a positive limit makes the note a zone start
+    // (DZ), the end-of-limit a zone end (FZ). Clearing the limit drops a speed-derived zone tag,
+    // but never touches a manually-chosen non-zone type.
+    function syncSpeedZone(n) {
+        if (n.speed_limit == null) { if (n.wp_type === 'dz' || n.wp_type === 'fz') delete n.wp_type; }
+        else n.wp_type = n.speed_limit === 0 ? 'fz' : 'dz';
+    }
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
@@ -1272,8 +1279,9 @@
         $('speedSlot').innerHTML = `<label class="prop-field"><span>${t('Speed')}</span><select id="edSpeed" class="field">${speedOpts}</select></label>`;
         $('edSpeed').onchange = (e) => {
             const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v;
-            syncSpeedIcon(n); // the matching S-icon follows the limit (set/changed/lifted/cleared)
-            markDirty(); canvas.setNote(n); canvas.render(); renderNotes();
+            syncSpeedIcon(n);  // the matching S-icon follows the limit (set/changed/lifted/cleared)
+            syncSpeedZone(n);  // a speed limit also tags the note as a controlled zone (DZ / FZ)
+            markDirty(); canvas.setNote(n); canvas.render(); renderEditor(); renderNotes();
         };
         // CAP type qualifies an existing CAP (FIA: exit/average/calculated/turning); exit is the
         // implicit default, stored absent. Disabled until the note carries a CAP.
@@ -1464,7 +1472,12 @@
         const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; });
         let html = '';
         if (yours.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + yours.map((n) => iconBtn(n, lib[n], true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
-        html += Object.entries(std.categories || {}).map(([cat, files]) => `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + files.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('')).join('');
+        html += Object.entries(std.categories || {}).map(([cat, files]) => {
+            // #94: speed-limit signs are no longer placed by hand — the Speed dropdown sets the
+            // limit (and renders the matching sign), so hide the S* signs from the palette.
+            const shown = files.filter((f) => RB.speedLimitFromName(f) == null);
+            return shown.length ? `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + shown.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('') : '';
+        }).join('');
         $('iconGrid').innerHTML = html || `<span class="muted small">${esc(t('No icons.'))}</span>`;
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
             b.onclick = () => addIcon(b.dataset.add);

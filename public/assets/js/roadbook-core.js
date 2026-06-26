@@ -451,6 +451,17 @@
         // bearing_in points the trunk arrow backwards); the track is authoritative, so
         // re-derive bearings/distances/road-types from it — exactly as buildRoadbook does.
         if (suite && Array.isArray(rb.track) && rb.track.length >= 2) recomputeMetrics(rb);
+        // #94: a note carrying a speed-limit sign is a speed-controlled zone. Surface the limit as
+        // the declarative field and tag the note as a zone start/end (DZ / FZ) — only filling gaps,
+        // so a file that already declares speed_limit / wp_type is left untouched.
+        rb.notes.forEach((n) => {
+            let sp = null;
+            (n.icons || []).forEach((ic) => { const v = speedLimitFromName((ic.name || '').split('/').pop()); if (v != null) sp = v; });
+            if (sp != null) {
+                if (n.speed_limit == null) n.speed_limit = sp;
+                if (n.wp_type == null) n.wp_type = sp === 0 ? 'fz' : 'dz';
+            }
+        });
         return rb;
     }
 
