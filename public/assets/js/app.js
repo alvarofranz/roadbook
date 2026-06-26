@@ -32,7 +32,7 @@
         // Ranking stay web-only). The website keeps the full set.
         const tools = isNativeApp()
             ? [['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Recorder']]
-            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking']];
+            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking'], ['roadbooks', 'Roadbooks']];
         const navLinks = tools.map(([p, label]) => `<a class="nav-link${active(p)}" href="${ROOT}${p}/">${label}</a>`).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }

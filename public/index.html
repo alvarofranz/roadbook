@@ -40,6 +40,20 @@
         </div>
     </section>
 
+    <!-- INSTALL / CROSS-PLATFORM (above features) -->
+    <section class="block web-only" id="install">
+        <div class="wrap section-head">
+            <div class="kicker" data-i18n="install.kicker">Cross-platform</div>
+            <h2 data-i18n="install.title">Install it on any device</h2>
+            <p class="lead install-lead" data-i18n="install.text">Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.</p>
+            <div class="platforms">
+                <span><i class="fa-brands fa-windows"></i> Windows</span>
+                <span><i class="fa-brands fa-apple"></i> macOS / iOS</span>
+                <span><i class="fa-brands fa-android"></i> Android</span>
+            </div>
+        </div>
+    </section>
+
     <!-- FEATURES -->
     <section class="block web-only" id="features">
         <div class="wrap">
@@ -54,21 +68,7 @@
                 <div class="step"><i class="fa-solid fa-gauge-high"></i><h4 data-i18n="feat.5.t">Tripmaster</h4><p data-i18n="feat.5.d">A precise GPS odometer with no roadbook — partial and total distance.</p></div>
                 <div class="step"><i class="fa-solid fa-qrcode"></i><h4 data-i18n="feat.6.t">Validate &amp; QR</h4><p data-i18n="feat.6.d">Validate notes (manual or automatic) and emit a signed result QR.</p></div>
                 <div class="step"><i class="fa-solid fa-ranking-star"></i><h4 data-i18n="feat.7.t">Ranking</h4><p data-i18n="feat.7.d">Scan QRs and build accuracy, CAP, speed and regularity rankings.</p></div>
-                <div class="step"><i class="fa-solid fa-globe"></i><h4 data-i18n="feat.8.t">Accounts &amp; sharing</h4><p data-i18n="feat.8.d">Sign in to store roadbooks and publish them as public challenges.</p></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- INSTALL / CROSS-PLATFORM -->
-    <section class="block web-only" id="install">
-        <div class="wrap section-head">
-            <div class="kicker" data-i18n="install.kicker">Cross-platform</div>
-            <h2 data-i18n="install.title">Install it on any device</h2>
-            <p class="lead install-lead" data-i18n="install.text">Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.</p>
-            <div class="platforms">
-                <span><i class="fa-brands fa-windows"></i> Windows</span>
-                <span><i class="fa-brands fa-apple"></i> macOS / iOS</span>
-                <span><i class="fa-brands fa-android"></i> Android</span>
+                <div class="step"><i class="fa-solid fa-globe"></i><h4 data-i18n="feat.8.t">Accounts &amp; sharing</h4><p data-i18n="feat.8.d">Sign in to store roadbooks and publish them as public roadbooks.</p></div>
             </div>
         </div>
     </section>
@@ -82,14 +82,15 @@
         </nav>
     </section>
 
-    <!-- GALLERY (website + app) -->
+    <!-- PUBLIC ROADBOOKS teaser (website + app): the last few; the full list lives at /roadbooks -->
     <section class="block" id="gallery">
         <div class="wrap">
             <div class="section-head">
                 <div class="kicker" data-i18n="gallery.kicker">Gallery</div>
-                <h2 data-i18n="gallery.title">Public Challenges</h2>
+                <h2 data-i18n="gallery.title">Public Roadbooks</h2>
             </div>
-            <div class="gallery" id="galleryGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading challenges…</p></div>
+            <div class="gallery" id="galleryGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
+            <div class="btnrow"><a class="btn btn-ghost" href="roadbooks/" data-i18n="See all public roadbooks"><i class="fa-solid fa-globe"></i> See all public roadbooks</a></div>
         </div>
     </section>
 
@@ -99,6 +100,5 @@
 <script src="assets/js/roadbook-core.js?v=2026.06.26-2"></script>
 <script src="assets/js/challenges.js?v=2026.06.26-2"></script>
 <script src="assets/js/app.js?v=2026.06.26-2"></script>
-<script src="assets/js/home.js?v=2026.06.26-2"></script>
-</body>
+<script src="assets/js/home.js?v=2026.06.26-2"></script></body>
 </html>

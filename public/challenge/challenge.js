@@ -24,8 +24,16 @@
         if (credit) $('chMeta').textContent += ' · ' + credit;
         if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.className = 'ch-logo'; $('chTitle').parentNode.insertBefore(img, $('chTitle')); }
         $('chNav').href = '/reader/' + encodeURIComponent(slug);
-        if (j.is_owner) { const f = $('chFork'); f.href = '/editor/?rb=' + j.id; f.setAttribute('data-i18n', 'Edit'); f.innerHTML = '<i class="fa-solid fa-pen"></i> ' + esc(t('Edit')); }
-        else { $('chFork').href = '/editor/' + encodeURIComponent(slug); }
+        // Owner: Edit (opens their own roadbook). Non-owner: no Fork — a public roadbook can be
+        // read on the site / navigated / exported to PDF, but not forked or downloaded.
+        if (j.is_owner) { const f = $('chFork'); f.hidden = false; f.href = '/editor/?rb=' + j.id; f.setAttribute('data-i18n', 'Edit'); f.innerHTML = '<i class="fa-solid fa-pen"></i> ' + esc(t('Edit')); }
+        // Export PDF (client-side, jsPDF) — available to everyone, the only "take it with you" path.
+        $('chPdf').onclick = async () => {
+            $('chPdf').disabled = true;
+            try { await RBPdf.generate(rb, { iconBasePath: '/assets/icons/' }); }
+            catch (e) { if (window.RBToast) RBToast('Could not export the PDF.'); }
+            finally { $('chPdf').disabled = false; }
+        };
 
         if (j.photos && j.photos.length) {
             $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');

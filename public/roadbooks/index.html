@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Public Roadbooks · RDBK.app</title>
+    <meta name="description" content="Browse the public roadbooks shared on RDBK.app.">
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.06.26-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.26-2">
+    <style>
+        #rbWrap { max-width: var(--maxw); padding: 1.4rem 1.1rem 5rem; }
+        .rbp-head { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
+        .rbp-head h1 { margin: 0; font-size: 1.8rem; }
+        .rbp-toolbar { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .5rem .75rem; margin: .8rem 0 1.2rem; }
+        .rbp-toolbar i { color: var(--muted); }
+        .rbp-search { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; }
+        .rb-pager { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.4rem; }
+        .rb-pager .btn { margin: 0; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="rbWrap">
+    <div class="rbp-head">
+        <div class="kicker" data-i18n="gallery.kicker">Gallery</div>
+        <h1 data-i18n="Public Roadbooks">Public Roadbooks</h1>
+        <p class="muted" data-i18n="Browse the roadbooks shared by the community.">Browse the roadbooks shared by the community.</p>
+    </div>
+    <div class="rbp-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rbp-search" id="rbSearch" placeholder="Search roadbooks…" data-i18n-ph="Search roadbooks…" autocomplete="off" spellcheck="false"></div>
+    <div class="gallery" id="rbGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
+    <div class="rb-pager" id="rbPager"></div>
+</main>
+
+<script src="../assets/js/i18n.js?v=2026.06.26-2"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.06.26-2"></script>
+<script src="../assets/js/challenges.js?v=2026.06.26-2"></script>
+<script src="../assets/js/app.js?v=2026.06.26-2"></script>
+<script src="roadbooks.js?v=2026.06.26-2"></script>
+</body>
+</html>

@@ -20,15 +20,15 @@
         return m ? m[1] : null;
     };
 
-    // Picker: choose a public challenge to open in the current tool.
+    // Picker: choose a public roadbook to open in the current tool.
     async function pick(onPick) {
-        const d = RBModal(`<h2>${RBt('Public challenges')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
+        const d = RBModal(`<h2>${RBt('Public Roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
         const rbs = await listPublic();
-        d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public challenges')}</h2>
+        d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public Roadbooks')}</h2>
             ${rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
                 ${r.thumb ? `<img src="${RBesc(r.thumb)}" alt="">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
                 <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</small></span>
-            </button>`).join('') : `<p class="muted">${RBt('No public challenges yet.')}</p>`}
+            </button>`).join('') : `<p class="muted">${RBt('No public roadbooks yet.')}</p>`}
             <div class="btnrow spaced"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`;
         d.q('#chCancel').onclick = d.close;
         d.el.querySelectorAll('.challenge-row').forEach((b) => b.onclick = async () => {
