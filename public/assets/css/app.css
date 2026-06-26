@@ -181,6 +181,20 @@ section.block { padding: 2.4rem 0; }
 .maplibregl-ctrl button.rb-ctrl-on { color: var(--sand); }
 /* WP-type icon overlay marker (RBMap): a visual badge over a note's dot — never intercepts map interaction */
 .rb-wp-badge { pointer-events: none; line-height: 0; }
+/* per-tool feature pages (/features/<tool>/): hero recap + a grid of feature cards */
+.feat-page { max-width: var(--maxw); margin: 0 auto; padding: 2rem 1.1rem 5rem; }
+.feat-hero { text-align: center; padding: 1rem 0 1.4rem; }
+.feat-hero .feat-ico { font-size: 2.6rem; color: var(--sand); }
+.feat-hero h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); margin: .5rem 0 .5rem; }
+.feat-hero .lead { color: var(--muted); max-width: 60ch; margin: 0 auto 1.2rem; line-height: 1.6; }
+.feat-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+.feat-item { display: flex; gap: .8rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; }
+.feat-item > i { color: var(--sand); font-size: 1.3rem; flex-shrink: 0; margin-top: .15rem; }
+.feat-item h3 { margin: 0 0 .25rem; font-size: 1rem; }
+.feat-item p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.feat-plat { text-align: center; color: var(--muted); margin-top: 1.6rem; font-size: .9rem; }
+.feat-plat i { color: var(--sand); margin: 0 .15rem 0 .6rem; }
+.feat-more { font-size: .82rem; font-weight: 700; margin-top: .4rem; display: inline-block; }
 /* one-time cookie / storage notice (#95) — honest essential-only notice, not a consent wall */
 .cookie-notice { position: fixed; left: 0; right: 0; bottom: 0; z-index: 200; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0, 0, 0, .35); padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom)); }
 .cookie-notice .cookie-text { color: var(--muted); font-size: .86rem; max-width: 70ch; }

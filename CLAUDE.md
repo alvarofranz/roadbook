@@ -8,7 +8,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   codebase). The only built artifact is the native bridge (`native/src/native.js` →
   `public/assets/js/native.bundle.js`, esbuild). See **Native apps** below and `NATIVE.md`.
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
-  accounts, per-user roadbook storage, photos and public challenges. Config via `.env`
+  accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
   DB schema = `migrations/*.sql` (source of truth); 4 tables: `users`, `roadbooks`,
   `roadbook_photos`, `api_tokens`.
@@ -189,8 +189,10 @@ projects. See `NATIVE.md`.
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
   accuracy-aware sampling, pause/resume, autosave/recovery, smoothing, altitude,
   geotagged photos via the camera, instant waypoints), **Draw on the map** (sketch a
-  route from scratch), **`.rdbk`** or a public **Challenge**. Edit notes (text, road
-  type, FIA danger grading `!`/`!!`/`!!!`, CAP, icons); drag a note on the map to
+  route from scratch), **`.rdbk`** or a public **roadbook**. Edit notes (text, road
+  type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`wp_type`) + validation
+  radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
+  drag a note on the map to
   reposition. **The GPX is edited ON the map** via a vertical tool bar (translated
   hover tooltips, maximizable): mode tools *pan · add note · draw (tap to extend the
   nearest open end) · cut (tap any two spots — the track is split exactly there,
@@ -215,8 +217,12 @@ projects. See `NATIVE.md`.
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
   upcoming white · <50 m to next blue · approaching orange) with an optional per-note
-  MapLibre mini-map. The start modal sets Trip vs Competition mode, automatic (GPS,
-  marks within 50 m, orange warning at 30 m) vs manual (tap "reached") advancement, the
+  MapLibre mini-map; a note's FIA waypoint-type badge (`wp_type`) sits beside its number.
+  Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook**. The
+  start modal sets Trip vs Competition mode, automatic (GPS, marks within each note's
+  **detection radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius`
+  → the type default → the system default `CONST.REACH_DEFAULT_M` (35 m); the start modal can
+  instead pin one fixed radius for all) vs manual (tap "reached") advancement, the
   per-note map button and optional live GPX logging. Competition validates with
   penalties + an HMAC-signed result QR; validating syncs the total odometer to the
   note's distance. Opens `.rdbk` from the OS on installed PWAs.
@@ -226,14 +232,20 @@ projects. See `NATIVE.md`.
   to localStorage and resumes after a kill.
 - **Ranking** — scan/paste result QRs, verify the signature, build accuracy / CAP /
   speed / regularity rankings + a final score; per-row delete and CSV export.
+- **Public pages** — `/roadbooks/` lists every public roadbook (search + pagination) and the
+  per-roadbook public view lives at `/challenge/<slug>` (read on site · Navigate · PDF export;
+  a non-owner can't fork or download the `.rdbk`). The home shows a last-6 teaser linking there.
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
   `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
   (`simplifyTrack`/`simplifyRoadbook`, `reverseRoadbook`),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
-  speed-limit helpers, `buildMeta`/`parseMeta` (49-char QR), `signMeta`/`verifyMeta`
-  (HMAC-SHA256), `iconSrc`, `CONST`, `ROAD_TYPES`.
+  `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
+  the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
+  `detectionRadius` — the Reader's geofence radius), `buildMeta`/`parseMeta` (49-char QR),
+  `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
+  `deleteNote`, `pendingWork`), `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by both the Reader rows and the challenge page).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
@@ -245,8 +257,10 @@ projects. See `NATIVE.md`.
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
   settings modal, localStorage checkpoint with recovery, live file handle, finished-track
   modal (download / convert into a roadbook).
-- `challenges.js` (`RBChallenges`) — public challenges (DB-backed): `listPublic`/`loadPublic`/
+- `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
+  ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
+  label is "public roadbook", with "challenge" reserved for the future events feature.)
 - `i18n.js`, `app.js` (global header/footer, SW + version auto-refresh, Install button,
   account control, styled modals), `config.js`, `qrcode.min.js`.
 

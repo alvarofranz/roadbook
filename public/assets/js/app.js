@@ -60,7 +60,7 @@
                 <b>RDBK.app</b>
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="https://github.com/alvarofranz/roadbook" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
-                <a href="https://choosealicense.com/licenses/wtfpl/" target="_blank" rel="noopener"><i class="fa-solid fa-scale-balanced"></i> WTFPL</a>
+                <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
             <div class="lang" role="group" aria-label="Language" data-i18n-aria="Language"><button data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="it">IT</button></div>
