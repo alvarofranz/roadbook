@@ -504,4 +504,21 @@
         pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshPendingPill); else refreshPendingPill();
+
+    /* ---------------- Cookie / storage notice (#95) ----------------
+       RDBK uses ONLY an essential login session cookie + functional localStorage (preferences,
+       offline data) — no ads, no third-party tracking, no profiling. So this is an honest one-time
+       notice, not a consent wall; the choice is remembered so it shows once. */
+    const COOKIE_OK_KEY = 'rb_cookie_ok';
+    function cookieNotice() {
+        let seen = false; try { seen = localStorage.getItem(COOKIE_OK_KEY) === '1'; } catch (e) {}
+        if (seen || document.querySelector('.cookie-notice')) return;
+        const el = document.createElement('div');
+        el.className = 'cookie-notice'; el.setAttribute('role', 'note');
+        el.innerHTML = `<span class="cookie-text">${RBt('RDBK uses only essential cookies (to keep you signed in) and local storage for your preferences and offline data — no ads, no tracking, no profiling.')} <a href="${ROOT}privacy/">${RBt('Privacy')}</a></span>
+            <button class="btn btn-primary cookie-ok" type="button">${RBt('Got it')}</button>`;
+        document.body.appendChild(el);
+        el.querySelector('.cookie-ok').onclick = () => { try { localStorage.setItem(COOKIE_OK_KEY, '1'); } catch (e) {} el.remove(); };
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cookieNotice); else cookieNotice();
 })();

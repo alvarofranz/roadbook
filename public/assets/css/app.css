@@ -181,6 +181,11 @@ section.block { padding: 2.4rem 0; }
 .maplibregl-ctrl button.rb-ctrl-on { color: var(--sand); }
 /* WP-type icon overlay marker (RBMap): a visual badge over a note's dot — never intercepts map interaction */
 .rb-wp-badge { pointer-events: none; line-height: 0; }
+/* one-time cookie / storage notice (#95) — honest essential-only notice, not a consent wall */
+.cookie-notice { position: fixed; left: 0; right: 0; bottom: 0; z-index: 200; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0, 0, 0, .35); padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom)); }
+.cookie-notice .cookie-text { color: var(--muted); font-size: .86rem; max-width: 70ch; }
+.cookie-notice .cookie-text a { color: var(--sand-2); }
+.cookie-notice .cookie-ok { flex-shrink: 0; }
 
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; gap: .6rem; padding: .7rem 1rem; padding-bottom: calc(.7rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
 .fabrow .btn { flex: 1; justify-content: center; }
