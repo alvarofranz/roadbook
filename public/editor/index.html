@@ -349,22 +349,22 @@
         </div>
         <div class="meta-card">
             <div class="meta-grid">
-                <div class="meta-field full"><span data-i18n="Visibility">Visibility</span>
+                <div class="meta-field full"><span><span data-i18n="Visibility">Visibility</span><button class="help-tip" data-i18n-tip="help.visibility" data-i18n-aria="help.visibility" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span>
                     <div class="segmented" role="group" aria-label="Visibility">
                         <button class="segment on" id="visPrivate" data-i18n="Private" aria-pressed="true"><i class="fa-solid fa-lock"></i> Private</button>
                         <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
                     </div>
                 </div>
-                <label class="meta-field full"><span data-i18n="Description">Description</span><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></label>
-                <label class="meta-field"><span data-i18n="Author">Author</span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
-                <label class="meta-field"><span data-i18n="Organization">Organization</span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
-                <label class="meta-field"><span data-i18n="Roadbook type">Roadbook type</span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
-                <label class="meta-field"><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="—" data-i18n-ph="Per-type default"></label>
+                <label class="meta-field full"><span><span data-i18n="Description">Description</span><button class="help-tip" data-i18n-tip="help.description" data-i18n-aria="help.description" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></label>
+                <label class="meta-field"><span><span data-i18n="Author">Author</span><button class="help-tip" data-i18n-tip="help.author" data-i18n-aria="help.author" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
+                <label class="meta-field"><span><span data-i18n="Organization">Organization</span><button class="help-tip" data-i18n-tip="help.org" data-i18n-aria="help.org" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
+                <label class="meta-field"><span><span data-i18n="Roadbook type">Roadbook type</span><button class="help-tip" data-i18n-tip="help.profile" data-i18n-aria="help.profile" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
+                <label class="meta-field"><span><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="—" data-i18n-ph="Per-type default"></label>
                 <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
                 <div class="meta-field full">
-                    <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span></label>
+                    <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span><button class="help-tip" data-i18n-tip="help.mapAccess" data-i18n-aria="help.mapAccess" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></label>
                 </div>
-                <div class="meta-field full"><span data-i18n="Route">Route</span>
+                <div class="meta-field full"><span><span data-i18n="Route">Route</span><button class="help-tip" data-i18n-tip="help.route" data-i18n-aria="help.route" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span>
                     <button class="btn btn-ghost" id="cfgReverse" data-i18n="Reverse direction"><i class="fa-solid fa-right-left"></i> Reverse direction</button>
                 </div>
             </div>

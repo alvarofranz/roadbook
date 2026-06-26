@@ -10,6 +10,8 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
+    // A field label followed by an inline ⓘ help tooltip (#89). `tipKey` is an i18n key.
+    const labelHelp = (label, tipKey) => `${t(label)}<button type="button" class="help-tip" data-tip="${esc(t(tipKey))}" aria-label="${esc(t(tipKey))}"><i class="fa-solid fa-circle-info"></i></button>`;
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
     // base map style: satellite photo, or terrain (detailed off-road tracks + contours).
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
@@ -1264,8 +1266,8 @@
         // The note's segment/CAP attributes all live in the icon-search row: Road (the road type
         // followed = road_type_out), Danger, the declarative Speed limit and the CAP-type qualifier.
         // The Red CAP toggle itself is in the note row.
-        $('roadSlot').innerHTML = `<label class="prop-field"><span>${t('Road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
-        $('dangerSlot').innerHTML = `<label class="prop-field"><span>${t('Danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
+        $('roadSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Road', 'help.road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
+        $('dangerSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Danger', 'help.danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
         $('edRout').onchange = (e) => {
             n.road_type_out = +e.target.value; RB.normalizeRoadTypes(rb); canvas.render(); markDirty();
             const row = $('noteList').querySelector('.note-mini[data-i="' + sel + '"]'); // refresh only this row's accent
@@ -1276,7 +1278,7 @@
         const speedOpts = `<option value="" ${n.speed_limit == null ? 'selected' : ''}>—</option>`
             + [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130].map((v) => `<option value="${v}" ${n.speed_limit === v ? 'selected' : ''}>${v}</option>`).join('')
             + `<option value="0" ${n.speed_limit === 0 ? 'selected' : ''}>${t('End of limit')}</option>`;
-        $('speedSlot').innerHTML = `<label class="prop-field"><span>${t('Speed')}</span><select id="edSpeed" class="field">${speedOpts}</select></label>`;
+        $('speedSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Speed', 'help.speed')}</span><select id="edSpeed" class="field">${speedOpts}</select></label>`;
         $('edSpeed').onchange = (e) => {
             const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v;
             syncSpeedIcon(n);  // the matching S-icon follows the limit (set/changed/lifted/cleared)
@@ -1287,7 +1289,7 @@
         // implicit default, stored absent. Disabled until the note carries a CAP.
         const capTypeOpts = [['', 'Exit'], ['average', 'Average'], ['calculated', 'Calculated'], ['turning', 'Turning']]
             .map(([v, l]) => `<option value="${v}" ${(n.cap_type || '') === v ? 'selected' : ''}>${t(l)}</option>`).join('');
-        $('capTypeSlot').innerHTML = `<label class="prop-field"><span>${t('CAP type')}</span><select id="edCapType" class="field"${n.cap == null ? ' disabled' : ''}>${capTypeOpts}</select></label>`;
+        $('capTypeSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('CAP type', 'help.capType')}</span><select id="edCapType" class="field"${n.cap == null ? ' disabled' : ''}>${capTypeOpts}</select></label>`;
         $('edCapType').onchange = (e) => { const v = e.target.value; if (v) n.cap_type = v; else delete n.cap_type; markDirty(); };
         // WP type (FIA characterization): a custom dropdown so each option shows its colour badge
         // (a <select> can't). Scoped by the roadbook profile (core always, rally adds the full set);
@@ -1298,7 +1300,7 @@
         const menuHtml = optRow('', `<span class="wp-dd-none">— ${esc(t('None'))}</span>`)
             + RB.wpTypesForProfile(rb.meta && rb.meta.profile).map((w) =>
                 optRow(w.id, RB.wpBadgeSVG(w.id, 20) + `<span class="wp-dd-cap">${esc(w.cap)}</span><span class="wp-dd-nm">${esc(t(w.name))}</span>`)).join('');
-        $('wpTypeSlot').innerHTML = `<div class="prop-field wp-dd"><span>${t('WP type')}</span>
+        $('wpTypeSlot').innerHTML = `<div class="prop-field wp-dd"><span>${labelHelp('WP type', 'help.wpType')}</span>
             <div class="wp-dd-wrap">
                 <button type="button" class="field wp-dd-btn" id="wpDDBtn" aria-haspopup="listbox" aria-expanded="false">${curHtml}<span class="wp-dd-chev">▾</span></button>
                 <div class="wp-dd-menu" id="wpDDMenu" role="listbox" hidden>${menuHtml}</div>
@@ -1329,7 +1331,7 @@
         const typeDef = RB.wpType(n.wp_type) ? RB.wpType(n.wp_type).radius : null;
         const fallback = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : (typeDef != null ? typeDef : null);
         const radPh = fallback != null ? String(fallback) : t('Default');
-        $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${t('Radius m')}</span><input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${esc(radPh)}"></label>`;
+        $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Radius m', 'help.radius')}</span><input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${esc(radPh)}"></label>`;
         $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); };
     }
     // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).

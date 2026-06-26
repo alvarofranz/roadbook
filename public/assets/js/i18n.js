@@ -22,6 +22,21 @@
             'feat.8.t': 'Accounts & sharing', 'feat.8.d': 'Sign in to store roadbooks and publish them as public roadbooks.',
             'install.kicker': 'Cross-platform', 'install.title': 'Install it on any device', 'install.text': 'Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.',
             'gallery.kicker': 'Gallery', 'gallery.title': 'Public Roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.', 'gallery.notes': 'notes',
+            // Editor field help tooltips (issue #89)
+            'help.road': 'The road surface you continue on from this note (default, asphalt, track, off-piste); it stays in force until a later note changes it.',
+            'help.danger': 'FIA danger grading, shown as ! / !! / !!! in the vignette — the higher the grade, the more caution the spot demands.',
+            'help.speed': 'A declarative speed limit (km/h) in force from this note; “End of limit” lifts it. Setting a limit also marks the note a controlled zone.',
+            'help.capType': 'Qualifies the note’s CAP heading (FIA): Exit, Average, Calculated or Turning. Enabled once the note carries a CAP.',
+            'help.wpType': 'The FIA waypoint type. It sets the map icon and, in a rally roadbook, how the waypoint is validated and scored.',
+            'help.radius': 'Validation radius in metres — the geofence for automatic pass detection. Left empty it falls back to the roadbook default, then the type’s default (shown as the placeholder).',
+            'help.visibility': 'Private keeps the roadbook to you. Public lists it on the site so anyone can read it or export a PDF — but only you can download the .rdbk.',
+            'help.description': 'Shown on the roadbook’s public page — a short summary of the route or event.',
+            'help.author': 'The author’s name, embedded in the roadbook and shown to readers.',
+            'help.org': 'The organizing club or event, embedded in the roadbook and shown to readers.',
+            'help.profile': 'Basic (adventure) offers a simple waypoint set; Rally (FIA) adds the full FIA waypoint types, which drive how runs are scored.',
+            'help.defRadius': 'A validation radius applied only to notes where you haven’t set one. Left empty, each waypoint falls back to its type’s own default.',
+            'help.mapAccess': 'When on, the Reader may show the map. Turn it off to make readers navigate by the roadbook notes alone.',
+            'help.route': 'Reverse flips the travel direction — the track, note order and all headings are recomputed.',
         },
         es: {
             'hero.title': 'Roadbooks digitales para <span class="accent">tus aventuras</span>',
@@ -40,6 +55,21 @@
             'feat.8.t': 'Cuentas y compartir', 'feat.8.d': 'Inicia sesión para guardar roadbooks y publicarlos como roadbooks públicos.',
             'install.kicker': 'Multiplataforma', 'install.title': 'Instálala en cualquier dispositivo', 'install.text': 'Todas las funciones de RDBK.app están también disponibles como web app instalable (PWA) gratuita — en PC Windows y Mac, Android e iOS. Sin tienda de apps: añádela a la pantalla de inicio y úsala como una app nativa, incluso sin conexión.',
             'gallery.kicker': 'Galería', 'gallery.title': 'Roadbooks públicos', 'gallery.loading': 'Cargando…', 'gallery.empty': 'Aún no hay roadbooks públicos.', 'gallery.notes': 'notas',
+            // Ayudas de los campos del editor (issue #89)
+            'help.road': 'La superficie por la que continúas desde esta nota (predeterminada, asfalto, pista, campo a través); se mantiene hasta que una nota posterior la cambie.',
+            'help.danger': 'Gradación de peligro FIA, mostrada como ! / !! / !!! en la viñeta: a mayor grado, más precaución exige el punto.',
+            'help.speed': 'Un límite de velocidad declarativo (km/h) vigente desde esta nota; “Fin de límite” lo levanta. Fijar un límite también marca la nota como zona controlada.',
+            'help.capType': 'Califica el rumbo CAP de la nota (FIA): Salida, Medio, Calculado o de Giro. Se activa cuando la nota lleva un CAP.',
+            'help.wpType': 'El tipo de waypoint FIA. Define el icono en el mapa y, en un roadbook de rally, cómo se valida y puntúa el waypoint.',
+            'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook y luego al del tipo (mostrado como marcador).',
+            'help.visibility': 'Privado mantiene el roadbook solo para ti. Público lo lista en el sitio para que cualquiera pueda leerlo o exportar un PDF, pero solo tú puedes descargar el .rdbk.',
+            'help.description': 'Se muestra en la página pública del roadbook: un breve resumen de la ruta o el evento.',
+            'help.author': 'El nombre del autor, incrustado en el roadbook y mostrado a los lectores.',
+            'help.org': 'El club u organización del evento, incrustado en el roadbook y mostrado a los lectores.',
+            'help.profile': 'Básico (aventura) ofrece un conjunto sencillo de waypoints; Rally (FIA) añade todos los tipos de waypoint FIA, que determinan la puntuación.',
+            'help.defRadius': 'Un radio de validación aplicado solo a las notas donde no has fijado uno. Si se deja vacío, cada waypoint recurre al valor por defecto de su tipo.',
+            'help.mapAccess': 'Si está activo, el Lector puede mostrar el mapa. Desactívalo para que los lectores naveguen solo con las notas del roadbook.',
+            'help.route': 'Invertir cambia el sentido de marcha: la traza, el orden de las notas y todos los rumbos se recalculan.',
             'Navigate a roadbook': 'Navega un roadbook', 'GPS trip computer': 'Ordenador de viaje GPS', 'Record a GPS track': 'Graba una traza GPS',
             // ---- tools (the English string is the key) ----
             'Start new Roadbook from:': 'Crear un nuevo roadbook desde:', 'Start from a public RB': 'Parte de un RB público', 'Public Roadbooks': 'Roadbooks públicos', 'Import a GPS track': 'Importa un track GPS',
@@ -334,6 +364,21 @@
             'feat.8.t': 'Account e condivisione', 'feat.8.d': 'Accedi per salvare i roadbook e pubblicarli come roadbook pubblici.',
             'install.kicker': 'Multipiattaforma', 'install.title': 'Installala su qualsiasi dispositivo', 'install.text': 'Tutte le funzionalità di RDBK.app sono disponibili anche come web app installabile (PWA) gratuita — su PC Windows e Mac, Android e iOS. Nessuno store: aggiungila alla schermata Home e usala come un’app nativa, anche offline.',
             'gallery.kicker': 'Galleria', 'gallery.title': 'Roadbook pubblici', 'gallery.loading': 'Caricamento…', 'gallery.empty': 'Ancora nessun roadbook pubblico.', 'gallery.notes': 'note',
+            // Aiuti dei campi dell'editor (issue #89)
+            'help.road': 'La superficie su cui prosegui da questa nota (predefinita, asfalto, sterrato, fuoripista); resta valida finché una nota successiva non la cambia.',
+            'help.danger': 'Gradazione di pericolo FIA, mostrata come ! / !! / !!! nella vignetta: più alto il grado, più attenzione richiede il punto.',
+            'help.speed': 'Un limite di velocità dichiarativo (km/h) in vigore da questa nota; “Fine limite” lo toglie. Impostare un limite segna anche la nota come zona controllata.',
+            'help.capType': 'Qualifica il rilevamento CAP della nota (FIA): Uscita, Medio, Calcolato o di Svolta. Attivo quando la nota ha un CAP.',
+            'help.wpType': 'Il tipo di waypoint FIA. Definisce l’icona sulla mappa e, in un roadbook rally, come il waypoint viene validato e punteggiato.',
+            'help.radius': 'Raggio di validazione in metri: il geofence per il rilevamento automatico del passaggio. Se vuoto, ricade sul valore predefinito del roadbook e poi su quello del tipo (mostrato come segnaposto).',
+            'help.visibility': 'Privato tiene il roadbook solo per te. Pubblico lo elenca sul sito così chiunque può leggerlo o esportare un PDF, ma solo tu puoi scaricare il .rdbk.',
+            'help.description': 'Mostrata sulla pagina pubblica del roadbook: un breve riassunto del percorso o dell’evento.',
+            'help.author': 'Il nome dell’autore, incorporato nel roadbook e mostrato ai lettori.',
+            'help.org': 'Il club o l’organizzazione dell’evento, incorporato nel roadbook e mostrato ai lettori.',
+            'help.profile': 'Base (avventura) offre un set semplice di waypoint; Rally (FIA) aggiunge tutti i tipi di waypoint FIA, che determinano il punteggio.',
+            'help.defRadius': 'Un raggio di validazione applicato solo alle note in cui non ne hai impostato uno. Se vuoto, ogni waypoint ricade sul valore predefinito del suo tipo.',
+            'help.mapAccess': 'Quando attivo, il Reader può mostrare la mappa. Disattivalo per far navigare i lettori solo con le note del roadbook.',
+            'help.route': 'Inverti cambia il senso di marcia: traccia, ordine delle note e tutti i rilevamenti vengono ricalcolati.',
             'Navigate a roadbook': 'Naviga un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS',
             // ---- tools (the English string is the key) ----
             'Start new Roadbook from:': 'Crea un nuovo roadbook da:', 'Start from a public RB': 'Parti da un RB pubblico', 'Public Roadbooks': 'Roadbook pubblici', 'Import a GPS track': 'Importa una traccia GPS',
@@ -638,6 +683,8 @@
         // accessibility attributes: title + aria-label translate declaratively too
         document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-title')); if (v != null) el.setAttribute('title', v); });
         document.querySelectorAll('[data-i18n-aria]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-aria')); if (v != null) el.setAttribute('aria-label', v); });
+        // help tooltips: the bubble text lives in data-tip
+        document.querySelectorAll('[data-i18n-tip]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-tip')); if (v != null) el.setAttribute('data-tip', v); });
         document.querySelectorAll('.lang button').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
         localStorage.setItem('rb_lang', lang);
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));
