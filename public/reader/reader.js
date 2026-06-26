@@ -30,7 +30,8 @@
     // having come within its reach. So clustered notes validate one by one as you drive past
     // each, never all at once. The reach is a per-note gate, capped to half the smaller gap to
     // a neighbour (so two notes' reaches can't overlap) and floored above GPS noise.
-    const REACH_MAX_M = 20, REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate, in metres: max where notes are spread out · min so we never demand sub-GPS precision · how far past the closest point confirms a pass
+    const REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate floor (never demand sub-GPS precision) · how far past the closest point confirms a pass. The reach itself is the note's detection radius (RB.detectionRadius), capped by neighbour spacing.
+    let fixedRadius = null; // start-time override: one detection radius for ALL notes (null = use each note's radius)
     let approachIdx = -1, approachMin = Infinity, approachPos = null; // pass-by tracker for the active note: closest distance + the fix where it happened
     let lastPayload = '', lastQrUrl = '';
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
@@ -40,6 +41,20 @@
     $('pickRb').onclick = () => $('rbFile').click();
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load the roadbook.'); } };
     $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
+    // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
+    RBApi('config').then((c) => { if (c && c.user) $('pickMine').hidden = false; }).catch(() => {});
+    $('pickMine').onclick = async () => {
+        const r = await RBApi('rb_list');
+        const list = (r.ok && r.roadbooks) || [];
+        if (!list.length) return toast('No roadbooks yet.');
+        const rows = list.map((rb) => `<button type="button" class="challenge-row" data-id="${rb.id}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`).join('');
+        const d = RBModal(`<h2><i class="fa-solid fa-book icon-accent"></i> ${t('Your roadbooks')}</h2><div class="challenge-list">${rows}</div>`, 'wide');
+        d.el.querySelectorAll('[data-id]').forEach((b) => b.onclick = async () => {
+            d.close();
+            const j = await RBApi('rb_get', { id: +b.dataset.id });
+            if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.');
+        });
+    };
     RBGpxRecorder.init({ toast, onChange: (recording) => { // recording = an unmistakable red STOP button
         const b = $('navGpx');
         b.classList.toggle('btn-danger', recording);
@@ -91,13 +106,20 @@
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();
         $('optMapRow').hidden = !mapAllowed();
+        $('optRadiusVal').value = (rb.meta && rb.meta.default_wp_radius) || C.REACH_DEFAULT_M; // seed the fixed-radius field with the roadbook default
         openModal('modeModal');
     }
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); $('advAuto').setAttribute('aria-pressed', 'true'); $('advManual').setAttribute('aria-pressed', 'false'); };
     $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); $('advManual').setAttribute('aria-pressed', 'true'); $('advAuto').setAttribute('aria-pressed', 'false'); };
     let optGpx = false, sound = true, audioCtx = null;
-    function readModeOpts() { auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked; }
+    // Fixed-radius option: enabling it applies ONE detection radius to every note (the previous
+    // behaviour, now with a value the user picks); disabled = each note's own radius is used.
+    $('optFixedRadius').onchange = (e) => { $('optRadiusRow').hidden = !e.target.checked; };
+    function readModeOpts() {
+        auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked;
+        fixedRadius = $('optFixedRadius').checked ? Math.max(1, parseInt($('optRadiusVal').value, 10) || C.REACH_DEFAULT_M) : null;
+    }
     // Short beep when a note is reached (WebAudio — no asset, CSP-safe). The context is created
     // on the start tap (a user gesture) so it can later sound on a GPS auto-validation.
     function beep() {
@@ -152,14 +174,14 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { competition, team, auto, showMap, sound, fixedRadius, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
-        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false;
+        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false; fixedRadius = s.fixedRadius != null ? s.fixedRadius : null;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
@@ -200,9 +222,10 @@
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
     function reachRadius(i) {
+        const base = RB.detectionRadius(notes[i], rb && rb.meta, fixedRadius); // per-note radius (or the start-time fixed override)
         const gapPrev = notes[i].partial_distance || Infinity;
         const gapNext = notes[i + 1] ? (notes[i + 1].partial_distance || Infinity) : Infinity;
-        return Math.max(REACH_MIN_M, Math.min(REACH_MAX_M, Math.min(gapPrev, gapNext) / 2));
+        return Math.max(REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
     // Closest-approach auto-validation. Track the smallest distance seen for the active note;
     // once we've come within its reach AND moved PASS_MARGIN_M past that nearest point, we've passed

@@ -449,6 +449,16 @@ describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
         expect(RB.wpType('navigation').radius).toBe(90);
         expect(RB.wpType('dz').radius).toBeUndefined();
     });
+    it('detectionRadius follows the precedence: fixed override → note → roadbook → type → system', () => {
+        const meta = { default_wp_radius: 60 };
+        expect(RB.detectionRadius({ wp_radius: 40, wp_type: 'precise' }, meta, 75)).toBe(75);
+        expect(RB.detectionRadius({ wp_radius: 40, wp_type: 'precise' }, meta)).toBe(40);
+        expect(RB.detectionRadius({ wp_type: 'precise' }, meta)).toBe(60);
+        expect(RB.detectionRadius({ wp_type: 'precise' }, {})).toBe(30);
+        expect(RB.detectionRadius({}, {})).toBe(RB.CONST.REACH_DEFAULT_M);
+        expect(RB.detectionRadius(null, null)).toBe(RB.CONST.REACH_DEFAULT_M);
+        expect(RB.detectionRadius({ wp_radius: 40 }, {}, 0)).toBe(40);
+    });
     it('wpBadgeSVG renders a solid roundel with the acronym, and is empty when unset', () => {
         const svg = RB.wpBadgeSVG('dz', 26);
         expect(svg).toContain('<svg');
