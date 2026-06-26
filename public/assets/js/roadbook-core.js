@@ -45,6 +45,68 @@
         { id: 4, color: '#ff5a45', width: 4, dashed: true },  // off-piste
     ];
 
+    /* ---------------- waypoint types (FIA characterization, #63) ----------------
+       One optional per-note `wp_type`, profile-scoped in the editor (`tier`: core shows in
+       every roadbook, rally only when meta.profile === 'rally'). A "zone" is a start note +
+       an end note — there is no zones[] structure. `cap` is the badge acronym (or `glyph` for
+       the flag markers); `color` follows the FIA roadbook convention (orange = zone start,
+       green = zone end/finish, yellow = control). `radius` is the default validation radius
+       (metres) prefilled in the editor. `sym`/`osm` map the type to a Garmin <sym> / OSMAnd
+       icon so the type carries into the GPX export. Verified against the FIA Road Book Lexicon
+       (Appendix III, 2026). */
+    const WP_TYPES = [
+        // core tier — offered in every roadbook
+        { id: 'start',    tier: 'core',  cap: 'ST',  name: 'Start',  color: '#57bb63', sym: 'Flag, Green',     osm: 'special_flag_start' },
+        { id: 'finish',   tier: 'core',  cap: 'FIN', name: 'Finish', color: '#111111', sym: 'Flag, Checkered', osm: 'special_flag_finish' },
+        { id: 'ss_start', tier: 'core',  cap: 'DSS', name: 'Selective section start', color: '#ee9a3c', sym: 'Flag, Green',     osm: 'special_flag_start' },
+        { id: 'ss_end',   tier: 'core',  cap: 'ASS', name: 'Selective section end',   color: '#57bb63', sym: 'Flag, Checkered', osm: 'special_flag_finish' },
+        // rally tier — FIA waypoint types (radius-bearing)
+        { id: 'navigation', tier: 'rally', cap: 'WPN', name: 'Navigation WP', color: '#3a8dff', radius: 90,  sym: 'Waypoint',      osm: 'special_point' },
+        { id: 'masked',     tier: 'rally', cap: 'WPM', name: 'Masked WP',     color: '#a855f7', radius: 200, sym: 'Flag, Blue',    osm: 'special_marker' },
+        { id: 'eclipse',    tier: 'rally', cap: 'WPE', name: 'Eclipse WP',    color: '#6366f1', radius: 200, sym: 'Flag, Blue',    osm: 'special_marker' },
+        { id: 'control',    tier: 'rally', cap: 'WPC', name: 'Control WP',    color: '#22c55e', radius: 90,  sym: 'Circle, Green', osm: 'special_point' },
+        { id: 'security',   tier: 'rally', cap: 'WPS', name: 'Security WP',   color: '#ff5a45', radius: 90,  sym: 'Circle, Red',   osm: 'special_marker' },
+        { id: 'precise',    tier: 'rally', cap: 'WPP', name: 'Precise WP',    color: '#e8b059', radius: 30,  sym: 'Waypoint',      osm: 'special_point' },
+        { id: 'visible',    tier: 'rally', cap: 'WPV', name: 'Visible WP',    color: '#2dd4bf', radius: 200, sym: 'Waypoint',      osm: 'special_point' },
+        // rally tier — zone boundaries (start = orange · end = green)
+        { id: 'dz', tier: 'rally', cap: 'DZ', name: 'Difficult-overtaking zone start', color: '#ee9a3c', sym: 'Flag, Red',   osm: 'special_marker' },
+        { id: 'fz', tier: 'rally', cap: 'FZ', name: 'Difficult-overtaking zone end',   color: '#57bb63', sym: 'Flag, Green', osm: 'special_point' },
+        { id: 'dn', tier: 'rally', cap: 'DN', name: 'Neutralisation start', color: '#ee9a3c', sym: 'Flag, Red',   osm: 'special_marker' },
+        { id: 'fn', tier: 'rally', cap: 'FN', name: 'Neutralisation end',   color: '#57bb63', sym: 'Flag, Green', osm: 'special_point' },
+        { id: 'dt', tier: 'rally', cap: 'DT', name: 'Transfer start', color: '#ee9a3c', sym: 'Flag, Red',   osm: 'special_marker' },
+        { id: 'ft', tier: 'rally', cap: 'FT', name: 'Transfer end',   color: '#57bb63', sym: 'Flag, Green', osm: 'special_point' },
+        // rally tier — point controls (yellow)
+        { id: 'cp',   tier: 'rally', cap: 'CP',   name: 'Check point',      color: '#f5c518', sym: 'Circle, Red', osm: 'special_point' },
+        { id: 'pc',   tier: 'rally', cap: 'PC',   name: 'Passage control',  color: '#f5c518', sym: 'Circle, Red', osm: 'special_point' },
+        { id: 'stop', tier: 'rally', cap: 'STOP', name: 'Stop',             color: '#ff5a45', sym: 'Stop',        osm: 'special_marker' },
+    ];
+    const WP_TYPE_BY_ID = {}; WP_TYPES.forEach((w) => { WP_TYPE_BY_ID[w.id] = w; });
+    // Look up a type by id (null when unset/unknown). The badge label is its acronym or glyph.
+    function wpType(id) { return (id && WP_TYPE_BY_ID[id]) || null; }
+    // The types offered for a roadbook profile: core always; rally adds the full FIA set.
+    function wpTypesForProfile(profile) { return WP_TYPES.filter((w) => w.tier === 'core' || profile === 'rally'); }
+    // Dark or light ink for legible text on a solid colour fill (perceived luminance).
+    function textInk(hex) {
+        const c = String(hex).replace('#', '');
+        const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#14100a' : '#fff';
+    }
+    // A self-contained SVG roundel for a waypoint type (solid colour + acronym) — the shared
+    // badge drawn identically in the editor selector and the Reader row. '' when unset/unknown.
+    function wpBadgeSVG(id, size) {
+        const w = wpType(id); if (!w) return '';
+        size = size || 26;
+        const label = w.cap || '';
+        const fs = label.length >= 4 ? size * 0.34 : label.length === 3 ? size * 0.40 : size * 0.46;
+        const c = size / 2;
+        // Double ring so the badge is legible on ANY background — a white halo pops a dark badge on
+        // a dark menu, a dark hairline pops a light badge on white paper.
+        return `<svg class="wp-badge" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${label}">`
+            + `<circle cx="${c}" cy="${c}" r="${c - 1}" fill="#fff"/>`
+            + `<circle cx="${c}" cy="${c}" r="${c - 2}" fill="${w.color}" stroke="rgba(0,0,0,.35)" stroke-width="1"/>`
+            + `<text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-weight="800" font-size="${fs.toFixed(1)}" fill="${textInk(w.color)}">${label}</text></svg>`;
+    }
+
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5,
@@ -530,6 +592,9 @@
     // Lowercase index so a note's icon name matches regardless of case.
     const APP_WPT_LC = {}; for (const [k, v] of Object.entries(APP_WPT)) APP_WPT_LC[k.toLowerCase()] = v;
     function appWaypointSymbol(note) {
+        // A declared waypoint type wins — it carries the FIA characterization into the export.
+        const wt = wpType(note.wp_type);
+        if (wt) return { sym: wt.sym, osmandIcon: wt.osm, color: wt.color };
         let m = null;
         for (const ic of (note.icons || [])) { const k = (ic.name || '').split('/').pop().toLowerCase(); if (APP_WPT_LC[k]) { m = APP_WPT_LC[k]; break; } }
         if (!m) m = note.danger ? APP_DANGER : APP_DEFAULT;
@@ -759,10 +824,10 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST,
+        ROAD_TYPES, CONST, WP_TYPES, wpType, wpTypesForProfile, wpBadgeSVG,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
-        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote,
+        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         nearestIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,

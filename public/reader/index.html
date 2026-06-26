@@ -39,7 +39,11 @@
            (done/skipped/active/warn/close) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
         /* larger per-note readouts: partial km just under the total, coordinates legible */
-        #noteList .col-distance .partial { font-size: 1.4rem; }
+        #noteList .col-distance .partial { font-size: 1.6rem; }
+        /* the note number and its FIA waypoint-type badge sit side by side at the bottom of the column */
+        #noteList .col-distance .num-row { margin-top: auto; display: flex; align-items: center; gap: .4rem; }
+        #noteList .col-distance .num-row .num { margin-top: 0; align-self: center; }
+        #noteList .col-distance .num-row .wp-badge { display: block; flex-shrink: 0; }
         #noteList .col-text .coords { font-size: .9rem; }
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */

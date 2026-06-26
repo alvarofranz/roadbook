@@ -33,8 +33,23 @@
         .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
         /* the icon search sits on its own row above the icons; it grows to fill the width */
         #iconSearch { min-width: 0; }
-        #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot { flex-shrink: 0; }
+        #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot, #wpTypeSlot, #wpRadiusSlot { flex-shrink: 0; }
         #roadSlot select, #dangerSlot select, #speedSlot select, #capTypeSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
+        #wpRadiusSlot input { width: 4.2rem; padding: .3rem .4rem; }
+        /* the waypoint-type badge (RB.wpBadgeSVG) shown in a note row, next to the number */
+        .note-mini .wp-badge { display: block; flex-shrink: 0; margin-top: .15rem; }
+        /* WP-type custom dropdown — each option shows its colour badge (a <select> can't) */
+        .wp-dd-wrap { position: relative; }
+        .wp-dd-btn { display: inline-flex; align-items: center; gap: .4rem; width: auto; min-width: 7rem; padding: .3rem .5rem; cursor: pointer; text-align: left; }
+        .wp-dd-btn .wp-badge { flex-shrink: 0; }
+        .wp-dd-chev { margin-left: auto; padding-left: .3rem; color: var(--muted); }
+        .wp-dd-none { color: var(--muted); }
+        .wp-dd-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; width: 250px; max-height: 300px; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: .3rem; }
+        .wp-dd-opt { display: flex; align-items: center; gap: .5rem; width: 100%; background: none; border: 0; color: var(--text); font: inherit; text-align: left; padding: .35rem .5rem; border-radius: 7px; cursor: pointer; }
+        .wp-dd-opt:hover { background: var(--card-2); }
+        .wp-dd-opt.on { background: rgba(232, 176, 89, .14); }
+        .wp-dd-opt .wp-dd-cap { font-weight: 800; min-width: 2.6rem; }
+        .wp-dd-opt .wp-dd-nm { color: var(--muted); font-size: .82rem; }
         /* Labelled property selects, one row above the icon search (Road / Danger / Speed / CAP type) */
         .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
         .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
@@ -309,7 +324,7 @@
                     </div>
                     <div class="vig-icons">
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span></div>
+                        <div class="ed-row"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
                         <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
@@ -343,6 +358,8 @@
                 <label class="meta-field full"><span data-i18n="Description">Description</span><textarea id="rbDesc" class="field" rows="2" placeholder="Shown on the public challenge page" data-i18n-ph="Shown on the public challenge page" maxlength="600"></textarea></label>
                 <label class="meta-field"><span data-i18n="Author">Author</span><input type="text" id="rbAuthor" class="field" placeholder="Author name" data-i18n-ph="Author name" maxlength="120"></label>
                 <label class="meta-field"><span data-i18n="Organization">Organization</span><input type="text" id="rbOrg" class="field" placeholder="Organization" data-i18n-ph="Organization" maxlength="120"></label>
+                <label class="meta-field"><span data-i18n="Roadbook type">Roadbook type</span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
+                <label class="meta-field"><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="—" data-i18n-ph="Per-type default"></label>
                 <div class="meta-field"><span data-i18n="Last modified">Last modified</span><span id="rbModified" class="meta-value">—</span></div>
                 <div class="meta-field full">
                     <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span></label>

@@ -15,7 +15,7 @@
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true });
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true, wpIconsToggle: true });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.
@@ -179,6 +179,14 @@
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0); // delete only exists once it's saved
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
+    // The declarative speed_limit drives the vignette symbol: keep exactly one S-icon matching the
+    // value (S99_end for a lifted limit, 0), or none. 130 km has no palette icon, so none is added.
+    const SPEED_ICON = { 0: 'S99_end.svg', 10: 'S01_10km.svg', 20: 'S02_20km.svg', 30: 'S03_30km.svg', 40: 'S04_40km.svg', 50: 'S05_50km.svg', 60: 'S06_60km.svg', 70: 'S07_70km.svg', 80: 'S08_80km.svg', 90: 'S09_90km.svg', 100: 'S10_100km.svg', 110: 'S11_110km.svg', 120: 'S12_120km.svg' };
+    function syncSpeedIcon(n) {
+        n.icons = (n.icons || []).filter((ic) => RB.speedLimitFromName((ic.name || '').split('/').pop()) == null); // drop any existing speed symbol
+        const name = n.speed_limit == null ? null : SPEED_ICON[n.speed_limit];
+        if (name) n.icons.push(mkIcon(name, [0, 0]));
+    }
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
@@ -627,6 +635,8 @@
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
         $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
+        $('cfgProfile').value = rb.meta.profile === 'rally' ? 'rally' : 'basic'; // absent ⇒ basic
+        $('cfgWpRadius').value = rb.meta.default_wp_radius != null ? rb.meta.default_wp_radius : ''; // absent ⇒ per-type defaults
         updatePhotos(); updateAudio(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
         sel = 0;
@@ -698,6 +708,28 @@
     $('backToMap').onclick = () => showView('map');
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
     $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
+    // Roadbook profile scopes the WP-type vocabulary. Basic is the default → stored absent
+    // (clean files); only 'rally' is persisted. Switching to Basic clears any rally-only types.
+    $('cfgProfile').onchange = (e) => {
+        if (!rb) return;
+        if (e.target.value === 'rally') rb.meta.profile = 'rally'; else delete rb.meta.profile;
+        if (e.target.value !== 'rally') { // drop types no longer offered
+            const core = new Set(RB.wpTypesForProfile('basic').map((w) => w.id));
+            rb.notes.forEach((n) => { if (n.wp_type && !core.has(n.wp_type)) delete n.wp_type; }); // keep wp_radius (independent of type)
+        }
+        markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
+    };
+    // Roadbook-wide default validation radius (metres); a typed note with no explicit wp_radius
+    // prefills from this, else from the type's catalog default. Absent ⇒ per-type defaults.
+    $('cfgWpRadius').onchange = (e) => {
+        if (!rb) return;
+        const v = parseInt(e.target.value, 10);
+        if (isFinite(v) && v > 0) {
+            rb.meta.default_wp_radius = v;
+            rb.notes.forEach((n) => { if (n.wp_radius == null) n.wp_radius = v; }); // fill every note that has no radius yet
+        } else delete rb.meta.default_wp_radius;
+        markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
+    };
     window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { saveDraft(); e.preventDefault(); e.returnValue = ''; } });
 
     /* ---------- record / adjust route (live GPS) ---------- */
@@ -1114,7 +1146,7 @@
             if (best >= 0 && bd <= 80) (photosByNote[best] = photosByNote[best] || []).push(p);
         });
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                <span class="note-number">${n.num}</span>
+                <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}</span>
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
@@ -1238,13 +1270,59 @@
             + [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130].map((v) => `<option value="${v}" ${n.speed_limit === v ? 'selected' : ''}>${v}</option>`).join('')
             + `<option value="0" ${n.speed_limit === 0 ? 'selected' : ''}>${t('End of limit')}</option>`;
         $('speedSlot').innerHTML = `<label class="prop-field"><span>${t('Speed')}</span><select id="edSpeed" class="field">${speedOpts}</select></label>`;
-        $('edSpeed').onchange = (e) => { const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v; markDirty(); };
+        $('edSpeed').onchange = (e) => {
+            const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v;
+            syncSpeedIcon(n); // the matching S-icon follows the limit (set/changed/lifted/cleared)
+            markDirty(); canvas.setNote(n); canvas.render(); renderNotes();
+        };
         // CAP type qualifies an existing CAP (FIA: exit/average/calculated/turning); exit is the
         // implicit default, stored absent. Disabled until the note carries a CAP.
         const capTypeOpts = [['', 'Exit'], ['average', 'Average'], ['calculated', 'Calculated'], ['turning', 'Turning']]
             .map(([v, l]) => `<option value="${v}" ${(n.cap_type || '') === v ? 'selected' : ''}>${t(l)}</option>`).join('');
         $('capTypeSlot').innerHTML = `<label class="prop-field"><span>${t('CAP type')}</span><select id="edCapType" class="field"${n.cap == null ? ' disabled' : ''}>${capTypeOpts}</select></label>`;
         $('edCapType').onchange = (e) => { const v = e.target.value; if (v) n.cap_type = v; else delete n.cap_type; markDirty(); };
+        // WP type (FIA characterization): a custom dropdown so each option shows its colour badge
+        // (a <select> can't). Scoped by the roadbook profile (core always, rally adds the full set);
+        // picking a radius-bearing type prefills its default validation radius.
+        const cur = RB.wpType(n.wp_type);
+        const curHtml = cur ? RB.wpBadgeSVG(cur.id, 20) + `<span>${esc(t(cur.name))}</span>` : `<span class="wp-dd-none">${esc(t('None'))}</span>`;
+        const optRow = (id, inner) => `<button type="button" class="wp-dd-opt${id === (n.wp_type || '') ? ' on' : ''}" role="option" data-id="${id}">${inner}</button>`;
+        const menuHtml = optRow('', `<span class="wp-dd-none">— ${esc(t('None'))}</span>`)
+            + RB.wpTypesForProfile(rb.meta && rb.meta.profile).map((w) =>
+                optRow(w.id, RB.wpBadgeSVG(w.id, 20) + `<span class="wp-dd-cap">${esc(w.cap)}</span><span class="wp-dd-nm">${esc(t(w.name))}</span>`)).join('');
+        $('wpTypeSlot').innerHTML = `<div class="prop-field wp-dd"><span>${t('WP type')}</span>
+            <div class="wp-dd-wrap">
+                <button type="button" class="field wp-dd-btn" id="wpDDBtn" aria-haspopup="listbox" aria-expanded="false">${curHtml}<span class="wp-dd-chev">▾</span></button>
+                <div class="wp-dd-menu" id="wpDDMenu" role="listbox" hidden>${menuHtml}</div>
+            </div></div>`;
+        const ddBtn = $('wpDDBtn'), ddMenu = $('wpDDMenu');
+        const closeDD = () => { ddMenu.hidden = true; ddBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', onDocClick); };
+        function onDocClick(e) { if (!ddMenu.contains(e.target) && !ddBtn.contains(e.target)) closeDD(); }
+        ddBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (ddMenu.hidden) { ddMenu.hidden = false; ddBtn.setAttribute('aria-expanded', 'true'); setTimeout(() => document.addEventListener('click', onDocClick)); }
+            else closeDD();
+        };
+        ddMenu.querySelectorAll('.wp-dd-opt').forEach((b) => b.onclick = () => {
+            closeDD();
+            const v = b.dataset.id, w = RB.wpType(v);
+            if (w) {
+                n.wp_type = v;
+                if (n.wp_radius == null) { // prefill: roadbook default first, then the type's catalog default
+                    const def = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : w.radius;
+                    if (def != null) n.wp_radius = def;
+                }
+            } else { delete n.wp_type; } // radius is independent of type → keep any set wp_radius
+            markDirty(); renderEditor(); renderNotes();
+        });
+        // Validation radius (metres) — available for EVERY waypoint, typed or not. Empty falls back
+        // (at runtime) to the roadbook default, then the type's default; the placeholder shows that
+        // effective fallback so the author sees what's in force.
+        const typeDef = RB.wpType(n.wp_type) ? RB.wpType(n.wp_type).radius : null;
+        const fallback = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : (typeDef != null ? typeDef : null);
+        const radPh = fallback != null ? String(fallback) : t('Default');
+        $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${t('Radius m')}</span><input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${esc(radPh)}"></label>`;
+        $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); };
     }
     // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).
     function toggleCapAt(i) {
@@ -1535,7 +1613,7 @@
                 <button class="btn btn-primary" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
             </div>
             <h3>${esc(t('GPX'))}</h3>
-            <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track'))}</label>
+            <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track line'))}</label>
             <label class="checkbox-row"><input type="checkbox" data-g="wpt" checked> ${esc(t('Waypoints (notes)'))}</label>
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>

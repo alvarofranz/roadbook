@@ -275,7 +275,9 @@ integer metres.** Spec page: `public/standard/index.html`.
   "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str,
              "author"?: str, "organization"?: str, "modified"?: str /* YYYY-MM-DD */,
              "logo"?: str /* base64 data: URI, embedded like the icons */,
-             "map_access"?: bool /* may the Reader show a map? absent/true = yes, false = hidden */ },
+             "map_access"?: bool /* may the Reader show a map? absent/true = yes, false = hidden */,
+             "profile"?: "basic"|"rally" /* waypoint-type vocabulary scope; absent = basic */,
+             "default_wp_radius"?: int /* roadbook-wide default validation radius (m) for waypoints without their own */ },
   "track": [ { "lat": float, "lon": float, "ele"?: int } ],   // ordered polyline
   "notes": [ {
     "num": int, "idx": int,                                   // idx → index into track[]
@@ -288,6 +290,8 @@ integer metres.** Spec page: `public/standard/index.html`.
     "road_type_in": 0..4, "road_type_out": 0..4,
     "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
+    "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|security|navigation|precise|visible|eclipse + start/finish/zone/control markers); editor badge + GPX sym
+    "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (Reader use is deferred — issue #87)
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
     "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..4 } ]
   } ],

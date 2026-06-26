@@ -82,6 +82,8 @@
         <tr><td><code>modified</code></td><td>string</td><td data-i18n-html="meta.modified">Optional. Last-modified date, ISO <code>YYYY-MM-DD</code>.</td></tr>
         <tr><td><code>logo</code></td><td>string</td><td data-i18n-html="meta.logo">Optional. Event logo as a base64 <code>data:</code> URI (embedded, self-contained — like the symbols in <code>icons</code>).</td></tr>
         <tr><td><code>map_access</code></td><td>boolean</td><td data-i18n-html="meta.map_access">Optional. Whether a reader may show a map of the route while navigating. Absent or <code>true</code> = allowed; <code>false</code> hides the map (e.g. competitions where map-reading would be cheating).</td></tr>
+        <tr><td><code>profile</code></td><td>string, optional</td><td data-i18n="meta.profile">Optional. Scopes the waypoint-type vocabulary an editor offers: <code>basic</code> (default, essential markers only) or <code>rally</code> (full FIA set). Absent = basic. Editorial only — it does not change how a reader interprets the file.</td></tr>
+        <tr><td><code>default_wp_radius</code></td><td>integer, optional</td><td data-i18n="meta.default_wp_radius">Optional. Roadbook-wide default validation radius (metres) for waypoints that carry no <code>wp_radius</code> of their own.</td></tr>
     </table>
 
     <h2 id="track">track</h2>
@@ -110,6 +112,8 @@
         <tr><td><code>road_type_out</code></td><td>0–4</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
         <tr><td><code>speed_limit</code></td><td>integer, optional</td><td data-i18n="Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.">Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.</td></tr>
         <tr><td><code>danger</code></td><td>1–3, optional</td><td data-i18n-html="notes.danger">FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
+        <tr><td><code>wp_type</code></td><td>string, optional</td><td data-i18n="notes.wp_type">Optional. FIA waypoint type: the seven types masked / control / security / navigation / precise / visible / eclipse, plus the start/finish, selective-section, zone and control markers. Rendered as a coloured acronym badge by the note number and mapped to a Garmin/OSMAnd symbol on GPX export.</td></tr>
+        <tr><td><code>wp_radius</code></td><td>integer, optional</td><td data-i18n="notes.wp_radius">Optional. Per-note validation radius (metres). When absent, falls back to <code>meta.default_wp_radius</code> then the type default.</td></tr>
         <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
         <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
     </table>

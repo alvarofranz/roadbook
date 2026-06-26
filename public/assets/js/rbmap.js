@@ -31,7 +31,8 @@ window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
         this._headingUp = true; this._posArrow = null; // heading-up rotation (opt-in), live-position chevron
-        const { layerToggle, geolocate, headingToggle, ...mapOpts } = opts; // ours, not MapLibre options
+        this._wpIcons = false; this._wpMarkers = []; this._lastNotes = null; // WP-type icon overlay (opt-in)
+        const { layerToggle, geolocate, headingToggle, wpIconsToggle, ...mapOpts } = opts; // ours, not MapLibre options
         const cont = document.getElementById(containerId);
         if (!window.maplibregl) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable.</div>';
@@ -54,6 +55,7 @@ window.RBMap = class RBMap {
         this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
         if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
         if (headingToggle) this.map.addControl(headingToggleControl(this), 'top-right');
+        if (wpIconsToggle) this.map.addControl(wpIconsToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
         m.on('click', 'rb-wpts', (e) => { if (this._wptMoved || !this._onWpt || !e.features[0]) return; this._onWpt(parseInt(e.features[0].properties.i, 10)); });
@@ -227,7 +229,20 @@ window.RBMap = class RBMap {
         });
         this._noteIdx = new Set(rb.notes.map((n) => n.idx)); // points carrying a note get the blue marker, not a white vertex dot
         if (this._vertShow) this._paintVerts(rb.track); // keep the vertex dots in sync (and visible on first load)
+        this._lastNotes = rb.notes; this._paintWpIcons(); // refresh the WP-type icon overlay when it's on
         if (!noFit) this._fit(rb);
+    }
+    // WP-type icon overlay: when on, each note carrying a wp_type shows its colour badge over
+    // its dot (visual only — pointer-events:none, so clicks/drag still reach the marker layer).
+    setWpIcons(on) { this._wpIcons = !!on; this._paintWpIcons(); }
+    _paintWpIcons() {
+        this._wpMarkers.forEach((mk) => mk.remove()); this._wpMarkers = [];
+        if (!this._wpIcons || !this.map || !this._lastNotes || !window.RB || !RB.wpBadgeSVG) return;
+        this._lastNotes.forEach((n) => {
+            const svg = RB.wpBadgeSVG(n.wp_type, 30); if (!svg) return;
+            const el = document.createElement('div'); el.className = 'rb-wp-badge'; el.innerHTML = svg;
+            this._wpMarkers.push(new maplibregl.Marker({ element: el }).setLngLat([n.lon, n.lat]).addTo(this.map));
+        });
     }
     // Live recording: draw the growing track + waypoint + geolocated-photo markers.
     setLiveTrack(pts, wpts, photos) {
@@ -336,6 +351,26 @@ function headingToggleControl(rbmap) {
             b.innerHTML = '<i class="fa-solid fa-location-arrow" aria-hidden="true"></i>';
             const sync = () => b.classList.toggle('rb-ctrl-on', rbmap._headingUp);
             b.onclick = () => { rbmap.setHeadingUp(!rbmap._headingUp); sync(); };
+            sync();
+            c.appendChild(b); this._c = c;
+            return c;
+        },
+        onRemove() { this._c.remove(); },
+    };
+}
+// A control button that toggles the WP-type icon overlay (each note's badge over its dot).
+function wpIconsToggleControl(rbmap) {
+    return {
+        onAdd() {
+            const c = document.createElement('div');
+            c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.title = window.RBt ? RBt('Waypoint icons') : 'Waypoint icons';
+            b.setAttribute('aria-label', b.title);
+            b.innerHTML = '<i class="fa-solid fa-location-dot" aria-hidden="true"></i>';
+            const sync = () => b.classList.toggle('rb-ctrl-on', rbmap._wpIcons);
+            b.onclick = () => { rbmap.setWpIcons(!rbmap._wpIcons); sync(); };
             sync();
             c.appendChild(b); this._c = c;
             return c;

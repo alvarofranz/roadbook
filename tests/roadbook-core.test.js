@@ -415,6 +415,48 @@ describe('appWaypointSymbol (Garmin/OSMAnd mapping for GPX export, #34)', () => 
         expect(r.osmandIcon).toBe('special_point');
         expect(r.color).toBe('#3a8dff'); // blue
     });
+    it('a declared wp_type wins over the icon and carries its sym/icon/colour', () => {
+        const r = RB.appWaypointSymbol({ wp_type: 'masked', icons: [{ name: 'I07_acqua_potabile.png' }] });
+        expect(r.sym).toBe('Flag, Blue');        // the masked-WP sym, not Drinking Water
+        expect(r.osmandIcon).toBe('special_marker');
+        expect(r.color).toBe('#a855f7');         // the type colour
+    });
+});
+
+describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
+    it('exposes a flat catalog with unique ids and a tier on every entry', () => {
+        const ids = RB.WP_TYPES.map((w) => w.id);
+        expect(ids.length).toBe(new Set(ids).size);
+        expect(RB.WP_TYPES.every((w) => w.tier === 'core' || w.tier === 'rally')).toBe(true);
+        expect(RB.WP_TYPES.every((w) => w.cap || w.glyph)).toBe(true); // a label to render
+    });
+    it('wpType() looks an entry up, and is null-safe on unset/unknown ids', () => {
+        expect(RB.wpType('masked').cap).toBe('WPM');
+        expect(RB.wpType('ss_start').color).toBe('#ee9a3c'); // FIA: zone start = orange
+        expect(RB.wpType(null)).toBeNull();
+        expect(RB.wpType('nope')).toBeNull();
+    });
+    it('wpTypesForProfile() scopes the vocabulary: core-only vs the full FIA set', () => {
+        const basic = RB.wpTypesForProfile('basic');
+        const rally = RB.wpTypesForProfile('rally');
+        expect(basic.every((w) => w.tier === 'core')).toBe(true);
+        expect(rally.length).toBe(RB.WP_TYPES.length);
+        expect(rally.length).toBeGreaterThan(basic.length);
+        expect(RB.wpTypesForProfile(undefined).length).toBe(basic.length); // absent profile ⇒ basic
+    });
+    it('radius-bearing FIA types carry a default radius; zone boundaries do not', () => {
+        expect(RB.wpType('precise').radius).toBe(30);
+        expect(RB.wpType('navigation').radius).toBe(90);
+        expect(RB.wpType('dz').radius).toBeUndefined();
+    });
+    it('wpBadgeSVG renders a solid roundel with the acronym, and is empty when unset', () => {
+        const svg = RB.wpBadgeSVG('dz', 26);
+        expect(svg).toContain('<svg');
+        expect(svg).toContain('#ee9a3c'); // the type colour fills the circle
+        expect(svg).toContain('>DZ</text>');
+        expect(RB.wpBadgeSVG(null)).toBe('');
+        expect(RB.wpBadgeSVG('nope')).toBe('');
+    });
 });
 
 describe('nearestOnTrack (project a point onto the polyline)', () => {

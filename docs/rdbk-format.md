@@ -64,6 +64,8 @@ Lo scheletro è prodotto da `buildRoadbook` in
 | `modified`       | string   | Opzionale. Data di ultima modifica, ISO `YYYY-MM-DD`.                       |
 | `logo`           | string   | Opzionale. Logo evento come data URI base64 (incorporato, come i simboli).  |
 | `map_access`     | boolean  | Opzionale. Se un reader può mostrare la mappa durante la navigazione. Assente o `true` = consentito; `false` nasconde la mappa (es. gare in cui leggere la mappa sarebbe sleale). |
+| `profile`        | string   | Opzionale. Ambito del vocabolario dei tipi di waypoint (`wp_type`): `basic` (default, solo i marcatori essenziali) o `rally` (set FIA completo). Assente = `basic`. Scopo solo editoriale (decide quali tipi propone l'editor). |
+| `default_wp_radius` | integer | Opzionale. Raggio di convalida (metri) di default a livello roadbook, usato dai waypoint senza un proprio `wp_radius`. |
 
 ---
 
@@ -103,6 +105,8 @@ la traccia GPS.
 | `road_type_in`     | 0–4             | Superficie in arrivo — vedi [§7 Tipi di strada](#7-tipi-di-strada).                |
 | `road_type_out`    | 0–4             | Superficie in uscita.                                                              |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
+| `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
+| `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). In assenza: `meta.default_wp_radius`, poi il default del tipo. L'uso a runtime nel Reader/Ranking è rinviato (issue #87): oggi il dato è solo modellato e mostrato. |
 | `icons`            | array           | Simboli posizionati — vedi [§6 Simboli](#6-simboli).                                |
 | `junctions`        | array \| null   | Vettori di incrocio — vedi [§8 Vettori di incrocio](#8-vettori-di-incrocio).       |
 
