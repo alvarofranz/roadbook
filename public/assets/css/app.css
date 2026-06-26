@@ -192,9 +192,21 @@ section.block { padding: 2.4rem 0; }
 .feat-item > i { color: var(--sand); font-size: 1.3rem; flex-shrink: 0; margin-top: .15rem; }
 .feat-item h3 { margin: 0 0 .25rem; font-size: 1rem; }
 .feat-item p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+/* prev/next nav across the tool feature pages */
+.feat-nav { display: flex; align-items: stretch; gap: .8rem; max-width: 720px; margin: 0 auto 1.6rem; }
+.feat-nav .next { margin-left: auto; }
+.feat-nav-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .55rem .9rem; color: var(--text); text-decoration: none; font-weight: 700; font-size: .9rem; transition: border-color .15s ease, transform .12s ease; }
+.feat-nav-link:hover { border-color: var(--sand); transform: translateY(-1px); text-decoration: none; }
+.feat-nav-link > i { color: var(--muted); }
+.feat-nav-link .tool { display: inline-flex; align-items: center; gap: .4rem; }
+.feat-nav-link .tool i { color: var(--sand); }
 .feat-plat { text-align: center; color: var(--muted); margin-top: 1.6rem; font-size: .9rem; }
 .feat-plat i { color: var(--sand); margin: 0 .15rem 0 .6rem; }
 .feat-more { font-size: .82rem; font-weight: 700; margin-top: .4rem; display: inline-block; }
+/* a feature card for an upcoming capability: dimmed, dashed, with a "Coming soon" pill */
+.flow .step.soon { border-style: dashed; opacity: .85; }
+.flow .step.soon i { color: var(--muted); }
+.soon-badge { display: inline-block; vertical-align: middle; margin-left: .4rem; background: var(--card-2); border: 1px solid var(--line); color: var(--sand); border-radius: 999px; padding: .05rem .5rem; font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 /* one-time cookie / storage notice (#95) — honest essential-only notice, not a consent wall */
 .cookie-notice { position: fixed; left: 0; right: 0; bottom: 0; z-index: 200; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0, 0, 0, .35); padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom)); }
 .cookie-notice .cookie-text { color: var(--muted); font-size: .86rem; max-width: 70ch; }
@@ -281,6 +293,10 @@ section.block { padding: 2.4rem 0; }
 .workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
 .workflow .wf-step i { font-size: 1.7rem; color: var(--sand); }
 .workflow .wf-step span { font-size: .82rem; font-weight: 700; max-width: 12ch; }
+/* workflow steps link to their feature page — keep the styling, just add a subtle hover */
+.workflow a.wf-step { color: inherit; text-decoration: none; transition: transform .12s ease; }
+.workflow a.wf-step:hover { transform: translateY(-2px); }
+.workflow a.wf-step:hover span { color: var(--sand); }
 .workflow .wf-arrow { color: var(--muted); font-size: 1.3rem; font-weight: 700; }
 @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
