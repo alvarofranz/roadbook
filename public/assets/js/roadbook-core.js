@@ -261,7 +261,11 @@
                 icons: [], junctions: null,
             };
             if (r.danger >= 1 && r.danger <= 3) note.danger = Math.round(r.danger);
-            if (r.or.length) note.openrally = r.or; // verbatim passthrough of every other openrally: param
+            const orPass = r.or.filter((e) => {
+                if (e.tag === 'wptType') { if (wpType(e.text)) note.wp_type = e.text; return false; }
+                return true;
+            });
+            if (orPass.length) note.openrally = orPass;
             const t = tulipToDataURL(r.tulip);
             // The tulip is the whole vignette → a `cover` icon (NoteCanvas renders it full-box, alone).
             if (t) { const key = 'tulip-' + (i + 1) + (/^data:image\/png/i.test(t) ? '.png' : '.svg'); icons[key] = t; note.icons.push({ name: key, cover: true }); }
@@ -675,6 +679,7 @@
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
+            if (n.wp_type) ext.push(`<openrally:wptType>${x(n.wp_type)}</openrally:wptType>`);
             if (Array.isArray(n.openrally) && n.openrally.length) {
                 // imported note: re-emit every preserved param verbatim (cap·danger·speed·wp types·zones·…)
                 n.openrally.forEach((e) => ext.push(emitOr(e)));

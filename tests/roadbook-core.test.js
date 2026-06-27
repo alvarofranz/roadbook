@@ -541,6 +541,20 @@ describe('OpenRally round-trip (openRallyDocument → parseOpenRally)', () => {
         expect(back.rb.notes[1].lat).toBeCloseTo(rb.notes[1].lat, 5);
         expect(back.rb.notes[1].lon).toBeCloseTo(rb.notes[1].lon, 5);
     });
+    it('emits <openrally:wptType> when a note has wp_type', () => {
+        const track = [{ lat: 45, lon: 9 }, { lat: 45, lon: 9.001 }, { lat: 45.001, lon: 9.002 }];
+        const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
+        rb.notes[0].wp_type = 'masked';
+        const xml = RB.openRallyDocument(rb, { tulips: [] });
+        expect(xml).toContain('<openrally:wptType>masked</openrally:wptType>');
+        expect(xml.split('<openrally:wptType>').length - 1).toBe(1);
+    });
+    it('does not emit wptType for notes without wp_type', () => {
+        const track = [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }];
+        const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
+        const xml = RB.openRallyDocument(rb, { tulips: [] });
+        expect(xml).not.toContain('wptType');
+    });
 });
 
 describe('NoteCanvas.toSVG (vignette render)', () => {
