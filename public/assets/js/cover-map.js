@@ -50,7 +50,7 @@
             ctx.lineJoin = ctx.lineCap = 'round'; ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
         };
         stroke('rgba(13,18,26,0.55)', 11); // dark glow under the route for contrast on busy tiles
-        stroke('#e8b059', 6);
+        stroke('#ff5a45', 6); // RDBK track red
         const dot = (p, color) => { ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, 2 * Math.PI); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = '#0d121a'; ctx.stroke(); };
         dot(pts[0], '#3ddc84'); dot(pts[pts.length - 1], '#ff5a45'); // start / finish
 
