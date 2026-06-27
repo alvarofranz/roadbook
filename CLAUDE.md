@@ -13,9 +13,11 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   DB schema = `migrations/*.sql` (source of truth); 4 tables: `users`, `roadbooks`,
   `roadbook_photos`, `api_tokens`.
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
-- UI languages: **English (default) · Spanish · Italian**, browser auto-detected. All
-  translation lives in `public/assets/js/i18n.js` (source-string keys; `data-i18n`,
-  `data-i18n-html`, `data-i18n-ph` in HTML; `RBi18n.t()` + auto-translating `RBToast()` in JS).
+- UI languages: **English (default) · Spanish · Italian · German · French**, browser
+  auto-detected. English is the source (in `i18n.js`); each other language lives in its own
+  `public/assets/js/i18n.<lang>.js` (loaded before `i18n.js`, merged via `window.RBi18nLangs`).
+  Source-string keys; `data-i18n` / `data-i18n-html` / `data-i18n-ph` / `data-i18n-title` /
+  `data-i18n-aria` / `data-i18n-tip` in HTML; `RBt()` + auto-translating `RBToast()` in JS.
 
 ## Working guidelines (read first)
 - **Think, don't just obey.** Do NOT blindly do whatever the user says. If a request is
@@ -67,8 +69,10 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), plus the global header/footer (minimal nav, full-viewport
     mobile menu), version auto-refresh and install button.
-  - **`i18n.js`**: `RBt(key)` (translate; falls back to the key) + `data-i18n` / `data-i18n-html`
-    / `data-i18n-ph` in HTML. Keep `es`/`it` at full key parity with the English source strings.
+  - **`i18n.js`** (+ per-language `i18n.<lang>.js`): `RBt(key)` (translate; a missing key falls
+    back to English, then to the key) + `data-i18n` / `data-i18n-html` / `data-i18n-ph` /
+    `data-i18n-title` / `data-i18n-aria` / `data-i18n-tip` in HTML. Keep **every** language file
+    (`es`/`it`/`de`/`fr`) at full key parity with the English source strings.
   - **`roadbook-core.js`** (`RB.*`): geo math, GPX/WPT parsing, `buildRoadbook`, metrics/CAPs,
     QR meta, signing. **`note-canvas.js`**: `NoteCanvas` editor + `NoteCanvas.toSVG` (the
     vignette, used by the Reader rows and the challenge page). **`rbmap.js`** (`RBMap`): MapLibre helper (Editor + Reader map).
@@ -261,8 +265,8 @@ projects. See `NATIVE.md`.
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
   label is "public roadbook", with "challenge" reserved for the future events feature.)
-- `i18n.js`, `app.js` (global header/footer, SW + version auto-refresh, Install button,
-  account control, styled modals), `config.js`, `qrcode.min.js`.
+- `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
+  auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
 
 ## Native apps (iOS + Android)
 Capacitor wraps `public/` into native shells; the web stays the single source of truth.
