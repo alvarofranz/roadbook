@@ -70,6 +70,7 @@
             'Export GPX': 'Exportar GPX', 'Export OpenRally GPX': 'Exportar GPX OpenRally',
             'Export': 'Exportar', '.rdbk file': 'Archivo .rdbk', 'Track line': 'Traza', 'Waypoints (notes)': 'Waypoints (notas)', 'Garmin icons': 'Iconos Garmin', 'OSMAnd icons': 'Iconos OSMAnd', 'Pick at least one GPX type.': 'Elige al menos un tipo de GPX.', 'Delete me to export the edited tulip': 'Bórrame para exportar el tulip editado',
             'Settings': 'Ajustes', 'Generate PDF': 'Generar PDF', 'Roadbook configuration': 'Configuración del roadbook',
+            'Identity': 'Identidad', 'Waypoints & scoring': 'Waypoints y puntuación', 'Visibility & map': 'Visibilidad y mapa',
             'Map access from player': 'Acceso al mapa desde el player', 'Allow the map in the Reader': 'Permitir el mapa en el Reader',
             'Route': 'Ruta', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': '¿Invertir toda la ruta? Salida y llegada se intercambian y se recalculan todas las viñetas.',
             'Map style': 'Estilo de mapa', 'Page': 'Página', 'of': 'de', 'Total km': 'Km totales', 'Generating PDF…': 'Generando PDF…',
