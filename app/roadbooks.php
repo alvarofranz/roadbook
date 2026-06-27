@@ -147,7 +147,8 @@ function ph_list(?array $user, array $d): void {
     $rb = $st->fetch();
     if (!$rb) fail('Not found.', 404);
     if (!(int)$rb['is_public'] && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
-    $p = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_photos WHERE roadbook_id = ? ORDER BY sort, id');
+    // the reserved cover ('_map.avif') is the listing thumbnail, not a gallery photo → never listed here
+    $p = db()->prepare("SELECT id, filename, lat, lon FROM roadbook_photos WHERE roadbook_id = ? AND filename <> '_map.avif' ORDER BY sort, id");
     $p->execute([$rbId]);
     $photos = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/photos/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $p->fetchAll());
     json_out(['ok' => true, 'photos' => $photos]);
@@ -232,10 +233,12 @@ function public_get(array $d): void {
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
     $rb = json_decode((string)file_get_contents($path), true);
-    $p = db()->prepare('SELECT id, filename FROM roadbook_photos WHERE roadbook_id = ? ORDER BY sort, id');
+    // gallery photos exclude the reserved route-map cover; it is returned separately as `cover`
+    $p = db()->prepare("SELECT id, filename FROM roadbook_photos WHERE roadbook_id = ? AND filename <> '_map.avif' ORDER BY sort, id");
     $p->execute([$row['id']]);
     $photos = array_map(fn($r) => '/photos/' . $row['id'] . '/' . $r['filename'], $p->fetchAll());
-    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'is_public' => (int)$row['is_public'], 'roadbook' => $rb, 'photos' => $photos,
+    $cover = is_file($CFG['photos_dir'] . '/' . $row['id'] . '/_map.avif') ? '/photos/' . $row['id'] . '/_map.avif' : null;
+    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'is_public' => (int)$row['is_public'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
         'owner' => ['username' => $row['username'], 'name' => trim($row['first_name'] . ' ' . $row['last_name']), 'bio' => $row['bio'], 'avatar' => $row['avatar']]]);
 }
 

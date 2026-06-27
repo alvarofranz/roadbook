@@ -70,4 +70,21 @@ if ($type === 'photo') {
     json_out(['ok' => true, 'id' => $pid, 'url' => '/photos/' . $rbId . '/' . $fn, 'lat' => $lat, 'lon' => $lon]);
 }
 
+if ($type === 'cover') {
+    // The roadbook's auto-generated route-map cover: a single reserved gallery entry under a fixed
+    // name, overwritten on every save. It is the home/listing thumbnail (sort -1 = first) but is
+    // excluded from the public photo swipe (see roadbooks.php). Generated client-side (cover-map.js).
+    $rbId = (int)($_POST['roadbook'] ?? 0);
+    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st->execute([$rbId, $user['id']]);
+    if (!$st->fetch()) fail('Roadbook not found.', 404);
+    $fn = '_map.avif';
+    $dest = $CFG['photos_dir'] . '/' . $rbId . '/' . $fn;
+    if (!process_to_avif($tmp, $dest, 1200, false, 55)) fail('Could not process the image.');
+    $ex = db()->prepare('SELECT id FROM roadbook_photos WHERE roadbook_id = ? AND filename = ?');
+    $ex->execute([$rbId, $fn]);
+    if (!$ex->fetch()) db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,?)')->execute([$rbId, $fn, null, null, -1]);
+    json_out(['ok' => true, 'url' => '/photos/' . $rbId . '/' . $fn]);
+}
+
 fail('Unknown upload type.');

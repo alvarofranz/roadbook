@@ -957,6 +957,16 @@
         if (!(await confirmOpenCuts())) return;
         const r = await doSave();
         toast(r.ok ? (isPublic && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
+        if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
+    }
+    // Generate the roadbook's cover map (route over CyclOSM tiles) and store it under its reserved
+    // filename. Best-effort and non-blocking: a missing cover just falls back to the route shape.
+    async function updateCover() {
+        if (!window.RBCoverMap) return;
+        try {
+            const blob = await RBCoverMap.capture(rb.track);
+            if (blob) await RBUpload({ type: 'cover', roadbook: String(currentRbId) }, new File([blob], 'cover.png', { type: 'image/png' }));
+        } catch (e) { /* a cover is non-essential — never let it break a save */ }
     }
     $('saveAccount').onclick = saveRoadbook;
     $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
