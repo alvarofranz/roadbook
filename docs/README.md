@@ -28,6 +28,8 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 - [pdf](pdf.md) — `RBPdf`: generazione PDF A4 del roadbook sul dispositivo.
 
 ## Pagine utente e statiche
+- [home-page](home_page.md) — la galleria della home (teaser dei roadbook pubblici) e la
+  generazione della **cover** di ogni roadbook (mappa statica della rotta) usata come miniatura.
 - [account-pages](account-pages.md) — home, profilo, I miei roadbook, privacy.
 
 ## Backend
