@@ -278,7 +278,7 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   watch in the app, the Web Geolocation watch otherwise.
 - **One contextual home:** `index.html` shows the marketing landing on the web and the
   field-tool launcher in the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second
-  page. App scope: **Reader · Tripmaster · Recorder** (Editor and Ranking stay web-only).
+  page. App scope: **Reader · Editor · Tripmaster · Recorder · Ranking** — all tools available in the app.
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
   client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token
   only inside the app.

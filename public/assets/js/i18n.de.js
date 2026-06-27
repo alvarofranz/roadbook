@@ -31,7 +31,7 @@
             'help.defRadius': 'Ein Validierungsradius, der nur für Notes ohne eigenen Radius gilt. Leer greift jeder Waypoint auf den Standard seines Typs zurück.',
             'help.mapAccess': 'Wenn aktiv, darf der Reader die Karte anzeigen. Deaktivieren, damit Leser nur anhand der Roadbook-Notes navigieren.',
             'help.route': 'Umkehren dreht die Fahrtrichtung um – Track, Note-Reihenfolge und alle Peilungen werden neu berechnet.',
-            'Navigate a roadbook': 'Roadbook navigieren', 'GPS trip computer': 'GPS-Reisecomputer', 'Record a GPS track': 'GPS-Track aufzeichnen',
+            'Navigate a roadbook': 'Roadbook navigieren', 'Build a roadbook': 'Roadbook erstellen', 'GPS trip computer': 'GPS-Reisecomputer', 'Record a GPS track': 'GPS-Track aufzeichnen', 'Score events': 'Veranstaltungen bewerten',
             'Start new Roadbook from:': 'Neues Roadbook starten aus:', 'Start from a public RB': 'Öffentliches RB verwenden', 'Public Roadbooks': 'Öffentliche Roadbooks', 'Import a GPS track': 'GPS-Track importieren',
             'Open an existing roadbook': 'Vorhandenes Roadbook öffnen', 'Record route': 'Route aufzeichnen',
             'Record live with GPS': 'Live per GPS aufzeichnen', 'Start from a public one': 'Öffentliches verwenden',

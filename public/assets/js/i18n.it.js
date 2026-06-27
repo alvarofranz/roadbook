@@ -31,7 +31,7 @@
             'help.defRadius': 'Un raggio di validazione applicato solo alle note in cui non ne hai impostato uno. Se vuoto, ogni waypoint ricade sul valore predefinito del suo tipo.',
             'help.mapAccess': 'Quando attivo, il Reader può mostrare la mappa. Disattivalo per far navigare i lettori solo con le note del roadbook.',
             'help.route': 'Inverti cambia il senso di marcia: traccia, ordine delle note e tutti i rilevamenti vengono ricalcolati.',
-            'Navigate a roadbook': 'Naviga un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS',
+            'Navigate a roadbook': 'Naviga un roadbook', 'Build a roadbook': 'Prepara un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS', 'Score events': 'Classifica eventi',
             // ---- tools (the English string is the key) ----
             'Start new Roadbook from:': 'Crea un nuovo roadbook da:', 'Start from a public RB': 'Parti da un RB pubblico', 'Public Roadbooks': 'Roadbook pubblici', 'Import a GPS track': 'Importa una traccia GPS',
             'Open an existing roadbook': 'Apri un roadbook esistente', 'Record route': 'Registra percorso',
