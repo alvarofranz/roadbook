@@ -12,8 +12,16 @@
     const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}">${
         r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                 : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
+        <button type="button" class="card-copy" data-copy="${esc(r.slug)}" title="${esc(t('Copy link'))}" aria-label="${esc(t('Copy link'))}"><i class="fa-solid fa-link"></i></button>
         <div class="gallery-body"><h3>${esc(r.title)}</h3>
         <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div></div></a>`;
+
+    // the copy button lives inside the card link → don't let its click navigate
+    grid.addEventListener('click', (e) => {
+        const b = e.target.closest('.card-copy'); if (!b) return;
+        e.preventDefault(); e.stopPropagation();
+        RBCopy(RBReaderLink(b.dataset.copy));
+    });
 
     function render() {
         const filtered = (window.RB && RB.filterByText) ? RB.filterByText(all, q, ['title', 'username']) : all;

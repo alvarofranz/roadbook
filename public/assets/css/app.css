@@ -70,8 +70,13 @@ img { max-width: 100%; display: block; }
     .topnav { display: none; }
     /* full-viewport menu: big centred type, nothing else */
     .topbar.nav-open { backdrop-filter: none; background: var(--bg); }
-    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; background: var(--bg); }
+    /* full-viewport menu: scrollable + top-padded so every item (incl. the account submenu)
+       stays reachable on short screens; centered look kept via the padding. */
+    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.8rem; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(56px + 1.8rem) 1rem calc(1.8rem + env(safe-area-inset-bottom)); }
     .topnav.open .nav-link { font-size: 1.55rem; font-weight: 700; }
+    /* the account submenu flows inline inside the scrollable menu, not as an off-screen dropdown */
+    .topnav.open .account-control { flex-direction: column; align-items: center; gap: 1rem; }
+    .topnav.open .account-menu { position: static; margin: 0; box-shadow: none; }
     /* keep the brand logo visible at the top of the open full-viewport menu */
     .topbar.nav-open .brand { position: relative; z-index: 90; }
 }
@@ -226,8 +231,11 @@ section.block { padding: 2.4rem 0; }
 
 /* ---------- gallery (home) + demo picker ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-.gallery-card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
+.gallery-card { position: relative; display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
 .gallery-card:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+/* copy-share-link button overlaid on a public roadbook card */
+.card-copy { position: absolute; top: .5rem; right: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
+.card-copy:hover { background: var(--sand); color: var(--on-sand); }
 .gallery-card .thumb { aspect-ratio: 16/10; width: 100%; object-fit: cover; background: var(--card-2); display: block; }
 .gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
 .challenge-row-placeholder { width: 84px; height: 54px; border-radius: 8px; flex: 0 0 auto; background: var(--card); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.3rem; }

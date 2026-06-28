@@ -287,6 +287,7 @@
             <span class="rb-badge ${rb.is_public ? 'public' : 'private'}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBesc(RBt(rb.is_public ? 'Public' : 'Private'))}</span>
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
+            ${rb.is_public && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}&export=1" title="${RBesc(RBt('Export'))}" aria-label="${RBesc(RBt('Export'))}"><i class="fa-solid fa-file-export"></i></a>
             <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Save as'))}" aria-label="${RBesc(RBt('Save as'))}"><i class="fa-solid fa-clone"></i></button>
@@ -300,6 +301,7 @@
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
                 if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
             });
+            rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
         };
         const render = () => {
             const filtered = (window.RB && RB.filterRoadbooks) ? RB.filterRoadbooks(all, q) : all;
@@ -328,6 +330,13 @@
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
     };
+    // Copy text (e.g. a roadbook share link) to the clipboard, with a translated toast.
+    window.RBCopy = async (text) => {
+        try { await navigator.clipboard.writeText(text); RBToast('Link copied'); }
+        catch (e) { RBToast('Could not copy the link.'); }
+    };
+    // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL.
+    window.RBReaderLink = (slug) => location.origin + '/reader/' + encodeURIComponent(slug);
     // API auth: a Capacitor webview can't carry the cross-origin session cookie, so in the
     // native apps login returns a Bearer token we store and replay on every call. In the
     // browser this is completely inert — the httponly session cookie is used as before and
