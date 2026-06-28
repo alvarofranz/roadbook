@@ -119,23 +119,10 @@
         loadRoadbooks();
     }
 
-    // Public-roadbook moderation: list every public roadbook + a force-private control.
+    // Public-roadbook moderation: the shared RBPublicRoadbooksList renders the cards + force-private.
     async function loadRoadbooks() {
-        const r = await api('admin_roadbooks');
-        if (!r.ok) return;
-        const list = r.roadbooks || [];
-        $('pubHeading').hidden = false; $('rbBox').hidden = false;
-        const body = $('rbBody');
-        body.innerHTML = list.length ? list.map((rb) => `<tr>
-            <td><a href="../challenge/${esc(rb.slug)}" target="_blank" rel="noopener">${esc(rb.title)}</a><div class="u-handle">${RBSummary(rb.total_distance, rb.note_count)}</div></td>
-            <td>@${esc(rb.username)}</td>
-            <td><button class="btn btn-ghost" data-unpub="${rb.id}" data-title="${esc(rb.title)}"><i class="fa-solid fa-lock"></i> ${esc(t('Make private'))}</button></td>
-        </tr>`).join('') : `<tr><td colspan="3" class="muted">${esc(t('No public roadbooks yet.'))}</td></tr>`;
-        body.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirm(t('Make this roadbook private?') + ' “' + (b.dataset.title || '') + '”', t('Make private')))) return;
-            const x = await api('admin_unpublish', { id: +b.dataset.unpub });
-            if (x.ok) { toast('Roadbook is now private.'); loadRoadbooks(); } else toast(x.error || 'Could not change visibility.');
-        });
+        $('pubHeading').hidden = false; $('pubList').hidden = false;
+        RBPublicRoadbooksList($('pubList'));
     }
 
     async function init() {

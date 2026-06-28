@@ -7,5 +7,10 @@
         const cfg = await RBApi('config');
         if (!cfg.user) { location.href = '../account/'; return; } // sign in first
         RBRoadbookList(document.getElementById('rbList'));
+        // admins additionally see every public roadbook here, with a force-private control
+        if (cfg.user.is_admin) {
+            document.getElementById('adminPub').hidden = false;
+            RBPublicRoadbooksList(document.getElementById('pubList'));
+        }
     })();
 })();
