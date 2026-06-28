@@ -225,7 +225,7 @@ function public_list(): void {
         FROM roadbooks r JOIN users u ON u.id = r.user_id
         WHERE r.is_public = 1 AND r.slug IS NOT NULL ORDER BY r.updated_at DESC LIMIT 60');
     $rows = array_map(fn($r) => [
-        'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
+        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
         'note_count' => (int)$r['note_count'], 'username' => $r['username'],
         'thumb' => $r['thumb'] ? '/photos/' . $r['id'] . '/' . $r['thumb'] : null,
     ], $st->fetchAll());

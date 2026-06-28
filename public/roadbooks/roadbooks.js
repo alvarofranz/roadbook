@@ -6,21 +6,29 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
     const PER = 12;
-    let all = [], page = 1, q = '';
+    let all = [], page = 1, q = '', isAdmin = false;
     const grid = $('rbGrid'), pager = $('rbPager'), search = $('rbSearch');
 
     const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}">${
         r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                 : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
         <button type="button" class="card-copy" data-copy="${esc(r.slug)}" title="${esc(t('Copy link'))}" aria-label="${esc(t('Copy link'))}"><i class="fa-solid fa-link"></i></button>
+        ${isAdmin ? `<button type="button" class="card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-lock"></i></button>` : ''}
         <div class="gallery-body"><h3>${esc(r.title)}</h3>
         <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div></div></a>`;
 
-    // the copy button lives inside the card link → don't let its click navigate
-    grid.addEventListener('click', (e) => {
-        const b = e.target.closest('.card-copy'); if (!b) return;
-        e.preventDefault(); e.stopPropagation();
-        RBCopy(RBReaderLink(b.dataset.copy));
+    // the overlay buttons live inside the card link → don't let their click navigate
+    grid.addEventListener('click', async (e) => {
+        const cp = e.target.closest('.card-copy');
+        if (cp) { e.preventDefault(); e.stopPropagation(); RBCopy(RBReaderLink(cp.dataset.copy)); return; }
+        const up = e.target.closest('.card-unpub');
+        if (up) {
+            e.preventDefault(); e.stopPropagation();
+            if (!(await RBConfirm(t('Make this roadbook private?') + ' “' + (up.dataset.title || '') + '”', t('Make private')))) return;
+            const x = await RBApi('admin_unpublish', { id: +up.dataset.unpub });
+            if (x.ok) { RBToast('Roadbook is now private.'); all = all.filter((r) => String(r.id) !== up.dataset.unpub); render(); }
+            else RBToast(x.error || 'Could not change visibility.');
+        }
     });
 
     function render() {
@@ -39,8 +47,9 @@
     if (search) search.oninput = () => { q = search.value; page = 1; render(); };
     window.addEventListener('rb-lang', () => { if (all.length) render(); }); // re-render labels on language switch
 
-    RBChallenges.listPublic().then((list) => {
+    Promise.all([RBChallenges.listPublic(), RBApi('config').catch(() => ({}))]).then(([list, cfg]) => {
         all = list || [];
+        isAdmin = !!(cfg && cfg.user && cfg.user.is_admin); // admins get a force-private control per card
         if (!all.length) { grid.innerHTML = `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`; if (search) search.closest('.rbp-toolbar').hidden = true; return; }
         render();
     }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; });
