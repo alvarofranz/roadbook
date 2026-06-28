@@ -41,6 +41,7 @@ try {
         case 'rb_get':    rb_get(require_user(), $d); break;
         case 'rb_draft':  rb_draft(require_user()); break;
         case 'rb_save':   rb_save(require_user(), $d); break;
+        case 'rb_visibility': rb_visibility(require_user(), $d); break;
         case 'rb_duplicate': rb_duplicate(require_user(), $d); break;
         case 'rb_delete': rb_delete(require_user(), $d); break;
         case 'ph_list':     ph_list(current_user(), $d); break;

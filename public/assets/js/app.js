@@ -284,7 +284,7 @@
         const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${fmtDate(rb.updated_at)}</small></div>
-            <span class="rb-badge ${rb.is_public ? 'public' : 'private'}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBesc(RBt(rb.is_public ? 'Public' : 'Private'))}</span>
+            <button class="rb-badge ${rb.is_public ? 'public' : 'private'}" data-vis="${rb.id}" data-pub="${rb.is_public ? 1 : 0}" title="${RBesc(RBt(rb.is_public ? 'Make private' : 'Make public'))}" aria-label="${RBesc(RBt(rb.is_public ? 'Make private' : 'Make public'))}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBesc(RBt(rb.is_public ? 'Public' : 'Private'))}</button>
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             ${rb.is_public && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
@@ -302,6 +302,12 @@
                 if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
             });
             rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
+            rowsEl.querySelectorAll('[data-vis]').forEach((b) => b.onclick = async () => {
+                const makePublic = b.dataset.pub === '0';
+                const r = await RBApi('rb_visibility', { id: +b.dataset.vis, is_public: makePublic ? 1 : 0 });
+                if (r.ok) { RBToast(makePublic ? 'Roadbook is now public.' : 'Roadbook is now private.'); RBRoadbookList(container); }
+                else RBToast(r.error || 'Could not change visibility.');
+            });
         };
         const render = () => {
             const filtered = (window.RB && RB.filterRoadbooks) ? RB.filterRoadbooks(all, q) : all;

@@ -86,6 +86,19 @@ function rb_save(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'is_public' => $isPublic]);
 }
 
+// Toggle a roadbook's public/private visibility (owner only). Every roadbook already has a slug
+// from save, so publishing just flips the flag — no slug work needed.
+function rb_visibility(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $isPublic = !empty($d['is_public']) ? 1 : 0;
+    $st = db()->prepare('SELECT slug FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st->execute([$id, $user['id']]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    db()->prepare('UPDATE roadbooks SET is_public = ? WHERE id = ?')->execute([$isPublic, $id]);
+    json_out(['ok' => true, 'id' => $id, 'is_public' => $isPublic, 'slug' => $row['slug']]);
+}
+
 // Duplicate a roadbook the user owns: copies the .rdbk file, the DB row and the
 // photo gallery (files + rows) into a brand-new roadbook. The copy starts private
 // and gets its own title ("… (copy)") and slug.
