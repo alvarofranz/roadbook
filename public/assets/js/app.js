@@ -337,9 +337,8 @@
         const list = r.roadbooks || [];
         container.innerHTML = list.length ? list.map((rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>@${RBesc(rb.username)} · ${RBSummary(rb.total_distance, rb.note_count)}</small></div>
-            <span class="rb-badge public"><i class="fa-solid fa-globe"></i> ${RBesc(RBt('Public'))}</span>
+            <button class="rb-badge public" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Make private'))}" aria-label="${RBesc(RBt('Make private'))}"><i class="fa-solid fa-globe"></i> ${RBesc(RBt('Public'))}</button>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
-            <button class="btn btn-ghost" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Make private'))}" aria-label="${RBesc(RBt('Make private'))}"><i class="fa-solid fa-lock icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
         container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + (b.dataset.title || '') + '”', RBt('Make private')))) return;
