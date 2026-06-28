@@ -37,6 +37,8 @@ try {
         case 'admin_block':     admin_block(require_admin(), $d); break;
         case 'admin_update':    admin_update_user(require_admin(), $d); break;
         case 'admin_delete':    admin_delete_user(require_admin(), $d); break;
+        case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
+        case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_get':    rb_get(require_user(), $d); break;
         case 'rb_draft':  rb_draft(require_user()); break;

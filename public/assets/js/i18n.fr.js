@@ -33,6 +33,7 @@
             'help.route': 'Inverser change le sens de marche — la trace, l’ordre des notes et tous les caps sont recalculés.',
             'Copy link': 'Copier le lien', 'Link copied': 'Lien copié', 'Could not copy the link.': 'Impossible de copier le lien.',
             'Make public': 'Rendre public', 'Make private': 'Rendre privé', 'Roadbook is now public.': 'Le roadbook est maintenant public.', 'Roadbook is now private.': 'Le roadbook est maintenant privé.', 'Could not change visibility.': 'Impossible de changer la visibilité.',
+            'Owner': 'Propriétaire', 'Make this roadbook private?': 'Rendre ce roadbook privé ?',
             'Navigate a roadbook': 'Naviguer un roadbook', 'Build a roadbook': 'Créer un roadbook', 'GPS trip computer': 'Ordinateur de voyage GPS', 'Record a GPS track': 'Enregistrer une trace GPS', 'Score events': 'Classer les événements',
             'Start new Roadbook from:': 'Nouveau roadbook depuis :', 'Start from a public RB': 'Partir d\'un RB public', 'Public Roadbooks': 'Roadbooks publics', 'Import a GPS track': 'Importer une trace GPS',
             'Open an existing roadbook': 'Ouvrir un roadbook existant', 'Record route': 'Enregistrer l\'itinéraire',

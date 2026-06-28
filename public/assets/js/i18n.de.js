@@ -33,6 +33,7 @@
             'help.route': 'Umkehren dreht die Fahrtrichtung um – Track, Note-Reihenfolge und alle Peilungen werden neu berechnet.',
             'Copy link': 'Link kopieren', 'Link copied': 'Link kopiert', 'Could not copy the link.': 'Link konnte nicht kopiert werden.',
             'Make public': 'Öffentlich machen', 'Make private': 'Privat machen', 'Roadbook is now public.': 'Roadbook ist jetzt öffentlich.', 'Roadbook is now private.': 'Roadbook ist jetzt privat.', 'Could not change visibility.': 'Sichtbarkeit konnte nicht geändert werden.',
+            'Owner': 'Eigentümer', 'Make this roadbook private?': 'Dieses Roadbook privat machen?',
             'Navigate a roadbook': 'Roadbook navigieren', 'Build a roadbook': 'Roadbook erstellen', 'GPS trip computer': 'GPS-Reisecomputer', 'Record a GPS track': 'GPS-Track aufzeichnen', 'Score events': 'Veranstaltungen bewerten',
             'Start new Roadbook from:': 'Neues Roadbook starten aus:', 'Start from a public RB': 'Öffentliches RB verwenden', 'Public Roadbooks': 'Öffentliche Roadbooks', 'Import a GPS track': 'GPS-Track importieren',
             'Open an existing roadbook': 'Vorhandenes Roadbook öffnen', 'Record route': 'Route aufzeichnen',

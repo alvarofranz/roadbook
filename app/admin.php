@@ -63,6 +63,28 @@ function admin_users(array $user): void {
     json_out(['ok' => true, 'me' => (int)$user['id'], 'users' => $users]);
 }
 
+// Moderation: every public roadbook with its owner, so an admin can review the public site.
+function admin_public_roadbooks(array $user): void {
+    $rows = db()->query('SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.updated_at, u.username
+        FROM roadbooks r JOIN users u ON u.id = r.user_id
+        WHERE r.is_public = 1 ORDER BY r.updated_at DESC')->fetchAll();
+    $list = array_map(fn($r) => [
+        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'username' => $r['username'],
+        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'], 'updated_at' => $r['updated_at'],
+    ], $rows);
+    json_out(['ok' => true, 'roadbooks' => $list]);
+}
+
+// Moderation: force any roadbook back to private (admin, regardless of owner). Data is untouched.
+function admin_unpublish(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare('UPDATE roadbooks SET is_public = 0 WHERE id = ?')->execute([$id]);
+    json_out(['ok' => true, 'id' => $id]);
+}
+
 // Force-activate an account (e.g. the user never clicked the verification email).
 function admin_verify(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
