@@ -98,7 +98,7 @@
                 + `<td><button class="link-delete" data-del="${r.ts}" title="${t('Remove')}" aria-label="${t('Remove')}">✕</button></td></tr>`).join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirmDanger(t('Remove vehicle') + ' ' + entries.find((e) => String(e.ts) === b.dataset.del)?.m.team + '?', 'Remove')) {
+            if (await RBConfirmDanger(t('Remove vehicle') + ' ' + RBesc(entries.find((e) => String(e.ts) === b.dataset.del)?.m.team) + '?', 'Remove')) {
                 entries = entries.filter((e) => String(e.ts) !== b.dataset.del); save(); render();
             }
         });

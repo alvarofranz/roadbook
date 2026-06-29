@@ -24,7 +24,7 @@
         const up = e.target.closest('.card-unpub');
         if (up) {
             e.preventDefault(); e.stopPropagation();
-            if (!(await RBConfirm(t('Make this roadbook private?') + ' “' + (up.dataset.title || '') + '”', t('Make private')))) return;
+            if (!(await RBConfirm(t('Make this roadbook private?') + ' “' + esc(up.dataset.title || '') + '”', t('Make private')))) return;
             const x = await RBApi('admin_unpublish', { id: +up.dataset.unpub });
             if (x.ok) { RBToast('Roadbook is now private.'); all = all.filter((r) => String(r.id) !== up.dataset.unpub); render(); }
             else RBToast(x.error || 'Could not change visibility.');

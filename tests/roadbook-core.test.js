@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import RB from '../public/assets/js/roadbook-core.js';
 import NoteCanvas from '../public/assets/js/note-canvas.js';
 globalThis.RB = RB; // NoteCanvas.toSVG reads the global RB.ROAD_TYPES for the trunk colour
+// toSVG escapes icon URLs through the shared RBesc global (app.js provides it in the browser).
+globalThis.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // One metre on the equator is ~111195 m per degree at this Earth radius — handy for
 // building tracks with predictable lengths.
@@ -579,6 +581,16 @@ describe('NoteCanvas.toSVG (vignette render)', () => {
     it('shows FIA danger marks (!!) for a danger-2 note', () => {
         const s = NoteCanvas.toSVG({ ...baseNote, danger: 2 });
         expect(s).toContain('>!!</text>');
+    });
+    it('escapes the resolved icon URL so a crafted .rdbk icon name cannot break out of the href', () => {
+        // A malicious roadbook (e.g. a public one rendered on /challenge/<slug>) could set an
+        // icon name with a quote to inject an onerror handler into the <image> element.
+        const evil = 'a" onerror="alert(1)';
+        const placed = NoteCanvas.toSVG({ ...baseNote, icons: [{ name: evil, pos: [0, 0], size: 32 }] }, (ic) => ic.name);
+        const cover = NoteCanvas.toSVG({ icons: [{ name: evil, cover: true }] }, (ic) => ic.name);
+        expect(placed).not.toContain('onerror="'); // no live event-handler attribute
+        expect(cover).not.toContain('onerror="');
+        expect(placed).toContain('href="a&quot; onerror=&quot;alert(1)"'); // quote neutralised
     });
 });
 

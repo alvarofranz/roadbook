@@ -173,7 +173,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     // are skipped too, since the imported drawing already bakes them in.
     const cover = (note.icons || []).find((ic) => ic.cover);
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
-        + `<image x="0" y="0" width="${W}" height="${H}" href="${resolveIcon(cover)}" preserveAspectRatio="xMidYMid meet"/></svg>`;
+        + `<image x="0" y="0" width="${W}" height="${H}" href="${RBesc(resolveIcon(cover))}" preserveAspectRatio="xMidYMid meet"/></svg>`;
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
         + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
@@ -191,7 +191,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     (note.icons || []).forEach((ic) => {
         const [cxi, cyi] = toV(ic.pos ? ic.pos[0] : 0, ic.pos ? ic.pos[1] : 0), sz = ic.size || 32;
         const flip = ic.flip_x ? ` transform="translate(${2 * cxi} 0) scale(-1 1)"` : '';
-        s += `<g transform="rotate(${ic.angle || 0} ${cxi} ${cyi})"><image x="${cxi - sz / 2}" y="${cyi - sz / 2}" width="${sz}" height="${sz}" href="${resolveIcon(ic)}"${flip} preserveAspectRatio="xMidYMid meet"/></g>`;
+        s += `<g transform="rotate(${ic.angle || 0} ${cxi} ${cyi})"><image x="${cxi - sz / 2}" y="${cyi - sz / 2}" width="${sz}" height="${sz}" href="${RBesc(resolveIcon(ic))}"${flip} preserveAspectRatio="xMidYMid meet"/></g>`;
     });
     // Danger marks carry their own presentation attributes so the SVG is fully
     // self-contained (renders identically standalone — PDF — and inside the DOM).

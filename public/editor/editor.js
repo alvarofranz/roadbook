@@ -301,10 +301,13 @@
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Waypoint turned into a track point.');
     }
+    // A note's confirm label, e.g. "#3 — Sharp left". The text comes from the loaded
+    // .rdbk (user/untrusted) and the confirm message is rendered as HTML, so escape it.
+    const noteLabel = (n) => '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        const n = rb.notes[ni], label = '#' + n.num + (n.text ? ' — ' + n.text : '');
+        const label = noteLabel(rb.notes[ni]);
         if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
         delNote(ni);
     }
@@ -1189,7 +1192,7 @@
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
             if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            const dn = rb.notes[+b.dataset.del], dlabel = dn ? '#' + dn.num + (dn.text ? ' — ' + dn.text : '') : '';
+            const dn = rb.notes[+b.dataset.del], dlabel = dn ? noteLabel(dn) : '';
             if (await RBConfirmDanger(t('Delete note') + ' ' + dlabel + '?', 'Delete')) delNote(+b.dataset.del);
         });
         $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
@@ -1539,7 +1542,7 @@
         if (header) header.hidden = !headerHits;
     }
     const iconBtn = (name, src, rmv, title) =>
-        `<button data-add="${name}" title="${esc(title || name)}">${rmv ? `<span data-del="${name}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${src}" alt="" loading="lazy"></button>`;
+        `<button data-add="${esc(name)}" title="${esc(title || name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!rb) return toast('Load a roadbook first.');
         canvas.addIcon(mkIcon(name, [0, 0]));

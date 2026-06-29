@@ -315,7 +315,7 @@
                 if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container); } else RBToast(x.error || 'Could not duplicate.');
             });
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + (b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
+                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
             });
             rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
             rowsEl.querySelectorAll('[data-vis]').forEach((b) => b.onclick = async () => {
@@ -357,7 +357,7 @@
             <a class="btn btn-ghost" href="/challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
         </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
         container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + (b.dataset.title || '') + '”', RBt('Make private')))) return;
+            if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + RBesc(b.dataset.title || '') + '”', RBt('Make private')))) return;
             const x = await RBApi('admin_unpublish', { id: +b.dataset.unpub });
             if (x.ok) { RBToast('Roadbook is now private.'); RBPublicRoadbooksList(container); } else RBToast(x.error || 'Could not change visibility.');
         });
@@ -531,7 +531,7 @@
             </div>`).join('');
             listEl.querySelectorAll('[data-discard]').forEach((b) => b.onclick = async () => {
                 const it = items[+b.closest('[data-i]').dataset.i];
-                if (!(await RBConfirmDanger(RBt('Discard') + ' “' + RBt(PENDING_LABEL[it.tool]) + ' · ' + pendingDetail(it) + '”?', 'Discard'))) return;
+                if (!(await RBConfirmDanger(RBt('Discard') + ' “' + RBt(PENDING_LABEL[it.tool]) + ' · ' + RBesc(pendingDetail(it)) + '”?', 'Discard'))) return;
                 it.keys.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
                 RBToast('Discarded.'); draw(); refreshPendingPill();
             });
