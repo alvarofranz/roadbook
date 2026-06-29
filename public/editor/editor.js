@@ -170,7 +170,7 @@
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
     let draftTimer = null;
-    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, isPublic, gaps })); } catch (e) {} };
+    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
     const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     // Floppy save button: clickable only when there's something to save (a new roadbook, or
@@ -891,7 +891,7 @@
         if (recTrack.length < 2) { clearRec(); showLanding(); return toast('Route too short to save.'); }
         try {
             setRoadbook(RB.buildRoadbook({ name: gpx.name || 'Recorded route', trkpts: smoothTrack(recTrack), wpts: recWpts }));
-            if (draftId) { currentRbId = draftId; setVis(0); await doSave(); } // persist the draft (photos already attached)
+            if (draftId) { currentRbId = draftId; setStatus('draft'); await doSave(); } // persist the draft (photos already attached)
             markDirty(); clearRec(); toast('Route recorded · edit and save.');
         } catch (e) { showLanding(); toast('Error: ' + e.message); }
     };
@@ -936,17 +936,26 @@
         catch (e) { return false; }
     }
 
-    /* ---------- account: save to profile · public/private · load by ?rb ---------- */
-    let meUser = null, currentRbId = 0, isPublic = 0;
+    /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
+    let meUser = null, currentRbId = 0, status = 'draft';
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
-    $('visPrivate').onclick = () => { setVis(0); markDirty(); };
-    $('visPublic').onclick = () => { setVis(1); markDirty(); };
-    function setVis(v) { isPublic = v; $('visPrivate').classList.toggle('on', !v); $('visPublic').classList.toggle('on', !!v); $('visPrivate').setAttribute('aria-pressed', String(!v)); $('visPublic').setAttribute('aria-pressed', String(!!v)); }
+    $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
+    $('visReady').onclick = () => { setStatus('ready'); markDirty(); };
+    $('visPublic').onclick = () => { setStatus('public'); markDirty(); };
+    // Reflect the chosen publication status on the three segments (draft → ready → public).
+    function setStatus(s) {
+        status = RB.roadbookStatus(s);
+        [['visDraft', 'draft'], ['visReady', 'ready'], ['visPublic', 'public']].forEach(([id, v]) => {
+            const on = status === v;
+            $(id).classList.toggle('on', on);
+            $(id).setAttribute('aria-pressed', String(on));
+        });
+    }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setVis(0); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const r = await RBApi('rb_save', { id: currentRbId, is_public: isPublic, roadbook: rb });
+        const r = await RBApi('rb_save', { id: currentRbId, status, roadbook: rb });
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateAudio(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
@@ -959,7 +968,7 @@
         if (!rb) return toast('Nothing to save.');
         if (!(await confirmOpenCuts())) return;
         const r = await doSave();
-        toast(r.ok ? (isPublic && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
+        toast(r.ok ? (status === 'public' && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
         if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
     }
     // Generate the roadbook's cover map (route over CyclOSM tiles) and store it under its reserved
@@ -982,7 +991,7 @@
         if (!(await confirmOpenCuts())) return;
         rb.meta.title = ((rb.meta.title || 'Untitled') + ' (copy)').slice(0, 200);
         $('rbTitle').value = rb.meta.title;
-        currentRbId = 0; setVis(0); // new identity, private
+        currentRbId = 0; setStatus('draft'); // new identity, a fresh draft
         const r = await doSave();
         toast(r.ok ? 'Saved as a new roadbook.' : (r.error || 'Could not save.'));
     };
@@ -1772,7 +1781,7 @@
                 ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft', 'rb_trip_name'].forEach((k) => sessionStorage.removeItem(k));
                 if (pts && pts.length >= 2) {
                     setRoadbook(RB.buildRoadbook({ name: tripName, trkpts: pts, wpts }));
-                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setVis(0); loadPhotos(); } } // adopt the draft that holds the photos
+                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setStatus('draft'); loadPhotos(); } } // adopt the draft that holds the photos
                     markDirty();
                 }
             } catch (e) { toast('Could not load the recorded trip.'); }
@@ -1791,7 +1800,7 @@
             // Declining keeps the draft — it is overwritten by the next checkpoint and
             // cleared on save/export, so a mis-tap can't destroy unsaved work.
             if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
-                currentRbId = draft.currentRbId || 0; setVis(draft.isPublic ? 1 : 0);
+                currentRbId = draft.currentRbId || 0; setStatus(draft.status);
                 setRoadbook(draft.rb);
                 if (Array.isArray(draft.gaps) && draft.gaps.length) { gaps = draft.gaps; refreshMap(true); }
                 markDirty();
@@ -1800,7 +1809,7 @@
         }
         if (!explicitTarget && !loadStarted && await checkRecovery()) return;
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setVis(0); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
+        if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setStatus('draft'); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;
         if (id && meUser) {
             const r = await RBApi('rb_get', { id });
@@ -1809,7 +1818,7 @@
                 // Continue load it straight into draw mode (Cancel falls through to the list).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
-                    currentRbId = id; setVis(r.is_public ? 1 : 0); setRoadbook(r.roadbook);
+                    currentRbId = id; setStatus(r.status); setRoadbook(r.roadbook);
                 }
             }
         }

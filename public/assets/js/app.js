@@ -285,6 +285,8 @@
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
     // Relative links work from any one-level-deep tool page (/editor/, /myroadbooks/).
+    // Publication-status labels for the My-roadbooks status control (draft/ready/public).
+    const RB_STATUS_LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
     window.RBRoadbookList = async (container) => {
         if (!container) return 0;
         const fmtDate = (s) => { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleDateString(); };
@@ -300,10 +302,10 @@
         const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${fmtDate(rb.updated_at)}</small></div>
-            <button class="rb-badge ${rb.is_public ? 'public' : 'private'}" data-vis="${rb.id}" data-pub="${rb.is_public ? 1 : 0}" title="${RBesc(RBt(rb.is_public ? 'Make private' : 'Make public'))}" aria-label="${RBesc(RBt(rb.is_public ? 'Make private' : 'Make public'))}"><i class="fa-solid fa-${rb.is_public ? 'globe' : 'lock'}"></i> ${RBesc(RBt(rb.is_public ? 'Public' : 'Private'))}</button>
+            <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RB_STATUS_LABEL[s]))}</option>`).join('')}</select>
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
-            ${rb.is_public && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
+            ${rb.status === 'public' && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}&export=1" title="${RBesc(RBt('Export'))}" aria-label="${RBesc(RBt('Export'))}"><i class="fa-solid fa-file-export"></i></a>
             <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Save as'))}" aria-label="${RBesc(RBt('Save as'))}"><i class="fa-solid fa-clone"></i></button>
@@ -318,11 +320,10 @@
                 if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
             });
             rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
-            rowsEl.querySelectorAll('[data-vis]').forEach((b) => b.onclick = async () => {
-                const makePublic = b.dataset.pub === '0';
-                const r = await RBApi('rb_visibility', { id: +b.dataset.vis, is_public: makePublic ? 1 : 0 });
-                if (r.ok) { RBToast(makePublic ? 'Roadbook is now public.' : 'Roadbook is now private.'); RBRoadbookList(container); }
-                else RBToast(r.error || 'Could not change visibility.');
+            rowsEl.querySelectorAll('[data-status]').forEach((sel) => sel.onchange = async () => {
+                const r = await RBApi('rb_status', { id: +sel.dataset.status, status: sel.value });
+                RBToast(r.ok ? 'Status updated.' : (r.error || 'Could not change visibility.'));
+                RBRoadbookList(container); // re-render from the server truth (also resets on error)
             });
         };
         const render = () => {

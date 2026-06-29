@@ -30,7 +30,7 @@
             'help.capType': 'Qualifies the note’s CAP heading (FIA): Exit, Average, Calculated or Turning. Enabled once the note carries a CAP.',
             'help.wpType': 'The FIA waypoint type. It sets the map icon and, in a rally roadbook, how the waypoint is validated and scored.',
             'help.radius': 'Validation radius in metres — the geofence for automatic pass detection. Left empty it falls back to the roadbook default, then the type’s default (shown as the placeholder).',
-            'help.visibility': 'Private keeps the roadbook to you. Public lists it on the site so anyone can read it or export a PDF — but only you can download the .rdbk.',
+            'help.visibility': 'Draft keeps the roadbook private while you work on it. Ready marks it finished but still private. Public lists it on the site so anyone can read it or export a PDF — but only you can download the .rdbk.',
             'help.description': 'Shown on the roadbook’s public page — a short summary of the route or event.',
             'help.author': 'The author’s name, embedded in the roadbook and shown to readers.',
             'help.org': 'The organizing club or event, embedded in the roadbook and shown to readers.',

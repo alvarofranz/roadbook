@@ -10,15 +10,21 @@ function rb_dir(int $userId): string {
     return $dir;
 }
 
+// A roadbook's publication lifecycle: draft (in progress, private) → ready (done, private)
+// → public (visible to anyone). Any unknown value normalises to 'draft'.
+function rb_clean_status($s): string {
+    return in_array($s, ['draft', 'ready', 'public'], true) ? $s : 'draft';
+}
+
 function rb_list(array $user): void {
-    $st = db()->prepare('SELECT id, title, total_distance, note_count, is_public, slug, updated_at FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
+    $st = db()->prepare('SELECT id, title, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
     $st->execute([$user['id']]);
     json_out(['ok' => true, 'roadbooks' => $st->fetchAll()]);
 }
 
 function rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT filename, is_public, slug, title FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st = db()->prepare('SELECT filename, status, slug, title FROM roadbooks WHERE id = ? AND user_id = ?');
     $st->execute([$id, $user['id']]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
@@ -31,7 +37,7 @@ function rb_get(array $user, array $d): void {
         if (!is_file($path)) fail('File missing.', 404);
         $rb = json_decode((string)file_get_contents($path), true);
     }
-    json_out(['ok' => true, 'id' => $id, 'is_public' => (int)$row['is_public'], 'slug' => $row['slug'], 'roadbook' => $rb]);
+    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'slug' => $row['slug'], 'roadbook' => $rb]);
 }
 
 function rb_slug(string $title, int $excludeId): string {
@@ -49,8 +55,8 @@ function rb_slug(string $title, int $excludeId): string {
 // Create an empty draft when recording starts, so photos can attach to it live.
 // Drafts that never get finished (note_count = 0) are purged by the cron.
 function rb_draft(array $user): void {
-    db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, is_public, filename) VALUES (?,?,?,?,?,?)')
-        ->execute([$user['id'], 'Recording…', 0, 0, 0, 'pending']);
+    db()->prepare("INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,'draft',?)")
+        ->execute([$user['id'], 'Recording…', 0, 0, 'pending']);
     json_out(['ok' => true, 'id' => (int)db()->lastInsertId()]);
 }
 
@@ -60,7 +66,7 @@ function rb_save(array $user, array $d): void {
     $title = substr(trim((string)($rb['meta']['title'] ?? '')) ?: 'Untitled', 0, 200);
     $dist = (int)($rb['meta']['total_distance'] ?? 0);
     $nc = count($rb['notes']);
-    $isPublic = !empty($d['is_public']) ? 1 : 0;
+    $status = rb_clean_status($d['status'] ?? null);
     $id = (int)($d['id'] ?? 0);
     $dir = rb_dir((int)$user['id']);
 
@@ -72,35 +78,35 @@ function rb_save(array $user, array $d): void {
         $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
-        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, is_public = ?, slug = ?, filename = ? WHERE id = ?')
-            ->execute([$title, $dist, $nc, $isPublic, $slug, $fn, $id]);
+        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, slug = ?, filename = ? WHERE id = ?')
+            ->execute([$title, $dist, $nc, $status, $slug, $fn, $id]);
     } else {
-        db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, is_public, filename) VALUES (?,?,?,?,?,?)')
-            ->execute([$user['id'], $title, $dist, $nc, $isPublic, 'pending']);
+        db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?)')
+            ->execute([$user['id'], $title, $dist, $nc, $status, 'pending']);
         $id = (int)db()->lastInsertId();
         $fn = $id . '.rdbk';
         $slug = rb_slug($title, $id);
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $id]);
     }
-    json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'is_public' => $isPublic]);
+    json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'status' => $status]);
 }
 
-// Toggle a roadbook's public/private visibility (owner only). Every roadbook already has a slug
-// from save, so publishing just flips the flag — no slug work needed.
-function rb_visibility(array $user, array $d): void {
+// Set a roadbook's publication status (owner only). Every roadbook already has a slug
+// from save, so publishing just sets the status — no slug work needed.
+function rb_status(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $isPublic = !empty($d['is_public']) ? 1 : 0;
+    $status = rb_clean_status($d['status'] ?? null);
     $st = db()->prepare('SELECT slug FROM roadbooks WHERE id = ? AND user_id = ?');
     $st->execute([$id, $user['id']]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
-    db()->prepare('UPDATE roadbooks SET is_public = ? WHERE id = ?')->execute([$isPublic, $id]);
-    json_out(['ok' => true, 'id' => $id, 'is_public' => $isPublic, 'slug' => $row['slug']]);
+    db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
+    json_out(['ok' => true, 'id' => $id, 'status' => $status, 'slug' => $row['slug']]);
 }
 
 // Duplicate a roadbook the user owns: copies the .rdbk file, the DB row and the
-// photo gallery (files + rows) into a brand-new roadbook. The copy starts private
+// photo gallery (files + rows) into a brand-new roadbook. The copy starts as a draft
 // and gets its own title ("… (copy)") and slug.
 function rb_duplicate(array $user, array $d): void {
     global $CFG;
@@ -114,8 +120,8 @@ function rb_duplicate(array $user, array $d): void {
     if (!is_file($srcPath)) fail('File missing.', 404);
 
     $title = substr(trim((string)$src['title']) . ' (copy)', 0, 200);
-    db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, is_public, filename) VALUES (?,?,?,?,?,?)')
-        ->execute([$user['id'], $title, (int)$src['total_distance'], (int)$src['note_count'], 0, 'pending']);
+    db()->prepare("INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,'draft',?)")
+        ->execute([$user['id'], $title, (int)$src['total_distance'], (int)$src['note_count'], 'pending']);
     $newId = (int)db()->lastInsertId();
     $fn = $newId . '.rdbk';
     if (!@copy($srcPath, $dir . '/' . $fn)) fail('Could not copy the roadbook file.', 500);
@@ -155,11 +161,11 @@ function rb_duplicate(array $user, array $d): void {
 
 function ph_list(?array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
-    $st = db()->prepare('SELECT user_id, is_public FROM roadbooks WHERE id = ?');
+    $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$rbId]);
     $rb = $st->fetch();
     if (!$rb) fail('Not found.', 404);
-    if (!(int)$rb['is_public'] && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
+    if ($rb['status'] !== 'public' && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
     // the reserved cover ('_map.avif') is the listing thumbnail, not a gallery photo → never listed here
     $p = db()->prepare("SELECT id, filename, lat, lon FROM roadbook_photos WHERE roadbook_id = ? AND filename <> '_map.avif' ORDER BY sort, id");
     $p->execute([$rbId]);
@@ -195,11 +201,11 @@ function ph_move(array $user, array $d): void {
 /* ---- waypoint voice notes (recorded audio kept alongside the transcription) ---- */
 function audio_list(?array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
-    $st = db()->prepare('SELECT user_id, is_public FROM roadbooks WHERE id = ?');
+    $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$rbId]);
     $rb = $st->fetch();
     if (!$rb) fail('Not found.', 404);
-    if (!(int)$rb['is_public'] && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
+    if ($rb['status'] !== 'public' && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
     $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
     $a->execute([$rbId]);
     $audio = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/audio/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $a->fetchAll());
@@ -220,10 +226,10 @@ function audio_delete(array $user, array $d): void {
 
 /* ---- public (no auth): home gallery + challenge page ---- */
 function public_list(): void {
-    $st = db()->query('SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username,
+    $st = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM roadbooks r JOIN users u ON u.id = r.user_id
-        WHERE r.is_public = 1 AND r.slug IS NOT NULL ORDER BY r.updated_at DESC LIMIT 60');
+        WHERE r.status = 'public' AND r.slug IS NOT NULL ORDER BY r.updated_at DESC LIMIT 60");
     $rows = array_map(fn($r) => [
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
         'note_count' => (int)$r['note_count'], 'username' => $r['username'],
@@ -235,14 +241,14 @@ function public_list(): void {
 function public_get(array $d): void {
     global $CFG;
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.is_public, u.username, u.first_name, u.last_name, u.bio, u.avatar
+    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.status, u.username, u.first_name, u.last_name, u.bio, u.avatar
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.slug = ?');
     $st->execute([$slug]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
     $me = current_user();
     $isOwner = $me && (int)$me['id'] === (int)$row['user_id'];
-    if (!(int)$row['is_public'] && !$isOwner) fail('This roadbook is private.', 403);
+    if ($row['status'] !== 'public' && !$isOwner) fail('This roadbook is private.', 403);
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
     $rb = json_decode((string)file_get_contents($path), true);
@@ -251,7 +257,7 @@ function public_get(array $d): void {
     $p->execute([$row['id']]);
     $photos = array_map(fn($r) => '/photos/' . $row['id'] . '/' . $r['filename'], $p->fetchAll());
     $cover = is_file($CFG['photos_dir'] . '/' . $row['id'] . '/_map.avif') ? '/photos/' . $row['id'] . '/_map.avif' : null;
-    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'is_public' => (int)$row['is_public'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
+    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
         'owner' => ['username' => $row['username'], 'name' => trim($row['first_name'] . ' ' . $row['last_name']), 'bio' => $row['bio'], 'avatar' => $row['avatar']]]);
 }
 

@@ -657,3 +657,20 @@ describe('filterByText (generic multi-field search, #79)', () => {
         expect(RB.filterRoadbooks(rbs, '')).toHaveLength(2);
     });
 });
+
+describe('roadbook publication status (#96)', () => {
+    it('exposes the draft → ready → public lifecycle in order', () => {
+        expect(RB.ROADBOOK_STATUSES).toEqual(['draft', 'ready', 'public']);
+    });
+    it('normalises known states to themselves', () => {
+        expect(RB.roadbookStatus('draft')).toBe('draft');
+        expect(RB.roadbookStatus('ready')).toBe('ready');
+        expect(RB.roadbookStatus('public')).toBe('public');
+    });
+    it('falls back to draft for anything unknown (matches the API)', () => {
+        expect(RB.roadbookStatus('bogus')).toBe('draft');
+        expect(RB.roadbookStatus('')).toBe('draft');
+        expect(RB.roadbookStatus(undefined)).toBe('draft');
+        expect(RB.roadbookStatus(null)).toBe('draft');
+    });
+});

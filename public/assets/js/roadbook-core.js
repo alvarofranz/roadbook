@@ -45,6 +45,13 @@
         { id: 4, color: '#ff5a45', width: 4, dashed: true },  // off-piste
     ];
 
+    /* A roadbook's publication lifecycle (#96): draft (in progress, private) → ready
+       (done, private) → public (visible to anyone). The DB `status` column mirrors this
+       list; the client builds its status controls from it. Unknown values fall back to
+       'draft' — the same normalisation the API does server-side. */
+    const ROADBOOK_STATUSES = ['draft', 'ready', 'public'];
+    const roadbookStatus = (s) => ROADBOOK_STATUSES.includes(s) ? s : 'draft';
+
     /* ---------------- waypoint types (FIA characterization, #63) ----------------
        One optional per-note `wp_type`, profile-scoped in the editor (`tier`: core shows in
        every roadbook, rally only when meta.profile === 'rally'). A "zone" is a start note +
@@ -852,7 +859,7 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName,
