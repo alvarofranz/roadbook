@@ -202,6 +202,12 @@ section.block { padding: 2.4rem 0; }
 .feat-item > i { color: var(--sand); font-size: 1.3rem; flex-shrink: 0; margin-top: .15rem; }
 .feat-item h3 { margin: 0 0 .25rem; font-size: 1rem; }
 .feat-item p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.feat-item b { color: var(--text); }
+/* a titled sub-section on a feature page (e.g. the Editor's Tips & tricks) */
+.feat-section { margin-top: 2.4rem; }
+.feat-section h2 { font-size: 1.35rem; margin: 0; }
+.feat-section h2 i { color: var(--sand); margin-right: .5rem; }
+.feat-section .feat-list { margin-top: .9rem; }
 /* prev/next nav across the tool feature pages */
 /* prev/next links flank the page title at the same height (icon sits above, centred) */
 .feat-titlerow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin: .4rem 0 .2rem; }
