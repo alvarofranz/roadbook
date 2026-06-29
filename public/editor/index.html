@@ -191,17 +191,18 @@
         .meta-modified { margin-top: 1.2rem; padding-top: .7rem; border-top: 1px solid var(--line); font-size: .72rem; color: var(--muted); }
         .meta-modified #rbModified { color: var(--text); }
         .logo-row { display: flex; gap: .5rem; align-items: center; }
-        /* desktop: wider editor, the five load cards on one line */
+        /* desktop: wider editor, the start cards on one line */
         @media (min-width: 900px) {
             #viewMap { max-width: 1100px; }
-            .load-opts { grid-template-columns: repeat(5, 1fr); }
+            .load-opts { grid-template-columns: repeat(4, 1fr); }
         }
         /* tablet landscape (iPad) and up: RB-suite split — the map pinned on the
            left, the notes + inline editor column on the right */
         @media (min-width: 1024px) {
             main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
-            /* span the page padding so the map sits flush against the left edge (and the panel against the right) */
-            #viewMap { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; margin: 0 -1.1rem; }
+            /* the split grid is for editing only — on the landing screen #viewMap stays the
+               centred 1100px column (otherwise the start cards hug the left of a 1680px row) */
+            #viewMap:has(#mapEditor:not([hidden])) { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; margin: 0 -1.1rem; }
             .map-box { border-radius: 0; }
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
