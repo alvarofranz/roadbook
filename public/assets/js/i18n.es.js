@@ -299,7 +299,7 @@
             'Adjust cancelled — you never got on the trail.': 'Ajuste cancelado — nunca llegaste a la ruta.',
             'Could not load challenge.': 'No se pudo cargar el challenge.',
             'Sharing not supported here — use Save QR.': 'Compartir no está disponible aquí — usa Guardar QR.',
-            'Install': 'Instalar', 'My profile': 'Mi perfil', 'Got it': 'Entendido', 'I accept': 'Acepto',
+            'Install': 'Instalar', 'My profile': 'Mi perfil', 'Got it': 'Entendido', 'I accept': 'Acepto', 'How it works': 'Cómo funciona',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Política de privacidad',
             'priv.updated': 'Última actualización: 18 de junio de 2026',

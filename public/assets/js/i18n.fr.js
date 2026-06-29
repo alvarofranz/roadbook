@@ -260,7 +260,7 @@
             'Adjust cancelled — you never got on the trail.': 'Ajustement annulé — vous n\'avez jamais rejoint le parcours.',
             'Could not load challenge.': 'Impossible de charger le challenge.',
             'Sharing not supported here — use Save QR.': 'Le partage n\'est pas disponible ici — utilisez Sauvegarder QR.',
-            'Install': 'Installer', 'My profile': 'Mon profil', 'Got it': 'Compris', 'I accept': 'J’accepte',
+            'Install': 'Installer', 'My profile': 'Mon profil', 'Got it': 'Compris', 'I accept': 'J’accepte', 'How it works': 'Comment ça marche',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Politique de confidentialité',
             'priv.updated': 'Dernière mise à jour : 18 juin 2026',
