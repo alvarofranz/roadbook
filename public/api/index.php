@@ -7,7 +7,7 @@ $action = (string)($d['action'] ?? '');
 
 // Only these read-only actions may use GET; everything that changes state needs POST
 // (blocks CSRF via top-level GET navigation with a Lax session cookie).
-$readOnly = ['config', 'public_list', 'public_get'];
+$readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get'];
 if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
 // Same-origin guard for state-changing requests.
 if ($method === 'POST') {
@@ -41,6 +41,9 @@ try {
         case 'admin_settings':  admin_settings(require_admin()); break;
         case 'admin_save_settings': admin_save_settings(require_admin(), $d); break;
         case 'admin_logs':      admin_logs(require_admin()); break;
+        case 'admin_events':    events_admin_list(require_admin()); break;
+        case 'event_save':      event_save(require_admin(), $d); break;
+        case 'event_delete':    event_delete(require_admin(), $d); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
@@ -57,6 +60,8 @@ try {
         case 'audio_delete': audio_delete(require_user(), $d); break;
         case 'public_list': public_list(); break;
         case 'public_get':  public_get($d); break;
+        case 'events_list': events_public_list(); break;
+        case 'event_get':   event_public_get($d); break;
         default:            fail('Unknown action.', 404);
     }
 } catch (Throwable $e) {

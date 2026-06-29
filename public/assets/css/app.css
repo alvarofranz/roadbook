@@ -450,6 +450,8 @@ button.rb-badge:hover { background: var(--card); }
 .site-banner-warning { background: #4a3b12; border-bottom: 1px solid #8a6d1a; color: #ffe9a8; }
 .site-banner-x { background: none; border: 0; color: inherit; cursor: pointer; opacity: .7; padding: .2rem; }
 .site-banner-x:hover { opacity: 1; }
+/* Admin event editor: the roadbook picker checklist (#6) */
+.ev-pool { max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; margin: .3rem 0 .6rem; }
 .rb-rows { display: flex; flex-direction: column; gap: .6rem; }
 .rb-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
 .rb-pager .btn { margin: 0; }

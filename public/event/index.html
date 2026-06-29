@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Event · RDBK.app</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=2026.06.29-22">
+    <link rel="stylesheet" href="/assets/css/app.css?v=2026.06.29-22">
+    <style>
+        #evWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
+        .ev-head { margin-bottom: 1rem; }
+        .ev-head h1 { margin: .2rem 0 .3rem; font-size: 1.8rem; }
+        .ev-desc { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="evWrap">
+    <p id="evLoading" class="muted" data-i18n="gallery.loading">Loading…</p>
+    <article id="evContent" hidden>
+        <div class="ev-head">
+            <div class="kicker"><a href="/events/" data-i18n="Events">Events</a></div>
+            <h1 id="evTitle"></h1>
+            <div class="muted small" id="evMeta"></div>
+        </div>
+        <p id="evDesc" class="ev-desc"></p>
+        <div class="icon-category" data-i18n="Roadbooks">Roadbooks</div>
+        <div class="gallery" id="evRoadbooks"></div>
+    </article>
+</main>
+
+<script src="/assets/js/i18n.es.js?v=2026.06.29-22"></script>
+<script src="/assets/js/i18n.it.js?v=2026.06.29-22"></script>
+<script src="/assets/js/i18n.de.js?v=2026.06.29-22"></script>
+<script src="/assets/js/i18n.fr.js?v=2026.06.29-22"></script>
+<script src="/assets/js/i18n.js?v=2026.06.29-22"></script>
+<script src="/assets/js/app.js?v=2026.06.29-22"></script>
+<script src="event.js?v=2026.06.29-22"></script>
+</body>
+</html>
