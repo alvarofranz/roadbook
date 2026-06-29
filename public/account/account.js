@@ -124,7 +124,14 @@
     onSubmit('loginForm', async () => {
         const pass = $('loginPass').value;
         const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
-        if (r.ok) { me = r.user; await storeCredential(me.email, pass); me.must_change_password ? showForce() : showAccount(me); }
+        if (r.ok) {
+            me = r.user; await storeCredential(me.email, pass);
+            if (me.must_change_password) return showForce();
+            // return to the page the user came from (?next=), if it's a safe same-origin path
+            const next = new URLSearchParams(location.search).get('next');
+            if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
+            showAccount(me);
+        }
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
     });

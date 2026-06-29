@@ -5,7 +5,7 @@
 (function () {
     (async function init() {
         const cfg = await RBApi('config');
-        if (!cfg.user) { location.href = '../account/'; return; } // sign in first
+        if (!cfg.user) { location.href = RBLoginUrl(); return; } // sign in first, then come back here
         RBRoadbookList(document.getElementById('rbList'));
     })();
 })();

@@ -10,6 +10,9 @@
 
     const here = (document.currentScript && document.currentScript.src) || location.href;
     const ROOT = here.replace(/assets\/js\/app\.js.*$/, ''); // .../roadbook/
+    // Login URL carrying a ?next= return path to the current page (omitted on /account/ itself);
+    // after login, account.js sends the user back to that safe same-origin path (#105).
+    window.RBLoginUrl = () => ROOT + 'account/' + (/\/account\/?$/.test(location.pathname) ? '' : '?next=' + encodeURIComponent(location.pathname + location.search + location.hash));
 
     // True only inside a Capacitor native shell (available synchronously at startup).
     const isNativeApp = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
@@ -432,7 +435,7 @@
             <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>
             <div class="btnrow center spaced">
                 <button class="btn btn-ghost" data-no>${RBt('Not now')}</button>
-                <a class="btn btn-primary" href="${ROOT}account/"><i class="fa-solid fa-right-to-bracket"></i> ${RBt('Sign in / Create account')}</a>
+                <a class="btn btn-primary" href="${RBLoginUrl()}"><i class="fa-solid fa-right-to-bracket"></i> ${RBt('Sign in / Create account')}</a>
             </div>`, 'narrow center');
         d.q('[data-no]').onclick = d.close;
     };
@@ -455,7 +458,7 @@
             if (!slot || slot.querySelector('.account-control')) return;
             const w = document.createElement('div'); w.className = 'account-control';
             if (!user) {
-                w.innerHTML = `<a class="nav-link account-login" href="${ROOT}account/" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
+                w.innerHTML = `<a class="nav-link account-login" href="${RBLoginUrl()}" title="Sign in / Create account"><i class="fa-solid fa-circle-user"></i></a>`;
             } else {
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
                     <div class="account-menu" hidden>
