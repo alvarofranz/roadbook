@@ -19,6 +19,7 @@
             : (isMe ? '' : `<button class="btn btn-ghost" data-role="${u.id}" data-make="${u.is_admin ? 0 : 1}">${esc(t(u.is_admin ? 'Remove admin' : 'Make admin'))}</button>`);
         const activate = u.verified ? '' : `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>`;
         const edit = `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>`;
+        const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
         const block = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
         const del = (u.locked || isMe) ? '' : `<button class="btn btn-danger" data-del="${u.id}" data-name="${esc(u.username)}">${esc(t('Delete'))}</button>`;
         return `<tr>
@@ -26,7 +27,7 @@
             <td>${esc(u.email)}</td>
             <td class="num">${u.roadbooks}</td>
             <td class="num">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
-            <td><div class="u-actions">${activate}${edit}${role}${block}${del}</div></td>
+            <td><div class="u-actions">${activate}${edit}${activity}${role}${block}${del}</div></td>
         </tr>`;
     }
 
@@ -68,6 +69,23 @@
         };
     }
 
+    // Read-only inspection (#86): a user's stats + recent activity timeline (IPs are anonymised).
+    function viewActivity(u) {
+        const m = RBModal(`<h2>${esc(t('Activity'))} · @${esc(u.username)}</h2>
+            <div id="actBody" class="muted small">${esc(t('Loading…'))}</div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
+        m.q('[data-cancel]').onclick = m.close;
+        api('admin_activity', { id: u.id }).then((r) => {
+            const body = m.q('#actBody');
+            if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
+            const stats = `<p class="hint">${r.stats.roadbooks} ${esc(t('roadbooks'))} · ${fmtSize(r.stats.bytes)}</p>`;
+            const rows = r.events.length
+                ? r.events.map((e) => `<tr><td class="small">${esc(e.created_at)}</td><td>${esc(e.action.replace(/_/g, ' '))}</td><td class="muted small">${esc(e.detail || '')}</td><td class="muted small">${esc(e.ip || '')}</td></tr>`).join('')
+                : `<tr><td colspan="4" class="muted small">${esc(t('No activity yet.'))}</td></tr>`;
+            body.innerHTML = stats + `<table class="act-table"><tbody>${rows}</tbody></table>`;
+        });
+    }
+
     // Re-bind the per-row action buttons (called after every render of #usersBody). Each
     // mutating action re-fetches via load(); the current search + page are preserved.
     function wireRows() {
@@ -85,6 +103,7 @@
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
+        body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => viewActivity(byId[+b.dataset.activity]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')', t('Delete')))) return;
             const x = await api('admin_delete', { id: +b.dataset.del });

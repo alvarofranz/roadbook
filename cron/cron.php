@@ -19,7 +19,12 @@ try {
             $log = __DIR__ . '/cron.log';
             if (is_file($log) && count($l = file($log)) > 1000) file_put_contents($log, implode('', array_slice($l, -500)));
             break;
-        // 1..9 reserved for future tasks
+        case 1:
+            require_once __DIR__ . '/purge-activity-log.php';
+            $r = purgeActivityLog();
+            echo "purge-activity-log: deleted {$r['deleted']}\n";
+            break;
+        // 2..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";
