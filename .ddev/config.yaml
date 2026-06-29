@@ -24,5 +24,7 @@ hooks:
     - composer: install
     # a working client config so the front-end has window.RB_CONFIG (map is free/no-key)
     - exec: "[ -f public/assets/js/config.js ] || cp public/assets/js/config.js.example public/assets/js/config.js"
-    # apply the SQL migrations once, on a fresh DB (skipped once `users` exists)
-    - exec: "mysql db -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1 || for f in migrations/*.sql; do echo \"applying $f\"; mysql db < \"$f\"; done"
+    # apply any pending SQL migrations (tracked in a _migrations table, so files added
+    # later are picked up on every start — not only on a fresh DB). tr strips CRLF in case
+    # the script was checked out on Windows.
+    - exec: "tr -d '\\r' < .ddev/migrate.sh | bash"
