@@ -21,6 +21,14 @@
     // for safe-area styling. Never runs in a plain browser — the PWA stays unchanged.
     if (isNativeApp()) {
         document.documentElement.classList.add('native');
+        // A service worker's own fetch() bypasses Capacitor's localhost asset server, so a SW
+        // breaks asset loading inside the app (blank/unstyled shell on the second launch). The
+        // native build ships its assets bundled and is offline without one — so never register a
+        // SW here, and tear down any a previous build left controlling this WebView.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
+            if (window.caches) caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+        }
         const nativeBridge = document.createElement('script');
         nativeBridge.src = ROOT + 'assets/js/native.bundle.js';
         document.head.appendChild(nativeBridge);
@@ -84,7 +92,7 @@
 
     /* ---------------- Service Worker ---------------- */
     let swReg = null;
-    if ('serviceWorker' in navigator) {
+    if (!isNativeApp() && 'serviceWorker' in navigator) {
         const hadController = !!navigator.serviceWorker.controller;
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
