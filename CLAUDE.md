@@ -37,6 +37,11 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   discarding unsaved work…) MUST ask for confirmation first via `RBConfirm` before it runs.
   No silent data loss, ever. A **deletion** confirm MUST name the object being deleted in its
   message (e.g. the note number + text), so the user knows exactly what they're removing.
+- **Edit freely, but WAIT for the user's test confirmation before deploying.** You may read and
+  modify the code in the local working copy as needed. But do NOT commit/stamp/push (a push to
+  `main` is a production deploy) until the user has tested the change (ddev serves the working
+  tree) and given an explicit go-ahead. Make the change, say what to test, then stop — never
+  pre-emptively deploy, even when the user asked for the feature.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would

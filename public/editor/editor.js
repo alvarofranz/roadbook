@@ -180,7 +180,7 @@
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0); // delete only exists once it's saved
     }
-    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 96, flip_x: false }); // inserted at 3× the old 32px default — easier to see, then resize as needed
+    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 64, flip_x: false }); // inserted at 2× the old 32px default — easier to see, then resize as needed
     // The declarative speed_limit drives the vignette symbol: keep exactly one S-icon matching the
     // value (S99_end for a lifted limit, 0), or none. 130 km has no palette icon, so none is added.
     const SPEED_ICON = { 0: 'S99_end.svg', 10: 'S01_10km.svg', 20: 'S02_20km.svg', 30: 'S03_30km.svg', 40: 'S04_40km.svg', 50: 'S05_50km.svg', 60: 'S06_60km.svg', 70: 'S07_70km.svg', 80: 'S08_80km.svg', 90: 'S09_90km.svg', 100: 'S10_100km.svg', 110: 'S11_110km.svg', 120: 'S12_120km.svg' };
@@ -1157,6 +1157,13 @@
      * row's slot — like the Reader's per-note map). Each note's text is edited in
      * the row itself, so a full list rebuild only happens on structural changes. */
     function renderNotes() {
+        // preserve text-editing focus + caret + scroll across the full list rebuild below, so adding
+        // a point/line (or any structural change) doesn't yank you out of the note you're editing.
+        const ae = document.activeElement;
+        const keepFocusI = ae && ae.classList && ae.classList.contains('note-title') ? ae.dataset.i : null;
+        const keepCaret = keepFocusI != null && ae.selectionStart != null ? ae.selectionStart : null;
+        const keepListScroll = $('noteList') ? $('noteList').scrollTop : 0;
+        const keepWinScroll = window.scrollY;
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
         // geotagged photos belong to their nearest note (within 80 m) → a 📷 under the km
         const photosByNote = {};
@@ -1215,6 +1222,10 @@
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
+        // restore focus/caret/scroll captured above so the rebuild isn't disruptive
+        if (keepFocusI != null) { const ta = $('noteList').querySelector('.note-title[data-i="' + keepFocusI + '"]'); if (ta) { ta.focus({ preventScroll: true }); if (keepCaret != null) { try { ta.setSelectionRange(keepCaret, keepCaret); } catch (e) {} } } }
+        if ($('noteList')) $('noteList').scrollTop = keepListScroll;
+        window.scrollTo({ top: keepWinScroll });
     }
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
