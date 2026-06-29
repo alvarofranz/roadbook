@@ -23,6 +23,7 @@ if ($type === 'audio') {
     if (!$st->fetch()) fail('Roadbook not found.', 404);
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_audio WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 200) fail('Too many voice notes (200 max).');
+    if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
     $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
     $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
     if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
@@ -57,6 +58,7 @@ if ($type === 'photo') {
     if (!$st->fetch()) fail('Roadbook not found.', 404);
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_photos WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 60) fail('Gallery is full (60 photos max).');
+    if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
     $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
     $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
     if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;

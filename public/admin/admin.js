@@ -4,7 +4,7 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
-    const fmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
+    const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
     let me = 0, allUsers = [], byId = {}, page = 1, query = '';
 
@@ -25,7 +25,7 @@
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
             <td>${esc(u.email)}</td>
             <td class="num">${u.roadbooks}</td>
-            <td class="num">${fmtSize(u.bytes)}</td>
+            <td class="num">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
             <td><div class="u-actions">${activate}${edit}${role}${block}${del}</div></td>
         </tr>`;
     }
@@ -44,11 +44,15 @@
             <label class="field-label" for="euPass">${esc(t('New password (optional)'))}</label>
             <input id="euPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Leave blank to keep current'))}">
             <p class="hint">${esc(t('If you set a password, the user must change it at next login.'))}</p>
+            <label class="field-label" for="euQuota">${esc(t('Storage quota (MB)'))}</label>
+            <input id="euQuota" type="number" min="0" step="1" class="field" autocomplete="off" placeholder="${esc(t('Default'))}">
+            <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow');
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
         m.q('#euEmail').value = u.email || '';
+        m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const x = await api('admin_update', {
@@ -58,6 +62,7 @@
                 username: m.q('#euUser').value.trim(),
                 email: m.q('#euEmail').value.trim(),
                 password: m.q('#euPass').value,
+                quota_bytes: m.q('#euQuota').value.trim() === '' ? '' : Math.max(0, Math.round(parseFloat(m.q('#euQuota').value) * 1048576)),
             });
             if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not save.');
         };

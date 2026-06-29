@@ -281,6 +281,8 @@
     window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
+    // Human-readable byte size, e.g. "12.3 MB" / "640 KB" (shared by the storage indicator + admin).
+    window.RBFmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
@@ -297,6 +299,7 @@
         let page = 1, q = '';
         // Search box only once the list is long enough to need it; the pager appears only past one page.
         container.innerHTML =
+            ((r.used_bytes != null && r.quota_bytes) ? `<div class="rb-usage muted small"><i class="fa-solid fa-database"></i> ${RBesc(RBt('Storage'))}: ${RBFmtSize(r.used_bytes)} / ${RBFmtSize(r.quota_bytes)}</div>` : '') +
             (all.length > 5 ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search roadbooks…'))}" autocomplete="off" spellcheck="false"></div>` : '') +
             `<div class="rb-rows"></div><div class="rb-pager"></div>`;
         const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');

@@ -19,7 +19,7 @@ function rb_clean_status($s): string {
 function rb_list(array $user): void {
     $st = db()->prepare('SELECT id, title, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
     $st->execute([$user['id']]);
-    json_out(['ok' => true, 'roadbooks' => $st->fetchAll()]);
+    json_out(['ok' => true, 'roadbooks' => $st->fetchAll(), 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
 }
 
 function rb_get(array $user, array $d): void {

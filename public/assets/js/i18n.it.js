@@ -33,6 +33,7 @@
             'help.route': 'Inverti cambia il senso di marcia: traccia, ordine delle note e tutti i rilevamenti vengono ricalcolati.',
             'Copy link': 'Copia link', 'Link copied': 'Link copiato', 'Could not copy the link.': 'Impossibile copiare il link.',
             'Make private': 'Rendi privato', 'Roadbook is now private.': 'Il roadbook ora è privato.', 'Could not change visibility.': 'Impossibile cambiare la visibilità.',
+            'Storage': 'Spazio', 'Storage quota (MB)': 'Quota di spazio (MB)', 'Storage limit reached — free up space or ask an admin for more.': 'Limite di spazio raggiunto — libera spazio o chiedine di più a un amministratore.', 'Blank uses the default. Raise it for a trusted user.': 'Vuoto usa il valore predefinito. Aumentalo per un utente fidato.',
             'Owner': 'Proprietario', 'Make this roadbook private?': 'Rendere privato questo roadbook?',
             'Navigate a roadbook': 'Naviga un roadbook', 'Build a roadbook': 'Prepara un roadbook', 'GPS trip computer': 'Computer di viaggio GPS', 'Record a GPS track': 'Registra una traccia GPS', 'Score events': 'Classifica eventi',
             // ---- tools (the English string is the key) ----
