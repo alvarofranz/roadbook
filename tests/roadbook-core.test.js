@@ -140,6 +140,18 @@ describe('recomputeMetrics & normalizeRoadTypes', () => {
         expect(rb.meta.note_count).toBe(2);
         expect(rb.meta.total_distance).toBeGreaterThan(0);
     });
+
+    it('derives each note bearing from the track heading (the data the editor map rotates to)', () => {
+        const rb = {
+            meta: {},
+            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }], // due east
+            notes: [{ idx: 1, road_type_out: 2 }],
+        };
+        RB.recomputeMetrics(rb);
+        // editor.js select() eases the map to note.bearing_in; if this regresses the map stops rotating.
+        expect(rb.notes[0].bearing_in).toBeCloseTo(90, 0);
+        expect(rb.notes[0].bearing_out).toBeCloseTo(90, 0);
+    });
 });
 
 describe('recomputeCaps', () => {
