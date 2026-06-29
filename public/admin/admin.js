@@ -116,13 +116,6 @@
         byId = {}; allUsers.forEach((u) => byId[u.id] = u);
         $('adminMsg').hidden = true; $('usersBox').hidden = false;
         render(); // keeps the current search + page across reloads
-        loadRoadbooks();
-    }
-
-    // Public-roadbook moderation: the shared RBPublicRoadbooksList renders the cards + force-private.
-    async function loadRoadbooks() {
-        $('pubHeading').hidden = false; $('pubList').hidden = false;
-        RBPublicRoadbooksList($('pubList'));
     }
 
     async function init() {

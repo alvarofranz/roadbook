@@ -338,7 +338,7 @@
         container.innerHTML = list.length ? list.map((rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>@${RBesc(rb.username)} · ${RBSummary(rb.total_distance, rb.note_count)}</small></div>
             <button class="rb-badge public" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Make private'))}" aria-label="${RBesc(RBt('Make private'))}"><i class="fa-solid fa-globe"></i> ${RBesc(RBt('Public'))}</button>
-            <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
+            <a class="btn btn-ghost" href="/challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
         </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
         container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + (b.dataset.title || '') + '”', RBt('Make private')))) return;
@@ -461,7 +461,8 @@
                     <div class="account-menu" hidden>
                         <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
-                        ${user.is_admin ? `<a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('Admin')}</a>` : ''}
+                        ${user.is_admin ? `<a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
+                        <a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
