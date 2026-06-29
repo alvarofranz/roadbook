@@ -63,6 +63,7 @@
                 <b>RDBK.app</b>
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="https://github.com/alvarofranz/roadbook" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
+                <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
@@ -554,7 +555,7 @@
         const el = document.createElement('div');
         el.className = 'cookie-notice'; el.setAttribute('role', 'note');
         el.innerHTML = `<span class="cookie-text">${RBt('RDBK uses only essential cookies (to keep you signed in) and local storage for your preferences and offline data — no ads, no tracking, no profiling.')} <a href="${ROOT}privacy/">${RBt('Privacy')}</a></span>
-            <button class="btn btn-primary cookie-ok" type="button">${RBt('Got it')}</button>`;
+            <button class="btn btn-primary cookie-ok" type="button">${RBt('I accept')}</button>`;
         document.body.appendChild(el);
         el.querySelector('.cookie-ok').onclick = () => { try { localStorage.setItem(COOKIE_OK_KEY, '1'); } catch (e) {} el.remove(); };
     }

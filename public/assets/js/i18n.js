@@ -95,21 +95,44 @@
         el.querySelectorAll('.lang-opt').forEach((o) => o.addEventListener('click', () => { close(); apply(o.dataset.lang); }));
     }
 
+    // Remember each element's original (English) content/attribute the first time, so a language
+    // that lacks a key — including switching BACK to English, whose source lives inline in the HTML
+    // (e.g. the privacy page) — restores the original instead of keeping the previous translation.
+    const orig = new WeakMap();
+    const baseOf = (el, field, getter) => { let o = orig.get(el); if (!o) orig.set(el, o = {}); if (!(field in o)) o[field] = getter(); return o[field]; };
+
     function apply(lang) {
         document.documentElement.lang = lang;
         document.querySelectorAll('[data-i18n]').forEach((el) => {
-            const v = tr(lang, el.getAttribute('data-i18n')); if (v == null) return;
             // replace just the text, keeping any leading icon (<i>) intact
             const tn = [...el.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
-            if (tn) tn.textContent = (el.firstElementChild ? ' ' : '') + v; else el.textContent = v;
+            const base = baseOf(el, 'text', () => tn ? tn.textContent : el.textContent);
+            const v = tr(lang, el.getAttribute('data-i18n'));
+            const val = v != null ? (el.firstElementChild ? ' ' : '') + v : base;
+            if (tn) tn.textContent = val; else el.textContent = val;
         });
-        document.querySelectorAll('[data-i18n-html]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-html')); if (v != null) el.innerHTML = v; });
-        document.querySelectorAll('[data-i18n-ph]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-ph')); if (v != null) el.setAttribute('placeholder', v); });
+        document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+            const base = baseOf(el, 'html', () => el.innerHTML);
+            const v = tr(lang, el.getAttribute('data-i18n-html')); el.innerHTML = v != null ? v : base;
+        });
+        document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+            const base = baseOf(el, 'ph', () => el.getAttribute('placeholder') || '');
+            const v = tr(lang, el.getAttribute('data-i18n-ph')); el.setAttribute('placeholder', v != null ? v : base);
+        });
         // accessibility attributes: title + aria-label translate declaratively too
-        document.querySelectorAll('[data-i18n-title]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-title')); if (v != null) el.setAttribute('title', v); });
-        document.querySelectorAll('[data-i18n-aria]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-aria')); if (v != null) el.setAttribute('aria-label', v); });
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+            const base = baseOf(el, 'title', () => el.getAttribute('title') || '');
+            const v = tr(lang, el.getAttribute('data-i18n-title')); el.setAttribute('title', v != null ? v : base);
+        });
+        document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+            const base = baseOf(el, 'aria', () => el.getAttribute('aria-label') || '');
+            const v = tr(lang, el.getAttribute('data-i18n-aria')); el.setAttribute('aria-label', v != null ? v : base);
+        });
         // help tooltips: the bubble text lives in data-tip
-        document.querySelectorAll('[data-i18n-tip]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-tip')); if (v != null) el.setAttribute('data-tip', v); });
+        document.querySelectorAll('[data-i18n-tip]').forEach((el) => {
+            const base = baseOf(el, 'tip', () => el.getAttribute('data-tip') || '');
+            const v = tr(lang, el.getAttribute('data-i18n-tip')); el.setAttribute('data-tip', v != null ? v : base);
+        });
         refreshLangControls(lang);
         localStorage.setItem('rb_lang', lang);
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));
