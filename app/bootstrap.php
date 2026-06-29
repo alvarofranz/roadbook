@@ -31,6 +31,7 @@ require __DIR__ . '/mail.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/roadbooks.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/settings.php';
 
 // Long-lived, SLIDING session — feels like a native app: stays signed in and
 // the window extends on every use (in the browser and the installed PWA alike).
