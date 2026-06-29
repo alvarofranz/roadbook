@@ -21,14 +21,14 @@ AddType audio/mpeg .mp3
     </FilesMatch>
 </IfModule>
 
-# Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug> → the tool page
+# Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug>, /event/<slug> → the page
 # (only when the path isn't a real file or directory). The trailing-slash form
-# redirects to the canonical one first — the tool pages load their assets via
+# redirects to the canonical one first — the pages load their assets via
 # relative ../ paths, which would break one level deeper.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(challenge|reader|editor)/([A-Za-z0-9_-]+)/$ /$1/$2 [R=301,L]
+    RewriteRule ^(challenge|reader|editor|event)/([A-Za-z0-9_-]+)/$ /$1/$2 [R=301,L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(challenge|reader|editor)/[A-Za-z0-9_-]+$ /$1/index.html [L]
+    RewriteRule ^(challenge|reader|editor|event)/[A-Za-z0-9_-]+$ /$1/index.html [L]
 </IfModule>
