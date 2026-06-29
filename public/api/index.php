@@ -17,7 +17,7 @@ if ($method === 'POST') {
 
 try {
     switch ($action) {
-        case 'config':    json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'user' => current_user()]); break;
+        case 'config':    json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'user' => current_user(), 'banner' => site_banner()]); break;
         case 'register':  register_user($d); break;
         case 'verify':    verify_email($d); break;
         case 'login':     login_user($d); break;
@@ -38,6 +38,9 @@ try {
         case 'admin_update':    admin_update_user(require_admin(), $d); break;
         case 'admin_delete':    admin_delete_user(require_admin(), $d); break;
         case 'admin_activity':  admin_activity(require_admin(), $d); break;
+        case 'admin_settings':  admin_settings(require_admin()); break;
+        case 'admin_save_settings': admin_save_settings(require_admin(), $d); break;
+        case 'admin_logs':      admin_logs(require_admin()); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;

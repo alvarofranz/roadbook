@@ -457,9 +457,23 @@
         d.q('[data-no]').onclick = d.close;
     };
 
+    // Site-wide announcement banner (#103): rendered under the header from the config payload.
+    function renderBanner(banner) {
+        document.querySelector('.site-banner')?.remove();
+        if (!banner || !banner.text) return;
+        const el = document.createElement('div');
+        el.className = 'site-banner site-banner-' + (banner.level === 'warning' ? 'warning' : 'info');
+        el.innerHTML = `<span>${RBesc(banner.text)}</span><button class="site-banner-x" aria-label="${RBesc(RBt('Dismiss'))}"><i class="fa-solid fa-xmark"></i></button>`;
+        const header = document.querySelector('header.topbar');
+        (header || document.body).insertAdjacentElement(header ? 'afterend' : 'afterbegin', el);
+        el.querySelector('.site-banner-x').onclick = () => el.remove();
+    }
+
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
-        const user = (await RBApi('config')).user || null;
+        const cfg = await RBApi('config');
+        const user = cfg.user || null;
+        renderBanner(cfg.banner);
         // A signed-in user's language preference follows them across devices: apply it on
         // connect, and persist any later switch from the header selector.
         if (user && window.RBi18n) {
@@ -482,7 +496,8 @@
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
                         <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
                         ${user.is_admin ? `<a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>
-                        <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>` : ''}
+                        <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
+                        <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }

@@ -441,6 +441,15 @@ button.rb-badge:hover { background: var(--card); }
 /* Admin activity-inspection timeline (#86) */
 .act-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .act-table td { padding: .25rem .45rem; border-top: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+/* Admin site-settings page (#103) + the site-wide announcement banner */
+.cfg-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.log-pre { max-height: 320px; overflow: auto; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .6rem; font-family: ui-monospace, monospace; font-size: .78rem; white-space: pre-wrap; }
+.site-banner { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; font-size: .9rem; }
+.site-banner span { flex: 1; }
+.site-banner-info { background: var(--card-2); border-bottom: 1px solid var(--line); }
+.site-banner-warning { background: #4a3b12; border-bottom: 1px solid #8a6d1a; color: #ffe9a8; }
+.site-banner-x { background: none; border: 0; color: inherit; cursor: pointer; opacity: .7; padding: .2rem; }
+.site-banner-x:hover { opacity: 1; }
 .rb-rows { display: flex; flex-direction: column; gap: .6rem; }
 .rb-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
 .rb-pager .btn { margin: 0; }

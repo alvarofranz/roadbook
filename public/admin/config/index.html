@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Site settings · Admin · RDBK.app</title>
+    <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=2026.06.29-22">
+    <link rel="stylesheet" href="../../assets/css/app.css?v=2026.06.29-22">
+    <style>
+        #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="adminWrap">
+    <h1 data-i18n="Site settings">Site settings</h1>
+    <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
+    <div id="cfgBody" hidden>
+        <section class="cfg-card">
+            <h2 data-i18n="Home-page message">Home-page message</h2>
+            <p class="hint" data-i18n="Shown as a banner under the header on every page.">Shown as a banner under the header on every page.</p>
+            <label class="checkbox-row"><input type="checkbox" id="smOn"> <span data-i18n="Show the message">Show the message</span></label>
+            <label class="field-label" for="smText" data-i18n="Message">Message</label>
+            <textarea id="smText" class="field" rows="3" maxlength="2000"></textarea>
+            <div class="field-grid">
+                <div>
+                    <label class="field-label" for="smLevel" data-i18n="Level">Level</label>
+                    <select id="smLevel" class="field"><option value="info" data-i18n="Info">Info</option><option value="warning" data-i18n="Warning">Warning</option></select>
+                </div>
+                <div>
+                    <label class="field-label" for="smUntil" data-i18n="Show until (optional)">Show until (optional)</label>
+                    <input type="date" id="smUntil" class="field">
+                </div>
+            </div>
+            <div class="btnrow end"><button class="btn btn-primary" id="smSave" data-i18n="Save">Save</button></div>
+        </section>
+        <section class="cfg-card">
+            <h2 data-i18n="Logs">Logs</h2>
+            <p class="hint"><span data-i18n="Deploy logs live in GitHub Actions.">Deploy logs live in GitHub Actions.</span> <a href="https://github.com/alvarofranz/roadbook/actions" target="_blank" rel="noopener">GitHub Actions <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+            <h3 data-i18n="Recent activity">Recent activity</h3>
+            <div id="logActivity" class="muted small">—</div>
+            <h3 data-i18n="Cron log">Cron log</h3>
+            <pre id="logCron" class="log-pre">—</pre>
+        </section>
+    </div>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../../assets/js/roadbook-core.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/i18n.es.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/i18n.it.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/i18n.de.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/i18n.fr.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/i18n.js?v=2026.06.29-22"></script>
+<script src="../../assets/js/app.js?v=2026.06.29-22"></script>
+<script src="config.js?v=2026.06.29-22"></script>
+</body>
+</html>
