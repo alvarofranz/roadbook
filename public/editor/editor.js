@@ -1255,8 +1255,12 @@
         openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
-        map.select(rb.notes[i], true); // highlight only — selecting a note deliberately does NOT
-        // recentre / zoom / rotate the map, so editing (and deleting) never loses your place on it (#65).
+        map.select(rb.notes[i], true); // highlight
+        // recentre + rotate the map to the note's arrival heading. Only a deliberate selection
+        // reorients — edits/deletes refresh through renderNotes (not select), so they never move
+        // the map and you don't lose your place (the concern behind #65).
+        const n = rb.notes[i];
+        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: Math.max(map.map.getZoom(), 14), bearing: n.bearing_in || 0, duration: 450 });
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.

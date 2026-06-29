@@ -54,7 +54,7 @@
         .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
         .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
-        .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; }
+        .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; overscroll-behavior: contain; }
         /* icons live on a white tile so dark line-art symbols stay legible */
         .icon-grid button { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
         .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
