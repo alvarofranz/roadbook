@@ -56,6 +56,45 @@
 
     const tr = (lang, k) => { const d = T[lang] || T.en; return d[k] != null ? d[k] : (T.en[k] != null ? T.en[k] : null); };
 
+    // The language selector: a collapsed flag-only trigger that opens a flag + endonym list.
+    // Flags are inline SVG (emoji flags don't render on Windows). EN uses the UK flag.
+    const LANGS = [
+        ['en', 'English',  '<svg viewBox="0 0 19 13"><rect width="19" height="13" fill="#012169"/><path d="M0,0 19,13 M19,0 0,13" stroke="#fff" stroke-width="2.6"/><path d="M0,0 19,13 M19,0 0,13" stroke="#C8102E" stroke-width="1.1"/><rect x="7.6" width="3.8" height="13" fill="#fff"/><rect y="4.6" width="19" height="3.8" fill="#fff"/><rect x="8.45" width="2.1" height="13" fill="#C8102E"/><rect y="5.45" width="19" height="2.1" fill="#C8102E"/></svg>'],
+        ['es', 'Español',  '<svg viewBox="0 0 19 13"><rect width="19" height="13" fill="#AA151B"/><rect y="3.25" width="19" height="6.5" fill="#F1BF00"/></svg>'],
+        ['it', 'Italiano', '<svg viewBox="0 0 19 13"><rect width="6.33" height="13" fill="#009246"/><rect x="6.33" width="6.34" height="13" fill="#fff"/><rect x="12.67" width="6.33" height="13" fill="#ce2b37"/></svg>'],
+        ['de', 'Deutsch',  '<svg viewBox="0 0 19 13"><rect width="19" height="4.33" fill="#000"/><rect y="4.33" width="19" height="4.34" fill="#DD0000"/><rect y="8.67" width="19" height="4.33" fill="#FFCE00"/></svg>'],
+        ['fr', 'Français', '<svg viewBox="0 0 19 13"><rect width="6.33" height="13" fill="#0055A4"/><rect x="6.33" width="6.34" height="13" fill="#fff"/><rect x="12.67" width="6.33" height="13" fill="#EF4135"/></svg>'],
+    ];
+    const flagOf = (code) => (LANGS.find((l) => l[0] === code) || LANGS[0])[2];
+
+    // Sync every selector to the active language: swap the trigger flag, mark the active option.
+    function refreshLangControls(lang) {
+        document.querySelectorAll('.lang').forEach((el) => {
+            const f = el.querySelector('.lang-trigger .lang-flag');
+            if (f) f.innerHTML = flagOf(lang);
+            el.querySelectorAll('.lang-opt').forEach((o) => o.classList.toggle('active', o.dataset.lang === lang));
+        });
+    }
+
+    // Turn an empty .lang container into the collapsible control + wire open/close + selection.
+    function buildLangControl(el) {
+        const cur = document.documentElement.lang || pickLang();
+        el.innerHTML =
+            `<button type="button" class="lang-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${window.RBt ? RBt('Language') : 'Language'}"><span class="lang-flag">${flagOf(cur)}</span><span class="lang-chev">▾</span></button>`
+            + '<div class="lang-menu" role="listbox" hidden>'
+            + LANGS.map(([code, name, flag]) => `<button type="button" class="lang-opt" role="option" data-lang="${code}"><span class="lang-flag">${flag}</span> ${name}</button>`).join('')
+            + '</div>';
+        const trig = el.querySelector('.lang-trigger'), menu = el.querySelector('.lang-menu');
+        const close = () => { menu.hidden = true; trig.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', onDoc); };
+        function onDoc(e) { if (!el.contains(e.target)) close(); }
+        trig.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (menu.hidden) { menu.hidden = false; trig.setAttribute('aria-expanded', 'true'); setTimeout(() => document.addEventListener('click', onDoc)); }
+            else close();
+        });
+        el.querySelectorAll('.lang-opt').forEach((o) => o.addEventListener('click', () => { close(); apply(o.dataset.lang); }));
+    }
+
     function apply(lang) {
         document.documentElement.lang = lang;
         document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -71,7 +110,7 @@
         document.querySelectorAll('[data-i18n-aria]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-aria')); if (v != null) el.setAttribute('aria-label', v); });
         // help tooltips: the bubble text lives in data-tip
         document.querySelectorAll('[data-i18n-tip]').forEach((el) => { const v = tr(lang, el.getAttribute('data-i18n-tip')); if (v != null) el.setAttribute('data-tip', v); });
-        document.querySelectorAll('.lang button').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
+        refreshLangControls(lang);
         localStorage.setItem('rb_lang', lang);
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));
     }
@@ -85,7 +124,7 @@
     window.RBt = (k) => (window.RBi18n ? RBi18n.t(k) : k);
 
     document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.lang').forEach(buildLangControl);
         apply(pickLang());
-        document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => apply(b.dataset.lang)));
     });
 })();
