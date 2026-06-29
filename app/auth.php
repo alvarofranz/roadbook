@@ -105,6 +105,7 @@ function change_password(array $user, array $d): void {
         if (!$h || !password_verify((string)($d['current'] ?? ''), $h)) fail('Current password is wrong.', 403);
     }
     db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
+    log_activity((int)$user['id'], 'password_change');
     json_out(['ok' => true, 'message' => 'Password updated.']);
 }
 
@@ -115,6 +116,7 @@ function account_delete(array $user, array $d): void {
     $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
     $h = $st->fetchColumn();
     if (!$h || !password_verify($pass, $h)) fail('Wrong password.', 403);
+    log_activity(null, 'account_delete'); // anonymous marker — the user's own rows cascade away with them
     purge_user_files((int)$user['id']);
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$user['id']]);
     $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
@@ -158,6 +160,7 @@ function register_user(array $d): void {
     $raw = new_token();
     db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,verify_token,verify_expires) VALUES (?,?,?,?,?,?, DATE_ADD(NOW(), INTERVAL 24 HOUR))')
         ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT), token_hash($raw)]);
+    log_activity((int)db()->lastInsertId(), 'register');
 
     global $CFG;
     $link = $CFG['base_url'] . '/account/?verify=' . $raw;
@@ -175,6 +178,7 @@ function verify_email(array $d): void {
     $u = $st->fetch();
     if (!$u) fail('That verification link is invalid or has expired.');
     db()->prepare('UPDATE users SET email_verified = 1, verify_token = NULL, verify_expires = NULL WHERE id = ?')->execute([$u['id']]);
+    log_activity((int)$u['id'], 'verify_email');
     json_out(['ok' => true, 'message' => 'Email verified — you can sign in now.']);
 }
 
@@ -186,17 +190,20 @@ function login_user(array $d): void {
     $st = db()->prepare('SELECT * FROM users WHERE email = ? OR username = ?');
     $st->execute([$id, $id]);
     $u = $st->fetch();
-    if (!$u || !password_verify($pass, $u['password_hash'])) fail('Wrong email/username or password.', 401);
-    if ((int)($u['blocked'] ?? 0)) fail('Your account has been blocked — contact the administrator.', 403);
+    if (!$u || !password_verify($pass, $u['password_hash'])) { log_activity($u ? (int)$u['id'] : null, 'login_failed'); fail('Wrong email/username or password.', 401); }
+    if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
+    log_activity((int)$u['id'], 'login');
     // Also hand back a Bearer token for the native apps (the browser ignores it and uses the cookie).
     json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
 }
 
 function logout_user(): void {
+    $uid = !empty($_SESSION['uid']) ? (int)$_SESSION['uid'] : null;
     if ($tok = bearer_token()) db()->prepare('DELETE FROM api_tokens WHERE token_hash = ?')->execute([token_hash($tok)]);
+    log_activity($uid, 'logout');
     $_SESSION = [];
     if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
     json_out(['ok' => true]);
@@ -229,6 +236,7 @@ function reset_password(array $d): void {
     $u = $st->fetch();
     if (!$u) fail('That reset link is invalid or has expired.');
     db()->prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $u['id']]);
+    log_activity((int)$u['id'], 'password_reset');
     json_out(['ok' => true, 'message' => 'Password updated — you can sign in now.']);
 }
 

@@ -79,3 +79,30 @@ function rate_limit(string $key, int $max, int $window): void {
     }
 }
 function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
+
+// Anonymise an IP before logging (GDPR, #86): drop the last octet of an IPv4 address, or all
+// but the first three groups of an IPv6 one, so a logged address can't single out a person.
+function anon_ip(string $ip): string {
+    if (strpos($ip, '.') !== false) return preg_replace('/\.\d+$/', '.0', $ip);
+    if (strpos($ip, ':') !== false) return implode(':', array_slice(explode(':', $ip), 0, 3)) . '::';
+    return $ip;
+}
+
+// The client IP for logging: behind the production proxy the real client is the first entry of
+// X-Forwarded-For (REMOTE_ADDR is the proxy). Used ONLY for anonymised logging, never for a
+// security decision, so trusting the proxy header here is fine — and rate-limiting keeps using
+// the un-proxied client_ip(), so anonymisation here doesn't widen its buckets.
+function logged_ip(): string {
+    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ($xff !== '') { $first = trim(explode(',', $xff)[0]); if ($first !== '') return $first; }
+    return client_ip();
+}
+
+// Record a security/activity event (#86). The IP is anonymised; rows auto-purge after 90 days
+// and CASCADE-delete with the user. Best-effort: logging must never break the actual request.
+function log_activity(?int $userId, string $action, ?string $detail = null): void {
+    try {
+        db()->prepare('INSERT INTO activity_log (user_id, action, detail, ip) VALUES (?,?,?,?)')
+            ->execute([$userId, substr($action, 0, 40), $detail !== null ? substr($detail, 0, 255) : null, anon_ip(logged_ip())]);
+    } catch (\Throwable $e) { /* never let logging fail the request */ }
+}

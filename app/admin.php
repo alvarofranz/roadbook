@@ -89,6 +89,7 @@ function admin_unpublish(array $user, array $d): void {
     $st->execute([$id]);
     if (!$st->fetch()) fail('Not found.', 404);
     db()->prepare("UPDATE roadbooks SET status = 'ready' WHERE id = ?")->execute([$id]);
+    log_activity((int)$user['id'], 'admin_unpublish', 'roadbook #' . $id);
     json_out(['ok' => true, 'id' => $id]);
 }
 
@@ -99,6 +100,7 @@ function admin_verify(array $user, array $d): void {
     $st->execute([$id]);
     if (!$st->fetch()) fail('Not found.', 404);
     db()->prepare('UPDATE users SET email_verified = 1, verify_token = NULL, verify_expires = NULL WHERE id = ?')->execute([$id]);
+    log_activity((int)$user['id'], 'admin_verify', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
@@ -114,6 +116,7 @@ function admin_block(array $user, array $d): void {
     if (!$row) fail('Not found.', 404);
     if ($blocked && in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail("Can't block a configured superuser.");
     db()->prepare('UPDATE users SET blocked = ? WHERE id = ?')->execute([$blocked, $id]);
+    log_activity((int)$user['id'], $blocked ? 'admin_block' : 'admin_unblock', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
@@ -145,6 +148,7 @@ function admin_update_user(array $user, array $d): void {
         $quotaVal = ($q === null || $q === '') ? null : max(0, (int)$q);
         db()->prepare('UPDATE users SET quota_bytes = ? WHERE id = ?')->execute([$quotaVal, $id]);
     }
+    log_activity((int)$user['id'], 'admin_edit_user', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
@@ -159,6 +163,7 @@ function admin_set_role(array $user, array $d): void {
     if (!$row) fail('Not found.', 404);
     if (!$makeAdmin && in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail('That account is a configured superuser (set in .env).');
     db()->prepare('UPDATE users SET is_admin = ? WHERE id = ?')->execute([$makeAdmin ? 1 : 0, $id]);
+    log_activity((int)$user['id'], $makeAdmin ? 'admin_grant' : 'admin_revoke', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
@@ -172,6 +177,23 @@ function admin_delete_user(array $user, array $d): void {
     if (!$row) fail('Not found.', 404);
     if (in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail("Can't delete a configured superuser.");
     purge_user_files($id);
-    db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // roadbooks/photos/api_tokens rows go via cascade
+    db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // roadbooks/photos/api_tokens/activity_log rows go via cascade
+    log_activity((int)$user['id'], 'admin_delete_user', 'user #' . $id);
     json_out(['ok' => true]);
+}
+
+// Admin inspection (#86): a user's stats + their recent activity timeline (anonymised IPs).
+function admin_activity(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT username FROM users WHERE id = ?');
+    $st->execute([$id]);
+    $u = $st->fetch();
+    if (!$u) fail('Not found.', 404);
+    $rc = db()->prepare('SELECT COUNT(*) FROM roadbooks WHERE user_id = ?');
+    $rc->execute([$id]);
+    $a = db()->prepare('SELECT action, detail, ip, created_at FROM activity_log WHERE user_id = ? ORDER BY id DESC LIMIT 50');
+    $a->execute([$id]);
+    json_out(['ok' => true, 'username' => $u['username'],
+        'stats' => ['roadbooks' => (int)$rc->fetchColumn(), 'bytes' => user_disk_bytes($id)],
+        'events' => $a->fetchAll()]);
 }

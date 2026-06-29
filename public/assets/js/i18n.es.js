@@ -33,7 +33,7 @@
             'help.route': 'Invertir cambia el sentido de marcha: la traza, el orden de las notas y todos los rumbos se recalculan.',
             'Copy link': 'Copiar enlace', 'Link copied': 'Enlace copiado', 'Could not copy the link.': 'No se pudo copiar el enlace.',
             'Make private': 'Hacer privado', 'Roadbook is now private.': 'El roadbook ahora es privado.', 'Could not change visibility.': 'No se pudo cambiar la visibilidad.',
-            'Storage': 'Almacenamiento', 'Storage quota (MB)': 'Cuota de almacenamiento (MB)', 'Storage limit reached — free up space or ask an admin for more.': 'Límite de almacenamiento alcanzado — libera espacio o pide más a un administrador.', 'Blank uses the default. Raise it for a trusted user.': 'En blanco usa el valor por defecto. Súbelo para un usuario de confianza.',
+            'Storage': 'Almacenamiento', 'Storage quota (MB)': 'Cuota de almacenamiento (MB)', 'Storage limit reached — free up space or ask an admin for more.': 'Límite de almacenamiento alcanzado — libera espacio o pide más a un administrador.', 'Blank uses the default. Raise it for a trusted user.': 'En blanco usa el valor por defecto. Súbelo para un usuario de confianza.', 'Activity': 'Actividad', 'Could not load.': 'No se pudo cargar.', 'No activity yet.': 'Sin actividad todavía.', 'roadbooks': 'roadbooks',
             'Owner': 'Propietario', 'Make this roadbook private?': '¿Hacer privado este roadbook?',
             'Navigate a roadbook': 'Navega un roadbook', 'Build a roadbook': 'Prepara un roadbook', 'GPS trip computer': 'Ordenador de viaje GPS', 'Record a GPS track': 'Graba una traza GPS', 'Score events': 'Clasificar eventos',
             // ---- tools (the English string is the key) ----
@@ -303,7 +303,7 @@
             'Install': 'Instalar', 'My profile': 'Mi perfil', 'Got it': 'Entendido', 'I accept': 'Acepto', 'How it works': 'Cómo funciona',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Política de privacidad',
-            'priv.updated': 'Última actualización: 18 de junio de 2026',
+            'priv.updated': 'Última actualización: 29 de junio de 2026',
             'priv.authoritative': 'La versión en inglés de esta política es la versión de referencia; las traducciones se ofrecen por comodidad.',
             'priv.intro': 'RDBK.app (“RDBK”, “nosotros”) es una suite gratuita para crear y navegar roadbooks digitales, disponible como sitio web, app web instalable (PWA) y apps nativas para Android e iOS. Esta política explica qué datos trata RDBK y por qué. En resumen: <b>tu ubicación se usa en tu dispositivo para navegar y grabar rutas; una cuenta y el almacenamiento en la nube son totalmente opcionales; no mostramos publicidad, no realizamos seguimiento de terceros y nunca vendemos tus datos.</b>',
             'priv.h.location': 'Ubicación',
@@ -328,6 +328,7 @@
             'priv.cookies.3': 'Sin cookies de terceros, sin cookies de publicidad ni analítica, sin seguimiento entre sitios. Como usamos solo almacenamiento esencial y funcional, no se requiere legalmente ningún banner de consentimiento; mostramos un aviso único por transparencia.',
             'priv.h.storage': 'Almacenamiento y seguridad',
             'priv.storage': 'Los datos que guardas se almacenan en nuestro servidor en la UE. Las contraseñas y los tokens de acceso se almacenan con hash. Las conexiones usan HTTPS.',
+            'priv.h.activity': 'Registro de actividad y seguridad', 'priv.activity': 'Por seguridad y prevención de abusos guardamos un breve registro de eventos clave de la cuenta — inicio de sesión (incluidos los intentos fallidos), cierre de sesión, registro, verificación de email, cambios de contraseña y acciones de administración. Cada entrada guarda el evento, la hora y tu dirección IP <b>anonimizada</b> (sin la última parte) para que no pueda identificarte. Las entradas se eliminan automáticamente a los 90 días, y todas tus entradas se borran cuando eliminas tu cuenta.',
             'priv.h.rights': 'Tus opciones y derechos',
             'priv.rights.1': 'Usa RDBK por completo sin cuenta (ningún dato personal sale de tu dispositivo).',
             'priv.rights.2': 'Edita o elimina tus roadbooks y fotos en cualquier momento desde tu cuenta.',
