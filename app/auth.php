@@ -35,7 +35,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {

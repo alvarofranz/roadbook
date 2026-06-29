@@ -33,6 +33,7 @@
             'help.route': 'Inverser change le sens de marche — la trace, l’ordre des notes et tous les caps sont recalculés.',
             'Copy link': 'Copier le lien', 'Link copied': 'Lien copié', 'Could not copy the link.': 'Impossible de copier le lien.',
             'Make private': 'Rendre privé', 'Roadbook is now private.': 'Le roadbook est maintenant privé.', 'Could not change visibility.': 'Impossible de changer la visibilité.',
+            'Storage': 'Stockage', 'Storage quota (MB)': 'Quota de stockage (MB)', 'Storage limit reached — free up space or ask an admin for more.': 'Limite de stockage atteinte — libérez de l\'espace ou demandez-en plus à un administrateur.', 'Blank uses the default. Raise it for a trusted user.': 'Vide utilise la valeur par défaut. Augmentez-la pour un utilisateur de confiance.',
             'Owner': 'Propriétaire', 'Make this roadbook private?': 'Rendre ce roadbook privé ?',
             'Navigate a roadbook': 'Naviguer un roadbook', 'Build a roadbook': 'Créer un roadbook', 'GPS trip computer': 'Ordinateur de voyage GPS', 'Record a GPS track': 'Enregistrer une trace GPS', 'Score events': 'Classer les événements',
             'Start new Roadbook from:': 'Nouveau roadbook depuis :', 'Start from a public RB': 'Partir d\'un RB public', 'Public Roadbooks': 'Roadbooks publics', 'Import a GPS track': 'Importer une trace GPS',

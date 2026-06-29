@@ -31,6 +31,10 @@ function user_disk_bytes(int $uid): int {
     foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $rid) $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
     return $bytes;
 }
+// A user's effective disk quota in bytes: their per-user override, or the system default.
+function user_quota_bytes(array $user): int {
+    return isset($user['quota_bytes']) && $user['quota_bytes'] !== null ? (int)$user['quota_bytes'] : DEFAULT_QUOTA_BYTES;
+}
 // Delete a user's files (call BEFORE removing the row, while roadbooks still resolve).
 function purge_user_files(int $uid): void {
     global $CFG;
@@ -41,7 +45,7 @@ function purge_user_files(int $uid): void {
 }
 
 function admin_users(array $user): void {
-    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, blocked, created_at,
+    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, blocked, quota_bytes, created_at,
             (SELECT COUNT(*) FROM roadbooks r WHERE r.user_id = users.id) AS roadbooks
         FROM users ORDER BY id')->fetchAll();
     $users = array_map(fn($r) => [
@@ -58,6 +62,8 @@ function admin_users(array $user): void {
         'locked'     => in_array(strtolower($r['email']), $GLOBALS['CFG']['admin_emails'], true) ? 1 : 0, // .env admin: can't demote/block/delete
         'roadbooks'  => (int)$r['roadbooks'],
         'bytes'      => user_disk_bytes((int)$r['id']),
+        'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
+        'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
         'created_at' => $r['created_at'],
     ], $rows);
     json_out(['ok' => true, 'me' => (int)$user['id'], 'users' => $users]);
@@ -131,6 +137,13 @@ function admin_update_user(array $user, array $d): void {
     if ($pw !== '') {
         if (strlen($pw) < 8) fail('Password must be at least 8 characters.');
         db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $id]);
+    }
+    // Disk-quota override (#99): empty → NULL (use the default), a value → bytes the client computed
+    // from MB. Only touched when the form actually sent the field, so an older client can't reset it.
+    if (array_key_exists('quota_bytes', $d)) {
+        $q = $d['quota_bytes'];
+        $quotaVal = ($q === null || $q === '') ? null : max(0, (int)$q);
+        db()->prepare('UPDATE users SET quota_bytes = ? WHERE id = ?')->execute([$quotaVal, $id]);
     }
     json_out(['ok' => true]);
 }

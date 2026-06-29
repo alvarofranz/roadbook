@@ -35,6 +35,10 @@ require __DIR__ . '/admin.php';
 // Long-lived, SLIDING session — feels like a native app: stays signed in and
 // the window extends on every use (in the browser and the installed PWA alike).
 const SESSION_LIFETIME = 60 * 24 * 3600; // 60 days
+// Per-user disk quota (#99): the default cap on a user's stored content (their .rdbk files +
+// photos). A user's `quota_bytes` column overrides it (NULL = use this default). Images are
+// AVIF-compressed on upload, so 50 MB holds hundreds of photos.
+const DEFAULT_QUOTA_BYTES = 50 * 1024 * 1024;
 if (PHP_SAPI !== 'cli' && session_status() !== PHP_SESSION_ACTIVE) {
     // Secure cookie on real HTTPS only. Behind a TLS-terminating router (ddev locally,
     // the proxy in production) the internal hop to PHP is plain HTTP, so trust
