@@ -180,7 +180,7 @@
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0); // delete only exists once it's saved
     }
-    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 32, flip_x: false });
+    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 96, flip_x: false }); // inserted at 3× the old 32px default — easier to see, then resize as needed
     // The declarative speed_limit drives the vignette symbol: keep exactly one S-icon matching the
     // value (S99_end for a lifted limit, 0), or none. 130 km has no palette icon, so none is added.
     const SPEED_ICON = { 0: 'S99_end.svg', 10: 'S01_10km.svg', 20: 'S02_20km.svg', 30: 'S03_30km.svg', 40: 'S04_40km.svg', 50: 'S05_50km.svg', 60: 'S06_60km.svg', 70: 'S07_70km.svg', 80: 'S08_80km.svg', 90: 'S09_90km.svg', 100: 'S10_100km.svg', 110: 'S11_110km.svg', 120: 'S12_120km.svg' };
