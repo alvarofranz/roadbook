@@ -46,6 +46,21 @@ describe('feature-page i18n (fp.* keys)', () => {
     }
 });
 
+describe('i18n cross-language key parity', () => {
+    // Every key defined in ANY language must exist in ALL of them — guards key drift,
+    // including the apostrophe-variant duplication (straight ' vs typographic ’) that left
+    // four strings untranslated in de/fr (#114).
+    const langs = loadLangs();
+    const union = [...new Set(LANGS.flatMap((l) => Object.keys(langs[l])))];
+
+    for (const lang of LANGS) {
+        it(`${lang} defines every key the other languages do`, () => {
+            const missing = union.filter((k) => !(k in langs[lang]));
+            expect(missing).toEqual([]);
+        });
+    }
+});
+
 describe('i18n apply round-trip', () => {
     beforeAll(() => {
         delete window.RBi18nLangs;
