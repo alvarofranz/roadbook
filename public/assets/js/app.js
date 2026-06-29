@@ -44,16 +44,16 @@
         const tools = isNativeApp()
             ? [['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Recorder']]
             : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking'], ['roadbooks', 'Roadbooks']];
-        const navLinks = tools.map(([p, label]) => `<a class="nav-link${active(p)}" href="${ROOT}${p}/">${label}</a>`).join('');
-        // on a tool page, a "How it works" link to that tool's /features/ description page
+        // on a tool page, a "How it works" link to that tool's /features/ description page, shown right after that tool's nav link
         const curTool = rel.split('/')[0];
         const toolHelp = ['recorder', 'editor', 'reader', 'tripmaster', 'ranking'].includes(curTool)
-            ? `<a class="tool-help" href="${ROOT}features/${curTool}/" title="How it works" data-i18n-title="How it works" aria-label="How it works" data-i18n-aria="How it works"><i class="fa-solid fa-circle-question"></i></a>` : '';
+            ? `<a class="tool-help" href="${ROOT}features/${curTool}/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>` : '';
+        const navLinks = tools.map(([p, label]) => `<a class="nav-link${active(p)}" href="${ROOT}${p}/">${label}</a>${p === curTool ? toolHelp : ''}`).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
-            <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>${toolHelp}</span>
+            <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a></span>
             <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <nav class="topnav" id="topnav">${navLinks}<div class="lang lang-top"></div></nav>
         </div>`;
@@ -479,10 +479,10 @@
             } else {
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
                     <div class="account-menu" hidden>
-                        <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
-                        ${user.is_admin ? `<a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
-                        <a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>` : ''}
+                        <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
+                        ${user.is_admin ? `<a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>
+                        <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }

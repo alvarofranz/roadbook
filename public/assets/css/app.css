@@ -60,9 +60,9 @@ img { max-width: 100%; display: block; }
 .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
 .brand-wrap { display: inline-flex; align-items: center; gap: .55rem; }
-/* "How it works" link to a tool's /features page — shown next to the brand on tool pages */
-.tool-help { display: inline-flex; align-items: center; color: var(--muted); font-size: 1.05rem; line-height: 1; text-decoration: none; }
-.tool-help:hover { color: var(--sand); }
+/* "How it works" link to a tool's /features page — labelled, shown right after the active tool's nav link */
+.tool-help { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); font-size: .92rem; font-weight: 600; line-height: 1; text-decoration: none; transition: color .15s; }
+.tool-help:hover { color: var(--sand); text-decoration: none; }
 /* minimal nav: plain text links, the active tool in sand */
 .topnav { display: flex; align-items: center; gap: 1.5rem; }
 .nav-link { background: none; border: 0; padding: .2rem 0; color: var(--muted); font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer; text-decoration: none; transition: color .15s; }
