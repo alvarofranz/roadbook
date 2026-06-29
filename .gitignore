@@ -22,6 +22,10 @@
 # repo (it holds the production panel key, scoped to rdbk).
 /DB.md
 
+# Generic security/architecture report — untracked (issue #100): boilerplate with
+# no secrets or grounded findings, no value being public in the repo.
+/docs/secnotes.md
+
 # Capacitor — the android/ (and ios/) projects are committed, but these are generated:
 /public/assets/js/native.bundle.js
 /ios/App/Pods
