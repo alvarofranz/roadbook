@@ -41,7 +41,10 @@ window.RBMap = class RBMap {
         try {
             this.map = new maplibregl.Map(Object.assign({
                 container: containerId, style: STYLE_SATELLITE,
-                center: [-3.6, 37.178], zoom: 12, attributionControl: true,
+                // Cap at the deepest zoom our base tiles cover (topo 20 / satellite 19). Without this the
+                // map defaults to maxZoom 22 and zooming past the available tiles destabilises the camera,
+                // snapping it back to the initial zoom (#112).
+                center: [-3.6, 37.178], zoom: 12, maxZoom: 20, attributionControl: true,
             }, mapOpts));
         } catch (e) { // no WebGL on this device — degrade to a placeholder, never kill the page
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (WebGL).</div>';
