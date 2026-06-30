@@ -28,6 +28,13 @@
         .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
         .users-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
         .users-pager .btn { margin: 0; }
+        /* the per-user roadbook list needs more room than the default wide modal; let titles wrap */
+        .rb-list { max-width: min(820px, 94vw); }
+        .rb-list .act-table td:first-child { white-space: normal; }
+        /* Owner-reassignment user picker (searchable) */
+        .mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
+        .mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }
+        .mv-opt:hover { border-color: var(--sand); }
         /* Phone: the wide table squeezes the actions column and stacks the buttons, wasting
            vertical space. Reflow each row into a card — labelled lines + actions wrapping
            across the full width (#127). */
@@ -55,7 +62,6 @@
                 <thead><tr>
                     <th data-i18n="User">User</th>
                     <th data-i18n="Email">Email</th>
-                    <th class="num" data-i18n="Roadbooks">Roadbooks</th>
                     <th class="num" data-i18n="Disk">Disk</th>
                     <th></th>
                 </tr></thead>

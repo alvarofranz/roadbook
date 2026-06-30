@@ -48,6 +48,7 @@ try {
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
+        case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_get':    rb_get(require_user(), $d); break;
         case 'rb_draft':  rb_draft(require_user()); break;
