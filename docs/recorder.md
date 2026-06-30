@@ -150,13 +150,30 @@ microfono che detta direttamente nel campo (tap per avviare, tap per fermare)
 riconoscimento segue l'UI: `it-IT`, `es-ES`, `en-US`, altrimenti `navigator.language`.
 Il microfono pulsa mentre ascolta (classe `.on`, [index.html](../public/recorder/index.html)).
 
-### "WP audio" (dettatura diretta)
-Oltre al *Waypoint* col modale, un pulsante **"WP audio"** (`#recWptAudio`, visibile solo
-dove lo speech-to-text è supportato — evidenziato con `.btn-accent`, tinta sand, per
-distinguerlo dai ghost button vicini) fa tutto in un tap, **senza modale**: rilascia un
-waypoint alla posizione corrente **e** avvia subito la dettatura; il testo riconosciuto
-diventa la nota del waypoint in tempo reale. Pulsa in rosso mentre ascolta; un secondo tap
-ferma. È il flusso pensato per l'uso col telefono in movimento.
+### "WP audio" (registrazione vocale, press-and-hold)
+Il pulsante **"WP audio"** (`#recWptAudio`, `.btn-accent`/sand; visibile dove c'è
+speech-to-text **o** registrazione audio) è il flusso pensato per il telefono in movimento:
+**tieni premuto per registrare**, senza modale. Alla pressione rilascia subito un waypoint
+alla posizione corrente, poi:
+
+- **Audio (primario):** registra la **clip vocale** via `getUserMedia` + `MediaRecorder` e
+  la salva sul server (`RBUploadAudio` → tabella `roadbook_audio`, come le foto) — solo da
+  **loggato + bozza** (`meUser && draftId`). La clip si rivede/riascolta nell'Editor, **sulla
+  riga della nota** più vicina.
+- **Testo (best-effort):** in parallelo tenta `SpeechRecognition` → `note.text`. **Il microfono
+  è esclusivo**, quindi la registrazione lo prende per prima: il testo dal vivo esce **solo dove
+  il mic è condivisibile (desktop)**; su **Android/iOS** = **audio sì, testo no**. (Per il solo
+  testo dal vivo c'è il mic del modale *Waypoint*, che è STT-only.)
+- **Countdown al rilascio:** lasciando il tasto parte un conto alla rovescia **sul pulsante**
+  (3→0 la prima volta, 2→0 dopo una ri-pressione) durante il quale **continua a registrare**;
+  a **0 salva** automaticamente (il waypoint è già creato → nessun OK). **Ripremere** durante il
+  countdown lo annulla e riprende a registrare (prossimo countdown = 2). Il rilascio è gestito a
+  livello `document` (un dito che scivola via chiude comunque); niente `setPointerCapture`
+  (instabile su Android).
+- **Feedback:** toast diagnostici — *Microphone unavailable* / *No audio captured* / *Voice note
+  saved* — così un fallimento non è silenzioso.
+
+Trascrivere la clip *registrata* in testo (post-registrazione, nell'Editor) è tracciato in **#133**.
 
 > Il pulsante foto è etichettato **"WP Foto"**.
 

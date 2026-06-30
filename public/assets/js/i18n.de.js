@@ -468,4 +468,6 @@
             'Voice note saved.': 'Sprachnotiz gespeichert.',
             'Microphone unavailable.': 'Mikrofon nicht verfügbar.',
             'Preparing… try the voice note again in a second.': 'Wird vorbereitet… versuche die Sprachnotiz gleich erneut.',
+            'fp.recorder.t9t': 'WP-Audio: gedrückt halten zum Aufnehmen',
+            'fp.recorder.t9d': 'Halte die WP-Audio-Schaltfläche gedrückt, um eine Sprachnotiz am Wegpunkt aufzunehmen; beim Loslassen läuft ein kurzer Countdown auf der Schaltfläche weiter und speichert dann automatisch. Es speichert den Audioclip (auf der Notiz im Editor abspielbar); am Desktop wird zusätzlich live transkribiert — auf dem Handy ist das Mikrofon exklusiv, nutze für diktierten Text daher das Mikrofon der Waypoint-Schaltfläche.',
         };

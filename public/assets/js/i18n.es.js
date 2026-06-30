@@ -506,4 +506,6 @@
             'Voice note saved.': 'Nota de voz guardada.',
             'Microphone unavailable.': 'Micrófono no disponible.',
             'Preparing… try the voice note again in a second.': 'Preparando… vuelve a intentar la nota de voz en un segundo.',
+            'fp.recorder.t9t': 'WP audio: mantén pulsado para grabar',
+            'fp.recorder.t9d': 'Mantén pulsado el botón WP audio para grabar una nota de voz en el waypoint; al soltar, una breve cuenta atrás en el botón sigue grabando y luego guarda sola. Guarda el clip de audio (se reproduce en la nota en el Editor); en escritorio también transcribe en directo — en el móvil el micrófono es exclusivo, así que para el texto dictado usa el mic del botón Waypoint.',
         };
