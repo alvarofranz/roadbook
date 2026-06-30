@@ -377,6 +377,10 @@ section.block { padding: 2.4rem 0; }
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .field:focus-visible, .modal-in:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
+/* Record-GPX dialog: the interval field sits inline with its label and stays narrow. */
+.gx-rate-row { display: flex; align-items: center; gap: .6rem; margin: .3rem 0 .6rem; }
+.gx-rate-row label { margin: 0; }
+.gx-rate-in { width: 5rem; margin: 0; }
 /* segmented two-state toggle (Reader advancement · Editor visibility); .fill stretches to full width */
 .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .segmented.fill { display: flex; }

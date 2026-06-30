@@ -71,17 +71,17 @@ window.RBGpxRecorder = (() => {
         const t = RBt, fsa = 'showSaveFilePicker' in window; // file picker ONLY when this device supports it
         // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
         const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
-        const rateField = opts.sampleRate === false ? '' : `<label class="muted small">${t('Sample every (seconds)')}</label>
-            <input id="gxFreq" class="modal-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}">`;
+        const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
+            <input id="gxFreq" class="modal-in gx-rate-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}"></div>`;
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
             ${rateField}
             <label class="muted small">${nameLabel}</label>
             <input id="gxName" class="modal-in" type="text" value="${startName}">
-            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
             <div class="btnrow between">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
-            </div>`, 'narrow top', null, { dismissable: false });
+            </div>
+            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>`, 'narrow top', null, { dismissable: false });
         let picked = null;
         d.q('#gxX').onclick = d.close;
         if (fsa) d.q('#gxPick').onclick = async () => {
