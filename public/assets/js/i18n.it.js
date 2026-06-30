@@ -492,4 +492,7 @@
             'fp.ranking.t5t': 'Offline al traguardo',
             'fp.ranking.t5d': 'Tutto è in locale sul dispositivo e verificato — funziona completamente offline al traguardo, senza account.',
             'Filter roadbooks…': 'Filtra i roadbook…',
+            'Organizer': 'Organizzatore',
+            'Can create and manage their own events.': 'Può creare e gestire i propri eventi.',
+            'Organizers only.': 'Solo organizzatori.',
         };

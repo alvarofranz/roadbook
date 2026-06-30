@@ -492,4 +492,7 @@
             'fp.ranking.t5t': 'Sin conexión en la meta',
             'fp.ranking.t5d': 'Todo es local en el dispositivo y verificado — funciona totalmente sin conexión en la meta, sin necesidad de cuenta.',
             'Filter roadbooks…': 'Filtrar roadbooks…',
+            'Organizer': 'Organizador',
+            'Can create and manage their own events.': 'Puede crear y gestionar sus propios eventos.',
+            'Organizers only.': 'Solo organizadores.',
         };

@@ -453,4 +453,7 @@
             'fp.ranking.t5t': 'Hors ligne à l\'arrivée',
             'fp.ranking.t5d': 'Tout est local à l\'appareil et vérifié — cela fonctionne entièrement hors ligne sur la ligne d\'arrivée, sans compte requis.',
             'Filter roadbooks…': 'Filtrer les roadbooks…',
+            'Organizer': 'Organisateur',
+            'Can create and manage their own events.': 'Peut créer et gérer ses propres événements.',
+            'Organizers only.': 'Réservé aux organisateurs.',
         };

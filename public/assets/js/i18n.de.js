@@ -454,4 +454,7 @@
             'fp.ranking.t5t': 'Offline im Ziel',
             'fp.ranking.t5d': 'Alles ist gerätelokal und verifiziert — es funktioniert im Ziel vollständig offline, kein Konto erforderlich.',
             'Filter roadbooks…': 'Roadbooks filtern…',
+            'Organizer': 'Veranstalter',
+            'Can create and manage their own events.': 'Kann eigene Veranstaltungen erstellen und verwalten.',
+            'Organizers only.': 'Nur Veranstalter.',
         };

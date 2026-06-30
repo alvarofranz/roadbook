@@ -35,11 +35,12 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, bio, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
         $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
+        $u['is_organizer'] = (int)($u['is_organizer'] ?? 0); // raw grant flag (admins manage events regardless)
         $u['email_verified'] = (int)$u['email_verified'];
         $u['must_change_password'] = (int)$u['must_change_password']; // int, so the JS truthiness check is right
         // Default map location → numbers (or null), never DECIMAL strings, for the client.
@@ -60,6 +61,10 @@ function is_admin(?array $u): bool {
     return in_array(strtolower((string)($u['email'] ?? '')), $CFG['admin_emails'], true);
 }
 function require_admin(): array { $u = require_user(); if (!is_admin($u)) fail('Admins only.', 403); return $u; }
+// Effective organizer = an admin (manages every event) OR a user granted the organizer flag
+// (manages their own events). Used to gate the event-management endpoints (#121).
+function is_organizer(?array $u): bool { return is_admin($u) || (int)($u['is_organizer'] ?? 0) === 1; }
+function require_organizer(): array { $u = require_user(); if (!is_organizer($u)) fail('Organizers only.', 403); return $u; }
 
 function update_profile(array $user, array $d): void {
     $first = mb_substr(trim((string)($d['first_name'] ?? '')), 0, 80);
