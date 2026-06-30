@@ -37,18 +37,30 @@
             </div>
             <label class="checkbox-row"><input type="checkbox" id="evPublic"> <span>${esc(t('Public'))}</span></label>
             <label class="field-label">${esc(t('Roadbooks'))}</label>
-            <div class="ev-pool">${pool.length
-                ? pool.map((r) => `<label class="checkbox-row"><input type="checkbox" data-rb="${r.id}"${checked.has(r.id) ? ' checked' : ''}> <span>${esc(r.title)} <span class="muted small">@${esc(r.username)}</span></span></label>`).join('')
-                : `<p class="muted small">${esc(t('No public roadbooks yet.'))}</p>`}</div>
+            ${pool.length ? `<input id="evRbSearch" class="field" type="search" placeholder="${esc(t('Filter roadbooks…'))}" autocomplete="off">` : ''}
+            <div class="ev-pool" id="evPool">${pool.length ? '' : `<p class="muted small">${esc(t('No public roadbooks yet.'))}</p>`}</div>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="evSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false });
         m.q('#evTitleIn').value = e.title || '';
         m.q('#evDescIn').value = e.description || '';
         m.q('#evStart').value = e.starts_on || '';
         m.q('#evEnd').value = e.ends_on || '';
         m.q('#evPublic').checked = !!e.is_public;
+        // Filterable roadbook pool. `checked` is the source of truth so filtering/typing never
+        // drops a selection (and Save reads the set, not just the rows currently visible).
+        const poolEl = m.q('#evPool');
+        const rbRow = (r) => `<label class="checkbox-row"><input type="checkbox" data-rb="${r.id}"${checked.has(r.id) ? ' checked' : ''}> <span>${esc(r.title)} <span class="muted small">@${esc(r.username)}</span></span></label>`;
+        const renderPool = (q) => {
+            const list = (window.RB && RB.filterByText) ? RB.filterByText(pool, q, ['title', 'username']) : pool;
+            poolEl.innerHTML = list.length ? list.map(rbRow).join('') : `<p class="muted small">${esc(t('No matching roadbooks.'))}</p>`;
+        };
+        if (pool.length) { renderPool(''); m.q('#evRbSearch').oninput = (ev) => renderPool(ev.target.value); }
+        poolEl.addEventListener('change', (ev) => {
+            const cb = ev.target.closest('[data-rb]'); if (!cb) return;
+            if (cb.checked) checked.add(+cb.dataset.rb); else checked.delete(+cb.dataset.rb);
+        });
         m.q('[data-cancel]').onclick = m.close;
         m.q('#evSave').onclick = async () => {
-            const ids = [...m.el.querySelectorAll('[data-rb]:checked')].map((c) => +c.dataset.rb);
+            const ids = [...checked];
             const x = await api('event_save', {
                 id: e.id, title: m.q('#evTitleIn').value.trim(), description: m.q('#evDescIn').value.trim(),
                 starts_on: m.q('#evStart').value, ends_on: m.q('#evEnd').value,

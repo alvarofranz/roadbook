@@ -453,4 +453,5 @@
             'fp.ranking.t4d': 'Lösche eine falsche Zeile und exportiere dann das gesamte Klassement als CSV für die offizielle Ergebnisliste.',
             'fp.ranking.t5t': 'Offline im Ziel',
             'fp.ranking.t5d': 'Alles ist gerätelokal und verifiziert — es funktioniert im Ziel vollständig offline, kein Konto erforderlich.',
+            'Filter roadbooks…': 'Roadbooks filtern…',
         };

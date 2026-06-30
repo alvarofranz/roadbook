@@ -491,4 +491,5 @@
             'fp.ranking.t4d': 'Borra una fila errónea y luego exporta toda la clasificación como CSV para el acta oficial de resultados.',
             'fp.ranking.t5t': 'Sin conexión en la meta',
             'fp.ranking.t5d': 'Todo es local en el dispositivo y verificado — funciona totalmente sin conexión en la meta, sin necesidad de cuenta.',
+            'Filter roadbooks…': 'Filtrar roadbooks…',
         };

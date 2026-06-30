@@ -491,4 +491,5 @@
             'fp.ranking.t4d': 'Elimina una riga errata, poi esporta l’intera classifica come CSV per il foglio dei risultati ufficiale.',
             'fp.ranking.t5t': 'Offline al traguardo',
             'fp.ranking.t5d': 'Tutto è in locale sul dispositivo e verificato — funziona completamente offline al traguardo, senza account.',
+            'Filter roadbooks…': 'Filtra i roadbook…',
         };

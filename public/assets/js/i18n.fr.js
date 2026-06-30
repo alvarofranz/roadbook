@@ -452,4 +452,5 @@
             'fp.ranking.t4d': 'Supprimez une ligne erronée, puis exportez tout le classement en CSV pour la feuille de résultats officielle.',
             'fp.ranking.t5t': 'Hors ligne à l\'arrivée',
             'fp.ranking.t5d': 'Tout est local à l\'appareil et vérifié — cela fonctionne entièrement hors ligne sur la ligne d\'arrivée, sans compte requis.',
+            'Filter roadbooks…': 'Filtrer les roadbooks…',
         };
