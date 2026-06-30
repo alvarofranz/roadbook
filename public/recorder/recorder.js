@@ -195,33 +195,38 @@
         }
     };
 
-    // "WP audio": one tap drops a waypoint, dictates its note via speech-to-text AND — when
-    // signed in — keeps the actual recording, so a wrong transcription can be replayed and
-    // re-checked in the Editor. Tap again to stop. Shown wherever STT or audio capture works.
+    // "WP audio" (#129): press and HOLD to record — drops a waypoint and records its note
+    // (speech-to-text + the kept audio when signed in). On release it keeps recording for 5s
+    // more, then stops, so the last words aren't clipped. Pointer events + capture so a finger
+    // sliding off still releases; the touch callout / selection are suppressed in CSS.
     const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
     const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-    if (SR_REC || CAN_REC_AUDIO) $('recWptAudio').hidden = false;
-    let wptRecActive = false, wptSR = null, wptMedia = null;
-    $('recWptAudio').onclick = async () => {
-        if (wptRecActive) { if (wptSR) wptSR.stop(); if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); return; } // tap again → stop
+    const wptBtn = $('recWptAudio');
+    if (SR_REC || CAN_REC_AUDIO) wptBtn.hidden = false;
+    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptFinish = null;
+
+    async function startWptAudio() {
+        if (wptRecActive) return; // already recording (or in the 5s release tail)
         if (!here) return toast(t('Waiting for a GPS fix…'));
-        wptRecActive = true; // claim the session now so a double-tap during mic setup can't start a second one
+        wptRecActive = true; // claim the session synchronously so a second press can't start another
         const note = dropWaypoint(here.lat, here.lon, '');
         const wptLat = here.lat, wptLon = here.lon;
         let ended = false;
-        const finish = () => {
+        wptFinish = () => {
             if (ended) return; ended = true; wptRecActive = false;
-            $('recWptAudio').classList.remove('on');
-            if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); // STT ended first → stop the recording too
-            wptSR = null; wptMedia = null; refreshMap();
+            if (wptTail) { clearTimeout(wptTail); wptTail = null; }
+            wptBtn.classList.remove('on');
+            if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop();
+            wptSR = null; wptMedia = null; wptFinish = null; refreshMap();
         };
         // speech-to-text → note.text (best-effort; the kept audio is the fallback when it's wrong)
         if (SR_REC) {
             wptSR = new SR_REC();
             wptSR.lang = voiceLang();
-            wptSR.interimResults = true;
+            wptSR.interimResults = true; wptSR.continuous = true; // keep listening while held + the 5s tail
             wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
-            wptSR.onend = finish; wptSR.onerror = finish;
+            wptSR.onend = () => { if (wptFinish) wptFinish(); };
+            wptSR.onerror = () => { if (wptFinish) wptFinish(); };
         }
         // keep the recording itself (signed-in + draft only — it lives on the server, like photos)
         if (CAN_REC_AUDIO && meUser && draftId) {
@@ -232,7 +237,7 @@
                 mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
                 mr.onstop = async () => {
                     stream.getTracks().forEach((tk) => tk.stop());
-                    if (!SR_REC) finish(); // no STT session to close it → do it here
+                    if (!SR_REC && wptFinish) wptFinish(); // no STT session to close it → do it here
                     if (chunks.length && draftId) {
                         const r = await RBUploadAudio({ type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon }, new Blob(chunks, { type: mr.mimeType }));
                         if (!r.ok) toast(r.error || t('Audio upload failed.'));
@@ -241,10 +246,27 @@
                 mr.start();
             } catch (e) { wptMedia = null; } // mic blocked/unavailable → STT-only, as before
         }
-        if (!wptSR && !wptMedia) { wptRecActive = false; return; } // nothing to record (no STT and no mic)
-        $('recWptAudio').classList.add('on'); toast(t('Listening… tap again to stop'));
-        if (wptSR) { try { wptSR.start(); } catch (e) { finish(); } }
-    };
+        if (!wptSR && !wptMedia) { wptRecActive = false; wptFinish = null; return; } // nothing to record
+        wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
+        if (wptSR) { try { wptSR.start(); } catch (e) { if (wptFinish) wptFinish(); } }
+    }
+
+    // Release → keep recording 5s more, then stop (stopping STT ends it via onend → wptFinish).
+    function releaseWptAudio() {
+        if (!wptRecActive || wptTail) return; // not recording, or already counting down the tail
+        wptTail = setTimeout(() => {
+            wptTail = null;
+            if (wptSR) { try { wptSR.stop(); } catch (e) {} } else if (wptFinish) wptFinish();
+        }, 5000);
+    }
+
+    wptBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); // no text selection / iOS long-press callout / synthetic click
+        try { wptBtn.setPointerCapture(e.pointerId); } catch (_) {}
+        startWptAudio();
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => wptBtn.addEventListener(ev, releaseWptAudio));
+    wptBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     /* ---------- photos (signed-in: camera → upload → geotagged pin) ---------- */
     $('recPhoto').onclick = () => {

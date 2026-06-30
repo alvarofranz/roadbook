@@ -46,6 +46,8 @@
         .wf-row { display: flex; gap: .5rem; align-items: center; }
         .wf-row .field { flex: 1; min-width: 0; }
         #wfMic.on, #recWptAudio.on { color: var(--track); animation: recpulse 1.2s infinite; }
+        /* press-and-hold (#129): no text selection, no iOS long-press callout, no touch-scroll steal */
+        #recWptAudio { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
         /* latest waypoint note (incl. live dictated audio text) shown while recording */
         .rec-lastwp { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .8rem; font-size: .9rem; color: var(--text); }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
@@ -77,7 +79,7 @@
             <div class="btnrow">
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span id="recPauseTxt" data-i18n="Pause">Pause</span></button>
                 <button class="btn btn-ghost" id="recWpt"><i class="fa-solid fa-flag"></i> <span data-i18n="Waypoint">Waypoint</span></button>
-                <button class="btn btn-accent" id="recWptAudio" hidden><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
+                <button class="btn btn-accent" id="recWptAudio" hidden title="Hold to record a voice note; keeps recording 5s after you let go." data-i18n-title="Hold to record a voice note; keeps recording 5s after you let go."><i class="fa-solid fa-microphone"></i> <span data-i18n="WP audio">WP audio</span></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="WP photo">WP photo</span></button>
             </div>
             <div id="recLastWp" class="rec-lastwp" hidden></div>

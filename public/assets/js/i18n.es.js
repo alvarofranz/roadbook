@@ -347,7 +347,6 @@
             'Remove': 'Quitar', 'Scan QR': 'Escanear QR', 'Stop': 'Detener',
             'Code not recognized.': 'Código no reconocido.',
             'Your browser does not support camera scanning; paste the code by hand.': 'Tu navegador no soporta escaneo con cámara; pega el código a mano.',
-            'Waypoint': 'Waypoint', 'WP audio': 'WP audio', 'WP photo': 'WP foto', 'Heading up': 'Dirección de marcha', 'Listening… tap again to stop': 'Escuchando… toca de nuevo para parar', 'Some photos failed.': 'Algunas fotos fallaron.',
             'Could not read the image.': 'No se pudo leer la imagen.',
             'In use; remove it from the notes first.': 'En uso; quítalo antes de las notas.',
             'Icon(s) uploaded — tap them to place.': 'Icono(s) subidos — tócalos para colocarlos.',
@@ -497,4 +496,6 @@
             'Organizer': 'Organizador',
             'Can create and manage their own events.': 'Puede crear y gestionar sus propios eventos.',
             'Organizers only.': 'Solo organizadores.',
+            'Recording… release to finish': 'Grabando… suelta para terminar',
+            'Hold to record a voice note; keeps recording 5s after you let go.': 'Mantén pulsado para grabar una nota de voz; sigue grabando 5 s tras soltar.',
         };
