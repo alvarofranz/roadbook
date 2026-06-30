@@ -93,6 +93,62 @@ function admin_unpublish(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 
+// Every roadbook of a given user (any status), for the admin per-user roadbook view (#126).
+function admin_user_roadbooks(array $user, array $d): void {
+    $uid = (int)($d['user_id'] ?? 0);
+    if ($uid <= 0) fail('Bad request.');
+    $st = db()->prepare('SELECT id, slug, title, status, total_distance, note_count, updated_at
+        FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
+    $st->execute([$uid]);
+    $list = array_map(fn($r) => [
+        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'status' => $r['status'],
+        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'], 'updated_at' => $r['updated_at'],
+    ], $st->fetchAll());
+    json_out(['ok' => true, 'roadbooks' => $list]);
+}
+
+// Admin: set any roadbook's publication status (draft/ready/public) from the per-user view (#126).
+function admin_set_status(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $status = rb_clean_status($d['status'] ?? null);
+    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
+    log_activity((int)$user['id'], 'admin_set_status', 'roadbook #' . $id . ' → ' . $status);
+    json_out(['ok' => true, 'id' => $id, 'status' => $status]);
+}
+
+// Admin: reassign a roadbook to another user. The .rdbk file is the only owner-scoped file
+// (it lives under storage/<user_id>/) so it's moved between the two dirs; photos and audio are
+// keyed by roadbook id, so they stay put, and the disk quota is recomputed per user (#126).
+function admin_move_roadbook(array $user, array $d): void {
+    global $CFG;
+    $id = (int)($d['id'] ?? 0);
+    $to = (int)($d['user_id'] ?? 0);
+    if ($id <= 0 || $to <= 0) fail('Bad request.');
+    $st = db()->prepare('SELECT user_id, filename FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    $from = (int)$row['user_id'];
+    if ($to === $from) { json_out(['ok' => true, 'id' => $id]); return; }
+    $tu = db()->prepare('SELECT id FROM users WHERE id = ?'); $tu->execute([$to]);
+    if (!$tu->fetch()) fail('Target user not found.', 404);
+    $fn = (string)$row['filename'];
+    if ($fn !== '' && $fn !== 'pending') { // a draft recording with no real file yet has nothing to move
+        $src = $CFG['storage'] . '/' . $from . '/' . $fn;
+        if (is_file($src)) {
+            $dstDir = $CFG['storage'] . '/' . $to;
+            if (!is_dir($dstDir)) mkdir($dstDir, 0700, true);
+            @rename($src, $dstDir . '/' . $fn);
+        }
+    }
+    db()->prepare('UPDATE roadbooks SET user_id = ? WHERE id = ?')->execute([$to, $id]);
+    log_activity((int)$user['id'], 'admin_move_roadbook', 'roadbook #' . $id . ' user #' . $from . ' → #' . $to);
+    json_out(['ok' => true, 'id' => $id]);
+}
+
 // Force-activate an account (e.g. the user never clicked the verification email).
 function admin_verify(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
