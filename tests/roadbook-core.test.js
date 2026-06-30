@@ -245,6 +245,14 @@ describe('speed limits', () => {
         // unset field → falls back to the icon-name rule
         expect(RB.speedLimitOfNote({ icons: [{ name: 'S03_30km.svg' }] })).toBe(30);
     });
+    it('parses the limit straight from a symbol name (speedLimitFromName)', () => {
+        expect(RB.speedLimitFromName('S03_30km.svg')).toBe(30);
+        expect(RB.speedLimitFromName('S12_120km')).toBe(120);
+        expect(RB.speedLimitFromName('S99_end.svg')).toBe(0); // end-of-limit clears it
+        expect(RB.speedLimitFromName('W01_curve_right.svg')).toBeNull(); // not a speed sign
+        expect(RB.speedLimitFromName('')).toBeNull();
+        expect(RB.speedLimitFromName(null)).toBeNull();
+    });
 });
 
 describe('QR meta payload', () => {
