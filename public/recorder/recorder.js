@@ -203,19 +203,21 @@
     const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     const wptBtn = $('recWptAudio');
     if (SR_REC || CAN_REC_AUDIO) wptBtn.hidden = false;
-    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptFinish = null;
+    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 3, wptFinish = null;
+    const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
+    const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('WP audio') : String(n); };
 
     async function startWptAudio() {
-        if (wptRecActive) return; // already recording (or in the 5s release tail)
+        if (wptRecActive) return; // already recording (or in the release countdown)
         if (!here) return toast(t('Waiting for a GPS fix…'));
-        wptRecActive = true; // claim the session synchronously so a second press can't start another
+        wptRecActive = true; wptHolding = true; wptCount = 3; // hold to record; first release counts down from 3
         const note = dropWaypoint(here.lat, here.lon, '');
         const wptLat = here.lat, wptLon = here.lon;
         let ended = false;
         wptFinish = () => {
-            if (ended) return; ended = true; wptRecActive = false;
-            if (wptTail) { clearTimeout(wptTail); wptTail = null; }
-            wptBtn.classList.remove('on');
+            if (ended) return; ended = true; wptRecActive = false; wptHolding = false;
+            if (wptTail) { clearInterval(wptTail); wptTail = null; }
+            wptBtn.classList.remove('on'); setWptCount(null);
             if (wptSR) { try { wptSR.stop(); } catch (e) {} }
             if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); // → onstop uploads the clip
             wptSR = null; wptMedia = null; wptFinish = null; refreshMap();
@@ -260,18 +262,30 @@
         wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
     }
 
-    // Release → keep recording 5s more, then stop. Driven purely by the press (not by STT).
+    // Release → keep recording while a countdown ticks ON the button (3s first, 2s after a re-press),
+    // then save automatically at 0 (the waypoint was already dropped on press — no confirm).
     function releaseWptAudio() {
-        if (!wptRecActive || wptTail) return; // not recording, or already counting down the tail
-        wptTail = setTimeout(() => { wptTail = null; if (wptFinish) wptFinish(); }, 5000);
+        if (!wptRecActive || !wptHolding) return; // not recording, or already counting down
+        wptHolding = false;
+        let n = wptCount; setWptCount(n);
+        wptTail = setInterval(() => {
+            n -= 1;
+            if (n <= 0) { clearInterval(wptTail); wptTail = null; if (wptFinish) wptFinish(); }
+            else setWptCount(n);
+        }, 1000);
     }
 
-    // Press to start; release anywhere to stop (document-level, so a finger that slides off the
-    // button still ends it). No setPointerCapture — it's flaky on Android (and the mic-permission
-    // prompt fires lostpointercapture, which would cut the hold short).
+    // Press to start; release anywhere (document-level, so a finger sliding off still releases) to
+    // begin the countdown. Re-pressing during the countdown cancels it and keeps recording, with the
+    // next countdown shortened to 2. No setPointerCapture — it's flaky on Android.
     wptBtn.addEventListener('pointerdown', (e) => {
         if (e.button && e.button !== 0) return; // primary button / touch only
         e.preventDefault();                     // no text selection / iOS long-press callout / synthetic click
+        if (wptRecActive) { // re-press during the release countdown → resume recording, next countdown is 2
+            if (wptTail) { clearInterval(wptTail); wptTail = null; }
+            wptHolding = true; wptCount = 2; setWptCount(null);
+            return;
+        }
         startWptAudio();
     });
     document.addEventListener('pointerup', releaseWptAudio);
