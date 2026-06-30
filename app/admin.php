@@ -93,6 +93,32 @@ function admin_unpublish(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 
+// Every roadbook of a given user (any status), for the admin per-user roadbook view (#126).
+function admin_user_roadbooks(array $user, array $d): void {
+    $uid = (int)($d['user_id'] ?? 0);
+    if ($uid <= 0) fail('Bad request.');
+    $st = db()->prepare('SELECT id, slug, title, status, total_distance, note_count, updated_at
+        FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
+    $st->execute([$uid]);
+    $list = array_map(fn($r) => [
+        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'status' => $r['status'],
+        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'], 'updated_at' => $r['updated_at'],
+    ], $st->fetchAll());
+    json_out(['ok' => true, 'roadbooks' => $list]);
+}
+
+// Admin: set any roadbook's publication status (draft/ready/public) from the per-user view (#126).
+function admin_set_status(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $status = rb_clean_status($d['status'] ?? null);
+    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
+    log_activity((int)$user['id'], 'admin_set_status', 'roadbook #' . $id . ' → ' . $status);
+    json_out(['ok' => true, 'id' => $id, 'status' => $status]);
+}
+
 // Force-activate an account (e.g. the user never clicked the verification email).
 function admin_verify(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);

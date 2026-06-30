@@ -22,12 +22,13 @@
         const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
         const block = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
         const del = (u.locked || isMe) ? '' : `<button class="btn btn-danger" data-del="${u.id}" data-name="${esc(u.username)}">${esc(t('Delete'))}</button>`;
+        const roadbooks = u.roadbooks > 0 ? `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>` : '';
         return `<tr>
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
             <td data-label="${esc(t('Email'))}">${esc(u.email)}</td>
             <td class="num" data-label="${esc(t('Roadbooks'))}">${u.roadbooks}</td>
             <td class="num" data-label="${esc(t('Disk'))}">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
-            <td><div class="u-actions">${activate}${edit}${activity}${role}${block}${del}</div></td>
+            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${role}${block}${del}</div></td>
         </tr>`;
     }
 
@@ -86,6 +87,31 @@
         });
     }
 
+    // A user's roadbooks (any status) with an admin status control per row (#126).
+    function viewRoadbooks(u) {
+        const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
+        const m = RBModal(`<h2>${esc(t('Roadbooks'))} · @${esc(u.username)}</h2>
+            <div id="rbsBody" class="muted small">${esc(t('Loading…'))}</div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
+        m.q('[data-cancel]').onclick = m.close;
+        const render = () => api('admin_user_roadbooks', { user_id: u.id }).then((r) => {
+            const body = m.q('#rbsBody');
+            if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
+            if (!r.roadbooks.length) { body.textContent = t('No roadbooks yet.'); return; }
+            body.innerHTML = `<table class="act-table"><tbody>${r.roadbooks.map((rb) => `<tr>
+                <td><b>${esc(rb.title)}</b><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
+                <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
+                <td>${rb.status === 'public' && rb.slug ? `<a class="btn btn-ghost" href="/challenge/${esc(rb.slug)}" target="_blank" rel="noopener" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>` : ''}</td>
+            </tr>`).join('')}</tbody></table>`;
+            body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
+                const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
+                if (!x.ok) toast(x.error || 'Could not save.');
+                render(); // re-render from server truth (also resets the select on error)
+            });
+        });
+        render();
+    }
+
     // Re-bind the per-row action buttons (called after every render of #usersBody). Each
     // mutating action re-fetches via load(); the current search + page are preserved.
     function wireRows() {
@@ -104,6 +130,7 @@
         });
         body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
         body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => viewActivity(byId[+b.dataset.activity]));
+        body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')', t('Delete')))) return;
             const x = await api('admin_delete', { id: +b.dataset.del });
