@@ -97,6 +97,9 @@
         .audio-item .audio-note { flex-shrink: 0; min-width: 2.2rem; font-weight: 800; color: var(--sand); font-size: .8rem; }
         .audio-item audio { flex: 1; min-width: 0; height: 34px; }
         .audio-item .del-badge { position: static; width: 22px; height: 22px; line-height: 22px; flex-shrink: 0; }
+        /* a note's voice note(s): the recorded clip shown ON the note row, under its text */
+        .note-audio { display: flex; flex-direction: column; gap: .3rem; margin-top: .35rem; }
+        .note-audio audio { height: 30px; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
         /* photo viewer: overlays ONLY the map box (so the notes panel stays editable) */
@@ -399,10 +402,6 @@
             <div class="ed-row between"><div class="icon-category flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
             <input id="photoFile" type="file" accept="image/*" multiple hidden>
             <div id="photoGrid" class="icon-grid"></div>
-        </div>
-        <div id="audioSection" hidden>
-            <div class="ed-row between"><div class="icon-category flush" data-i18n="Voice notes">Voice notes</div></div>
-            <div id="audioList" class="note-list"></div>
         </div>
         <div id="deleteSection" class="ed-row" hidden>
             <button class="btn btn-danger" id="deleteRb"><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete roadbook">Delete roadbook</span></button>

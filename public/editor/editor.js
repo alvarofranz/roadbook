@@ -939,6 +939,7 @@
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft';
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
+    let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
     $('visReady').onclick = () => { setStatus('ready'); markDirty(); };
     $('visPublic').onclick = () => { setStatus('public'); markDirty(); };
@@ -1023,31 +1024,15 @@
         if (map) map.setPhotos(r.photos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note 📷 indicators
     }
-    /* ---------- voice notes (recorded WP audio, played back here) ---------- */
+    /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
     function updateAudio() {
-        if (currentRbId > 0) { $('audioSection').hidden = false; loadAudio(); }
-        else { $('audioSection').hidden = true; $('audioList').innerHTML = ''; }
+        if (currentRbId > 0) loadAudio();
+        else { noteAudio = []; if (rb) renderNotes(); }
     }
-    // Each clip was recorded at a waypoint, so it's labelled with (and ordered by) the nearest note.
-    const nearestNote = (a) => {
-        if (a.lat == null || a.lon == null || !rb || !rb.notes.length) return null;
-        let best = null, bestD = Infinity;
-        rb.notes.forEach((n) => { const dM = RB.geo.haversineM(a, n); if (dM < bestD) { bestD = dM; best = n; } });
-        return best;
-    };
     async function loadAudio() {
         const r = await RBApi('audio_list', { roadbook: currentRbId });
-        const g = $('audioList');
-        if (!r.ok || !r.audio.length) { g.innerHTML = `<span class="muted small">${esc(t('No voice notes yet.'))}</span>`; return; }
-        g.innerHTML = r.audio.map((a) => {
-            const n = nearestNote(a), label = n ? '#' + n.num : '';
-            return `<div class="audio-item"><span class="audio-note">${esc(label)}</span><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" data-dela="${a.id}" data-note="${esc(label)}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`;
-        }).join('');
-        g.querySelectorAll('[data-dela]').forEach((s) => s.onclick = async (e) => {
-            e.stopPropagation();
-            const ref = s.dataset.note ? ' (' + s.dataset.note + ')' : '';
-            if (await RBConfirm(t('Delete this voice note?') + ref, t('Delete'), true)) { await RBApi('audio_delete', { id: +s.dataset.dela }); loadAudio(); }
-        });
+        noteAudio = (r.ok && r.audio) || [];
+        if (rb) renderNotes(); // each clip surfaces on its nearest note row
     }
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
@@ -1183,6 +1168,15 @@
             rb.notes.forEach((n, k) => { const d = RB.geo.haversineM(n, pt); if (d < bd) { bd = d; best = k; } });
             if (best >= 0 && bd <= 80) (photosByNote[best] = photosByNote[best] || []).push(p);
         });
+        // recorded voice notes likewise belong to their nearest note → an inline player on that row
+        const audioByNote = {};
+        noteAudio.forEach((a) => {
+            if (a.lat == null) return;
+            const pt = { lat: +a.lat, lon: +a.lon };
+            let best = -1, bd = Infinity;
+            rb.notes.forEach((n, k) => { const d = RB.geo.haversineM(n, pt); if (d < bd) { bd = d; best = k; } });
+            if (best >= 0 && bd <= 80) (audioByNote[best] = audioByNote[best] || []).push(a);
+        });
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}</span>
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
@@ -1190,6 +1184,7 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
                 <div class="note-actions">
                     <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
@@ -1203,7 +1198,7 @@
         rows.forEach((el) => el.onclick = (e) => {
             const capBtn = e.target.closest('[data-cap]');
             if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
-            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav')) toggleNote(+el.dataset.i);
+            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
         });
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
@@ -1218,6 +1213,11 @@
             e.stopPropagation();
             const ph = photosByNote[+b.dataset.photo] || [];
             if (ph.length) openLightbox(ph[0].id, ph); // same viewer, scoped to this note's nearby photos
+        });
+        // delete a voice note straight from its note row
+        $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {
+            e.stopPropagation();
+            if (await RBConfirm(t('Delete this voice note?'), t('Delete'), true)) { await RBApi('audio_delete', { id: +b.dataset.dela }); loadAudio(); }
         });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
