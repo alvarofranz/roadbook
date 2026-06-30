@@ -460,4 +460,8 @@
             'Organizers only.': 'Nur Veranstalter.',
             'Recording… release to finish': 'Aufnahme… loslassen zum Beenden',
             'Hold to record a voice note; keeps recording 5s after you let go.': 'Gedrückt halten, um eine Sprachnotiz aufzunehmen; nimmt nach dem Loslassen noch 5 s auf.',
+            'fp.recorder.t7t': 'Fotos brauchen Konto + GPS-Fix',
+            'fp.recorder.t7d': 'Du kannst Fotos deiner Wegpunkte aufnehmen. Fotos sind eine serverseitige, kontogebundene Funktion: anmelden und eine Aufnahme starten (ein Roadbook-Entwurf genügt). Die WP-Foto-Schaltfläche erscheint erst, wenn Entwurf und ein GPS-Fix vorhanden sind; ohne Fix zeigt die App „Waiting for a GPS fix…“ und verortet nicht.',
+            'fp.recorder.t8t': 'Fotos werden zu verorteten Pins',
+            'fp.recorder.t8d': 'Jedes Foto wird an der genauen GPS-Position fixiert, an der du es aufgenommen hast (so genau wie das GPS dann – wenige Meter), direkt auf dem GPX-Track. Im Editor prüfst du die Foto-Pins auf der Karte und machst an der richtigen Stelle Notizen daraus.',
         };

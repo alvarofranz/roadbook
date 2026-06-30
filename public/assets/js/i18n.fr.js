@@ -459,4 +459,8 @@
             'Organizers only.': 'Réservé aux organisateurs.',
             'Recording… release to finish': 'Enregistrement… relâche pour terminer',
             'Hold to record a voice note; keeps recording 5s after you let go.': 'Maintiens appuyé pour enregistrer une note vocale ; continue 5 s après le relâchement.',
+            'fp.recorder.t7t': 'Les photos nécessitent un compte + un fix GPS',
+            'fp.recorder.t7d': 'Tu peux prendre des photos de tes waypoints. Les photos sont une fonction côté serveur, liée au compte : connecte-toi et démarre un enregistrement (un roadbook brouillon suffit). Le bouton photo WP n’apparaît qu’une fois le brouillon et un fix GPS présents ; sans fix l’app affiche « Waiting for a GPS fix… » et ne géolocalise pas.',
+            'fp.recorder.t8t': 'Les photos deviennent des pins géolocalisés',
+            'fp.recorder.t8d': 'Chaque photo est épinglée aux coordonnées GPS exactes où tu l’as prise (à la précision du GPS à ce moment, quelques mètres), sur la trace GPX. Dans l’Éditeur tu revois les pins photo sur la carte et tu les transformes en notes au bon endroit.',
         };
