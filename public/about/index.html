@@ -15,6 +15,9 @@
     <style>
         .about-page { max-width: 880px; margin: 0 auto; padding: 1.5rem 0 3rem; }
         .about-page .lead { max-width: 62ch; }
+        .about-hero { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: center; }
+        .about-hero .about-figure img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
+        @media (min-width: 760px) { .about-hero { grid-template-columns: 1.3fr 1fr; } }
         .about-sec { margin-top: 2.4rem; }
         .about-sec h2 { font-size: 1.4rem; letter-spacing: -.01em; margin: 0 0 .6rem; }
         .about-sec p { color: var(--text); max-width: 68ch; }
@@ -33,7 +36,10 @@
 
 <main class="wrap about-page">
     <h1>Who we are</h1>
-    <p class="lead">RDBK.app is a free suite of <b>digital roadbooks</b> for every adventure — 4×4, moto, bike, running — built around the open <b>.rdbk</b> format. It grows out of years of real rally-navigation tooling.</p>
+    <div class="about-hero">
+        <p class="lead">RDBK.app is a free suite of <b>digital roadbooks</b> for every adventure — 4×4, moto, bike, running — built around the open <b>.rdbk</b> format. It grows out of years of real rally-navigation tooling.</p>
+        <figure class="about-figure"><img src="../assets/about-hero.jpg" alt="Printed roadbooks on clipboards at a rally event"></figure>
+    </div>
 
     <section class="about-sec">
         <h2>From Roadbook System to RDBK.app</h2>
