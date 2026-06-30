@@ -233,13 +233,14 @@
                 mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
                 mr.onstop = async () => {
                     stream.getTracks().forEach((tk) => tk.stop());
-                    if (chunks.length && draftId) {
-                        const r = await RBUploadAudio({ type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon }, new Blob(chunks, { type: mr.mimeType }));
-                        if (!r.ok) toast(r.error || t('Audio upload failed.'));
-                    }
+                    if (!chunks.length) { toast(t('No audio captured.')); return; } // nothing recorded
+                    const r = await RBUploadAudio({ type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon }, new Blob(chunks, { type: mr.mimeType }));
+                    toast(r.ok ? t('Voice note saved.') : (r.error || t('Audio upload failed.')));
                 };
-                mr.start();
-            } catch (e) { wptMedia = null; } // mic blocked/unavailable
+                mr.start(1000); // periodic data chunks → robust even if stop() timing is odd on mobile
+            } catch (e) { wptMedia = null; toast(t('Microphone unavailable.')); } // surface the failure, don't fail silently
+        } else if (meUser && !draftId) {
+            toast(t('Preparing… try the voice note again in a second.')); // the draft roadbook isn't ready yet
         }
         // Speech-to-text → note.text: best-effort, started AFTER the recorder has the mic, so it only
         // runs where the platform allows a second mic consumer (e.g. desktop). It never controls the
