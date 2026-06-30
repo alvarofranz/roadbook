@@ -455,4 +455,7 @@
             'Move this roadbook to': 'Déplacer ce roadbook vers',
             'Move': 'Déplacer',
             'Roadbook moved.': 'Roadbook déplacé.',
+            'Organizer': 'Organisateur',
+            'Can create and manage their own events.': 'Peut créer et gérer ses propres événements.',
+            'Organizers only.': 'Réservé aux organisateurs.',
         };

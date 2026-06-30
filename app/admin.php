@@ -45,7 +45,7 @@ function purge_user_files(int $uid): void {
 }
 
 function admin_users(array $user): void {
-    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, must_change_password, blocked, quota_bytes, created_at,
+    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at,
             (SELECT COUNT(*) FROM roadbooks r WHERE r.user_id = users.id) AS roadbooks
         FROM users ORDER BY id')->fetchAll();
     $users = array_map(fn($r) => [
@@ -57,6 +57,7 @@ function admin_users(array $user): void {
         'email'      => $r['email'],
         'verified'   => (int)$r['email_verified'],
         'is_admin'   => is_admin($r) ? 1 : 0,
+        'is_organizer' => (int)$r['is_organizer'],
         'mustchange' => (int)$r['must_change_password'],
         'blocked'    => (int)$r['blocked'],
         'locked'     => in_array(strtolower($r['email']), $GLOBALS['CFG']['admin_emails'], true) ? 1 : 0, // .env admin: can't demote/block/delete
@@ -203,6 +204,10 @@ function admin_update_user(array $user, array $d): void {
         $q = $d['quota_bytes'];
         $quotaVal = ($q === null || $q === '') ? null : max(0, (int)$q);
         db()->prepare('UPDATE users SET quota_bytes = ? WHERE id = ?')->execute([$quotaVal, $id]);
+    }
+    // Organizer grant (#121): only when the form sent the field, so an older client can't clear it.
+    if (array_key_exists('is_organizer', $d)) {
+        db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([!empty($d['is_organizer']) ? 1 : 0, $id]);
     }
     log_activity((int)$user['id'], 'admin_edit_user', 'user #' . $id);
     json_out(['ok' => true]);

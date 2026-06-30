@@ -48,12 +48,15 @@
             <label class="field-label" for="euQuota">${esc(t('Storage quota (MB)'))}</label>
             <input id="euQuota" type="number" min="0" step="1" class="field" autocomplete="off" placeholder="${esc(t('Default'))}">
             <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p>
+            <label class="checkbox-row"><input type="checkbox" id="euOrganizer"> <span>${esc(t('Organizer'))}</span></label>
+            <p class="hint">${esc(t('Can create and manage their own events.'))}</p>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow', null, { dismissable: false });
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
         m.q('#euEmail').value = u.email || '';
         m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
+        m.q('#euOrganizer').checked = !!u.is_organizer;
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const x = await api('admin_update', {
@@ -64,6 +67,7 @@
                 email: m.q('#euEmail').value.trim(),
                 password: m.q('#euPass').value,
                 quota_bytes: m.q('#euQuota').value.trim() === '' ? '' : Math.max(0, Math.round(parseFloat(m.q('#euQuota').value) * 1048576)),
+                is_organizer: m.q('#euOrganizer').checked ? 1 : 0,
             });
             if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not save.');
         };

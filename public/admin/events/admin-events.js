@@ -71,7 +71,7 @@
     }
 
     async function load() {
-        const r = await api('admin_events');
+        const r = await api('events_manage');
         events = (r.ok && r.events) || [];
         render();
     }
@@ -79,9 +79,10 @@
     (async function init() {
         const cfg = await api('config');
         if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../../account/">${esc(t('Sign in'))}</a>`; return; }
-        if (!cfg.user.is_admin) { $('adminMsg').textContent = t('Admins only.'); return; }
+        // admins manage every event; organizers manage their own (#121)
+        if (!cfg.user.is_admin && !cfg.user.is_organizer) { $('adminMsg').textContent = t('Organizers only.'); return; }
         $('adminMsg').hidden = true; $('evBody').hidden = false;
-        const pr = await api('admin_roadbooks');
+        const pr = await api('public_list'); // the public roadbooks an event can gather
         pool = (pr.ok && pr.roadbooks) || [];
         $('evNew').onclick = () => editEvent(null);
         load();

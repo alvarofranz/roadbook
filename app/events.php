@@ -16,10 +16,18 @@ function event_slug(string $title, int $excludeId): string {
     }
 }
 
-// Admin: every event with its associated roadbook ids (for the management page).
-function events_admin_list(array $user): void {
-    $rows = db()->query('SELECT e.id, e.slug, e.title, e.description, e.starts_on, e.ends_on, e.is_public, u.username AS organizer
-        FROM events e JOIN users u ON u.id = e.organizer_id ORDER BY e.created_at DESC')->fetchAll();
+// Management list with each event's associated roadbook ids: an admin sees every event,
+// an organizer sees only their own (#121).
+function events_manage(array $user): void {
+    $sql = 'SELECT e.id, e.slug, e.title, e.description, e.starts_on, e.ends_on, e.is_public, u.username AS organizer
+        FROM events e JOIN users u ON u.id = e.organizer_id';
+    if (is_admin($user)) {
+        $rows = db()->query($sql . ' ORDER BY e.created_at DESC')->fetchAll();
+    } else {
+        $st = db()->prepare($sql . ' WHERE e.organizer_id = ? ORDER BY e.created_at DESC');
+        $st->execute([(int)$user['id']]);
+        $rows = $st->fetchAll();
+    }
     $events = array_map(function ($r) {
         $rb = db()->prepare('SELECT roadbook_id FROM event_roadbooks WHERE event_id = ? ORDER BY sort, roadbook_id');
         $rb->execute([$r['id']]);
@@ -32,7 +40,8 @@ function events_admin_list(array $user): void {
     json_out(['ok' => true, 'events' => $events]);
 }
 
-// Admin: create or update an event + replace its roadbook associations.
+// Create or update an event + replace its roadbook associations. An organizer may only touch
+// their own events; admins any (#121).
 function event_save(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $title = substr(trim((string)($d['title'] ?? '')) ?: 'Untitled event', 0, 200);
@@ -42,9 +51,10 @@ function event_save(array $user, array $d): void {
     $isPublic = !empty($d['is_public']) ? 1 : 0;
     $rbIds = array_values(array_unique(array_map('intval', is_array($d['roadbook_ids'] ?? null) ? $d['roadbook_ids'] : [])));
     if ($id > 0) {
-        $st = db()->prepare('SELECT slug FROM events WHERE id = ?'); $st->execute([$id]);
+        $st = db()->prepare('SELECT slug, organizer_id FROM events WHERE id = ?'); $st->execute([$id]);
         $row = $st->fetch();
         if (!$row) fail('Not found.', 404);
+        if (!is_admin($user) && (int)$row['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
         $slug = $row['slug'];
         db()->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ? WHERE id = ?')
             ->execute([$title, $desc, $starts, $ends, $isPublic, $id]);
@@ -65,8 +75,10 @@ function event_save(array $user, array $d): void {
 
 function event_delete(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT id FROM events WHERE id = ?'); $st->execute([$id]);
-    if (!$st->fetch()) fail('Not found.', 404);
+    $st = db()->prepare('SELECT organizer_id FROM events WHERE id = ?'); $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    if (!is_admin($user) && (int)$row['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
     db()->prepare('DELETE FROM events WHERE id = ?')->execute([$id]); // event_roadbooks rows cascade
     log_activity((int)$user['id'], 'event_delete', 'event #' . $id);
     json_out(['ok' => true]);

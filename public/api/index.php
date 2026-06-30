@@ -41,9 +41,9 @@ try {
         case 'admin_settings':  admin_settings(require_admin()); break;
         case 'admin_save_settings': admin_save_settings(require_admin(), $d); break;
         case 'admin_logs':      admin_logs(require_admin()); break;
-        case 'admin_events':    events_admin_list(require_admin()); break;
-        case 'event_save':      event_save(require_admin(), $d); break;
-        case 'event_delete':    event_delete(require_admin(), $d); break;
+        case 'events_manage':   events_manage(require_organizer()); break;
+        case 'event_save':      event_save(require_organizer(), $d); break;
+        case 'event_delete':    event_delete(require_organizer(), $d); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
