@@ -81,7 +81,7 @@ window.RBGpxRecorder = (() => {
             <div class="btnrow between">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
-            </div>`, 'narrow', null, { dismissable: false });
+            </div>`, 'narrow top', null, { dismissable: false });
         let picked = null;
         d.q('#gxX').onclick = d.close;
         if (fsa) d.q('#gxPick').onclick = async () => {
