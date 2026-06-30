@@ -12,12 +12,15 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.06.30-6">
     <style>
         #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
+        /* Column table; min-width keeps the columns intact and the wrapper scrolls horizontally
+           on narrow/medium screens instead of squeezing or breaking the layout. */
         .table-scroll { overflow-x: auto; }
-        .users-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .users-table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: .9rem; }
         .users-table th, .users-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
         .users-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
         .users-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; }
+        .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; word-break: break-word; }
+        .u-quota { color: var(--muted); font-size: .82rem; } /* second line of the Disk cell: assigned space */
         .u-badge { display: inline-block; font-size: .66rem; font-weight: 800; padding: .05rem .4rem; border-radius: 6px; letter-spacing: .03em; }
         .u-admin { background: var(--sand); color: #14100a; }
         .u-unverified { background: rgba(255, 90, 69, .18); color: var(--track); }
@@ -35,18 +38,6 @@
         .mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
         .mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }
         .mv-opt:hover { border-color: var(--sand); }
-        /* Phone: the wide table squeezes the actions column and stacks the buttons, wasting
-           vertical space. Reflow each row into a card — labelled lines + actions wrapping
-           across the full width (#127). */
-        @media (max-width: 760px) {
-            .users-table thead { display: none; }
-            .users-table, .users-table tbody, .users-table tr, .users-table td { display: block; }
-            .users-table tr { border: 1px solid var(--line); border-radius: 12px; padding: .5rem .75rem; margin-bottom: .7rem; }
-            .users-table td { border: 0; padding: .22rem 0; }
-            .users-table td[data-label] { display: flex; justify-content: space-between; gap: 1rem; }
-            .users-table td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
-            .u-actions { margin-top: .45rem; }
-        }
     </style>
 </head>
 <body>
@@ -61,7 +52,6 @@
             <table class="users-table">
                 <thead><tr>
                     <th data-i18n="User">User</th>
-                    <th data-i18n="Email">Email</th>
                     <th class="num" data-i18n="Disk">Disk</th>
                     <th></th>
                 </tr></thead>

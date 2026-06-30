@@ -24,9 +24,8 @@
         const del = (u.locked || isMe) ? '' : `<button class="btn btn-danger" data-del="${u.id}" data-name="${esc(u.username)}">${esc(t('Delete'))}</button>`;
         const roadbooks = `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>`;
         return `<tr>
-            <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
-            <td data-label="${esc(t('Email'))}">${esc(u.email)}</td>
-            <td class="num" data-label="${esc(t('Disk'))}">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
+            <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
+            <td class="num">${fmtSize(u.bytes)}<div class="u-quota">/ ${fmtSize(u.quota)}</div></td>
             <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${role}${block}${del}</div></td>
         </tr>`;
     }
@@ -178,7 +177,7 @@
         const slice = filtered.slice((page - 1) * PER, page * PER);
         $('usersBody').innerHTML = slice.length
             ? slice.map(rowHtml).join('')
-            : `<tr><td colspan="5" class="muted">${esc(t('No matching users.'))}</td></tr>`;
+            : `<tr><td colspan="3" class="muted">${esc(t('No matching users.'))}</td></tr>`;
         wireRows();
         const pager = $('usersPager');
         pager.innerHTML = pages > 1
