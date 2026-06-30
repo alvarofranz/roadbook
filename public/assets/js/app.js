@@ -245,7 +245,9 @@
     /* ---------------- Shared UI primitives (the one home for these) ----------------
        Every page reuses these instead of re-implementing them — see CLAUDE.md. */
     // Overlay modal. Pass the card's inner HTML (+ optional card style + backdrop-dismiss
-    // callback). Returns { el, q(sel), close }.
+    // callback + options). Options: { dismissable } — set dismissable:false for data-entry
+    // forms, so a stray backdrop click or Escape can't discard what you typed (close only via
+    // the dialog's own buttons). Returns { el, q(sel), close }.
     // Dialog focus management for a `.modal-card`: moves focus in, cycles Tab
     // inside, Escape → onEscape; returns release() (detaches + restores focus).
     // Reused by RBModal AND the Reader's static dialogs — one home for the logic.
@@ -264,7 +266,8 @@
         setTimeout(() => { const f = focusable(); (f[0] || card).focus(); }, 0); // move focus into the dialog
         return () => { document.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
     };
-    window.RBModal = (cardHtml, cardClass, onDismiss) => {
+    window.RBModal = (cardHtml, cardClass, onDismiss, opts) => {
+        const dismissable = !(opts && opts.dismissable === false);
         const m = document.createElement('div'); m.className = 'modal';
         const card = document.createElement('div');
         card.className = 'modal-card' + (cardClass ? ' ' + cardClass : '');
@@ -274,8 +277,10 @@
         document.body.appendChild(m);
         let release;
         const close = () => { if (release) release(); m.remove(); };
-        release = RBFocusTrap(card, () => { close(); if (onDismiss) onDismiss(); });
-        m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
+        // dismissable dialogs close on Escape and on a backdrop click; a non-dismissable form
+        // ignores both and is closed only by its own buttons (Escape still traps focus, no close).
+        release = RBFocusTrap(card, dismissable ? () => { close(); if (onDismiss) onDismiss(); } : null);
+        if (dismissable) m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
         return { el: m, q: (s) => m.querySelector(s), close };
     };
     // HTML-escape for safe interpolation into innerHTML.

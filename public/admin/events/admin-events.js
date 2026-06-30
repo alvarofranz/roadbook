@@ -40,7 +40,7 @@
             <div class="ev-pool">${pool.length
                 ? pool.map((r) => `<label class="checkbox-row"><input type="checkbox" data-rb="${r.id}"${checked.has(r.id) ? ' checked' : ''}> <span>${esc(r.title)} <span class="muted small">@${esc(r.username)}</span></span></label>`).join('')
                 : `<p class="muted small">${esc(t('No public roadbooks yet.'))}</p>`}</div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="evSave">${esc(t('Save'))}</button></div>`, 'wide');
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="evSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false });
         m.q('#evTitleIn').value = e.title || '';
         m.q('#evDescIn').value = e.description || '';
         m.q('#evStart').value = e.starts_on || '';

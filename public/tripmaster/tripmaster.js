@@ -143,7 +143,7 @@
                 <span>L … L+5</span><select id="sa2" class="modal-in" aria-label="${band('L … L+5')}">${opt(saColors[2])}</select>
                 <span>&gt; L+5</span><select id="sa3" class="modal-in" aria-label="${band('> L+5')}">${opt(saColors[3])}</select>
             </div>
-            <div class="btnrow end spaced"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'narrow');
+            <div class="btnrow end spaced"><button class="btn btn-ghost" id="saX">${t('Cancel')}</button><button class="btn btn-primary" id="saS">${t('Save')}</button></div>`, 'narrow', null, { dismissable: false });
         d.q('#saX').onclick = d.close;
         d.q('#saS').onclick = () => {
             saLimit = Math.max(0, Math.min(300, parseInt(d.q('#saIn').value, 10) || 0));

@@ -48,7 +48,7 @@
             <label class="field-label" for="euQuota">${esc(t('Storage quota (MB)'))}</label>
             <input id="euQuota" type="number" min="0" step="1" class="field" autocomplete="off" placeholder="${esc(t('Default'))}">
             <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow');
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow', null, { dismissable: false });
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
