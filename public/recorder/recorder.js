@@ -220,21 +220,10 @@
             if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); // → onstop uploads the clip
             wptSR = null; wptMedia = null; wptFinish = null; refreshMap();
         };
-        // speech-to-text → note.text. Best-effort ONLY: it does NOT control the recording lifecycle.
-        // On Android STT (webkitSpeechRecognition) often ends/errors early, so letting it stop the
-        // recording was killing the hold; we just drop the transcriber and keep recording.
-        if (SR_REC) {
-            try {
-                wptSR = new SR_REC();
-                wptSR.lang = voiceLang();
-                wptSR.interimResults = true; wptSR.continuous = true;
-                wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
-                wptSR.onend = () => { wptSR = null; };   // transcription stopped; the recording keeps going
-                wptSR.onerror = () => { wptSR = null; };
-                wptSR.start();
-            } catch (e) { wptSR = null; }
-        }
-        // keep the recorded audio (signed-in + draft only — it lives on the server, like photos)
+        // Record the audio clip FIRST, so it claims the microphone. On mobile the mic is exclusive:
+        // starting speech-to-text first was stealing it, so getUserMedia failed and the clip came out
+        // empty (and Android STT didn't transcribe either). Signed-in + draft only; the clip lives on
+        // the server, like photos.
         if (CAN_REC_AUDIO && meUser && draftId) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -250,7 +239,21 @@
                     }
                 };
                 mr.start();
-            } catch (e) { wptMedia = null; } // mic blocked/unavailable → STT-only
+            } catch (e) { wptMedia = null; } // mic blocked/unavailable
+        }
+        // Speech-to-text → note.text: best-effort, started AFTER the recorder has the mic, so it only
+        // runs where the platform allows a second mic consumer (e.g. desktop). It never controls the
+        // lifecycle — if it ends/errors (as on Android) we just keep recording the clip.
+        if (SR_REC) {
+            try {
+                wptSR = new SR_REC();
+                wptSR.lang = voiceLang();
+                wptSR.interimResults = true; wptSR.continuous = true;
+                wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
+                wptSR.onend = () => { wptSR = null; };
+                wptSR.onerror = () => { wptSR = null; };
+                wptSR.start();
+            } catch (e) { wptSR = null; }
         }
         if (!wptSR && !wptMedia) { wptRecActive = false; wptFinish = null; return; } // nothing to record
         wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
