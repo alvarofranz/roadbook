@@ -1781,7 +1781,7 @@
                 ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft', 'rb_trip_name'].forEach((k) => sessionStorage.removeItem(k));
                 if (pts && pts.length >= 2) {
                     setRoadbook(RB.buildRoadbook({ name: tripName, trkpts: pts, wpts }));
-                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setStatus('draft'); loadPhotos(); } } // adopt the draft that holds the photos
+                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setStatus('draft'); updatePhotos(); updateAudio(); } } // adopt the draft that holds the photos AND the voice notes
                     markDirty();
                 }
             } catch (e) { toast('Could not load the recorded trip.'); }
