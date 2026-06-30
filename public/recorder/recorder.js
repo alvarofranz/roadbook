@@ -216,56 +216,62 @@
             if (ended) return; ended = true; wptRecActive = false;
             if (wptTail) { clearTimeout(wptTail); wptTail = null; }
             wptBtn.classList.remove('on');
-            if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop();
+            if (wptSR) { try { wptSR.stop(); } catch (e) {} }
+            if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); // → onstop uploads the clip
             wptSR = null; wptMedia = null; wptFinish = null; refreshMap();
         };
-        // speech-to-text → note.text (best-effort; the kept audio is the fallback when it's wrong)
+        // speech-to-text → note.text. Best-effort ONLY: it does NOT control the recording lifecycle.
+        // On Android STT (webkitSpeechRecognition) often ends/errors early, so letting it stop the
+        // recording was killing the hold; we just drop the transcriber and keep recording.
         if (SR_REC) {
-            wptSR = new SR_REC();
-            wptSR.lang = voiceLang();
-            wptSR.interimResults = true; wptSR.continuous = true; // keep listening while held + the 5s tail
-            wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
-            wptSR.onend = () => { if (wptFinish) wptFinish(); };
-            wptSR.onerror = () => { if (wptFinish) wptFinish(); };
+            try {
+                wptSR = new SR_REC();
+                wptSR.lang = voiceLang();
+                wptSR.interimResults = true; wptSR.continuous = true;
+                wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
+                wptSR.onend = () => { wptSR = null; };   // transcription stopped; the recording keeps going
+                wptSR.onerror = () => { wptSR = null; };
+                wptSR.start();
+            } catch (e) { wptSR = null; }
         }
-        // keep the recording itself (signed-in + draft only — it lives on the server, like photos)
+        // keep the recorded audio (signed-in + draft only — it lives on the server, like photos)
         if (CAN_REC_AUDIO && meUser && draftId) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (ended) { stream.getTracks().forEach((tk) => tk.stop()); return; } // released during the mic prompt
                 const mr = new MediaRecorder(stream), chunks = [];
                 wptMedia = mr;
                 mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
                 mr.onstop = async () => {
                     stream.getTracks().forEach((tk) => tk.stop());
-                    if (!SR_REC && wptFinish) wptFinish(); // no STT session to close it → do it here
                     if (chunks.length && draftId) {
                         const r = await RBUploadAudio({ type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon }, new Blob(chunks, { type: mr.mimeType }));
                         if (!r.ok) toast(r.error || t('Audio upload failed.'));
                     }
                 };
                 mr.start();
-            } catch (e) { wptMedia = null; } // mic blocked/unavailable → STT-only, as before
+            } catch (e) { wptMedia = null; } // mic blocked/unavailable → STT-only
         }
         if (!wptSR && !wptMedia) { wptRecActive = false; wptFinish = null; return; } // nothing to record
         wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
-        if (wptSR) { try { wptSR.start(); } catch (e) { if (wptFinish) wptFinish(); } }
     }
 
-    // Release → keep recording 5s more, then stop (stopping STT ends it via onend → wptFinish).
+    // Release → keep recording 5s more, then stop. Driven purely by the press (not by STT).
     function releaseWptAudio() {
         if (!wptRecActive || wptTail) return; // not recording, or already counting down the tail
-        wptTail = setTimeout(() => {
-            wptTail = null;
-            if (wptSR) { try { wptSR.stop(); } catch (e) {} } else if (wptFinish) wptFinish();
-        }, 5000);
+        wptTail = setTimeout(() => { wptTail = null; if (wptFinish) wptFinish(); }, 5000);
     }
 
+    // Press to start; release anywhere to stop (document-level, so a finger that slides off the
+    // button still ends it). No setPointerCapture — it's flaky on Android (and the mic-permission
+    // prompt fires lostpointercapture, which would cut the hold short).
     wptBtn.addEventListener('pointerdown', (e) => {
-        e.preventDefault(); // no text selection / iOS long-press callout / synthetic click
-        try { wptBtn.setPointerCapture(e.pointerId); } catch (_) {}
+        if (e.button && e.button !== 0) return; // primary button / touch only
+        e.preventDefault();                     // no text selection / iOS long-press callout / synthetic click
         startWptAudio();
     });
-    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => wptBtn.addEventListener(ev, releaseWptAudio));
+    document.addEventListener('pointerup', releaseWptAudio);
+    document.addEventListener('pointercancel', releaseWptAudio);
     wptBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     /* ---------- photos (signed-in: camera → upload → geotagged pin) ---------- */
