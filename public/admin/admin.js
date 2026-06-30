@@ -24,9 +24,9 @@
         const del = (u.locked || isMe) ? '' : `<button class="btn btn-danger" data-del="${u.id}" data-name="${esc(u.username)}">${esc(t('Delete'))}</button>`;
         return `<tr>
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
-            <td>${esc(u.email)}</td>
-            <td class="num">${u.roadbooks}</td>
-            <td class="num">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
+            <td data-label="${esc(t('Email'))}">${esc(u.email)}</td>
+            <td class="num" data-label="${esc(t('Roadbooks'))}">${u.roadbooks}</td>
+            <td class="num" data-label="${esc(t('Disk'))}">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</td>
             <td><div class="u-actions">${activate}${edit}${activity}${role}${block}${del}</div></td>
         </tr>`;
     }

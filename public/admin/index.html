@@ -28,6 +28,18 @@
         .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
         .users-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
         .users-pager .btn { margin: 0; }
+        /* Phone: the wide table squeezes the actions column and stacks the buttons, wasting
+           vertical space. Reflow each row into a card — labelled lines + actions wrapping
+           across the full width (#127). */
+        @media (max-width: 760px) {
+            .users-table thead { display: none; }
+            .users-table, .users-table tbody, .users-table tr, .users-table td { display: block; }
+            .users-table tr { border: 1px solid var(--line); border-radius: 12px; padding: .5rem .75rem; margin-bottom: .7rem; }
+            .users-table td { border: 0; padding: .22rem 0; }
+            .users-table td[data-label] { display: flex; justify-content: space-between; gap: 1rem; }
+            .users-table td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+            .u-actions { margin-top: .45rem; }
+        }
     </style>
 </head>
 <body>
