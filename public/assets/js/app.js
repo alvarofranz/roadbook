@@ -76,7 +76,6 @@
                 <a href="${ROOT}about/"><i class="fa-solid fa-circle-info"></i> ${RBt('About')}</a>
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="${ROOT}events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Events')}</a>
-                <a href="https://github.com/alvarofranz/roadbook" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
