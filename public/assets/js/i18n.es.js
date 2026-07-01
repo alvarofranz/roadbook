@@ -1,6 +1,7 @@
 /* RDBK.app i18n — ES translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).es = {
             'About': 'Acerca de',
+            'Terms of Use': 'Términos de uso',
             'hero.title': 'Roadbooks digitales para <span class="accent">tus aventuras</span>',
             'hero.lead': 'Crea un roadbook desde un GPX, síguelo con GPS y compártelo. 4x4, moto, bici, correr… cualquier aventura.',
             'hero.cta_tools': 'Abrir el Editor', 'hero.cta_challenges': 'Challenges',
