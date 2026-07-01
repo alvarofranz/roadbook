@@ -12,6 +12,14 @@
     <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.02-4">
     <style>
         #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
+        /* event editor: a roadbook row = the pick checkbox + its per-roadbook participation mode */
+        .ev-rb-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .ev-rb-row .checkbox-row { flex: 1; min-width: 12rem; margin: 0; }
+        .ev-rbmode { max-width: 15rem; }
+        /* categories: an editable, reorderable list — name input grows, small action buttons follow */
+        .ev-cat-row { display: flex; align-items: center; gap: .4rem; margin: .3rem 0; }
+        .ev-cat-row .field { flex: 1; margin: 0; }
+        .ev-cat-row .btn { width: auto; }
     </style>
 </head>
 <body>

@@ -1,6 +1,8 @@
 /* RDBK.app i18n — ES translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).es = {
             'About': 'Acerca de',
+            'Categories': 'Categorías', 'Add category': 'Añadir categoría', 'Category name': 'Nombre de la categoría',
+            'No race (free)': 'Sin competición (libre)', 'Roadbook-suite rules': 'Reglas Roadbook-suite', 'FIA rules (unavailable)': 'Reglas FIA (no disponible)',
             'Terms of Use': 'Términos de uso',
             'reg.acceptTerms': 'He leído y acepto los <a href="/terms/" target="_blank" rel="noopener">Términos de uso</a>',
             'You must accept the Terms of Use to register.': 'Debes aceptar los Términos de uso para registrarte.',
