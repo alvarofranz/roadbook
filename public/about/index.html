@@ -18,6 +18,9 @@
         .about-hero { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: center; }
         .about-hero .about-figure img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
         @media (min-width: 760px) { .about-hero { grid-template-columns: 1.3fr 1fr; } }
+        .about-gallery { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1.2rem; }
+        .about-gallery img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 3 / 2; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
+        @media (min-width: 620px) { .about-gallery { grid-template-columns: 1fr 1fr; } }
         .about-sec { margin-top: 2.4rem; }
         .about-sec h2 { font-size: 1.4rem; letter-spacing: -.01em; margin: 0 0 .6rem; }
         .about-sec p { color: var(--text); max-width: 68ch; }
@@ -45,6 +48,10 @@
         <h2>From Roadbook System to RDBK.app</h2>
         <p>RDBK.app is the evolution of <a href="https://www.roadbook-system.com/" target="_blank" rel="noopener"><b>Roadbook System</b></a> — the free, open-source rally-navigation suite created by <b>Massimiliano</b> for 4×4 clubs and non-competitive off-road events. Roadbook System paired a roadbook editor, a mobile reader with tripmaster, real-time event ranking and time-locked GPX-trace protection, under one creed: <span class="creed">Logica, Semplice, Utile</span> — logic, simple, useful.</p>
         <p>RDBK.app carries that spirit onto the modern web. The same core ideas — build a roadbook, follow it with GPS, score an event — rebuilt as a free, installable web app (PWA) plus native iOS and Android apps, around the open <b>.rdbk</b> file format, for any adventure and any device, online or off. The aim is to keep what made Roadbook System loved — clarity, the co-driver's craft, free and open — while bringing it to everyone, everywhere.</p>
+        <div class="about-gallery">
+            <figure><img src="../assets/about-2.jpg" alt="Organisers with a chequered flag at the event start"></figure>
+            <figure><img src="../assets/about-3.jpg" alt="Briefing with a printed roadbook at a rally event"></figure>
+        </div>
     </section>
 
     <section class="about-sec">
