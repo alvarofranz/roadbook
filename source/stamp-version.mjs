@@ -43,3 +43,17 @@ for (const file of await htmlFiles(publicDir)) {
     if (n) { await writeFile(file, out); stamped += n; files++; }
 }
 console.log(`Stamped ${version}: version.json + ${stamped} cache-buster(s) across ${files} HTML file(s).`);
+
+// Local maintenance hook: every 5th release, run the dead-code sweep — but only if the
+// git-ignored local dev script source/find-orphans.mjs is present. It's a no-op for anyone
+// without it (CI never runs this stamper; fresh clones don't have find-orphans.mjs). The
+// counter lives in a git-ignored file, so it never adds release noise.
+try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const orphans = await import('./find-orphans.mjs');
+    const countFile = join(here, '.release-count');
+    let n = 0; try { n = parseInt(await readFile(countFile, 'utf8'), 10) || 0; } catch { /* first run */ }
+    n += 1; await writeFile(countFile, String(n) + '\n');
+    if (n % 5 === 0) { console.log(`\n[find-orphans] release #${n}: running the every-5-releases dead-code sweep…`); orphans.reportOrphans(await orphans.findOrphans()); }
+    else console.log(`[find-orphans] next dead-code sweep in ${5 - (n % 5)} release(s).`);
+} catch { /* find-orphans.mjs absent (CI / other devs) — skip */ }
