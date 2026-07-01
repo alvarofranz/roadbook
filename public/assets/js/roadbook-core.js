@@ -92,12 +92,10 @@
     function wpType(id) { return (id && WP_TYPE_BY_ID[id]) || null; }
     // The types offered for a roadbook profile: core always; rally adds the full FIA set.
     function wpTypesForProfile(profile) { return WP_TYPES.filter((w) => w.tier === 'core' || profile === 'rally'); }
-    // The geofence radius (metres) for auto-validating a note. Precedence: a run-time fixed
-    // override (one radius for all notes, chosen at start) → the note's own wp_radius → the
-    // roadbook default → the type's default → the system default. The Reader still caps this by
-    // neighbour spacing and floors it for GPS noise, so existing roadbooks (no radii) are unchanged.
-    function detectionRadius(note, meta, fixedOverride) {
-        if (fixedOverride != null && fixedOverride > 0) return fixedOverride;
+    // The geofence radius (metres) for auto-validating a note. Precedence: the note's own
+    // wp_radius → the roadbook default → the type's default → the system default. The Reader
+    // still caps this by neighbour spacing and floors it for GPS noise.
+    function detectionRadius(note, meta) {
         if (note && note.wp_radius != null) return note.wp_radius;
         if (meta && meta.default_wp_radius != null) return meta.default_wp_radius;
         const w = note && wpType(note.wp_type);
@@ -128,7 +126,7 @@
 
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
-        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 35,
+        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
         META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],

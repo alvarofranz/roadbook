@@ -242,6 +242,13 @@ section.block { padding: 2.4rem 0; }
 .feat-table td code { color: var(--sand-2); white-space: nowrap; }
 .fmt-yes { color: #2ec77a; }
 .fmt-no { color: var(--muted); opacity: .5; }
+/* toggle switch showing an ON/OFF state (e.g. the Reader's auto-advance control) — the
+   knob position IS the state, so it never reads as "press to set to the shown value". */
+.rb-switch { display: inline-flex; align-items: center; gap: .5rem; }
+.rb-switch .rb-switch-track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s ease; flex-shrink: 0; }
+.rb-switch .rb-switch-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s ease, background .15s ease; }
+.rb-switch.on .rb-switch-track { background: var(--sand); }
+.rb-switch.on .rb-switch-knob { transform: translateX(14px); background: #14100a; }
 /* a feature card for an upcoming capability: dimmed, dashed, with a "Coming soon" pill */
 .flow .step.soon { border-style: dashed; opacity: .85; }
 .flow .step.soon i { color: var(--muted); }
@@ -302,7 +309,6 @@ section.block { padding: 2.4rem 0; }
 .nrow.done { background: #d6f5e0; }     /* light green: reached */
 .nrow.skipped { background: #ffe1ec; }  /* pink: passed over without being reached */
 .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
-.nrow.active.warn { box-shadow: inset 0 0 0 3px #ff9f1c; }      /* orange: approaching */
 /* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
 .vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
 .gallery-card .gallery-body { padding: .9rem 1rem; }

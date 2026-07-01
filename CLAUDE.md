@@ -225,14 +225,14 @@ projects. See `NATIVE.md`.
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
-  upcoming white · <50 m to next blue · approaching orange) with an optional per-note
+  upcoming white · <50 m to next blue) with an optional per-note
   MapLibre mini-map; a note's FIA waypoint-type badge (`wp_type`) sits beside its number.
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook**. The
-  start modal sets Trip vs Competition mode, automatic (GPS, marks within each note's
-  **detection radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius`
-  → the type default → the system default `CONST.REACH_DEFAULT_M` (35 m); the start modal can
-  instead pin one fixed radius for all) vs manual (tap "reached") advancement, the
-  per-note map button and optional live GPX logging. Competition validates with
+  start modal sets Trip vs Competition mode, the per-note map button and optional live GPX
+  logging. Advancement is automatic by default (GPS marks a note on entering its **detection
+  radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius` → the type
+  default → the system default `CONST.REACH_DEFAULT_M` (30 m)), with a live Auto on/off switch
+  in the nav bar, or manual (tap "reached"). Competition validates with
   penalties + an HMAC-signed result QR; validating syncs the total odometer to the
   note's distance. Opens `.rdbk` from the OS on installed PWAs.
 - **Tripmaster** — a GPS trip computer with no roadbook: total/partial odometer with

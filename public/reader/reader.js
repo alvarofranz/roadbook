@@ -22,17 +22,14 @@
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
-    let showMap = true, approaching = false; // showMap: per-note map button · approaching: auto, in reach and closing (orange)
+    let showMap = true; // per-note map button
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
-    // Auto-validation is by closest approach, not by entering a fixed bubble: a note is
-    // marked the moment you pass its nearest point (distance bottomed out, then rose again)
-    // having come within its reach. So clustered notes validate one by one as you drive past
-    // each, never all at once. The reach is a per-note gate, capped to half the smaller gap to
-    // a neighbour (so two notes' reaches can't overlap) and floored above GPS noise.
-    const REACH_MIN_M = 18, PASS_MARGIN_M = 8; // reach gate floor (never demand sub-GPS precision) · how far past the closest point confirms a pass. The reach itself is the note's detection radius (RB.detectionRadius), capped by neighbour spacing.
-    let fixedRadius = null; // start-time override: one detection radius for ALL notes (null = use each note's radius)
-    let approachIdx = -1, approachMin = Infinity, approachPos = null; // pass-by tracker for the active note: closest distance + the fix where it happened
+    // Auto-validation: a note is reached the moment you enter its detection radius — you've
+    // arrived, so it validates immediately (no waiting to overshoot it). The reach is a per-note
+    // gate, capped to half the smaller gap to a neighbour (so two notes' reaches can't overlap →
+    // clustered notes still validate one at a time) and floored above GPS noise.
+    const REACH_MIN_M = 18; // reach gate floor (never demand sub-GPS precision). The reach itself is the note's detection radius (RB.detectionRadius), capped by neighbour spacing.
     let lastPayload = '', lastQrUrl = '';
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
@@ -58,7 +55,7 @@
     RBGpxRecorder.init({ toast, onChange: (recording) => { // recording = an unmistakable red STOP button
         const b = $('navGpx');
         b.classList.toggle('btn-danger', recording);
-        b.innerHTML = recording ? '<i class="fa-solid fa-stop"></i>' : '<i class="fa-solid fa-circle-dot"></i>';
+        b.innerHTML = recording ? '<i class="fa-solid fa-stop"></i> GPX' : '<i class="fa-solid fa-circle-dot"></i> GPX';
         saveSession();
     } });
     // Resume an interrupted run first; otherwise fall back to a challenge passed
@@ -106,19 +103,13 @@
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();
         $('optMapRow').hidden = !mapAllowed();
-        $('optRadiusVal').value = (rb.meta && rb.meta.default_wp_radius) || C.REACH_DEFAULT_M; // seed the fixed-radius field with the roadbook default
-        openModal('modeModal');
+        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses the popup → back to the load screen you came from
     }
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
-    $('advAuto').onclick = () => { $('advAuto').classList.add('on'); $('advManual').classList.remove('on'); $('advAuto').setAttribute('aria-pressed', 'true'); $('advManual').setAttribute('aria-pressed', 'false'); };
-    $('advManual').onclick = () => { $('advManual').classList.add('on'); $('advAuto').classList.remove('on'); $('advManual').setAttribute('aria-pressed', 'true'); $('advAuto').setAttribute('aria-pressed', 'false'); };
     let optGpx = false, sound = true, audioCtx = null;
-    // Fixed-radius option: enabling it applies ONE detection radius to every note (the previous
-    // behaviour, now with a value the user picks); disabled = each note's own radius is used.
-    $('optFixedRadius').onchange = (e) => { $('optRadiusRow').hidden = !e.target.checked; };
     function readModeOpts() {
-        auto = $('advAuto').classList.contains('on'); showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked;
-        fixedRadius = $('optFixedRadius').checked ? Math.max(1, parseInt($('optRadiusVal').value, 10) || C.REACH_DEFAULT_M) : null;
+        // Advancement starts on Automatic (GPS); the nav-screen Auto switch toggles it during the run.
+        auto = true; showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked;
     }
     // Short beep when a note is reached (WebAudio — no asset, CSP-safe). The context is created
     // on the start tap (a user gesture) so it can later sound on a GPS auto-validation.
@@ -147,8 +138,7 @@
         buildScored();
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
-        $('autoBtn').innerHTML = autoLabel();
-        $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto));
+        syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
@@ -174,14 +164,14 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { competition, team, auto, showMap, sound, fixedRadius, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
-        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false; fixedRadius = s.fixedRadius != null ? s.fixedRadius : null;
+        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
@@ -222,31 +212,24 @@
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
     function reachRadius(i) {
-        const base = RB.detectionRadius(notes[i], rb && rb.meta, fixedRadius); // per-note radius (or the start-time fixed override)
+        const base = RB.detectionRadius(notes[i], rb && rb.meta); // the note's radius from the roadbook (per-note → roadbook default → type default → 30 m)
         const gapPrev = notes[i].partial_distance || Infinity;
         const gapNext = notes[i + 1] ? (notes[i + 1].partial_distance || Infinity) : Infinity;
         return Math.max(REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
-    // Closest-approach auto-validation. Track the smallest distance seen for the active note;
-    // once we've come within its reach AND moved PASS_MARGIN_M past that nearest point, we've passed
-    // it → validate. Speed-independent (no fix-to-fix delta) and immune to the cascade, since the
-    // next note's tracker only starts after this one advances.
+    // Auto-validation on arrival: the moment the current fix is within the active note's reach,
+    // the note is reached → validate against that fix. Immune to the cascade since reaches can't
+    // overlap (reachRadius caps to half the neighbour gap), so the next note's gate only opens
+    // once this one advances. renderNotes() happens inside validateAt.
     function autoAdvance(dist, here) {
-        if (activeIdx !== approachIdx) { approachIdx = activeIdx; approachMin = Infinity; approachPos = null; } // new active note → fresh tracker
-        if (dist < approachMin) { approachMin = dist; approachPos = here; }
-        const reach = reachRadius(activeIdx);
-        const passed = approachMin <= reach && dist > approachMin + PASS_MARGIN_M;
-        const wasApproaching = approaching;
-        approaching = dist <= reach && !passed; // orange while in reach and still closing on the note
-        if (passed) validateAt(activeIdx, approachPos); // score against the closest point we hit; renderNotes() happens inside
-        else if (approaching !== wasApproaching) renderNotes();
+        if (dist <= reachRadius(activeIdx)) validateAt(activeIdx, here);
     }
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
     // reached = green · skipped (passed over, never reached) = pink · active = red border ·
-    // upcoming = white · ≤50 m to next = blue · approaching (auto) = orange.
+    // upcoming = white · ≤50 m to next = blue.
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
@@ -255,7 +238,7 @@
         $('noteList').innerHTML = notes.map((n, i) => {
             const cls = ['nrow'];
             if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
-            if (i === activeIdx) { cls.push('active'); if (auto && approaching) cls.push('warn'); }
+            if (i === activeIdx) cls.push('active');
             const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
@@ -272,7 +255,7 @@
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
-        // only recentre when the active note actually changed (not on every approaching/redraw)
+        // only recentre when the active note actually changed (not on every redraw)
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = $('noteList').querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
         updateCapBar();
         saveSession();
@@ -313,7 +296,7 @@
     // "Note reached" button: advance sequentially and mark green (both modes).
     function markReached(i) {
         if (competition) { tapNote(i); return; } // scored validation
-        reached.add(i); tripPartialM = 0; approaching = false; beep();
+        reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; renderNotes();
     }
@@ -361,7 +344,7 @@
         extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
         if (lim != null) { if (scored && curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
-        reached.add(i); tripPartialM = 0; approaching = false; beep();
+        reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; renderNotes();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
@@ -370,15 +353,17 @@
         if (competition) { if (activeIdx < notes.length) tapNote(activeIdx); }
         else if (activeIdx < notes.length) markReached(activeIdx);
     };
-    const autoLabel = () => `<i class="fa-solid fa-robot"></i> ${esc(t('Auto'))}: ${auto ? 'ON' : 'off'}`;
-    $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').innerHTML = autoLabel(); $('autoBtn').classList.toggle('btn-primary', auto); $('autoBtn').setAttribute('aria-pressed', String(auto)); approaching = false; renderNotes(); };
+    // The auto-advance control is a toggle SWITCH: the knob position shows the current state
+    // (on = GPS validates notes automatically), so it never reads as "press to set to the label".
+    const syncAutoBtn = () => { $('autoBtn').classList.toggle('on', auto); $('autoBtn').setAttribute('aria-checked', String(auto)); };
+    $('autoBtn').onclick = () => { auto = !auto; syncAutoBtn(); renderNotes(); };
     // re-render the translated note rows when the language changes mid-session
     window.addEventListener('rb-lang', () => { if (notes.length && !$('navScreen').hidden) renderNotes(); });
     // Pause: stop the GPS watch and release the wake lock to save battery (e.g. a lunch
     // stop). Resume restarts the same meter. The odometer simply doesn't move while paused.
     function updatePauseBtn() {
-        $('pauseBtn').innerHTML = paused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
         const lbl = t(paused ? 'Resume' : 'Pause');
+        $('pauseBtn').innerHTML = `<i class="fa-solid fa-${paused ? 'play' : 'pause'}"></i> ${esc(lbl)} RB`; // "RB" makes clear it pauses the roadbook run, not the GPX recording
         $('pauseBtn').title = lbl; $('pauseBtn').setAttribute('aria-label', lbl);
         $('pauseBtn').classList.toggle('btn-primary', paused);
     }

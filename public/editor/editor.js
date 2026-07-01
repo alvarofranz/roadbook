@@ -338,6 +338,9 @@
     }
     const gapIdxs = () => resolveGaps().map((x) => x.i);
     const refreshMap = (noFit) => map.showRoadbook(rb, noFit, gapIdxs());
+    // Centre the map on the signed-in user's saved default location — used when there's no route to
+    // fit (an empty start, or opening a saved roadbook that has no points yet), so drawing starts there.
+    const centerOnDefault = () => { if (map.map && meUser && meUser.default_lat != null && meUser.default_lon != null) map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 12 }); };
     async function confirmOpenCuts() {
         if (!resolveGaps().length) return true;
         return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'), t('Continue'));
@@ -657,7 +660,7 @@
         const routeless = rb.track.length < 2;
         setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to moving points
         showView('map'); // tap a note to open its editor inline below the row
-        if (routeless) toast('Tap the map to draw your route.');
+        if (routeless) { centerOnDefault(); toast('Tap the map to draw your route.'); } // no route to fit → start at the user's default location
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -1198,6 +1201,9 @@
         rows.forEach((el) => el.onclick = (e) => {
             const capBtn = e.target.closest('[data-cap]');
             if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
+            // A click inside the live tulip canvas (icon select/drag, junction, its toolbar) must NOT
+            // toggle the row shut — the canvas is hosted inside the open row, so its clicks bubble here.
+            if (e.target.closest('#canvasWrap')) return;
             if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
         });
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
@@ -1824,8 +1830,8 @@
         }
         if (!rb && meUser) {
             const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; // landing → list the user's saved roadbooks
-            // Empty start (e.g. "Draw on the map"): centre on the user's saved default location.
-            if (meUser.default_lat != null && meUser.default_lon != null) map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 12 });
+            centerOnDefault(); // empty start (e.g. "Draw on the map"): centre on the user's saved default location
+
         }
         // Opened from My roadbooks "Export" (?export=1): pop the same Export popup straight away.
         if (rb && new URLSearchParams(location.search).get('export') === '1') {

@@ -8,9 +8,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.01-9">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.01-10">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.01-9">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.01-10">
     <style>
         /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
         .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -30,13 +30,13 @@
         .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; transform: rotate(var(--cap-rotation, -45deg)); transition: transform .35s ease; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
-        .mode-grid { margin-top: 1rem; }
+        .mode-grid { margin-top: 1rem; grid-template-columns: 1fr 1fr; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
         .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
         @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } .odometer-bar { top: 0; } }
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
-           (done/skipped/active/warn/close) are toggled by reader.js */
+           (done/skipped/active/close) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
         /* larger per-note readouts: partial km just under the total, coordinates legible */
         #noteList .col-distance .partial { font-size: 1.6rem; }
@@ -49,8 +49,6 @@
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
-        .radius-row { display: flex; align-items: center; gap: .5rem; padding-left: 1.9rem; }
-        .radius-input { width: 5rem; padding: .35rem .5rem; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; font: inherit; }
     </style>
 </head>
 <body>
@@ -93,10 +91,10 @@
         <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
     </div>
     <nav class="fabrow">
-        <button class="btn btn-ghost" id="autoBtn" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> Auto: off</button>
+        <button class="btn btn-ghost rb-switch on" id="autoBtn" role="switch" aria-checked="true" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> <span data-i18n="Auto">Auto</span> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
         <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
         <button class="btn btn-ghost" id="pauseBtn" title="Pause" data-i18n-title="Pause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
-        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i></button>
+        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i> GPX</button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
         <button class="btn btn-ghost" id="endBtn" title="End navigation" data-i18n-title="End navigation" aria-label="End navigation" data-i18n-aria="End navigation"><i class="fa-solid fa-right-from-bracket icon-danger"></i></button>
     </nav>
@@ -107,16 +105,9 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
         <h2 id="modeTitle" data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
-            <label class="muted small" data-i18n="Advancement">Advancement</label>
-            <div class="segmented fill" role="group" aria-label="Advancement" data-i18n-aria="Advancement">
-                <button type="button" class="segment on" id="advAuto" data-i18n="Automatic (GPS)" aria-pressed="true">Automatic (GPS)</button>
-                <button type="button" class="segment" id="advManual" data-i18n="Manual (tap)" aria-pressed="false">Manual (tap)</button>
-            </div>
             <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
-            <label class="checkbox-row"><input type="checkbox" id="optFixedRadius"> <span data-i18n="Fixed detection radius for all notes">Fixed detection radius for all notes</span></label>
-            <div class="radius-row" id="optRadiusRow" hidden><span class="muted small" data-i18n="Radius (m)">Radius (m)</span> <input type="number" id="optRadiusVal" class="radius-input" min="1" step="1" value="35" aria-label="Radius (m)" data-i18n-aria="Radius (m)"> <span class="muted small">m</span></div>
         </div>
         <div class="mode-grid">
             <button class="mode-btn" id="modeTrip"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
@@ -156,20 +147,20 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.01-9"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.01-9"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.01-9"></script>
-<script src="../assets/js/gps-meter.js?v=2026.07.01-9"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.07.01-9"></script>
-<script src="../assets/js/note-canvas.js?v=2026.07.01-9"></script>
-<script src="../assets/js/qrcode.min.js?v=2026.07.01-9"></script>
-<script src="../assets/js/challenges.js?v=2026.07.01-9"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.01-9"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.01-9"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.01-9"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.01-9"></script>
-<script src="../assets/js/i18n.js?v=2026.07.01-9"></script>
-<script src="../assets/js/app.js?v=2026.07.01-9"></script>
-<script src="reader.js?v=2026.07.01-9"></script>
+<script src="../assets/js/config.js?v=2026.07.01-10"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.01-10"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.01-10"></script>
+<script src="../assets/js/gps-meter.js?v=2026.07.01-10"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.07.01-10"></script>
+<script src="../assets/js/note-canvas.js?v=2026.07.01-10"></script>
+<script src="../assets/js/qrcode.min.js?v=2026.07.01-10"></script>
+<script src="../assets/js/challenges.js?v=2026.07.01-10"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.01-10"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.01-10"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.01-10"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.01-10"></script>
+<script src="../assets/js/i18n.js?v=2026.07.01-10"></script>
+<script src="../assets/js/app.js?v=2026.07.01-10"></script>
+<script src="reader.js?v=2026.07.01-10"></script>
 </body>
 </html>
