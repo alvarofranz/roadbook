@@ -3,6 +3,11 @@
  * password. Tokens are random and stored hashed (sha256 + app secret pepper).
  * Cloudflare Turnstile guards register/login/forgot when configured. */
 
+// Current Terms of Use version — MUST match <meta name="terms-version"> on /terms/. Recorded
+// server-side at registration (authoritative; the client-sent value is never trusted). Bump both
+// this and the page's meta/visible date whenever the Terms change (#135).
+const TERMS_VERSION = '2026-07-01T15:50Z';
+
 function valid_email(string $e): bool { return filter_var($e, FILTER_VALIDATE_EMAIL) !== false; }
 function new_token(): string { return bin2hex(random_bytes(32)); }
 function token_hash(string $t): string { global $CFG; return hash('sha256', $t . '|' . $CFG['app_secret']); }
@@ -156,6 +161,7 @@ function register_user(array $d): void {
     if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
     if (!valid_email($email)) fail('Please enter a valid email.');
     if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
+    if (empty($d['accept_terms'])) fail('You must accept the Terms of Use to register.');
     verify_turnstile($d['turnstile'] ?? null);
 
     $st = db()->prepare('SELECT id FROM users WHERE username = ? OR email = ?');
@@ -163,8 +169,9 @@ function register_user(array $d): void {
     if ($st->fetch()) fail('That username or email is already in use.');
 
     $raw = new_token();
-    db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,verify_token,verify_expires) VALUES (?,?,?,?,?,?, DATE_ADD(NOW(), INTERVAL 24 HOUR))')
-        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT), token_hash($raw)]);
+    // Stamp the consent server-side: NOW() + the authoritative TERMS_VERSION (never the client's).
+    db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,verify_token,verify_expires,terms_accepted_at,terms_version) VALUES (?,?,?,?,?,?, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW(), ?)')
+        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT), token_hash($raw), TERMS_VERSION]);
     log_activity((int)db()->lastInsertId(), 'register');
 
     global $CFG;
