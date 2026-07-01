@@ -133,7 +133,13 @@
     }
     $('recPause').onclick = () => {
         paused = !paused;
-        if (paused) { elapsedAcc = elapsed(); segStart = 0; lastSampled = null; } else { segStart = Date.now(); }
+        // Pause frees the GPS watch + wake lock so a long stop (e.g. lunch) doesn't drain the
+        // battery; Resume reacquires and keeps appending to the SAME track (the resume point joins
+        // the last one — lastSampled is cleared so the first new fix samples). The elapsed clock
+        // freezes on pause regardless. The pause state is checkpointed so a kill mid-pause resumes paused.
+        if (paused) { elapsedAcc = elapsed(); segStart = 0; lastSampled = null; stopMeter(); }
+        else startMeter();
+        saveSession();
         renderPauseBtn(); renderBar();
     };
     $('recStop').onclick = async () => {
