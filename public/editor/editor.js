@@ -208,9 +208,7 @@
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         if (photoPlacing) { placePhotoHere(here); return; } // setting the position of a photo with no EXIF GPS
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
-        if (mapTool === 'note') { if (rb) addWaypointNear(here); else toast('Load a roadbook first.'); }
-        else if (mapTool === 'draw') drawPoint(here);
-        else if (mapTool === 'insert') { if (rb) insertPointOnLine(here); else toast('Load a roadbook first.'); }
+        if (mapTool === 'draw') drawPoint(here);
         else if (mapTool === 'cut') cutPoint(here);
     });
 
@@ -277,7 +275,9 @@
         const pt = rb.track[i];
         if (act === 'note') { promoteVertex(i); } // attach a note to THIS vertex — no new geometry (#61)
         else if (act === 'mid') { addMidpointAfter(i); }
-        else if (act === 'line') { setMapTool('insert'); toast('Tap the route to add a point.'); }
+        // "Add point on line": add a track point straight away at the pointer (like W adds a note),
+        // instead of switching to a mode and waiting for a tap. Falls back to a midpoint after the vertex.
+        else if (act === 'line') { if (hoverPt) addPointAtExact(hoverPt); else addMidpointAfter(i); }
         else if (act === 'del') { deleteTrackPointNear(pt); }
     }
     // A: insert a track point at the midpoint of the segment that follows point i.
@@ -347,14 +347,14 @@
     }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    const MODE_TOOLS = ['toolPan', 'toolNote', 'toolDraw', 'toolInsert', 'toolCut']; // Move ('points') is the default — no button
+    const MODE_TOOLS = ['toolCut']; // the only mode with a toolbar button; Move ('points') is the default, Draw is entered from the landing
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
         if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); map.setPhotoEditor(onPhotoDrag, onPhotoCommit); } // Move: drag trk · wpt · photo
-        else if ((tool === 'insert' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) so you see the points while inserting/drawing (#52)
+        else if (tool === 'draw' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) so you see the points while drawing (#52)
         else { map.setVertexEditor(null); map.setWaypointEditor(null); map.setPhotoEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
     }
@@ -363,8 +363,6 @@
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
         const tips = {
-            toolPan: 'Navigate', toolNote: 'Add note (tap the route)', toolDraw: 'Draw route (tap to extend)',
-            toolInsert: 'Insert a point (tap the route where you want it)',
             toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
@@ -478,16 +476,6 @@
     // ready to drag with "move points". The dashed connector of an open cut is skipped.
     // Add a track point exactly where you tap ON the route (the projection onto the nearest
     // segment), so it lands where you can see it — not at the segment's midpoint.
-    function insertPointOnLine(p) {
-        const hit = RB.nearestOnTrack(rb.track, p);
-        if (!hit) return toast('Tap on the route to insert a point.');
-        if (new Set(gapIdxs()).has(hit.i)) return toast('Cannot insert on an open cut.');
-        rb.track.splice(hit.i + 1, 0, { lat: RB.round6(hit.lat), lon: RB.round6(hit.lon) });
-        rb.notes.forEach((n) => { if (n.idx > hit.i) n.idx++; });
-        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        refreshMap(true); renderNotes(); markDirty();
-        toast('Point inserted.');
-    }
     // Cut mode: tap two points — at the ends it trims; in the middle it removes
     // the span and leaves an OPEN cut (dashed connector) to fill by drawing.
     function cutPoint(p) {
@@ -645,7 +633,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolNote', 'toolInsert', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -1395,7 +1383,10 @@
         if (!rb || i < 0 || i >= rb.notes.length) return;
         const removed = RB.deleteNote(rb, i);
         if (removed >= 0 && cutFromIdx > removed) cutFromIdx -= 1;
-        markDirty(); refreshMap(true); renderNotes(); select(Math.min(i, rb.notes.length - 1));
+        // Refresh in place WITHOUT recentring the map (like the track-point ops) — deleting a note
+        // must not make the view jump to a neighbour. routeChanged only highlights, never eases.
+        sel = Math.min(i, rb.notes.length - 1);
+        routeChanged('Note deleted.');
     }
     // Road type in force at a track index = the road_out of the nearest preceding
     // note. A note inserted here continues on that road by default (road_out =
