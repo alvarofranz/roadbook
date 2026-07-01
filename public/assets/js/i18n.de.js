@@ -253,7 +253,7 @@
             'Check point': 'Kontrollpunkt', 'Passage control': 'Durchgangskontrolle',
             'Paused': 'Pausiert', 'End navigation': 'Navigation beenden', 'End navigation? Your progress on the notes will be lost.': 'Navigation beenden? Dein Fortschritt bei den Noten geht verloren.',
             'Recover the unsaved draft?': 'Nicht gespeicherten Entwurf wiederherstellen?',
-            'Advancement': 'Fortschritt', 'Automatic (GPS)': 'Automatisch (GPS)', 'Manual (tap)': 'Manuell (antippen)', 'Show map button per note': 'Kartenschaltfläche pro Note anzeigen', 'Record a GPX track': 'GPX-Track aufzeichnen', 'Sound on note': 'Ton bei Note', 'Fixed detection radius for all notes': 'Fester Erkennungsradius für alle Noten', 'Radius (m)': 'Radius (m)',
+            'Show map button per note': 'Kartenschaltfläche pro Note anzeigen', 'Record a GPX track': 'GPX-Track aufzeichnen', 'Sound on note': 'Ton bei Note',
             'Note reached': 'Note erreicht', 'Open on map': 'Auf Karte öffnen', 'Load': 'Laden', 'Map not configured.': 'Karte nicht konfiguriert.',
             'Author': 'Autor', 'Organization': 'Organisation', 'Event logo': 'Veranstaltungslogo', 'Upload logo': 'Logo hochladen', 'Last modified': 'Zuletzt geändert', 'Author name': 'Autorname',
             'Photos uploaded.': 'Fotos hochgeladen.', 'Save to your profile first.': 'Zuerst im Profil speichern.',
