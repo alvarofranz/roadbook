@@ -82,6 +82,6 @@ from console
 *   `tools/`: Utility scripts and helpers.
 
 ---
-**Project Maintainer:** Alvaro, Maurizio, inspired by works from Massimiliano of [RoadBook System](https://www.roadbook-system.com/)
+**Project Maintainer:** Alvaro, Maurizio, inspired by works from Massimo Sabattini of [RoadBook System](https://www.roadbook-system.com/)
 
 **License:** See `LICENSE` file for details.

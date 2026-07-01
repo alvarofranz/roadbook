@@ -73,6 +73,7 @@
         footer.innerHTML = `<div class="wrap">
             <div class="muted foot-links">
                 <b>RDBK.app</b>
+                <a href="${ROOT}about/"><i class="fa-solid fa-circle-info"></i> ${RBt('About')}</a>
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="${ROOT}events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Events')}</a>
                 <a href="https://github.com/alvarofranz/roadbook" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>

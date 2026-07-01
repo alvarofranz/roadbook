@@ -9,8 +9,8 @@
     <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../manifest.json">
-    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=2026.07.01-6">
-    <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.01-6">
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=2026.07.01-7">
+    <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.01-7">
 </head>
 <body>
 <header class="topbar"></header>
@@ -32,6 +32,72 @@
         <div class="feat-item"><i class="fa-solid fa-file-export"></i><div><h3 data-i18n="fp.editor.f6t">Export everything</h3><p data-i18n-html="fp.editor.f6d">Self-contained <code>.rdbk</code>, GPX (track + named waypoints, OpenRally), and a print-ready A4 PDF — plus save to your profile, public or private.</p></div></div>
     </section>
 
+    <section class="feat-section" id="formats">
+        <h2><i class="fa-solid fa-right-left"></i><span data-i18n="fp.editor.fmtTitle">Supported formats: what goes in, what comes out</span></h2>
+        <p class="feat-intro" data-i18n-html="fp.editor.fmtIntro">The Editor is the conversion hub: load a route from several formats, edit it in the canonical model, then export to whichever format your device or event needs. Here is what it reads and writes.</p>
+        <div class="feat-table-wrap">
+            <table class="feat-table">
+                <tr>
+                    <th data-i18n="fp.editor.fmtHFormat">Format</th>
+                    <th class="mark" data-i18n="fp.editor.fmtHIn">Import</th>
+                    <th class="mark" data-i18n="fp.editor.fmtHOut">Export</th>
+                    <th data-i18n="fp.editor.fmtHData">What travels</th>
+                </tr>
+                <tr>
+                    <td><code>.rdbk</code></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Export" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td data-i18n="fp.editor.fmtRdbkData">Everything — the native, self-contained format</td>
+                </tr>
+                <tr>
+                    <td>GPX</td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Export" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td data-i18n="fp.editor.fmtGpxData">Track + named waypoints (optional Garmin / OSMAnd icons)</td>
+                </tr>
+                <tr>
+                    <td data-i18n="fp.editor.fmtRowOr">OpenRally GPX</td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Export" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td data-i18n="fp.editor.fmtOrData">Notes (distance, CAP, danger, waypoint type) + the vignette as a flat image</td>
+                </tr>
+                <tr>
+                    <td>Garmin <code>.wpt</code></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><span class="fmt-no" aria-label="Not supported" data-i18n-aria="fp.editor.fmtNo">—</span></td>
+                    <td data-i18n="fp.editor.fmtWptData">Waypoints only, loaded alongside a GPX track</td>
+                </tr>
+                <tr>
+                    <td data-i18n="fp.editor.fmtRowLegacy">Roadbook-Suite (legacy JSON)</td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><span class="fmt-no" aria-label="Not supported" data-i18n-aria="fp.editor.fmtNo">—</span></td>
+                    <td data-i18n="fp.editor.fmtLegacyData">Pre-standard files, converted to the canonical model on open</td>
+                </tr>
+                <tr>
+                    <td data-i18n="fp.editor.fmtRowPublic">Public roadbook</td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Import" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Export" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td data-i18n="fp.editor.fmtPubData">Loaded from / saved to the public library (signed in)</td>
+                </tr>
+                <tr>
+                    <td>PDF</td>
+                    <td class="mark"><span class="fmt-no" aria-label="Not supported" data-i18n-aria="fp.editor.fmtNo">—</span></td>
+                    <td class="mark"><i class="fa-solid fa-check fmt-yes" aria-label="Export" data-i18n-aria="fp.editor.fmtYes"></i></td>
+                    <td data-i18n="fp.editor.fmtPdfData">Print-ready A4 roadbook</td>
+                </tr>
+            </table>
+        </div>
+        <div class="feat-list">
+            <div class="feat-item"><i class="fa-solid fa-floppy-disk"></i><div><h3 data-i18n="fp.editor.fmtRdbkT">RDBK (<code>.rdbk</code>) — the native format</h3><p data-i18n-html="fp.editor.fmtRdbkD">A single self-contained JSON file that embeds the track, every note and all the symbols it uses. Round-trips with <b>full fidelity</b> — icons, junction vectors, CAP, danger, waypoint types and radii all survive. This is the format to keep for re-editing. See the <a href="../../standard/">open .rdbk standard</a>.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-route"></i><div><h3 data-i18n="fp.editor.fmtGpxT">GPX</h3><p data-i18n-html="fp.editor.fmtGpxD">Standard GPS exchange. On import the track and any named waypoints become notes; if the GPX has waypoints but no track, a route is built through them to redraw. On export you choose track, waypoints (notes) or both, optionally tagging waypoints with <b>Garmin</b> or <b>OSMAnd</b> symbol names.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-location-dot"></i><div><h3 data-i18n="fp.editor.fmtWptT">Garmin <code>.wpt</code></h3><p data-i18n-html="fp.editor.fmtWptD">A companion waypoint file: load it together with a GPX and its points fill in the notes when the GPX itself carries none. Import only.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-diagram-project"></i><div><h3 data-i18n="fp.editor.fmtOrT">OpenRally GPX</h3><p data-i18n-html="fp.editor.fmtOrD">The rally <a href="https://github.com/openrally/openrally" target="_blank" rel="noopener">interoperability standard</a>. On <b>import</b> RDBK reads the route and each note's structured data — distance, CAP, danger grade and FIA waypoint type. But the vignette (the <i>tulip</i>) is stored by the OpenRally schema as an <b>opaque flat image</b> (a base64 PNG, sometimes wrapped in SVG), so it comes in as one full-box picture that <b>can't be broken back</b> into editable icons and junction vectors — that structure was lost when the producer exported. On <b>export</b> RDBK renders each note's vignette to an embedded SVG tulip, so the file stays self-contained. In short: OpenRally is a delivery / interchange format, <b>not an editable source</b> — for full re-editing keep the native <code>.rdbk</code>.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-file-import"></i><div><h3 data-i18n="fp.editor.fmtLegacyT">Roadbook-Suite (legacy JSON)</h3><p data-i18n-html="fp.editor.fmtLegacyD">Older pre-standard JSON roadbooks open directly and are converted to the canonical model — the route, notes and vignettes come across so you can keep working. Import only.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-cloud"></i><div><h3 data-i18n="fp.editor.fmtPubT">Public roadbook</h3><p data-i18n-html="fp.editor.fmtPubD">Signed in, you can fork any roadbook from the public library into the Editor and save your own back to your profile — <b>public</b> (listed and shareable) or <b>private</b>. Saved roadbooks stay re-editable and sync across your devices.</p></div></div>
+            <div class="feat-item"><i class="fa-solid fa-file-pdf"></i><div><h3 data-i18n="fp.editor.fmtPdfT">PDF</h3><p data-i18n-html="fp.editor.fmtPdfD">A print-ready A4 roadbook for the co-driver's clipboard or the event's paper archive. Export only.</p></div></div>
+        </div>
+    </section>
+
     <section class="feat-section">
         <h2><i class="fa-solid fa-lightbulb"></i><span data-i18n="fp.editor.tipsTitle">Roadbook editing workflow: Tips &amp; tricks</span></h2>
         <div class="feat-list">
@@ -50,11 +116,11 @@
     <p class="feat-plat"><span data-i18n="fp.plat.works">Works on</span><i class="fa-brands fa-windows"></i>Windows<i class="fa-brands fa-apple"></i>macOS / iOS<i class="fa-brands fa-android"></i>Android<i class="fa-brands fa-linux"></i>Linux<span data-i18n="fp.plat.browser"> — runs in the browser, no install needed.</span></p>
 </main>
 
-<script src="../../assets/js/i18n.es.js?v=2026.07.01-6"></script>
-<script src="../../assets/js/i18n.it.js?v=2026.07.01-6"></script>
-<script src="../../assets/js/i18n.de.js?v=2026.07.01-6"></script>
-<script src="../../assets/js/i18n.fr.js?v=2026.07.01-6"></script>
-<script src="../../assets/js/i18n.js?v=2026.07.01-6"></script>
-<script src="../../assets/js/app.js?v=2026.07.01-6"></script>
+<script src="../../assets/js/i18n.es.js?v=2026.07.01-7"></script>
+<script src="../../assets/js/i18n.it.js?v=2026.07.01-7"></script>
+<script src="../../assets/js/i18n.de.js?v=2026.07.01-7"></script>
+<script src="../../assets/js/i18n.fr.js?v=2026.07.01-7"></script>
+<script src="../../assets/js/i18n.js?v=2026.07.01-7"></script>
+<script src="../../assets/js/app.js?v=2026.07.01-7"></script>
 </body>
 </html>
