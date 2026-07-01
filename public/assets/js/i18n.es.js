@@ -2,6 +2,8 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).es = {
             'About': 'Acerca de',
             'Terms of Use': 'Términos de uso',
+            'reg.acceptTerms': 'He leído y acepto los <a href="/terms/" target="_blank" rel="noopener">Términos de uso</a>',
+            'You must accept the Terms of Use to register.': 'Debes aceptar los Términos de uso para registrarte.',
             'hero.title': 'Roadbooks digitales para <span class="accent">tus aventuras</span>',
             'hero.lead': 'Crea un roadbook desde un GPX, síguelo con GPS y compártelo. 4x4, moto, bici, correr… cualquier aventura.',
             'hero.cta_tools': 'Abrir el Editor', 'hero.cta_challenges': 'Challenges',

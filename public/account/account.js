@@ -142,7 +142,8 @@
         if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
-        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, turnstile: tsTokens.register });
+        if (!$('regTerms').checked) return msg('You must accept the Terms of Use to register.', false);
+        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, accept_terms: true, turnstile: tsTokens.register });
         msg(r.message || r.error, !!r.ok); if (r.ok) show('vLogin'); else resetTs('register');
     });
     onSubmit('forgotForm', async () => {
