@@ -57,6 +57,7 @@
     /* ---------- startup: know the user, then resume → rescue → idle ---------- */
     RBApi('config').then((c) => {
         meUser = c.user || null;
+        updateRecUi(); // login known → reveal WP audio (signed-in) or show the sign-in hint
         // Before the first fix, centre on the user's saved default location if they set one.
         if (meUser && meUser.default_lat != null && meUser.default_lon != null && !here && map && map.map)
             map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 13 });
@@ -208,7 +209,15 @@
     const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
     const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     const wptBtn = $('recWptAudio');
-    if (SR_REC || CAN_REC_AUDIO) wptBtn.hidden = false;
+    // WP audio (voice notes) and WP photo upload to a server draft → they need a signed-in user.
+    // Reveal the audio button only for a signed-in user who can record; the photo button is gated
+    // by draftId (which needs login). A hint on the idle screen tells signed-out users the track
+    // records anyway. Called once config() has told us who the user is (and offline handling of
+    // these is tracked separately, offline-first).
+    function updateRecUi() {
+        wptBtn.hidden = !(meUser && (SR_REC || CAN_REC_AUDIO));
+        const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
+    }
     let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 3, wptFinish = null;
     const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
     const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('WP audio') : String(n); };
@@ -328,9 +337,10 @@
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷</p>
             <div class="btnrow center wrap">
-                <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>
+                <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-file-arrow-down"></i> ${t('Export GPX')}</button>
                 <button class="btn btn-primary" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
+            <p class="muted small">${t('GPX is a local file — photos and audio are not included.')}</p>
             <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
         d.q('#rfDl').onclick = () => {
             const nm = name || ('RDBK_' + pad2(new Date().getHours()));

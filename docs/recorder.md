@@ -27,7 +27,7 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden`
 
 La barra di stato globale (orologio, batteria, stato satellite/GPS) è `RBStatusBar`,
 mostrata solo durante la registrazione ([recorder.js:38](../public/recorder/recorder.js#L38)).
-Il pulsante *Photo* è nascosto di default e compare solo a draft creato (§5).
+Il pulsante *Photo* è nascosto di default e compare solo a draft creato (§3, §6).
 
 Le dipendenze sono caricate dall'HTML nell'ordine: MapLibre, `config.js`,
 `roadbook-core.js`, `rbmap.js`, `gps-meter.js`, `gpx-recorder.js`, `i18n.js`,
@@ -105,7 +105,60 @@ versione a metà sessione ([recorder.js:35](../public/recorder/recorder.js#L35))
 
 ---
 
-## 3. La mappa live
+## 3. Dove finiscono i dati: locale vs server (e il *draft*)
+
+Punto chiave, spesso frainteso: **traccia e foto/audio seguono percorsi diversi**.
+
+- **Traccia + waypoint** restano **in locale** per tutta la registrazione: la traccia
+  autorevole è in `RBGpxRecorder` (checkpoint in `localStorage` + file `.gpx` scritto live
+  su disco dove l'API File System Access è disponibile); i metadati/waypoint nel session
+  checkpoint del Recorder. **Non vengono inviati al server durante la registrazione** (la
+  posizione live non lascia il device). Arrivano al server **solo quando si salva il
+  roadbook** (Convert into roadbook → Editor → Save, §8).
+- **Foto e audio** vengono invece **caricati subito sul server** appena scattati/registrati —
+  e per farlo serve un contenitore server: il **draft**.
+
+### Il draft server — prerequisito di foto/audio
+All'avvio, se l'utente è **loggato** (e c'è connessione), `begin()` chiama `RBApi('rb_draft')`,
+che crea un **roadbook vuoto** (`status='draft'`, `total_distance 0`, `note_count 0`): solo un
+**contenitore identificato da `draftId`**. Foto e audio vengono poi caricati **dentro quel
+draft** (`/photos/<draftId>/`, `/audio/<draftId>/`, righe `roadbook_photos`/`roadbook_audio`),
+legati per id + coordinate. **La traccia non viene mai spinta nel draft**: il draft nasce solo
+per reggere foto/audio finché la registrazione non diventa un roadbook salvato.
+
+→ Senza login **non c'è draft**, quindi **niente foto/audio** (i relativi pulsanti restano
+inattivi/nascosti, §6).
+
+### Cosa sta in quale formato, e quando va sul server
+| Dato            | Nel `.rdbk`   | Nel GPX | Quando raggiunge il server |
+|-----------------|---------------|---------|----------------------------|
+| Traccia         | Sì (`track`)  | Sì (`trk`) | **Solo al salvataggio** del roadbook (Convert → Editor → Save) |
+| Waypoint / note | Sì (`notes`)  | Sì (`wpt`) | idem |
+| Foto            | **No, mai**   | **No**  | **Subito**, durante la registrazione (nel draft) |
+| Audio           | **No, mai**   | **No**  | **Subito**, durante la registrazione (nel draft) |
+
+Foto e audio non sono **mai** dentro il file `.rdbk` né nel GPX: sono file lato server
+referenziati dal roadbook per id + coordinate. Viaggiano col roadbook solo sul server / nell'app.
+
+### Differenze di piattaforma
+| Aspetto | App nativa (Android / iOS) | Browser / PWA (PC · Android · iOS Safari) |
+|---|---|---|
+| GPS in background | **Sì** — `RBNative.geo` = `@capgo/background-geolocation` (foreground service): registra a **schermo bloccato / app in background** (Android mostra la notifica "Recording your route"; iOS via background-location del plugin) | `navigator.geolocation.watchPosition` + **wakeLock** (schermo acceso). A schermo bloccato / app in background il watch è sospeso/limitato — **iOS Safari** è il più penalizzato (JS sospeso); serve app in primo piano |
+| File `.gpx` live su disco | no (solo checkpoint localStorage) | **solo PC Chromium** (File System Access); altrove solo localStorage |
+| Fotocamera / microfono | API web (`<input capture>`, `getUserMedia`) — il bridge nativo espone **solo il GPS** | API web |
+
+### Comportamento offline (mobile)
+- **Traccia + waypoint di testo**: funzionano **pienamente offline** (GPS locale + checkpoint).
+  Nessuna rete richiesta.
+- **Foto / audio**: **richiedono connessione** (upload immediato al draft). Offline da subito →
+  `rb_draft` non parte → niente `draftId` → foto/audio non disponibili; se la rete cade dopo, il
+  singolo upload **fallisce senza retry né buffer locale** → quella foto/audio è persa.
+- La **traccia** sopravvive comunque in locale: la si può scaricare in GPX subito oppure —
+  tornata la rete — riprendere la sessione e salvarla sul server.
+
+---
+
+## 4. La mappa live
 
 `RBMap('recMap', { zoom: 15, headingToggle: true })` è istanziata all'avvio del modulo
 ([recorder.js:22](../public/recorder/recorder.js#L22)). Ad ogni fix la posizione
@@ -130,7 +183,7 @@ in attesa del satellite. Il primo fix reale prende poi il sopravvento sul marker
 
 ---
 
-## 4. Waypoint con testo (e dettatura)
+## 5. Waypoint con testo (e dettatura)
 
 *Waypoint* ([recorder.js:132](../public/recorder/recorder.js#L132)) richiede un fix GPS
 (altrimenti toast *"Waiting for a GPS fix…"*). Il flusso è:
@@ -179,7 +232,7 @@ Trascrivere la clip *registrata* in testo (post-registrazione, nell'Editor) è t
 
 ---
 
-## 5. Foto geotaggate
+## 6. Foto geotaggate
 
 Le foto sono una **funzione per utenti loggati**. Il pulsante *Photo* è nascosto finché
 non esiste un *draft roadbook*: in `begin()`, se l'utente è loggato (`meUser`), si chiama
@@ -206,11 +259,11 @@ identificato da `draftId`. In `photos` resta solo `{ id, url, lat, lon }`. Di co
 - Senza login non c'è draft, quindi **niente foto** (il pulsante resta nascosto).
 - Allo *scarico GPX* le foto **non** sono incluse (il GPX porta solo traccia + waypoint).
   Le foto sopravvivono solo se si sceglie *Convert into roadbook*, che passa il `draftId`
-  all'Editor (§7).
+  all'Editor (§8).
 
 ---
 
-## 6. Salvataggio su disco e file handle crash-safe
+## 7. Salvataggio su disco e file handle crash-safe
 
 Il logging su file è interamente delegato a `RBGpxRecorder`. Il Recorder lo configura
 una volta con `RBGpxRecorder.init({ toast, onChange })`
@@ -232,7 +285,7 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 
 ---
 
-## 7. Termine: download GPX o conversione in roadbook
+## 8. Termine: download GPX o conversione in roadbook
 
 A *Finish* confermato si apre `finishModal(pts, name)`
 ([recorder.js:190](../public/recorder/recorder.js#L190)) con il riepilogo
@@ -253,7 +306,7 @@ A *Finish* confermato si apre `finishModal(pts, name)`
 
 ---
 
-## 8. Funzioni chiave
+## 9. Funzioni chiave
 
 | Funzione            | Riga                                                       | Ruolo |
 |---------------------|------------------------------------------------------------|-------|
@@ -267,7 +320,7 @@ A *Finish* confermato si apre `finishModal(pts, name)`
 
 ---
 
-## 9. Limiti
+## 10. Limiti
 
 - **Foto solo per utenti loggati**: senza login il pulsante è nascosto e le foto non
   esistono. Senza `draftId` (es. prima del fix o se `rb_draft` fallisce) la fotocamera
