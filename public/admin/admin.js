@@ -11,12 +11,15 @@
     function rowHtml(u) {
         const isMe = u.id === me;
         const badges = (u.is_admin ? `<span class="u-badge u-admin">admin</span> ` : '')
+            + (u.is_organizer ? `<span class="u-badge u-organizer">${esc(t('organizer'))}</span> ` : '')
             + (u.blocked ? `<span class="u-badge u-blocked">${esc(t('blocked'))}</span> ` : '')
             + (u.mustchange ? `<span class="u-badge u-unverified">${esc(t('must change password'))}</span> ` : '')
             + (u.verified ? '' : `<span class="u-badge u-unverified">${esc(t('unverified'))}</span>`);
+        // quick event-organizer toggle; the admin role moved into the Edit dialog. An admin
+        // already runs every event, so the toggle only shows for non-admin users.
         const role = u.locked
             ? `<span class="u-badge u-admin" title="${esc(t('Configured in .env'))}">superuser</span>`
-            : (isMe ? '' : `<button class="btn btn-ghost" data-role="${u.id}" data-make="${u.is_admin ? 0 : 1}">${esc(t(u.is_admin ? 'Remove admin' : 'Make admin'))}</button>`);
+            : (u.is_admin ? '' : `<button class="btn btn-ghost" data-org="${u.id}" data-make="${u.is_organizer ? 0 : 1}">${esc(t(u.is_organizer ? 'Remove event organizer' : 'Make event organizer'))}</button>`);
         const activate = u.verified ? '' : `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>`;
         const edit = `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>`;
         const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
@@ -49,6 +52,8 @@
             <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p>
             <label class="checkbox-row"><input type="checkbox" id="euOrganizer"> <span>${esc(t('Organizer'))}</span></label>
             <p class="hint">${esc(t('Can create and manage their own events.'))}</p>
+            <label class="checkbox-row"><input type="checkbox" id="euAdmin"> <span>${esc(t('Admin'))}</span></label>
+            <p class="hint">${esc(t('Full access to users, settings and every event.'))}</p>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow', null, { dismissable: false });
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
@@ -56,6 +61,8 @@
         m.q('#euEmail').value = u.email || '';
         m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
         m.q('#euOrganizer').checked = !!u.is_organizer;
+        m.q('#euAdmin').checked = !!u.is_admin;
+        m.q('#euAdmin').disabled = u.locked || u.id === me; // superuser (.env) and yourself can't be toggled
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const x = await api('admin_update', {
@@ -68,7 +75,14 @@
                 quota_bytes: m.q('#euQuota').value.trim() === '' ? '' : Math.max(0, Math.round(parseFloat(m.q('#euQuota').value) * 1048576)),
                 is_organizer: m.q('#euOrganizer').checked ? 1 : 0,
             });
-            if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not save.');
+            if (!x.ok) return toast(x.error || 'Could not save.');
+            // the admin role rides admin_set_role (it owns the self/superuser guards)
+            const wantAdmin = m.q('#euAdmin').checked ? 1 : 0;
+            if (!m.q('#euAdmin').disabled && wantAdmin !== (u.is_admin ? 1 : 0)) {
+                const r2 = await api('admin_set_role', { id: u.id, is_admin: wantAdmin });
+                if (!r2.ok) { toast(r2.error || 'Could not save.'); load(); return; }
+            }
+            m.close(); load();
         };
     }
 
@@ -145,8 +159,8 @@
     // mutating action re-fetches via load(); the current search + page are preserved.
     function wireRows() {
         const body = $('usersBody');
-        body.querySelectorAll('[data-role]').forEach((b) => b.onclick = async () => {
-            const x = await api('admin_set_role', { id: +b.dataset.role, is_admin: +b.dataset.make });
+        body.querySelectorAll('[data-org]').forEach((b) => b.onclick = async () => {
+            const x = await api('admin_set_role', { id: +b.dataset.org, is_organizer: +b.dataset.make });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {

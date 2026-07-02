@@ -224,6 +224,7 @@
         $('pfFirst').value = user.first_name || '';
         $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
+        $('pfOrg').value = user.organization || '';
         $('pfVoiceLang').value = user.voice_lang || '';
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
@@ -234,7 +235,7 @@
             if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
         };
         $('pfSave').onclick = async () => {
-            const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, voice_lang: $('pfVoiceLang').value });
+            const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value, voice_lang: $('pfVoiceLang').value });
             if (r.ok) $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; // keep the header name in sync
             msg(r.ok ? 'Profile saved.' : r.error, !!r.ok);
         };

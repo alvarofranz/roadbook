@@ -12,14 +12,6 @@
     <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.02-5">
     <style>
         #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
-        /* event editor: a roadbook row = the pick checkbox + its per-roadbook participation mode */
-        .ev-rb-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-        .ev-rb-row .checkbox-row { flex: 1; min-width: 12rem; margin: 0; }
-        .ev-rbmode { max-width: 15rem; }
-        /* categories: an editable, reorderable list — name input grows, small action buttons follow */
-        .ev-cat-row { display: flex; align-items: center; gap: .4rem; margin: .3rem 0; }
-        .ev-cat-row .field { flex: 1; margin: 0; }
-        .ev-cat-row .btn { width: auto; }
     </style>
 </head>
 <body>
@@ -29,7 +21,7 @@
     <h1 data-i18n="Events">Events</h1>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
     <div id="evBody" hidden>
-        <div class="btnrow"><button class="btn btn-primary" id="evNew" data-i18n="New event"><i class="fa-solid fa-plus"></i> New event</button></div>
+        <div class="btnrow"><a class="btn btn-primary" id="evNew" href="edit/"><i class="fa-solid fa-plus"></i> <span data-i18n="New event">New event</span></a></div>
         <div id="evList" class="rb-grid"></div>
     </div>
 </main>

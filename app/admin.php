@@ -213,15 +213,23 @@ function admin_update_user(array $user, array $d): void {
     json_out(['ok' => true]);
 }
 
+// Toggle a user's role: the payload carries either is_organizer (event-organizer grant, #121)
+// or is_admin (with the self/superuser guards).
 function admin_set_role(array $user, array $d): void {
     global $CFG;
     $id = (int)($d['id'] ?? 0);
-    $makeAdmin = !empty($d['is_admin']);
-    if ($id === (int)$user['id']) fail("You can't change your own role.");
     $st = db()->prepare('SELECT email FROM users WHERE id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
+    if (array_key_exists('is_organizer', $d)) {
+        $on = !empty($d['is_organizer']);
+        db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([$on ? 1 : 0, $id]);
+        log_activity((int)$user['id'], $on ? 'organizer_grant' : 'organizer_revoke', 'user #' . $id);
+        json_out(['ok' => true]);
+    }
+    $makeAdmin = !empty($d['is_admin']);
+    if ($id === (int)$user['id']) fail("You can't change your own role.");
     if (!$makeAdmin && in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail('That account is a configured superuser (set in .env).');
     db()->prepare('UPDATE users SET is_admin = ? WHERE id = ?')->execute([$makeAdmin ? 1 : 0, $id]);
     log_activity((int)$user['id'], $makeAdmin ? 'admin_grant' : 'admin_revoke', 'user #' . $id);

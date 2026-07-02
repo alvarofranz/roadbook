@@ -17,7 +17,12 @@ if ($method === 'POST') {
 
 try {
     switch ($action) {
-        case 'config':    json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'user' => current_user(), 'banner' => site_banner()]); break;
+        case 'config':
+            $u = current_user();
+            // a plain user who co-organizes an event still needs the Events entry point (#123)
+            if ($u && !is_admin($u) && empty($u['is_organizer'])) $u['manages_events'] = user_manages_events((int)$u['id']) ? 1 : 0;
+            json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'user' => $u, 'banner' => site_banner()]);
+            break;
         case 'register':  register_user($d); break;
         case 'verify':    verify_email($d); break;
         case 'login':     login_user($d); break;
@@ -41,9 +46,23 @@ try {
         case 'admin_settings':  admin_settings(require_admin()); break;
         case 'admin_save_settings': admin_save_settings(require_admin(), $d); break;
         case 'admin_logs':      admin_logs(require_admin()); break;
-        case 'events_manage':   events_manage(require_organizer()); break;
-        case 'event_save':      event_save(require_organizer(), $d); break;
-        case 'event_delete':    event_delete(require_organizer(), $d); break;
+        // Event management (#123): the list/edit rights are per event (owner / co-organizer /
+        // admin — checked inside), so these only need a signed-in user; creating an event
+        // still requires the organizer role (checked in event_save).
+        case 'events_manage':   events_manage(require_user()); break;
+        case 'event_manage_get': event_manage_get(require_user(), $d); break;
+        case 'event_save':      event_save(require_user(), $d); break;
+        case 'event_delete':    event_delete(require_user(), $d); break;
+        case 'event_rb_add':    event_rb_add(require_user(), $d); break;
+        case 'event_rb_remove': event_rb_remove(require_user(), $d); break;
+        case 'event_rb_mode':   event_rb_mode(require_user(), $d); break;
+        case 'user_search':     user_search(require_user(), $d); break;
+        case 'event_org_add':   event_org_add(require_user(), $d); break;
+        case 'event_org_remove': event_org_remove(require_user(), $d); break;
+        case 'event_join_code': event_join_code(require_user(), $d); break;
+        case 'event_join':      event_join(require_user(), $d); break;
+        case 'event_leave':     event_leave(require_user(), $d); break;
+        case 'event_participant_remove': event_participant_remove(require_user(), $d); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;

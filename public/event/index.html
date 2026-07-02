@@ -15,6 +15,11 @@
         .ev-head { margin-bottom: 1rem; }
         .ev-head h1 { margin: .2rem 0 .3rem; font-size: 1.8rem; }
         .ev-desc { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+        /* join-with-code (#123): a compact inline form / joined banner between description and roadbooks */
+        .ev-join { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .8rem 1rem; margin: 1rem 0; }
+        .ev-join .field { max-width: 12rem; margin: 0; font-family: ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+        .ev-join .btn { width: auto; }
+        .ev-join .grow { flex: 1; }
     </style>
 </head>
 <body>
@@ -29,6 +34,7 @@
             <div class="muted small" id="evMeta"></div>
         </div>
         <p id="evDesc" class="ev-desc"></p>
+        <div class="ev-join" id="evJoin" hidden></div>
         <div class="icon-category" data-i18n="Roadbooks">Roadbooks</div>
         <div class="gallery" id="evRoadbooks"></div>
     </article>
