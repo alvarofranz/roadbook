@@ -69,8 +69,6 @@ window.NoteCanvas = class NoteCanvas {
             // motorway: a white centre line splits the thick stroke into a DOUBLE line
             if (s.double) this.svg.appendChild(svg('line', { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: '#fff', 'stroke-width': Math.max(3, s.width * 0.3), 'stroke-linecap': 'round' }));
         });
-        // validation point: a small open circle where the two trunk segments meet (the note's spot)
-        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#0e1116', 'stroke-width': 2.5 })); }
         // junctions
         (this.note.junctions || []).forEach((b, i) => {
             const [px, py] = this.toV(b.pivot[0], b.pivot[1]);
@@ -111,6 +109,10 @@ window.NoteCanvas = class NoteCanvas {
                 this.svg.appendChild(rh);
             }
         });
+        // validation point: a small open circle where the trunk segments meet (the note's exact
+        // spot), drawn LAST so junction vectors and centre-placed icons never hide it (#142);
+        // pointer-inert so it never steals a tap from the drag handles underneath.
+        { const [vcx, vcy] = this.toV(0, 0); this.svg.appendChild(svg('circle', { class: 'vignette-box-dyn', cx: vcx, cy: vcy, r: 6, fill: '#fff', stroke: '#0e1116', 'stroke-width': 2.5, 'pointer-events': 'none' })); }
         this._toolbar();
     }
     _handle(vx, vy, onMove) {
@@ -181,7 +183,6 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="${g.dashed ? 'butt' : 'round'}"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="' + DASH + '"' : ''}/>`;
         if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(3, g.width * 0.3)}" stroke-linecap="round"/>`; // motorway: white centre → double line
     });
-    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#0e1116" stroke-width="2.5"/>`; // validation point (where the trunk segments meet)
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);
         const st = roadStyle(b.road_type), w = b.width || st.width;
@@ -193,6 +194,9 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
         const flip = ic.flip_x ? ` transform="translate(${2 * cxi} 0) scale(-1 1)"` : '';
         s += `<g transform="rotate(${ic.angle || 0} ${cxi} ${cyi})"><image x="${cxi - sz / 2}" y="${cyi - sz / 2}" width="${sz}" height="${sz}" href="${RBesc(resolveIcon(ic))}"${flip} preserveAspectRatio="xMidYMid meet"/></g>`;
     });
+    // validation point: a small open circle where the trunk segments meet (the note's exact spot),
+    // drawn LAST so junction vectors and centre-placed icons never hide it (#142)
+    s += `<circle cx="${cx}" cy="${cy}" r="6" fill="#fff" stroke="#0e1116" stroke-width="2.5"/>`;
     // Danger marks carry their own presentation attributes so the SVG is fully
     // self-contained (renders identically standalone — PDF — and inside the DOM).
     const danger = dangerMarks(note);

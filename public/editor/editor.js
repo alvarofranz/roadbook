@@ -137,8 +137,9 @@
         map.map.on('mouseout', () => { hoverPt = null; });
     }
     // Editor shortcuts (#35): the context menu's commands accelerate while it's open; otherwise the
-    // keys act on the current selection (a tap-selected track vertex, else the open note), and with
-    // nothing selected W/L/Del add or delete at the mouse position.
+    // keys act on the current selection (a tap-selected track vertex takes W/A/L/Del; an open note
+    // takes T/Del), and any key left unclaimed — W/L always, Del with no selection — acts at the
+    // mouse position on the map, so W/L keep adding points even while a note is open (#141).
     window.addEventListener('keydown', (e) => {
         if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
@@ -156,10 +157,10 @@
             e.preventDefault();
             const i = selVertex; selVertex = -1; // the index goes stale once the route changes
             vertexAction(act, i);
-        } else if (editorOpen && sel >= 0) { // a note is selected
-            if (k === 't') { e.preventDefault(); transformNote(sel); }
-            else if (k === 'del') { e.preventDefault(); deleteNoteConfirm(sel); }
-        } else if (hoverPt) { // nothing selected → act at the mouse position (no menu needed)
+        } else if (editorOpen && sel >= 0 && (k === 't' || k === 'del')) { // a note is open: T transforms it, Del deletes it
+            e.preventDefault();
+            if (k === 't') transformNote(sel); else deleteNoteConfirm(sel);
+        } else if (hoverPt) { // act at the mouse position (no menu needed)
             if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
             else if (k === 'l') { e.preventDefault(); addPointAtExact(hoverPt); }
             else if (k === 'del') { e.preventDefault(); deleteTrackPointNear(hoverPt); }

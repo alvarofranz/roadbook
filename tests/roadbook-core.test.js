@@ -587,6 +587,16 @@ describe('NoteCanvas.toSVG (vignette render)', () => {
         expect(s).toContain('<circle cx="115" cy="81" r="6"'); // validation point
         expect(s).toContain('marker-end="url(#vig-arr)"');      // the exit arrow
     });
+    it('draws the validation circle ON TOP of junctions and icons so they never hide it (#142)', () => {
+        const s = NoteCanvas.toSVG({
+            ...baseNote,
+            icons: [{ name: 'S03_30km.svg', pos: [0, 0], size: 64 }], // centre-placed icon (e.g. auto speed symbol)
+            junctions: [{ pivot: [0, 0], tip: [45, 25], width: 8, road_type: 3 }],
+        }, (ic) => ic.name);
+        const circle = s.indexOf('<circle cx="115" cy="81" r="6"');
+        expect(circle).toBeGreaterThan(s.lastIndexOf('marker-end="url(#vig-tick)"')); // after every junction
+        expect(circle).toBeGreaterThan(s.lastIndexOf('<image'));                      // after every icon
+    });
     it('renders a cover icon full-box and nothing else (no trunk/validation circle)', () => {
         const s = NoteCanvas.toSVG({ icons: [{ name: 'or.svg', cover: true }] }, (ic) => 'DATA:' + ic.name);
         expect(s).toContain('width="230" height="162" href="DATA:or.svg"');
