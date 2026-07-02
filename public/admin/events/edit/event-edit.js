@@ -70,7 +70,7 @@
             ${isOwner() && o.id !== ev.owner_id ? `<button class="btn btn-ghost" data-orgdel="${o.id}" data-name="${esc(o.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : ''}
         </div>`).join('');
         $('orgList').querySelectorAll('[data-orgdel]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Remove organizer') + ' “' + b.dataset.name + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove organizer') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
             const x = await api('event_org_remove', { event_id: id, user_id: +b.dataset.orgdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });
@@ -114,7 +114,7 @@
         });
         $('rbList').querySelectorAll('[data-rbdel]').forEach((b) => b.onclick = async () => {
             // removing only detaches it from the event — the roadbook itself is never deleted
-            if (!(await RBConfirmDanger(t('Remove from event') + ' “' + b.dataset.title + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove from event') + ' “' + esc(b.dataset.title) + '”?', t('Remove')))) return;
             const x = await api('event_rb_remove', { event_id: id, roadbook_id: +b.dataset.rbdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });
@@ -159,7 +159,7 @@
             <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(t('No participants yet.'))}</p>`;
         $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + b.dataset.name + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
             const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });

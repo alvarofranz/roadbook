@@ -245,13 +245,14 @@ function event_join_code(array $user, array $d): void {
         db()->prepare('UPDATE events SET join_code = NULL WHERE id = ?')->execute([(int)$e['id']]);
         json_out(['ok' => true, 'join_code' => null]);
     }
-    while (true) { // regenerate until unique (the column is UNIQUE; collisions are ~impossible)
+    for ($try = 0; $try < 5; $try++) { // regenerate until unique (the column is UNIQUE; collisions are ~impossible)
         $code = strtoupper(bin2hex(random_bytes(4)));
         try {
             db()->prepare('UPDATE events SET join_code = ? WHERE id = ?')->execute([$code, (int)$e['id']]);
             json_out(['ok' => true, 'join_code' => $code]);
         } catch (\Throwable $x) { /* duplicate code — roll again */ }
     }
+    fail('Could not generate a join code.', 500); // 5 straight failures = the DB is unhappy, not a collision
 }
 
 // A signed-in user joins the event whose page they're on by typing its join code.
