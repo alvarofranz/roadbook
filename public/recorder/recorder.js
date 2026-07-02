@@ -12,8 +12,8 @@
     const t = RBt, toast = RBToast;
     const pad2 = RB.pad2;
     const SESSION_KEY = 'rb_recorder_session';
-    // Default roadbook name proposed when a recording starts: "REC YYYY-MM-DD HH-MM" (#54).
-    const recName = () => { const d = new Date(); return 'REC ' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()); };
+    // Default roadbook name proposed when a recording starts: date + time, "YYYY-MM-DD HH-MM" (#148).
+    const recName = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()); };
 
     let meter = null, map = null, meUser = null, draftId = 0;
     // Speech-to-text language for voice notes: the signed-in user's account preference
@@ -88,8 +88,9 @@
         track = []; wpts = []; photos = []; draftId = 0; showWpText(null);
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
-        // a draft roadbook holds the geotagged photos (signed-in only); the camera appears once it exists
-        if (meUser) RBApi('rb_draft').then((r) => { if (r.ok) { draftId = r.id; $('recPhoto').hidden = false; } }).catch(() => {});
+        // a draft roadbook holds the geotagged photos (signed-in only); the camera appears once it
+        // exists. Title it with the chosen date+time name so it never shows as "Recording…" (#148).
+        if (meUser) RBApi('rb_draft', { name: RBGpxRecorder.fileName }).then((r) => { if (r.ok) { draftId = r.id; $('recPhoto').hidden = false; } }).catch(() => {});
     }
     function startMeter() {
         segStart = paused ? 0 : Date.now();

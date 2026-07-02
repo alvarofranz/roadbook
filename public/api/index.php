@@ -70,7 +70,7 @@ try {
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_get':    rb_get(require_user(), $d); break;
-        case 'rb_draft':  rb_draft(require_user()); break;
+        case 'rb_draft':  rb_draft(require_user(), $d); break;
         case 'rb_save':   rb_save(require_user(), $d); break;
         case 'rb_status': rb_status(require_user(), $d); break;
         case 'rb_duplicate': rb_duplicate(require_user(), $d); break;
