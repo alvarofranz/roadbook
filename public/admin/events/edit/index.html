@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Event · RDBK.app</title>
+    <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../../../manifest.json">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../../assets/css/app.css">
+    <style>
+        #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
+        /* title + page actions (View · Save) share one row */
+        .ev-head-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .ev-head-row h1 { margin: 0; flex: 1; min-width: 12rem; }
+        .ev-head-row .btnrow { margin: 0; }
+        .ev-section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
+        .ev-section h2 { font-size: 1.1rem; margin: .2rem 0 .8rem; }
+        /* associated roadbooks: header + rows share one grid so the participation-mode label
+           sits exactly over its column (title · mode · edit · remove) */
+        .ev-rb-head, .ev-rb-row { display: grid; grid-template-columns: 1fr 15rem 2.8rem 2.8rem; gap: .5rem; align-items: center; }
+        .ev-rb-head h2 { margin: 0; }
+        .ev-rb-row { padding: .35rem 0; border-bottom: 1px solid var(--line); }
+        .ev-rb-row:last-child { border-bottom: 0; }
+        .ev-rb-row .meta { min-width: 0; }
+        @media (max-width: 640px) {
+            .ev-rb-head, .ev-rb-row { grid-template-columns: 1fr 1fr; }
+            .ev-rb-head span { display: none; }
+        }
+        /* categories: an editable, reorderable list — name input grows, small action buttons follow */
+        .ev-cat-row { display: flex; align-items: center; gap: .4rem; margin: .3rem 0; }
+        .ev-cat-row .field { flex: 1; margin: 0; }
+        .ev-cat-row .btn { width: auto; }
+        /* dates + Public on ONE row, labels inline to the LEFT of each date box */
+        .ev-dates-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .35rem 0; }
+        .ev-dates-row .field { width: auto; margin: 0; }
+        .ev-dates-row .field-label, .ev-dates-row .checkbox-row { margin: 0; }
+        .ev-dates-row .checkbox-row { margin-left: auto; }
+        /* one-line "value + actions" rows (organizers, participants, join code) */
+        .ev-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; }
+        .ev-line .meta { flex: 1; min-width: 10rem; }
+        .ev-add-row { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; }
+        .ev-add-row .field { flex: 1; margin: 0; }
+        .ev-add-row .btn { width: auto; }
+        .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
+        /* the add-roadbook picker (inside the modal): scrollable result list */
+        .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap" id="adminWrap">
+    <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
+    <!-- heading row: the title with the page actions (View · Save) on the SAME line -->
+    <div class="ev-head-row">
+        <h1 id="evHeading" data-i18n="Event">Event</h1>
+        <div class="btnrow" id="evActions" hidden>
+            <a class="btn btn-ghost" id="evView" hidden><i class="fa-solid fa-eye"></i> <span data-i18n="View">View</span></a>
+            <button class="btn btn-primary" id="evSave" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
+        </div>
+    </div>
+    <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
+
+    <div id="evBody" hidden>
+        <!-- 1 · the event's own parameters -->
+        <section class="ev-section">
+            <label class="field-label" for="evTitleIn" data-i18n="Title">Title</label>
+            <input id="evTitleIn" class="field" autocomplete="off">
+            <label class="field-label" for="evDescIn" data-i18n="Description">Description</label>
+            <textarea id="evDescIn" class="field" rows="3"></textarea>
+            <div class="ev-dates-row">
+                <label class="field-label" for="evStart" data-i18n="Start date">Start date</label><input id="evStart" type="date" class="field">
+                <label class="field-label" for="evEnd" data-i18n="End date">End date</label><input id="evEnd" type="date" class="field">
+                <label class="checkbox-row"><input type="checkbox" id="evPublic"> <span data-i18n="Public">Public</span></label>
+            </div>
+            <label class="field-label" data-i18n="Categories">Categories</label>
+            <div id="evCats"></div>
+            <div class="btnrow">
+                <button class="btn btn-ghost" id="evCatAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add category">Add category</span></button>
+            </div>
+        </section>
+
+        <!-- 2 · who manages this event (and can edit its roadbook associations) -->
+        <section class="ev-section" id="orgSection" hidden>
+            <h2 data-i18n="Organizers">Organizers</h2>
+            <div id="orgList"></div>
+            <div class="ev-add-row" id="orgAddRow">
+                <input id="orgSearchIn" class="field" data-i18n-ph="Search users…" placeholder="Search users…" autocomplete="off">
+                <input id="orgOrgIn" class="field" data-i18n-ph="Organization" placeholder="Organization" autocomplete="off">
+            </div>
+            <div id="orgResults"></div>
+        </section>
+
+        <!-- 3 · the associated roadbooks -->
+        <section class="ev-section" id="rbSection" hidden>
+            <div class="ev-rb-head">
+                <h2 data-i18n="Roadbooks">Roadbooks</h2>
+                <span class="muted small" data-i18n="Participation mode">Participation mode</span>
+            </div>
+            <div id="rbList"></div>
+            <div class="btnrow"><button class="btn btn-ghost" id="rbAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add roadbook">Add roadbook</span></button></div>
+        </section>
+
+        <!-- 4 · participants + the join code they use -->
+        <section class="ev-section" id="ppSection" hidden>
+            <h2 data-i18n="Participants">Participants</h2>
+            <div class="ev-line" id="joinRow">
+                <span class="meta" id="joinCodeOut"></span>
+                <button class="btn btn-ghost" id="joinCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
+                <button class="btn btn-ghost" id="joinRotate" type="button"><i class="fa-solid fa-rotate"></i> <span data-i18n="New join code">New join code</span></button>
+                <button class="btn btn-ghost" id="joinClear" type="button" hidden><i class="fa-solid fa-ban icon-danger"></i> <span data-i18n="Disable joining">Disable joining</span></button>
+            </div>
+            <div id="ppList"></div>
+        </section>
+    </div>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="../../../assets/js/roadbook-core.js"></script>
+<script src="../../../assets/js/i18n.es.js"></script>
+<script src="../../../assets/js/i18n.it.js"></script>
+<script src="../../../assets/js/i18n.de.js"></script>
+<script src="../../../assets/js/i18n.fr.js"></script>
+<script src="../../../assets/js/i18n.js"></script>
+<script src="../../../assets/js/app.js"></script>
+<script src="event-edit.js"></script>
+</body>
+</html>

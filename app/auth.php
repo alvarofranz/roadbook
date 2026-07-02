@@ -40,7 +40,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
@@ -76,10 +76,11 @@ function update_profile(array $user, array $d): void {
     $last  = mb_substr(trim((string)($d['last_name'] ?? '')), 0, 80);
     if ($first === '' || $last === '') fail('First and last name are required.');
     $bio = mb_substr(trim((string)($d['bio'] ?? '')), 0, 500);
+    $organization = mb_substr(trim((string)($d['organization'] ?? '')), 0, 120);
     // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
     $voice = (string)($d['voice_lang'] ?? '');
     if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
-    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $voice, $user['id']]);
+    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, organization = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $organization !== '' ? $organization : null, $user['id']]);
     json_out(['ok' => true]);
 }
 

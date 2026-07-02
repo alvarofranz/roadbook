@@ -505,7 +505,7 @@
                         <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
                         <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>
                         <a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Events')}</a>` : ''}
-                        ${(!user.is_admin && user.is_organizer) ? `<a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Events')}</a>` : ''}
+                        ${(!user.is_admin && (user.is_organizer || user.manages_events)) ? `<a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Events')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }

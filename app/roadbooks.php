@@ -24,16 +24,17 @@ function rb_list(array $user): void {
 
 function rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT filename, status, slug, title FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$id, $user['id']]);
+    $st = db()->prepare('SELECT user_id, filename, status, slug, title FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
     $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    // yours — or attached to an event you organize (#123 co-editing)
+    if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
     // A recording draft that never got a route has no file yet (filename = 'pending'): hand back
     // an empty skeleton so the Editor can open it and draw the route (the first save writes the file).
     if ($row['filename'] === 'pending') {
         $rb = ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
     } else {
-        $path = rb_dir((int)$user['id']) . '/' . $row['filename'];
+        $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
         if (!is_file($path)) fail('File missing.', 404);
         $rb = json_decode((string)file_get_contents($path), true);
     }
@@ -68,19 +69,24 @@ function rb_save(array $user, array $d): void {
     $nc = count($rb['notes']);
     $status = rb_clean_status($d['status'] ?? null);
     $id = (int)($d['id'] ?? 0);
-    $dir = rb_dir((int)$user['id']);
 
     if ($id > 0) {
-        $st = db()->prepare('SELECT filename, slug FROM roadbooks WHERE id = ? AND user_id = ?');
-        $st->execute([$id, $user['id']]);
+        $st = db()->prepare('SELECT user_id, filename, slug, status FROM roadbooks WHERE id = ?');
+        $st->execute([$id]);
         $row = $st->fetch();
-        if (!$row) fail('Not found.', 404);
+        // yours — or attached to an event you organize (#123 co-editing); the file stays in
+        // the OWNER's storage, the owner never changes, and only the owner sets the
+        // publication status (a co-editor's save keeps it as it is)
+        if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+        if ((int)$row['user_id'] !== (int)$user['id']) $status = $row['status'];
+        $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, slug = ?, filename = ? WHERE id = ?')
             ->execute([$title, $dist, $nc, $status, $slug, $fn, $id]);
     } else {
+        $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
         db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?)')
             ->execute([$user['id'], $title, $dist, $nc, $status, 'pending']);
         $id = (int)db()->lastInsertId();
