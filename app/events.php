@@ -4,6 +4,12 @@
  * categories, participants/join codes, co-editing and scoring. The public listing + the
  * /event/<slug> presentation page show public events and their public roadbooks. */
 
+// Participation rules per associated roadbook (#6): 'free' = follow it with no scoring;
+// 'roadbook_suite' = the rules the current ranking engine implements. 'fia' is reserved — the
+// editor shows it but disabled (not implemented), so the API refuses it and falls back to 'free'.
+const EVENT_SCORING_MODES = ['free', 'roadbook_suite'];
+function event_scoring_mode($m): string { return in_array($m, EVENT_SCORING_MODES, true) ? $m : 'free'; }
+
 function event_slug(string $title, int $excludeId): string {
     $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($title)), '-');
     $base = substr($base ?: 'event', 0, 60);
@@ -28,13 +34,17 @@ function events_manage(array $user): void {
         $st->execute([(int)$user['id']]);
         $rows = $st->fetchAll();
     }
-    $events = array_map(function ($r) {
-        $rb = db()->prepare('SELECT roadbook_id FROM event_roadbooks WHERE event_id = ? ORDER BY sort, roadbook_id');
+    $rb = db()->prepare('SELECT roadbook_id, scoring_mode FROM event_roadbooks WHERE event_id = ? ORDER BY sort, roadbook_id');
+    $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
+    $events = array_map(function ($r) use ($rb, $cat) {
         $rb->execute([$r['id']]);
+        $cat->execute([$r['id']]);
         return [
             'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'description' => $r['description'],
             'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'], 'is_public' => (int)$r['is_public'],
-            'organizer' => $r['organizer'], 'roadbook_ids' => array_map('intval', $rb->fetchAll(PDO::FETCH_COLUMN)),
+            'organizer' => $r['organizer'],
+            'roadbooks' => array_map(fn($x) => ['id' => (int)$x['roadbook_id'], 'scoring_mode' => $x['scoring_mode']], $rb->fetchAll()),
+            'categories' => array_map(fn($x) => ['id' => (int)$x['id'], 'name' => $x['name']], $cat->fetchAll()),
         ];
     }, $rows);
     json_out(['ok' => true, 'events' => $events]);
@@ -49,7 +59,10 @@ function event_save(array $user, array $d): void {
     $starts = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['starts_on'] ?? '')) ? $d['starts_on'] : null;
     $ends = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['ends_on'] ?? '')) ? $d['ends_on'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
-    $rbIds = array_values(array_unique(array_map('intval', is_array($d['roadbook_ids'] ?? null) ? $d['roadbook_ids'] : [])));
+    // Associated roadbooks: a list of { id, scoring_mode } (each RB carries its own rules).
+    $rbs = is_array($d['roadbooks'] ?? null) ? $d['roadbooks'] : [];
+    // Categories/classes: a list of names, kept in the given order.
+    $cats = is_array($d['categories'] ?? null) ? $d['categories'] : [];
     if ($id > 0) {
         $st = db()->prepare('SELECT slug, organizer_id FROM events WHERE id = ?'); $st->execute([$id]);
         $row = $st->fetch();
@@ -65,9 +78,21 @@ function event_save(array $user, array $d): void {
         $id = (int)db()->lastInsertId();
     }
     db()->prepare('DELETE FROM event_roadbooks WHERE event_id = ?')->execute([$id]);
-    if ($rbIds) {
-        $ins = db()->prepare('INSERT INTO event_roadbooks (event_id, roadbook_id, sort) VALUES (?,?,?)');
-        foreach ($rbIds as $i => $rid) { try { $ins->execute([$id, $rid, $i]); } catch (\Throwable $e) { /* skip an id that isn't a real roadbook */ } }
+    $insRb = db()->prepare('INSERT INTO event_roadbooks (event_id, roadbook_id, sort, scoring_mode) VALUES (?,?,?,?)');
+    $seen = []; $i = 0;
+    foreach ($rbs as $rb) {
+        $rid = (int)($rb['id'] ?? 0);
+        if ($rid <= 0 || isset($seen[$rid])) continue;
+        $seen[$rid] = true;
+        try { $insRb->execute([$id, $rid, $i++, event_scoring_mode($rb['scoring_mode'] ?? 'free')]); } catch (\Throwable $e) { /* skip an id that isn't a real roadbook */ }
+    }
+    db()->prepare('DELETE FROM event_categories WHERE event_id = ?')->execute([$id]);
+    $insCat = db()->prepare('INSERT INTO event_categories (event_id, name, sort) VALUES (?,?,?)');
+    $ci = 0;
+    foreach ($cats as $name) {
+        $name = substr(trim((string)$name), 0, 100);
+        if ($name === '') continue;
+        $insCat->execute([$id, $name, $ci++]);
     }
     log_activity((int)$user['id'], 'event_save', 'event #' . $id);
     json_out(['ok' => true, 'id' => $id, 'slug' => $slug]);
@@ -103,18 +128,21 @@ function event_public_get(array $d): void {
     $st->execute([$slug]);
     $e = $st->fetch();
     if (!$e || !(int)$e['is_public']) fail('Not found.', 404);
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username,
+    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username, er.scoring_mode,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status = 'public' ORDER BY er.sort, er.roadbook_id");
     $rb->execute([$e['id']]);
     $roadbooks = array_map(fn($r) => [
         'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
-        'note_count' => (int)$r['note_count'], 'username' => $r['username'],
+        'note_count' => (int)$r['note_count'], 'username' => $r['username'], 'scoring_mode' => $r['scoring_mode'],
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
     ], $rb->fetchAll());
+    $cat = db()->prepare('SELECT name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
+    $cat->execute([$e['id']]);
     json_out(['ok' => true, 'event' => [
         'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'organizer' => $e['organizer'],
+        'categories' => $cat->fetchAll(PDO::FETCH_COLUMN),
     ], 'roadbooks' => $roadbooks]);
 }
