@@ -161,6 +161,7 @@ function register_user(array $d): void {
     if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
     if (!valid_email($email)) fail('Please enter a valid email.');
     if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
+    if ($pass !== (string)($d['password_confirm'] ?? '')) fail("Passwords don't match.");
     if (empty($d['accept_terms'])) fail('You must accept the Terms of Use to register.');
     verify_turnstile($d['turnstile'] ?? null);
 

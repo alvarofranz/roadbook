@@ -65,16 +65,18 @@
     <section id="vRegister" class="auth-card" hidden>
         <h1 data-i18n="Create account">Create account</h1>
         <form id="registerForm">
+            <label class="field-label" for="regUser" data-i18n="Username">Username</label>
+            <input id="regUser" class="field" autocomplete="username">
             <div class="row2">
                 <div><label class="field-label" for="regFirst" data-i18n="First name">First name</label><input id="regFirst" class="field" autocomplete="given-name"></div>
                 <div><label class="field-label" for="regLast" data-i18n="Last name">Last name</label><input id="regLast" class="field" autocomplete="family-name"></div>
             </div>
-            <label class="field-label" for="regUser" data-i18n="Username">Username</label>
-            <input id="regUser" class="field" autocomplete="username">
             <label class="field-label" for="regEmail" data-i18n="Email">Email</label>
             <input id="regEmail" class="field" type="email" autocomplete="email">
             <label class="field-label" for="regPass" data-i18n="Password (min 8 chars)">Password (min 8 chars)</label>
             <input id="regPass" class="field" type="password" autocomplete="new-password">
+            <label class="field-label" for="regPass2" data-i18n="Confirm password">Confirm password</label>
+            <input id="regPass2" class="field" type="password" autocomplete="new-password">
             <label class="checkbox-row"><input type="checkbox" id="regTerms" required> <span data-i18n-html="reg.acceptTerms">I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a></span></label>
             <div class="turnstile" data-ts="register"></div>
             <button class="btn btn-primary" id="regBtn" type="submit" data-i18n="Create account"><i class="fa-solid fa-user-plus"></i> Create account</button>

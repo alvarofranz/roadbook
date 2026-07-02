@@ -227,7 +227,7 @@
             'Not now': 'Pas maintenant', 'Sign in / Create account': 'Se connecter / Créer un compte',
             'Create a free account to save and share your roadbooks.': 'Créez un compte gratuit pour sauvegarder et partager vos roadbooks.',
             'Roadbook title': 'Titre du roadbook', 'Password (min 8 chars)': 'Mot de passe (min 8 car.)', 'New password (min 8 chars)': 'Nouveau mot de passe (min 8 car.)',
-            'Confirm new password': 'Confirmer le nouveau mot de passe', "Passwords don't match.": 'Les mots de passe ne correspondent pas.', 'Bio': 'Bio',
+            'Confirm password': 'Confirmer le mot de passe', 'Confirm new password': 'Confirmer le nouveau mot de passe', "Passwords don't match.": 'Les mots de passe ne correspondent pas.', 'Bio': 'Bio',
             'Change email': 'Changer l\'e-mail', 'New email': 'Nouvel e-mail', 'Confirm new email': 'Confirmer le nouvel e-mail', 'Update email': 'Mettre à jour l\'e-mail', "Emails don't match.": 'Les e-mails ne correspondent pas.',
             'We’ll email a confirmation link to the new address; it changes only once you confirm.': 'Nous enverrons un lien de confirmation à la nouvelle adresse ; la modification n\'a lieu qu\'après confirmation.',
             'That is already your email.': 'C\'est déjà votre e-mail.', 'That email is already in use.': 'Cet e-mail est déjà utilisé.', 'Check your new inbox to confirm the change.': 'Vérifiez votre nouvelle boîte pour confirmer la modification.', 'That confirmation link is invalid or has expired.': 'Ce lien de confirmation est invalide ou expiré.', 'That email is now in use by another account.': 'Cet e-mail est maintenant utilisé par un autre compte.', 'Email updated.': 'E-mail mis à jour.',

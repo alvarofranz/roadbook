@@ -228,7 +228,7 @@
             'Not now': 'Nicht jetzt', 'Sign in / Create account': 'Anmelden / Konto erstellen',
             'Create a free account to save and share your roadbooks.': 'Kostenloses Konto erstellen um Roadbooks zu speichern und zu teilen.',
             'Roadbook title': 'Roadbook-Titel', 'Password (min 8 chars)': 'Passwort (min. 8 Zeichen)', 'New password (min 8 chars)': 'Neues Passwort (min. 8 Zeichen)',
-            'Confirm new password': 'Neues Passwort bestätigen', "Passwords don't match.": 'Passwörter stimmen nicht überein.', 'Bio': 'Bio',
+            'Confirm password': 'Passwort bestätigen', 'Confirm new password': 'Neues Passwort bestätigen', "Passwords don't match.": 'Passwörter stimmen nicht überein.', 'Bio': 'Bio',
             'Change email': 'E-Mail ändern', 'New email': 'Neue E-Mail', 'Confirm new email': 'Neue E-Mail bestätigen', 'Update email': 'E-Mail aktualisieren', "Emails don't match.": 'E-Mails stimmen nicht überein.',
             'We’ll email a confirmation link to the new address; it changes only once you confirm.': 'Wir senden einen Bestätigungslink an die neue Adresse; sie ändert sich erst nach Bestätigung.',
             'That is already your email.': 'Das ist bereits deine E-Mail.', 'That email is already in use.': 'Diese E-Mail wird bereits verwendet.', 'Check your new inbox to confirm the change.': 'Neuen Posteingang prüfen um die Änderung zu bestätigen.', 'That confirmation link is invalid or has expired.': 'Dieser Bestätigungslink ist ungültig oder abgelaufen.', 'That email is now in use by another account.': 'Diese E-Mail wird jetzt von einem anderen Konto verwendet.', 'Email updated.': 'E-Mail aktualisiert.',
