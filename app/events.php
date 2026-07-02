@@ -94,8 +94,9 @@ function event_manage_get(array $user, array $d): void {
     $rb->execute([$id]);
     $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
     $cat->execute([$id]);
-    $pp = db()->prepare('SELECT u.id, u.username, ep.created_at FROM event_participants ep JOIN users u ON u.id = ep.user_id
-        WHERE ep.event_id = ? ORDER BY ep.created_at');
+    // The participants themselves come from the paged event_participants_list (#144) — the
+    // page only needs the total here, for the section header.
+    $pp = db()->prepare('SELECT COUNT(*) FROM event_participants WHERE event_id = ?');
     $pp->execute([$id]);
     json_out(['ok' => true, 'event' => [
         'id' => $id, 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
@@ -105,8 +106,34 @@ function event_manage_get(array $user, array $d): void {
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
         'categories' => array_map(fn($x) => ['id' => (int)$x['id'], 'name' => $x['name']], $cat->fetchAll()),
-        'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'joined' => $x['created_at']], $pp->fetchAll()),
+        'participant_count' => (int)$pp->fetchColumn(),
     ]]);
+}
+
+// Paged, searchable participant list (#144) — an event's roster can run into the hundreds, so
+// the page never gets it whole. q matches the username or the full name (like user_search);
+// the response row shape is the contract P2.4 (#124) will widen with the entry fields.
+function event_participants_list(array $user, array $d): void {
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    $q = trim((string)($d['q'] ?? ''));
+    $page = max(1, (int)($d['page'] ?? 1));
+    $perPage = min(100, max(1, (int)($d['per_page'] ?? 25)));
+    $where = 'ep.event_id = ?';
+    $args = [(int)$e['id']];
+    if ($q !== '') {
+        $where .= " AND (u.username LIKE ? OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?)";
+        $like = '%' . $q . '%';
+        array_push($args, $like, $like);
+    }
+    $st = db()->prepare("SELECT COUNT(*) FROM event_participants ep JOIN users u ON u.id = ep.user_id WHERE $where");
+    $st->execute($args);
+    $total = (int)$st->fetchColumn();
+    // LIMIT/OFFSET are sanitized ints inlined directly: PDO string-binds bound placeholders there
+    $st = db()->prepare("SELECT u.id, u.username, ep.created_at FROM event_participants ep JOIN users u ON u.id = ep.user_id
+        WHERE $where ORDER BY ep.created_at, u.id LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
+    $st->execute($args);
+    json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage,
+        'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'joined' => $x['created_at']], $st->fetchAll())]);
 }
 
 // Create or update an event's own parameters + categories. The roadbook associations and the

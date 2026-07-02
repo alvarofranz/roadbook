@@ -63,6 +63,7 @@ try {
         case 'event_join':      event_join(require_user(), $d); break;
         case 'event_leave':     event_leave(require_user(), $d); break;
         case 'event_participant_remove': event_participant_remove(require_user(), $d); break;
+        case 'event_participants_list': event_participants_list(require_user(), $d); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;

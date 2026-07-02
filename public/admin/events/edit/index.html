@@ -47,6 +47,9 @@
         .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
         /* the add-roadbook picker (inside the modal): scrollable result list */
         .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
+        /* participants pager (#144): centred prev / page-count / next */
+        .ev-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .6rem; }
+        .ev-pager .btn { margin: 0; width: auto; }
     </style>
 </head>
 <body>
@@ -104,16 +107,20 @@
             <div class="btnrow"><button class="btn btn-ghost" id="rbAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add roadbook">Add roadbook</span></button></div>
         </section>
 
-        <!-- 4 · participants + the join code they use -->
+        <!-- 4 · participants + the join code they use; the roster is paged + searchable (#144) -->
         <section class="ev-section" id="ppSection" hidden>
-            <h2 data-i18n="Participants">Participants</h2>
+            <h2><span data-i18n="Participants">Participants</span> <span class="muted" id="ppHeadCount"></span></h2>
             <div class="ev-line" id="joinRow">
                 <span class="meta" id="joinCodeOut"></span>
                 <button class="btn btn-ghost" id="joinCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
                 <button class="btn btn-ghost" id="joinRotate" type="button"><i class="fa-solid fa-rotate"></i> <span data-i18n="New join code">New join code</span></button>
                 <button class="btn btn-ghost" id="joinClear" type="button" hidden><i class="fa-solid fa-ban icon-danger"></i> <span data-i18n="Disable joining">Disable joining</span></button>
             </div>
+            <div class="ev-add-row" id="ppSearchRow" hidden>
+                <input id="ppSearchIn" class="field" type="search" data-i18n-ph="Search participants…" placeholder="Search participants…" autocomplete="off">
+            </div>
             <div id="ppList"></div>
+            <div class="ev-pager" id="ppPager"></div>
         </section>
     </div>
 </main>
