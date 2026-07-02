@@ -514,8 +514,41 @@
     $('addGpxFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = '';
         if (!f || !rb) return;
-        try { await addGpxTrack(RB.parseGPX(await f.text()).trkpts); } catch (err) { toast('Error: ' + err.message); }
+        try {
+            const p = RB.parseGPX(await f.text());
+            // A GPX with a real track → smart-join it. A GPX with little/no track but waypoints
+            // (e.g. a POI/waypoint-only file) → merge those onto the current route instead (#131).
+            if (p.trkpts && p.trkpts.length >= 2) await addGpxTrack(p.trkpts);
+            else if (p.wpts && p.wpts.length) addWaypointsFromGpx(p.wpts);
+            else toast('The GPX has no usable track or waypoints.');
+        } catch (err) { toast('Error: ' + err.message); }
     };
+    // Merge a waypoint-only GPX onto the current route: each waypoint that falls within SNAP_M of
+    // the existing track line is inserted ON the line (at its projection) as a note; waypoints
+    // farther than that are skipped (they don't belong to this route). #131
+    function addWaypointsFromGpx(wpts) {
+        const SNAP_M = 10;
+        let added = 0, skipped = 0;
+        wpts.forEach((wp) => {
+            const hit = RB.nearestOnTrack(rb.track, wp);
+            if (!hit || hit.dist > SNAP_M) { skipped++; return; }
+            const at = hit.i + 1;
+            rb.track.splice(at, 0, { lat: hit.lat, lon: hit.lon }); // the snapped point ON the line
+            rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
+            if (cutFromIdx >= at) cutFromIdx++;
+            const note = makeNote(rb, at, roadOutBefore(at));
+            note.text = (wp.name || '').trim();
+            if (wp.icon) note.icons = [{ name: wp.icon, pos: [0, 0], angle: 0, size: 40, flip_x: false }];
+            if (wp.danger) note.danger = wp.danger;
+            if (wp.appwpt) note.appwpt = wp.appwpt; // unmapped Garmin/OSMAnd icon, kept verbatim
+            rb.notes.push(note);
+            added++;
+        });
+        if (!added) return toast(skipped ? 'No waypoints within 10 m of the route.' : 'The GPX has no usable track or waypoints.');
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        sel = 0;
+        routeChanged(t('Waypoints added from the GPX') + ': ' + added + (skipped ? ' (' + skipped + ' ' + t('skipped, too far') + ')' : '') + '.');
+    }
     async function addGpxTrack(trkpts) {
         if (!trkpts || trkpts.length < 2) return toast('The GPX track has too few points.');
         const D = RB.geo.haversineM, NEAR_M = 200;
