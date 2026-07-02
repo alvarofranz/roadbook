@@ -34,10 +34,10 @@ function events_manage(array $user): void {
         $st->execute([(int)$user['id']]);
         $rows = $st->fetchAll();
     }
-    $events = array_map(function ($r) {
-        $rb = db()->prepare('SELECT roadbook_id, scoring_mode FROM event_roadbooks WHERE event_id = ? ORDER BY sort, roadbook_id');
+    $rb = db()->prepare('SELECT roadbook_id, scoring_mode FROM event_roadbooks WHERE event_id = ? ORDER BY sort, roadbook_id');
+    $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
+    $events = array_map(function ($r) use ($rb, $cat) {
         $rb->execute([$r['id']]);
-        $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
         $cat->execute([$r['id']]);
         return [
             'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'description' => $r['description'],

@@ -82,8 +82,8 @@
         const renderCats = () => {
             catsEl.innerHTML = cats.map((name, i) => `<div class="ev-cat-row">
                 <input class="field" data-cat="${i}" value="${esc(name)}" placeholder="${esc(t('Category name'))}" autocomplete="off">
-                <button class="btn btn-ghost" type="button" data-catup="${i}" title="↑"${i === 0 ? ' disabled' : ''}>↑</button>
-                <button class="btn btn-ghost" type="button" data-catdown="${i}" title="↓"${i === cats.length - 1 ? ' disabled' : ''}>↓</button>
+                <button class="btn btn-ghost" type="button" data-catup="${i}" title="${esc(t('Move to the row above'))}" aria-label="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
+                <button class="btn btn-ghost" type="button" data-catdown="${i}" title="${esc(t('Move to the row below'))}" aria-label="${esc(t('Move to the row below'))}"${i === cats.length - 1 ? ' disabled' : ''}>↓</button>
                 <button class="btn btn-ghost" type="button" data-catdel="${i}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
             </div>`).join('');
         };
@@ -98,7 +98,9 @@
         renderCats();
         m.q('[data-cancel]').onclick = m.close;
         m.q('#evSave').onclick = async () => {
-            const roadbooks = pool.filter((r) => rbModes.has(r.id)).map((r) => ({ id: r.id, scoring_mode: rbModes.get(r.id) }));
+            // Save from rbModes, not the pool — an attached roadbook that is no longer public
+            // (so absent from the pool) must keep its association instead of being dropped.
+            const roadbooks = [...rbModes].map(([id, scoring_mode]) => ({ id, scoring_mode }));
             const categories = cats.map((c) => c.trim()).filter(Boolean);
             const x = await api('event_save', {
                 id: e.id, title: m.q('#evTitleIn').value.trim(), description: m.q('#evDescIn').value.trim(),
