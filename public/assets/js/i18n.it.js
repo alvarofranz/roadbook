@@ -227,7 +227,7 @@
             'The GPX has no usable track or waypoints.': 'Il GPX non ha una traccia utilizzabile né waypoint.',
             'No waypoints within 10 m of the route.': 'Nessun waypoint entro 10 m dal percorso.',
             'Waypoints added from the GPX': 'Waypoint aggiunti dal GPX', 'skipped, too far': 'saltati, troppo lontani',
-            'Reader': 'Reader', 'Load a roadbook and navigate it with GPS.': 'Carica un roadbook e navigalo col GPS.',
+            'Load a roadbook and navigate it with GPS.': 'Carica un roadbook e navigalo col GPS.',
             'Load .rdbk file': 'Carica file .rdbk', 
             'Load one of your RBs': 'Carica uno dei tuoi roadbook', 'Load from public roadbooks': 'Carica un roadbook pubblico', 'No roadbooks yet.': 'Non hai ancora roadbook.',
             'Browse the roadbooks shared by the community.': 'Esplora i roadbook condivisi dalla community.', 'See all public roadbooks': 'Vedi tutti i roadbook pubblici', 'No public roadbooks yet.': 'Ancora nessun roadbook pubblico.', 'Could not load roadbooks.': 'Impossibile caricare i roadbook.', 'Could not export the PDF.': 'Impossibile esportare il PDF.',
