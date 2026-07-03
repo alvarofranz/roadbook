@@ -171,7 +171,7 @@
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
     let draftTimer = null;
-    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps })); } catch (e) {} };
+    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps, rbIsOwner, rbOwner })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
     const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     // Floppy save button: clickable only when there's something to save (a new roadbook, or
@@ -179,7 +179,7 @@
     function updateSaveBtn() {
         const dis = !!(currentRbId && !dirty);
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
-        const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0); // delete only exists once it's saved
+        const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0 && rbIsOwner); // delete only exists once it's saved, and only for the owner
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 64, flip_x: false }); // inserted at 2× the old 32px default — easier to see, then resize as needed
     // The declarative speed_limit drives the vignette symbol: keep exactly one S-icon matching the
@@ -963,6 +963,7 @@
 
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft';
+    let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
@@ -977,8 +978,17 @@
             $(id).setAttribute('aria-pressed', String(on));
         });
     }
+    // The visibility segments and the delete section only exist for the OWNER: a co-editor's
+    // save keeps the owner's publication status, so showing dead controls would lie.
+    function setOwnership(isOwner, owner) {
+        rbIsOwner = isOwner; rbOwner = owner || '';
+        $('visField').hidden = !isOwner;
+        $('visCoedit').hidden = isOwner;
+        if (!isOwner) $('visCoeditNote').textContent = '@' + rbOwner + ' — ' + t('Only the owner can change the visibility.');
+        updateSaveBtn();
+    }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); setOwnership(true, ''); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await RBApi('rb_save', { id: currentRbId, status, roadbook: rb });
@@ -1832,6 +1842,7 @@
             // cleared on save/export, so a mis-tap can't destroy unsaved work.
             if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
                 currentRbId = draft.currentRbId || 0; setStatus(draft.status);
+                setOwnership(draft.rbIsOwner !== false, draft.rbOwner || '');
                 setRoadbook(draft.rb);
                 if (Array.isArray(draft.gaps) && draft.gaps.length) { gaps = draft.gaps; refreshMap(true); }
                 markDirty();
@@ -1849,7 +1860,7 @@
                 // Continue load it straight into draw mode (Cancel falls through to the list).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
-                    currentRbId = id; setStatus(r.status); setRoadbook(r.roadbook);
+                    currentRbId = id; setStatus(r.status); setOwnership(!!r.is_owner, r.owner); setRoadbook(r.roadbook);
                 }
             }
         }

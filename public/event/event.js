@@ -25,7 +25,8 @@
             r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                     : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
             <div class="gallery-body"><h3>${esc(r.title)}</h3>
-            <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div></div></a>`;
+            <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div>
+            ${r.status === 'ready' ? `<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ${esc(t('Participants only'))}</div>` : ''}</div></a>`;
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;

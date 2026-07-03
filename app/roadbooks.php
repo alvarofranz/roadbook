@@ -24,11 +24,13 @@ function rb_list(array $user): void {
 
 function rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT user_id, filename, status, slug, title FROM roadbooks WHERE id = ?');
+    $st = db()->prepare('SELECT r.user_id, r.filename, r.status, r.slug, r.title, u.username AS owner
+        FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
+    $isOwner = $row && (int)$row['user_id'] === (int)$user['id'];
     // yours — or attached to an event you organize (#123 co-editing)
-    if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+    if (!$row || (!$isOwner && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
     // A recording draft that never got a route has no file yet (filename = 'pending'): hand back
     // an empty skeleton so the Editor can open it and draw the route (the first save writes the file).
     if ($row['filename'] === 'pending') {
@@ -38,7 +40,9 @@ function rb_get(array $user, array $d): void {
         if (!is_file($path)) fail('File missing.', 404);
         $rb = json_decode((string)file_get_contents($path), true);
     }
-    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'slug' => $row['slug'], 'roadbook' => $rb]);
+    // is_owner/owner drive the Editor's co-editing UI: visibility + delete stay with the owner
+    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'slug' => $row['slug'],
+        'is_owner' => $isOwner, 'owner' => $row['owner'], 'roadbook' => $rb]);
 }
 
 function rb_slug(string $title, int $excludeId): string {
@@ -258,7 +262,10 @@ function public_get(array $d): void {
     if (!$row) fail('Not found.', 404);
     $me = current_user();
     $isOwner = $me && (int)$me['id'] === (int)$row['user_id'];
-    if ($row['status'] !== 'public' && !$isOwner) fail('This roadbook is private.', 403);
+    // Event delivery (#25): a READY roadbook attached to an event is readable by that event's
+    // participants and organizers — never anonymously; drafts stay owner-only.
+    $viaEvent = !$isOwner && $me && $row['status'] === 'ready' && event_grants_read((int)$me['id'], (int)$row['id']);
+    if ($row['status'] !== 'public' && !$isOwner && !$viaEvent) fail('This roadbook is private.', 403);
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
     $rb = json_decode((string)file_get_contents($path), true);

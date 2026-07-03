@@ -33,6 +33,18 @@ function user_manages_events(int $uid): bool {
     return (bool)$st->fetch();
 }
 
+// Participant read access (#25): a signed-in user may READ a non-public roadbook when it is
+// attached to an event they joined — or organize (organizers can already edit it, #123).
+function event_grants_read(int $uid, int $roadbookId): bool {
+    $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
+        WHERE er.roadbook_id = ? AND (e.organizer_id = ?
+            OR EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ?)
+            OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?))
+        LIMIT 1');
+    $st->execute([$roadbookId, $uid, $uid, $uid]);
+    return (bool)$st->fetch();
+}
+
 // Event co-editing (#123): the organizers of an event can edit the roadbooks attached to it —
 // true when the user owns or co-organizes at least one event this roadbook is associated with.
 function event_co_edits_roadbook(int $uid, int $roadbookId): bool {
@@ -345,18 +357,6 @@ function event_public_get(array $d): void {
     $st->execute([$slug]);
     $e = $st->fetch();
     if (!$e || !(int)$e['is_public']) fail('Not found.', 404);
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username, er.scoring_mode,
-            (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
-        FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
-        WHERE er.event_id = ? AND r.status = 'public' ORDER BY er.sort, er.roadbook_id");
-    $rb->execute([$e['id']]);
-    $roadbooks = array_map(fn($r) => [
-        'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
-        'note_count' => (int)$r['note_count'], 'username' => $r['username'], 'scoring_mode' => $r['scoring_mode'],
-        'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
-    ], $rb->fetchAll());
-    $cat = db()->prepare('SELECT name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
-    $cat->execute([$e['id']]);
     // joining state for the signed-in visitor: drives the Join-with-code / Leave UI (#123)
     $me = current_user();
     $joined = false;
@@ -365,6 +365,21 @@ function event_public_get(array $d): void {
         $j->execute([(int)$e['id'], (int)$me['id']]);
         $joined = (bool)$j->fetch();
     }
+    // Anyone sees the PUBLIC roadbooks; a member of the event (participant or organizer) also
+    // sees the READY ones — finished routes delivered to entrants only (#25). Drafts never show.
+    $member = $joined || ($me && event_can_manage($me, $e));
+    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
+            (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+        FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
+        WHERE er.event_id = ? AND r.status IN ('public'" . ($member ? ", 'ready'" : '') . ") ORDER BY er.sort, er.roadbook_id");
+    $rb->execute([$e['id']]);
+    $roadbooks = array_map(fn($r) => [
+        'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
+        'note_count' => (int)$r['note_count'], 'status' => $r['status'], 'username' => $r['username'], 'scoring_mode' => $r['scoring_mode'],
+        'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
+    ], $rb->fetchAll());
+    $cat = db()->prepare('SELECT name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
+    $cat->execute([$e['id']]);
     json_out(['ok' => true, 'event' => [
         'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],

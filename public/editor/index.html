@@ -376,13 +376,15 @@
             <div class="meta-group">
                 <div class="meta-grouphead" data-i18n="Visibility & map">Visibility &amp; map</div>
                 <div class="meta-grid">
-                    <div class="meta-field full"><span><span data-i18n="Visibility">Visibility</span><button class="help-tip" data-i18n-tip="help.visibility" data-i18n-aria="help.visibility" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span>
+                    <div class="meta-field full" id="visField"><span><span data-i18n="Visibility">Visibility</span><button class="help-tip" data-i18n-tip="help.visibility" data-i18n-aria="help.visibility" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span>
                         <div class="segmented" role="group" aria-label="Visibility">
                             <button class="segment on" id="visDraft" data-i18n="Draft" aria-pressed="true"><i class="fa-solid fa-pencil"></i> Draft</button>
                             <button class="segment" id="visReady" data-i18n="Ready" aria-pressed="false"><i class="fa-solid fa-circle-check"></i> Ready</button>
                             <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
                         </div>
                     </div>
+                    <!-- co-editing an event roadbook (#123): visibility stays with the owner -->
+                    <div class="meta-field full" id="visCoedit" hidden><span class="muted small" id="visCoeditNote"></span></div>
                     <div class="meta-field full">
                         <label class="checkbox-row"><input type="checkbox" id="cfgMapAccess" checked> <span data-i18n="Allow the map in the Reader">Allow the map in the Reader</span><button class="help-tip" data-i18n-tip="help.mapAccess" data-i18n-aria="help.mapAccess" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></label>
                     </div>
