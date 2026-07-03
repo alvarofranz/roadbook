@@ -162,6 +162,8 @@ section.block { padding: 2.4rem 0; }
 .foot { border-top: 1px solid var(--line); margin-top: 2rem; padding: 2rem 0; color: var(--muted); font-size: .9rem; }
 .foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
 .foot a { color: var(--sand-2); }
+/* shared fullscreen mode (Tripmaster, Reader): hide the site chrome for a distraction-free view */
+body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 
 /* ---------- centred single-card screen (Reader load screen) ---------- */
 .center-screen { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 2rem 1rem; }
@@ -500,7 +502,8 @@ button.rb-badge:hover { background: var(--card); }
 .mapboxgl-ctrl-group button i { line-height: 29px; font-size: .95rem; color: #333; }
 
 /* ---------- shared GPS status bar (RBStatusBar): clock · battery · satellite/GPS ---------- */
-.status-bar { position: sticky; top: 56px; z-index: 30; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+/* shared status row (Recorder + Tripmaster): clock · battery · GPS, capped to the tools' column width */
+.status-bar { position: sticky; top: 56px; z-index: 30; max-width: 560px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
 .status-bar .status-cell { display: flex; align-items: center; justify-content: center; gap: .3rem; min-width: 0; background: var(--bg); padding: .85rem .2rem; font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .status-bar .status-cell i { font-size: clamp(.95rem, 4vw, 1.25rem); color: var(--muted); }
 .status-bar .status-cell.ok i, .status-bar .status-cell.ok span { color: var(--ok); }

@@ -18,9 +18,14 @@
         .odometer-item.right { align-items: flex-end; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-        /* roadbook title: its own full-width line at the top of the (sticky) bar, so it's always visible */
-        .odo-title { flex: 1 0 100%; text-align: center; font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .odo-title:empty { display: none; }
+        /* top row of the sticky bar: fullscreen toggle (left) · roadbook title (centre) · event logo (right) */
+        .odo-toprow { flex: 1 0 100%; display: flex; align-items: center; gap: .6rem; }
+        .odo-title { flex: 1; text-align: center; font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .odo-fs { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 1.05rem; line-height: 1; cursor: pointer; border-radius: 8px; }
+        .odo-fs:hover { color: var(--sand); border-color: var(--sand); }
+        .odo-logo { flex-shrink: 0; max-height: 40px; width: auto; object-fit: contain; }
+        /* fullscreen (shared body.rb-fs hides header/footer): pin the bar to the very top */
+        body.rb-fs .odometer-bar { top: 0; }
         /* CAP / clock / GPS / battery indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
         /* bearing indicator: a directional arrow (0° = up = straight ahead) that rotates toward the next note relative to your heading */
@@ -76,7 +81,11 @@
 <div id="navScreen" hidden>
     <!-- top odometer bar: total · bearing+clock · partial -->
     <div class="odometer-bar" role="status" aria-live="polite">
-        <div class="odo-title" id="navTitle"></div>
+        <div class="odo-toprow">
+            <button class="odo-fs" id="odoFs" type="button" title="Fullscreen" data-i18n-title="Fullscreen" aria-label="Fullscreen" data-i18n-aria="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            <div class="odo-title" id="navTitle"></div>
+            <img class="odo-logo" id="odoLogo" alt="" hidden>
+        </div>
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
         <span class="ind"><i class="fa-solid fa-arrow-up odo-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
         <span class="ind"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>

@@ -36,6 +36,7 @@
 
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
+    RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load the roadbook.'); } };
     $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
@@ -142,6 +143,7 @@
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
+        const odoLogo = $('odoLogo'); if (rb.meta && rb.meta.logo) { odoLogo.src = rb.meta.logo; odoLogo.hidden = false; } else { odoLogo.hidden = true; }
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();
         paused = false; updatePauseBtn();

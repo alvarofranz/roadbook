@@ -341,6 +341,27 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[type="date"]').forEach((inp) => { try { RBDateField(inp); } catch (e) {} });
     });
+
+    // Shared fullscreen toggle for the field tools (Tripmaster, Reader): hides the site header +
+    // footer for a distraction-free view and uses the browser Fullscreen API where available. Pass
+    // the toggle button; its <i> icon swaps expand/compress. Leaving browser fullscreen (Esc)
+    // restores everything. Page CSS offsets any sticky bar via `body.rb-fs`.
+    window.RBFullscreen = (btn) => {
+        if (!btn) return;
+        const set = (on) => {
+            document.body.classList.toggle('rb-fs', on);
+            const i = btn.querySelector('i'); if (i) i.className = on ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+        };
+        btn.addEventListener('click', () => {
+            const on = !document.body.classList.contains('rb-fs');
+            set(on);
+            try {
+                if (on) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); }
+                else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            } catch (e) {}
+        });
+        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) set(false); });
+    };
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
