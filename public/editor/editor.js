@@ -630,7 +630,7 @@
     let loadStarted = false;
     $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
-    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); }; // forking a challenge starts a NEW roadbook
+    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }, { reusable: true }); }; // #106: only reusable public roadbooks can be forked
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files);
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -698,6 +698,7 @@
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
         $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
+        $('cfgReusable').checked = reusable; // #106: server-side flag, not part of the .rdbk
         $('cfgProfile').value = rb.meta.profile === 'rally' ? 'rally' : 'basic'; // absent ⇒ basic
         $('cfgWpRadius').value = rb.meta.default_wp_radius != null ? rb.meta.default_wp_radius : ''; // absent ⇒ per-type defaults
         updatePhotos(); updateAudio(); updateSaveBtn();
@@ -730,7 +731,7 @@
         clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000);
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
-        setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false;
+        setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false; $('cfgReusable').checked = reusable;
         refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
         map.select(rb.notes[sel], true);
         updateHistBtns();
@@ -773,6 +774,7 @@
     $('backToMap').onclick = () => showView('map');
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
     $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
+    $('cfgReusable').onchange = (e) => { reusable = e.target.checked; markDirty(); }; // #106: only meaningful when the roadbook is Public
     // Roadbook profile scopes the WP-type vocabulary. Basic is the default → stored absent
     // (clean files); only 'rally' is persisted. Switching to Basic clears any rally-only types.
     $('cfgProfile').onchange = (e) => {
@@ -990,7 +992,7 @@
     }
 
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
-    let meUser = null, currentRbId = 0, status = 'draft';
+    let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
     let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
@@ -1039,10 +1041,10 @@
         updateSaveBtn();
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const r = await RBApi('rb_save', { id: currentRbId, status, roadbook: rb });
+        const r = await RBApi('rb_save', { id: currentRbId, status, reusable, roadbook: rb });
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateAudio(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
@@ -1931,7 +1933,7 @@
         }
         if (!explicitTarget && !loadStarted && await checkRecovery()) return;
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setStatus('draft'); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
+        if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;
         if (id && meUser) {
             const r = await RBApi('rb_get', { id, lock: 1 }); // editing intent: take the soft lock (#154)
@@ -1940,7 +1942,7 @@
                 // Continue load it straight into draw mode (Cancel falls through to the list).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
-                    currentRbId = id; setStatus(r.status); setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
+                    currentRbId = id; setStatus(r.status); reusable = !!r.reusable; setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
             }
         }

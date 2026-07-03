@@ -37,6 +37,7 @@
             'help.profile': 'Basic (adventure) offers a simple waypoint set; Rally (FIA) adds the full FIA waypoint types, which drive how runs are scored.',
             'help.defRadius': 'A validation radius applied only to notes where you haven’t set one. Left empty, each waypoint falls back to its type’s own default.',
             'help.mapAccess': 'When on, the Reader may show the map. Turn it off to make readers navigate by the roadbook notes alone.',
+            'help.reusable': 'Off (default): others can read and navigate this public roadbook but can\'t copy it. On: they can also copy it into their own profile to edit — it appears in the Editor\'s public-roadbook search.',
             'help.route': 'Reverse flips the travel direction — the track, note order and all headings are recomputed.',
         },
     };
