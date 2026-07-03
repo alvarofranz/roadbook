@@ -59,6 +59,28 @@
         load();
     };
 
+    /* ---------- the event logo (#151): preview + upload + remove ---------- */
+    function renderLogo() {
+        $('logoRow').hidden = false;
+        const img = $('evLogoImg');
+        img.hidden = !ev.logo;
+        if (ev.logo) img.src = ev.logo + '?v=' + Date.now(); // bust caches after a re-upload
+        $('evLogoRemove').hidden = !ev.logo;
+    }
+    $('evLogoUpload').onclick = () => $('evLogoFile').click();
+    $('evLogoFile').onchange = async () => {
+        const f = $('evLogoFile').files[0];
+        $('evLogoFile').value = '';
+        if (!f) return;
+        const r = await RBUpload({ type: 'event_logo', event: id }, f, 'logo.jpg');
+        if (r.ok) { ev.logo = r.logo; renderLogo(); toast('Saved.'); } else toast(r.error || 'Could not save.');
+    };
+    $('evLogoRemove').onclick = async () => {
+        if (!(await RBConfirmDanger(t('Remove the event logo?'), t('Remove')))) return;
+        const x = await api('event_logo_remove', { event_id: id });
+        if (x.ok) { ev.logo = null; renderLogo(); } else toast(x.error || 'Could not remove.');
+    };
+
     /* ---------- 2 · organizers ---------- */
     function renderOrgs() {
         $('orgSection').hidden = false;
@@ -145,48 +167,18 @@
         m.q('[data-cancel]').onclick = m.close;
     };
 
-    /* ---------- 4 · participants + join code ---------- */
-    // The join-code row comes from event_manage_get; the roster is paged server-side (#144),
-    // searched with a debounce and fetched via event_participants_list.
-    let ppQ = '', ppPage = 1, ppSearchTimer = null;
+    /* ---------- 4 · join code (the roster lives on participants/, #144) ---------- */
     function renderJoinCode() {
         $('ppSection').hidden = false;
         $('ppHeadCount').textContent = ev.participant_count ? `(${ev.participant_count})` : '';
+        $('ppPageLink').href = '../participants/?id=' + id;
         const code = ev.join_code;
         $('joinCodeOut').innerHTML = code
             ? `${esc(t('Join code'))}: <span class="ev-join-code">${esc(code)}</span>`
             : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
         $('joinCopy').hidden = !code;
         $('joinClear').hidden = !code;
-        $('ppSearchRow').hidden = !ev.participant_count;
     }
-    async function loadParticipants() {
-        const r = await api('event_participants_list', { event_id: id, q: ppQ, page: ppPage });
-        if (!r.ok) { $('ppList').innerHTML = `<p class="muted small">${esc(r.error || t('Could not load.'))}</p>`; return; }
-        const pages = Math.max(1, Math.ceil(r.total / r.per_page));
-        if (ppPage > pages) { ppPage = pages; return loadParticipants(); } // e.g. the last row of the last page was removed
-        $('ppList').innerHTML = r.participants.length ? r.participants.map((p) => `<div class="ev-line">
-            <span class="meta"><i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(p.username)} <span class="muted small">${esc((p.joined || '').slice(0, 10))}</span></span>
-            <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
-        </div>`).join('') : `<p class="muted small">${esc(t(ppQ ? 'No matching users.' : 'No participants yet.'))}</p>`;
-        $('ppPager').innerHTML = pages > 1
-            ? `<button class="btn btn-ghost" id="ppPrev"${ppPage <= 1 ? ' disabled' : ''} aria-label="${esc(t('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button>
-               <span class="muted small">${ppPage} / ${pages} · ${r.total} ${esc(t('participants'))}</span>
-               <button class="btn btn-ghost" id="ppNext"${ppPage >= pages ? ' disabled' : ''} aria-label="${esc(t('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
-            : '';
-        const prev = $('ppPrev'), next = $('ppNext');
-        if (prev) prev.onclick = () => { if (ppPage > 1) { ppPage--; loadParticipants(); } };
-        if (next) next.onclick = () => { ppPage++; loadParticipants(); };
-        $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
-            const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
-            if (x.ok) { ev.participant_count--; renderJoinCode(); loadParticipants(); } else toast(x.error || 'Could not remove.');
-        });
-    }
-    $('ppSearchIn').oninput = () => {
-        clearTimeout(ppSearchTimer);
-        ppSearchTimer = setTimeout(() => { ppQ = $('ppSearchIn').value.trim(); ppPage = 1; loadParticipants(); }, 300);
-    };
     $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
     $('joinRotate').onclick = async () => {
         // rotating invalidates the currently shared code, so it must be confirmed
@@ -207,7 +199,7 @@
         ev = r.event;
         cats = ev.categories.map((c) => ({ id: c.id, name: c.name }));
         $('adminMsg').hidden = true; $('evBody').hidden = false; $('evActions').hidden = false;
-        renderParams(); renderOrgs(); renderRbs(); renderJoinCode(); loadParticipants();
+        renderParams(); renderLogo(); renderOrgs(); renderRbs(); renderJoinCode();
     }
 
     (async function init() {

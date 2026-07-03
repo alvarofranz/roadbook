@@ -203,7 +203,8 @@
     }
 
     async function load() {
-        const r = await api('admin_users');
+        const eventId = +($('userEventFilter').value || 0);
+        const r = await api('admin_users', eventId ? { event_id: eventId } : {});
         if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
         me = r.me;
         allUsers = r.users || [];
@@ -212,11 +213,21 @@
         render(); // keeps the current search + page across reloads
     }
 
+    // Event filter: narrow the list to one event's people (participants + organizers).
+    async function loadEventFilter() {
+        const r = await api('events_manage'); // an admin sees every event
+        const sel = $('userEventFilter');
+        sel.innerHTML = `<option value="">${esc(t('All events'))}</option>`
+            + ((r.ok && r.events) || []).map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
+        sel.onchange = () => { page = 1; load(); };
+    }
+
     async function init() {
         const cfg = await api('config');
         if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../account/">${esc(t('Sign in'))}</a>`; return; }
         if (!cfg.user.is_admin) { $('adminMsg').textContent = t('Admins only.'); return; }
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
+        loadEventFilter();
         load();
     }
     init();

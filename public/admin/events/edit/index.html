@@ -47,9 +47,8 @@
         .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
         /* the add-roadbook picker (inside the modal): scrollable result list */
         .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
-        /* participants pager (#144): centred prev / page-count / next */
-        .ev-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .6rem; }
-        .ev-pager .btn { margin: 0; width: auto; }
+        /* the event logo (#151): avatar-style preview beside its upload/remove actions */
+        .ev-logo-thumb { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
     </style>
 </head>
 <body>
@@ -70,6 +69,13 @@
     <div id="evBody" hidden>
         <!-- 1 · the event's own parameters -->
         <section class="ev-section">
+            <div class="ev-line" id="logoRow" hidden>
+                <img id="evLogoImg" class="ev-logo-thumb" alt="" hidden>
+                <span class="grow"></span>
+                <button class="btn btn-ghost" id="evLogoUpload" type="button"><i class="fa-solid fa-image"></i> <span data-i18n="Upload logo">Upload logo</span></button>
+                <button class="btn btn-ghost" id="evLogoRemove" type="button" hidden><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Remove logo">Remove logo</span></button>
+                <input id="evLogoFile" type="file" accept="image/*" hidden>
+            </div>
             <label class="field-label" for="evTitleIn" data-i18n="Title">Title</label>
             <input id="evTitleIn" class="field" autocomplete="off">
             <label class="field-label" for="evDescIn" data-i18n="Description">Description</label>
@@ -107,7 +113,7 @@
             <div class="btnrow"><button class="btn btn-ghost" id="rbAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add roadbook">Add roadbook</span></button></div>
         </section>
 
-        <!-- 4 · participants + the join code they use; the roster is paged + searchable (#144) -->
+        <!-- 4 · the join code; the roster itself lives on its own page (#144) -->
         <section class="ev-section" id="ppSection" hidden>
             <h2><span data-i18n="Participants">Participants</span> <span class="muted" id="ppHeadCount"></span></h2>
             <div class="ev-line" id="joinRow">
@@ -116,11 +122,7 @@
                 <button class="btn btn-ghost" id="joinRotate" type="button"><i class="fa-solid fa-rotate"></i> <span data-i18n="New join code">New join code</span></button>
                 <button class="btn btn-ghost" id="joinClear" type="button" hidden><i class="fa-solid fa-ban icon-danger"></i> <span data-i18n="Disable joining">Disable joining</span></button>
             </div>
-            <div class="ev-add-row" id="ppSearchRow" hidden>
-                <input id="ppSearchIn" class="field" type="search" data-i18n-ph="Search participants…" placeholder="Search participants…" autocomplete="off">
-            </div>
-            <div id="ppList"></div>
-            <div class="ev-pager" id="ppPager"></div>
+            <div class="btnrow"><a class="btn btn-ghost" id="ppPageLink"><i class="fa-solid fa-users"></i> <span data-i18n="View participants">View participants</span></a></div>
         </section>
     </div>
 </main>

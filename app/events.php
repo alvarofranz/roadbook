@@ -60,7 +60,7 @@ function require_event_manage(array $user, int $id): array {
 // Management list: an admin sees every event; anyone else sees the events they own or
 // co-organize (#123) — a plain user simply gets an empty list.
 function events_manage(array $user): void {
-    $sql = 'SELECT e.id, e.slug, e.title, e.starts_on, e.ends_on, e.is_public, u.username AS organizer,
+    $sql = 'SELECT e.id, e.slug, e.title, e.starts_on, e.ends_on, e.is_public, e.logo, u.username AS organizer,
             (SELECT COUNT(*) FROM event_roadbooks er WHERE er.event_id = e.id) AS roadbooks,
             (SELECT COUNT(*) FROM event_participants ep WHERE ep.event_id = e.id) AS participants
         FROM events e JOIN users u ON u.id = e.organizer_id';
@@ -76,7 +76,8 @@ function events_manage(array $user): void {
     json_out(['ok' => true, 'events' => array_map(fn($r) => [
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'],
         'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'], 'is_public' => (int)$r['is_public'],
-        'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'], 'participants' => (int)$r['participants'],
+        'logo' => $r['logo'], 'organizer' => $r['organizer'],
+        'roadbooks' => (int)$r['roadbooks'], 'participants' => (int)$r['participants'],
     ], $rows)]);
 }
 
@@ -101,7 +102,7 @@ function event_manage_get(array $user, array $d): void {
     json_out(['ok' => true, 'event' => [
         'id' => $id, 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
-        'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'],
+        'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
@@ -129,11 +130,14 @@ function event_participants_list(array $user, array $d): void {
     $st->execute($args);
     $total = (int)$st->fetchColumn();
     // LIMIT/OFFSET are sanitized ints inlined directly: PDO string-binds bound placeholders there
-    $st = db()->prepare("SELECT u.id, u.username, ep.created_at FROM event_participants ep JOIN users u ON u.id = ep.user_id
+    $st = db()->prepare("SELECT u.id, u.username, u.first_name, u.last_name, u.email, ep.created_at
+        FROM event_participants ep JOIN users u ON u.id = ep.user_id
         WHERE $where ORDER BY ep.created_at, u.id LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
     $st->execute($args);
     json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage,
-        'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'joined' => $x['created_at']], $st->fetchAll())]);
+        'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'],
+            'first_name' => $x['first_name'], 'last_name' => $x['last_name'], 'email' => $x['email'],
+            'joined' => $x['created_at']], $st->fetchAll())]);
 }
 
 // Create or update an event's own parameters + categories. The roadbook associations and the
@@ -185,14 +189,25 @@ function event_save(array $user, array $d): void {
 }
 
 function event_delete(array $user, array $d): void {
+    global $CFG;
     $id = (int)($d['id'] ?? 0);
     $st = db()->prepare('SELECT organizer_id FROM events WHERE id = ?'); $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
     // deleting the whole event stays with the owner (or an admin) — co-organizers can't
     if (!is_admin($user) && (int)$row['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
+    @unlink($CFG['event_logos_dir'] . '/' . $id . '.avif'); // the logo file goes with the event
     db()->prepare('DELETE FROM events WHERE id = ?')->execute([$id]); // associations cascade
     log_activity((int)$user['id'], 'event_delete', 'event #' . $id);
+    json_out(['ok' => true]);
+}
+
+// Remove the event's logo (#151): the file and the column — the upload endpoint recreates both.
+function event_logo_remove(array $user, array $d): void {
+    global $CFG;
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    @unlink($CFG['event_logos_dir'] . '/' . (int)$e['id'] . '.avif');
+    db()->prepare('UPDATE events SET logo = NULL WHERE id = ?')->execute([(int)$e['id']]);
     json_out(['ok' => true]);
 }
 
@@ -313,19 +328,19 @@ function event_participant_remove(array $user, array $d): void {
 
 /* ---- public (no auth) ---- */
 function events_public_list(): void {
-    $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, u.username AS organizer,
+    $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, e.logo, u.username AS organizer,
             (SELECT COUNT(*) FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id WHERE er.event_id = e.id AND r.status = 'public') AS roadbooks
         FROM events e JOIN users u ON u.id = e.organizer_id
         WHERE e.is_public = 1 ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
     json_out(['ok' => true, 'events' => array_map(fn($r) => [
         'slug' => $r['slug'], 'title' => $r['title'], 'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'],
-        'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'],
+        'logo' => $r['logo'], 'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'],
     ], $rows)]);
 }
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.slug, e.title, e.description, e.starts_on, e.ends_on, e.is_public, e.join_code, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.slug, e.title, e.description, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -352,7 +367,7 @@ function event_public_get(array $d): void {
     }
     json_out(['ok' => true, 'event' => [
         'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
-        'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'organizer' => $e['organizer'],
+        'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'categories' => $cat->fetchAll(PDO::FETCH_COLUMN),
         'can_join' => $e['join_code'] !== null, 'joined' => $joined,
     ], 'roadbooks' => $roadbooks]);

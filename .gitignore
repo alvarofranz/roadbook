@@ -13,6 +13,7 @@
 /vendor
 /storage
 /public/avatars
+/public/event-logos
 /public/photos
 /public/audio
 /cron/cron.log

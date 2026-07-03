@@ -7,12 +7,13 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     let events = [];
 
-    const fmtDates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? e.starts_on + ' – ' + e.ends_on : e.starts_on) : '';
+    const fmtDates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? RBFmtDate(e.starts_on) + ' – ' + RBFmtDate(e.ends_on) : RBFmtDate(e.starts_on)) : '';
 
     function render() {
         $('evList').innerHTML = events.length ? events.map((e) => `<div class="roadbook-row">
-            <div class="meta"><b>${esc(e.title)}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · ${e.roadbooks} ${esc(t('roadbooks'))} · ${e.participants} ${esc(t('participants'))}${fmtDates(e) ? ' · ' + esc(fmtDates(e)) : ''}</small></div>
+            <div class="meta"><b>${esc(e.title)}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · <i class="fa-solid fa-user icon-accent"></i> @${esc(e.organizer)} · ${e.roadbooks} ${esc(t('roadbooks'))} · ${e.participants} ${esc(t('participants'))}${fmtDates(e) ? ' · ' + esc(fmtDates(e)) : ''}</small></div>
             ${e.is_public ? `<a class="btn btn-ghost" href="/event/${esc(e.slug)}" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>` : ''}
+            <a class="btn btn-ghost" href="participants/?id=${e.id}" title="${esc(t('Participants'))}" aria-label="${esc(t('Participants'))}"><i class="fa-solid fa-users"></i> ${e.participants}</a>
             <a class="btn btn-ghost" href="edit/?id=${e.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <button class="btn btn-ghost" data-del="${e.id}" data-title="${esc(e.title)}" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(t('No events yet.'))}</p>`;
@@ -28,6 +29,7 @@
         events = (r.ok && r.events) || [];
         render();
     }
+    window.addEventListener('rb-lang', () => { if (events.length) render(); }); // re-format the dates in the new language
 
     (async function init() {
         const cfg = await api('config');

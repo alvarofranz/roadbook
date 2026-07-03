@@ -8,9 +8,10 @@
     let all = [], page = 1, q = '';
     const grid = $('evGrid'), pager = $('evPager'), search = $('evSearch');
 
-    const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${e.starts_on} – ${e.ends_on}` : e.starts_on) : '';
+    const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${RBFmtDate(e.starts_on)} – ${RBFmtDate(e.ends_on)}` : RBFmtDate(e.starts_on)) : '';
     const card = (e) => `<a class="gallery-card" href="/event/${encodeURIComponent(e.slug)}">
-        <div class="thumb thumb-placeholder"><i class="fa-solid fa-flag-checkered"></i></div>
+        ${e.logo ? `<img class="thumb" src="${esc(e.logo)}" alt="${esc(e.title)}" loading="lazy">`
+                 : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-flag-checkered"></i></div>`}
         <div class="gallery-body"><h3>${esc(e.title)}</h3>
         <div class="gallery-meta">@${esc(e.organizer)}${dates(e) ? ' · ' + esc(dates(e)) : ''} · ${e.roadbooks} ${esc(t('roadbooks'))}</div></div></a>`;
 

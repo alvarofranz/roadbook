@@ -44,10 +44,14 @@ function purge_user_files(int $uid): void {
     rrmdir($CFG['storage'] . '/' . $uid);
 }
 
-function admin_users(array $user): void {
+function admin_users(array $user, array $d = []): void {
+    // Optional event filter: only the users belonging to that event (participants + organizers).
+    $eventId = (int)($d['event_id'] ?? 0);
+    $where = $eventId > 0 ? " WHERE users.id IN (SELECT user_id FROM event_participants WHERE event_id = $eventId
+        UNION SELECT user_id FROM event_organizers WHERE event_id = $eventId)" : '';
     $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at,
             (SELECT COUNT(*) FROM roadbooks r WHERE r.user_id = users.id) AS roadbooks
-        FROM users ORDER BY id')->fetchAll();
+        FROM users' . $where . ' ORDER BY id')->fetchAll();
     $users = array_map(fn($r) => [
         'id'         => (int)$r['id'],
         'first_name' => $r['first_name'],

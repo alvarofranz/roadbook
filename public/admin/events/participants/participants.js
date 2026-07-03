@@ -1,0 +1,72 @@
+'use strict';
+/* Event participants page (#144): the roster lives on its own page — an event can have
+ * hundreds of entrants, so it is searched and paged server-side (event_participants_list).
+ * Opened as participants/?id=<event id>; management rights are enforced by the API. */
+(function () {
+    const $ = (id) => document.getElementById(id);
+    const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
+    const id = +(new URLSearchParams(location.search).get('id') || 0);
+    let q = '', page = 1, searchTimer = null, eventTitle = '';
+
+    async function load() {
+        const r = await api('event_participants_list', { event_id: id, q, page });
+        if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
+        $('adminMsg').hidden = true; $('ppBody').hidden = false;
+        const pages = Math.max(1, Math.ceil(r.total / r.per_page));
+        if (page > pages) { page = pages; return load(); } // e.g. the last row of the last page was removed
+        if (!q) $('ppHeadCount').textContent = r.total ? `(${r.total})` : '';
+        $('ppList').innerHTML = r.participants.length ? r.participants.map((p) => `<div class="ev-line">
+            <span class="meta"><i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(p.username)}
+                <span class="muted small">· ${esc((p.first_name + ' ' + p.last_name).trim())} · ${esc(p.email)} · ${esc(RBFmtDate(p.joined))}</span></span>
+            <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
+        </div>`).join('') : `<p class="muted small">${esc(t(q ? 'No matching users.' : 'No participants yet.'))}</p>`;
+        $('ppPager').innerHTML = pages > 1
+            ? `<button class="btn btn-ghost" id="ppPrev"${page <= 1 ? ' disabled' : ''} aria-label="${esc(t('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button>
+               <span class="muted small">${page} / ${pages} · ${r.total} ${esc(t('participants'))}</span>
+               <button class="btn btn-ghost" id="ppNext"${page >= pages ? ' disabled' : ''} aria-label="${esc(t('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
+            : '';
+        const prev = $('ppPrev'), next = $('ppNext');
+        if (prev) prev.onclick = () => { if (page > 1) { page--; load(); } };
+        if (next) next.onclick = () => { page++; load(); };
+        $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
+            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
+            const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
+            if (x.ok) load(); else toast(x.error || 'Could not remove.');
+        });
+    }
+
+    $('ppSearchIn').oninput = () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { q = $('ppSearchIn').value.trim(); page = 1; load(); }, 300);
+    };
+    window.addEventListener('rb-lang', () => load()); // re-format the joined dates in the new language
+
+    // CSV export (first name, last name, email) of the whole roster — or of the current search
+    // when one is active. Collected page by page (100 at a time), quoted RFC-4180 style.
+    $('ppExport').onclick = async () => {
+        const cell = (v) => /[",\n]/.test(v = String(v ?? '')) ? '"' + v.replace(/"/g, '""') + '"' : v;
+        const rows = [];
+        for (let p = 1; ; p++) {
+            const r = await api('event_participants_list', { event_id: id, q, page: p, per_page: 100 });
+            if (!r.ok) return toast(r.error || 'Could not load.');
+            rows.push(...r.participants);
+            if (p * r.per_page >= r.total) break;
+        }
+        if (!rows.length) return toast(q ? 'No matching users.' : 'No participants yet.');
+        const lines = ['first_name,last_name,email', ...rows.map((p) => [cell(p.first_name), cell(p.last_name), cell(p.email)].join(','))];
+        // the file is named after the event (filesystem-hostile characters stripped)
+        const name = (eventTitle || 'rdbk-participants').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+        RBDownload(new Blob([lines.join('\n')], { type: 'text/csv' }), name + '.csv');
+    };
+
+    (async function init() {
+        const cfg = await api('config');
+        if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../../../account/">${esc(t('Sign in'))}</a>`; return; }
+        const r = await api('event_manage_get', { id }); // the heading: event title + a link back to its management page
+        if (r.ok) {
+            eventTitle = r.event.title; // also names the CSV export
+            $('ppEventTitle').innerHTML = `${esc(eventTitle)} · <a href="../edit/?id=${id}">${esc(t('Edit event'))}</a>`;
+        }
+        load();
+    })();
+})();

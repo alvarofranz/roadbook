@@ -12,8 +12,11 @@
     <link rel="stylesheet" href="/assets/css/app.css?v=2026.07.02-8">
     <style>
         #evWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
-        .ev-head { margin-bottom: 1rem; }
+        .ev-head { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
         .ev-head h1 { margin: .2rem 0 .3rem; font-size: 1.8rem; }
+        .ev-head-text { min-width: 0; }
+        /* the event logo (#151): boxed like an avatar, never squeezing the title */
+        .ev-logo { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card); border: 1px solid var(--line); flex: none; }
         .ev-desc { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
         /* join-with-code (#123): a compact inline form / joined banner between description and roadbooks */
         .ev-join { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .8rem 1rem; margin: 1rem 0; }
@@ -29,9 +32,12 @@
     <p id="evLoading" class="muted" data-i18n="gallery.loading">Loading…</p>
     <article id="evContent" hidden>
         <div class="ev-head">
-            <div class="kicker"><a href="/events/" data-i18n="Events">Events</a></div>
-            <h1 id="evTitle"></h1>
-            <div class="muted small" id="evMeta"></div>
+            <img id="evLogo" class="ev-logo" alt="" hidden>
+            <div class="ev-head-text">
+                <div class="kicker"><a href="/events/" data-i18n="Events">Events</a></div>
+                <h1 id="evTitle"></h1>
+                <div class="muted small" id="evMeta"></div>
+            </div>
         </div>
         <p id="evDesc" class="ev-desc"></p>
         <div class="ev-join" id="evJoin" hidden></div>

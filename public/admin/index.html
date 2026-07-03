@@ -30,6 +30,7 @@
         .u-actions .btn { padding: .25rem .55rem; font-size: .78rem; }
         .users-toolbar { display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; color: var(--muted); }
         .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
+        .users-toolbar .users-event-filter { flex: none; width: auto; max-width: 16rem; } /* the per-event people filter */
         .users-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
         .users-pager .btn { margin: 0; }
         /* the per-user roadbook list needs more room than the default wide modal; let titles wrap */
@@ -48,7 +49,10 @@
     <h1 data-i18n="User management">User management</h1>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
     <div id="usersBox" hidden>
-        <div class="users-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="userSearch" class="field" placeholder="Search users…" data-i18n-ph="Search users…" autocomplete="off" spellcheck="false"></div>
+        <div class="users-toolbar">
+            <i class="fa-solid fa-magnifying-glass"></i><input type="search" id="userSearch" class="field" placeholder="Search users…" data-i18n-ph="Search users…" autocomplete="off" spellcheck="false">
+            <select id="userEventFilter" class="field users-event-filter" aria-label="Events" data-i18n-aria="Events"></select>
+        </div>
         <div class="table-scroll">
             <table class="users-table">
                 <thead><tr>

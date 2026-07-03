@@ -43,7 +43,7 @@
         // Ranking stay web-only). The website keeps the full set.
         const tools = isNativeApp()
             ? [['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Recorder']]
-            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking'], ['roadbooks', 'Roadbooks']];
+            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking'], ['roadbooks', 'Roadbooks'], ['events', '<span data-i18n="Events">Events</span>']];
         // on a tool page, a "How it works" link to that tool's /features/ description page, shown right after that tool's nav link
         const curTool = rel.split('/')[0];
         const toolHelp = ['recorder', 'editor', 'reader', 'tripmaster', 'ranking'].includes(curTool)
@@ -289,6 +289,13 @@
     window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
     // Human-readable byte size, e.g. "12.3 MB" / "640 KB" (shared by the storage indicator + admin).
     window.RBFmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
+    // An ISO YYYY-MM-DD date in the ACTIVE UI language's format (event dates). The parts are
+    // used as-is — never parsed as UTC, so the day can't shift across timezones.
+    window.RBFmtDate = (iso) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+        if (!m) return iso || '';
+        return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString(window.RBi18n ? RBi18n.current() : undefined);
+    };
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).

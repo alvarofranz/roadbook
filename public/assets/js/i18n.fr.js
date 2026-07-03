@@ -57,7 +57,7 @@
             'Save location': 'Enregistrer la position', 'Location saved.': 'Position enregistrée.',
             'Too many attempts. Please wait a moment.': 'Trop de tentatives. Veuillez patienter.', 'Try again in': 'Réessayer dans',
             'Read': 'Lire', 'View': 'Voir', 'Search roadbooks…': 'Rechercher des roadbooks…', 'No matching roadbooks.': 'Aucun roadbook correspondant.',
-            'Search users…': 'Rechercher des utilisateurs…', 'Search participants…': 'Rechercher des participants…', 'No matching users.': 'Aucun utilisateur correspondant.', 'users': 'utilisateurs',
+            'Search users…': 'Rechercher des utilisateurs…', 'Search participants…': 'Rechercher des participants…', 'Remove the event logo?': 'Retirer le logo de l’événement ?', 'View participants': 'Voir les participants', 'All events': 'Tous les événements', 'Export CSV': 'Exporter CSV', 'No matching users.': 'Aucun utilisateur correspondant.', 'users': 'utilisateurs',
             'Roadbook name': 'Nom du roadbook', 'Recorded trip': 'Parcours enregistré',
             'Elapsed': 'Temps', 'No GPS': 'Pas de GPS', 'Resume the recording in progress?': 'Reprendre l\'enregistrement en cours ?', 'Finish the recording?': 'Terminer l\'enregistrement ?', 'Dictate': 'Dicter',
             

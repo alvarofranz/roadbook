@@ -1,6 +1,7 @@
 <?php
 /* Multipart upload.
  *   type=avatar                 → square 256px AVIF avatar (re-compressed; original never stored)
+ *   type=event_logo event=<id>  → event logo, max 512px AVIF (manage rights; #151)
  *   type=photo   roadbook=<id>  → gallery photo, max 1600px AVIF
  *   type=audio   roadbook=<id>  → waypoint voice note, stored as-is (no transcoding) */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
@@ -49,6 +50,16 @@ if ($type === 'avatar') {
     $url = '/avatars/' . $user['id'] . '.avif';
     db()->prepare('UPDATE users SET avatar = ? WHERE id = ?')->execute([$url, $user['id']]);
     json_out(['ok' => true, 'avatar' => $url . '?v=' . time()]);
+}
+
+if ($type === 'event_logo') {
+    $e = require_event_manage($user, (int)($_POST['event'] ?? 0)); // owner / co-organizer / admin (#151)
+    if (!is_dir($CFG['event_logos_dir'])) mkdir($CFG['event_logos_dir'], 0755, true);
+    $dest = $CFG['event_logos_dir'] . '/' . (int)$e['id'] . '.avif';
+    if (!process_to_avif($tmp, $dest, 512, false, 55)) fail('Could not process the image.');
+    $url = '/event-logos/' . (int)$e['id'] . '.avif';
+    db()->prepare('UPDATE events SET logo = ? WHERE id = ?')->execute([$url, (int)$e['id']]);
+    json_out(['ok' => true, 'logo' => $url . '?v=' . time()]);
 }
 
 if ($type === 'photo') {

@@ -8,15 +8,18 @@
     const parts = location.pathname.split('/').filter(Boolean);
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'event') { $('evLoading').textContent = t('Not found.'); return; }
-    const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${e.starts_on} – ${e.ends_on}` : e.starts_on) : '';
+    const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${RBFmtDate(e.starts_on)} – ${RBFmtDate(e.ends_on)}` : RBFmtDate(e.starts_on)) : '';
 
     RBApi('event_get', { slug }).then((j) => {
         if (!j.ok) { $('evLoading').textContent = t('Not found.'); return; }
         const e = j.event;
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
+        if (e.logo) { $('evLogo').src = e.logo; $('evLogo').hidden = false; }
         document.title = e.title + ' · RDBK.app';
-        $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : '');
+        const renderMeta = () => { $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : ''); };
+        renderMeta();
+        window.addEventListener('rb-lang', renderMeta); // re-format the dates in the new language
         $('evDesc').textContent = e.description || '';
         const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}">${
             r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
