@@ -136,12 +136,12 @@
     }
     $('recPause').onclick = () => {
         paused = !paused;
-        // Pause frees the GPS watch + wake lock so a long stop (e.g. lunch) doesn't drain the
-        // battery; Resume reacquires and keeps appending to the SAME track (the resume point joins
-        // the last one — lastSampled is cleared so the first new fix samples). The elapsed clock
-        // freezes on pause regardless. The pause state is checkpointed so a kill mid-pause resumes paused.
-        if (paused) { elapsedAcc = elapsed(); segStart = 0; lastSampled = null; stopMeter(); }
-        else startMeter();
+        // Pause keeps the GPS watch alive (position still shown) but stops appending to the track, so
+        // resuming continues from a warm, accurate fix instead of a cold-start jump (#149). The elapsed
+        // clock freezes on pause; on resume lastSampled is cleared so the first new fix starts a fresh
+        // sample. The pause state is checkpointed so a kill mid-pause resumes paused.
+        if (paused) { elapsedAcc = elapsed(); segStart = 0; }
+        else { segStart = Date.now(); lastSampled = null; }
         saveSession();
         renderPauseBtn(); renderBar();
     };
@@ -220,15 +220,16 @@
     function updateRecUi() {
         wptBtn.hidden = !(meUser && (SR_REC || CAN_REC_AUDIO));
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
+        const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native'); // only the native app records in the background
     }
-    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 3, wptFinish = null;
+    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 5, wptFinish = null;
     const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
     const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('WP audio') : String(n); };
 
     async function startWptAudio() {
         if (wptRecActive) return; // already recording (or in the release countdown)
         if (!here) return toast(t('Waiting for a GPS fix…'));
-        wptRecActive = true; wptHolding = true; wptCount = 3; // hold to record; first release counts down from 3
+        wptRecActive = true; wptHolding = true; wptCount = 5; // hold to record; first release counts down from 5
         const note = dropWaypoint(here.lat, here.lon, '');
         const wptLat = here.lat, wptLon = here.lon;
         let ended = false;
@@ -280,7 +281,7 @@
         wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
     }
 
-    // Release → keep recording while a countdown ticks ON the button (3s first, 2s after a re-press),
+    // Release → keep recording while a countdown ticks ON the button (5s first, 2s after a re-press),
     // then save automatically at 0 (the waypoint was already dropped on press — no confirm).
     function releaseWptAudio() {
         if (!wptRecActive || !wptHolding) return; // not recording, or already counting down
