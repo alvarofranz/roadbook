@@ -25,7 +25,7 @@ function rb_list(array $user): void {
 // The edit-rights gate shared by rb_get / rb_save / the lock actions: yours, or attached to
 // an event you organize (#123 co-editing). Returns the row (with the owner's username) or 404s.
 function rb_require_edit(array $user, int $id): array {
-    $st = db()->prepare('SELECT r.user_id, r.filename, r.status, r.slug, r.title, u.username AS owner
+    $st = db()->prepare('SELECT r.user_id, r.filename, r.status, r.reusable, r.slug, r.title, u.username AS owner
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
@@ -94,7 +94,7 @@ function rb_get(array $user, array $d): void {
     // The soft edit lock (#154) is taken only when the caller ASKS for it (the Editor does;
     // the Reader reads the same roadbooks without blocking anyone's editing).
     $lock = !empty($d['lock']) ? rb_lock_acquire($id, (int)$user['id']) : null;
-    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'slug' => $row['slug'],
+    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'slug' => $row['slug'],
         'is_owner' => $isOwner, 'owner' => $row['owner'], 'lock' => $lock, 'roadbook' => $rb]);
 }
 
@@ -143,6 +143,7 @@ function rb_save(array $user, array $d): void {
     $dist = (int)($rb['meta']['total_distance'] ?? 0);
     $nc = count($rb['notes']);
     $status = rb_clean_status($d['status'] ?? null);
+    $reusable = !empty($d['reusable']) ? 1 : 0; // #106: may others copy this public roadbook?
     $id = (int)($d['id'] ?? 0);
 
     if ($id > 0) {
@@ -150,7 +151,7 @@ function rb_save(array $user, array $d): void {
         // the OWNER's storage, the owner never changes, and only the owner sets the
         // publication status (a co-editor's save keeps it as it is)
         $row = rb_require_edit($user, $id);
-        if ((int)$row['user_id'] !== (int)$user['id']) $status = $row['status'];
+        if ((int)$row['user_id'] !== (int)$user['id']) { $status = $row['status']; $reusable = (int)$row['reusable']; } // only the owner sets publication + reusability
         // soft lock (#154): while someone else holds a fresh lock, their work wins
         $h = rb_lock_holder($id);
         if ($h && (int)$h['user_id'] !== (int)$user['id']) fail('This roadbook is being edited by someone else.', 409);
@@ -158,8 +159,8 @@ function rb_save(array $user, array $d): void {
         $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
-        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, slug = ?, filename = ? WHERE id = ?')
-            ->execute([$title, $dist, $nc, $status, $slug, $fn, $id]);
+        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, slug = ?, filename = ? WHERE id = ?')
+            ->execute([$title, $dist, $nc, $status, $reusable, $slug, $fn, $id]);
         rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
@@ -171,7 +172,7 @@ function rb_save(array $user, array $d): void {
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $id]);
     }
-    json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'status' => $status]);
+    json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'status' => $status, 'reusable' => $reusable]);
 }
 
 // Set a roadbook's publication status (owner only). Every roadbook already has a slug
@@ -309,11 +310,14 @@ function audio_delete(array $user, array $d): void {
 }
 
 /* ---- public (no auth): home gallery + challenge page ---- */
-function public_list(): void {
+function public_list(array $d = []): void {
+    // #106: the Editor's fork search passes reusable=1 to show only copyable roadbooks; the
+    // read-only listings (gallery, home, Reader picker) pass nothing and see every public one.
+    $filter = !empty($d['reusable']) ? ' AND r.reusable = 1' : '';
     $st = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, u.username,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM roadbooks r JOIN users u ON u.id = r.user_id
-        WHERE r.status = 'public' AND r.slug IS NOT NULL ORDER BY r.updated_at DESC LIMIT 60");
+        WHERE r.status = 'public' AND r.slug IS NOT NULL" . $filter . " ORDER BY r.updated_at DESC LIMIT 60");
     $rows = array_map(fn($r) => [
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
         'note_count' => (int)$r['note_count'], 'username' => $r['username'],
@@ -325,7 +329,7 @@ function public_list(): void {
 function public_get(array $d): void {
     global $CFG;
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.status, u.username, u.first_name, u.last_name, u.bio, u.avatar
+    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.status, r.reusable, u.username, u.first_name, u.last_name, u.bio, u.avatar
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.slug = ?');
     $st->execute([$slug]);
     $row = $st->fetch();
@@ -344,7 +348,7 @@ function public_get(array $d): void {
     $p->execute([$row['id']]);
     $photos = array_map(fn($r) => '/photos/' . $row['id'] . '/' . $r['filename'], $p->fetchAll());
     $cover = is_file($CFG['photos_dir'] . '/' . $row['id'] . '/_map.avif') ? '/photos/' . $row['id'] . '/_map.avif' : null;
-    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
+    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
         'owner' => ['username' => $row['username'], 'name' => trim($row['first_name'] . ' ' . $row['last_name']), 'bio' => $row['bio'], 'avatar' => $row['avatar']]]);
 }
 

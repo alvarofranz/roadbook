@@ -5,8 +5,9 @@
     const here = (document.currentScript && document.currentScript.src) || location.href;
     const ROOT = here.replace(/assets\/js\/challenges\.js.*$/, '');
 
-    async function listPublic() {
-        try { return (await (await fetch(ROOT + 'api/index.php?action=public_list')).json()).roadbooks || []; }
+    async function listPublic(opts) {
+        const q = opts && opts.reusable ? '&reusable=1' : ''; // #106: the Editor fork search asks for reusable-only
+        try { return (await (await fetch(ROOT + 'api/index.php?action=public_list' + q)).json()).roadbooks || []; }
         catch (e) { return []; }
     }
     async function loadPublic(slug) {
@@ -21,9 +22,9 @@
     };
 
     // Picker: choose a public roadbook to open in the current tool.
-    async function pick(onPick) {
+    async function pick(onPick, opts) {
         const d = RBModal(`<h2>${RBt('Public Roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
-        const rbs = await listPublic();
+        const rbs = await listPublic(opts);
         d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public Roadbooks')}</h2>
             ${rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
                 ${r.thumb ? `<img src="${RBesc(r.thumb)}" alt="">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
