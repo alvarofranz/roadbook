@@ -46,6 +46,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
   be discarded or clobber someone else's.
+- **A `fix:` request → open the issue and start it immediately.** When the user prefixes a
+  request with `fix:`, treat it as a bug to formalize: FIRST create a GitHub issue for it
+  (`gh issue create --repo alvarofranz/roadbook` — clear English title + the reported behavior
+  and the expected fix), THEN immediately assign it and mark it in progress (see the next
+  bullet), all before writing any code. Only after that do you fix it, under the normal flow
+  (test hand-off before deploy; drop the WIP tag when it ships to prod).
 - **Taking on a GitHub issue → assign it + mark it in progress.** The moment you start on an
   issue — including scoping/investigation, BEFORE writing any code — run `gh issue edit <n> --repo alvarofranz/roadbook --add-assignee
   @me --add-label "in lavorazione"`. `@me` assigns it to whoever is authenticated with `gh`
