@@ -97,6 +97,8 @@
     }
 
     let competition = false;
+    const eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event → mode is dictated (#155)
+    let eventMode = null; // 'trip' | 'competition' when the event locks the choice
     function loadRb(r) {
         r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
         if (!r.notes.length) return toast('Roadbook has no notes.');
@@ -104,7 +106,26 @@
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();
         $('optMapRow').hidden = !mapAllowed();
-        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses the popup → back to the load screen you came from
+        openModeModal();
+    }
+    // Usage-mode modal. For a roadbook opened from an event (?event=<slug>) the organizer's mode is
+    // fetched from the public event and the Trip/Competition choice is locked to it (#155).
+    async function openModeModal() {
+        applyModeLock(null);
+        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses → back to the load screen
+        if (!eventSlug) return;
+        try {
+            const j = await RBApi('event_get', { slug: eventSlug });
+            const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop();
+            const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug);
+            if (er) applyModeLock(er.scoring_mode && er.scoring_mode !== 'free' ? 'competition' : 'trip');
+        } catch (e) { /* no event mode → keep the free choice */ }
+    }
+    function applyModeLock(mode) {
+        eventMode = mode;
+        $('modeGrid').hidden = !!mode;
+        $('modeLocked').hidden = !mode;
+        if (mode) $('modeLockedTxt').textContent = t('Mode set by the event:') + ' ' + t(mode === 'competition' ? 'Competition mode' : 'Trip mode');
     }
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     let optGpx = false, sound = true, audioCtx = null;
@@ -124,12 +145,15 @@
             o.start(t0); o.stop(t0 + 0.2);
         } catch (e) { /* audio unavailable */ }
     }
-    $('modeTrip').onclick = () => { readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin(); };
-    $('modeComp').onclick = () => {
+    const startTrip = () => { readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin(); };
+    const startComp = () => {
         readModeOpts(); closeModal('modeModal'); $('teamInput').value = '1';
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
     };
+    $('modeTrip').onclick = startTrip;
+    $('modeComp').onclick = startComp;
+    $('modeLockedStart').onclick = () => (eventMode === 'competition' ? startComp() : startTrip());
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startNav(true); if (optGpx) RBGpxRecorder.begin(); };
     $('teamCancel').onclick = () => { closeModal('teamModal'); openModal('modeModal'); };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
