@@ -217,9 +217,11 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
   Node 22 + `npm ci`, then `config.js` and the licensed FontAwesome Pro files
   fetched from the live site (public client assets by design — no workflow
   secrets), then the native bridge + `npx cap sync ios`.
-- **`ci_pre_xcodebuild.sh`** stamps an always-increasing build number
-  (`YYYYMMDD.HHMMSS`) into `CURRENT_PROJECT_VERSION`, so every cloud build is a
-  valid new TestFlight build with zero manual bumps.
+- **Build numbers are managed by Xcode Cloud itself**: each build gets the next
+  integer (1, 2, 3…) and App Store Connect uses that number for the TestFlight /
+  App Store build, overriding the project's `CURRENT_PROJECT_VERSION`. Change the
+  counter under App Store Connect → Xcode Cloud → Settings → Build Number; bump
+  the user-facing version by editing `MARKETING_VERSION` in the Xcode project.
 
 **One-time setup:**
 1. Register the App ID: https://developer.apple.com → Certificates, Identifiers &
