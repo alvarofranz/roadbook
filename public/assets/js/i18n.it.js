@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
             'About': 'Chi siamo',
             'Categories': 'Categorie', 'Add category': 'Aggiungi categoria', 'Category name': 'Nome categoria',
-            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)', 'Fullscreen': 'Schermo intero', 'Select date': 'Seleziona data', 'Unsaved changes': 'Modifiche non salvate', 'Save your changes before closing?': 'Salvare le modifiche prima di chiudere?', 'Save & close': 'Salva e chiudi', 'Close without saving': 'Chiudi senza salvare', 'Change logo': 'Cambia logo',
+            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)', 'Fullscreen': 'Schermo intero', 'Select date': 'Seleziona data', 'Unsaved changes': 'Modifiche non salvate', 'Save your changes before closing?': 'Salvare le modifiche prima di chiudere?', 'Save & close': 'Salva e chiudi', 'Close without saving': 'Chiudi senza salvare', 'Change logo': 'Cambia logo', 'In a browser, recording stops when the app is in the background or the screen is off.': 'Nel browser la registrazione si ferma quando l\'app è in secondo piano o lo schermo è spento.',
             'Terms of Use': 'Condizioni d’uso',
             'reg.acceptTerms': 'Ho letto e accetto le <a href="/terms/" target="_blank" rel="noopener">Condizioni d’uso</a>',
             'You must accept the Terms of Use to register.': 'Devi accettare le Condizioni d’uso per registrarti.',
