@@ -726,6 +726,7 @@
     $('rbAuthor').oninput = (e) => { if (rb) { rb.meta.author = e.target.value; markDirty(); } };
     $('rbOrg').oninput = (e) => { if (rb) { rb.meta.organization = e.target.value; markDirty(); } };
     $('rbLogoBtn').onclick = () => $('rbLogoFile').click();
+    $('rbLogoPrev').onclick = () => $('rbLogoFile').click(); // the shown logo doubles as the "change logo" button
     $('rbLogoClr').onclick = () => { if (rb) { delete rb.meta.logo; setLogoPreview(null); markDirty(); } };
     $('rbLogoFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = '';
@@ -735,7 +736,8 @@
     };
     // event logo: embedded as a base64 data URI in meta.logo (self-contained, like the icons)
     function userName() { if (!meUser) return ''; return (((meUser.first_name || '') + ' ' + (meUser.last_name || '')).trim()) || meUser.username || ''; }
-    function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.hidden = false; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.hidden = true; $('rbLogoClr').hidden = true; } }
+    // With a logo, the shown logo replaces the upload button (click it to change); without, the upload button shows.
+    function setLogoPreview(src) { const i = $('rbLogoPrev'); if (src) { i.src = src; i.hidden = false; $('rbLogoBtn').hidden = true; $('rbLogoClr').hidden = false; } else { i.removeAttribute('src'); i.hidden = true; $('rbLogoBtn').hidden = false; $('rbLogoClr').hidden = true; } }
     function stampMeta() { if (!rb) return; rb.meta = rb.meta || {}; if (!rb.meta.author) rb.meta.author = userName(); rb.meta.modified = new Date().toISOString().slice(0, 10); $('rbModified').textContent = rb.meta.modified; if (rb.meta.author) $('rbAuthor').value = rb.meta.author; }
     function showView(v) {
         $('viewMap').hidden = v !== 'map';
@@ -1041,6 +1043,28 @@
     }
     $('saveAccount').onclick = saveRoadbook;
     $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
+    // Close the editor: unsaved changes get a save prompt first, then it returns to the start screen.
+    async function closeEditor() {
+        if (rb && dirty) {
+            const choice = await new Promise((resolve) => {
+                const d = RBModal(`<h3>${t('Unsaved changes')}</h3>
+                    <p class="muted">${t('Save your changes before closing?')}</p>
+                    <div class="btnrow center wrap">
+                        <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
+                        <button class="btn btn-ghost" id="ccDiscard">${t('Close without saving')}</button>
+                        <button class="btn btn-ghost" id="ccCancel">${t('Cancel')}</button>
+                    </div>`, 'slim center', () => resolve('cancel'));
+                d.q('#ccSave').onclick = () => { resolve('save'); d.close(); };
+                d.q('#ccDiscard').onclick = () => { resolve('discard'); d.close(); };
+                d.q('#ccCancel').onclick = () => { resolve('cancel'); d.close(); };
+            });
+            if (choice === 'cancel') return;
+            if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
+        }
+        clearDraft();
+        location.href = location.pathname; // back to the fresh editor start screen
+    }
+    $('closeEditor').onclick = closeEditor;
     // "Save as": store the current content as a NEW roadbook (the original is left
     // untouched). The copy starts private and gets a "… (copy)" title; the editor
     // then keeps editing the copy. Photos stay with the original (they live server-side).

@@ -56,7 +56,8 @@
         /* Labelled property selects, one row above the icon search (Road / Danger / Speed / CAP type) */
         .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
         .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
-        .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); }
+        .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); border: 1px solid var(--line); cursor: pointer; }
+        .logo-preview:hover { border-color: var(--sand); }
         .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: .5rem; max-height: 50vh; overflow: auto; overscroll-behavior: contain; }
         /* icons live on a white tile so dark line-art symbols stay legible */
         .icon-grid button { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
@@ -329,10 +330,11 @@
                     <button class="btn btn-primary" id="rawJsonBtn" title="Raw JSON" data-i18n-title="Raw JSON" aria-label="Raw JSON" data-i18n-aria="Raw JSON"><i class="fa-solid fa-code"></i></button>
                     <button class="btn btn-primary" id="saveAccount" title="Save" data-i18n-title="Save" aria-label="Save" data-i18n-aria="Save"><i class="fa-solid fa-floppy-disk"></i></button>
                     <button class="btn btn-ghost" id="saveAsAccount" title="Save as" data-i18n-title="Save as" aria-label="Save as" data-i18n-aria="Save as"><i class="fa-solid fa-clone"></i></button>
+                    <button class="btn btn-ghost" id="closeEditor" title="Close" data-i18n-title="Close" aria-label="Close" data-i18n-aria="Close"><i class="fa-solid fa-xmark"></i> <span data-i18n="Close">Close</span></button>
                 </div>
                 <div class="rb-actions-right">
                     <input type="text" id="rbTitle" class="field grow" placeholder="Roadbook title" data-i18n-ph="Roadbook title">
-                    <img id="rbLogoPrev" alt="" class="logo-preview" hidden>
+                    <img id="rbLogoPrev" alt="" class="logo-preview" title="Change logo" data-i18n-title="Change logo" hidden>
                     <button class="btn btn-ghost" id="rbLogoBtn" title="Upload logo" data-i18n-title="Upload logo" aria-label="Upload logo" data-i18n-aria="Upload logo"><i class="fa-solid fa-image"></i></button>
                     <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-xmark"></i></button>
                     <input id="rbLogoFile" type="file" accept="image/*" hidden>
