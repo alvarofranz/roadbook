@@ -20,7 +20,7 @@
         document.title = e.title + ' · RDBK.app';
         $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : '');
         $('evDesc').textContent = e.description || '';
-        const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}">${
+        const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}">${
             r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
                     : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
             <div class="gallery-body"><h3>${esc(r.title)}</h3>

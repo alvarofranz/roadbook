@@ -23,7 +23,8 @@
         const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · ');
         if (credit) $('chMeta').textContent += ' · ' + credit;
         if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.className = 'ch-logo'; $('chTitle').closest('.ch-head').appendChild(img); }
-        $('chNav').href = '/reader/' + encodeURIComponent(slug);
+        const evParam = new URLSearchParams(location.search).get('event'); // carry the event context so the Reader locks the mode (#155)
+        $('chNav').href = '/reader/' + encodeURIComponent(slug) + (evParam ? '?event=' + encodeURIComponent(evParam) : '');
         // Owner: Edit (opens their own roadbook). Non-owner: no Fork — a public roadbook can be
         // read on the site / navigated / exported to PDF, but not forked or downloaded.
         if (j.is_owner) { const f = $('chFork'); f.hidden = false; f.href = '/editor/?rb=' + j.id; f.setAttribute('data-i18n', 'Edit'); f.innerHTML = '<i class="fa-solid fa-pen"></i> ' + esc(t('Edit')); }

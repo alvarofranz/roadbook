@@ -121,9 +121,13 @@
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
         </div>
-        <div class="mode-grid">
+        <div class="mode-grid" id="modeGrid">
             <button class="mode-btn" id="modeTrip"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
             <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
+        </div>
+        <div id="modeLocked" class="opt-row" hidden>
+            <p class="muted small"><i class="fa-solid fa-lock"></i> <span id="modeLockedTxt"></span></p>
+            <button class="btn btn-primary" id="modeLockedStart"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Start">Start</span></button>
         </div>
     </div>
 </div>
