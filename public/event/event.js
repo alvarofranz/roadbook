@@ -1,7 +1,8 @@
 'use strict';
 /* Public event presentation page (#6): /event/<slug>. Shows the event (title, dates,
- * organizer, description), a join-with-code form for signed-in users (#123) and the public
- * roadbooks it gathers, each linking to /challenge/<slug>. */
+ * organizer, description), a join-with-code form for signed-in users (#123) and the
+ * roadbooks it gathers — the public ones for everyone, plus the READY ones for
+ * participants (#25). Joining or leaving re-fetches, so the list follows the access. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast;
@@ -9,17 +10,15 @@
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'event') { $('evLoading').textContent = t('Not found.'); return; }
     const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${RBFmtDate(e.starts_on)} – ${RBFmtDate(e.ends_on)}` : RBFmtDate(e.starts_on)) : '';
+    let ev = null; // the loaded event — kept for the language-switch re-render
 
-    RBApi('event_get', { slug }).then((j) => {
-        if (!j.ok) { $('evLoading').textContent = t('Not found.'); return; }
-        const e = j.event;
+    function render(j) {
+        const e = ev = j.event;
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
         if (e.logo) { $('evLogo').src = e.logo; $('evLogo').hidden = false; }
         document.title = e.title + ' · RDBK.app';
-        const renderMeta = () => { $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : ''); };
-        renderMeta();
-        window.addEventListener('rb-lang', renderMeta); // re-format the dates in the new language
+        $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : '');
         $('evDesc').textContent = e.description || '';
         const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}">${
             r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
@@ -31,13 +30,20 @@
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
         renderJoin(e);
-    }).catch(() => { $('evLoading').textContent = t('Not found.'); });
+    }
+    // Joining changes what the server returns (the READY roadbooks appear), so join/leave
+    // always re-fetch the whole page payload instead of patching the local state.
+    const load = () => RBApi('event_get', { slug })
+        .then((j) => { if (j.ok) render(j); else $('evLoading').textContent = t('Not found.'); })
+        .catch(() => { $('evLoading').textContent = t('Not found.'); });
+    window.addEventListener('rb-lang', () => { if (ev) $('evMeta').textContent = '@' + (ev.organizer || '') + (dates(ev) ? ' · ' + dates(ev) : ''); });
+    load();
 
     // Join with code (#123): shown when the organizer enabled joining. Signed-in users enter
     // the shared code; a participant sees their state and can leave.
     async function renderJoin(e) {
-        if (!e.can_join && !e.joined) return;
         const box = $('evJoin');
+        if (!e.can_join && !e.joined) { box.hidden = true; return; }
         box.hidden = false;
         const cfg = await RBApi('config');
         if (!cfg.user) {
@@ -51,7 +57,7 @@
             box.querySelector('#evLeave').onclick = async () => {
                 if (!(await RBConfirmDanger(t('Leave event') + ' “' + esc(e.title) + '”?', t('Leave event')))) return;
                 const x = await RBApi('event_leave', { slug: e.slug });
-                if (x.ok) { e.joined = false; renderJoin(e); } else toast(x.error || 'Could not save.');
+                if (x.ok) load(); else toast(x.error || 'Could not save.'); // the reserved roadbooks drop out
             };
             return;
         }
@@ -62,10 +68,10 @@
             const code = box.querySelector('#evCode').value.trim();
             if (!code) return;
             const x = await RBApi('event_join', { code, slug: e.slug });
-            if (x.ok) { toast('You are participating in this event.'); e.joined = true; renderJoin(e); }
+            if (x.ok) { toast('You are participating in this event.'); load(); } // the reserved roadbooks appear
             else toast(x.error || 'Wrong join code.');
         };
         box.querySelector('#evJoinBtn').onclick = join;
-        box.querySelector('#evCode').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') join(); });
+        box.querySelector('#evCode').addEventListener('keydown', (ev2) => { if (ev2.key === 'Enter') join(); });
     }
 })();

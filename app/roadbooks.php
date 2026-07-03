@@ -22,15 +22,65 @@ function rb_list(array $user): void {
     json_out(['ok' => true, 'roadbooks' => $st->fetchAll(), 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
 }
 
-function rb_get(array $user, array $d): void {
-    $id = (int)($d['id'] ?? 0);
+// The edit-rights gate shared by rb_get / rb_save / the lock actions: yours, or attached to
+// an event you organize (#123 co-editing). Returns the row (with the owner's username) or 404s.
+function rb_require_edit(array $user, int $id): array {
     $st = db()->prepare('SELECT r.user_id, r.filename, r.status, r.slug, r.title, u.username AS owner
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
-    $isOwner = $row && (int)$row['user_id'] === (int)$user['id'];
-    // yours — or attached to an event you organize (#123 co-editing)
-    if (!$row || (!$isOwner && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+    if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+    return $row;
+}
+
+/* ---- soft edit lock (#154): one editor at a time on a co-edited roadbook ---- */
+const RB_LOCK_TTL_S = 600; // a lock with no heartbeat for 10 minutes is stale — free to take
+
+// The current holder, or null when the lock is free or stale.
+function rb_lock_holder(int $rbId): ?array {
+    $st = db()->prepare('SELECT l.user_id, u.username, TIMESTAMPDIFF(SECOND, l.refreshed_at, NOW()) AS age_s
+        FROM roadbook_locks l JOIN users u ON u.id = l.user_id WHERE l.roadbook_id = ?');
+    $st->execute([$rbId]);
+    $row = $st->fetch();
+    return ($row && (int)$row['age_s'] < RB_LOCK_TTL_S) ? $row : null;
+}
+// Take (or keep) the lock — the caller has already passed the edit-rights gate.
+function rb_lock_acquire(int $rbId, int $uid): array {
+    $h = rb_lock_holder($rbId);
+    if ($h && (int)$h['user_id'] !== $uid) return ['mine' => false, 'by' => $h['username'], 'age_s' => (int)$h['age_s']];
+    db()->prepare('INSERT INTO roadbook_locks (roadbook_id, user_id) VALUES (?,?)
+        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), acquired_at = NOW(), refreshed_at = NOW()')->execute([$rbId, $uid]);
+    return ['mine' => true];
+}
+// Heartbeat from the Editor while a held roadbook stays open.
+function rb_lock_refresh(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    rb_require_edit($user, $id);
+    db()->prepare('UPDATE roadbook_locks SET refreshed_at = NOW() WHERE roadbook_id = ? AND user_id = ?')
+        ->execute([$id, (int)$user['id']]);
+    json_out(['ok' => true]);
+}
+// Leaving the Editor frees the lock right away (sent as a beacon on page hide).
+function rb_lock_release(array $user, array $d): void {
+    db()->prepare('DELETE FROM roadbook_locks WHERE roadbook_id = ? AND user_id = ?')
+        ->execute([(int)($d['id'] ?? 0), (int)$user['id']]);
+    json_out(['ok' => true]);
+}
+// Take over a lock someone else holds — the whole co-editing team of an event roadbook is
+// trusted with this (the other editor's unsaved work is lost, so the client confirms first).
+function rb_lock_force(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    rb_require_edit($user, $id);
+    db()->prepare('INSERT INTO roadbook_locks (roadbook_id, user_id) VALUES (?,?)
+        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), acquired_at = NOW(), refreshed_at = NOW()')->execute([$id, (int)$user['id']]);
+    log_activity((int)$user['id'], 'rb_lock_force', 'roadbook #' . $id);
+    json_out(['ok' => true]);
+}
+
+function rb_get(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $row = rb_require_edit($user, $id);
+    $isOwner = (int)$row['user_id'] === (int)$user['id'];
     // A recording draft that never got a route has no file yet (filename = 'pending'): hand back
     // an empty skeleton so the Editor can open it and draw the route (the first save writes the file).
     if ($row['filename'] === 'pending') {
@@ -40,9 +90,26 @@ function rb_get(array $user, array $d): void {
         if (!is_file($path)) fail('File missing.', 404);
         $rb = json_decode((string)file_get_contents($path), true);
     }
-    // is_owner/owner drive the Editor's co-editing UI: visibility + delete stay with the owner
+    // is_owner/owner drive the Editor's co-editing UI (visibility + delete stay with the owner).
+    // The soft edit lock (#154) is taken only when the caller ASKS for it (the Editor does;
+    // the Reader reads the same roadbooks without blocking anyone's editing).
+    $lock = !empty($d['lock']) ? rb_lock_acquire($id, (int)$user['id']) : null;
     json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'slug' => $row['slug'],
-        'is_owner' => $isOwner, 'owner' => $row['owner'], 'roadbook' => $rb]);
+        'is_owner' => $isOwner, 'owner' => $row['owner'], 'lock' => $lock, 'roadbook' => $rb]);
+}
+
+// The roadbooks you can edit through your events (#123): someone else's, attached to an event
+// you organize — each row names its event so the Editor landing can say where it comes from.
+function rb_coedit_list(array $user): void {
+    $st = db()->prepare('SELECT r.id, r.title, r.status, u.username AS owner, e.title AS event_title
+        FROM event_roadbooks er JOIN events e ON e.id = er.event_id
+        JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
+        WHERE r.user_id <> ? AND (e.organizer_id = ?
+            OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?))
+        ORDER BY e.title, er.sort, r.id');
+    $st->execute([(int)$user['id'], (int)$user['id'], (int)$user['id']]);
+    json_out(['ok' => true, 'roadbooks' => array_map(fn($r) => ['id' => (int)$r['id'], 'title' => $r['title'],
+        'status' => $r['status'], 'owner' => $r['owner'], 'event_title' => $r['event_title']], $st->fetchAll())]);
 }
 
 function rb_slug(string $title, int $excludeId): string {
@@ -79,20 +146,21 @@ function rb_save(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
 
     if ($id > 0) {
-        $st = db()->prepare('SELECT user_id, filename, slug, status FROM roadbooks WHERE id = ?');
-        $st->execute([$id]);
-        $row = $st->fetch();
         // yours — or attached to an event you organize (#123 co-editing); the file stays in
         // the OWNER's storage, the owner never changes, and only the owner sets the
         // publication status (a co-editor's save keeps it as it is)
-        if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+        $row = rb_require_edit($user, $id);
         if ((int)$row['user_id'] !== (int)$user['id']) $status = $row['status'];
+        // soft lock (#154): while someone else holds a fresh lock, their work wins
+        $h = rb_lock_holder($id);
+        if ($h && (int)$h['user_id'] !== (int)$user['id']) fail('This roadbook is being edited by someone else.', 409);
         $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, slug = ?, filename = ? WHERE id = ?')
             ->execute([$title, $dist, $nc, $status, $slug, $fn, $id]);
+        rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
         db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?)')
@@ -179,7 +247,8 @@ function ph_list(?array $user, array $d): void {
     $st->execute([$rbId]);
     $rb = $st->fetch();
     if (!$rb) fail('Not found.', 404);
-    if ($rb['status'] !== 'public' && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
+    // public, yours, or a roadbook you co-edit through an event (#123 — the photos are content)
+    if ($rb['status'] !== 'public' && (!$user || ((int)$user['id'] !== (int)$rb['user_id'] && !event_co_edits_roadbook((int)$user['id'], $rbId)))) fail('This roadbook is private.', 403);
     // the reserved cover ('_map.avif') is the listing thumbnail, not a gallery photo → never listed here
     $p = db()->prepare("SELECT id, filename, lat, lon FROM roadbook_photos WHERE roadbook_id = ? AND filename <> '_map.avif' ORDER BY sort, id");
     $p->execute([$rbId]);
@@ -219,7 +288,8 @@ function audio_list(?array $user, array $d): void {
     $st->execute([$rbId]);
     $rb = $st->fetch();
     if (!$rb) fail('Not found.', 404);
-    if ($rb['status'] !== 'public' && (!$user || (int)$user['id'] !== (int)$rb['user_id'])) fail('This roadbook is private.', 403);
+    // public, yours, or a roadbook you co-edit through an event (#123 — the voice notes are content)
+    if ($rb['status'] !== 'public' && (!$user || ((int)$user['id'] !== (int)$rb['user_id'] && !event_co_edits_roadbook((int)$user['id'], $rbId)))) fail('This roadbook is private.', 403);
     $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
     $a->execute([$rbId]);
     $audio = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/audio/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $a->fetchAll());

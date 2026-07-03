@@ -71,6 +71,10 @@ try {
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
+        case 'rb_coedit_list': rb_coedit_list(require_user()); break;
+        case 'rb_lock_refresh': rb_lock_refresh(require_user(), $d); break;
+        case 'rb_lock_release': rb_lock_release(require_user(), $d); break;
+        case 'rb_lock_force':   rb_lock_force(require_user(), $d); break;
         case 'rb_get':    rb_get(require_user(), $d); break;
         case 'rb_draft':  rb_draft(require_user(), $d); break;
         case 'rb_save':   rb_save(require_user(), $d); break;

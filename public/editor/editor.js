@@ -177,7 +177,7 @@
     // Floppy save button: clickable only when there's something to save (a new roadbook, or
     // pending edits) — disabled once it's saved to the profile with no further changes.
     function updateSaveBtn() {
-        const dis = !!(currentRbId && !dirty);
+        const dis = !!(currentRbId && !dirty) || !rbLock.mine; // never save over someone else's lock (#154)
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0 && rbIsOwner); // delete only exists once it's saved, and only for the owner
     }
@@ -964,6 +964,7 @@
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft';
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
+    let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
@@ -978,6 +979,28 @@
             $(id).setAttribute('aria-pressed', String(on));
         });
     }
+    /* ---------- soft edit lock (#154): one editor at a time on a co-edited roadbook ---------- */
+    // The banner + disabled saves when someone else holds the lock; a heartbeat keeps ours
+    // fresh while the page is open, and leaving releases it (stale ones expire server-side).
+    function setLock(lock) {
+        rbLock = lock && lock.mine === false ? lock : { mine: true };
+        $('lockBanner').hidden = rbLock.mine;
+        if (!rbLock.mine) $('lockBannerText').textContent = '@' + rbLock.by + ' ' + t('is editing this roadbook — read-only.');
+        updateSaveBtn();
+    }
+    $('lockForce').onclick = async () => {
+        if (!(await RBConfirmDanger(t('Force unlock? The other editor may lose unsaved changes.'), t('Force unlock')))) return;
+        const x = await RBApi('rb_lock_force', { id: currentRbId });
+        if (x.ok) location.reload(); // reload picks up their last saved state — and the lock is now ours
+        else toast(x.error || 'Could not save.');
+    };
+    setInterval(() => { if (currentRbId > 0 && rbLock.mine && rb) RBApi('rb_lock_refresh', { id: currentRbId }); }, 240000);
+    window.addEventListener('pagehide', () => {
+        if (currentRbId > 0 && rbLock.mine && navigator.sendBeacon) {
+            navigator.sendBeacon('../api/index.php', new Blob([JSON.stringify({ action: 'rb_lock_release', id: currentRbId })], { type: 'application/json' }));
+        }
+    });
+
     // The visibility segments and the delete section only exist for the OWNER: a co-editor's
     // save keeps the owner's publication status, so showing dead controls would lie.
     function setOwnership(isOwner, owner) {
@@ -988,7 +1011,7 @@
         updateSaveBtn();
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); setOwnership(true, ''); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await RBApi('rb_save', { id: currentRbId, status, roadbook: rb });
@@ -1854,18 +1877,26 @@
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); currentRbId = 0; setStatus('draft'); setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;
         if (id && meUser) {
-            const r = await RBApi('rb_get', { id });
+            const r = await RBApi('rb_get', { id, lock: 1 }); // editing intent: take the soft lock (#154)
             if (r.ok && r.roadbook) {
                 // A roadbook saved with no route yet would open on an empty map: warn, and on
                 // Continue load it straight into draw mode (Cancel falls through to the list).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
-                    currentRbId = id; setStatus(r.status); setOwnership(!!r.is_owner, r.owner); setRoadbook(r.roadbook);
+                    currentRbId = id; setStatus(r.status); setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
             }
         }
         if (!rb && meUser) {
             const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; // landing → list the user's saved roadbooks
+            // …plus the roadbooks you can edit through your events (#123), each named after its event
+            const ce = await RBApi('rb_coedit_list');
+            const coedit = (ce.ok && ce.roadbooks) || [];
+            $('coeditSection').hidden = !coedit.length;
+            $('coeditList').innerHTML = coedit.map((r) => `<div class="roadbook-row">
+                <div class="meta"><b>${esc(r.title)}</b><small>@${esc(r.owner)} · <i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(r.event_title)}</small></div>
+                <a class="btn btn-ghost" href="?rb=${r.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
+            </div>`).join('');
             centerOnDefault(); // empty start (e.g. "Draw on the map"): centre on the user's saved default location
 
         }

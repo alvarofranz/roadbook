@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.03-2">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
+        /* soft edit lock (#154): the read-only strip above the actions */
+        .lock-banner { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: rgba(232, 176, 89, .12); border: 1px solid var(--sand); color: var(--sand); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .6rem; font-size: .85rem; }
+        .lock-banner .btn { width: auto; margin-left: auto; }
         .ed-row.between { justify-content: space-between; }
         #loadFrom .icon-category { margin-top: 0; }
         .icon-category.flush { margin: 0; }
@@ -259,6 +262,11 @@
                 <div class="icon-category" data-i18n="Your roadbooks">Your roadbooks</div>
                 <div id="myRbList" class="rb-grid"></div>
             </div>
+            <!-- roadbooks you can edit through your events (#123): someone else's, with the event named -->
+            <div id="coeditSection" hidden>
+                <div class="icon-category" data-i18n="From your events">From your events</div>
+                <div id="coeditList" class="rb-grid"></div>
+            </div>
         </div>
         <div id="recBar" class="record-bar" hidden>
             <div class="rec-status"><span class="rec-dot"></span> <span id="recStats" class="muted small">Recording…</span></div>
@@ -305,6 +313,11 @@
             </div>
         </div>
         <div id="rbPanel" hidden>
+            <!-- soft edit lock (#154): someone else is editing → read-only + force unlock -->
+            <div id="lockBanner" class="lock-banner" hidden>
+                <i class="fa-solid fa-lock"></i> <span id="lockBannerText"></span>
+                <button class="btn btn-ghost" id="lockForce" type="button"><i class="fa-solid fa-unlock"></i> <span data-i18n="Force unlock">Force unlock</span></button>
+            </div>
             <div class="rb-actions">
                 <div class="btn-group">
                     <button class="btn btn-ghost" id="openConfig" title="Settings" data-i18n-title="Settings" aria-label="Settings" data-i18n-aria="Settings"><i class="fa-solid fa-sliders"></i></button>
