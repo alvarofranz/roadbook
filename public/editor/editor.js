@@ -1043,8 +1043,8 @@
     }
     $('saveAccount').onclick = saveRoadbook;
     $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
-    // Close the editor: unsaved changes get a save prompt first, then it returns to the start screen.
-    async function closeEditor() {
+    // Leave the editor: unsaved changes get a save prompt first, then navigate to the home page.
+    async function leaveEditor() {
         if (rb && dirty) {
             const choice = await new Promise((resolve) => {
                 const d = RBModal(`<h3>${t('Unsaved changes')}</h3>
@@ -1064,7 +1064,7 @@
         clearDraft();
         location.href = '../'; // close → back to the home page
     }
-    $('closeEditor').onclick = closeEditor;
+    $('closeEditor').onclick = leaveEditor;
     // "Save as": store the current content as a NEW roadbook (the original is left
     // untouched). The copy starts private and gets a "… (copy)" title; the editor
     // then keeps editing the copy. Photos stay with the original (they live server-side).
