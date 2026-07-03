@@ -334,23 +334,47 @@
         d.q('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } d.close(); };
     };
 
-    /* ---------- finish: download the GPX, or convert into a roadbook in the Editor ---------- */
+    /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
+    // Signed in, the primary action SAVES the recording to the profile in one tap (#143): it
+    // builds the roadbook from the track + waypoints and writes it into the draft that already
+    // holds the geotagged photos and voice notes (rb_save with id=draftId), so nothing has to go
+    // through the Editor. You stay on the Recorder. Export GPX is a local file (no photos/audio);
+    // "Open in the editor" is there to refine before/after saving.
     function finishModal(pts, name) {
         const km = (recordedM / 1000).toFixed(2);
+        const nm = name || recName();
+        const signedIn = !!meUser;
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷</p>
             <div class="btnrow center wrap">
+                ${signedIn
+                    ? `<button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to server')}</button>`
+                    : `<button class="btn btn-primary" id="rfLogin"><i class="fa-solid fa-right-to-bracket"></i> ${t('Sign in to save')}</button>`}
+                <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Open in the editor')}</button>
                 <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-file-arrow-down"></i> ${t('Export GPX')}</button>
-                <button class="btn btn-primary" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <p class="muted small">${t('GPX is a local file — photos and audio are not included.')}</p>
+            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('GPX is a local file — photos and audio are not included.')}</p>
             <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
-        d.q('#rfDl').onclick = () => {
-            const nm = name || ('RDBK_' + pad2(new Date().getHours()));
-            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
-            RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
+        if (signedIn) d.q('#rfSave').onclick = async () => {
+            let roadbook;
+            try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts }); }
+            catch (e) { return toast('Track too short to save.'); }
+            const btn = d.q('#rfSave'); btn.disabled = true;
+            // reuse the draft (id) so the already-uploaded photos/audio stay attached
+            const r = await RBApi('rb_save', { id: draftId || 0, status: 'draft', roadbook });
+            btn.disabled = false;
+            if (!r.ok) return toast(r.error || 'Could not save.');
             d.close();
+            // stay on the Recorder — a small confirmation with a link to refine in the Editor
+            const c = RBModal(`<h3><i class="fa-solid fa-circle-check icon-accent"></i> ${t('Saved to your profile.')}</h3>
+                <p class="muted small">${RBesc(roadbook.meta.title)} · ${roadbook.notes.length} ${t('notes')}</p>
+                <div class="btnrow center wrap">
+                    <a class="btn btn-primary" href="../editor/?rb=${r.id}"><i class="fa-solid fa-pen-ruler"></i> ${t('Edit')}</a>
+                    <button class="btn btn-ghost" id="scClose">${t('Close')}</button>
+                </div>`, 'slim center');
+            c.q('#scClose').onclick = c.close;
         };
+        else d.q('#rfLogin').onclick = () => RBNeedAuth('Sign in to save this roadbook to your profile.');
         d.q('#rfEd').onclick = () => {
             try {
                 sessionStorage.setItem('rb_trip_track', JSON.stringify(pts));
@@ -359,6 +383,11 @@
                 if (draftId) sessionStorage.setItem('rb_trip_draft', String(draftId));
             } catch (e) {}
             location.href = '../editor/?trip=1';
+        };
+        d.q('#rfDl').onclick = () => {
+            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
+            RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
+            d.close();
         };
         d.q('#rfClose').onclick = d.close;
     }
