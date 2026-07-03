@@ -12,6 +12,15 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.03-3">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; transition: background .35s ease; }
+        /* "How it works" link centred at the foot of the dashboard */
+        .tm-help { display: flex; width: fit-content; margin: 1.2rem auto 0; }
+        /* status row (clock · battery · GPS) as wide as the dashboard boxes below it */
+        .status-bar { max-width: 560px; margin-inline: auto; }
+        /* Fullscreen toggle sits next to "End the trip" */
+        .tm-controls #tmFs { grid-column: 2; grid-row: 2; justify-self: start; width: auto; flex-direction: row; }
+        /* Fullscreen mode: hide the global header + footer for a distraction-free dashboard */
+        body.tm-fs header.topbar, body.tm-fs footer.foot { display: none; }
+        body.tm-fs .status-bar { top: 0; }
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         /* odometer rows: value + Reset + ±10 m correctors stacked, all in one line */
         .readout-row { display: flex; align-items: center; gap: .6rem; text-align: left; }
@@ -95,8 +104,10 @@
             <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
             <button class="btn btn-ghost tm-marknote" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="mark note">mark note</span></button>
             <button class="btn btn-danger" id="tmExit"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="End the trip">End the trip</span></button>
+            <button class="btn btn-ghost" id="tmFs" title="Fullscreen" data-i18n-title="Fullscreen" aria-label="Fullscreen" data-i18n-aria="Fullscreen"><i class="fa-solid fa-expand"></i> <span data-i18n="Fullscreen">Fullscreen</span></button>
         </div>
     </div>
+    <a class="tool-help tm-help" href="../features/tripmaster/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
 </main>
 
 <div id="toast" class="toast" hidden></div>

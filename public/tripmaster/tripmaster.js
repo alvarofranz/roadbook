@@ -105,6 +105,23 @@
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
     $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'), t('End the trip'))) { clearSession(); location.reload(); } };
 
+    // Fullscreen toggle: hide the global header + footer for a distraction-free dashboard, and use
+    // the browser Fullscreen API where available. Leaving browser fullscreen (Esc) restores both.
+    const tmFs = $('tmFs');
+    const setFullscreen = (on) => {
+        document.body.classList.toggle('tm-fs', on);
+        tmFs.querySelector('i').className = on ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+    };
+    tmFs.onclick = () => {
+        const on = !document.body.classList.contains('tm-fs');
+        setFullscreen(on);
+        try {
+            if (on) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); }
+            else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        } catch (e) {}
+    };
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setFullscreen(false); });
+
     // Reset the partial trip. Pointer: hold 5 s (anti-accidental, browser + PWA);
     // a quick tap-and-release explains the gesture instead of doing nothing.
     // Keyboard (Enter/Space): confirm via a dialog, since a hold gesture is

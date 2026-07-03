@@ -42,13 +42,20 @@
         // The native app is a field companion: Reader · Tripmaster · Recorder only (Editor and
         // Ranking stay web-only). The website keeps the full set.
         const tools = isNativeApp()
-            ? [['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Recorder']]
-            : [['recorder', 'Recorder'], ['editor', 'Editor'], ['reader', 'Reader'], ['tripmaster', 'Tripmaster'], ['ranking', 'Ranking'], ['roadbooks', 'Roadbooks'], ['events', '<span data-i18n="Events">Events</span>']];
-        // on a tool page, a "How it works" link to that tool's /features/ description page, shown right after that tool's nav link
-        const curTool = rel.split('/')[0];
-        const toolHelp = ['recorder', 'editor', 'reader', 'tripmaster', 'ranking'].includes(curTool)
-            ? `<a class="tool-help" href="${ROOT}features/${curTool}/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>` : '';
-        const navLinks = tools.map(([p, label]) => `<a class="nav-link${active(p)}" href="${ROOT}${p}/">${label}</a>${p === curTool ? toolHelp : ''}`).join('');
+            ? [['reader', 'Roadbook Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Track Recorder']]
+            : [['recorder', 'Track Recorder'], ['editor', 'Roadbook Editor'], ['reader', 'Roadbook Reader'], ['tripmaster', 'Tripmaster'], ['roadbooks', 'Roadbooks'], ['events', '<span data-i18n="Events">Events</span>'], ['ranking', 'Ranking']];
+        // Each tool's "How it works" link lives on the tool page itself (beside the title, or at
+        // the foot of the Tripmaster dashboard) — never in the top menu.
+        // Long tool names stack on two lines in the desktop bar: split a plain label on its first
+        // space into two <span class="nl-w">s (single-word labels stay one line). A pre-built HTML
+        // label (the translated Events span) passes through untouched.
+        const twoLine = (label) => {
+            if (label.indexOf('<') !== -1) return label;
+            const sp = label.indexOf(' ');
+            return sp === -1 ? `<span class="nl-w">${label}</span>`
+                : `<span class="nl-w">${label.slice(0, sp)}</span><span class="nl-w">${label.slice(sp + 1)}</span>`;
+        };
+        const navLinks = tools.map(([p, label]) => `<a class="nav-link nav-tool${active(p)}" href="${ROOT}${p}/">${twoLine(label)}</a>`).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';

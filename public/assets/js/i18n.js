@@ -13,7 +13,7 @@
             'flow.kicker': 'Features', 'flow.title': 'Everything you need',
             'flow.s1': 'Record a route', 'flow.s2': 'Build a roadbook', 'flow.s3': 'Use it with friends', 'flow.s4': 'Run a club event',
             'feat.1.t': 'Roadbook Editor', 'feat.1.d': 'Build a roadbook from a GPX, Design each note with rally standards.',
-            'feat.2.t': 'Route Recorder', 'feat.2.d': 'Record live GPX, dropping waypoints with voice recognition and photos.',
+            'feat.2.t': 'Track Recorder', 'feat.2.d': 'Record live GPX, dropping waypoints with voice recognition and photos.',
             'feat.3.t': 'Roadbook design', 'feat.3.d': 'Design each note: junction vectors, resizable icons and your own symbols.',
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Navigate with odometer, bearing, a live map and the CAP direction bar.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'A precise GPS odometer with no roadbook — partial and total distance.',

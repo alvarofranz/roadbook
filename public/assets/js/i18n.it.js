@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
             'About': 'Chi siamo',
             'Categories': 'Categorie', 'Add category': 'Aggiungi categoria', 'Category name': 'Nome categoria',
-            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)',
+            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)', 'Fullscreen': 'Schermo intero',
             'Terms of Use': 'Condizioni d’uso',
             'reg.acceptTerms': 'Ho letto e accetto le <a href="/terms/" target="_blank" rel="noopener">Condizioni d’uso</a>',
             'You must accept the Terms of Use to register.': 'Devi accettare le Condizioni d’uso per registrarti.',
@@ -12,7 +12,7 @@
             'flow.kicker': 'Funzioni', 'flow.title': 'Tutto ciò che serve',
             'flow.s1': 'Registra il percorso', 'flow.s2': 'Prepara un roadbook', 'flow.s3': 'Usalo con gli amici', 'flow.s4': 'Organizza un evento ',
             'feat.1.t': 'Editor roadbook', 'feat.1.d': 'Crea un roadbook da un GPX e crea le note con gli standard dei Rally.',
-            'feat.2.t': 'Registratore percorsi', 'feat.2.d': 'Registra traccia GPX, aggiungendo waypoint con riconoscimento vocale e foto.',
+            'feat.2.t': 'Track Recorder', 'feat.2.d': 'Registra traccia GPX, aggiungendo waypoint con riconoscimento vocale e foto.',
             'feat.3.t': 'Disegno del roadbook', 'feat.3.d': 'Disegna ogni nota: vettori di giunzione, icone ridimensionabili e i tuoi simboli.',
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Naviga con odometro, rotta, mappa dal vivo e la barra di direzione CAP.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odometro GPS preciso senza roadbook — distanza parziale e totale.',
@@ -363,8 +363,8 @@
             'In use; remove it from the notes first.': 'In uso; rimuovilo prima dalle note.',
             'Icon(s) uploaded — tap them to place.': 'Icona/e caricate — toccale per posizionarle.',
             // Feature pages (/features/<tool>/) — tool descriptions + Tips & tricks
-            'fp.tool.recorder': 'Registratore percorsi',
-            'fp.tool.editor': 'Editor roadbook',
+            'fp.tool.recorder': 'Track Recorder',
+            'fp.tool.editor': 'Roadbook Editor',
             'fp.recorder.lead': 'Registra il tuo percorso dal vivo col GPS e trasformalo in un roadbook. Campionamento attento alla precisione, pausa/ripresa, registrazione a prova di crash, waypoint vocali e foto geolocalizzate — poi salvalo nel tuo profilo per modificarlo nell’Editor.',
             'fp.recorder.open': 'Apri il Registratore',
             'fp.recorder.f1t': 'Registrazione GPS dal vivo',

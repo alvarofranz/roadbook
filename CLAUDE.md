@@ -340,7 +340,7 @@ integer metres.** Spec page: `public/standard/index.html`.
 - Keep the data model in clean English (no camelCase beyond unavoidable; metres, not km).
 - **Icon consistency — one canonical FontAwesome icon per tool, everywhere.** A tool must use
   the SAME icon across the home workflow step, its Features card, its `/features/<tool>/` page
-  and the native launcher — never a different glyph for the same tool. Canonical set: **Route
+  and the native launcher — never a different glyph for the same tool. Canonical set: **Track
   Recorder** `fa-circle-dot` · **Roadbook Editor** `fa-pen-ruler` · **Roadbook Reader**
   `fa-compass` · **Tripmaster** `fa-gauge-high` · **Event classification (Ranking)**
   `fa-ranking-star`. The two-level-deep `/features/<tool>/` pages use `../../assets/…`.

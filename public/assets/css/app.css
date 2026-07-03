@@ -68,6 +68,9 @@ img { max-width: 100%; display: block; }
 .nav-link { background: none; border: 0; padding: .2rem 0; color: var(--muted); font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer; text-decoration: none; transition: color .15s; }
 .nav-link:hover { color: var(--text); text-decoration: none; }
 .nav-link.active { color: var(--sand); }
+/* tool links show their long name on two centred lines (one word per line); single-word names stay one line */
+.nav-tool { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.08; text-align: center; }
+.nav-tool .nl-w { display: block; }
 .navtoggle { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; background: none; color: var(--text); font-size: 1.25rem; cursor: pointer; }
 @media (max-width: 760px) {
     .navtoggle { display: inline-flex; position: relative; z-index: 90; }
@@ -78,6 +81,8 @@ img { max-width: 100%; display: block; }
        stays reachable on short screens; centered look kept via the padding. */
     .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.8rem; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(56px + 1.8rem) 1rem calc(1.8rem + env(safe-area-inset-bottom)); }
     .topnav.open .nav-link { font-size: 1.55rem; font-weight: 700; }
+    /* in the full-viewport menu the two-line split collapses back to one line */
+    .topnav.open .nav-tool { flex-direction: row; gap: .35rem; }
     /* the account submenu flows inline inside the scrollable menu, not as an off-screen dropdown */
     .topnav.open .account-control { flex-direction: column; align-items: center; gap: 1rem; }
     .topnav.open .account-menu { position: static; margin: 0; box-shadow: none; }
@@ -163,6 +168,9 @@ section.block { padding: 2.4rem 0; }
 .center-card { max-width: 480px; }
 .center-card .big { font-size: 3rem; color: var(--sand); }
 .center-card h1 { margin: .6rem 0 .3rem; }
+/* tool-page title + its "How it works" link, side by side (centred in the idle card, left-aligned on the editor landing) */
+.tool-titlebar { display: inline-flex; align-items: center; gap: .9rem; flex-wrap: wrap; margin: .6rem 0 .3rem; }
+.tool-titlebar h1 { margin: 0; }
 
 /* ---------- tool pages ---------- */
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
