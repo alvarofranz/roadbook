@@ -1,6 +1,6 @@
 {
   "generated": true,
-  "count": 119,
+  "count": 123,
   "categories": {
     "Warning signs": [
       "W01_curve_right.svg",
@@ -126,7 +126,11 @@
       "P14_estanque.png",
       "p15_capannone_o_allevamento.png",
       "p16_pannelli_solari.png",
-      "p17_campo_da_futboll.png"
+      "p17_campo_da_futboll.png",
+      "p18_chiesa.svg",
+      "p19_monumento.svg",
+      "p20_traliccio.svg",
+      "p21_cappelletta.svg"
     ]
   }
 }
