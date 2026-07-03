@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).fr = {
             'About': 'À propos',
             'Categories': 'Catégories', 'Add category': 'Ajouter une catégorie', 'Category name': 'Nom de la catégorie',
-            'No race (free)': 'Pas de compétition (libre)', 'Roadbook-suite rules': 'Règles Roadbook-suite', 'FIA rules (unavailable)': 'Règles FIA (non disponible)', 'Fullscreen': 'Plein écran', 'Select date': 'Choisir une date',
+            'No race (free)': 'Pas de compétition (libre)', 'Roadbook-suite rules': 'Règles Roadbook-suite', 'FIA rules (unavailable)': 'Règles FIA (non disponible)', 'Fullscreen': 'Plein écran', 'Select date': 'Choisir une date', 'Unsaved changes': 'Modifications non enregistrées', 'Save your changes before closing?': 'Enregistrer les modifications avant de fermer ?', 'Save & close': 'Enregistrer et fermer', 'Close without saving': 'Fermer sans enregistrer', 'Change logo': 'Changer le logo',
             'Terms of Use': 'Conditions d’utilisation',
             'reg.acceptTerms': 'J’ai lu et j’accepte les <a href="/terms/" target="_blank" rel="noopener">Conditions d’utilisation</a>',
             'You must accept the Terms of Use to register.': 'Vous devez accepter les Conditions d’utilisation pour vous inscrire.',
@@ -247,7 +247,7 @@
             'Total': 'Total', 'Partial': 'Partiel', 'Reset': 'Réinitialiser', 'Hold to reset.': 'Maintenir pour réinitialiser.', 'Pause': 'Pause', 'Press to set Alert': 'Appuyer pour définir l\'alerte', 'mark note': 'marquer la note', 'Max km/h': 'Max km/h', 'Waypoints': 'Waypoints',
             'Record GPX': 'Enregistrer GPX', 'Stop recording': 'Arrêter l\'enregistrement', 'Speed alert': 'Alerte vitesse', 'Speed to watch (km/h · 0 = off)': 'Vitesse à surveiller (km/h · 0 = off)', 'Colours': 'Couleurs',
             'green': 'vert', 'orange': 'orange', 'red': 'rouge', 'Recorded track': 'Trace enregistrée', 'points': 'points', 'Download GPX': 'Télécharger GPX', 'Convert into roadbook': 'Convertir en roadbook',
-            'End the trip': 'Terminer le voyage', 'End the trip and reset everything?': 'Terminer le voyage et tout remettre à zéro ?', 'Trip reset.': 'Voyage réinitialisé.', 'Recording GPX track.': 'Enregistrement de la trace GPX.', 'Could not load the recorded trip.': 'Impossible de charger le voyage enregistré.',
+            'End & close': 'Terminer et fermer', 'End the trip and reset everything?': 'Terminer le voyage et tout remettre à zéro ?', 'Trip reset.': 'Voyage réinitialisé.', 'Recording GPX track.': 'Enregistrement de la trace GPX.', 'Could not load the recorded trip.': 'Impossible de charger le voyage enregistré.',
             'Sample every (seconds)': 'Intervalle (secondes)', 'File name': 'Nom du fichier', 'Choose where to save…': 'Choisir où enregistrer…', 'Saved to file': 'Enregistré dans le fichier', 'Track too short.': 'Trace trop courte.',
             'Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).': 'Optionnel : choisissez où enregistrer le fichier — la trace est écrite sur le disque en direct (résistant aux plantages).',
             'Auto-saved while recording, recovered if the app closes.': 'Sauvegarde automatique en cours d\'enregistrement ; récupéré si l\'app se ferme.',

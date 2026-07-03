@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).es = {
             'About': 'Acerca de',
             'Categories': 'Categorías', 'Add category': 'Añadir categoría', 'Category name': 'Nombre de la categoría',
-            'No race (free)': 'Sin competición (libre)', 'Roadbook-suite rules': 'Reglas Roadbook-suite', 'FIA rules (unavailable)': 'Reglas FIA (no disponible)', 'Fullscreen': 'Pantalla completa', 'Select date': 'Seleccionar fecha',
+            'No race (free)': 'Sin competición (libre)', 'Roadbook-suite rules': 'Reglas Roadbook-suite', 'FIA rules (unavailable)': 'Reglas FIA (no disponible)', 'Fullscreen': 'Pantalla completa', 'Select date': 'Seleccionar fecha', 'Unsaved changes': 'Cambios sin guardar', 'Save your changes before closing?': '¿Guardar los cambios antes de cerrar?', 'Save & close': 'Guardar y cerrar', 'Close without saving': 'Cerrar sin guardar', 'Change logo': 'Cambiar logo',
             'Terms of Use': 'Términos de uso',
             'reg.acceptTerms': 'He leído y acepto los <a href="/terms/" target="_blank" rel="noopener">Términos de uso</a>',
             'You must accept the Terms of Use to register.': 'Debes aceptar los Términos de uso para registrarte.',
@@ -286,7 +286,7 @@
             'Total': 'Total', 'Partial': 'Parcial', 'Reset': 'Reiniciar', 'Hold to reset.': 'Mantén pulsado para poner a cero.', 'Pause': 'Pausa', 'Press to set Alert': 'Toca para fijar la alerta', 'mark note': 'marca nota', 'Max km/h': 'Máx km/h', 'Waypoints': 'Waypoints',
             'Record GPX': 'Grabar GPX', 'Stop recording': 'Detener grabación', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
             'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook',
-            'End the trip': 'Terminar el viaje', 'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
+            'End & close': 'Terminar y cerrar', 'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
             'Sample every (seconds)': 'Cada cuántos segundos', 'File name': 'Nombre del archivo', 'Choose where to save…': 'Elegir dónde guardar…', 'Saved to file': 'Guardado en el archivo', 'Track too short.': 'Traza demasiado corta.',
             'Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).': 'Opcional: elige dónde guardar el archivo — la traza se escribe en disco en vivo mientras grabas (a prueba de crash).',
             'Auto-saved while recording, recovered if the app closes.': 'Se guarda solo al grabar; se recupera si la app se cierra.',
