@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).de = {
             'About': 'Über uns',
             'Categories': 'Kategorien', 'Add category': 'Kategorie hinzufügen', 'Category name': 'Kategoriename',
-            'No race (free)': 'Kein Wettbewerb (frei)', 'Roadbook-suite rules': 'Roadbook-suite-Regeln', 'FIA rules (unavailable)': 'FIA-Regeln (nicht verfügbar)', 'Fullscreen': 'Vollbild',
+            'No race (free)': 'Kein Wettbewerb (frei)', 'Roadbook-suite rules': 'Roadbook-suite-Regeln', 'FIA rules (unavailable)': 'FIA-Regeln (nicht verfügbar)', 'Fullscreen': 'Vollbild', 'Select date': 'Datum wählen',
             'Terms of Use': 'Nutzungsbedingungen',
             'reg.acceptTerms': 'Ich habe die <a href="/terms/" target="_blank" rel="noopener">Nutzungsbedingungen</a> gelesen und akzeptiere sie',
             'You must accept the Terms of Use to register.': 'Du musst die Nutzungsbedingungen akzeptieren, um dich zu registrieren.',

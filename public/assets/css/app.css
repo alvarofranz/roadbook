@@ -402,6 +402,13 @@ section.block { padding: 2.4rem 0; }
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .field:focus-visible, .modal-in:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
+/* locale-aware date field (RBDateField): the localized date shows in a .field box while a
+   transparent native <input type="date"> overlays it for the picker + keyboard + ISO value */
+.rb-datefield { position: relative; display: block; }
+.rb-date-display { margin: 0; cursor: pointer; white-space: nowrap; }
+.rb-date-display.rb-date-empty { color: var(--muted); }
+.rb-datefield-native { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.rb-datefield:focus-within .rb-date-display { border-color: var(--sand); outline: 2px solid var(--sand); outline-offset: 1px; }
 /* Record-GPX dialog: the interval field sits inline with its label and stays narrow. */
 .gx-rate-row { display: flex; align-items: center; gap: .6rem; margin: .3rem 0 .6rem; }
 .gx-rate-row label { margin: 0; }

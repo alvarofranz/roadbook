@@ -303,6 +303,44 @@
         if (!m) return iso || '';
         return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString(window.RBi18n ? RBi18n.current() : undefined);
     };
+    // Locale-aware date field (issue #152): shows/enters the date in the ACTIVE UI language while
+    // the real <input type="date"> — kept in the DOM with its id and ISO value — holds the value
+    // and drives the native picker. The native input sits transparent on top (a click opens the
+    // picker, the keyboard still operates it) and the localized text shows through behind it.
+    // Every <input type="date"> is enhanced automatically, so callers keep using input.value (ISO).
+    window.RBDateField = (input) => {
+        if (!input || input.dataset.rbdf) return;
+        input.dataset.rbdf = '1';
+        const wrap = document.createElement('span');
+        wrap.className = 'rb-datefield';
+        input.parentNode.insertBefore(wrap, input);
+        const disp = document.createElement('span');
+        disp.className = 'field rb-date-display';
+        disp.setAttribute('aria-hidden', 'true');
+        input.classList.add('field', 'rb-datefield-native');
+        wrap.appendChild(disp);
+        wrap.appendChild(input);
+        const refresh = () => {
+            const iso = input.value;
+            disp.textContent = iso ? RBFmtDate(iso) : RBt('Select date');
+            disp.classList.toggle('rb-date-empty', !iso);
+        };
+        input.addEventListener('input', refresh);
+        input.addEventListener('change', refresh);
+        input.addEventListener('click', () => { try { if (input.showPicker) input.showPicker(); } catch (e) {} });
+        window.addEventListener('rb-lang', refresh);
+        // a form loading an existing record sets input.value = iso programmatically → refresh the text
+        const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+        Object.defineProperty(input, 'value', {
+            configurable: true,
+            get() { return desc.get.call(this); },
+            set(v) { desc.set.call(this, v); refresh(); },
+        });
+        refresh();
+    };
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('input[type="date"]').forEach((inp) => { try { RBDateField(inp); } catch (e) {} });
+    });
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
@@ -311,7 +349,6 @@
     const RB_STATUS_LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
     window.RBRoadbookList = async (container) => {
         if (!container) return 0;
-        const fmtDate = (s) => { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleDateString(); };
         const r = await RBApi('rb_list');
         const all = (r.ok && r.roadbooks) || [];
         if (!all.length) { container.innerHTML = `<p class="muted small">${RBesc(RBt('No roadbooks yet. Create one in the Editor.'))}</p>`; return 0; }
@@ -324,7 +361,7 @@
             `<div class="rb-rows"></div><div class="rb-pager"></div>`;
         const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
-            <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${fmtDate(rb.updated_at)}</small></div>
+            <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${RBFmtDate(rb.updated_at)}</small></div>
             <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RB_STATUS_LABEL[s]))}</option>`).join('')}</select>
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>

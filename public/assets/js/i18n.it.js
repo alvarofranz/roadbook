@@ -2,7 +2,7 @@
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
             'About': 'Chi siamo',
             'Categories': 'Categorie', 'Add category': 'Aggiungi categoria', 'Category name': 'Nome categoria',
-            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)', 'Fullscreen': 'Schermo intero',
+            'No race (free)': 'Nessuna gara (libera)', 'Roadbook-suite rules': 'Regole Roadbook-suite', 'FIA rules (unavailable)': 'Regole FIA (non disponibile)', 'Fullscreen': 'Schermo intero', 'Select date': 'Seleziona data',
             'Terms of Use': 'Condizioni d’uso',
             'reg.acceptTerms': 'Ho letto e accetto le <a href="/terms/" target="_blank" rel="noopener">Condizioni d’uso</a>',
             'You must accept the Terms of Use to register.': 'Devi accettare le Condizioni d’uso per registrarti.',
