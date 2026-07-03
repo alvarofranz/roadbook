@@ -1062,7 +1062,7 @@
             if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
         }
         clearDraft();
-        location.href = location.pathname; // back to the fresh editor start screen
+        location.href = '../'; // close → back to the home page
     }
     $('closeEditor').onclick = closeEditor;
     // "Save as": store the current content as a NEW roadbook (the original is left
