@@ -524,19 +524,27 @@
             else toast('The GPX has no usable track or waypoints.');
         } catch (err) { toast('Error: ' + err.message); }
     };
-    // Merge a waypoint-only GPX onto the current route: each waypoint that falls within SNAP_M of
-    // the existing track line is inserted ON the line (at its projection) as a note; waypoints
-    // farther than that are skipped (they don't belong to this route). #131
+    // Merge a waypoint-only GPX onto the current route (#131). When both the waypoint and the
+    // route carry timestamps (same recording), place it at the track point nearest IN TIME — the
+    // reliable anchor on a self-crossing route (#158). Otherwise fall back to a geometry snap:
+    // a waypoint within SNAP_M of the line is inserted at its projection; farther ones are skipped.
     function addWaypointsFromGpx(wpts) {
         const SNAP_M = 10;
+        const routeTimed = rb.track.some((p) => p.t != null);
         let added = 0, skipped = 0;
         wpts.forEach((wp) => {
-            const hit = RB.nearestOnTrack(rb.track, wp);
-            if (!hit || hit.dist > SNAP_M) { skipped++; return; }
-            const at = hit.i + 1;
-            rb.track.splice(at, 0, { lat: hit.lat, lon: hit.lon }); // the snapped point ON the line
-            rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
-            if (cutFromIdx >= at) cutFromIdx++;
+            let at;
+            if (wp.t != null && routeTimed) {
+                at = RB.nearestIdxByTime(rb.track, wp.t); // anchor by time ONTO an existing track point (no splice)
+                if (rb.notes.some((n) => n.idx === at)) { skipped++; return; } // a note already sits there
+            } else {
+                const hit = RB.nearestOnTrack(rb.track, wp);
+                if (!hit || hit.dist > SNAP_M) { skipped++; return; }
+                at = hit.i + 1;
+                rb.track.splice(at, 0, { lat: hit.lat, lon: hit.lon }); // the snapped point ON the line
+                rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
+                if (cutFromIdx >= at) cutFromIdx++;
+            }
             const note = makeNote(rb, at, roadOutBefore(at));
             note.text = (wp.name || '').trim();
             if (wp.icon) note.icons = [{ name: wp.icon, pos: [0, 0], angle: 0, size: 40, flip_x: false }];
@@ -563,11 +571,29 @@
             sel = 0; routeChanged('Spliced · metrics recomputed.');
             return;
         }
-        const joinAtStart = Math.min(D(rb.track[0], pieceStart), D(rb.track[0], pieceEnd))
-            < Math.min(D(rb.track[rb.track.length - 1], pieceStart), D(rb.track[rb.track.length - 1], pieceEnd));
+        // Prefer chronology when both the route and the piece carry timestamps and don't overlap
+        // in time (#158): continue the piece from whichever physical END of the route is nearest
+        // to it in time. Reading the times AT the two array ends keeps this correct even after a
+        // Reverse (array order needn't match time order). Otherwise fall back to nearest-end geometry.
+        const startT = rb.track[0].t, endT = rb.track[rb.track.length - 1].t, pT0 = pieceStart.t, pT1 = pieceEnd.t;
+        let joinAtStart, byTime = null;
+        if (startT != null && endT != null && pT0 != null && pT1 != null) {
+            const pMin = Math.min(pT0, pT1), pMax = Math.max(pT0, pT1), rMin = Math.min(startT, endT), rMax = Math.max(startT, endT);
+            if (pMin >= rMax || pMax <= rMin) { // the piece doesn't overlap the route in time
+                const pMid = (pT0 + pT1) / 2;
+                joinAtStart = Math.abs(pMid - startT) < Math.abs(pMid - endT); // the end nearest in time
+                const anchorT = joinAtStart ? startT : endT;
+                byTime = Math.abs(pT0 - anchorT) <= Math.abs(pT1 - anchorT) ? trkpts : trkpts.slice().reverse(); // the piece end nearest that anchor connects first
+            }
+        }
+        if (joinAtStart === undefined) { // no usable times → nearest-end geometry (original behaviour)
+            joinAtStart = Math.min(D(rb.track[0], pieceStart), D(rb.track[0], pieceEnd))
+                < Math.min(D(rb.track[rb.track.length - 1], pieceStart), D(rb.track[rb.track.length - 1], pieceEnd));
+        }
         if (joinAtStart) RB.reverseRoadbook(rb); // join at the start = extend the reversed route
         const anchor = rb.track[rb.track.length - 1];
-        extension(rb, D(anchor, pieceStart) <= D(anchor, pieceEnd) ? trkpts : trkpts.slice().reverse());
+        // time decided the orientation; otherwise orient the piece so its nearest end meets the anchor
+        extension(rb, byTime || (D(anchor, pieceStart) <= D(anchor, pieceEnd) ? trkpts : trkpts.slice().reverse()));
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         if (joinAtStart) RB.reverseRoadbook(rb);
         sel = 0; routeChanged('Track joined to the route.');
@@ -1688,9 +1714,16 @@
         if (toastMsg) toast(toastMsg);
     }
 
-    // lengthen the route with another track; an end note rides the new finish
+    // lengthen the route with another track; an end note rides the new finish. Keep each joined
+    // point's elevation and time (#158) so the merged track stays uniform and its time span stays
+    // accurate for a later join.
     function extension(r, trk) {
-        const nt = r.track.concat(trk.slice(1).map((p) => ({ lat: p.lat, lon: p.lon })));
+        const nt = r.track.concat(trk.slice(1).map((p) => {
+            const q = { lat: p.lat, lon: p.lon };
+            if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
+            if (p.t != null) q.t = p.t;
+            return q;
+        }));
         const last = r.notes[r.notes.length - 1];
         r.track = nt; r.notes.forEach((n) => n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }));
         r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));

@@ -143,10 +143,11 @@
             const lat = parseFloat(p.getAttribute('lat')), lon = parseFloat(p.getAttribute('lon'));
             if (isFinite(lat) && isFinite(lon)) {
                 const ele = parseFloat(p.querySelector('ele')?.textContent);
+                const t = Date.parse(p.querySelector('time')?.textContent || ''); // GPX ISO 8601 → epoch ms
                 trkpts.push({
                     lat, lon,
                     ele: isFinite(ele) ? ele : null,
-                    time: p.querySelector('time')?.textContent || null,
+                    t: isFinite(t) ? t : null, // fix time, one name + unit across the pipeline (epoch ms)
                     cmt: (p.querySelector('cmt')?.textContent || '').trim() || null,
                 });
             }
@@ -165,12 +166,13 @@
                 const osmand = (local) => all.find((e) => e.nodeName === 'osmand:' + local
                     || (e.localName === local && (e.prefix === 'osmand' || /osmand/i.test(e.namespaceURI || ''))))?.textContent;
                 const r = appwptFromImport(sym, osmand('icon'), osmand('color'));
-                wpts.push({ lat, lon, name: nm, num: numFromName(nm), icon: r.icon || null, danger: r.danger || null, appwpt: r.appwpt || null });
+                const wt = Date.parse(w.querySelector('time')?.textContent || '');
+                wpts.push({ lat, lon, name: nm, num: numFromName(nm), t: isFinite(wt) ? wt : null, icon: r.icon || null, danger: r.danger || null, appwpt: r.appwpt || null });
             }
         });
         if (!wpts.length) {
             trkpts.forEach((p) => {
-                if (p.cmt && /^wpt/i.test(p.cmt)) wpts.push({ lat: p.lat, lon: p.lon, name: p.cmt, num: numFromName(p.cmt) });
+                if (p.cmt && /^wpt/i.test(p.cmt)) wpts.push({ lat: p.lat, lon: p.lon, name: p.cmt, num: numFromName(p.cmt), t: p.t }); // a cmt-flagged trackpoint keeps its own time
             });
         }
         return { name, trkpts, wpts };
@@ -316,6 +318,25 @@
         }
         return best;
     }
+    // The track index of the point closest in TIME to `t` (epoch ms). Only meaningful when the
+    // track carries per-point times — used to place a waypoint on a self-crossing route, where
+    // "nearest in space" is ambiguous but "nearest in time" is not (#158).
+    function nearestIdxByTime(trkpts, t) {
+        let best = 0, bd = Infinity;
+        for (let i = 0; i < trkpts.length; i++) {
+            if (trkpts[i].t == null) continue;
+            const d = Math.abs(trkpts[i].t - t);
+            if (d < bd) { bd = d; best = i; }
+        }
+        return best;
+    }
+    // Resolve a waypoint's track index: by TIME when both the waypoint and the track carry a
+    // timestamp (robust on loops/out-and-backs), otherwise by nearest position. One rule, reused
+    // by buildRoadbook and the Editor's waypoint snap.
+    const trackHasTime = (trkpts) => trkpts.some((p) => p.t != null);
+    function resolveIdx(trkpts, pt) {
+        return (pt.t != null && trackHasTime(trkpts)) ? nearestIdxByTime(trkpts, pt.t) : nearestIdx(trkpts, pt);
+    }
     // Cumulative distance in METRES at each track point.
     function cumulativeM(trkpts) {
         const cum = [0];
@@ -331,13 +352,13 @@
 
         // guarantee a start note and an end note
         const pts = (wpts && wpts.length) ? wpts.slice() : [];
-        const hasStart = pts.some((w) => nearestIdx(trkpts, w) === 0);
-        const hasEnd = pts.some((w) => nearestIdx(trkpts, w) === trkpts.length - 1);
+        const hasStart = pts.some((w) => resolveIdx(trkpts, w) === 0);
+        const hasEnd = pts.some((w) => resolveIdx(trkpts, w) === trkpts.length - 1);
         if (!hasStart) pts.push({ lat: trkpts[0].lat, lon: trkpts[0].lon, name: 'start', num: 0 });
         if (!hasEnd) pts.push({ lat: trkpts[trkpts.length - 1].lat, lon: trkpts[trkpts.length - 1].lon, name: 'end', num: 9999 });
 
-        // resolve each waypoint's track index and order along the track
-        const withIdx = pts.map((w) => ({ ...w, idx: nearestIdx(trkpts, w) }))
+        // resolve each waypoint's track index (by time when available) and order along the track
+        const withIdx = pts.map((w) => ({ ...w, idx: resolveIdx(trkpts, w) }))
             .sort((a, b) => a.idx - b.idx)
             .filter((w, i, arr) => i === 0 || w.idx !== arr[i - 1].idx); // dedup by idx
 
@@ -366,7 +387,12 @@
 
         return {
             meta: { title: name || 'roadbook', total_distance: Math.round(totalM), note_count: notes.length },
-            track: trkpts.map((p) => (p.ele != null && isFinite(p.ele) ? { lat: round6(p.lat), lon: round6(p.lon), ele: Math.round(p.ele) } : { lat: round6(p.lat), lon: round6(p.lon) })),
+            track: trkpts.map((p) => {
+                const tp = { lat: round6(p.lat), lon: round6(p.lon) };
+                if (p.ele != null && isFinite(p.ele)) tp.ele = Math.round(p.ele);
+                if (p.t != null && isFinite(p.t)) tp.t = p.t; // optional per-point time (epoch ms), preserved from the recording/GPX
+                return tp;
+            }),
             notes,
         };
     }
@@ -590,6 +616,7 @@
         const hasSym = (wpts || []).some((w) => w.sym);
         const wptXml = (wpts || []).map((w) => {
             let inner = w.name ? '<name>' + x(w.name) + '</name>' : '';   // the note NUMBER
+            if (w.t != null) inner += '<time>' + new Date(w.t).toISOString() + '</time>'; // when the waypoint was dropped (#158)
             if (w.desc) inner += '<desc>' + x(w.desc) + '</desc>';        // the note comment
             if (w.sym) inner += '<sym>' + x(w.sym) + '</sym><type>user</type>';
             let ext = '';
@@ -863,7 +890,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
-        nearestIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
+        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

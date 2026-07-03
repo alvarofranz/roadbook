@@ -19,7 +19,7 @@
     // Speech-to-text language for voice notes: the signed-in user's account preference
     // (set in /account/), or the device language when unset or signed out.
     const voiceLang = () => (meUser && meUser.voice_lang) || navigator.language || 'en-US';
-    let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null;
+    let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null, lastFixT = 0;
     let track = [], wpts = [], photos = [];
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
 
@@ -115,6 +115,7 @@
         if (map) map.setPosition(fix.here.lat, fix.here.lon, true, course);
         if (c.accuracy != null && c.accuracy > 35) { renderBar(); return; } // drop junk fixes
         here = { lat: fix.here.lat, lon: fix.here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
+        lastFixT = fix.tnow; // latest fix time — a dropped waypoint shares the track's time base (#158)
         if (paused) { renderBar(); return; }
         recordedM += fix.disp;
         // dense detail with a good fix, no jitter with a weak one
@@ -159,7 +160,8 @@
     function refreshMap() { if (map) map.setLiveTrack(track, wpts, photos); }
 
     function dropWaypoint(lat, lon, text) {
-        const note = { lat, lon, name: 'wpt' + (wpts.length + 1), num: wpts.length + 1, text: text || '' };
+        // stamp when it was dropped so the Editor can anchor it on the track by time (#158)
+        const note = { lat, lon, name: 'wpt' + (wpts.length + 1), num: wpts.length + 1, text: text || '', t: lastFixT || null };
         wpts.push(note); refreshMap(); saveSession(); renderBar();
         return note;
     }
@@ -345,7 +347,7 @@
             <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
         d.q('#rfDl').onclick = () => {
             const nm = name || ('RDBK_' + pad2(new Date().getHours()));
-            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name }));
+            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
             RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
             d.close();
         };

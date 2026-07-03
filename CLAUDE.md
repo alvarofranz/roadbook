@@ -302,7 +302,7 @@ integer metres.** Spec page: `public/standard/index.html`.
              "map_access"?: bool /* may the Reader show a map? absent/true = yes, false = hidden */,
              "profile"?: "basic"|"rally" /* waypoint-type vocabulary scope; absent = basic */,
              "default_wp_radius"?: int /* roadbook-wide default validation radius (m) for waypoints without their own */ },
-  "track": [ { "lat": float, "lon": float, "ele"?: int } ],   // ordered polyline
+  "track": [ { "lat": float, "lon": float, "ele"?: int, "t"?: int /* fix time epoch ms UTC, kept from a recording */ } ], // ordered polyline
   "notes": [ {
     "num": int, "idx": int,                                   // idx → index into track[]
     "lat": float, "lon": float,

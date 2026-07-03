@@ -87,9 +87,9 @@
     </table>
 
     <h2 id="track">track</h2>
-    <p data-i18n-html="track.intro">An ordered array of points describing the route polyline. Notes reference into it by index. Each point may carry an optional <code>ele</code> — the elevation in integer metres.</p>
+    <p data-i18n-html="track.intro">An ordered array of points describing the route polyline. Notes reference into it by index. Each point may carry an optional <code>ele</code> — the elevation in integer metres — and an optional <code>t</code> — the fix time in epoch milliseconds (UTC), kept from a recording so tools can order or time-match points.</p>
     <pre><code>"track": [
-  { "lat": 45.82712, "lon": 9.41164, "ele": 1245 },
+  { "lat": 45.82712, "lon": 9.41164, "ele": 1245, "t": 1783065600000 },
   { "lat": 45.82740, "lon": 9.41180 }
 ]</code></pre>
 

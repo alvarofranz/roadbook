@@ -72,6 +72,48 @@ describe('parseGPX', () => {
         expect(r.wpts).toEqual([]);
         expect(r.name).toBe('');
     });
+
+    it('reads <time> as epoch ms on both track points and waypoints (#158)', () => {
+        const gpxT = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+            <wpt lat="45.0" lon="9.0"><name>1</name><time>2026-07-03T10:00:30Z</time></wpt>
+            <trk><trkseg>
+              <trkpt lat="45.0" lon="9.0"><time>2026-07-03T10:00:00Z</time></trkpt>
+              <trkpt lat="45.001" lon="9.001"></trkpt>
+            </trkseg></trk></gpx>`;
+        const r = RB.parseGPX(gpxT);
+        expect(r.trkpts[0].t).toBe(Date.parse('2026-07-03T10:00:00Z'));
+        expect(r.trkpts[1].t).toBeNull();               // no <time> → null, not NaN
+        expect(r.wpts[0].t).toBe(Date.parse('2026-07-03T10:00:30Z'));
+    });
+});
+
+describe('track-point timestamps (#158)', () => {
+    it('nearestIdxByTime picks the point closest in time, ignoring untimed points', () => {
+        const trk = [{ lat: 0, lon: 0, t: 1000 }, { lat: 0, lon: 1 }, { lat: 0, lon: 2, t: 5000 }];
+        expect(RB.nearestIdxByTime(trk, 1200)).toBe(0);
+        expect(RB.nearestIdxByTime(trk, 4800)).toBe(2);
+    });
+    it('resolveIdx uses time when both sides carry it, else falls back to nearest position', () => {
+        const trk = [{ lat: 0, lon: 0, t: 1000 }, { lat: 0, lon: 1, t: 2000 }, { lat: 0, lon: 2, t: 3000 }];
+        expect(RB.resolveIdx(trk, { lat: 5, lon: 5, t: 2900 })).toBe(2);   // far in space, but time wins
+        expect(RB.resolveIdx(trk, { lat: 0, lon: 0.9 })).toBe(1);           // no time → nearest position
+        const untimed = [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }];
+        expect(RB.resolveIdx(untimed, { lat: 0, lon: 0.1, t: 9 })).toBe(0); // wp timed but track isn't → position
+    });
+    it('buildRoadbook keeps t on the track and anchors a self-crossing waypoint by time', () => {
+        // an out-and-back on the SAME line: the return passes the outbound points again, so the
+        // midpoint waypoint is spatially ambiguous — its time (late) must place it on the return leg.
+        const trkpts = [
+            { lat: 0, lon: 0, t: 0 }, { lat: 0, lon: 1, t: 100 }, { lat: 0, lon: 2, t: 200 },
+            { lat: 0, lon: 1, t: 300 }, { lat: 0, lon: 0, t: 400 },
+        ];
+        const wpts = [{ lat: 0, lon: 1, t: 300, name: 'return' }];
+        const rb = RB.buildRoadbook({ name: 'T', trkpts, wpts });
+        expect(rb.track[0].t).toBe(0);                 // times preserved into the .rdbk track
+        expect(rb.track[4].t).toBe(400);
+        const note = rb.notes.find((n) => n.text === 'return' || n.idx === 3);
+        expect(note.idx).toBe(3);                       // the return-leg point (t=300), not the outbound idx 1
+    });
 });
 
 describe('parseWPT', () => {
@@ -228,6 +270,16 @@ describe('gpxDocument round-trips through parseGPX', () => {
         const xml = RB.gpxDocument('A & B <tag>', [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }], []);
         expect(xml).toContain('A &amp; B &lt;tag&gt;');
         expect(() => RB.parseGPX(xml)).not.toThrow();
+    });
+
+    it('serializes <time> on track points and waypoints and re-parses to the same epoch ms (#158)', () => {
+        const t0 = Date.parse('2026-07-03T08:00:00Z'), t1 = Date.parse('2026-07-03T08:00:10Z');
+        const xml = RB.gpxDocument('Timed', [{ lat: 45, lon: 9, t: t0 }, { lat: 45.001, lon: 9.001, t: t1 }], [{ lat: 45, lon: 9, name: '1', t: t0 }]);
+        expect(xml).toContain('<time>2026-07-03T08:00:00.000Z</time>');
+        const r = RB.parseGPX(xml);
+        expect(r.trkpts[0].t).toBe(t0);
+        expect(r.trkpts[1].t).toBe(t1);
+        expect(r.wpts[0].t).toBe(t0);
     });
 });
 
