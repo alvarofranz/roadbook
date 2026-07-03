@@ -208,17 +208,43 @@ For a **real GPS test you need a physical phone** (simulators fake location).
 
 ## 8. Publishing (the "finish launching" steps — done from the GUIs)
 
-### iOS → TestFlight / App Store
-1. Xcode → select the **App** target → **Signing & Capabilities** → set your Team
-   (Apple Developer account). Bundle id is `app.rdbk`.
-2. Set version/build, choose **Any iOS Device (arm64)**, then **Product → Archive**.
-3. In the Organizer: **Distribute App → App Store Connect → Upload**.
-4. On https://appstoreconnect.apple.com create the app (bundle id `app.rdbk`), fill the
-   privacy nutrition labels (you collect **Location** for app functionality, and account
-   email if signed in), add screenshots, and submit for review.
-5. **Review note to include** (clears guideline 4.2 "minimum functionality"): explain it's a
-   GPS roadbook navigator with **background location recording**, camera capture and offline
-   use — native capabilities, not a website.
+### iOS → TestFlight / App Store (CI/CD on Xcode Cloud)
+Releases build in the cloud — no local archive step. The pipeline lives in
+`ios/App/ci_scripts/` (Xcode Cloud picks the folder up automatically because it
+sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
+
+- **`ci_post_clone.sh`** rebuilds everything gitignored that the app bundle needs:
+  Node 22 + `npm ci`, then `config.js` and the licensed FontAwesome Pro files
+  fetched from the live site (public client assets by design — no workflow
+  secrets), then the native bridge + `npx cap sync ios`.
+- **`ci_pre_xcodebuild.sh`** stamps an always-increasing build number
+  (`YYYYMMDD.HHMMSS`) into `CURRENT_PROJECT_VERSION`, so every cloud build is a
+  valid new TestFlight build with zero manual bumps.
+
+**One-time setup:**
+1. Register the App ID: https://developer.apple.com → Certificates, Identifiers &
+   Profiles → **Identifiers → + → App IDs → App** → Explicit **`app.rdbk`**,
+   description "RDBK" (no extra capabilities — background location is an
+   Info.plist key, not an App ID capability).
+2. https://appstoreconnect.apple.com → Apps → **+ New app** → iOS, name
+   **RDBK**, bundle id `app.rdbk` (appears once step 1 is done), SKU `rdbk`.
+3. Xcode (`npx cap open ios`) → menu **Integrate → Create Workflow** → pick the
+   **App** scheme. If the repo doesn't show up, grant the **Xcode Cloud** GitHub
+   app access to `alvarofranz/roadbook` (github.com → Settings → Applications).
+4. Edit the workflow: **start condition = Tag changes, pattern `ios-*`** — NOT
+   branch changes, because every web release pushes `main` and must not burn an
+   iOS build. Action **Archive** (Release) → post-action **TestFlight (internal
+   group)**. No environment variables needed.
+
+**Cutting a TestFlight build:** `git tag ios-<version> && git push origin ios-<version>`
+— or press ▶ Start Build on the workflow in Xcode / App Store Connect. Promote
+to App Store review from TestFlight when happy.
+
+**First submission:** fill the privacy nutrition labels (you collect **Location**
+for app functionality, and account email if signed in), add screenshots, and
+include the review note that clears guideline 4.2 "minimum functionality":
+it's a GPS roadbook navigator with **background location recording**, camera
+capture and offline use — native capabilities, not a website.
 
 ### Android → Play
 1. Android Studio → **Build → Generate Signed Bundle / APK → Android App Bundle (.aab)**.
