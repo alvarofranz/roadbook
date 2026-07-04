@@ -76,7 +76,8 @@ window.RBGpxRecorder = (() => {
         // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
         const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
         const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
-            <input id="gxFreq" class="modal-in gx-rate-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}"></div>`;
+            <input id="gxFreq" class="modal-in gx-rate-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}"></div>
+            <p class="muted small gx-rate-hint">${t('Suggested: 3s car/rally · 5s bike · 10s walking')}</p>`;
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
             ${rateField}
             <label class="muted small">${nameLabel}</label>
