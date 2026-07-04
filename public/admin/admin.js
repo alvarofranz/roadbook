@@ -44,6 +44,8 @@
             <input id="euUser" class="field" autocomplete="off">
             <label class="field-label" for="euEmail">${esc(t('Email'))}</label>
             <input id="euEmail" type="email" class="field" autocomplete="off">
+            <label class="field-label" for="euOrg">${esc(t('Organization'))}</label>
+            <input id="euOrg" class="field" autocomplete="off" maxlength="120">
             <label class="field-label" for="euPass">${esc(t('New password (optional)'))}</label>
             <input id="euPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Leave blank to keep current'))}">
             <p class="hint">${esc(t('If you set a password, the user must change it at next login.'))}</p>
@@ -59,6 +61,7 @@
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
         m.q('#euEmail').value = u.email || '';
+        m.q('#euOrg').value = u.organization || '';
         m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
         m.q('#euOrganizer').checked = !!u.is_organizer;
         m.q('#euAdmin').checked = !!u.is_admin;
@@ -71,6 +74,7 @@
                 last_name: m.q('#euLast').value.trim(),
                 username: m.q('#euUser').value.trim(),
                 email: m.q('#euEmail').value.trim(),
+                organization: m.q('#euOrg').value.trim(),
                 password: m.q('#euPass').value,
                 quota_bytes: m.q('#euQuota').value.trim() === '' ? '' : Math.max(0, Math.round(parseFloat(m.q('#euQuota').value) * 1048576)),
                 is_organizer: m.q('#euOrganizer').checked ? 1 : 0,

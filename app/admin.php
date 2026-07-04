@@ -54,7 +54,7 @@ function admin_users(array $user, array $d = []): void {
     $eventId = (int)($d['event_id'] ?? 0);
     $where = $eventId > 0 ? " WHERE users.id IN (SELECT user_id FROM event_participants WHERE event_id = $eventId
         UNION SELECT user_id FROM event_organizers WHERE event_id = $eventId)" : '';
-    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
+    $rows = db()->query('SELECT id, first_name, last_name, username, email, organization, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
         FROM users' . $where . ' ORDER BY id')->fetchAll();
     // One query maps every user to their roadbook ids: it feeds both the per-user roadbook
     // count and the disk scan, instead of two queries per listed user.
@@ -67,6 +67,7 @@ function admin_users(array $user, array $d = []): void {
         'name'       => trim($r['first_name'] . ' ' . $r['last_name']),
         'username'   => $r['username'],
         'email'      => $r['email'],
+        'organization' => $r['organization'],
         'verified'   => (int)$r['email_verified'],
         'is_admin'   => is_admin($r) ? 1 : 0,
         'is_organizer' => (int)$r['is_organizer'],
@@ -222,6 +223,11 @@ function admin_update_user(array $user, array $d): void {
     // Organizer grant (#121): only when the form sent the field, so an older client can't clear it.
     if (array_key_exists('is_organizer', $d)) {
         db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([!empty($d['is_organizer']) ? 1 : 0, $id]);
+    }
+    // Organization (free-text club, #183): only when sent; trim + collapse whitespace, empty → NULL.
+    if (array_key_exists('organization', $d)) {
+        $org = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$d['organization'])), 0, 120);
+        db()->prepare('UPDATE users SET organization = ? WHERE id = ?')->execute([$org !== '' ? $org : null, $id]);
     }
     log_activity((int)$user['id'], 'admin_edit_user', 'user #' . $id);
     json_out(['ok' => true]);
