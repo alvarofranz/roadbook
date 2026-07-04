@@ -272,7 +272,35 @@ Riassunto del contenuto (data ultimo aggiornamento: 18 giugno 2026):
 
 ---
 
-## 6. Limiti e quirk da segnalare
+## 6. Le altre pagine statiche e di marketing
+
+Pagine di solo contenuto (HTML statico + i18n + `app.js`), senza logica propria degna di un
+documento a sé:
+
+- **About (`/about/`)** — "Chi siamo": la storia (da Roadbook System a RDBK.app), il team e i
+  ringraziamenti. Markup in [about/index.html](../public/about/index.html) con qualche stile
+  inline scoped alla pagina; nessun JS proprio.
+- **Terms of Use (`/terms/`)** — le condizioni d'uso, in **italiano** (contenuto non i18n-keyato,
+  solo il `<title>`/description lo sono). Porta un `<meta name="terms-version">` machine-readable
+  che la registrazione registra come versione accettata (#135, vedi
+  [backend-api](backend-api.md)). Email di contatto: `rdbk.admin@gmail.com`.
+- **Contact (`/contact/`)** — pagina contatti (#161): intro + email `rdbk.admin@gmail.com` +
+  rimandi a Privacy e About. Linkata dal footer globale, in sitemap, i18n in tutte e 5 le lingue.
+- **Standard (`/standard/`)** — la specifica del formato `.rdbk`; documentata a parte in
+  [rdbk-format](rdbk-format.md).
+- **Feature pages (`/features/<tool>/`)** — una pagina "How it works" per ogni tool (recorder ·
+  editor · reader · tripmaster · ranking): marketing + spiegazione, con SEO dedicato e le stringhe
+  `fp.*` tradotte in tutte le lingue (parità garantita dal test i18n, vedi [i18n](i18n.md)). I nomi
+  brand dei tool restano in inglese in ogni lingua. Le pagine sono a due livelli di profondità →
+  asset via `../../assets/…`. Ogni tool usa la sua **icona canonica** (vedi `CLAUDE.md`).
+
+> Cartelle di `public/` **senza documento e che non ne richiedono uno**: `photos/` ed
+> `event-logos/` (dati runtime, gitignored), `assets/fontawesome/` (vendored) e `assets/icons/`
+> (palette, descritta in [rdbk-format](rdbk-format.md) e `CLAUDE.md`).
+
+---
+
+## 7. Limiti e quirk da segnalare
 
 - **Username non modificabile.** Avatar, nome, cognome, bio, lingua note vocali, posizione
   di default, email e password si cambiano da qui; lo **username** è mostrato (`@handle`) ma

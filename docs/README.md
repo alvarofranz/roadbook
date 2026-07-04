@@ -34,11 +34,15 @@ e una sezione onesta di limiti/quirk.
 ## Pagine utente e statiche
 - [home-page](home_page.md) — la galleria della home (teaser dei roadbook pubblici) e la
   generazione della **cover** di ogni roadbook (mappa statica della rotta) usata come miniatura.
-- [account-pages](account-pages.md) — home, profilo, I miei roadbook, privacy.
+- [account-pages](account-pages.md) — home, profilo, I miei roadbook, privacy, e le altre pagine
+  statiche/marketing (about, terms, contact, feature pages).
 
 ## Backend
 - [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto/audio,
   roadbook pubblici, **eventi + co-editing**, schema DB (migrazioni fino a 027).
+- [events](events.md) — il sottosistema **Eventi** (`public/events/`, `public/event/`,
+  `public/admin/events/` + `app/events.php`): modello dati, ruoli/co-organizzatori, partecipanti +
+  join-by-code, consegna dei roadbook `ready`, co-editing.
 - [user-management](user-management.md) — gestione utenti: pannello admin (`/admin`), modello
   permessi, azioni admin (attiva/modifica/blocca/elimina), self-service (cambio password forzato,
   elimina account), migrazioni e note di deploy.
