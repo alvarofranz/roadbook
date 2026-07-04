@@ -262,6 +262,22 @@
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
+    // Keep the just-completed note on screen when advancing (#177). Centring the active (next)
+    // note slid the note you just used up behind the sticky odometer bar; instead anchor the
+    // PREVIOUS row just below that bar, so the completed note stays visible with the active note
+    // right under it. Measures the sticky-bar height at runtime (it collapses in fullscreen).
+    function scrollActiveIntoView() {
+        const list = $('noteList');
+        const act = list.querySelector('.nrow.active');
+        if (!act) return;
+        const rows = list.querySelectorAll('.nrow');
+        let anchor = act;
+        for (let k = 0; k < rows.length; k++) { if (rows[k] === act) { if (k > 0) anchor = rows[k - 1]; break; } }
+        const odo = document.querySelector('.odometer-bar');
+        const topOcc = odo ? odo.getBoundingClientRect().bottom : 56; // pixels hidden behind the sticky top bar(s)
+        const y = anchor.getBoundingClientRect().top + window.scrollY - topOcc - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
@@ -284,8 +300,8 @@
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
-        // only recentre when the active note actually changed (not on every redraw)
-        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = $('noteList').querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        // only rescroll when the active note actually changed (not on every redraw)
+        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         updateCapBar();
         saveSession();
     }
@@ -312,7 +328,7 @@
                 cell.prepend(b);
             }
         }
-        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = list.querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         updateCapBar();
         saveSession();
     }
