@@ -1071,7 +1071,8 @@
     }
     $('saveAccount').onclick = saveRoadbook;
     $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
-    // Leave the editor: unsaved changes get a save prompt first, then navigate to the home page.
+    // Leave the editor: unsaved changes get a save prompt first, then return to the editor
+    // landing (the roadbook list), not the home page.
     async function leaveEditor() {
         if (rb && dirty) {
             const choice = await new Promise((resolve) => {
@@ -1090,7 +1091,7 @@
             if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
         }
         clearDraft();
-        location.href = '../'; // close → back to the home page
+        location.href = location.pathname.replace(/[^/]*$/, ''); // close → the editor landing (roadbook list), stripping any ?rb / /<slug>
     }
     $('closeEditor').onclick = leaveEditor;
     // "Save as": store the current content as a NEW roadbook (the original is left
