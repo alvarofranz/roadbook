@@ -294,6 +294,31 @@
     window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
+    // Set SEO meta at runtime for the public dynamic pages (challenge, event): title + description
+    // + canonical, keeping the og:/twitter: mirrors in sync. Creates any missing tag; skips nulls.
+    window.RBSetMeta = ({ title, description, canonical }) => {
+        const meta = (key, kind) => {
+            let el = document.head.querySelector(`meta[${kind}="${key}"]`);
+            if (!el) { el = document.createElement('meta'); el.setAttribute(kind, key); document.head.appendChild(el); }
+            return el;
+        };
+        if (title != null) {
+            document.title = title;
+            meta('og:title', 'property').setAttribute('content', title);
+            meta('twitter:title', 'name').setAttribute('content', title);
+        }
+        if (description != null) {
+            meta('description', 'name').setAttribute('content', description);
+            meta('og:description', 'property').setAttribute('content', description);
+            meta('twitter:description', 'name').setAttribute('content', description);
+        }
+        if (canonical != null) {
+            let link = document.head.querySelector('link[rel="canonical"]');
+            if (!link) { link = document.createElement('link'); link.setAttribute('rel', 'canonical'); document.head.appendChild(link); }
+            link.setAttribute('href', canonical);
+            meta('og:url', 'property').setAttribute('content', canonical);
+        }
+    };
     // Human-readable byte size, e.g. "12.3 MB" / "640 KB" (shared by the storage indicator + admin).
     window.RBFmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
     // An ISO YYYY-MM-DD date in the ACTIVE UI language's format (event dates). The parts are

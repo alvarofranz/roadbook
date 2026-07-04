@@ -17,7 +17,7 @@
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
         if (e.logo) { $('evLogo').src = e.logo; $('evLogo').hidden = false; }
-        document.title = e.title + ' · RDBK.app';
+        RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
         $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : '');
         $('evDesc').textContent = e.description || '';
         const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}">${

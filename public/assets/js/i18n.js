@@ -39,6 +39,18 @@
             'help.mapAccess': 'When on, the Reader may show the map. Turn it off to make readers navigate by the roadbook notes alone.',
             'help.reusable': 'Off (default): others can read and navigate this public roadbook but can\'t copy it. On: they can also copy it into their own profile to edit — it appears in the Editor\'s public-roadbook search.',
             'help.route': 'Reverse flips the travel direction — the track, note order and all headings are recomputed.',
+            'seo.home.title': 'RDBK.app — digital roadbooks for your adventures', 'seo.home.desc': 'Create, navigate, validate and rank roadbooks for any adventure. Free PWA and the open .rdbk format.',
+            'seo.about.title': 'Who we are — RDBK.app', 'seo.about.desc': 'The people and mission behind RDBK.app — free digital roadbook tools and the open .rdbk format for every adventure.',
+            'seo.privacy.title': 'Privacy Policy — RDBK.app', 'seo.privacy.desc': 'How RDBK.app handles your data — accounts, roadbooks and photos — on our free digital roadbook tools.',
+            'seo.terms.title': 'Terms of Use — RDBK.app', 'seo.terms.desc': 'The terms for using RDBK.app, the free digital roadbook suite and the open .rdbk format.',
+            'seo.standard.title': 'The .rdbk standard — RDBK.app', 'seo.standard.desc': 'The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.',
+            'seo.roadbooks.title': 'Public Roadbooks — RDBK.app', 'seo.roadbooks.desc': 'Browse public roadbooks shared by the community — 4x4, moto, bike and running routes to read, navigate or export.',
+            'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',
+            'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.',
+            'seo.feat_reader.title': 'Roadbook Reader — RDBK.app', 'seo.feat_reader.desc': 'Navigate any roadbook with GPS: odometer, bearing, live map, CAP direction bar and automatic waypoint validation.',
+            'seo.feat_recorder.title': 'Track Recorder — RDBK.app', 'seo.feat_recorder.desc': 'Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos.',
+            'seo.feat_tripmaster.title': 'Tripmaster — RDBK.app', 'seo.feat_tripmaster.desc': 'A precise GPS trip computer: partial and total odometer, speed alerts, heading, stopwatch and GPX recording — no roadbook needed.',
+            'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
@@ -128,6 +140,11 @@
         document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
             const base = baseOf(el, 'aria', () => el.getAttribute('aria-label') || '');
             const v = tr(lang, el.getAttribute('data-i18n-aria')); el.setAttribute('aria-label', v != null ? v : base);
+        });
+        // SEO meta: <title data-i18n> localizes the tab title; <meta … data-i18n-content> the content attr
+        document.querySelectorAll('[data-i18n-content]').forEach((el) => {
+            const base = baseOf(el, 'content', () => el.getAttribute('content') || '');
+            const v = tr(lang, el.getAttribute('data-i18n-content')); el.setAttribute('content', v != null ? v : base);
         });
         // help tooltips: the bubble text lives in data-tip
         document.querySelectorAll('[data-i18n-tip]').forEach((el) => {
