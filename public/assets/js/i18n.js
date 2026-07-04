@@ -43,6 +43,7 @@
             'seo.about.title': 'Who we are — RDBK.app', 'seo.about.desc': 'The people and mission behind RDBK.app — free digital roadbook tools and the open .rdbk format for every adventure.',
             'seo.privacy.title': 'Privacy Policy — RDBK.app', 'seo.privacy.desc': 'How RDBK.app handles your data — accounts, roadbooks and photos — on our free digital roadbook tools.',
             'seo.terms.title': 'Terms of Use — RDBK.app', 'seo.terms.desc': 'The terms for using RDBK.app, the free digital roadbook suite and the open .rdbk format.',
+            'seo.contact.title': 'Contact — RDBK.app', 'seo.contact.desc': 'Get in touch with the RDBK.app team — questions, feedback or data requests about our free digital roadbook tools.',
             'seo.standard.title': 'The .rdbk standard — RDBK.app', 'seo.standard.desc': 'The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.',
             'seo.roadbooks.title': 'Public Roadbooks — RDBK.app', 'seo.roadbooks.desc': 'Browse public roadbooks shared by the community — 4x4, moto, bike and running routes to read, navigate or export.',
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',

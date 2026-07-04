@@ -84,6 +84,7 @@
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
+                <a href="${ROOT}contact/"><i class="fa-solid fa-envelope"></i> ${RBt('Contact')}</a>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
