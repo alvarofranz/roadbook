@@ -33,6 +33,19 @@ window.RBStatusBar = (function () {
     return {
         show() { ensure(); el.hidden = false; if (!clockTimer) clockTimer = setInterval(render, 1000); render(); },
         hide() { if (el) el.hidden = true; if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } },
+        // Battery feed for other bars (the Reader's odometer strip): onUpdate({pct, charging,
+        // icon}) fires on subscribe and on every level/charging change. Returns false where
+        // the Battery Status API is unsupported (e.g. iOS Safari) — the caller shows N/A.
+        watchBattery(onUpdate) {
+            if (!('getBattery' in navigator)) return false;
+            try {
+                navigator.getBattery().then((b) => {
+                    const fire = () => { const p = Math.round(b.level * 100); onUpdate({ pct: p, charging: b.charging, icon: b.charging ? 'fa-bolt' : battIcon(p) }); };
+                    ['levelchange', 'chargingchange'].forEach((e) => b.addEventListener(e, fire)); fire();
+                }).catch(() => {});
+            } catch (e) {}
+            return true;
+        },
         // The Geolocation API exposes accuracy, not a satellite count — show signal quality.
         setGps(acc) {
             const t = window.RBt || ((k) => k);

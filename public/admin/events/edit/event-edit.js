@@ -203,9 +203,8 @@
     }
 
     (async function init() {
-        const cfg = await api('config');
-        me = cfg.user;
-        if (!me) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../../../account/">${esc(t('Sign in'))}</a>`; return; }
+        me = await RBRequireUser($('adminMsg'), { account: '../../../account/' });
+        if (!me) return;
         $('orgOrgIn').value = me.organization || ''; // the organizer search defaults to your organization
         if (id > 0) return load();
         // new event: only the parameters section until the first save creates it

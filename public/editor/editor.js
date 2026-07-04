@@ -266,8 +266,7 @@
         selVertex = i; // the W/M/A/L/Del shortcuts now target this point
         map.setSelectedVertex(tp);
         // centre + rotate to the heading at this point, like selecting a note (arrival heading)
-        const heading = i > 0 ? RB.geo.bearingDeg(rb.track[i - 1], tp)
-            : (i < rb.track.length - 1 ? RB.geo.bearingDeg(tp, rb.track[i + 1]) : 0);
+        const heading = RB.deriveBearings(rb.track, i).bIn;
         if (map.map && map.ready) map.map.easeTo({ center: [tp.lon, tp.lat], zoom: Math.max(map.map.getZoom(), 14), bearing: heading, duration: 450 });
     }
     // Track-point context commands (from the menu, or its keyboard shortcut). #35
@@ -857,10 +856,10 @@
     function onRecFix(pos) {
         const c = pos.coords, here = { lat: c.latitude, lon: c.longitude, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
         if (map) map.setPosition(here.lat, here.lon, true);
-        if (c.accuracy != null && c.accuracy > 35) { updateRecStats(c.accuracy); return; } // drop junk fixes
+        if (RB.recJunkFix(c.accuracy)) { updateRecStats(c.accuracy); return; }
         recHere = here;
         if (recPaused) { updateRecStats(c.accuracy); return; }
-        const step = Math.max(2.5, (c.accuracy || 10) * 0.35); // dense detail with a good fix, no jitter with a weak one
+        const step = RB.recStepM(c.accuracy); // accuracy-scaled sampling (shared with the Recorder)
         if (recMode === 'adjust') {
             const n = nearestTrackIdx(here);
             if (adjP1 < 0) { if (n.dist <= 10) { adjP1 = n.idx; toast('On the trail — recording your variant.'); } updateRecStats(c.accuracy); return; }
@@ -890,22 +889,11 @@
         saveRec(); updateRecStats();
         return note;
     }
-    // Waypoint: drops instantly, then a no-pressure quick-text modal that auto-dismisses
-    // after 5 s ("Edit later (5)…") — unless you start typing, then it waits for you.
+    // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s).
     $('recWaypoint').onclick = () => {
         if (!recHere) return toast('Waiting for a GPS fix…');
         const note = dropWaypoint(recHere.lat, recHere.lon, '');
-        const d = RBModal(`<h3>Waypoint ${note.num}</h3>
-            <input id="wfText" class="modal-in" placeholder="${t('Quick note (optional)…')}" autocomplete="off">
-            <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'narrow', () => finish());
-        const inp = d.q('#wfText'), btn = d.q('#wfBtn');
-        setTimeout(() => inp.focus(), 50);
-        let n = 5, typed = false;
-        const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${t('Edit later')} (${n})`; }, 1000);
-        function finish() { clearInterval(timer); note.text = inp.value.trim(); d.close(); updateRecStats(); }
-        inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = t('Save note'); } });
-        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
-        btn.onclick = finish;
+        RBWaypointPrompt(note.num, (text) => { note.text = text; updateRecStats(); });
     };
     // photo: camera → upload → shows the photo with OK / Convert into waypoint
     $('recPhoto').onclick = () => {
@@ -922,13 +910,7 @@
         if (!r.ok) return toast(r.error || 'Photo failed.');
         recPhotos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
         const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
-        const d = RBModal(`<img src="${r.url}" alt="" class="photo-preview">
-            <div class="btnrow center">
-                <button class="btn btn-ghost" id="ptOk">OK</button>
-                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${t('Convert into waypoint')}</button>
-            </div>`, 'slim center');
-        d.q('#ptOk').onclick = d.close;
-        d.q('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } d.close(); };
+        RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
     };
     $('recStop').onclick = async () => {
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
@@ -1264,24 +1246,21 @@
         const keepListScroll = $('noteList') ? $('noteList').scrollTop : 0;
         const keepWinScroll = window.scrollY;
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
-        // geotagged photos belong to their nearest note (within 80 m) → a 📷 under the km
-        const photosByNote = {};
-        notePhotos.forEach((p) => {
-            if (p.lat == null) return;
-            const pt = { lat: +p.lat, lon: +p.lon };
-            let best = -1, bd = Infinity;
-            rb.notes.forEach((n, k) => { const d = RB.geo.haversineM(n, pt); if (d < bd) { bd = d; best = k; } });
-            if (best >= 0 && bd <= 80) (photosByNote[best] = photosByNote[best] || []).push(p);
-        });
-        // recorded voice notes likewise belong to their nearest note → an inline player on that row
-        const audioByNote = {};
-        noteAudio.forEach((a) => {
-            if (a.lat == null) return;
-            const pt = { lat: +a.lat, lon: +a.lon };
-            let best = -1, bd = Infinity;
-            rb.notes.forEach((n, k) => { const d = RB.geo.haversineM(n, pt); if (d < bd) { bd = d; best = k; } });
-            if (best >= 0 && bd <= 80) (audioByNote[best] = audioByNote[best] || []).push(a);
-        });
+        // geotagged media belongs to its nearest note (within 80 m): photos → a 📷 under the
+        // km, voice notes → an inline player on that row
+        const byNearestNote = (items) => {
+            const buckets = {};
+            if (!rb.notes.length) return buckets;
+            items.forEach((it) => {
+                if (it.lat == null) return;
+                const pt = { lat: +it.lat, lon: +it.lon };
+                const best = RB.nearestIdx(rb.notes, pt);
+                if (RB.geo.haversineM(rb.notes[best], pt) <= 80) (buckets[best] = buckets[best] || []).push(it);
+            });
+            return buckets;
+        };
+        const photosByNote = byNearestNote(notePhotos);
+        const audioByNote = byNearestNote(noteAudio);
         $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}</span>
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
@@ -1838,7 +1817,7 @@
         const ta = m.q('#rawJson'), msg = m.q('#rawMsg'), gpxBtn = m.q('[data-x="gpx"]');
         let gpxMode = false;
         ta.value = jsonText();
-        const setMsg = (txt, ok) => { msg.textContent = txt; msg.className = 'small ' + (ok ? 'ok-msg' : 'err-msg'); };
+        const setMsg = (txt, ok) => { msg.textContent = txt; msg.className = 'small msg ' + (ok ? 'ok' : 'err'); };
         // Enter in the search box → jump to the next occurrence (wraps), scrolling it into view.
         m.q('#rawSearch').onkeydown = (e) => {
             if (e.key !== 'Enter') return;

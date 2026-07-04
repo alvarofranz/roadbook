@@ -20,14 +20,7 @@
                 <span class="muted small">· ${esc((p.first_name + ' ' + p.last_name).trim())} · ${esc(p.email)} · ${esc(RBFmtDate(p.joined))}</span></span>
             <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(t(q ? 'No matching users.' : 'No participants yet.'))}</p>`;
-        $('ppPager').innerHTML = pages > 1
-            ? `<button class="btn btn-ghost" id="ppPrev"${page <= 1 ? ' disabled' : ''} aria-label="${esc(t('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button>
-               <span class="muted small">${page} / ${pages} · ${r.total} ${esc(t('participants'))}</span>
-               <button class="btn btn-ghost" id="ppNext"${page >= pages ? ' disabled' : ''} aria-label="${esc(t('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
-            : '';
-        const prev = $('ppPrev'), next = $('ppNext');
-        if (prev) prev.onclick = () => { if (page > 1) { page--; load(); } };
-        if (next) next.onclick = () => { page++; load(); };
+        RBPager($('ppPager'), page, pages, (p) => { page = p; load(); }, pages > 1 ? `${r.total} ${esc(t('participants'))}` : '');
         $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
             const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
@@ -60,8 +53,7 @@
     };
 
     (async function init() {
-        const cfg = await api('config');
-        if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../../../account/">${esc(t('Sign in'))}</a>`; return; }
+        if (!(await RBRequireUser($('adminMsg'), { account: '../../../account/' }))) return;
         const r = await api('event_manage_get', { id }); // the heading: event title + a link back to its management page
         if (r.ok) {
             eventTitle = r.event.title; // also names the CSV export

@@ -387,6 +387,80 @@
         });
         document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) set(false); });
     };
+    // The one chevron pager (‹ page/pages ›, plus an optional trailing label): empty on a single
+    // page (the label alone stays, e.g. a result count). onGo(page) fires already clamped.
+    window.RBPager = (el, page, pages, onGo, label) => {
+        if (!el) return;
+        el.innerHTML = pages > 1
+            ? `<button class="btn btn-ghost" data-pg="${page - 1}"${page <= 1 ? ' disabled' : ''} aria-label="${RBesc(RBt('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button><span class="muted small">${page} / ${pages}${label ? ' · ' + label : ''}</span><button class="btn btn-ghost" data-pg="${page + 1}"${page >= pages ? ' disabled' : ''} aria-label="${RBesc(RBt('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
+            : (label ? `<span class="muted small">${label}</span>` : '');
+        el.querySelectorAll('[data-pg]').forEach((b) => b.onclick = () => { const p = +b.dataset.pg; if (p >= 1 && p <= pages) onGo(p); });
+    };
+    // An event's date range for a meta line: "start – end", the single date, or '' when undated.
+    window.RBDateRange = (startIso, endIso) => startIso ? (endIso && endIso !== startIso ? RBFmtDate(startIso) + ' – ' + RBFmtDate(endIso) : RBFmtDate(startIso)) : '';
+    // One public gallery card (Roadbooks · Events · event page · home teaser): thumb (or an icon
+    // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
+    // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
+    window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
+        `<a class="gallery-card" href="${href}">`
+        + (thumb ? `<img class="thumb" src="${RBesc(thumb)}" alt="${RBesc(title)}" loading="lazy">`
+                 : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
+        + overlays
+        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div></a>`;
+    // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
+    // signed-in user, or writes the standard message into msgEl and returns null. `account` is
+    // the relative path to the sign-in page (page depths differ).
+    window.RBRequireUser = async (msgEl, { admin = false, account = '../account/' } = {}) => {
+        const cfg = await RBApi('config').catch(() => ({}));
+        if (!cfg.user) { msgEl.innerHTML = `${RBesc(RBt('Sign in to continue.'))} <a href="${account}">${RBesc(RBt('Sign in'))}</a>`; return null; }
+        if (admin && !cfg.user.is_admin) { msgEl.textContent = RBt('Admins only.'); return null; }
+        return cfg.user;
+    };
+    // The waypoint quick-text prompt (Recorder + the Editor's route recording): shown right
+    // after the waypoint drops, auto-dismisses after 5 s ("Edit later (5)…") unless the user
+    // starts typing. opts.mic adds the dictation button (speech-to-text where supported) with
+    // opts.lang() as its language. onDone(text) fires exactly once, however the modal closes.
+    window.RBWaypointPrompt = (num, onDone, opts = {}) => {
+        const SR = opts.mic ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+        const inputHtml = SR
+            ? `<div class="wf-row"><input id="wfText" class="field" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off"><button class="btn btn-ghost" type="button" id="wfMic" aria-label="${RBesc(RBt('Dictate'))}" title="${RBesc(RBt('Dictate'))}"><i class="fa-solid fa-microphone"></i></button></div>`
+            : `<input id="wfText" class="modal-in" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off">`;
+        const d = RBModal(`<h3>${RBesc(RBt('Waypoint'))} ${num}</h3>
+            ${inputHtml}
+            <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${RBesc(RBt('Edit later'))} (5)</button></div>`, 'narrow', () => finish());
+        const inp = d.q('#wfText'), btn = d.q('#wfBtn');
+        setTimeout(() => inp.focus(), 50);
+        let n = 5, typed = false, done = false;
+        const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${RBt('Edit later')} (${n})`; }, 1000);
+        function finish() { if (done) return; done = true; clearInterval(timer); d.close(); onDone(inp.value.trim()); }
+        inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = RBt('Save note'); } });
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
+        btn.onclick = finish;
+        if (SR) { // dictate straight into the field (tap to start, tap to stop)
+            const mic = d.q('#wfMic'); let rec = null;
+            mic.onclick = () => {
+                if (rec) { rec.stop(); return; }
+                rec = new SR();
+                rec.lang = opts.lang ? opts.lang() : document.documentElement.lang;
+                rec.interimResults = true;
+                rec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; inp.value = txt; typed = true; btn.textContent = RBt('Save note'); };
+                const stop = () => { mic.classList.remove('on'); rec = null; };
+                rec.onend = stop; rec.onerror = stop;
+                mic.classList.add('on'); try { rec.start(); } catch (e) { stop(); }
+            };
+        }
+    };
+    // A just-captured photo: full preview + OK / "Convert into waypoint" (Recorder + the
+    // Editor's route recording). onWaypoint fires only when the user converts.
+    window.RBPhotoPreview = (url, onWaypoint) => {
+        const d = RBModal(`<img src="${RBesc(url)}" alt="" class="photo-preview">
+            <div class="btnrow center">
+                <button class="btn btn-ghost" id="ptOk">OK</button>
+                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${RBesc(RBt('Convert into waypoint'))}</button>
+            </div>`, 'slim center');
+        d.q('#ptOk').onclick = d.close;
+        d.q('#ptWpt').onclick = () => { onWaypoint(); d.close(); };
+    };
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
@@ -404,8 +478,8 @@
         container.innerHTML =
             ((r.used_bytes != null && r.quota_bytes) ? `<div class="rb-usage muted small"><i class="fa-solid fa-database"></i> ${RBesc(RBt('Storage'))}: ${RBFmtSize(r.used_bytes)} / ${RBFmtSize(r.quota_bytes)}</div>` : '') +
             (all.length > 5 ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search roadbooks…'))}" autocomplete="off" spellcheck="false"></div>` : '') +
-            `<div class="rb-rows"></div><div class="rb-pager"></div>`;
-        const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.rb-pager');
+            `<div class="rb-rows"></div><div class="pager"></div>`;
+        const rowsEl = container.querySelector('.rb-rows'), pagerEl = container.querySelector('.pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${RBFmtDate(rb.updated_at)}</small></div>
             <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RB_STATUS_LABEL[s]))}</option>`).join('')}</select>
@@ -438,13 +512,8 @@
             if (page > pages) page = pages;
             const slice = filtered.slice((page - 1) * PER, page * PER);
             rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('No matching roadbooks.'))}</p>`;
-            pagerEl.innerHTML = pages > 1
-                ? `<button class="btn btn-ghost rb-prev"${page <= 1 ? ' disabled' : ''} aria-label="${RBesc(RBt('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button><span class="muted small">${page} / ${pages}</span><button class="btn btn-ghost rb-next"${page >= pages ? ' disabled' : ''} aria-label="${RBesc(RBt('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
-                : '';
+            RBPager(pagerEl, page, pages, (p) => { page = p; render(); });
             wireRows();
-            const prev = pagerEl.querySelector('.rb-prev'), next = pagerEl.querySelector('.rb-next');
-            if (prev) prev.onclick = () => { if (page > 1) { page--; render(); } };
-            if (next) next.onclick = () => { if (page < pages) { page++; render(); } };
         };
         const search = container.querySelector('.rb-search');
         if (search) search.oninput = () => { q = search.value; page = 1; render(); };

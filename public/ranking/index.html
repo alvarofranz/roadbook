@@ -23,11 +23,8 @@
         #manualMeta { flex: 1; min-width: 200px; width: auto; padding: .6rem; }
         .config-row { margin-top: .8rem; align-items: center; }
         #msg { margin-top: .5rem; }
-        #msg.ok { color: var(--ok); }
-        #msg.err { color: var(--track); }
         .rank-results { margin-top: 1rem; }
         .card-head h2 { margin: 0; }
-        .table-scroll { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -50,7 +47,7 @@
             <label class="muted small"><span data-i18n="Target average speed">Target average speed</span> <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
             <span class="muted small" data-i18n="(used for regularity if the QR doesn't carry it)">(used for regularity if the QR doesn't carry it)</span>
         </div>
-        <div id="msg" class="muted small"></div>
+        <div id="msg" class="muted small msg"></div>
     </section>
 
     <section class="panel rank-results">

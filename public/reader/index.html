@@ -25,22 +25,20 @@
         .odo-fs { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 1.05rem; line-height: 1; cursor: pointer; border-radius: 8px; }
         .odo-fs:hover { color: var(--sand); border-color: var(--sand); }
         .odo-logo { flex-shrink: 0; max-height: 40px; width: auto; object-fit: contain; }
-        /* fullscreen (shared body.rb-fs hides header/footer): pin the bar to the very top */
-        body.rb-fs .odometer-bar { top: 0; }
         /* CAP / clock / GPS / battery indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        /* bearing indicator: a directional arrow (0° = up = straight ahead) that rotates toward the next note relative to your heading */
-        .odometer-bar .odo-arrow { color: var(--sand); transform: rotate(var(--cap-rotation, 0deg)); transition: transform .35s ease; }
+        /* bearing indicator: the shared .cap-arrow rotation (0° = up = straight ahead), accented */
+        .odometer-bar .cap-arrow { color: var(--sand); }
         .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
         /* bottom CAP bar */
         .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
-        .capbar .cap-arrow { font-size: 1.4rem; transform: rotate(var(--cap-rotation, -45deg)); transition: transform .35s ease; }
+        .capbar .cap-arrow { font-size: 1.4rem; --cap-rotation: -45deg; } /* the location-arrow glyph points NE, hence the -45° rest */
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
         .mode-grid { margin-top: 1rem; grid-template-columns: 1fr 1fr; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
         .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
-        @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } .odometer-bar { top: 0; } }
+        @media (orientation: landscape) and (max-height: 540px) { .odometer-bar { top: 0; } } /* the topbar hide is the shared body.gps-tool rule */
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
            (done/skipped/active/close) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
@@ -57,7 +55,7 @@
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
     </style>
 </head>
-<body>
+<body class="gps-tool">
 <header class="topbar"></header>
 
 <!-- load -->
@@ -88,7 +86,7 @@
             <img class="odo-logo" id="odoLogo" alt="" hidden>
         </div>
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
-        <span class="ind"><i class="fa-solid fa-arrow-up odo-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
+        <span class="ind"><i class="fa-solid fa-arrow-up cap-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
         <span class="ind"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind"><i class="fa-solid fa-battery-half" id="odoBattIcon"></i> <span id="odoBatt">—</span></span>
@@ -168,6 +166,7 @@
 <script src="../assets/js/roadbook-core.js?v=2026.07.04-7"></script>
 <script src="../assets/js/rbmap.js?v=2026.07.04-7"></script>
 <script src="../assets/js/gps-meter.js?v=2026.07.04-7"></script>
+<script src="../assets/js/status-bar.js?v=2026.07.04-7"></script>
 <script src="../assets/js/gpx-recorder.js?v=2026.07.04-7"></script>
 <script src="../assets/js/note-canvas.js?v=2026.07.04-7"></script>
 <script src="../assets/js/qrcode.min.js?v=2026.07.04-7"></script>

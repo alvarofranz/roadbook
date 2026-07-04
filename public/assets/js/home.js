@@ -32,15 +32,12 @@
     const render = () => {
         if (!cards) return;
         if (!cards.length) { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; return; }
-        grid.innerHTML = cards.slice(0, TEASER).map((r) => `
-            <a class="gallery-card" href="${ROOT}challenge/${encodeURIComponent(r.slug)}">
-                ${r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
-                    : (routeCache[r.slug] || `<div class="thumb thumb-placeholder" data-route="${esc(r.slug)}"><i class="fa-solid fa-map-location-dot"></i></div>`)}
-                <div class="gallery-body">
-                    <h3>${esc(r.title)}</h3>
-                    <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div>
-                </div>
-            </a>`).join('');
+        grid.innerHTML = cards.slice(0, TEASER).map((r) => RBGalleryCard({
+            href: `${ROOT}challenge/${encodeURIComponent(r.slug)}`, thumb: r.thumb, title: r.title,
+            meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
+            // photo-less cards start with a marked placeholder that fillRoutes swaps for the route SVG
+            placeholder: routeCache[r.slug] || `<div class="thumb thumb-placeholder" data-route="${esc(r.slug)}"><i class="fa-solid fa-map-location-dot"></i></div>`,
+        })).join('');
         fillRoutes();
     };
 

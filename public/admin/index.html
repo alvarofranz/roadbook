@@ -12,10 +12,8 @@
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.04-7">
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.04-7">
     <style>
-        #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
-        /* Column table; min-width keeps the columns intact and the wrapper scrolls horizontally
-           on narrow/medium screens instead of squeezing or breaking the layout. */
-        .table-scroll { overflow-x: auto; }
+        /* Column table; min-width keeps the columns intact and the shared .table-scroll wrapper
+           scrolls horizontally on narrow/medium screens instead of squeezing the layout. */
         .users-table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: .9rem; }
         .users-table th, .users-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
         .users-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
@@ -32,8 +30,6 @@
         .users-toolbar { display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; color: var(--muted); }
         .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
         .users-toolbar .users-event-filter { flex: none; width: auto; max-width: 16rem; } /* the per-event people filter */
-        .users-pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
-        .users-pager .btn { margin: 0; }
         /* the per-user roadbook list needs more room than the default wide modal; let titles wrap */
         .rb-list { max-width: min(820px, 94vw); }
         .rb-list .act-table td:first-child { white-space: normal; }
@@ -46,7 +42,7 @@
 <body>
 <header class="topbar"></header>
 
-<main class="wrap" id="adminWrap">
+<main class="wrap admin-wrap">
     <h1 data-i18n="User management">User management</h1>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
     <div id="usersBox" hidden>
@@ -64,7 +60,7 @@
                 <tbody id="usersBody"></tbody>
             </table>
         </div>
-        <div id="usersPager" class="users-pager"></div>
+        <div id="usersPager" class="pager"></div>
     </div>
 </main>
 

@@ -14,12 +14,10 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.04-7">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
-        @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
         /* recorded km box sits to the right of Waypoints → four readouts in a row */
         .rec-readouts { grid-template-columns: repeat(4, 1fr); }
         /* live map: the recorded track + waypoints + geotagged photos */
         .rec-map { height: 46vh; min-height: 280px; padding: 0; overflow: hidden; border-radius: 14px; margin-bottom: .8rem; }
-        .map-placeholder { padding: 1rem; color: var(--muted); }
         .rec-counts { color: var(--muted); font-size: .8rem; text-align: center; margin-top: -.2rem; }
         /* compact readouts; big full-width Pause/Waypoint on one row (as wide as the map) */
         .rec-main .row3 .mini { padding: .4rem .35rem; }
@@ -42,7 +40,6 @@
             .rec-lastwp { margin-bottom: 0; padding: .45rem .6rem; } /* spacing handled by .dash gap */
             .rec-map { margin-bottom: 0; }
         }
-        .photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
         /* waypoint quick-note: text field + dictation mic; the mic pulses while listening */
         .wf-row { display: flex; gap: .5rem; align-items: center; }
         .wf-row .field { flex: 1; min-width: 0; }
@@ -51,10 +48,9 @@
         #recWptAudio { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
         /* latest waypoint note (incl. live dictated audio text) shown while recording */
         .rec-lastwp { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .8rem; font-size: .9rem; color: var(--text); }
-        @media (orientation: landscape) and (max-height: 540px) { header.topbar { display: none; } }
     </style>
 </head>
-<body>
+<body class="gps-tool">
 <header class="topbar"></header>
 
 <main class="wrap rec-main">

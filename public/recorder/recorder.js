@@ -113,13 +113,12 @@
         if (h != null) course = smoothHeading(course, h);
         if (!lastHeadingPos || RB.geo.haversineM(lastHeadingPos, cur) > 4) lastHeadingPos = cur;
         if (map) map.setPosition(fix.here.lat, fix.here.lon, true, course);
-        if (c.accuracy != null && c.accuracy > 35) { renderBar(); return; } // drop junk fixes
+        if (RB.recJunkFix(c.accuracy)) { renderBar(); return; }
         here = { lat: fix.here.lat, lon: fix.here.lon, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
         lastFixT = fix.tnow; // latest fix time — a dropped waypoint shares the track's time base (#158)
         if (paused) { renderBar(); return; }
         recordedM += fix.disp;
-        // dense detail with a good fix, no jitter with a weak one
-        const step = Math.max(2.5, (c.accuracy || 10) * 0.35);
+        const step = RB.recStepM(c.accuracy); // accuracy-scaled sampling (shared with the Editor's recording)
         if (!lastSampled || RB.geo.haversineM(lastSampled, here) >= step) {
             lastSampled = here; track.push(here);
             RBGpxRecorder.add(here, fix.tnow); // the crash-safe checkpoint + live file own the authoritative track
@@ -171,38 +170,12 @@
         if (note && note.text) { el.textContent = t('Waypoint') + ' ' + note.num + ': ' + note.text; el.hidden = false; }
         else el.hidden = true;
     }
-    // Waypoint: drops instantly, then a no-pressure quick-text modal that auto-dismisses
-    // after 5 s ("Edit later (5)…") — unless you start typing, then it waits for you.
+    // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s),
+    // with the dictation mic where speech-to-text is supported.
     $('recWpt').onclick = () => {
         if (!here) return toast(t('Waiting for a GPS fix…'));
         const note = dropWaypoint(here.lat, here.lon, '');
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition; // speech-to-text where supported
-        const micBtn = SR ? `<button class="btn btn-ghost" type="button" id="wfMic" aria-label="${t('Dictate')}" title="${t('Dictate')}"><i class="fa-solid fa-microphone"></i></button>` : '';
-        const d = RBModal(`<h3>${t('Waypoint')} ${note.num}</h3>
-            <div class="wf-row"><input id="wfText" class="field" placeholder="${t('Quick note (optional)…')}" autocomplete="off">${micBtn}</div>
-            <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${t('Edit later')} (5)</button></div>`, 'narrow', () => finish());
-        const inp = d.q('#wfText'), btn = d.q('#wfBtn');
-        setTimeout(() => inp.focus(), 50);
-        let n = 5, typed = false;
-        const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${t('Edit later')} (${n})`; }, 1000);
-        function finish() { clearInterval(timer); note.text = inp.value.trim(); showWpText(note); d.close(); }
-        inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = t('Save note'); } });
-        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
-        btn.onclick = finish;
-        // dictate the note straight into the field (tap to start, tap to stop)
-        if (SR) {
-            const mic = d.q('#wfMic'); let rec = null;
-            mic.onclick = () => {
-                if (rec) { rec.stop(); return; }
-                rec = new SR();
-                rec.lang = voiceLang();
-                rec.interimResults = true;
-                rec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; inp.value = txt; typed = true; btn.textContent = t('Save note'); };
-                const done = () => { mic.classList.remove('on'); rec = null; };
-                rec.onend = done; rec.onerror = done;
-                mic.classList.add('on'); try { rec.start(); } catch (e) { done(); }
-            };
-        }
+        RBWaypointPrompt(note.num, (text) => { note.text = text; showWpText(note); }, { mic: true, lang: voiceLang });
     };
 
     // "WP audio" (#129): press and HOLD to record — drops a waypoint and records its note
@@ -326,13 +299,7 @@
         if (!r.ok) return toast(r.error || 'Photo failed.');
         photos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); refreshMap(); saveSession(); renderBar();
         const lat = r.lat != null ? r.lat : (here && here.lat), lon = r.lon != null ? r.lon : (here && here.lon);
-        const d = RBModal(`<img src="${r.url}" alt="" class="photo-preview">
-            <div class="btnrow center">
-                <button class="btn btn-ghost" id="ptOk">OK</button>
-                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${t('Convert into waypoint')}</button>
-            </div>`, 'slim center');
-        d.q('#ptOk').onclick = d.close;
-        d.q('#ptWpt').onclick = () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } d.close(); };
+        RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } });
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */

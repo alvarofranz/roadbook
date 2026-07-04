@@ -193,13 +193,7 @@
             ? slice.map(rowHtml).join('')
             : `<tr><td colspan="3" class="muted">${esc(t('No matching users.'))}</td></tr>`;
         wireRows();
-        const pager = $('usersPager');
-        pager.innerHTML = pages > 1
-            ? `<button class="btn btn-ghost" id="uPrev"${page <= 1 ? ' disabled' : ''} aria-label="${esc(t('Previous'))}"><i class="fa-solid fa-chevron-left"></i></button><span class="muted small">${page} / ${pages} · ${filtered.length} ${esc(t('users'))}</span><button class="btn btn-ghost" id="uNext"${page >= pages ? ' disabled' : ''} aria-label="${esc(t('Next'))}"><i class="fa-solid fa-chevron-right"></i></button>`
-            : (filtered.length ? `<span class="muted small">${filtered.length} ${esc(t('users'))}</span>` : '');
-        const prev = $('uPrev'), next = $('uNext');
-        if (prev) prev.onclick = () => { if (page > 1) { page--; render(); } };
-        if (next) next.onclick = () => { if (page < pages) { page++; render(); } };
+        RBPager($('usersPager'), page, pages, (p) => { page = p; render(); }, filtered.length ? `${filtered.length} ${esc(t('users'))}` : '');
     }
 
     async function load() {
@@ -223,9 +217,7 @@
     }
 
     async function init() {
-        const cfg = await api('config');
-        if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../account/">${esc(t('Sign in'))}</a>`; return; }
-        if (!cfg.user.is_admin) { $('adminMsg').textContent = t('Admins only.'); return; }
+        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../account/' }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
         loadEventFilter();
         load();

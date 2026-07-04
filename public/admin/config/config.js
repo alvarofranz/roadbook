@@ -6,9 +6,7 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
 
     (async function init() {
-        const cfg = await api('config');
-        if (!cfg.user) { $('adminMsg').innerHTML = `${esc(t('Sign in to continue.'))} <a href="../../account/">${esc(t('Sign in'))}</a>`; return; }
-        if (!cfg.user.is_admin) { $('adminMsg').textContent = t('Admins only.'); return; }
+        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../../account/' }))) return;
         $('adminMsg').hidden = true; $('cfgBody').hidden = false;
 
         const s = await api('admin_settings');

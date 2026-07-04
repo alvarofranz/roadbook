@@ -17,7 +17,7 @@ window.RBGpxRecorder = (() => {
         const d = new Date();
         return 'RDBK_trip_' + pad2(d.getDate()) + pad2(d.getMonth() + 1) + pad2(d.getFullYear() % 100) + '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
     };
-    const trackKm = (p) => { let m = 0; for (let i = 1; i < p.length; i++) m += RB.geo.haversineM(p[i - 1], p[i]); return m / 1000; };
+    const trackKm = (p) => p.length ? RB.cumulativeM(p)[p.length - 1] / 1000 : 0;
     const download = (p, name) => RBDownload(new Blob([RB.gpxDocument(name || defaultName(), p)], { type: 'application/gpx+xml' }), (name || defaultName()) + '.gpx');
     async function writeFile() { if (!fileHandle) return; try { const w = await fileHandle.createWritable(); await w.write(RB.gpxDocument(fileName, pts)); await w.close(); } catch (e) {} }
     function persist(tnow) {
@@ -34,7 +34,7 @@ window.RBGpxRecorder = (() => {
     function begin(opts = {}) { on = true; pts = []; lastT = 0; lastPersist = 0; useCheckpoint = opts.checkpoint !== false; onChange(true); toast('Recording GPX track.'); }
     // sampled intake (Tripmaster + Reader): one point per interval, junk fixes dropped
     function feed(coords, here, tnow) {
-        if (!on || (coords.accuracy != null && coords.accuracy > 35) || tnow - lastT < sampleMs) return;
+        if (!on || RB.recJunkFix(coords.accuracy) || tnow - lastT < sampleMs) return;
         pts.push({ lat: here.lat, lon: here.lon, ele: (coords.altitude != null && isFinite(coords.altitude)) ? coords.altitude : null, t: tnow });
         lastT = tnow; persist(tnow); // crash-safe: localStorage + live file write
     }

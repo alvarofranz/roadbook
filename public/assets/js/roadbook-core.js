@@ -262,7 +262,7 @@
             const note = {
                 num: i + 1, idx: idxOf(r, i), lat: r.lat, lon: r.lon,
                 distance: r.distM != null ? r.distM : 0, partial_distance: 0,
-                text: /^(wpt\s*\d*|start|end|\d+)$/i.test(r.name) ? '' : r.name,
+                text: wptText({ name: r.name }),
                 cap: r.cap != null ? Math.round(r.cap) : null, cap_distance: null,
                 bearing_in: 0, bearing_out: 0, road_type_in: 0, road_type_out: 0,
                 icons: [], junctions: null,
@@ -343,6 +343,19 @@
         for (let i = 1; i < trkpts.length; i++) cum[i] = cum[i - 1] + haversineM(trkpts[i - 1], trkpts[i]);
         return cum;
     }
+    // A note's bearings at track index `idx`: in = from the previous point (falling back to the
+    // outgoing one at the track start), out = to the next point (falling back to in at the end).
+    function deriveBearings(trkpts, idx) {
+        const tp = trkpts[idx];
+        const bIn = idx > 0 ? bearingDeg(trkpts[idx - 1], tp) : (idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : 0);
+        const bOut = idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : bIn;
+        return { bIn, bOut };
+    }
+    // Live-recording intake (Recorder · the Editor's record/adjust · the GPX logger): a fix
+    // worse than 35 m is junk; the sampling step scales with the accuracy — dense detail with
+    // a good fix, no jitter with a weak one.
+    const recJunkFix = (acc) => acc != null && acc > 35;
+    const recStepM = (acc) => Math.max(2.5, (acc || 10) * 0.35);
 
     // Build the roadbook JSON from a track + waypoints.
     function buildRoadbook({ name, trkpts, wpts }) {
@@ -366,8 +379,7 @@
             const idx = w.idx;
             const prevIdx = i > 0 ? withIdx[i - 1].idx : null;
             const tp = trkpts[idx];
-            const bIn = idx > 0 ? bearingDeg(trkpts[idx - 1], tp) : (idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : 0);
-            const bOut = idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : bIn;
+            const { bIn, bOut } = deriveBearings(trkpts, idx);
             const note = {
                 num: i + 1, idx,
                 distance: Math.round(cum[idx]),
@@ -522,8 +534,7 @@
             n.lat = round6(tp.lat); n.lon = round6(tp.lon);
             n.distance = Math.round(cum[idx]);
             n.partial_distance = Math.round(i === 0 ? 0 : Math.max(0, cum[idx] - cum[rb.notes[i - 1].idx]));
-            const bIn = idx > 0 ? bearingDeg(rb.track[idx - 1], tp) : (idx < rb.track.length - 1 ? bearingDeg(tp, rb.track[idx + 1]) : 0);
-            const bOut = idx < rb.track.length - 1 ? bearingDeg(tp, rb.track[idx + 1]) : bIn;
+            const { bIn, bOut } = deriveBearings(rb.track, idx);
             n.bearing_in = round3(bIn); n.bearing_out = round3(bOut);
         });
         normalizeRoadTypes(rb);
@@ -605,9 +616,11 @@
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
+    // XML attribute/text escape, shared by the GPX and OpenRally serializers.
+    const xmlEsc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
     // Serialize a GPX 1.1 document: a track (points may carry ele/t) + optional named waypoints.
     function gpxDocument(name, pts, wpts) {
-        const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+        const x = xmlEsc;
         const trkpts = pts.map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}${p.t ? '<time>' + new Date(p.t).toISOString() + '</time>' : ''}</trkpt>`).join('');
         // a wpt may carry app icons: `sym` = Garmin standard symbol (+ a gpxx WaypointExtension so
         // Garmin shows symbol+name) · `osmandIcon`/`color` = OSMAnd extensions. Both tag sets live
@@ -701,7 +714,7 @@
         opts = opts || {};
         const tulips = opts.tulips || [];
         const NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
-        const x = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+        const x = xmlEsc;
         const name = opts.name || (rb.meta && rb.meta.title) || 'RDBK roadbook';
         // re-emit one preserved openrally: element (from an imported note's passthrough) verbatim
         const emitOr = (e) => {
@@ -959,6 +972,7 @@
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
+        cumulativeM, deriveBearings, recJunkFix, recStepM,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

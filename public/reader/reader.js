@@ -179,18 +179,12 @@
         clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
         startBattery();
     }
-    // battery charge in the indicator row (best-effort; not all browsers expose the API)
+    // battery charge in the indicator row — fed by the shared RBStatusBar battery watch
     let clockTimer = null, battWired = false;
-    const battIcon = (p) => p > 80 ? 'fa-battery-full' : p > 55 ? 'fa-battery-three-quarters' : p > 30 ? 'fa-battery-half' : p > 10 ? 'fa-battery-quarter' : 'fa-battery-empty';
     function startBattery() {
-        if (!('getBattery' in navigator)) { $('odoBatt').textContent = 'N/A'; return; }
         if (battWired) return; battWired = true; // the listeners live for the page — wire once
-        try {
-            navigator.getBattery().then((b) => {
-                const upd = () => { const p = Math.round(b.level * 100); $('odoBatt').textContent = p + '%'; $('odoBattIcon').className = 'fa-solid ' + (b.charging ? 'fa-bolt' : battIcon(p)); };
-                ['levelchange', 'chargingchange'].forEach((e) => b.addEventListener(e, upd)); upd();
-            }).catch(() => {});
-        } catch (e) {}
+        const ok = RBStatusBar.watchBattery(({ pct, icon }) => { $('odoBatt').textContent = pct + '%'; $('odoBattIcon').className = 'fa-solid ' + icon; });
+        if (!ok) $('odoBatt').textContent = 'N/A';
     }
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */

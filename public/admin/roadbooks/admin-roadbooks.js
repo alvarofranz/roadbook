@@ -4,9 +4,7 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     (async function init() {
-        const cfg = await RBApi('config');
-        if (!cfg.user) { $('adminMsg').innerHTML = `${RBesc(RBt('Sign in to continue.'))} <a href="../../account/">${RBesc(RBt('Sign in'))}</a>`; return; }
-        if (!cfg.user.is_admin) { $('adminMsg').textContent = RBt('Admins only.'); return; }
+        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../../account/' }))) return;
         $('adminMsg').hidden = true; $('pubList').hidden = false;
         RBPublicRoadbooksList($('pubList'));
     })();

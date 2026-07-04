@@ -9,8 +9,9 @@
     const parts = location.pathname.split('/').filter(Boolean);
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'event') { $('evLoading').textContent = t('Not found.'); return; }
-    const dates = (e) => e.starts_on ? (e.ends_on && e.ends_on !== e.starts_on ? `${RBFmtDate(e.starts_on)} – ${RBFmtDate(e.ends_on)}` : RBFmtDate(e.starts_on)) : '';
+    const meta = (e) => '@' + (e.organizer || '') + (RBDateRange(e.starts_on, e.ends_on) ? ' · ' + RBDateRange(e.starts_on, e.ends_on) : '');
     let ev = null; // the loaded event — kept for the language-switch re-render
+    const whoami = RBApi('config').catch(() => ({})); // fetched once; renderJoin awaits it on every re-render
 
     function render(j) {
         const e = ev = j.event;
@@ -18,14 +19,13 @@
         $('evTitle').textContent = e.title;
         if (e.logo) { $('evLogo').src = e.logo; $('evLogo').hidden = false; }
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
-        $('evMeta').textContent = '@' + (e.organizer || '') + (dates(e) ? ' · ' + dates(e) : '');
+        $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';
-        const card = (r) => `<a class="gallery-card" href="/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}">${
-            r.thumb ? `<img class="thumb" src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy">`
-                    : `<div class="thumb thumb-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>`}
-            <div class="gallery-body"><h3>${esc(r.title)}</h3>
-            <div class="gallery-meta">@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</div>
-            ${r.status === 'ready' ? `<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ${esc(t('Participants only'))}</div>` : ''}</div></a>`;
+        const card = (r) => RBGalleryCard({
+            href: `/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}`, thumb: r.thumb, title: r.title,
+            meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
+            body: r.status === 'ready' ? `<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ${esc(t('Participants only'))}</div>` : '',
+        });
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
@@ -36,7 +36,7 @@
     const load = () => RBApi('event_get', { slug })
         .then((j) => { if (j.ok) render(j); else $('evLoading').textContent = t('Not found.'); })
         .catch(() => { $('evLoading').textContent = t('Not found.'); });
-    window.addEventListener('rb-lang', () => { if (ev) $('evMeta').textContent = '@' + (ev.organizer || '') + (dates(ev) ? ' · ' + dates(ev) : ''); });
+    window.addEventListener('rb-lang', () => { if (ev) $('evMeta').textContent = meta(ev); });
     load();
 
     // Join with code (#123): shown when the organizer enabled joining. Signed-in users enter
@@ -45,7 +45,7 @@
         const box = $('evJoin');
         if (!e.can_join && !e.joined) { box.hidden = true; return; }
         box.hidden = false;
-        const cfg = await RBApi('config');
+        const cfg = await whoami; // resolved once at page load
         if (!cfg.user) {
             box.innerHTML = `<span class="grow">${esc(t('Sign in to join this event with the organizer’s code.'))}</span>
                 <a class="btn btn-primary" href="/account/?next=${encodeURIComponent(location.pathname)}">${esc(t('Sign in'))}</a>`;

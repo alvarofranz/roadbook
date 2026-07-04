@@ -10,9 +10,8 @@
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="../../../assets/css/app.css">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=2026.07.04-7">
     <style>
-        #adminWrap { max-width: 1000px; margin: 1.2rem auto; }
         /* title + page actions (View · Save) share one row */
         .ev-head-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
         .ev-head-row h1 { margin: 0; flex: 1; min-width: 12rem; }
@@ -39,9 +38,6 @@
         .ev-dates-row .field { width: auto; margin: 0; }
         .ev-dates-row .field-label, .ev-dates-row .checkbox-row { margin: 0; }
         .ev-dates-row .checkbox-row { margin-left: auto; }
-        /* one-line "value + actions" rows (organizers, participants, join code) */
-        .ev-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; }
-        .ev-line .meta { flex: 1; min-width: 10rem; }
         .ev-add-row { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; }
         .ev-add-row .field { flex: 1; margin: 0; }
         .ev-add-row .btn { width: auto; }
@@ -55,7 +51,7 @@
 <body>
 <header class="topbar"></header>
 
-<main class="wrap" id="adminWrap">
+<main class="wrap admin-wrap">
     <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
     <!-- heading row: the title with the page actions (View · Save) on the SAME line -->
     <div class="ev-head-row">
