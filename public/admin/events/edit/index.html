@@ -46,6 +46,8 @@
         .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
         /* the event logo (#151): avatar-style preview beside its upload/remove actions */
         .ev-logo-thumb { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
+        /* the duplicated Save at the foot of the form (#179) */
+        .ev-save-bottom { margin: 1rem 0 2rem; }
     </style>
 </head>
 <body>
@@ -121,6 +123,11 @@
             </div>
             <div class="btnrow"><a class="btn btn-ghost" id="ppPageLink"><i class="fa-solid fa-users"></i> <span data-i18n="View participants">View participants</span></a></div>
         </section>
+
+        <!-- a second Save, so a long form doesn't force a scroll back to the top -->
+        <div class="btnrow end ev-save-bottom">
+            <button class="btn btn-primary" id="evSaveBottom" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
+        </div>
     </div>
 </main>
 

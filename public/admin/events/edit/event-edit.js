@@ -46,7 +46,7 @@
         else if (del) { cats.splice(+del.dataset.catdel, 1); renderCats(); }
     });
     $('evCatAdd').onclick = () => { cats.push({ id: 0, name: '' }); renderCats(); const inp = $('evCats').querySelector(`[data-cat="${cats.length - 1}"]`); if (inp) inp.focus(); };
-    $('evSave').onclick = async () => {
+    async function save() {
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
@@ -57,7 +57,11 @@
         toast('Saved.');
         if (!id) { id = x.id; history.replaceState(null, '', '?id=' + id); } // a new event now exists: pin it to the URL
         load();
-    };
+    }
+    // Save is offered at both the top (in the heading row) and the foot of the form, so a long
+    // event page never forces a scroll back up to save (#179).
+    $('evSave').onclick = save;
+    $('evSaveBottom').onclick = save;
 
     /* ---------- the event logo (#151): preview + upload + remove ---------- */
     function renderLogo() {
