@@ -83,6 +83,28 @@ function rate_limit(string $key, int $max, int $window): void {
 }
 function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
 
+// Same-origin guard for state-changing requests (the POST API + uploads): a cross-site page
+// can fire the request, but the browser stamps its Origin — refuse when it names another host.
+function require_same_origin(): void {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
+}
+
+// A URL slug unique within a table (roadbooks · events): the slugified title, then -2, -3, …
+// The table name is whitelisted — it is interpolated into the query.
+function unique_slug(string $table, string $title, string $fallback, int $excludeId): string {
+    if (!in_array($table, ['roadbooks', 'events'], true)) fail('Server error.', 500);
+    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($title)), '-');
+    $base = substr($base ?: $fallback, 0, 60);
+    $slug = $base; $n = 1;
+    while (true) {
+        $st = db()->prepare("SELECT id FROM $table WHERE slug = ? AND id <> ?");
+        $st->execute([$slug, $excludeId]);
+        if (!$st->fetch()) return $slug;
+        $slug = $base . '-' . (++$n);
+    }
+}
+
 // Anonymise an IP before logging (GDPR, #86): drop the last octet of an IPv4 address, or all
 // but the first three groups of an IPv6 one, so a logged address can't single out a person.
 function anon_ip(string $ip): string {

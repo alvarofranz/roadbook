@@ -11,18 +11,6 @@
 const EVENT_SCORING_MODES = ['free', 'roadbook_suite'];
 function event_scoring_mode($m): string { return in_array($m, EVENT_SCORING_MODES, true) ? $m : 'free'; }
 
-function event_slug(string $title, int $excludeId): string {
-    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($title)), '-');
-    $base = substr($base ?: 'event', 0, 60);
-    $slug = $base; $n = 1;
-    while (true) {
-        $st = db()->prepare('SELECT id FROM events WHERE slug = ? AND id <> ?');
-        $st->execute([$slug, $excludeId]);
-        if (!$st->fetch()) return $slug;
-        $slug = $base . '-' . (++$n);
-    }
-}
-
 /* ---- per-event management rights: admin, the owner, or a listed co-organizer (#123) ---- */
 // Does this user own or co-organize at least one event? Drives the header's Events link for
 // users without the global organizer role.
@@ -33,28 +21,20 @@ function user_manages_events(int $uid): bool {
     return (bool)$st->fetch();
 }
 
-// Participant read access (#25): a signed-in user may READ a non-public roadbook when it is
-// attached to an event they joined — or organize (organizers can already edit it, #123).
-function event_grants_read(int $uid, int $roadbookId): bool {
+// Event-granted rights on a roadbook attached to an event: the organizers (owner or listed
+// co-organizer) can EDIT it (#123); with $includeParticipants a participant may also READ a
+// non-public one (#25). One query, the participant clause added only for the read check.
+function event_rights_on_roadbook(int $uid, int $roadbookId, bool $includeParticipants): bool {
     $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
         WHERE er.roadbook_id = ? AND (e.organizer_id = ?
-            OR EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ?)
-            OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?))
+            OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)'
+            . ($includeParticipants ? ' OR EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ?)' : '') . ')
         LIMIT 1');
-    $st->execute([$roadbookId, $uid, $uid, $uid]);
+    $st->execute($includeParticipants ? [$roadbookId, $uid, $uid, $uid] : [$roadbookId, $uid, $uid]);
     return (bool)$st->fetch();
 }
-
-// Event co-editing (#123): the organizers of an event can edit the roadbooks attached to it —
-// true when the user owns or co-organizes at least one event this roadbook is associated with.
-function event_co_edits_roadbook(int $uid, int $roadbookId): bool {
-    $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
-        WHERE er.roadbook_id = ? AND (e.organizer_id = ?
-            OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?))
-        LIMIT 1');
-    $st->execute([$roadbookId, $uid, $uid]);
-    return (bool)$st->fetch();
-}
+function event_grants_read(int $uid, int $roadbookId): bool { return event_rights_on_roadbook($uid, $roadbookId, true); }
+function event_co_edits_roadbook(int $uid, int $roadbookId): bool { return event_rights_on_roadbook($uid, $roadbookId, false); }
 function event_can_manage(array $user, array $eventRow): bool {
     if (is_admin($user) || (int)$eventRow['organizer_id'] === (int)$user['id']) return true;
     $st = db()->prepare('SELECT 1 FROM event_organizers WHERE event_id = ? AND user_id = ?');
@@ -68,20 +48,30 @@ function require_event_manage(array $user, int $id): array {
     if (!event_can_manage($user, $row)) fail('Not allowed.', 403);
     return $row;
 }
+// Owner-only event actions (the organizer list, deleting the event): co-organizers manage
+// content, never access — those stay with the owner (or an admin).
+function require_event_owner(array $user, int $id): array {
+    $e = require_event_manage($user, $id);
+    if (!is_admin($user) && (int)$e['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
+    return $e;
+}
 
 // Management list: an admin sees every event; anyone else sees the events they own or
 // co-organize (#123) — a plain user simply gets an empty list.
 function events_manage(array $user): void {
+    // grouped LEFT JOINs give the per-event roadbook/participant counts in one pass instead
+    // of two correlated subqueries per listed event
     $sql = 'SELECT e.id, e.slug, e.title, e.starts_on, e.ends_on, e.is_public, e.logo, u.username AS organizer,
-            (SELECT COUNT(*) FROM event_roadbooks er WHERE er.event_id = e.id) AS roadbooks,
-            (SELECT COUNT(*) FROM event_participants ep WHERE ep.event_id = e.id) AS participants
-        FROM events e JOIN users u ON u.id = e.organizer_id';
+            COUNT(DISTINCT er.roadbook_id) AS roadbooks, COUNT(DISTINCT ep.user_id) AS participants
+        FROM events e JOIN users u ON u.id = e.organizer_id
+        LEFT JOIN event_roadbooks er ON er.event_id = e.id
+        LEFT JOIN event_participants ep ON ep.event_id = e.id';
+    $tail = ' GROUP BY e.id ORDER BY e.created_at DESC';
     if (is_admin($user)) {
-        $rows = db()->query($sql . ' ORDER BY e.created_at DESC')->fetchAll();
+        $rows = db()->query($sql . $tail)->fetchAll();
     } else {
         $st = db()->prepare($sql . ' WHERE e.organizer_id = ? OR EXISTS
-            (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)
-            ORDER BY e.created_at DESC');
+            (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)' . $tail);
         $st->execute([(int)$user['id'], (int)$user['id']]);
         $rows = $st->fetchAll();
     }
@@ -164,38 +154,43 @@ function event_save(array $user, array $d): void {
     $isPublic = !empty($d['is_public']) ? 1 : 0;
     // Categories/classes: [{id, name}] kept in the given order.
     $cats = is_array($d['categories'] ?? null) ? $d['categories'] : [];
-    if ($id > 0) {
-        $e = require_event_manage($user, $id);
-        $slug = $e['slug'];
-        db()->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ? WHERE id = ?')
-            ->execute([$title, $desc, $starts, $ends, $isPublic, $id]);
-    } else {
-        if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403);
-        $slug = event_slug($title, 0);
-        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
-        $id = (int)db()->lastInsertId();
-        // the owner is also listed among the event's organizers
-        db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
-    }
-    // UPSERT keeping ids stable: P2.4 entries will reference event_categories.id, so renaming
-    // or reordering must never churn the id — only categories dropped from the list are deleted.
-    $st = db()->prepare('SELECT id FROM event_categories WHERE event_id = ?');
-    $st->execute([$id]);
-    $existing = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
-    $updCat = db()->prepare('UPDATE event_categories SET name = ?, sort = ? WHERE id = ? AND event_id = ?');
-    $insCat = db()->prepare('INSERT INTO event_categories (event_id, name, sort) VALUES (?,?,?)');
-    $keep = []; $ci = 0;
-    foreach ($cats as $c) {
-        $cid = (int)($c['id'] ?? 0);
-        $name = substr(trim((string)($c['name'] ?? '')), 0, 100);
-        if ($name === '') continue;
-        if ($cid > 0 && in_array($cid, $existing, true)) { $updCat->execute([$name, $ci, $cid, $id]); $keep[] = $cid; }
-        else { $insCat->execute([$id, $name, $ci]); $keep[] = (int)db()->lastInsertId(); }
-        $ci++;
-    }
-    db()->prepare('DELETE FROM event_categories WHERE event_id = ?'
-        . ($keep ? ' AND id NOT IN (' . implode(',', $keep) . ')' : ''))->execute([$id]);
+    // rights + slug first, then ALL the writes in one transaction — a mid-way failure must
+    // not leave the event saved with half its categories
+    if ($id > 0) { $e = require_event_manage($user, $id); $slug = $e['slug']; }
+    else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        if ($id > 0) {
+            $pdo->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ? WHERE id = ?')
+                ->execute([$title, $desc, $starts, $ends, $isPublic, $id]);
+        } else {
+            $pdo->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
+                ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
+            $id = (int)$pdo->lastInsertId();
+            // the owner is also listed among the event's organizers
+            $pdo->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
+        }
+        // UPSERT keeping ids stable: P2.4 entries will reference event_categories.id, so renaming
+        // or reordering must never churn the id — only categories dropped from the list are deleted.
+        $st = $pdo->prepare('SELECT id FROM event_categories WHERE event_id = ?');
+        $st->execute([$id]);
+        $existing = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+        $updCat = $pdo->prepare('UPDATE event_categories SET name = ?, sort = ? WHERE id = ? AND event_id = ?');
+        $insCat = $pdo->prepare('INSERT INTO event_categories (event_id, name, sort) VALUES (?,?,?)');
+        $keep = []; $ci = 0;
+        foreach ($cats as $c) {
+            $cid = (int)($c['id'] ?? 0);
+            $name = substr(trim((string)($c['name'] ?? '')), 0, 100);
+            if ($name === '') continue;
+            if ($cid > 0 && in_array($cid, $existing, true)) { $updCat->execute([$name, $ci, $cid, $id]); $keep[] = $cid; }
+            else { $insCat->execute([$id, $name, $ci]); $keep[] = (int)$pdo->lastInsertId(); }
+            $ci++;
+        }
+        $pdo->prepare('DELETE FROM event_categories WHERE event_id = ?'
+            . ($keep ? ' AND id NOT IN (' . implode(',', $keep) . ')' : ''))->execute([$id]);
+        $pdo->commit();
+    } catch (\Throwable $x) { $pdo->rollBack(); throw $x; }
     log_activity((int)$user['id'], 'event_save', 'event #' . $id);
     json_out(['ok' => true, 'id' => $id, 'slug' => $slug]);
 }
@@ -203,13 +198,9 @@ function event_save(array $user, array $d): void {
 function event_delete(array $user, array $d): void {
     global $CFG;
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT organizer_id FROM events WHERE id = ?'); $st->execute([$id]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
-    // deleting the whole event stays with the owner (or an admin) — co-organizers can't
-    if (!is_admin($user) && (int)$row['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
-    @unlink($CFG['event_logos_dir'] . '/' . $id . '.avif'); // the logo file goes with the event
+    require_event_owner($user, $id); // deleting the whole event stays with the owner (or an admin)
     db()->prepare('DELETE FROM events WHERE id = ?')->execute([$id]); // associations cascade
+    @unlink($CFG['event_logos_dir'] . '/' . $id . '.avif'); // the logo file goes with the event
     log_activity((int)$user['id'], 'event_delete', 'event #' . $id);
     json_out(['ok' => true]);
 }
@@ -272,8 +263,7 @@ function user_search(array $user, array $d): void {
 
 // Only the owner (or an admin) edits the organizer list; co-organizers manage content, not access.
 function event_org_add(array $user, array $d): void {
-    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
-    if (!is_admin($user) && (int)$e['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
+    $e = require_event_owner($user, (int)($d['event_id'] ?? 0));
     $username = trim((string)($d['username'] ?? ''));
     $st = db()->prepare('SELECT id FROM users WHERE username = ?'); $st->execute([$username]);
     $u = $st->fetch();
@@ -283,8 +273,7 @@ function event_org_add(array $user, array $d): void {
 }
 
 function event_org_remove(array $user, array $d): void {
-    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
-    if (!is_admin($user) && (int)$e['organizer_id'] !== (int)$user['id']) fail('Not allowed.', 403);
+    $e = require_event_owner($user, (int)($d['event_id'] ?? 0));
     $uid = (int)($d['user_id'] ?? 0);
     if ($uid === (int)$e['organizer_id']) fail('The event owner cannot be removed.');
     db()->prepare('DELETE FROM event_organizers WHERE event_id = ? AND user_id = ?')->execute([(int)$e['id'], $uid]);
@@ -340,10 +329,15 @@ function event_participant_remove(array $user, array $d): void {
 
 /* ---- public (no auth) ---- */
 function events_public_list(): void {
+    // grouped LEFT JOINs count each event's PUBLIC roadbooks in one pass instead of a
+    // correlated subquery per listed event
     $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, e.logo, u.username AS organizer,
-            (SELECT COUNT(*) FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id WHERE er.event_id = e.id AND r.status = 'public') AS roadbooks
+            COUNT(DISTINCT CASE WHEN r.status = 'public' THEN r.id END) AS roadbooks
         FROM events e JOIN users u ON u.id = e.organizer_id
-        WHERE e.is_public = 1 ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
+        LEFT JOIN event_roadbooks er ON er.event_id = e.id
+        LEFT JOIN roadbooks r ON r.id = er.roadbook_id
+        WHERE e.is_public = 1
+        GROUP BY e.id ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
     json_out(['ok' => true, 'events' => array_map(fn($r) => [
         'slug' => $r['slug'], 'title' => $r['title'], 'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'],
         'logo' => $r['logo'], 'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'],

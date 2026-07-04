@@ -9,11 +9,7 @@ $action = (string)($d['action'] ?? '');
 // (blocks CSRF via top-level GET navigation with a Lax session cookie).
 $readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get'];
 if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
-// Same-origin guard for state-changing requests.
-if ($method === 'POST') {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
-}
+if ($method === 'POST') require_same_origin(); // state-changing requests must come from our own pages
 
 try {
     switch ($action) {
