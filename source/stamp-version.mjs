@@ -33,16 +33,31 @@ async function htmlFiles(dir) {
 }
 
 // version.json — the trigger the app polls to force-refresh open clients.
-await writeFile(join(publicDir, 'version.json'), `{ "version": "${version}" }\n`);
+await writeFile(join(publicDir, 'version.json'), JSON.stringify({ version }) + '\n');
 
 let stamped = 0, files = 0;
+const unstamped = []; // first-party asset refs with NO ?v= token — this stamper would never touch them
+// A local <script src>/<link href> .js/.css reference; CDN URLs (a scheme or //) are exempt.
+const ASSET_REF = /(?:src|href)="([^"]+\.(?:js|css))(\?[^"]*)?"/g;
 for (const file of await htmlFiles(publicDir)) {
     const src = await readFile(file, 'utf8');
     let n = 0;
     const out = src.replace(CACHE_BUST, () => { n++; return `?v=${version}`; });
     if (n) { await writeFile(file, out); stamped += n; files++; }
+    for (const m of out.matchAll(ASSET_REF)) {
+        if (/^(?:[a-z]+:)?\/\//i.test(m[1])) continue; // third-party CDN — not ours to stamp
+        if (!m[2] || !m[2].startsWith('?v=')) unstamped.push(`${file.slice(publicDir.length + 1)} → ${m[1]}`);
+    }
 }
 console.log(`Stamped ${version}: version.json + ${stamped} cache-buster(s) across ${files} HTML file(s).`);
+// A ref without a buster serves stale through the host's static cache for hours after every
+// deploy — the exact bug this stamper exists to prevent. Fail the release until it gets one.
+if (unstamped.length) {
+    console.error(`\nERROR: ${unstamped.length} first-party asset reference(s) carry NO ?v= cache-buster:`);
+    for (const u of unstamped) console.error('  ' + u);
+    console.error('Add ?v=' + version + ' to each (the stamper only rewrites existing tokens), then re-run.');
+    process.exit(1);
+}
 
 // Local maintenance hook: every 5th release, run the dead-code sweep — but only if the
 // git-ignored local dev script source/find-orphans.mjs is present. It's a no-op for anyone

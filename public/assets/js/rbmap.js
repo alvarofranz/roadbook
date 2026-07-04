@@ -290,15 +290,16 @@ window.RBMap = class RBMap {
     onWaypoint(cb) { this._onWpt = cb; }
     // Arm/disarm waypoint dragging (the blue note markers). onDrag(noteIndex, lat, lon) fires
     // live, onCommit() on release; pass null to clear. The markers are painted by showRoadbook.
-    setWaypointEditor(onDrag, onCommit) { this._wptOnDrag = onDrag || null; this._wptOnCommit = onCommit || null; }
+    setWaypointEditor(onDrag, onCommit) { this._wptOnDrag = onDrag || null; this._wptOnCommit = onCommit || null; this._wptMoved = false; } // arming/disarming clears the drag flag, or a stale one swallows the next plain tap
     // Arm/disarm photo-pin dragging (the IMG markers). onDrag(photo, lat, lon) fires live,
     // onCommit(photo) on release; pass null to clear. Pins are painted by setPhotos.
-    setPhotoEditor(onDrag, onCommit) { this._photoOnDrag = onDrag || null; this._photoOnCommit = onCommit || null; }
+    setPhotoEditor(onDrag, onCommit) { this._photoOnDrag = onDrag || null; this._photoOnCommit = onCommit || null; this._photoMoved = false; }
     // Arm/disarm the move-points tool: pass the track + callbacks to show every
     // vertex as a draggable handle (onDrag(i, lat, lon) fires live while dragging,
     // onCommit() on release); pass null to clear it.
     setVertexEditor(track, onDrag, onCommit, onSelect) {
         this._vertOnDrag = onDrag || null; this._vertOnCommit = onCommit || null; this._onVert = onSelect || null;
+        this._vertMoved = false; // a stale drag flag would swallow the next plain tap
         if (!this._vertOnDrag) this.setSelectedVertex(null); // disarming clears any selection ring
         this._vertShow = track || null; // the dots to paint (decoupled from interactivity)
         this._paintVerts(this._vertShow);

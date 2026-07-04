@@ -77,12 +77,12 @@
         tmEls.speed.textContent = Math.round(speedKmh);
         tmEls.speed.style.setProperty('--speed-band', band || 'var(--text)'); // data-driven band colour
         tmEls.speed.classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
-        tmEls.main.style.background = band || ''; // tint the central column with the alert colour
+        tmEls.main.style.setProperty('--tm-band', band || 'transparent'); // tint the central column with the alert colour
         tmEls.max.textContent = Math.round(maxKmh);
         const hdg = meter && meter.heading != null ? Math.round(meter.heading) : null;
         tmEls.cap.textContent = hdg == null ? '—' : hdg;
-        // directional needle: 0° = up = North, rotates to the travel heading
-        tmEls.capArrow.style.visibility = hdg == null ? 'hidden' : 'visible';
+        // directional needle: 0° = up = North, rotates to the travel heading; parked until a heading exists
+        tmEls.capArrow.classList.toggle('idle', hdg == null);
         if (hdg != null) tmEls.capArrow.style.setProperty('--cap-rotation', hdg + 'deg');
         saveSession();
     }
@@ -103,7 +103,7 @@
     }
     $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimerButton(); saveSession(); };
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
-    $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'), t('End & close'))) { clearSession(); location.reload(); } };
+    $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'), t('End & close'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
 
     RBFullscreen($('tmFs')); // shared: hides header + footer, uses the Fullscreen API (app.js)
 

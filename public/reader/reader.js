@@ -418,7 +418,7 @@
     // End navigation: leave the run and return to the load screen. The note progress
     // (reached/skipped) is discarded — warn before doing it.
     $('endBtn').onclick = async () => {
-        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) { clearSession(); location.href = '../'; } // back to the home page, not the load screen
+        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) { clearSession(); window.RB_BUSY = false; location.href = '../'; } // back to the home page; unblock the version auto-refresh before leaving
     };
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
