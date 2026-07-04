@@ -210,6 +210,7 @@
         me = await RBRequireUser($('adminMsg'), { account: '../../../account/' });
         if (!me) return;
         $('orgOrgIn').value = me.organization || ''; // the organizer search defaults to your organization
+        RBOrgDatalist($('orgSuggest')); // suggest the clubs already in use, so spellings stay consistent (#116)
         if (id > 0) return load();
         // new event: only the parameters section until the first save creates it
         if (!me.is_admin && !me.is_organizer) { $('adminMsg').textContent = t('Organizers only.'); return; }

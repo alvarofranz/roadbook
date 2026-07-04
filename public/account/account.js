@@ -225,6 +225,7 @@
         $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
         $('pfOrg').value = user.organization || '';
+        RBOrgDatalist($('orgSuggest')); // suggest existing clubs so the same one isn't retyped differently (#116)
         $('pfVoiceLang').value = user.voice_lang || '';
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();

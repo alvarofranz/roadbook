@@ -26,6 +26,7 @@ try {
         case 'forgot':    forgot_password($d); break;
         case 'reset':     reset_password($d); break;
         case 'profile':   update_profile(require_user(), $d); break;
+        case 'org_suggest': org_suggest(require_user()); break;
         case 'save_location': save_location(require_user(), $d); break;
         case 'set_lang':  set_lang(require_user(), $d); break;
         case 'change_password': change_password(require_user(), $d); break;
