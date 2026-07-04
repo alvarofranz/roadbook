@@ -413,8 +413,13 @@
     // the relative path to the sign-in page (page depths differ).
     window.RBRequireUser = async (msgEl, { admin = false, account = '../account/' } = {}) => {
         const cfg = await RBApi('config').catch(() => ({}));
-        if (!cfg.user) { msgEl.innerHTML = `${RBesc(RBt('Sign in to continue.'))} <a href="${account}">${RBesc(RBt('Sign in'))}</a>`; return null; }
-        if (admin && !cfg.user.is_admin) { msgEl.textContent = RBt('Admins only.'); return null; }
+        // Detach the element from i18n before writing the gate message: msgEl starts as the
+        // "Loading…" placeholder (data-i18n), and a later apply() pass — e.g. when the account's
+        // saved language is applied after config — would revert our message back to "Loading…",
+        // which looked like the page hanging on "Loading…" for non-admins (#182).
+        const setMsg = (html) => { msgEl.removeAttribute('data-i18n'); msgEl.removeAttribute('data-i18n-html'); msgEl.innerHTML = html; };
+        if (!cfg.user) { setMsg(`${RBesc(RBt('Sign in to continue.'))} <a href="${account}">${RBesc(RBt('Sign in'))}</a>`); return null; }
+        if (admin && !cfg.user.is_admin) { setMsg(RBesc(RBt('Admins only.'))); return null; }
         return cfg.user;
     };
     // Fill a <datalist> with the organization names already in use, so the profile field and the
