@@ -79,12 +79,21 @@ function update_profile(array $user, array $d): void {
     $last  = mb_substr(trim((string)($d['last_name'] ?? '')), 0, 80);
     if ($first === '' || $last === '') fail('First and last name are required.');
     $bio = mb_substr(trim((string)($d['bio'] ?? '')), 0, 500);
-    $organization = mb_substr(trim((string)($d['organization'] ?? '')), 0, 120);
+    // Collapse internal whitespace so the same club doesn't split into "Club  X" vs "Club X" (#116).
+    $organization = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($d['organization'] ?? ''))), 0, 120);
     // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
     $voice = (string)($d['voice_lang'] ?? '');
     if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
     db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, organization = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $organization !== '' ? $organization : null, $voice, $user['id']]);
     json_out(['ok' => true]);
+}
+
+// Distinct existing organization names, for the profile field + the event organizer-search
+// filter (#116): offering the clubs already entered lets people pick the canonical spelling
+// instead of retyping it, so the same club stays grouped. Read-only; any signed-in user.
+function org_suggest(array $user): void {
+    $rows = db()->query("SELECT DISTINCT organization FROM users WHERE organization IS NOT NULL AND organization <> '' ORDER BY organization LIMIT 500")->fetchAll(PDO::FETCH_COLUMN);
+    json_out(['ok' => true, 'organizations' => $rows]);
 }
 
 // Preferred UI language for a signed-in user, set from the header language switcher so the

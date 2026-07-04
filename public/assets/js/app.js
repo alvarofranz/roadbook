@@ -417,6 +417,13 @@
         if (admin && !cfg.user.is_admin) { msgEl.textContent = RBt('Admins only.'); return null; }
         return cfg.user;
     };
+    // Fill a <datalist> with the organization names already in use, so the profile field and the
+    // event organizer search reuse the canonical club spelling instead of diverging (#116).
+    window.RBOrgDatalist = async (el) => {
+        if (!el) return;
+        const r = await RBApi('org_suggest').catch(() => ({}));
+        if (r && r.ok && Array.isArray(r.organizations)) el.innerHTML = r.organizations.map((o) => `<option value="${RBesc(o)}"></option>`).join('');
+    };
     // The waypoint quick-text prompt (Recorder + the Editor's route recording): shown right
     // after the waypoint drops, auto-dismisses after 5 s ("Edit later (5)…") unless the user
     // starts typing. opts.mic adds the dictation button (speech-to-text where supported) with

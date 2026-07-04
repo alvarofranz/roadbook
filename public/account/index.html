@@ -142,7 +142,8 @@
             <label class="field-label" for="pfBio" data-i18n="Bio">Bio</label>
             <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" data-i18n-aria="Short bio…" maxlength="500"></textarea>
             <label class="field-label" for="pfOrg" data-i18n="Organization">Organization</label>
-            <input id="pfOrg" class="field" autocomplete="organization" maxlength="120">
+            <input id="pfOrg" class="field" autocomplete="organization" maxlength="120" list="orgSuggest">
+            <datalist id="orgSuggest"></datalist>
             <label class="muted small" for="pfVoiceLang"><span data-i18n="Voice note language">Voice note language</span></label>
             <select id="pfVoiceLang" class="field">
                 <option value="" data-i18n="Automatic (device)">Automatic (device)</option>
