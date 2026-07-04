@@ -123,8 +123,11 @@ window.NoteCanvas = class NoteCanvas {
     _startDrag(e, onMove, selObj) {
         e.stopPropagation(); e.preventDefault();
         if (selObj) this.select(selObj);
-        const move = (ev) => { const [vx, vy] = this.evToV(ev); onMove(vx, vy); this.render(); };
-        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); this.onChange(); };
+        // The model updates on every pointermove (exact final position) but the full SVG
+        // rebuild is coalesced to one render per animation frame — per-move rebuilds jank.
+        let raf = 0;
+        const move = (ev) => { const [vx, vy] = this.evToV(ev); onMove(vx, vy); if (!raf) raf = requestAnimationFrame(() => { raf = 0; this.render(); }); };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); if (raf) { cancelAnimationFrame(raf); raf = 0; } this.render(); this.onChange(); };
         window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
     }
     select(sel) { this.sel = sel; this.render(); this.onSelect(this.sel); }

@@ -8,7 +8,7 @@
 window.RBGpxRecorder = (() => {
     const CHECKPOINT_KEY = 'rb_trip_gpx', SETTINGS_KEY = 'rb_gpx_settings';
     let on = false, pts = [], lastT = 0, sampleMs = 3000, fileName = '', fileHandle = null;
-    let useCheckpoint = true, lastFileWrite = 0;
+    let useCheckpoint = true, lastPersist = 0;
     let onChange = () => {}, toast = () => {};
     try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (s && s.freq) sampleMs = s.freq; } catch (e) {}
 
@@ -21,13 +21,17 @@ window.RBGpxRecorder = (() => {
     const download = (p, name) => RBDownload(new Blob([RB.gpxDocument(name || defaultName(), p)], { type: 'application/gpx+xml' }), (name || defaultName()) + '.gpx');
     async function writeFile() { if (!fileHandle) return; try { const w = await fileHandle.createWritable(); await w.write(RB.gpxDocument(fileName, pts)); await w.close(); } catch (e) {} }
     function persist(tnow) {
+        // One crash checkpoint + live file flush per 3 s window, however fast points arrive —
+        // serialising the whole growing track on every point would cost O(n²) over a session.
+        if (tnow - lastPersist < 3000) return;
+        lastPersist = tnow;
         if (useCheckpoint) { try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ pts, name: fileName })); } catch (e) {} }
-        if (tnow - lastFileWrite >= 3000) { lastFileWrite = tnow; writeFile(); } // live file flush, throttled
+        writeFile();
     }
 
     // checkpoint: false → the caller keeps its own richer crash checkpoint (the
     // Editor's route recording does), so this one stays out of its way.
-    function begin(opts = {}) { on = true; pts = []; lastT = 0; lastFileWrite = 0; useCheckpoint = opts.checkpoint !== false; onChange(true); toast('Recording GPX track.'); }
+    function begin(opts = {}) { on = true; pts = []; lastT = 0; lastPersist = 0; useCheckpoint = opts.checkpoint !== false; onChange(true); toast('Recording GPX track.'); }
     // sampled intake (Tripmaster + Reader): one point per interval, junk fixes dropped
     function feed(coords, here, tnow) {
         if (!on || (coords.accuracy != null && coords.accuracy > 35) || tnow - lastT < sampleMs) return;
@@ -81,7 +85,8 @@ window.RBGpxRecorder = (() => {
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
             </div>
-            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>`, 'narrow top', null, { dismissable: false });
+            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
+            ${document.documentElement.classList.contains('native') ? '' : `<p class="muted small">${t('In a browser, recording stops when the app is in the background or the screen is off.')}</p>`}`, 'narrow top', null, { dismissable: false });
         let picked = null;
         d.q('#gxX').onclick = d.close;
         if (fsa) d.q('#gxPick').onclick = async () => {

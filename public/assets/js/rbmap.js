@@ -279,8 +279,13 @@ window.RBMap = class RBMap {
     }
     _fit(rb) {
         if (!this.map || !rb.track.length) return;
-        const lons = rb.track.map((p) => p.lon), lats = rb.track.map((p) => p.lat);
-        this.map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 40, duration: 600 });
+        // single pass — spreading a long track into Math.min/max arguments blows the call stack
+        const b = rb.track.reduce((a, p) => {
+            if (p.lon < a.minLon) a.minLon = p.lon; if (p.lon > a.maxLon) a.maxLon = p.lon;
+            if (p.lat < a.minLat) a.minLat = p.lat; if (p.lat > a.maxLat) a.maxLat = p.lat;
+            return a;
+        }, { minLon: Infinity, maxLon: -Infinity, minLat: Infinity, maxLat: -Infinity });
+        this.map.fitBounds([[b.minLon, b.minLat], [b.maxLon, b.maxLat]], { padding: 40, duration: 600 });
     }
     onWaypoint(cb) { this._onWpt = cb; }
     // Arm/disarm waypoint dragging (the blue note markers). onDrag(noteIndex, lat, lon) fires

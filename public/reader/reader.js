@@ -175,13 +175,16 @@
         renderNotes();
         paused = false; updatePauseBtn();
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
-        setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
+        clearInterval(clockTimer); // startNav can run again in the same page life — never stack clocks
+        clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
         startBattery();
     }
     // battery charge in the indicator row (best-effort; not all browsers expose the API)
+    let clockTimer = null, battWired = false;
     const battIcon = (p) => p > 80 ? 'fa-battery-full' : p > 55 ? 'fa-battery-three-quarters' : p > 30 ? 'fa-battery-half' : p > 10 ? 'fa-battery-quarter' : 'fa-battery-empty';
     function startBattery() {
         if (!('getBattery' in navigator)) { $('odoBatt').textContent = 'N/A'; return; }
+        if (battWired) return; battWired = true; // the listeners live for the page — wire once
         try {
             navigator.getBattery().then((b) => {
                 const upd = () => { const p = Math.round(b.level * 100); $('odoBatt').textContent = p + '%'; $('odoBattIcon').className = 'fa-solid ' + (b.charging ? 'fa-bolt' : battIcon(p)); };
@@ -210,6 +213,9 @@
     }
 
     /* ---------- GPS (RBGpsMeter drives one onFix per position) ---------- */
+    // The odometer + CAP bars are static markup, touched on every GPS fix — cache the refs once.
+    const odoEls = { total: $('odoTotal'), partial: $('odoPartial'), brg: $('odoBrg'), arrow: $('odoBrgArrow'), gpsDot: $('gpsDot'), gpsTxt: $('gpsTxt') };
+    const capEls = { bar: $('capbar'), heading: $('capHeading'), speed: $('capSpeed'), dist: $('capDist'), arrow: $('capArrow') };
     function onFix(fix) {
         const { here, coords, disp, speedKmh } = fix;
         setGps(coords.accuracy <= 25 ? 'ok' : 'bad', Math.round(coords.accuracy));
@@ -225,18 +231,18 @@
             if (auto) autoAdvance(dist, here);
         }
         // top odometer bar
-        $('odoTotal').textContent = (tripTotalM / 1000).toFixed(2);
-        $('odoPartial').textContent = (tripPartialM / 1000).toFixed(2);
+        odoEls.total.textContent = (tripTotalM / 1000).toFixed(2);
+        odoEls.partial.textContent = (tripPartialM / 1000).toFixed(2);
         // bearing readout (to the next note, else device heading) + a directional arrow
         // that points relative to where you're pointing: 0° = up = straight ahead.
         const brg = an ? RB.geo.bearingDeg(here, an) : meter.heading;
-        $('odoBrg').textContent = brg == null ? '—°' : pad(Math.round(brg), 3) + '°';
+        odoEls.brg.textContent = brg == null ? '—°' : pad(Math.round(brg), 3) + '°';
         const relBrg = brg == null ? 0 : (an ? ((brg - (meter.heading != null ? meter.heading : 0)) + 360) % 360 : 0);
-        $('odoBrgArrow').style.setProperty('--cap-rotation', relBrg + 'deg');
+        odoEls.arrow.style.setProperty('--cap-rotation', relBrg + 'deg');
         updateCapBar(here);
         saveSession();
     }
-    function setGps(state, acc) { $('gpsDot').className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); $('gpsTxt').textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
+    function setGps(state, acc) { odoEls.gpsDot.className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); odoEls.gpsTxt.textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
@@ -249,7 +255,7 @@
     // Auto-validation on arrival: the moment the current fix is within the active note's reach,
     // the note is reached → validate against that fix. Immune to the cascade since reaches can't
     // overlap (reachRadius caps to half the neighbour gap), so the next note's gate only opens
-    // once this one advances. renderNotes() happens inside validateAt.
+    // once this one advances. The row-state update happens inside validateAt.
     function autoAdvance(dist, here) {
         if (dist <= reachRadius(activeIdx)) validateAt(activeIdx, here);
     }
@@ -289,6 +295,33 @@
         updateCapBar();
         saveSession();
     }
+    // Advancing/validating only changes row STATE: update the classes and the reach button
+    // in place instead of re-rendering every vignette. renderNotes() stays for structural
+    // changes (start, auto on/off, language switch) — and the open per-note map survives.
+    function updateNoteStates() {
+        const list = $('noteList');
+        if (!list.firstChild) { renderNotes(); return; } // list not built yet
+        list.querySelectorAll('.nrow').forEach((row) => {
+            const i = +row.dataset.i;
+            row.classList.toggle('done', reached.has(i));
+            row.classList.toggle('skipped', !reached.has(i) && i < activeIdx);
+            row.classList.toggle('active', i === activeIdx);
+        });
+        list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
+        if (!auto) {
+            const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
+            if (cell) {
+                const b = document.createElement('button');
+                b.className = 'note-button reach'; b.dataset.reach = activeIdx; b.title = t('Note reached');
+                b.innerHTML = '<i class="fa-solid fa-check"></i>';
+                b.onclick = (e) => { e.stopPropagation(); markReached(activeIdx); };
+                cell.prepend(b);
+            }
+        }
+        if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; const act = list.querySelector('.nrow.active'); if (act) act.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        updateCapBar();
+        saveSession();
+    }
     // One interactive map at a time: zoom buttons + satellite/topo toggle (RBMap),
     // centred on the note at zoom ~13, with the whole route + pins for context.
     function toggleNoteMap(i) {
@@ -310,16 +343,16 @@
     // Bottom CAP bar: heading to hold (prev note's CAP) · speed · live distance to
     // destination · direction arrow. Appears only while a CAP is active.
     function updateCapBar(here) {
-        const bar = $('capbar'), an = notes[activeIdx], prev = notes[activeIdx - 1];
-        if (!prev || prev.cap == null || !an) { bar.hidden = true; return; }
-        bar.hidden = false;
-        $('capHeading').textContent = Math.round(prev.cap) + '°';
-        $('capSpeed').textContent = meter && meter.speedKmh ? Math.round(meter.speedKmh) + ' km/h' : '--';
+        const an = notes[activeIdx], prev = notes[activeIdx - 1];
+        if (!prev || prev.cap == null || !an) { capEls.bar.hidden = true; return; }
+        capEls.bar.hidden = false;
+        capEls.heading.textContent = Math.round(prev.cap) + '°';
+        capEls.speed.textContent = meter && meter.speedKmh ? Math.round(meter.speedKmh) + ' km/h' : '--';
         if (here) {
             const dist = RB.geo.haversineM(here, an);
-            $('capDist').textContent = dist >= 1000 ? (dist / 1000).toFixed(2) + ' km' : Math.round(dist) + ' m';
+            capEls.dist.textContent = dist >= 1000 ? (dist / 1000).toFixed(2) + ' km' : Math.round(dist) + ' m';
             const rel = ((prev.cap - (meter.heading != null ? meter.heading : 0)) + 360) % 360;
-            $('capArrow').style.setProperty('--cap-rotation', (rel - 45) + 'deg'); // data-driven arrow direction
+            capEls.arrow.style.setProperty('--cap-rotation', (rel - 45) + 'deg'); // data-driven arrow direction
         }
     }
     // "Note reached" button: advance sequentially and mark green (both modes).
@@ -327,7 +360,7 @@
         if (competition) { tapNote(i); return; } // scored validation
         reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
-        activeIdx = i + 1; renderNotes();
+        activeIdx = i + 1; updateNoteStates();
     }
     // Scored sections (rally special stages): only notes between a START icon and the
     // next FINISH icon (both inclusive) are penalised; the liaison/transfer notes
@@ -343,7 +376,7 @@
     const isScored = (i) => scoredSet === null || scoredSet.has(i);
 
     function tapNote(i) {
-        if (!competition) { activeIdx = i; tripPartialM = 0; renderNotes(); return; } // Trip mode: free navigation, no scoring
+        if (!competition) { activeIdx = i; tripPartialM = 0; updateNoteStates(); return; } // Trip mode: free navigation, no scoring
         if (i < activeIdx) return;
         // Manual tracking works with NO GPS at all; when a fix IS present, keep the
         // 100 m proximity gate so a validation can't be faked far from the note.
@@ -375,7 +408,7 @@
         if (lim != null) { if (scored && curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
         reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
-        activeIdx = i + 1; renderNotes();
+        activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
     $('validateBtn').onclick = () => {

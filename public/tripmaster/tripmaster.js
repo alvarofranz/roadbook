@@ -68,22 +68,23 @@
         const c = v < saLimit - 5 ? saColors[0] : v < saLimit ? saColors[1] : v < saLimit + 5 ? saColors[2] : saColors[3];
         return SA_COLORS[c] || '';
     }
+    // The dashboard is static markup, redrawn on every GPS fix — cache the refs once.
+    const tmEls = { total: $('tmTotal'), partial: $('tmPartial'), speed: $('tmSpeed'), main: $('tmMain'), max: $('tmMax'), cap: $('tmCap'), capArrow: $('tmCapArrow') };
     function render() {
         const speedKmh = meter ? meter.speedKmh : 0;
         const band = speedBandColor(speedKmh);
-        $('tmTotal').textContent = (totalM / 1000).toFixed(2);
-        $('tmPartial').textContent = (partialM / 1000).toFixed(2);
-        $('tmSpeed').textContent = Math.round(speedKmh);
-        $('tmSpeed').style.setProperty('--speed-band', band || 'var(--text)'); // data-driven band colour
-        $('tmSpeed').classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
-        $('tmMain').style.background = band || ''; // tint the central column with the alert colour
-        $('tmMax').textContent = Math.round(maxKmh);
+        tmEls.total.textContent = (totalM / 1000).toFixed(2);
+        tmEls.partial.textContent = (partialM / 1000).toFixed(2);
+        tmEls.speed.textContent = Math.round(speedKmh);
+        tmEls.speed.style.setProperty('--speed-band', band || 'var(--text)'); // data-driven band colour
+        tmEls.speed.classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
+        tmEls.main.style.background = band || ''; // tint the central column with the alert colour
+        tmEls.max.textContent = Math.round(maxKmh);
         const hdg = meter && meter.heading != null ? Math.round(meter.heading) : null;
-        $('tmCap').textContent = hdg == null ? '—' : hdg;
+        tmEls.cap.textContent = hdg == null ? '—' : hdg;
         // directional needle: 0° = up = North, rotates to the travel heading
-        const arr = $('tmCapArrow');
-        arr.style.visibility = hdg == null ? 'hidden' : 'visible';
-        if (hdg != null) arr.style.setProperty('--cap-rotation', hdg + 'deg');
+        tmEls.capArrow.style.visibility = hdg == null ? 'hidden' : 'visible';
+        if (hdg != null) tmEls.capArrow.style.setProperty('--cap-rotation', hdg + 'deg');
         saveSession();
     }
     // partial ±10 m correctors adjust the partial trip ONLY — the lifetime total is untouched

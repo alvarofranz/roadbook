@@ -14,8 +14,8 @@ window.RBGpsMeter = class RBGpsMeter {
         this.lastPos = null; this.speedKmh = 0; this.heading = null; this.watchId = null;
         this._lastSpeedPos = null; this._lastSpeedT = null; this._wakeLock = null;
         this._native = !!(window.RBNative && RBNative.available); this._running = false;
+        this._onVis = () => { if (document.visibilityState === 'visible' && this._running) this._wake(); }; // re-acquire the wake lock when the tab comes back
         if (!this._native && !navigator.geolocation) { this._onError(); return; }
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && this._running) this._wake(); });
         this.resume();
     }
     // (Re)start the watch and re-acquire the screen wake lock — also used to resume after
@@ -24,6 +24,7 @@ window.RBGpsMeter = class RBGpsMeter {
     resume() {
         if (this._running) return;
         this._running = true;
+        document.addEventListener('visibilitychange', this._onVis);
         if (this._native) {
             RBNative.geo.start((c) => this._fix(c, Date.now()), this._onError);
         } else {
@@ -52,9 +53,10 @@ window.RBGpsMeter = class RBGpsMeter {
         this._onFix({ here, coords: c, disp, speedKmh: this.speedKmh, heading: this.heading, tnow });
     }
     async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
-    // Stop the watch and release the screen wake lock.
+    // Stop the watch and release the screen wake lock (resume() re-arms everything).
     stop() {
         this._running = false;
+        document.removeEventListener('visibilitychange', this._onVis);
         if (this._native) RBNative.geo.stop();
         if (this.watchId != null) { navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
         if (this._wakeLock) { this._wakeLock.release().catch(() => {}); this._wakeLock = null; }

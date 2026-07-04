@@ -473,10 +473,6 @@
         if (cutFromIdx > hit.i) cutFromIdx++; // keep a pending first cut anchored
         return hit.i + 1;
     }
-    // Insert-point tool: tap a segment and a new vertex is born at its MIDPOINT,
-    // ready to drag with "move points". The dashed connector of an open cut is skipped.
-    // Add a track point exactly where you tap ON the route (the projection onto the nearest
-    // segment), so it lands where you can see it — not at the segment's midpoint.
     // Cut mode: tap two points — at the ends it trims; in the middle it removes
     // the span and leaves an OPEN cut (dashed connector) to fill by drawing.
     function cutPoint(p) {
@@ -668,25 +664,23 @@
     function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; }
     function setRoadbook(r) {
         rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
-        // Pre-load all embedded icons as data URIs so they render in the editor
+        // Pre-load AND refresh the used standard-palette icons as data URIs (#174): the palette
+        // is canonical, so updated sign art replaces a stale copy embedded in an older roadbook;
+        // a custom icon isn't on disk (its fetch fails) and its embedded copy stays. Async and
+        // non-blocking: the UI renders right away and repaints once the icons are in.
+        const iconJobs = new Map(); // base name → fetch promise (dedupes icons used by several notes)
         rb.notes.forEach((n) => {
             (n.icons || []).forEach((ic) => {
-                if (ic.name && !rb.icons[ic.name]) {
-                    const src = RB.iconSrc(ic, rb, '../assets/icons/');
-                    if (!/^data:/.test(src)) {
-                        try {
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', src, false);
-                            xhr.overrideMimeType('text/plain; charset=x-user-defined');
-                            xhr.send();
-                            if (xhr.status === 200) {
-                                const binary = String.fromCharCode.apply(null, Array.from(xhr.responseText).map(c => c.charCodeAt(0)));
-                                rb.icons[ic.name] = 'data:' + (src.endsWith('.svg') ? 'image/svg+xml' : 'image/png') + ';base64,' + btoa(binary);
-                            }
-                        } catch (e) {}
-                    }
+                const base = (ic.name || '').split('/').pop();
+                if (base && !/^data:/.test(ic.name) && !iconJobs.has(base)) {
+                    iconJobs.set(base, RB.urlToDataURL('../assets/icons/' + base).then((d) => { if (d) rb.icons[base] = d; }));
                 }
             });
+        });
+        const loadedRb = rb;
+        if (iconJobs.size) Promise.all(iconJobs.values()).then(() => {
+            if (rb !== loadedRb) return; // a different roadbook was opened meanwhile
+            renderNotes(); flagUnresolvedIcons(); canvas.render();
         });
 
         dirty = false; gaps = [];
@@ -1128,7 +1122,7 @@
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
         notePhotos = r.photos;
-        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
+        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => { e.stopPropagation(); await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
         g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
@@ -1870,15 +1864,17 @@
             setMsg(t('Copied.'), true);
         };
     }
-    // embed EVERY used icon (self-contained .rdbk) and prune the unused ones
+    // embed EVERY used icon (self-contained .rdbk) and prune the unused ones. The standard
+    // palette is canonical (#174): each used icon is re-fetched so updated sign art replaces a
+    // stale embedded copy; a custom icon isn't on disk (its fetch fails) and its copy stays.
     async function embedUsed(r) {
         r.icons = r.icons || {};
         const used = new Set();
         r.notes.forEach((n) => (n.icons || []).forEach((ic) => used.add((ic.name || '').split('/').pop())));
         for (const base of used) {
-            if (!base) continue;
-            if (Object.keys(r.icons).some((k) => k.toLowerCase() === base.toLowerCase())) continue;
-            const u = await RB.urlToDataURL('../assets/icons/' + base); if (u) r.icons[base] = u;
+            if (!base || /^data:/.test(base)) continue;
+            const u = await RB.urlToDataURL('../assets/icons/' + base);
+            if (u) { Object.keys(r.icons).forEach((k) => { if (k !== base && k.toLowerCase() === base.toLowerCase()) delete r.icons[k]; }); r.icons[base] = u; }
         }
         Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
     }
