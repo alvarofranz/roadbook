@@ -35,10 +35,10 @@ in parte modellato come dati (danger, cap, road_type) e in parte non rappresenta
 | Terreno / altimetria / superficie | **Alta** — `A*` + `T*/t*` |
 | Riferimenti ambientali (case, alberi, acqua, ferrovia…) | **Media** — `P*`, mancano molti elementi desertici |
 | Direzione / tipo strada | **⊘ dati** — `junctions[]` + `road_type` 0–4 |
-| Pericolo / CAP | **⊘ dati** — campo `danger` 1–3, `cap`/`cap_distance` |
-| Tipi di waypoint (Masked/Control/Security/…) | **Nessuna** |
+| Pericolo / CAP | **⊘ dati** — campo `danger` 1–3, `cap`/`cap_distance` (+ `cap_type`) |
+| Tipi di waypoint (Masked/Control/Security/…) | **⊘ dati** — campo `wp_type` su `RB.WP_TYPES` (7 tipi FIA + start/finish, zone, controlli), con `wp_radius` |
 | Dune / sabbia (cuvette, dunette, livelli) | **Nessuna** (solo sabbia/guado generici) |
-| Controlli di gara (SS, CP, neutralizz., transfer, TC, assistenza, zone) | **Nessuna** |
+| Controlli di gara (SS, CP, zone DZ/FZ…) | **⊘ dati parziale** — `wp_type` copre SS start/end, CP/PC/STOP e le zone; TC/neutralizzazioni/transfer/assistenza ancora assenti |
 
 ---
 
@@ -53,7 +53,7 @@ in parte modellato come dati (danger, cap, road_type) e in parte non rappresenta
 | Stop | `B02_stop.svg` | ✓ |
 | Give way / precedenza | `B01_give_way.svg` | ✓ |
 | Red line under km = danger 2 | campo `danger=2` (resa testuale, non grafica identica) | ≈ |
-| Start / Finish Difficult Overtaking Zone (DZ) | — | ✗ |
+| Start / Finish Difficult Overtaking Zone (DZ/FZ) | `wp_type` `dz`/`fz` | ⊘ ✓ |
 
 Pericoli stradali (dal set Vienna, ora tutti raggiungibili anche dai file Suite via alias):
 strettoia `W07`, curva dx/sx `W01`/`W02`, strada tortuosa `W03`, sdrucciolevole `W11`,
@@ -117,11 +117,11 @@ solo parzialmente dal modello dati.
 
 | Area FIA | Elementi | RDBK |
 |---|---|---|
-| **Tipi di WP** | Masked · Control · Security · Navigation · Precise · Visible · Eclipse · WP number | ✗ (la nota non tipizza il waypoint) |
-| **CAPS** | Exit cap · Average cap · Calculated cap (HP) · Cap that turns | ⊘ parziale — un solo `cap`/`cap_distance`, senza tipizzazione |
+| **Tipi di WP** | Masked · Control · Security · Navigation · Precise · Visible · Eclipse · WP number | ⊘ ✓ — `wp_type` su `RB.WP_TYPES` (i 7 tipi FIA), badge nell'editor/Reader e `sym` nel GPX |
+| **CAPS** | Exit cap · Average cap · Calculated cap (HP) · Cap that turns | ⊘ parziale — `cap`/`cap_distance` + `cap_type` (exit/average/calculated/turning) |
 | **Dune / sabbia** | Sandy plain · Big bowl "cuvette" · Sand spit · Dune · Broken dune · Many dunes · Small dune "dunette" · Dunes difficulty level · Concrete pass | ✗ |
 | **On-track / direttive** | Principal/Parallel track · Sight driving! · Off track forbidden · Follow principal/road · Low-visible track | ✗ (il *tipo* strada è `road_type` 0–4, non i glifi direttivi) |
-| **Controlli di gara** | Start/Arrival SS · Check point · Neutralisation · Transfer · Time control · Assistance · Tyre/Fuel zone · End zone | ✗ |
+| **Controlli di gara** | Start/Arrival SS · Check point · Neutralisation · Transfer · Time control · Assistance · Tyre/Fuel zone · End zone | ⊘ parziale — `wp_type` copre SS start/end, CP/PC/STOP e le zone (DZ/FZ ecc.); neutralizzazioni/transfer/TC/assistenza ancora assenti |
 | **Abbreviazioni** | VG, L/R, KpL, ET, NBX, BIG/SMALL, … (testo) | ✗ (testo libero nella nota) |
 
 ---
@@ -132,16 +132,19 @@ solo parzialmente dal modello dati.
 acqua, animali, riferimenti edilizi principali. I cartelli della Roadbook Suite trovano ora
 **tutti** un equivalente (vedi [editor.md §9.5](editor.md)).
 
+**Già coperto a livello di modello dati:** la **tipizzazione dei waypoint** (`wp_type` su
+`RB.WP_TYPES`: i 7 tipi FIA + start/finish SS, zone DZ/FZ, controlli CP/PC/STOP) con
+`wp_radius`, e il **qualificatore CAP** (`cap_type`). Vedi lo standard su `/standard`.
+
 **Gap principali verso la piena compliance FIA**, in ordine di utilità:
 1. **Pittogrammi ambientali desertici/rally** mancanti (recinzioni, pali/linee elettriche,
    pozzo, monumento, cairn, montagna, chott, tunnel, bivacco…). → estendere la palette `P*`.
 2. **Dune / sabbia** — categoria assente; rilevante solo per rally-raid sahariani.
-3. **Tipi di waypoint** e **CAPS tipizzati** — richiedono un'estensione del *modello dati*
-   `.rdbk` (non solo icone), quindi una decisione di formato.
-4. **Controlli di gara** (SS/CP/neutralizzazioni/zone) — anch'essi modello dati, fuori dallo
-   scopo attuale del roadbook generalista.
+3. **CAPS tipizzati** oltre `cap_type` e i **controlli di gara** ancora scoperti (time
+   control, neutralizzazioni, transfer, assistenza, zone gomme/carburante) — richiedono
+   ulteriore estensione del modello dati.
 
 > Nota di scopo: RDBK è un roadbook **multi-disciplina** (4x4, moto, bici, running), non solo
 > FIA cross-country. La compliance grafica sui **segnali e sul terreno** è raggiungibile con
-> sole icone; la compliance sul livello **operativo di gara** (WP typing, CAPS, controlli)
-> implica estendere il formato `.rdbk` ed è una scelta di prodotto da valutare a parte.
+> sole icone; il livello **operativo di gara** (WP typing, CAP, controlli) è in parte già
+> modellato e in parte da estendere secondo le priorità di prodotto.

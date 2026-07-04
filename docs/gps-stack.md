@@ -78,9 +78,9 @@ tachimetro non resta "incollato" all'ultimo valore.
 
 | Metodo | Effetto |
 |--------|---------|
-| `constructor(onFix, onError)` | salva le callback, registra il listener di visibilità e chiama `resume()` ([gps-meter.js:12](../public/assets/js/gps-meter.js#L12)) |
-| `resume()` | (ri)avvia il watch e riacquisisce il wake lock; no-op se già attivo ([gps-meter.js:24](../public/assets/js/gps-meter.js#L24)) |
-| `stop()` | ferma il watch e rilascia il wake lock ([gps-meter.js:56](../public/assets/js/gps-meter.js#L56)) |
+| `constructor(onFix, onError)` | salva le callback, *definisce* l'handler di visibilità e chiama `resume()` |
+| `resume()` | (ri)avvia il watch, **aggiunge** il listener `visibilitychange` e riacquisisce il wake lock; no-op se già attivo |
+| `stop()` | ferma il watch, **rimuove** il listener `visibilitychange` e rilascia il wake lock |
 
 `stop()` + `resume()` sono la coppia Pausa/Riprendi (il Reader li usa così,
 [reader.js:345](../public/reader/reader.js#L345)).
@@ -96,11 +96,10 @@ con la stessa forma di `GeolocationCoordinates`, così il resto del codice è id
 
 ### Il wake lock
 
-`_wake()` richiede `navigator.wakeLock.request('screen')` per tenere lo schermo acceso
-([gps-meter.js:54](../public/assets/js/gps-meter.js#L54)). I wake lock vengono persi quando
-la tab passa in background: il listener `visibilitychange` nel costruttore lo **riacquisisce**
-al ritorno in primo piano, ma solo se il meter è ancora `_running`
-([gps-meter.js:18](../public/assets/js/gps-meter.js#L18)).
+`_wake()` richiede `navigator.wakeLock.request('screen')` per tenere lo schermo acceso. I wake
+lock vengono persi quando la tab passa in background: il listener `visibilitychange`
+(aggiunto da `resume()`, rimosso da `stop()`) lo **riacquisisce** al ritorno in primo piano, ma
+solo se il meter è ancora `_running` — così una coppia stop/resume non lascia listener orfani.
 
 ---
 
@@ -143,15 +142,14 @@ traccia GPX e fa di tutto per non perderla.
 
 ### Persistenza crash-safe (due livelli)
 
-A ogni punto, `persist(tnow)` ([gpx-recorder.js:23](../public/assets/js/gpx-recorder.js#L23)):
+`persist(tnow)` accorpa entrambi i livelli in **una sola finestra da 3 s** (guardia condivisa
+`lastPersist`), per evitare la ri-serializzazione O(n²) dell'intero array a ogni punto:
 
-1. **Checkpoint localStorage** (chiave `rb_trip_gpx`): l'intero array di punti + il nome,
-   riscritto a ogni punto. Sopravvive a un crash/chiusura della tab.
+1. **Checkpoint localStorage** (chiave `rb_trip_gpx`): l'intero array di punti + il nome —
+   riscritto una volta per finestra da 3 s, non a ogni punto. Sopravvive a un crash/chiusura.
 2. **File live** (File System Access): se l'utente ha scelto un file nel modal, la traccia
-   viene riscritta su disco **al massimo ogni 3 s** (`writeFile`,
-   [gpx-recorder.js:22](../public/assets/js/gpx-recorder.js#L22)). Il file picker compare solo
-   sui dispositivi che supportano `showSaveFilePicker`
-   ([gpx-recorder.js:71](../public/assets/js/gpx-recorder.js#L71)).
+   viene riscritta su disco nella stessa finestra (`writeFile`, di per sé non throttlato). Il
+   file picker compare solo sui dispositivi che supportano `showSaveFilePicker`.
 
 L'opzione `begin({ checkpoint: false })` disattiva il checkpoint localStorage del recorder,
 per quando il chiamante tiene un proprio checkpoint più ricco
@@ -197,16 +195,14 @@ Recorder e Tripmaster mentre una sessione GPS è attiva.
 
 ### L'API pubblica
 
-([status-bar.js:33-43](../public/assets/js/status-bar.js#L33))
-
 | Metodo | Cosa fa |
 |--------|---------|
 | `show()` | crea la barra (una volta), la mostra e avvia il tick dell'orologio (1 s) |
 | `hide()` | nasconde la barra e ferma il tick |
 | `setGps(acc)` | aggiorna la cella GPS con l'accuratezza in metri dell'ultimo fix |
+| `watchBattery(onUpdate)` | sottoscrive il feed batteria: `onUpdate({ pct, charging, icon })` scatta alla sottoscrizione e a ogni cambio livello/carica; ritorna `false` dove la Battery API non c'è. Riusato dall'indicatore batteria dell'odometro del Reader |
 
-La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.topbar`
-([status-bar.js:10-22](../public/assets/js/status-bar.js#L10)).
+La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.topbar`.
 
 ### Le tre celle
 
@@ -260,12 +256,10 @@ All'avvio chiama anche `RBGpxRecorder.init({ onChange, toast })`, e tenta una
 - **Il wake lock è best-effort.** Errori e API mancanti sono silenziati
   ([gps-meter.js:54](../public/assets/js/gps-meter.js#L54)); su browser senza Wake Lock lo
   schermo può spegnersi e — nel browser, non nell'app nativa — sospendere il watch.
-- **Soglie di accuratezza diverse, hardcoded.** `feed` scarta a > 35 m
-  ([gpx-recorder.js:33](../public/assets/js/gpx-recorder.js#L33)), l'Editor scarta a > 35 m
-  per conto suo ([editor.js:501](../public/editor/editor.js#L501)), la barra di stato passa
-  a "bad" a > 35 m ([status-bar.js:40](../public/assets/js/status-bar.js#L40)), il Reader
-  considera "ok" il segnale solo ≤ 25 m ([reader.js:157](../public/reader/reader.js#L157)).
-  Sono costanti separate, non un'unica soglia condivisa.
+- **Soglia scarto-fix condivisa, altre soglie distinte.** Lo scarto a > 35 m dell'intake di
+  registrazione è ora l'unico helper `RB.recJunkFix`, usato dal logger GPX (`feed`), dal
+  Recorder e dall'Editor (e il passo di campionamento è `RB.recStepM`). Restano invece distinte
+  la soglia "ok ≤ 25 m" del Reader e il "bad > 35 m" della barra di stato.
 - **Il file live non sopravvive a un reload.** Dopo `resume()` la traccia continua solo su
   localStorage; il file handle scelto prima del crash va riselezionato per tornare a
   scrivere su disco.

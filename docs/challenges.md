@@ -14,13 +14,17 @@ pagina pubblica della singola sfida.
 ## 1. Scopo
 
 Le challenge danno a un roadbook salvato un **URL condivisibile e amichevole** e una pagina di
-presentazione pubblica. Da lì chiunque può:
+presentazione pubblica. Da lì si può:
 
-- **navigare** la sfida nel Reader (`/reader/<slug>`);
-- **forkarla** nell'Editor (`/editor/<slug>`) per partire da una copia e crearne una propria;
-- scoprirla nella **gallery** della home.
+- scoprirla nella **gallery** della home e in `/roadbooks/` (senza login);
+- **navigarla** nel Reader (`/reader/<slug>`) — **richiede login** (#146);
+- esportarne il **PDF**;
+- **forkarla** nell'Editor (`/editor/<slug>`) solo se il proprietario l'ha marcata
+  *riusabile* (flag `reusable`, #106).
 
-Il tutto senza login: gli endpoint usati sono di sola lettura.
+**Lettura dietro login (#146)**: leggere il contenuto di un roadbook pubblico (la pagina
+`/challenge/<slug>` e il Reader) richiede di essere autenticati — a un visitatore anonimo la
+pagina mostra `RBNeedAuth` invece del roadbook. La gallery/elenco resta pubblica.
 
 ---
 
@@ -34,9 +38,9 @@ dalle sottocartelle dei tool senza percorsi hard-coded.
 
 | Metodo | Cosa fa | Endpoint API |
 |--------|---------|--------------|
-| `listPublic()` | Elenco delle sfide pubbliche per gallery e picker | `api/index.php?action=public_list` |
-| `loadPublic(slug)` | Carica una singola sfida (roadbook + foto + owner) | `api/index.php?action=public_get&slug=…` |
-| `pick(onPick)` | Apre il picker modale e richiama `onPick(roadbook, slug)` | (usa `listPublic`/`loadPublic`) |
+| `listPublic(opts)` | Elenco dei roadbook pubblici per gallery e picker; con `{reusable:true}` filtra ai soli riusabili (la ricerca-fork dell'Editor) | `api/index.php?action=public_list[&reusable=1]` |
+| `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + foto + owner + `reusable`) | `api/index.php?action=public_get&slug=…` |
+| `pick(onPick, opts)` | Apre il picker modale e richiama `onPick(roadbook, slug)`; passa `opts` a `listPublic` | (usa `listPublic`/`loadPublic`) |
 | `publicFromUrl()` | Estrae lo slug dall'URL amichevole corrente | — |
 | `ROOT` | Radice dell'app, riusata altrove (es. home, gallery) | — |
 
@@ -101,9 +105,9 @@ Chi lo usa all'avvio della pagina:
 
 - **Reader** ([reader.js:60-61](../public/reader/reader.js#L60)): se presente uno slug e non
   c'è una sessione da riprendere, fa `loadPublic` e `loadRb(j.roadbook)`.
-- **Editor** ([editor.js:1035-1036](../public/editor/editor.js#L1036)): se presente uno slug,
-  forka — `currentRbId = 0`, `setVis(0)` e `setRoadbook(j.roadbook)`, quindi un salvataggio
-  crea un roadbook nuovo invece di sovrascrivere l'originale.
+- **Editor**: se presente uno slug, forka via `resetIdentity()` (azzera `currentRbId`, rimette lo
+  stato a `draft`) e `setRoadbook(j.roadbook)`, quindi un salvataggio crea un roadbook nuovo invece
+  di sovrascrivere l'originale.
 
 > La pagina `/challenge/<slug>` **non** usa `publicFromUrl`: ricava lo slug da sé (vedi §5),
 > perché quella regex matcha solo `reader`/`editor`.
@@ -128,9 +132,9 @@ Caricato `loadPublic(slug)` ([challenge.js:11](../public/challenge/challenge.js#
 popola:
 
 - **titolo** + `document.title`, **owner** (nome o `@username`) e avatar (rimosso se assente);
-- una riga **meta**: `@username · RBSummary(…)`, eventuale `🔒 Private`, e il credito
-  dichiarato nel roadbook (`author · organization · modified`)
-  ([challenge.js:18-24](../public/challenge/challenge.js#L18));
+- una riga **meta**: `@username · RBSummary(…)`, eventuale badge di stato (`🔒 Ready`/`Draft`
+  per un roadbook non ancora pubblico servito via evento), e il credito dichiarato nel
+  roadbook (`author · organization · modified`);
 - **logo evento** (`meta.logo`, data URI embedded) inserito prima del titolo se presente
   ([challenge.js:25](../public/challenge/challenge.js#L25));
 - **descrizione** e una **gallery di foto** (le foto sono una feature server-side, mai dentro
@@ -165,27 +169,31 @@ Gli alias delle icone si risolvono con
 `RB.iconSrc(ic, rb, '/assets/icons/')` ([challenge.js:33](../public/challenge/challenge.js#L33)),
 rispettando la regola self-contained del formato (inline → `rb.icons` → palette standard).
 
-### I due bottoni d'azione
-([challenge.js:26-28](../public/challenge/challenge.js#L26)):
+### I bottoni d'azione
+Per tutti:
 
-- **Navigate** → `href = /reader/<slug>` (apre nel Reader);
-- **Fork** → `href = /editor/<slug>`.
+- **Navigate** → `href = /reader/<slug>` (apre nel Reader, previo login #146);
+- **Export PDF** → genera il PDF client-side (jsPDF).
 
-Se l'API segnala `is_owner`, il bottone Fork diventa **Edit** e punta a `/editor/?rb=<id>`,
-che apre direttamente il roadbook posseduto invece di forkarne una copia.
+**Nessun bottone Fork per i non proprietari**: un roadbook pubblico si legge, si naviga e si
+esporta in PDF, ma non si forka né si scarica il `.rdbk`. Il fork nell'Editor
+(`/editor/<slug>`) esiste solo per i roadbook che il proprietario ha reso **riusabili**
+(`reusable`, #106): il picker-fork dell'Editor elenca solo quelli e `/editor/<slug>` rifiuta un
+pubblico non riusabile con "This public roadbook cannot be copied.".
 
-In caso di errore di `loadPublic`, mostra "This challenge does not exist or is private."
-([challenge.js:44](../public/challenge/challenge.js#L44)).
+Se l'API segnala `is_owner`, compare invece **Edit** → `/editor/?rb=<id>`, che apre
+direttamente il roadbook posseduto.
+
+In caso di errore di `loadPublic`, mostra "This challenge does not exist or is private.".
 
 ---
 
 ## 6. La gallery della home
 
 `home.js` ([home.js](../public/assets/js/home.js)) riusa `RBChallenges`: chiama `listPublic()`
-e disegna le card, ognuna linkata a `${ROOT}challenge/<slug>`
-([home.js:13-21](../public/assets/js/home.js#L13)). Cache la lista in `cards` così un cambio
-lingua (`rb-lang`) ri-renderizza senza rifetchare
-([home.js:24-25](../public/assets/js/home.js#L24)).
+e disegna le card con l'helper condiviso `RBGalleryCard`, ognuna linkata a
+`${ROOT}challenge/<slug>`. Cache la lista in `cards` così un cambio lingua (`rb-lang`)
+ri-renderizza senza rifetchare.
 
 ---
 
@@ -199,9 +207,10 @@ lingua (`rb-lang`) ri-renderizza senza rifetchare
 - **Render via `innerHTML`**: picker e pagina costruiscono markup per concatenazione; la
   sicurezza dipende interamente dal passaggio disciplinato per `RBesc`. Un campo nuovo che
   dimentichi `RBesc` è una falla.
-- **Fork = roadbook nuovo, sempre**: aprire `/editor/<slug>` (non proprietario) azzera identità
-  e id; non esiste un "modifica l'originale" se non sei l'owner (in quel caso il link diventa
-  `/editor/?rb=<id>`).
+- **Fork solo se riusabile**: aprire `/editor/<slug>` funziona solo per un pubblico marcato
+  `reusable` e azzera sempre identità e id (roadbook nuovo); un pubblico non riusabile viene
+  rifiutato. Non esiste un "modifica l'originale" se non sei l'owner (in quel caso il link
+  diventa `/editor/?rb=<id>`).
 - **Nessun caching lato modulo** oltre a quello della home: il picker rifetcha `listPublic` a
   ogni apertura, e Reader/Editor rifetchano `loadPublic` a ogni avvio da URL.
 - Il dettaglio di **come uno slug diventa pubblico** (creazione, visibilità, generazione dello

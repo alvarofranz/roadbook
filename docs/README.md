@@ -2,13 +2,17 @@
 
 Una guida sezione-per-sezione a come è fatto RDBK.app — la PWA per roadbook digitali e il
 formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, funzioni chiave
-(con link al codice a livello di riga) e una sezione onesta di limiti/quirk.
+e una sezione onesta di limiti/quirk.
 
 > Per il quadro d'insieme e le regole di lavoro vedi [CLAUDE.md](../CLAUDE.md) nella radice.
+>
+> **Convenzione:** i riferimenti al codice puntano alle **funzioni per nome** (es. `setRoadbook`,
+> `rb_save`), non a numeri di riga — che scivolano ad ogni modifica. Cerca il nome nel file
+> indicato.
 
 ## I tool (`public/<tool>/`)
-- [Editor](editor.md) — l'hub di creazione: sorgenti (GPX, Record, Draw, .rdbk, Challenge),
-  editing sulla mappa, modello note, i tre export e Save to profile.
+- [Editor](editor.md) — l'hub di creazione: sorgenti (GPX, Record, Draw, .rdbk, roadbook
+  pubblico), editing sulla mappa, modello note, gli export e Save to profile.
 - [Reader](reader.md) — il navigatore: tabella note cartacea, stati colore, modal di avvio,
   avanzamento auto/manuale, odometro e CAP. *(Punteggio gara → vedi Ranking.)*
 - [Tripmaster](tripmaster.md) — computer di bordo GPS senza roadbook.
@@ -23,7 +27,7 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 - [gps-stack](gps-stack.md) — `RBGpsMeter` + `RBGpxRecorder` + status bar: il ciclo GPS condiviso.
 - [app-shell](app-shell.md) — `app.js`/`home.js`: helper globali `RB*`, header/footer, service
   worker, auto-refresh di versione, install PWA.
-- [i18n](i18n.md) — internazionalizzazione a stringhe-sorgente (EN · ES · IT).
+- [i18n](i18n.md) — internazionalizzazione a stringhe-sorgente (EN · ES · IT · DE · FR).
 - [challenges](challenges.md) — `RBChallenges`: sfide pubbliche DB-backed e URL amichevoli.
 - [pdf](pdf.md) — `RBPdf`: generazione PDF A4 del roadbook sul dispositivo.
 
@@ -33,11 +37,15 @@ formato aperto `.rdbk`. Ogni documento spiega scopo, struttura, flusso dati, fun
 - [account-pages](account-pages.md) — home, profilo, I miei roadbook, privacy.
 
 ## Backend
-- [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto,
-  challenge, schema DB.
+- [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto/audio,
+  roadbook pubblici, **eventi + co-editing**, schema DB (migrazioni fino a 027).
 - [user-management](user-management.md) — gestione utenti: pannello admin (`/admin`), modello
-  permessi (`is_admin` + `ADMIN_EMAILS`), azioni admin (attiva/modifica/blocca/elimina),
-  self-service (cambio password forzato, elimina account), migrazioni e note di deploy.
+  permessi, azioni admin (attiva/modifica/blocca/elimina), self-service (cambio password forzato,
+  elimina account), migrazioni e note di deploy.
+
+## Infrastruttura / contenuto
+- [seo](seo.md) — metadati per i motori di ricerca (title/description per pagina e lingua,
+  Open Graph, canonical, policy di indicizzazione).
 
 ## Il formato
 - [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` e la pagina `/standard`.

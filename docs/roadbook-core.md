@@ -1,12 +1,12 @@
 # roadbook-core.js — la libreria backbone
 
-Il modulo condiviso da **tutte** le pagine di RDBK.app. È un'unica IIFE che non esporta
-nulla via moduli (l'app è multi-pagina, no-build): espone un solo globale
-[`window.RB`](../public/assets/js/roadbook-core.js#L397). Dentro ci sono il modello dati del
+Il modulo condiviso da **tutte** le pagine di RDBK.app. È un'unica IIFE che espone il globale
+`window.RB` (e, per i test Node, `module.exports`). Dentro ci sono il modello dati del
 roadbook, la matematica geografica, il parsing di GPX/WPT, la costruzione del roadbook, i
-ricalcoli delle metriche, le operazioni sulla traccia, la serializzazione GPX, i limiti di
-velocità e — condivise tra Reader e Ranking — le costanti di punteggio, il payload del
-risultato e la firma.
+ricalcoli delle metriche, le operazioni sulla traccia, la serializzazione GPX/OpenRally, i
+limiti di velocità, la tipizzazione dei waypoint (FIA), lo stato di pubblicazione, e —
+condivise tra Reader e Ranking — il **motore di punteggio** (sezioni, penalità, `rankEntry`),
+le costanti, il payload del risultato e la firma.
 
 > Convenzione del modello dati: **tutte le distanze sono metri interi**, gli angoli sono gradi
 > bussola `[0,360)` (0 = N, 90 = E). Le coordinate vengono arrotondate a 6 decimali, gli
@@ -16,26 +16,32 @@ risultato e la firma.
 
 ## 1. L'oggetto esportato (`window.RB`)
 
-Tutto ciò che è pubblico passa da [`window.RB`](../public/assets/js/roadbook-core.js#L397).
-Le funzioni geo stanno in un sotto-oggetto `RB.geo`; tutto il resto è in cima a `RB`.
+Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un sotto-oggetto
+`RB.geo`; tutto il resto è in cima a `RB`.
 
 | Chiave            | Cosa contiene |
 |-------------------|---------------|
 | `ROAD_TYPES`      | tabella dei 5 tipi di strada (§2) |
 | `CONST`           | costanti di punteggio e larghezze META (§2) |
 | `geo`             | `{ haversineM, bearingDeg, destPoint }` (§3) |
-| `parseGPX`, `parseWPT` | parser di import (§4) |
+| `parseGPX`, `parseWPT`, `parseOpenRally` | parser di import (§4) |
 | `buildRoadbook`, `importRoadbook` | costruzione/normalizzazione del roadbook (§5) |
 | `recomputeMetrics`, `recomputeCaps`, `normalizeRoadTypes` | ricalcoli (§6) |
-| `speedLimitOfNote` | limite di velocità in vigore su una nota (§8) |
+| `cumulativeM`, `deriveBearings` | distanza cumulativa / bearing in-out a un indice (§5-6) |
+| `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
 | `simplifyRoadbook`, `reverseRoadbook`, `nearestOnTrack` | operazioni traccia (§7) |
-| `gpxDocument`     | serializzatore GPX 1.1 (§7) |
+| `gpxDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / OpenRally (§7) |
+| `WP_TYPES`, `wpType`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius` | tipizzazione waypoint FIA + raggio di rilevamento |
+| `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
+| **scoring** — `scoredNoteSet`, `isScoredIdx`, `validationPenalties`, `speedPenalty`, `skipPenalty`, `rankEntry`, `speedBand` | motore di punteggio condiviso Reader↔Ranking (vedi [ranking-model.md](ranking-model.md)) |
+| `hhmmss`, `ddmmyy`, `parseHms` | codec orari del payload META |
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
 | `iconSrc`         | risoluzione sorgente di un'icona (§10) |
 | `filterByText`, `filterRoadbooks` | filtro testuale generico / di una lista di roadbook (§11) |
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |
-| `nearestIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |
+| `recJunkFix`, `recStepM` | soglia scarto fix / passo di campionamento della registrazione live |
+| `nearestIdx`, `nearestIdxByTime`, `resolveIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |
 
 Quasi tutte le funzioni di mutazione (`recompute*`, `simplify*`, `reverse*`, `importRoadbook`,
 `normalizeRoadTypes`) **modificano l'oggetto `rb` in-place** e lo restituiscono per
@@ -45,25 +51,26 @@ concatenazione: non producono una copia.
 
 ## 2. Costanti (`ROAD_TYPES`, `CONST`)
 
-[`ROAD_TYPES`](../public/assets/js/roadbook-core.js#L39) è la tabella dei 5 tipi di strada,
-usata sia per disegnare (colore + larghezza tratto nella vignetta) sia come `id` nel modello
-nota (`road_type_in` / `road_type_out`).
+`ROAD_TYPES` è la tabella dei 5 tipi di strada, usata per disegnare (colore del tratto nella
+vignetta e larghezza della linea sulla mappa) e come `id` nel modello nota (`road_type_in` /
+`road_type_out`). Le larghezze del *tulip* sono invece in `ROAD_STYLE` di note-canvas (§ nota).
 
-| id | tipo       | colore     | width | tratteggiato |
-|:--:|------------|------------|:-----:|:------------:|
-| 0  | default    | `#9aa4b2`  | 5     | no  |
-| 1  | autostrada | `#3b82f6`  | 9     | no  |
-| 2  | asfalto    | `#22c55e`  | 7     | no  |
-| 3  | sterrato   | `#ff5a45`  | 5     | no  |
-| 4  | fuoripista | `#ff5a45`  | 4     | **sì** |
+| id | tipo       | colore     | tratteggiato |
+|:--:|------------|------------|:------------:|
+| 0  | default    | `#9aa4b2`  | no  |
+| 1  | autostrada | `#3b82f6`  | no  |
+| 2  | asfalto    | `#22c55e`  | no  |
+| 3  | sterrato   | `#ff5a45`  | no  |
+| 4  | fuoripista | `#ff5a45`  | **sì** |
 
-[`CONST`](../public/assets/js/roadbook-core.js#L48) raccoglie le costanti che **Reader e
-Ranking devono condividere** per essere d'accordo sul punteggio:
+`CONST` raccoglie le costanti che **Reader e Ranking devono condividere** per essere d'accordo
+sul punteggio:
 
 | Chiave             | Valore | Significato |
 |--------------------|:------:|-------------|
 | `MANUAL_RADIUS_M`  | 100    | raggio di "armamento" per il calcolo dell'overshoot |
 | `MIN_DISP_M`       | 5      | spostamento minimo considerato (filtro deriva GPS) |
+| `REACH_DEFAULT_M`  | 30     | raggio di rilevamento di default (geofence del Reader) |
 | `P_SKIP`           | 450    | penalità per nota saltata |
 | `P_SPEED_PER_KMH`  | 10     | penalità per km/h di eccesso |
 | `REG_GRACE_S`      | 59     | tolleranza in secondi sul ritardo (regolarità) |
@@ -116,20 +123,21 @@ Due helper sul nome del waypoint:
 
 ## 5. Costruzione del roadbook (`buildRoadbook`)
 
-[`buildRoadbook({ name, trkpts, wpts })`](../public/assets/js/roadbook-core.js#L135) trasforma
-traccia + waypoint nel JSON canonico del roadbook. Lancia se i punti traccia sono meno di 2.
+`buildRoadbook({ name, trkpts, wpts })` trasforma traccia + waypoint nel JSON canonico del
+roadbook. Lancia se i punti traccia sono meno di 2.
 
 Passaggi:
-1. [`cumulativeM(trkpts)`](../public/assets/js/roadbook-core.js#L128) calcola la distanza
-   cumulativa (metri) ad ogni punto; l'ultima è `total_distance`.
+1. `cumulativeM(trkpts)` calcola la distanza cumulativa (metri) ad ogni punto; l'ultima è
+   `total_distance`.
 2. **Garantisce una nota di partenza e una di arrivo**: se nessun waypoint cade sul primo
    punto traccia ne aggiunge uno `start`/`num 0`, idem per l'ultimo (`end`/`num 9999`).
-3. Risolve l'indice traccia di ogni waypoint con
-   [`nearestIdx(trkpts, pt)`](../public/assets/js/roadbook-core.js#L119) (punto traccia più
-   vicino per distanza haversine), li **ordina** per `idx` e **deduplica** waypoint che cadono
-   sullo stesso indice.
+3. Risolve l'indice traccia di ogni waypoint con `resolveIdx(trkpts, pt)` — **il punto più
+   vicino nel TEMPO** quando sia il waypoint sia la traccia portano un timestamp (`t`),
+   altrimenti il più vicino per posizione (`nearestIdx`, haversine) — poi li **ordina** per
+   `idx` e **deduplica** i waypoint che cadono sullo stesso indice. (La stessa `resolveIdx`
+   individua anche start/end.)
 4. Per ogni nota deriva `num` (riprogressivo), `distance`, `partial_distance`, `lat`/`lon` dal
-   punto traccia, `bearing_in`/`bearing_out`, e il testo via `wptText`.
+   punto traccia, `bearing_in`/`bearing_out` (via `deriveBearings`), e il testo via `wptText`.
 
 Il **modello nota** prodotto:
 
@@ -149,12 +157,14 @@ Il **modello nota** prodotto:
 
 Il `track[]` salvato porta `ele` (intero) solo dove l'elevazione è finita.
 
-[`importRoadbook(rb)`](../public/assets/js/roadbook-core.js#L184) normalizza un file appena
-caricato nello schema canonico. È un **importer permanente e intenzionale** (non back-compat
-cruft): RDBK apre ancora i vecchi file con chiavi italiane, quindi rinomina `titolo → title`,
-`km_totali → total_distance` (km → metri), `testo → text` ed elimina le originali; poi riempie
-i default strutturali mancanti (`meta`, `icons`, `junctions: null` per nota). È **idempotente**:
-un file già canonico passa invariato.
+`importRoadbook(rb)` normalizza un file appena caricato nello schema canonico. È un **importer
+permanente e intenzionale** (non back-compat cruft): oltre a rinominare le chiavi italiane
+(`titolo → title`, `km_totali → total_distance` in km → metri, `testo → text`) e a riempire i
+default strutturali (`meta`, `icons`, `junctions: null`), fa la **conversione completa dei file
+Roadbook Suite**: `bivio → junctions` con flip dell'asse y, flip di ancoraggio/asse delle icone,
+remap via `SUITE_ICON_ALIASES`, conversione di `km_prog/km_parz/cap_hdr/cap_km`, `recomputeMetrics`
+per i file Suite, e il tagging del limite di velocità → `speed_limit`/`wp_type` (#94). È
+**idempotente**: un file già canonico passa invariato.
 
 ---
 
@@ -207,12 +217,12 @@ eventuali `<wpt>` con nome. Tutto il testo è XML-escaped. Usato anche dal logge
 
 ## 8. Limiti di velocità (`speedLimitFromName`, `speedLimitOfNote`)
 
-Il limite è **codificato nel nome dell'icona**:
-- [`speedLimitFromName(name)`](../public/assets/js/roadbook-core.js#L311) — `S99_end` → `0`
-  (limite revocato); `S01_10km`/`S03_30km`/… → il numero (`10`, `30`, …); altrimenti `null`.
-- [`speedLimitOfNote(note)`](../public/assets/js/roadbook-core.js#L318) — scorre le icone della
-  nota e ritorna l'**ultimo** limite trovato (`0` = revocato, `null` = nessuno). Solo
-  `speedLimitOfNote` è esportata.
+Il limite è **dichiarativo** sul campo `note.speed_limit`, con le icone come fallback:
+- `speedLimitFromName(name)` — `S99_end` → `0` (limite revocato); `S01_10km`/`S03_30km`/… → il
+  numero (`10`, `30`, …); altrimenti `null`.
+- `speedLimitOfNote(note)` — ritorna prima `note.speed_limit` se presente (`0` = revocato),
+  altrimenti scorre le icone della nota e ritorna l'ultimo limite trovato (`null` = nessuno).
+  Entrambe sono esportate.
 
 ---
 

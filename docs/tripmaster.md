@@ -127,8 +127,8 @@ colori di banda, persistiti in `localStorage` sotto la chiave `rb_speedalert`
 ([tripmaster.js:65](../public/tripmaster/tripmaster.js#L65)). Il modale di configurazione è in
 `tmSpeedAlert` ([tripmaster.js:133](../public/tripmaster/tripmaster.js#L133)).
 
-Il colore della banda è scelto da `speedBandColor(v)`
-([tripmaster.js:66](../public/tripmaster/tripmaster.js#L66)) attorno al limite `L = saLimit`:
+Il colore della banda è scelto da `speedBandColor(v)`, che delega la fascia (0..3) al core
+`RB.speedBand(v, saLimit)` e la mappa sui colori scelti, attorno al limite `L = saLimit`:
 
 | Banda | Condizione | Colore (default) |
 |-------|-----------|------------------|
@@ -139,12 +139,11 @@ Il colore della banda è scelto da `speedBandColor(v)`
 
 Il colore risultante:
 
-- tinge il **numero della velocità** (`--speed-band`);
-- tinge lo **sfondo dell'intera colonna centrale** `#tmMain`
-  ([tripmaster.js:79](../public/tripmaster/tripmaster.js#L79)), con transizione morbida;
+- tinge il **numero della velocità** (variabile CSS `--speed-band`);
+- tinge lo **sfondo dell'intera colonna centrale** `#tmMain` via la variabile CSS `--tm-band`
+  (nessuno stile inline), con transizione morbida;
 - aggiunge la classe `.over` quando `speedKmh ≥ saLimit`, che mostra un'icona di avviso ⚠ come
-  **segnale non-cromatico** di superamento ([tripmaster.js:78](../public/tripmaster/tripmaster.js#L78),
-  [index.html:50](../public/tripmaster/index.html#L50)).
+  **segnale non-cromatico** di superamento.
 
 ---
 

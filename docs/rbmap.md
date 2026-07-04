@@ -8,10 +8,10 @@ sfondo satellite e topografico. Documento di riferimento per l'API pubblica e i 
 limiti.
 
 > **Non è Mapbox.** Nonostante il nome storico, il modulo usa
-> [MapLibre GL](https://maplibre.org/) con stili e tile **gratuiti, senza chiave**
-> (OpenFreeMap per il topo, tile DEM Terrarium di AWS per il rilievo 3D). Non serve un
-> token in `config.js` per la mappa di base; gli stili si sovrascrivono via `RB_CONFIG`
-> ([rbmap.js:10](../public/assets/js/rbmap.js#L10)).
+> [MapLibre GL](https://maplibre.org/) con tile **gratuite, senza chiave**: il **topo** è
+> CyclOSM (`RASTER_TOPO`), il **satellite** è ESRI World Imagery (`RASTER_SATELLITE`);
+> OpenFreeMap serve solo i glyph/font. Non serve un token in `config.js` per la mappa di
+> base; una chiave MapTiler eventuale migliora solo il satellite.
 
 ---
 
@@ -69,14 +69,15 @@ ogni swap di stile** (MapLibre azzera source e layer custom su `setStyle`).
 | `rb-track`     | line | la traccia del roadbook (`MultiLineString` se ci sono tagli) | rosso `#ff5a45` |
 | `rb-gap`       | line dashed | i connettori dei **tagli aperti** (buchi non riempiti, Editor) | sabbia `#e8b059` |
 | `rb-sel`       | circle | l'alone della nota **selezionata** | sabbia translucido |
-| `rb-wpts` / `rb-wpts-l` | circle + symbol | i waypoint + l'etichetta col numero nota | sabbia / testo bianco |
+| `rb-wpts` / `rb-wpts-l` | circle + symbol | i waypoint + l'etichetta col numero nota | **blu `#3b82f6`** / testo bianco |
 | `rb-live`      | line | la sub-traccia "adjust" / registrazione in overlay | verde `#3ad29f` |
-| `rb-photos` / `rb-photos-i` | circle + symbol | i pin foto + l'emoji 📷 | blu `#3a8dff` |
+| `rb-photos` / `rb-photos-i` | circle + symbol | i pin foto + l'etichetta testuale **`IMG`** | blu `#3a8dff` |
 | `rb-pos`       | circle | il puntino "sei qui" | azzurro `#5aa9ff` |
-| `rb-verts`     | circle | le maniglie dei vertici (move-points tool), in cima | bianco bordo rosso |
+| `rb-verts`     | circle | le maniglie dei vertici (move-points tool) | bianco bordo rosso |
+| `rb-vsel`      | circle | l'anello del vertice **selezionato** | arancione |
 
-`rb-verts` è aggiunto **per ultimo** così resta sopra gli altri e quindi afferrabile
-([rbmap.js:112](../public/assets/js/rbmap.js#L112)).
+I layer waypoint (`rb-wpts`/`rb-wpts-l`) vengono portati in cima con `moveLayer` dopo gli
+altri add (incluso `rb-vsel`), così i marker restano afferrabili.
 
 ### Rilievo 3D (`_terrain`)
 `_terrain()` aggiunge una source `raster-dem` da tile Terrarium AWS (gratis, senza
@@ -155,14 +156,15 @@ trascinabili. Il vecchio marker rosso pan-only è stato rimosso (#61): la nota s
 trascinando direttamente il suo marker blu, esattamente come un punto traccia.
 
 ### Vertici traccia e note (move-points tool)
-- **`setVertexEditor(track, onDrag, onCommit)`** — arma/disarma lo strumento: con `track`
-  + callback mostra ogni vertice come maniglia trascinabile; con `null` lo azzera
-  ([rbmap.js:190](../public/assets/js/rbmap.js#L190)).
+- **`setVertexEditor(track, onDrag, onCommit, onSelect)`** — arma/disarma lo strumento: con
+  `track` + callback mostra ogni vertice come maniglia trascinabile; `onSelect(i)` scatta sul
+  **tap** (senza drag) di un vertice; con `null` azzera tutto.
 - `onDrag(i, lat, lon)` scatta **live** mentre si trascina il vertice `i`; `onCommit()` al
-  rilascio. La logica di drag (disabilita il pan, cambia cursore) è nei listener
-  registrati una sola volta ([rbmap.js:48-58](../public/assets/js/rbmap.js#L48)).
-- **`refreshVertices(track)`** ridisegna le maniglie (usato live durante il drag,
-  [rbmap.js:195](../public/assets/js/rbmap.js#L195)).
+  rilascio. La logica di drag (disabilita il pan, cambia cursore) è nei listener registrati
+  una sola volta; armare/disarmare gli editor azzera anche i flag di drag, così un flag
+  residuo non ingoia il tap successivo su un marker.
+- **`showVertices(track)`** mostra i puntini vertice in sola lettura (senza drag/select),
+  **`setSelectedVertex(pt)`** disegna l'anello arancione del vertice selezionato.
 - **`setWaypointEditor(onDrag, onCommit)`** — arma/disarma il drag delle **note** (layer
   `rb-wpts`): `onDrag(noteIndex, lat, lon)` live, `onCommit()` al rilascio. L'Editor sposta
   il vertice traccia sotto la nota, così la linea la segue (la nota è mobile come un trk, #61).
@@ -207,16 +209,15 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 
 ## 9. Limiti e quirk
 
-- **Non è Mapbox.** Il nome `RBMap` e i riferimenti storici a "Mapbox" in CLAUDE.md sono
-  obsoleti: il codice usa MapLibre GL. Lo sfondo satellite di default **ricade sul
-  topo** se non si configura `RB_CONFIG.styleSatellite` con un provider con licenza
-  (es. uno stile satellite MapTiler) ([rbmap.js:11](../public/assets/js/rbmap.js#L11)).
-  Senza override, il "satellite" mostra in realtà la mappa topografica.
+- **Non è Mapbox.** Il nome `RBMap` e i riferimenti storici a "Mapbox" sono obsoleti: il
+  codice usa MapLibre GL con tile senza chiave (satellite ESRI World Imagery, topo CyclOSM).
+  Una chiave MapTiler eventuale in `RB_CONFIG` migliora solo il satellite.
 - **Source condivisa traccia.** `setLiveTrack` e `showRoadbook` scrivono **entrambi** su
   `rb-track`: live usa un `LineString`, il roadbook un `MultiLineString`. Sono modalità
   mutuamente esclusive sulla stessa source, non sovrapponibili.
-- **Tutto si appoggia a tile/DEM esterni gratuiti** (OpenFreeMap, AWS Terrarium): offline
-  o se il servizio è giù, mappa e rilievo degradano senza errori ma senza dati.
+- **Tutto si appoggia a tile/glyph esterni gratuiti** (ESRI World Imagery, CyclOSM,
+  OpenFreeMap per i font): offline o se il servizio è giù, la mappa degrada senza errori ma
+  senza dati.
 - **Coda a un solo elemento.** Solo `showRoadbook` è messa in coda prima del `ready`; gli
   altri metodi (posizione, foto, overlay, selezione) chiamati troppo presto sono no-op
   silenziosi e vanno richiamati dopo il load.

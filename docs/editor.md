@@ -27,33 +27,33 @@ La pagina ha due viste, commutate da `showView(v)`
 | **map**      | `#viewMap`    | landing iniziale · mappa + barra strumenti · lista note + editor inline |
 | **config**   | `#viewConfig` | dettagli roadbook (visibilità, descrizione, autore, org, logo, accesso mappa) + galleria foto |
 
-Lo stato globale del modulo vive in poche variabili
-([editor.js:29](../public/editor/editor.js#L29)): `rb` (il roadbook), `sel` (indice nota
+Lo stato globale del modulo vive in poche variabili: `rb` (il roadbook), `sel` (indice nota
 selezionata), `dirty`/`exported` (per il pulsante Save e il prompt di uscita), `editorOpen`
-(editor nota aperto inline), più `gaps` (i tagli aperti, §3) e
-`currentRbId`/`isPublic` (identità lato profilo, §6).
+(editor nota aperto inline), più `gaps` (i tagli aperti, §3) e l'identità lato profilo
+`currentRbId` + `status` (draft/ready/public) + `reusable` (§6).
 
 ---
 
 ## 2. Le sorgenti di creazione
 
 La landing (`#loadFrom`) offre quattro carte; le altre due sorgenti (record/trip) arrivano
-dal flusso di startup (§7). Tutte passano per `setRoadbook(r)`
-([editor.js:336](../public/editor/editor.js#L336)), che normalizza con `RB.importRoadbook`,
-pre-carica via XHR sincrono ogni icona embedded come data-URI (così le vignette renderizzano
-subito), mostra la superficie di editing e fa il primo render.
+dal flusso di startup (§7). Tutte passano per `setRoadbook(r)`, che normalizza con
+`RB.importRoadbook`, **pre-carica e rinfresca in modo asincrono** le icone della palette
+standard usate (via `RB.urlToDataURL`): la UI renderizza subito e si ridisegna quando le icone
+arrivano; l'arte aggiornata di un segnale sostituisce una copia vecchia embeddata in un
+roadbook datato, mentre un'icona custom (fetch fallito) mantiene la sua (#174).
 
-| Sorgente            | Handler                                                                | Cosa fa |
-|---------------------|------------------------------------------------------------------------|---------|
-| **GPX** (`+ .wpt`)  | `$('gpxFile').onchange` ([editor.js:314](../public/editor/editor.js#L314)) | `RB.parseGPX` (+ `RB.parseWPT` se manca) → `RB.buildRoadbook` |
-| **Draw on the map** | `$('drawRoute').onclick` ([editor.js:308](../public/editor/editor.js#L308)) | apre la mappa in modalità `draw`; i primi due tap creano il roadbook |
-| **.rdbk**           | `$('jsonFile').onchange` ([editor.js:325](../public/editor/editor.js#L325)) | `JSON.parse`, valida `track`+`notes`, `setRoadbook` — dettaglio e fedeltà per il Ranking in **§9** |
-| **Challenge**       | `$('pickChallenge').onclick` ([editor.js:313](../public/editor/editor.js#L313)) | `RBChallenges.pick` → fork come **nuovo** roadbook |
+| Sorgente            | Handler | Cosa fa |
+|---------------------|---------|---------|
+| **GPX** (`+ .wpt`)  | `$('gpxFile').onchange` | `RB.parseGPX` (+ `RB.parseWPT` se manca) → `RB.buildRoadbook` |
+| **Draw on the map** | `$('drawRoute').onclick` | apre la mappa in modalità `draw`; i primi due tap creano il roadbook |
+| **.rdbk**           | `$('jsonFile').onchange` | `JSON.parse`, valida `track`+`notes`, `setRoadbook` — dettaglio e fedeltà per il Ranking in **§9** |
+| **Roadbook pubblico** | `$('pickChallenge').onclick` | `RBChallenges.pick(…, { reusable: true })` → fork come **nuovo** roadbook (solo i pubblici riusabili, #106) |
 
-Le sorgenti che importano contenuto *fresco* (GPX, .rdbk, challenge) chiamano prima
-`resetIdentity()` ([editor.js:636](../public/editor/editor.js#L636)): azzerano
-`currentRbId`, rimettono privato e ripuliscono `?rb=` dall'URL — così importare qualcosa
-mentre si edita un roadbook salvato fa partire una nuova entità, non sovrascrive l'originale.
+Le sorgenti che importano contenuto *fresco* (GPX, .rdbk, pubblico) chiamano prima
+`resetIdentity()`: azzera `currentRbId`, rimette lo stato a `draft` + `reusable` a false, e
+ripulisce `?rb=` dall'URL — così importare qualcosa mentre si edita un roadbook salvato fa
+partire una nuova entità, non sovrascrive l'originale.
 
 ---
 
@@ -65,25 +65,27 @@ si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate
 
 > Caricata una rotta, il tool attivo di **default** è **Move** (`setMapTool('points')` in
 > `setRoadbook`): si trascina qualunque punto — traccia **o** nota — e la linea segue (#61).
-> La barra mostra **solo** ☰ · Undo · Redo; **tutti** gli strumenti (Navigate, Add note, Draw,
-> Insert, Cut, Add GPX, Simplify, Adjust) stanno nel menu **☰** (`#mapMenuToggle`/`#mapMenuPanel`).
-> Non esiste un pulsante Move: **Esc** (o il completamento di un taglio) riporta a Move. **Reverse**
-> è nei *Settings* del roadbook (§7). Vedi §3.3 per l'intero comportamento della mappa.
+> La barra mostra **solo** ☰ · Undo · Redo; l'unico *mode tool* con un pulsante è **Cut**
+> (`MODE_TOOLS = ['toolCut']`). Il menu **☰** (`#mapMenuPanel`) contiene **Cut · Add GPX ·
+> Simplify · Adjust**. Non esiste un pulsante Move: **Esc** (o il completamento di un taglio)
+> riporta a Move. **Draw** si avvia dalla landing (`drawRoute`) ed è il default per un roadbook
+> senza rotta. **Reverse** è nei *Settings* del roadbook (§7). Vedi §3.3 per l'intero
+> comportamento della mappa.
 
 ### 3.1 Mode tool
 
-`setMapTool(tool)` ([editor.js:110](../public/editor/editor.js#L110)) imposta `mapTool`,
-azzera lo stato di cut/draw, aggiorna l'evidenziazione e il cursore. Il dispatch dei tap
-mappa è in `map.map.on('click', …)` ([editor.js:51](../public/editor/editor.js#L51)).
+`setMapTool(tool)` imposta `mapTool`, azzera lo stato di cut/draw, aggiorna l'evidenziazione e
+il cursore. Il dispatch dei tap mappa (`map.map.on('click', …)`) gestisce solo `draw` e `cut`.
 
-| Tool       | `mapTool` | Funzione                                                  | Comportamento |
-|------------|-----------|-----------------------------------------------------------|---------------|
-| **Navigate** | `pan`   | `select` su waypoint ([editor.js:50](../public/editor/editor.js#L50)) | naviga la mappa; tap su una nota la apre |
-| **add note** | `note`  | `addWaypointNear` ([editor.js:860](../public/editor/editor.js#L860)) | inserisce una nota dove tocchi (split del segmento se serve) |
-| **draw**   | `draw`    | `drawPoint` ([editor.js:157](../public/editor/editor.js#L157)) | ogni tap estende dall'estremità **aperta più vicina** |
-| **Move** (default, no button) | `points` | `setVertexEditor` + `setWaypointEditor` → `onVertexDrag`/`onWptDrag` ([editor.js:64](../public/editor/editor.js#L64)) | trascina qualunque punto, **traccia o nota** (sposta il vertice, la linea segue); metriche ricalcolate al rilascio |
-| **insert** | `insert`  | `insertMidpoint` ([editor.js:214](../public/editor/editor.js#L214)) | tap su un segmento → nuovo vertice al suo punto medio |
-| **cut**    | `cut`     | `cutPoint` ([editor.js:227](../public/editor/editor.js#L227)) | tap due punti → taglia |
+| Tool       | `mapTool` | Funzione | Comportamento |
+|------------|-----------|----------|---------------|
+| **Move** (default, no button) | `points` | `setVertexEditor` + `setWaypointEditor` → `onVertexDrag`/`onWptDrag` | trascina qualunque punto, **traccia o nota** (sposta il vertice, la linea segue); metriche ricalcolate al rilascio |
+| **draw**   | `draw`    | `drawPoint` | ogni tap estende dall'estremità **aperta più vicina**; avviato dalla landing |
+| **cut**    | `cut`     | `cutPoint` | tap due punti → taglia (unico mode tool con pulsante in barra) |
+
+> Aggiungere una nota non è più un *mode tool*: `addWaypointNear` si raggiunge dal menu
+> contestuale / dal menu per-vertice; l'inserimento di un punto intermedio è l'azione `mid`
+> del menu per-vertice.
 
 **Draw.** Con nulla caricato, i primi due tap costruiscono un roadbook da zero
 (`drawSeed` → `RB.buildRoadbook`). Con una rotta presente, ogni tap calcola la candidata più
@@ -221,21 +223,19 @@ Il **recording di una rotta nuova** vive ormai nel tool Recorder dedicato; nell'
 barra serve principalmente ad **"Adjust on the trail"** (re-record live di un tratto),
 avviata da `startRecording('adjust')` ([editor.js:480](../public/editor/editor.js#L480)).
 
-Il fix GPS (`onRecFix`, [editor.js:498](../public/editor/editor.js#L498)) scarta i fix con
-accuratezza > 35 m, campiona con passo adattivo `max(2.5, accuracy·0.35)` e applica uno
-smoothing a media mobile su 3 punti (`smoothTrack`,
-[editor.js:444](../public/editor/editor.js#L444)). In modalità adjust attende che ci si porti
-sul sentiero (≤ 10 m) per fissare l'ingresso `adjP1`, poi rileva un eventuale rientro più
-avanti (`adjP2`). Alla fine `finishAdjust` ([editor.js:588](../public/editor/editor.js#L588))
-chiede conferma e fa `spliceByIndex` ([editor.js:608](../public/editor/editor.js#L608)),
-sostituendo il tratto e ri-agganciando le note (`RB.nearestIdx`).
+Il fix GPS (`onRecFix`) usa gli **stessi helper condivisi del core** di Recorder e Reader:
+scarta i fix rumorosi con `RB.recJunkFix` (accuratezza troppo alta / salto improbabile) e
+campiona con passo adattivo `RB.recStepM(accuracy)`; a fine tratto applica lo smoothing a media
+mobile (`smoothTrack`). In modalità adjust attende che ci si porti sul sentiero (≤ 10 m) per
+fissare l'ingresso `adjP1`, poi rileva un eventuale rientro più avanti (`adjP2`). Alla fine
+`finishAdjust` chiede conferma e fa `spliceByIndex`, sostituendo il tratto e ri-agganciando le
+note (`RB.nearestIdx`).
 
-Il recording nuovo (`recMode === 'new'`) è checkpointato in `localStorage` (`REC_KEY`,
-[editor.js:441](../public/editor/editor.js#L441)) e recuperabile via `checkRecovery`
-([editor.js:619](../public/editor/editor.js#L619)); rispecchia inoltre la traccia nel file GPX
-crash-safe di `RBGpxRecorder`. Le foto in recording sono geotaggate e caricate lato server
-(`recPhoto`, [editor.js:552](../public/editor/editor.js#L552)); richiedono un draft id e il
-login.
+Il recording nuovo (`recMode === 'new'`) è checkpointato in `localStorage` (`REC_KEY`) e
+recuperabile via `checkRecovery`; rispecchia inoltre la traccia nel file GPX crash-safe di
+`RBGpxRecorder`. Le note istantanee in recording passano dal prompt condiviso `RBWaypointPrompt`
+(tipo waypoint + testo); le foto sono geotaggate, mostrate con `RBPhotoPreview` e caricate lato
+server (`recPhoto`) — richiedono un draft id e il login.
 
 ---
 
@@ -248,15 +248,21 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
 `modified` (YYYY-MM-DD) ad ogni save/export.
 
 - **Logo evento** — caricato via `RBImg.toDataURL(f, 256)` ed embedded come data-URI in
-  `meta.logo` (auto-contenuto come le icone) ([editor.js:417](../public/editor/editor.js#L417)).
-- **Visibilità** — segmented Private/Public → `setVis` ([editor.js:634](../public/editor/editor.js#L634)).
-- **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`
-  ([editor.js:434](../public/editor/editor.js#L434)).
+  `meta.logo` (auto-contenuto come le icone).
+- **Stato** — non è più un semplice Private/Public: `setStatus(status)` gestisce **tre stati**
+  (`draft` · `ready` · `public`), riflessi in `status` a livello di modulo. Solo `public`
+  pubblica il roadbook nell'elenco pubblico; `draft`/`ready` restano privati.
+- **Riutilizzabile** — checkbox `cfgReusable` → `reusable`: marca un roadbook pubblico come
+  clonabile/riusabile da altri (#106). Ha senso solo quando lo stato è `public`.
+- **Profilo waypoint** — select `cfgProfile` → `meta.profile` (`basic`|`rally`): sceglie il
+  vocabolario dei tipi di waypoint FIA offerti nell'editor di nota.
+- **Raggio di validazione di default** — campo `cfgWpRadius` → `meta.default_wp_radius`: il
+  raggio (m) usato dal Reader per le note senza `wp_radius` proprio.
+- **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`.
 - **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
 - **Cancella roadbook (#81)** — una sezione *danger* (`#deleteSection`) col pulsante
-  *Delete roadbook* (`#deleteRb`, [editor.js:907](../public/editor/editor.js#L907)) compare
-  **solo per un roadbook salvato** (`currentRbId > 0`, mostrata/nascosta in `updateSaveBtn`,
-  [editor.js:163](../public/editor/editor.js#L163)). Chiede conferma **nominando il roadbook**
+  *Delete roadbook* (`#deleteRb`) compare **solo per un roadbook salvato** (`currentRbId > 0`,
+  mostrata/nascosta in `updateSaveBtn`). Chiede conferma **nominando il roadbook**
   (`RBConfirmDanger` col titolo), poi chiama `rb_delete` e, al successo, pulisce il draft e
   riporta a *My roadbooks*. I roadbook non ancora salvati non hanno nulla da cancellare lato
   server, quindi il pulsante non c'è.
@@ -411,9 +417,28 @@ meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo regi
 `currentRbId`, azzera `dirty`, pulisce il draft e **fissa `?rb=<id>` nell'URL** via
 `history.replaceState` — così un reload (o l'auto-refresh di versione) continua a editare lo
 stesso roadbook, e i successivi save aggiornano la stessa entità. `$('saveAccount')` richiede
-login (`RBNeedAuth`). **"Save as"** ([editor.js:657](../public/editor/editor.js#L657)) azzera
-l'identità, aggiunge "(copy)" al titolo e salva una nuova entità privata, lasciando intatto
-l'originale.
+login (`RBNeedAuth`). **"Save as"** azzera l'identità, aggiunge "(copy)" al titolo e salva una
+nuova entità privata, lasciando intatto l'originale.
+
+### 7.2 Co-editing, lock e chiusura (#123 · #154 · #166)
+
+Un roadbook di evento può essere modificato da più persone; proprietà e blocco tengono le
+cose coerenti:
+
+- **Proprietà (#123).** `setOwnership(isOwner, owner)` distingue proprietario e co-editor. Al
+  **co-editor** vengono nascosti i controlli che restano del proprietario — la scelta di
+  **stato/visibilità** (`visField`) e la sezione *danger* di cancellazione — mostrando invece
+  la nota `visCoedit` (*Solo il proprietario può cambiare la visibilità*). Un save del
+  co-editor **mantiene lo stato di pubblicazione del proprietario**.
+- **Soft lock (#154).** `setLock(lock)` implementa un lock morbido: mentre lo tiene qualcun
+  altro (`lock.mine === false`) l'Editor è **read-only** e mostra `lockBanner` (*@utente sta
+  modificando — sola lettura*); `updateSaveBtn` disabilita il Save (`!rbLock.mine`). Chi tiene
+  il lock lo **rinnova** ogni 4 min (`rb_lock_refresh`) e lo **rilascia** in chiusura via
+  `sendBeacon` (`rb_lock_release`); è possibile **forzarlo** (`rb_lock_force`).
+- **Chiudi → landing dell'editor (#166).** `leaveEditor` (pulsante `#closeEditor`) con modifiche
+  non salvate offre *Salva e chiudi · Chiudi senza salvare · Annulla*, poi torna alla **landing
+  dell'editor (la lista dei roadbook)** — `location.pathname` senza il nome file — **non** alla
+  home; ripulisce eventuali `?rb=`/`/<slug>`.
 
 ---
 
@@ -572,12 +597,7 @@ Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
 
 ## 10. Limiti e quirk da segnalare
 
-- **XHR sincrono in `setRoadbook`.** Le icone embedded mancanti vengono risolte con
-  `XMLHttpRequest` **sincrono** ([editor.js:346](../public/editor/editor.js#L346)): blocca il
-  thread durante il caricamento e usa il deprecato `overrideMimeType` per leggere binario.
-  Funziona ma è un anti-pattern; con molte icone non in cache l'apertura può ingobbire.
-- **`makeNote` non emette il campo `num`.** `makeNote` crea `num: 0`
-  ([editor.js:45](../public/editor/editor.js#L45)); la numerazione corretta arriva solo dopo
+- **`makeNote` non emette il campo `num`.** `makeNote` crea `num: 0`; la numerazione corretta arriva solo dopo
   `RB.recomputeMetrics`. Le righe che inseriscono note lo chiamano subito, quindi in pratica è
   coerente — ma una nota appena creata e mostrata prima del recompute apparirebbe come `0`.
 - **L'autore di default può sovrascrivere il campo vuoto al login.** In startup, se l'utente

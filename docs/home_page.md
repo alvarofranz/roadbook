@@ -17,10 +17,10 @@ La lista completa con ricerca + paginazione vive in `/roadbooks` ([challenges](c
 
 Flusso ([home.js:65](../public/assets/js/home.js#L65)):
 1. `RBChallenges.listPublic()` → `public_list` dell'API restituisce i roadbook pubblici
-   (`WHERE is_public = 1 AND slug IS NOT NULL`, ordinati per `updated_at`, max 60) con per
+   (`WHERE status = 'public' AND slug IS NOT NULL`, ordinati per `updated_at`, max 60) con per
    ciascuno `slug · title · total_distance · note_count · username · thumb`.
-2. `render()` ([home.js:32](../public/assets/js/home.js#L32)) costruisce una `.gallery-card`
-   per roadbook, linkata a `/challenge/<slug>`.
+2. `render()` costruisce una card per roadbook con l'helper condiviso **`RBGalleryCard`**
+   (`.gallery-card`), linkata a `/challenge/<slug>`.
 
 **La miniatura** di ogni card, in ordine di preferenza:
 - **`thumb`** — l'URL immagine restituito da `public_list`. È la **cover** del roadbook quando
@@ -34,7 +34,7 @@ Flusso ([home.js:65](../public/assets/js/home.js#L65)):
   forma della rotta: resta l'icona segnaposto.
 
 > La home **non** decide cosa è pubblico: elenca solo ciò che `public_list` ritorna, che filtra
-> già `is_public = 1`. Vedi [backend-api](backend-api.md).
+> già `status = 'public'`. Vedi [backend-api](backend-api.md).
 
 ## 2. Generazione della cover (`cover-map.js` + salvataggio Editor)
 

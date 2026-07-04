@@ -18,7 +18,11 @@ oppure si converte tutto (traccia + waypoint + foto) in un roadbook nell'Editor.
 La pagina ha due stati esclusivi, commutati via attributo `hidden`
 ([recorder.js:35-37](../public/recorder/recorder.js#L35)):
 
-- **`recIdle`** — schermata di avvio con il solo pulsante *Start recording*.
+- **`recIdle`** — schermata di avvio con il pulsante *Start recording* più due avvisi
+  contestuali: `recLoginHint` (visibile ai **non loggati**: la traccia si registra comunque,
+  ma foto/audio richiedono il login) e `recBgHint` (visibile solo **fuori dall'app nativa**:
+  solo l'app registra a schermo bloccato/in background). Entrambi sono governati da
+  `updateRecUi()` una volta noto l'utente.
 - **`recRunning`** — dashboard live: quattro readout (tempo trascorso, velocità,
   numero waypoint, km registrati), la fila di pulsanti azione (Pause · Waypoint ·
   WP audio · WP Foto), la mappa live e il pulsante *Finish*. Su smartphone (≤430px)
@@ -40,37 +44,37 @@ Le dipendenze sono caricate dall'HTML nell'ordine: MapLibre, `config.js`,
 
 ### Avvio
 *Start recording* apre prima il modale impostazioni di `RBGpxRecorder`
-(`RBGpxRecorder.settings`), e solo alla conferma chiama `begin()`
-([recorder.js:63](../public/recorder/recorder.js#L63)).
+(`RBGpxRecorder.settings`), pre-riempito con un **nome roadbook di default** = data+ora
+`YYYY-MM-DD HH-MM` (`recName()`, #148); solo alla conferma chiama `begin()`.
 
-`begin()` ([recorder.js:65](../public/recorder/recorder.js#L65)) azzera tutto lo
-stato (`recordedM`, `track`, `wpts`, `photos`, contatore tempo), avvia il logging
-crash-safe con `RBGpxRecorder.begin()` — che a sua volta accende, via callback
-`onChange`, la barra di stato e la vista *running* — poi fa partire il meter GPS,
-ridisegna la mappa e (solo se loggato) crea il draft per le foto.
+`begin()` azzera tutto lo stato (`recordedM`, `track`, `wpts`, `photos`, contatore tempo),
+avvia il logging crash-safe con `RBGpxRecorder.begin()` — che a sua volta accende, via
+callback `onChange`, la barra di stato e la vista *running* — poi fa partire il meter GPS,
+ridisegna la mappa e (solo se loggato) crea il **draft** per foto/audio, **intitolandolo col
+nome scelto** (`rb_draft` con `name`, #148) così non appare mai come "Recording…".
 
 ### Campionamento consapevole dell'accuratezza
-Ogni fix GPS arriva a `onFix(fix)` ([recorder.js:82](../public/recorder/recorder.js#L82)):
+Ogni fix GPS arriva a `onFix(fix)`, che usa gli **stessi helper condivisi del core**
+dell'Editor (una sola definizione delle soglie):
 
-1. Aggiorna lo stato satellite della barra con l'accuratezza corrente.
-2. **Scarta i fix-spazzatura**: se `accuracy > 35 m` il fix viene ignorato per la
-   traccia (aggiorna solo la barra) ([recorder.js:86](../public/recorder/recorder.js#L86)).
+1. Aggiorna lo stato satellite della barra con l'accuratezza corrente e il marker heading-up.
+2. **Scarta i fix-spazzatura** con `RB.recJunkFix(accuracy)` (accuratezza troppo alta):
+   il fix aggiorna solo barra e marker, non la traccia.
 3. Se in pausa, non accumula nulla.
 4. Somma lo spostamento del fix all'odometro `recordedM`.
 5. **Passo di campionamento adattivo**: il punto entra nella traccia solo se dista
-   dall'ultimo campione almeno `step = max(2.5, accuracy × 0.35)` metri
-   ([recorder.js:91-92](../public/recorder/recorder.js#L91)). Fix preciso ⇒ dettaglio
+   dall'ultimo campione almeno `step = RB.recStepM(accuracy)` metri. Fix preciso ⇒ dettaglio
    fitto; fix debole ⇒ passo più largo, niente jitter.
 
-| Comportamento                  | Soglia / formula                         |
+| Comportamento                  | Regola (core)                            |
 |--------------------------------|------------------------------------------|
-| Fix scartato dalla traccia     | `accuracy > 35 m`                        |
-| Passo minimo di campionamento  | `max(2.5, accuracy × 0.35)` m            |
+| Fix scartato dalla traccia     | `RB.recJunkFix(accuracy)`                |
+| Passo minimo di campionamento  | `RB.recStepM(accuracy)` m                |
 | Altitudine memorizzata         | `coords.altitude` se finita, altrimenti `null` |
 
-> Nota: l'odometro `recordedM` somma lo spostamento di **ogni** fix accettato
-> (`accuracy ≤ 35`), anche quando il punto non viene campionato per il passo adattivo.
-> Il conteggio km può quindi essere leggermente più alto del numero di punti in traccia.
+> Nota: l'odometro `recordedM` somma lo spostamento di **ogni** fix accettato (non-spazzatura),
+> anche quando il punto non viene campionato per il passo adattivo. Il conteggio km può quindi
+> essere leggermente più alto del numero di punti in traccia.
 
 ### Pausa / ripresa
 *Pause* commuta il flag `paused` e gestisce il cronometro: in pausa congela il tempo
@@ -185,23 +189,21 @@ in attesa del satellite. Il primo fix reale prende poi il sopravvento sul marker
 
 ## 5. Waypoint con testo (e dettatura)
 
-*Waypoint* ([recorder.js:132](../public/recorder/recorder.js#L132)) richiede un fix GPS
-(altrimenti toast *"Waiting for a GPS fix…"*). Il flusso è:
+*Waypoint* richiede un fix GPS (altrimenti toast *"Waiting for a GPS fix…"*). Il flusso è:
 
-1. **Drop immediato** alla posizione corrente via `dropWaypoint()`
-   ([recorder.js:125](../public/recorder/recorder.js#L125)): crea
-   `{ lat, lon, name: 'wptN', num, text }`, lo aggiunge a `wpts`, ridisegna e salva.
-2. Apre un modale rapido di testo **senza pressione**: il pulsante mostra
-   *"Edit later (5)…"* e si auto-chiude dopo 5 secondi, **a meno che** non si inizi a
-   digitare — in quel caso il countdown si ferma e il pulsante diventa *"Save note"*
-   ([recorder.js:142-147](../public/recorder/recorder.js#L142)).
+1. **Drop immediato** alla posizione corrente via `dropWaypoint(lat, lon, text)`: crea
+   `{ lat, lon, name: 'wptN', num, text, t: lastFixT }`, lo aggiunge a `wpts`, ridisegna e
+   salva. Il campo **`t`** è il timestamp dell'ultimo fix (#158): l'Editor lo userà per
+   ancorare il waypoint alla traccia **per tempo**.
+2. Apre il **prompt di testo condiviso** `RBWaypointPrompt(note.num, cb, { mic: true, lang:
+   voiceLang })` — lo stesso primitivo usato altrove: si auto-chiude dopo **5 s** salvo si
+   inizi a digitare, e include il microfono di dettatura dove supportato.
 
 ### Speech-to-text
-Se il browser espone `SpeechRecognition`/`webkitSpeechRecognition`, compare un pulsante
-microfono che detta direttamente nel campo (tap per avviare, tap per fermare)
-([recorder.js:149-162](../public/recorder/recorder.js#L149)). La lingua del
-riconoscimento segue l'UI: `it-IT`, `es-ES`, `en-US`, altrimenti `navigator.language`.
-Il microfono pulsa mentre ascolta (classe `.on`, [index.html](../public/recorder/index.html)).
+La lingua del riconoscimento vocale è `voiceLang()`: la **preferenza dell'account**
+(`meUser.voice_lang`, impostabile in `/account/`) oppure, se assente o da sloggati,
+`navigator.language`. È la stessa lingua usata sia dal mic del prompt *Waypoint* sia dalla
+trascrizione best-effort di *WP audio*. Il microfono pulsa mentre ascolta (classe `.on`).
 
 ### "WP audio" (registrazione vocale, press-and-hold)
 Il pulsante **"WP audio"** (`#recWptAudio`, `.btn-accent`/sand; visibile dove c'è
@@ -218,7 +220,7 @@ alla posizione corrente, poi:
   il mic è condivisibile (desktop)**; su **Android/iOS** = **audio sì, testo no**. (Per il solo
   testo dal vivo c'è il mic del modale *Waypoint*, che è STT-only.)
 - **Countdown al rilascio:** lasciando il tasto parte un conto alla rovescia **sul pulsante**
-  (3→0 la prima volta, 2→0 dopo una ri-pressione) durante il quale **continua a registrare**;
+  (5→0 la prima volta, 2→0 dopo una ri-pressione) durante il quale **continua a registrare**;
   a **0 salva** automaticamente (il waypoint è già creato → nessun OK). **Ripremere** durante il
   countdown lo annulla e riprende a registrare (prossimo countdown = 2). Il rilascio è gestito a
   livello `document` (un dito che scivola via chiude comunque); niente `setPointerCapture`
@@ -248,8 +250,8 @@ Il flusso ([recorder.js:166-187](../public/recorder/recorder.js#L166)):
 - L'upload va a `RBUpload` con `type: 'photo'`, `roadbook: draftId` e — se c'è un fix —
   le coordinate correnti come geotag ([recorder.js:171-177](../public/recorder/recorder.js#L171)).
 - La foto restituita (`{ id, url, lat, lon }`) entra in `photos`, ridisegna la mappa e
-  salva la sessione. Poi un modale anteprima offre *OK* o *Convert into waypoint*
-  (che lascia un waypoint vuoto alla posizione della foto).
+  salva la sessione. Poi il primitivo condiviso `RBPhotoPreview(url, cb)` mostra l'anteprima:
+  confermando la callback lascia un waypoint vuoto alla posizione della foto.
 
 ### Dove finiscono davvero le foto (quirk importante)
 Le foto **non** sono parte della traccia GPX né del file `.rdbk` (per design: il formato
@@ -285,38 +287,41 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 
 ---
 
-## 8. Termine: download GPX o conversione in roadbook
+## 8. Termine: salva sul server, esporta GPX o apri nell'Editor
 
-A *Finish* confermato si apre `finishModal(pts, name)`
-([recorder.js:190](../public/recorder/recorder.js#L190)) con il riepilogo
-(punti · km · waypoint · foto) e due azioni:
+A *Finish* confermato si apre `finishModal(pts, name)` con il riepilogo
+(punti · km · waypoint · foto) e **tre** azioni (più *Close*). L'azione **primaria dipende dal
+login**:
 
-- **Download GPX** ([recorder.js:199](../public/recorder/recorder.js#L199)): serializza con
-  `RB.gpxDocument(name, pts, gpxWpts)`, dove i waypoint diventano `{ lat, lon, name }`
-  usando il testo del waypoint (o il nome `wptN` se vuoto). Il file scende via `RBDownload`.
-  Le foto **non** sono nel GPX.
-- **Convert into roadbook** ([recorder.js:205](../public/recorder/recorder.js#L205)): mette
-  in `sessionStorage` la traccia (`rb_trip_track`), i waypoint (`rb_trip_wpts`) e — se c'è —
-  il `draftId` (`rb_trip_draft`, il ponte verso le foto già caricate sul server), poi
-  naviga a `../editor/?trip=1`. È l'Editor a leggere queste chiavi e costruire il roadbook.
+- **Save to server** *(loggato, primaria, #143)*: in un tap costruisce il roadbook dalla
+  traccia + waypoint (`RB.buildRoadbook`) e lo scrive **dentro il draft già esistente**
+  (`rb_save` con `id = draftId`, `status:'draft'`), così le **foto e le note vocali già
+  caricate restano attaccate** senza passare dall'Editor. **Si resta sul Recorder**: una
+  piccola conferma offre un link *Edit* (`../editor/?rb=<id>`) per rifinire.
+- **Sign in to save** *(sloggato)*: al posto della primaria, un pulsante che apre `RBNeedAuth`.
+- **Open in the editor**: mette in `sessionStorage` la traccia (`rb_trip_track`), i waypoint
+  (`rb_trip_wpts`), il **nome scelto** (`rb_trip_name`, #54) e — se c'è — il `draftId`
+  (`rb_trip_draft`, il ponte verso le foto già sul server), poi naviga a `../editor/?trip=1`.
+- **Export GPX**: serializza con `RB.gpxDocument(name, pts, gpxWpts)`, dove i waypoint diventano
+  `{ lat, lon, name, t }` (testo del waypoint o `wptN` se vuoto, più il timestamp). Il file
+  scende via `RBDownload`. Le foto/audio **non** sono nel GPX.
 
-`clearSession()` viene chiamata subito dopo `finish()`
-([recorder.js:115](../public/recorder/recorder.js#L115)), quindi la sessione di recovery
-è scartata appena la traccia è in mano al modale finale.
+`clearSession()` viene chiamata subito dopo `finish()`, quindi la sessione di recovery è
+scartata appena la traccia è in mano al modale finale.
 
 ---
 
 ## 9. Funzioni chiave
 
-| Funzione            | Riga                                                       | Ruolo |
-|---------------------|------------------------------------------------------------|-------|
-| `begin()`           | [recorder.js:65](../public/recorder/recorder.js#L65)       | avvia logging, meter, mappa, draft foto |
-| `onFix(fix)`        | [recorder.js:82](../public/recorder/recorder.js#L82)       | filtro accuratezza + campionamento adattivo |
-| `startMeter`/`stopMeter` | [recorder.js:73](../public/recorder/recorder.js#L73) | ciclo `RBGpsMeter` + cronometro |
-| `dropWaypoint()`    | [recorder.js:125](../public/recorder/recorder.js#L125)     | crea e registra un waypoint |
-| `saveSession()`     | [recorder.js:26](../public/recorder/recorder.js#L26)       | checkpoint metadati in localStorage |
-| `finishModal()`     | [recorder.js:190](../public/recorder/recorder.js#L190)     | download GPX o conversione in roadbook |
-| `refreshMap()`      | [recorder.js:123](../public/recorder/recorder.js#L123)     | ridisegno mappa live |
+| Funzione            | Ruolo |
+|---------------------|-------|
+| `begin()`           | avvia logging, meter, mappa, draft foto/audio (intitolato col nome) |
+| `onFix(fix)`        | `RB.recJunkFix` (scarto) + `RB.recStepM` (campionamento adattivo) |
+| `startMeter`/`stopMeter` | ciclo `RBGpsMeter` + cronometro |
+| `dropWaypoint()`    | crea e registra un waypoint (con timestamp `t`) |
+| `saveSession()`     | checkpoint metadati in localStorage |
+| `finishModal()`     | salva sul server · apri nell'Editor · esporta GPX |
+| `refreshMap()`      | ridisegno mappa live |
 
 ---
 
@@ -331,8 +336,8 @@ A *Finish* confermato si apre `finishModal(pts, name)`
 - **Odometro vs traccia**: `recordedM` somma lo spostamento di ogni fix accettato, mentre
   in traccia entrano solo i punti oltre il passo adattivo — i km possono superare la
   densità della polilinea.
-- **Soglia accuratezza fissa a 35 m**: i fix peggiori sono scartati dalla traccia senza
-  possibilità di configurazione dalla UI del Recorder.
+- **Soglia accuratezza non configurabile**: i fix peggiori sono scartati dalla traccia da
+  `RB.recJunkFix` (regola del core), senza possibilità di configurazione dalla UI del Recorder.
 - **La traccia locale `track` è solo per il disegno**: dopo un resume riparte vuota e la
   mappa mostra la sola parte registrata da quel momento, anche se la traccia autorevole
   (in `RBGpxRecorder`) è completa.

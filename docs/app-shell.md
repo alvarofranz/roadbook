@@ -43,7 +43,11 @@ andato in race.
 | Contesto | Tool nel menu |
 |----------|---------------|
 | App nativa (companion da campo) | Reader · Tripmaster · Recorder |
-| Sito web | Recorder · Editor · Reader · Tripmaster · Ranking |
+| Sito web | Recorder · Editor · Reader · Tripmaster · **Roadbooks** · **Events** · Ranking |
+
+> Le etichette dei tool a due parole vengono spezzate su due righe nella barra desktop
+> (`twoLine` → `<span class="nl-w">`); un'etichetta già HTML (es. lo `Events` tradotto) passa
+> intatta.
 
 Il link al tool corrente riceve la classe `active`, decisa confrontando il path relativo alla
 `ROOT` con il prefisso del tool ([app.js:30](../public/assets/js/app.js#L30)).
@@ -63,27 +67,34 @@ Il menu si chiude cliccando fuori ([app.js:53](../public/assets/js/app.js#L53)) 
 link / un pulsante che **non** sia `.account-button` ([app.js:54](../public/assets/js/app.js#L54)) —
 il pulsante account resta aperto per mostrare il proprio sottomenu.
 
-**Footer.** `renderChrome` crea anche il `<footer class="foot">`
-([app.js:56](../public/assets/js/app.js#L56)) con: marchio, link allo standard `.rdbk`, GitHub,
-licenza WTFPL, la versione corrente (`#appVersion`, popolata dal sistema di versione) e il
-selettore lingua EN/ES/IT. Se `RBi18n` non è caricato, il selettore lingua viene nascosto
-([app.js:68](../public/assets/js/app.js#L68)).
+**Footer.** `renderChrome` crea anche il `<footer class="foot">` con: marchio, link **About**,
+**The .rdbk standard**, **Privacy**, **Terms of Use**, il copyright, la versione corrente
+(`#appVersion`, popolata dal sistema di versione) e il selettore lingua a bandiere. Se `RBi18n`
+non è caricato, il selettore lingua viene nascosto.
+
+**Banner di sito (#103).** `renderBanner(banner)` inietta, sotto l'header, un avviso di sito
+(`.site-banner`, livello `info`/`warning`, chiudibile) preso dal payload `config.banner`.
 
 ---
 
 ## 3. Il controllo account nel menu
 
-`accountControl()` ([app.js:301](../public/assets/js/app.js#L301)) è una IIFE asincrona che
-chiede all'API chi è loggato (`RBApi('config')`, campo `user`) e inserisce un controllo nel nav:
+`accountControl()` è una IIFE asincrona che chiede all'API chi è loggato (`RBApi('config')`,
+campo `user`), rende il banner di sito e inserisce un controllo nel nav:
 
-- **Anonimo** → un'icona-link a `account/` (Sign in / Create account)
-  ([app.js:308](../public/assets/js/app.js#L308)).
-- **Loggato** → un pulsante con lo username che apre un `account-menu` con: *My roadbooks*,
-  *My profile* e *Sign out* ([app.js:310](../public/assets/js/app.js#L310)).
+- **Anonimo** → un'icona-link alla pagina account via `RBLoginUrl()` (che aggiunge `?next=`
+  con il percorso corrente, così dopo il login si torna dov'eri).
+- **Loggato** → un pulsante con lo username che apre un `account-menu` con:
+  - sempre: *My profile*, *My roadbooks*, *Sign out*;
+  - se **admin**: *Public Roadbooks*, *User management*, *Site settings*, *Event management*;
+  - se **organizer** o co-organizzatore di un evento (`is_organizer` / `manages_events`, e non
+    admin): *Event management*.
+- Se loggato, la **lingua UI** dell'account viene applicata all'avvio e ogni cambio dal
+  selettore è persistito (`set_lang`).
 
 Il menu si apre col click sul pulsante (con `stopPropagation` così il listener globale non lo
-richiude subito) e si chiude cliccando altrove ([app.js:320](../public/assets/js/app.js#L320)).
-*Sign out* chiama `RBApi('logout')` e ricarica la pagina.
+richiude subito) e si chiude cliccando altrove. *Sign out* chiama `RBApi('logout')` e ricarica
+la pagina.
 
 > Il **login vero e proprio** vive nella pagina account, non qui (vedi `docs/account-pages.md`).
 > Vale la pena ricordare un dettaglio del flusso: quando l'API risponde con un 429 di
@@ -202,11 +213,11 @@ Ogni pagina riusa questi invece di reimplementarli. Firme reali:
 
 ### Interfaccia
 
-#### `RBModal(cardHtml, cardClass, onDismiss) → { el, q(sel), close }`
-([app.js:214](../public/assets/js/app.js#L214)) — La modale base di **ogni** dialogo. Crea
-`.modal` > `.modal-card`, inietta `cardHtml`, applica il focus-trap e si chiude cliccando sullo
-sfondo o con Escape (invocando `onDismiss` se passata). Ritorna `el` (l'overlay), `q(sel)`
-(query dentro la modale) e `close()`.
+#### `RBModal(cardHtml, cardClass, onDismiss, opts) → { el, q(sel), close }`
+La modale base di **ogni** dialogo. Crea `.modal` > `.modal-card`, inietta `cardHtml`, applica il
+focus-trap e si chiude cliccando sullo sfondo o con Escape (invocando `onDismiss` se passata).
+`opts` (4° argomento) regola comportamenti opzionali della modale. Ritorna `el` (l'overlay),
+`q(sel)` (query dentro la modale) e `close()`.
 
 `cardClass` è un **modificatore** della `.modal-card` (definito in `app.css`):
 
@@ -223,10 +234,14 @@ il focus dentro, cicla il Tab all'interno e su Escape chiama `onEscape`. Ritorna
 sgancia il listener e ripristina il focus precedente. Usata da `RBModal` **e** dai dialoghi statici
 del Reader — una sola casa per la logica.
 
-#### `RBConfirm(msg, okLabel) → Promise<boolean>`
-([app.js:280](../public/assets/js/app.js#L280)) — Conferma stilizzata costruita su `RBModal`
-(card `narrow`). Risolve `true`/`false`. `msg` e `okLabel` passano per `RBt` (le chiavi inglesi si
-traducono, le stringhe già tradotte/composte passano invariate).
+#### `RBConfirm(msg, okLabel, danger) → Promise<boolean>`
+Conferma stilizzata costruita su `RBModal` (card `narrow`). Risolve `true`/`false`. `msg` e
+`okLabel` passano per `RBt` (le chiavi inglesi si traducono, le stringhe già tradotte/composte
+passano invariate). `danger === true` colora il pulsante di conferma come azione distruttiva.
+
+#### `RBConfirmDanger(msg, okLabel) → Promise<boolean>`
+Scorciatoia per `RBConfirm(msg, okLabel, true)` — la conferma usata per **ogni azione che
+distrugge dati** (cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
 
 #### `RBNeedAuth(msg)` → (apre una modale, nessun ritorno)
 ([app.js:290](../public/assets/js/app.js#L290)) — Prompt "serve un account" con CTA verso
@@ -247,9 +262,13 @@ e cattura il token dalle risposte di login (inerte nel browser, dove vale il coo
 httponly — vedi [app.js:244](../public/assets/js/app.js#L244)).
 
 #### `RBUpload(fields, file, name) → Promise<object>`
-([app.js:269](../public/assets/js/app.js#L269)) — Carica **un'immagine** su `upload.php`. Riduce
-prima il file con `RBImg.toBlob`, poi lo invia come campo `photo` insieme ai `fields` extra.
-Ritorna il JSON, o `{ ok: false, error: 'Upload failed.' }` in errore.
+Carica **un'immagine** su `upload.php`. Riduce prima il file con `RBImg.toBlob`, poi lo invia come
+campo `photo` insieme ai `fields` extra (`type` = avatar/event_logo/photo/cover, §6 di
+[backend-api](backend-api.md)). Ritorna il JSON, o `{ ok: false, error: 'Upload failed.' }` in errore.
+
+#### `RBUploadAudio(fields, blob, name) → Promise<object>`
+Carica **una clip audio** (una nota vocale) su `upload.php` come campo `audio` — senza passare dal
+downscaler immagini. Usato dal *WP audio* del Recorder e dalla registrazione dell'Editor.
 
 #### `RBDownload(data, filename)`
 ([app.js:263](../public/assets/js/app.js#L263)) — Scarica un Blob **o** una URL stringa creando un
@@ -275,37 +294,78 @@ così non superano mai `post_max_size` di PHP. Usato da avatar, galleria e logo 
 in `innerHTML`.
 
 #### `RBSummary(distanceM, noteCount) → string`
-([app.js:231](../public/assets/js/app.js#L231)) — Sottotitolo one-liner di un roadbook:
-`"12.3 km · 45 notes"` (la parola unità è tradotta via `RBt`).
+Sottotitolo one-liner di un roadbook: `"12.3 km · 45 notes"` (la parola unità è tradotta via `RBt`).
+
+### Altri primitivi condivisi
+
+Aggiunti man mano che le feature (eventi, gestione, registrazione vocale) li hanno richiesti;
+vivono qui in **un solo posto** e sono riusati ovunque.
+
+#### `RBGalleryCard({ href, thumb, title, meta, icon?, placeholder?, overlays?, body? }) → html`
+Una card di galleria pubblica (Roadbooks · Events · pagina evento · teaser home): thumbnail (o un
+placeholder con icona), titolo e riga meta. `meta`/`overlays`/`body`/`placeholder` sono HTML già
+sanificati dal chiamante.
+
+#### `RBPager(el, page, pages, onGo, label?)`
+Renderizza in `el` i controlli di paginazione (precedente / `pagina / totale` [`· label`] /
+successivo); i pulsanti chiamano `onGo(p)`. Con una sola pagina mostra solo l'eventuale `label`.
+
+#### `RBWaypointPrompt(num, onDone, opts?)`
+Il prompt rapido di testo per un waypoint (Recorder + registrazione dell'Editor): appare appena il
+waypoint è creato, **si auto-chiude dopo 5 s** (`Edit later (5)…`) salvo si inizi a digitare;
+`opts.mic` aggiunge il microfono di dettatura con `opts.lang()` come lingua. `onDone(text)` scatta
+**una sola volta**.
+
+#### `RBPhotoPreview(url, onWaypoint)`
+Anteprima a pieno di una foto appena scattata, con *OK* / *Convert into waypoint*; `onWaypoint`
+scatta solo se si converte.
+
+#### `RBRequireUser(msgEl, { admin?, account? }) → Promise<user|null>`
+Gate di una pagina di gestione: risolve l'utente loggato, o scrive il messaggio standard in `msgEl`
+e ritorna `null` (con `admin: true` esige anche il ruolo admin).
+
+#### Utility varie
+
+| Helper | Ruolo |
+|--------|-------|
+| `RBLoginUrl()` | URL della pagina account con `?next=` al percorso corrente |
+| `RBSetMeta({ title, description, canonical })` | imposta `<title>`/meta description/canonical della pagina |
+| `RBFmtDate(iso)` · `RBDateRange(startIso, endIso)` | data localizzata · intervallo `start – end` |
+| `RBDateField(input)` | rende un input data localizzato |
+| `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
+| `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
+| `RBCopy(text)` · `RBReaderLink(slug)` | copia negli appunti · link Reader pubblico di uno slug |
 
 ### Lista roadbook condivisa
 
 #### `RBRoadbookList(container) → Promise<number>`
-([app.js:272](../public/assets/js/app.js#L272)) — La lista dei roadbook salvati dell'utente
-loggato, **condivisa** da *My roadbooks* e dalla landing dell'Editor (lì non c'è una seconda
-implementazione: entrambe chiamano questo helper). Fa `RBApi('rb_list')`, e se non c'è nessun
-roadbook scrive un messaggio tradotto e ritorna `0`. Altrimenti ritorna il numero di roadbook
-e disegna, per ogni riga (`rowHtml`, [app.js:285](../public/assets/js/app.js#L285)):
+La lista dei roadbook salvati dell'utente loggato, **condivisa** da *My roadbooks* e dalla landing
+dell'Editor (lì non c'è una seconda implementazione: entrambe chiamano questo helper). Fa
+`RBApi('rb_list')`, e se non c'è nessun roadbook scrive un messaggio tradotto e ritorna `0`.
+Altrimenti ritorna il numero di roadbook e disegna, in testa, una riga di **uso spazio**
+(`used_bytes / quota_bytes`, #99) e, per ogni riga (`rowHtml`):
 
-- un badge **Public/Private** (`rb.is_public`) e il riassunto `RBSummary` + data ultima modifica;
-- sei azioni, tutte con percorsi relativi (funzionano da `/editor/` come da `/myroadbooks/`):
-  - **Read** → `../reader/?rb=<id>` — apre quel roadbook nel Reader, **anche se privato/personale**
-    (il Reader serve l'owner);
-  - **View** → `../challenge/<slug>` — la vetrina pubblica della sfida;
+- il riassunto `RBSummary` + data ultima modifica, e un **select di stato** (`draft` · `ready` ·
+  `public`, da `RB.ROADBOOK_STATUSES`) che chiama `rb_status` al cambio e ri-renderizza dalla
+  verità del server (non è più un badge Public/Private su `rb.is_public`);
+- azioni con percorsi relativi (funzionano da `/editor/` come da `/myroadbooks/`):
+  - **Read** → `../reader/?rb=<id>` — apre quel roadbook nel Reader, **anche se privato/personale**;
+  - **View** → `../challenge/<slug>` — la vetrina pubblica;
+  - **Copy link** → copia il link Reader pubblico (`RBCopy`/`RBReaderLink`), **solo se `public`**;
   - **Edit** → `../editor/?rb=<id>`;
-  - **Export** → `../editor/?rb=<id>&export=1` — apre l'Editor su quel roadbook e fa **scattare
-    subito il popup Export** (l'Editor toglie poi il flag `export=1` dall'URL, così un refresh
-    non lo riapre — [editor.js:1665](../public/editor/editor.js#L1665));
-  - **Save as** (duplica) e **Delete** (con conferma `RBConfirmDanger` che **nomina il titolo**
-    del roadbook, [app.js:300](../public/assets/js/app.js#L300)).
+  - **Export** → `../editor/?rb=<id>&export=1` — apre l'Editor e fa **scattare subito il popup
+    Export** (l'Editor toglie poi il flag `export=1` dall'URL, così un refresh non lo riapre);
+  - **Save as** (duplica) e **Delete** (con conferma `RBConfirmDanger` che **nomina il titolo**).
 
-**Ricerca + paginazione** ([app.js:278-321](../public/assets/js/app.js#L278)). La barra di ricerca
-viene mostrata **solo se la lista ha più di 5 voci** ([app.js:282](../public/assets/js/app.js#L282));
-filtra in locale via `RB.filterRoadbooks(all, q)` (match case-insensitive sul titolo). La
-paginazione è **client-side a 12 per pagina**, e il pager (precedente / `pagina / totale` /
-successivo) appare **solo oltre la prima pagina**. `render()` ridisegna solo le righe e il pager
-ad ogni ricerca/cambio pagina, **senza ricostruire la barra di ricerca** (così il focus e il
-testo digitato non si perdono); duplica/elimina invece ri-chiamano `RBRoadbookList` per intero.
+**Ricerca + paginazione.** La barra di ricerca viene mostrata **solo se la lista ha più di 5
+voci**; filtra in locale via `RB.filterRoadbooks(all, q)` (match case-insensitive sul titolo). La
+paginazione è **client-side a 12 per pagina** e il pager (via `RBPager`, nel `.pager`) appare
+**solo oltre la prima pagina**. `render()` ridisegna solo le righe e il pager ad ogni
+ricerca/cambio pagina, **senza ricostruire la barra di ricerca** (così il focus e il testo
+digitato non si perdono); duplica/elimina/cambio-stato ri-chiamano `RBRoadbookList` per intero.
+
+#### `RBPublicRoadbooksList(container) → Promise<number>`
+Come sopra ma per l'elenco **pubblico** (galleria community), reso in card via `RBGalleryCard`.
 
 ---
 
@@ -316,13 +376,16 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
 ([home.js:4](../public/assets/js/home.js#L4)).
 
 - Chiama `RBChallenges.listPublic()` per i roadbook pubblici dal database e li mette in cache in
-  `cards` ([home.js:25](../public/assets/js/home.js#L25)).
-- `render()` ([home.js:10](../public/assets/js/home.js#L10)) costruisce le card: thumbnail (o un
-  placeholder con icona mappa), titolo, `@username` e il sottotitolo via `RBSummary`. Ogni card
-  linka a `challenge/<slug>`.
+  `cards`; ne mostra solo un **teaser di 6** (la lista completa vive su `/roadbooks`).
+- `render()` costruisce le card **via `RBGalleryCard`**: titolo, `@username` e il sottotitolo via
+  `RBSummary`. Ogni card linka a `challenge/<slug>`.
+- **Card senza foto → forma della rotta.** Invece di una generica icona, una card senza thumbnail
+  parte con un placeholder marcato che `fillRoutes()` sostituisce con un **SVG statico della
+  polilinea** della traccia (`routeSvg`, nessuna basemap, fetch lazy una sola volta per slug). Un
+  roadbook che nasconde la mappa (`map_access:false`) **non** rivela la forma: resta sull'icona.
 - Lista vuota o errore di fetch → messaggio tradotto `gallery.empty`.
 - Si riaggancia all'evento `rb-lang` per **ri-renderizzare al cambio lingua senza rifare la fetch**
-  (usa la cache `cards`) ([home.js:24](../public/assets/js/home.js#L24)).
+  (usa la cache `cards`).
 
 ---
 

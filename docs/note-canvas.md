@@ -80,26 +80,28 @@ così il diagramma mostra già la direzione da prendere (dritto = prosegui, dest
 destra…).
 
 ### Colore
-- La strada da seguire è **blu** (`#3b82f6`); la provenienza è blu anch'essa **tranne sulla
-  prima nota** (`note.num > 1`), perché la nota iniziale non ha una provenienza reale —
-  lì il tratto in ingresso resta grigio (`#9aa4b2`)
-  ([note-canvas.js:220](../public/assets/js/note-canvas.js#L220)).
+- Ogni tratto è colorato **secondo il suo tipo di strada** (`RB.ROAD_TYPES[roadType].color`,
+  la palette del RB System): `trunkSegments` colora così la strada da seguire e la
+  provenienza. Fanno eccezione i tratti **fuori-route**, che restano grigi (`#9aa4b2`): la
+  provenienza sulla **prima nota** (`note.num > 1` è falso), perché la nota iniziale non ha
+  una provenienza reale — è l'unico caso di tronco non su route.
 
 ### Stile per tipo di strada (`ROAD_STYLE`)
-Il tronco usa una tabella di stile **propria**, indipendente dalle larghezze di
-`RB.ROAD_TYPES` usate sulla mappa ([note-canvas.js:201](../public/assets/js/note-canvas.js#L201)):
+Il tronco usa una tabella di stile **propria** (`ROAD_STYLE` in note-canvas.js), indipendente
+dalle larghezze di `RB.ROAD_TYPES` usate sulla mappa: solo spessore/tratteggio/doppia
+codificano il tipo, il colore viene invece da `RB.ROAD_TYPES`.
 
 | `road_type` | Resa nel tulip | width | tratteggio | doppia |
 |:-----------:|----------------|:-----:|:----------:|:------:|
-| 1 motorway | linea spessa **doppia** | 12 | no | sì |
-| 2 asphalt | linea spessa singola | 8 | no | no |
-| 3 track | linea sottile | 4 | no | no |
-| 4 off-piste | linea sottile **tratteggiata** | 4 | sì | no |
-| 0/altro | fallback su 3 (track) | 4 | no | no |
+| 0 default | linea media | 6 | no | no |
+| 1 motorway | linea **spessa doppia** | 14 | no | sì |
+| 2 asphalt | linea spessa singola | 11 | no | no |
+| 3 track | linea medio-spessa | 8 | no | no |
+| 4 off-piste | linea sottile **tratteggiata** | 5 | sì | no |
+| altro | fallback su 3 (track) | 8 | no | no |
 
 L'autostrada è resa "doppia" sovrapponendo una linea bianca centrale di spessore
-`max(3, width·0.3)` sopra la linea spessa ([note-canvas.js:67](../public/assets/js/note-canvas.js#L67)
-e [:169](../public/assets/js/note-canvas.js#L169)).
+`max(3, width·0.3)` sopra la linea spessa (in `NoteCanvas.toSVG` e nel `render()` dell'istanza).
 
 ---
 
@@ -107,13 +109,13 @@ e [:169](../public/assets/js/note-canvas.js#L169)).
 
 Le giunzioni sono i rami che partono dal centro per indicare incroci/diramazioni da NON
 prendere. Ogni giunzione è `{ pivot:[x,y], tip:[x,y], width, road_type }` in coordinate
-modello. Vengono disegnate in grigio (`#9aa4b2`) con un **tick** terminale
-(`marker-end="url(#vignette-box-tick)"`) e tratteggiate se il loro tipo strada è off-piste
-([note-canvas.js:70](../public/assets/js/note-canvas.js#L70)).
+modello. Vengono disegnate in grigio (`#9aa4b2`) con un **tick** terminale, prendendo
+spessore/tratteggio dal loro tipo di strada via `roadStyle` (`ROAD_STYLE` di note-canvas):
+off-piste = tratteggiata, autostrada = **doppia linea** (come il tronco).
 
-`addJunction()` ([note-canvas.js:151](../public/assets/js/note-canvas.js#L151)) ne crea una
-con default `pivot:[0,0]`, `tip:[45,25]`, ereditando `road_type` da `road_type_out` della
-nota (fallback 3) e la `width` dalla tabella `RB.ROAD_TYPES` corrispondente.
+`addJunction()` ne crea una con default `pivot:[0,0]`, `tip:[45,25]`, ereditando `road_type`
+da `road_type_out` della nota (fallback 3) e la `width` da `roadStyle(road_type)` (la tabella
+`ROAD_STYLE` di note-canvas, non `RB.ROAD_TYPES`).
 
 Quando una giunzione è selezionata compaiono **due maniglie** di drag
 ([note-canvas.js:77](../public/assets/js/note-canvas.js#L77)):
@@ -171,9 +173,11 @@ Le icone arrivano in due modi:
 - `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e notifica
   `onSelect(sel)` ([note-canvas.js:121](../public/assets/js/note-canvas.js#L121)); toccare
   lo sfondo deseleziona ([note-canvas.js:32](../public/assets/js/note-canvas.js#L32)).
-- `_startDrag` ([note-canvas.js:114](../public/assets/js/note-canvas.js#L114)) installa i
-  listener `pointermove`/`pointerup` su `window`, ridisegna ad ogni mossa e chiama
-  `onChange()` **solo al rilascio** (un singolo cambio per gesto, non per frame).
+- `_startDrag` installa i listener `pointermove`/`pointerup` su `window`. Il modello si
+  aggiorna a ogni `pointermove` (posizione finale esatta), ma il rebuild dell'SVG è
+  **accorpato a un render per frame** via `requestAnimationFrame` — un `render()` per
+  animation frame invece che per mossa. `onChange()` è chiamato **solo al rilascio** (un
+  singolo cambio per gesto).
 
 I tre callback passati al costruttore: `onChange` (qualcosa è cambiato → l'Editor salva /
 ricalcola), `onSelect` (la selezione è cambiata) e `resolveIcon` (vedi §7).
@@ -216,11 +220,16 @@ colonna di testo ([note-canvas.js:88](../public/assets/js/note-canvas.js#L88) pe
 ## 9. Il render statico `NoteCanvas.toSVG`
 
 ### `NoteCanvas.toSVG(note, resolveIcon)` → stringa SVG
-([note-canvas.js:167](../public/assets/js/note-canvas.js#L167)) Render di sola lettura,
-identico per geometria all'editor: stessi `trunkSegments`, stesse giunzioni, stesse icone,
-stesso pericolo, ma come **stringa** `<svg>…</svg>` da iniettare. È quello che mostra ogni
-riga `.nrow` del Reader, la pagina challenge e l'export PDF. È l'unico render statico del
-modulo: la classe interattiva e questa funzione sono le sole superfici pubbliche (§1).
+Render di sola lettura, identico per geometria all'editor: stessi `trunkSegments`, stesse
+giunzioni, stesse icone, stesso pericolo, ma come **stringa** `<svg>…</svg>` da iniettare. È
+quello che mostra ogni riga `.nrow` del Reader, la pagina challenge e l'export PDF. È l'unico
+render statico del modulo: la classe interattiva e questa funzione sono le sole superfici
+pubbliche (§1).
+
+> **Icona `cover`**: se la nota ha un'icona con `cover: true` (una tulip importata opaca che
+> **è** l'intera vignetta, es. da OpenRally), `toSVG` va in corto-circuito e rende solo quella
+> a piena scatola — niente tronco/giunzioni/pericolo generati, perché il disegno importato li
+> incorpora già.
 
 ---
 

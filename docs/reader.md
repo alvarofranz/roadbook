@@ -20,14 +20,21 @@ chiusura della scheda da parte del sistema non perdono nulla.
 
 ## 1. Caricare un roadbook
 
-La schermata iniziale (`#loadScreen`) offre due ingressi:
+La schermata iniziale (`#loadScreen`) offre tre ingressi:
 
 - **Carica file `.rdbk`** — `#pickRb` apre il file picker; il JSON viene parsato e passato a
-  `loadRb` ([reader.js:40-41](../public/reader/reader.js#L40)).
-- **Carica da sfide pubbliche** — `RBChallenges.pick` apre il picker DB-backed
-  ([reader.js:42](../public/reader/reader.js#L42)).
+  `loadRb`.
+- **Carica uno dei tuoi RB** — `#pickMine`, visibile solo da loggati: un picker dei roadbook
+  salvati sul profilo.
+- **Carica da roadbook pubblici** — `#pickChallenge` apre il picker DB-backed
+  (`RBChallenges.pick`).
 
-`loadRb` ([reader.js:83](../public/reader/reader.js#L83)) normalizza lo schema con
+**Accesso richiesto (#146)**: aprire un roadbook **pubblico** (dal picker o da `/reader/<slug>`)
+richiede di essere loggati — da non loggati parte `RBNeedAuth` invece del caricamento. Perciò
+`config` viene letto in testa all'avvio per conoscere lo stato di login (`meUser`). File `.rdbk`
+locali e roadbook propri per `?rb=` non sono soggetti al gate.
+
+`loadRb` normalizza lo schema con
 `RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
 roadbook senza note, legge il flag roadbook-level `map_access` (`mapAllowed`,
 [reader.js:92](../public/reader/reader.js#L92)) per mostrare/nascondere l'opzione mappa, e
@@ -42,15 +49,13 @@ ordine di priorità:
    accettata, fa `resumeSession`. Rifiutare **non** cancella la sessione (un tap sbagliato
    non deve distruggere una gara): viene sostituita all'avvio di una nuova corsa o cancellata
    solo all'uscita esplicita.
-2. **Roadbook da URL** (`loadFromUrl`, [reader.js:62](../public/reader/reader.js#L62)) — due
-   forme:
-   - **Sfida pubblica** via `/reader/<slug>` (es. il pulsante "Naviga" di una sfida):
-     `RBChallenges.publicFromUrl` + `loadPublic`.
-   - **Roadbook personale/privato per id (#71)** via `/reader/?rb=<id>`
-     ([reader.js:61](../public/reader/reader.js#L61), [:64](../public/reader/reader.js#L64)): lo
-     carica dal profilo con `RBApi('rb_get', { id })` — endpoint **gated sul proprietario**,
-     così solo il titolare apre i propri roadbook privati per navigarli. Affianca il percorso
-     pubblico `<slug>` e l'upload del file.
+2. **Roadbook da URL** (`loadFromUrl`) — due forme:
+   - **Roadbook pubblico** via `/reader/<slug>` (es. il pulsante "Naviga" di un roadbook
+     pubblico): `RBChallenges.publicFromUrl` + `loadPublic`, previo login (#146).
+   - **Roadbook personale/privato per id (#71)** via `/reader/?rb=<id>`: lo carica dal profilo
+     con `RBApi('rb_get', { id })` — endpoint gated sul proprietario (e sui co-organizzatori
+     dell'evento, #123), così solo chi ne ha diritto apre i roadbook privati. Affianca il
+     percorso pubblico `<slug>` e l'upload del file.
 3. **Recupero di un GPX orfano** — `RBGpxRecorder.offerRecovery`.
 
 ### Apertura `.rdbk` dal sistema operativo (PWA installata)
@@ -70,9 +75,9 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 
 | Colonna | Classe | Contenuto |
 |---------|--------|-----------|
-| 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota |
+| 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota, con accanto il **badge del tipo di waypoint** FIA (`RB.wpBadgeSVG(n.wp_type, 22)`) |
 | 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc)`; linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
-| 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale · coordinate `lat, lon` |
+| 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale (con qualificatore FIA Average/Calculated/Turning in `.note-cap`) · riga **limite di velocità** opzionale (`.note-speed`) · coordinate `lat, lon` |
 | 4 — Pulsanti | `.col-buttons` | pulsante "raggiunta" (solo manuale, nota attiva) · pulsante mappa (se attivo) |
 
 - La risoluzione icone passa per `iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/')`
@@ -84,18 +89,21 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 - Dopo il render, gli handler vengono ricablati: `[data-reach]` → `markReached`,
   `[data-map]` → `toggleNoteMap`, e il tap sull'intera riga → `tapNote`
   ([reader.js:229-231](../public/reader/reader.js#L229)).
+- **Rebuild completo vs aggiornamento in place**: `renderNotes` ricostruisce l'intera lista
+  solo ai cambi *strutturali* (avvio, toggle Auto, cambio lingua). Avanzamento e validazione
+  aggiornano invece solo lo **stato** delle righe con `updateNoteStates` (classi
+  done/skipped/active e il pulsante "raggiunta" che segue la riga attiva), senza ridisegnare
+  ogni vignetta — così anche la mini-mappa per-nota aperta sopravvive all'avanzamento.
 - **Auto-scroll**: la vista si ricentra sulla nota attiva *solo quando l'indice attivo
-  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno per stato "approaching"
-  ([reader.js:233](../public/reader/reader.js#L233)).
-- Un cambio lingua a metà sessione (`rb-lang`) forza un re-render delle righe tradotte
-  ([reader.js:333](../public/reader/reader.js#L333)).
+  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno.
+- Un cambio lingua a metà sessione (`rb-lang`) forza un re-render delle righe tradotte.
 
 ---
 
 ## 3. I colori di stato delle note
 
-Le classi di stato sulla `.nrow` sono assegnate in `renderNotes`
-([reader.js:215-218](../public/reader/reader.js#L215)); il colore vero è in `app.css`.
+Le classi di stato sulla `.nrow` sono assegnate da `renderNotes`/`updateNoteStates`; il colore
+vero è in `app.css`.
 
 | Stato | Classe | Quando | Aspetto |
 |-------|--------|--------|---------|
@@ -104,16 +112,12 @@ Le classi di stato sulla `.nrow` sono assegnate in `renderNotes`
 | **Attiva** | `.active` | `i === activeIdx` | bordo rosso |
 | **Imminente** | (nessuna) | nota futura | bianco |
 | **≤50 m alla prossima** | `.close` (sulla `.col-distance`) | la nota *successiva* ha `partial_distance < 50` | blu |
-| **Approaching** | `.warn` (con `.active`) | solo in auto, dentro il reach e ancora in avvicinamento | arancione |
 
 Distinzioni chiave:
 - La differenza fra **raggiunta** e **saltata** dipende interamente dal `Set` `reached`: una
-  nota oltrepassata che non è dentro `reached` è considerata saltata
-  ([reader.js:19](../public/reader/reader.js#L19), [reader.js:216](../public/reader/reader.js#L216)).
+  nota oltrepassata che non è dentro `reached` è considerata saltata.
 - Lo stato **`.close`** (blu) è agganciato alla `partial_distance` della nota *seguente*, non
-  al GPS — è una proprietà statica del roadbook ([reader.js:218](../public/reader/reader.js#L218)).
-- Lo stato **`.warn`** (arancione, "approaching") è dinamico e deriva da `autoAdvance` (§7):
-  `approaching = dist <= reach && !passed` ([reader.js:200](../public/reader/reader.js#L200)).
+  al GPS — è una proprietà statica del roadbook.
 
 ---
 
@@ -132,7 +136,7 @@ riga raccoglie tutti i readout, aggiornati a ogni fix in `onFix`
 | **Bussola + freccia** | `#odoBrg` / `#odoBrgArrow` | rilevamento alla prossima nota (`RB.geo.bearingDeg`), altrimenti `meter.heading`; freccia ruotata *relativa* al proprio heading (0° = su = dritto) |
 | **Ora** | `#odoClock` | orologio di sistema, aggiornato ogni secondo da un `setInterval` ([reader.js:120](../public/reader/reader.js#L120)) |
 | **GPS** | `#gpsDot` / `#gpsTxt` | `setGps`: pallino `ok`/`bad` e `±N m`; verde se `accuracy ≤ 25 m` ([reader.js:157](../public/reader/reader.js#L157), [reader.js:181](../public/reader/reader.js#L181)) |
-| **Batteria** | `#odoBatt` / `#odoBattIcon` | Battery Status API best-effort (`startBattery`); icona per livello/carica; `N/A` se l'API manca ([reader.js:124-133](../public/reader/reader.js#L124)) |
+| **Batteria** | `#odoBatt` / `#odoBattIcon` | alimentata dal feed condiviso `RBStatusBar.watchBattery` (`startBattery`); icona per livello/carica; `N/A` se l'API manca |
 
 L'odometro avanza di `disp` (lo spostamento per-fix fornito da `RBGpsMeter`) sia sul totale
 sia sul parziale ([reader.js:158](../public/reader/reader.js#L158)).
@@ -155,11 +159,8 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 
 ## 5. Il modal di avvio
 
-`loadRb` apre `#modeModal` ([index.html:99-116](../public/reader/index.html#L99)) con le
-opzioni di sessione, lette da `readModeOpts` ([reader.js:96](../public/reader/reader.js#L96)):
+`loadRb` apre `#modeModal` con le opzioni di sessione, lette da `readModeOpts`:
 
-- **Avanzamento** — segmented control `Automatic (GPS)` vs `Manual (tap)`; `auto` deriva da
-  quale segmento è acceso ([reader.js:93-94](../public/reader/reader.js#L93)).
 - **Mostra pulsante mappa per nota** (`#optMap`) — solo se `mapAllowed()`; controlla `showMap`.
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
   start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
@@ -173,22 +174,30 @@ Poi si sceglie la **modalità**:
 - **Trip mode** (`#modeTrip`) — segue il roadbook liberamente, **nessun punteggio**; avvia
   subito `startNav(false)`.
 - **Competition mode** (`#modeComp`) — apre prima `#teamModal` per il **numero veicolo**
-  (`team`, 1–999, sanificato a sole cifre), poi `startNav(true)`
-  ([reader.js:98-105](../public/reader/reader.js#L98)). Il punteggio e il QR finale sono
-  trattati in [ranking-model.md](./ranking-model.md).
+  (`team`, 1–999, sanificato a sole cifre), poi `startNav(true)`. Il punteggio e il QR finale
+  sono trattati in [ranking-model.md](./ranking-model.md).
+
+`auto` parte sempre `true` (non c'è un segmented control Automatic/Manual nel modal) e si
+commuta durante la corsa con l'interruttore Auto nella barra di navigazione (`#autoBtn`).
+
+### Modalità imposta dall'evento (#155)
+Quando il Reader è aperto con `?event=<slug>` (es. dalla pagina evento), `applyModeLock`
+carica l'evento (`event_get`) e **blocca** la scelta Trip/Competition sul `scoring_mode`
+dell'organizzatore: al posto di `#modeGrid` si mostra `#modeLocked` con l'unico avvio
+consentito (`#modeLockedStart`).
 
 ### Il reach adattivo (`reachRadius`)
-Il raggio entro cui una nota è "in portata" non è fisso: `reachRadius(i)`
-([reader.js:185](../public/reader/reader.js#L185)) lo limita a **metà del gap along-track più
-piccolo** verso un vicino (usando `partial_distance`, così i reach di due note non possono
-sovrapporsi), poi lo *flooring* sopra il rumore GPS:
+Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
+di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
+`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (30 m) — poi
+lo limita a **metà del gap along-track più piccolo** verso un vicino (usando `partial_distance`,
+così i reach di due note non si sovrappongono) e lo *flooring* sopra il rumore GPS:
 
 ```
-reach = clamp(min(gapPrev, gapNext) / 2, REACH_MIN_M=18, REACH_MAX_M=20)
+reach = max(REACH_MIN_M=18, min(detectionRadius, min(gapPrev, gapNext) / 2))
 ```
-Il cap a **20 m** tiene la convalida automatica stretta sul punto (era 50 m).
-
-Note rally fitte ottengono un gate stretto; sentieri radi ottengono il cap di 50 m.
+Non c'è un cap fisso: il limite superiore è il raggio di rilevamento della nota (default 30 m).
+Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio del tipo.
 
 ---
 
@@ -206,30 +215,18 @@ che la lista viene ricostruita per intero. Se MapLibre non è configurato, mostr
 
 ## 7. Avanzamento: automatico e manuale
 
-### Automatico — closest approach (`autoAdvance`)
-La validazione automatica **non** scatta entrando in una bolla fissa, ma al *punto di minimo
-avvicinamento* ([reader.js:194](../public/reader/reader.js#L194)). Per la nota attiva si
-traccia la distanza minima vista (`approachMin`) e la posizione dove è avvenuta
-(`approachPos`); la nota si valida quando:
-
-```
-passed = approachMin <= reach && dist > approachMin + PASS_MARGIN_M   // PASS_MARGIN_M = 8 m
-```
-
-cioè quando si è entrati nel reach **e** ci si è allontanati di almeno 8 m dal punto più
-vicino — segno di averlo oltrepassato. Conseguenze del design:
+### Automatico — arrivo nel raggio (`autoAdvance`)
+La validazione automatica scatta **appena il fix corrente entra nel reach** della nota attiva:
+`autoAdvance(dist, here)` fa semplicemente `if (dist <= reachRadius(activeIdx)) validateAt(activeIdx, here)`,
+punteggiando contro il fix corrente `here`. Sei arrivato, quindi valida subito — senza
+aspettare di oltrepassare la nota. Conseguenze del design:
 
 - È **indipendente dalla velocità** (nessun delta fix-a-fix).
-- È **immune al cascade**: il tracker della nota successiva (`approachIdx` resettato) parte
-  solo dopo che la corrente avanza, quindi note ammassate si validano *una a una* mentre ci
-  si passa accanto, mai tutte insieme ([reader.js:195](../public/reader/reader.js#L195)).
-- Lo stato arancione `approaching` è `dist <= reach && !passed`; un cambio di questo flag
-  forza un re-render anche senza validare ([reader.js:200-202](../public/reader/reader.js#L200)).
-- Validando, si punteggia contro `approachPos` (il punto più vicino realmente toccato), non
-  contro il fix corrente ([reader.js:201](../public/reader/reader.js#L201)).
+- È **immune al cascade**: i reach non possono sovrapporsi (`reachRadius` li limita a metà del
+  gap col vicino), quindi il gate della nota successiva si apre solo dopo che la corrente
+  avanza; note ammassate si validano *una a una*, mai tutte insieme.
 
-`auto` è anche commutabile a metà sessione col pulsante `#autoBtn`
-([reader.js:331](../public/reader/reader.js#L331)).
+`auto` è commutabile a metà sessione col pulsante `#autoBtn`.
 
 ### Manuale — tap
 - In **Trip mode** (`!competition`), `tapNote` è navigazione libera: imposta `activeIdx`,
@@ -284,25 +281,21 @@ impedisce l'auto-refresh di versione a metà gara.
 
 Tutta la logica di **sezione cronometrata, penalità (accuracy/CAP/skip/extra/speed), payload
 META a 49 caratteri, firma HMAC e QR del risultato** è documentata altrove:
-vedi **[ranking-model.md](./ranking-model.md)**. Nel Reader vive nelle funzioni `buildScored`
-([reader.js:282](../public/reader/reader.js#L282)), nell'accumulo dentro `onFix`/`validateAt`,
-e in `finish` ([reader.js:357](../public/reader/reader.js#L357)) che impacchetta e firma il
-risultato e ne genera il QR (`#qrModal`, con Save/Share).
+vedi **[ranking-model.md](./ranking-model.md)**. Le sezioni cronometrate e le formule di
+penalità vivono nel core (`RB.scoredNoteSet`/`RB.isScoredIdx`, `RB.validationPenalties`,
+`RB.skipPenalty`, `RB.speedPenalty`, #169); il Reader le richiama, accumula in `validateAt`, e
+in `finish` impacchetta e firma il risultato generandone il QR (`#qrModal`, con Save/Share).
 
 ---
 
 ## 11. Limiti e quirk
 
-- **Una sola sezione a punteggio** start→finish (`buildScored`): più settori selettivi
-  separati non sono rappresentabili — vedi [ranking-model.md](./ranking-model.md) §8.
-- **Raggio uniforme** per tutte le note: `reachRadius` è adattivo 18–50 m, ma non esistono
-  raggi `open`/`clear` per-nota distinti per tipo di controllo.
+- **Settori cronometrati** delimitati da icone START→FINISH (`RB.scoredNoteSet`): più settori
+  selettivi separati SONO rappresentabili (start/finish multipli) — vedi
+  [ranking-model.md](./ranking-model.md) §8.
 - **`reachRadius` usa `partial_distance` along-track, non la distanza geometrica** verso il
   vicino: se due note sono vicine "in linea d'aria" ma lontane lungo la traccia (tornante), il
   gate resta largo e i loro reach potrebbero comunque sovrapporsi nello spazio.
-- **`PASS_MARGIN_M = 8 m`**: per validare in auto serve allontanarsi di 8 m oltre il punto più
-  vicino. Su una nota all'estremità finale del percorso (dove non ci si allontana più) la
-  validazione automatica può non scattare — resta il fallback manuale o il pulsante centrale.
 - **Penalità posizionali dipendenti dal GPS**: una gara manuale senza segnale azzera
   accuracy/CAP/extra (vedi [ranking-model.md](./ranking-model.md)).
 - **Indicatore batteria best-effort**: la Battery Status API non è esposta su tutti i browser

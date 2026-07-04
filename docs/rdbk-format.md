@@ -106,7 +106,7 @@ la traccia GPS.
 | `road_type_out`    | 0–4             | Superficie in uscita.                                                              |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
 | `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
-| `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). In assenza: `meta.default_wp_radius`, poi il default del tipo. L'uso a runtime nel Reader/Ranking è rinviato (issue #87): oggi il dato è solo modellato e mostrato. |
+| `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (30 m); il Reader lo usa come geofence per il rilevamento automatico. |
 | `icons`            | array           | Simboli posizionati — vedi [§6 Simboli](#6-simboli).                                |
 | `junctions`        | array \| null   | Vettori di incrocio — vedi [§8 Vettori di incrocio](#8-vettori-di-incrocio).       |
 
@@ -172,14 +172,14 @@ L'ordine di risoluzione di un simbolo (`RB.iconSrc`): un data URI inline sull'ic
 [`public/assets/icons/`](../public/assets/icons/)). **Un writer conforme DEVE incorporare
 in `icons` ogni simbolo referenziato da una qualsiasi nota**, così il file resta autonomo.
 
-### Limiti di velocità nei nomi dei simboli
+### Limiti di velocità
 
-Un limite di velocità è codificato nel **nome** del simbolo, non in un campo dedicato.
-`speedLimitOfNote` lo legge dalle icone della nota
-([roadbook-core.js:311](../public/assets/js/roadbook-core.js#L311)):
+Il limite di velocità è **dichiarativo** sul campo `speed_limit` della nota; il nome del
+simbolo resta un fallback. `speedLimitOfNote(note)` ritorna prima `note.speed_limit`, poi lo
+legge dalle icone:
 
-- `S03_30km` ⇒ 30 km/h (pattern `^S\d{2}_(\d{1,3})km`);
-- `S99_end` ⇒ 0, ossia limite **annullato**.
+- `speed_limit: 30` ⇒ 30 km/h; `speed_limit: 0` ⇒ limite **annullato**;
+- (fallback icone) `S03_30km` ⇒ 30 km/h (pattern `^S\d{2}_(\d{1,3})km`); `S99_end` ⇒ 0.
 
 ---
 

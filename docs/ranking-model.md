@@ -15,19 +15,22 @@ Il ranking non misura nulla da sé: **consuma il risultato firmato** prodotto da
 ```
 Reader (Competition) ──finish()──▶ stringa META (49 char) + firma HMAC
         │                                   │
-        │  motore penalità                  ▼
+        │  penalità (core)                  ▼
         │  (acc/cap/skip/extra/speed)   QR code  ──scan / incolla──▶ Ranking
         ▼                                                              │
-   nota validata ←─ GPS / tap manuale                          compute() → classifica
+   nota validata ←─ GPS / tap manuale                      RB.rankEntry() → classifica
 ```
 
 - **Reader** ([reader.js](../public/reader/reader.js)) accumula le penalità durante la guida e,
   al `Finish`, le impacchetta in una stringa a larghezza fissa, la firma e ne fa un QR.
 - **Ranking** ([ranking.js](../public/ranking/ranking.js)) raccoglie quei QR (fotocamera o
-  incolla), verifica la firma, ricostruisce i campi e calcola le colonne + il punteggio finale.
-- Il ponte tra i due è il **payload META**, definito una volta sola in
-  [roadbook-core.js](../public/assets/js/roadbook-core.js) (`buildMeta`/`parseMeta`,
-  `signMeta`/`verifyMeta`).
+  incolla), verifica la firma, ricostruisce i campi e calcola le colonne + il punteggio finale
+  con `RB.rankEntry(meta, avgTarget)`.
+- Il ponte tra i due è il **payload META** e le **formule di punteggio**, definiti una volta
+  sola nel core ([roadbook-core.js](../public/assets/js/roadbook-core.js)): `buildMeta`/`parseMeta`,
+  `signMeta`/`verifyMeta`, le penalità (`validationPenalties`/`skipPenalty`/`speedPenalty`) e
+  `rankEntry` — così produttore (Reader) e consumatore (Ranking) restano d'accordo, con i
+  test di [tests/scoring.test.js](../tests/scoring.test.js) a garantirlo (#169).
 
 ---
 
@@ -76,35 +79,33 @@ icone speciali nelle note ([reader.js:280](../public/reader/reader.js#L280)):
 - `scoredSet` contiene tutte le note tra una partenza (inclusa) e il primo arrivo successivo;
 - **se nessuna nota ha l'icona di partenza, l'intero roadbook è a punteggio** (`scoredSet = null`).
 
-> Implicazione: il modello supporta **una sola sezione contigua** start→finish. Più settori
-> selettivi separati non sono rappresentabili nel payload attuale.
+> Implicazione: le sezioni cronometrate sono delimitate da icone START→FINISH
+> (`RB.scoredNoteSet`) e possono essere **più d'una** (start/finish multipli); le formule qui
+> sotto vivono nel core e il Reader le richiama accumulando in `pen`.
 
 ### `accuracy` — precisione di posizione
 Ad ogni nota validata (dentro la sezione, con un fix GPS disponibile, esclusa la nota 0):
 si somma la distanza in metri tra la posizione GPS reale e la nota.
-`pen.acc += haversineM(here, nota)` — **1 punto per metro**
-([reader.js:311](../public/reader/reader.js#L311)).
+`RB.validationPenalties(notes, i, here).acc` — **1 punto per metro**.
 
 ### `cap` — fedeltà alla bussola
 Se la nota *precedente* aveva un CAP (`cap` + `cap_distance`), si calcola il punto-bersaglio
 proiettando quel rilevamento (`destPoint`) e si somma la distanza tra il fix reale e il
-bersaglio. `pen.cap += haversineM(here, target)` — **1 punto per metro**
-([reader.js:313](../public/reader/reader.js#L313)).
+bersaglio (`RB.validationPenalties(...).cap`) — **1 punto per metro**.
 
 ### `skip` — note saltate
 Se si valida una nota più avanti scavalcandone alcune a punteggio, ogni nota saltata costa
-`P_SKIP = 450` punti ([reader.js:298](../public/reader/reader.js#L298), `CONST.P_SKIP`).
+`P_SKIP = 450` punti (`RB.skipPenalty(scoredSet, from, to)`).
 
 ### `extra` — sforamento (overshoot)
 Quando si entra nel raggio di `MANUAL_RADIUS_M = 100 m` dalla nota attiva, il contatore si
 "arma"; se ci si allontana di nuovo senza validare, ogni metro percorso da armati viene
-accumulato. `extraAccum += disp` → `pen.extra` alla validazione — **1 punto per metro**
-([reader.js:164-166](../public/reader/reader.js#L164)).
+accumulato (`extraAccum += disp` → `pen.extra` alla validazione) — **1 punto per metro**.
 
 ### `speed` — eccesso di velocità
-Quando è in vigore un limite (ricavato dai nomi-icona, `speedLimitOfNote`) e la velocità
+Quando è in vigore un limite (`speedLimitOfNote`, dichiarativo o dai nomi-icona) e la velocità
 massima nel segmento lo supera, si pagano `P_SPEED_PER_KMH = 10` punti per ogni km/h di
-eccesso, una volta per segmento ([reader.js:320](../public/reader/reader.js#L320)).
+eccesso, una volta per segmento (`RB.speedPenalty(maxKmh, limit)`).
 
 ### `km` e `avg`
 - `km` = odometro totale (sincronizzato sulla distanza cumulativa delle note ad ogni
@@ -116,10 +117,11 @@ eccesso, una volta per segmento ([reader.js:320](../public/reader/reader.js#L320
 
 ---
 
-## 4. Il calcolo della classifica (`compute`)
+## 4. Il calcolo della classifica (`RB.rankEntry`)
 
-La pagina ranking ([ranking.js:64](../public/ranking/ranking.js#L64)) ricostruisce 5 colonne
-e il punteggio finale da ogni risultato.
+La pagina ranking passa ogni META parsato per `RB.rankEntry(meta, avgTarget)` (nel core,
+condiviso con i test), che ricostruisce 5 colonne e il punteggio finale. La sola lettura del
+DOM (la media target dal campo dell'interfaccia) resta nella pagina; il motore è puro.
 
 | Colonna       | Formula                                  |
 |---------------|------------------------------------------|
@@ -183,13 +185,14 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 
 ## 8. Limiti del modello attuale
 
-- **Una sola sezione** start→finish; nessun supporto a settori selettivi multipli.
-- Il payload è **a 49 caratteri fissi**: nuovi campi (es. tempi per-settore, controlli orari,
-  validazione per-waypoint) **non ci stanno** senza ridisegnare META + firma e adeguare il
-  Reader e il Ranking. È il vincolo chiave da tenere presente per estensioni tipo OpenRally
-  (waypoint tipizzati / cronometraggio FIA).
-- **Tutte le note sono trattate come controlli con raggio uniforme** (adattivo 18–50 m,
-  `reachRadius`): non esistono raggi `open`/`clear` per-nota.
+- Le sezioni cronometrate START→FINISH possono essere **più d'una** (`RB.scoredNoteSet`), ma il
+  payload aggrega comunque le penalità in un unico totale.
+- Il payload è **a 49 caratteri fissi**: nuovi campi (es. tempi per-settore, controlli orari)
+  **non ci stanno** senza ridisegnare META + firma e adeguare il Reader e il Ranking. È il
+  vincolo chiave da tenere presente per estensioni tipo cronometraggio FIA per-settore.
+- **Il raggio di convalida per-nota** è dato da `RB.detectionRadius` (`wp_radius` → default del
+  roadbook → default del tipo → 30 m), poi ristretto dai vicini in `reachRadius`: non è un
+  valore uniforme fisso, ma non esistono raggi `open`/`clear` distinti per tipo di controllo.
 - Le penalità posizionali (accuracy/CAP/extra) **dipendono dal GPS**: una prova manuale senza
   segnale le azzera.
 - La regolarità è di fatto inerte per i risultati firmati (vedi §5).

@@ -26,18 +26,18 @@ mostra `.app-only`.
 | Blocco | Visibilità | Contenuto |
 |--------|------------|-----------|
 | Hero | solo web (`.web-only`) | Titolo, lead, e i 4 passi del workflow: registra → costruisci → usa con amici → organizza un evento ([index.html:24](../public/index.html#L24)) |
-| Features | solo web | Le 7 card degli strumenti: Record route, Editor, Reader, Tripmaster, Validate & QR, Ranking, Accounts & sharing ([index.html:44](../public/index.html#L44)) |
+| Features | solo web | Le card degli strumenti: Track Recorder, Roadbook Editor, Roadbook Reader, Tripmaster, Event classification, più *Events* (coming soon) |
 | Install / Cross-platform | solo web | PWA installabile su Windows, macOS/iOS, Android ([index.html:63](../public/index.html#L63)) |
 | App launcher | solo app nativa (`.app-only`) | Tre tile verso Reader, Tripmaster, Recorder ([index.html:77](../public/index.html#L77)) |
 | Gallery / Public Challenges | web **e** app | Griglia delle challenge pubbliche, popolata da JS ([index.html:86](../public/index.html#L86)) |
 
 La galleria è l'unico pezzo dinamico. [home.js](../public/assets/js/home.js) chiama
-`RBChallenges.listPublic()` ([home.js:25](../public/assets/js/home.js#L25)) e disegna una
-card per roadbook pubblico: thumbnail (o placeholder), titolo, `@username` e il riepilogo
-distanza/note via `RBSummary` ([home.js:13](../public/assets/js/home.js#L13)). Ogni card
-linka a `challenge/<slug>`. La lista viene **memorizzata in cache** (`cards`) così che un
-cambio lingua ri-disegni senza rifare la fetch, agganciandosi all'evento `rb-lang`
-([home.js:24](../public/assets/js/home.js#L24)).
+`RBChallenges.listPublic()` e disegna un **teaser di 6** roadbook pubblici via `RBGalleryCard`:
+thumbnail, titolo, `@username` e il riepilogo distanza/note via `RBSummary`; ogni card linka a
+`challenge/<slug>`. Una card **senza foto** riceve un SVG statico della **forma della rotta**
+(fetch lazy, saltato se `map_access:false`) invece di una generica icona. La lista è **in cache**
+(`cards`) così un cambio lingua ri-disegna senza rifare la fetch (evento `rb-lang`). La lista
+completa e ricercabile vive su `/roadbooks`.
 
 ---
 
@@ -47,18 +47,22 @@ L'header è reso da `app.js` su ogni pagina; al suo interno un piccolo "account 
 ([app.js:301](../public/assets/js/app.js#L301)) interroga `RBApi('config')` per sapere se
 c'è una sessione e cambia forma di conseguenza:
 
-- **Non loggato** → una sola icona utente che linka a `account/` (Sign in / Create account)
-  ([app.js:308](../public/assets/js/app.js#L308)).
-- **Loggato** → un bottone con lo username che apre un menu a tendina con tre voci
-  ([app.js:310](../public/assets/js/app.js#L310)):
+- **Non loggato** → una sola icona utente che linka alla pagina account via `RBLoginUrl()`
+  (con `?next=` al percorso corrente).
+- **Loggato** → un bottone con lo username che apre un menu a tendina:
 
-| Voce | Icona | Destinazione |
-|------|-------|--------------|
-| **My roadbooks** | `fa-book` | `myroadbooks/` |
-| **My profile** | `fa-user` | `account/` |
-| **Sign out** | `fa-right-from-bracket` | `RBApi('logout')` poi `location.reload()` |
+| Voce | Icona | Destinazione | Quando |
+|------|-------|--------------|--------|
+| **My profile** | `fa-user` | `account/` | sempre |
+| **My roadbooks** | `fa-book` | `myroadbooks/` | sempre |
+| **Public Roadbooks** | `fa-globe` | `admin/roadbooks/` | solo admin |
+| **User management** | `fa-users-gear` | `admin/` | solo admin |
+| **Site settings** | `fa-sliders` | `admin/config/` | solo admin |
+| **Event management** | `fa-flag-checkered` | `admin/events/` | admin, **oppure** organizer / co-organizzatore (`is_organizer`/`manages_events`) |
+| **Sign out** | `fa-right-from-bracket` | `RBApi('logout')` poi `location.reload()` | sempre |
 
-Quindi profilo e lista roadbook sono **due pagine distinte** raggiungibili da questo menu.
+Quindi profilo e lista roadbook sono **due pagine distinte** raggiungibili da questo menu; le
+voci admin/eventi appaiono solo per chi ne ha i permessi.
 
 ---
 
@@ -78,7 +82,7 @@ nascondendo le altre ([account.js:15](../public/account/account.js#L15)):
 | Vista | id | Scopo |
 |-------|------|-------|
 | Sign in | `vLogin` | login con email/username + password |
-| Create account | `vRegister` | nome, cognome, username, email, password (min 8) |
+| Create account | `vRegister` | nome, cognome, username, email, password (min 8) + conferma (`password_confirm`) e **accettazione dei Termini** (`accept_terms`, obbligatoria) |
 | Reset password | `vForgot` | invio link di reset via email |
 | Set a new password | `vReset` | nuova password (raggiunta dal link `?reset=…`) |
 | Forced change | `vForce` | cambio password obbligato quando un admin ha impostato una password temporanea (`must_change_password`) |
@@ -103,6 +107,7 @@ Popola l'intestazione e i campi:
 | Avatar (`accAvatar`) | `user.avatar` con `?v=Date.now()` per **bustare la cache** HTTP/CDN dopo un re-upload ([account.js:213](../public/account/account.js#L213)); fallback `../assets/icon.svg` |
 | Nome / cognome (`pfFirst` / `pfLast`) | `user.first_name` / `user.last_name`, `maxlength="80"` |
 | Bio (`pfBio`) | `user.bio`, textarea `maxlength="500"` |
+| Organizzazione (`pfOrg`) | `user.organization` (testo libero — filtra la ricerca organizzatori negli eventi, #123) |
 | Lingua note vocali (`pfVoiceLang`) | `user.voice_lang` (vuoto = "Automatic (device)") |
 | Posizione di default (`pfLocMap`) | `user.default_lat` / `user.default_lon` (§3.3) |
 | Link Admin (`adminLink`) | visibile solo se `user.is_admin` |
@@ -116,11 +121,10 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
   l'immagine sale con `RBUpload({type:'avatar'}, f, 'avatar.jpg')` e, se ok, l'avatar viene
   aggiornato in pagina ([account.js:221](../public/account/account.js#L221)).
 - **Save profile** — `pfSave` invia `RBApi('profile', { first_name, last_name, bio,
-  voice_lang })` ([account.js:227](../public/account/account.js#L227)). Salva quindi
-  **nome, cognome, bio e lingua delle note vocali** in un colpo solo, e ri-sincronizza il
-  nome mostrato nell'intestazione. Lingua note vocali = preferenza per-account usata dal
-  Recorder per il riconoscimento vocale ([recorder.js:21](../public/recorder/recorder.js#L21));
-  con valore vuoto ricade sulla lingua del dispositivo.
+  organization, voice_lang })`. Salva quindi **nome, cognome, bio, organizzazione e lingua delle
+  note vocali** in un colpo solo, e ri-sincronizza il nome mostrato nell'intestazione. Lingua note
+  vocali = preferenza per-account usata da Recorder ed Editor per il riconoscimento vocale; con
+  valore vuoto ricade sulla lingua del dispositivo.
 - **Default map location** — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
   `RBMap.STYLE_TOPO`, tile topografiche gratuite) e un pin trascinabile
   ([account.js:183](../public/account/account.js#L183)). Si imposta toccando la mappa,
@@ -208,15 +212,17 @@ paginatore ridisegnano solo le righe, non la casella.
 | Elemento | Contenuto |
 |----------|-----------|
 | Titolo + meta | `title`; sotto, riepilogo distanza/note (`RBSummary`) e **data ultima modifica** (`updated_at`, nella locale del visitatore) |
-| Badge | pillola **Public** (globo verde) o **Private** (lucchetto) secondo `is_public` |
+| Stato | un **select** `draft` · `ready` · `public` (non più un badge Public/Private): il cambio chiama `rb_status` e ri-renderizza dalla verità del server |
 | Read | `<i fa-book-open>` → `../reader/?rb=<id>` — apre nel **Reader**, anche i roadbook **privati** del proprietario |
 | View | `<i fa-eye>` → `../challenge/<slug>` (anteprima pubblica) |
+| Copy link | `<i fa-link>` → copia il link Reader pubblico (`RBCopy`/`RBReaderLink`), **solo se `public`** |
 | Edit | `<i fa-pen>` → `../editor/?rb=<id>` |
 | Export | `<i fa-file-export>` → `../editor/?rb=<id>&export=1` (apre l'Editor e fa partire subito il popup di export) |
 | Save as | `<i fa-clone>` → duplica lato server (`rb_duplicate`) |
 | Delete | `<i fa-trash>` rosso → conferma che **nomina il roadbook** (`RBConfirmDanger`), poi `rb_delete` |
 
-Se la lista è vuota, mostra "No roadbooks yet. Create one in the Editor."
+In cima alla lista c'è anche una riga di **uso spazio** (`used_bytes / quota_bytes`, #99). Se la
+lista è vuota, mostra "No roadbooks yet. Create one in the Editor."
 
 ### 4.3 Duplica ("Save as")
 
@@ -240,7 +246,7 @@ confermato, chiama `RBApi('rb_delete', { id })` e ricarica.
 
 ### 4.6 Endpoint API usati
 
-`config`, `rb_list`, `rb_duplicate`, `rb_delete`.
+`config`, `rb_list`, `rb_status`, `rb_duplicate`, `rb_delete`.
 
 ---
 
@@ -285,8 +291,6 @@ Riassunto del contenuto (data ultimo aggiornamento: 18 giugno 2026):
   form.
 - **My roadbooks è gated.** Senza sessione fa redirect al login; non mostra mai una lista
   vuota "da ospite".
-- **Nessun link Reader diretto dalla lista.** Da proprietario si apre l'Editor (`?rb=<id>`)
-  o l'anteprima challenge (`slug`); l'apertura nel Reader con `?rb=` non è un'azione di riga.
 - **La home serve due target.** Stesso HTML per web e app nativa, commutato da
   `.web-only`/`.app-only`; modifiche al layout vanno verificate in entrambe le modalità.
 - **La galleria dipende dall'API challenge.** Senza backend (o senza challenge pubbliche)
