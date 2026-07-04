@@ -4,7 +4,6 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
-    const C = RB.CONST;
     let entries = load();
     let stream = null, scanning = false, detector = null;
 
@@ -59,34 +58,12 @@
         stream = null; $('video').hidden = true; $('scanBtn').innerHTML = `<i class="fa-solid fa-camera"></i> ${RBt('Scan QR')}`;
     }
 
-    /* ---------- scoring ---------- */
-    const toSec = (hhmmss) => { const s = String(hhmmss).padStart(6, '0'); return (+s.slice(0, 2)) * 3600 + (+s.slice(2, 4)) * 60 + (+s.slice(4, 6)); };
-    function compute(entry) {
-        const m = entry.m;
-        const accuracy = num(m.accuracy) + num(m.skip) + num(m.extra);
-        const cap = num(m.cap);
-        const speed = num(m.speed);
-        const km = num(m.km) / 10;
-        // Regularity reference = the organizer-set target average; the run's own m.avg is informational only.
-        const avg = parseFloat($('targetAvg').value) || num(m.avg) / 10 || 30;
-        let reg = 0;
-        let actual = toSec(m.end) - toSec(m.start);
-        if (actual < 0) actual += 86400; // run crossed midnight
-        if (avg > 0 && km > 0 && actual > 0) {
-            const expected = Math.round(3600 * km / avg);
-            const early = Math.max(0, expected - actual);
-            const late = Math.max(0, actual - expected);
-            reg = early + Math.max(0, late - C.REG_GRACE_S);
-        }
-        const finalScore = accuracy + cap + speed + reg;
-        return { team: parseInt(m.team, 10), km, accuracy, cap, speed, reg, finalScore, valid: entry.valid };
-    }
-    const num = (x) => { const n = parseInt(x, 10); return isFinite(n) ? n : 0; };
-
-    /* ---------- render ---------- */
+    /* ---------- render (the scoring itself is RB.rankEntry — shared with the Reader's tests, #169) ---------- */
     let lastRows = [];
     function render() {
-        const rows = entries.map((e) => Object.assign(compute(e), { ts: e.ts })).sort((a, b) => a.finalScore - b.finalScore);
+        // Regularity reference = the organizer-set target average; the run's own m.avg is informational only.
+        const avgTarget = parseFloat($('targetAvg').value) || 0;
+        const rows = entries.map((e) => Object.assign(RB.rankEntry(e.m, avgTarget), { valid: e.valid, ts: e.ts })).sort((a, b) => a.finalScore - b.finalScore);
         lastRows = rows;
         $('empty').hidden = !!rows.length;
         if (!rows.length) { $('table').innerHTML = ''; return; }

@@ -747,6 +747,73 @@
         return lim;
     }
 
+    /* ---------------- competition scoring (the Reader accrues → META → the Ranking scores) ---------------- */
+    // Scored sections (rally special stages): only notes between a START icon and the next
+    // FINISH icon (both inclusive) are penalised; liaison/transfer notes outside them are not.
+    // Returns null when the roadbook has no START marker — the whole roadbook is scored.
+    const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
+    function scoredNoteSet(notes) {
+        const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
+        if (!notes.some((n) => has(n, START_ICON))) return null;
+        const set = new Set();
+        let inStage = false;
+        notes.forEach((n, i) => { if (has(n, START_ICON)) inStage = true; if (inStage) set.add(i); if (has(n, FINISH_ICON)) inStage = false; });
+        return set;
+    }
+    const isScoredIdx = (scoredSet, i) => scoredSet === null || scoredSet.has(i);
+    // Position penalties on validating note i from `here` (1 pt/m): accuracy = distance to the
+    // note (never charged on the first note); CAP = distance to the previous note's CAP target
+    // point. Both zero without a GPS fix — a manual run has nothing to measure against.
+    function validationPenalties(notes, i, here) {
+        if (!here) return { acc: 0, cap: 0 };
+        const n = notes[i], prev = notes[i - 1];
+        const acc = i > 0 ? haversineM(here, n) : 0;
+        const cap = (prev && prev.cap != null && prev.cap_distance != null)
+            ? haversineM(here, destPoint(prev.lat, prev.lon, prev.cap, prev.cap_distance)) : 0;
+        return { acc, cap };
+    }
+    // Speed penalty when a controlled segment closes: points per full km/h over the limit.
+    function speedPenalty(maxKmh, limitKmh) {
+        return (limitKmh && limitKmh > 0 && maxKmh > limitKmh) ? CONST.P_SPEED_PER_KMH * (Math.floor(maxKmh) - limitKmh) : 0;
+    }
+    // Skip penalty for jumping from note `fromIdx` straight to `toIdx`: each passed-over note
+    // inside a scored section costs P_SKIP; unscored (liaison) notes are free to skip.
+    function skipPenalty(scoredSet, fromIdx, toIdx) {
+        let skips = 0;
+        for (let k = fromIdx; k < toIdx; k++) if (isScoredIdx(scoredSet, k)) skips++;
+        return CONST.P_SKIP * skips;
+    }
+    // Codecs for the META date/time fields (fixed-width digits, no separators).
+    const hhmmss = (d) => d ? pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds()) : '000000';
+    const ddmmyy = (d) => d ? pad2(d.getDate()) + pad2(d.getMonth() + 1) + pad2(d.getFullYear() % 100) : '000000';
+    const parseHms = (s) => { const p = String(s).padStart(6, '0'); return (+p.slice(0, 2)) * 3600 + (+p.slice(2, 4)) * 60 + (+p.slice(4, 6)); };
+    // Score one parsed META (the Ranking side; lower = better). `avgTarget` is the organizer-set
+    // target average (km/h); it falls back to the run's own informational average, then 30.
+    // Regularity: early seconds cost 1 pt each; late ones get REG_GRACE_S of grace first.
+    function rankEntry(m, avgTarget) {
+        const num = (x) => { const n = parseInt(x, 10); return isFinite(n) ? n : 0; };
+        const accuracy = num(m.accuracy) + num(m.skip) + num(m.extra);
+        const cap = num(m.cap), speed = num(m.speed);
+        const km = num(m.km) / 10;
+        const avg = avgTarget || num(m.avg) / 10 || 30;
+        let reg = 0;
+        let actual = parseHms(m.end) - parseHms(m.start);
+        if (actual < 0) actual += 86400; // the run crossed midnight
+        if (avg > 0 && km > 0 && actual > 0) {
+            const expected = Math.round(3600 * km / avg);
+            const early = Math.max(0, expected - actual);
+            const late = Math.max(0, actual - expected);
+            reg = early + Math.max(0, late - CONST.REG_GRACE_S);
+        }
+        return { team: parseInt(m.team, 10), km, accuracy, cap, speed, reg, finalScore: accuracy + cap + speed + reg };
+    }
+    // Speed-alert band vs a limit (Tripmaster dashboard): 0 = well under (>5 km/h margin),
+    // 1 = approaching, 2 = just over (<5 km/h), 3 = far over; null when no limit is set.
+    function speedBand(speedKmh, limitKmh) {
+        if (!limitKmh) return null;
+        return speedKmh < limitKmh - 5 ? 0 : speedKmh < limitKmh ? 1 : speedKmh < limitKmh + 5 ? 2 : 3;
+    }
+
     /* ---------------- result META (49-char QR payload) ---------------- */
     const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg'];
     function buildMeta(f) {
@@ -890,6 +957,7 @@
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
+        scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
     };
     // The browser uses the global; Node (the test runner) imports the same object.

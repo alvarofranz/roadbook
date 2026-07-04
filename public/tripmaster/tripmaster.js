@@ -64,9 +64,8 @@
     let saLimit = 0, saColors = ['green', 'orange', 'red', 'red'];
     try { const s = JSON.parse(localStorage.getItem('rb_speedalert') || 'null'); if (s) { saLimit = s.limit || 0; saColors = s.colors || saColors; } } catch (e) {}
     function speedBandColor(v) {
-        if (!saLimit) return '';
-        const c = v < saLimit - 5 ? saColors[0] : v < saLimit ? saColors[1] : v < saLimit + 5 ? saColors[2] : saColors[3];
-        return SA_COLORS[c] || '';
+        const band = RB.speedBand(v, saLimit); // 0..3 vs the alert limit, null when unset (core, #169)
+        return band == null ? '' : SA_COLORS[saColors[band]] || '';
     }
     // The dashboard is static markup, redrawn on every GPS fix — cache the refs once.
     const tmEls = { total: $('tmTotal'), partial: $('tmPartial'), speed: $('tmSpeed'), main: $('tmMain'), max: $('tmMax'), cap: $('tmCap'), capArrow: $('tmCapArrow') };

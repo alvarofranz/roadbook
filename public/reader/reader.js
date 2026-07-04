@@ -163,7 +163,7 @@
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
-        buildScored();
+        scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('finishBtn').hidden = !comp;
         syncAutoBtn();
@@ -362,18 +362,9 @@
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; updateNoteStates();
     }
-    // Scored sections (rally special stages): only notes between a START icon and the
-    // next FINISH icon (both inclusive) are penalised; the liaison/transfer notes
-    // outside them are not. A roadbook with no START marker is scored end to end.
-    const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
-    const hasIcon = (n, name) => (n.icons || []).some((ic) => ic.name === name);
-    function buildScored() {
-        if (!notes.some((n) => hasIcon(n, START_ICON))) { scoredSet = null; return; }
-        scoredSet = new Set();
-        let inStage = false;
-        notes.forEach((n, i) => { if (hasIcon(n, START_ICON)) inStage = true; if (inStage) scoredSet.add(i); if (hasIcon(n, FINISH_ICON)) inStage = false; });
-    }
-    const isScored = (i) => scoredSet === null || scoredSet.has(i);
+    // Scored sections (rally special stages) live in the core — RB.scoredNoteSet: only notes
+    // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
+    const isScored = (i) => RB.isScoredIdx(scoredSet, i);
 
     function tapNote(i) {
         if (!competition) { activeIdx = i; tripPartialM = 0; updateNoteStates(); return; } // Trip mode: free navigation, no scoring
@@ -382,9 +373,8 @@
         // 100 m proximity gate so a validation can't be faked far from the note.
         const here = meter && meter.lastPos;
         if (here && RB.geo.haversineM(here, notes[i]) > C.MANUAL_RADIUS_M) return toast(t('Too far from note') + ' ' + notes[i].num);
-        if (i > activeIdx) { // overshoot belonged to the skipped notes — only count skips inside a scored section
-            let skips = 0; for (let k = activeIdx; k < i; k++) if (isScored(k)) skips++;
-            pen.skip += C.P_SKIP * skips; extraAccum = 0; armed = false;
+        if (i > activeIdx) { // overshoot belonged to the skipped notes — only scored ones cost points
+            pen.skip += RB.skipPenalty(scoredSet, activeIdx, i); extraAccum = 0; armed = false;
         }
         validateAt(i, here || null);
     }
@@ -392,20 +382,16 @@
         const n = notes[i], now = new Date();
         if (startedAt == null) startedAt = now; // first validated note starts the clock (even if note 0 was skipped)
         endedAt = now;
-        // Penalties accrue only inside a start→finish section, and only the
-        // position-based ones (accuracy/CAP) when an actual GPS fix is available —
-        // a manual run with no GPS simply has nothing to measure against.
+        // Penalties accrue only inside a start→finish section; the position-based ones
+        // (accuracy/CAP) are zero without a GPS fix — the formulas live in the core (#169).
         const scored = isScored(i);
-        if (scored && here && i > 0) pen.acc += RB.geo.haversineM(here, n);
-        const prev = notes[i - 1];
-        if (scored && here && prev && prev.cap != null && prev.cap_distance != null) {
-            const tgt = RB.geo.destPoint(prev.lat, prev.lon, prev.cap, prev.cap_distance);
-            pen.cap += RB.geo.haversineM(here, tgt);
+        if (scored) {
+            const p = RB.validationPenalties(notes, i, here);
+            pen.acc += p.acc; pen.cap += p.cap; pen.extra += extraAccum;
         }
-        if (scored) pen.extra += extraAccum;
         extraAccum = 0; armed = false;
         const lim = RB.speedLimitOfNote(n);
-        if (lim != null) { if (scored && curLimit && curLimit > 0 && maxSpdSeg > curLimit) pen.speed += C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
+        if (lim != null) { if (scored) pen.speed += RB.speedPenalty(maxSpdSeg, curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
         reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; updateNoteStates();
@@ -446,12 +432,12 @@
     $('finishBtn').onclick = finish;
     async function finish() {
         // the open segment's speed penalty stays local so Finish is idempotent (re-tap, or resume + re-finish)
-        const penSpeed = pen.speed + ((curLimit && curLimit > 0 && maxSpdSeg > curLimit) ? C.P_SPEED_PER_KMH * (Math.floor(maxSpdSeg) - curLimit) : 0);
+        const penSpeed = pen.speed + RB.speedPenalty(maxSpdSeg, curLimit);
         const km = Math.round(tripTotalM / 1000 * 10);
         const durH = startedAt && endedAt ? (endedAt - startedAt) / 3600000 : 0;
         const avg = durH > 0 ? Math.round((tripTotalM / 1000 / durH) * 10) : 0;
         const meta = RB.buildMeta({
-            team, date: ddmmyy(endedAt || new Date()), start: hhmmss(startedAt), end: hhmmss(endedAt),
+            team, date: RB.ddmmyy(endedAt || new Date()), start: RB.hhmmss(startedAt), end: RB.hhmmss(endedAt),
             accuracy: Math.min(9999, Math.round(pen.acc)), skip: Math.min(9999, pen.skip), extra: Math.min(9999, Math.round(pen.extra)),
             cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, penSpeed), km: Math.min(99999, km), avg: Math.min(999, avg),
         });
@@ -464,7 +450,7 @@
         openModal('qrModal', () => $('qrClose').click());
     }
     $('qrClose').onclick = () => closeModal('qrModal');
-    $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + ddmmyy(new Date()) + '.png');
+    $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => {
         try {
             const blob = await (await fetch(lastQrUrl)).blob();
@@ -476,7 +462,5 @@
     };
 
     /* ---------- utils ---------- */
-    const pad = (n, w) => String(n).padStart(w, '0');
-    const ddmmyy = (d) => d ? pad(d.getDate(), 2) + pad(d.getMonth() + 1, 2) + pad(d.getFullYear() % 100, 2) : '000000';
-    const hhmmss = (d) => d ? pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2) : '000000';
+    const pad = (n, w) => String(n).padStart(w, '0'); // display padding (bearing, clock); META codecs live in the core
 })();
