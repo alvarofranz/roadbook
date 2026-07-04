@@ -31,6 +31,7 @@
     // clustered notes still validate one at a time) and floored above GPS noise.
     const REACH_MIN_M = 18; // reach gate floor (never demand sub-GPS precision). The reach itself is the note's detection radius (RB.detectionRadius), capped by neighbour spacing.
     let lastPayload = '', lastQrUrl = '';
+    let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
 
@@ -38,9 +39,10 @@
     $('pickRb').onclick = () => $('rbFile').click();
     RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load the roadbook.'); } };
-    $('pickChallenge').onclick = () => RBChallenges.pick((r) => loadRb(r));
+    $('pickChallenge').onclick = () => { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.pick((r) => loadRb(r)); };
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
-    RBApi('config').then((c) => { if (c && c.user) $('pickMine').hidden = false; }).catch(() => {});
+    // #146: the same config load also tells us whether public roadbooks may be opened at all.
+    const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; }).catch(() => {});
     $('pickMine').onclick = async () => {
         const r = await RBApi('rb_list');
         const list = (r.ok && r.roadbooks) || [];
@@ -62,6 +64,7 @@
     // Resume an interrupted run first; otherwise fall back to a challenge passed
     // in the URL, then to rescuing an orphaned GPX recording.
     (async function () {
+        await cfgReady; // #146: know sign-in state before deciding to open a public roadbook
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         let savedRb = null;
         if (session && session.pen) {
@@ -73,7 +76,7 @@
         const pub = RBChallenges.publicFromUrl();
         const rbId = +(new URLSearchParams(location.search).get('rb') || 0); // open a personal (private) roadbook by id — owner only (#71)
         const loadFromUrl = () => {
-            if (pub) RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.'));
+            if (pub) { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.')); }
             else if (rbId > 0) RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
         };
         if (session) {

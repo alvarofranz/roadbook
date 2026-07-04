@@ -1,5 +1,6 @@
 /* RDBK.app i18n — IT translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
+            'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
             'seo.home.title': 'RDBK.app — roadbook digitali per le tue avventure', 'seo.home.desc': 'Crea, naviga, valida e classifica roadbook per ogni avventura. PWA gratuita e il formato aperto .rdbk.',
             'seo.about.title': 'Chi siamo — RDBK.app', 'seo.about.desc': 'Le persone e la missione dietro RDBK.app — strumenti gratuiti per roadbook digitali e il formato aperto .rdbk per ogni avventura.',
             'seo.privacy.title': 'Informativa sulla privacy — RDBK.app', 'seo.privacy.desc': 'Come RDBK.app tratta i tuoi dati — account, roadbook e foto — nei nostri strumenti gratuiti per roadbook digitali.',

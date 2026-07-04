@@ -1,13 +1,16 @@
 'use strict';
 /* Public challenge page: photo gallery + the roadbook's notes in the canonical
  * layout + owner. Navigate (Reader) and Fork (Editor). Slug from /challenge/<slug>. */
-(function () {
+(async function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
     const parts = location.pathname.replace(/\/+$/, '').split('/');
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'challenge') { $('chLoading').textContent = t('Challenge not found.'); return; }
 
+    // #146: reading a public roadbook requires a signed-in account.
+    const cfg = await RBApi('config').catch(() => null);
+    if (!cfg || !cfg.user) { $('chLoading').textContent = t('Sign in to read this roadbook.'); RBNeedAuth('Sign in to read public roadbooks.'); return; }
     RBChallenges.loadPublic(slug).then((j) => {
         const rb = j.roadbook, o = j.owner || {};
         $('chLoading').hidden = true; $('chContent').hidden = false;

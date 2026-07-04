@@ -14,12 +14,14 @@ The site is a **client-side i18n PWA**: one URL per page, text swapped by JS fro
 ## Indexing policy
 
 - **Indexed + in `sitemap.xml`:** home, about, privacy, terms, standard, roadbooks, events, and the five `/features/*` pages.
-- **`noindex`:** the tools (editor, reader, recorder, tripmaster, ranking), account, myroadbooks and every `/admin/*` page — they are apps, not landing pages.
+- **`noindex`:** the tools (editor, reader, recorder, tripmaster, ranking), account, myroadbooks and every `/admin/*` page — they are apps, not landing pages. Also `/challenge/<slug>`, whose content is gated behind sign-in (#146).
 - **`robots.txt`** allows everything except `/api/`, and points to `https://rdbk.app/sitemap.xml`.
 
 ## Dynamic pages (per-content meta)
 
 `/challenge/<slug>` and `/event/<slug>` set their title, description, canonical and og:* at runtime from the loaded roadbook/event via the shared `RBSetMeta({ title, description, canonical })` helper in `public/assets/js/app.js`. Their static HTML carries only a generic fallback description + og basics.
+
+Reading a public roadbook requires a signed-in account (#146): the Reader and the `/challenge/<slug>` page prompt sign-in (`RBNeedAuth`) for anonymous visitors and don't render the roadbook, so `/challenge/<slug>` is `noindex`. `/event/<slug>` stays public (it lists events, not a roadbook).
 
 ## Per-page title & description (all languages)
 
