@@ -9,7 +9,7 @@ require dirname(__DIR__, 2) . '/app/images.php';
 global $CFG;
 
 $user = require_user();
-if (($_SERVER['HTTP_ORIGIN'] ?? '') !== '' && parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
+require_same_origin();
 $type = $_POST['type'] ?? '';
 
 if ($type === 'audio') {

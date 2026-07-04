@@ -112,16 +112,13 @@ function rb_coedit_list(array $user): void {
         'status' => $r['status'], 'owner' => $r['owner'], 'event_title' => $r['event_title']], $st->fetchAll())]);
 }
 
-function rb_slug(string $title, int $excludeId): string {
-    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($title)), '-');
-    $base = substr($base ?: 'roadbook', 0, 60);
-    $slug = $base; $n = 1;
-    while (true) {
-        $st = db()->prepare('SELECT id FROM roadbooks WHERE slug = ? AND id <> ?');
-        $st->execute([$slug, $excludeId]);
-        if (!$st->fetch()) return $slug;
-        $slug = $base . '-' . (++$n);
-    }
+// Owner-only row fetch (status change, duplicate, delete): the roadbook or a 404.
+function rb_require_own(array $user, int $id): array {
+    $st = db()->prepare('SELECT id, slug, title, status, filename, total_distance, note_count FROM roadbooks WHERE id = ? AND user_id = ?');
+    $st->execute([$id, (int)$user['id']]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    return $row;
 }
 
 // Create an empty draft when recording starts, so photos can attach to it live.
@@ -156,7 +153,7 @@ function rb_save(array $user, array $d): void {
         $h = rb_lock_holder($id);
         if ($h && (int)$h['user_id'] !== (int)$user['id']) fail('This roadbook is being edited by someone else.', 409);
         $dir = rb_dir((int)$row['user_id']);
-        $slug = $row['slug'] ?: rb_slug($title, $id); // every roadbook gets a slug (view page works private too)
+        $slug = $row['slug'] ?: unique_slug('roadbooks', $title, 'roadbook', $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
         if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, slug = ?, filename = ? WHERE id = ?')
@@ -168,8 +165,11 @@ function rb_save(array $user, array $d): void {
             ->execute([$user['id'], $title, $dist, $nc, $status, 'pending']);
         $id = (int)db()->lastInsertId();
         $fn = $id . '.rdbk';
-        $slug = rb_slug($title, $id);
-        if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
+        $slug = unique_slug('roadbooks', $title, 'roadbook', $id);
+        if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) {
+            db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]); // never leave a fileless 'pending' row (the cron only reaps empty drafts)
+            fail('Could not write the roadbook file.', 500);
+        }
         db()->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $id]);
     }
     json_out(['ok' => true, 'id' => $id, 'title' => $title, 'slug' => $slug, 'status' => $status, 'reusable' => $reusable]);
@@ -180,10 +180,7 @@ function rb_save(array $user, array $d): void {
 function rb_status(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $status = rb_clean_status($d['status'] ?? null);
-    $st = db()->prepare('SELECT slug FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$id, $user['id']]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    $row = rb_require_own($user, $id);
     db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
     json_out(['ok' => true, 'id' => $id, 'status' => $status, 'slug' => $row['slug']]);
 }
@@ -194,51 +191,56 @@ function rb_status(array $user, array $d): void {
 function rb_duplicate(array $user, array $d): void {
     global $CFG;
     $srcId = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT title, total_distance, note_count, filename FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$srcId, $user['id']]);
-    $src = $st->fetch();
-    if (!$src) fail('Not found.', 404);
+    $src = rb_require_own($user, $srcId);
     $dir = rb_dir((int)$user['id']);
     $srcPath = $dir . '/' . $src['filename'];
     if (!is_file($srcPath)) fail('File missing.', 404);
 
+    // Every row lands in one transaction: a mid-way failure (a fail() exit included — the
+    // dropped connection rolls back) leaves no half-copied roadbook. The copied FILES are
+    // best-effort: an orphaned photo dir without rows is harmless and re-copyable.
     $title = substr(trim((string)$src['title']) . ' (copy)', 0, 200);
-    db()->prepare("INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,'draft',?)")
-        ->execute([$user['id'], $title, (int)$src['total_distance'], (int)$src['note_count'], 'pending']);
-    $newId = (int)db()->lastInsertId();
-    $fn = $newId . '.rdbk';
-    if (!@copy($srcPath, $dir . '/' . $fn)) fail('Could not copy the roadbook file.', 500);
-    $slug = rb_slug($title, $newId);
-    db()->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $newId]);
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare("INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,'draft',?)")
+            ->execute([$user['id'], $title, (int)$src['total_distance'], (int)$src['note_count'], 'pending']);
+        $newId = (int)$pdo->lastInsertId();
+        $fn = $newId . '.rdbk';
+        if (!@copy($srcPath, $dir . '/' . $fn)) fail('Could not copy the roadbook file.', 500);
+        $slug = unique_slug('roadbooks', $title, 'roadbook', $newId);
+        $pdo->prepare('UPDATE roadbooks SET filename = ?, slug = ? WHERE id = ?')->execute([$fn, $slug, $newId]);
 
-    // carry the gallery over: copy each photo file and its row
-    $p = db()->prepare('SELECT filename, lat, lon, sort FROM roadbook_photos WHERE roadbook_id = ? ORDER BY sort, id');
-    $p->execute([$srcId]);
-    $photos = $p->fetchAll();
-    if ($photos) {
-        $srcPhotoDir = $CFG['photos_dir'] . '/' . $srcId;
-        $dstPhotoDir = $CFG['photos_dir'] . '/' . $newId;
-        if (!is_dir($dstPhotoDir)) mkdir($dstPhotoDir, 0755, true);
-        $ins = db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,?)');
-        foreach ($photos as $ph) {
-            @copy($srcPhotoDir . '/' . $ph['filename'], $dstPhotoDir . '/' . $ph['filename']);
-            $ins->execute([$newId, $ph['filename'], $ph['lat'], $ph['lon'], $ph['sort']]);
+        // carry the gallery over: copy each photo file and its row
+        $p = $pdo->prepare('SELECT filename, lat, lon, sort FROM roadbook_photos WHERE roadbook_id = ? ORDER BY sort, id');
+        $p->execute([$srcId]);
+        $photos = $p->fetchAll();
+        if ($photos) {
+            $srcPhotoDir = $CFG['photos_dir'] . '/' . $srcId;
+            $dstPhotoDir = $CFG['photos_dir'] . '/' . $newId;
+            if (!is_dir($dstPhotoDir)) mkdir($dstPhotoDir, 0755, true);
+            $ins = $pdo->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,?)');
+            foreach ($photos as $ph) {
+                @copy($srcPhotoDir . '/' . $ph['filename'], $dstPhotoDir . '/' . $ph['filename']);
+                $ins->execute([$newId, $ph['filename'], $ph['lat'], $ph['lon'], $ph['sort']]);
+            }
         }
-    }
-    // carry the voice notes over: copy each clip and its row
-    $a = db()->prepare('SELECT filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
-    $a->execute([$srcId]);
-    $clips = $a->fetchAll();
-    if ($clips) {
-        $srcAudioDir = $CFG['audio_dir'] . '/' . $srcId;
-        $dstAudioDir = $CFG['audio_dir'] . '/' . $newId;
-        if (!is_dir($dstAudioDir)) mkdir($dstAudioDir, 0755, true);
-        $insA = db()->prepare('INSERT INTO roadbook_audio (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)');
-        foreach ($clips as $cl) {
-            @copy($srcAudioDir . '/' . $cl['filename'], $dstAudioDir . '/' . $cl['filename']);
-            $insA->execute([$newId, $cl['filename'], $cl['lat'], $cl['lon']]);
+        // carry the voice notes over: copy each clip and its row
+        $a = $pdo->prepare('SELECT filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
+        $a->execute([$srcId]);
+        $clips = $a->fetchAll();
+        if ($clips) {
+            $srcAudioDir = $CFG['audio_dir'] . '/' . $srcId;
+            $dstAudioDir = $CFG['audio_dir'] . '/' . $newId;
+            if (!is_dir($dstAudioDir)) mkdir($dstAudioDir, 0755, true);
+            $insA = $pdo->prepare('INSERT INTO roadbook_audio (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)');
+            foreach ($clips as $cl) {
+                @copy($srcAudioDir . '/' . $cl['filename'], $dstAudioDir . '/' . $cl['filename']);
+                $insA->execute([$newId, $cl['filename'], $cl['lat'], $cl['lon']]);
+            }
         }
-    }
+        $pdo->commit();
+    } catch (\Throwable $x) { $pdo->rollBack(); throw $x; }
     json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
 }
 
@@ -354,11 +356,8 @@ function public_get(array $d): void {
 
 function rb_delete(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT filename FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$id, $user['id']]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    $row = rb_require_own($user, $id);
+    db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]); // row first — a failed DELETE must not lose the file
     @unlink(rb_dir((int)$user['id']) . '/' . $row['filename']);
-    db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]);
     json_out(['ok' => true]);
 }

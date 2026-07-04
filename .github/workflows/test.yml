@@ -14,12 +14,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Syntax-check the shared front-end scripts
-        run: for f in public/assets/js/*.js; do node --check "$f"; done
+      - name: Syntax-check every first-party script
+        run: |
+          set -e
+          for f in $(find public -name '*.js' ! -name '*.min.js'); do node --check "$f"; done
       - run: npm test

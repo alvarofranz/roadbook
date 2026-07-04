@@ -22,25 +22,30 @@ function rrmdir(string $dir): void {
     }
     @rmdir($dir);
 }
-// Bytes a user occupies on disk: their .rdbk files + every roadbook's photo folder.
-function user_disk_bytes(int $uid): int {
-    global $CFG;
-    $bytes = dir_size($CFG['storage'] . '/' . $uid);
+// Every roadbook id a user owns — the media dirs (photos/audio) are keyed by roadbook id.
+function user_roadbook_ids(int $uid): array {
     $st = db()->prepare('SELECT id FROM roadbooks WHERE user_id = ?');
     $st->execute([$uid]);
-    foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $rid) $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
+    return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+}
+// Bytes a user occupies on disk: their .rdbk files + every roadbook's photo folder. Pass the
+// pre-fetched roadbook ids when listing many users (admin_users) — one query, not one each.
+function user_disk_bytes(int $uid, ?array $rbIds = null): int {
+    global $CFG;
+    $bytes = dir_size($CFG['storage'] . '/' . $uid);
+    foreach ($rbIds ?? user_roadbook_ids($uid) as $rid) $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
     return $bytes;
 }
 // A user's effective disk quota in bytes: their per-user override, or the system default.
 function user_quota_bytes(array $user): int {
     return isset($user['quota_bytes']) && $user['quota_bytes'] !== null ? (int)$user['quota_bytes'] : DEFAULT_QUOTA_BYTES;
 }
-// Delete a user's files (call BEFORE removing the row, while roadbooks still resolve).
-function purge_user_files(int $uid): void {
+// Delete a user's files. The caller collects $rbIds BEFORE deleting the user row (the cascade
+// wipes the roadbook rows that resolve them) and purges AFTER the row is gone — a failed
+// DELETE must never leave a live account whose files are already gone.
+function purge_user_files(int $uid, array $rbIds): void {
     global $CFG;
-    $st = db()->prepare('SELECT id FROM roadbooks WHERE user_id = ?');
-    $st->execute([$uid]);
-    foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $rid) rrmdir($CFG['photos_dir'] . '/' . (int)$rid);
+    foreach ($rbIds as $rid) rrmdir($CFG['photos_dir'] . '/' . (int)$rid);
     rrmdir($CFG['storage'] . '/' . $uid);
 }
 
@@ -49,9 +54,12 @@ function admin_users(array $user, array $d = []): void {
     $eventId = (int)($d['event_id'] ?? 0);
     $where = $eventId > 0 ? " WHERE users.id IN (SELECT user_id FROM event_participants WHERE event_id = $eventId
         UNION SELECT user_id FROM event_organizers WHERE event_id = $eventId)" : '';
-    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at,
-            (SELECT COUNT(*) FROM roadbooks r WHERE r.user_id = users.id) AS roadbooks
+    $rows = db()->query('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
         FROM users' . $where . ' ORDER BY id')->fetchAll();
+    // One query maps every user to their roadbook ids: it feeds both the per-user roadbook
+    // count and the disk scan, instead of two queries per listed user.
+    $rbByUser = [];
+    foreach (db()->query('SELECT user_id, id FROM roadbooks')->fetchAll() as $r) $rbByUser[(int)$r['user_id']][] = (int)$r['id'];
     $users = array_map(fn($r) => [
         'id'         => (int)$r['id'],
         'first_name' => $r['first_name'],
@@ -64,9 +72,9 @@ function admin_users(array $user, array $d = []): void {
         'is_organizer' => (int)$r['is_organizer'],
         'mustchange' => (int)$r['must_change_password'],
         'blocked'    => (int)$r['blocked'],
-        'locked'     => in_array(strtolower($r['email']), $GLOBALS['CFG']['admin_emails'], true) ? 1 : 0, // .env admin: can't demote/block/delete
-        'roadbooks'  => (int)$r['roadbooks'],
-        'bytes'      => user_disk_bytes((int)$r['id']),
+        'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete
+        'roadbooks'  => count($rbByUser[(int)$r['id']] ?? []),
+        'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),
         'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
         'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
         'created_at' => $r['created_at'],
@@ -140,6 +148,10 @@ function admin_move_roadbook(array $user, array $d): void {
     if ($to === $from) { json_out(['ok' => true, 'id' => $id]); return; }
     $tu = db()->prepare('SELECT id FROM users WHERE id = ?'); $tu->execute([$to]);
     if (!$tu->fetch()) fail('Target user not found.', 404);
+    // The row is the source of truth: reassign the owner FIRST, then move the file — if the
+    // rename fails the row already points at the new owner and the file is recoverable by
+    // hand, never a row whose owner's dir no longer holds the file.
+    db()->prepare('UPDATE roadbooks SET user_id = ? WHERE id = ?')->execute([$to, $id]);
     $fn = (string)$row['filename'];
     if ($fn !== '' && $fn !== 'pending') { // a draft recording with no real file yet has nothing to move
         $src = $CFG['storage'] . '/' . $from . '/' . $fn;
@@ -149,7 +161,6 @@ function admin_move_roadbook(array $user, array $d): void {
             @rename($src, $dstDir . '/' . $fn);
         }
     }
-    db()->prepare('UPDATE roadbooks SET user_id = ? WHERE id = ?')->execute([$to, $id]);
     log_activity((int)$user['id'], 'admin_move_roadbook', 'roadbook #' . $id . ' user #' . $from . ' → #' . $to);
     json_out(['ok' => true, 'id' => $id]);
 }
@@ -167,7 +178,6 @@ function admin_verify(array $user, array $d): void {
 
 // Block / unblock an account (a blocked user can't sign in).
 function admin_block(array $user, array $d): void {
-    global $CFG;
     $id = (int)($d['id'] ?? 0);
     $blocked = !empty($d['blocked']) ? 1 : 0;
     if ($id === (int)$user['id']) fail("You can't block yourself.");
@@ -175,7 +185,7 @@ function admin_block(array $user, array $d): void {
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
-    if ($blocked && in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail("Can't block a configured superuser.");
+    if ($blocked && is_locked_admin($row['email'])) fail("Can't block a configured superuser.");
     db()->prepare('UPDATE users SET blocked = ? WHERE id = ?')->execute([$blocked, $id]);
     log_activity((int)$user['id'], $blocked ? 'admin_block' : 'admin_unblock', 'user #' . $id);
     json_out(['ok' => true]);
@@ -220,7 +230,6 @@ function admin_update_user(array $user, array $d): void {
 // Toggle a user's role: the payload carries either is_organizer (event-organizer grant, #121)
 // or is_admin (with the self/superuser guards).
 function admin_set_role(array $user, array $d): void {
-    global $CFG;
     $id = (int)($d['id'] ?? 0);
     $st = db()->prepare('SELECT email FROM users WHERE id = ?');
     $st->execute([$id]);
@@ -234,23 +243,23 @@ function admin_set_role(array $user, array $d): void {
     }
     $makeAdmin = !empty($d['is_admin']);
     if ($id === (int)$user['id']) fail("You can't change your own role.");
-    if (!$makeAdmin && in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail('That account is a configured superuser (set in .env).');
+    if (!$makeAdmin && is_locked_admin($row['email'])) fail('That account is a configured superuser (set in .env).');
     db()->prepare('UPDATE users SET is_admin = ? WHERE id = ?')->execute([$makeAdmin ? 1 : 0, $id]);
     log_activity((int)$user['id'], $makeAdmin ? 'admin_grant' : 'admin_revoke', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
 function admin_delete_user(array $user, array $d): void {
-    global $CFG;
     $id = (int)($d['id'] ?? 0);
     if ($id === (int)$user['id']) fail('Use your profile to delete your own account.');
     $st = db()->prepare('SELECT email FROM users WHERE id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
-    if (in_array(strtolower($row['email']), $CFG['admin_emails'], true)) fail("Can't delete a configured superuser.");
-    purge_user_files($id);
+    if (is_locked_admin($row['email'])) fail("Can't delete a configured superuser.");
+    $rbIds = user_roadbook_ids($id); // collected BEFORE the cascade wipes the roadbook rows
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // roadbooks/photos/api_tokens/activity_log rows go via cascade
+    purge_user_files($id, $rbIds);
     log_activity((int)$user['id'], 'admin_delete_user', 'user #' . $id);
     json_out(['ok' => true]);
 }

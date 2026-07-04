@@ -57,19 +57,22 @@ function current_user(): ?array {
 
 function require_user(): array { $u = current_user(); if (!$u) fail('Not signed in.', 401); return $u; }
 
-// Effective admin = the DB flag, or an email listed in .env ADMIN_EMAILS (the bootstrap admins,
-// who stay admin even if "demoted" in the panel — that's the failsafe for the owner).
-function is_admin(?array $u): bool {
+// A configured .env superuser (ADMIN_EMAILS): the bootstrap admins, who stay admin even if
+// "demoted" in the panel and can never be blocked or deleted — the failsafe for the owner.
+function is_locked_admin(string $email): bool {
     global $CFG;
+    return in_array(strtolower($email), $CFG['admin_emails'], true);
+}
+// Effective admin = the DB flag, or a configured superuser.
+function is_admin(?array $u): bool {
     if (!$u) return false;
     if ((int)($u['is_admin'] ?? 0) === 1) return true;
-    return in_array(strtolower((string)($u['email'] ?? '')), $CFG['admin_emails'], true);
+    return is_locked_admin((string)($u['email'] ?? ''));
 }
 function require_admin(): array { $u = require_user(); if (!is_admin($u)) fail('Admins only.', 403); return $u; }
 // Effective organizer = an admin (manages every event) OR a user granted the organizer flag
 // (manages their own events). Used to gate the event-management endpoints (#121).
 function is_organizer(?array $u): bool { return is_admin($u) || (int)($u['is_organizer'] ?? 0) === 1; }
-function require_organizer(): array { $u = require_user(); if (!is_organizer($u)) fail('Organizers only.', 403); return $u; }
 
 function update_profile(array $user, array $d): void {
     $first = mb_substr(trim((string)($d['first_name'] ?? '')), 0, 80);
@@ -120,16 +123,19 @@ function change_password(array $user, array $d): void {
     json_out(['ok' => true, 'message' => 'Password updated.']);
 }
 
-// Self-service account deletion (requires the current password). Removes the user's files
-// then the row — roadbooks/photos rows go via ON DELETE CASCADE. purge_user_files: roadbooks.php.
+// Self-service account deletion (requires the current password). The media locations are
+// collected BEFORE the row goes (the cascade wipes the roadbook rows that resolve them), the
+// row is deleted, THEN the files — a failed DELETE must never leave a live account whose
+// files are already gone. user_roadbook_ids/purge_user_files: admin.php.
 function account_delete(array $user, array $d): void {
     $pass = (string)($d['password'] ?? '');
     $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
     $h = $st->fetchColumn();
     if (!$h || !password_verify($pass, $h)) fail('Wrong password.', 403);
     log_activity(null, 'account_delete'); // anonymous marker — the user's own rows cascade away with them
-    purge_user_files((int)$user['id']);
+    $rbIds = user_roadbook_ids((int)$user['id']);
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$user['id']]);
+    purge_user_files((int)$user['id'], $rbIds);
     $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
     json_out(['ok' => true]);
 }
@@ -201,7 +207,7 @@ function login_user(array $d): void {
     $id = strtolower(trim((string)($d['email'] ?? '')));
     $pass = (string)($d['password'] ?? '');
     verify_turnstile($d['turnstile'] ?? null);
-    $st = db()->prepare('SELECT * FROM users WHERE email = ? OR username = ?');
+    $st = db()->prepare('SELECT id, password_hash, blocked, email_verified FROM users WHERE email = ? OR username = ?');
     $st->execute([$id, $id]);
     $u = $st->fetch();
     if (!$u || !password_verify($pass, $u['password_hash'])) { log_activity($u ? (int)$u['id'] : null, 'login_failed'); fail('Wrong email/username or password.', 401); }
