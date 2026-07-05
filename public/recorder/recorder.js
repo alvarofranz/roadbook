@@ -56,8 +56,8 @@
     });
 
     /* ---------- startup: know the user, then resume → rescue → idle ---------- */
-    RBApi('config').then((c) => {
-        meUser = c.user || null;
+    RBConfig().then((c) => {
+        meUser = c.user || null; // offline falls back to the last-known user, so capture stays available (#189)
         updateRecUi(); // login known → reveal WP audio (signed-in) or show the sign-in hint
         // Before the first fix, centre on the user's saved default location if they set one.
         if (meUser && meUser.default_lat != null && meUser.default_lon != null && !here && map && map.map)

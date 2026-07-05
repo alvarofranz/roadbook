@@ -77,7 +77,9 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
     (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
     returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
     `RBToast(msg)` (translated toast into the page's `#toast`), `RBApi(action, body)` (JSON POST
-    to the API), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
+    to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
+    user so the account menu + capture buttons survive no connectivity; use it, not a bare
+    `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), plus the global header/footer (minimal nav, full-viewport
     mobile menu), version auto-refresh and install button.

@@ -64,7 +64,7 @@ img { max-width: 100%; display: block; }
 .tool-help { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); font-size: .92rem; font-weight: 600; line-height: 1; text-decoration: none; transition: color .15s; }
 .tool-help:hover { color: var(--sand); text-decoration: none; }
 /* minimal nav: plain text links, the active tool in sand */
-.topnav { display: flex; align-items: center; gap: 1.5rem; }
+.topnav { display: flex; align-items: center; gap: 1.1rem; }
 .nav-link { background: none; border: 0; padding: .2rem 0; color: var(--muted); font: inherit; font-weight: 600; font-size: .92rem; cursor: pointer; text-decoration: none; transition: color .15s; }
 .nav-link:hover { color: var(--text); text-decoration: none; }
 .nav-link.active { color: var(--sand); }
@@ -72,7 +72,10 @@ img { max-width: 100%; display: block; }
 .nav-tool { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.08; text-align: center; }
 .nav-tool .nl-w { display: block; }
 .navtoggle { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; background: none; color: var(--text); font-size: 1.25rem; cursor: pointer; }
-@media (max-width: 760px) {
+/* The full inline nav (7 tools + language + account) only fits comfortably on a real desktop;
+   at/below 1024px — every iPad included — collapse to the hamburger + full-viewport menu so the
+   bar never overflows and the account control can't be pushed off-screen (#188). */
+@media (max-width: 1024px) {
     .navtoggle { display: inline-flex; position: relative; z-index: 90; }
     .topnav { display: none; }
     /* full-viewport menu: big centred type, nothing else */
@@ -104,8 +107,8 @@ img { max-width: 100%; display: block; }
 .foot .lang-menu { top: auto; bottom: calc(100% + 6px); }
 /* The selector lives in the top bar on desktop and in the footer on mobile — one per breakpoint. */
 .lang-top { margin-left: .5rem; }
-@media (min-width: 761px) { .foot .lang { display: none; } }
-@media (max-width: 760px) { .lang-top { display: none; } }
+@media (min-width: 1025px) { .foot .lang { display: none; } }
+@media (max-width: 1024px) { .lang-top { display: none; } }
 
 /* ---------- buttons ---------- */
 .btn {

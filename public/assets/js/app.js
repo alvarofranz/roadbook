@@ -577,11 +577,14 @@
         try { const t = localStorage.getItem(RB_TOKEN_KEY); if (t) return Object.assign({ Authorization: 'Bearer ' + t }, base); } catch (e) {}
         return base;
     };
+    // Cached signed-in identity for the offline config fallback (#188/#189), cleared on sign-out.
+    const RB_CFG_USER = 'rb_cfg_user';
     const rbCaptureToken = (action, json) => {
         if (isNativeApp()) try {
             if (json && json.token) localStorage.setItem(RB_TOKEN_KEY, json.token);
             else if (action === 'logout') localStorage.removeItem(RB_TOKEN_KEY);
         } catch (e) {}
+        if (action === 'logout') try { localStorage.removeItem(RB_CFG_USER); } catch (e) {} // forget cached identity on any sign-out
         return json;
     };
     // JSON POST to the API → the parsed response ({ ok: false, … } on network failure).
@@ -589,6 +592,20 @@
         method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(Object.assign({ action }, body || {})),
     }).then((r) => r.json()).then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
+    // Config with an offline fallback (#188/#189). `config` is what tells the app who is signed in
+    // (account menu, the Recorder's capture buttons…). When the server is unreachable — flaky/no
+    // data, common on an iPad in the field — a bare RBApi('config') returns no user and the app
+    // wrongly looks signed-out. So cache the last-known user and fall back to it offline; the real
+    // API calls still enforce auth server-side, and a genuine sign-out clears the cache (rbCaptureToken).
+    window.RBConfig = async () => {
+        const cfg = await RBApi('config');
+        if (cfg && cfg.ok !== false) { // reached the server → the authoritative answer
+            try { if (cfg.user) localStorage.setItem(RB_CFG_USER, JSON.stringify(cfg.user)); else localStorage.removeItem(RB_CFG_USER); } catch (e) {}
+            return cfg;
+        }
+        let user = null; try { user = JSON.parse(localStorage.getItem(RB_CFG_USER) || 'null'); } catch (e) {}
+        return { ok: false, offline: true, user };
+    };
     // Trigger a download from a Blob or a URL.
     window.RBDownload = (data, filename) => {
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
@@ -656,7 +673,7 @@
 
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
-        const cfg = await RBApi('config');
+        const cfg = await RBConfig();
         const user = cfg.user || null;
         renderBanner(cfg.banner);
         // A signed-in user's language preference follows them across devices: apply it on
