@@ -201,6 +201,24 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
 and uploaded to the stores; the web deploy serves `public/` and ignores the `android/`/`ios/`
 projects. See `NATIVE.md`.
 
+## Email (`info@rdbk.app`)
+The public contact address is a **forward-only alias** — no mailbox, no IMAP, no
+webmail. It lives on the production host's existing postfix (Virtualmin → virtual
+server `rdbk.app` → Mail Aliases; set up 2026-07-05) and forwards to the admin's
+private inbox. DNS was already in place in Cloudflare: `MX 5 mail.rdbk.app`
+(DNS-only, not proxied) + SPF.
+
+Operational notes:
+- Outbound SMTP on the host is pinned to IPv4 (`smtp_address_preference=ipv4`)
+  because Gmail hard-rejects the host's IPv6 (no PTR/auth). Don't undo that.
+- Forwarding preserves the original envelope sender, so inbox placement relies on
+  the *original sender's* DKIM signature surviving the relay — true for every major
+  provider. Rare unsigned senders can bounce with Gmail `5.7.26`; if that ever hits
+  legitimate mail, the upgrade path is SRS (`postsrsd`).
+- The app does **not** send mail as `@rdbk.app`. Before it ever does, publish the
+  host's DKIM TXT for `rdbk.app` into Cloudflare (the key currently exists only in
+  the host's local DNS zone) — otherwise signatures will be unverifiable.
+
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
   accuracy-aware sampling, pause/resume, autosave/recovery, smoothing, altitude,
