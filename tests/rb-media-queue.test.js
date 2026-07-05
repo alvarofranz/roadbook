@@ -111,6 +111,33 @@ describe('RBMediaQueue orchestration (createQueue)', () => {
         expect(schedules).toBeGreaterThan(0);
     });
 
+    it('persists an uploader mutation of fields on failure and reuses it (pre-draft resolve, #147 F2)', async () => {
+        // Mirrors the browser uploader: an item enqueued without a roadbook is stamped with one
+        // (resolved lazily) at flush; the stamp must survive a failed pass so it is not re-resolved.
+        await store.add({ kind: 'photo', fields: { type: 'photo' }, token: 'a', tries: 0, ts: 1 });
+        let draft = null, net = false, resolveCalls = 0;
+        const q = make({
+            upload: async (it) => {
+                if (!it.fields.roadbook) { if (!draft) return { ok: false }; resolveCalls += 1; it.fields.roadbook = draft; }
+                return net ? { ok: true, id: 1 } : { ok: false };
+            },
+        });
+
+        await q.flush(); // offline: no draft yet → stays queued, not resolved
+        expect(resolveCalls).toBe(0);
+        expect([...store._map.values()][0].fields.roadbook).toBeUndefined();
+
+        draft = '7'; // draft now obtainable, but the upload itself still fails
+        await q.flush();
+        expect(resolveCalls).toBe(1);
+        expect([...store._map.values()][0].fields.roadbook).toBe('7'); // stamp persisted
+
+        net = true; // connection back
+        await q.flush();
+        expect(resolveCalls).toBe(1);         // not re-resolved — reused the persisted stamp
+        expect(await store.count()).toBe(0);  // finally uploaded
+    });
+
     it('does not run overlapping flushes (re-entry guard)', async () => {
         await store.add({ kind: 'photo', fields: {}, token: 'a', tries: 0, ts: 1 });
         let active = 0, overlap = false;

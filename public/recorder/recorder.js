@@ -71,7 +71,7 @@
                 RBGpxRecorder.resume(session.fileName);
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
                 track = []; wpts = session.wpts || []; photos = session.photos || []; draftId = session.draftId || 0;
-                $('recPhoto').hidden = !draftId;
+                updateRecUi(); // photo/audio buttons follow sign-in, not the draft (#147 F2)
                 startMeter(); renderPauseBtn(); refreshMap(); renderBar();
                 return;
             }
@@ -89,9 +89,24 @@
         track = []; wpts = []; photos = []; draftId = 0; showWpText(null);
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
-        // a draft roadbook holds the geotagged photos (signed-in only); the camera appears once it
-        // exists. Title it with the chosen date+time name so it never shows as "Recording…" (#148).
-        if (meUser) RBApi('rb_draft', { name: RBGpxRecorder.fileName }).then((r) => { if (r.ok) { draftId = r.id; $('recPhoto').hidden = false; } }).catch(() => {});
+        // a draft roadbook holds the geotagged photos/voice notes (signed-in only), titled with the
+        // chosen date+time name so it never shows as "Recording…" (#148). Best-effort now; if it can't
+        // be created (offline), captures still buffer and the draft is created on the first flush (#147 F2).
+        if (meUser) ensureDraft();
+    }
+    // Get the draft container id, creating it once when signed-in and online. Returns null when it
+    // can't be made yet (offline, or signed out) so queued captures simply wait (#147 F2). Memoised
+    // so a burst of queued items shares a single draft creation.
+    let draftPromise = null;
+    function ensureDraft() {
+        if (draftId) return Promise.resolve(draftId);
+        if (!meUser || (typeof navigator !== 'undefined' && navigator.onLine === false)) return Promise.resolve(null);
+        if (!draftPromise) {
+            draftPromise = RBApi('rb_draft', { name: RBGpxRecorder.fileName || recName() })
+                .then((r) => { draftPromise = null; if (r && r.ok) { draftId = r.id; saveSession(); return draftId; } return null; })
+                .catch(() => { draftPromise = null; return null; });
+        }
+        return draftPromise;
     }
     function startMeter() {
         segStart = paused ? 0 : Date.now();
@@ -186,13 +201,13 @@
     const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
     const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     const wptBtn = $('recWptAudio');
-    // WP audio (voice notes) and WP photo upload to a server draft → they need a signed-in user.
-    // Reveal the audio button only for a signed-in user who can record; the photo button is gated
-    // by draftId (which needs login). A hint on the idle screen tells signed-out users the track
-    // records anyway. Called once config() has told us who the user is (and offline handling of
-    // these is tracked separately, offline-first).
+    // WP audio (voice notes) and WP photo need a signed-in user (they end up on a server draft).
+    // They're revealed by sign-in alone — NOT by the draft: a capture made offline / before the
+    // draft exists is buffered and uploaded later (#147 F2). A hint on the idle screen tells
+    // signed-out users the track records anyway. Called once config() has told us who the user is.
     function updateRecUi() {
         wptBtn.hidden = !(meUser && (SR_REC || CAN_REC_AUDIO));
+        $('recPhoto').hidden = !meUser;
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
         const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native'); // only the native app records in the background
     }
@@ -217,9 +232,9 @@
         };
         // Record the audio clip FIRST, so it claims the microphone. On mobile the mic is exclusive:
         // starting speech-to-text first was stealing it, so getUserMedia failed and the clip came out
-        // empty (and Android STT didn't transcribe either). Signed-in + draft only; the clip lives on
-        // the server, like photos.
-        if (CAN_REC_AUDIO && meUser && draftId) {
+        // empty (and Android STT didn't transcribe either). Signed-in only; the clip is buffered and
+        // uploaded later, so it works offline / before the draft exists (#147 F2).
+        if (CAN_REC_AUDIO && meUser) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 if (ended) { stream.getTracks().forEach((tk) => tk.stop()); return; } // released during the mic prompt
@@ -229,14 +244,14 @@
                 mr.onstop = () => {
                     stream.getTracks().forEach((tk) => tk.stop());
                     if (!chunks.length) { toast(t('No audio captured.')); return; } // nothing recorded
-                    // buffer + upload with retry (#147) — a dropped connection no longer loses the clip
-                    RBMediaQueue.add('audio', new Blob(chunks, { type: mr.mimeType }), { type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon });
+                    // buffer + upload with retry (#147); roadbook is resolved at flush (draft may not exist yet)
+                    const fields = { type: 'audio', lat: wptLat, lon: wptLon };
+                    if (draftId) fields.roadbook = String(draftId);
+                    RBMediaQueue.add('audio', new Blob(chunks, { type: mr.mimeType }), fields);
                     toast(t('Voice note saved.'));
                 };
                 mr.start(1000); // periodic data chunks → robust even if stop() timing is odd on mobile
             } catch (e) { wptMedia = null; toast(t('Microphone unavailable.')); } // surface the failure, don't fail silently
-        } else if (meUser && !draftId) {
-            toast(t('Preparing… try the voice note again in a second.')); // the draft roadbook isn't ready yet
         }
         // Speech-to-text → note.text: best-effort, started AFTER the recorder has the mic, so it only
         // runs where the platform allows a second mic consumer (e.g. desktop). It never controls the
@@ -291,6 +306,9 @@
        network drop mid-recording never loses them. A photo shows an optimistic pin from
        a local blob URL, reconciled to the server URL (with its id) when the upload lands. */
     RBMediaQueue.init({
+        // pre-draft/offline captures have no roadbook yet; the queue asks for one at flush
+        // time and this creates the draft once a connection is back (#147 F2)
+        resolveRoadbook: ensureDraft,
         onChange: (n) => {
             const el = $('recPending'); if (!el) return;
             el.hidden = !n;
@@ -310,13 +328,13 @@
     /* ---------- photos (signed-in: camera → queued upload → geotagged pin) ---------- */
     $('recPhoto').onclick = () => {
         if (!meUser) return RBNeedAuth(t('Sign in to attach photos.'));
-        if (!draftId) return toast(t('Waiting for a GPS fix…'));
-        $('recPhotoFile').click();
+        $('recPhotoFile').click(); // no draft needed — a pre-draft/offline shot is queued (#147 F2)
     };
     $('recPhotoFile').onchange = (e) => {
-        const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
+        const f = e.target.files[0]; e.target.value = ''; if (!f) return;
         const lat = here ? here.lat : null, lon = here ? here.lon : null;
-        const fields = { type: 'photo', roadbook: String(draftId) };
+        const fields = { type: 'photo' };
+        if (draftId) fields.roadbook = String(draftId); // else resolved at flush time
         if (lat != null) { fields.lat = lat; fields.lon = lon; }
         // optimistic pin from the local blob; reconciled to the server URL on upload (onDone)
         const token = 'p' + Date.now() + '_' + (++mediaSeq);

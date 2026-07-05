@@ -106,7 +106,7 @@
             'Route': 'Percorso', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Invertire tutto il percorso? Partenza e arrivo si scambiano e ogni vignetta viene ricalcolata.',
             'Map style': 'Stile mappa', 'Page': 'Pagina', 'of': 'di', 'Total km': 'Km totali', 'Generating PDF…': 'Generazione PDF…',
             'No photos yet.': 'Ancora nessuna foto.', '(no text)': '(senza testo)', 'No icons.': 'Nessuna icona.',
-            'Delete this voice note?': 'Eliminare questa nota vocale?', 'Audio upload failed.': 'Caricamento audio non riuscito.',
+            'Delete this voice note?': 'Eliminare questa nota vocale?',
             'Recording…': 'Registrazione…', 'Paused ·': 'In pausa ·', 'Adjust: get on the trail…': 'Regola: raggiungi il percorso…', 'Adjust · will rejoin': 'Regola · si ricongiungerà', 'Adjust · recording': 'Regola · registrazione',
             'Saved · public at': 'Salvato · pubblico su', 'Auto': 'Auto', 'Skips': 'Salti', 'Extra': 'Extra', 'pts': 'pti', 'prog.': 'prog.', 'part.': 'parz.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto: le note si convalidano via GPS quando le raggiungi. Off: tocca per segnare ogni nota come fatta.',
@@ -593,8 +593,6 @@
             'No audio captured.': 'Nessun audio registrato.',
             'Voice note saved.': 'Nota vocale salvata.',
             'awaiting upload': 'in attesa di upload',
-            'Microphone unavailable.': 'Microfono non disponibile.',
-            'Preparing… try the voice note again in a second.': 'Preparazione… riprova la nota vocale tra un secondo.',
-            'fp.recorder.t9t': 'WP audio: tieni premuto per registrare',
+            'Microphone unavailable.': 'Microfono non disponibile.',            'fp.recorder.t9t': 'WP audio: tieni premuto per registrare',
             'fp.recorder.t9d': 'Tieni premuto il tasto WP audio per registrare una nota vocale al waypoint; al rilascio un breve countdown sul tasto continua a registrare, poi salva da solo. Salva la clip audio (riascoltabile sulla nota nell’Editor); su desktop trascrive anche dal vivo — sul telefono il microfono è esclusivo, quindi per il testo dettato usa il mic del tasto Waypoint.'
         };

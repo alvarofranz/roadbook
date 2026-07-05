@@ -104,7 +104,7 @@
             'Route': 'Itinéraire', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Inverser tout l\'itinéraire ? Départ et arrivée s\'échangent, toutes les vignettes sont recalculées.',
             'Map style': 'Style de carte', 'Page': 'Page', 'of': 'sur', 'Total km': 'Km total', 'Generating PDF…': 'Génération du PDF…',
             'No photos yet.': 'Pas encore de photos.', '(no text)': '(sans texte)', 'No icons.': 'Pas d\'icônes.',
-            'Delete this voice note?': 'Supprimer cette note vocale ?', 'Audio upload failed.': 'Échec de l\'envoi audio.',
+            'Delete this voice note?': 'Supprimer cette note vocale ?',
             'Recording…': 'Enregistrement…', 'Paused ·': 'En pause ·', 'Adjust: get on the trail…': 'Ajuster : rejoindre le parcours…', 'Adjust · will rejoin': 'Ajuster · va rejoindre', 'Adjust · recording': 'Ajuster · enregistrement',
             'Saved · public at': 'Enregistré · public sur', 'Auto': 'Auto', 'Skips': 'Sauts', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'part.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto : les notes sont validées par GPS à l\'arrivée. Off : tapez pour marquer chaque note comme faite.',
@@ -554,8 +554,6 @@
             'No audio captured.': 'Aucun audio enregistré.',
             'Voice note saved.': 'Note vocale enregistrée.',
             'awaiting upload': 'en attente d’envoi',
-            'Microphone unavailable.': 'Microphone indisponible.',
-            'Preparing… try the voice note again in a second.': 'Préparation… réessaie la note vocale dans une seconde.',
-            'fp.recorder.t9t': 'WP audio : maintiens pour enregistrer',
+            'Microphone unavailable.': 'Microphone indisponible.',            'fp.recorder.t9t': 'WP audio : maintiens pour enregistrer',
             'fp.recorder.t9d': 'Maintiens le bouton WP audio pour enregistrer une note vocale au waypoint ; au relâchement, un court compte à rebours sur le bouton continue l’enregistrement puis sauvegarde automatiquement. Il enregistre le clip audio (réécoutable sur la note dans l’Éditeur) ; sur ordinateur il transcrit aussi en direct — sur mobile le micro est exclusif, donc pour le texte dicté utilise le micro du bouton Waypoint.'
         };

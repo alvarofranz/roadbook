@@ -105,7 +105,7 @@
             'Route': 'Route', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Gesamte Route umkehren? Start und Ziel tauschen und alle Vignetten werden neu berechnet.',
             'Map style': 'Kartenstil', 'Page': 'Seite', 'of': 'von', 'Total km': 'Gesamt km', 'Generating PDF…': 'PDF wird erstellt…',
             'No photos yet.': 'Noch keine Fotos.', '(no text)': '(kein Text)', 'No icons.': 'Keine Icons.',
-            'Delete this voice note?': 'Diese Sprachnotiz löschen?', 'Audio upload failed.': 'Audio-Upload fehlgeschlagen.',
+            'Delete this voice note?': 'Diese Sprachnotiz löschen?',
             'Recording…': 'Aufnahme…', 'Paused ·': 'Pausiert ·', 'Adjust: get on the trail…': 'Anpassen: Auf die Strecke gehen…', 'Adjust · will rejoin': 'Anpassen · wird wieder verbunden', 'Adjust · recording': 'Anpassen · Aufnahme',
             'Saved · public at': 'Gespeichert · öffentlich unter', 'Auto': 'Auto', 'Skips': 'Übersprünge', 'Extra': 'Extra', 'pts': 'Pkt', 'prog.': 'Prog.', 'part.': 'Teil.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto: Noten werden per GPS validiert wenn du sie erreichst. Aus: Antippen um jede Note als erledigt zu markieren.',
@@ -555,8 +555,6 @@
             'No audio captured.': 'Kein Audio aufgenommen.',
             'Voice note saved.': 'Sprachnotiz gespeichert.',
             'awaiting upload': 'warten auf Upload',
-            'Microphone unavailable.': 'Mikrofon nicht verfügbar.',
-            'Preparing… try the voice note again in a second.': 'Wird vorbereitet… versuche die Sprachnotiz gleich erneut.',
-            'fp.recorder.t9t': 'WP-Audio: gedrückt halten zum Aufnehmen',
+            'Microphone unavailable.': 'Mikrofon nicht verfügbar.',            'fp.recorder.t9t': 'WP-Audio: gedrückt halten zum Aufnehmen',
             'fp.recorder.t9d': 'Halte die WP-Audio-Schaltfläche gedrückt, um eine Sprachnotiz am Wegpunkt aufzunehmen; beim Loslassen läuft ein kurzer Countdown auf der Schaltfläche weiter und speichert dann automatisch. Es speichert den Audioclip (auf der Notiz im Editor abspielbar); am Desktop wird zusätzlich live transkribiert — auf dem Handy ist das Mikrofon exklusiv, nutze für diktierten Text daher das Mikrofon der Waypoint-Schaltfläche.'
         };

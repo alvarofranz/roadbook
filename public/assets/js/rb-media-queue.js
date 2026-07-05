@@ -109,10 +109,22 @@
         count: () => op('readonly', (st) => st.count()).then((n) => n || 0),
     };
 
-    // Photos go through the shared image downscale (RBUpload); voice notes upload as-is.
-    const uploader = (it) => (it.kind === 'audio')
-        ? RBUploadAudio(it.fields, it.blob, it.name)
-        : RBUpload(it.fields, it.blob, it.name);
+    // A capture may be enqueued before the server container (draft) exists — offline or
+    // pre-draft (#147 F2). In that case `fields.roadbook` is absent; at flush time we ask
+    // the page's resolver for one (it creates the draft when a connection is back). Until a
+    // draft can be obtained the item stays queued. Photos go through the shared image
+    // downscale (RBUpload); voice notes upload as-is.
+    let resolveRoadbook = null;
+    async function uploader(it) {
+        if (!it.fields.roadbook) {
+            const rb = resolveRoadbook ? await resolveRoadbook() : null;
+            if (!rb) return { ok: false }; // no container yet — keep queued, retry later
+            it.fields.roadbook = String(rb);
+        }
+        return (it.kind === 'audio')
+            ? RBUploadAudio(it.fields, it.blob, it.name)
+            : RBUpload(it.fields, it.blob, it.name);
+    }
 
     let retryTimer = null;
     const RETRY_MS = 20000;
@@ -131,8 +143,8 @@
         add: (kind, blob, fields, name, token) => queue.add(kind, blob, fields, name, token),
         flush: () => queue.flush(),
         count: () => queue.count(),
-        // Wire the reconciliation/badge callbacks and drain anything left from a
-        // previous session (blobs persist in IndexedDB across reloads/crashes).
-        init: (cb) => { queue.init(cb); queue.flush(); },
+        // Wire the reconciliation/badge callbacks (+ optional roadbook resolver) and drain
+        // anything left from a previous session (blobs persist in IndexedDB across reloads).
+        init: (cb) => { cb = cb || {}; resolveRoadbook = cb.resolveRoadbook || null; queue.init(cb); queue.flush(); },
     };
 })();

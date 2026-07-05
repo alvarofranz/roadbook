@@ -106,7 +106,7 @@
             'Route': 'Ruta', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': '¿Invertir toda la ruta? Salida y llegada se intercambian y se recalculan todas las viñetas.',
             'Map style': 'Estilo de mapa', 'Page': 'Página', 'of': 'de', 'Total km': 'Km totales', 'Generating PDF…': 'Generando PDF…',
             'No photos yet.': 'Aún no hay fotos.', '(no text)': '(sin texto)', 'No icons.': 'Sin iconos.',
-            'Delete this voice note?': '¿Eliminar esta nota de voz?', 'Audio upload failed.': 'Fallo al subir el audio.',
+            'Delete this voice note?': '¿Eliminar esta nota de voz?',
             'Recording…': 'Grabando…', 'Paused ·': 'Pausado ·', 'Adjust: get on the trail…': 'Ajuste: súbete a la ruta…', 'Adjust · will rejoin': 'Ajuste · reconectará', 'Adjust · recording': 'Ajuste · grabando',
             'Saved · public at': 'Guardado · público en', 'Auto': 'Auto', 'Skips': 'Saltos', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'parc.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto: las notas se validan por GPS al llegar. Off: toca para marcar cada nota como hecha.',
@@ -593,8 +593,6 @@
             'No audio captured.': 'No se ha grabado audio.',
             'Voice note saved.': 'Nota de voz guardada.',
             'awaiting upload': 'en espera de subida',
-            'Microphone unavailable.': 'Micrófono no disponible.',
-            'Preparing… try the voice note again in a second.': 'Preparando… vuelve a intentar la nota de voz en un segundo.',
-            'fp.recorder.t9t': 'WP audio: mantén pulsado para grabar',
+            'Microphone unavailable.': 'Micrófono no disponible.',            'fp.recorder.t9t': 'WP audio: mantén pulsado para grabar',
             'fp.recorder.t9d': 'Mantén pulsado el botón WP audio para grabar una nota de voz en el waypoint; al soltar, una breve cuenta atrás en el botón sigue grabando y luego guarda sola. Guarda el clip de audio (se reproduce en la nota en el Editor); en escritorio también transcribe en directo — en el móvil el micrófono es exclusivo, así que para el texto dictado usa el mic del botón Waypoint.'
         };
