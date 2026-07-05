@@ -652,7 +652,17 @@
     };
     $('jsonFile').onchange = async (e) => {
         const f = e.target.files[0]; if (!f) return;
-        try { const j = await RBZip.readRdbk(f); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
+        try {
+            const b = await RBZip.readBundle(f); const j = b.roadbook;
+            if (!j.track || !j.notes) throw new Error('Not a roadbook');
+            resetIdentity(); pendingMedia = b.media; setRoadbook(j);
+            if (pendingMedia.length) { // the bundle carries photos/audio → they only appear once re-uploaded on save (#162)
+                const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos & audio'))}</h3>
+                    <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>
+                    <div class="btnrow end"><button class="btn btn-primary" data-ok>OK</button></div>`, 'narrow');
+                d.q('[data-ok]').onclick = d.close;
+            }
+        }
         catch (err) { toast('Error: ' + err.message); }
     };
     // Toggle between the opening screen (ways to start a new roadbook) and the
@@ -973,6 +983,7 @@
     let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
+    let pendingMedia = []; // media bundled in an imported .rdbk v2, uploaded to the gallery on the first save (#162)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
     $('visReady').onclick = () => { setStatus('ready'); markDirty(); };
     $('visPublic').onclick = () => { setStatus('public'); markDirty(); };
@@ -1017,12 +1028,28 @@
         updateSaveBtn();
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    // Media bundled in an imported .rdbk v2 (#162): once the roadbook has a server id, upload each
+    // photo/audio into its gallery with the geotag from the bundle's manifest, then clear the queue.
+    async function flushImportedMedia() {
+        const items = pendingMedia; pendingMedia = [];
+        for (const it of items) {
+            const fields = { roadbook: String(currentRbId) };
+            if (it.lat != null) fields.lat = it.lat;
+            if (it.lon != null) fields.lon = it.lon;
+            try {
+                if (it.type === 'audio') await RBUploadAudio({ type: 'audio', ...fields }, it.blob, it.name);
+                else await RBUpload({ type: 'photo', ...fields }, it.blob, it.name);
+            } catch (e) { /* skip a media file that won't upload — never fail the save */ }
+        }
+    }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await RBApi('rb_save', { id: currentRbId, status, reusable, roadbook: rb });
         if (r.ok) {
-            currentRbId = r.id; dirty = false; clearDraft(); updatePhotos(); updateAudio(); updateSaveBtn();
+            currentRbId = r.id; dirty = false; clearDraft();
+            if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
+            updatePhotos(); updateAudio(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
             try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
         }

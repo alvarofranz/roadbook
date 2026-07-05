@@ -99,7 +99,7 @@
             'Export GPX': 'Esporta GPX',
             'GPX is a local file — photos and audio are not included.': 'Il GPX è un file locale — foto e audio non sono inclusi.',
             'Sign in to also capture photos and voice notes (the track records either way).': 'Accedi per registrare anche foto e note vocali (la traccia si registra comunque).',
-            'Export': 'Esporta', '.rdbk file': 'File .rdbk', 'Include photos & audio in the .rdbk': 'Includi foto e audio nel .rdbk', 'Track line': 'Traccia', 'Waypoints (notes)': 'Waypoint (note)', 'Garmin icons': 'Icone Garmin', 'OSMAnd icons': 'Icone OSMAnd', 'Pick at least one GPX type.': 'Scegli almeno un tipo di GPX.', 'Delete me to export the edited tulip': 'Cancellami per esportare il tulip modificato',
+            'Export': 'Esporta', '.rdbk file': 'File .rdbk', 'Include photos & audio in the .rdbk': 'Includi foto e audio nel .rdbk', 'Photos & audio': 'Foto e audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Questo roadbook include foto o note vocali. Restano nascoste finché non lo salvi nel tuo profilo.', 'Track line': 'Traccia', 'Waypoints (notes)': 'Waypoint (note)', 'Garmin icons': 'Icone Garmin', 'OSMAnd icons': 'Icone OSMAnd', 'Pick at least one GPX type.': 'Scegli almeno un tipo di GPX.', 'Delete me to export the edited tulip': 'Cancellami per esportare il tulip modificato',
             'Settings': 'Impostazioni', 'Roadbook configuration': 'Configurazione roadbook',
             'Identity': 'Identità', 'Waypoints & scoring': 'Waypoint e punteggio', 'Visibility & map': 'Visibilità e mappa',
             'Map access from player': 'Accesso alla mappa dal player', 'Allow the map in the Reader': 'Consenti la mappa nel Reader',

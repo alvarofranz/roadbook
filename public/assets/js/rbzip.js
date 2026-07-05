@@ -116,6 +116,35 @@
         return out;
     }
 
+    // MIME from a filename extension, so re-uploaded media carries a type the server recognises.
+    function mimeOf(name) {
+        const ext = (String(name).split('.').pop() || '').toLowerCase();
+        return ({ avif: 'image/avif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+            webm: 'audio/webm', ogg: 'audio/ogg', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav' })[ext] || 'application/octet-stream';
+    }
+
+    /* ---- open a .rdbk with its bundled media: { roadbook, media:[{type,name,lat,lon,blob}] } ----
+       A plain-JSON .rdbk yields no media. media.json (if present) supplies each file's geotag. */
+    async function readBundle(file) {
+        const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+        if (!isZip(head)) return { roadbook: JSON.parse(await file.text()), media: [] };
+        const files = await read(file);
+        const rbJson = files['roadbook.json'];
+        if (!rbJson) throw new Error('No roadbook.json in the .rdbk container');
+        const roadbook = JSON.parse(textOf(rbJson));
+        let manifest = {};
+        if (files['media.json']) { try { manifest = JSON.parse(textOf(files['media.json'])); } catch (e) {} }
+        const coordOf = (path) => (manifest.photos || []).concat(manifest.audio || []).find((x) => x.file === path) || {};
+        const media = [];
+        for (const path of Object.keys(files)) {
+            const type = path.startsWith('photos/') ? 'photo' : path.startsWith('audio/') ? 'audio' : null;
+            if (!type) continue;
+            const c = coordOf(path);
+            media.push({ type, name: path.split('/').pop(), lat: c.lat != null ? c.lat : null, lon: c.lon != null ? c.lon : null, blob: new Blob([files[path]], { type: mimeOf(path) }) });
+        }
+        return { roadbook, media };
+    }
+
     /* ---- open a .rdbk file: a v2 ZIP (read roadbook.json) or a plain-JSON .rdbk ---- */
     async function readRdbk(file) {
         const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
@@ -128,7 +157,7 @@
         return JSON.parse(await file.text());
     }
 
-    const RBZip = { read, write, readRdbk, isZip, textOf, crc32 };
+    const RBZip = { read, write, readRdbk, readBundle, isZip, textOf, mimeOf, crc32 };
     if (typeof window !== 'undefined') window.RBZip = RBZip;
     if (typeof module !== 'undefined' && module.exports) module.exports = RBZip;
 })();
