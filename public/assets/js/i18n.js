@@ -52,6 +52,7 @@
             'seo.feat_recorder.title': 'Track Recorder — RDBK.app', 'seo.feat_recorder.desc': 'Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos.',
             'seo.feat_tripmaster.title': 'Tripmaster — RDBK.app', 'seo.feat_tripmaster.desc': 'A precise GPS trip computer: partial and total odometer, speed alerts, heading, stopwatch and GPX recording — no roadbook needed.',
             'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',
+            'seo.feat_events.title': 'Organising an event — RDBK.app', 'seo.feat_events.desc': 'How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)

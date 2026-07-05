@@ -8,6 +8,7 @@
   <url><loc>https://rdbk.app/features/recorder/</loc><priority>0.7</priority></url>
   <url><loc>https://rdbk.app/features/tripmaster/</loc><priority>0.7</priority></url>
   <url><loc>https://rdbk.app/features/ranking/</loc><priority>0.7</priority></url>
+  <url><loc>https://rdbk.app/features/events/</loc><priority>0.7</priority></url>
   <url><loc>https://rdbk.app/standard/</loc><priority>0.6</priority></url>
   <url><loc>https://rdbk.app/about/</loc><priority>0.5</priority></url>
   <url><loc>https://rdbk.app/privacy/</loc><priority>0.3</priority></url>

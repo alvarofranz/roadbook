@@ -26,16 +26,23 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.05-3">
     <style>
         #evWrap { max-width: var(--maxw); padding: 1.4rem 1.1rem 5rem; }
+        /* title on the left, the "organise your own event" claim link top-right (override the
+           column direction .rbp-head sets, else the button stacks below the title) */
+        .ev-head-row { flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+        /* a chunkier, squarer CTA: the label wraps onto ~two lines instead of one long pill */
+        .ev-organise { flex-shrink: 0; margin-top: .3rem; max-width: 13rem; white-space: normal; text-align: left; line-height: 1.25; border-radius: 12px; padding: .7rem 1rem; }
     </style>
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="wrap" id="evWrap">
-    <div class="rbp-head">
-        <div class="kicker" data-i18n="Events">Events</div>
-        <h1 data-i18n="Events">Events</h1>
-        <p class="muted" data-i18n="Browse the events organised by the community.">Browse the events organised by the community.</p>
+    <div class="rbp-head ev-head-row">
+        <div>
+            <h1 data-i18n="Events">Events</h1>
+            <p class="muted" data-i18n="Browse the events organised by the community.">Browse the events organised by the community.</p>
+        </div>
+        <a class="btn btn-primary ev-organise" href="../features/events/"><i class="fa-solid fa-calendar-check"></i> <span data-i18n="Organise your event on RDBK.app">Organise your event on RDBK.app</span></a>
     </div>
     <div class="rbp-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rbp-search" id="evSearch" placeholder="Search events…" data-i18n-ph="Search events…" autocomplete="off" spellcheck="false"></div>
     <div class="gallery" id="evGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title data-i18n="seo.feat_events.title">Organising an event — RDBK.app</title>
+    <meta name="description" data-i18n-content="seo.feat_events.desc" content="How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.">
+    <link rel="canonical" href="https://rdbk.app/features/events/">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RDBK.app">
+    <meta property="og:title" content="Organising an event — RDBK.app">
+    <meta property="og:description" content="How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.">
+    <meta property="og:url" content="https://rdbk.app/features/events/">
+    <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
+    <meta property="og:locale" content="en">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Organising an event — RDBK.app">
+    <meta name="twitter:description" content="How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.">
+    <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
+    <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=2026.07.05-3">
+    <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.05-3">
+    <style>
+        /* hero: the title + the plain-language definition of an event */
+        .ev-hero { padding: .4rem 0 1.4rem; }
+        .ev-hero-copy h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); margin: 0 0 .6rem; letter-spacing: -.01em; }
+        .ev-hero-copy .lead { color: var(--muted); line-height: 1.65; margin: 0; font-size: 1.05rem; max-width: 60ch; }
+        /* the number badge on each step heading */
+        .ev-n { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--sand); color: #14110b; font-weight: 800; font-size: .85rem; flex-shrink: 0; }
+        /* step-by-step: plain prose (no cards) — a numbered heading + a light left accent rule */
+        .ev-step-doc { margin-top: 1.7rem; padding-left: 1rem; border-left: 2px solid var(--line); scroll-margin-top: 80px; }
+        .ev-step-doc h3 { display: flex; align-items: center; gap: .55rem; font-size: 1.2rem; margin: 0 0 .4rem; }
+        .ev-step-doc p { color: var(--muted); line-height: 1.65; max-width: 72ch; margin: .5rem 0; }
+        .ev-step-doc b { color: var(--text); }
+        /* Preparation sits beside the "getting the organiser role" prerequisite box */
+        .ev-prep-row { display: grid; grid-template-columns: 1fr; gap: 1.2rem; }
+        @media (min-width: 820px) { .ev-prep-row { grid-template-columns: 1.6fr 1fr; align-items: start; } }
+        /* "already an organiser?" — the Event-management shortcut, kept at the foot */
+        .ev-already { text-align: center; color: var(--muted); margin-top: 2.4rem; }
+        .ev-already .btn { margin-left: .4rem; }
+        /* a UI-location reference inside the copy, e.g. "Event management → Organizers" */
+        .ev-where { font-weight: 700; color: var(--sand); }
+        /* prerequisite callout — the one step that needs the reader to act (request the role) */
+        .ev-callout { display: flex; gap: .9rem; align-items: flex-start; background: var(--card-2); border: 1px solid var(--sand); border-radius: 14px; padding: 1.1rem 1.2rem; margin: 0; }
+        .ev-callout > i { color: var(--sand); font-size: 1.4rem; flex-shrink: 0; margin-top: .15rem; }
+        .ev-callout h3 { margin: 0 0 .3rem; font-size: 1.1rem; }
+        .ev-callout p { margin: 0; color: var(--muted); line-height: 1.6; }
+        .ev-callout-cta { margin-top: .9rem; }
+        .ev-callout b { color: var(--text); }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="feat-page">
+    <section class="ev-hero">
+        <div class="ev-hero-copy">
+            <h1 data-i18n="fp.events.title">Organising an event</h1>
+            <p class="lead" data-i18n="fp.events.lead">An event gathers one or more roadbooks under a public page, with a team of organisers and participants who join to access the routes. Scoring reuses the Reader's Competition mode + the Ranking tool.</p>
+        </div>
+    </section>
+
+    <!-- the lifecycle, step by step, in prose (no cards) -->
+    <section class="feat-section">
+        <h2><i class="fa-solid fa-diagram-project"></i><span data-i18n="fp.events.lifeTitle">The event, step by step</span></h2>
+
+        <div class="ev-step-doc ev-prep-row" id="ev-prep">
+            <div class="ev-prep-main">
+                <h3><span class="ev-n">1</span> <span data-i18n="fp.events.ph1t">Preparation</span></h3>
+                <p data-i18n-html="fp.events.prep2">To create the event, open <span class="ev-where">Event management → New event</span> and set the title, description, start/end dates, an optional logo and the <b>categories / classes</b> (e.g. SUV / modified / expert).</p>
+                <p data-i18n-html="fp.events.prep3">To build the team, use the <span class="ev-where">Organizers</span> section — search users by name and add co-organisers. The <b>owner</b> (and admins) control the organiser list, the visibility and deletion; <b>co-organisers</b> manage the content and can co-edit the event's roadbooks, with a soft lock keeping it to one editor at a time.</p>
+                <p data-i18n-html="fp.events.prep4">To gather the routes, in the <span class="ev-where">Roadbooks</span> section attach your own roadbooks and set each one's <b>participation mode</b> (Free = follow with no scoring · Roadbook-suite rules = the current scoring). Drafts stay private — only public or ready roadbooks are shown to people.</p>
+            </div>
+            <aside class="ev-callout">
+                <i class="fa-solid fa-user-shield" aria-hidden="true"></i>
+                <div>
+                    <h3 data-i18n="fp.events.rightsTitle">Getting the organiser role</h3>
+                    <p data-i18n-html="fp.events.rightsIntro">To create events you need the <b>organiser</b> role — just send us your username. Once we grant it, the <span class="ev-where">Event management</span> entry appears in your account menu (top-right); from there you can create and manage your own events.</p>
+                    <a class="btn btn-primary ev-callout-cta" href="mailto:rdbk.admin@gmail.com?subject=Organiser%20role%20request&body=Hi%2C%20I%27d%20like%20the%20organiser%20role%20to%20create%20events%20on%20RDBK.app.%0AMy%20username%3A%20" data-i18n="fp.events.request"><i class="fa-solid fa-user-shield"></i> Request the organiser role</a>
+                </div>
+            </aside>
+        </div>
+
+        <div class="ev-step-doc" id="ev-publish">
+            <h3><span class="ev-n">2</span> <span data-i18n="fp.events.ph2t">Publish</span></h3>
+            <p data-i18n-html="fp.events.pub1">To make the event visible, turn on <b>Public</b> — it then appears in the <a href="../../events/">public events list</a> with its own presentation page. Participants and organisers also see the event's <b>ready</b> roadbooks there, not only the public ones.</p>
+        </div>
+
+        <div class="ev-step-doc" id="ev-join">
+            <h3><span class="ev-n">3</span> <span data-i18n="fp.events.ph3t">Join</span></h3>
+            <p data-i18n-html="fp.events.join1">To let people in, generate a <b>join code</b> in the <span class="ev-where">Participants</span> section and share it — a signed-in user joins by entering it, which unlocks the event's ready roadbooks. To manage the roster, the participants page lists who joined (searchable) and lets you remove someone.</p>
+        </div>
+
+        <div class="ev-step-doc" id="ev-run">
+            <h3><span class="ev-n">4</span> <span data-i18n="fp.events.ph4t">Run</span></h3>
+            <p data-i18n-html="fp.events.run1">To follow or compete, participants open the event's roadbooks in the <b>Reader</b> — Trip mode to simply follow the route, Competition mode to be scored.</p>
+        </div>
+
+        <div class="ev-step-doc" id="ev-results">
+            <h3><span class="ev-n">5</span> <span data-i18n="fp.events.ph5t">Results</span></h3>
+            <p data-i18n-html="fp.events.res1">To rank the teams, collect the signed result <b>QR</b> that each Competition run produces and load them into the <a href="../ranking/">Ranking</a> tool for the final classification.</p>
+        </div>
+    </section>
+
+    <p class="ev-already"><span data-i18n="fp.events.already">Already an organiser?</span><a class="btn btn-ghost" href="../../admin/events/" data-i18n="fp.events.open"><i class="fa-solid fa-calendar-check"></i> Open Event management</a></p>
+
+    <p class="feat-plat"><span data-i18n="fp.plat.works">Works on</span><i class="fa-brands fa-windows"></i>Windows<i class="fa-brands fa-apple"></i>macOS / iOS<i class="fa-brands fa-android"></i>Android<i class="fa-brands fa-linux"></i>Linux<span data-i18n="fp.plat.browser"> — runs in the browser, no install needed.</span></p>
+</main>
+
+<script src="../../assets/js/i18n.es.js?v=2026.07.05-3"></script>
+<script src="../../assets/js/i18n.it.js?v=2026.07.05-3"></script>
+<script src="../../assets/js/i18n.de.js?v=2026.07.05-3"></script>
+<script src="../../assets/js/i18n.fr.js?v=2026.07.05-3"></script>
+<script src="../../assets/js/i18n.js?v=2026.07.05-3"></script>
+<script src="../../assets/js/app.js?v=2026.07.05-3"></script>
+</body>
+</html>
