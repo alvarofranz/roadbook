@@ -26,10 +26,8 @@
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
     // Auto-validation: a note is reached the moment you enter its detection radius — you've
-    // arrived, so it validates immediately (no waiting to overshoot it). The reach is a per-note
-    // gate, capped to half the smaller gap to a neighbour (so two notes' reaches can't overlap →
-    // clustered notes still validate one at a time) and floored above GPS noise.
-    const REACH_MIN_M = 18; // reach gate floor (never demand sub-GPS precision). The reach itself is the note's detection radius (RB.detectionRadius), capped by neighbour spacing.
+    // arrived, so it validates immediately (no waiting to overshoot it). The reach gate itself
+    // (per-note radius, capped by neighbour spacing, floored above GPS noise) is RB.reachRadius.
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
@@ -240,12 +238,7 @@
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
-    function reachRadius(i) {
-        const base = RB.detectionRadius(notes[i], rb && rb.meta); // the note's radius from the roadbook (per-note → roadbook default → type default → 30 m)
-        const gapPrev = notes[i].partial_distance || Infinity;
-        const gapNext = notes[i + 1] ? (notes[i + 1].partial_distance || Infinity) : Infinity;
-        return Math.max(REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
-    }
+    const reachRadius = (i) => RB.reachRadius(notes[i], notes[i + 1], rb && rb.meta);
     // Auto-validation on arrival: the moment the current fix is within the active note's reach,
     // the note is reached → validate against that fix. Immune to the cascade since reaches can't
     // overlap (reachRadius caps to half the neighbour gap), so the next note's gate only opens

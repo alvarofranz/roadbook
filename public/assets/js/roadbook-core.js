@@ -102,6 +102,15 @@
         if (w && w.radius != null) return w.radius;
         return CONST.REACH_DEFAULT_M;
     }
+    // The auto-validation reach gate for a note: its detection radius, capped to half the smaller
+    // along-track gap to a neighbour (so adjacent reaches never overlap) and floored above GPS
+    // noise. gapPrev is this note's partial_distance; gapNext is the next note's (null at the end).
+    function reachRadius(note, nextNote, meta) {
+        const base = detectionRadius(note, meta);
+        const gapPrev = (note && note.partial_distance) || Infinity;
+        const gapNext = (nextNote && nextNote.partial_distance) || Infinity;
+        return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
+    }
     // Dark or light ink for legible text on a solid colour fill (perceived luminance).
     function textInk(hex) {
         const c = String(hex).replace('#', '');
@@ -126,7 +135,7 @@
 
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
-        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30,
+        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
         META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],
@@ -964,7 +973,7 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName,

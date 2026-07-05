@@ -560,6 +560,21 @@ describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
         expect(RB.detectionRadius(null, null)).toBe(RB.CONST.REACH_DEFAULT_M);
         expect(RB.CONST.REACH_DEFAULT_M).toBe(30); // system default when the roadbook defines nothing
     });
+    it('reachRadius = detection radius, capped to half the smaller neighbour gap, floored above GPS noise (#87)', () => {
+        const wide = { wp_radius: 40, partial_distance: 1000 };
+        // gaps large on both sides → the note's own radius wins
+        expect(RB.reachRadius(wide, { partial_distance: 1000 }, {})).toBe(40);
+        // last note (no next) → forward gap is infinite, radius still wins
+        expect(RB.reachRadius(wide, null, {})).toBe(40);
+        // a tight previous gap caps the reach to half that gap
+        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 50 }, { partial_distance: 1000 }, {})).toBe(25);
+        // a tight forward gap caps it too (uses the smaller of the two)
+        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 1000 }, { partial_distance: 30 }, {})).toBe(RB.CONST.REACH_MIN_M); // 15 → floored to 18
+        // a very tight cluster is floored, never demanding sub-GPS precision
+        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 20 }, { partial_distance: 20 }, {})).toBe(RB.CONST.REACH_MIN_M);
+        // no per-note radius → falls back through detectionRadius (roadbook default here), then capped
+        expect(RB.reachRadius({ partial_distance: 1000 }, { partial_distance: 1000 }, { default_wp_radius: 50 })).toBe(50);
+    });
     it('wpBadgeSVG renders a solid roundel with the acronym, and is empty when unset', () => {
         const svg = RB.wpBadgeSVG('dz', 26);
         expect(svg).toContain('<svg');
