@@ -652,7 +652,7 @@
     };
     $('jsonFile').onchange = async (e) => {
         const f = e.target.files[0]; if (!f) return;
-        try { const j = JSON.parse(await f.text()); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
+        try { const j = await RBZip.readRdbk(f); if (!j.track || !j.notes) throw new Error('Not a roadbook'); resetIdentity(); setRoadbook(j); }
         catch (err) { toast('Error: ' + err.message); }
     };
     // Toggle between the opening screen (ways to start a new roadbook) and the
@@ -1710,7 +1710,32 @@
      * ONCE before running, so a GPX multi-pick never re-prompts per file. */
     const stamp = () => { const d = new Date(), p = RB.pad2; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); };
     // Self-contained .rdbk: every used icon embedded as a data URI.
-    async function exportRdbk() { stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb); download(rb, RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk'); exported = true; clearDraft(); }
+    // A .rdbk is a ZIP container (#162): always roadbook.json (the unchanged schema, icons still
+    // base64 inside it), plus — when the user opts in — the geotagged photos/audio fetched from the
+    // server gallery under photos/ and audio/, with a media.json manifest carrying their coordinates
+    // (so a later import can re-upload them). Media-less exports are just a ZIP with roadbook.json.
+    async function exportRdbk(includeMedia) {
+        stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
+        const files = { 'roadbook.json': JSON.stringify(rb) };
+        if (includeMedia) {
+            const media = { photos: [], audio: [] };
+            const grab = async (list, dir, bucket) => {
+                for (const it of list) {
+                    try {
+                        const res = await fetch(it.url); if (!res.ok) continue;
+                        const file = dir + '/' + it.url.split('/').pop();
+                        files[file] = new Uint8Array(await res.arrayBuffer());
+                        bucket.push({ file, lat: it.lat, lon: it.lon });
+                    } catch (e) { /* skip a media file that won't fetch — never fail the export */ }
+                }
+            };
+            await grab(notePhotos, 'photos', media.photos);
+            await grab(noteAudio, 'audio', media.audio);
+            if (media.photos.length || media.audio.length) files['media.json'] = JSON.stringify(media);
+        }
+        RBDownload(await RBZip.write(files), RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk');
+        exported = true; clearDraft();
+    }
     // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js
     async function exportPdf() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
@@ -1761,6 +1786,7 @@
                 <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-floppy-disk"></i> ${esc(t('.rdbk file'))}</button>
                 <button class="btn btn-primary" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
             </div>
+            ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
             <h3>${esc(t('GPX'))}</h3>
             <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track line'))}</label>
             <label class="checkbox-row"><input type="checkbox" data-g="wpt" checked> ${esc(t('Waypoints (notes)'))}</label>
@@ -1771,7 +1797,7 @@
         const cb = (g) => m.q(`[data-g="${g}"]`);
         const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
         cb('wpt').onchange = syncIcons; syncIcons();
-        m.q('[data-x="rdbk"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportRdbk(); };
+        m.q('[data-x="rdbk"]').onclick = async () => { const mm = m.q('[data-media]'); m.close(); if (await confirmOpenCuts()) await exportRdbk(!!(mm && mm.checked)); };
         m.q('[data-x="pdf"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportPdf(); };
         m.q('[data-x="gpx"]').onclick = async () => {
             const o = { track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked, or: cb('openrally').checked };
@@ -1857,7 +1883,6 @@
         }
         Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
     }
-    function download(obj, name) { RBDownload(new Blob([JSON.stringify(obj)], { type: 'application/x-roadbook' }), name); }
 
 
     /* ---------- startup: trip handoff → draft → recording → challenge/?rb ---------- */

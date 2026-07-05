@@ -36,7 +36,7 @@
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
     RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
-    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(JSON.parse(await f.text())); } catch (err) { toast('Could not load the roadbook.'); } };
+    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast('Could not load the roadbook.'); } };
     $('pickChallenge').onclick = () => { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.pick((r) => loadRb(r)); };
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
     // #146: the same config load also tells us whether public roadbooks may be opened at all.
@@ -93,7 +93,7 @@
     if ('launchQueue' in window && window.LaunchParams) {
         launchQueue.setConsumer(async (params) => {
             if (!params.files || !params.files.length) return;
-            try { loadRb(JSON.parse(await (await params.files[0].getFile()).text())); } catch (e) {}
+            try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) {}
         });
     }
 
