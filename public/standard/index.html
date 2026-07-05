@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
     <title data-i18n="seo.standard.title">The .rdbk standard — RDBK.app</title>
-    <meta name="description" data-i18n-content="seo.standard.desc" content="The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.">
+    <meta name="description" data-i18n-content="seo.standard.desc" content="The open .rdbk format for digital roadbooks: a ZIP container holding a self-contained roadbook.json — track, notes and embedded icons — plus optional media. Full specification.">
     <link rel="canonical" href="https://rdbk.app/standard/">
     <meta name="robots" content="index, follow">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="RDBK.app">
     <meta property="og:title" content="The .rdbk standard — RDBK.app">
-    <meta property="og:description" content="The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.">
+    <meta property="og:description" content="The open .rdbk format for digital roadbooks: a ZIP container holding a self-contained roadbook.json — track, notes and embedded icons — plus optional media. Full specification.">
     <meta property="og:url" content="https://rdbk.app/standard/">
     <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
     <meta property="og:locale" content="en">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="The .rdbk standard — RDBK.app">
-    <meta name="twitter:description" content="The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.">
+    <meta name="twitter:description" content="The open .rdbk format for digital roadbooks: a ZIP container holding a self-contained roadbook.json — track, notes and embedded icons — plus optional media. Full specification.">
     <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.05-8">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.05-8">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-1">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-1">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -49,10 +49,11 @@
 <main class="doc">
     <p><span class="pill">rdbk · v1.0</span><span class="pill">application/x-roadbook</span><span class="pill">.rdbk</span></p>
     <h1 data-i18n-html="title.h1">The <span class="accent">.rdbk</span> standard</h1>
-    <p class="lead-spec" data-i18n-html="lead.spec">An open, single-file format for digital roadbooks. One self-contained UTF-8 JSON document carries the whole route — track, notes, headings, junction diagrams <b>and its own symbols</b> — so a roadbook is just a file you can read, follow, share and archive, with nothing else attached.</p>
+    <p class="lead-spec" data-i18n-html="lead.spec">An open format for digital roadbooks, packaged as a ZIP container. A self-contained UTF-8 <code>roadbook.json</code> carries the whole route — track, notes, headings, junction diagrams <b>and its own symbols</b> — alongside optional photos and voice notes, so a roadbook is just a file you can read, follow, share and archive.</p>
 
     <div class="toc">
         <a href="#why" data-i18n="Why .rdbk">Why .rdbk</a>
+        <a href="#container" data-i18n="container">container</a>
         <a href="#structure" data-i18n="Structure">Structure</a>
         <a href="#meta">meta</a>
         <a href="#track">track</a>
@@ -68,13 +69,22 @@
     <h2 id="why" data-i18n="Why .rdbk">Why .rdbk</h2>
     <ul>
         <li data-i18n-html="why.selfcontained"><b>Self-contained.</b> A <code>.rdbk</code> embeds the symbols it uses (as data URIs), so it renders identically anywhere — offline, years later — with no external icon packs to lose.</li>
-        <li data-i18n-html="why.onefile"><b>One file, plain JSON.</b> Open it in any text editor, parse it with one line in any language, diff it in git.</li>
+        <li data-i18n-html="why.onefile"><b>Plain JSON inside.</b> Open <code>roadbook.json</code> in any text editor, parse it with one line in any language, diff it in git.</li>
         <li data-i18n-html="why.mapready"><b>Map-ready.</b> The full GPS track travels with the notes, so any reader can draw the route and place you on it.</li>
         <li data-i18n-html="why.symbols"><b>Symbols are first-class.</b> Each note can carry positioned, rotated, scalable pictograms and colored junction vectors — not just a line of text.</li>
     </ul>
 
+    <h2 id="container" data-i18n="Container (the file)">Container (the file)</h2>
+    <p data-i18n-html="container.intro">A <code>.rdbk</code> file is a <b>ZIP</b> container. Inside it, <code>roadbook.json</code> holds the roadbook — the schema described below, with symbols still embedded in its <code>icons</code> — alongside optional bundled media:</p>
+    <pre><code>my-roadbook.rdbk   (ZIP)
+├─ roadbook.json     // the roadbook — schema below
+├─ media.json        // optional — geotags for the bundled media
+├─ photos/…          // optional — geotagged photos
+└─ audio/…           // optional — voice notes</code></pre>
+    <p data-i18n-html="container.media">Photos and voice notes are <b>optional</b>: they travel only when the exporter includes them. The file's MIME type stays <code>application/x-roadbook</code>.</p>
+
     <h2 id="structure" data-i18n="Document structure">Document structure</h2>
-    <p data-i18n-html="structure.intro">A <code>.rdbk</code> file is a single JSON object with four top-level keys:</p>
+    <p data-i18n-html="structure.intro"><code>roadbook.json</code> is a single JSON object with four top-level keys:</p>
     <pre><code>{
   "meta":  { … },   // document metadata
   "track": [ … ],   // the GPS polyline (ordered points)
@@ -210,9 +220,9 @@
 
     <h2 id="conformance" data-i18n="Conformance">Conformance</h2>
     <ul>
-        <li data-i18n-html="conformance.files">Files are UTF-8 JSON, extension <code>.rdbk</code>, media type <code>application/x-roadbook</code>.</li>
-        <li data-i18n-html="conformance.reader">A conforming <b>reader</b> MUST render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
-        <li data-i18n-html="conformance.writer">A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so the file is self-contained.</li>
+        <li data-i18n-html="conformance.files">A <code>.rdbk</code> is a ZIP container with a UTF-8 <code>roadbook.json</code> inside; extension <code>.rdbk</code>, media type <code>application/x-roadbook</code>.</li>
+        <li data-i18n-html="conformance.reader">A conforming <b>reader</b> MUST read <code>roadbook.json</code> from the container, render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
+        <li data-i18n-html="conformance.writer">A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so <code>roadbook.json</code> is self-contained.</li>
         <li data-i18n="Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).">Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
     </ul>
 
@@ -248,12 +258,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=2026.07.05-8"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.05-8"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.05-8"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.05-8"></script>
-<script src="../assets/js/i18n.js?v=2026.07.05-8"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.05-8"></script>
-<script src="../assets/js/app.js?v=2026.07.05-8"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.06-1"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.06-1"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.06-1"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.06-1"></script>
+<script src="../assets/js/i18n.js?v=2026.07.06-1"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.06-1"></script>
+<script src="../assets/js/app.js?v=2026.07.06-1"></script>
 </body>
 </html>

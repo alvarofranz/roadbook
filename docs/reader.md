@@ -22,7 +22,8 @@ chiusura della scheda da parte del sistema non perdono nulla.
 
 La schermata iniziale (`#loadScreen`) offre tre ingressi:
 
-- **Carica file `.rdbk`** — `#pickRb` apre il file picker; il JSON viene parsato e passato a
+- **Carica file `.rdbk`** — `#pickRb` apre il file picker; `RBZip.readRdbk` estrae
+  `roadbook.json` dal contenitore ZIP (o legge un `.rdbk` JSON puro pre-container) e lo passa a
   `loadRb`.
 - **Carica uno dei tuoi RB** — `#pickMine`, visibile solo da loggati: un picker dei roadbook
   salvati sul profilo.

@@ -267,8 +267,10 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
   riporta a *My roadbooks*. I roadbook non ancora salvati non hanno nulla da cancellare lato
   server, quindi il pulsante non c'è.
 
-> Le foto sono **una feature dell'app, mai dentro il `.rdbk`** (vivono lato server). Coerente
-> con lo standard.
+> Le foto e le note vocali vivono **lato server** (feature dell'app); non stanno mai in
+> `roadbook.json`. Viaggiano solo come **media del contenitore** — cartelle `photos/`/`audio/`
+> accanto a `roadbook.json` nel ZIP `.rdbk` — quando l'export ha la spunta *includi foto e
+> audio* (§7). Coerente con lo standard.
 
 ### 6.1 Foto: galleria sulla mappa, upload geolocalizzato, lightbox
 Le foto sono **server-side, geotaggate, legate al roadbook** (tabella `roadbook_photos`, API
@@ -317,13 +319,23 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 
 | Formato | Funzione | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk` | JSON auto-contenuto; `embedUsed` embedda ogni icona usata e pota le inutilizzate |
+| **.rdbk** | `exportRdbk(includeMedia)` | contenitore ZIP (`RBZip.write`): `roadbook.json` auto-contenuto (`embedUsed` embedda ogni icona usata e pota le inutilizzate); con `includeMedia`, aggiunge `photos/`/`audio/` presi dalla gallery + `media.json` con i geotag |
 | **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | un set di checkbox componibili (vedi §7.1) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto); file `…_OR.gpx` |
 
 `embedUsed` garantisce la regola auto-contenuta del formato: ogni simbolo usato finisce in
 `rb.icons` come data-URI; le icone non più referenziate vengono rimosse.
+
+> **Contenitore `.rdbk` e media (#162).** Il file `.rdbk` è sempre un contenitore ZIP
+> (`RBZip`). L'export mostra una spunta **includi foto e audio**: se attiva, `exportRdbk` scarica
+> le foto/note vocali dalla gallery del roadbook e le impacchetta in `photos/`/`audio/` con un
+> `media.json` che ne porta i geotag; se spenta, il ZIP contiene solo `roadbook.json`. In
+> **import** (`RBZip.readBundle`) i media inclusi finiscono in `pendingMedia`: subito dopo il
+> caricamento un popup avvisa che foto/audio non saranno visibili finché non si salva sul
+> proprio profilo, e `flushImportedMedia()` li carica al primo `doSave` (poi `resetIdentity`
+> azzera `pendingMedia`). Lo storage lato server resta JSON: il ZIP è solo l'artefatto di
+> export/import.
 
 > **OpenRally import/export (issue #13).** Standard:
 > [github.com/openrally/openrally](https://github.com/openrally/openrally) (XSD:
@@ -477,21 +489,26 @@ Risolta la sorgente, due rifiniture finali della startup:
 
 ---
 
-## 9. Importazione di file JSON predisposti da RB Suite (`.rdbk`)
+## 9. Importazione di file `.rdbk` predisposti da RB Suite
 
-I file JSON prodotti dalla suite RDBK sono i `.rdbk`: un unico file UTF-8 auto-contenuto con
-`meta` · `track` · `notes` · `icons` (lo schema completo è in [rdbk-format.md](rdbk-format.md)).
-Questo capitolo documenta cosa succede quando se ne **importa uno nell'Editor** e — punto
-chiave — **se sopravvivono le informazioni che serviranno poi al Ranking**.
+Un `.rdbk` è un contenitore ZIP con dentro `roadbook.json`: un roadbook UTF-8 auto-contenuto con
+`meta` · `track` · `notes` · `icons` (lo schema completo è in [rdbk-format.md](rdbk-format.md)),
+più — opzionalmente — foto/note vocali. Questo capitolo documenta cosa succede quando se ne
+**importa uno nell'Editor** e — punto chiave — **se sopravvivono le informazioni che serviranno
+poi al Ranking**.
 
 ### 9.1 Il percorso di import
 La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
 ([editor.js:325](../public/editor/editor.js#L325)):
 
-1. `JSON.parse` del testo del file;
+1. `RBZip.readBundle(file)` — sniffa il magic `PK`: se è un ZIP estrae `roadbook.json` e
+   raccoglie i media (`photos/`/`audio/`, geotaggati da `media.json`); un `.rdbk` JSON puro
+   pre-container è letto come roadbook nudo, con media vuoti;
 2. validazione minima: devono esserci `track` **e** `notes`, altrimenti `throw 'Not a roadbook'`;
 3. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
-4. `setRoadbook(j)` ([editor.js:336](../public/editor/editor.js#L336)).
+4. `setRoadbook(roadbook)` ([editor.js:336](../public/editor/editor.js#L336)); gli eventuali
+   media confluiscono in `pendingMedia` e un popup avvisa che saranno visibili solo dopo il
+   salvataggio sul profilo (caricati al primo `doSave` da `flushImportedMedia`, §7).
 
 `setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js#L205), che
 porta il file allo schema canonico. Per un `.rdbk` **già canonico** non tocca nulla. Per un

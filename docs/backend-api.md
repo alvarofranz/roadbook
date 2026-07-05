@@ -257,10 +257,11 @@ i form passano senza challenge.
 
 ## 5. Storage dei roadbook per-utente (roadbooks.php)
 
-**Modello ibrido:** i *metadati* stanno nella tabella `roadbooks`; il *JSON `.rdbk` completo*
-è un file su disco in `storage/users/<user_id>/<id>.rdbk`
+**Modello ibrido:** i *metadati* stanno nella tabella `roadbooks`; il *JSON completo del
+roadbook* è un file su disco in `storage/users/<user_id>/<id>.rdbk`
 ([`rb_dir`](../app/roadbooks.php#L6), `mkdir 0700`), fuori dalla web root e servito **solo**
-attraverso questi endpoint autenticati.
+attraverso questi endpoint autenticati. Lo storage lato server resta **JSON puro**: il
+contenitore ZIP `.rdbk` (con foto/audio) è solo l'artefatto di export/import client-side.
 
 ### Lo stato di pubblicazione (`status`, non più `is_public`)
 Dalla migrazione 015 (#96) il ciclo di vita di un roadbook è un enum **`status`** =

@@ -121,6 +121,11 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
   untested logic.
 - **Commit messages are changelogs** — short English title + bullet points.
+- **Every deploy updates the docs too.** Before pushing a change to `main`, check whether it
+  makes any documentation stale and update it in the same release: the architecture docs in
+  `docs/*.md`, and the user-facing pages when relevant — the `.rdbk` spec at `/standard`
+  (`public/standard/`), the privacy policy (`public/privacy/`), the feature/guide pages. Docs
+  drift is a bug: a change isn't done until the docs describing it read as the current reality.
 
 ## Run locally
 **Full stack (PHP 8.1 + MariaDB) in Docker — recommended:** `ddev start` then `ddev launch`

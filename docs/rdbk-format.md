@@ -1,10 +1,11 @@
 # Il formato aperto `.rdbk`
 
-Lo standard di file dietro a RDBK.app: un roadbook digitale è **un solo file JSON
-autonomo** che porta con sé l'intero percorso — traccia GPS, note, rilevamenti, diagrammi
-di incrocio **e i propri simboli**. Documento di riferimento per lo schema, le convenzioni
-e i dettagli che la [pagina pubblica dello standard](../public/standard/index.html)
-(`/standard`) espone.
+Lo standard di file dietro a RDBK.app: un file `.rdbk` è un **contenitore ZIP** con dentro
+`roadbook.json` — il roadbook autonomo che porta con sé l'intero percorso (traccia GPS,
+note, rilevamenti, diagrammi di incrocio **e i propri simboli**) — più, opzionalmente, i
+media geotaggati (foto, note vocali). Documento di riferimento per il contenitore, lo
+schema, le convenzioni e i dettagli che la
+[pagina pubblica dello standard](../public/standard/index.html) (`/standard`) espone.
 
 > Convenzione cardine: **tutte le distanze sono numeri interi in metri**. Niente
 > chilometri, niente decimali nel modello dati. Le coordinate sono gradi decimali WGS-84;
@@ -17,23 +18,44 @@ e i dettagli che la [pagina pubblica dello standard](../public/standard/index.ht
 Un `.rdbk` è pensato per essere **letto, seguito, condiviso e archiviato** senza alcun
 allegato esterno. Le sue quattro proprietà di design:
 
-- **Autonomo.** Il file incorpora i simboli che usa (come data URI), quindi rende in modo
-  identico ovunque — offline, anni dopo — senza pacchetti di icone esterni da perdere.
-- **Un file, JSON puro.** Apribile in qualsiasi editor di testo, parsabile con una riga in
-  qualunque linguaggio, versionabile con `git diff`.
+- **Autonomo.** `roadbook.json` incorpora i simboli che usa (come data URI), quindi rende in
+  modo identico ovunque — offline, anni dopo — senza pacchetti di icone esterni da perdere.
+- **JSON puro.** `roadbook.json` è apribile in qualsiasi editor di testo, parsabile con una
+  riga in qualunque linguaggio, versionabile con `git diff`.
 - **Pronto per la mappa.** La traccia GPS completa viaggia insieme alle note, così ogni
   reader può disegnare il percorso e posizionare l'utente su di esso.
 - **I simboli sono di prima classe.** Ogni nota può portare pittogrammi posizionati,
   ruotati e scalabili e vettori di incrocio colorati — non solo una riga di testo.
 
-**File:** estensione `.rdbk`, codifica **UTF-8 JSON**, media type
-**`application/x-roadbook`**.
+**File:** estensione `.rdbk`, contenitore **ZIP**, media type **`application/x-roadbook`**.
 
 ---
 
-## 2. Struttura del documento
+## 2. Contenitore (il file)
 
-Un file `.rdbk` è un singolo oggetto JSON con quattro chiavi di primo livello:
+Un file `.rdbk` è un **contenitore ZIP**. Al suo interno, `roadbook.json` contiene il
+roadbook — lo schema descritto sotto, con i simboli sempre incorporati nei suoi `icons` —
+insieme a media opzionali:
+
+```
+il-mio-roadbook.rdbk   (ZIP)
+├─ roadbook.json     // il roadbook — schema qui sotto
+├─ media.json        // opzionale — geotag dei media inclusi
+├─ photos/…          // opzionale — foto geotaggate
+└─ audio/…           // opzionale — note vocali
+```
+
+Foto e note vocali sono **opzionali**: viaggiano solo quando chi esporta le include (nel
+Editor, la spunta *includi foto e audio*). Senza media, il ZIP contiene solo `roadbook.json`.
+Lo **storage lato server resta JSON**: il contenitore ZIP è unicamente l'artefatto di
+export/import. Un reader riconosce un `.rdbk` dal magic number ZIP (`PK`); i file JSON
+puri prodotti prima del contenitore restano leggibili come `roadbook.json` nudo.
+
+---
+
+## 3. Struttura del documento (`roadbook.json`)
+
+`roadbook.json` è un singolo oggetto JSON con quattro chiavi di primo livello:
 
 ```jsonc
 {
@@ -51,7 +73,7 @@ Lo scheletro è prodotto da `buildRoadbook` in
 
 ---
 
-## 3. `meta`
+## 4. `meta`
 
 | Campo            | Tipo     | Significato                                                                 |
 |------------------|----------|------------------------------------------------------------------------------|
@@ -69,7 +91,7 @@ Lo scheletro è prodotto da `buildRoadbook` in
 
 ---
 
-## 4. `track`
+## 5. `track`
 
 Un array **ordinato** di punti che descrive la polilinea del percorso. Le note vi fanno
 riferimento per indice (`idx`). Ogni punto può portare un `ele` opzionale — l'altitudine
@@ -84,7 +106,7 @@ in metri interi.
 
 ---
 
-## 5. `notes`
+## 6. `notes`
 
 Il cuore di un roadbook: una lista ordinata di waypoint, ognuno con un'istruzione, un
 rilevamento e dei simboli. Un reader evidenzia la nota attiva e valida il progresso contro
@@ -102,13 +124,13 @@ la traccia GPS.
 | `cap_distance`     | integer \| null | Distanza in linea retta per cui tenere quel rilevamento (metri).                   |
 | `bearing_in`       | number          | Rilevamento della traccia in arrivo alla nota (gradi).                             |
 | `bearing_out`      | number          | Rilevamento della traccia in uscita dalla nota (gradi).                            |
-| `road_type_in`     | 0–4             | Superficie in arrivo — vedi [§7 Tipi di strada](#7-tipi-di-strada).                |
+| `road_type_in`     | 0–4             | Superficie in arrivo — vedi [§8 Tipi di strada](#8-tipi-di-strada).                |
 | `road_type_out`    | 0–4             | Superficie in uscita.                                                              |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
 | `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
 | `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (30 m); il Reader lo usa come geofence per il rilevamento automatico. |
-| `icons`            | array           | Simboli posizionati — vedi [§6 Simboli](#6-simboli).                                |
-| `junctions`        | array \| null   | Vettori di incrocio — vedi [§8 Vettori di incrocio](#8-vettori-di-incrocio).       |
+| `icons`            | array           | Simboli posizionati — vedi [§7 Simboli](#7-simboli).                                |
+| `junctions`        | array \| null   | Vettori di incrocio — vedi [§9 Vettori di incrocio](#9-vettori-di-incrocio).       |
 
 ```jsonc
 {
@@ -137,7 +159,7 @@ la traccia GPS.
 
 ---
 
-## 6. Simboli (`icons` di nota + libreria `icons` di primo livello)
+## 7. Simboli (`icons` di nota + libreria `icons` di primo livello)
 
 ### Sistema di coordinate
 
@@ -183,7 +205,7 @@ legge dalle icone:
 
 ---
 
-## 7. Tipi di strada
+## 8. Tipi di strada
 
 `road_type_in` / `road_type_out` (e il `road_type` dei vettori di incrocio) usano un
 identificatore 0–4 ([roadbook-core.js:39](../public/assets/js/roadbook-core.js#L39)):
@@ -203,7 +225,7 @@ diramano dal centro. Lo spessore del tratto è indicativo del tipo di strada.
 
 ---
 
-## 8. Vettori di incrocio (`junctions`)
+## 9. Vettori di incrocio (`junctions`)
 
 Oltre al testo, una nota può disegnare l'incrocio stesso: uno o più vettori sullo stesso
 box 230 × 162. Ogni vettore va da un `pivot` a un `tip` (punta della freccia), colorato per
@@ -227,18 +249,19 @@ Il valore è `null` quando la nota non disegna incroci espliciti.
 
 ---
 
-## 9. Cosa NON contiene
+## 10. Cosa NON contiene `roadbook.json`
 
-- **Le foto non sono nel `.rdbk`.** Le foto geotaggate sono una **funzione dell'app**: sono
-  memorizzate lato server, mai incorporate nel file. Un `.rdbk` resta un documento di sola
-  navigazione (traccia + note + simboli).
+- **Le foto non sono in `roadbook.json`.** Le foto geotaggate e le note vocali sono media
+  del contenitore: viaggiano in `photos/` / `audio/` accanto a `roadbook.json`, solo quando
+  chi esporta le include (vedi [§2 Contenitore](#2-contenitore-il-file)). `roadbook.json`
+  resta un documento di sola navigazione (traccia + note + simboli).
 - **Nessun dato personale** nel file né nel token risultato (vedi sotto).
 - Niente tempi GPS per-punto nel modello `notes`: il logging GPX live è separato (lo
   produce il `gpxDocument`, [roadbook-core.js:303](../public/assets/js/roadbook-core.js#L303)).
 
 ---
 
-## 10. Token risultato (opzionale, per gli eventi)
+## 11. Token risultato (opzionale, per gli eventi)
 
 Quando un roadbook è seguito in gara, un reader può emettere un **token risultato a
 larghezza fissa di 49 caratteri** (adatto a un QR), una sequenza di campi numerici con
@@ -250,7 +273,7 @@ modello di punteggio è in [ranking-model.md](ranking-model.md).
 
 ---
 
-## 11. Esempio completo (minimo)
+## 12. Esempio completo (minimo, `roadbook.json`)
 
 ```jsonc
 {
@@ -284,22 +307,26 @@ modello di punteggio è in [ranking-model.md](ranking-model.md).
 
 ---
 
-## 12. Conformità
+## 13. Conformità
 
-- I file sono UTF-8 JSON, estensione `.rdbk`, media type `application/x-roadbook`.
-- Un **reader** conforme DEVE rendere `track` e `notes` in ordine e risolvere i simboli da
-  `icons` per primi.
+- Un file `.rdbk` è un contenitore ZIP con un `roadbook.json` UTF-8 al suo interno;
+  estensione `.rdbk`, media type `application/x-roadbook`.
+- Un **reader** conforme DEVE leggere `roadbook.json` dal contenitore, rendere `track` e
+  `notes` in ordine e risolvere i simboli da `icons` per primi.
 - Un **writer** conforme DEVE incorporare in `icons` ogni simbolo referenziato da una nota,
-  così il file è autonomo.
+  così `roadbook.json` è autonomo; i media inclusi vanno in `photos/` / `audio/` con i loro
+  geotag in `media.json`.
 - I campi sconosciuti DEVONO essere preservati nel round-trip e ignorati se non compresi
   (compatibilità in avanti).
 
 ---
 
-## 13. Limiti
+## 14. Limiti
 
-- **Le foto restano fuori dal file.** Un `.rdbk` condiviso senza l'app perde le foto
-  geotaggate: sono una funzione server-side, non parte dello standard.
+- **I media viaggiano solo se inclusi all'export.** Un `.rdbk` esportato senza la spunta
+  *includi foto e audio* non contiene i media; e lo storage lato server resta comunque JSON,
+  quindi i media geotaggati restano una funzione dell'app finché non li si include nel
+  contenitore.
 - **Il limite di velocità è una convenzione di naming, non un campo.** Vive nel nome del
   simbolo (`S03_30km`, `S99_end`); un simbolo nominato fuori dal pattern `^S\d{2}_(\d{1,3})km`
   non sarà riconosciuto come limite, e non c'è un modo dichiarativo per imporlo.

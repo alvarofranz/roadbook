@@ -69,11 +69,11 @@ Reading a public roadbook requires a signed-in account (#146): the Reader and th
 
 | Lang | Title | Description |
 |---|---|---|
-| English | The .rdbk standard — RDBK.app | The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification. |
-| Italiano | Lo standard .rdbk — RDBK.app | Il formato aperto .rdbk per roadbook digitali: un unico file JSON autosufficiente con traccia, note e icone incorporate. Specifica completa. |
-| Español | El estándar .rdbk — RDBK.app | El formato abierto .rdbk para roadbooks digitales: un único archivo JSON autónomo con traza, notas e iconos incrustados. Especificación completa. |
-| Deutsch | Der .rdbk-Standard — RDBK.app | Das offene .rdbk-Format für digitale Roadbooks: eine eigenständige JSON-Datei mit Track, Notizen und eingebetteten Icons. Vollständige Spezifikation. |
-| Français | Le standard .rdbk — RDBK.app | Le format ouvert .rdbk pour roadbooks numériques : un seul fichier JSON autonome avec tracé, notes et icônes intégrées. Spécification complète. |
+| English | The .rdbk standard — RDBK.app | The open .rdbk format for digital roadbooks: a ZIP container holding a self-contained roadbook.json — track, notes and embedded icons — plus optional media. Full specification. |
+| Italiano | Lo standard .rdbk — RDBK.app | Il formato aperto .rdbk per roadbook digitali: un contenitore ZIP con un roadbook.json autosufficiente — traccia, note e icone incorporate — più media opzionali. Specifica completa. |
+| Español | El estándar .rdbk — RDBK.app | El formato abierto .rdbk para roadbooks digitales: un contenedor ZIP con un roadbook.json autónomo — traza, notas e iconos incrustados — más medios opcionales. Especificación completa. |
+| Deutsch | Der .rdbk-Standard — RDBK.app | Das offene .rdbk-Format für digitale Roadbooks: ein ZIP-Container mit einer eigenständigen roadbook.json — Track, Notizen und eingebettete Icons — samt optionalen Medien. Vollständige Spezifikation. |
+| Français | Le standard .rdbk — RDBK.app | Le format ouvert .rdbk pour roadbooks numériques : un conteneur ZIP avec un roadbook.json autonome — tracé, notes et icônes intégrées — plus des médias optionnels. Spécification complète. |
 
 ### `/roadbooks/`
 
