@@ -25,6 +25,17 @@
     if (search) search.oninput = () => { q = search.value; page = 1; render(); };
     window.addEventListener('rb-lang', () => { if (all.length) render(); });
 
+    // The header claim points newcomers to the guide (learn / request the role); once the
+    // visitor already manages events (admin, organiser, or a co-organiser), it becomes a direct
+    // "Organise an event" shortcut into Event management.
+    RBApi('config').then((c) => {
+        const u = c && c.user, link = $('evOrganise'), txt = $('evOrganiseTxt');
+        if (!link || !u || !(u.is_admin || u.is_organizer || u.manages_events)) return;
+        link.href = '../admin/events/';
+        txt.removeAttribute('data-i18n'); // set directly, don't let a later i18n pass revert it
+        txt.textContent = t('Organise an event');
+    }).catch(() => {});
+
     RBApi('events_list').then((r) => {
         all = (r.ok && r.events) || [];
         render();
