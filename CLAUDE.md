@@ -349,6 +349,12 @@ integer metres.** Spec page: `public/standard/index.html`.
 - Header and footer are rendered globally by `app.js` — pages ship empty `<header
   class="topbar">`.
 - Keep the data model in clean English (no camelCase beyond unavoidable; metres, not km).
+- **"A destra" / right placement = top-right, on the title's row.** When the user asks to put
+  something "a destra" (to the right) — a header CTA, a claim/banner link, an action — they mean
+  the **top-right of that section, on the SAME row as the heading** (title left, action right),
+  **not** below it. Lay it out with a flex row (`justify-content: space-between`,
+  `align-items: flex-start`); if the container is a `flex-direction: column` block (e.g.
+  `.rbp-head`), override it to `row` or the action stacks under the title.
 - **Icon consistency — one canonical FontAwesome icon per tool, everywhere.** A tool must use
   the SAME icon across the home workflow step, its Features card, its `/features/<tool>/` page
   and the native launcher — never a different glyph for the same tool. Canonical set: **Track
