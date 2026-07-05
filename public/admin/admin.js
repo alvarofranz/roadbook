@@ -45,7 +45,8 @@
             <label class="field-label" for="euEmail">${esc(t('Email'))}</label>
             <input id="euEmail" type="email" class="field" autocomplete="off">
             <label class="field-label" for="euOrg">${esc(t('Organization'))}</label>
-            <input id="euOrg" class="field" autocomplete="off" maxlength="120">
+            <input id="euOrg" class="field" autocomplete="off" maxlength="120" list="euOrgSuggest">
+            <datalist id="euOrgSuggest"></datalist>
             <label class="field-label" for="euPass">${esc(t('New password (optional)'))}</label>
             <input id="euPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Leave blank to keep current'))}">
             <p class="hint">${esc(t('If you set a password, the user must change it at next login.'))}</p>
@@ -62,6 +63,7 @@
         m.q('#euUser').value = u.username || '';
         m.q('#euEmail').value = u.email || '';
         m.q('#euOrg').value = u.organization || '';
+        RBOrgDatalist(m.q('#euOrgSuggest')); // suggest existing clubs, like the profile + event search (#184)
         m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
         m.q('#euOrganizer').checked = !!u.is_organizer;
         m.q('#euAdmin').checked = !!u.is_admin;
