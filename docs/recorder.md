@@ -8,7 +8,8 @@ oppure si converte tutto (traccia + waypoint + foto) in un roadbook nell'Editor.
 
 > Il Recorder non possiede logica GPS o di logging propria: **orchestra le primitive
 > condivise**. Il loop GPS è `RBGpsMeter`, il logging crash-safe è `RBGpxRecorder`,
-> la mappa è `RBMap`, le foto passano da `RBUpload`. Per i dettagli di ciascuna,
+> la mappa è `RBMap`, foto e note vocali passano dalla coda offline-first `RBMediaQueue`
+> (upload differito con retry via `RBUpload`/`RBUploadAudio`). Per i dettagli di ciascuna,
 > vedere i rispettivi documenti — qui si descrive solo come il Recorder le usa.
 
 ---
@@ -119,8 +120,10 @@ Punto chiave, spesso frainteso: **traccia e foto/audio seguono percorsi diversi*
   checkpoint del Recorder. **Non vengono inviati al server durante la registrazione** (la
   posizione live non lascia il device). Arrivano al server **solo quando si salva il
   roadbook** (Convert into roadbook → Editor → Save, §8).
-- **Foto e audio** vengono invece **caricati subito sul server** appena scattati/registrati —
-  e per farlo serve un contenitore server: il **draft**.
+- **Foto e audio** vengono **bufferizzati in una coda locale** (`RBMediaQueue`, IndexedDB) e
+  **caricati sul server con retry** appena possibile — per l'upload serve un contenitore server:
+  il **draft**. La coda fa sì che un calo di rete a metà registrazione **non perda** più foto/audio
+  (offline-first, #147; vedi §3 "Comportamento offline").
 
 ### Il draft server — prerequisito di foto/audio
 All'avvio, se l'utente è **loggato** (e c'è connessione), `begin()` chiama `RBApi('rb_draft')`,
@@ -138,8 +141,8 @@ inattivi/nascosti, §6).
 |-----------------|---------------|---------|----------------------------|
 | Traccia         | Sì (`track`)  | Sì (`trk`) | **Solo al salvataggio** del roadbook (Convert → Editor → Save) |
 | Waypoint / note | Sì (`notes`)  | Sì (`wpt`) | idem |
-| Foto            | **No, mai**   | **No**  | **Subito**, durante la registrazione (nel draft) |
-| Audio           | **No, mai**   | **No**  | **Subito**, durante la registrazione (nel draft) |
+| Foto            | **No, mai**   | **No**  | Via **coda locale → upload differito con retry** (nel draft) |
+| Audio           | **No, mai**   | **No**  | Via **coda locale → upload differito con retry** (nel draft) |
 
 Foto e audio non sono **mai** dentro il file `.rdbk` né nel GPX: sono file lato server
 referenziati dal roadbook per id + coordinate. Viaggiano col roadbook solo sul server / nell'app.
@@ -154,9 +157,14 @@ referenziati dal roadbook per id + coordinate. Viaggiano col roadbook solo sul s
 ### Comportamento offline (mobile)
 - **Traccia + waypoint di testo**: funzionano **pienamente offline** (GPS locale + checkpoint).
   Nessuna rete richiesta.
-- **Foto / audio**: **richiedono connessione** (upload immediato al draft). Offline da subito →
-  `rb_draft` non parte → niente `draftId` → foto/audio non disponibili; se la rete cade dopo, il
-  singolo upload **fallisce senza retry né buffer locale** → quella foto/audio è persa.
+- **Foto / audio**: ogni cattura entra in una **coda locale** (`RBMediaQueue`, blob in IndexedDB)
+  e viene caricata sul draft **con retry** appena c'è rete; la coda si svuota da sola al ritorno
+  online (evento `online` + retry periodico) e **sopravvive a reload/kill** (i blob restano in
+  IndexedDB). Se la rete cade a metà registrazione, la foto/audio **non è più persa** (#147). Un
+  contatore "N in attesa di upload" appare sotto i comandi finché la coda non è vuota.
+  - *Limite attuale (F1)*: la cattura richiede comunque **login + draft**; una foto scattata
+    da signed-out o senza draft (offline da subito, `rb_draft` non parte) non è ancora possibile
+    — pulsanti sempre attivi e cattura pre-draft sono le fasi successive (F2/F3 dell'issue #147).
 - La **traccia** sopravvive comunque in locale: la si può scaricare in GPX subito oppure —
   tornata la rete — riprendere la sessione e salvarla sul server.
 
@@ -211,10 +219,10 @@ speech-to-text **o** registrazione audio) è il flusso pensato per il telefono i
 **tieni premuto per registrare**, senza modale. Alla pressione rilascia subito un waypoint
 alla posizione corrente, poi:
 
-- **Audio (primario):** registra la **clip vocale** via `getUserMedia` + `MediaRecorder` e
-  la salva sul server (`RBUploadAudio` → tabella `roadbook_audio`, come le foto) — solo da
-  **loggato + bozza** (`meUser && draftId`). La clip si rivede/riascolta nell'Editor, **sulla
-  riga della nota** più vicina.
+- **Audio (primario):** registra la **clip vocale** via `getUserMedia` + `MediaRecorder` e la
+  **accoda** (`RBMediaQueue.add('audio', …)` → upload differito con retry a `RBUploadAudio` →
+  tabella `roadbook_audio`, come le foto) — solo da **loggato + bozza** (`meUser && draftId`).
+  La clip si rivede/riascolta nell'Editor, **sulla riga della nota** più vicina.
 - **Testo (best-effort):** in parallelo tenta `SpeechRecognition` → `note.text`. **Il microfono
   è esclusivo**, quindi la registrazione lo prende per prima: il testo dal vivo esce **solo dove
   il mic è condivisibile (desktop)**; su **Android/iOS** = **audio sì, testo no**. (Per il solo
@@ -247,16 +255,20 @@ Il flusso ([recorder.js:166-187](../public/recorder/recorder.js#L166)):
 - Non loggato → `RBNeedAuth`. Senza `draftId` → toast di attesa fix.
 - L'input `<input type="file" accept="image/*" capture="environment">`
   ([index.html:73](../public/recorder/index.html#L73)) apre la **fotocamera posteriore**.
-- L'upload va a `RBUpload` con `type: 'photo'`, `roadbook: draftId` e — se c'è un fix —
-  le coordinate correnti come geotag ([recorder.js:171-177](../public/recorder/recorder.js#L171)).
-- La foto restituita (`{ id, url, lat, lon }`) entra in `photos`, ridisegna la mappa e
-  salva la sessione. Poi il primitivo condiviso `RBPhotoPreview(url, cb)` mostra l'anteprima:
+- La foto viene **accodata** (`RBMediaQueue.add('photo', file, { type: 'photo', roadbook: draftId,
+  lat, lon }, 'photo.jpg', token)`) per l'upload differito con retry; `RBUpload` applica il
+  downscale al momento dell'invio.
+- Subito compare un **pin ottimistico** da un `objectURL` locale (`photos` con `{ token, url,
+  lat, lon, local: true, pending: true }`), la mappa si ridisegna e la sessione si salva. Quando
+  l'upload va a buon fine, `onDone` **riconcilia** quella voce con `{ id, url }` del server
+  (via `token`) e revoca l'`objectURL`. Poi `RBPhotoPreview(url, cb)` mostra l'anteprima:
   confermando la callback lascia un waypoint vuoto alla posizione della foto.
 
 ### Dove finiscono davvero le foto (quirk importante)
 Le foto **non** sono parte della traccia GPX né del file `.rdbk` (per design: il formato
 `.rdbk` non contiene foto). Vengono caricate **lato server, legate al draft roadbook**
-identificato da `draftId`. In `photos` resta solo `{ id, url, lat, lon }`. Di conseguenza:
+identificato da `draftId`. In `photos` resta solo il riferimento (`{ id, url, lat, lon }` una
+volta riconciliato dalla coda). Di conseguenza:
 
 - Senza login non c'è draft, quindi **niente foto** (il pulsante resta nascosto).
 - Allo *scarico GPX* le foto **non** sono incluse (il GPX porta solo traccia + waypoint).
@@ -322,14 +334,17 @@ scartata appena la traccia è in mano al modale finale.
 | `saveSession()`     | checkpoint metadati in localStorage |
 | `finishModal()`     | salva sul server · apri nell'Editor · esporta GPX |
 | `refreshMap()`      | ridisegno mappa live |
+| `RBMediaQueue`      | coda foto/audio offline-first (IndexedDB) + upload differito con retry (#147) |
 
 ---
 
 ## 10. Limiti
 
-- **Foto solo per utenti loggati**: senza login il pulsante è nascosto e le foto non
-  esistono. Senza `draftId` (es. prima del fix o se `rb_draft` fallisce) la fotocamera
-  non si apre.
+- **Foto/audio solo per utenti loggati con draft (F1 di #147)**: senza login il pulsante è
+  nascosto e le foto non esistono; senza `draftId` (es. prima del fix o se `rb_draft` fallisce)
+  la fotocamera non si apre. L'offline-first attuale copre solo la **perdita da calo di rete a
+  metà registrazione** (coda + retry per il loggato); la cattura da signed-out o pre-draft è
+  rinviata alle fasi F2/F3.
 - **Le foto vivono solo lato server**, legate al draft: non sono nel GPX né nel `.rdbk`.
   Scaricando il GPX si perdono; sopravvivono solo via *Convert into roadbook* (che porta
   il `draftId` all'Editor). Un draft mai convertito resta sul server.

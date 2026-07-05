@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-1">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-2">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-1">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-2">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* recorded km box sits to the right of Waypoints → four readouts in a row */
@@ -48,6 +48,8 @@
         #recWptAudio { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
         /* latest waypoint note (incl. live dictated audio text) shown while recording */
         .rec-lastwp { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .8rem; font-size: .9rem; color: var(--text); }
+        /* offline-first: photos/voice notes awaiting upload (RBMediaQueue, #147) */
+        .rec-pending { color: var(--muted); font-size: .82rem; text-align: center; margin-bottom: .6rem; }
     </style>
 </head>
 <body class="gps-tool">
@@ -85,6 +87,7 @@
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="WP photo">WP photo</span></button>
             </div>
             <div id="recLastWp" class="rec-lastwp" hidden></div>
+            <div id="recPending" class="rec-pending" hidden></div>
             <div id="recMap" class="rec-map panel"></div>
             <div class="btnrow">
                 <button class="btn btn-danger grow" id="recStop"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
@@ -97,18 +100,19 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.06-1"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.06-1"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.06-1"></script>
-<script src="../assets/js/gps-meter.js?v=2026.07.06-1"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.07.06-1"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.06-1"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.06-1"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.06-1"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.06-1"></script>
-<script src="../assets/js/i18n.js?v=2026.07.06-1"></script>
-<script src="../assets/js/app.js?v=2026.07.06-1"></script>
-<script src="../assets/js/status-bar.js?v=2026.07.06-1"></script>
-<script src="recorder.js?v=2026.07.06-1"></script>
+<script src="../assets/js/config.js?v=2026.07.06-2"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.06-2"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.06-2"></script>
+<script src="../assets/js/gps-meter.js?v=2026.07.06-2"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.07.06-2"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.06-2"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.06-2"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.06-2"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.06-2"></script>
+<script src="../assets/js/i18n.js?v=2026.07.06-2"></script>
+<script src="../assets/js/app.js?v=2026.07.06-2"></script>
+<script src="../assets/js/rb-media-queue.js?v=2026.07.06-2"></script>
+<script src="../assets/js/status-bar.js?v=2026.07.06-2"></script>
+<script src="recorder.js?v=2026.07.06-2"></script>
 </body>
 </html>

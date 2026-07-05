@@ -553,6 +553,7 @@
             'fp.recorder.t8d': 'Chaque photo est épinglée aux coordonnées GPS exactes où tu l’as prise (à la précision du GPS à ce moment, quelques mètres), sur la trace GPX. Dans l’Éditeur tu revois les pins photo sur la carte et tu les transformes en notes au bon endroit.',
             'No audio captured.': 'Aucun audio enregistré.',
             'Voice note saved.': 'Note vocale enregistrée.',
+            'awaiting upload': 'en attente d’envoi',
             'Microphone unavailable.': 'Microphone indisponible.',
             'Preparing… try the voice note again in a second.': 'Préparation… réessaie la note vocale dans une seconde.',
             'fp.recorder.t9t': 'WP audio : maintiens pour enregistrer',

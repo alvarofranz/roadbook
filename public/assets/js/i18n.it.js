@@ -592,6 +592,7 @@
             'fp.recorder.t8d': 'Ogni foto è ancorata alle coordinate GPS esatte dove l’hai scattata (precisione del GPS in quel momento, pochi metri), proprio sul tracciato GPX. Nell’Editor rivedi i pin delle foto sulla mappa e li trasformi in note nel punto giusto.',
             'No audio captured.': 'Nessun audio registrato.',
             'Voice note saved.': 'Nota vocale salvata.',
+            'awaiting upload': 'in attesa di upload',
             'Microphone unavailable.': 'Microfono non disponibile.',
             'Preparing… try the voice note again in a second.': 'Preparazione… riprova la nota vocale tra un secondo.',
             'fp.recorder.t9t': 'WP audio: tieni premuto per registrare',

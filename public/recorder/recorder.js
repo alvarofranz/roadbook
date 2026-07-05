@@ -21,6 +21,7 @@
     const voiceLang = () => (meUser && meUser.voice_lang) || navigator.language || 'en-US';
     let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null, lastFixT = 0;
     let track = [], wpts = [], photos = [];
+    let mediaSeq = 0; // client tokens for optimistic photo pins reconciled by RBMediaQueue
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
 
     /* ---------- map ---------- */
@@ -225,11 +226,12 @@
                 const mr = new MediaRecorder(stream), chunks = [];
                 wptMedia = mr;
                 mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
-                mr.onstop = async () => {
+                mr.onstop = () => {
                     stream.getTracks().forEach((tk) => tk.stop());
                     if (!chunks.length) { toast(t('No audio captured.')); return; } // nothing recorded
-                    const r = await RBUploadAudio({ type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon }, new Blob(chunks, { type: mr.mimeType }));
-                    toast(r.ok ? t('Voice note saved.') : (r.error || t('Audio upload failed.')));
+                    // buffer + upload with retry (#147) — a dropped connection no longer loses the clip
+                    RBMediaQueue.add('audio', new Blob(chunks, { type: mr.mimeType }), { type: 'audio', roadbook: String(draftId), lat: wptLat, lon: wptLon });
+                    toast(t('Voice note saved.'));
                 };
                 mr.start(1000); // periodic data chunks → robust even if stop() timing is odd on mobile
             } catch (e) { wptMedia = null; toast(t('Microphone unavailable.')); } // surface the failure, don't fail silently
@@ -284,22 +286,45 @@
     document.addEventListener('pointercancel', releaseWptAudio);
     wptBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    /* ---------- photos (signed-in: camera → upload → geotagged pin) ---------- */
+    /* ---------- offline-first media queue (#147) ----------
+       Photos and voice notes are buffered in IndexedDB and uploaded with retry, so a
+       network drop mid-recording never loses them. A photo shows an optimistic pin from
+       a local blob URL, reconciled to the server URL (with its id) when the upload lands. */
+    RBMediaQueue.init({
+        onChange: (n) => {
+            const el = $('recPending'); if (!el) return;
+            el.hidden = !n;
+            el.textContent = n ? (' ' + n + ' ' + t('awaiting upload')) : '';
+        },
+        onDone: (item, res) => {
+            if (item.kind !== 'photo') return; // voice notes have no map pin to reconcile
+            const p = photos.find((x) => x.token === item.token);
+            if (!p) return; // uploaded from a previous session — no pin in this one
+            if (p.local && p.url) { try { URL.revokeObjectURL(p.url); } catch (e) {} }
+            p.id = res.id; p.url = res.url; p.local = false; p.pending = false;
+            if (res.lat != null) { p.lat = res.lat; p.lon = res.lon; }
+            refreshMap(); saveSession();
+        },
+    });
+
+    /* ---------- photos (signed-in: camera → queued upload → geotagged pin) ---------- */
     $('recPhoto').onclick = () => {
         if (!meUser) return RBNeedAuth(t('Sign in to attach photos.'));
         if (!draftId) return toast(t('Waiting for a GPS fix…'));
         $('recPhotoFile').click();
     };
-    $('recPhotoFile').onchange = async (e) => {
+    $('recPhotoFile').onchange = (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
+        const lat = here ? here.lat : null, lon = here ? here.lon : null;
         const fields = { type: 'photo', roadbook: String(draftId) };
-        if (here) { fields.lat = here.lat; fields.lon = here.lon; }
-        toast(t('Uploading photo…'));
-        const r = await RBUpload(fields, f);
-        if (!r.ok) return toast(r.error || 'Photo failed.');
-        photos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); refreshMap(); saveSession(); renderBar();
-        const lat = r.lat != null ? r.lat : (here && here.lat), lon = r.lon != null ? r.lon : (here && here.lon);
-        RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } });
+        if (lat != null) { fields.lat = lat; fields.lon = lon; }
+        // optimistic pin from the local blob; reconciled to the server URL on upload (onDone)
+        const token = 'p' + Date.now() + '_' + (++mediaSeq);
+        const localUrl = URL.createObjectURL(f);
+        photos.push({ token, url: localUrl, lat, lon, local: true, pending: true });
+        refreshMap(); saveSession(); renderBar();
+        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
+        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } });
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */

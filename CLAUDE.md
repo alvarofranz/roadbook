@@ -90,6 +90,9 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
     vignette, used by the Reader rows and the challenge page). **`rbmap.js`** (`RBMap`): MapLibre helper (Editor + Reader map).
     **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
+    **`rb-media-queue.js`** (`RBMediaQueue`): offline-first buffering of geotagged photos +
+    voice notes (blobs in IndexedDB) with deferred upload + retry (Recorder; Editor recording
+    next).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.icon-accent`/`.icon-danger`,
     `.field-grid`, `.btn-group`, `.grow`, the note rows, etc.
@@ -296,6 +299,11 @@ Operational notes:
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
   settings modal, localStorage checkpoint with recovery, live file handle, finished-track
   modal (download / convert into a roadbook).
+- `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
+  voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
+  `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` · `flush()` ·
+  `count()` · `init({onDone, onChange})`. Pure `createQueue` core (module.exports) is unit-tested;
+  used by the Recorder (Editor recording next).
 - `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing

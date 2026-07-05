@@ -554,6 +554,7 @@
             'fp.recorder.t8d': 'Jedes Foto wird an der genauen GPS-Position fixiert, an der du es aufgenommen hast (so genau wie das GPS dann – wenige Meter), direkt auf dem GPX-Track. Im Editor prüfst du die Foto-Pins auf der Karte und machst an der richtigen Stelle Notizen daraus.',
             'No audio captured.': 'Kein Audio aufgenommen.',
             'Voice note saved.': 'Sprachnotiz gespeichert.',
+            'awaiting upload': 'warten auf Upload',
             'Microphone unavailable.': 'Mikrofon nicht verfügbar.',
             'Preparing… try the voice note again in a second.': 'Wird vorbereitet… versuche die Sprachnotiz gleich erneut.',
             'fp.recorder.t9t': 'WP-Audio: gedrückt halten zum Aufnehmen',
