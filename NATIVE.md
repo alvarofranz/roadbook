@@ -248,15 +248,31 @@ include the review note that clears guideline 4.2 "minimum functionality":
 it's a GPS roadbook navigator with **background location recording**, camera
 capture and offline use — native capabilities, not a website.
 
-### Android → Play
-1. Android Studio → **Build → Generate Signed Bundle / APK → Android App Bundle (.aab)**.
-   Create a keystore the first time and **keep it safe** (you need it for every update).
-2. On https://play.google.com/console create the app, upload the `.aab` to the
-   **Internal testing** track first.
-3. Fill the Data safety form (Location, plus email if accounts). Because we use a
-   **foreground service** (not background-location), you only declare the foreground-service
-   location use — no background-location video/justification needed.
-4. Promote Internal → Production when happy.
+### Android → Play (CI/CD on GitHub Actions)
+Releases build in the cloud from a tag — no local archive step — mirroring the iOS `ios-*` flow.
+The pipeline is `.github/workflows/android-release.yml`: it rehydrates the gitignored client
+assets from the live site (config.js + FontAwesome, public by design), builds the native bridge,
+`cap sync android`, restores the signing keystore from secrets, `bundleRelease` (versionCode from
+the run number, versionName from the tag), and uploads the `.aab` to the **Internal testing**
+track via the service account. It fires **only on an `android-*` tag**, so a web release never
+triggers an app build.
+
+**Cutting a release:** `git tag android-1.0.4 && git push origin android-1.0.4` (or run the
+workflow from the Actions tab). Promote Internal → Production in the Play Console when happy.
+
+**One-time setup:**
+1. **Signing** — the upload keystore lives at `android/rdbk-upload.jks` (+ `android/keystore.properties`),
+   both git-ignored. Its base64 and passwords are the repo secrets `ANDROID_KEYSTORE_BASE64`,
+   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Keep the `.jks` safe —
+   it's needed for every update.
+2. **Play Console** — create the app `app.rdbk`, upload one `.aab` **manually** to Internal testing
+   first (the API can't create the very first release), and enable **Play App Signing**.
+3. **Service account** — create one in the Cloud project, enable the **Google Play Android
+   Publisher API**, download its JSON key → repo secret `PLAY_SERVICE_ACCOUNT_JSON`, then invite the
+   service-account email in Play Console → **Users and permissions** with release permissions.
+4. **Data safety form** — declare Location (plus email if accounts). We use a **foreground service**
+   (not background-location), so only the foreground-service location use is declared — no
+   background-location video/justification needed.
 
 ---
 
