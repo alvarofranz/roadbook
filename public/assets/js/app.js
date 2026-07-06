@@ -713,6 +713,9 @@
         const cfg = await RBConfig();
         const user = cfg.user || null;
         renderBanner(cfg.banner);
+        // Admins get the in-context UI translation editor (#118) — a small script loaded only for
+        // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
+        if (user && user.is_admin) { const s = document.createElement('script'); s.src = ROOT + 'assets/js/i18n-edit.js'; s.async = true; document.head.appendChild(s); }
         // A signed-in user's language preference follows them across devices: apply it on
         // connect, and persist any later switch from the header selector.
         if (user && window.RBi18n) {
