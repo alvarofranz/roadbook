@@ -474,8 +474,19 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .google-signin { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
 .gterms { display: flex; flex-direction: column; gap: .6rem; align-items: center; text-align: center; }
-/* the app's native Google button (RBNative picker) — sized to match the web GIS button */
-.gbtn-native { min-width: 260px; justify-content: center; }
+/* Our own dark Google button (matches the theme). On the web, Google's real button is rendered
+   invisibly ON TOP of it (.gis-overlay) so the click triggers the official flow without the
+   white-box GIS look; in the app the button calls RBNative directly. */
+.gbtn-wrap { position: relative; width: 280px; }
+.gbtn-btn { width: 280px; height: 46px; gap: .6rem; font-weight: 700; }
+.gbtn-wrap .gbtn-btn { pointer-events: none; }            /* clicks pass through to the invisible GIS button */
+.gbtn-wrap .gis-overlay { position: absolute; inset: 0; opacity: 0; }
+.gbtn-wrap .gis-overlay > div, .gbtn-wrap .gis-overlay iframe { width: 100% !important; height: 100% !important; }
+.gicon { width: 18px; height: 18px; flex-shrink: 0; }
+.gbtn-loading { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; width: 280px; height: 46px; color: var(--muted); font-weight: 600; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--sand); animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.google-hint { max-width: 280px; text-align: center; margin: 0; }
 .field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
 .ios-steps { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }
 .grow { flex: 1; }

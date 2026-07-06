@@ -31,8 +31,12 @@
     }
     function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
-    /* ---------- Google Sign-In (GIS) ---------- */
+    /* ---------- Google Sign-In ---------- */
     let gClientId = '', googleCred = null;
+    // Google's four-colour "G" (no white circle) so our OWN dark button matches the site theme.
+    const GOOGLE_G = '<svg class="gicon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+    const gButton = () => `<button type="button" class="btn btn-ghost gbtn-btn">${GOOGLE_G}<span>${t('Continue with Google')}</span></button>`;
+
     function loadGoogle(clientId) {
         gClientId = clientId || '';
         if (!gClientId) return;
@@ -40,18 +44,41 @@
         s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
         s.onload = renderGoogle; document.head.appendChild(s);
     }
+    // Web: our own dark button (matches the theme) with Google's real button rendered INVISIBLY on
+    // top of it, so a click reliably triggers the official ID-token flow without the white-box GIS look.
     function renderGoogle() {
         if (!gClientId || !window.google || !google.accounts || !google.accounts.id) return;
-        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => { googleCred = resp && resp.credential; sendGoogle(false); } });
-        const el = $('gBtn');
-        if (el) google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: 280 });
+        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => { googleCred = resp && resp.credential; googleBusy(); sendGoogle(false); } });
+        const el = $('gBtn'); if (!el) return;
+        el.className = 'gbtn-wrap';
+        el.innerHTML = `${gButton()}<div class="gis-overlay"></div>`;
+        google.accounts.id.renderButton(el.querySelector('.gis-overlay'), { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 280 });
     }
-    // The GIS callback and the Terms-retry button both land here. A new Google account needs Terms
+    // App: a real dark button that opens the native OS Google picker (RBNative), then the SAME flow.
+    function renderNativeGoogle() {
+        const el = $('gBtn'); if (!el) return;
+        el.className = ''; el.innerHTML = gButton();
+        el.querySelector('button').onclick = async () => {
+            try {
+                const idToken = await RBNative.googleSignIn();
+                if (!idToken) return;                 // user cancelled — button stays
+                googleBusy(); googleCred = idToken;
+                await sendGoogle(false);
+            } catch (e) { restoreGoogle(); msg('Google sign-in failed. Please try again.', false); }
+        };
+    }
+    // Feedback while the ID token is verified server-side; restoreGoogle() puts the button back on a
+    // terminal failure (on success the page navigates away, so no restore is needed).
+    function googleBusy() { const el = $('gBtn'); if (el) { el.className = ''; el.innerHTML = `<div class="gbtn-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
+    function restoreGoogle() { (window.RBNative && RBNative.googleSignIn) ? renderNativeGoogle() : renderGoogle(); }
+
+    // The Google callback and the Terms-retry button both land here. A new Google account needs Terms
     // accepted (server returns need_terms); existing / linked users sign in with no extra step.
     async function sendGoogle(acceptTerms) {
         if (!googleCred) return;
         const r = await api('google_auth', { credential: googleCred, accept_terms: !!acceptTerms });
         if (r.ok) { me = r.user; finishLogin(me); return; }
+        restoreGoogle();
         if (r.need_terms) { $('gTerms').hidden = false; return msg('You must accept the Terms of Use to register.', false); }
         msg(r.error, false);
     }
@@ -62,20 +89,6 @@
         const next = new URLSearchParams(location.search).get('next');
         if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
         showAccount(user);
-    }
-    // App: a plain button opening the native Google picker (RBNative), then the SAME flow as the
-    // web (sendGoogle → google_auth, including the Terms step for a brand-new account).
-    function renderNativeGoogle() {
-        const el = $('gBtn'); if (!el) return;
-        el.innerHTML = '<button type="button" class="btn btn-ghost gbtn-native"><i class="fa-brands fa-google"></i> <span data-i18n="Continue with Google">Continue with Google</span></button>';
-        el.querySelector('button').onclick = async () => {
-            try {
-                const idToken = await RBNative.googleSignIn();
-                if (!idToken) return;               // user cancelled
-                googleCred = idToken;
-                await sendGoogle(false);
-            } catch (e) { msg('Google sign-in failed. Please try again.', false); }
-        };
     }
 
     /* Submit on Enter / button: run the handler, never reload the page. */
