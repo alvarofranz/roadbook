@@ -138,9 +138,11 @@ subito, ma se è offline non fallisce — le catture entrano comunque in coda e 
 `RBMediaQueue.init` (`resolveRoadbook`). `ensureDraft` è memoizzato, quindi una raffica di catture
 condivide **un solo** draft; l'id, una volta ottenuto, viene stampato sugli item in coda.
 
-→ Senza login **niente foto/audio** (i pulsanti restano nascosti, §6): la cattura da signed-out è
-la fase successiva (F3). Con login, i pulsanti sono **sempre attivi** — anche offline o prima che
-il draft esista.
+→ I pulsanti foto/audio sono **sempre attivi**, anche **da sloggato** (#147 F3): la cattura entra
+comunque in coda. Da loggato viene caricata nel draft (subito o al primo flush); **da sloggato**
+resta sul dispositivo (`ensureDraft` ritorna `null` senza `meUser`, quindi non si creano draft
+orfani) e si salva in un **`.rdbk` self-contained** a fine registrazione (§8). Per salvare
+sull'account, si accede **prima** di registrare.
 
 ### Cosa sta in quale formato, e quando va sul server
 | Dato            | Nel `.rdbk`   | Nel GPX | Quando raggiunge il server |
@@ -163,15 +165,16 @@ referenziati dal roadbook per id + coordinate. Viaggiano col roadbook solo sul s
 ### Comportamento offline (mobile)
 - **Traccia + waypoint di testo**: funzionano **pienamente offline** (GPS locale + checkpoint).
   Nessuna rete richiesta.
-- **Foto / audio** (utente **loggato**): i pulsanti sono **sempre attivi**, anche offline o prima
-  che il draft esista (#147 F2). Ogni cattura entra in una **coda locale** (`RBMediaQueue`, blob in
-  IndexedDB) e viene caricata **con retry** appena c'è rete; se il draft non c'è ancora viene creato
-  al primo flush (`resolveRoadbook`→`ensureDraft`) e il suo id stampato sugli item. La coda si
-  svuota da sola al ritorno online (evento `online` + retry periodico) e **sopravvive a reload/kill**
-  (i blob restano in IndexedDB). Un contatore "N in attesa di upload" appare sotto i comandi finché
-  la coda non è vuota.
-  - *Limite attuale*: la cattura richiede comunque il **login**; da signed-out foto/audio non sono
-    ancora possibili (buffering da non loggato = fase F3 dell'issue #147).
+- **Foto / audio**: i pulsanti sono **sempre attivi** (anche offline, pre-draft e **da sloggato**,
+  #147 F2/F3). Ogni cattura entra in una **coda locale** (`RBMediaQueue`, blob in IndexedDB) che
+  **sopravvive a reload/kill**.
+  - *Loggato*: caricata **con retry** appena c'è rete; se il draft non c'è ancora viene creato al
+    primo flush (`resolveRoadbook`→`ensureDraft`) e il suo id stampato sugli item; la coda si svuota
+    da sola al ritorno online (evento `online` + retry periodico). Badge "N in attesa di upload".
+  - *Sloggato*: nessun upload (`ensureDraft`→`null`); i media restano sul dispositivo e si salvano
+    in un **`.rdbk` self-contained** a fine registrazione (§8). Badge "N salvate su questo dispositivo".
+  - *Limite residuo*: per salvare foto/audio **sull'account** occorre accedere **prima** di
+    registrare; non c'è (per scelta) upload differito dei media catturati da sloggato.
 - La **traccia** sopravvive comunque in locale: la si può scaricare in GPX subito oppure —
   tornata la rete — riprendere la sessione e salvarla sul server.
 
@@ -251,13 +254,13 @@ Trascrivere la clip *registrata* in testo (post-registrazione, nell'Editor) è t
 
 ## 6. Foto geotaggate
 
-Le foto sono una **funzione per utenti loggati**. Il pulsante *WP Foto* è rivelato dal solo
-**login** (`updateRecUi`: `recPhoto.hidden = !meUser`) — **non** dal draft: una foto scattata
-offline o prima che il draft esista viene comunque accodata e caricata dopo (#147 F2). Il draft si
-crea best-effort/pigro (`ensureDraft`, §3).
+Il pulsante *WP Foto* è **sempre visibile** (`updateRecUi`: `recPhoto.hidden = false`), a
+prescindere da login e draft (#147 F3): la cattura entra in coda. Da loggato viene caricata nel
+draft (creato best-effort/pigro, `ensureDraft`, §3); da sloggato resta sul dispositivo e va nel
+`.rdbk` locale a fine registrazione (§8).
 
 Il flusso:
-- Non loggato → `RBNeedAuth`. Loggato → si apre subito la fotocamera (nessun requisito di draft).
+- Tap → si apre subito la fotocamera (nessun requisito di login/draft).
 - L'input `<input type="file" accept="image/*" capture="environment">`
   ([index.html](../public/recorder/index.html)) apre la **fotocamera posteriore**.
 - La foto viene **accodata** (`RBMediaQueue.add('photo', file, { type: 'photo', lat, lon }, 'photo.jpg',
@@ -270,15 +273,17 @@ Il flusso:
   confermando la callback lascia un waypoint vuoto alla posizione della foto.
 
 ### Dove finiscono davvero le foto (quirk importante)
-Le foto **non** sono parte della traccia GPX né del file `.rdbk` (per design: il formato
-`.rdbk` non contiene foto). Vengono caricate **lato server, legate al draft roadbook**
-identificato da `draftId`. In `photos` resta solo il riferimento (`{ id, url, lat, lon }` una
-volta riconciliato dalla coda). Di conseguenza:
+Le foto **non** sono parte della traccia GPX e non stanno in `roadbook.json`. Dove vivono
+dipende dallo stato di login:
 
-- Senza login non c'è draft, quindi **niente foto** (il pulsante resta nascosto).
-- Allo *scarico GPX* le foto **non** sono incluse (il GPX porta solo traccia + waypoint).
-  Le foto sopravvivono solo se si sceglie *Convert into roadbook*, che passa il `draftId`
-  all'Editor (§8).
+- **Loggato**: caricate **lato server, legate al draft roadbook** (`draftId`, tabella
+  `roadbook_photos`); in `photos` resta il riferimento (`{ id, url, lat, lon }` una volta
+  riconciliato dalla coda).
+- **Sloggato**: restano nella **coda locale** (blob in IndexedDB) e vengono impacchettate come
+  media nel **contenitore `.rdbk` ZIP** all'export di fine registrazione (#162/#147 F3).
+- Allo *scarico GPX* le foto **non** sono mai incluse (il GPX porta solo traccia + waypoint):
+  sopravvivono via *Save to server* / *Convert into roadbook* (da loggato) o *Export .rdbk* (da
+  sloggato), §8.
 
 ---
 
@@ -304,7 +309,7 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 
 ---
 
-## 8. Termine: salva sul server, esporta GPX o apri nell'Editor
+## 8. Termine: salva sul server / esporta .rdbk, GPX o apri nell'Editor
 
 A *Finish* confermato si apre `finishModal(pts, name)` con il riepilogo
 (punti · km · waypoint · foto) e **tre** azioni (più *Close*). L'azione **primaria dipende dal
@@ -315,7 +320,11 @@ login**:
   (`rb_save` con `id = draftId`, `status:'draft'`), così le **foto e le note vocali già
   caricate restano attaccate** senza passare dall'Editor. **Si resta sul Recorder**: una
   piccola conferma offre un link *Edit* (`../editor/?rb=<id>`) per rifinire.
-- **Sign in to save** *(sloggato)*: al posto della primaria, un pulsante che apre `RBNeedAuth`.
+- **Export .rdbk** *(sloggato, primaria, #147 F3)*: `exportLocalRdbk` costruisce il roadbook e lo
+  impacchetta con i media in coda in un **contenitore `.rdbk` ZIP** self-contained (`roadbook.json`
+  + `photos/`/`audio/` + `media.json`, via `RBZip.write` — stesso formato dell'Editor, #162), poi
+  lo scarica. Se ci sono media, un `RBConfirm` offre di **rimuoverli dal dispositivo** (`RBMediaQueue.clear`)
+  ora che vivono nel file. Così un utente non loggato non perde nulla, senza account.
 - **Open in the editor**: mette in `sessionStorage` la traccia (`rb_trip_track`), i waypoint
   (`rb_trip_wpts`), il **nome scelto** (`rb_trip_name`, #54) e — se c'è — il `draftId`
   (`rb_trip_draft`, il ponte verso le foto già sul server), poi naviga a `../editor/?trip=1`.
@@ -337,22 +346,23 @@ scartata appena la traccia è in mano al modale finale.
 | `startMeter`/`stopMeter` | ciclo `RBGpsMeter` + cronometro |
 | `dropWaypoint()`    | crea e registra un waypoint (con timestamp `t`) |
 | `saveSession()`     | checkpoint metadati in localStorage |
-| `finishModal()`     | salva sul server · apri nell'Editor · esporta GPX |
+| `finishModal()`     | loggato: salva sul server · sloggato: esporta `.rdbk` · apri nell'Editor · esporta GPX |
+| `exportLocalRdbk()` | costruisce e scarica un `.rdbk` ZIP con i media in coda (percorso di salvataggio da sloggato, #147 F3) |
 | `refreshMap()`      | ridisegno mappa live |
-| `ensureDraft()`     | crea il draft una sola volta (memoizzato), pigro/best-effort — il resolver della coda (#147 F2) |
-| `RBMediaQueue`      | coda foto/audio offline-first (IndexedDB) + upload differito con retry (#147) |
+| `ensureDraft()`     | crea il draft una sola volta (memoizzato), pigro/best-effort — il resolver della coda (#147 F2); ritorna `null` da sloggato |
+| `RBMediaQueue`      | coda foto/audio offline-first (IndexedDB): `add`/`flush`/`items`/`clear`/`count`; upload differito con retry (#147) |
 
 ---
 
 ## 10. Limiti
 
-- **Foto/audio solo per utenti loggati (#147 F1+F2)**: senza login i pulsanti sono nascosti e
-  foto/audio non esistono. Da loggato invece la cattura funziona **offline e prima che il draft
-  esista** (coda + retry, draft creato al primo flush). Resta fuori solo il **buffering da
-  signed-out** (fase F3).
-- **Le foto vivono solo lato server**, legate al draft: non sono nel GPX né nel `.rdbk`.
-  Scaricando il GPX si perdono; sopravvivono solo via *Convert into roadbook* (che porta
-  il `draftId` all'Editor). Un draft mai convertito resta sul server.
+- **Cattura sempre disponibile** (#147 F1+F2+F3): offline, pre-draft e da sloggato. L'unico
+  limite residuo: i media catturati **da sloggato non hanno un upload differito** verso l'account
+  (scelta di design) — per salvarli sul server si accede **prima** di registrare; altrimenti si
+  esporta il `.rdbk` locale con i media.
+- **Le foto non stanno nel GPX né in `roadbook.json`**: da loggato vivono lato server (draft); da
+  sloggato nel contenitore `.rdbk` ZIP esportato a fine registrazione. Uno *scarico GPX* non le
+  include mai.
 - **Odometro vs traccia**: `recordedM` somma lo spostamento di ogni fix accettato, mentre
   in traccia entrano solo i punti oltre il passo adattivo — i km possono superare la
   densità della polilinea.

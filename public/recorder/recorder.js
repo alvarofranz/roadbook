@@ -201,13 +201,13 @@
     const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
     const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     const wptBtn = $('recWptAudio');
-    // WP audio (voice notes) and WP photo need a signed-in user (they end up on a server draft).
-    // They're revealed by sign-in alone — NOT by the draft: a capture made offline / before the
-    // draft exists is buffered and uploaded later (#147 F2). A hint on the idle screen tells
-    // signed-out users the track records anyway. Called once config() has told us who the user is.
+    // WP photo / WP audio are available to EVERYONE, signed in or not (#147 F3): captures buffer in
+    // the local queue. Signed in, they upload to the draft; signed out, they're kept on the device and
+    // saved into a self-contained .rdbk at the end (audio only where the device can record). The idle
+    // hint tells signed-out users their media is kept locally. Called once config() is known.
     function updateRecUi() {
-        wptBtn.hidden = !(meUser && (SR_REC || CAN_REC_AUDIO));
-        $('recPhoto').hidden = !meUser;
+        wptBtn.hidden = !(SR_REC || CAN_REC_AUDIO);
+        $('recPhoto').hidden = false;
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
         const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native'); // only the native app records in the background
     }
@@ -232,9 +232,9 @@
         };
         // Record the audio clip FIRST, so it claims the microphone. On mobile the mic is exclusive:
         // starting speech-to-text first was stealing it, so getUserMedia failed and the clip came out
-        // empty (and Android STT didn't transcribe either). Signed-in only; the clip is buffered and
-        // uploaded later, so it works offline / before the draft exists (#147 F2).
-        if (CAN_REC_AUDIO && meUser) {
+        // empty (and Android STT didn't transcribe either). The clip is buffered and handled later, so
+        // it works offline, before the draft exists, and signed out (kept locally) (#147 F2/F3).
+        if (CAN_REC_AUDIO) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 if (ended) { stream.getTracks().forEach((tk) => tk.stop()); return; } // released during the mic prompt
@@ -312,7 +312,8 @@
         onChange: (n) => {
             const el = $('recPending'); if (!el) return;
             el.hidden = !n;
-            el.textContent = n ? (' ' + n + ' ' + t('awaiting upload')) : '';
+            // signed in → uploading with retry; signed out → kept on the device for the local .rdbk
+            el.textContent = n ? (n + ' ' + t(meUser ? 'awaiting upload' : 'kept on this device')) : '';
         },
         onDone: (item, res) => {
             if (item.kind !== 'photo') return; // voice notes have no map pin to reconcile
@@ -325,10 +326,9 @@
         },
     });
 
-    /* ---------- photos (signed-in: camera → queued upload → geotagged pin) ---------- */
+    /* ---------- photos (camera → queued; uploaded when signed in, kept locally otherwise) ---------- */
     $('recPhoto').onclick = () => {
-        if (!meUser) return RBNeedAuth(t('Sign in to attach photos.'));
-        $('recPhotoFile').click(); // no draft needed — a pre-draft/offline shot is queued (#147 F2)
+        $('recPhotoFile').click(); // open to everyone — the shot is queued; no draft/login needed (#147 F3)
     };
     $('recPhotoFile').onchange = (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -346,11 +346,43 @@
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
+    // File extension for a queued media blob, by MIME (photos keep their original type; voice-note
+    // container varies by browser). Falls back sensibly so the bundle always has a usable name.
+    function mediaExt(mime, kind) {
+        const m = (mime || '').split(';')[0];
+        return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/avif': 'avif', 'image/webp': 'webp', 'image/heic': 'heic',
+            'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[m] || (kind === 'audio' ? 'webm' : 'jpg');
+    }
+    // Build a self-contained .rdbk (roadbook.json + bundled photos/audio + media.json geotags) from
+    // the current recording and the locally-queued media, and download it — the signed-out save path
+    // (#147 F3), same container format as the Editor's export (#162). Returns the number of media
+    // files bundled, or null if the track was too short to build.
+    async function exportLocalRdbk(pts, name) {
+        let roadbook;
+        try { roadbook = RB.buildRoadbook({ name, trkpts: pts, wpts }); }
+        catch (e) { toast(t('Route too short to save.')); return null; }
+        const files = { 'roadbook.json': JSON.stringify(roadbook) };
+        const media = { photos: [], audio: [] };
+        let n = 0;
+        for (const it of await RBMediaQueue.items()) {
+            if (!it.blob) continue;
+            const dir = it.kind === 'audio' ? 'audio' : 'photos';
+            const file = dir + '/' + it.kind + '-' + (++n) + '.' + mediaExt(it.blob.type, it.kind);
+            files[file] = new Uint8Array(await it.blob.arrayBuffer());
+            const f = it.fields || {};
+            (it.kind === 'audio' ? media.audio : media.photos).push({ file, lat: f.lat != null ? f.lat : null, lon: f.lon != null ? f.lon : null });
+        }
+        const bundled = media.photos.length + media.audio.length;
+        if (bundled) files['media.json'] = JSON.stringify(media);
+        RBDownload(await RBZip.write(files), RB.slug(name) + '.rdbk');
+        return bundled;
+    }
+
     // Signed in, the primary action SAVES the recording to the profile in one tap (#143): it
     // builds the roadbook from the track + waypoints and writes it into the draft that already
     // holds the geotagged photos and voice notes (rb_save with id=draftId), so nothing has to go
-    // through the Editor. You stay on the Recorder. Export GPX is a local file (no photos/audio);
-    // "Open in the editor" is there to refine before/after saving.
+    // through the Editor. Signed out, the primary action exports a self-contained .rdbk (with the
+    // buffered media). Export GPX is a local file without media; "Open in the editor" refines it.
     function finishModal(pts, name) {
         const km = (recordedM / 1000).toFixed(2);
         const nm = name || recName();
@@ -360,11 +392,11 @@
             <div class="btnrow center wrap">
                 ${signedIn
                     ? `<button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to server')}</button>`
-                    : `<button class="btn btn-primary" id="rfLogin"><i class="fa-solid fa-right-to-bracket"></i> ${t('Sign in to save')}</button>`}
+                    : `<button class="btn btn-primary" id="rfRdbk"><i class="fa-solid fa-file-zipper"></i> ${t('Export .rdbk')}</button>`}
                 <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Open in the editor')}</button>
                 <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-file-arrow-down"></i> ${t('Export GPX')}</button>
             </div>
-            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('GPX is a local file — photos and audio are not included.')}</p>
+            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('The .rdbk keeps your photos and voice notes in one file; GPX has the track only.')}</p>
             <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
         if (signedIn) d.q('#rfSave').onclick = async () => {
             let roadbook;
@@ -385,7 +417,16 @@
                 </div>`, 'slim center');
             c.q('#scClose').onclick = c.close;
         };
-        else d.q('#rfLogin').onclick = () => RBNeedAuth('Sign in to save this roadbook to your profile.');
+        else d.q('#rfRdbk').onclick = async () => {
+            const btn = d.q('#rfRdbk'); btn.disabled = true;
+            const n = await exportLocalRdbk(pts, nm);
+            btn.disabled = false;
+            if (n == null) return; // track too short — toast already shown
+            d.close();
+            // the media now lives in the downloaded file → offer to free it from the device
+            if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?'), t('Remove')))
+                await RBMediaQueue.clear();
+        };
         d.q('#rfEd').onclick = () => {
             try {
                 sessionStorage.setItem('rb_trip_track', JSON.stringify(pts));

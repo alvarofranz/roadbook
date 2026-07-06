@@ -138,6 +138,20 @@ describe('RBMediaQueue orchestration (createQueue)', () => {
         expect(await store.count()).toBe(0);  // finally uploaded
     });
 
+    it('items() exposes the queued records and clear() empties the queue (#147 F3 local export)', async () => {
+        await store.add({ kind: 'photo', fields: { lat: 1, lon: 2 }, blob: 'B1', token: 'a', tries: 0, ts: 1 });
+        await store.add({ kind: 'audio', fields: { lat: 3, lon: 4 }, blob: 'B2', token: 'b', tries: 0, ts: 2 });
+        const q = make();
+        const items = await q.items();
+        expect(items.map((x) => x.kind)).toEqual(['photo', 'audio']);
+        expect(items.map((x) => x.blob)).toEqual(['B1', 'B2']);
+        const counts = [];
+        q.init({ onChange: (n) => counts.push(n) });
+        await q.clear();
+        expect(await store.count()).toBe(0);
+        expect(counts).toContain(0); // badge notified after clearing
+    });
+
     it('does not run overlapping flushes (re-entry guard)', async () => {
         await store.add({ kind: 'photo', fields: {}, token: 'a', tries: 0, ts: 1 });
         let active = 0, overlap = false;

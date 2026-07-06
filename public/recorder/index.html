@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-4">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-5">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-5">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* recorded km box sits to the right of Waypoints → four readouts in a row */
@@ -65,7 +65,7 @@
                 <a class="tool-help" href="../features/recorder/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
             </div>
             <p class="muted" data-i18n="Record a GPX track live with GPS.">Record a GPX track live with GPS.</p>
-            <p id="recLoginHint" class="muted small" data-i18n="Sign in to also capture photos and voice notes (the track records either way)." hidden>Sign in to also capture photos and voice notes (the track records either way).</p>
+            <p id="recLoginHint" class="muted small" data-i18n="Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account." hidden>Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.</p>
             <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
             <div class="btnrow mt-2"><button class="btn btn-primary" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Start recording">Start recording</span></button></div>
         </div>
@@ -100,19 +100,20 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.06-4"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.06-4"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.06-4"></script>
-<script src="../assets/js/gps-meter.js?v=2026.07.06-4"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.07.06-4"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.06-4"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.06-4"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.06-4"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.06-4"></script>
-<script src="../assets/js/i18n.js?v=2026.07.06-4"></script>
-<script src="../assets/js/app.js?v=2026.07.06-4"></script>
-<script src="../assets/js/rb-media-queue.js?v=2026.07.06-4"></script>
-<script src="../assets/js/status-bar.js?v=2026.07.06-4"></script>
-<script src="recorder.js?v=2026.07.06-4"></script>
+<script src="../assets/js/config.js?v=2026.07.06-5"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.06-5"></script>
+<script src="../assets/js/rbzip.js?v=2026.07.06-5"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.06-5"></script>
+<script src="../assets/js/gps-meter.js?v=2026.07.06-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.07.06-5"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.06-5"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.06-5"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.06-5"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.06-5"></script>
+<script src="../assets/js/i18n.js?v=2026.07.06-5"></script>
+<script src="../assets/js/app.js?v=2026.07.06-5"></script>
+<script src="../assets/js/rb-media-queue.js?v=2026.07.06-5"></script>
+<script src="../assets/js/status-bar.js?v=2026.07.06-5"></script>
+<script src="recorder.js?v=2026.07.06-5"></script>
 </body>
 </html>

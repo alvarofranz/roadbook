@@ -71,8 +71,15 @@
             }
         }
 
+        // Empty the queue (e.g. after a signed-out user has saved a local .rdbk with the media, #147 F3).
+        async function clear() {
+            for (const it of await store.all()) await store.del(it.id);
+            await emitChange();
+        }
+
         return {
-            add, flush,
+            add, flush, clear,
+            items: function () { return store.all(); }, // queued records (blob + fields) for a local export
             count: function () { return store.count(); },
             init: function (cb) { cb = cb || {}; onDone = cb.onDone || null; onChange = cb.onChange || null; },
         };
@@ -142,6 +149,8 @@
     window.RBMediaQueue = {
         add: (kind, blob, fields, name, token) => queue.add(kind, blob, fields, name, token),
         flush: () => queue.flush(),
+        items: () => queue.items(),
+        clear: () => queue.clear(),
         count: () => queue.count(),
         // Wire the reconciliation/badge callbacks (+ optional roadbook resolver) and drain
         // anything left from a previous session (blobs persist in IndexedDB across reloads).
