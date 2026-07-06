@@ -63,6 +63,20 @@
         if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
         showAccount(user);
     }
+    // App: a plain button opening the native Google picker (RBNative), then the SAME flow as the
+    // web (sendGoogle → google_auth, including the Terms step for a brand-new account).
+    function renderNativeGoogle() {
+        const el = $('gBtn'); if (!el) return;
+        el.innerHTML = '<button type="button" class="btn btn-ghost gbtn-native"><i class="fa-brands fa-google"></i> <span data-i18n="Continue with Google">Continue with Google</span></button>';
+        el.querySelector('button').onclick = async () => {
+            try {
+                const idToken = await RBNative.googleSignIn();
+                if (!idToken) return;               // user cancelled
+                googleCred = idToken;
+                await sendGoogle(false);
+            } catch (e) { msg('Google sign-in failed. Please try again.', false); }
+        };
+    }
 
     /* Submit on Enter / button: run the handler, never reload the page. */
     function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
@@ -121,7 +135,10 @@
         const cfg = await api('config');
         tsSite = cfg.turnstile || '';
         loadTurnstile();
-        loadGoogle(cfg.google_client || '');
+        // In the Capacitor app the web GIS button can't run (Google blocks OAuth in a WebView), so
+        // sign in through the native OS picker via RBNative; on the web, render the GIS button.
+        if (window.RBNative && RBNative.googleSignIn) renderNativeGoogle();
+        else loadGoogle(cfg.google_client || '');
 
         if (params.get('verify')) {
             const r = await api('verify', { token: params.get('verify') });

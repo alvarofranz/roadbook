@@ -13,10 +13,37 @@
  * with no change to their own code. */
 import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
+import { SocialLogin } from '@capgo/capacitor-social-login';
+
+// The app's Google OAuth clients (all public). The WEB client is the token audience the backend
+// verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
+const GOOGLE_WEB_CLIENT_ID = '300694269526-qhtr54a7rvagseohbt3l5b4gdhmn9n7t.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID = '300694269526-q9evtli556sb0ag4trp42b8ko7qq1ldf.apps.googleusercontent.com';
+let googleReady = null;   // SocialLogin.initialize() promise, run once
 
 const RBNative = {
     available: true,                       // the bundle only loads inside a native shell
     platform: Capacitor.getPlatform(),     // 'ios' | 'android'
+
+    // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
+    // uses the OS Google account picker (Credential Manager on Android, GoogleSignIn on iOS) via
+    // @capgo/capacitor-social-login, then hands the ID token to /api google_auth — the same
+    // endpoint the web uses. Returns the ID token string, or null if the user cancelled.
+    async googleSignIn() {
+        if (!googleReady) {
+            googleReady = SocialLogin.initialize({
+                google: {
+                    webClientId: GOOGLE_WEB_CLIENT_ID,      // Android serverClientId + token audience
+                    iOSClientId: GOOGLE_IOS_CLIENT_ID,
+                    iOSServerClientId: GOOGLE_WEB_CLIENT_ID,
+                    mode: 'online',                          // returns an ID token (not just an auth code)
+                },
+            });
+        }
+        await googleReady;
+        const res = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+        return (res && res.result && res.result.idToken) || null;
+    },
 
     geo: {
         // Start background-capable location updates. `onUpdate` receives a coords

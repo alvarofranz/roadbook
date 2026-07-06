@@ -61,5 +61,15 @@
 	<string>RDBK uses the camera to add geotagged photos and scan result QR codes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>RDBK lets you attach photos from your library to a roadbook.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Google Sign-In (#46): the reversed iOS OAuth client id, so the native picker can return to the app. -->
+				<string>com.googleusercontent.apps.300694269526-q9evtli556sb0ag4trp42b8ko7qq1ldf</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
