@@ -39,23 +39,31 @@
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
         const active = (p) => rel.indexOf(p) === 0 ? ' active' : '';
+        // Each tool → [short nav label, canonical FontAwesome icon]. Short single-word labels keep
+        // the desktop bar clean and even; the icon is CSS-hidden there and only shows in the
+        // mobile full-screen menu, where it makes the list scannable.
+        const TOOLS = {
+            recorder:   ['Recorder',   'fa-circle-dot'],
+            editor:     ['Editor',     'fa-pen-ruler'],
+            reader:     ['Reader',     'fa-compass'],
+            tripmaster: ['Tripmaster', 'fa-gauge-high'],
+            roadbooks:  ['Roadbooks',  'fa-book-open'],
+            events:     ['Events',     'fa-calendar-check'],
+            ranking:    ['Ranking',    'fa-ranking-star']
+        };
         // The native app is a field companion: Reader · Tripmaster · Recorder only (Editor and
         // Ranking stay web-only). The website keeps the full set.
-        const tools = isNativeApp()
-            ? [['reader', 'Roadbook Reader'], ['tripmaster', 'Tripmaster'], ['recorder', 'Track Recorder']]
-            : [['recorder', 'Track Recorder'], ['editor', 'Roadbook Editor'], ['reader', 'Roadbook Reader'], ['tripmaster', 'Tripmaster'], ['roadbooks', 'Roadbooks'], ['events', '<span data-i18n="Events">Events</span>'], ['ranking', 'Ranking']];
+        const order = isNativeApp()
+            ? ['reader', 'tripmaster', 'recorder']
+            : ['recorder', 'editor', 'reader', 'tripmaster', 'roadbooks', 'events', 'ranking'];
         // Each tool's "How it works" link lives on the tool page itself (beside the title, or at
-        // the foot of the Tripmaster dashboard) — never in the top menu.
-        // Long tool names stack on two lines in the desktop bar: split a plain label on its first
-        // space into two <span class="nl-w">s (single-word labels stay one line). A pre-built HTML
-        // label (the translated Events span) passes through untouched.
-        const twoLine = (label) => {
-            if (label.indexOf('<') !== -1) return label;
-            const sp = label.indexOf(' ');
-            return sp === -1 ? `<span class="nl-w">${label}</span>`
-                : `<span class="nl-w">${label.slice(0, sp)}</span><span class="nl-w">${label.slice(sp + 1)}</span>`;
-        };
-        const navLinks = tools.map(([p, label]) => `<a class="nav-link nav-tool${active(p)}" href="${ROOT}${p}/">${twoLine(label)}</a>`).join('');
+        // the foot of the Tripmaster dashboard) — never in the top menu. "Events" is the lone
+        // translated label (the future feature); the rest are proper tool names.
+        const navLinks = order.map((p) => {
+            const [label, icon] = TOOLS[p];
+            const text = p === 'events' ? '<span data-i18n="Events">Events</span>' : label;
+            return `<a class="nav-link nav-tool${active(p)}" href="${ROOT}${p}/"><i class="fa-solid ${icon} nav-ico"></i><span class="nav-txt">${text}</span></a>`;
+        }).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';

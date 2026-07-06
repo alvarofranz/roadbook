@@ -41,21 +41,25 @@
 <main>
     <!-- HERO (website only — hidden in the native app, which shows the launcher below) -->
     <section class="hero web-only">
-        <div class="wrap hero-grid">
-            <div class="hero-copy">
-                <h1 data-i18n-html="hero.title">Digital roadbooks for <span class="accent">your adventures</span></h1>
-                <p class="lead" data-i18n="hero.lead">Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.</p>
-                <div class="workflow" aria-label="Workflow">
-                    <a class="wf-step" href="features/recorder/"><i class="fa-solid fa-circle-dot"></i><span data-i18n="flow.s1">Record a route</span></a>
-                    <span class="wf-arrow">→</span>
-                    <a class="wf-step" href="features/editor/"><i class="fa-solid fa-pen-ruler"></i><span data-i18n="flow.s2">Build a roadbook</span></a>
-                    <span class="wf-arrow">→</span>
-                    <a class="wf-step" href="features/reader/"><i class="fa-solid fa-users"></i><span data-i18n="flow.s3">Use it with friends</span></a>
-                    <span class="wf-arrow">→</span>
-                    <a class="wf-step" href="features/ranking/"><i class="fa-solid fa-trophy"></i><span data-i18n="flow.s4">Run an event</span></a>
+        <div class="wrap">
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <h1 data-i18n-html="hero.title">Digital roadbooks for <span class="accent">your adventures</span></h1>
+                    <p class="lead" data-i18n="hero.lead">Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.</p>
                 </div>
+                <img class="hero-mock" src="assets/mockup.png" alt="RDBK.app" width="440" height="440" loading="eager">
             </div>
-            <img class="hero-mock" src="assets/mockup.png" alt="RDBK.app" width="440" height="440" loading="eager">
+            <!-- Full-width "how it works" strip below the hero so the four steps + arrows lay out on
+                 one clean row on desktop/tablet and wrap to a 2×2 grid on phones. -->
+            <div class="workflow" aria-label="Workflow">
+                <a class="wf-step" href="features/recorder/"><i class="fa-solid fa-circle-dot"></i><span data-i18n="flow.s1">Record a route</span></a>
+                <span class="wf-arrow" aria-hidden="true">→</span>
+                <a class="wf-step" href="features/editor/"><i class="fa-solid fa-pen-ruler"></i><span data-i18n="flow.s2">Build a roadbook</span></a>
+                <span class="wf-arrow" aria-hidden="true">→</span>
+                <a class="wf-step" href="features/reader/"><i class="fa-solid fa-users"></i><span data-i18n="flow.s3">Use it with friends</span></a>
+                <span class="wf-arrow" aria-hidden="true">→</span>
+                <a class="wf-step" href="features/ranking/"><i class="fa-solid fa-trophy"></i><span data-i18n="flow.s4">Run an event</span></a>
+            </div>
         </div>
     </section>
 
