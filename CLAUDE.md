@@ -68,6 +68,13 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   @me --add-label "in lavorazione"`. `@me` assigns it to whoever is authenticated with `gh`
   (the person doing the work — you, Álvaro, whoever pulled), never a hard-coded name. This
   shows who owns it and that it is being worked on.
+- **Never work an issue in parallel with its current assignee — raise the flag first.** BEFORE
+  starting on an issue, check its assignee / `in lavorazione` label. If it is already assigned to
+  someone else (e.g. Álvaro picks up an issue currently assigned to Maurizio, or vice-versa), you
+  MUST **claim it first** — reassign it to yourself AND leave a short comment ("taking this over,
+  implementing X") — so the previous owner sees the flag and stops, instead of both building the
+  same thing and colliding on `main`. That signal (the reassignment + comment) is the "semaforo":
+  raise it before writing code, never discover the overlap after the fact.
 - **Committing an issue's fix to prod → drop the WIP tag.** Remove the `in lavorazione` label
   the moment the fix ships to production (a prod deploy = a push to `main`) — that is when it
   stops being "in progress". GitHub does NOT auto-remove labels, so clear it explicitly:
