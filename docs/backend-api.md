@@ -98,7 +98,7 @@ verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (ved
 |--------|---------|:----:|
 | `events_manage` | Elenca gli eventi che l'utente può gestire (propri + co-organizzati; tutti per admin) | richiesta |
 | `event_manage_get` | Dati completi di un evento per la pagina di gestione | richiesta |
-| `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**) | richiesta/organizer |
+| `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**); lo **slug pubblico segue il titolo** — rigenerato dal titolo a ogni salvataggio, quindi un rename aggiorna `/event/<slug>` (#194) | richiesta/organizer |
 | `event_delete` | Elimina un evento | richiesta |
 | `event_rb_add`/`event_rb_remove`/`event_rb_mode` | Associa/dissocia un roadbook all'evento; imposta la sua `scoring_mode` | richiesta |
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |

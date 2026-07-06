@@ -156,14 +156,16 @@ function event_save(array $user, array $d): void {
     $cats = is_array($d['categories'] ?? null) ? $d['categories'] : [];
     // rights + slug first, then ALL the writes in one transaction — a mid-way failure must
     // not leave the event saved with half its categories
-    if ($id > 0) { $e = require_event_manage($user, $id); $slug = $e['slug']; }
+    // The slug follows the current title (#194); excludeId keeps it unchanged when the slugified
+    // title is the same, and only regenerates it after a real rename.
+    if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
     $pdo = db();
     $pdo->beginTransaction();
     try {
         if ($id > 0) {
-            $pdo->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ? WHERE id = ?')
-                ->execute([$title, $desc, $starts, $ends, $isPublic, $id]);
+            $pdo->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
+                ->execute([$title, $desc, $starts, $ends, $isPublic, $slug, $id]);
         } else {
             $pdo->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
                 ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
