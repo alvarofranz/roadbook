@@ -14,9 +14,13 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Local builds keep 4 / 1.0.3; the Android-release CI overrides both via -P properties
-        // (versionCode from the run number, versionName from the android-<x> tag).
-        versionCode (project.findProperty('rdbkVersionCode') ?: 4).toString().toInteger()
-        versionName (project.findProperty('rdbkVersionName') ?: '1.0.3').toString()
+        // (versionCode from the run number, versionName from the android-<x> tag). Resolve into
+        // locals first — `versionCode (expr).toInteger()` would otherwise chain the conversion
+        // onto the setter's (null) return instead of the value.
+        def rdbkVc = (project.findProperty('rdbkVersionCode') ?: 4).toString().toInteger()
+        def rdbkVn = (project.findProperty('rdbkVersionName') ?: '1.0.3').toString()
+        versionCode rdbkVc
+        versionName rdbkVn
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
