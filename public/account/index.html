@@ -59,6 +59,16 @@
             <div class="turnstile" data-ts="login"></div>
             <button class="btn btn-primary" id="loginBtn" type="submit" data-i18n="Sign in"><i class="fa-solid fa-right-to-bracket"></i> Sign in</button>
         </form>
+        <!-- Google Sign-In (#46): the GIS button renders here; the Terms row only appears when a
+             brand-new account is being created (existing users sign in with no extra step). -->
+        <div class="or-sep"><span data-i18n="or">or</span></div>
+        <div class="google-signin">
+            <div class="gbtn" id="gBtn"></div>
+            <div id="gTerms" class="gterms" hidden>
+                <label class="checkbox-row"><input type="checkbox" id="gTermsChk"> <span data-i18n-html="reg.acceptTerms">I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a></span></label>
+                <button class="btn btn-ghost" id="gTermsBtn" type="button" data-i18n="Continue with Google">Continue with Google</button>
+            </div>
+        </div>
         <div class="links"><a href="#" id="toRegister" data-i18n="Create account">Create account</a><a href="#" id="toForgot" data-i18n="Forgot password?">Forgot password?</a></div>
     </section>
 

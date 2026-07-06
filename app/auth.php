@@ -229,6 +229,77 @@ function login_user(array $d): void {
     json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
 }
 
+// Google Sign-In (#46). The client posts { credential: <Google ID token> } from the GIS button.
+// We verify the token with Google, then: (1) an account already linked by google_sub signs in;
+// (2) otherwise a verified-email match links Google to that existing account; (3) otherwise a new
+// Google-only account is created (no password) — which requires accepting the Terms, exactly like
+// classic registration. Issues a session + a Bearer token (the app path), same as login_user.
+function google_auth(array $d): void {
+    global $CFG;
+    rate_limit('google_' . client_ip(), 30, 900);
+    $cred = (string)($d['credential'] ?? '');
+    if ($cred === '') fail('Missing Google credential.', 400);
+    if (empty($CFG['google_client_ids'])) fail('Google Sign-In is not configured.', 500);
+
+    // Verify with Google's tokeninfo endpoint: it validates the signature, issuer and expiry and
+    // returns the claims. (Same curl style as the Turnstile check — no new dependency.)
+    $ch = curl_init('https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($cred));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12]);
+    $body = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $c = json_decode((string)$body, true);
+    if ($code !== 200 || !is_array($c)) fail('Could not verify Google sign-in. Please try again.', 401);
+
+    // Trust the token only if it was minted for one of OUR client IDs, by Google, with a verified email.
+    if (!in_array((string)($c['aud'] ?? ''), $CFG['google_client_ids'], true)) fail('This Google sign-in is not for RDBK.', 401);
+    if (!in_array((string)($c['iss'] ?? ''), ['accounts.google.com', 'https://accounts.google.com'], true)) fail('Invalid Google token.', 401);
+    $sub = (string)($c['sub'] ?? '');
+    $email = strtolower(trim((string)($c['email'] ?? '')));
+    $verified = ($c['email_verified'] ?? null);
+    $verified = ($verified === true || $verified === 'true' || $verified === 1 || $verified === '1');
+    if ($sub === '' || !valid_email($email) || !$verified) fail('Your Google account has no verified email.', 401);
+
+    // (1) already linked → sign in. (2) verified-email match → link Google to it.
+    $st = db()->prepare('SELECT id, blocked FROM users WHERE google_sub = ?'); $st->execute([$sub]);
+    $u = $st->fetch();
+    if (!$u) {
+        $st = db()->prepare('SELECT id, blocked FROM users WHERE email = ?'); $st->execute([$email]);
+        if ($u = $st->fetch()) db()->prepare('UPDATE users SET google_sub = ?, email_verified = 1 WHERE id = ?')->execute([$sub, $u['id']]);
+    }
+    // (3) brand-new account → needs Terms acceptance, then create a passwordless Google account.
+    if (!$u) {
+        if (empty($d['accept_terms'])) { json_out(['ok' => false, 'need_terms' => true, 'error' => 'You must accept the Terms of Use to register.']); return; }
+        $first = mb_substr(trim((string)($c['given_name'] ?? '')), 0, 80) ?: 'RDBK';
+        $last  = mb_substr(trim((string)($c['family_name'] ?? '')), 0, 80);
+        $username = google_unique_username($email);
+        db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,google_sub,email_verified,terms_accepted_at,terms_version) VALUES (?,?,?,?,NULL,?,1,NOW(),?)')
+            ->execute([$first, $last, $username, $email, $sub, TERMS_VERSION]);
+        $u = ['id' => (int)db()->lastInsertId(), 'blocked' => 0];
+        log_activity((int)$u['id'], 'register_google');
+    }
+
+    if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
+    session_regenerate_id(true);
+    $_SESSION['uid'] = (int)$u['id'];
+    log_activity((int)$u['id'], 'login_google');
+    json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
+}
+
+// A unique username seeded from the email local-part, sanitised to the register charset
+// (letters, numbers, _ . -), 3–40 chars; a numeric suffix breaks any collision.
+function google_unique_username(string $email): string {
+    $base = strtolower(preg_replace('/[^a-z0-9_.-]/i', '', explode('@', $email)[0]));
+    $base = substr($base, 0, 34);
+    if (strlen($base) < 3) $base = 'rdbk' . $base;
+    $name = $base;
+    for ($n = 1; ; $n++) {
+        $st = db()->prepare('SELECT 1 FROM users WHERE username = ?'); $st->execute([$name]);
+        if (!$st->fetch()) return $name;
+        $name = substr($base, 0, 34) . $n;
+    }
+}
+
 function logout_user(): void {
     $uid = !empty($_SESSION['uid']) ? (int)$_SESSION['uid'] : null;
     if ($tok = bearer_token()) db()->prepare('DELETE FROM api_tokens WHERE token_hash = ?')->execute([token_hash($tok)]);

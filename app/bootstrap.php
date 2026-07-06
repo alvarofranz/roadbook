@@ -20,6 +20,9 @@ $CFG = [
     'turnstile_site'   => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
     'turnstile_secret' => $_ENV['TURNSTILE_SECRET'] ?? '',
     'admin_emails'     => array_values(array_filter(array_map('trim', explode(',', strtolower($_ENV['ADMIN_EMAILS'] ?? ''))))),
+    // Google Sign-In (#46): comma-separated OAuth client IDs, WEB first then Android. Every id is
+    // an accepted `aud` when verifying a Google ID token; the first (web) drives the GIS button.
+    'google_client_ids' => array_values(array_filter(array_map('trim', explode(',', $_ENV['GOOGLE_CLIENT_IDS'] ?? '')))),
     'storage'          => $ROOT . '/storage/users',   // per-user private storage (volume-backed)
     'avatars_dir'      => $ROOT . '/public/avatars',  // public avatars (web: /avatars/)
     'event_logos_dir'  => $ROOT . '/public/event-logos', // public event logos (web: /event-logos/)

@@ -31,6 +31,39 @@
     }
     function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
+    /* ---------- Google Sign-In (GIS) ---------- */
+    let gClientId = '', googleCred = null;
+    function loadGoogle(clientId) {
+        gClientId = clientId || '';
+        if (!gClientId) return;
+        const s = document.createElement('script');
+        s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+        s.onload = renderGoogle; document.head.appendChild(s);
+    }
+    function renderGoogle() {
+        if (!gClientId || !window.google || !google.accounts || !google.accounts.id) return;
+        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => { googleCred = resp && resp.credential; sendGoogle(false); } });
+        const el = $('gBtn');
+        if (el) google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: 280 });
+    }
+    // The GIS callback and the Terms-retry button both land here. A new Google account needs Terms
+    // accepted (server returns need_terms); existing / linked users sign in with no extra step.
+    async function sendGoogle(acceptTerms) {
+        if (!googleCred) return;
+        const r = await api('google_auth', { credential: googleCred, accept_terms: !!acceptTerms });
+        if (r.ok) { me = r.user; finishLogin(me); return; }
+        if (r.need_terms) { $('gTerms').hidden = false; return msg('You must accept the Terms of Use to register.', false); }
+        msg(r.error, false);
+    }
+    // Shared post-sign-in step (classic login + Google): force a password change if flagged, else
+    // return to ?next= (safe same-origin path only) or show the profile.
+    function finishLogin(user) {
+        if (user.must_change_password) return showForce();
+        const next = new URLSearchParams(location.search).get('next');
+        if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
+        showAccount(user);
+    }
+
     /* Submit on Enter / button: run the handler, never reload the page. */
     function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
 
@@ -88,6 +121,7 @@
         const cfg = await api('config');
         tsSite = cfg.turnstile || '';
         loadTurnstile();
+        loadGoogle(cfg.google_client || '');
 
         if (params.get('verify')) {
             const r = await api('verify', { token: params.get('verify') });
@@ -124,17 +158,12 @@
     onSubmit('loginForm', async () => {
         const pass = $('loginPass').value;
         const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
-        if (r.ok) {
-            me = r.user; await storeCredential(me.email, pass);
-            if (me.must_change_password) return showForce();
-            // return to the page the user came from (?next=), if it's a safe same-origin path
-            const next = new URLSearchParams(location.search).get('next');
-            if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
-            showAccount(me);
-        }
+        if (r.ok) { me = r.user; await storeCredential(me.email, pass); finishLogin(me); }
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
     });
+    // Google Sign-In: the Terms row appears only when creating a new account; retry with consent.
+    $('gTermsBtn').onclick = () => { if (!$('gTermsChk').checked) return msg('You must accept the Terms of Use to register.', false); sendGoogle(true); };
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
         if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
