@@ -71,10 +71,11 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
-| `config` | Bootstrap del front-end: chiave Turnstile (sito), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
+| `config` | Bootstrap del front-end: chiave Turnstile (sito), **`google_client`** (id OAuth Web per il pulsante GIS, #46), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
 | `register` | Crea l'account (richiede `password_confirm` **e** `accept_terms`, timbra `terms_accepted_at`/`terms_version`) e invia la mail di verifica | nessuna |
 | `verify` | Verifica l'email tramite token | nessuna |
 | `login` | Login (email **o** username), rigenera la sessione, restituisce anche un Bearer token | nessuna |
+| `google_auth` | **Google Sign-In (#46)**: verifica l'ID token Google (tokeninfo: firma/`iss`/`exp`, `aud` ∈ `GOOGLE_CLIENT_IDS`), poi (1) accede all'account già collegato via `google_sub`, (2) lo collega a un account con email **verificata** corrispondente, o (3) crea un account Google *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Rigenera la sessione + Bearer token come `login` | nessuna |
 | `logout` | Distrugge la sessione e revoca il Bearer token usato | sessione |
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
 | `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
