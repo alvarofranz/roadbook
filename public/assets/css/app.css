@@ -473,7 +473,6 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .or-sep { display: flex; align-items: center; gap: .8rem; color: var(--muted); font-size: .82rem; margin: 1.1rem 0 .9rem; }
 .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .google-signin { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
-.gterms { display: flex; flex-direction: column; gap: .6rem; align-items: center; text-align: center; }
 /* Our own dark Google button (matches the theme). On the web, Google's real button is rendered
    invisibly ON TOP of it (.gis-overlay) so the click triggers the official flow without the
    white-box GIS look; in the app the button calls RBNative directly. */
@@ -487,6 +486,14 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--sand); animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .google-hint { max-width: 280px; text-align: center; margin: 0; }
+/* the post-consent confirmation panel: detected email + (new accounts) Terms + a clear CTA */
+.gconfirm { display: flex; flex-direction: column; align-items: stretch; gap: .7rem; width: 280px; }
+.gconfirm-as { margin: 0; text-align: center; color: var(--muted); font-size: .92rem; }
+.gconfirm-as b { color: var(--text); }
+.gconfirm-terms { justify-content: center; font-size: .88rem; }
+.gconfirm .btn { width: 100%; justify-content: center; margin: 0; }
+.gconfirm-other { background: none; border: 0; color: var(--sand-2); font: inherit; font-size: .88rem; cursor: pointer; padding: .2rem; }
+.gconfirm-other:hover { text-decoration: underline; }
 .field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
 .ios-steps { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }
 .grow { flex: 1; }

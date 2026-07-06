@@ -260,16 +260,23 @@ function google_auth(array $d): void {
     $verified = ($verified === true || $verified === 'true' || $verified === 1 || $verified === '1');
     if ($sub === '' || !valid_email($email) || !$verified) fail('Your Google account has no verified email.', 401);
 
-    // (1) already linked → sign in. (2) verified-email match → link Google to it.
+    // Resolve the account this Google identity maps to: linked by google_sub, or a verified-email match.
     $st = db()->prepare('SELECT id, blocked FROM users WHERE google_sub = ?'); $st->execute([$sub]);
-    $u = $st->fetch();
+    $u = $st->fetch(); $linkEmail = false;
     if (!$u) {
         $st = db()->prepare('SELECT id, blocked FROM users WHERE email = ?'); $st->execute([$email]);
-        if ($u = $st->fetch()) db()->prepare('UPDATE users SET google_sub = ?, email_verified = 1 WHERE id = ?')->execute([$sub, $u['id']]);
+        $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (Google-verified) email
     }
-    // (3) brand-new account → needs Terms acceptance, then create a passwordless Google account.
-    if (!$u) {
-        if (empty($d['accept_terms'])) { json_out(['ok' => false, 'need_terms' => true, 'error' => 'You must accept the Terms of Use to register.']); return; }
+
+    // Phase 1 — PROBE: tell the client who this is and whether the account exists, WITHOUT signing in
+    // or creating anything, so it can show a clear "Sign in / Create account as <email>" confirmation.
+    if (empty($d['confirm'])) { json_out(['ok' => false, 'probe' => true, 'email' => $email, 'exists' => (bool)$u]); return; }
+
+    // Phase 2 — CONFIRM: sign in (existing; link the email match) or create a passwordless account.
+    if ($u) {
+        if ($linkEmail) db()->prepare('UPDATE users SET google_sub = ?, email_verified = 1 WHERE id = ?')->execute([$sub, $u['id']]);
+    } else {
+        if (empty($d['accept_terms'])) { json_out(['ok' => false, 'need_terms' => true, 'email' => $email]); return; }
         $first = mb_substr(trim((string)($c['given_name'] ?? '')), 0, 80) ?: 'RDBK';
         $last  = mb_substr(trim((string)($c['family_name'] ?? '')), 0, 80);
         $username = google_unique_username($email);

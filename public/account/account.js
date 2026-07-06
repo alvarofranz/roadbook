@@ -48,7 +48,7 @@
     // top of it, so a click reliably triggers the official ID-token flow without the white-box GIS look.
     function renderGoogle() {
         if (!gClientId || !window.google || !google.accounts || !google.accounts.id) return;
-        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => { googleCred = resp && resp.credential; googleBusy(); sendGoogle(false); } });
+        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => onGoogle(resp && resp.credential) });
         const el = $('gBtn'); if (!el) return;
         el.className = 'gbtn-wrap';
         el.innerHTML = `${gButton()}<div class="gis-overlay"></div>`;
@@ -59,12 +59,8 @@
         const el = $('gBtn'); if (!el) return;
         el.className = ''; el.innerHTML = gButton();
         el.querySelector('button').onclick = async () => {
-            try {
-                const idToken = await RBNative.googleSignIn();
-                if (!idToken) return;                 // user cancelled — button stays
-                googleBusy(); googleCred = idToken;
-                await sendGoogle(false);
-            } catch (e) { restoreGoogle(); msg('Google sign-in failed. Please try again.', false); }
+            try { const idToken = await RBNative.googleSignIn(); if (idToken) onGoogle(idToken); }   // null = cancelled
+            catch (e) { msg('Google sign-in failed. Please try again.', false); }
         };
     }
     // Feedback while the ID token is verified server-side; restoreGoogle() puts the button back on a
@@ -72,15 +68,35 @@
     function googleBusy() { const el = $('gBtn'); if (el) { el.className = ''; el.innerHTML = `<div class="gbtn-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
     function restoreGoogle() { (window.RBNative && RBNative.googleSignIn) ? renderNativeGoogle() : renderGoogle(); }
 
-    // The Google callback and the Terms-retry button both land here. A new Google account needs Terms
-    // accepted (server returns need_terms); existing / linked users sign in with no extra step.
-    async function sendGoogle(acceptTerms) {
-        if (!googleCred) return;
-        const r = await api('google_auth', { credential: googleCred, accept_terms: !!acceptTerms });
-        if (r.ok) { me = r.user; finishLogin(me); return; }
-        restoreGoogle();
-        if (r.need_terms) { $('gTerms').hidden = false; return msg('You must accept the Terms of Use to register.', false); }
-        msg(r.error, false);
+    // After Google consent: probe the server (who is this? does the account exist?) WITHOUT signing in,
+    // then show a clear "Sign in / Create account as <email>" confirmation.
+    async function onGoogle(cred) {
+        if (!cred) return;
+        googleCred = cred; googleBusy();
+        const p = await api('google_auth', { credential: cred });          // probe (no confirm)
+        if (p && p.probe) return showGoogleConfirm(p.email, !!p.exists);
+        restoreGoogle(); msg((p && p.error) || 'Google sign-in failed. Please try again.', false);
+    }
+    // The confirmation panel: the detected email, the Terms (new accounts only) and the final CTA.
+    function showGoogleConfirm(email, exists) {
+        const el = $('gBtn'); if (!el) return;
+        el.className = 'gconfirm';
+        el.innerHTML =
+            `<p class="gconfirm-as">${t('Continue as')} <b>${RBesc(email)}</b></p>`
+            + (exists ? '' : `<label class="checkbox-row gconfirm-terms"><input type="checkbox" id="gConfirmTerms"> <span>${t('reg.acceptTerms')}</span></label>`)
+            + `<button type="button" class="btn btn-primary gconfirm-go">${exists ? t('Sign in') : t('Create account')}</button>`
+            + `<button type="button" class="gconfirm-other">${t('Use a different account')}</button>`;
+        el.querySelector('.gconfirm-go').onclick = () => {
+            if (!exists && !el.querySelector('#gConfirmTerms').checked) return msg('You must accept the Terms of Use to register.', false);
+            googleBusy(); confirmGoogle(exists);
+        };
+        el.querySelector('.gconfirm-other').onclick = () => { googleCred = null; msg(''); restoreGoogle(); };
+    }
+    // Confirm: create the account (new, Terms accepted) or sign in (existing), then land in the profile.
+    async function confirmGoogle(exists) {
+        const r = await api('google_auth', { credential: googleCred, confirm: true, accept_terms: !exists });
+        if (r.ok) { me = r.user; return finishLogin(me); }
+        restoreGoogle(); msg(r.error || 'Google sign-in failed. Please try again.', false);
     }
     // Shared post-sign-in step (classic login + Google): force a password change if flagged, else
     // return to ?next= (safe same-origin path only) or show the profile.
@@ -192,8 +208,6 @@
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
     });
-    // Google Sign-In: the Terms row appears only when creating a new account; retry with consent.
-    $('gTermsBtn').onclick = () => { if (!$('gTermsChk').checked) return msg('You must accept the Terms of Use to register.', false); sendGoogle(true); };
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
         if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);

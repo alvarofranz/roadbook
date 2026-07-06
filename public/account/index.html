@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-10">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.06-11">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-10">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.06-11">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -59,16 +59,12 @@
             <div class="turnstile" data-ts="login"></div>
             <button class="btn btn-primary" id="loginBtn" type="submit" data-i18n="Sign in"><i class="fa-solid fa-right-to-bracket"></i> Sign in</button>
         </form>
-        <!-- Google Sign-In (#46): the GIS button renders here; the Terms row only appears when a
-             brand-new account is being created (existing users sign in with no extra step). -->
+        <!-- Google Sign-In (#46): our dark button renders into #gBtn; after consent it swaps to a
+             confirmation panel (detected email + Terms for new accounts + a Sign in / Create CTA). -->
         <div class="or-sep"><span data-i18n="or">or</span></div>
         <div class="google-signin">
             <div class="gbtn" id="gBtn"></div>
             <p class="google-hint muted small" data-i18n="Sign in or create your account — no password needed.">Sign in or create your account — no password needed.</p>
-            <div id="gTerms" class="gterms" hidden>
-                <label class="checkbox-row"><input type="checkbox" id="gTermsChk"> <span data-i18n-html="reg.acceptTerms">I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a></span></label>
-                <button class="btn btn-ghost" id="gTermsBtn" type="button" data-i18n="Continue with Google">Continue with Google</button>
-            </div>
         </div>
         <div class="links"><a href="#" id="toRegister" data-i18n="Create account">Create account</a><a href="#" id="toForgot" data-i18n="Forgot password?">Forgot password?</a></div>
     </section>
@@ -219,15 +215,15 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.06-10"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.06-10"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.06-10"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.06-10"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.06-10"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.06-10"></script>
-<script src="../assets/js/i18n.js?v=2026.07.06-10"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.06-10"></script>
-<script src="../assets/js/app.js?v=2026.07.06-10"></script>
-<script src="account.js?v=2026.07.06-10"></script>
+<script src="../assets/js/config.js?v=2026.07.06-11"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.06-11"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.06-11"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.06-11"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.06-11"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.06-11"></script>
+<script src="../assets/js/i18n.js?v=2026.07.06-11"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.06-11"></script>
+<script src="../assets/js/app.js?v=2026.07.06-11"></script>
+<script src="account.js?v=2026.07.06-11"></script>
 </body>
 </html>
