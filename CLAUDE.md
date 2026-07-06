@@ -3,13 +3,24 @@
 A free PWA suite for **digital roadbooks** for any adventure (4x4, moto, bike,
 running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/**.
 
+- **One codebase → four surfaces:** the same `public/` ships as the **website**, an
+  **installable PWA**, and native **iOS** + **Android** apps.
 - Front-end: vanilla HTML/CSS/JS PWA, web root `public/` (no build step on the web).
-- Native apps: the same `public/` is wrapped by **Capacitor** into iOS + Android (one
-  codebase). The only built artifact is the native bridge (`native/src/native.js` →
-  `public/assets/js/native.bundle.js`, esbuild). See **Native apps** below and `NATIVE.md`.
+- Native apps: the same `public/` is wrapped by **Capacitor** into iOS + Android. The only
+  built artifact is the native bridge (`native/src/native.js` → `public/assets/js/native.bundle.js`,
+  esbuild). Both stores ship via **tag-triggered CI** (not a `main` push): iOS on an `ios-*`
+  tag (Xcode Cloud → TestFlight), Android on an `android-*` tag (GitHub Actions → Play). See
+  **Native apps** below and `NATIVE.md`.
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
+- **Sign-in:** email/password **or Google Sign-In** (#46). `google_auth` (`app/auth.php`)
+  verifies the Google ID token and links/creates the account; the token's `aud` is always the
+  **Web** OAuth client, so ONE backend serves web + iOS + Android. **Web Google Sign-In is live**
+  (release 2026.07.06-7); the **native** app path (a Capacitor Google-auth plugin — the web GIS
+  button can't run in a WebView) is still a pending follow-up. OAuth client IDs live in `.env`
+  `GOOGLE_CLIENT_IDS` (web first) + the native OAuth clients (Android done; **iOS client not yet
+  created**).
   DB schema = `migrations/*.sql` (source of truth); 4 tables: `users`, `roadbooks`,
   `roadbook_photos`, `api_tokens`.
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
@@ -207,9 +218,13 @@ script/style URL in the HTML, so each release gets fresh asset URLs through ever
 layer (browser, CDN edge, the host's static-file cache — which ignores `.htaccess` and
 pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fontawesome/`,
 `public/assets/js/config.js`, `.env`, `vendor/`) are not in git and persist across deploys.
-**Native app releases are separate** — built on a Mac (signed Android AAB / iOS via Xcode)
-and uploaded to the stores; the web deploy serves `public/` and ignores the `android/`/`ios/`
-projects. See `NATIVE.md`.
+**Native app releases are separate from the web deploy** and are **tag-triggered CI**, never a
+`main` push: **iOS** on an `ios-*` tag (Xcode Cloud → TestFlight), **Android** on an `android-*`
+tag (`.github/workflows/android-release.yml`: rehydrate assets from the live site → build the
+native bridge → `cap sync android` → sign from repo secrets → `bundleRelease` → upload the AAB to
+the Play **internal** track via the service account). Cut them with `git tag ios-<v>` /
+`git tag android-<v>` and push the tag. The web deploy serves `public/` and ignores the
+`android/`/`ios/` projects. See `NATIVE.md`.
 
 ## Email (`info@rdbk.app`)
 The public contact address is a **forward-only alias** — no mailbox, no IMAP, no
