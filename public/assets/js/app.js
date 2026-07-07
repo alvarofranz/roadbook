@@ -78,6 +78,7 @@
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
             <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a></span>
+            <div class="lang lang-bar"></div>
             <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
             <nav class="topnav" id="topnav">${navLinks}<div class="lang lang-top"></div></nav>
         </div>`;
@@ -105,9 +106,7 @@
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
-            <div class="lang"></div>
         </div>`;
-        if (!window.RBi18n) { const l = footer.querySelector('.lang'); if (l) l.hidden = true; }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.

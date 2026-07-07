@@ -109,11 +109,12 @@ img { max-width: 100%; display: block; }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
-/* the footer selector sits at the bottom → open upward */
-.foot .lang-menu { top: auto; bottom: calc(100% + 6px); }
-/* The selector lives in the top bar on desktop and in the footer on mobile — one per breakpoint. */
+/* The selector lives in the top bar on both breakpoints — inline in the nav on desktop
+   (.lang-top), and top-right in the header bar on mobile (.lang-bar), where it stays above
+   the full-screen menu overlay so the language is switchable whether the menu is open or not. */
 .lang-top { margin-left: .5rem; }
-@media (min-width: 1025px) { .foot .lang { display: none; } }
+.lang-bar { margin-left: auto; position: relative; z-index: 90; }
+@media (min-width: 1025px) { .lang-bar { display: none; } }
 @media (max-width: 1024px) { .lang-top { display: none; } }
 
 /* ---------- buttons ---------- */
