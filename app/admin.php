@@ -48,6 +48,14 @@ function purge_user_files(int $uid, array $rbIds): void {
     foreach ($rbIds as $rid) rrmdir($CFG['photos_dir'] . '/' . (int)$rid);
     rrmdir($CFG['storage'] . '/' . $uid);
 }
+// Remove ONE roadbook's files: its owner-scoped .rdbk + its id-scoped photo/audio folders. Used
+// when permanently purging a trashed roadbook (#187) — admin "delete now" and the 30-day cron.
+function purge_roadbook_files(int $rbId, int $ownerId, string $filename): void {
+    global $CFG;
+    if ($filename !== '' && $filename !== 'pending') @unlink($CFG['storage'] . '/' . $ownerId . '/' . $filename);
+    rrmdir($CFG['photos_dir'] . '/' . $rbId);
+    rrmdir($CFG['audio_dir'] . '/' . $rbId);
+}
 
 function admin_users(array $user, array $d = []): void {
     // Optional event filter: only the users belonging to that event (participants + organizers).
@@ -111,8 +119,8 @@ function admin_unpublish(array $user, array $d): void {
 function admin_user_roadbooks(array $user, array $d): void {
     $uid = (int)($d['user_id'] ?? 0);
     if ($uid <= 0) fail('Bad request.');
-    $st = db()->prepare('SELECT id, slug, title, status, total_distance, note_count, updated_at
-        FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
+    $st = db()->prepare("SELECT id, slug, title, status, total_distance, note_count, updated_at
+        FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
     $st->execute([$uid]);
     $list = array_map(fn($r) => [
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'status' => $r['status'],
@@ -131,6 +139,51 @@ function admin_set_status(array $user, array $d): void {
     db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
     log_activity((int)$user['id'], 'admin_set_status', 'roadbook #' . $id . ' → ' . $status);
     json_out(['ok' => true, 'id' => $id, 'status' => $status]);
+}
+
+/* ---- roadbook trash (#187): soft-deleted roadbooks, admin-only ---- */
+const TRASH_DAYS = 30; // a trashed roadbook is kept this long, then the cron purges it for good
+
+// List every trashed roadbook (any owner) with how long until it is purged. Admin trash page.
+function admin_trash_list(array $user): void {
+    $rows = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.updated_at, u.username,
+            TIMESTAMPDIFF(DAY, r.updated_at, NOW()) AS days_in_trash
+        FROM roadbooks r JOIN users u ON u.id = r.user_id
+        WHERE r.status = 'deleted' ORDER BY r.updated_at DESC")->fetchAll();
+    $list = array_map(fn($r) => [
+        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'username' => $r['username'],
+        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'],
+        'deleted_at' => $r['updated_at'], 'days_left' => max(0, TRASH_DAYS - (int)$r['days_in_trash']),
+    ], $rows);
+    json_out(['ok' => true, 'trash_days' => TRASH_DAYS, 'roadbooks' => $list]);
+}
+
+// Restore a trashed roadbook → it comes back as a private DRAFT (its prior published state is
+// not remembered, and restoring must never silently re-publish). Owner unchanged.
+function admin_rb_restore(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT status FROM roadbooks WHERE id = ?'); $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    if ($row['status'] !== 'deleted') fail('That roadbook is not in the trash.');
+    db()->prepare("UPDATE roadbooks SET status = 'draft' WHERE id = ?")->execute([$id]);
+    log_activity((int)$user['id'], 'admin_rb_restore', 'roadbook #' . $id);
+    json_out(['ok' => true, 'id' => $id]);
+}
+
+// Permanently delete a trashed roadbook now (row + files). Only from the trash, so a live
+// roadbook can never be hard-deleted by mistake.
+function admin_rb_purge(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare("SELECT user_id, filename FROM roadbooks WHERE id = ? AND status = 'deleted'");
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('That roadbook is not in the trash.', 404);
+    // row first — a failed DELETE must not leave a live row whose files are already gone
+    db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]);
+    purge_roadbook_files($id, (int)$row['user_id'], (string)$row['filename']);
+    log_activity((int)$user['id'], 'admin_rb_purge', 'roadbook #' . $id);
+    json_out(['ok' => true, 'id' => $id]);
 }
 
 // Admin: reassign a roadbook to another user. The .rdbk file is the only owner-scoped file

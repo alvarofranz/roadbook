@@ -93,7 +93,7 @@ function event_manage_get(array $user, array $d): void {
     $org->execute([$id]);
     $rb = db()->prepare('SELECT r.id, r.title, r.status, er.scoring_mode, u.id AS owner_id, u.username
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
-        WHERE er.event_id = ? ORDER BY er.sort, er.roadbook_id');
+        WHERE er.event_id = ? AND r.status <> \'deleted\' ORDER BY er.sort, er.roadbook_id');
     $rb->execute([$id]);
     $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
     $cat->execute([$id]);
@@ -222,9 +222,9 @@ function event_logo_remove(array $user, array $d): void {
 function event_rb_add(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     $rid = (int)($d['roadbook_id'] ?? 0);
-    $st = db()->prepare('SELECT user_id FROM roadbooks WHERE id = ?'); $st->execute([$rid]);
+    $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?'); $st->execute([$rid]);
     $rb = $st->fetch();
-    if (!$rb) fail('Not found.', 404);
+    if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404); // can't attach a trashed roadbook (#187)
     if (!is_admin($user) && (int)$rb['user_id'] !== (int)$user['id']) fail('You can only attach your own roadbooks.', 403);
     $sort = (int)db()->query('SELECT COALESCE(MAX(sort), -1) + 1 FROM event_roadbooks WHERE event_id = ' . (int)$e['id'])->fetchColumn();
     db()->prepare('INSERT IGNORE INTO event_roadbooks (event_id, roadbook_id, sort, scoring_mode) VALUES (?,?,?,?)')

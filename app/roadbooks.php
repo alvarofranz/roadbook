@@ -17,7 +17,7 @@ function rb_clean_status($s): string {
 }
 
 function rb_list(array $user): void {
-    $st = db()->prepare('SELECT id, title, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? ORDER BY updated_at DESC');
+    $st = db()->prepare("SELECT id, title, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
     $st->execute([$user['id']]);
     json_out(['ok' => true, 'roadbooks' => $st->fetchAll(), 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
 }
@@ -29,7 +29,8 @@ function rb_require_edit(array $user, int $id): array {
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
-    if (!$row || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+    // a trashed roadbook (#187) is invisible to everyone but the admin trash page
+    if (!$row || $row['status'] === 'deleted' || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
     return $row;
 }
 
@@ -117,7 +118,8 @@ function rb_require_own(array $user, int $id): array {
     $st = db()->prepare('SELECT id, slug, title, status, filename, total_distance, note_count FROM roadbooks WHERE id = ? AND user_id = ?');
     $st->execute([$id, (int)$user['id']]);
     $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    // a trashed roadbook is out of the owner's reach too — only the admin trash can act on it (#187)
+    if (!$row || $row['status'] === 'deleted') fail('Not found.', 404);
     return $row;
 }
 
@@ -249,7 +251,7 @@ function ph_list(?array $user, array $d): void {
     $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$rbId]);
     $rb = $st->fetch();
-    if (!$rb) fail('Not found.', 404);
+    if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404);
     // public, yours, or a roadbook you co-edit through an event (#123 — the photos are content)
     if ($rb['status'] !== 'public' && (!$user || ((int)$user['id'] !== (int)$rb['user_id'] && !event_co_edits_roadbook((int)$user['id'], $rbId)))) fail('This roadbook is private.', 403);
     // the reserved cover ('_map.avif') is the listing thumbnail, not a gallery photo → never listed here
@@ -290,7 +292,7 @@ function audio_list(?array $user, array $d): void {
     $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$rbId]);
     $rb = $st->fetch();
-    if (!$rb) fail('Not found.', 404);
+    if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404);
     // public, yours, or a roadbook you co-edit through an event (#123 — the voice notes are content)
     if ($rb['status'] !== 'public' && (!$user || ((int)$user['id'] !== (int)$rb['user_id'] && !event_co_edits_roadbook((int)$user['id'], $rbId)))) fail('This roadbook is private.', 403);
     $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
@@ -335,7 +337,7 @@ function public_get(array $d): void {
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.slug = ?');
     $st->execute([$slug]);
     $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    if (!$row || $row['status'] === 'deleted') fail('Not found.', 404); // trashed → gone from public/owner views (#187)
     $me = current_user();
     $isOwner = $me && (int)$me['id'] === (int)$row['user_id'];
     // Event delivery (#25): a READY roadbook attached to an event is readable by that event's
@@ -356,8 +358,10 @@ function public_get(array $d): void {
 
 function rb_delete(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $row = rb_require_own($user, $id);
-    db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]); // row first — a failed DELETE must not lose the file
-    @unlink(rb_dir((int)$user['id']) . '/' . $row['filename']);
+    rb_require_own($user, $id);
+    // Soft-delete → admin trash (#187): the roadbook moves to the 'deleted' status (dropping out of
+    // every user view) but keeps its row + files for 30 days, so an admin can restore it. The cron
+    // hard-deletes it after that. `updated_at` (auto) records when it was trashed.
+    db()->prepare("UPDATE roadbooks SET status = 'deleted' WHERE id = ?")->execute([$id]);
     json_out(['ok' => true]);
 }

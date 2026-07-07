@@ -24,7 +24,12 @@ try {
             $r = purgeActivityLog();
             echo "purge-activity-log: deleted {$r['deleted']}\n";
             break;
-        // 2..9 reserved for future tasks
+        case 2:
+            require_once __DIR__ . '/purge-trashed-roadbooks.php';
+            $r = purgeTrashedRoadbooks();
+            echo "purge-trashed-roadbooks: deleted {$r['deleted']}\n";
+            break;
+        // 3..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";

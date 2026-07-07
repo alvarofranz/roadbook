@@ -740,6 +740,7 @@
                         ${user.is_admin ? `<a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>
                         <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
                         <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>
+                        <a href="${ROOT}admin/trash/"><i class="fa-solid fa-trash-can"></i> ${RBt('Roadbook trash')}</a>
                         <a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a>` : ''}
                         ${(!user.is_admin && (user.is_organizer || user.manages_events)) ? `<a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
