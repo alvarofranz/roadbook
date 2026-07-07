@@ -604,3 +604,21 @@ button.rb-badge:hover { background: var(--card); }
 /* one-time model-download progress (also reusable elsewhere) */
 .progress { height: 8px; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem; }
 .progress-bar { height: 100%; width: 0; background: var(--sand); transition: width .2s ease; }
+/* ---------- in-context UI translation editor (#118, admin-only) ---------- */
+.btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: 9px; }
+/* the admin toggle: a small floating chip; the edit bar appears when it's active */
+.i18ne-toggle { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.i18ne-toggle.active { color: var(--on-sand); background: var(--sand); border-color: var(--sand); }
+.i18ne-toggle.has-pending::after { content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--track); border: 2px solid var(--card); }
+.i18ne-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .4rem .7rem; box-shadow: var(--shadow); }
+.i18ne-badge { display: inline-flex; align-items: center; gap: .35rem; color: var(--sand); font-weight: 700; font-size: .85rem; }
+.i18ne-hint { color: var(--muted); font-size: .78rem; }
+/* outline every translatable label while edit mode is on, so what's editable is obvious */
+.i18ne-on [data-i18n], .i18ne-on [data-i18n-html], .i18ne-on [data-i18n-ph], .i18ne-on [data-i18n-title], .i18ne-on [data-i18n-aria], .i18ne-on [data-i18n-tip] { outline: 1px dashed var(--sand-2); outline-offset: 2px; }
+.i18ne-list { max-height: 60vh; overflow-y: auto; margin: .2rem 0 .8rem; }
+.i18ne-key { border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .6rem; }
+.i18ne-kname { font-family: ui-monospace, monospace; font-size: .78rem; color: var(--muted); margin-bottom: .35rem; word-break: break-all; }
+.i18ne-row { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; }
+.i18ne-lang { width: 1.7rem; text-transform: uppercase; font-size: .72rem; color: var(--muted); flex-shrink: 0; }
+.i18ne-krow { margin-top: .3rem; }
+.i18ne-export { width: 100%; min-height: 220px; font-family: ui-monospace, monospace; font-size: .8rem; white-space: pre; }

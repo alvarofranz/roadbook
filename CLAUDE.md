@@ -347,6 +347,12 @@ Operational notes:
   Editor's per-voice-note "➜ text" button (appends to the note, never overwrites).
 - `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
   auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
+- `i18n-edit.js` (`#118`, admin-only) — in-context UI translation editor. `app.js` loads it
+  ONLY for admins; dormant until edit mode is toggled on (the floating language chip). In edit
+  mode every translatable label (`data-i18n*`) is editable in place — the bottom bar edits all of
+  the page's labels, right-click edits a single one — with a live preview. Edits accumulate in
+  `localStorage` across pages; **Export** produces a paste-ready DELTA of the changed keys per
+  language to commit into `i18n.<lang>.js` (Option B: nothing served from a DB at runtime).
 
 ## Native apps (iOS + Android)
 Capacitor wraps `public/` into native shells; the web stays the single source of truth.
