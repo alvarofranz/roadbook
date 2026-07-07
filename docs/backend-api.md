@@ -88,8 +88,9 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 **Admin** (`auth.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
 `admin_verify`, `admin_block`, `admin_update`, `admin_delete`, `admin_activity`,
 `admin_settings`/`admin_save_settings`, `admin_logs`, `admin_roadbooks`, `admin_unpublish`,
-`admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook` — gestione utenti, ruoli,
-verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (vedi
+`admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`,
+`admin_trash_list`/`admin_rb_restore`/`admin_rb_purge` (cestino roadbook, #187) — gestione utenti,
+ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (vedi
 [user-management](user-management.md)).
 
 **Eventi** (`events.php`)
@@ -122,7 +123,7 @@ verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (ved
 | `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable`; solo il proprietario ne cambia pubblicazione; rifiuta 409 se un altro tiene il lock) | richiesta |
 | `rb_status` | Cambia solo lo `status` di pubblicazione (proprietario) | richiesta |
 | `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria **+ audio**), in **una transazione**; la copia parte `draft` | richiesta |
-| `rb_delete` | Elimina un proprio roadbook (riga prima, poi il file) | richiesta |
+| `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino admin | richiesta |
 | `ph_list` / `ph_delete` / `ph_move` | Elenca (pubblico, proprio o co-editato) / elimina / sposta il geotag di una foto | opzionale / richiesta / richiesta |
 | `audio_list` / `audio_delete` | Elenca / elimina una nota vocale | opzionale / richiesta |
 | `public_list` | Galleria pubblica: ultimi 60 `status='public'` (con `reusable=1` filtra i clonabili, #106) | nessuna |
@@ -267,12 +268,18 @@ contenitore ZIP `.rdbk` (con foto/audio) è solo l'artefatto di export/import cl
 ### Lo stato di pubblicazione (`status`, non più `is_public`)
 Dalla migrazione 015 (#96) il ciclo di vita di un roadbook è un enum **`status`** =
 `draft` → `ready` → `public` (in lavorazione → pronto → pubblicato), che **sostituisce** il
-vecchio flag binario `is_public`:
+vecchio flag binario `is_public`. La migrazione 029 (#187) aggiunge lo stato **`deleted`** (cestino):
 - `public` è l'unico stato visibile a un non proprietario (galleria, Reader, `/challenge`);
 - `draft`/`ready` sono privati, salvo la consegna di evento (`ready` ai partecipanti, vedi
   `public_get`);
 - `reusable` (#106) è un flag ortogonale: un roadbook **pubblico** può opt-in a essere clonabile
   da altri.
+- `deleted` (#187) è il **cestino**: `rb_delete` ci sposta il roadbook (invece di cancellarlo),
+  che sparisce da ogni vista utente (le viste pubbliche filtrano già `status='public'`); solo la
+  pagina admin **`/admin/trash/`** lo elenca, può ripristinarlo (`admin_rb_restore` → torna
+  `draft`) o eliminarlo subito (`admin_rb_purge`, riga+file). Il cron lo purga dopo 30gg
+  (`cron/purge-trashed-roadbooks.php`, slot 2 del round-robin; `updated_at` = quando è stato
+  cestinato). La cancellazione **account/utente** resta invece erasure immediata.
 
 ### Salvataggio (`rb_save`)
 `rb_save` valida che il payload abbia `notes` e `track`, deriva titolo/distanza/conteggio note dal
@@ -292,7 +299,7 @@ pagina di vista funziona pure su privato per il proprietario).
 `rb_draft` crea una riga vuota (`note_count = 0`, `status='draft'`, `filename = 'pending'`)
 all'avvio della registrazione, **intitolata col nome scelto** (#148) invece del vecchio segnaposto
 "Recording…", così foto e note vocali scattate dal vivo si agganciano subito a un `roadbook_id`. Le
-bozze mai finite vengono ripulite da un cron (menzionato nel commento, non presente in questo repo).
+bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cleanup-drafts.php`).
 
 ### Lista, lettura, duplicazione, eliminazione
 - `rb_list`: metadati dei propri roadbook ordinati per `updated_at`. `rb_coedit_list`: i roadbook
@@ -404,6 +411,8 @@ loro somma.
 | [025_roadbook_locks.sql](../migrations/025_roadbook_locks.sql) | tabella `roadbook_locks` (soft lock di co-editing, TTL 10 min, #154) |
 | [026_roadbook_reusable.sql](../migrations/026_roadbook_reusable.sql) | `roadbooks.reusable` (roadbook pubblico clonabile, #106) |
 | [027_listing_indexes.sql](../migrations/027_listing_indexes.sql) | indici compositi per le query di listing calde (#171) |
+| [028_google_auth.sql](../migrations/028_google_auth.sql) | `users.google_sub` (UNIQUE) + `password_hash` NULLABLE (Google Sign-In, #46) |
+| [029_roadbook_trash.sql](../migrations/029_roadbook_trash.sql) | `roadbooks.status` enum + valore `deleted` (cestino soft-delete, #187) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`, `event_categories`,
@@ -457,8 +466,9 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   roadbook.
 - **Foto e note vocali private non sono davvero private** a livello di accesso (vedi §9): la
   riservatezza è "by obscurity" via nome file casuale.
-- **Pulizia bozze esternalizzata a un cron** non incluso nel repo: le bozze
-  `rb_draft` mai finite (`note_count = 0`) restano finché un job esterno non le purga.
+- **Pulizia differita al cron** (`cron/cron.php`, round-robin un task/minuto): bozze `rb_draft`
+  mai finite (`note_count = 0`, slot 0), retention log attività 90gg (slot 1) e purga del cestino
+  roadbook a 30gg (slot 2, #187). Serve lo scheduler di sistema (`* * * * *`).
 - **Un solo livello di condivisione** (pubblico/privato): niente link non-listati, niente
   permessi per-utente o collaborazione.
 - **SendGrid hard-coded** come provider mail; nessun fallback SMTP.

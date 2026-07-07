@@ -69,6 +69,9 @@ try {
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
+        case 'admin_trash_list':  admin_trash_list(require_admin()); break;
+        case 'admin_rb_restore':  admin_rb_restore(require_admin(), $d); break;
+        case 'admin_rb_purge':    admin_rb_purge(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_coedit_list': rb_coedit_list(require_user()); break;
         case 'rb_lock_refresh': rb_lock_refresh(require_user(), $d); break;

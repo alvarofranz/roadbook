@@ -622,3 +622,9 @@ button.rb-badge:hover { background: var(--card); }
 .i18ne-lang { width: 1.7rem; text-transform: uppercase; font-size: .72rem; color: var(--muted); flex-shrink: 0; }
 .i18ne-krow { margin-top: .3rem; }
 .i18ne-export { width: 100%; min-height: 220px; font-family: ui-monospace, monospace; font-size: .8rem; white-space: pre; }
+/* ---------- admin roadbook trash (#187) ---------- */
+.trash-rows { display: flex; flex-direction: column; gap: .6rem; margin-top: .8rem; }
+.trash-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
+.trash-meta { min-width: 0; }
+.trash-title { font-weight: 700; }
+.trash-left { color: var(--sand); }
