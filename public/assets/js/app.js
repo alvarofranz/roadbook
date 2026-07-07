@@ -159,6 +159,22 @@
     setInterval(checkVersion, 60000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 
+    // App-only: on the home launcher show the INSTALLED build (via Capacitor) + the LATEST live
+    // version, so a tester sees what they're running and whether a newer build is out (#198). The
+    // app never hot-updates its code (that ships through TestFlight/Play), so this is how you tell.
+    if (isNativeApp()) document.addEventListener('DOMContentLoaded', async () => {
+        const el = document.getElementById('appVer'); if (!el) return;
+        let build = '';
+        try { const info = await Capacitor.Plugins.App.getInfo(); build = info.version + (info.build ? ' (' + info.build + ')' : ''); } catch (e) {}
+        let live = '';
+        try { live = (await (await fetch(API_ROOT + 'version.json', { cache: 'no-store' })).json()).version; } catch (e) {}
+        const parts = [];
+        if (build) parts.push(RBt('Installed') + ' ' + build);
+        if (live) parts.push(RBt('latest') + ' ' + live);
+        el.textContent = parts.join('  ·  ');
+        el.hidden = !parts.length;
+    });
+
     /* ---------------- Install (PWA) + iOS ---------------- */
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
