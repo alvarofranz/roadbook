@@ -45,6 +45,7 @@ try {
         case 'admin_settings':  admin_settings(require_admin()); break;
         case 'admin_save_settings': admin_save_settings(require_admin(), $d); break;
         case 'admin_logs':      admin_logs(require_admin()); break;
+        case 'admin_activity_log': admin_activity_log(require_admin(), $d); break;
         // Event management (#123): the list/edit rights are per event (owner / co-organizer /
         // admin — checked inside), so these only need a signed-in user; creating an event
         // still requires the organizer role (checked in event_save).

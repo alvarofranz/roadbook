@@ -48,10 +48,32 @@ function admin_save_settings(array $user, array $d): void {
     json_out(['ok' => true]);
 }
 
-// Admin: operational log viewer (#103) — the cron log tail + the recent global activity feed.
+// Admin: the cron log tail, for the Logs page (#200). The activity feed moved to its own paginated,
+// searchable endpoint (admin_activity_log).
 function admin_logs(array $user): void {
     $cronLog = dirname(__DIR__) . '/cron/cron.log';
     $cron = is_file($cronLog) ? substr((string)file_get_contents($cronLog), -8000) : '';
-    $activity = db()->query('SELECT user_id, action, detail, ip, created_at FROM activity_log ORDER BY id DESC LIMIT 100')->fetchAll();
-    json_out(['ok' => true, 'cron' => $cron, 'activity' => $activity]);
+    json_out(['ok' => true, 'cron' => $cron]);
+}
+
+// Admin: paginated + searchable global activity log for the Logs page (#200). `q` matches the
+// action, the (anonymised) IP, the detail or the username (LIKE); anonymous events (user_id NULL)
+// keep a blank user. Returns the page rows + the total count for pagination.
+function admin_activity_log(array $user, array $d): void {
+    $q = trim((string)($d['q'] ?? ''));
+    $per = 50;
+    $page = max(1, (int)($d['page'] ?? 1));
+    $off = ($page - 1) * $per;
+    $where = ''; $args = [];
+    if ($q !== '') {
+        $where = 'WHERE (a.action LIKE ? OR a.ip LIKE ? OR a.detail LIKE ? OR u.username LIKE ?)';
+        $like = '%' . $q . '%'; $args = [$like, $like, $like, $like];
+    }
+    $ct = db()->prepare("SELECT COUNT(*) FROM activity_log a LEFT JOIN users u ON u.id = a.user_id $where");
+    $ct->execute($args);
+    $total = (int)$ct->fetchColumn();
+    $st = db()->prepare("SELECT a.user_id, u.username, a.action, a.detail, a.ip, a.created_at
+        FROM activity_log a LEFT JOIN users u ON u.id = a.user_id $where ORDER BY a.id DESC LIMIT $per OFFSET $off");
+    $st->execute($args);
+    json_out(['ok' => true, 'rows' => $st->fetchAll(), 'total' => $total, 'page' => $page, 'per_page' => $per]);
 }
