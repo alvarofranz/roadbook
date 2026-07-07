@@ -8,7 +8,9 @@
 (function () {
     if (!window.RBt || !window.RBModal || !window.RBi18nLangs || !window.RBi18n) return;
     const t = RBt, esc = RBesc;
-    const LANGS = ['es', 'it', 'de', 'fr'];
+    // English first — it's the source/reference; unlike the others it lives in i18n.js (T.en),
+    // exposed on RBi18nLangs.en, and its export delta targets that file, not an i18n.<lang>.js.
+    const LANGS = ['en', 'es', 'it', 'de', 'fr'];
     const ATTRS = ['data-i18n', 'data-i18n-html', 'data-i18n-ph', 'data-i18n-title', 'data-i18n-aria', 'data-i18n-tip', 'data-i18n-content'];
     const SEL = ATTRS.map((a) => '[' + a + ']').join(',');
     const LS_ON = 'rb_i18n_edit', LS_DELTA = 'rb_i18n_delta';
@@ -16,7 +18,7 @@
 
     /* ---------- pending delta (survives navigation) ---------- */
     function loadDelta() {
-        const d = { es: {}, it: {}, de: {}, fr: {} };
+        const d = {}; LANGS.forEach((l) => { d[l] = {}; });
         try { const s = JSON.parse(localStorage.getItem(LS_DELTA) || '{}'); LANGS.forEach((l) => Object.assign(d[l], s[l] || {})); } catch (e) {}
         return d;
     }
@@ -34,7 +36,13 @@
         RBi18n.set(RBi18n.current());
     }
 
-    const valueOf = (lang, key) => (key in delta[lang]) ? delta[lang][key] : (langs[lang] && langs[lang][key] != null ? langs[lang][key] : '');
+    // English falls back to the key itself (source-string keys display the key when not in T.en),
+    // so the English field always shows the real source text to translate from — never blank.
+    const valueOf = (lang, key) => {
+        if (key in delta[lang]) return delta[lang][key];
+        if (langs[lang] && langs[lang][key] != null) return langs[lang][key];
+        return lang === 'en' ? key : '';
+    };
 
     function setValue(lang, key, val) {
         delta[lang][key] = val;
@@ -87,7 +95,10 @@
     function exportDelta() {
         const parts = LANGS.filter((l) => Object.keys(delta[l]).length).map((l) => {
             const lines = Object.entries(delta[l]).map(([k, v]) => `    ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join('\n');
-            return `/* → paste inside window.RBi18nLangs.${l} in public/assets/js/i18n.${l}.js */\n${lines}`;
+            const target = l === 'en'
+                ? 'the T.en object in public/assets/js/i18n.js'
+                : `window.RBi18nLangs.${l} in public/assets/js/i18n.${l}.js`;
+            return `/* → paste inside ${target} */\n${lines}`;
         });
         const text = parts.join('\n\n') || t('No pending changes.');
         const d = RBModal(`<h3>${t('Export translation delta')}</h3>

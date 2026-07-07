@@ -21,8 +21,11 @@ accendi.
 2. In basso a sinistra compare un **chip con l'icona lingua**. Cliccalo → **modalità traduzione ON**:
    tutte le label traducibili si evidenziano e appare una **barra in basso**.
 3. **Modifica una label:**
-   - **Tasto destro** su una label → popup per editare **solo quella** (le 4 lingue).
-   - Oppure barra → **Page labels** → popup con **tutte le label della pagina** (4 lingue ciascuna).
+   - **Tasto destro** su una label → popup per editare **solo quella** (le 5 lingue).
+   - Oppure barra → **Page labels** → popup con **tutte le label della pagina** (5 lingue ciascuna).
+   - L'**inglese** è la prima riga di ogni label: è la **sorgente/riferimento** (per le chiavi
+     tecniche tipo `hero.title` mostra il testo inglese, non il nome-chiave). Puoi correggerlo qui
+     come le altre lingue — cambia solo il testo mostrato, la chiave resta invariata.
 4. Digitando vedi l'**anteprima live** sulla pagina. Ogni modifica è **salvata automaticamente**
    come *in sospeso* (nel browser) e **resta anche cambiando pagina** — puoi girare il sito e
    tradurre man mano. Il contatore accanto a *Export* mostra quante modifiche hai in sospeso.
@@ -35,7 +38,7 @@ accendi.
    (dopo che sono state committate, o se erano prove).
 
 > Con il **tasto destro** puoi tradurre anche una label che oggi è **solo in inglese**: crei di
-> fatto una nuova chiave nelle 4 lingue.
+> fatto una nuova chiave nelle 4 lingue (e, se serve, correggi l'inglese stesso).
 
 ## Pubblicare le modifiche (chi committa — dev)
 Il delta è un blocco per lingua, es.:
@@ -43,10 +46,14 @@ Il delta è un blocco per lingua, es.:
 /* → paste inside window.RBi18nLangs.es in public/assets/js/i18n.es.js */
     "gallery.title": "Últimos roadbook pubblici",
     ...
+/* → paste inside the T.en object in public/assets/js/i18n.js */
+    "gallery.title": "Latest public roadbooks",
 ```
-1. Per ogni blocco, **incolla/sostituisci** le chiavi dentro l'oggetto `window.RBi18nLangs.<lang>`
-   del file `public/assets/js/i18n.<lang>.js` corrispondente (aggiorna la chiave se esiste, aggiungila
-   se è nuova). **Mantieni tutte e 4 le lingue in parità.**
+1. Per ogni blocco, **incolla/sostituisci** le chiavi nel target indicato nel commento:
+   - `es/it/de/fr` → dentro `window.RBi18nLangs.<lang>` nel rispettivo `public/assets/js/i18n.<lang>.js`.
+   - `en` → dentro l'oggetto **`T.en`** in `public/assets/js/i18n.js` (l'inglese vive lì, non in un
+     file `i18n.<lang>.js`).
+   Aggiorna la chiave se esiste, aggiungila se è nuova. **Mantieni tutte e 4 le lingue tradotte in parità.**
 2. `npm test` (deve restare verde: copre la parità i18n).
 3. Committa e rilascia con il normale flusso di deploy (`node source/stamp-version.mjs <versione>`
    → push su `main`), così i nuovi file arrivano ai client col cache-buster.

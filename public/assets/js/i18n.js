@@ -57,6 +57,10 @@
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
     if (window.RBi18nLangs) Object.assign(T, window.RBi18nLangs);
+    // Expose the English source dict too, so the in-context translation editor can read and edit it
+    // like any other language (its live preview mutates these dicts). Unlike the others, English
+    // lives here in i18n.js (T.en) — the editor exports its delta back into this file, not an i18n.<lang>.js.
+    (window.RBi18nLangs = window.RBi18nLangs || {}).en = T.en;
 
 
     function pickLang() {
