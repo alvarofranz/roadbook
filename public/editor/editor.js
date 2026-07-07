@@ -1148,6 +1148,37 @@
         noteAudio = (r.ok && r.audio) || [];
         if (rb) renderNotes(); // each clip surfaces on its nearest note row
     }
+    // Transcribe a voice note in the browser (#133) and APPEND the text to its note (never
+    // overwrite). The Whisper model downloads once on first use — show its progress in a modal.
+    async function transcribeInto(i, url, btn) {
+        if (!window.RBTranscribe || !rb || !rb.notes[i]) return;
+        const prog = RBTranscribe.ready() ? null : progressModal();
+        btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>';
+        try {
+            const text = await RBTranscribe.run(url, { lang: meUser && meUser.voice_lang, onProgress: (p) => prog && prog.set(p.pct) });
+            if (prog) prog.close();
+            if (!text) return toast(t('No speech detected.'));
+            const n = rb.notes[i];
+            n.text = (n.text && n.text.trim() ? n.text.trim() + '\n' : '') + text;
+            markDirty();
+            const ta = $('noteList').querySelector('.note-title[data-i="' + i + '"]'); if (ta) ta.value = n.text;
+            toast(t('Transcription added.'));
+        } catch (e) {
+            if (prog) prog.close();
+            toast(t('Transcription failed. Please try again.'));
+        } finally { btn.disabled = false; btn.innerHTML = orig; }
+    }
+    // First-use progress while the (one-time) transcription model downloads.
+    function progressModal() {
+        const d = RBModal(`<h3>${t('Preparing transcription')}</h3>
+            <p class="muted small">${t('Downloading the voice-to-text model — this happens only once, then it works offline.')}</p>
+            <div class="progress"><div class="progress-bar" data-bar></div></div>
+            <p class="muted small"><span data-pct>0</span>%</p>`, 'narrow');
+        return {
+            set: (pct) => { const bar = d.q('[data-bar]'), pc = d.q('[data-pct]'); if (bar) bar.style.width = (pct || 0) + '%'; if (pc) pc.textContent = pct || 0; },
+            close: d.close,
+        };
+    }
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
     // map to set its position (one tap per queued photo). No photo is stored without coords.
@@ -1295,7 +1326,7 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t('Transcribe to text'))}" title="${esc(t('Transcribe to text'))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
                 <div class="note-actions">
                     <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
@@ -1333,6 +1364,8 @@
             e.stopPropagation();
             if (await RBConfirm(t('Delete this voice note?'), t('Delete'), true)) { await RBApi('audio_delete', { id: +b.dataset.dela }); loadAudio(); }
         });
+        // transcribe a voice note → append the text to its note (#133, in-browser Whisper)
+        $('noteList').querySelectorAll('[data-totext]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); transcribeInto(+b.dataset.totext, b.dataset.aurl, b); });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
             inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };

@@ -308,6 +308,18 @@ Frecce ‹/›, `←`/`→` e `Esc`, più una riga azioni:
   aggiorna le coordinate della foto via l'endpoint **`ph_move`** ([roadbooks.php](../app/roadbooks.php), `UPDATE … SET lat,lon`, con check proprietà);
 - **Delete** — elimina la foto (`ph_delete`, con conferma) e aggiorna lightbox + pin.
 
+### 6.2 Note vocali: player sulla riga e trascrizione in-browser (#133)
+Le note vocali (registrate come *WP audio*) sono server-side (tabella `roadbook_audio`,
+`audio_list`/`audio_delete`) e compaiono come **player audio sulla riga della nota più vicina**
+(entro 80 m). Accanto al player, il pulsante **"➜ testo"** (`data-totext`, `transcribeInto`) le
+**trascrive nel browser** e **appende** il testo alla nota (mai overwrite):
+- motore **Whisper** via `RBTranscribe` (`rb-transcribe.js`): transformers.js/WASM importato da CDN
+  **solo al primo click**, modello `Xenova/whisper-tiny` (cache del browser);
+- l'audio **non lascia il dispositivo**, nessun costo/infra server; la lingua segue `voice_lang`
+  dell'utente o è auto-rilevata da Whisper;
+- al primo uso un modale mostra il download del modello (una-tantum, ~decine di MB), poi funziona
+  offline.
+
 ---
 
 ## 7. Export e "Save to profile"

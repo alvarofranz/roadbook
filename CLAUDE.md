@@ -341,6 +341,10 @@ Operational notes:
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
   label is "public roadbook", with "challenge" reserved for the future events feature.)
+- `rb-transcribe.js` (`RBTranscribe`, #133) — in-browser voice-note→text (Whisper via
+  transformers.js/WASM, imported from a CDN only on first use; `Xenova/whisper-tiny`, browser-cached).
+  `run(url, {lang, onProgress})` → text; no server, audio never leaves the device. Used by the
+  Editor's per-voice-note "➜ text" button (appends to the note, never overwrites).
 - `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
   auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
 

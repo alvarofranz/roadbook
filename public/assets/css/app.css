@@ -585,3 +585,12 @@ button.rb-badge:hover { background: var(--card); }
 .status-bar .status-cell.ok i, .status-bar .status-cell.ok span { color: var(--ok); }
 .status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: #ff9f1c; }
 .status-bar .status-cell.bad i, .status-bar .status-cell.bad span { color: var(--track); }
+
+/* ---------- voice-note transcription (#133) ---------- */
+/* the "➜ text" button beside a note's audio player */
+.audio-totext { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border: 1px solid var(--line); background: var(--card-2); color: var(--muted); border-radius: 8px; cursor: pointer; }
+.audio-totext:hover { color: var(--sand); border-color: var(--sand); }
+.audio-totext:disabled { opacity: .6; cursor: default; }
+/* one-time model-download progress (also reusable elsewhere) */
+.progress { height: 8px; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem; }
+.progress-bar { height: 100%; width: 0; background: var(--sand); transition: width .2s ease; }
