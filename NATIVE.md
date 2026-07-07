@@ -253,12 +253,16 @@ Releases build in the cloud from a tag — no local archive step — mirroring t
 The pipeline is `.github/workflows/android-release.yml`: it rehydrates the gitignored client
 assets from the live site (config.js + FontAwesome, public by design), builds the native bridge,
 `cap sync android`, restores the signing keystore from secrets, `bundleRelease` (versionCode from
-the run number, versionName from the tag), and uploads the `.aab` to the **Internal testing**
+the run number, versionName from the tag), and uploads the `.aab` to the **Closed testing (alpha)**
 track via the service account. It fires **only on an `android-*` tag**, so a web release never
 triggers an app build.
 
-**Cutting a release:** `git tag android-1.0.4 && git push origin android-1.0.4` (or run the
-workflow from the Actions tab). Promote Internal → Production in the Play Console when happy.
+**Cutting a release:** bump the version in the tag and push it, e.g.
+`git tag android-1.0.5 && git push origin android-1.0.5` (or run the workflow from the Actions tab).
+The build lands straight in **Closed testing – Alpha**. Promote Closed → Production in the Play
+Console once the closed-test gate is met (a new personal Play account must keep **≥12 testers opted
+in for 14 days** before Production unlocks; testers are managed on the closed track itself, so you
+can add them right away — they don't depend on a specific build).
 
 **One-time setup:**
 1. **Signing** — the upload keystore lives at `android/rdbk-upload.jks` (+ `android/keystore.properties`),

@@ -4,7 +4,7 @@ name: Android release
 # to main), so a web release never triggers an app build — mirrors the iOS `ios-*` tag flow.
 # Prereqs (one-time): the app exists in Play Console with a first manual AAB uploaded, Play App
 # Signing enabled, and the service account (PLAY_SERVICE_ACCOUNT_JSON) invited in Play Console
-# with release permissions. Cut a release: `git tag android-1.0.4 && git push origin android-1.0.4`.
+# with release permissions. Cut a release: `git tag android-1.0.5 && git push origin android-1.0.5`.
 on:
   push:
     tags: ['android-*']
@@ -87,11 +87,11 @@ jobs:
             -PrdbkVersionCode=${{ steps.ver.outputs.code }} \
             -PrdbkVersionName=${{ steps.ver.outputs.name }})
 
-      - name: Upload to Google Play (internal track)
+      - name: Upload to Google Play (closed testing / alpha track)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: app.rdbk
           releaseFiles: android/app/build/outputs/bundle/release/*.aab
-          track: internal
+          track: alpha
           status: completed

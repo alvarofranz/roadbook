@@ -229,9 +229,15 @@ pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fonta
 `main` push: **iOS** on an `ios-*` tag (Xcode Cloud → TestFlight), **Android** on an `android-*`
 tag (`.github/workflows/android-release.yml`: rehydrate assets from the live site → build the
 native bridge → `cap sync android` → sign from repo secrets → `bundleRelease` → upload the AAB to
-the Play **internal** track via the service account). Cut them with `git tag ios-<v>` /
-`git tag android-<v>` and push the tag. The web deploy serves `public/` and ignores the
-`android/`/`ios/` projects. See `NATIVE.md`.
+the Play **Closed testing (alpha)** track via the service account). Cut a release by bumping the
+tag and pushing it — **iOS** `git tag ios-<v> && git push origin ios-<v>`, **Android**
+`git tag android-<v> && git push origin android-<v>` (e.g. `android-1.0.5`; versionName comes from
+the tag, versionCode from the run number so it always climbs). The Android build then appears under
+**Closed testing – Alpha** in the Play Console; promote Closed → Production there when ready. Note:
+a new personal Play account keeps Production **locked** until it has run a closed test with **≥12
+testers opted in for 14 days** — testers are managed on the closed track itself (add them any time,
+independent of the current build). The web deploy serves `public/` and ignores the `android/`/`ios/`
+projects. See `NATIVE.md`.
 
 ## Email (`info@rdbk.app`)
 The public contact address is a **forward-only alias** — no mailbox, no IMAP, no
