@@ -400,6 +400,14 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .native .app-only { display: block; }
 .native .web-only { display: none; }
 .native .topbar { padding-top: env(safe-area-inset-top); } /* notch / status bar, viewport-fit=cover */
+/* the marketing footer (About / standard / privacy / social…) is web-only — hide it in the app,
+   where every page is a field tool and the tall footer just overflowed the viewport (#198) */
+.native .foot { display: none; }
+/* iPad/native (viewport-fit=cover): the sticky tool bars (Reader/Tripmaster) must drop below the
+   iOS status bar. Normally they sit under the 56px top bar (itself safe-area-padded); in fullscreen
+   the top bar is hidden, so they pin just below the status bar instead of under it (#198). */
+.native .odometer-bar, .native .status-bar { top: calc(56px + env(safe-area-inset-top)); }
+.native body.rb-fs .odometer-bar, .native body.rb-fs .status-bar { top: env(safe-area-inset-top); }
 .launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
 .launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
 .launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }

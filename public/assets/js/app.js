@@ -60,10 +60,10 @@
             events:     ['Events',     'fa-calendar-check'],
             ranking:    ['Ranking',    'fa-ranking-star']
         };
-        // The native app is a field companion: Reader · Tripmaster · Recorder only (Editor and
-        // Ranking stay web-only). The website keeps the full set.
+        // The native app is a field companion: the GPS tools + Events (#198). Editor/Ranking/Roadbooks
+        // stay web-only in the top nav. The website keeps the full set.
         const order = isNativeApp()
-            ? ['reader', 'tripmaster', 'recorder']
+            ? ['reader', 'tripmaster', 'recorder', 'events']
             : ['recorder', 'editor', 'reader', 'tripmaster', 'roadbooks', 'events', 'ranking'];
         // Each tool's "How it works" link lives on the tool page itself (beside the title, or at
         // the foot of the Tripmaster dashboard) — never in the top menu. "Events" is the lone
@@ -180,7 +180,9 @@
         slot.appendChild(installBtn);
         return installBtn;
     }
-    function showInstall() { if (isStandalone()) return; const b = ensureBtn(); if (b) b.hidden = false; }
+    // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
+    // display-mode:standalone / navigator.standalone, so without this it would wrongly show (#198).
+    function showInstall() { if (isStandalone() || isNativeApp()) return; const b = ensureBtn(); if (b) b.hidden = false; }
     async function onInstall() {
         if (deferred) {
             deferred.prompt();
@@ -190,8 +192,8 @@
         }
         if (isIOS()) showIosModal();
     }
-    // iOS Safari never fires beforeinstallprompt: offer the button when not installed.
-    if (isIOS() && !isStandalone()) document.addEventListener('DOMContentLoaded', showInstall);
+    // iOS Safari never fires beforeinstallprompt: offer the button when not installed (never in the app).
+    if (isIOS() && !isStandalone() && !isNativeApp()) document.addEventListener('DOMContentLoaded', showInstall);
 
     function showIosModal() {
         const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> ${RBt('Install on iPhone')}</h2>
