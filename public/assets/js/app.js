@@ -17,6 +17,15 @@
     // True only inside a Capacitor native shell (available synchronously at startup).
     const isNativeApp = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 
+    // API + live-version host. On the web it is the same-origin ROOT. The native app serves its
+    // bundled UI from a WebView-local origin with no backend, so the PHP API (accounts, public
+    // roadbooks, uploads) and the live version.json live on the production domain, reached
+    // cross-origin (the server whitelists the app origin — see cors_for_app). Shared globally so
+    // every module (challenges.js…) reaches the backend through the same host.
+    const PROD_ROOT = 'https://rdbk.app/';
+    const API_ROOT = isNativeApp() ? PROD_ROOT : ROOT;
+    window.RB_API_ROOT = API_ROOT;
+
     // Native shell: load the native capability bridge (RBNative) and flag the document
     // for safe-area styling. Never runs in a plain browser — the PWA stays unchanged.
     if (isNativeApp()) {
@@ -124,20 +133,22 @@
     /* ---------------- Version system ---------------- */
     let appVer = null, refreshing = false, pendingRefresh = false;
     async function checkVersion() {
-        // Never reload in the middle of an active session (e.g. a competition run
-        // in the Reader): defer until it's free. window.RB_BUSY is set by the tool.
-        if (pendingRefresh && !window.RB_BUSY && !refreshing) { refreshing = true; return hardRefresh(); }
+        // Never reload in the middle of an active session (e.g. a competition run in the Reader):
+        // defer until it's free. window.RB_BUSY is set by the tool. The app never hot-refreshes —
+        // its code is bundled and updates ship through the store — so this is web-only.
+        if (!isNativeApp() && pendingRefresh && !window.RB_BUSY && !refreshing) { refreshing = true; return hardRefresh(); }
         try {
-            const v = (await (await fetch(ROOT + 'version.json', { cache: 'no-store' })).json()).version;
+            const v = (await (await fetch(API_ROOT + 'version.json', { cache: 'no-store' })).json()).version;
             if (!v) return;
             const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + v;
+            if (isNativeApp()) return;                        // app: just show the live version; never hot-refresh
             if (appVer == null) { appVer = v; return; }      // first read: set the reference
             if (v !== appVer && !refreshing) {
                 appVer = v;
                 if (window.RB_BUSY) pendingRefresh = true;   // wait for the session to end
                 else { refreshing = true; await hardRefresh(); }
             }
-        } catch (e) { /* offline: retried on the next tick */ }
+        } catch (e) { /* offline: retried on the next tick, keeps the last shown version */ }
     }
     async function hardRefresh() {
         try { if (swReg) await swReg.update(); } catch (e) {}
@@ -596,7 +607,7 @@
         return json;
     };
     // JSON POST to the API → the parsed response ({ ok: false, … } on network failure).
-    window.RBApi = (action, body) => fetch(ROOT + 'api/index.php', {
+    window.RBApi = (action, body) => fetch(API_ROOT + 'api/index.php', {
         method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(Object.assign({ action }, body || {})),
     }).then((r) => r.json()).then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
@@ -627,7 +638,7 @@
         const fd = new FormData();
         for (const k in fields) fd.append(k, fields[k]);
         fd.append(fieldName, blob, name);
-        try { return await (await fetch(ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({}), body: fd })).json(); }
+        try { return await (await fetch(API_ROOT + 'api/upload.php', { method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({}), body: fd })).json(); }
         catch (e) { return { ok: false, error: 'Upload failed.' }; }
     };
     window.RBUpload = async (fields, file, name) => rbPostUpload(fields, 'photo', await RBImg.toBlob(file), name || 'photo.jpg');
@@ -790,9 +801,11 @@
     /* ---------------- Cookie / storage notice (#95) ----------------
        RDBK uses ONLY an essential login session cookie + functional localStorage (preferences,
        offline data) — no ads, no third-party tracking, no profiling. So this is an honest one-time
-       notice, not a consent wall; the choice is remembered so it shows once. */
+       notice, not a consent wall; the choice is remembered so it shows once. Never in the native
+       app: it is a self-contained bundle with no browser-cookie context, so the notice is moot. */
     const COOKIE_OK_KEY = 'rb_cookie_ok';
     function cookieNotice() {
+        if (isNativeApp()) return;
         let seen = false; try { seen = localStorage.getItem(COOKIE_OK_KEY) === '1'; } catch (e) {}
         if (seen || document.querySelector('.cookie-notice')) return;
         const el = document.createElement('div');

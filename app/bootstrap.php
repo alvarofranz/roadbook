@@ -86,11 +86,35 @@ function rate_limit(string $key, int $max, int $window): void {
 }
 function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
 
-// Same-origin guard for state-changing requests (the POST API + uploads): a cross-site page
-// can fire the request, but the browser stamps its Origin — refuse when it names another host.
+// The native app shells (Capacitor) serve their bundled UI from a WebView-local origin, so their
+// API calls reach us cross-origin. These are the only non-web origins we trust: a real website
+// cannot forge them (the browser sets Origin and script can't override it), so they are safe to
+// exempt from the same-origin CSRF guard — and every state-changing action still requires a Bearer
+// token. The web is unaffected: it is same-origin and never presents one of these.
+const APP_ORIGINS = ['http://localhost', 'https://localhost', 'capacitor://localhost', 'ionic://localhost'];
+function is_app_origin(string $origin): bool { return $origin !== '' && in_array($origin, APP_ORIGINS, true); }
+
+// CORS for the native app: let a trusted app origin call the API/uploads (Bearer-authenticated,
+// never cookies) and answer its preflight. A no-op for same-origin web requests (no Origin match).
+function cors_for_app(): void {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (is_app_origin($origin)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Vary: Origin');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type');
+        header('Access-Control-Max-Age: 86400');
+    }
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }
+}
+
+// Same-origin guard for state-changing requests (the POST API + uploads): a cross-site page can
+// fire the request, but the browser stamps its Origin — refuse when it names another host. A
+// missing Origin (some same-origin requests) and the trusted app shells (Bearer-authed) pass.
 function require_same_origin(): void {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
+    if ($origin === '' || is_app_origin($origin)) return;
+    if (parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
 }
 
 // A URL slug unique within a table (roadbooks · events): the slugified title, then -2, -3, …

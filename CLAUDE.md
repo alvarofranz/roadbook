@@ -358,6 +358,11 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
   client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token
   only inside the app.
+- **Backend host + CORS:** the app's bundled UI runs at a WebView-local origin with no backend, so
+  `app.js` sets `RB_API_ROOT = https://rdbk.app/` and every API/upload/live-version call goes there
+  **cross-origin**. The server whitelists the app origins (`cors_for_app` in `app/bootstrap.php` —
+  CORS headers + preflight; `require_same_origin` exempts them, still Bearer-gated); `version.json`
+  gets `Access-Control-Allow-Origin: *` in `public/.htaccess`. The cookie notice is web-only.
 - **Projects:** `android/` is committed (build artifacts git-ignored); generate iOS with
   `npx cap add ios` on a Mac with Xcode.
 

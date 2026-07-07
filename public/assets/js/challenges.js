@@ -7,11 +7,11 @@
 
     async function listPublic(opts) {
         const q = opts && opts.reusable ? '&reusable=1' : ''; // #106: the Editor fork search asks for reusable-only
-        try { return (await (await fetch(ROOT + 'api/index.php?action=public_list' + q)).json()).roadbooks || []; }
+        try { return (await (await fetch((window.RB_API_ROOT || ROOT) + 'api/index.php?action=public_list' + q)).json()).roadbooks || []; }
         catch (e) { return []; }
     }
     async function loadPublic(slug) {
-        const j = await (await fetch(ROOT + 'api/index.php?action=public_get&slug=' + encodeURIComponent(slug))).json();
+        const j = await (await fetch((window.RB_API_ROOT || ROOT) + 'api/index.php?action=public_get&slug=' + encodeURIComponent(slug))).json();
         if (!j.ok) throw new Error(j.error || 'Not found');
         return j; // { slug, roadbook, photos, owner }
     }

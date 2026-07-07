@@ -36,6 +36,13 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   cookie) and `current_user()` accepts it; `RBApi`/`RBUpload` send & store it **only in the
   app**, so accounts, save-to-profile, challenges and photo upload work inside the app while
   the browser stays cookie-only and unchanged. Requires migration `006_api_tokens.sql` (§4).
+- **Production API host + CORS** — the app serves its bundled UI from a WebView-local origin
+  (`https://localhost`) with no backend, so `app.js` points every API/upload/version call at the
+  production domain (`RB_API_ROOT = https://rdbk.app/`), reached **cross-origin**. `cors_for_app()`
+  (`app/bootstrap.php`) whitelists the app origins, answers the preflight, and `require_same_origin`
+  exempts them — safe because a real website can't forge `Origin: https://localhost`, and every
+  state-changing action still needs the Bearer token. `version.json` carries its own
+  `Access-Control-Allow-Origin: *` (`public/.htaccess`) so the footer shows the live version.
 - **MapLibre** — `rbmap.js` now uses MapLibre GL (no Mapbox, no paid token) with a free,
   no-key topo style (OpenFreeMap) and free 3D terrain (AWS Terrarium). The satellite toggle
   uses `RB_CONFIG.styleSatellite` (a MapTiler style URL); unset, it falls back to topo (§4).

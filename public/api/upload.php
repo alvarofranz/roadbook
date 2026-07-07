@@ -8,6 +8,7 @@ require dirname(__DIR__, 2) . '/app/bootstrap.php';
 require dirname(__DIR__, 2) . '/app/images.php';
 global $CFG;
 
+cors_for_app(); // native app: cross-origin upload (Bearer auth) — CORS headers + preflight before auth
 $user = require_user();
 require_same_origin();
 $type = $_POST['type'] ?? '';

@@ -1,5 +1,6 @@
 <?php
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
+cors_for_app(); // native app shells call cross-origin (Bearer auth) — set CORS headers + answer preflight
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $d = $method === 'POST' ? json_in() : $_GET;

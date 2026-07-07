@@ -19,6 +19,11 @@ AddType audio/mpeg .mp3
     <FilesMatch "\.(png|jpe?g|webp|gif|ico|woff2?|ttf)$">
         Header set Cache-Control "public, max-age=604800"
     </FilesMatch>
+    # The native app reads the live version from the production host, cross-origin, so its footer
+    # always shows the current unified version (web + app move together). version.json is public.
+    <Files "version.json">
+        Header set Access-Control-Allow-Origin "*"
+    </Files>
 </IfModule>
 
 # Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug>, /event/<slug> → the page
