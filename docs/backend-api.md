@@ -316,7 +316,7 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
 
 ### Endpoint pubblici (challenge / community)
 - `public_list`: join `roadbooks ⨝ users`, solo `status = 'public'` con slug, ultimi 60, con una
-  thumbnail (prima foto della galleria, che è la cover `_map.avif` a `sort -1` se presente).
+  thumbnail (prima foto della galleria, che è la cover a `sort -1` se presente).
   `reusable=1` nel body filtra i soli clonabili (la ricerca di fork dell'Editor, #106).
 - `public_get`: carica un roadbook via **slug**. È servito se `public`, **o** al proprietario, **o**
   — se `ready` — ai **partecipanti/organizzatori dell'evento** a cui è associato (#25,
@@ -345,9 +345,11 @@ disco per-utente**: superata, rispondono **`413`** (`user_disk_bytes` vs `user_q
   **non indovinabile** (`bin2hex(random_bytes(8)).avif`) così le foto di roadbook privati non sono
   enumerabili; se l'elaborazione fallisce la riga viene rimossa.
 - **`type=cover` + `roadbook=<id>`** (#123) → la **cover auto-generata** (mappa del percorso,
-  prodotta lato client da `cover-map.js`): una sola entry di galleria riservata al nome fisso
-  **`_map.avif`** con `sort -1` (prima → è la thumbnail di home/liste), **esclusa** dallo swipe
-  foto pubblico. Sovrascritta ad ogni save (anche di un co-editor). Accesso via `rb_require_edit`.
+  prodotta lato client da `cover-map.js`): una sola entry di galleria riservata a **`sort -1`**
+  (prima → è la thumbnail di home/liste), **esclusa** dallo swipe foto pubblico. Nome file
+  casuale come ogni foto (#206: non enumerabile — le mappe dei roadbook privati non devono
+  essere indovinabili). Rigenerata ad ogni save (anche di un co-editor); la rigenerazione
+  elimina il file precedente. Accesso via `rb_require_edit`.
 - **`type=audio` + `roadbook=<id>`** → nota vocale di un waypoint, **archiviata così com'è
   (nessun transcoding)** accanto alla sua trascrizione, così una trascrizione errata si può
   riascoltare. Verifica la proprietà del roadbook, impone un tetto di **200 note** per roadbook,

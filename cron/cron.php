@@ -29,7 +29,12 @@ try {
             $r = purgeTrashedRoadbooks();
             echo "purge-trashed-roadbooks: deleted {$r['deleted']}\n";
             break;
-        // 3..9 reserved for future tasks
+        case 3:
+            require_once __DIR__ . '/rename-legacy-covers.php';
+            $r = renameLegacyCovers();
+            echo "rename-legacy-covers: renamed {$r['renamed']}\n";
+            break;
+        // 4..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";
