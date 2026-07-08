@@ -28,12 +28,16 @@ function user_roadbook_ids(int $uid): array {
     $st->execute([$uid]);
     return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
 }
-// Bytes a user occupies on disk: their .rdbk files + every roadbook's photo folder. Pass the
-// pre-fetched roadbook ids when listing many users (admin_users) — one query, not one each.
+// Bytes a user occupies on disk: their .rdbk files + every roadbook's photo AND audio folders
+// (#210 — voice notes count like photos). Pass the pre-fetched roadbook ids when listing many
+// users (admin_users) — one query, not one each.
 function user_disk_bytes(int $uid, ?array $rbIds = null): int {
     global $CFG;
     $bytes = dir_size($CFG['storage'] . '/' . $uid);
-    foreach ($rbIds ?? user_roadbook_ids($uid) as $rid) $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
+    foreach ($rbIds ?? user_roadbook_ids($uid) as $rid) {
+        $bytes += dir_size($CFG['photos_dir'] . '/' . (int)$rid);
+        $bytes += dir_size($CFG['audio_dir'] . '/' . (int)$rid);
+    }
     return $bytes;
 }
 // A user's effective disk quota in bytes: their per-user override, or the system default.

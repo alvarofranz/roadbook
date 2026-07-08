@@ -1,3 +1,7 @@
+# Never list directory contents: private media (photos/, audio/) relies on unguessable
+# filenames, and an autoindex would hand the whole list to anyone (#210).
+Options -Indexes
+
 # RDBK.app — MIME type for roadbook files (.rdbk = JSON).
 AddType application/x-roadbook .rdbk
 

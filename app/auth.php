@@ -40,10 +40,11 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     if ($u) {
+        $u['has_password'] = (int)$u['has_password']; // 0 = Google-created account with no password yet (#211)
         $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
         $u['is_organizer'] = (int)($u['is_organizer'] ?? 0); // raw grant flag (admins manage events regardless)
         $u['email_verified'] = (int)$u['email_verified'];
@@ -100,7 +101,7 @@ function org_suggest(array $user): void {
 // choice follows them across devices. Whitelisted to the UI languages.
 function set_lang(array $user, array $d): void {
     $lang = (string)($d['lang'] ?? '');
-    if (!in_array($lang, ['en', 'es', 'it'], true)) fail('Unsupported language.');
+    if (!in_array($lang, ['en', 'es', 'it', 'de', 'fr'], true)) fail('Unsupported language.');
     db()->prepare('UPDATE users SET ui_lang = ? WHERE id = ?')->execute([$lang, $user['id']]);
     json_out(['ok' => true]);
 }
@@ -117,30 +118,33 @@ function save_location(array $user, array $d): void {
 }
 
 // Change password while signed in. Normally the current password is required; a user the
-// admin flagged must_change_password sets a new one WITHOUT it (the admin gave a temp one).
-// Either way the flag is cleared.
+// admin flagged must_change_password sets a new one WITHOUT it (the admin gave a temp one),
+// and a Google-created account (no password yet, hash NULL) sets its FIRST one the same way
+// (#211). Either way the flag is cleared.
 function change_password(array $user, array $d): void {
     $new = (string)($d['new'] ?? '');
     if (strlen($new) < 8) fail('Password must be at least 8 characters.');
     if (empty($user['must_change_password'])) {
         $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
         $h = $st->fetchColumn();
-        if (!$h || !password_verify((string)($d['current'] ?? ''), $h)) fail('Current password is wrong.', 403);
+        if ($h && !password_verify((string)($d['current'] ?? ''), $h)) fail('Current password is wrong.', 403);
     }
     db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
     log_activity((int)$user['id'], 'password_change');
     json_out(['ok' => true, 'message' => 'Password updated.']);
 }
 
-// Self-service account deletion (requires the current password). The media locations are
-// collected BEFORE the row goes (the cascade wipes the roadbook rows that resolve them), the
-// row is deleted, THEN the files — a failed DELETE must never leave a live account whose
-// files are already gone. user_roadbook_ids/purge_user_files: admin.php.
+// Self-service account deletion. Password-gated when the account has one; a Google-created
+// account (hash NULL) deletes on the signed-in session + the client's explicit confirm alone —
+// self-deletion must always be possible (#211). The media locations are collected BEFORE the
+// row goes (the cascade wipes the roadbook rows that resolve them), the row is deleted, THEN
+// the files — a failed DELETE must never leave a live account whose files are already gone.
+// user_roadbook_ids/purge_user_files: admin.php.
 function account_delete(array $user, array $d): void {
     $pass = (string)($d['password'] ?? '');
     $st = db()->prepare('SELECT password_hash FROM users WHERE id = ?'); $st->execute([$user['id']]);
     $h = $st->fetchColumn();
-    if (!$h || !password_verify($pass, $h)) fail('Wrong password.', 403);
+    if ($h && !password_verify($pass, $h)) fail('Wrong password.', 403);
     log_activity(null, 'account_delete'); // anonymous marker — the user's own rows cascade away with them
     $rbIds = user_roadbook_ids((int)$user['id']);
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$user['id']]);
@@ -219,7 +223,8 @@ function login_user(array $d): void {
     $st = db()->prepare('SELECT id, password_hash, blocked, email_verified FROM users WHERE email = ? OR username = ?');
     $st->execute([$id, $id]);
     $u = $st->fetch();
-    if (!$u || !password_verify($pass, $u['password_hash'])) { log_activity($u ? (int)$u['id'] : null, 'login_failed'); fail('Wrong email/username or password.', 401); }
+    // a Google-created account has no password (hash NULL) → a password login can only fail (#211)
+    if (!$u || !$u['password_hash'] || !password_verify($pass, $u['password_hash'])) { log_activity($u ? (int)$u['id'] : null, 'login_failed'); fail('Wrong email/username or password.', 401); }
     if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);

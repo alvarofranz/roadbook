@@ -232,7 +232,11 @@
         if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
         RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
-        if (r.ok) { await storeCredential(me && me.email, $('pwNew').value); $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = ''; }
+        if (r.ok) {
+            await storeCredential(me && me.email, $('pwNew').value);
+            $('pwCurrent').value = ''; $('pwNew').value = ''; $('pwNew2').value = '';
+            if (me && !me.has_password) { me.has_password = 1; showAccount(me); } // first password set (#211) → the card becomes "Change password"
+        }
     });
     // change email (signed in): re-verifies the new address — see change_email() server-side
     onSubmit('emailForm', async () => {
@@ -292,6 +296,18 @@
         me = user;
         show('vAccount'); msg('');
         $('adminLink').hidden = !user.is_admin; // the admin panel link, only for admins
+
+        // A Google-created account has no password yet (#211): hide the "current password"
+        // fields (the server doesn't require them either), retitle the card to "Set a
+        // password" and explain — setting one also enables email/password sign-in.
+        const hasPassword = !!user.has_password;
+        $('pwTitle').setAttribute('data-i18n', hasPassword ? 'Change password' : 'Set a password');
+        $('pwTitle').textContent = t(hasPassword ? 'Change password' : 'Set a password');
+        $('pwGoogleHint').hidden = hasPassword;
+        $('pwCurrentLabel').hidden = !hasPassword;
+        $('pwCurrent').hidden = !hasPassword;
+        $('delPassLabel').hidden = !hasPassword;
+        $('delPass').hidden = !hasPassword;
 
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
