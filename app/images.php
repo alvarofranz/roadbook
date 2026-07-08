@@ -4,6 +4,8 @@
  * AVIF. The caller deletes the original upload (the PHP tmp file is auto-removed). */
 
 function process_to_avif(string $srcPath, string $destAvif, int $maxDim, bool $square = false, int $quality = 55): bool {
+    // GD built without AVIF (imageavif missing) → fail cleanly instead of a fatal 500 (#207)
+    if (!function_exists('imageavif')) { error_log('images: GD has no AVIF support — cannot process uploads'); return false; }
     $data = @file_get_contents($srcPath);
     if ($data === false) return false;
     $img = @imagecreatefromstring($data);
@@ -12,10 +14,11 @@ function process_to_avif(string $srcPath, string $destAvif, int $maxDim, bool $s
 
     if (function_exists('exif_read_data')) {
         $exif = @exif_read_data($srcPath);
-        $o = $exif['Orientation'] ?? 0;
-        if ($o === 3) $img = imagerotate($img, 180, 0);
-        elseif ($o === 6) $img = imagerotate($img, -90, 0);
-        elseif ($o === 8) $img = imagerotate($img, 90, 0);
+        $angle = [3 => 180, 6 => -90, 8 => 90][$exif['Orientation'] ?? 0] ?? 0;
+        if ($angle) {
+            $rotated = imagerotate($img, $angle, 0);
+            if ($rotated) { imagedestroy($img); $img = $rotated; } // a rotate failure keeps the unrotated image (#207)
+        }
     }
 
     $w = imagesx($img); $h = imagesy($img);

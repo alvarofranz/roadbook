@@ -64,20 +64,19 @@ risente — la card userà semplicemente il fallback.
 ## 3. Storage e liste (lato server)
 
 La cover **non** è uno storage a parte: è una **voce riservata della galleria foto** del
-roadbook, con nome fisso **`_map.avif`**, sovrascritta a ogni salvataggio.
+roadbook, identificata da **`sort = -1`** e con **nome file casuale** (#206: le mappe dei
+roadbook privati non devono essere enumerabili), rigenerata a ogni salvataggio.
 
 - **Upload** ([upload.php:73](../public/api/upload.php#L73), `type=cover`): verifica la
   proprietà del roadbook, ricomprime il PNG in AVIF (`process_to_avif`, max 1200px) su
-  `photos/<id>/_map.avif`, e fa l'**upsert** di una sola riga `roadbook_photos` con
-  `sort = -1`.
+  `photos/<id>/<random>.avif`, e fa l'**upsert** della sola riga `roadbook_photos` a
+  `sort = -1` (il file della cover precedente viene eliminato).
 - **Miniatura** (`public_list`, [roadbooks.php:209](../app/roadbooks.php#L209)): la subquery del
   `thumb` ordina `sort, id` → con `sort = -1` la cover è **sempre** la prima, quindi la
   miniatura. Senza cover ricade sulla prima foto reale.
-- **Esclusa dallo swipe**: `public_get`
-  ([roadbooks.php:237](../app/roadbooks.php#L237)) e `ph_list`
-  ([roadbooks.php:151](../app/roadbooks.php#L151)) filtrano `filename <> '_map.avif'`, così la
-  cover non compare tra le foto utente né nell'editor. `public_get` la restituisce a parte nel
-  campo **`cover`** ([roadbooks.php:240](../app/roadbooks.php#L240)).
+- **Esclusa dallo swipe**: `public_get` e `ph_list` filtrano `sort >= 0`, così la cover non
+  compare tra le foto utente né nell'editor. `public_get` la restituisce a parte nel campo
+  **`cover`** (letto dalla riga a `sort -1`).
 
 In sintesi: **cover-only** (fuori dalla galleria), **sempre la miniatura**, base **CyclOSM**.
 

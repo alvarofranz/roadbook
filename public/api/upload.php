@@ -85,18 +85,24 @@ if ($type === 'photo') {
 }
 
 if ($type === 'cover') {
-    // The roadbook's auto-generated route-map cover: a single reserved gallery entry under a fixed
-    // name, overwritten on every save — a co-editor's save regenerates it too (#123). It is the
-    // home/listing thumbnail (sort -1 = first) but is excluded from the public photo swipe (see
-    // roadbooks.php). Generated client-side (cover-map.js).
+    // The roadbook's auto-generated route-map cover: the single reserved gallery entry at sort -1
+    // (= first, so it is the home/listing thumbnail), regenerated on every save — a co-editor's
+    // save regenerates it too (#123). Excluded from the public photo swipe (see roadbooks.php).
+    // Generated client-side (cover-map.js). The filename is random like every stored photo, so
+    // private roadbooks' route maps can't be enumerated (#206).
     $rbId = (int)($_POST['roadbook'] ?? 0);
     rb_require_edit($user, $rbId);
-    $fn = '_map.avif';
+    $fn = bin2hex(random_bytes(8)) . '.avif';
     $dest = $CFG['photos_dir'] . '/' . $rbId . '/' . $fn;
     if (!process_to_avif($tmp, $dest, 1200, false, 55)) fail('Could not process the image.');
-    $ex = db()->prepare('SELECT id FROM roadbook_photos WHERE roadbook_id = ? AND filename = ?');
-    $ex->execute([$rbId, $fn]);
-    if (!$ex->fetch()) db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,?)')->execute([$rbId, $fn, null, null, -1]);
+    $ex = db()->prepare('SELECT id, filename FROM roadbook_photos WHERE roadbook_id = ? AND sort = -1');
+    $ex->execute([$rbId]);
+    if ($old = $ex->fetch()) {
+        @unlink($CFG['photos_dir'] . '/' . $rbId . '/' . $old['filename']);
+        db()->prepare('UPDATE roadbook_photos SET filename = ? WHERE id = ?')->execute([$fn, (int)$old['id']]);
+    } else {
+        db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon, sort) VALUES (?,?,?,?,-1)')->execute([$rbId, $fn, null, null]);
+    }
     json_out(['ok' => true, 'url' => '/photos/' . $rbId . '/' . $fn]);
 }
 
