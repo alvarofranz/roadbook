@@ -46,10 +46,11 @@ const SESSION_LIFETIME = 60 * 24 * 3600; // 60 days
 // AVIF-compressed on upload, so 50 MB holds hundreds of photos.
 const DEFAULT_QUOTA_BYTES = 50 * 1024 * 1024;
 if (PHP_SAPI !== 'cli' && session_status() !== PHP_SESSION_ACTIVE) {
-    // Secure cookie on real HTTPS only. Behind a TLS-terminating router (ddev locally,
-    // the proxy in production) the internal hop to PHP is plain HTTP, so trust
-    // X-Forwarded-Proto: this keeps the cookie Secure in production (https) while letting
-    // it work on a local http ddev URL — otherwise the session is dropped over http.
+    // Secure cookie on real HTTPS only. On the on-VPS dev clone (plain http on
+    // localhost) and behind the production proxy the internal hop to PHP is plain
+    // HTTP, so trust X-Forwarded-Proto: this keeps the cookie Secure in production
+    // (https) while letting it work on a local http dev URL — otherwise the session
+    // is dropped over http.
     $https = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
         || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     @ini_set('session.gc_maxlifetime', (string)SESSION_LIFETIME);
