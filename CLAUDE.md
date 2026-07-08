@@ -50,10 +50,11 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   No silent data loss, ever. A **deletion** confirm MUST name the object being deleted in its
   message (e.g. the note number + text), so the user knows exactly what they're removing.
 - **Edit freely, but WAIT for the user's test confirmation before deploying.** You may read and
-  modify the code in the local working copy as needed. But do NOT commit/stamp/push (a push to
-  `main` is a production deploy) until the user has tested the change (ddev serves the working
-  tree) and given an explicit go-ahead. Make the change, say what to test, then stop — never
-  pre-emptively deploy, even when the user asked for the feature.
+  modify the code in the dev clone as needed. But do NOT commit/stamp/push (a push to
+  `main` is a production deploy) until the user has tested the change (the dev clone serves the
+  working tree at `http://localhost:8806` via the SSH forward) and given an explicit go-ahead. Make
+  the change, say what to test, then stop — never pre-emptively deploy, even when the user asked
+  for the feature.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
   copy: `git fetch origin && git reset --hard origin/main`. Production deploys hard-reset
   to `origin/main`, so never work on (or push) a stale/divergent copy — your edits would
@@ -152,9 +153,14 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   drift is a bug: a change isn't done until the docs describing it read as the current reality.
 
 ## Run locally
-**Full stack (PHP 8.1 + MariaDB) in Docker — recommended:** `ddev start` then `ddev launch`
-(first start installs Composer deps, seeds `config.js` from the example and applies every
-`migrations/*.sql`; details in the README). Front-end only, no back-end:
+**Full stack (PHP 8.1 + MariaDB) on the VPS dev clone:** development happens on the box in a
+dev clone next to prod — `/home/rdbk/dev/rdbk` (dev DB `rdbk_dev`), served privately on
+`127.0.0.1:8806` and reached over SSH/Blink (LocalForward → `http://localhost:8806`). Prod
+stays untouched at `/home/rdbk/rdbk`. The dev clone reuses rdbk's prod PHP-FPM pool (same
+user), so the full stack is just the clone served on `127.0.0.1:8806` plus the `rdbk_dev` DB
+seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clone `vendor`,
+`config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
+and `BASE_URL=http://localhost:8806`. Front-end only, no back-end:
 ```
 cd public && python3 -m http.server 8000   # → http://localhost:8000/
 ```
@@ -170,26 +176,26 @@ style URL for satellite imagery; the base map runs on free, no-key MapLibre tile
 (copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
 (copy `.env.example`); migrations live in `migrations/`.
 
-## Production DB (migrations + fresh pull)
-Both prod-DB workflows — **pulling a fresh copy of prod into local dev** and
-**applying a schema migration to prod** — go through the **VPS panel** with a
-single key, the rdbk-scoped **`VPS_ADMIN_KEY`** (panel slug `rdbk`). That one key
-covers DB dump + migrate; there is no separate dump secret. Keep it in
-`.claude/settings.local.json` under `env` (gitignored) so Claude always has it;
+## Production DB (migrations + fresh dev DB)
+Two prod-DB workflows: **reseeding the dev DB from a fresh copy of prod** and
+**applying a schema migration to prod**. The fresh dev DB reseed runs entirely on
+the box (`dev-sync`, below — no panel, no key). **Migrations** go through the **VPS
+panel** with the rdbk-scoped **`VPS_ADMIN_KEY`** (panel slug `rdbk`); that one key
+covers the panel's migrate + dump routes — there is no separate dump secret. Keep it
+in `.claude/settings.local.json` under `env` (gitignored) so Claude always has it;
 the live value is handed over out-of-band (it is a secret, never in this public
 repo), and the longer ops note `DB.md` is likewise private/gitignored.
 
-**Fresh prod DB → local.** Replaces your local DB with a current copy of prod
-(real users, roadbooks, photo metadata) — keep that copy private.
-- **Mac (DDEV):** download from the panel dump route, then import:
-  ```bash
-  curl -fsSL -H "X-Admin-Key: $VPS_ADMIN_KEY" \
-    https://alvarofranz.com/api/projects/rdbk/dump -o /tmp/rdbk-fresh.sql.gz
-  ddev import-db --file=/tmp/rdbk-fresh.sql.gz && rm -f /tmp/rdbk-fresh.sql.gz
-  ```
-  or the helper that does exactly this: `bash bashy/pull-fresh-db-rdbk.sh`.
-- **On the VPS (Blink/SSH dev box):** `dev-sync rdbk rdbk_dev` (clones prod into
-  the on-box dev DB; no HTTPS round-trip).
+**Fresh dev DB → reseed from prod.** Replaces the `rdbk_dev` DB with a current copy of prod
+(real users, roadbooks, photo metadata) — keep that copy private. On the box (Blink/SSH):
+```bash
+dev-sync rdbk rdbk_dev
+```
+An instant local `mysqldump | mysql` — no HTTPS round-trip. `dev-sync` is write-guarded: it
+refuses any target DB not ending in `_dev`, so prod is only ever read, never a write target.
+To test a schema change against dev before it ships, apply one file to the dev DB with
+`dev-migrate rdbk_dev <file.sql>` (throwaway — no panel, no backup; prod is never touched).
+DB access on the box is the native `mariadb` client.
 
 **Migrations.** List pending and apply through the same panel key:
 ```bash
