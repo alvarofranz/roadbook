@@ -111,7 +111,9 @@ function admin_public_roadbooks(array $user): void {
 // 'ready' (private but complete) — the content is untouched, only its public visibility.
 function admin_unpublish(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ?');
+    // a trashed roadbook is out of reach here — acting on it would silently restore it,
+    // bypassing the trash's restore path (#214); only admin_rb_restore brings it back
+    $st = db()->prepare("SELECT id FROM roadbooks WHERE id = ? AND status <> 'deleted'");
     $st->execute([$id]);
     if (!$st->fetch()) fail('Not found.', 404);
     db()->prepare("UPDATE roadbooks SET status = 'ready' WHERE id = ?")->execute([$id]);
@@ -137,7 +139,8 @@ function admin_user_roadbooks(array $user, array $d): void {
 function admin_set_status(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $status = rb_clean_status($d['status'] ?? null);
-    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ?');
+    // never on a trashed roadbook — that would un-trash it outside admin_rb_restore (#214)
+    $st = db()->prepare("SELECT id FROM roadbooks WHERE id = ? AND status <> 'deleted'");
     $st->execute([$id]);
     if (!$st->fetch()) fail('Not found.', 404);
     db()->prepare('UPDATE roadbooks SET status = ? WHERE id = ?')->execute([$status, $id]);
