@@ -34,7 +34,12 @@ try {
             $r = renameLegacyCovers();
             echo "rename-legacy-covers: renamed {$r['renamed']}\n";
             break;
-        // 4..9 reserved for future tasks
+        case 4:
+            require_once __DIR__ . '/prune-stale-tokens.php';
+            $r = pruneStaleTokens();
+            echo "prune-stale-tokens: deleted {$r['deleted']}\n";
+            break;
+        // 5..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";

@@ -206,7 +206,9 @@ function register_user(array $d): void {
 function verify_email(array $d): void {
     $t = (string)($d['token'] ?? '');
     if ($t === '') fail('Missing token.');
-    $st = db()->prepare('SELECT id FROM users WHERE verify_token = ? AND verify_expires > NOW()');
+    // pending_email set = a change-email token (verify_email_change owns those); consuming it
+    // here would burn the token and silently drop the email change (#214)
+    $st = db()->prepare('SELECT id FROM users WHERE verify_token = ? AND verify_expires > NOW() AND pending_email IS NULL');
     $st->execute([token_hash($t)]);
     $u = $st->fetch();
     if (!$u) fail('That verification link is invalid or has expired.');
@@ -230,8 +232,11 @@ function login_user(array $d): void {
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
     log_activity((int)$u['id'], 'login');
-    // Also hand back a Bearer token for the native apps (the browser ignores it and uses the cookie).
-    json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
+    // A Bearer token only for the native apps (recognised by their trusted Origin): the web uses
+    // the session cookie and discards the token, so minting one there would only pile up
+    // permanent orphan credentials (#213).
+    $token = is_app_origin($_SERVER['HTTP_ORIGIN'] ?? '') ? issue_api_token((int)$u['id']) : null;
+    json_out(['ok' => true, 'user' => current_user(), 'token' => $token]);
 }
 
 // Google Sign-In (#46). The client posts { credential: <Google ID token> } from the GIS button.
@@ -295,7 +300,9 @@ function google_auth(array $d): void {
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
     log_activity((int)$u['id'], 'login_google');
-    json_out(['ok' => true, 'user' => current_user(), 'token' => issue_api_token((int)$u['id'])]);
+    // token: app logins only — same rule as the classic login (#213)
+    $token = is_app_origin($_SERVER['HTTP_ORIGIN'] ?? '') ? issue_api_token((int)$u['id']) : null;
+    json_out(['ok' => true, 'user' => current_user(), 'token' => $token]);
 }
 
 // A unique username seeded from the email local-part, sanitised to the register charset
@@ -357,6 +364,7 @@ function reset_password(array $d): void {
 // once that link is opened (verify_email_change). The current email stays active until then.
 // The confirmation link reuses verify_token/verify_expires (free on a verified account).
 function change_email(array $user, array $d): void {
+    rate_limit('change_email_' . (int)$user['id'], 3, 3600); // it mails an arbitrary address — cap it like the other mail senders (#212)
     $email = strtolower(trim((string)($d['email'] ?? '')));
     if (!valid_email($email)) fail('Please enter a valid email.');
     if ($email === strtolower((string)$user['email'])) fail('That is already your email.');

@@ -13,6 +13,15 @@ $user = require_user();
 require_same_origin();
 $type = $_POST['type'] ?? '';
 
+// The optional geotag of a media upload: a valid pair, or nulls (shared by audio + photo, #214).
+function post_latlon(): array {
+    $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
+    $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
+    if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
+    if ($lon !== null && ($lon < -180 || $lon > 180)) $lon = null;
+    return [$lat, $lon];
+}
+
 if ($type === 'audio') {
     // Voice note: keep the recorded clip as-is alongside its transcription, so a wrong
     // transcription can be replayed and re-checked. Geolocated, so the Editor can tie it
@@ -26,10 +35,7 @@ if ($type === 'audio') {
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_audio WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 200) fail('Too many voice notes (200 max).');
     if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
-    $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
-    $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
-    if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
-    if ($lon !== null && ($lon < -180 || $lon > 180)) $lon = null;
+    [$lat, $lon] = post_latlon();
     // Extension from the browser-reported MIME (MediaRecorder output differs by browser); default webm.
     $ext = ['audio/webm' => 'webm', 'video/webm' => 'webm', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'audio/mpeg' => 'mp3', 'audio/wav' => 'wav'][$_FILES['audio']['type'] ?? ''] ?? 'webm';
     $fn = bin2hex(random_bytes(8)) . '.' . $ext; // unguessable → private voice notes can't be enumerated
@@ -71,10 +77,7 @@ if ($type === 'photo') {
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_photos WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 60) fail('Gallery is full (60 photos max).');
     if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
-    $lat = (isset($_POST['lat']) && $_POST['lat'] !== '') ? (float)$_POST['lat'] : null;
-    $lon = (isset($_POST['lon']) && $_POST['lon'] !== '') ? (float)$_POST['lon'] : null;
-    if ($lat !== null && ($lat < -90 || $lat > 90)) $lat = null;
-    if ($lon !== null && ($lon < -180 || $lon > 180)) $lon = null;
+    [$lat, $lon] = post_latlon();
     db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)')->execute([$rbId, 'pending', $lat, $lon]);
     $pid = (int)db()->lastInsertId();
     $fn = bin2hex(random_bytes(8)) . '.avif'; // unguessable → private roadbook photos can't be enumerated
