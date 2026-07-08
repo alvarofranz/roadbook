@@ -71,6 +71,7 @@ try {
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
         case 'admin_trash_list':  admin_trash_list(require_admin()); break;
+        case 'admin_rb_trash':    admin_rb_trash(require_admin(), $d); break;
         case 'admin_rb_restore':  admin_rb_restore(require_admin(), $d); break;
         case 'admin_rb_purge':    admin_rb_purge(require_admin(), $d); break;
         case 'rb_list':   rb_list(require_user()); break;
@@ -84,6 +85,8 @@ try {
         case 'rb_status': rb_status(require_user(), $d); break;
         case 'rb_duplicate': rb_duplicate(require_user(), $d); break;
         case 'rb_delete': rb_delete(require_user(), $d); break;
+        case 'rb_trash_list': rb_trash_list(require_user()); break;
+        case 'rb_restore':    rb_restore(require_user(), $d); break;
         case 'ph_list':     ph_list(current_user(), $d); break;
         case 'ph_delete':   ph_delete(require_user(), $d); break;
         case 'ph_move':     ph_move(require_user(), $d); break;

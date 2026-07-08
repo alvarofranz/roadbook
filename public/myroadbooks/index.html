@@ -15,6 +15,7 @@
         #myRoadbooks { max-width: 860px; margin: 0 auto; }
         .section-bar { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 1.4rem 0 .6rem; }
         .section-bar h1 { margin: 0; font-size: 1.6rem; }
+        .rb-trash-title { margin: 2rem 0 .2rem; font-size: 1.2rem; }
         /* the roadbook list (.rb-grid / .roadbook-row / .rb-status) is shared — see app.css */
     </style>
 </head>
@@ -28,6 +29,11 @@
             <a class="btn btn-primary" href="../editor/" data-i18n="New roadbook"><i class="fa-solid fa-plus"></i> New roadbook</a>
         </div>
         <div id="rbList" class="rb-grid"><p class="muted small">Loading…</p></div>
+        <section id="rbTrash" hidden>
+            <h2 class="rb-trash-title"><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Trash">Trash</span></h2>
+            <p class="muted small" data-i18n="A deleted roadbook stays here 30 days, then it is gone for good.">A deleted roadbook stays here 30 days, then it is gone for good.</p>
+            <div id="rbTrashList" class="rb-grid"></div>
+        </section>
     </div>
 </main>
 

@@ -383,9 +383,37 @@ function public_get(array $d): void {
 function rb_delete(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     rb_require_own($user, $id);
-    // Soft-delete → admin trash (#187): the roadbook moves to the 'deleted' status (dropping out of
-    // every user view) but keeps its row + files for 30 days, so an admin can restore it. The cron
-    // hard-deletes it after that. `updated_at` (auto) records when it was trashed.
+    // Soft-delete → the trash (#187): the roadbook moves to the 'deleted' status (dropping out of
+    // every list view) but keeps its row + files for 30 days — the owner sees it in their own
+    // trash (#238) and can restore it, as can an admin. The cron hard-deletes it after that.
+    // `updated_at` (auto) records when it was trashed.
     db()->prepare("UPDATE roadbooks SET status = 'deleted' WHERE id = ?")->execute([$id]);
     json_out(['ok' => true]);
+}
+
+// The signed-in user's own trash (#238): their soft-deleted roadbooks with the days left before
+// the 30-day purge — the personal counterpart of the admin trash page.
+function rb_trash_list(array $user): void {
+    $st = db()->prepare("SELECT id, title, total_distance, note_count, updated_at,
+            TIMESTAMPDIFF(DAY, updated_at, NOW()) AS days_in_trash
+        FROM roadbooks WHERE user_id = ? AND status = 'deleted' ORDER BY updated_at DESC");
+    $st->execute([(int)$user['id']]);
+    $list = array_map(fn($r) => [
+        'id' => (int)$r['id'], 'title' => $r['title'],
+        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'],
+        'deleted_at' => $r['updated_at'], 'days_left' => max(0, TRASH_DAYS - (int)$r['days_in_trash']),
+    ], $st->fetchAll());
+    json_out(['ok' => true, 'trash_days' => TRASH_DAYS, 'roadbooks' => $list]);
+}
+
+// Restore one of your own trashed roadbooks (#238) — back as a private DRAFT, the same rule as
+// the admin restore (the prior published state is never silently re-applied).
+function rb_restore(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare("SELECT id FROM roadbooks WHERE id = ? AND user_id = ? AND status = 'deleted'");
+    $st->execute([$id, (int)$user['id']]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare("UPDATE roadbooks SET status = 'draft' WHERE id = ?")->execute([$id]);
+    log_activity((int)$user['id'], 'rb_restore', 'roadbook #' . $id);
+    json_out(['ok' => true, 'id' => $id]);
 }
