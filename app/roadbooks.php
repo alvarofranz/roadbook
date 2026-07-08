@@ -135,6 +135,15 @@ function rb_draft(array $user, array $d = []): void {
     json_out(['ok' => true, 'id' => (int)db()->lastInsertId()]);
 }
 
+// The .rdbk file counts against its OWNER's disk quota like any upload (#210). $prevBytes is
+// the size of the file being replaced, so re-saving only charges the growth delta.
+function rb_assert_quota(int $ownerId, int $prevBytes, int $newBytes): void {
+    $st = db()->prepare('SELECT quota_bytes FROM users WHERE id = ?');
+    $st->execute([$ownerId]);
+    $quota = user_quota_bytes(['quota_bytes' => $st->fetchColumn() ?: null]);
+    if (user_disk_bytes($ownerId) - $prevBytes + $newBytes > $quota) fail('Storage limit reached — free up space or ask an admin for more.', 413);
+}
+
 function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
     if (!is_array($rb) || empty($rb['notes']) || empty($rb['track'])) fail('Invalid roadbook.');
@@ -157,18 +166,23 @@ function rb_save(array $user, array $d): void {
         $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: unique_slug('roadbooks', $title, 'roadbook', $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
-        if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) fail('Could not write the roadbook file.', 500);
+        $json = json_encode($rb);
+        $path = $dir . '/' . $fn;
+        rb_assert_quota((int)$row['user_id'], is_file($path) ? (int)filesize($path) : 0, strlen($json));
+        if (file_put_contents($path, $json) === false) fail('Could not write the roadbook file.', 500);
         db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, slug = ?, filename = ? WHERE id = ?')
             ->execute([$title, $dist, $nc, $status, $reusable, $slug, $fn, $id]);
         rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
+        $json = json_encode($rb);
+        rb_assert_quota((int)$user['id'], 0, strlen($json));
         db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?)')
             ->execute([$user['id'], $title, $dist, $nc, $status, 'pending']);
         $id = (int)db()->lastInsertId();
         $fn = $id . '.rdbk';
         $slug = unique_slug('roadbooks', $title, 'roadbook', $id);
-        if (file_put_contents($dir . '/' . $fn, json_encode($rb)) === false) {
+        if (file_put_contents($dir . '/' . $fn, $json) === false) {
             db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]); // never leave a fileless 'pending' row (the cron only reaps empty drafts)
             fail('Could not write the roadbook file.', 500);
         }
