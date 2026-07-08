@@ -48,6 +48,23 @@ describe('scoredNoteSet / isScoredIdx', () => {
         expect([...set].sort()).toEqual([0, 1, 3, 4]);
         expect(set.has(2)).toBe(false);
     });
+    it('FIA wp_type markers (ss_start/ss_end) bound the stage like the legacy icons (#215)', () => {
+        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+        const set = RB.scoredNoteSet([N(), W('ss_start'), N(), W('ss_end'), N()]);
+        expect([...set].sort()).toEqual([1, 2, 3]);
+        expect(RB.isScoredIdx(set, 0)).toBe(false);
+        expect(RB.isScoredIdx(set, 4)).toBe(false);
+    });
+    it('legacy icons and wp_type markers mix freely (#215)', () => {
+        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+        const set = RB.scoredNoteSet([W('ss_start'), N(), N([{ name: 'I01_arrivo.png' }]), N()]);
+        expect([...set].sort()).toEqual([0, 1, 2]);
+        expect(set.has(3)).toBe(false);
+    });
+    it('the plain start/finish wp_types do not open a stage — only the selective-section pair does', () => {
+        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+        expect(RB.scoredNoteSet([W('start'), N(), W('finish')])).toBeNull();
+    });
 });
 
 describe('validationPenalties (1 pt/m)', () => {

@@ -563,8 +563,10 @@
     // Douglas-Peucker simplification with a tolerance in METRES, iterative (no
     // recursion limit) on a local equirectangular projection. Indices listed in
     // `keepIdx` (note anchors) always survive.
-    function simplifyTrack(trkpts, toleranceM, keepIdx) {
-        if (!trkpts || trkpts.length < 3) return (trkpts || []).slice();
+    // The Douglas-Peucker kept-vertex mask (endpoints + keepIdx always kept), shared by
+    // simplifyTrack and simplifyRoadbook; null when the track is too short to simplify.
+    function simplifyKeepMask(trkpts, toleranceM, keepIdx) {
+        if (!trkpts || trkpts.length < 3) return null;
         const lat0 = toRad(trkpts[0].lat);
         const xy = trkpts.map((p) => ({ x: toRad(p.lon) * Math.cos(lat0) * EARTH_RADIUS_M, y: toRad(p.lat) * EARTH_RADIUS_M }));
         const segDist = (p, a, b) => {
@@ -586,7 +588,11 @@
             }
             if (worstDist > toleranceM) { keep[worst] = 1; stack.push([a, worst], [worst, b]); }
         }
-        return trkpts.filter((_, i) => keep[i]);
+        return keep;
+    }
+    function simplifyTrack(trkpts, toleranceM, keepIdx) {
+        const keep = simplifyKeepMask(trkpts, toleranceM, keepIdx);
+        return keep ? trkpts.filter((_, i) => keep[i]) : (trkpts || []).slice();
     }
     // Closest position ON the track polyline (not just a vertex): the segment
     // index `i` (between points i and i+1), the fraction `t` along it, the
@@ -607,10 +613,20 @@
         const a = trkpts[best.i], b = trkpts[best.i + 1];
         return { i: best.i, t: best.t, dist: best.dist, lat: round6(a.lat + (b.lat - a.lat) * best.t), lon: round6(a.lon + (b.lon - a.lon) * best.t) };
     }
-    // Simplify rb.track (notes' anchor points always survive), then re-anchor and recompute.
+    // Simplify rb.track (notes' anchor points always survive), then remap and recompute.
     function simplifyRoadbook(rb, toleranceM) {
-        rb.track = simplifyTrack(rb.track, toleranceM, rb.notes.map((n) => n.idx));
-        rb.notes.forEach((n) => { n.idx = nearestIdx(rb.track, n); });
+        const keep = simplifyKeepMask(rb.track, toleranceM, rb.notes.map((n) => n.idx));
+        if (keep) {
+            // Exact old→new index remap: every note's own vertex is in the mask, so its new
+            // index is the count of kept vertices before it. Never re-anchor spatially here —
+            // on a loop/out-and-back a nearest-vertex search can snap a note to the OTHER pass
+            // of the same spot and scramble the note order (#216).
+            const newIdx = new Int32Array(keep.length);
+            let k = 0;
+            for (let i = 0; i < keep.length; i++) newIdx[i] = keep[i] ? k++ : -1;
+            rb.track = rb.track.filter((_, i) => keep[i]);
+            rb.notes.forEach((n) => { n.idx = newIdx[n.idx] >= 0 ? newIdx[n.idx] : nearestIdx(rb.track, n); });
+        }
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
@@ -770,16 +786,21 @@
     }
 
     /* ---------------- competition scoring (the Reader accrues → META → the Ranking scores) ---------------- */
-    // Scored sections (rally special stages): only notes between a START icon and the next
-    // FINISH icon (both inclusive) are penalised; liaison/transfer notes outside them are not.
-    // Returns null when the roadbook has no START marker — the whole roadbook is scored.
+    // Scored sections (rally special stages): only notes between a stage-start marker and the
+    // next stage-end marker (both inclusive) are penalised; liaison/transfer notes outside them
+    // are not. A marker is the FIA waypoint type (ss_start/ss_end — DSS/ASS) or the legacy
+    // start/finish icon. Returns null when the roadbook has no start marker — all notes scored.
     const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
     function scoredNoteSet(notes) {
+        // A stage opens on the FIA selective-section start (wp_type 'ss_start' = DSS) or the
+        // legacy start icon, and closes on 'ss_end' (ASS) or the legacy finish icon (#215).
         const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
-        if (!notes.some((n) => has(n, START_ICON))) return null;
+        const opens = (n) => n.wp_type === 'ss_start' || has(n, START_ICON);
+        const closes = (n) => n.wp_type === 'ss_end' || has(n, FINISH_ICON);
+        if (!notes.some(opens)) return null;
         const set = new Set();
         let inStage = false;
-        notes.forEach((n, i) => { if (has(n, START_ICON)) inStage = true; if (inStage) set.add(i); if (has(n, FINISH_ICON)) inStage = false; });
+        notes.forEach((n, i) => { if (opens(n)) inStage = true; if (inStage) set.add(i); if (closes(n)) inStage = false; });
         return set;
     }
     const isScoredIdx = (scoredSet, i) => scoredSet === null || scoredSet.has(i);

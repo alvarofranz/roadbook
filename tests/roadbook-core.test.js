@@ -252,6 +252,27 @@ describe('simplifyRoadbook', () => {
         expect(rb.track.length).toBeLessThan(trkpts.length);
         expect(rb.track.length).toBeGreaterThanOrEqual(3);
     });
+    it('a note on the return leg of an out-and-back keeps its own vertex — exact remap, no spatial snap (#216)', () => {
+        // Out along a line, then back over the SAME spots. A nearest-vertex re-anchor would snap
+        // the return-leg note to the outbound pass (same coordinates, lower index) and wreck its
+        // distance; the exact remap must keep it on its own (kept) vertex.
+        const track = [];
+        for (let i = 0; i <= 10; i++) track.push({ lat: 0, lon: i * 0.0001 });          // outbound
+        for (let i = 9; i >= 0; i--) track.push({ lat: 0, lon: i * 0.0001 });           // return
+        const iBack = track.length - 3; // return leg, same coords as an outbound vertex
+        const notes = [
+            { num: 1, idx: 2, lat: track[2].lat, lon: track[2].lon, text: 'out', distance: 0, partial_distance: 0 },
+            { num: 2, idx: iBack, lat: track[iBack].lat, lon: track[iBack].lon, text: 'back', distance: 0, partial_distance: 0 },
+        ];
+        const rb = { meta: { title: 'T', total_distance: 0, note_count: 2 }, track, notes };
+        RB.simplifyRoadbook(rb, 5);
+        // travel order preserved (out before back) and the return note keeps a return-leg distance:
+        // ~85% of the ~222 m round trip, not the ~33 m of the outbound pass it must NOT snap to
+        expect(rb.notes[0].text).toBe('out');
+        expect(rb.notes[1].text).toBe('back');
+        expect(rb.notes[1].idx).toBeGreaterThan(rb.notes[0].idx);
+        expect(rb.notes[1].distance).toBeGreaterThan(100);
+    });
 });
 
 describe('gpxDocument round-trips through parseGPX', () => {

@@ -123,6 +123,20 @@ intermedio (`spliceByIndex`); altrimenti unisce il pezzo all'estremità più vic
 auto-orientandolo (eventuale `reverseRoadbook` per agganciare in testa). In ogni caso la
 rotta resta una sola traccia.
 
+**Simplify e chilometraggio.** Dopo l'ottimizzazione `recomputeMetrics` **ricalcola da zero**
+totale, parziali e distanza di ogni nota sulla polilinea semplificata — nulla resta dei valori
+precedenti. Il totale **può solo diminuire, mai crescere**: Douglas-Peucker sostituisce una
+spezzata con la sua corda, che per la disuguaglianza triangolare è sempre ≤. Sui rettilinei la
+differenza è zero (punti collineari); in curva si perde al massimo l'errore vincolato dalla
+tolleranza (default **2 m**, range 0,5–50 m). In pratica, con 2 m su una traccia registrata il
+simplify rimuove soprattutto lo **zig-zag del rumore GPS**, quindi il totale semplificato è
+spesso *più vicino alla distanza reale* di quello grezzo (variazioni tipiche: frazioni di
+percento; tolleranze alte su percorsi a tornanti perdono visibilmente di più). Le **note
+restano sui loro vertici** — il simplify li preserva sempre e il remap degli indici è esatto
+(#216), quindi anche su anelli/andata-ritorno ordine, parziali e CAP restano coerenti. Per i
+roadbook da gara: ottimizzare **prima** di rifinire i parziali, così i numeri stampati
+corrispondono alla polilinea definitiva.
+
 **Undo/redo.** Snapshot dell'intero `{rb, sel, gaps}` serializzato
 ([editor.js:378](../public/editor/editor.js#L378)), max 30, push debounced a 400 ms. Ogni
 `markDirty()` ([editor.js:36](../public/editor/editor.js#L36)) schedula un push. Scorciatoie
