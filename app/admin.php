@@ -197,6 +197,7 @@ function admin_trash_list(array $user): void {
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'username' => $r['username'],
         'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'],
         'deleted_at' => $r['updated_at'], 'days_left' => max(0, TRASH_DAYS - (int)$r['days_in_trash']),
+        'graveyard' => $r['username'] === GRAVEYARD_USERNAME, // restoring one of these must ask WHO gets it (the owner can't log in)
     ], $rows);
     json_out(['ok' => true, 'trash_days' => TRASH_DAYS, 'roadbooks' => $list]);
 }

@@ -166,6 +166,10 @@ section.block { padding: 2.4rem 0; }
 .account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; }
 .account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
 .account-menu .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
+/* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */
+.mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
+.mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }
+.mv-opt:hover { border-color: var(--sand); }
 /* "unsaved work" pill: sits in the bar (always visible, not behind the mobile menu) and only
    appears when another tool has in-progress work to resume or discard */
 .pending-pill { margin-left: auto; display: inline-flex; align-items: center; gap: .4rem; background: var(--sand); color: var(--on-sand); border: 0; border-radius: 999px; padding: .32rem .7rem; font: inherit; font-weight: 800; font-size: .82rem; cursor: pointer; white-space: nowrap; }
