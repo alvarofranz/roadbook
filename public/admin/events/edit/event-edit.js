@@ -103,13 +103,15 @@
     }
     // Live user search (debounced) to pick a co-organizer; the organization filter narrows it
     // and defaults to YOUR organization (set once in init).
-    let orgSearchTimer = null;
+    let orgSearchTimer = null, orgSearchSeq = 0;
     function orgSearch() {
         clearTimeout(orgSearchTimer);
         orgSearchTimer = setTimeout(async () => {
             const q = $('orgSearchIn').value.trim(), organization = $('orgOrgIn').value.trim();
             if (!q && !organization) { $('orgResults').innerHTML = ''; return; }
+            const seq = ++orgSearchSeq;
             const r = await api('user_search', { q, organization });
+            if (seq !== orgSearchSeq) return; // a newer search is in flight — never paint stale results (#220)
             const have = new Set(ev ? ev.organizers.map((o) => o.username) : []);
             const list = ((r.ok && r.users) || []).filter((u) => !have.has(u.username));
             $('orgResults').innerHTML = list.length ? list.map((u) => `<div class="ev-line">

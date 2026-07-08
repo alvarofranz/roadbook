@@ -233,9 +233,9 @@ cancellano con il badge × (bloccato se l'icona è in uso, `delCustomIcon`,
 ## 5. Record e "Adjust on the trail" (GPS live)
 
 La barra `#recBar` ([index.html:191](../public/editor/index.html#L191)) è il loop GPS dal vivo.
-Il **recording di una rotta nuova** vive ormai nel tool Recorder dedicato; nell'Editor la
-barra serve principalmente ad **"Adjust on the trail"** (re-record live di un tratto),
-avviata da `startRecording('adjust')` ([editor.js:480](../public/editor/editor.js#L480)).
+Il **recording di una rotta nuova** vive nel tool Recorder dedicato; nell'Editor la barra
+serve esclusivamente ad **"Adjust on the trail"** (re-record live di un tratto), avviata da
+`startRecording()`.
 
 Il fix GPS (`onRecFix`) usa gli **stessi helper condivisi del core** di Recorder e Reader:
 scarta i fix rumorosi con `RB.recJunkFix` (accuratezza troppo alta / salto improbabile) e
@@ -245,11 +245,9 @@ fissare l'ingresso `adjP1`, poi rileva un eventuale rientro più avanti (`adjP2`
 `finishAdjust` chiede conferma e fa `spliceByIndex`, sostituendo il tratto e ri-agganciando le
 note (`RB.nearestIdx`).
 
-Il recording nuovo (`recMode === 'new'`) è checkpointato in `localStorage` (`REC_KEY`) e
-recuperabile via `checkRecovery`; rispecchia inoltre la traccia nel file GPX crash-safe di
-`RBGpxRecorder`. Le note istantanee in recording passano dal prompt condiviso `RBWaypointPrompt`
+Le note istantanee in recording passano dal prompt condiviso `RBWaypointPrompt`
 (tipo waypoint + testo); le foto sono geotaggate, mostrate con `RBPhotoPreview` e caricate lato
-server (`recPhoto`) — richiedono un draft id e il login.
+server (`recPhoto`) — si agganciano al roadbook in adjust (serve un roadbook salvato + login).
 
 ---
 
@@ -498,9 +496,8 @@ precisa:
    e, se loggati, il draft con le foto già attaccate).
 3. **Draft non salvato** in `localStorage` — `RBConfirm` di recupero (rifiutare **non** lo
    cancella: viene sovrascritto al prossimo checkpoint).
-4. **`checkRecovery`** — un recording GPS interrotto.
-5. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.
-6. **`?rb=<id>`** — carica un roadbook salvato dal profilo (richiede login).
+4. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.
+5. **`?rb=<id>`** — carica un roadbook salvato dal profilo (richiede login).
 
 Risolta la sorgente, due rifiniture finali della startup:
 

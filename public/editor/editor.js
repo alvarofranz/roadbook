@@ -404,7 +404,9 @@
         },
         onRemove() { if (this._m && this._upd) this._m.off('zoom', this._upd); },
     }, 'top-right');
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMapTool('points'); }); // Escape → back to the default Move tool
+    // Escape → back to the default Move tool; never mid-adjust — the drag editors must not
+    // touch a track that is being live re-recorded (#220)
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && recWatch == null) setMapTool('points'); });
     // Draw mode: every tap extends the route from the nearest OPEN end — the
     // finish, the start, or either edge of an open cut (tapping on the opposite
     // edge closes the cut). With nothing loaded, the first two taps create a
@@ -615,7 +617,7 @@
             d.close(); routeChanged(t('Removed') + ' ' + (before - rb.track.length) + ' ' + t('points') + '.');
         };
     };
-    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording('adjust'); };
+    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording(); };
     $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
@@ -804,10 +806,7 @@
 
     /* ---------- record / adjust route (live GPS) ---------- */
     let recTrack = [], recWpts = [], recPhotos = [], recWatch = null, recLast = null, recHere = null, recWake = null, recPaused = false;
-    let recMode = 'new', draftId = 0, adjP1 = -1, adjP2 = -1; // adjust: entry/exit index on the base track
-    const REC_KEY = 'rb_recording';
-    const saveRec = () => { try { if (recMode === 'new') localStorage.setItem(REC_KEY, JSON.stringify({ track: recTrack, wpts: recWpts })); } catch (e) {} };
-    const clearRec = () => { try { localStorage.removeItem(REC_KEY); } catch (e) {} };
+    let draftId = 0, adjP1 = -1, adjP2 = -1; // adjust: entry/exit index on the base track
     // Light 3-point moving average — trims micro-zigzag from weak-signal fixes.
     function smoothTrack(pts) {
         if (pts.length < 5) return pts;
@@ -818,26 +817,13 @@
         }
         return out;
     }
-    // Recording a NEW route now lives in the dedicated Recorder tool. The recording
-    // bar below is reused by "Adjust on the trail" (live re-record of a segment).
+    // Recording a NEW route lives in the dedicated Recorder tool; this recording bar serves
+    // only "Adjust on the trail" (live re-record of a segment of the loaded roadbook).
     $('recPause').onclick = () => {
         recPaused = !recPaused;
         $('recPause').innerHTML = recPaused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
         recLast = recPaused ? recLast : null; // restart the distance gate cleanly on resume
-        $('recDiscard').hidden = !(recPaused && recMode === 'new'); // discard only while paused on a new recording
         updateRecStats();
-    };
-    $('recDiscard').onclick = async () => {
-        if (recMode !== 'new') return; // never delete an existing roadbook from an adjust session
-        if (!(await RBConfirmDanger('Discard this recording? It cannot be undone.', 'Discard'))) return;
-        if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
-        if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
-        if (draftId) { RBApi('rb_delete', { id: draftId }); draftId = 0; }
-        recPaused = false; recTrack = []; recWpts = []; recPhotos = []; clearRec();
-        await RBGpxRecorder.finish(); // discard releases the live file + checkpoint too
-        if (map) map.setLiveTrack([], [], []);
-        $('recDiscard').hidden = true; showLanding();
-        toast('Recording discarded.');
     };
     document.addEventListener('visibilitychange', async () => {
         if (document.visibilityState === 'hidden') { if (rb && dirty) saveDraft(); return; } // flush the draft before a possible OS kill
@@ -845,23 +831,23 @@
             try { recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         }
     });
-    async function startRecording(mode) {
+    async function startRecording() {
         if (!navigator.geolocation) return toast('No geolocation on this device.');
-        recMode = mode; recTrack = []; recWpts = []; recPhotos = []; recLast = null; recHere = null; recPaused = false;
-        adjP1 = -1; adjP2 = -1; draftId = 0;
+        recTrack = []; recWpts = []; recPhotos = []; recLast = null; recHere = null; recPaused = false;
+        adjP1 = -1; adjP2 = -1;
         $('recPause').innerHTML = '<i class="fa-solid fa-pause"></i>';
-        showEditing(); $('rbPanel').hidden = true; $('recBar').hidden = false; $('recDiscard').hidden = true;
-        $('recPhoto').hidden = true; // shown only once a draft id exists (so the camera never errors)
-        if (mode === 'adjust') { showView('map'); if (map) { refreshMap(false); map.setOverlay([]); } draftId = currentRbId; $('recPhoto').hidden = !draftId; toast('Walk onto the trail (≤10 m) to start adjusting.'); }
-        else { if (map) map.setLiveTrack([], [], []); if (meUser) { const r = await RBApi('rb_draft'); if (r.ok) draftId = r.id; } $('recPhoto').hidden = !draftId; }
+        showEditing(); $('rbPanel').hidden = true; $('recBar').hidden = false;
+        showView('map'); if (map) { refreshMap(false); map.setOverlay([]); }
+        draftId = currentRbId; $('recPhoto').hidden = !draftId; // photos attach to the roadbook being adjusted (saved ones only)
+        toast('Walk onto the trail (≤10 m) to start adjusting.');
         updateRecStats();
         try { if ('wakeLock' in navigator) recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         recWatch = navigator.geolocation.watchPosition(onRecFix, (e) => toast('GPS: ' + e.message), { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
     }
+    // nearest track vertex + its distance (RB.nearestIdx does the search; one extra haversine for the gate)
     function nearestTrackIdx(p) {
-        let best = -1, bd = Infinity;
-        rb.track.forEach((t, i) => { const d = RB.geo.haversineM(p, t); if (d < bd) { bd = d; best = i; } });
-        return { idx: best, dist: bd };
+        const idx = RB.nearestIdx(rb.track, p);
+        return { idx, dist: idx >= 0 ? RB.geo.haversineM(p, rb.track[idx]) : Infinity };
     }
     function onRecFix(pos) {
         const c = pos.coords, here = { lat: c.latitude, lon: c.longitude, ele: (c.altitude != null && isFinite(c.altitude)) ? c.altitude : null };
@@ -870,33 +856,22 @@
         recHere = here;
         if (recPaused) { updateRecStats(c.accuracy); return; }
         const step = RB.recStepM(c.accuracy); // accuracy-scaled sampling (shared with the Recorder)
-        if (recMode === 'adjust') {
-            const n = nearestTrackIdx(here);
-            if (adjP1 < 0) { if (n.dist <= 10) { adjP1 = n.idx; toast('On the trail — recording your variant.'); } updateRecStats(c.accuracy); return; }
-            if (!recLast || RB.geo.haversineM(recLast, here) >= step) { recTrack.push(here); recLast = here; if (map) map.setOverlay(recTrack); }
-            if (recTrack.length > 3 && n.dist <= 10 && n.idx > adjP1 + 2) adjP2 = n.idx; // rejoin further along
-            updateRecStats(c.accuracy);
-            return;
-        }
-        if (!recLast || RB.geo.haversineM(recLast, here) >= step) {
-            recTrack.push(here); recLast = here;
-            RBGpxRecorder.add(here, Date.now()); // mirrors the route to the live GPX file
-            if (map) map.setLiveTrack(recTrack, recWpts, recPhotos);
-            if (recTrack.length % 5 === 0) saveRec(); // auto-save for crash recovery
-        }
+        const n = nearestTrackIdx(here);
+        if (adjP1 < 0) { if (n.dist <= 10) { adjP1 = n.idx; toast('On the trail — recording your variant.'); } updateRecStats(c.accuracy); return; }
+        if (!recLast || RB.geo.haversineM(recLast, here) >= step) { recTrack.push(here); recLast = here; if (map) map.setOverlay(recTrack); }
+        if (recTrack.length > 3 && n.dist <= 10 && n.idx > adjP1 + 2) adjP2 = n.idx; // rejoin further along
         updateRecStats(c.accuracy);
     }
     function updateRecStats(acc) {
         let m = 0; for (let i = 1; i < recTrack.length; i++) m += RB.geo.haversineM(recTrack[i - 1], recTrack[i]);
-        const head = recPaused ? t('Paused ·') : (recMode === 'adjust' ? (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording'))) : t('Recording…'));
+        const head = recPaused ? t('Paused ·') : (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording')));
         $('recStats').textContent = `${head} ${recTrack.length} pts · ${(m / 1000).toFixed(2)} km · ${recWpts.length} wpt · ${recPhotos.length} 📷${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
     }
     // drop a waypoint (shared by the button and "convert photo → waypoint")
     function dropWaypoint(lat, lon, text) {
         const note = { lat, lon, name: 'wpt' + (recWpts.length + 1), num: recWpts.length + 1, text: text || '' };
         recWpts.push(note);
-        if (map && recMode === 'new') map.setLiveTrack(recTrack, recWpts, recPhotos);
-        saveRec(); updateRecStats();
+        updateRecStats();
         return note;
     }
     // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s).
@@ -922,19 +897,12 @@
         const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
         RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
     };
-    $('recStop').onclick = async () => {
+    $('recStop').onclick = () => {
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
         if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
         recPaused = false; $('recBar').hidden = true;
         if (map) map.setOverlay([]);
-        if (recMode === 'adjust') return finishAdjust();
-        const gpx = await RBGpxRecorder.finish(); // final flush; its name titles the roadbook
-        if (recTrack.length < 2) { clearRec(); showLanding(); return toast('Route too short to save.'); }
-        try {
-            setRoadbook(RB.buildRoadbook({ name: gpx.name || 'Recorded route', trkpts: smoothTrack(recTrack), wpts: recWpts }));
-            if (draftId) { currentRbId = draftId; setStatus('draft'); await doSave(); } // persist the draft (photos already attached)
-            markDirty(); clearRec(); toast('Route recorded · edit and save.');
-        } catch (e) { showLanding(); toast('Error: ' + e.message); }
+        finishAdjust();
     };
     async function finishAdjust() {
         $('rbPanel').hidden = false; showView('map');
@@ -966,17 +934,6 @@
         r.notes.forEach((n) => { n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }); });
         RB.recomputeMetrics(r); RB.recomputeCaps(r);
     }
-    // Recover an interrupted recording (crash/closed tab); true if a route was restored.
-    async function checkRecovery() {
-        let s; try { s = JSON.parse(localStorage.getItem(REC_KEY) || 'null'); } catch (e) {}
-        if (!s || !s.track || s.track.length < 2) return false;
-        const yes = await RBConfirm(t('Recover your unsaved recording?') + ' (' + s.track.length + ' ' + t('points') + ')', 'Recover');
-        clearRec();
-        if (!yes) return false;
-        try { setRoadbook(RB.buildRoadbook({ name: 'Recovered route', trkpts: smoothTrack(s.track), wpts: s.wpts || [] })); markDirty(); return true; }
-        catch (e) { return false; }
-    }
-
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
@@ -1104,11 +1061,19 @@
         if (!meUser) return RBNeedAuth('Sign in to save this roadbook to your profile.');
         if (!rb) return toast('Nothing to save.');
         if (!(await confirmOpenCuts())) return;
+        // the copy identity holds only if the save SUCCEEDS — a failure (offline/quota/lock)
+        // must leave the editor on the original roadbook, not a detached "(copy)" (#220)
+        const prev = { title: rb.meta.title, id: currentRbId, status, reusable };
         rb.meta.title = ((rb.meta.title || 'Untitled') + ' (copy)').slice(0, 200);
         $('rbTitle').value = rb.meta.title;
         currentRbId = 0; setStatus('draft'); // new identity, a fresh draft
         const r = await doSave();
-        toast(r.ok ? 'Saved as a new roadbook.' : (r.error || 'Could not save.'));
+        if (!r.ok) {
+            rb.meta.title = prev.title; $('rbTitle').value = prev.title || '';
+            currentRbId = prev.id; setStatus(prev.status); reusable = prev.reusable;
+            return toast(r.error || 'Could not save.');
+        }
+        toast('Saved as a new roadbook.');
     };
     // Delete the saved roadbook (the button only shows once it exists on the server). Names it
     // in the confirm, then sends the user back to their list — the editor content is gone.
@@ -1126,8 +1091,11 @@
         if (currentRbId > 0) { $('photosSection').hidden = false; loadPhotos(); }
         else { $('photosSection').hidden = true; $('photoGrid').innerHTML = ''; }
     }
+    let photosSeq = 0; // unsequenced reloads (paste/upload/delete/style-toggle) must never repaint with stale data (#220)
     async function loadPhotos() {
+        const seq = ++photosSeq;
         const r = await RBApi('ph_list', { roadbook: currentRbId });
+        if (seq !== photosSeq) return; // a newer load is already in flight
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
         notePhotos = r.photos;
@@ -1350,12 +1318,7 @@
             if (e.target.closest('#canvasWrap')) return;
             if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
         });
-        $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = async (e) => {
-            e.stopPropagation();
-            if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            const dn = rb.notes[+b.dataset.del], dlabel = dn ? noteLabel(dn) : '';
-            if (await RBConfirmDanger(t('Delete note') + ' ' + dlabel + '?', 'Delete')) delNote(+b.dataset.del);
-        });
+        $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = (e) => { e.stopPropagation(); deleteNoteConfirm(+b.dataset.del); });
         $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
         $('noteList').querySelectorAll('[data-down]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.down + 1); });
         // tap the 📷 under the km to view the note's photo(s)
@@ -1997,7 +1960,6 @@
                 return;
             }
         }
-        if (!explicitTarget && !loadStarted && await checkRecovery()) return;
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
         await account;

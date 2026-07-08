@@ -259,10 +259,9 @@ Operational notes:
   the host's local DNS zone) — otherwise signatures will be unverifiable.
 
 ## The tools (`public/<tool>/`)
-- **Editor** — the creation hub. Load from **GPX**, **Record route** (live GPS:
-  accuracy-aware sampling, pause/resume, autosave/recovery, smoothing, altitude,
-  geotagged photos via the camera, instant waypoints), **Draw on the map** (sketch a
-  route from scratch), **`.rdbk`** or a public **roadbook**. Edit notes (text, road
+- **Editor** — the creation hub. Load from **GPX**, **Draw on the map** (sketch a
+  route from scratch), **`.rdbk`** or a public **roadbook** — and the Recorder hands its
+  live capture straight in (`?trip=1`). Edit notes (text, road
   type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`wp_type`) + validation
   radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
   drag a note on the map to
@@ -283,9 +282,10 @@ Operational notes:
   URL so re-saves update the same roadbook; importing fresh content starts a new
   one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons + junction
   vectors); searchable icon palette.
-- **Recorder** — a standalone live-GPS route recorder (accuracy-aware sampling, pause/resume,
-  crash-safe GPX, geotagged photos via the camera); signed-in, it saves the route as a draft
-  roadbook to edit later. (The Editor's "Record route" is the same capture, done in-place.)
+- **Recorder** — THE live-GPS route recorder (accuracy-aware sampling, pause/resume,
+  crash-safe GPX, geotagged photos + voice notes via the camera/mic); signed-in, it saves the
+  route as a draft roadbook to edit later. Recording a new route lives here only; the
+  Editor's recording bar serves just "Adjust on the trail".
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
