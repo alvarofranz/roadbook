@@ -64,7 +64,10 @@
 
 
     function pickLang() {
-        const saved = localStorage.getItem('rb_lang');
+        // guarded: blocked storage (cookie-blocking modes, some WebViews) throws on access,
+        // and pickLang runs under virtually every render path (#208)
+        let saved = null;
+        try { saved = localStorage.getItem('rb_lang'); } catch (e) {}
         if (saved && T[saved]) return saved;
         for (const l of (navigator.languages || [navigator.language || 'en'])) {
             const code = String(l).slice(0, 2).toLowerCase();
@@ -158,7 +161,7 @@
             const v = tr(lang, el.getAttribute('data-i18n-tip')); el.setAttribute('data-tip', v != null ? v : base);
         });
         refreshLangControls(lang);
-        localStorage.setItem('rb_lang', lang);
+        try { localStorage.setItem('rb_lang', lang); } catch (e) {}
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));
     }
 

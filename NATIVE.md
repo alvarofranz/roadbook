@@ -1,21 +1,18 @@
 # RDBK — native apps (iOS + Android)
 
-This repo is now a **monorepo**: the web app in `public/` stays the single source of
+This repo is a **monorepo**: the web app in `public/` stays the single source of
 truth, and the same `public/` is wrapped into real native apps with **Capacitor**.
 One codebase → web + iOS + Android.
 
-**App scope:** the native app is a **field companion** — **Reader · Tripmaster · Recorder**
-(navigate, trip computer, GPX + geotagged photos), plus sign-in (your & public challenges)
-and opening a `.rdbk`. The **Editor and Ranking stay web-only**. The app boots into a small
-launcher at `public/app/`; the website's marketing home redirects there only when running
-natively, and the header nav shows just the three field tools inside the app.
+**App scope:** every tool ships in the app — **Reader · Editor · Tripmaster · Recorder ·
+Ranking** — plus sign-in and opening a `.rdbk` from the OS. There is no separate app page:
+`public/index.html` is the **one contextual home** — the marketing landing on the web, the
+field-tool launcher in the app (CSS toggles `.web-only`/`.app-only` via the `.native` class
+that `app.js` puts on `<html>` only inside the shell).
 
 The whole point of going native is **GPS that survives a locked screen**: inside the
 app, location logging keeps running with the screen off / app in the background, so the
 recorded track has no gaps. The browser PWA cannot do this; the app can.
-
-> Everything that does **not** need Xcode / Android Studio is already done and verified.
-> What's left needs those GUI toolchains and your developer accounts — that's this guide.
 
 ---
 
@@ -49,10 +46,9 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
 - **Camera & share** — already native through the webview: photo capture is a file input
   (opens the OS camera/picker) and the result QR uses Web Share (the OS share sheet). Only
   the iOS usage-description keys are needed (§4).
-- **App scope / launcher** — `public/app/index.html` is the app's home (Reader · Tripmaster ·
-  Recorder + the public-challenges gallery); `public/index.html` redirects there when native;
-  `app.js` renders the field-only nav in the app. Editor and Ranking remain on the web but
-  aren't surfaced in the app.
+- **App scope / launcher** — `public/index.html` is the one contextual home: marketing landing
+  on the web, tool launcher in the app (`.web-only`/`.app-only` toggled by the `.native` class).
+  All five tools (Reader · Editor · Tripmaster · Recorder · Ranking) are in the app's nav.
 
 You don't run anything for the above; it's committed and verified (the map and camera need a
 quick visual check on a device — see §6).
@@ -85,18 +81,18 @@ From the repo root:
 ```bash
 npm install                 # JS deps (Capacitor CLI, plugins, esbuild)
 npm run build:native        # builds public/assets/js/native.bundle.js
-npx cap add ios             # creates the ios/ Xcode project (runs pod install)
-npx cap add android         # creates the android/ Android Studio project
 npx cap sync                # copies public/ + plugins into both native projects
 ```
 
-`cap add` generates the `ios/` and `android/` folders — **commit them** to the repo
-(their internal build artifacts are git-ignored already). From now on, `npm run sync`
-rebuilds the bridge and re-syncs both platforms in one step.
+The `ios/` and `android/` projects are **already committed** (their internal build
+artifacts are git-ignored), so there is no `cap add` step on a fresh clone — `npm run
+sync` rebuilds the bridge and re-syncs both platforms in one step. (`npx cap add ios` /
+`npx cap add android` exist only to regenerate a project from scratch if it is ever
+deleted; on iOS that needs a Mac with CocoaPods.)
 
 ---
 
-## 4. Required native config (do this once, after `cap add`)
+## 4. Required native config (already applied in the committed projects — reference)
 
 These make the background GPS work and let the apps pass store review.
 

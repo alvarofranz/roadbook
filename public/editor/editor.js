@@ -1132,7 +1132,12 @@
         if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
         notePhotos = r.photos;
         g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
-        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => { e.stopPropagation(); await RBApi('ph_delete', { id: +s.dataset.delp }); loadPhotos(); });
+        g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => {
+            e.stopPropagation();
+            if (!(await RBConfirmDanger(t('Delete this photo?'), t('Delete')))) return; // never delete a stored photo silently (#209)
+            await RBApi('ph_delete', { id: +s.dataset.delp });
+            loadPhotos();
+        });
         g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
         if (map) map.setPhotos(r.photos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });

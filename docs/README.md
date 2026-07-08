@@ -39,7 +39,7 @@ e una sezione onesta di limiti/quirk.
 
 ## Backend
 - [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto/audio,
-  roadbook pubblici, **eventi + co-editing**, schema DB (migrazioni fino a 027).
+  roadbook pubblici, **eventi + co-editing**, schema DB (tutte le `migrations/*.sql`).
 - [events](events.md) — il sottosistema **Eventi** (`public/events/`, `public/event/`,
   `public/admin/events/` + `app/events.php`): modello dati, ruoli/co-organizzatori, partecipanti +
   join-by-code, consegna dei roadbook `ready`, co-editing.

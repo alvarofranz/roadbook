@@ -15,14 +15,15 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
 - **Sign-in:** email/password **or Google Sign-In** (#46). `google_auth` (`app/auth.php`)
-  verifies the Google ID token and links/creates the account; the token's `aud` is always the
-  **Web** OAuth client, so ONE backend serves web + iOS + Android. **Web Google Sign-In is live**
-  (release 2026.07.06-7); the **native** app path (a Capacitor Google-auth plugin — the web GIS
-  button can't run in a WebView) is still a pending follow-up. OAuth client IDs live in `.env`
-  `GOOGLE_CLIENT_IDS` (web first) + the native OAuth clients (Android done; **iOS client not yet
-  created**).
-  DB schema = `migrations/*.sql` (source of truth); 4 tables: `users`, `roadbooks`,
-  `roadbook_photos`, `api_tokens`.
+  verifies the Google ID token and links/creates the account. The web renders the GIS button;
+  the app uses the OS account picker (`RBNative.googleSignIn`, `@capgo/capacitor-social-login` —
+  the web GIS button can't run in a WebView). Both hand the ID token to the same endpoint;
+  `.env` `GOOGLE_CLIENT_IDS` lists every OAuth client whose tokens the backend accepts as `aud`
+  (web + Android + iOS — the client ids are public, in `native/src/native.js`). Remaining #46
+  work: extend the prod `GOOGLE_CLIENT_IDS` with the native clients + real-device tests.
+  DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
+  `roadbook_audio`, `roadbook_locks`, `api_tokens`, `activity_log`, `settings`, plus the events
+  family (`events`, `event_roadbooks`, `event_categories`, `event_organizers`, `event_participants`).
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
 - UI languages: **English (default) · Spanish · Italian · German · French**, browser
   auto-detected. English is the source (in `i18n.js`); each other language lives in its own
@@ -377,8 +378,13 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   `npx cap add ios` on a Mac with Xcode.
 
 ## The `.rdbk` format (open standard, documented at /standard)
-One self-contained UTF-8 JSON file (MIME `application/x-roadbook`). **All distances are
-integer metres.** Spec page: `public/standard/index.html`.
+A **ZIP container** (MIME `application/x-roadbook`) holding `roadbook.json` — the
+self-contained roadbook — plus optional geotagged media: `media.json`, `photos/…`,
+`audio/…` (bundled only when the exporter includes them; #162). A reader detects the ZIP
+by its `PK` magic; a bare JSON file is still read as a naked `roadbook.json`. Server-side
+storage stays JSON — the ZIP is the export/import artifact. **All distances are integer
+metres.** Spec page: `public/standard/index.html`; full reference: `docs/rdbk-format.md`.
+The `roadbook.json` schema:
 ```jsonc
 {
   "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str,
@@ -420,7 +426,9 @@ integer metres.** Spec page: `public/standard/index.html`.
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
   used standard icons embedded in a roadbook on open and on save/export (#174), so art
   updates propagate to older roadbooks; custom (user-uploaded) icons are never touched.
-- Photos are an **app feature only** (stored server-side, geotagged), never in the `.rdbk`.
+- Photos and voice notes live **server-side** (geotagged, per roadbook) and travel in the
+  `.rdbk` ZIP only as the **optional** `photos/`/`audio/` + `media.json` bundle — never
+  inside `roadbook.json` itself.
 
 ## Conventions
 - Tool pages are one level deep → relative `../assets/…`; the challenge page uses
