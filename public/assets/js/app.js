@@ -520,7 +520,7 @@
     // Relative links work from any one-level-deep tool page (/editor/, /myroadbooks/).
     // Publication-status labels for the My-roadbooks status control (draft/ready/public).
     const RB_STATUS_LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
-    window.RBRoadbookList = async (container) => {
+    window.RBRoadbookList = async (container, onChange) => { // onChange: fires after a delete/duplicate, so the page can refresh siblings (e.g. the trash, #238)
         if (!container) return 0;
         const r = await RBApi('rb_list');
         // a failed call is NOT an empty list — offline in the field must never read as
@@ -550,16 +550,16 @@
         const wireRows = () => {
             rowsEl.querySelectorAll('[data-dup]').forEach((b) => b.onclick = async () => {
                 const x = await RBApi('rb_duplicate', { id: +b.dataset.dup });
-                if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container); } else RBToast(x.error || 'Could not duplicate.');
+                if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container, onChange); if (onChange) onChange(); } else RBToast(x.error || 'Could not duplicate.');
             });
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container); }
+                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container, onChange); if (onChange) onChange(); }
             });
             rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
             rowsEl.querySelectorAll('[data-status]').forEach((sel) => sel.onchange = async () => {
                 const r = await RBApi('rb_status', { id: +sel.dataset.status, status: sel.value });
                 RBToast(r.ok ? 'Status updated.' : (r.error || 'Could not change visibility.'));
-                RBRoadbookList(container); // re-render from the server truth (also resets on error)
+                RBRoadbookList(container, onChange); // re-render from the server truth (also resets on error)
             });
         };
         const render = () => {

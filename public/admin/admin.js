@@ -124,6 +124,7 @@
                 <td><b>${esc(rb.title)}</b><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
                 <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
                 <td><button class="btn btn-ghost" data-mv="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move'))}" aria-label="${esc(t('Move'))}"><i class="fa-solid fa-right-left"></i></button></td>
+                <td><button class="btn btn-ghost" data-trash="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move to trash'))}" aria-label="${esc(t('Move to trash'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>
                 <td>${rb.status === 'public' && rb.slug ? `<a class="btn btn-ghost" href="/challenge/${esc(rb.slug)}" target="_blank" rel="noopener" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>` : ''}</td>
             </tr>`).join('')}</tbody></table>`;
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
@@ -132,6 +133,14 @@
                 render(); // re-render from server truth (also resets the select on error)
             });
             body.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => movePicker(b.dataset.mv, b.dataset.title));
+            // Admin trash (#237): the moderation counterpart of the owner's delete — the only way
+            // to trash a graveyard-owned roadbook. Standard trash lifecycle (restore / 30-day purge).
+            body.querySelectorAll('[data-trash]').forEach((b) => b.onclick = async () => {
+                if (!(await RBConfirmDanger(t('Move to trash') + ' “' + (b.dataset.title || '') + '”?', t('Delete')))) return;
+                const x = await api('admin_rb_trash', { id: +b.dataset.trash });
+                if (!x.ok) toast(x.error || 'Could not delete.');
+                render();
+            });
         });
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {

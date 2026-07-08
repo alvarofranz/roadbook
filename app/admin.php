@@ -67,10 +67,12 @@ function graveyard_user_id(): int {
         ->execute([GRAVEYARD_USERNAME]);
     return (int)db()->lastInsertId();
 }
-// Move a user's roadbooks to the graveyard before their account dies (#234): every roadbook —
-// trashed ones included, which finish their 30-day countdown there — keeps its content and
-// publication status, gets the former username prefixed to its title, and its .rdbk file moves
-// to the graveyard's storage. The photo/audio folders are roadbook-keyed and stay put.
+// Move a user's roadbooks to the graveyard before their account dies (#234): every roadbook
+// gets the former username prefixed to its title, its .rdbk file moves to the graveyard's
+// storage, and it lands in the TRASH (status 'deleted') — visible in /admin/trash/, restorable
+// for the standard 30 days (the UPDATE bumps updated_at, restarting the countdown at account
+// deletion), then purged for good by the cron. The photo/audio folders are roadbook-keyed and
+// stay put until that purge.
 function reassign_roadbooks_to_graveyard(int $uid, string $username): void {
     global $CFG;
     $st = db()->prepare('SELECT id, title, filename FROM roadbooks WHERE user_id = ?');
@@ -79,7 +81,7 @@ function reassign_roadbooks_to_graveyard(int $uid, string $username): void {
     if (!$rows) return;
     $gid = graveyard_user_id();
     $dstDir = rb_dir($gid);
-    $up = db()->prepare('UPDATE roadbooks SET user_id = ?, title = ? WHERE id = ?');
+    $up = db()->prepare("UPDATE roadbooks SET user_id = ?, title = ?, status = 'deleted' WHERE id = ?");
     foreach ($rows as $r) {
         $title = mb_substr($username . ' — ' . $r['title'], 0, 200);
         if (!empty($r['filename']) && $r['filename'] !== 'pending') @rename($CFG['storage'] . '/' . $uid . '/' . $r['filename'], $dstDir . '/' . $r['filename']);
@@ -195,12 +197,26 @@ function admin_trash_list(array $user): void {
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'username' => $r['username'],
         'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'],
         'deleted_at' => $r['updated_at'], 'days_left' => max(0, TRASH_DAYS - (int)$r['days_in_trash']),
+        'graveyard' => $r['username'] === GRAVEYARD_USERNAME, // restoring one of these must ask WHO gets it (the owner can't log in)
     ], $rows);
     json_out(['ok' => true, 'trash_days' => TRASH_DAYS, 'roadbooks' => $list]);
 }
 
 // Restore a trashed roadbook → it comes back as a private DRAFT (its prior published state is
 // not remembered, and restoring must never silently re-publish). Owner unchanged.
+// Admin: move ANY live roadbook to the trash (#237) — the moderation counterpart of the
+// owner's rb_delete, and the only way to trash a graveyard-owned roadbook (its "owner" can
+// never log in). Same lifecycle as every trashed roadbook: restore or 30-day purge.
+function admin_rb_trash(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare("SELECT id FROM roadbooks WHERE id = ? AND status <> 'deleted'");
+    $st->execute([$id]);
+    if (!$st->fetch()) fail('Not found.', 404);
+    db()->prepare("UPDATE roadbooks SET status = 'deleted' WHERE id = ?")->execute([$id]);
+    log_activity((int)$user['id'], 'admin_rb_trash', 'roadbook #' . $id);
+    json_out(['ok' => true, 'id' => $id]);
+}
+
 function admin_rb_restore(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $st = db()->prepare('SELECT status FROM roadbooks WHERE id = ?'); $st->execute([$id]);
