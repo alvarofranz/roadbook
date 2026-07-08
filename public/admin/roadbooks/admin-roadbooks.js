@@ -4,7 +4,7 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     (async function init() {
-        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../../account/' }))) return;
+        if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('adminMsg').hidden = true; $('pubList').hidden = false;
         RBPublicRoadbooksList($('pubList'));
     })();

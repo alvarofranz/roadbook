@@ -320,7 +320,7 @@
             const p = photos.find((x) => x.token === item.token);
             if (!p) return; // uploaded from a previous session — no pin in this one
             if (p.local && p.url) { try { URL.revokeObjectURL(p.url); } catch (e) {} }
-            p.id = res.id; p.url = res.url; p.local = false; p.pending = false;
+            p.id = res.id; p.url = RBMediaSrc(res.url); p.local = false; p.pending = false; // absolute in the app (#232)
             if (res.lat != null) { p.lat = res.lat; p.lon = res.lon; }
             refreshMap(); saveSession();
         },

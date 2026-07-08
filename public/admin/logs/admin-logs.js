@@ -31,7 +31,7 @@
     }
 
     (async function init() {
-        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../../account/' }))) return;
+        if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('adminMsg').hidden = true; $('logsWrap').hidden = false;
         $('logSearch').addEventListener('input', () => {
             clearTimeout(searchTimer);

@@ -17,7 +17,7 @@
         const e = ev = j.event;
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
-        if (e.logo) { $('evLogo').src = e.logo; $('evLogo').hidden = false; }
+        if (e.logo) { $('evLogo').src = RBMediaSrc(e.logo); $('evLogo').hidden = false; }
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
         $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';

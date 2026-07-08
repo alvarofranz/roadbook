@@ -29,7 +29,7 @@
         const rows = rbs === null
             ? `<p class="muted"><i class="fa-solid fa-triangle-exclamation"></i> ${RBt('Could not load.')}</p>`
             : (rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
-                ${r.thumb ? `<img src="${RBesc(r.thumb)}" alt="" loading="lazy">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
+                ${r.thumb ? `<img src="${RBesc(RBMediaSrc(r.thumb))}" alt="" loading="lazy">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
                 <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</small></span>
             </button>`).join('') : `<p class="muted">${RBt('No public roadbooks yet.')}</p>`);
         d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public Roadbooks')}</h2>

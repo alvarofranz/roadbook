@@ -6,7 +6,7 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
 
     (async function init() {
-        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../../account/' }))) return;
+        if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('adminMsg').hidden = true; $('cfgBody').hidden = false;
 
         const s = await api('admin_settings');

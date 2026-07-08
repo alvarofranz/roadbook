@@ -25,6 +25,10 @@
     const PROD_ROOT = 'https://rdbk.app/';
     const API_ROOT = isNativeApp() ? PROD_ROOT : ROOT;
     window.RB_API_ROOT = API_ROOT;
+    // API-served media path (/photos/… /audio/… /avatars/… /event-logos/…) → a URL that loads
+    // everywhere: same-origin on the web, the backend host inside the native app — whose WebView
+    // origin has no backend, so a root-relative src renders a broken image there (#232).
+    window.RBMediaSrc = (p) => (typeof p === 'string' && p.startsWith('/') ? API_ROOT.replace(/\/+$/, '') + p : p);
 
     // Native shell: load the native capability bridge (RBNative) and flag the document
     // for safe-area styling. Never runs in a plain browser — the PWA stays unchanged.
@@ -440,21 +444,21 @@
     // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
     window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
         `<a class="gallery-card" href="${href}">`
-        + (thumb ? `<img class="thumb" src="${RBesc(thumb)}" alt="${RBesc(title)}" loading="lazy">`
+        + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
         + overlays
         + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div></a>`;
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).
-    window.RBRequireUser = async (msgEl, { admin = false, account = '../account/' } = {}) => {
+    window.RBRequireUser = async (msgEl, { admin = false } = {}) => {
         const cfg = await RBApi('config').catch(() => ({}));
         // Detach the element from i18n before writing the gate message: msgEl starts as the
         // "Loading…" placeholder (data-i18n), and a later apply() pass — e.g. when the account's
         // saved language is applied after config — would revert our message back to "Loading…",
         // which looked like the page hanging on "Loading…" for non-admins (#182).
         const setMsg = (html) => { msgEl.removeAttribute('data-i18n'); msgEl.removeAttribute('data-i18n-html'); msgEl.innerHTML = html; };
-        if (!cfg.user) { setMsg(`${RBesc(RBt('Sign in to continue.'))} <a href="${account}">${RBesc(RBt('Sign in'))}</a>`); return null; }
+        if (!cfg.user) { setMsg(`${RBesc(RBt('Sign in to continue.'))} <a href="${RBLoginUrl()}">${RBesc(RBt('Sign in'))}</a>`); return null; } // real login flow: ?next= brings the user back here (#233)
         if (admin && !cfg.user.is_admin) { setMsg(RBesc(RBt('Admins only.'))); return null; }
         return cfg.user;
     };

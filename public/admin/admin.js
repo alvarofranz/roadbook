@@ -223,7 +223,7 @@
     }
 
     async function init() {
-        if (!(await RBRequireUser($('adminMsg'), { admin: true, account: '../account/' }))) return;
+        if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
         loadEventFilter();
         load();

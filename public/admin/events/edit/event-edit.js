@@ -209,7 +209,7 @@
     }
 
     (async function init() {
-        me = await RBRequireUser($('adminMsg'), { account: '../../../account/' });
+        me = await RBRequireUser($('adminMsg'));
         if (!me) return;
         $('orgOrgIn').value = me.organization || ''; // the organizer search defaults to your organization
         RBOrgDatalist($('orgSuggest')); // suggest the clubs already in use, so spellings stay consistent (#116)

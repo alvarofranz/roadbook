@@ -893,7 +893,7 @@
         toast('Uploading photo…');
         const r = await RBUpload(fields, f);
         if (!r.ok) return toast(r.error || 'Photo failed.');
-        recPhotos.push({ id: r.id, url: r.url, lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
+        recPhotos.push({ id: r.id, url: RBMediaSrc(r.url), lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
         const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
         RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
     };
@@ -1098,8 +1098,8 @@
         if (seq !== photosSeq) return; // a newer load is already in flight
         const g = $('photoGrid');
         if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
-        notePhotos = r.photos;
-        g.innerHTML = r.photos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
+        notePhotos = r.photos.map((p) => ({ ...p, url: RBMediaSrc(p.url) })); // absolute in the app (#232)
+        g.innerHTML = notePhotos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => {
             e.stopPropagation();
             if (!(await RBConfirmDanger(t('Delete this photo?'), t('Delete')))) return; // never delete a stored photo silently (#209)
@@ -1108,7 +1108,7 @@
         });
         g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
-        if (map) map.setPhotos(r.photos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
+        if (map) map.setPhotos(notePhotos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note 📷 indicators
     }
     /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
@@ -1118,7 +1118,7 @@
     }
     async function loadAudio() {
         const r = await RBApi('audio_list', { roadbook: currentRbId });
-        noteAudio = (r.ok && r.audio) || [];
+        noteAudio = ((r.ok && r.audio) || []).map((a) => ({ ...a, url: RBMediaSrc(a.url) })); // absolute in the app (#232)
         if (rb) renderNotes(); // each clip surfaces on its nearest note row
     }
     // Transcribe a voice note in the browser (#133) and APPEND the text to its note (never

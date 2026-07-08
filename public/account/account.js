@@ -311,7 +311,7 @@
 
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
-        $('accAvatar').src = user.avatar ? user.avatar + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
+        $('accAvatar').src = user.avatar ? RBMediaSrc(user.avatar) + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
         $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
         $('pfFirst').value = user.first_name || '';
         $('pfLast').value = user.last_name || '';
@@ -325,7 +325,7 @@
             const f = $('pfAvatar').files[0]; if (!f) return;
             msg('Uploading photo…', true);
             const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
-            if (r.ok) { $('accAvatar').src = r.avatar; msg('Photo updated.', true); } else msg(r.error, false);
+            if (r.ok) { $('accAvatar').src = RBMediaSrc(r.avatar); msg('Photo updated.', true); } else msg(r.error, false);
         };
         $('pfSave').onclick = async () => {
             const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value, voice_lang: $('pfVoiceLang').value });

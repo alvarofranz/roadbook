@@ -30,7 +30,7 @@
     window.addEventListener('rb-lang', () => { if (events.length) render(); }); // re-format the dates in the new language
 
     (async function init() {
-        const user = await RBRequireUser($('adminMsg'), { account: '../../account/' });
+        const user = await RBRequireUser($('adminMsg'));
         if (!user) return;
         const r = await api('events_manage');
         events = (r.ok && r.events) || [];

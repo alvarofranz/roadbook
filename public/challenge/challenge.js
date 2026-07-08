@@ -19,7 +19,7 @@
         RBSetMeta({ title: title + ' · RDBK.app', description: (rb.meta && rb.meta.description) || undefined, canonical: location.origin + '/challenge/' + encodeURIComponent(slug) });
         $('chOwner').textContent = o.name || ('@' + (o.username || ''));
         $('chMeta').textContent = '@' + (o.username || '') + ' · ' + RBSummary((rb.meta && rb.meta.total_distance) || 0, rb.notes.length) + (j.status === 'public' ? '' : ' · 🔒 ' + t(j.status === 'ready' ? 'Ready' : 'Draft'));
-        if (o.avatar) $('chAvatar').src = o.avatar; else $('chAvatar').remove();
+        if (o.avatar) $('chAvatar').src = RBMediaSrc(o.avatar); else $('chAvatar').remove();
         $('chDesc').textContent = (rb.meta && rb.meta.description) || '';
         // roadbook-declared credit (author / organization / date) + event logo
         const m = rb.meta || {};
@@ -40,7 +40,7 @@
         };
 
         if (j.photos && j.photos.length) {
-            $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');
+            $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(RBMediaSrc(u))}" target="_blank" rel="noopener"><img src="${esc(RBMediaSrc(u))}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');
         }
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);

@@ -53,7 +53,7 @@
     };
 
     (async function init() {
-        if (!(await RBRequireUser($('adminMsg'), { account: '../../../account/' }))) return;
+        if (!(await RBRequireUser($('adminMsg')))) return;
         const r = await api('event_manage_get', { id }); // the heading: event title + a link back to its management page
         if (r.ok) {
             eventTitle = r.event.title; // also names the CSV export
