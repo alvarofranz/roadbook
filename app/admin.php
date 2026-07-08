@@ -49,8 +49,42 @@ function user_quota_bytes(array $user): int {
 // DELETE must never leave a live account whose files are already gone.
 function purge_user_files(int $uid, array $rbIds): void {
     global $CFG;
-    foreach ($rbIds as $rid) rrmdir($CFG['photos_dir'] . '/' . (int)$rid);
+    foreach ($rbIds as $rid) { rrmdir($CFG['photos_dir'] . '/' . (int)$rid); rrmdir($CFG['audio_dir'] . '/' . (int)$rid); }
+    @unlink($CFG['avatars_dir'] . '/' . $uid . '.avif'); // the avatar is profile data — it goes with the account (#234)
     rrmdir($CFG['storage'] . '/' . $uid);
+}
+
+/* ---- the "deleted user" graveyard (#234): a deleted account's roadbooks live on ---- */
+// The system account that inherits them. It can never log in (no password + blocked) and its
+// username is reserved at registration. Created lazily on the first deletion that needs it.
+const GRAVEYARD_USERNAME = 'deleted-user';
+function graveyard_user_id(): int {
+    $st = db()->prepare('SELECT id FROM users WHERE username = ?');
+    $st->execute([GRAVEYARD_USERNAME]);
+    $id = $st->fetchColumn();
+    if ($id) return (int)$id;
+    db()->prepare("INSERT INTO users (first_name, last_name, username, email, password_hash, email_verified, blocked) VALUES ('Deleted', 'User', ?, 'deleted-user@rdbk.app', NULL, 1, 1)")
+        ->execute([GRAVEYARD_USERNAME]);
+    return (int)db()->lastInsertId();
+}
+// Move a user's roadbooks to the graveyard before their account dies (#234): every roadbook —
+// trashed ones included, which finish their 30-day countdown there — keeps its content and
+// publication status, gets the former username prefixed to its title, and its .rdbk file moves
+// to the graveyard's storage. The photo/audio folders are roadbook-keyed and stay put.
+function reassign_roadbooks_to_graveyard(int $uid, string $username): void {
+    global $CFG;
+    $st = db()->prepare('SELECT id, title, filename FROM roadbooks WHERE user_id = ?');
+    $st->execute([$uid]);
+    $rows = $st->fetchAll();
+    if (!$rows) return;
+    $gid = graveyard_user_id();
+    $dstDir = rb_dir($gid);
+    $up = db()->prepare('UPDATE roadbooks SET user_id = ?, title = ? WHERE id = ?');
+    foreach ($rows as $r) {
+        $title = mb_substr($username . ' — ' . $r['title'], 0, 200);
+        if (!empty($r['filename']) && $r['filename'] !== 'pending') @rename($CFG['storage'] . '/' . $uid . '/' . $r['filename'], $dstDir . '/' . $r['filename']);
+        $up->execute([$gid, $title, (int)$r['id']]);
+    }
 }
 // Remove ONE roadbook's files: its owner-scoped .rdbk + its id-scoped photo/audio folders. Used
 // when permanently purging a trashed roadbook (#187) — admin "delete now" and the 30-day cron.
@@ -318,15 +352,17 @@ function admin_set_role(array $user, array $d): void {
 function admin_delete_user(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     if ($id === (int)$user['id']) fail('Use your profile to delete your own account.');
-    $st = db()->prepare('SELECT email FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT email, username FROM users WHERE id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
     if (is_locked_admin($row['email'])) fail("Can't delete a configured superuser.");
-    $rbIds = user_roadbook_ids($id); // collected BEFORE the cascade wipes the roadbook rows
-    db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // roadbooks/photos/api_tokens/activity_log rows go via cascade
+    if ($row['username'] === GRAVEYARD_USERNAME) fail("Can't delete the deleted-user system account.");
+    reassign_roadbooks_to_graveyard($id, (string)$row['username']); // the roadbooks live on (#234)
+    $rbIds = user_roadbook_ids($id); // whatever is left (nothing) — collected BEFORE the cascade
+    db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // photos/api_tokens/activity_log rows go via cascade
     purge_user_files($id, $rbIds);
-    log_activity((int)$user['id'], 'admin_delete_user', 'user #' . $id);
+    log_activity((int)$user['id'], 'admin_delete_user', 'user #' . $id . ' (@' . $row['username'] . ')');
     json_out(['ok' => true]);
 }
 

@@ -279,7 +279,11 @@ vecchio flag binario `is_public`. La migrazione 029 (#187) aggiunge lo stato **`
   pagina admin **`/admin/trash/`** lo elenca, può ripristinarlo (`admin_rb_restore` → torna
   `draft`) o eliminarlo subito (`admin_rb_purge`, riga+file). Il cron lo purga dopo 30gg
   (`cron/purge-trashed-roadbooks.php`, slot 2 del round-robin; `updated_at` = quando è stato
-  cestinato). La cancellazione **account/utente** resta invece erasure immediata.
+  cestinato). La cancellazione **account/utente** elimina profilo e file personali, ma i
+  roadbook **sopravvivono** (#234): passano all'account di sistema **`deleted-user`** (creato
+  lazy, non può accedere, username riservato alla registrazione) col vecchio username
+  prefissato al titolo; i `.rdbk` si spostano nel suo storage, le cartelle foto/audio (per
+  roadbook) restano dove sono. I cestinati migrano anche loro e finiscono lì i loro 30 giorni.
 
 ### Salvataggio (`rb_save`)
 `rb_save` valida che il payload abbia `notes` e `track`, deriva titolo/distanza/conteggio note dal
