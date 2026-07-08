@@ -146,7 +146,8 @@ function account_delete(array $user, array $d): void {
     $h = $st->fetchColumn();
     if ($h && !password_verify($pass, $h)) fail('Wrong password.', 403);
     log_activity(null, 'account_delete'); // anonymous marker — the user's own rows cascade away with them
-    $rbIds = user_roadbook_ids((int)$user['id']);
+    reassign_roadbooks_to_graveyard((int)$user['id'], (string)$user['username']); // the roadbooks live on (#234)
+    $rbIds = user_roadbook_ids((int)$user['id']); // whatever is left (nothing) — collected BEFORE the cascade
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$user['id']]);
     purge_user_files((int)$user['id'], $rbIds);
     $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy();
@@ -179,6 +180,7 @@ function register_user(array $d): void {
     $pass  = (string)($d['password'] ?? '');
     if ($first === '' || $last === '') fail('First and last name are required.');
     if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
+    if (strcasecmp($username, GRAVEYARD_USERNAME) === 0) fail('That username or email is already in use.'); // reserved for the deleted-user system account (#234)
     if (!valid_email($email)) fail('Please enter a valid email.');
     if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
     if ($pass !== (string)($d['password_confirm'] ?? '')) fail("Passwords don't match.");
@@ -314,7 +316,7 @@ function google_unique_username(string $email): string {
     $name = $base;
     for ($n = 1; ; $n++) {
         $st = db()->prepare('SELECT 1 FROM users WHERE username = ?'); $st->execute([$name]);
-        if (!$st->fetch()) return $name;
+        if (!$st->fetch() && strcasecmp($name, GRAVEYARD_USERNAME) !== 0) return $name; // the graveyard name stays reserved (#234)
         $name = substr($base, 0, 34) . $n;
     }
 }

@@ -99,7 +99,7 @@ Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel r
 | `admin_set_role` | `admin_set_role()` | promuove/declassa admin **o** organizer (rifiuta la demozione admin di un superuser `.env`) |
 | `admin_block` | `admin_block()` | blocca/sblocca (rifiuta su superuser `.env` e su se stessi) |
 | `admin_update` | `admin_update_user()` | modifica nome/cognome/username/email; password opzionale → forza il cambio; anche `quota_bytes` e `is_organizer` |
-| `admin_delete` | `admin_delete_user()` | elimina utente + file (rifiuta su superuser `.env` e su se stessi) |
+| `admin_delete` | `admin_delete_user()` | elimina utente + file personali; i roadbook passano a `deleted-user` (#234); rifiuta su superuser `.env`, su se stessi e sull'account di sistema |
 | `admin_activity` | `admin_activity()` | timeline attività dell'utente (#86, IP anonimizzati) |
 | `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126) |
 | `admin_roadbooks` / `admin_unpublish` | — | moderazione dei roadbook pubblici |
@@ -151,8 +151,11 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
   attiva finché la conferma non avviene. [`verify_email_change()`](../app/auth.php#L258) apre il
   link (basato su token, senza sessione, come il reset), rifà il controllo di unicità e fa lo
   switch `email ← pending_email`. È self-service: lo username, invece, lo cambia solo un admin.
-- **`account_delete()`** ([app/auth.php:113](../app/auth.php#L113)): verifica la password,
-  cancella i file (`purge_user_files`) e la riga, e distrugge la sessione.
+- **`account_delete()`** ([app/auth.php](../app/auth.php)): verifica la password (non richiesta
+  per gli account solo-Google, #211), **riassegna i roadbook** all'account di sistema
+  `deleted-user` (#234 — titolo prefissato con lo username, `.rdbk` spostati nel suo storage),
+  poi cancella i file personali residui (`purge_user_files`: avatar + storage ormai vuoto) e la
+  riga, e distrugge la sessione.
 
 ---
 
