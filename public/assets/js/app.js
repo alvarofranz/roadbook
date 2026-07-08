@@ -519,7 +519,10 @@
     window.RBRoadbookList = async (container) => {
         if (!container) return 0;
         const r = await RBApi('rb_list');
-        const all = (r.ok && r.roadbooks) || [];
+        // a failed call is NOT an empty list — offline in the field must never read as
+        // "you have no roadbooks" (#218)
+        if (!r.ok) { container.innerHTML = `<p class="muted small"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt(navigator.onLine === false ? 'You are offline — reconnect to see your roadbooks.' : (r.error || 'Could not load.')))}</p>`; return 0; }
+        const all = r.roadbooks || [];
         if (!all.length) { container.innerHTML = `<p class="muted small">${RBesc(RBt('No roadbooks yet. Create one in the Editor.'))}</p>`; return 0; }
         const PER = 12;
         let page = 1, q = '';

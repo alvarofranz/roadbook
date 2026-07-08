@@ -43,8 +43,9 @@
     window.addEventListener('rb-lang', () => { if (all.length) render(); }); // re-render labels on language switch
 
     Promise.all([RBChallenges.listPublic(), RBApi('config').catch(() => ({}))]).then(([list, cfg]) => {
-        all = list || [];
         isAdmin = !!(cfg && cfg.user && cfg.user.is_admin); // admins get a force-private control per card
+        if (list === null) { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; if (search) search.closest('.rbp-toolbar').hidden = true; return; } // failed ≠ empty (#218)
+        all = list;
         if (!all.length) { grid.innerHTML = `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`; if (search) search.closest('.rbp-toolbar').hidden = true; return; }
         render();
     }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; });

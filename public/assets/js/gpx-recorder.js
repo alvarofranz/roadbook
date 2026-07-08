@@ -40,19 +40,30 @@ window.RBGpxRecorder = (() => {
     }
     // direct intake (Editor route recording): the caller already decided this point belongs
     function add(here, tnow) { if (!on) return; pts.push({ lat: here.lat, lon: here.lon, ele: here.ele ?? null, t: tnow }); persist(tnow); }
-    // end the log and hand the result to the caller — no UI
-    async function finish() {
+    const clearCheckpoint = () => { try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {} };
+    // End the log, KEEPING the crash checkpoint: it is cleared only when the points reach a safe
+    // destination (download / convert / saved file / the caller's own store), so a stray dismissal
+    // can never lose a recording — until then a reload offers recovery (#217).
+    async function end() {
         on = false; onChange(false);
         await writeFile(); // final flush to the live file before we report "saved"
         const result = { pts: pts.slice(), name: fileName, savedToFile: !!fileHandle };
         fileHandle = null;
-        try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
         return result;
     }
-    // end the log and offer the standard finished-track modal
+    // end the log and hand the result to the caller — no UI; the caller owns the points
+    async function finish() {
+        const r = await end();
+        clearCheckpoint();
+        return r;
+    }
+    // End the log and offer the standard finished-track modal. The stop itself asks first:
+    // it kills the live watch and a recording can't seamlessly restart (#217).
     async function stop() {
-        const r = await finish();
-        if (r.pts.length >= 2) finishedModal(r.pts, r.name, r.savedToFile); else toast('Track too short.');
+        if (!(await RBConfirm(RBt('Stop recording?'), RBt('Stop')))) return;
+        const r = await end();
+        if (r.pts.length >= 2) { finishedModal(r.pts, r.name, r.savedToFile); }
+        else { toast('Track too short.'); clearCheckpoint(); }
     }
     // continue an interrupted log after a reload (a live file handle cannot survive one)
     function resume(savedName) {
@@ -110,16 +121,23 @@ window.RBGpxRecorder = (() => {
     }
     function finishedModal(finished, name, savedToFile) {
         const t = RBt;
+        // Not dismissable: the recording only leaves through an explicit outcome — download,
+        // convert, or a confirmed discard — never a stray backdrop tap or Escape (#217). Each
+        // outcome (and only it) clears the crash checkpoint; a live-file recording is already
+        // safe on disk, so its Close is harmless.
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${finished.length} ${t('points')} · ${trackKm(finished).toFixed(2)} km${savedToFile ? '<br>✓ ' + t('Saved to file') : ''}</p>
             <div class="btnrow center wrap">
                 ${savedToFile ? '' : `<button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>`}
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <div class="btnrow center"><button class="btn btn-ghost" id="trClose">${t('Close')}</button></div>`, 'slim center');
-        const dl = d.q('#trDl'); if (dl) dl.onclick = () => { download(finished, name); d.close(); };
-        d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(finished)); } catch (e) {} location.href = '../editor/?trip=1'; };
-        d.q('#trClose').onclick = d.close;
+            <div class="btnrow center"><button class="btn btn-ghost" id="trClose">${savedToFile ? t('Close') : `<i class="fa-solid fa-trash"></i> ${t('Discard')}`}</button></div>`, 'slim center', null, { dismissable: false });
+        const dl = d.q('#trDl'); if (dl) dl.onclick = () => { download(finished, name); clearCheckpoint(); d.close(); };
+        d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(finished)); } catch (e) {} clearCheckpoint(); location.href = '../editor/?trip=1'; };
+        d.q('#trClose').onclick = async () => {
+            if (!savedToFile && !(await RBConfirmDanger(t('Discard this recording?') + ' (' + finished.length + ' ' + t('points') + ')', t('Discard')))) return;
+            clearCheckpoint(); d.close();
+        };
     }
 
     return {

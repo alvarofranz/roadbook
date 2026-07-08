@@ -59,6 +59,8 @@
     }
 
     window.addEventListener('rb-lang', render);
-    RBChallenges.listPublic().then((rbs) => { cards = rbs; render(); })
-        .catch(() => { grid.innerHTML = `<p class="gallery-empty">${t('gallery.empty')}</p>`; });
+    RBChallenges.listPublic().then((rbs) => {
+        if (rbs === null) { grid.innerHTML = `<p class="gallery-empty">${t('Could not load.')}</p>`; return; } // failed ≠ empty (#218)
+        cards = rbs; render();
+    });
 })();

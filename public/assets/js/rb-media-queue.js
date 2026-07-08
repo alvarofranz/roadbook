@@ -93,12 +93,17 @@
     const DB_NAME = 'rbmedia', STORE = 'queue', VERSION = 1;
     let dbP = null;
     function db() {
-        if (!dbP) dbP = new Promise((res, rej) => {
-            const rq = indexedDB.open(DB_NAME, VERSION);
-            rq.onupgradeneeded = () => { const d = rq.result; if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true }); };
-            rq.onsuccess = () => res(rq.result);
-            rq.onerror = () => rej(rq.error);
-        });
+        if (!dbP) {
+            dbP = new Promise((res, rej) => {
+                const rq = indexedDB.open(DB_NAME, VERSION);
+                rq.onupgradeneeded = () => { const d = rq.result; if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true }); };
+                rq.onsuccess = () => res(rq.result);
+                rq.onerror = () => rej(rq.error);
+            });
+            // a failed open must never be memoised — the next capture retries instead of
+            // silently losing every photo/voice note for the rest of the session (#218)
+            dbP.catch(() => { dbP = null; });
+        }
         return dbP;
     }
     function op(mode, fn) {
