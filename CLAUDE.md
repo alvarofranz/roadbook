@@ -160,11 +160,12 @@ stays untouched at `/home/rdbk/rdbk`. The dev clone reuses rdbk's prod PHP-FPM p
 user), so the full stack is just the clone served on `127.0.0.1:8806` plus the `rdbk_dev` DB
 seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clone `vendor`,
 `config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
-and `BASE_URL=http://localhost:8806`. Front-end only, no back-end:
-```
-cd public && python3 -m http.server 8000   # → http://localhost:8000/
-```
-`node --check <file>.js` for syntax. **Unit tests:** `npm install` then `npm test`
+and `BASE_URL=http://localhost:8806`. Edit the working tree, reload `http://localhost:8806`,
+and only push once the user has tested (see *Releasing*). There is no Mac/local dev and no
+Docker — the dev clone on the box IS the development environment.
+
+`node --check <file>.js` checks a file's syntax. **Unit tests** run anywhere Node is installed:
+`npm install` then `npm test`
 (Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
 GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
 the 49-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
@@ -173,17 +174,19 @@ tests can import it — no build step is introduced on the web. Tests live in `t
 runs them on every push/PR via `.github/workflows/test.yml`.
 `public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
 style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
-(copy `config.js.example`). The PHP API needs a local PHP+MariaDB and an `.env`
-(copy `.env.example`); migrations live in `migrations/`.
+(in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
+in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
+`rdbk_dev`, BASE_URL `http://localhost:8806`) — there is no separate local PHP/MariaDB to set up.
 
 ## Production DB (migrations + fresh dev DB)
 Two prod-DB workflows: **reseeding the dev DB from a fresh copy of prod** and
 **applying a schema migration to prod**. The fresh dev DB reseed runs entirely on
 the box (`dev-sync`, below — no panel, no key). **Migrations** go through the **VPS
-panel** with the rdbk-scoped **`VPS_ADMIN_KEY`** (panel slug `rdbk`); that one key
+panel** with the rdbk-scoped **`VPS_KEY`** (panel slug `rdbk`); that one key
 covers the panel's migrate + dump routes — there is no separate dump secret. Keep it
-in `.claude/settings.local.json` under `env` (gitignored) so Claude always has it;
-the live value is handed over out-of-band (it is a secret, never in this public
+in `.claude/settings.local.json` under `env` (gitignored) so Claude always has it,
+and the bashy helpers read the same key from `bashy/config-rdbk.sh` (gitignored, sets
+`VPS_KEY`). The live value is handed over out-of-band (it is a secret, never in this public
 repo), and the longer ops note `DB.md` is likewise private/gitignored.
 
 **Fresh dev DB → reseed from prod.** Replaces the `rdbk_dev` DB with a current copy of prod
@@ -199,9 +202,9 @@ DB access on the box is the native `mariadb` client.
 
 **Migrations.** List pending and apply through the same panel key:
 ```bash
-curl -fsS -H "X-Admin-Key: $VPS_ADMIN_KEY" \
+curl -fsS -H "X-Admin-Key: $VPS_KEY" \
   https://alvarofranz.com/api/projects/rdbk/migrations | jq '.parsed'
-curl -sS -X POST -H "X-Admin-Key: $VPS_ADMIN_KEY" \
+curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" \
   https://alvarofranz.com/api/projects/rdbk/migrations/<file.sql>/apply | jq -r '.stdout // .'
 ```
 or the helpers `bash bashy/migrations-pending-rdbk.sh` /
