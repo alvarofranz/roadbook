@@ -94,7 +94,10 @@ img { max-width: 100%; display: block; }
        drops as a floating overlay ON TOP of the tool links (not inline), so opening it never
        pushes the list down. Long (admin) lists scroll inside the overlay. */
     .topnav.open .account-control { order: -1; flex-direction: column; align-items: stretch; margin: 0 0 .3rem; width: 100%; max-width: 420px; }
-    .topnav.open .account-menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; margin: 0; max-height: 68vh; overflow-y: auto; z-index: 85; }
+    /* sized to its content like the desktop dropdown — never a screen-wide half-empty panel (#243);
+       capped at the viewport, where a too-long label wraps instead of clipping */
+    .topnav.open .account-menu { position: absolute; top: calc(100% + 4px); left: 0; right: auto; width: max-content; min-width: 220px; max-width: calc(100vw - 2.2rem); margin: 0; max-height: 68vh; overflow-y: auto; z-index: 85; }
+    .topnav.open .account-menu a, .topnav.open .account-menu button { white-space: normal; }
     /* keep the brand logo visible at the top of the open full-screen menu */
     .topbar.nav-open .brand-wrap { position: relative; z-index: 90; }
 }
@@ -163,7 +166,7 @@ section.block { padding: 2.4rem 0; }
 .account-control { position: relative; order: 99; display: flex; }
 .account-button span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
-.account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; }
+.account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; /* the dropdown widens to its longest label — no two-line entries (#243) */ }
 .account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
 .account-menu .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
 /* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */

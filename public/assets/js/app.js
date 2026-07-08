@@ -92,6 +92,9 @@
             header.classList.toggle('nav-open', open); // drops the blur so the menu can cover the viewport
             toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
             toggle.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+            // closing the menu also folds the account submenu — the X stops propagation, so the
+            // document-level closer never sees it and it would still be open on the next ☰ (#243)
+            if (!open) { const m = nav.querySelector('.account-menu'); if (m) m.hidden = true; }
         };
         toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!nav.classList.contains('open')); });
         document.addEventListener('click', (e) => { if (!nav.contains(e.target) && !toggle.contains(e.target)) setOpen(false); });
