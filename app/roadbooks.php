@@ -269,19 +269,17 @@ function rb_duplicate(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
 }
 
-// The media read gate shared by ph_list/audio_list (photos and voice notes are roadbook
-// content, gated exactly like the roadbook itself): public, yours, co-edited through an
-// event, or — when READY — delivered to an event you take part in, matching public_get
-// (#214: participants could read the roadbook but its media 403'd).
+// The media read gate shared by ph_list/audio_list: public, yours, or co-edited through an
+// event. Media is deliberately NARROWER than the roadbook itself — an event participant may
+// read a delivered READY roadbook (public_get) but never its photos/voice notes, which are
+// the authors' working material (#214, per Maurizio's call).
 function rb_media_readable(?array $user, int $rbId): void {
     $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$rbId]);
     $rb = $st->fetch();
     if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404);
     if ($rb['status'] === 'public') return;
-    if ($user && ((int)$user['id'] === (int)$rb['user_id']
-        || event_co_edits_roadbook((int)$user['id'], $rbId)
-        || ($rb['status'] === 'ready' && event_grants_read((int)$user['id'], $rbId)))) return;
+    if ($user && ((int)$user['id'] === (int)$rb['user_id'] || event_co_edits_roadbook((int)$user['id'], $rbId))) return;
     fail('This roadbook is private.', 403);
 }
 // Owner-only media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY).
