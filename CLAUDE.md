@@ -155,14 +155,16 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 ## Run locally
 **Full stack (PHP 8.1 + MariaDB) on the VPS dev clone:** development happens on the box in a
 dev clone next to prod — `/home/rdbk/dev/rdbk` (dev DB `rdbk_dev`), served privately on
-`127.0.0.1:8806` and reached over SSH/Blink (LocalForward → `http://localhost:8806`). Prod
+`127.0.0.1:8806`, loopback-only: view it from the box itself with
+`dev-shot http://localhost:8806/ out.png` (headless Chromium) or `curl -s http://localhost:8806/`. Prod
 stays untouched at `/home/rdbk/rdbk`. The dev clone reuses rdbk's prod PHP-FPM pool (same
 user), so the full stack is just the clone served on `127.0.0.1:8806` plus the `rdbk_dev` DB
 seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clone `vendor`,
 `config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
-and `BASE_URL=http://localhost:8806`. Edit the working tree, reload `http://localhost:8806`,
-and only push once the user has tested (see *Releasing*). There is no Mac/local dev and no
-Docker — the dev clone on the box IS the development environment.
+and `BASE_URL=http://localhost:8806`. Edit the working tree, check `http://localhost:8806`
+from the box (`dev-shot`/`curl`), and only push once the user has tested (see *Releasing*).
+There is no Mac/local dev and no Docker — the dev clone on the box IS the development
+environment.
 
 `node --check <file>.js` checks a file's syntax. **Unit tests** run anywhere Node is installed:
 `npm install` then `npm test`
