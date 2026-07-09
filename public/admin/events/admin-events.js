@@ -9,7 +9,7 @@
 
     function render() {
         $('evList').innerHTML = events.length ? events.map((e) => `<div class="roadbook-row">
-            <div class="meta"><b>${esc(e.title)}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · <i class="fa-solid fa-user icon-accent"></i> @${esc(e.organizer)} · ${e.roadbooks} ${esc(t('roadbooks'))} · ${e.participants} ${esc(t('participants'))}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''}</small></div>
+            <div class="meta"><b>${esc(e.title)}${e.ended ? ` <span class="u-badge u-blocked">${esc(t('Expired'))}</span>` : ''}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · <i class="fa-solid fa-user icon-accent"></i> @${esc(e.organizer)} · ${e.roadbooks} ${esc(t('roadbooks'))} · ${e.participants} ${esc(t('participants'))}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''}</small></div>
             ${e.is_public ? `<a class="btn btn-ghost" href="/event/${esc(e.slug)}" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>` : ''}
             <a class="btn btn-ghost" href="participants/?id=${e.id}" title="${esc(t('Participants'))}" aria-label="${esc(t('Participants'))}"><i class="fa-solid fa-users"></i> ${e.participants}</a>
             <a class="btn btn-ghost" href="edit/?id=${e.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>

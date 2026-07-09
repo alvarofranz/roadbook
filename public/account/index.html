@@ -134,14 +134,13 @@
                 <div class="muted" id="accHandle"></div>
             </div>
             <div class="profile-actions">
-                <a class="btn btn-ghost" id="adminLink" href="../admin/" hidden data-i18n="Admin"><i class="fa-solid fa-users-gear"></i> Admin</a>
+                <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
                 <button class="btn btn-ghost" id="logoutBtn" data-i18n="Sign out"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
             </div>
         </div>
 
         <div id="profileForm" class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
-            <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
             <div class="row2">
                 <div><label class="field-label" for="pfFirst" data-i18n="First name">First name</label><input id="pfFirst" class="field" autocomplete="given-name" maxlength="80"></div>
                 <div><label class="field-label" for="pfLast" data-i18n="Last name">Last name</label><input id="pfLast" class="field" autocomplete="family-name" maxlength="80"></div>
@@ -149,7 +148,7 @@
             <label class="field-label" for="pfBio" data-i18n="Bio">Bio</label>
             <textarea id="pfBio" class="field" rows="3" placeholder="Short bio…" data-i18n-ph="Short bio…" data-i18n-aria="Short bio…" maxlength="500"></textarea>
             <label class="field-label" for="pfOrg" data-i18n="Organization">Organization</label>
-            <input id="pfOrg" class="field" autocomplete="organization" maxlength="120" list="orgSuggest">
+            <input id="pfOrg" class="field" autocomplete="organization" maxlength="120" list="orgSuggest" data-i18n-tip="Enter your club, check if it already exists in the list" title="Enter your club, check if it already exists in the list">
             <datalist id="orgSuggest"></datalist>
             <label class="muted small" for="pfVoiceLang"><span data-i18n="Voice note language">Voice note language</span></label>
             <select id="pfVoiceLang" class="field">

@@ -295,8 +295,6 @@
     async function showAccount(user) {
         me = user;
         show('vAccount'); msg('');
-        $('adminLink').hidden = !user.is_admin; // the admin panel link, only for admins
-
         // A Google-created account has no password yet (#211): hide the "current password"
         // fields (the server doesn't require them either), retitle the card to "Set a
         // password" and explain — setting one also enables email/password sign-in.

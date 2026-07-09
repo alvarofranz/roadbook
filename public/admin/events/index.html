@@ -11,16 +11,23 @@
     <link rel="manifest" href="../../manifest.json">
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=2026.07.08-7">
     <link rel="stylesheet" href="../../assets/css/app.css?v=2026.07.08-7">
+    <style>
+        .ev-head-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .ev-head-row h1 { margin: 0; flex: 1; min-width: 12rem; }
+        .ev-head-row .btn { margin: 0; }
+    </style>
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="wrap admin-wrap">
-    <h1 data-i18n="Event management">Event management</h1>
+    <div class="ev-head-row">
+        <h1 data-i18n="Event management">Event management</h1>
+        <a class="btn btn-primary" id="evNew" href="edit/" hidden><i class="fa-solid fa-plus"></i> <span data-i18n="New event">New event</span></a>
+    </div>
     <p class="muted small"><a href="../../features/events/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a></p>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
     <div id="evBody" hidden>
-        <div class="btnrow"><a class="btn btn-primary" id="evNew" href="edit/"><i class="fa-solid fa-plus"></i> <span data-i18n="New event">New event</span></a></div>
         <div id="evList" class="rb-grid"></div>
     </div>
 </main>

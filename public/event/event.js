@@ -23,7 +23,7 @@
         $('evDesc').textContent = e.description || '';
         const card = (r) => RBGalleryCard({
             href: `/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}`, thumb: r.thumb, title: r.title,
-            meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
+            meta: `${r.category ? `<span class="u-badge">${esc(r.category)}</span> ` : ''}@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
             body: r.status === 'ready' ? `<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ${esc(t('Participants only'))}</div>` : '',
         });
         $('evRoadbooks').innerHTML = j.roadbooks.length

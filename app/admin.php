@@ -100,10 +100,21 @@ function purge_roadbook_files(int $rbId, int $ownerId, string $filename): void {
 function admin_users(array $user, array $d = []): void {
     // Optional event filter: only the users belonging to that event (participants + organizers).
     $eventId = (int)($d['event_id'] ?? 0);
-    $where = $eventId > 0 ? " WHERE users.id IN (SELECT user_id FROM event_participants WHERE event_id = $eventId
-        UNION SELECT user_id FROM event_organizers WHERE event_id = $eventId)" : '';
-    $rows = db()->query('SELECT id, first_name, last_name, username, email, organization, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
-        FROM users' . $where . ' ORDER BY id')->fetchAll();
+    $orgQ = trim((string)($d['organization'] ?? ''));
+    $where = '';
+    $args = [];
+    if ($eventId > 0) {
+        $where = " WHERE users.id IN (SELECT user_id FROM event_participants WHERE event_id = $eventId
+            UNION SELECT user_id FROM event_organizers WHERE event_id = $eventId)";
+    }
+    if ($orgQ !== '') {
+        $where .= ($where ? ' AND' : ' WHERE') . ' users.organization LIKE ?';
+        $args[] = '%' . $orgQ . '%';
+    }
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, organization, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
+        FROM users' . $where . ' ORDER BY id');
+    $st->execute($args);
+    $rows = $st->fetchAll();
     // One query maps every user to their roadbook ids: it feeds both the per-user roadbook
     // count and the disk scan, instead of two queries per listed user.
     $rbByUser = [];
@@ -161,14 +172,26 @@ function admin_unpublish(array $user, array $d): void {
 function admin_user_roadbooks(array $user, array $d): void {
     $uid = (int)($d['user_id'] ?? 0);
     if ($uid <= 0) fail('Bad request.');
+    $q = trim((string)($d['q'] ?? ''));
+    $page = max(1, (int)($d['page'] ?? 1));
+    $perPage = min(100, max(1, (int)($d['per_page'] ?? 25)));
+    $where = 'user_id = ? AND status <> \'deleted\'';
+    $args = [$uid];
+    if ($q !== '') {
+        $where .= ' AND title LIKE ?';
+        $args[] = '%' . $q . '%';
+    }
+    $st = db()->prepare("SELECT COUNT(*) FROM roadbooks WHERE $where");
+    $st->execute($args);
+    $total = (int)$st->fetchColumn();
     $st = db()->prepare("SELECT id, slug, title, status, total_distance, note_count, updated_at
-        FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
-    $st->execute([$uid]);
+        FROM roadbooks WHERE $where ORDER BY updated_at DESC LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
+    $st->execute($args);
     $list = array_map(fn($r) => [
         'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'status' => $r['status'],
         'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'], 'updated_at' => $r['updated_at'],
     ], $st->fetchAll());
-    json_out(['ok' => true, 'roadbooks' => $list]);
+    json_out(['ok' => true, 'roadbooks' => $list, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
 }
 
 // Admin: set any roadbook's publication status (draft/ready/public) from the per-user view (#126).
@@ -407,11 +430,23 @@ function admin_activity(array $user, array $d): void {
     $st->execute([$id]);
     $u = $st->fetch();
     if (!$u) fail('Not found.', 404);
+    $q = trim((string)($d['q'] ?? ''));
+    $page = max(1, (int)($d['page'] ?? 1));
+    $perPage = min(200, max(1, (int)($d['per_page'] ?? 50)));
+    $where = 'user_id = ?';
+    $args = [$id];
+    if ($q !== '') {
+        $where .= ' AND (action LIKE ? OR detail LIKE ?)';
+        $like = '%' . $q . '%';
+        $args[] = $like; $args[] = $like;
+    }
     $rc = db()->prepare('SELECT COUNT(*) FROM roadbooks WHERE user_id = ?');
     $rc->execute([$id]);
-    $a = db()->prepare('SELECT action, detail, ip, created_at FROM activity_log WHERE user_id = ? ORDER BY id DESC LIMIT 50');
-    $a->execute([$id]);
+    $tc = db()->prepare("SELECT COUNT(*) FROM activity_log WHERE $where");
+    $tc->execute($args);
+    $a = db()->prepare("SELECT action, detail, ip, created_at FROM activity_log WHERE $where ORDER BY id DESC LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
+    $a->execute($args);
     json_out(['ok' => true, 'username' => $u['username'],
         'stats' => ['roadbooks' => (int)$rc->fetchColumn(), 'bytes' => user_disk_bytes($id)],
-        'events' => $a->fetchAll()]);
+        'events' => $a->fetchAll(), 'total' => (int)$tc->fetchColumn(), 'page' => $page, 'per_page' => $perPage]);
 }

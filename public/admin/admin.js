@@ -6,7 +6,7 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, allUsers = [], byId = {}, page = 1, query = '';
+    let me = 0, allUsers = [], byId = {}, page = 1, query = '', orgFilter = '';
 
     function rowHtml(u) {
         const isMe = u.id === me;
@@ -34,40 +34,47 @@
     }
 
     // Edit a user's identity; optionally set a temporary password they must change at next login.
+    // Two-column layout for the form fields (#244).
     function editUser(u) {
         const m = RBModal(`<h2>${esc(t('Edit user'))}</h2>
-            <label class="field-label" for="euFirst">${esc(t('First name'))}</label>
-            <input id="euFirst" class="field" autocomplete="off">
-            <label class="field-label" for="euLast">${esc(t('Last name'))}</label>
-            <input id="euLast" class="field" autocomplete="off">
-            <label class="field-label" for="euUser">${esc(t('Username'))}</label>
-            <input id="euUser" class="field" autocomplete="off">
-            <label class="field-label" for="euEmail">${esc(t('Email'))}</label>
-            <input id="euEmail" type="email" class="field" autocomplete="off">
+            <div class="row2">
+                <div><label class="field-label" for="euFirst">${esc(t('First name'))}</label>
+                <input id="euFirst" class="field" autocomplete="off"></div>
+                <div><label class="field-label" for="euLast">${esc(t('Last name'))}</label>
+                <input id="euLast" class="field" autocomplete="off"></div>
+            </div>
+            <div class="row2">
+                <div><label class="field-label" for="euUser">${esc(t('Username'))}</label>
+                <input id="euUser" class="field" autocomplete="off"></div>
+                <div><label class="field-label" for="euEmail">${esc(t('Email'))}</label>
+                <input id="euEmail" type="email" class="field" autocomplete="off"></div>
+            </div>
             <label class="field-label" for="euOrg">${esc(t('Organization'))}</label>
             <input id="euOrg" class="field" autocomplete="off" maxlength="120" list="euOrgSuggest">
             <datalist id="euOrgSuggest"></datalist>
-            <label class="field-label" for="euPass">${esc(t('New password (optional)'))}</label>
-            <input id="euPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Leave blank to keep current'))}">
-            <p class="hint">${esc(t('If you set a password, the user must change it at next login.'))}</p>
-            <label class="field-label" for="euQuota">${esc(t('Storage quota (MB)'))}</label>
-            <input id="euQuota" type="number" min="0" step="1" class="field" autocomplete="off" placeholder="${esc(t('Default'))}">
-            <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p>
+            <div class="row2">
+                <div><label class="field-label" for="euPass">${esc(t('New password (optional)'))}</label>
+                <input id="euPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Leave blank to keep current'))}">
+                <p class="hint">${esc(t('If you set a password, the user must change it at next login.'))}</p></div>
+                <div><label class="field-label" for="euQuota">${esc(t('Storage quota (MB)'))}</label>
+                <input id="euQuota" type="number" min="0" step="1" class="field" autocomplete="off" placeholder="${esc(t('Default'))}">
+                <p class="hint">${esc(t('Blank uses the default. Raise it for a trusted user.'))}</p></div>
+            </div>
             <label class="checkbox-row"><input type="checkbox" id="euOrganizer"> <span>${esc(t('Organizer'))}</span></label>
             <p class="hint">${esc(t('Can create and manage their own events.'))}</p>
             <label class="checkbox-row"><input type="checkbox" id="euAdmin"> <span>${esc(t('Admin'))}</span></label>
             <p class="hint">${esc(t('Full access to users, settings and every event.'))}</p>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'narrow', null, { dismissable: false });
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false });
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
         m.q('#euEmail').value = u.email || '';
         m.q('#euOrg').value = u.organization || '';
-        RBOrgDatalist(m.q('#euOrgSuggest')); // suggest existing clubs, like the profile + event search (#184)
+        RBOrgDatalist(m.q('#euOrgSuggest'));
         m.q('#euQuota').value = u.quota_bytes != null ? Math.round(u.quota_bytes / 1048576) : '';
         m.q('#euOrganizer').checked = !!u.is_organizer;
         m.q('#euAdmin').checked = !!u.is_admin;
-        m.q('#euAdmin').disabled = u.locked || u.id === me; // superuser (.env) and yourself can't be toggled
+        m.q('#euAdmin').disabled = u.locked || u.id === me;
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const x = await api('admin_update', {
@@ -82,7 +89,6 @@
                 is_organizer: m.q('#euOrganizer').checked ? 1 : 0,
             });
             if (!x.ok) return toast(x.error || 'Could not save.');
-            // the admin role rides admin_set_role (it owns the self/superuser guards)
             const wantAdmin = m.q('#euAdmin').checked ? 1 : 0;
             if (!m.q('#euAdmin').disabled && wantAdmin !== (u.is_admin ? 1 : 0)) {
                 const r2 = await api('admin_set_role', { id: u.id, is_admin: wantAdmin });
@@ -93,30 +99,54 @@
     }
 
     // Read-only inspection (#86): a user's stats + recent activity timeline (IPs are anonymised).
+    // Pagination + search + export CSV (#244).
     function viewActivity(u) {
         const m = RBModal(`<h2>${esc(t('Activity'))} · @${esc(u.username)}</h2>
-            <div id="actBody" class="muted small">${esc(t('Loading…'))}</div>
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="actSearch" placeholder="${esc(t('Search\u2026'))}" autocomplete="off" spellcheck="false">
+            <button class="btn btn-ghost" id="actExport" title="${esc(t('Export CSV'))}" aria-label="${esc(t('Export CSV'))}"><i class="fa-solid fa-download"></i></button></div>
+            <div id="actBody" class="muted small">${esc(t('Loading\u2026'))}</div>
+            <div id="actPager" class="pager"></div>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
         m.q('[data-cancel]').onclick = m.close;
-        api('admin_activity', { id: u.id }).then((r) => {
-            const body = m.q('#actBody');
-            if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
-            const stats = `<p class="hint">${r.stats.roadbooks} ${esc(t('roadbooks'))} · ${fmtSize(r.stats.bytes)}</p>`;
-            const rows = r.events.length
-                ? r.events.map((e) => `<tr><td class="small">${esc(e.created_at)}</td><td>${esc(e.action.replace(/_/g, ' '))}</td><td class="muted small">${esc(e.detail || '')}</td><td class="muted small">${esc(e.ip || '')}</td></tr>`).join('')
-                : `<tr><td colspan="4" class="muted small">${esc(t('No activity yet.'))}</td></tr>`;
-            body.innerHTML = stats + `<table class="act-table"><tbody>${rows}</tbody></table>`;
-        });
+        let actPage = 1, actQuery = '';
+        const loadAct = () => {
+            api('admin_activity', { id: u.id, page: actPage, q: actQuery }).then((r) => {
+                const body = m.q('#actBody');
+                if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
+                const stats = `<p class="hint">${r.stats.roadbooks} ${esc(t('roadbooks'))} \u00b7 ${fmtSize(r.stats.bytes)}</p>`;
+                const rows = r.events.length
+                    ? r.events.map((e) => `<tr><td class="small">${esc(e.created_at)}</td><td>${esc(e.action.replace(/_/g, ' '))}</td><td class="muted small">${esc(e.detail || '')}</td><td class="muted small">${esc(e.ip || '')}</td></tr>`).join('')
+                    : `<tr><td colspan="4" class="muted small">${esc(t('No activity yet.'))}</td></tr>`;
+                body.innerHTML = stats + `<table class="act-table"><tbody>${rows}</tbody></table>`;
+                const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 50)));
+                RBPager(m.q('#actPager'), actPage, pages, (p) => { actPage = p; loadAct(); });
+            });
+        };
+        m.q('#actSearch').oninput = () => { actQuery = m.q('#actSearch').value; actPage = 1; loadAct(); };
+        m.q('#actExport').onclick = () => {
+            api('admin_activity', { id: u.id, q: actQuery, page: 1, per_page: 10000 }).then((r) => {
+                if (!r.ok || !r.events.length) return;
+                const csv = '\uFEFF' + ['action,detail,ip,created_at'].concat(r.events.map((e) =>
+                    `"${e.action}","${(e.detail || '').replace(/"/g, '""')}","${e.ip || ''}","${e.created_at}"`
+                )).join('\n');
+                RBDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'activity_' + u.username + '.csv');
+            });
+        };
+        loadAct();
     }
 
     // A user's roadbooks (any status) with an admin status control + owner reassignment (#126).
+    // Pagination + search (#244).
     function viewRoadbooks(u) {
         const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
-        const m = RBModal(`<h2>${esc(t('Roadbooks'))} · @${esc(u.username)}</h2>
-            <div id="rbsBody" class="muted small">${esc(t('Loading…'))}</div>
+        const m = RBModal(`<h2>${esc(t('Roadbooks'))} \u00b7 @${esc(u.username)}</h2>
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="rbsSearch" placeholder="${esc(t('Search roadbooks\u2026'))}" autocomplete="off" spellcheck="false"></div>
+            <div id="rbsBody" class="muted small">${esc(t('Loading\u2026'))}</div>
+            <div id="rbsPager" class="pager"></div>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list');
         m.q('[data-cancel]').onclick = m.close;
-        const render = () => api('admin_user_roadbooks', { user_id: u.id }).then((r) => {
+        let rbPage = 1, rbQuery = '';
+        const render = () => api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
             const body = m.q('#rbsBody');
             if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
             if (!r.roadbooks.length) { body.textContent = t('No roadbooks yet.'); return; }
@@ -130,22 +160,22 @@
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
                 const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
                 if (!x.ok) toast(x.error || 'Could not save.');
-                render(); // re-render from server truth (also resets the select on error)
+                render();
             });
             body.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => movePicker(b.dataset.mv, b.dataset.title));
-            // Admin trash (#237): the moderation counterpart of the owner's delete — the only way
-            // to trash a graveyard-owned roadbook. Standard trash lifecycle (restore / 30-day purge).
             body.querySelectorAll('[data-trash]').forEach((b) => b.onclick = async () => {
-                if (!(await RBConfirmDanger(t('Move to trash') + ' “' + (b.dataset.title || '') + '”?', t('Delete')))) return;
+                if (!(await RBConfirmDanger(t('Move to trash') + ' "' + (b.dataset.title || '') + '"?', t('Delete')))) return;
                 const x = await api('admin_rb_trash', { id: +b.dataset.trash });
                 if (!x.ok) toast(x.error || 'Could not delete.');
                 render();
             });
+            const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 25)));
+            RBPager(m.q('#rbsPager'), rbPage, pages, (p) => { rbPage = p; render(); });
         });
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
-            const m2 = RBModal(`<h2>${esc(t('Move'))} · ${esc(rbTitle)}</h2>
-                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users…'))}" autocomplete="off">
+            const m2 = RBModal(`<h2>${esc(t('Move'))} \u00b7 ${esc(rbTitle)}</h2>
+                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" autocomplete="off">
                 <div id="mvList" class="mv-list"></div>
                 <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button></div>`, 'narrow');
             m2.q('[data-cancel]').onclick = m2.close;
@@ -160,7 +190,7 @@
                     if (!(await RBConfirm(t('Move this roadbook to') + ' @' + b.dataset.name + '?', t('Move')))) return;
                     const x = await api('admin_move_roadbook', { id: +rbId, user_id: +b.dataset.pick });
                     toast(x.ok ? t('Roadbook moved.') : (x.error || 'Could not move.'));
-                    m2.close(); render(); // the moved roadbook drops out of this user's list
+                    m2.close(); render();
                 });
             };
             m2.q('#mvSearch').oninput = (e) => draw(e.target.value);
@@ -213,18 +243,22 @@
 
     async function load() {
         const eventId = +($('userEventFilter').value || 0);
-        const r = await api('admin_users', eventId ? { event_id: eventId } : {});
+        const params = {};
+        if (eventId) params.event_id = eventId;
+        const org = ($('userOrgFilter').value || '').trim();
+        if (org) params.organization = org;
+        const r = await api('admin_users', params);
         if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
         me = r.me;
         allUsers = r.users || [];
         byId = {}; allUsers.forEach((u) => byId[u.id] = u);
         $('adminMsg').hidden = true; $('usersBox').hidden = false;
-        render(); // keeps the current search + page across reloads
+        render();
     }
 
     // Event filter: narrow the list to one event's people (participants + organizers).
     async function loadEventFilter() {
-        const r = await api('events_manage'); // an admin sees every event
+        const r = await api('events_manage');
         const sel = $('userEventFilter');
         sel.innerHTML = `<option value="">${esc(t('All events'))}</option>`
             + ((r.ok && r.events) || []).map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
@@ -271,6 +305,7 @@
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
         $('userCreate').onclick = createUser;
+        $('userOrgFilter').oninput = () => { orgFilter = $('userOrgFilter').value; page = 1; load(); };
         loadEventFilter();
         load();
     }

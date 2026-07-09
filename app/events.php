@@ -80,6 +80,7 @@ function events_manage(array $user): void {
         'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'], 'is_public' => (int)$r['is_public'],
         'logo' => $r['logo'], 'organizer' => $r['organizer'],
         'roadbooks' => (int)$r['roadbooks'], 'participants' => (int)$r['participants'],
+        'ended' => $r['ends_on'] !== null && $r['ends_on'] < date('Y-m-d'),
     ], $rows)]);
 }
 
@@ -91,12 +92,10 @@ function event_manage_get(array $user, array $d): void {
     $org = db()->prepare('SELECT u.id, u.username, u.email, u.organization FROM event_organizers eo JOIN users u ON u.id = eo.user_id
         WHERE eo.event_id = ? ORDER BY u.username');
     $org->execute([$id]);
-    $rb = db()->prepare('SELECT r.id, r.title, r.status, er.scoring_mode, u.id AS owner_id, u.username
+    $rb = db()->prepare('SELECT r.id, r.title, r.category, r.status, er.scoring_mode, u.id AS owner_id, u.username
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status <> \'deleted\' ORDER BY er.sort, er.roadbook_id');
     $rb->execute([$id]);
-    $cat = db()->prepare('SELECT id, name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
-    $cat->execute([$id]);
     // The participants themselves come from the paged event_participants_list (#144) — the
     // page only needs the total here, for the section header.
     $pp = db()->prepare('SELECT COUNT(*) FROM event_participants WHERE event_id = ?');
@@ -106,9 +105,8 @@ function event_manage_get(array $user, array $d): void {
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
         'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
-        'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'status' => $x['status'],
+        'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
-        'categories' => array_map(fn($x) => ['id' => (int)$x['id'], 'name' => $x['name']], $cat->fetchAll()),
         'participant_count' => (int)$pp->fetchColumn(),
     ]]);
 }
@@ -152,47 +150,21 @@ function event_save(array $user, array $d): void {
     $starts = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['starts_on'] ?? '')) ? $d['starts_on'] : null;
     $ends = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['ends_on'] ?? '')) ? $d['ends_on'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
-    // Categories/classes: [{id, name}] kept in the given order.
-    $cats = is_array($d['categories'] ?? null) ? $d['categories'] : [];
-    // rights + slug first, then ALL the writes in one transaction — a mid-way failure must
-    // not leave the event saved with half its categories
+    // rights + slug first, then save — no transaction needed for a single UPDATE/INSERT.
     // The slug follows the current title (#194); excludeId keeps it unchanged when the slugified
     // title is the same, and only regenerates it after a real rename.
     if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
-    $pdo = db();
-    $pdo->beginTransaction();
-    try {
-        if ($id > 0) {
-            $pdo->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
-                ->execute([$title, $desc, $starts, $ends, $isPublic, $slug, $id]);
-        } else {
-            $pdo->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
-                ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
-            $id = (int)$pdo->lastInsertId();
-            // the owner is also listed among the event's organizers
-            $pdo->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
-        }
-        // UPSERT keeping ids stable: P2.4 entries will reference event_categories.id, so renaming
-        // or reordering must never churn the id — only categories dropped from the list are deleted.
-        $st = $pdo->prepare('SELECT id FROM event_categories WHERE event_id = ?');
-        $st->execute([$id]);
-        $existing = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
-        $updCat = $pdo->prepare('UPDATE event_categories SET name = ?, sort = ? WHERE id = ? AND event_id = ?');
-        $insCat = $pdo->prepare('INSERT INTO event_categories (event_id, name, sort) VALUES (?,?,?)');
-        $keep = []; $ci = 0;
-        foreach ($cats as $c) {
-            $cid = (int)($c['id'] ?? 0);
-            $name = substr(trim((string)($c['name'] ?? '')), 0, 100);
-            if ($name === '') continue;
-            if ($cid > 0 && in_array($cid, $existing, true)) { $updCat->execute([$name, $ci, $cid, $id]); $keep[] = $cid; }
-            else { $insCat->execute([$id, $name, $ci]); $keep[] = (int)$pdo->lastInsertId(); }
-            $ci++;
-        }
-        $pdo->prepare('DELETE FROM event_categories WHERE event_id = ?'
-            . ($keep ? ' AND id NOT IN (' . implode(',', $keep) . ')' : ''))->execute([$id]);
-        $pdo->commit();
-    } catch (\Throwable $x) { $pdo->rollBack(); throw $x; }
+    if ($id > 0) {
+        db()->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
+            ->execute([$title, $desc, $starts, $ends, $isPublic, $slug, $id]);
+    } else {
+        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
+        $id = (int)db()->lastInsertId();
+        // the owner is also listed among the event's organizers
+        db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
+    }
     log_activity((int)$user['id'], 'event_save', 'event #' . $id);
     json_out(['ok' => true, 'id' => $id, 'slug' => $slug]);
 }
@@ -363,23 +335,26 @@ function event_public_get(array $d): void {
     }
     // Anyone sees the PUBLIC roadbooks; a member of the event (participant or organizer) also
     // sees the READY ones — finished routes delivered to entrants only (#25). Drafts never show.
+    // Event organizers (#247) can always read every roadbook attached to the event.
     $member = $joined || ($me && event_can_manage($me, $e));
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
+    $orgRead = $me && event_can_manage($me, $e); // organizers always readable
+    $statuses = "'public'";
+    if ($member) $statuses .= ", 'ready'";
+    if ($orgRead) $statuses .= ", 'draft'";
+    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
-        WHERE er.event_id = ? AND r.status IN ('public'" . ($member ? ", 'ready'" : '') . ") ORDER BY er.sort, er.roadbook_id");
+        WHERE er.event_id = ? AND r.status IN ($statuses) ORDER BY er.sort, er.roadbook_id");
     $rb->execute([$e['id']]);
     $roadbooks = array_map(fn($r) => [
-        'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
+        'slug' => $r['slug'], 'title' => $r['title'], 'category' => $r['category'], 'total_distance' => (int)$r['total_distance'],
         'note_count' => (int)$r['note_count'], 'status' => $r['status'], 'username' => $r['username'], 'scoring_mode' => $r['scoring_mode'],
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
     ], $rb->fetchAll());
-    $cat = db()->prepare('SELECT name FROM event_categories WHERE event_id = ? ORDER BY sort, id');
-    $cat->execute([$e['id']]);
     json_out(['ok' => true, 'event' => [
         'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
-        'categories' => $cat->fetchAll(PDO::FETCH_COLUMN),
+        'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
         'can_join' => $e['join_code'] !== null, 'joined' => $joined,
     ], 'roadbooks' => $roadbooks]);
 }

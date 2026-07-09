@@ -1,14 +1,13 @@
 'use strict';
-/* Event management page (#123): a full page (not a popup) to edit one event — its parameters
- * and categories on top, then the organizers who co-manage it, the associated roadbooks (with
- * per-roadbook participation mode, #6) and the participants with their join code. Opened as
- * edit/?id=<id>; ?id=0 (or none) creates a new event on the first save. */
+/* Event management page (#123): a full page (not a popup) to edit one event — its parameters on
+ * top, then the organizers who co-manage it, the associated roadbooks (with per-roadbook
+ * participation mode, #6) and the participants with their join code. Opened as edit/?id=<id>;
+ * ?id=0 (or none) creates a new event on the first save. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     let id = +(new URLSearchParams(location.search).get('id') || 0);
     let me = null, ev = null;
-    let cats = []; // ordered {id, name} categories — ids ride along so a save never churns them (P2.4 entries reference them)
 
     // Participation modes for an associated roadbook (#6). 'fia' is shown but disabled (not
     // implemented); the API refuses it and falls back to 'free'.
@@ -17,7 +16,7 @@
 
     const isOwner = () => me && ev && (me.is_admin || ev.owner_id === me.id);
 
-    /* ---------- 1 · parameters + categories ---------- */
+    /* ---------- 1 · parameters ---------- */
     function renderParams() {
         $('evHeading').textContent = ev ? ev.title : t('New event');
         $('evTitleIn').value = ev ? ev.title : '';
@@ -28,30 +27,13 @@
         const view = $('evView');
         view.hidden = !(ev && ev.is_public);
         if (ev) view.href = '/event/' + ev.slug;
-        renderCats();
     }
-    function renderCats() {
-        $('evCats').innerHTML = cats.map((c, i) => `<div class="ev-cat-row">
-            <input class="field" data-cat="${i}" value="${esc(c.name)}" placeholder="${esc(t('Category name'))}" autocomplete="off">
-            <button class="btn btn-ghost" type="button" data-catup="${i}" title="${esc(t('Move to the row above'))}" aria-label="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
-            <button class="btn btn-ghost" type="button" data-catdown="${i}" title="${esc(t('Move to the row below'))}" aria-label="${esc(t('Move to the row below'))}"${i === cats.length - 1 ? ' disabled' : ''}>↓</button>
-            <button class="btn btn-ghost" type="button" data-catdel="${i}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
-        </div>`).join('');
-    }
-    $('evCats').addEventListener('input', (e) => { const inp = e.target.closest('[data-cat]'); if (inp) cats[+inp.dataset.cat].name = inp.value; });
-    $('evCats').addEventListener('click', (e) => {
-        const up = e.target.closest('[data-catup]'), dn = e.target.closest('[data-catdown]'), del = e.target.closest('[data-catdel]');
-        if (up) { const i = +up.dataset.catup; if (i > 0) { [cats[i - 1], cats[i]] = [cats[i], cats[i - 1]]; renderCats(); } }
-        else if (dn) { const i = +dn.dataset.catdown; if (i < cats.length - 1) { [cats[i + 1], cats[i]] = [cats[i], cats[i + 1]]; renderCats(); } }
-        else if (del) { cats.splice(+del.dataset.catdel, 1); renderCats(); }
-    });
-    $('evCatAdd').onclick = () => { cats.push({ id: 0, name: '' }); renderCats(); const inp = $('evCats').querySelector(`[data-cat="${cats.length - 1}"]`); if (inp) inp.focus(); };
+
     async function save() {
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
-            categories: cats.map((c) => ({ id: c.id || 0, name: c.name.trim() })).filter((c) => c.name),
         });
         if (!x.ok) return toast(x.error || 'Could not save.');
         toast('Saved.');
@@ -203,7 +185,6 @@
         const r = await api('event_manage_get', { id });
         if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; return; }
         ev = r.event;
-        cats = ev.categories.map((c) => ({ id: c.id, name: c.name }));
         $('adminMsg').hidden = true; $('evBody').hidden = false; $('evActions').hidden = false;
         renderParams(); renderLogo(); renderOrgs(); renderRbs(); renderJoinCode();
     }

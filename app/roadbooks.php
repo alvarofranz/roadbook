@@ -17,9 +17,21 @@ function rb_clean_status($s): string {
 }
 
 function rb_list(array $user): void {
-    $st = db()->prepare("SELECT id, title, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
+    global $CFG;
+    $st = db()->prepare("SELECT id, title, category, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
     $st->execute([$user['id']]);
-    json_out(['ok' => true, 'roadbooks' => $st->fetchAll(), 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
+    $rbs = $st->fetchAll();
+    // Per-roadbook disk usage: the .rdbk file + photos + audio (#246)
+    foreach ($rbs as &$rb) {
+        $rid = (int)$rb['id'];
+        $bytes = dir_size($CFG['photos_dir'] . '/' . $rid) + dir_size($CFG['audio_dir'] . '/' . $rid);
+        if (!empty($rb['filename']) && $rb['filename'] !== 'pending') {
+            $f = $CFG['storage'] . '/' . (int)$user['id'] . '/' . $rb['filename'];
+            if (is_file($f)) $bytes += (int)@filesize($f);
+        }
+        $rb['total_bytes'] = $bytes;
+    }
+    json_out(['ok' => true, 'roadbooks' => $rbs, 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
 }
 
 // The edit-rights gate shared by rb_get / rb_save / the lock actions: yours, or attached to
@@ -157,6 +169,7 @@ function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
     if (!is_array($rb) || empty($rb['notes']) || empty($rb['track'])) fail('Invalid roadbook.');
     $title = substr(trim((string)($rb['meta']['title'] ?? '')) ?: 'Untitled', 0, 200);
+    $category = mb_substr(trim((string)($rb['meta']['category'] ?? '')), 0, 100) ?: null;
     $dist = (int)($rb['meta']['total_distance'] ?? 0);
     $nc = count($rb['notes']);
     $status = rb_clean_status($d['status'] ?? null);
@@ -179,15 +192,15 @@ function rb_save(array $user, array $d): void {
         $path = $dir . '/' . $fn;
         rb_assert_quota((int)$row['user_id'], is_file($path) ? (int)filesize($path) : 0, strlen($json));
         if (!rb_write_file($path, $json)) fail('Could not write the roadbook file.', 500);
-        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, slug = ?, filename = ? WHERE id = ?')
-            ->execute([$title, $dist, $nc, $status, $reusable, $slug, $fn, $id]);
+        db()->prepare('UPDATE roadbooks SET title = ?, category = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, slug = ?, filename = ? WHERE id = ?')
+            ->execute([$title, $category, $dist, $nc, $status, $reusable, $slug, $fn, $id]);
         rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
         $json = json_encode($rb);
         rb_assert_quota((int)$user['id'], 0, strlen($json));
-        db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?)')
-            ->execute([$user['id'], $title, $dist, $nc, $status, 'pending']);
+        db()->prepare('INSERT INTO roadbooks (user_id, title, category, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $title, $category, $dist, $nc, $status, 'pending']);
         $id = (int)db()->lastInsertId();
         $fn = $id . '.rdbk';
         $slug = unique_slug('roadbooks', $title, 'roadbook', $id);
