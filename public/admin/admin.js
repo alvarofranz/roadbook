@@ -164,7 +164,7 @@
             });
             body.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => movePicker(b.dataset.mv, b.dataset.title));
             body.querySelectorAll('[data-trash]').forEach((b) => b.onclick = async () => {
-                if (!(await RBConfirmDanger(t('Move to trash') + ' "' + (b.dataset.title || '') + '"?', t('Delete')))) return;
+                if (!(await RBConfirmDanger(t('Move to trash') + ' "' + esc(b.dataset.title || '') + '"?', t('Delete')))) return;
                 const x = await api('admin_rb_trash', { id: +b.dataset.trash });
                 if (!x.ok) toast(x.error || 'Could not delete.');
                 render();
@@ -187,7 +187,7 @@
                     ? matches.map((au) => `<button class="mv-opt" data-pick="${au.id}" data-name="${esc(au.username)}"><b>@${esc(au.username)}</b> <span class="muted small">${esc(au.email)}</span></button>`).join('')
                     : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
                 listEl.querySelectorAll('[data-pick]').forEach((b) => b.onclick = async () => {
-                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + b.dataset.name + '?', t('Move')))) return;
+                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + esc(b.dataset.name) + '?', t('Move')))) return;
                     const x = await api('admin_move_roadbook', { id: +rbId, user_id: +b.dataset.pick });
                     toast(x.ok ? t('Roadbook moved.') : (x.error || 'Could not move.'));
                     m2.close(); render();

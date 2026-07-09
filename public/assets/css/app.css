@@ -614,7 +614,7 @@ button.rb-badge:hover { background: var(--card); }
 .audio-totext:disabled { opacity: .6; cursor: default; }
 /* one-time model-download progress (also reusable elsewhere) */
 .progress { height: 8px; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem; }
-.progress-bar { height: 100%; width: 0; background: var(--sand); transition: width .2s ease; }
+.progress-bar { height: 100%; width: var(--progress, 0%); background: var(--sand); transition: width .2s ease; }
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: 9px; }
 /* the admin toggle: a small floating chip; the edit bar appears when it's active */

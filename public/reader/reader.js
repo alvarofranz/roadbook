@@ -118,7 +118,8 @@
         try {
             const j = await RBApi('event_get', { slug: eventSlug });
             const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop();
-            const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug);
+            const rbId = +(new URLSearchParams(location.search).get('rb') || 0);
+            const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug || (rbId && x.id === rbId));
             if (er) applyModeLock(er.scoring_mode && er.scoring_mode !== 'free' ? 'competition' : 'trip');
         } catch (e) { /* no event mode → keep the free choice */ }
     }

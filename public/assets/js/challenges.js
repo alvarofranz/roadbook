@@ -2,8 +2,7 @@
 /* RBChallenges — public, DB-backed challenges (roadbooks shared by users).
  * App root is derived from this script's URL (works on the home and tool subfolders). */
 (function () {
-    const here = (document.currentScript && document.currentScript.src) || location.href;
-    const ROOT = here.replace(/assets\/js\/challenges\.js.*$/, '');
+    const ROOT = window.RB_ROOT || '../'; // set by app.js; fallback for isolated loads
 
     async function listPublic(opts) {
         const q = opts && opts.reusable ? '&reusable=1' : ''; // #106: the Editor fork search asks for reusable-only

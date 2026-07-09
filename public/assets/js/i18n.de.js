@@ -93,7 +93,7 @@
             'Search icons…': 'Icons suchen…', 'Yours (in this roadbook)': 'Deine (in diesem Roadbook)',
             'Warning signs': 'Warnschilder', 'Priority signs': 'Vorfahrtsschilder', 'Prohibitions & limits': 'Verbote und Limits', 'Mandatory signs': 'Gebotsschilder',
             'Terrain': 'Gelände', 'Info': 'Info', 'References': 'Referenzen',
-            'Road': 'Straße', 'Danger': 'Gefahr', 'Red CAP': 'Roter KAP',
+            'Road': 'Straße', 'Danger': 'Gefahr', 'Red CAP': 'Roter KAP', 'CAP disabled': 'KAP deaktiviert',
             'CAP type': 'KAP-Typ', 'Exit': 'Ausfahrt', 'Average': 'Mittel', 'Calculated': 'Berechnet', 'Turning': 'Kurve', 'End of limit': 'Ende Limit', 'END': 'ENDE',
             'Default': 'Standard', 'Motorway': 'Autobahn', 'Asphalt': 'Asphalt', 'Track': 'Piste', 'Off-piste': 'Gelände',
             'Draw on the map': 'Auf der Karte zeichnen', 'Sketch a route tapping the map': 'Route durch Antippen der Karte skizzieren',

@@ -107,8 +107,8 @@
     // noise. gapPrev is this note's partial_distance; gapNext is the next note's (null at the end).
     function reachRadius(note, nextNote, meta) {
         const base = detectionRadius(note, meta);
-        const gapPrev = (note && note.partial_distance) || Infinity;
-        const gapNext = (nextNote && nextNote.partial_distance) || Infinity;
+        const gapPrev = (note && note.partial_distance != null) ? note.partial_distance : Infinity;
+        const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
     // Dark or light ink for legible text on a solid colour fill (perceived luminance).
@@ -556,6 +556,7 @@
         for (let i = 0; i < rb.notes.length; i++) {
             const n = rb.notes[i], nx = rb.notes[i + 1];
             if (n.cap != null && nx) { n.cap = Math.round(bearingDeg(n, nx)); n.cap_distance = Math.round(haversineM(n, nx)); }
+            else if (n.cap != null) { n.cap = null; n.cap_distance = null; } // target note was deleted → clear stale cap
         }
         return rb;
     }
@@ -637,6 +638,7 @@
     function reverseRoadbook(rb) {
         const last = rb.track.length - 1;
         rb.track.reverse();
+        rb.track.forEach((p) => { delete p.t; }); // reversed timestamps would be non-monotonic
         rb.notes.forEach((n) => { n.idx = last - n.idx; n.road_type_out = n.road_type_in; });
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;

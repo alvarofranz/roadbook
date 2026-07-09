@@ -92,7 +92,7 @@ window.RBGpxRecorder = (() => {
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
             ${rateField}
             <label class="muted small">${nameLabel}</label>
-            <input id="gxName" class="modal-in" type="text" value="${startName}">
+            <input id="gxName" class="modal-in" type="text" value="${RBesc(startName)}">
             <div class="btnrow between">
                 ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>

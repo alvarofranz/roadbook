@@ -10,7 +10,7 @@
     const t = RBt, esc = RBesc;
     // English first — it's the source/reference; unlike the others it lives in i18n.js (T.en),
     // exposed on RBi18nLangs.en, and its export delta targets that file, not an i18n.<lang>.js.
-    const LANGS = ['en', 'es', 'it', 'de', 'fr'];
+    const LANGS = Object.keys(window.RBi18nLangs);
     const ATTRS = ['data-i18n', 'data-i18n-html', 'data-i18n-ph', 'data-i18n-title', 'data-i18n-aria', 'data-i18n-tip', 'data-i18n-content'];
     const SEL = ATTRS.map((a) => '[' + a + ']').join(',');
     const LS_ON = 'rb_i18n_edit', LS_DELTA = 'rb_i18n_delta';

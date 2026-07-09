@@ -1151,7 +1151,7 @@
             <div class="progress"><div class="progress-bar" data-bar></div></div>
             <p class="muted small"><span data-pct>0</span>%</p>`, 'narrow');
         return {
-            set: (pct) => { const bar = d.q('[data-bar]'), pc = d.q('[data-pct]'); if (bar) bar.style.width = (pct || 0) + '%'; if (pc) pc.textContent = pct || 0; },
+            set: (pct) => { const bar = d.q('[data-bar]'), pc = d.q('[data-pct]'); if (bar) bar.style.setProperty('--progress', (pct || 0) + '%'); if (pc) pc.textContent = pct || 0; },
             close: d.close,
         };
     }
@@ -1357,7 +1357,7 @@
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
         const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
-            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : 'CAP DISABLED'}</button>`;
+            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : esc(t('CAP disabled'))}</button>`;
         return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
     };
     function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i], i); }

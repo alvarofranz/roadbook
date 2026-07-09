@@ -10,6 +10,7 @@
 
     const here = (document.currentScript && document.currentScript.src) || location.href;
     const ROOT = here.replace(/assets\/js\/app\.js.*$/, ''); // .../roadbook/
+    window.RB_ROOT = ROOT;
     // Login URL carrying a ?next= return path to the current page (omitted on /account/ itself);
     // after login, account.js sends the user back to that safe same-origin path (#105).
     window.RBLoginUrl = () => ROOT + 'account/' + (/\/account\/?$/.test(location.pathname) ? '' : '?next=' + encodeURIComponent(location.pathname + location.search + location.hash));
@@ -446,7 +447,7 @@
     // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
     // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
     window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
-        `<a class="gallery-card" href="${href}">`
+        `<a class="gallery-card" href="${RBesc(href)}">`
         + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
         + overlays
@@ -657,6 +658,7 @@
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
         const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); a.remove();
+        if (typeof data !== 'string') setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
     // Upload one image (downscaled first) to upload.php. `fields` = extra form fields.
     // POST a multipart upload to upload.php. Photos go through the image downscale; voice

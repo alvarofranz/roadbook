@@ -94,7 +94,7 @@
             'Search icons…': 'Cerca icone…', 'Yours (in this roadbook)': 'Tuoi (in questo roadbook)',
             'Warning signs': 'Segnali di pericolo', 'Priority signs': 'Segnali di precedenza', 'Prohibitions & limits': 'Divieti e limiti', 'Mandatory signs': 'Segnali di obbligo',
             'Terrain': 'Terreno', 'Info': 'Info', 'References': 'Riferimenti',
-            'Road': 'Strada', 'Danger': 'Pericolo', 'Red CAP': 'CAP rosso',
+            'Road': 'Strada', 'Danger': 'Pericolo', 'Red CAP': 'CAP rosso', 'CAP disabled': 'CAP disattivato',
             'CAP type': 'Tipo CAP', 'Exit': 'Uscita', 'Average': 'Medio', 'Calculated': 'Calcolato', 'Turning': 'Che gira', 'End of limit': 'Fine limite', 'END': 'FINE',
             'Default': 'Standard', 'Motorway': 'Autostrada', 'Asphalt': 'Asfalto', 'Track': 'Pista', 'Off-piste': 'Fuoripista',
             'Draw on the map': 'Disegna sulla mappa', 'Sketch a route tapping the map': 'Traccia un percorso toccando la mappa',

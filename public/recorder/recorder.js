@@ -70,7 +70,7 @@
             if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>', t('Resume'))) {
                 RBGpxRecorder.resume(session.fileName);
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
-                track = []; wpts = session.wpts || []; photos = session.photos || []; draftId = session.draftId || 0;
+                track = []; wpts = session.wpts || []; photos = (session.photos || []).filter((p) => !p.local); draftId = session.draftId || 0;
                 updateRecUi(); // photo/audio buttons follow sign-in, not the draft (#147 F2)
                 startMeter(); renderPauseBtn(); refreshMap(); renderBar();
                 return;
