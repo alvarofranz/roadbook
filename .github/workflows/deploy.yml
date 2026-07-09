@@ -48,6 +48,7 @@ jobs:
           resp=$(curl -fsS --max-time 120 -X POST \
             -H "X-Admin-Key: $DEPLOY_KEY" \
             -H "Accept: application/json" \
+            -H "X-Deploy-Sha: $GITHUB_SHA" \
             "$DEPLOY_URL")
           echo "$resp"
           echo "$resp" | grep -qE '"ok"[[:space:]]*:[[:space:]]*true' || { echo "::error::Deploy reported failure"; exit 1; }

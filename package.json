@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "RDBK.app — native shells (iOS + Android) for the rdbk.app PWA, via Capacitor. The web app in public/ stays the single source of truth.",
-  "license": "WTFPL",
+  "license": "MIT",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

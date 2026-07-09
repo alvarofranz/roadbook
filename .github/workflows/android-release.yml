@@ -37,6 +37,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Test (syntax-check + unit tests)
+        run: |
+          for f in $(find public -name '*.js' ! -name '*.min.js'); do node --check "$f"; done
+          npm test
+
       # Rebuild the gitignored client assets the bundle needs, straight from the live site (public
       # by design — same as the iOS ci_post_clone), so the app matches exactly what production serves.
       - name: Rehydrate config.js + FontAwesome from the live site
@@ -70,12 +75,22 @@ jobs:
             echo "keyPassword=$KEY_PASS"
           } > android/keystore.properties
 
-      - name: Compute version (code from the run number, name from the tag)
+      - name: Compute version (name from the tag, code from tag components)
         id: ver
         run: |
           TAG="${GITHUB_REF_NAME}"
-          case "$TAG" in android-*) VN="${TAG#android-}" ;; *) VN="1.0.$GITHUB_RUN_NUMBER" ;; esac
-          VC=$((100 + GITHUB_RUN_NUMBER))
+          case "$TAG" in android-*)
+            VN="${TAG#android-}"
+            MAJ=$(echo "$VN" | cut -d. -f1)
+            MIN=$(echo "$VN" | cut -d. -f2)
+            PAT=$(echo "$VN" | cut -d. -f3)
+            VC=$((MAJ * 10000 + MIN * 100 + PAT))
+            ;;
+          *)
+            VN="1.0.$GITHUB_RUN_NUMBER"
+            VC=$((100 + GITHUB_RUN_NUMBER))
+            ;;
+          esac
           echo "name=$VN" >> "$GITHUB_OUTPUT"
           echo "code=$VC" >> "$GITHUB_OUTPUT"
           echo "Building versionName=$VN versionCode=$VC"

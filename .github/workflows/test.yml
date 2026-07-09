@@ -1,14 +1,12 @@
 name: Tests
 
-# Unit tests (Vitest) + a syntax check of the shared front-end scripts. The
-# quality signal for branches and PRs. `main` is intentionally excluded: the
-# Deploy workflow runs the same suite there as a gate before production, so
-# testing it here too would just duplicate that job.
+# Unit tests (Vitest) + a syntax check of the shared front-end scripts. Runs
+# on every pull request (and manual dispatch for branch testing). `main` is
+# covered by the Deploy workflow's gate, so it is not duplicated here.
 
 on:
-  push:
-    branches-ignore: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:

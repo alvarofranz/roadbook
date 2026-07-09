@@ -35,7 +35,12 @@ echo "ci_post_clone: fetched config.js"
 FA="public/assets/fontawesome"
 mkdir -p "$FA/css" "$FA/webfonts"
 curl -fsSL "$SITE/assets/fontawesome/css/all.min.css" -o "$FA/css/all.min.css"
-for font in $(grep -o 'webfonts/[A-Za-z0-9.-]*\.\(woff2\|ttf\)' "$FA/css/all.min.css" | sort -u); do
+fonts=$(grep -oE 'webfonts/[A-Za-z0-9.-]*\.(woff2|ttf)' "$FA/css/all.min.css" | sort -u)
+if [ -z "$fonts" ]; then
+  echo "ci_post_clone: ERROR — no FontAwesome webfont references found in CSS" >&2
+  exit 1
+fi
+for font in $fonts; do
   curl -fsSL "$SITE/assets/fontawesome/$font" -o "$FA/$font"
 done
 echo "ci_post_clone: fetched fontawesome ($(ls "$FA/webfonts" | wc -l | tr -d ' ') webfonts)"
