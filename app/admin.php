@@ -365,6 +365,24 @@ function admin_set_role(array $user, array $d): void {
     json_out(['ok' => true]);
 }
 
+// Admin: create a user directly (#242). Same rules as self-service registration
+// (validate_new_account), but no email round-trip: the account is born verified, and the
+// temporary password the admin hands over is flagged must_change_password — the user
+// replaces it at the first sign-in.
+function admin_create_user(array $user, array $d): void {
+    $first = mb_substr(trim((string)($d['first_name'] ?? '')), 0, 80);
+    $last  = mb_substr(trim((string)($d['last_name'] ?? '')), 0, 80);
+    $username = trim((string)($d['username'] ?? ''));
+    $email = strtolower(trim((string)($d['email'] ?? '')));
+    $pass  = (string)($d['password'] ?? '');
+    validate_new_account($first, $last, $username, $email, $pass);
+    db()->prepare('INSERT INTO users (first_name, last_name, username, email, password_hash, email_verified, must_change_password) VALUES (?,?,?,?,?,1,1)')
+        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+    $id = (int)db()->lastInsertId();
+    log_activity((int)$user['id'], 'admin_create_user', 'user #' . $id . ' (@' . $username . ')');
+    json_out(['ok' => true, 'id' => $id]);
+}
+
 function admin_delete_user(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     if ($id === (int)$user['id']) fail('Use your profile to delete your own account.');

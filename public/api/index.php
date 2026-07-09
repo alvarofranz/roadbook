@@ -40,6 +40,7 @@ try {
         case 'admin_verify':    admin_verify(require_admin(), $d); break;
         case 'admin_block':     admin_block(require_admin(), $d); break;
         case 'admin_update':    admin_update_user(require_admin(), $d); break;
+        case 'admin_create':    admin_create_user(require_admin(), $d); break;
         case 'admin_delete':    admin_delete_user(require_admin(), $d); break;
         case 'admin_activity':  admin_activity(require_admin(), $d); break;
         case 'admin_settings':  admin_settings(require_admin()); break;

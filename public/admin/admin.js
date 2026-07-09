@@ -231,9 +231,46 @@
         sel.onchange = () => { page = 1; load(); };
     }
 
+    // Create a user directly (#242). The account is born verified with a temporary
+    // password — the user replaces it at the first sign-in.
+    function createUser() {
+        const m = RBModal(`<h2>${esc(t('Create user'))}</h2>
+            <label class="field-label" for="cuFirst">${esc(t('First name'))}</label>
+            <input id="cuFirst" class="field" autocomplete="off">
+            <label class="field-label" for="cuLast">${esc(t('Last name'))}</label>
+            <input id="cuLast" class="field" autocomplete="off">
+            <label class="field-label" for="cuUser">${esc(t('Username'))}</label>
+            <input id="cuUser" class="field" autocomplete="off">
+            <label class="field-label" for="cuEmail">${esc(t('Email'))}</label>
+            <input id="cuEmail" type="email" class="field" autocomplete="off">
+            <label class="field-label" for="cuOrg">${esc(t('Organization'))}</label>
+            <input id="cuOrg" class="field" autocomplete="off" maxlength="120" list="cuOrgSuggest">
+            <datalist id="cuOrgSuggest"></datalist>
+            <label class="field-label" for="cuPass">${esc(t('Password'))}</label>
+            <input id="cuPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Temporary password'))}">
+            <p class="hint">${esc(t('The user must change this at first login.'))}</p>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="cuSave">${esc(t('Create'))}</button></div>`, 'narrow', null, { dismissable: false });
+        RBOrgDatalist(m.q('#cuOrgSuggest'));
+        m.q('[data-cancel]').onclick = m.close;
+        m.q('#cuSave').onclick = async () => {
+            const first = m.q('#cuFirst').value.trim();
+            const last = m.q('#cuLast').value.trim();
+            const username = m.q('#cuUser').value.trim();
+            const email = m.q('#cuEmail').value.trim();
+            const pass = m.q('#cuPass').value;
+            if (!first || !last || !username || !email || !pass) { toast(t('All fields are required.')); return; }
+            const x = await api('admin_create', { first_name: first, last_name: last, username, email, password: pass });
+            if (!x.ok) return toast(x.error || t('Could not create user.'));
+            m.close();
+            load();
+        };
+        setTimeout(() => m.q('#cuFirst').focus(), 50);
+    }
+
     async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
+        $('userCreate').onclick = createUser;
         loadEventFilter();
         load();
     }
