@@ -171,6 +171,17 @@ function verify_turnstile(?string $token): void {
     if (empty($res['success'])) fail('Challenge failed. Please try again.', 403);
 }
 
+function validate_new_account(string $first, string $last, string $username, string $email, string $pass): void {
+    if ($first === '' || $last === '') fail('First and last name are required.');
+    if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
+    if (strcasecmp($username, GRAVEYARD_USERNAME) === 0) fail('That username or email is already in use.'); // reserved for the deleted-user system account
+    if (!valid_email($email)) fail('Please enter a valid email.');
+    if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
+    $st = db()->prepare('SELECT id FROM users WHERE username = ? OR email = ?');
+    $st->execute([$username, $email]);
+    if ($st->fetch()) fail('That username or email is already in use.');
+}
+
 function register_user(array $d): void {
     rate_limit('reg_' . client_ip(), 10, 3600);
     $first = trim((string)($d['first_name'] ?? ''));
@@ -178,18 +189,10 @@ function register_user(array $d): void {
     $username = trim((string)($d['username'] ?? ''));
     $email = strtolower(trim((string)($d['email'] ?? '')));
     $pass  = (string)($d['password'] ?? '');
-    if ($first === '' || $last === '') fail('First and last name are required.');
-    if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
-    if (strcasecmp($username, GRAVEYARD_USERNAME) === 0) fail('That username or email is already in use.'); // reserved for the deleted-user system account (#234)
-    if (!valid_email($email)) fail('Please enter a valid email.');
-    if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
+    validate_new_account($first, $last, $username, $email, $pass);
     if ($pass !== (string)($d['password_confirm'] ?? '')) fail("Passwords don't match.");
     if (empty($d['accept_terms'])) fail('You must accept the Terms of Use to register.');
     verify_turnstile($d['turnstile'] ?? null);
-
-    $st = db()->prepare('SELECT id FROM users WHERE username = ? OR email = ?');
-    $st->execute([$username, $email]);
-    if ($st->fetch()) fail('That username or email is already in use.');
 
     $raw = new_token();
     // Stamp the consent server-side: NOW() + the authoritative TERMS_VERSION (never the client's).
