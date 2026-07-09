@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.08-7">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.09-1">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.08-7">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.09-1">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -173,6 +173,7 @@
         .rec-status { display: flex; align-items: center; gap: .5rem; }
         .rec-btns { display: flex; gap: .45rem; }
         .rec-btns .btn { flex: 1; justify-content: center; padding: .6rem .4rem; }
+        .rec-pending { color: var(--muted); font-size: .82rem; text-align: center; }
         .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--track); animation: recpulse 1.2s infinite; flex-shrink: 0; }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
         .rb-actions .btn-group { flex-wrap: wrap; } /* phones: action buttons wrap instead of overflowing off-screen */
@@ -279,6 +280,7 @@
                 <button class="btn btn-ghost" id="recWaypoint" data-i18n="Waypoint"><i class="fa-solid fa-location-dot"></i> Waypoint</button>
                 <button class="btn btn-primary" id="recStop" data-i18n="Finish"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
             </div>
+            <div id="recPending" class="rec-pending" hidden></div>
         </div>
         <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
         <input id="addGpxFile" type="file" accept=".gpx" hidden>
@@ -427,21 +429,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.08-7"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.08-7"></script>
-<script src="../assets/js/rbzip.js?v=2026.07.08-7"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.08-7"></script>
-<script src="../assets/js/cover-map.js?v=2026.07.08-7"></script>
-<script src="../assets/js/note-canvas.js?v=2026.07.08-7"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.07.08-7"></script>
-<script src="../assets/js/challenges.js?v=2026.07.08-7"></script>
-<script src="../assets/js/rb-transcribe.js?v=2026.07.08-7"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.08-7"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.08-7"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.08-7"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.08-7"></script>
-<script src="../assets/js/i18n.js?v=2026.07.08-7"></script>
-<script src="../assets/js/app.js?v=2026.07.08-7"></script>
-<script src="editor.js?v=2026.07.08-7"></script>
+<script src="../assets/js/config.js?v=2026.07.09-1"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.09-1"></script>
+<script src="../assets/js/rbzip.js?v=2026.07.09-1"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.09-1"></script>
+<script src="../assets/js/cover-map.js?v=2026.07.09-1"></script>
+<script src="../assets/js/note-canvas.js?v=2026.07.09-1"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.07.09-1"></script>
+<script src="../assets/js/challenges.js?v=2026.07.09-1"></script>
+<script src="../assets/js/rb-media-queue.js?v=2026.07.09-1"></script>
+<script src="../assets/js/rb-transcribe.js?v=2026.07.09-1"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.09-1"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.09-1"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.09-1"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.09-1"></script>
+<script src="../assets/js/i18n.js?v=2026.07.09-1"></script>
+<script src="../assets/js/app.js?v=2026.07.09-1"></script>
+<script src="editor.js?v=2026.07.09-1"></script>
 </body>
 </html>

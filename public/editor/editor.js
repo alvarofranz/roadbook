@@ -806,6 +806,7 @@
 
     /* ---------- record / adjust route (live GPS) ---------- */
     let recTrack = [], recWpts = [], recPhotos = [], recWatch = null, recLast = null, recHere = null, recWake = null, recPaused = false;
+    let lastFixT = 0, mediaSeq = 0;
     let draftId = 0, adjP1 = -1, adjP2 = -1; // adjust: entry/exit index on the base track
     // Light 3-point moving average — trims micro-zigzag from weak-signal fixes.
     function smoothTrack(pts) {
@@ -854,6 +855,7 @@
         if (map) map.setPosition(here.lat, here.lon, true);
         if (RB.recJunkFix(c.accuracy)) { updateRecStats(c.accuracy); return; }
         recHere = here;
+        lastFixT = pos.timestamp || Date.now();
         if (recPaused) { updateRecStats(c.accuracy); return; }
         const step = RB.recStepM(c.accuracy); // accuracy-scaled sampling (shared with the Recorder)
         const n = nearestTrackIdx(here);
@@ -869,7 +871,7 @@
     }
     // drop a waypoint (shared by the button and "convert photo → waypoint")
     function dropWaypoint(lat, lon, text) {
-        const note = { lat, lon, name: 'wpt' + (recWpts.length + 1), num: recWpts.length + 1, text: text || '' };
+        const note = { lat, lon, name: 'wpt' + (recWpts.length + 1), num: recWpts.length + 1, text: text || '', t: lastFixT || null };
         recWpts.push(note);
         updateRecStats();
         return note;
@@ -886,16 +888,17 @@
         if (!draftId) return toast('Save to your profile first.');
         $('recPhotoFile').click();
     };
-    $('recPhotoFile').onchange = async (e) => {
+    $('recPhotoFile').onchange = (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f || !draftId) return;
+        const lat = recHere ? recHere.lat : null, lon = recHere ? recHere.lon : null;
         const fields = { type: 'photo', roadbook: String(draftId) };
-        if (recHere) { fields.lat = recHere.lat; fields.lon = recHere.lon; }
-        toast('Uploading photo…');
-        const r = await RBUpload(fields, f);
-        if (!r.ok) return toast(r.error || 'Photo failed.');
-        recPhotos.push({ id: r.id, url: RBMediaSrc(r.url), lat: r.lat, lon: r.lon }); if (map) map.setPhotos(recPhotos);
-        const lat = r.lat != null ? r.lat : (recHere && recHere.lat), lon = r.lon != null ? r.lon : (recHere && recHere.lon);
-        RBPhotoPreview(r.url, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
+        if (lat != null) { fields.lat = lat; fields.lon = lon; }
+        const token = 'p' + Date.now() + '_' + (++mediaSeq);
+        const localUrl = URL.createObjectURL(f);
+        recPhotos.push({ token, url: localUrl, lat, lon, local: true, pending: true }); if (map) map.setPhotos(recPhotos);
+        updateRecStats();
+        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
+        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
     };
     $('recStop').onclick = () => {
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
@@ -1912,6 +1915,28 @@
         Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
     }
 
+
+    /* ---------- offline-first media queue (#147) — photos captured during "Adjust on the trail"
+        are buffered in IndexedDB with retry, so a network drop mid-trail never loses a shot.
+        The Editor always has a draftId when the camera is active, so no lazy-draft resolver
+        is needed; the OnDone reconciles the optimistic local pin to the server URL. */
+    RBMediaQueue.init({
+        onChange: (n) => {
+            const el = $('recPending'); if (!el) return;
+            el.hidden = !n;
+            el.textContent = n ? (n + ' ' + t('awaiting upload')) : '';
+        },
+        onDone: (item, res) => {
+            if (item.kind !== 'photo') return;
+            const p = recPhotos.find((x) => x.token === item.token);
+            if (!p) return;
+            if (p.local && p.url) { try { URL.revokeObjectURL(p.url); } catch (e) {} }
+            p.id = res.id; p.url = RBMediaSrc(res.url); p.local = false; p.pending = false;
+            if (res.lat != null) { p.lat = res.lat; p.lon = res.lon; }
+            if (map) map.setPhotos(recPhotos);
+            updateRecStats();
+        },
+    });
 
     /* ---------- startup: trip handoff → draft → recording → challenge/?rb ---------- */
     renderIcons();
