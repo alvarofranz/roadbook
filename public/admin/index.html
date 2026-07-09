@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.09-3">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.09-3">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.09-4">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.09-4">
     <style>
         /* Column table; min-width keeps the columns intact and the shared .table-scroll wrapper
            scrolls horizontally on narrow/medium screens instead of squeezing the layout. */
@@ -21,15 +21,15 @@
         .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; word-break: break-word; }
         .u-quota { color: var(--muted); font-size: .82rem; } /* second line of the Disk cell: assigned space */
         .u-badge { display: inline-block; font-size: .66rem; font-weight: 800; padding: .05rem .4rem; border-radius: 6px; letter-spacing: .03em; }
-        .u-admin { background: var(--sand); color: #14100a; }
+        .u-admin { background: var(--sand); color: var(--on-sand); }
         .u-organizer { background: rgba(90, 169, 255, .2); color: #5aa9ff; }
         .u-unverified { background: rgba(255, 90, 69, .18); color: var(--track); }
         .u-blocked { background: var(--track); color: #fff; }
         .u-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
         .u-actions .btn { padding: .25rem .55rem; font-size: .78rem; }
-        .users-toolbar { display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; color: var(--muted); }
+        .users-toolbar { margin-bottom: .7rem; color: var(--muted); }
         .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
-        .users-toolbar .users-event-filter { flex: none; width: auto; max-width: 16rem; } /* the per-event people filter */
+        .users-toolbar .users-event-filter { flex: none; width: auto; max-width: 16rem; }
         /* the per-user roadbook list needs more room than the default wide modal; let titles wrap */
         .rb-list { max-width: min(820px, 94vw); }
         .rb-list .act-table td:first-child { white-space: normal; }
@@ -43,7 +43,7 @@
     <h1 data-i18n="User management">User management</h1>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
     <div id="usersBox" hidden>
-        <div class="users-toolbar">
+        <div class="toolbar users-toolbar">
             <i class="fa-solid fa-magnifying-glass"></i><input type="search" id="userSearch" class="field" placeholder="Search users…" data-i18n-ph="Search users…" autocomplete="off" spellcheck="false">
             <input type="text" id="userOrgFilter" class="field" placeholder="Organization" data-i18n-ph="Organization" autocomplete="off" style="max-width:180px">
             <select id="userEventFilter" class="field users-event-filter" aria-label="Events" data-i18n-aria="Events"></select>
@@ -65,13 +65,13 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=2026.07.09-3"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.09-3"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.09-3"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.09-3"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.09-3"></script>
-<script src="../assets/js/i18n.js?v=2026.07.09-3"></script>
-<script src="../assets/js/app.js?v=2026.07.09-3"></script>
-<script src="admin.js?v=2026.07.09-3"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.09-4"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.09-4"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.09-4"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.09-4"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.09-4"></script>
+<script src="../assets/js/i18n.js?v=2026.07.09-4"></script>
+<script src="../assets/js/app.js?v=2026.07.09-4"></script>
+<script src="admin.js?v=2026.07.09-4"></script>
 </body>
 </html>

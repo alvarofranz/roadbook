@@ -283,7 +283,7 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .rb-switch .rb-switch-track { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .15s ease; flex-shrink: 0; }
 .rb-switch .rb-switch-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s ease, background .15s ease; }
 .rb-switch.on .rb-switch-track { background: var(--sand); }
-.rb-switch.on .rb-switch-knob { transform: translateX(14px); background: #14100a; }
+.rb-switch.on .rb-switch-knob { transform: translateX(14px); background: var(--on-sand); }
 /* a feature card for an upcoming capability: dimmed, dashed, with a "Coming soon" pill */
 .flow .step.soon { border-style: dashed; opacity: .85; }
 .flow .step.soon:hover { transform: none; border-color: var(--line); }   /* not a live tool — no clickable lift */
@@ -302,11 +302,11 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .gallery-card { position: relative; display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
 .gallery-card:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
-/* copy-share-link button overlaid on a public roadbook card */
-.card-copy { position: absolute; top: .5rem; right: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
+/* overlay button on a gallery card (copy-link + admin-force-private) */
+.card-btn { position: absolute; top: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
+.card-copy { right: .5rem; }
 .card-copy:hover { background: var(--sand); color: var(--on-sand); }
-/* admin-only force-private control on a public card (top-left, away from the copy button) */
-.card-unpub { position: absolute; top: .5rem; left: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
+.card-unpub { left: .5rem; }
 .card-unpub:hover { background: var(--track); color: #fff; }
 .gallery-card .thumb { aspect-ratio: 16/10; width: 100%; object-fit: cover; background: var(--card-2); display: block; }
 .gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
@@ -545,8 +545,9 @@ button.rb-badge:hover { background: var(--card); }
 .rb-status-public { color: var(--ok); border-color: var(--ok); }
 .rb-status:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
 .rb-status option { color: var(--text); background: var(--card-2); }
-/* My roadbooks / Editor landing: search box + paged rows + pager */
-.rb-toolbar { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .35rem .8rem; margin-bottom: .6rem; color: var(--muted); }
+/* shared search / filter toolbar (card style) */
+.rb-toolbar, .toolbar { display: flex; align-items: center; gap: .5rem; }
+.rb-toolbar { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .35rem .8rem; margin-bottom: .6rem; color: var(--muted); }
 .rb-toolbar .rb-search { flex: 1; min-width: 0; margin: 0; border: 0; background: none; padding: .35rem 0; }
 .rb-usage { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; } /* My-roadbooks storage indicator */
 /* Admin activity-inspection timeline (#86) */
@@ -561,7 +562,6 @@ button.rb-badge:hover { background: var(--card); }
 .site-banner-warning { background: #4a3b12; border-bottom: 1px solid #8a6d1a; color: #ffe9a8; }
 .site-banner-x { background: none; border: 0; color: inherit; cursor: pointer; opacity: .7; padding: .2rem; }
 .site-banner-x:hover { opacity: 1; }
-.rb-rows { display: flex; flex-direction: column; gap: .6rem; }
 /* the one chevron pager, everywhere a list pages (public listings, admin, saved roadbooks) */
 .pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
 .pager .btn { margin: 0; width: auto; }
@@ -580,9 +580,6 @@ button.rb-badge:hover { background: var(--card); }
 /* Public listing pages (Roadbooks · Events): heading + boxed search toolbar */
 .rbp-head { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
 .rbp-head h1 { margin: 0; font-size: 1.8rem; }
-.rbp-toolbar { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .5rem .75rem; margin: .8rem 0 1.2rem; }
-.rbp-toolbar i { color: var(--muted); }
-.rbp-search { flex: 1; background: none; border: 0; color: var(--text); font: inherit; outline: none; }
 /* Admin event pages: one label/value/actions line */
 .ev-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; }
 .ev-line .meta { flex: 1; min-width: 10rem; }

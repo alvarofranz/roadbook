@@ -12,8 +12,8 @@
     const card = (r) => RBGalleryCard({
         href: `/challenge/${encodeURIComponent(r.slug)}`, thumb: r.thumb, title: r.title,
         meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
-        overlays: `<button type="button" class="card-copy" data-copy="${esc(r.slug)}" title="${esc(t('Copy link'))}" aria-label="${esc(t('Copy link'))}"><i class="fa-solid fa-link"></i></button>`
-            + (isAdmin ? `<button type="button" class="card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-lock"></i></button>` : ''),
+        overlays: `<button type="button" class="card-btn card-copy" data-copy="${esc(r.slug)}" title="${esc(t('Copy link'))}" aria-label="${esc(t('Copy link'))}"><i class="fa-solid fa-link"></i></button>`
+            + (isAdmin ? `<button type="button" class="card-btn card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-lock"></i></button>` : ''),
     });
 
     // the overlay buttons live inside the card link → don't let their click navigate
@@ -44,9 +44,9 @@
 
     Promise.all([RBChallenges.listPublic(), RBApi('config').catch(() => ({}))]).then(([list, cfg]) => {
         isAdmin = !!(cfg && cfg.user && cfg.user.is_admin); // admins get a force-private control per card
-        if (list === null) { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; if (search) search.closest('.rbp-toolbar').hidden = true; return; } // failed ≠ empty (#218)
+        if (list === null) { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; return; } // failed ≠ empty (#218)
         all = list;
-        if (!all.length) { grid.innerHTML = `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`; if (search) search.closest('.rbp-toolbar').hidden = true; return; }
+        if (!all.length) { grid.innerHTML = `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; return; }
         render();
     }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; });
 })();

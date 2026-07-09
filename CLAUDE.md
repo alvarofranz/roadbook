@@ -151,6 +151,10 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   visual UI the harness can't unit-test, say so explicitly and state what you verified instead
   (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
   untested logic.
+- **After making changes, list what to test.** Before asking the user to deploy, propose a
+  short checklist of specific things they should verify on the dev server (`http://localhost:8806`):
+  what pages to visit, what interactions to try, and what the expected result is. Keep it
+  concrete — name the URLs and the visible behaviour to check.
 - **Commit messages are changelogs** — short English title + bullet points.
 - **Every deploy updates the docs too.** Before pushing a change to `main`, check whether it
   makes any documentation stale and update it in the same release: the architecture docs in
