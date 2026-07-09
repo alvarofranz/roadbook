@@ -84,6 +84,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   also close the issue, do it in the same step: `gh issue close <n> --repo alvarofranz/roadbook`.
   The `in lavorazione` label must reflect only what is genuinely being worked right now — never
   an issue whose fix is already deployed (or closed).
+- **Epic sub-issues → update the parent epic when a sub-issue closes.** When closing a
+  sub-issue of an epic, drop a short comment on the parent epic listing what shipped
+  and what remains: `gh issue comment <epic> --repo alvarofranz/roadbook --body "…"`.
+  The comment must name the closed sub-issue and list every still-open sub-issue so the
+  next person knows exactly what to pick up. Do this in the same step as closing the
+  sub-issue — never leave the epic stale.
 - **Process/architecture changes need an Alvaro review — ASK FIRST.** Any change that
   touches server-side processes (deploy, CI, the PHP API, the DB schema/migrations) or the
   project's architecture or way of working MUST NOT go straight to `main` on your own:
