@@ -166,6 +166,14 @@ from the box (`dev-shot`/`curl`), and only push once the user has tested (see *R
 There is no Mac/local dev and no Docker — the dev clone on the box IS the development
 environment.
 
+**On-box browser tools** — use them only when the task really needs to see or drive the
+page (`curl` first, it's cheaper): `dev-shot <url> [out.png]` screenshot ·
+`dev-shot --console <url>` JS console + uncaught errors · `dev-shot --dom <url>` rendered
+post-JS DOM · `dev-drive <script.js>` interactive headless browser (puppeteer-core) to log
+in as a user, click, fill forms — the script exports
+`module.exports = async (page, browser) => {…}` and the page's console/errors are echoed
+automatically.
+
 `node --check <file>.js` checks a file's syntax. **Unit tests** run anywhere Node is installed:
 `npm install` then `npm test`
 (Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
