@@ -61,6 +61,45 @@ describe('i18n cross-language key parity', () => {
     }
 });
 
+describe('i18n — English key parity + all-page data-i18n keys', () => {
+    const langs = loadLangs();
+    // Also load the English dict (i18n.js attaches window.RBi18nLangs.en)
+    loadLangs();
+    eval(read('public/assets/js/i18n.js'));
+    const enDict = window.RBi18nLangs.en || {};
+
+    it('every English source key is translated in every language', () => {
+        const enKeys = Object.keys(enDict);
+        expect(enKeys.length).toBeGreaterThan(50);
+        for (const lang of LANGS) {
+            const missing = enKeys.filter((k) => !(k in langs[lang]));
+            expect(missing).toEqual([]);
+        }
+    });
+
+    // Scan EVERY .html under public/ for data-i18n attributes, not just the /features/ pages.
+    it('every data-i18n key used anywhere in the app is defined in every language', () => {
+        const re = /data-i18n(?:-html|-ph|-title|-aria|-tip)?="([^"]+)"/g;
+        const allKeys = new Set();
+        const walk = (dir) => {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const p = dir + '/' + entry.name;
+                if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') walk(p);
+                else if (entry.isFile() && entry.name.endsWith('.html')) {
+                    let m;
+                    while ((m = re.exec(read(p)))) allKeys.add(m[1]);
+                }
+            }
+        };
+        walk('public');
+        expect(allKeys.size).toBeGreaterThan(100);
+        for (const lang of LANGS) {
+            const missing = [...allKeys].filter((k) => !(k in langs[lang]));
+            expect(missing).toEqual([]);
+        }
+    });
+});
+
 describe('i18n apply round-trip', () => {
     beforeAll(() => {
         delete window.RBi18nLangs;

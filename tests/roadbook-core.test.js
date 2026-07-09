@@ -791,3 +791,107 @@ describe('roadbook publication status (#96)', () => {
         expect(RB.roadbookStatus(null)).toBe('draft');
     });
 });
+
+describe('appwptFromImport — GPX icon recovery', () => {
+    it('recognises an OSMAnd icon back to the RDBK icon', () => {
+        // I01_arrivo → i01_arrivo (OSMAnd key is lowercase)
+        const r = RB.appwptFromImport('', 'i01_arrivo', '');
+        expect(r.icon).toBe('I01_arrivo.png');
+    });
+    it('recognises a Garmin sym back to the RDBK icon (fallback)', () => {
+        const r = RB.appwptFromImport('Arrival', '', '');
+        expect(r.icon).toBe('I01_arrivo.png');
+    });
+    it('returns danger:3 for Dangerous Area / special_marker', () => {
+        expect(RB.appwptFromImport('Dangerous Area', '', '')).toEqual({ danger: 3 });
+        expect(RB.appwptFromImport('', 'special_marker', '')).toEqual({ danger: 3 });
+    });
+    it('returns appwpt for an unrecognised but valid sym+osmandIcon (round-trip passthrough)', () => {
+        const r = RB.appwptFromImport('Restaurant', 'custom_icon', '#ff0000');
+        expect(r.appwpt).toBeTruthy();
+        expect(r.appwpt.sym).toBe('Restaurant');
+        expect(r.appwpt.osmandIcon).toBe('custom_icon');
+        expect(r.appwpt.color).toBe('#ff0000');
+    });
+    it('derives the OSMAnd icon from the Garmin sym if neither is recognised', () => {
+        // "tall tower" → osmandIcon "man_made_mast" via SYM_OSMAND table
+        const r = RB.appwptFromImport('tall tower', '', '');
+        expect(r.appwpt).toBeTruthy();
+        expect(r.appwpt.osmandIcon).toBe('man_made_mast');
+        expect(r.appwpt.sym).toBe('tall tower');
+    });
+    it('derives the colour from a Garmin sym with a colour word', () => {
+        const r = RB.appwptFromImport('Circle, Green', '', '');
+        expect(r.appwpt.color).toBe('#00842b');
+    });
+    it('returns {} for a plain waypoint with no icon info', () => {
+        expect(RB.appwptFromImport('', '', '')).toEqual({});
+    });
+});
+
+describe('parseOpenRally — fallback paths and tulipToDataURL', () => {
+    const GPX_EMPTY = '<?xml version="1.0"?><gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1" xmlns:openrally="http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3"></gpx>';
+
+    it('warns placeholderTrack when the file has no trkpt and no real coords on wpts', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="0" lon="0"><name>N1</name><extensions><openrally:distance>5.2</openrally:distance></extensions></wpt></gpx>');
+        const { warnings, rb } = RB.parseOpenRally(xml);
+        expect(warnings).toContain('placeholderTrack');
+        expect(rb.notes).toHaveLength(1);
+    });
+
+    it('warns builtTrackFromWaypoints when no trk segment but wpts have real coords', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="45.5" lon="9.1"><name>N1</name></wpt><wpt lat="45.6" lon="9.2"><name>N2</name></wpt></gpx>');
+        const { warnings, rb } = RB.parseOpenRally(xml);
+        expect(warnings).toContain('builtTrackFromWaypoints');
+        expect(rb.track).toHaveLength(2);
+        expect(rb.notes).toHaveLength(2);
+    });
+
+    it('passes a real trk segment through without warnings', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<trk><trkseg><trkpt lat="45" lon="9"></trkpt><trkpt lat="46" lon="9"></trkpt></trkseg></trk>'
+            + '<wpt lat="45.2" lon="9.1"><name>N1</name></wpt></gpx>');
+        const { warnings, rb } = RB.parseOpenRally(xml);
+        expect(warnings).not.toContain('placeholderTrack');
+        expect(warnings).not.toContain('builtTrackFromWaypoints');
+        expect(rb.track).toHaveLength(2);
+    });
+
+    it('tulipToDataURL keeps an existing data: URI unchanged', () => {
+        // tulipToDataURL is internal — test via parseOpenRally with a data: URI tulip
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="45" lon="9"><extensions><openrally:tulip>data:image/svg+xml,%3Csvg%3E%3C/svg%3E</openrally:tulip></extensions></wpt></gpx>');
+        const { rb } = RB.parseOpenRally(xml);
+        expect(rb.notes[0].icons).toHaveLength(1);
+        expect(rb.notes[0].icons[0].cover).toBe(true);
+        expect(rb.notes[0].icons[0].name).toMatch(/^tulip-1\.svg$/);
+    });
+
+    it('tulipToDataURL wraps an SVG string into a data URI', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="45" lon="9"><extensions><openrally:tulip><svg></svg></openrally:tulip></extensions></wpt></gpx>');
+        const { rb } = RB.parseOpenRally(xml);
+        expect(rb.notes[0].icons[0].name).toBe('tulip-1.svg');
+        expect(rb.icons['tulip-1.svg']).toMatch(/^data:image\/svg\+xml/);
+    });
+
+    it('tulipToDataURL treats bare base64 as PNG', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="45" lon="9"><extensions><openrally:tulip>iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==</openrally:tulip></extensions></wpt></gpx>');
+        const { rb } = RB.parseOpenRally(xml);
+        expect(rb.notes[0].icons[0].name).toBe('tulip-1.png');
+        expect(rb.icons['tulip-1.png']).toMatch(/^data:image\/png;base64/);
+    });
+
+    it('captures non-consumed openrally: elements into the note for round-trip passthrough', () => {
+        const xml = GPX_EMPTY.replace('</gpx>',
+            '<wpt lat="45" lon="9"><extensions><openrally:customAttr foo="bar">hello</openrally:customAttr></extensions></wpt></gpx>');
+        const { rb } = RB.parseOpenRally(xml);
+        expect(rb.notes[0].openrally).toBeTruthy();
+        expect(rb.notes[0].openrally[0].tag).toBe('customAttr');
+        expect(rb.notes[0].openrally[0].text).toBe('hello');
+        expect(rb.notes[0].openrally[0].attrs.foo).toBe('bar');
+    });
+});
