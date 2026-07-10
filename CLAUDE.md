@@ -52,7 +52,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Edit freely, but WAIT for the user's test confirmation before deploying.** You may read and
   modify the code in the dev clone as needed. But do NOT commit/stamp/push (a push to
   `main` is a production deploy) until the user has tested the change (the dev clone serves the
-  working tree at `http://localhost:8806` via the SSH forward) and given an explicit go-ahead. Make
+  working tree at `https://rdbk.ddev.site` via the SSH forward) and given an explicit go-ahead. Make
   the change, say what to test, then stop — never pre-emptively deploy, even when the user asked
   for the feature.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
@@ -152,7 +152,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
   untested logic.
 - **After making changes, list what to test.** Before asking the user to deploy, propose a
-  short checklist of specific things they should verify on the dev server (`http://localhost:8806`):
+  short checklist of specific things they should verify on the dev server (`https://rdbk.ddev.site`):
   what pages to visit, what interactions to try, and what the expected result is. Keep it
   concrete — name the URLs and the visible behaviour to check.
 - **Commit messages are changelogs** — short English title + bullet points.
@@ -166,12 +166,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 **Full stack (PHP 8.1 + MariaDB) on the VPS dev clone:** development happens on the box in a
 dev clone next to prod — `/home/rdbk/dev/rdbk` (dev DB `rdbk_dev`), served privately on
 `127.0.0.1:8806`, loopback-only: view it from the box itself with
-`dev-shot http://localhost:8806/ out.png` (headless Chromium) or `curl -s http://localhost:8806/`. Prod
+`dev-shot https://rdbk.ddev.site/ out.png` (headless Chromium) or `curl -s https://rdbk.ddev.site/`. Prod
 stays untouched at `/home/rdbk/rdbk`. The dev clone reuses rdbk's prod PHP-FPM pool (same
 user), so the full stack is just the clone served on `127.0.0.1:8806` plus the `rdbk_dev` DB
 seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clone `vendor`,
 `config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
-and `BASE_URL=http://localhost:8806`. Edit the working tree, check `http://localhost:8806`
+and `BASE_URL=https://rdbk.ddev.site`. Edit the working tree, check `https://rdbk.ddev.site`
 from the box (`dev-shot`/`curl`), and only push once the user has tested (see *Releasing*).
 There is no Mac/local dev and no Docker — the dev clone on the box IS the development
 environment.
@@ -196,7 +196,7 @@ runs them on every push/PR via `.github/workflows/test.yml`.
 style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
 (in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
 in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
-`rdbk_dev`, BASE_URL `http://localhost:8806`) — there is no separate local PHP/MariaDB to set up.
+`rdbk_dev`, BASE_URL `https://rdbk.ddev.site`) — there is no separate local PHP/MariaDB to set up.
 
 ## Production DB (migrations + fresh dev DB)
 Two prod-DB workflows: **reseeding the dev DB from a fresh copy of prod** and

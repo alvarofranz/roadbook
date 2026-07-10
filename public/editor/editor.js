@@ -627,7 +627,7 @@
     let loadStarted = false;
     $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
-    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }, { reusable: true }); }; // #106: only reusable public roadbooks can be forked
+    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); };
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files);
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
