@@ -21,6 +21,14 @@
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
         $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';
+        const w = $('evWebsite');
+        if (e.organizer_website) { w.hidden = false; w.innerHTML = `<a href="${esc(e.organizer_website)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> ${esc(e.organizer_website.replace(/^https?:\/\//, ''))}</a>`; } else w.hidden = true;
+        const mapEl = $('evHqMap');
+        if (e.hq_lat != null && e.hq_lon != null) {
+            mapEl.hidden = false;
+            const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat] });
+            if (hqMap.map) new maplibregl.Marker({ color: '#e8b059' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
+        } else mapEl.hidden = true;
         const card = (r) => RBGalleryCard({
             href: `/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}`, thumb: r.thumb, title: r.title,
             meta: `${r.category ? `<span class="u-badge">${esc(r.category)}</span> ` : ''}@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,

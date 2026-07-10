@@ -21,17 +21,24 @@
         $('evHeading').textContent = ev ? ev.title : t('New event');
         $('evTitleIn').value = ev ? ev.title : '';
         $('evDescIn').value = (ev && ev.description) || '';
+        $('evWebsiteIn').value = (ev && ev.organizer_website) || '';
         $('evStart').value = (ev && ev.starts_on) || '';
         $('evEnd').value = (ev && ev.ends_on) || '';
         $('evPublic').checked = !!(ev && ev.is_public);
         const view = $('evView');
         view.hidden = !(ev && ev.is_public);
         if (ev) view.href = '/event/' + ev.slug;
+        // HQ map: place the pin if coordinates exist, otherwise default to Italy centre
+        const lat = (ev && ev.hq_lat != null) ? ev.hq_lat : 43.7, lon = (ev && ev.hq_lon != null) ? ev.hq_lon : 12.5;
+        if (ev && ev.hq_lat != null) setHqPin(ev.hq_lat, ev.hq_lon);
+        else if (hqMap && hqMap.map) hqMap.map.jumpTo({ center: [lon, lat], zoom: 5 });
     }
 
     async function save() {
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
+            organizer_website: $('evWebsiteIn').value.trim(),
+            hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
         });
@@ -179,6 +186,18 @@
         const x = await api('event_join_code', { event_id: id, clear: 1 });
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
+
+    /* ---------- headquarters map (#249) ---------- */
+    let hqMap = null, hqMarker = null;
+    function setHqPin(lat, lon) {
+        $('evHqLat').value = lat; $('evHqLon').value = lon;
+        if (hqMap && hqMap.map) {
+            if (hqMarker) hqMarker.remove();
+            hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
+        }
+    }
+    hqMap = new RBMap('evHqMap', { zoom: 5, center: [12.5, 43.7] });
+    if (hqMap.map) hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
 
     /* ---------- load ---------- */
     async function load() {

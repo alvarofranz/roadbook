@@ -102,6 +102,7 @@ function event_manage_get(array $user, array $d): void {
     $pp->execute([$id]);
     json_out(['ok' => true, 'event' => [
         'id' => $id, 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
+        'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
         'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
@@ -149,6 +150,9 @@ function event_save(array $user, array $d): void {
     $desc = substr(trim((string)($d['description'] ?? '')), 0, 5000);
     $starts = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['starts_on'] ?? '')) ? $d['starts_on'] : null;
     $ends = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['ends_on'] ?? '')) ? $d['ends_on'] : null;
+    $website = substr(trim((string)($d['organizer_website'] ?? '')), 0, 500);
+    $hqLat = isset($d['hq_lat']) && is_numeric($d['hq_lat']) ? (float)$d['hq_lat'] : null;
+    $hqLon = isset($d['hq_lon']) && is_numeric($d['hq_lon']) ? (float)$d['hq_lon'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
     // rights + slug first, then save — no transaction needed for a single UPDATE/INSERT.
     // The slug follows the current title (#194); excludeId keeps it unchanged when the slugified
@@ -156,11 +160,11 @@ function event_save(array $user, array $d): void {
     if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
     if ($id > 0) {
-        db()->prepare('UPDATE events SET title = ?, description = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
-            ->execute([$title, $desc, $starts, $ends, $isPublic, $slug, $id]);
+        db()->prepare('UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
+            ->execute([$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $slug, $id]);
     } else {
-        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $slug, $title, $desc, $starts, $ends, $isPublic]);
+        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic]);
         $id = (int)db()->lastInsertId();
         // the owner is also listed among the event's organizers
         db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
@@ -320,7 +324,7 @@ function events_public_list(): void {
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.slug, e.title, e.description, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -353,6 +357,7 @@ function event_public_get(array $d): void {
     ], $rb->fetchAll());
     json_out(['ok' => true, 'event' => [
         'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
+        'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
         'can_join' => $e['join_code'] !== null, 'joined' => $joined,

@@ -378,7 +378,7 @@
             'Recover the unsaved draft?': '¿Recuperar el borrador sin guardar?',
             'Show map button per note': 'Botón de mapa por nota', 'Record a GPX track': 'Grabar una traza GPX', 'Sound on note': 'Sonido en cada nota',
             'Note reached': 'Nota alcanzada', 'Open on map': 'Abrir en mapa', 'Map not configured.': 'Mapa no configurado.',
-            'Author': 'Autor', 'Organization': 'Organización', 'Upload logo': 'Subir logo', 'Last modified': 'Última modificación', 'Author name': 'Nombre del autor',
+            'Author': 'Autor', 'Organization': 'Organización', 'Upload logo': 'Subir logo', 'Organizer website': 'Web del organizador', 'Event headquarters': 'Sede del evento', 'Tap the map to set the event headquarters location.': 'Toca el mapa para fijar la sede del evento.', 'Last modified': 'Última modificación', 'Author name': 'Nombre del autor',
             'Photos uploaded.': 'Fotos subidas.', 'Save to your profile first.': 'Guarda primero en tu perfil.',
             'No geolocation': 'Sin geolocalización',
             'Last note validated! Tap Finish.': '¡Última nota validada! Pulsa Finalizar.',

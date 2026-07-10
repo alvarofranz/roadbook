@@ -33,6 +33,7 @@
         .ev-join .field { max-width: 12rem; margin: 0; font-family: ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
         .ev-join .btn { width: auto; }
         .ev-join .grow { flex: 1; }
+        .ev-hq-map { width: 100%; height: 240px; border-radius: 12px; border: 1px solid var(--line); margin-top: .8rem; }
     </style>
 </head>
 <body>
@@ -50,12 +51,19 @@
             </div>
         </div>
         <p id="evDesc" class="ev-desc"></p>
+        <p id="evWebsite" class="ev-desc" hidden></p>
+        <div id="evHqMap" class="ev-hq-map" hidden></div>
         <div class="ev-join" id="evJoin" hidden></div>
         <div class="icon-category" data-i18n="Roadbooks">Roadbooks</div>
         <div class="gallery" id="evRoadbooks"></div>
     </article>
 </main>
 
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="/assets/js/config.js?v=2026.07.09-5"></script>
+<script src="/assets/js/roadbook-core.js?v=2026.07.09-5"></script>
+<script src="/assets/js/rbmap.js?v=2026.07.09-5"></script>
 <script src="/assets/js/i18n.es.js?v=2026.07.09-5"></script>
 <script src="/assets/js/i18n.it.js?v=2026.07.09-5"></script>
 <script src="/assets/js/i18n.de.js?v=2026.07.09-5"></script>

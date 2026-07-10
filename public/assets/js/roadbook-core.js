@@ -199,6 +199,14 @@
     // placeholder line spaced by openrally:distance, flagged so the author re-draws it on the
     // map. Returns { rb, warnings }. Needs a DOMParser (browser), like parseGPX.
     const OPENRALLY_NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
+    // Convert an OpenRally <tulip> value to a data: URI. Exported so the test suite can
+    // exercise it directly (happy-dom can't parse namespaced XML children).
+    function tulipToDataURL(s) {
+        s = String(s || '').trim(); if (!s) return null;
+        if (/^data:/i.test(s)) return s;
+        if (/<svg[\s>]/i.test(s) || /^<\?xml/i.test(s)) return 'data:image/svg+xml,' + encodeURIComponent(s);
+        return 'data:image/png;base64,' + s.replace(/\s+/g, ''); // otherwise assume a base64 PNG
+    }
     function parseOpenRally(text) {
         const doc = new DOMParser().parseFromString(text, 'application/xml');
         if (doc.querySelector('parsererror')) throw new Error('Invalid GPX (malformed XML).');
@@ -216,12 +224,6 @@
                 out.push({ tag: c.localName, attrs, text: (c.textContent || '').trim() });
             });
             return out;
-        };
-        const tulipToDataURL = (s) => {
-            s = String(s || '').trim(); if (!s) return null;
-            if (/^data:/i.test(s)) return s;
-            if (/<svg[\s>]/i.test(s) || /^<\?xml/i.test(s)) return 'data:image/svg+xml,' + encodeURIComponent(s);
-            return 'data:image/png;base64,' + s.replace(/\s+/g, ''); // otherwise assume a base64 PNG
         };
 
         const name = (doc.querySelector('metadata > name, trk > name')?.textContent || '').trim() || 'OpenRally roadbook';
@@ -999,7 +1001,7 @@
         ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
-        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport,
+        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
