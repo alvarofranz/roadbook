@@ -104,8 +104,8 @@ describe('RBZip — foreign ZIPs (extra fields, comments, data descriptors)', ()
         cd.set(le16(nameBytes.length), c); c += 2;         // name length
         cd.set(le16(extra.length), c); c += 2;             // extra length
         cd.set(le16(comment.length), c); c += 2;           // file comment length
-        cd.set(le32(0), c); c += 4;                        // disk start
-        cd.set(le32(0), c); c += 4;                        // internal attrs
+        cd.set(le16(0), c); c += 2;                        // disk start
+        cd.set(le16(0), c); c += 2;                        // internal attrs
         cd.set(le32(0), c); c += 4;                        // external attrs
         cd.set(le32(0), c); c += 4;                        // local header offset
         cd.set(nameBytes, c); c += nameBytes.length;
