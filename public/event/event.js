@@ -82,7 +82,7 @@
             box.querySelector('#evLeave').onclick = async () => {
                 if (!(await RBConfirmDanger(t('Leave event') + ' "' + esc(e.title) + '"?', t('Leave event')))) return;
                 const x = await RBApi('event_leave', { slug: e.slug });
-                if (x.ok) load(); else toast(x.error || 'Could not save.');
+                if (x.ok) { if (x.clear_participant) { document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch (e) {} } load(); } else toast(x.error || 'Could not save.');
             };
             return;
         }

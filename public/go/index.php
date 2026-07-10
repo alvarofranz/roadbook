@@ -31,13 +31,11 @@ if (!$row) {
         ->execute([(int)$event['id'], (int)$user['id'], $actCode, $actCode]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$event['id']);
 }
-// Only ACTIVE participants enter participant mode: the context plus the UI-hint cookie
-// (read by app.js to show the participant bar — deliberately not httponly). A pending
-// visitor just lands on the event page and waits for the organizer's activation.
-if ($row && $row['status'] === 'active') {
-    set_participant_context((int)$event['id']);
-    setcookie('rb_participant', '1', 0, '/', '', false, false);
-}
+// Everyone entering via the /go/ link gets participant mode (pending or active): the
+// reduced surface removes irrelevant nav tools (#163). A pending participant waits on
+// the event page for the organizer's activation but already sees only event-scoped UI.
+set_participant_context((int)$event['id']);
+setcookie('rb_participant', '1', 0, '/', '', false, false);
 
 header('Location: /event/' . $event['slug']);
 exit;

@@ -312,7 +312,8 @@ function event_leave(array $user, array $d): void {
     $e = $st->fetch();
     if (!$e) fail('Not found.', 404);
     db()->prepare('DELETE FROM event_participants WHERE event_id = ? AND user_id = ?')->execute([(int)$e['id'], (int)$user['id']]);
-    json_out(['ok' => true]);
+    clear_participant_context();
+    json_out(['ok' => true, 'clear_participant' => true]);
 }
 
 function event_participant_remove(array $user, array $d): void {
