@@ -27,59 +27,41 @@ The platform emphasizes offline capability by implementing Progressive Web App (
 
 ### 🚀 Getting Started
 
-Follow these steps to get the application running locally:
+The front-end is a plain static PWA (web root `public/`, no build step): any static web
+server pointed at `public/` runs every tool without the back-end (accounts/sharing are
+simply disabled). Copy `public/assets/js/config.js.example` to `config.js`; the base map
+uses free, no-key MapLibre tiles — for satellite imagery add a MapTiler `styleSatellite`
+URL there.
 
-#### Local development with DDEV (recommended)
+#### Full stack (accounts, sharing, public roadbooks)
 
-[DDEV](https://ddev.com/) spins up the full stack (PHP 8.1 + MariaDB + web server) in Docker with one command — no local PHP or database setup.
-
-1. Install [Docker](https://docs.docker.com/get-docker/) and [DDEV](https://ddev.com/get-started/).
-2. From the repo root, run **`ddev start`**. On the first start it automatically installs the Composer deps, creates `public/assets/js/config.js` from the example, and applies every `migrations/*.sql` to a fresh database.
-3. Open it with **`ddev launch`** → `https://rdbk.ddev.site`
-
-Handy: `ddev mysql` (DB shell), `ddev ssh` (web container), `ddev composer install`, `ddev stop`. Re-apply the migrations on a wiped DB with `for f in migrations/*.sql; do ddev mysql < "$f"; done`. The base map uses free, no-key MapLibre tiles; for satellite imagery add a MapTiler `styleSatellite` URL to `public/assets/js/config.js`.
-
-The rest of this section covers the **manual** setup, if you prefer not to use DDEV.
-
-#### Prerequisites
-1.  PHP (Version compatible with project requirements)
-2.  Composer (PHP Dependency Manager)
-3.  Web Server (e.g., Apache via WAMP/XAMPP)
-4.  Database System (MySQL/MariaDB)
-
-#### Installation Steps
-
-1.  **Install Dependencies:** Open your terminal in the root directory of the project and run:
+1.  **Prerequisites:** PHP 8.1, Composer, a web server serving `public/` as the document
+    root (Apache config ships in `public/.htaccess`), MariaDB/MySQL.
+2.  **Install dependencies:**
     ```bash
     composer install
     ```
-2.  **Configure Environment:** Copy the example environment file and update credentials:
+3.  **Configure environment:**
     ```bash
     cp .env.example .env
-    # Edit the contents of the new .env file with your database credentials
+    # edit .env with your database credentials
     ```
-3.  **Database Setup:**
-    *   Create an empty database in your local MySQL instance matching the name defined in `.env`.
-    *   Run all migration files sequentially via a dedicated SQL client (e.g., phpMyAdmin):
-        1. `migrations/001_init.sql`
-        2. `migrations/002_community.sql`
-        3. `migrations/003_photos.sql`
-        4. ... and so on, until all files are run.
+4.  **Database setup:** create the database named in `.env`, then apply every
+    `migrations/*.sql` in numeric order.
 
-#### Running the Application
-Place this project directory within your web server's root folder (e.g., `/var/www/html/`). You can then access the application via your local host URL (e.g., `http://localhost/`).
+#### Unit tests
 
-##### Windows 11
-from console
-   > python3 -m http.server 8000
+Node ≥ 22, then `npm install` and `npm test` (Vitest). CI runs the suite on every pull
+request and before every deploy.
 
 ## 🗺️ Directory Structure Overview
 
-*   `public/`: The main entry point for the web client, containing all HTML, JavaScript, and CSS assets.
-*   `app/`: Contains the core business logic (PHP functions) that handle data fetching, saving, and validation.
+*   `public/`: The web client — all HTML, JavaScript and CSS assets (also wrapped by Capacitor into the iOS/Android apps, see `NATIVE.md`).
+*   `app/`: The core business logic (PHP functions) handling data fetching, saving, and validation.
 *   `migrations/`: SQL files used to version control the database schema.
 *   `cron/`: Scheduled tasks executed by a cron job for background maintenance (e.g., cleaning up drafts).
-*   `tools/`: Utility scripts and helpers.
+*   `native/`, `android/`, `ios/`: The Capacitor bridge source and native app projects.
+*   `tests/`: The Vitest unit-test suite.
 
 ---
 **Project Maintainer:** Alvaro, Maurizio, inspired by works from Massimo Sabattini of [RoadBook System](https://www.roadbook-system.com/)

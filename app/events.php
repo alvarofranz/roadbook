@@ -1,5 +1,5 @@
 <?php
-/* Events (#6): the event entity, its roadbook associations, categories, co-organizers and
+/* Events (#6): the event entity, its roadbook associations, co-organizers and
  * participants. An event is owned by the user who created it (events.organizer_id); the
  * event_organizers rows grant more users management rights on that one event. Participants
  * join with the organizer-shared join code. The public listing + the /event/<slug>
@@ -22,13 +22,14 @@ function user_manages_events(int $uid): bool {
 }
 
 // Event-granted rights on a roadbook attached to an event: the organizers (owner or listed
-// co-organizer) can EDIT it (#123); with $includeParticipants a participant may also READ a
-// non-public one (#25). One query, the participant clause added only for the read check.
+// co-organizer) can EDIT it (#123); with $includeParticipants an ACTIVE participant may also
+// READ a non-public one (#25/#163 — pending participants wait for the organizer's activation).
+// One query, the participant clause added only for the read check.
 function event_rights_on_roadbook(int $uid, int $roadbookId, bool $includeParticipants): bool {
     $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
         WHERE er.roadbook_id = ? AND (e.organizer_id = ?
             OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)'
-            . ($includeParticipants ? ' OR EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ?)' : '') . ')
+            . ($includeParticipants ? " OR EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = e.id AND ep.user_id = ? AND ep.status = 'active')" : '') . ')
         LIMIT 1');
     $st->execute($includeParticipants ? [$roadbookId, $uid, $uid, $uid] : [$roadbookId, $uid, $uid]);
     return (bool)$st->fetch();
@@ -84,7 +85,7 @@ function events_manage(array $user): void {
     ], $rows)]);
 }
 
-// Everything the event management page needs (#123): parameters, categories, organizers,
+// Everything the event management page needs (#123): parameters, organizers,
 // associated roadbooks (with owner + scoring mode) and participants + the join code.
 function event_manage_get(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['id'] ?? 0));
@@ -141,7 +142,7 @@ function event_participants_list(array $user, array $d): void {
             'joined' => $x['created_at'], 'status' => $x['status']], $st->fetchAll())]);
 }
 
-// Create or update an event's own parameters + categories. The roadbook associations and the
+// Create or update an event's own parameters. The roadbook associations and the
 // organizer/participant lists have their own add/remove actions. Creating requires the global
 // organizer role; editing is per-event (owner / co-organizer / admin).
 function event_save(array $user, array $d): void {
@@ -224,8 +225,10 @@ function event_rb_mode(array $user, array $d): void {
 }
 
 /* ---- co-organizers (#123) ---- */
-// User search for the add-organizer / add-participant pickers: matches username, full name or email.
+// User search for the add-organizer / add-participant pickers: matches username, full name or
+// email. Organizer-gated — it returns emails, so plain users must not be able to enumerate accounts.
 function user_search(array $user, array $d): void {
+    if (!is_organizer($user) && !user_manages_events((int)$user['id'])) fail('Organizers only.', 403);
     $q = trim((string)($d['q'] ?? ''));
     $org = trim((string)($d['organization'] ?? ''));
     if ($q === '' && $org === '') json_out(['ok' => true, 'users' => []]);
@@ -355,13 +358,16 @@ function event_public_get(array $d): void {
         $row = $j->fetch();
         if ($row) { $joined = true; $participantStatus = $row['status']; }
     }
-    // The front-end shows all roadbooks in the event list, gating access with badges:
-    // Draft → "Organizers only" badge; Ready → "Active participants only" badge
-    // (unless the user is an active participant or organizer).
-    // Actual roadbook access is still checked server-side on the challenge page.
+    // Status visibility: anyone sees the PUBLIC roadbooks; event members (participants,
+    // pending included, and organizers) also see the READY ones as badge-locked cards
+    // ("Active participants only") until activation unlocks them; DRAFTS show to
+    // organizers only. Actual roadbook access is re-checked server-side on the
+    // challenge page — this list only controls what existence/metadata is disclosed.
     $orgRead = $me && event_can_manage($me, $e); // organizers always readable
     $activeParticipant = $joined && $participantStatus === 'active';
-    $statuses = "'public','ready','draft'";
+    $statuses = "'public'";
+    if ($joined || $orgRead) $statuses .= ",'ready'";
+    if ($orgRead) $statuses .= ",'draft'";
     $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id

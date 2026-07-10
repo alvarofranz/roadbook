@@ -24,8 +24,9 @@ if (!$row) {
         ->execute([(int)$event['id'], (int)$user['id']]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$event['id']);
 }
-setcookie('rb_participant', '1', 0, '/', '', false, false);
-
+// Only ACTIVE participants enter participant mode: the context plus the UI-hint cookie
+// (read by app.js to show the participant bar — deliberately not httponly). A pending
+// visitor just lands on the event page and waits for the organizer's activation.
 if ($row && $row['status'] === 'active') {
     set_participant_context((int)$event['id']);
     setcookie('rb_participant', '1', 0, '/', '', false, false);

@@ -450,6 +450,7 @@
         's21_attraversamanto_senza_barriere.png': 'W24_level_crossing.svg',
         's24_attenzione.png': 'W28_general_danger.svg',
         's25_trattori.png': 'W27_agricultural_vehicles.svg',
+        'Trattori.png': 'W27_agricultural_vehicles.svg',
     };
     // Normalize a roadbook into the canonical .rdbk schema in place. Besides the
     // structural defaults, this is where pre-standard files exported by Roadbook

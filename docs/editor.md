@@ -612,6 +612,7 @@ traduzione avviene in due punti.
 | `s21_attraversamanto_senza_barriere.png` | `W24_level_crossing.svg` | cartello: passaggio a livello senza barriere |
 | `s24_attenzione.png` | `W28_general_danger.svg` | cartello: attenzione (pericolo generico) |
 | `s25_trattori.png` | `W27_agricultural_vehicles.svg` | cartello: mezzi agricoli |
+| `Trattori.png` | `W27_agricultural_vehicles.svg` | variante legacy dello stesso cartello (file rimosso dalla palette) |
 
 > ⚠️ **Collisione serie `S`:** la Suite usa `S10`…`S20` per *cartelli* (stop, precedenza,
 > divieto, curve, frana, rotatoria, …), mentre la palette usa la serie `S` solo per i *limiti*

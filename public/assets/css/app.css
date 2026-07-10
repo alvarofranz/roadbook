@@ -155,7 +155,7 @@ section.block { padding: 2.4rem 0; }
 .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .flow .step { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 1.5rem 1.3rem; text-align: center; position: relative; transition: border-color .15s ease, transform .12s ease; }
 .flow .step:hover { border-color: rgba(232, 176, 89, .5); transform: translateY(-3px); }
-.flow .step i { color: var(--sand); font-size: 1.5rem; display: inline-flex; align-items: center; justify-content: center; width: 3.4rem; height: 3.4rem; border-radius: 16px; background: rgba(232, 176, 89, .12); border: 1px solid rgba(232, 176, 89, .22); }
+.flow .step i, .workflow .wf-step i { color: var(--sand); font-size: 1.5rem; display: inline-flex; align-items: center; justify-content: center; width: 3.4rem; height: 3.4rem; border-radius: 16px; background: rgba(232, 176, 89, .12); border: 1px solid rgba(232, 176, 89, .22); }
 .flow .step h4 { margin: .7rem 0 .3rem; font-size: 1.02rem; }
 .flow .step p { margin: 0; font-size: .86rem; color: var(--muted); line-height: 1.5; }
 
@@ -301,7 +301,7 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 /* ---------- gallery (home) + demo picker ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .gallery-card { position: relative; display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
-.gallery-card:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+.gallery-card:hover, .launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
 /* overlay button on a gallery card (copy-link + admin-force-private) */
 .card-btn { position: absolute; top: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
 .card-copy { right: .5rem; }
@@ -379,7 +379,7 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
    desktop/tablet, a clean 2×2 grid on phones (arrows dropped once it wraps) */
 .workflow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 1rem 1.6rem; margin-top: 2.6rem; }
 .workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .55rem; text-align: center; width: 8.5rem; }
-.workflow .wf-step i { font-size: 1.5rem; color: var(--sand); display: inline-flex; align-items: center; justify-content: center; width: 3.4rem; height: 3.4rem; border-radius: 16px; background: rgba(232, 176, 89, .12); border: 1px solid rgba(232, 176, 89, .22); transition: background .12s ease, border-color .12s ease; }
+.workflow .wf-step i { transition: background .12s ease, border-color .12s ease; }
 .workflow .wf-step span { font-size: .86rem; font-weight: 700; }
 /* workflow steps link to their feature page — subtle lift + chip highlight on hover */
 .workflow a.wf-step { color: inherit; text-decoration: none; transition: transform .12s ease; }
@@ -423,7 +423,6 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .native body.rb-fs .odometer-bar, .native body.rb-fs .status-bar { top: env(safe-area-inset-top); }
 .launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
 .launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
-.launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
 .launch-tile i { color: var(--sand); font-size: 2rem; }
 .launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
 .launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
@@ -447,7 +446,7 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 /* form fields inside modals (shared by every RBModal dialog) */
 .modal-in { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: .6rem; font: inherit; margin: .3rem 0 .6rem; }
 select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
-.field:focus-visible, .modal-in:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
+.field:focus-visible, .modal-in:focus-visible, .rb-status:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
 /* locale-aware date field (RBDateField): the localized date shows in a .field box while a
    transparent native <input type="date"> overlays it for the picker + keyboard + ISO value */
 .rb-datefield { position: relative; display: block; }
@@ -519,6 +518,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
 .ios-steps { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }
 .grow { flex: 1; }
+.clickable { cursor: pointer; }
 .icon-danger { color: var(--track); }
 /* Inline field help: a small ⓘ after a label; its explanation shows on hover and on tap/focus
    (touch-friendly). The bubble text lives in data-tip. Reusable on any field, anywhere. */
@@ -544,7 +544,6 @@ button.rb-badge:hover { background: var(--card); }
 .rb-status { flex-shrink: 0; font: inherit; font-size: .72rem; font-weight: 700; padding: .25rem 1.5rem .25rem .6rem; border-radius: 999px; border: 1px solid var(--line); background-color: var(--card-2); color: var(--muted); cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%2393a0b4' d='M3 4.5 6 7.5 9 4.5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .5rem center; background-size: .7rem; }
 .rb-status-ready { color: var(--text); border-color: var(--muted); }
 .rb-status-public { color: var(--ok); border-color: var(--ok); }
-.rb-status:focus-visible { outline: 2px solid var(--sand); border-color: transparent; }
 .rb-status option { color: var(--text); background: var(--card-2); }
 /* shared search / filter toolbar (card style) */
 .rb-toolbar, .toolbar { display: flex; align-items: center; gap: .5rem; }
