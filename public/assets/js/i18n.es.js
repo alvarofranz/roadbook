@@ -685,4 +685,8 @@
             'This cannot be undone.': 'No se puede deshacer.',
             'Expired': 'Caducado',
             'Organizers only.': 'Solo organizadores.',
+            'Please complete the challenge.': 'Completa la verificación.',
+            'Challenge failed. Please try again.': 'La verificación ha fallado. Inténtalo de nuevo.',
+            'Google sign-in failed. Please try again.': 'El inicio de sesión con Google ha fallado. Inténtalo de nuevo.',
+            'Account': 'Cuenta',
         };

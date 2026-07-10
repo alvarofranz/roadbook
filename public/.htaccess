@@ -5,6 +5,10 @@ Options -Indexes
 # RDBK.app — MIME type for roadbook files (.rdbk = JSON).
 AddType application/x-roadbook .rdbk
 
+# Uploaded media (photos/covers/avatars/event logos) is re-encoded to AVIF; without an explicit
+# MIME type Apache serves it with no Content-Type and stricter mobile engines drop the image.
+AddType image/avif .avif
+
 # Voice notes (recorded WP audio): explicit MIME so every host serves them playable.
 AddType audio/webm .webm
 AddType audio/mp4 .m4a
@@ -20,7 +24,7 @@ AddType audio/mpeg .mp3
     <FilesMatch "\.(html|js|css|json|svg|rdbk)$">
         Header set Cache-Control "no-cache"
     </FilesMatch>
-    <FilesMatch "\.(png|jpe?g|webp|gif|ico|woff2?|ttf)$">
+    <FilesMatch "\.(png|jpe?g|webp|avif|gif|ico|woff2?|ttf)$">
         Header set Cache-Control "public, max-age=604800"
     </FilesMatch>
     # The native app reads the live version from the production host, cross-origin, so its footer

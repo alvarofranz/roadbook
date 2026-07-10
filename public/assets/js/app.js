@@ -715,15 +715,19 @@
     };
 
     // Site-wide announcement banner (#103): rendered under the header from the config payload.
+    // Dismissing it sticks across pages (keyed on the message text, #250) — it only comes back
+    // when the admin publishes a different message.
+    const BANNER_DISMISSED = 'rb_banner_dismissed';
     function renderBanner(banner) {
         document.querySelector('.site-banner')?.remove();
         if (!banner || !banner.text) return;
+        try { if (localStorage.getItem(BANNER_DISMISSED) === banner.text) return; } catch (e) {}
         const el = document.createElement('div');
         el.className = 'site-banner site-banner-' + (banner.level === 'warning' ? 'warning' : 'info');
         el.innerHTML = `<span>${RBesc(banner.text)}</span><button class="site-banner-x" aria-label="${RBesc(RBt('Dismiss'))}"><i class="fa-solid fa-xmark"></i></button>`;
         const header = document.querySelector('header.topbar');
         (header || document.body).insertAdjacentElement(header ? 'afterend' : 'afterbegin', el);
-        el.querySelector('.site-banner-x').onclick = () => el.remove();
+        el.querySelector('.site-banner-x').onclick = () => { el.remove(); try { localStorage.setItem(BANNER_DISMISSED, banner.text); } catch (e) {} };
     }
 
     /* ---------------- Account control in the header ---------------- */
@@ -750,9 +754,9 @@
             if (!slot || slot.querySelector('.account-control')) return;
             const w = document.createElement('div'); w.className = 'account-control';
             if (!user) {
-                w.innerHTML = `<a class="nav-link account-login" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span>${RBt('Sign in')}</span></a>`;
+                w.innerHTML = `<a class="nav-link account-login" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Sign in">${RBt('Sign in')}</span></a>`;
             } else {
-                w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '')}</span></button>
+                w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
                     <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
                         <a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>
