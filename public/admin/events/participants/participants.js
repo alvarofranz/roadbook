@@ -18,6 +18,7 @@
         $('ppList').innerHTML = r.participants.length ? r.participants.map((p) => `<div class="ev-line">
             <span class="meta"><i class="fa-solid fa-${p.status === 'active' ? 'circle-check icon-ok' : 'hourglass-half'}"></i> ${esc(p.username)}
                 <span class="muted small">· ${esc((p.first_name + ' ' + p.last_name).trim())} · ${esc(p.email)} · ${esc(RBFmtDate(p.joined))}</span></span>
+            ${p.status === 'pending' ? `<button class="btn btn-ghost" data-ppact="${p.id}" title="${esc(t('Activate'))}" aria-label="${esc(t('Activate'))}"><i class="fa-solid fa-check icon-ok"></i></button>` : ''}
             <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(t(q ? 'No matching users.' : 'No participants yet.'))}</p>`;
         RBPager($('ppPager'), page, pages, (p) => { page = p; load(); }, pages > 1 ? `${r.total} ${esc(t('participants'))}` : '');
@@ -25,6 +26,10 @@
             if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
             const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
+        });
+        $('ppList').querySelectorAll('[data-ppact]').forEach((b) => b.onclick = async () => {
+            const x = await api('participant_activate', { event_id: id, user_id: +b.dataset.ppact });
+            if (x.ok) load(); else toast(x.error || 'Could not activate.');
         });
     }
 

@@ -101,7 +101,7 @@
             'Could not activate.': 'Could not activate.', 'Link for participants': 'Link for participants',
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:',
             'Participant management': 'Participant management', 'Select an event to manage its participants.': 'Select an event to manage its participants.',
-            'Add': 'Add', 'Search users…': 'Search users…', 'added.': 'added.',
+            'Add': 'Add', 'Search users…': 'Search users…', 'added.': 'added.', 'Activate': 'Activate',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
