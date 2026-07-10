@@ -556,7 +556,7 @@
             'fp.editor.fmtLegacyD': 'Los roadbooks JSON antiguos pre-estándar se abren directamente y se convierten al modelo canónico — la ruta, las notas y las viñetas llegan para que puedas seguir trabajando. Solo importación.',
             'fp.editor.fmtPubT': 'Roadbook público',
             'fp.editor.fmtPubD': 'Con la sesión iniciada, puedes bifurcar cualquier roadbook de la biblioteca pública al Editor y guardar el tuyo en tu perfil — <b>público</b> (listado y compartible) o <b>privado</b>. Los roadbooks guardados siguen siendo editables y se sincronizan entre tus dispositivos.',
-            'fp.editor.fmtPdfT': 'PDF',
+            'fp.editor.fmtPdfT': 'PDF', 'PDF': 'PDF',
             'fp.editor.fmtPdfD': 'Un roadbook A4 listo para imprimir, para la carpeta del copiloto o el archivo en papel del evento. Solo exportación.',
             'fp.tool.tripmaster': 'Tripmaster',
             'fp.reader.lead': 'El navegador: sigue un roadbook giro a giro con GPS. Una tabla de notas estilo papel, un odómetro en vivo y una barra de dirección CAP, validación automática o manual, y puntuación completa de competición con un resultado firmado.',

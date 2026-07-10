@@ -518,7 +518,7 @@
             'fp.editor.fmtLegacyD': 'Ältere Vor-Standard-JSON-Roadbooks öffnen sich direkt und werden ins kanonische Modell konvertiert — Route, Notizen und Vignetten kommen mit, damit du weiterarbeiten kannst. Nur Import.',
             'fp.editor.fmtPubT': 'Öffentliches Roadbook',
             'fp.editor.fmtPubD': 'Angemeldet kannst du jedes Roadbook aus der öffentlichen Bibliothek in den Editor forken und dein eigenes in deinem Profil speichern — <b>öffentlich</b> (gelistet und teilbar) oder <b>privat</b>. Gespeicherte Roadbooks bleiben bearbeitbar und synchronisieren über deine Geräte.',
-            'fp.editor.fmtPdfT': 'PDF',
+            'fp.editor.fmtPdfT': 'PDF', 'PDF': 'PDF',
             'fp.editor.fmtPdfD': 'Ein druckfertiges A4-Roadbook für das Klemmbrett des Beifahrers oder das Papierarchiv der Veranstaltung. Nur Export.',
             'fp.tool.tripmaster': 'Tripmaster',
             'fp.reader.lead': 'Der Navigator: Folge einem Roadbook Kurve für Kurve per GPS. Eine Notentabelle im Papierstil, ein Live-Kilometerzähler und CAP-Richtungsbalken, automatische oder manuelle Validierung und vollständige Wettkampfwertung mit signiertem Ergebnis.',
