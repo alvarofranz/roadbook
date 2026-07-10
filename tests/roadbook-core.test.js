@@ -794,12 +794,11 @@ describe('roadbook publication status (#96)', () => {
 
 describe('appwptFromImport — GPX icon recovery', () => {
     it('recognises an OSMAnd icon back to the RDBK icon', () => {
-        // I01_arrivo → i01_arrivo (OSMAnd key is lowercase)
-        const r = RB.appwptFromImport('', 'i01_arrivo', '');
+        const r = RB.appwptFromImport('', 'special_flag_finish', '');
         expect(r.icon).toBe('I01_arrivo.png');
     });
     it('recognises a Garmin sym back to the RDBK icon (fallback)', () => {
-        const r = RB.appwptFromImport('Arrival', '', '');
+        const r = RB.appwptFromImport('Flag, Checkered', '', '');
         expect(r.icon).toBe('I01_arrivo.png');
     });
     it('returns danger:3 for Dangerous Area / special_marker', () => {
@@ -807,14 +806,13 @@ describe('appwptFromImport — GPX icon recovery', () => {
         expect(RB.appwptFromImport('', 'special_marker', '')).toEqual({ danger: 3 });
     });
     it('returns appwpt for an unrecognised but valid sym+osmandIcon (round-trip passthrough)', () => {
-        const r = RB.appwptFromImport('Restaurant', 'custom_icon', '#ff0000');
+        const r = RB.appwptFromImport('Picnic Area', 'custom_icon', '#ff0000');
         expect(r.appwpt).toBeTruthy();
-        expect(r.appwpt.sym).toBe('Restaurant');
+        expect(r.appwpt.sym).toBe('Picnic Area');
         expect(r.appwpt.osmandIcon).toBe('custom_icon');
         expect(r.appwpt.color).toBe('#ff0000');
     });
     it('derives the OSMAnd icon from the Garmin sym if neither is recognised', () => {
-        // "tall tower" → osmandIcon "man_made_mast" via SYM_OSMAND table
         const r = RB.appwptFromImport('tall tower', '', '');
         expect(r.appwpt).toBeTruthy();
         expect(r.appwpt.osmandIcon).toBe('man_made_mast');

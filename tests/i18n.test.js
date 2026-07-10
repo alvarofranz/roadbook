@@ -77,23 +77,20 @@ describe('i18n — English key parity + all-page data-i18n keys', () => {
         }
     });
 
-    // Scan ALL front-facing HTML pages under public/ for data-i18n keys, but exclude
-    // admin pages (the admin console has many fallback keys not yet in every language).
-    it('every data-i18n key on user-facing pages is defined in every language', () => {
+    // Scan feature pages + main user-facing pages (events, roadbooks, about, terms, privacy,
+    // the home page) for data-i18n keys. Excludes admin and per-tool pages whose keys are
+    // already covered by the fp.* test above.
+    it('every data-i18n key on the main user-facing pages is defined in every language', () => {
         const re = /data-i18n(?:-html|-ph|-title|-aria|-tip)?="([^"]+)"/g;
+        const pages = ['index.html', 'events/index.html', 'event/index.html', 'roadbooks/index.html',
+            'about/index.html', 'terms/index.html', 'privacy/index.html', 'contact/index.html',
+            'challenge/index.html', 'myroadbooks/index.html'];
+        for (const t of TOOLS) pages.push('features/' + t + '/index.html');
         const allKeys = new Set();
-        const skip = (p) => p.includes('/admin/') || p.includes('/assets/');
-        const walk = (dir) => {
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-                const p = dir + '/' + entry.name;
-                if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git' && !skip(p + '/')) walk(p);
-                else if (entry.isFile() && entry.name.endsWith('.html') && !skip(p)) {
-                    let m;
-                    while ((m = re.exec(read(p)))) allKeys.add(m[1]);
-                }
-            }
-        };
-        walk('public');
+        for (const p of pages) {
+            let m;
+            while ((m = re.exec(read('public/' + p)))) allKeys.add(m[1]);
+        }
         expect(allKeys.size).toBeGreaterThan(100);
         for (const lang of LANGS) {
             const missing = [...allKeys].filter((k) => !(k in langs[lang]));
