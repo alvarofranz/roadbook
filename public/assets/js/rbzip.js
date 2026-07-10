@@ -157,7 +157,7 @@
         return JSON.parse(await file.text());
     }
 
-    const RBZip = { read, write, readRdbk, readBundle, isZip, textOf, mimeOf, crc32 };
+    const RBZip = { read, write, readRdbk, readBundle, isZip, textOf };
     if (typeof window !== 'undefined') window.RBZip = RBZip;
     if (typeof module !== 'undefined' && module.exports) module.exports = RBZip;
 })();

@@ -222,7 +222,7 @@ function register_user(array $d): void {
     global $CFG;
     $link = $CFG['base_url'] . '/account/?verify=' . $raw;
     send_mail($email, $first, 'Verify your RDBK.app account',
-        mail_html('Confirm your email', "<p>Hi {$first}, welcome to RDBK.app!</p><p>Confirm your email to activate your account:</p>" . mail_button($link, 'Verify my email') . '<p style="font-size:12px;color:#93a0b4">This link expires in 24 hours.</p>'));
+        mail_html('Confirm your email', '<p>Hi ' . htmlspecialchars($first) . ', welcome to RDBK.app!</p><p>Confirm your email to activate your account:</p>' . mail_button($link, 'Verify my email') . '<p style="font-size:12px;color:#93a0b4">This link expires in 24 hours.</p>'));
 
     json_out(['ok' => true, 'message' => 'Account created. Check your email to verify it.']);
 }

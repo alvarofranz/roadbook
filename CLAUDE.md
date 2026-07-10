@@ -19,8 +19,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   the app uses the OS account picker (`RBNative.googleSignIn`, `@capgo/capacitor-social-login` —
   the web GIS button can't run in a WebView). Both hand the ID token to the same endpoint;
   `.env` `GOOGLE_CLIENT_IDS` lists every OAuth client whose tokens the backend accepts as `aud`
-  (web + Android + iOS — the client ids are public, in `native/src/native.js`). Remaining #46
-  work: extend the prod `GOOGLE_CLIENT_IDS` with the native clients + real-device tests.
+  (web + Android + iOS — the client ids are public, in `native/src/native.js`).
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
   `roadbook_audio`, `roadbook_locks`, `api_tokens`, `activity_log`, `settings`, plus the events
   family (`events`, `event_roadbooks`, `event_categories`, `event_organizers`, `event_participants`).
@@ -52,7 +51,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - **Edit freely, but WAIT for the user's test confirmation before deploying.** You may read and
   modify the code in the dev clone as needed. But do NOT commit/stamp/push (a push to
   `main` is a production deploy) until the user has tested the change (the dev clone serves the
-  working tree at `https://rdbk.ddev.site` via the SSH forward) and given an explicit go-ahead. Make
+  working tree at `http://localhost:8806` via the SSH forward) and given an explicit go-ahead. Make
   the change, say what to test, then stop — never pre-emptively deploy, even when the user asked
   for the feature.
 - **PRIORITY — start from a fresh `main`.** Before making ANY change, sync the working
@@ -153,7 +152,7 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
   (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
   untested logic.
 - **After making changes, list what to test.** Before asking the user to deploy, propose a
-  short checklist of specific things they should verify on the dev server (`https://rdbk.ddev.site`):
+  short checklist of specific things they should verify on the dev clone (`http://localhost:8806`):
   what pages to visit, what interactions to try, and what the expected result is. Keep it
   concrete — name the URLs and the visible behaviour to check.
 - **Commit messages are changelogs** — short English title + bullet points.
@@ -167,12 +166,12 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 **Full stack (PHP 8.1 + MariaDB) on the VPS dev clone:** development happens on the box in a
 dev clone next to prod — `/home/rdbk/dev/rdbk` (dev DB `rdbk_dev`), served privately on
 `127.0.0.1:8806`, loopback-only: view it from the box itself with
-`dev-shot https://rdbk.ddev.site/ out.png` (headless Chromium) or `curl -s https://rdbk.ddev.site/`. Prod
+`dev-shot http://localhost:8806/ out.png` (headless Chromium) or `curl -s http://localhost:8806/`. Prod
 stays untouched at `/home/rdbk/rdbk`. The dev clone reuses rdbk's prod PHP-FPM pool (same
 user), so the full stack is just the clone served on `127.0.0.1:8806` plus the `rdbk_dev` DB
 seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clone `vendor`,
 `config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
-and `BASE_URL=https://rdbk.ddev.site`. Edit the working tree, check `https://rdbk.ddev.site`
+and `BASE_URL=http://localhost:8806`. Edit the working tree, check `http://localhost:8806`
 from the box (`dev-shot`/`curl`), and only push once the user has tested (see *Releasing*).
 There is no Mac/local dev and no Docker — the dev clone on the box IS the development
 environment.
@@ -197,7 +196,7 @@ runs them on every push/PR via `.github/workflows/test.yml`.
 style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
 (in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
 in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
-`rdbk_dev`, BASE_URL `https://rdbk.ddev.site`) — there is no separate local PHP/MariaDB to set up.
+`rdbk_dev`, BASE_URL `http://localhost:8806`) — there is no separate local PHP/MariaDB to set up.
 
 ## Production DB (migrations + fresh dev DB)
 Two prod-DB workflows: **reseeding the dev DB from a fresh copy of prod** and
@@ -338,6 +337,11 @@ Operational notes:
 - **Public pages** — `/roadbooks/` lists every public roadbook (search + pagination) and the
   per-roadbook public view lives at `/challenge/<slug>` (read on site · Navigate · PDF export;
   a non-owner can't fork or download the `.rdbk`). The home shows a last-6 teaser linking there.
+- **Events** — `/events/` lists public events and `/event/<slug>` is the event view
+  (categories, organizers, linked roadbooks). Participants join as *pending* and are activated
+  by the organizer (QR token or the admin panel); `/go/<code>` is the participant deep link
+  (auto-join + redirect). Admin side under `/admin/events/`. Tables: the `events` family in
+  `migrations/`.
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
@@ -362,8 +366,8 @@ Operational notes:
   modal (download / convert into a roadbook).
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
   voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
-  `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` · `flush()` ·
-  `items()` (queued records, for a local export) · `clear()` · `count()` ·
+  `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·
+  `items()` (queued records, for a local export) · `clear()` ·
   `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in). Signed-out
   captures stay local and are bundled into a self-contained `.rdbk` (RBZip). Pure `createQueue`
@@ -371,7 +375,7 @@ Operational notes:
 - `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
-  label is "public roadbook", with "challenge" reserved for the future events feature.)
+  label is "public roadbook", with "challenge" reserved for the events feature.)
 - `rb-transcribe.js` (`RBTranscribe`, #133) — in-browser voice-note→text (Whisper via
   transformers.js/WASM, imported from a CDN only on first use; `Xenova/whisper-tiny`, browser-cached).
   `run(url, {lang, onProgress})` → text; no server, audio never leaves the device. Used by the
@@ -436,7 +440,7 @@ The `roadbook.json` schema:
     "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
     "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|security|navigation|precise|visible|eclipse + start/finish/zone/control markers); editor badge + GPX sym
-    "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (Reader use is deferred — issue #87)
+    "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
     "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..4 } ]
   } ],
@@ -451,7 +455,8 @@ The `roadbook.json` schema:
 - Standard palette (`public/assets/icons/` + `index.json`): roadbook pictograms (PNG)
   plus a Vienna-Convention EU traffic-sign set (SVG: warning `W*`, priority `B*`,
   prohibitory `C*`/`S*`, mandatory `D*`). The sign set was produced by a generator script
-  that is LOCAL-ONLY (`source/` is gitignored except `stamp-version.mjs`), so a fresh
+  that is LOCAL-ONLY (`source/` is gitignored except `stamp-version.mjs` and
+  `check-syntax.mjs`), so a fresh
   clone doesn't have it: edit the committed SVGs directly, keeping the change minimal and
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
   used standard icons embedded in a roadbook on open and on save/export (#174), so art

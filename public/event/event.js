@@ -96,10 +96,10 @@
         var payload = e.id + ':' + cfg.user.id + ':activate';
         var token = await RB.signMeta(payload, (window.RB_CONFIG || {}).signKey);
         $('evQrToken').textContent = token;
+        var c = $('evQrCode');
         try {
             var qr = new qrcode(0, 'M');
             qr.addData(token); qr.make();
-            var c = $('evQrCode');
             c.hidden = false; c.width = 180; c.height = 180;
             var ctx = c.getContext('2d');
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 180, 180);

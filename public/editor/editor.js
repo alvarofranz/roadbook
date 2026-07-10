@@ -672,7 +672,6 @@
     // hidden until there's a roadbook to edit, so the editor never opens on a
     // blank map.
     function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
-    function showLanding() { $('landing').hidden = false; $('mapEditor').hidden = true; $('rbPanel').hidden = true; $('recBar').hidden = true; }
     function setRoadbook(r) {
         rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
         // Pre-load AND refresh the used standard-palette icons as data URIs (#174): the palette

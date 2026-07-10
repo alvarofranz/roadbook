@@ -161,7 +161,8 @@ function rb_write_file(string $path, string $json): bool {
 function rb_assert_quota(int $ownerId, int $prevBytes, int $newBytes): void {
     $st = db()->prepare('SELECT quota_bytes FROM users WHERE id = ?');
     $st->execute([$ownerId]);
-    $quota = user_quota_bytes(['quota_bytes' => $st->fetchColumn() ?: null]);
+    $stored = $st->fetchColumn();
+    $quota = user_quota_bytes(['quota_bytes' => $stored === false ? null : $stored]);
     if (user_disk_bytes($ownerId) - $prevBytes + $newBytes > $quota) fail('Storage limit reached — free up space or ask an admin for more.', 413);
 }
 

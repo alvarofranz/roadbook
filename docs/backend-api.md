@@ -107,7 +107,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_join`/`event_leave` | Adesione con codice / abbandono (`event_participants`) | richiesta |
 | `event_participant_remove` / `event_participants_list` | Rimuove / elenca (paginato) i partecipanti | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
-| `user_search` | Ricerca utenti (per aggiungere organizzatori), filtrata per organizzazione | richiesta |
+| `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti), filtrata per organizzazione — restituisce le email, quindi è riservata a chi gestisce eventi | organizzatore/admin |
 | `events_list` | Elenco pubblico degli eventi | nessuna |
 | `event_get` | Vista pubblica di un evento via slug | nessuna |
 
@@ -422,9 +422,13 @@ loro somma.
 | [027_listing_indexes.sql](../migrations/027_listing_indexes.sql) | indici compositi per le query di listing calde (#171) |
 | [028_google_auth.sql](../migrations/028_google_auth.sql) | `users.google_sub` (UNIQUE) + `password_hash` NULLABLE (Google Sign-In, #46) |
 | [029_roadbook_trash.sql](../migrations/029_roadbook_trash.sql) | `roadbooks.status` enum + valore `deleted` (cestino soft-delete, #187) |
+| [030_roadbook_category.sql](../migrations/030_roadbook_category.sql) | `roadbooks.category` (la categoria passa dall'evento al roadbook, #248) |
+| [031_event_website_hq.sql](../migrations/031_event_website_hq.sql) | `events.organizer_website` + coordinate HQ (`hq_lat`/`hq_lon`, #249) |
+| [032_event_participant_status.sql](../migrations/032_event_participant_status.sql) | `event_participants.status` (`pending`/`active`, attivazione partecipanti #163) |
+| [033_drop_dead_schema.sql](../migrations/033_drop_dead_schema.sql) | Rimuove `event_categories` (sostituita da `roadbooks.category`) e `roadbooks.is_public` (sostituita da `status`) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
-`api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`, `event_categories`,
+`api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,
 `event_organizers`, `event_participants`. I token (verify/reset/api) sono colonne/righe con
 **solo l'hash**; `pending_email` tiene il nuovo indirizzo finché il cambio non è confermato. Le FK
 sono `ON DELETE CASCADE`: cancellare un utente porta via i suoi roadbook, i suoi eventi e le sue

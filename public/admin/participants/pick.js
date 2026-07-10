@@ -12,11 +12,6 @@
         </div>`).join('') : `<p class="muted small">${esc(t('No events yet.'))}</p>`;
     }
 
-    async function load() {
-        const r = await api('events_manage');
-        events = (r.ok && r.events) || [];
-        render();
-    }
     window.addEventListener('rb-lang', () => { if (events.length) render(); });
 
     (async function init() {

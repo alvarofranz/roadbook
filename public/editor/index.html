@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.10-2">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.10-3">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.10-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.10-3">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -98,7 +98,6 @@
         .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
         /* voice-note rows: nearest-note label · audio player · delete */
         .audio-item { display: flex; align-items: center; gap: .5rem; }
-        .audio-item .audio-note { flex-shrink: 0; min-width: 2.2rem; font-weight: 800; color: var(--sand); font-size: .8rem; }
         .audio-item audio { flex: 1; min-width: 0; height: 34px; }
         .audio-item .del-badge { position: static; width: 22px; height: 22px; line-height: 22px; flex-shrink: 0; }
         /* a note's voice note(s): the recorded clip shown ON the note row, under its text */
@@ -180,7 +179,6 @@
         .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 260px; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
-        .meta-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
         .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
         .meta-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
         .meta-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
@@ -196,7 +194,6 @@
         .meta-grouphead::after { content: ""; flex: 1; height: 1px; background: var(--line); }
         .meta-modified { margin-top: 1.2rem; padding-top: .7rem; border-top: 1px solid var(--line); font-size: .72rem; color: var(--muted); }
         .meta-modified #rbModified { color: var(--text); }
-        .logo-row { display: flex; gap: .5rem; align-items: center; }
         /* desktop: wider editor, the start cards on one line */
         @media (min-width: 900px) {
             #viewMap { max-width: 1100px; }
@@ -429,22 +426,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=2026.07.10-2"></script>
-<script src="../assets/js/roadbook-core.js?v=2026.07.10-2"></script>
-<script src="../assets/js/rbzip.js?v=2026.07.10-2"></script>
-<script src="../assets/js/rbmap.js?v=2026.07.10-2"></script>
-<script src="../assets/js/cover-map.js?v=2026.07.10-2"></script>
-<script src="../assets/js/note-canvas.js?v=2026.07.10-2"></script>
-<script src="../assets/js/rb-pdf.js?v=2026.07.10-2"></script>
-<script src="../assets/js/challenges.js?v=2026.07.10-2"></script>
-<script src="../assets/js/rb-media-queue.js?v=2026.07.10-2"></script>
-<script src="../assets/js/rb-transcribe.js?v=2026.07.10-2"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.10-2"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.10-2"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.10-2"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.10-2"></script>
-<script src="../assets/js/i18n.js?v=2026.07.10-2"></script>
-<script src="../assets/js/app.js?v=2026.07.10-2"></script>
-<script src="editor.js?v=2026.07.10-2"></script>
+<script src="../assets/js/config.js?v=2026.07.10-3"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.10-3"></script>
+<script src="../assets/js/rbzip.js?v=2026.07.10-3"></script>
+<script src="../assets/js/rbmap.js?v=2026.07.10-3"></script>
+<script src="../assets/js/cover-map.js?v=2026.07.10-3"></script>
+<script src="../assets/js/note-canvas.js?v=2026.07.10-3"></script>
+<script src="../assets/js/rb-pdf.js?v=2026.07.10-3"></script>
+<script src="../assets/js/challenges.js?v=2026.07.10-3"></script>
+<script src="../assets/js/rb-media-queue.js?v=2026.07.10-3"></script>
+<script src="../assets/js/rb-transcribe.js?v=2026.07.10-3"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.10-3"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.10-3"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.10-3"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.10-3"></script>
+<script src="../assets/js/i18n.js?v=2026.07.10-3"></script>
+<script src="../assets/js/app.js?v=2026.07.10-3"></script>
+<script src="editor.js?v=2026.07.10-3"></script>
 </body>
 </html>

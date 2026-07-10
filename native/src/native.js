@@ -11,7 +11,6 @@
  * watch via @capgo/background-geolocation). RBGpsMeter calls RBNative.geo when it
  * is present, so the Reader, Tripmaster and Recorder gain uninterrupted tracking
  * with no change to their own code. */
-import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 
@@ -23,7 +22,6 @@ let googleReady = null;   // SocialLogin.initialize() promise, run once
 
 const RBNative = {
     available: true,                       // the bundle only loads inside a native shell
-    platform: Capacitor.getPlatform(),     // 'ios' | 'android'
 
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
     // uses the OS Google account picker (Credential Manager on Android, GoogleSignIn on iOS) via

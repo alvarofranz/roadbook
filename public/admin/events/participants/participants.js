@@ -53,7 +53,7 @@
     let addSearchTimer = null;
     $('ppAdd').onclick = () => {
         const modal = RBModal(`<div>
-            <div class="toolbar" style="margin:0 0 .8rem">
+            <div class="toolbar pp-add-search">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input class="field" id="ppAddSearch" data-i18n-ph="Search users…" placeholder="${esc(t('Search users…'))}" autocomplete="off">
             </div>
@@ -65,7 +65,7 @@
             api('user_search', { q }).then((r) => {
                 if (!r.ok || !r.users) return;
                 modal.q('#ppAddResults').innerHTML = r.users.length
-                    ? r.users.map((u) => `<div class="ev-line"><span class="meta" style="cursor:pointer" data-pu="${u.id}" data-pun="${esc(u.username)}">
+                    ? r.users.map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}" data-pun="${esc(u.username)}">
                         <b>${esc(u.username)}</b> <span class="muted small">${esc((u.first_name + ' ' + u.last_name).trim())} · ${esc(u.email)}</span></span></div>`).join('')
                     : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
                 modal.el.querySelectorAll('[data-pu]').forEach((el) => el.onclick = async () => {

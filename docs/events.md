@@ -26,9 +26,11 @@ Cinque tabelle (migrazioni 019, 022, 023 — dettaglio in [backend-api §8](back
 |---|---|---|
 | `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. |
 | `event_roadbooks` | `event_id`, `roadbook_id`, `sort`, **`scoring_mode`** | I roadbook associati all'evento, ordinati, ognuno con la propria modalità di punteggio. |
-| `event_categories` | `id`, `event_id`, `name`, `sort` | Le categorie/classi dell'evento (SUV / elaborate / speciali…). |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
-| `event_participants` | `event_id`, `user_id`, `created_at` | Chi ha aderito (con il join code). |
+| `event_participants` | `event_id`, `user_id`, `status`, `created_at` | Chi ha aderito (con il join code): `pending` finché l'organizzatore non lo attiva, poi `active` (#163). |
+
+Le categorie/classi vivono sul singolo roadbook (`roadbooks.category`, #248), non più
+sull'evento.
 
 - **Proprietà vs gestione:** il proprietario è `events.organizer_id`; le righe `event_organizers`
   concedono ad altri utenti i diritti di **gestione dei contenuti** dello stesso evento. La
@@ -108,13 +110,14 @@ primo salvataggio.
 La pagina completa di un evento. `event_manage_get()` fornisce tutto: parametri, categorie,
 organizzatori, roadbook associati (con proprietario + `scoring_mode`) e il totale partecipanti +
 il join code. Le azioni:
-- **Parametri + categorie** — `event_save` (una transazione: un errore a metà non lascia
-  categorie a metà). Le categorie fanno **upsert mantenendo gli id stabili** (P2.4 vi si
-  aggancerà), cancellando solo quelle rimosse dalla lista.
+- **Parametri** — `event_save` (titolo, descrizione, sito dell'organizzatore, coordinate HQ,
+  date, visibilità). Le categorie non si gestiscono qui: vivono sul singolo roadbook
+  (`roadbooks.category`, #248).
 - **Roadbook** — `event_rb_add` (solo un roadbook **di cui sei proprietario**; un admin può
   associarne di altrui, #140), `event_rb_remove` (dissocia, non tocca il roadbook), `event_rb_mode`
   (imposta `scoring_mode`).
-- **Organizzatori** — `user_search` (ricerca per username/nome, filtrabile per organizzazione),
+- **Organizzatori** — `user_search` (ricerca per username/nome, filtrabile per organizzazione;
+  riservata a organizzatori/admin perché restituisce le email),
   `event_org_add`/`event_org_remove` (**solo il proprietario/admin**; il proprietario non è
   rimovibile).
 - **Join code** — `event_join_code` genera/rigenera (o azzera) il codice condiviso con i
