@@ -58,6 +58,25 @@ function current_user(): ?array {
 
 function require_user(): array { $u = current_user(); if (!$u) fail('Not signed in.', 401); return $u; }
 
+/* ---- participant context (#163) ---- */
+function participant_context(): ?array {
+    $uid = $_SESSION['uid'] ?? 0;
+    if (!$uid || empty($_SESSION['participant_event'])) return null;
+    $st = db()->prepare('SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ?');
+    $st->execute([(int)$_SESSION['participant_event'], (int)$uid]);
+    if (!$st->fetch()) return null;
+    $e = db()->prepare('SELECT slug, title FROM events WHERE id = ?');
+    $e->execute([(int)$_SESSION['participant_event']]);
+    $row = $e->fetch();
+    return $row ? ['event_id' => (int)$_SESSION['participant_event'], 'event_slug' => $row['slug'], 'event_title' => $row['title']] : null;
+}
+function set_participant_context(int $eventId): void {
+    $_SESSION['participant_event'] = $eventId;
+}
+function clear_participant_context(): void {
+    unset($_SESSION['participant_event']);
+}
+
 // A configured .env superuser (ADMIN_EMAILS): the bootstrap admins, who stay admin even if
 // "demoted" in the panel and can never be blocked or deleted — the failsafe for the owner.
 function is_locked_admin(string $email): bool {

@@ -36,8 +36,9 @@ AddType audio/mpeg .mp3
 # relative ../ paths, which would break one level deeper.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(challenge|reader|editor|event)/([A-Za-z0-9_-]+)/$ /$1/$2 [R=301,L]
+    RewriteRule ^(challenge|reader|editor|event|go)/([A-Za-z0-9_-]+)/$ /$1/$2 [R=301,L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(challenge|reader|editor|event)/[A-Za-z0-9_-]+$ /$1/index.html [L]
+    RewriteRule ^go/([A-Za-z0-9_-]+)$ /go/index.php?tag=$1 [L]
 </IfModule>

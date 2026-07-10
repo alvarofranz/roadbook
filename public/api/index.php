@@ -18,7 +18,7 @@ try {
             $u = current_user();
             // a plain user who co-organizes an event still needs the Events entry point (#123)
             if ($u && !is_admin($u) && empty($u['is_organizer'])) $u['manages_events'] = user_manages_events((int)$u['id']) ? 1 : 0;
-            json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'google_client' => $CFG['google_client_ids'][0] ?? '', 'user' => $u, 'banner' => site_banner()]);
+            json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'google_client' => $CFG['google_client_ids'][0] ?? '', 'user' => $u, 'participant' => participant_context(), 'banner' => site_banner()]);
             break;
         case 'register':  register_user($d); break;
         case 'verify':    verify_email($d); break;
@@ -64,8 +64,11 @@ try {
         case 'event_join':      event_join(require_user(), $d); break;
         case 'event_leave':     event_leave(require_user(), $d); break;
         case 'event_participant_remove': event_participant_remove(require_user(), $d); break;
+        case 'event_participant_add': event_participant_add(require_user(), $d); break;
+        case 'participant_activate': participant_activate(require_user(), $d); break;
         case 'event_participants_list': event_participants_list(require_user(), $d); break;
         case 'event_logo_remove': event_logo_remove(require_user(), $d); break;
+        case 'leave_participant_mode': clear_participant_context(); json_out(['ok' => true]); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;

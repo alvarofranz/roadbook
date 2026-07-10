@@ -16,6 +16,11 @@
         $('chLoading').hidden = true; $('chContent').hidden = false;
         const title = (rb.meta && rb.meta.title) || t('Roadbook');
         $('chTitle').textContent = title;
+        if (cfg.participant) {
+            var evBar = document.createElement('div'); evBar.className = 'ch-ev-bar';
+            evBar.innerHTML = '<a href="/event/' + esc(cfg.participant.event_slug) + '" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ' + esc(cfg.participant.event_title) + '</a>';
+            $('chContent').insertBefore(evBar, $('chContent').firstChild);
+        }
         RBSetMeta({ title: title + ' · RDBK.app', description: (rb.meta && rb.meta.description) || undefined, canonical: location.origin + '/challenge/' + encodeURIComponent(slug) });
         $('chOwner').textContent = o.name || ('@' + (o.username || ''));
         $('chMeta').textContent = '@' + (o.username || '') + ' · ' + RBSummary((rb.meta && rb.meta.total_distance) || 0, rb.notes.length) + (j.status === 'public' ? '' : ' · 🔒 ' + t(j.status === 'ready' ? 'Ready' : 'Draft'));

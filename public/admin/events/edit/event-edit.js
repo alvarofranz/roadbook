@@ -173,8 +173,19 @@
             : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
         $('joinCopy').hidden = !code;
         $('joinClear').hidden = !code;
+        renderLink();
     }
     $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
+    function renderLink() {
+        if (!ev.join_code) { $('evLink').hidden = true; return; }
+        $('evLink').hidden = false;
+        var url = location.origin + '/go/' + ev.join_code;
+        $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;
+        $('evLinkCopy').hidden = false;
+    }
+    $('evLinkCopy').onclick = async () => {
+        try { await navigator.clipboard.writeText($('evLinkUrl').textContent); toast('Copied.'); } catch (e) { toast('Could not copy.'); }
+    };
     $('joinRotate').onclick = async () => {
         // rotating invalidates the currently shared code, so it must be confirmed
         if (ev.join_code && !(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;

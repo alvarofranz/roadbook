@@ -97,6 +97,15 @@
             'seo.feat_tripmaster.title': 'Tripmaster — RDBK.app', 'seo.feat_tripmaster.desc': 'A precise GPS trip computer: partial and total odometer, speed alerts, heading, stopwatch and GPX recording — no roadbook needed.',
             'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',
             'seo.feat_events.title': 'Organising an event — RDBK.app', 'seo.feat_events.desc': 'How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.',
+            'In preparation': 'In preparation', 'Active participants only': 'Active participants only',
+            'Exit event mode': 'Exit event mode',
+            'Show this QR to the event organizer to activate your participation.': 'Show this QR to the event organizer to activate your participation.',
+            'Paste participant code…': 'Paste participant code…', 'Invalid participant code.': 'Invalid participant code.',
+            'This code is for a different event.': 'This code is for a different event.', 'Participant activated.': 'Participant activated.',
+            'Could not activate.': 'Could not activate.', 'Link for participants': 'Link for participants',
+            'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:',
+            'Participant management': 'Participant management', 'Select an event to manage its participants.': 'Select an event to manage its participants.',
+            'Add': 'Add', 'Search users…': 'Search users…', 'added.': 'added.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)

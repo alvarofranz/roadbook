@@ -17,6 +17,12 @@
 
     // True only inside a Capacitor native shell (available synchronously at startup).
     const isNativeApp = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+    // True when the user entered via an event participant landing page (#163).
+    const isParticipant = () => {
+        if (document.cookie.includes('rb_participant=1')) return true;
+        try { if (localStorage.getItem('rb_participant') === '1') return true; } catch (e) {}
+        return false;
+    };
 
     // API + live-version host. On the web it is the same-origin ROOT. The native app serves its
     // bundled UI from a WebView-local origin with no backend, so the PHP API (accounts, public
@@ -653,6 +659,7 @@
         let user = null; try { user = JSON.parse(localStorage.getItem(RB_CFG_USER) || 'null'); } catch (e) {}
         return { ok: false, offline: true, user };
     };
+    window.RBIsParticipant = isParticipant;
     // Trigger a download from a Blob or a URL.
     window.RBDownload = (data, filename) => {
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
@@ -723,6 +730,7 @@
     (async function accountControl() {
         const cfg = await RBConfig();
         const user = cfg.user || null;
+        const participant = cfg.participant || null;
         renderBanner(cfg.banner);
         // Admins get the in-context UI translation editor (#118) — a small script loaded only for
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
@@ -751,12 +759,14 @@
                         ${user.is_admin ? `<a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>
                         <hr class="menu-sep">
                         <a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a>
+                        <a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>
                         <hr class="menu-sep">
                         <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
                         <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>
                         <a href="${ROOT}admin/trash/"><i class="fa-solid fa-trash-can"></i> ${RBt('Roadbook trash')}</a>
                         <a href="${ROOT}admin/logs/"><i class="fa-solid fa-list-check"></i> ${RBt('Logs')}</a>` : ''}
-                        ${(!user.is_admin && (user.is_organizer || user.manages_events)) ? `<hr class="menu-sep"><a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a>` : ''}
+                        ${(!user.is_admin && (user.is_organizer || user.manages_events)) ? `<hr class="menu-sep"><a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a><a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>` : ''}
+                        ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Exit event mode')}</button>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
@@ -766,6 +776,8 @@
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
                 w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
+                const lp = w.querySelector('#leaveParticipant');
+                if (lp) lp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();

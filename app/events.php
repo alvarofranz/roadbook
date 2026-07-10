@@ -131,14 +131,14 @@ function event_participants_list(array $user, array $d): void {
     $st->execute($args);
     $total = (int)$st->fetchColumn();
     // LIMIT/OFFSET are sanitized ints inlined directly: PDO string-binds bound placeholders there
-    $st = db()->prepare("SELECT u.id, u.username, u.first_name, u.last_name, u.email, ep.created_at
+    $st = db()->prepare("SELECT u.id, u.username, u.first_name, u.last_name, u.email, ep.created_at, ep.status
         FROM event_participants ep JOIN users u ON u.id = ep.user_id
         WHERE $where ORDER BY ep.created_at, u.id LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
     $st->execute($args);
     json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage,
         'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'],
             'first_name' => $x['first_name'], 'last_name' => $x['last_name'], 'email' => $x['email'],
-            'joined' => $x['created_at']], $st->fetchAll())]);
+            'joined' => $x['created_at'], 'status' => $x['status']], $st->fetchAll())]);
 }
 
 // Create or update an event's own parameters + categories. The roadbook associations and the
@@ -224,19 +224,18 @@ function event_rb_mode(array $user, array $d): void {
 }
 
 /* ---- co-organizers (#123) ---- */
-// User search for the add-organizer picker: matches username or full name, optionally narrowed
-// by the free-text profile organization (the client defaults that filter to the searcher's own).
+// User search for the add-organizer / add-participant pickers: matches username, full name or email.
 function user_search(array $user, array $d): void {
     $q = trim((string)($d['q'] ?? ''));
     $org = trim((string)($d['organization'] ?? ''));
     if ($q === '' && $org === '') json_out(['ok' => true, 'users' => []]);
-    $sql = "SELECT username, organization FROM users WHERE blocked = 0";
+    $sql = "SELECT id, username, first_name, last_name, email, organization FROM users WHERE blocked = 0";
     $args = [];
-    if ($q !== '') { $sql .= " AND (username LIKE ? OR CONCAT(first_name, ' ', last_name) LIKE ?)"; $like = '%' . $q . '%'; array_push($args, $like, $like); }
+    if ($q !== '') { $sql .= " AND (username LIKE ? OR CONCAT(first_name, ' ', last_name) LIKE ? OR email LIKE ?)"; $like = '%' . $q . '%'; array_push($args, $like, $like, $like); }
     if ($org !== '') { $sql .= ' AND organization LIKE ?'; $args[] = '%' . $org . '%'; }
     $st = db()->prepare($sql . ' ORDER BY username LIMIT 10');
     $st->execute($args);
-    json_out(['ok' => true, 'users' => array_map(fn($r) => ['username' => $r['username'], 'organization' => $r['organization']], $st->fetchAll())]);
+    json_out(['ok' => true, 'users' => array_map(fn($r) => ['id' => (int)$r['id'], 'username' => $r['username'], 'first_name' => $r['first_name'], 'last_name' => $r['last_name'], 'email' => $r['email'], 'organization' => $r['organization']], $st->fetchAll())]);
 }
 
 // Only the owner (or an admin) edits the organizer list; co-organizers manage content, not access.
@@ -285,7 +284,7 @@ function event_join(array $user, array $d): void {
     $st = db()->prepare('SELECT id, slug FROM events WHERE join_code = ?'); $st->execute([$code]);
     $e = $st->fetch();
     if (!$e || ($slug !== '' && $e['slug'] !== $slug)) fail('Wrong join code.', 404);
-    db()->prepare('INSERT IGNORE INTO event_participants (event_id, user_id) VALUES (?,?)')->execute([(int)$e['id'], (int)$user['id']]);
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'pending') ON DUPLICATE KEY UPDATE status = 'pending'")->execute([(int)$e['id'], (int)$user['id']]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
     json_out(['ok' => true]);
 }
@@ -302,6 +301,23 @@ function event_participant_remove(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     db()->prepare('DELETE FROM event_participants WHERE event_id = ? AND user_id = ?')
         ->execute([(int)$e['id'], (int)($d['user_id'] ?? 0)]);
+    json_out(['ok' => true]);
+}
+
+function event_participant_add(array $user, array $d): void {
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    $uid = (int)($d['user_id'] ?? 0);
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")->execute([(int)$e['id'], $uid]);
+    json_out(['ok' => true]);
+}
+
+// #163: organizer activates a participant by signed token (verified client-side)
+function participant_activate(array $user, array $d): void {
+    $eventId = (int)($d['event_id'] ?? 0);
+    $participantId = (int)($d['user_id'] ?? 0);
+    $e = require_event_manage($user, $eventId);
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active')
+        ON DUPLICATE KEY UPDATE status = 'active'")->execute([$e['id'], $participantId]);
     json_out(['ok' => true]);
 }
 
@@ -324,7 +340,7 @@ function events_public_list(): void {
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -332,19 +348,20 @@ function event_public_get(array $d): void {
     // joining state for the signed-in visitor: drives the Join-with-code / Leave UI (#123)
     $me = current_user();
     $joined = false;
+    $participantStatus = null;
     if ($me) {
-        $j = db()->prepare('SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ?');
+        $j = db()->prepare('SELECT status FROM event_participants WHERE event_id = ? AND user_id = ?');
         $j->execute([(int)$e['id'], (int)$me['id']]);
-        $joined = (bool)$j->fetch();
+        $row = $j->fetch();
+        if ($row) { $joined = true; $participantStatus = $row['status']; }
     }
-    // Anyone sees the PUBLIC roadbooks; a member of the event (participant or organizer) also
-    // sees the READY ones — finished routes delivered to entrants only (#25). Drafts never show.
-    // Event organizers (#247) can always read every roadbook attached to the event.
-    $member = $joined || ($me && event_can_manage($me, $e));
+    // The front-end shows all roadbooks in the event list, gating access with badges:
+    // Draft → "Organizers only" badge; Ready → "Active participants only" badge
+    // (unless the user is an active participant or organizer).
+    // Actual roadbook access is still checked server-side on the challenge page.
     $orgRead = $me && event_can_manage($me, $e); // organizers always readable
-    $statuses = "'public'";
-    if ($member) $statuses .= ", 'ready'";
-    if ($orgRead) $statuses .= ", 'draft'";
+    $activeParticipant = $joined && $participantStatus === 'active';
+    $statuses = "'public','ready','draft'";
     $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
@@ -356,10 +373,11 @@ function event_public_get(array $d): void {
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
     ], $rb->fetchAll());
     json_out(['ok' => true, 'event' => [
-        'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
+        'id' => (int)$e['id'], 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
-        'can_join' => $e['join_code'] !== null, 'joined' => $joined,
+            'can_join' => $e['join_code'] !== null, 'joined' => $joined, 'participant_status' => $participantStatus,
+            'org_read' => $orgRead, 'active_participant' => $activeParticipant,
     ], 'roadbooks' => $roadbooks]);
 }

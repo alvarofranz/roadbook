@@ -9,8 +9,8 @@
     <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=2026.07.10-1">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=2026.07.10-1">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=2026.07.10-2">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=2026.07.10-2">
     <style>
         .pp-search { margin: .8rem 0; }
         .pp-search .field { flex: 1; max-width: 360px; margin: 0; }
@@ -28,9 +28,16 @@
 
     <div id="ppBody" hidden>
         <div class="toolbar pp-search">
+            <i class="fa-solid fa-qrcode icon-accent"></i>
+            <input id="ppActivateIn" class="field" data-i18n-ph="Paste participant code…" placeholder="Paste participant code…" autocomplete="off">
+            <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
+        </div>
+        <hr>
+        <div class="toolbar pp-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="ppSearchIn" class="field" type="search" data-i18n-ph="Search participants…" placeholder="Search participants…" autocomplete="off">
             <button class="btn btn-ghost" id="ppExport" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
+            <button class="btn btn-primary" id="ppAdd" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add">Add</span></button>
         </div>
         <div id="ppList"></div>
         <div class="pager" id="ppPager"></div>
@@ -39,13 +46,14 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../../assets/js/roadbook-core.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/i18n.es.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/i18n.it.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/i18n.de.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/i18n.fr.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/i18n.js?v=2026.07.10-1"></script>
-<script src="../../../assets/js/app.js?v=2026.07.10-1"></script>
-<script src="participants.js?v=2026.07.10-1"></script>
+<script src="../../../assets/js/config.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/roadbook-core.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/i18n.es.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/i18n.it.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/i18n.de.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/i18n.fr.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/i18n.js?v=2026.07.10-2"></script>
+<script src="../../../assets/js/app.js?v=2026.07.10-2"></script>
+<script src="participants.js?v=2026.07.10-2"></script>
 </body>
 </html>

@@ -40,7 +40,8 @@
     $('pickChallenge').onclick = () => { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.pick((r) => loadRb(r)); };
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
     // #146: the same config load also tells us whether public roadbooks may be opened at all.
-    const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; }).catch(() => {});
+    let evCtx = null;
+    const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; evCtx = (c && c.participant) || null; }).catch(() => {});
     $('pickMine').onclick = async () => {
         const r = await RBApi('rb_list');
         const list = (r.ok && r.roadbooks) || [];
@@ -169,6 +170,12 @@
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
+        if (evCtx) {
+            var bar = document.querySelector('.odo-ev-bar') || document.createElement('div');
+            bar.className = 'odo-ev-bar'; bar.innerHTML = '<a href="/event/' + esc(evCtx.event_slug) + '" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ' + esc(evCtx.event_title) + '</a>';
+            var ob = document.querySelector('.odometer-bar');
+            if (ob && !ob.contains(bar)) ob.insertBefore(bar, ob.firstChild);
+        }
         const odoLogo = $('odoLogo'); if (rb.meta && rb.meta.logo) { odoLogo.src = rb.meta.logo; odoLogo.hidden = false; } else { odoLogo.hidden = true; }
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();

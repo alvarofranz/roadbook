@@ -17,8 +17,8 @@
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=2026.07.10-1">
-    <link rel="stylesheet" href="/assets/css/app.css?v=2026.07.10-1">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=2026.07.10-2">
+    <link rel="stylesheet" href="/assets/css/app.css?v=2026.07.10-2">
     <style>
         #evWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
         .ev-head { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
@@ -35,6 +35,11 @@
         .ev-join .btn { width: auto; }
         .ev-join .grow { flex: 1; }
         .ev-hq-map { width: 100%; height: 240px; border-radius: 12px; border: 1px solid var(--line); margin-top: .8rem; }
+        .ev-qr-box { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .ev-qr { background: #fff; border-radius: 8px; padding: 6px; }
+        .ev-qr-right { flex: 1; min-width: 12rem; }
+        .ev-qr-right p { margin: 0 0 .4rem; font-size: .88rem; color: var(--text); }
+        .ev-token { font-size: .72rem; word-break: break-all; user-select: all; background: var(--card); padding: .3rem .5rem; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -46,7 +51,6 @@
         <div class="ev-head">
             <img id="evLogo" class="ev-logo" alt="" hidden>
             <div class="ev-head-text">
-                <div class="kicker"><a href="/events/" data-i18n="Events">Events</a></div>
                 <h1 id="evTitle"></h1>
                 <div class="muted small" id="evMeta"></div>
             </div>
@@ -54,6 +58,15 @@
         <p id="evDesc" class="ev-desc"></p>
         <p id="evWebsite" class="ev-desc" hidden></p>
         <div id="evHqMap" class="ev-hq-map" hidden></div>
+        <div class="ev-join" id="evActivate" hidden>
+            <div class="ev-qr-box">
+                <canvas id="evQrCode" width="180" height="180" class="ev-qr"></canvas>
+                <div class="ev-qr-right">
+                    <p data-i18n="Show this QR to the event organizer to activate your participation.">Show this QR to the event organizer to activate your participation.</p>
+                    <div class="ev-line"><code id="evQrToken" class="ev-token"></code><button class="btn btn-ghost btn-sm" id="evQrCopy" type="button"><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button></div>
+                </div>
+            </div>
+        </div>
         <div class="ev-join" id="evJoin" hidden></div>
         <div class="icon-category" data-i18n="Roadbooks">Roadbooks</div>
         <div class="gallery" id="evRoadbooks"></div>
@@ -61,15 +74,16 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=2026.07.10-1"></script>
-<script src="/assets/js/roadbook-core.js?v=2026.07.10-1"></script>
-<script src="/assets/js/rbmap.js?v=2026.07.10-1"></script>
-<script src="/assets/js/i18n.es.js?v=2026.07.10-1"></script>
-<script src="/assets/js/i18n.it.js?v=2026.07.10-1"></script>
-<script src="/assets/js/i18n.de.js?v=2026.07.10-1"></script>
-<script src="/assets/js/i18n.fr.js?v=2026.07.10-1"></script>
-<script src="/assets/js/i18n.js?v=2026.07.10-1"></script>
-<script src="/assets/js/app.js?v=2026.07.10-1"></script>
-<script src="event.js?v=2026.07.10-1"></script>
+<script src="/assets/js/config.js?v=2026.07.10-2"></script>
+<script src="/assets/js/roadbook-core.js?v=2026.07.10-2"></script>
+<script src="/assets/js/rbmap.js?v=2026.07.10-2"></script>
+<script src="/assets/js/i18n.es.js?v=2026.07.10-2"></script>
+<script src="/assets/js/i18n.it.js?v=2026.07.10-2"></script>
+<script src="/assets/js/i18n.de.js?v=2026.07.10-2"></script>
+<script src="/assets/js/i18n.fr.js?v=2026.07.10-2"></script>
+<script src="/assets/js/i18n.js?v=2026.07.10-2"></script>
+<script src="/assets/js/qrcode.min.js?v=2026.07.10-2"></script>
+<script src="/assets/js/app.js?v=2026.07.10-2"></script>
+<script src="event.js?v=2026.07.10-2"></script>
 </body>
 </html>

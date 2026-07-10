@@ -29,14 +29,21 @@
             const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat] });
             if (hqMap.map) new maplibregl.Marker({ color: '#e8b059' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
         } else mapEl.hidden = true;
+        const statusBadge = (r) => {
+            if (r.status === 'draft') return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';
+            if (r.status === 'ready' && !(j.event.active_participant || j.event.org_read)) return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('Active participants only')) + '</div>';
+            return '';
+        };
         const card = (r) => RBGalleryCard({
-            href: `/challenge/${encodeURIComponent(r.slug)}?event=${encodeURIComponent(slug)}`, thumb: r.thumb, title: r.title,
-            meta: `${r.category ? `<span class="u-badge">${esc(r.category)}</span> ` : ''}@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
-            body: r.status === 'ready' ? `<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ${esc(t('Participants only'))}</div>` : '',
+            href: '/challenge/' + encodeURIComponent(r.slug) + '?event=' + encodeURIComponent(slug),
+            thumb: r.thumb, title: r.title,
+            meta: (r.category ? '<span class="u-badge">' + esc(r.category) + '</span> ' : '') + '@' + esc(r.username) + ' \u00b7 ' + RBSummary(r.total_distance, r.note_count),
+            body: statusBadge(r),
         });
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
+        if (window.RBIsParticipant && RBIsParticipant()) { $('evJoin').hidden = true; $('evWebsite').hidden = true; $('evHqMap').hidden = true; }
         renderJoin(e);
     }
     // Joining changes what the server returns (the READY roadbooks appear), so join/leave
@@ -52,34 +59,61 @@
     async function renderJoin(e) {
         const box = $('evJoin');
         if (!e.can_join && !e.joined) { box.hidden = true; return; }
-        box.hidden = false;
-        const cfg = await whoami; // resolved once at page load
+        const cfg = await whoami;
         if (!cfg.user) {
-            box.innerHTML = `<span class="grow">${esc(t('Sign in to join this event with the organizer’s code.'))}</span>
-                <a class="btn btn-primary" href="/account/?next=${encodeURIComponent(location.pathname)}">${esc(t('Sign in'))}</a>`;
+            box.hidden = false;
+            box.innerHTML = '<span class="grow">' + esc(t('Sign in to join this event with the organizer\'s code.')) + '</span><a class="btn btn-primary" href="/account/?next=' + encodeURIComponent(location.pathname) + '">' + esc(t('Sign in')) + '</a>';
             return;
         }
-        if (e.joined) {
-            box.innerHTML = `<span class="grow"><i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(t('You are participating in this event.'))}</span>
-                <button class="btn btn-ghost" id="evLeave">${esc(t('Leave event'))}</button>`;
+        if (e.joined && e.participant_status !== 'pending') {
+            box.hidden = false;
+            box.innerHTML = '<span class="grow"><i class="fa-solid fa-flag-checkered icon-accent"></i> ' + esc(t('You are participating in this event.')) + '</span><button class="btn btn-ghost" id="evLeave">' + esc(t('Leave event')) + '</button>';
             box.querySelector('#evLeave').onclick = async () => {
-                if (!(await RBConfirmDanger(t('Leave event') + ' “' + esc(e.title) + '”?', t('Leave event')))) return;
+                if (!(await RBConfirmDanger(t('Leave event') + ' "' + esc(e.title) + '"?', t('Leave event')))) return;
                 const x = await RBApi('event_leave', { slug: e.slug });
-                if (x.ok) load(); else toast(x.error || 'Could not save.'); // the reserved roadbooks drop out
+                if (x.ok) load(); else toast(x.error || 'Could not save.');
             };
             return;
         }
-        box.innerHTML = `<span class="grow">${esc(t('Have a join code from the organizer?'))}</span>
-            <input id="evCode" class="field" data-i18n-ph="Join code" placeholder="${esc(t('Join code'))}" autocomplete="off" maxlength="16">
-            <button class="btn btn-primary" id="evJoinBtn"><i class="fa-solid fa-flag-checkered"></i> ${esc(t('Join'))}</button>`;
-        const join = async () => {
-            const code = box.querySelector('#evCode').value.trim();
-            if (!code) return;
-            const x = await RBApi('event_join', { code, slug: e.slug });
-            if (x.ok) { toast('You are participating in this event.'); load(); } // the reserved roadbooks appear
-            else toast(x.error || 'Wrong join code.');
-        };
-        box.querySelector('#evJoinBtn').onclick = join;
-        box.querySelector('#evCode').addEventListener('keydown', (ev2) => { if (ev2.key === 'Enter') join(); });
+        if (e.participant_status !== 'pending') {
+            box.hidden = false;
+            box.innerHTML = '<span class="grow">' + esc(t('Have a join code from the organizer?')) + '</span><input id="evCode" class="field" data-i18n-ph="Join code" placeholder="' + esc(t('Join code')) + '" autocomplete="off" maxlength="16"><button class="btn btn-primary" id="evJoinBtn"><i class="fa-solid fa-flag-checkered"></i> ' + esc(t('Join')) + '</button>';
+            box.querySelector('#evJoinBtn').onclick = async () => {
+                const code = box.querySelector('#evCode').value.trim();
+                if (!code) return;
+                const x = await RBApi('event_join', { code, slug: e.slug });
+                if (x.ok) { toast('You are participating in this event.'); load(); }
+                else toast(x.error || 'Wrong join code.');
+            };
+            box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
+        } else {
+            box.hidden = true;
+            renderActivateQr(e, cfg);
+        }
     }
+    async function renderActivateQr(e, cfg) {
+        var box = $('evActivate'); box.hidden = false;
+        var payload = e.id + ':' + cfg.user.id + ':activate';
+        var token = await RB.signMeta(payload, (window.RB_CONFIG || {}).signKey);
+        $('evQrToken').textContent = token;
+        try {
+            var qr = new qrcode(0, 'M');
+            qr.addData(token); qr.make();
+            var c = $('evQrCode');
+            c.hidden = false; c.width = 180; c.height = 180;
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 180, 180);
+            var cellSize = Math.floor(180 / qr.getModuleCount());
+            var offset = Math.floor((180 - cellSize * qr.getModuleCount()) / 2);
+            ctx.fillStyle = '#000000';
+            for (var row = 0; row < qr.getModuleCount(); row++) {
+                for (var col = 0; col < qr.getModuleCount(); col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        } catch (er) { c.hidden = true; }
+    }
+    var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = function() { navigator.clipboard.writeText($('evQrToken').textContent).then(function() { toast('Copied.'); }, function() { toast('Could not copy.'); }); };
 })();
