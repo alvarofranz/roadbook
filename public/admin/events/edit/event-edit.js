@@ -207,6 +207,7 @@
         if (hqMap && hqMap.map) {
             if (hqMarker) hqMarker.remove();
             hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
+            hqMap.map.jumpTo({ center: [lon, lat], zoom: 10 });
         }
         settingHq = false;
     }
@@ -222,8 +223,27 @@
             settingHq = false;
         }
     }
-    hqMap = new RBMap('evHqMap', { zoom: 5, center: [12.5, 43.7] });
-    if (hqMap.map) hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
+    function initHqMap() {
+        const hasCoords = ev && ev.hq_lat != null && ev.hq_lon != null;
+        const center = hasCoords ? [ev.hq_lon, ev.hq_lat] : [12.5, 43.7];
+        hqMap = new RBMap('evHqMap', { zoom: hasCoords ? 10 : 5, center,
+            style: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+                sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 20,
+                    tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+                        'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+                        'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'] } },
+                layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
+        if (!hqMap.map) return;
+        hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
+        if (hasCoords) setHqPin(ev.hq_lat, ev.hq_lon);
+        else if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => hqMap.map.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 10 }),
+                () => {},
+                { enableHighAccuracy: false, timeout: 5000 }
+            );
+        }
+    }
     $('evHqLat').oninput = hqInput;
     $('evHqLon').oninput = hqInput;
 
@@ -234,6 +254,7 @@
         ev = r.event;
         $('adminMsg').hidden = true; $('evBody').hidden = false; $('evActions').hidden = false;
         renderParams(); renderLogo(); renderOrgs(); renderRbs(); renderJoinCode();
+        initHqMap();
     }
 
     (async function init() {
@@ -246,5 +267,6 @@
         if (!me.is_admin && !me.is_organizer) { $('adminMsg').textContent = t('Organizers only.'); return; }
         $('adminMsg').hidden = true; $('evBody').hidden = false; $('evActions').hidden = false;
         renderParams();
+        initHqMap();
     })();
 })();
