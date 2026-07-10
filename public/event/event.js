@@ -22,7 +22,7 @@
         $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';
         const w = $('evWebsite');
-        if (e.organizer_website) { w.hidden = false; w.innerHTML = `<a href="${esc(e.organizer_website)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> ${esc(e.organizer_website.replace(/^https?:\/\//, ''))}</a>`; } else w.hidden = true;
+        if (e.organizer_website) { const href = /^https?:\/\//i.test(e.organizer_website) ? e.organizer_website : 'https://' + e.organizer_website; w.hidden = false; w.innerHTML = `<a href="${esc(href)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> ${esc(href.replace(/^https?:\/\//, ''))}</a>`; } else w.hidden = true;
         const mapEl = $('evHqMap');
         if (e.hq_lat != null && e.hq_lon != null) {
             mapEl.hidden = false;
