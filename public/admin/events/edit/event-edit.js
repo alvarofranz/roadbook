@@ -207,7 +207,7 @@
         if (hqMap && hqMap.map) {
             if (hqMarker) hqMarker.remove();
             hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
-            hqMap.map.jumpTo({ center: [lon, lat], zoom: 10 });
+            hqMap.map.jumpTo({ center: [lon, lat] });
         }
         settingHq = false;
     }
