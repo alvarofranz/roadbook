@@ -693,6 +693,7 @@
             'Challenge failed. Please try again.': 'La verificación ha fallado. Inténtalo de nuevo.',
             'Google sign-in failed. Please try again.': 'El inicio de sesión con Google ha fallado. Inténtalo de nuevo.',
             'Account': 'Cuenta',
+            'Ranking': 'Clasificación',
             'Open ranking': 'Abrir clasificación',
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Puntuaciones de este evento. El organizador recoge los códigos QR de resultado tras cada recorrido y los añade aquí.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Clasificación en vivo de este evento. Escanea el código QR de resultado de cada vehículo tras su recorrido.',
