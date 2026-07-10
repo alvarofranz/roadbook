@@ -685,4 +685,8 @@
             'This cannot be undone.': 'Non può essere annullato.',
             'Expired': 'Scaduto',
             'Organizers only.': 'Solo organizzatori.',
+            'Please complete the challenge.': 'Completa la verifica.',
+            'Challenge failed. Please try again.': 'Verifica non riuscita. Riprova.',
+            'Google sign-in failed. Please try again.': 'Accesso con Google non riuscito. Riprova.',
+            'Account': 'Account',
         };

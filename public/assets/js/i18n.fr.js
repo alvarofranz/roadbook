@@ -646,4 +646,8 @@
             'This cannot be undone.': 'Impossible d\'annuler.',
             'Expired': 'Expiré',
             'Organizers only.': 'Organisateurs uniquement.',
+            'Please complete the challenge.': 'Veuillez compléter la vérification.',
+            'Challenge failed. Please try again.': 'Échec de la vérification. Veuillez réessayer.',
+            'Google sign-in failed. Please try again.': 'Échec de la connexion Google. Veuillez réessayer.',
+            'Account': 'Compte',
         };

@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.10-4">
-    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.10-4">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=2026.07.10-5">
+    <link rel="stylesheet" href="../assets/css/app.css?v=2026.07.10-5">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; background: var(--tm-band, transparent); transition: background .35s ease; } /* --tm-band = the speed-alert tint, data-driven */
         /* "How it works" link centred at the foot of the dashboard */
@@ -31,7 +31,7 @@
         .tm-odo .readout-row { gap: .4rem; }
         .tm-odo .num, .tm-odo .num2 { font-size: clamp(1.3rem, 6vw, 2.1rem); }
         .tm-odo .corr .btn { padding: .25rem .4rem; font-size: .72rem; }
-        @media (max-width: 420px) { .tm-odo { grid-template-columns: 1fr; } }
+        @media (max-width: 340px) { .tm-odo { grid-template-columns: 1fr; } } /* two columns fit down to small phones — stacking doubles the dashboard height (#250) */
         .mini .spd-unit { font-size: .85rem; color: var(--muted); font-weight: 700; }
         /* CAP needle: the shared .cap-arrow rotation, sized to sit beside the readout;
            parked (invisible but keeping its space) until a heading exists */
@@ -59,6 +59,25 @@
         .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
         .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
         .hold-field-label { position: relative; z-index: 1; }
+        /* phones: compact the dashboard so the whole run view fits on screen without scrolling (#250) */
+        @media (max-width: 480px) {
+            .trip-main { padding: .5rem .7rem 1rem; }
+            .trip-main .dash { gap: .55rem; padding-top: .4rem; }
+            .tm-odo { gap: .55rem; }
+            .tm-odo .readout { padding: .45rem .5rem; }
+            .tm-odo .num, .tm-odo .num2 { font-size: clamp(1.3rem, 6vw, 2.1rem); }
+            /* the ±10 m correctors move to their own row UNDER the number: three controls plus a
+               long odometer value never fit side by side in a 2-column readout on a phone */
+            .tm-odo .readout-row { flex-wrap: wrap; }
+            .tm-odo .corr { order: 2; flex-direction: row; width: 100%; justify-content: center; gap: .5rem; }
+            .tm-odo #tmReset { padding: .4rem .55rem; }
+            .trip-main .row3 { gap: .5rem; }
+            .trip-main .mini { padding: .5rem .4rem; }
+            .trip-main .mini .value { font-size: 1.3rem; }
+            .tm-controls { margin-top: .1rem; gap: .5rem; }
+            .tm-controls .btn { padding: .5rem .3rem; }
+            .tm-help { margin: .7rem auto 0; }
+        }
     </style>
 </head>
 <body class="gps-tool">
@@ -109,16 +128,16 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=2026.07.10-4"></script>
-<script src="../assets/js/gps-meter.js?v=2026.07.10-4"></script>
-<script src="../assets/js/gpx-recorder.js?v=2026.07.10-4"></script>
-<script src="../assets/js/i18n.es.js?v=2026.07.10-4"></script>
-<script src="../assets/js/i18n.it.js?v=2026.07.10-4"></script>
-<script src="../assets/js/i18n.de.js?v=2026.07.10-4"></script>
-<script src="../assets/js/i18n.fr.js?v=2026.07.10-4"></script>
-<script src="../assets/js/i18n.js?v=2026.07.10-4"></script>
-<script src="../assets/js/app.js?v=2026.07.10-4"></script>
-<script src="../assets/js/status-bar.js?v=2026.07.10-4"></script>
-<script src="tripmaster.js?v=2026.07.10-4"></script>
+<script src="../assets/js/roadbook-core.js?v=2026.07.10-5"></script>
+<script src="../assets/js/gps-meter.js?v=2026.07.10-5"></script>
+<script src="../assets/js/gpx-recorder.js?v=2026.07.10-5"></script>
+<script src="../assets/js/i18n.es.js?v=2026.07.10-5"></script>
+<script src="../assets/js/i18n.it.js?v=2026.07.10-5"></script>
+<script src="../assets/js/i18n.de.js?v=2026.07.10-5"></script>
+<script src="../assets/js/i18n.fr.js?v=2026.07.10-5"></script>
+<script src="../assets/js/i18n.js?v=2026.07.10-5"></script>
+<script src="../assets/js/app.js?v=2026.07.10-5"></script>
+<script src="../assets/js/status-bar.js?v=2026.07.10-5"></script>
+<script src="tripmaster.js?v=2026.07.10-5"></script>
 </body>
 </html>

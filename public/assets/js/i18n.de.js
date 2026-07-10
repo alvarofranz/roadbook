@@ -647,4 +647,8 @@
             'This cannot be undone.': 'Das kann nicht rückgängig gemacht werden.',
             'Expired': 'Abgelaufen',
             'Organizers only.': 'Nur für Organisatoren.',
+            'Please complete the challenge.': 'Bitte schließe die Sicherheitsprüfung ab.',
+            'Challenge failed. Please try again.': 'Sicherheitsprüfung fehlgeschlagen. Bitte versuche es erneut.',
+            'Google sign-in failed. Please try again.': 'Google-Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
+            'Account': 'Konto',
         };

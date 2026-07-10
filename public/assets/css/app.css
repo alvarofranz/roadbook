@@ -296,7 +296,13 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .cookie-notice .cookie-ok { flex-shrink: 0; }
 
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; gap: .6rem; padding: .7rem 1rem; padding-bottom: calc(.7rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
-.fabrow .btn { flex: 1; justify-content: center; }
+.fabrow .btn { flex: 1; justify-content: center; min-width: 0; white-space: nowrap; }
+/* phones: the button row must never outgrow the viewport — tighter gaps, compact labels, and
+   content-proportional widths so no button's content ever spills over its neighbour (#250) */
+@media (max-width: 560px) {
+    .fabrow { gap: .3rem; padding: .55rem .45rem calc(.55rem + env(safe-area-inset-bottom)); }
+    .fabrow .btn { flex: 1 1 auto; min-width: 2.4rem; padding: .55rem .3rem; font-size: .8rem; gap: .3rem; }
+}
 
 /* ---------- gallery (home) + demo picker ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }

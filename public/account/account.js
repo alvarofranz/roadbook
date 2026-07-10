@@ -11,6 +11,7 @@
     let me = null; // the signed-in user (held so the change-password handler knows the credential id)
 
     const api = RBApi; // shared helper (app.js)
+    const IS_APP = document.documentElement.classList.contains('native'); // Capacitor shell (set before paint)
     const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vForce', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
@@ -56,20 +57,28 @@
         el.className = 'gbtn-wrap';
         el.innerHTML = `${gButton()}<div class="gis-overlay"></div>`;
         google.accounts.id.renderButton(el.querySelector('.gis-overlay'), { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 280 });
+        // If the invisible GIS iframe never rendered (blocked frame/script), taps fall through to
+        // the wrap — trigger Google's One Tap prompt so pressing the button always reacts (#250).
+        el.onclick = () => { if (!el.querySelector('.gis-overlay iframe')) { try { google.accounts.id.prompt(); } catch (e) {} } };
     }
     // App: a real dark button that opens the native OS Google picker (RBNative), then the SAME flow.
     function renderNativeGoogle() {
         const el = $('gBtn'); if (!el) return;
         el.className = ''; el.innerHTML = gButton();
         el.querySelector('button').onclick = async () => {
-            try { const idToken = await RBNative.googleSignIn(); if (idToken) onGoogle(idToken); }   // null = cancelled
-            catch (e) { msg('Google sign-in failed. Please try again.', false); }
+            // The bridge script loads async — if a tap lands before it's ready, wait for it
+            // briefly instead of doing nothing (#250).
+            for (let i = 0; i < 40 && !(window.RBNative && RBNative.googleSignIn); i++) await new Promise((r) => setTimeout(r, 50));
+            try {
+                if (!window.RBNative || !RBNative.googleSignIn) throw new Error('native bridge unavailable');
+                const idToken = await RBNative.googleSignIn(); if (idToken) onGoogle(idToken);      // null = cancelled
+            } catch (e) { msg('Google sign-in failed. Please try again.', false); }
         };
     }
     // Feedback while the ID token is verified server-side; restoreGoogle() puts the button back on a
     // terminal failure (on success the page navigates away, so no restore is needed).
     function googleBusy() { const el = $('gBtn'); if (el) { el.className = ''; el.innerHTML = `<div class="gbtn-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
-    function restoreGoogle() { (window.RBNative && RBNative.googleSignIn) ? renderNativeGoogle() : renderGoogle(); }
+    function restoreGoogle() { IS_APP ? renderNativeGoogle() : renderGoogle(); }
 
     // After Google consent: probe the server (who is this? does the account exist?) WITHOUT signing in,
     // then show a clear "Sign in / Create account as <email>" confirmation.
@@ -168,8 +177,10 @@
         tsSite = cfg.turnstile || '';
         loadTurnstile();
         // In the Capacitor app the web GIS button can't run (Google blocks OAuth in a WebView), so
-        // sign in through the native OS picker via RBNative; on the web, render the GIS button.
-        if (window.RBNative && RBNative.googleSignIn) renderNativeGoogle();
+        // ALWAYS use the native OS picker there. Decided by the shell class — set synchronously at
+        // startup — never by whether the async RBNative bridge finished loading: racing on it could
+        // render the web button inside the app, where pressing it does nothing (#250).
+        if (IS_APP) renderNativeGoogle();
         else loadGoogle(cfg.google_client || '');
 
         if (params.get('verify')) {
