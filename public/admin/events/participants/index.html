@@ -9,8 +9,8 @@
     <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=2026.07.10-5">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=2026.07.10-5">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=2026.07.10-6">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=2026.07.10-6">
     <style>
         .pp-search { margin: .8rem 0; }
         .pp-search .field { flex: 1; max-width: 360px; margin: 0; }
@@ -30,7 +30,7 @@
     <div id="ppBody" hidden>
         <div class="toolbar pp-search">
             <i class="fa-solid fa-qrcode icon-accent"></i>
-            <input id="ppActivateIn" class="field" data-i18n-ph="Paste participant code…" placeholder="Paste participant code…" autocomplete="off">
+            <input id="ppActivateIn" class="field ev-act-code" data-i18n-ph="Activation code" placeholder="Activation code" autocomplete="off" maxlength="6" style="text-transform:uppercase;font-size:1.4rem;font-weight:800;letter-spacing:.3em;width:10rem">
             <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
         </div>
         <hr>
@@ -47,14 +47,14 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../../assets/js/config.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/roadbook-core.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/i18n.es.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/i18n.it.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/i18n.de.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/i18n.fr.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/i18n.js?v=2026.07.10-5"></script>
-<script src="../../../assets/js/app.js?v=2026.07.10-5"></script>
-<script src="participants.js?v=2026.07.10-5"></script>
+<script src="../../../assets/js/config.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/roadbook-core.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/i18n.es.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/i18n.it.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/i18n.de.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/i18n.fr.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/i18n.js?v=2026.07.10-6"></script>
+<script src="../../../assets/js/app.js?v=2026.07.10-6"></script>
+<script src="participants.js?v=2026.07.10-6"></script>
 </body>
 </html>

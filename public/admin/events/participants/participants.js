@@ -35,16 +35,10 @@
     window.addEventListener('rb-lang', () => load());
 
     $('ppActivate').onclick = async () => {
-        const token = $('ppActivateIn').value.trim();
-        if (!token) return;
-        const key = (window.RB_CONFIG || {}).signKey;
-        const r = await RB.verifyMeta(token, key);
-        if (!r.valid) { toast('Invalid participant code.'); return; }
-        const parts = r.meta.split(':');
-        if (parts.length !== 3 || parts[2] !== 'activate') { toast('Invalid participant code.'); return; }
-        const evId = +parts[0], uid = +parts[1];
-        if (evId !== id) { toast('This code is for a different event.'); return; }
-        const x = await api('participant_activate', { event_id: evId, user_id: uid });
+        const code = $('ppActivateIn').value.trim().toUpperCase();
+        if (!code) return;
+        if (!/^[A-Z2-9]{6}$/.test(code)) { toast('Invalid activation code.'); return; }
+        const x = await api('event_activate_by_code', { code });
         if (x.ok) { $('ppActivateIn').value = ''; toast('Participant activated.'); load(); }
         else toast(x.error || 'Could not activate.');
     };

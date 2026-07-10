@@ -94,18 +94,15 @@
             box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
         } else {
             box.hidden = true;
-            renderActivateQr(e, cfg);
+            renderActivateQr(e);
         }
     }
-    async function renderActivateQr(e, cfg) {
+    function renderActivateQr(e) {
         var box = $('evActivate'); box.hidden = false;
-        var payload = e.id + ':' + cfg.user.id + ':activate';
-        var token = await RB.signMeta(payload, (window.RB_CONFIG || {}).signKey);
-        $('evQrToken').textContent = token;
-        var c = $('evQrCode');
+        $('evQrToken').textContent = e.activation_code;
         try {
             var qr = new qrcode(0, 'M');
-            qr.addData(token); qr.make();
+            qr.addData(e.activation_code); qr.make();
             c.hidden = false; c.width = 180; c.height = 180;
             var ctx = c.getContext('2d');
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 180, 180);

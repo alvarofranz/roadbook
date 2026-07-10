@@ -20,8 +20,9 @@ $st->execute([(int)$event['id'], (int)$user['id']]);
 $row = $st->fetch();
 
 if (!$row) {
-    db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'pending') ON DUPLICATE KEY UPDATE status = 'pending'")
-        ->execute([(int)$event['id'], (int)$user['id']]);
+    $actCode = gen_activation_code();
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
+        ->execute([(int)$event['id'], (int)$user['id'], $actCode, $actCode]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$event['id']);
 }
 // Only ACTIVE participants enter participant mode: the context plus the UI-hint cookie

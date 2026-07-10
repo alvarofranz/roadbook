@@ -11,6 +11,19 @@
 const EVENT_SCORING_MODES = ['free', 'roadbook_suite'];
 function event_scoring_mode($m): string { return in_array($m, EVENT_SCORING_MODES, true) ? $m : 'free'; }
 
+/* ---- helpers ---- */
+
+function gen_activation_code(): string {
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    do {
+        $code = '';
+        for ($i = 0; $i < 6; $i++) $code .= $chars[random_int(0, strlen($chars) - 1)];
+        $st = db()->prepare('SELECT 1 FROM event_participants WHERE activation_code = ?');
+        $st->execute([$code]);
+    } while ($st->fetchColumn());
+    return $code;
+}
+
 /* ---- per-event management rights: admin, the owner, or a listed co-organizer (#123) ---- */
 // Does this user own or co-organize at least one event? Drives the header's Events link for
 // users without the global organizer role.
@@ -287,9 +300,11 @@ function event_join(array $user, array $d): void {
     $st = db()->prepare('SELECT id, slug FROM events WHERE join_code = ?'); $st->execute([$code]);
     $e = $st->fetch();
     if (!$e || ($slug !== '' && $e['slug'] !== $slug)) fail('Wrong join code.', 404);
-    db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'pending') ON DUPLICATE KEY UPDATE status = 'pending'")->execute([(int)$e['id'], (int)$user['id']]);
+    $actCode = gen_activation_code();
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
+        ->execute([(int)$e['id'], (int)$user['id'], $actCode, $actCode]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
-    json_out(['ok' => true]);
+    json_out(['ok' => true, 'activation_code' => $actCode]);
 }
 
 function event_leave(array $user, array $d): void {
@@ -312,6 +327,21 @@ function event_participant_add(array $user, array $d): void {
     $uid = (int)($d['user_id'] ?? 0);
     db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")->execute([(int)$e['id'], $uid]);
     json_out(['ok' => true]);
+}
+
+function event_activate_by_code(array $user, array $d): void {
+    $code = strtoupper(trim((string)($d['code'] ?? '')));
+    if ($code === '' || !preg_match('/^[A-Z2-9]{6}$/', $code)) fail('Invalid code.', 400);
+    $st = db()->prepare("SELECT ep.event_id, ep.user_id FROM event_participants ep JOIN events e ON e.id = ep.event_id
+        WHERE ep.activation_code = ? AND ep.status = 'pending' AND e.is_public = 1");
+    $st->execute([$code]);
+    $row = $st->fetch();
+    if (!$row) fail('Code not found or already activated.', 404);
+    // only the event's organizer or co-organizer can activate
+    require_event_manage($user, (int)$row['event_id']);
+    db()->prepare("UPDATE event_participants SET status = 'active', activation_code = NULL WHERE event_id = ? AND user_id = ?")
+        ->execute([(int)$row['event_id'], (int)$row['user_id']]);
+    json_out(['ok' => true, 'user_id' => (int)$row['user_id']]);
 }
 
 // #163: organizer activates a participant by signed token (verified client-side)
@@ -352,11 +382,18 @@ function event_public_get(array $d): void {
     $me = current_user();
     $joined = false;
     $participantStatus = null;
+    $activationCode = null;
     if ($me) {
-        $j = db()->prepare('SELECT status FROM event_participants WHERE event_id = ? AND user_id = ?');
+        $j = db()->prepare('SELECT status, activation_code FROM event_participants WHERE event_id = ? AND user_id = ?');
         $j->execute([(int)$e['id'], (int)$me['id']]);
         $row = $j->fetch();
-        if ($row) { $joined = true; $participantStatus = $row['status']; }
+        if ($row) { $joined = true; $participantStatus = $row['status']; $activationCode = $row['activation_code'];
+            if ($participantStatus === 'pending' && !$activationCode) {
+                $activationCode = gen_activation_code();
+                db()->prepare('UPDATE event_participants SET activation_code = ? WHERE event_id = ? AND user_id = ?')
+                    ->execute([$activationCode, (int)$e['id'], (int)$me['id']]);
+            }
+        }
     }
     // Status visibility: anyone sees the PUBLIC roadbooks; event members (participants,
     // pending included, and organizers) also see the READY ones as badge-locked cards
@@ -384,6 +421,7 @@ function event_public_get(array $d): void {
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
             'can_join' => $e['join_code'] !== null, 'joined' => $joined, 'participant_status' => $participantStatus,
+            'activation_code' => $activationCode,
             'org_read' => $orgRead, 'active_participant' => $activeParticipant,
     ], 'roadbooks' => $roadbooks]);
 }
