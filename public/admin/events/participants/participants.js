@@ -49,6 +49,42 @@
     };
     $('ppActivateIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ppActivate').click(); });
 
+    $('ppScanQr').onclick = async () => {
+        if (!('BarcodeDetector' in window)) { toast('QR scanner not supported in this browser.'); return; }
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const modal = RBModal(`<div class="pp-scanner"><p class="muted small" style="margin-bottom:.5rem">${esc(t('Point the camera at the participant\'s QR code.'))}</p>
+            <video id="ppScannerVideo" autoplay playsinline style="width:100%;max-width:360px;border-radius:8px;background:#000"></video>
+            <p class="muted small" id="ppScanStatus" style="margin-top:.5rem">${esc(t('Waiting for QR code…'))}</p>
+            <div class="btnrow"><button class="btn btn-ghost modal-close">${esc(t('Cancel'))}</button></div></div>`);
+        const video = modal.q('#ppScannerVideo');
+        const status = modal.q('#ppScanStatus');
+        let stream = null;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
+            video.srcObject = stream; await video.play();
+            (function scan() {
+                if (modal.el.hidden) return;
+                detector.detect(video).then((codes) => {
+                    if (codes.length > 0) {
+                        const code = codes[0].rawValue.trim().toUpperCase();
+                        if (/^[A-Z2-9]{6}$/.test(code)) {
+                            stream.getTracks().forEach((t) => t.stop());
+                            modal.close();
+                            $('ppActivateIn').value = code;
+                            $('ppActivate').click();
+                            return;
+                        }
+                    }
+                    if (!modal.el.hidden) status.textContent = esc(t('Scanning…'));
+                    requestAnimationFrame(scan);
+                }).catch(() => { requestAnimationFrame(scan); });
+            })();
+        } catch (e) { toast('Could not access camera.'); modal.close(); return; }
+        modal.el.addEventListener('click', (e) => { if (e.target === modal.el) { if (stream) stream.getTracks().forEach((t) => t.stop()); } });
+        const origClose = modal.close;
+        modal.close = function() { if (stream) stream.getTracks().forEach((t) => t.stop()); origClose(); };
+    };
+
     let addSearchTimer = null;
     $('ppAdd').onclick = () => {
         const modal = RBModal(`<div>
