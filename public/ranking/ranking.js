@@ -4,12 +4,17 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
+    const eventSlug = new URLSearchParams(location.search).get('event');
     let entries = load();
     let stream = null, scanning = false, detector = null;
 
     if ('BarcodeDetector' in window) { try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {} }
 
     /* ---------- add ---------- */
+    if (eventSlug) {
+        var eh = document.getElementById('evHeader');
+        if (eh) eh.hidden = false;
+    }
     $('addManual').onclick = () => addMeta($('manualMeta').value.trim());
     $('manualMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') addMeta($('manualMeta').value.trim()); });
     $('targetAvg').addEventListener('input', render); // live-recompute the regularity column

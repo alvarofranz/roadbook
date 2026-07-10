@@ -654,4 +654,7 @@
             'Challenge failed. Please try again.': 'Échec de la vérification. Veuillez réessayer.',
             'Google sign-in failed. Please try again.': 'Échec de la connexion Google. Veuillez réessayer.',
             'Account': 'Compte',
+            'Open ranking': 'Ouvrir le classement',
+            'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores pour cet événement. L\'organisateur collecte les QR codes de résultat après chaque parcours et les ajoute ici.',
+            'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Classement en direct pour cet événement. Scannez le QR de résultat de chaque véhicule après son parcours.',
         };

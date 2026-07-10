@@ -180,7 +180,41 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 
 ---
 
-## 8. Limiti e quirk
+## 8. Entry gate e flusso partecipante (#163)
+
+### URL scheme
+
+Il punto di ingresso per un partecipante è il link breve `/go/<join_code>` (es.
+`https://rdbk.ddev.site/go/DA2C0926`). Questo URL è **distribuito solo al banco
+registrazione** (QR cartaceo o link inviato all'arrivo) — chi lo riceve è già in
+presenza dell'organizzatore e quindi pronto a consumare (leggere) i roadbook
+dell'evento.
+
+### Flusso
+
+1. Il partecipante apre `/go/<code>`.
+2. Se non autenticato → redirect a `/account/?next=/go/<code>`.
+3. Se autenticato e non ancora iscritto → viene creato come **pending** (in attesa
+   di attivazione) e reindirizzato a `/event/<slug>`.
+4. Se autenticato e già **active** → viene impostato il contesto partecipante
+   (cookie `rb_participant=1` + sessione lato server) e reindirizzato a
+   `/event/<slug>`.
+5. A questo punto la pagina evento mostra la **roadbook gallery** al completo
+   (public + ready) e, se il roadbook ha `scoring_mode ≠ free`, il **link alla
+   classifica**.
+
+### Riduzione della superficie (participant mode)
+
+Quando il cookie `rb_participant=1` è attivo:
+- La **top nav** mostra solo un link di ritorno all'evento (nessun tool Recorder,
+  Editor, Tripmaster…).
+- La **home page** (`/`) reindirizza a `/event/<slug>`.
+- Il **menu account** contiene l'escape hatch "Switch to full mode".
+- La pagina evento nasconde il form di join, il sito organizzatore e la mappa HQ.
+- Il **Ranking** è accessibile solo se l'evento ha almeno un roadbook con
+  `scoring_mode ≠ free`.
+
+## 9. Limiti e quirk
 
 - **Un evento per roadbook** in pratica: un roadbook può essere associato a più eventi via
   `event_roadbooks`, ma il flusso di gestione e il co-editing assumono un uso 1-a-1; per riusarne

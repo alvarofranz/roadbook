@@ -106,6 +106,9 @@
             'Waiting for QR code…': 'Waiting for QR code…', 'Scanning…': 'Scanning…',
             'QR scanner not supported in this browser.': 'QR scanner not supported in this browser.',
             'Could not access camera.': 'Could not access camera.',
+            'Open ranking': 'Open ranking',
+            'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',
+            'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live classification for this event. Scan the result QR from each vehicle after their run.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)

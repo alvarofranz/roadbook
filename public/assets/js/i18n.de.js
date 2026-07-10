@@ -655,4 +655,7 @@
             'Challenge failed. Please try again.': 'Sicherheitsprüfung fehlgeschlagen. Bitte versuche es erneut.',
             'Google sign-in failed. Please try again.': 'Google-Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
             'Account': 'Konto',
+            'Open ranking': 'Rangliste öffnen',
+            'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Wertungen für diese Veranstaltung. Der Organisator sammelt die Ergebnis-QR-Codes nach jeder Fahrt und fügt sie hier hinzu.',
+            'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live-Wertung für diese Veranstaltung. Scanne den Ergebnis-QR jedes Fahrzeugs nach seiner Fahrt.',
         };

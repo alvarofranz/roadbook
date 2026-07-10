@@ -49,7 +49,12 @@
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
+        const hasCompetition = j.roadbooks.some(function(r) { return r.scoring_mode && r.scoring_mode !== 'free'; });
         if (window.RBIsParticipant && RBIsParticipant()) { $('evJoin').hidden = true; $('evWebsite').hidden = true; $('evHqMap').hidden = true; }
+        if (j.event.active_participant && hasCompetition) {
+            var rl = $('evRanking'); rl.hidden = false;
+            $('evRankingLink').href = '/ranking/?event=' + encodeURIComponent(slug);
+        }
         renderJoin(e);
     }
     // Joining changes what the server returns (the READY roadbooks appear), so join/leave
