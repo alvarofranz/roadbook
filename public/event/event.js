@@ -33,7 +33,7 @@
                             'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
                             'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'] } },
                     layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
-            if (hqMap.map) new maplibregl.Marker({ color: '#e8b059' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
+            if (hqMap.map) { var m = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         } else mapEl.hidden = true;
         const statusBadge = (r) => {
             if (r.status === 'draft') return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';
@@ -89,7 +89,7 @@
                 if (!code) return;
                 const x = await RBApi('event_join', { code, slug: e.slug });
                 if (x.ok) { toast('You are participating in this event.'); load(); }
-                else toast(x.error || 'Wrong join code.');
+                else RBModal(`<p class="modal-text">${esc(x.error || t('Wrong join code.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`);
             };
             box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
         } else {
@@ -99,6 +99,7 @@
     }
     function renderActivateQr(e) {
         var box = $('evActivate'); box.hidden = false;
+        var c = $('evQrCode');
         $('evQrToken').textContent = e.activation_code;
         try {
             var qr = new qrcode(0, 'M');

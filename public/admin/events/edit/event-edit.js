@@ -188,7 +188,7 @@
     };
     $('joinRotate').onclick = async () => {
         // rotating invalidates the currently shared code, so it must be confirmed
-        if (ev.join_code && !(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;
+        if (!(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;
         const x = await api('event_join_code', { event_id: id });
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
@@ -206,7 +206,7 @@
         $('evHqLat').value = lat; $('evHqLon').value = lon;
         if (hqMap && hqMap.map) {
             if (hqMarker) hqMarker.remove();
-            hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
+            hqMarker = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([lon, lat]).addTo(hqMap.map);
             hqMap.map.jumpTo({ center: [lon, lat] });
         }
         settingHq = false;
@@ -218,7 +218,7 @@
             if (settingHq) return;
             settingHq = true;
             if (hqMarker) hqMarker.remove();
-            hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
+            hqMarker = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([lon, lat]).addTo(hqMap.map);
             hqMap.map.jumpTo({ center: [lon, lat], zoom: Math.max(hqMap.map.getZoom(), 8) });
             settingHq = false;
         }
@@ -235,7 +235,7 @@
                 layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
         if (!hqMap.map) return;
         hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
-        if (hasCoords) setHqPin(ev.hq_lat, ev.hq_lon);
+        if (hasCoords) { setHqPin(ev.hq_lat, ev.hq_lon); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         else if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => hqMap.map.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 10 }),
