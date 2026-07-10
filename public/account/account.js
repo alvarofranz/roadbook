@@ -245,8 +245,40 @@
         RBToast(r.message || r.error);
         if (r.ok) { $('emNew').value = ''; $('emNew2').value = ''; }
     });
+    async function buildTakeout() {
+        RBToast(t('Building your data export…'));
+        const profile = me ? { username: me.username, email: me.email, first_name: me.first_name, last_name: me.last_name, created_at: me.created_at } : {};
+        const list = await api('rb_list');
+        if (!list.ok || !list.roadbooks) { RBToast(t('Could not load your roadbooks.')); return; }
+        const outerFiles = { 'profile.json': JSON.stringify(profile, null, 2) };
+        for (const rbMeta of list.roadbooks) {
+            const r = await api('rb_get', { id: rbMeta.id });
+            if (!r.ok || !r.roadbook) continue;
+            const rb = r.roadbook;
+            if (!rb.meta) rb.meta = {}; if (!rb.meta.title) rb.meta.title = rbMeta.title;
+            const innerFiles = { 'roadbook.json': JSON.stringify(rb) };
+            const media = { photos: [], audio: [] };
+            const ph = await api('ph_list', { roadbook: rbMeta.id });
+            if (ph.ok && ph.photos) {
+                for (const p of ph.photos) {
+                    try { const res = await fetch(p.url); if (!res.ok) continue; const name = 'photos/' + p.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.photos.push({ file: name, lat: p.lat, lon: p.lon }); } catch (e) {}
+                }
+            }
+            const au = await api('audio_list', { roadbook: rbMeta.id });
+            if (au.ok && au.audio) {
+                for (const a of au.audio) {
+                    try { const res = await fetch(a.url); if (!res.ok) continue; const name = 'audio/' + a.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.audio.push({ file: name, lat: a.lat, lon: a.lon }); } catch (e) {}
+                }
+            }
+            if (media.photos.length || media.audio.length) innerFiles['media.json'] = JSON.stringify(media);
+            const slug = (RB.slug(rb.meta.title) || 'roadbook') + '_' + rbMeta.id;
+            outerFiles[slug + '.rdbk'] = new Uint8Array(await (await RBZip.write(innerFiles)).arrayBuffer());
+        }
+        RBDownload(await RBZip.write(outerFiles), 'rdbk-export_' + (me ? me.username : 'user') + '.zip');
+    }
     onSubmit('delForm', async () => {
         if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
+        if (await RBConfirm('Download all your data as a ZIP before deleting?', 'Download data')) await buildTakeout();
         const r = await api('account_delete', { password: $('delPass').value });
         if (r.ok) location.href = '../'; else RBToast(r.error);
     });
