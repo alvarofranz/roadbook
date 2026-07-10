@@ -26,7 +26,13 @@
         const mapEl = $('evHqMap');
         if (e.hq_lat != null && e.hq_lon != null) {
             mapEl.hidden = false;
-            const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat] });
+            const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat],
+                style: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+                    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 20,
+                        tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+                            'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+                            'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'] } },
+                    layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
             if (hqMap.map) new maplibregl.Marker({ color: '#e8b059' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
         } else mapEl.hidden = true;
         const statusBadge = (r) => {
