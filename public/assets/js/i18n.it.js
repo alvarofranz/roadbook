@@ -634,7 +634,7 @@
             'Organizer': 'Organizzatore',
             'Can create and manage their own events.': 'Può creare e gestire i propri eventi.',
             'In preparation': 'In preparazione', 'Active participants only': 'Solo partecipanti attivi',
-            'Exit event mode': 'Esci dalla modalità evento',
+            'Switch to full mode': 'Passa alla modalità completa',
             'Show this QR to the event organizer to activate your participation.': 'Mostra questo QR all\'organizzatore per attivare la tua partecipazione.',
             'Paste participant code…': 'Incolla il codice partecipante…', 'Invalid participant code.': 'Codice partecipante non valido.',
             'This code is for a different event.': 'Questo codice è per un evento diverso.', 'Participant activated.': 'Partecipante attivato.',

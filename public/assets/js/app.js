@@ -770,7 +770,7 @@
                         <a href="${ROOT}admin/trash/"><i class="fa-solid fa-trash-can"></i> ${RBt('Roadbook trash')}</a>
                         <a href="${ROOT}admin/logs/"><i class="fa-solid fa-list-check"></i> ${RBt('Logs')}</a>` : ''}
                         ${(!user.is_admin && (user.is_organizer || user.manages_events)) ? `<hr class="menu-sep"><a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a><a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>` : ''}
-                        ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Exit event mode')}</button>` : ''}
+                        ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
@@ -782,6 +782,21 @@
                 w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
                 const lp = w.querySelector('#leaveParticipant');
                 if (lp) lp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
+            }
+            if (participant) {
+                const n = document.querySelector('#topnav');
+                n.querySelectorAll('.nav-tool').forEach((el) => el.hidden = true);
+                const existing = n.querySelector('.ev-back-link');
+                if (!existing) {
+                    const bl = document.createElement('a');
+                    bl.className = 'nav-link ev-back-link';
+                    bl.href = '/event/' + participant.event_slug;
+                    bl.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + RBesc(participant.event_title);
+                    n.insertBefore(bl, n.firstChild);
+                }
+                const p = location.pathname.replace(/\/+$/, '') || '/';
+                const root = new URL(ROOT, location.href).pathname.replace(/\/+$/, '') || '/';
+                if (p === root) location.href = '/event/' + participant.event_slug;
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();

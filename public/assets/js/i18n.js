@@ -94,7 +94,7 @@
             'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',
             'seo.feat_events.title': 'Organising an event — RDBK.app', 'seo.feat_events.desc': 'How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.',
             'In preparation': 'In preparation', 'Active participants only': 'Active participants only',
-            'Exit event mode': 'Exit event mode',
+            'Switch to full mode': 'Switch to full mode',
             'Show this QR to the event organizer to activate your participation.': 'Show this QR to the event organizer to activate your participation.',
             'Paste participant code…': 'Paste participant code…', 'Invalid participant code.': 'Invalid participant code.',
             'This code is for a different event.': 'This code is for a different event.', 'Participant activated.': 'Participant activated.',
