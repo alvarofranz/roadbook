@@ -46,6 +46,9 @@
         /* the duplicated Save at the foot of the form (#179) */
         .ev-save-bottom { margin: 1rem 0 2rem; }
         .ev-hq-map { width: 100%; height: 280px; border-radius: 12px; border: 1px solid var(--line); margin: .4rem 0; }
+        .ev-coords-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .2rem 0; }
+        .ev-coords-row .field-label { margin: 0; }
+        .ev-coord { width: 10rem; font-family: ui-monospace, monospace; font-size: .82rem; }
         .ev-link-url { font-family: ui-monospace, monospace; font-size: .95rem; word-break: break-all; }
     </style>
 </head>
@@ -83,7 +86,10 @@
             <label class="field-label" data-i18n="Event headquarters">Event headquarters</label>
             <div id="evHqMap" class="ev-hq-map"></div>
             <p class="muted small" data-i18n="Tap the map to set the event headquarters location.">Tap the map to set the event headquarters location.</p>
-            <input id="evHqLat" type="hidden"><input id="evHqLon" type="hidden">
+            <div class="ev-coords-row">
+                <label class="field-label" for="evHqLat">Lat</label><input id="evHqLat" class="field ev-coord" type="number" step="any" placeholder="Latitude" data-i18n-ph="Latitude" autocomplete="off">
+                <label class="field-label" for="evHqLon">Lon</label><input id="evHqLon" class="field ev-coord" type="number" step="any" placeholder="Longitude" data-i18n-ph="Longitude" autocomplete="off">
+            </div>
             <div class="ev-dates-row">
                 <label class="field-label" for="evStart" data-i18n="Start date">Start date</label><input id="evStart" type="date" class="field">
                 <label class="field-label" for="evEnd" data-i18n="End date">End date</label><input id="evEnd" type="date" class="field">

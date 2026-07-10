@@ -199,16 +199,33 @@
     };
 
     /* ---------- headquarters map (#249) ---------- */
-    let hqMap = null, hqMarker = null;
+    let hqMap = null, hqMarker = null, settingHq = false;
     function setHqPin(lat, lon) {
+        if (settingHq) return;
+        settingHq = true;
         $('evHqLat').value = lat; $('evHqLon').value = lon;
         if (hqMap && hqMap.map) {
             if (hqMarker) hqMarker.remove();
             hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
         }
+        settingHq = false;
+    }
+    function hqInput() {
+        const lat = parseFloat($('evHqLat').value), lon = parseFloat($('evHqLon').value);
+        if (isNaN(lat) || isNaN(lon)) return;
+        if (hqMap && hqMap.map) {
+            if (settingHq) return;
+            settingHq = true;
+            if (hqMarker) hqMarker.remove();
+            hqMarker = new maplibregl.Marker({ color: '#e8b059' }).setLngLat([lon, lat]).addTo(hqMap.map);
+            hqMap.map.jumpTo({ center: [lon, lat], zoom: Math.max(hqMap.map.getZoom(), 8) });
+            settingHq = false;
+        }
     }
     hqMap = new RBMap('evHqMap', { zoom: 5, center: [12.5, 43.7] });
     if (hqMap.map) hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
+    $('evHqLat').oninput = hqInput;
+    $('evHqLon').oninput = hqInput;
 
     /* ---------- load ---------- */
     async function load() {
@@ -222,7 +239,7 @@
     (async function init() {
         me = await RBRequireUser($('adminMsg'));
         if (!me) return;
-        $('orgOrgIn').value = me.organization || ''; // the organizer search defaults to your organization
+        $('orgOrgIn').value = ''; // the organizer search defaults to no org filter (#253)
         RBOrgDatalist($('orgSuggest')); // suggest the clubs already in use, so spellings stay consistent (#116)
         if (id > 0) return load();
         // new event: only the parameters section until the first save creates it
