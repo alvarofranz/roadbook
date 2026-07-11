@@ -28,12 +28,17 @@ e una sezione onesta di limiti/quirk.
 - [app-shell](app-shell.md) — `app.js`/`home.js`: helper globali `RB*`, header/footer, service
   worker, auto-refresh di versione, install PWA.
 - [i18n](i18n.md) — internazionalizzazione a stringhe-sorgente (EN · ES · IT · DE · FR).
+- [i18n-edit](i18n-edit.md) — editor di traduzione in-context (solo admin).
+- [rbzip](rbzip.md) — `RBZip`: codec ZIP lato browser (container .rdbk e foto/audio).
+- [rb-media-queue](rb-media-queue.md) — `RBMediaQueue`: coda offline-first per upload di foto/audio.
+- [rb-transcribe](rb-transcribe.md) — `RBTranscribe`: trascrizione Whisper in-browser.
 - [challenges](challenges.md) — `RBChallenges`: sfide pubbliche DB-backed e URL amichevoli.
 - [pdf](pdf.md) — `RBPdf`: generazione PDF A4 del roadbook sul dispositivo.
 
 ## Pagine utente e statiche
 - [home-page](home_page.md) — la galleria della home (teaser dei roadbook pubblici) e la
   generazione della **cover** di ogni roadbook (mappa statica della rotta) usata come miniatura.
+- [roadbooks](roadbooks.md) — la galleria `/roadbooks/` dei roadbook pubblici completi.
 - [account-pages](account-pages.md) — home, profilo, I miei roadbook, privacy, e le altre pagine
   statiche/marketing (about, terms, contact, feature pages).
 
@@ -43,6 +48,10 @@ e una sezione onesta di limiti/quirk.
 - [events](events.md) — il sottosistema **Eventi** (`public/events/`, `public/event/`,
   `public/admin/events/` + `app/events.php`): modello dati, ruoli/co-organizzatori, partecipanti +
   join-by-code, consegna dei roadbook `ready`, co-editing.
+- [go](go.md) — l'handler `/go/<join_code>`: entry gate per partecipanti a eventi tramite codice
+  breve.
+- [cron](cron.md) — cron jobs: round-robin runner e task di manutenzione (pulizia upload, ricordi,
+  rimozione vecchi eventi, etc.).
 - [user-management](user-management.md) — gestione utenti: pannello admin (`/admin`), modello
   permessi, azioni admin (attiva/modifica/blocca/elimina), self-service (cambio password forzato,
   elimina account), migrazioni e note di deploy.
