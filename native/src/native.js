@@ -8,11 +8,15 @@
  *
  * Today it owns the one thing the browser cannot do: keep logging GPS while the
  * screen is locked / the app is backgrounded (a native foreground-service location
- * watch via @capgo/background-geolocation). RBGpsMeter calls RBNative.geo when it
+ * watch via @capgo/background-geolocation), and save files to device storage
+ * (the WebView ignores `<a download>`, so we write the blob to the cache and open
+ * the native share sheet). RBGpsMeter calls RBNative.geo when it
  * is present, so the Reader, Tripmaster and Recorder gain uninterrupted tracking
  * with no change to their own code. */
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -22,6 +26,28 @@ let googleReady = null;   // SocialLogin.initialize() promise, run once
 
 const RBNative = {
     available: true,                       // the bundle only loads inside a native shell
+
+    // Save a Blob as a file on-device and present the native share sheet so the user can pick
+    // where to keep it (Files, Drive, email…). The web `<a download>` trick doesn't work inside
+    // a WebView — this is the native path for every download the app generates.
+    async downloadFile(blob, filename) {
+        const base64 = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onloadend = () => { const s = r.result; resolve(s.slice(s.indexOf(',') + 1)); };
+            r.onerror = reject;
+            r.readAsDataURL(blob);
+        });
+        const result = await Filesystem.writeFile({
+            path: filename,
+            data: base64,
+            directory: Directory.Cache,
+            recursive: true,
+        });
+        await Share.share({
+            title: filename,
+            files: [result.uri],
+        });
+    },
 
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
     // uses the OS Google account picker (Credential Manager on Android, GoogleSignIn on iOS) via
