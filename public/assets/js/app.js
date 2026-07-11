@@ -661,11 +661,11 @@
     };
     window.RBIsParticipant = isParticipant;
     // Trigger a download from a Blob or a URL. Inside the native app the `<a download>` trick
-    // is ignored by the WebView — use the native bridge to write the file and share it instead.
-    window.RBDownload = (data, filename) => {
+    // is ignored by the WebView — use the native bridge (navigator.share) if available, and
+    // fall back to `<a download>` if the native path fails or is unavailable.
+    window.RBDownload = async (data, filename) => {
         if (isNativeApp() && window.RBNative && RBNative.downloadFile && typeof data !== 'string') {
-            RBNative.downloadFile(data, filename);
-            return;
+            try { await RBNative.downloadFile(data, filename); return; } catch (e) {}
         }
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
         const a = document.createElement('a'); a.href = url; a.download = filename;

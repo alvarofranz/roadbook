@@ -83,7 +83,7 @@ window.RBGpxRecorder = (() => {
     // opts.sampleRate: false hides the interval field (the Editor samples by
     // distance itself) · opts.onStart replaces the default begin()
     function settings(opts = {}) {
-        const t = RBt, fsa = 'showSaveFilePicker' in window; // file picker ONLY when this device supports it
+        const t = RBt, fsa = 'showSaveFilePicker' in window && !document.documentElement.classList.contains('native'); // not in the app — the WebView's picker is broken
         // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
         const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
         const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
