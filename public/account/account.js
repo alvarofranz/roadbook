@@ -174,7 +174,10 @@
     /* ---------- routes ---------- */
     async function init() {
         const cfg = await api('config');
-        tsSite = cfg.turnstile || '';
+        // Turnstile is a domain-locked Cloudflare widget: it can't run in the app's WebView
+        // (origin localhost, not rdbk.app), so never load it there. The backend exempts the
+        // trusted app origins from the challenge to match (see verify_turnstile).
+        tsSite = IS_APP ? '' : (cfg.turnstile || '');
         loadTurnstile();
         // In the Capacitor app the web GIS button can't run (Google blocks OAuth in a WebView), so
         // ALWAYS use the native OS picker there. Decided by the shell class — set synchronously at

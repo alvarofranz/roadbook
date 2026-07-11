@@ -177,6 +177,12 @@ function account_delete(array $user, array $d): void {
 function verify_turnstile(?string $token): void {
     global $CFG;
     if (empty($CFG['turnstile_secret'])) return; // not enabled yet
+    // The native app shells can't run the domain-locked Turnstile widget in their WebView (their
+    // origin is localhost, not rdbk.app), so they never carry a token. They are a trusted origin
+    // the browser stamps and a web page can't forge — the same reason they're exempt from the
+    // same-origin CSRF guard — and every auth endpoint is IP rate-limited underneath, so exempt
+    // them from the challenge instead of locking them out of sign-in entirely.
+    if (is_app_origin($_SERVER['HTTP_ORIGIN'] ?? '')) return;
     if (!$token) fail('Please complete the challenge.', 400);
     $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
     curl_setopt_array($ch, [

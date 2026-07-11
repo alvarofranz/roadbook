@@ -26,6 +26,7 @@
         .auth-message.ok { background: rgba(58,210,159,.14); color: var(--ok); }
         .auth-message.err { background: rgba(255,90,69,.14); color: var(--track); }
         .turnstile { display: flex; justify-content: center; margin: .6rem 0; }
+        .native .turnstile { display: none; } /* the domain-locked widget can't run in the app WebView */
         .avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
         #vAccount { max-width: 860px; margin: 0 auto; }
         .profile-head { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin: 1.2rem 0 .5rem; }
