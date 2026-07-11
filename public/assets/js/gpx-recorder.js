@@ -1,13 +1,14 @@
 'use strict';
 /* RBGpxRecorder — crash-safe GPX track logging, shared by the Tripmaster and
  * the Reader (optional log while navigating). Owns the settings modal (sample
- * rate, file name, optional live File System Access handle), a localStorage
- * checkpoint recovered after a crash, and the finished-track modal (download ·
- * convert into a roadbook in the Editor). The page reflects on/off state via
- * init({ onChange }) and feeds GPS fixes with feed(). */
+ * rate, file name), a localStorage checkpoint recovered after a crash, and the
+ * finished-track modal (download · convert into a roadbook in the Editor). The
+ * page reflects on/off state via init({ onChange }) and feeds GPS fixes with feed().
+ * Crash safety is the localStorage checkpoint — always available, on every platform;
+ * the file itself is written once at the end via RBDownload. */
 window.RBGpxRecorder = (() => {
     const CHECKPOINT_KEY = 'rb_trip_gpx', SETTINGS_KEY = 'rb_gpx_settings';
-    let on = false, pts = [], lastT = 0, sampleMs = 3000, fileName = '', fileHandle = null;
+    let on = false, pts = [], lastT = 0, sampleMs = 3000, fileName = '';
     let useCheckpoint = true, lastPersist = 0;
     let onChange = () => {}, toast = () => {};
     try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (s && s.freq) sampleMs = s.freq; } catch (e) {}
@@ -19,14 +20,12 @@ window.RBGpxRecorder = (() => {
     };
     const trackKm = (p) => p.length ? RB.cumulativeM(p)[p.length - 1] / 1000 : 0;
     const download = (p, name) => RBDownload(new Blob([RB.gpxDocument(name || defaultName(), p)], { type: 'application/gpx+xml' }), (name || defaultName()) + '.gpx');
-    async function writeFile() { if (!fileHandle) return; try { const w = await fileHandle.createWritable(); await w.write(RB.gpxDocument(fileName, pts)); await w.close(); } catch (e) {} }
     function persist(tnow) {
-        // One crash checkpoint + live file flush per 3 s window, however fast points arrive —
-        // serialising the whole growing track on every point would cost O(n²) over a session.
+        // One crash checkpoint per 3 s window, however fast points arrive — serialising the
+        // whole growing track on every point would cost O(n²) over a session.
         if (tnow - lastPersist < 3000) return;
         lastPersist = tnow;
         if (useCheckpoint) { try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ pts, name: fileName })); } catch (e) {} }
-        writeFile();
     }
 
     // checkpoint: false → the caller keeps its own richer crash checkpoint (the
@@ -42,18 +41,15 @@ window.RBGpxRecorder = (() => {
     function add(here, tnow) { if (!on) return; pts.push({ lat: here.lat, lon: here.lon, ele: here.ele ?? null, t: tnow }); persist(tnow); }
     const clearCheckpoint = () => { try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {} };
     // End the log, KEEPING the crash checkpoint: it is cleared only when the points reach a safe
-    // destination (download / convert / saved file / the caller's own store), so a stray dismissal
-    // can never lose a recording — until then a reload offers recovery (#217).
-    async function end() {
+    // destination (download / convert / the caller's own store), so a stray dismissal can never
+    // lose a recording — until then a reload offers recovery (#217).
+    function end() {
         on = false; onChange(false);
-        await writeFile(); // final flush to the live file before we report "saved"
-        const result = { pts: pts.slice(), name: fileName, savedToFile: !!fileHandle };
-        fileHandle = null;
-        return result;
+        return { pts: pts.slice(), name: fileName };
     }
     // end the log and hand the result to the caller — no UI; the caller owns the points
     async function finish() {
-        const r = await end();
+        const r = end();
         clearCheckpoint();
         return r;
     }
@@ -61,8 +57,8 @@ window.RBGpxRecorder = (() => {
     // it kills the live watch and a recording can't seamlessly restart (#217).
     async function stop() {
         if (!(await RBConfirm(RBt('Stop recording?'), RBt('Stop')))) return;
-        const r = await end();
-        if (r.pts.length >= 2) { finishedModal(r.pts, r.name, r.savedToFile); }
+        const r = end();
+        if (r.pts.length >= 2) { finishedModal(r.pts, r.name); }
         else { toast('Track too short.'); clearCheckpoint(); }
     }
     // continue an interrupted log after a reload (a live file handle cannot survive one)
@@ -78,12 +74,12 @@ window.RBGpxRecorder = (() => {
         const t = RBt;
         const yes = await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')', t('Recover'));
         try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
-        if (yes) finishedModal(saved.pts, saved.name || defaultName(), false);
+        if (yes) finishedModal(saved.pts, saved.name || defaultName());
     }
     // opts.sampleRate: false hides the interval field (the Editor samples by
     // distance itself) · opts.onStart replaces the default begin()
     function settings(opts = {}) {
-        const t = RBt, fsa = 'showSaveFilePicker' in window && !document.documentElement.classList.contains('native'); // not in the app — the WebView's picker is broken
+        const t = RBt;
         // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
         const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
         const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
@@ -93,21 +89,12 @@ window.RBGpxRecorder = (() => {
             ${rateField}
             <label class="muted small">${nameLabel}</label>
             <input id="gxName" class="modal-in" type="text" value="${RBesc(startName)}">
-            <div class="btnrow between">
-                ${fsa ? `<button class="btn btn-ghost" id="gxPick"><i class="fa-solid fa-folder-open"></i> ${t('Choose where to save…')}</button>` : '<span></span>'}
+            <div class="btnrow end">
                 <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
             </div>
-            <p class="muted small" id="gxLoc">${fsa ? t('Optional: pick where to save the file — the track is written to disk live as you record (crash-safe).') : t('Auto-saved while recording, recovered if the app closes.')}</p>
+            <p class="muted small">${t('Auto-saved while recording, recovered if the app closes.')}</p>
             ${document.documentElement.classList.contains('native') ? '' : `<p class="muted small">${t('In a browser, recording stops when the app is in the background or the screen is off.')}</p>`}`, 'narrow top', null, { dismissable: false });
-        let picked = null;
         d.q('#gxX').onclick = d.close;
-        if (fsa) d.q('#gxPick').onclick = async () => {
-            try {
-                picked = await window.showSaveFilePicker({ suggestedName: d.q('#gxName').value + '.gpx', types: [{ description: 'GPX', accept: { 'application/gpx+xml': ['.gpx'] } }] });
-                d.q('#gxLoc').textContent = '✓ ' + picked.name;
-                d.q('#gxName').value = picked.name.replace(/\.gpx$/i, '');
-            } catch (e) {}
-        };
         d.q('#gxGo').onclick = () => {
             const freqInput = d.q('#gxFreq');
             if (freqInput) {
@@ -115,27 +102,25 @@ window.RBGpxRecorder = (() => {
                 try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ freq: sampleMs })); } catch (e) {}
             }
             fileName = (d.q('#gxName').value || startName).trim();
-            fileHandle = picked;
             d.close(); (opts.onStart || begin)();
         };
     }
-    function finishedModal(finished, name, savedToFile) {
+    function finishedModal(finished, name) {
         const t = RBt;
         // Not dismissable: the recording only leaves through an explicit outcome — download,
         // convert, or a confirmed discard — never a stray backdrop tap or Escape (#217). Each
-        // outcome (and only it) clears the crash checkpoint; a live-file recording is already
-        // safe on disk, so its Close is harmless.
+        // outcome (and only it) clears the crash checkpoint.
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
-            <p class="muted small">${finished.length} ${t('points')} · ${trackKm(finished).toFixed(2)} km${savedToFile ? '<br>✓ ' + t('Saved to file') : ''}</p>
+            <p class="muted small">${finished.length} ${t('points')} · ${trackKm(finished).toFixed(2)} km</p>
             <div class="btnrow center wrap">
-                ${savedToFile ? '' : `<button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>`}
+                <button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <div class="btnrow center"><button class="btn btn-ghost" id="trClose">${savedToFile ? t('Close') : `<i class="fa-solid fa-trash"></i> ${t('Discard')}`}</button></div>`, 'slim center', null, { dismissable: false });
-        const dl = d.q('#trDl'); if (dl) dl.onclick = () => { download(finished, name); clearCheckpoint(); d.close(); };
+            <div class="btnrow center"><button class="btn btn-ghost" id="trClose"><i class="fa-solid fa-trash"></i> ${t('Discard')}</button></div>`, 'slim center', null, { dismissable: false });
+        d.q('#trDl').onclick = () => { download(finished, name); clearCheckpoint(); d.close(); };
         d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(finished)); } catch (e) {} clearCheckpoint(); location.href = '../editor/?trip=1'; };
         d.q('#trClose').onclick = async () => {
-            if (!savedToFile && !(await RBConfirmDanger(t('Discard this recording?') + ' (' + finished.length + ' ' + t('points') + ')', t('Discard')))) return;
+            if (!(await RBConfirmDanger(t('Discard this recording?') + ' (' + finished.length + ' ' + t('points') + ')', t('Discard')))) return;
             clearCheckpoint(); d.close();
         };
     }
