@@ -80,7 +80,7 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
 | `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
-| `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`) | richiesta |
+| `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`/`de`/`fr`) | richiesta |
 | `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)) | richiesta |
 | `change_email` / `verify_email_change` | Cambio email con ri-verifica (`pending_email` + link) / conferma dal link | richiesta / nessuna |
 | `account_delete` | Elimina il proprio account (vedi [user-management](user-management.md)) | richiesta |
@@ -240,8 +240,8 @@ vecchio limite "niente cambio email da loggati".
 
 ### Preferenze utente (lingua + posizione di default)
 - [`set_lang`](../app/auth.php#L78): salva la lingua UI preferita in **`ui_lang`** (whitelist
-  `en`/`es`/`it`), così la scelta dal selettore di lingua dell'header segue l'utente tra
-  dispositivi. Valore non nella whitelist → `400`.
+   `en`/`es`/`it`/`de`/`fr`), così la scelta dal selettore di lingua dell'header segue l'utente tra
+   dispositivi. Valore non nella whitelist → `400`.
 - [`save_location`](../app/auth.php#L88): salva la posizione mappa di default in
   **`default_lat`/`default_lon`**. Valida la coppia (numerica, `|lat| ≤ 90`, `|lon| ≤ 180`):
   se manca o è fuori range, **azzera** entrambe a `NULL`. Serve a centrare la mappa quando non
@@ -435,6 +435,7 @@ loro somma.
 | [030_roadbook_category.sql](../migrations/030_roadbook_category.sql) | `roadbooks.category` (la categoria passa dall'evento al roadbook, #248) |
 | [031_event_website_hq.sql](../migrations/031_event_website_hq.sql) | `events.organizer_website` + coordinate HQ (`hq_lat`/`hq_lon`, #249) |
 | [032_event_participant_status.sql](../migrations/032_event_participant_status.sql) | `event_participants.status` (`pending`/`active`, attivazione partecipanti #163) |
+| [033_activation_code.sql](../migrations/033_activation_code.sql) | Aggiunge `users.activation_code` — codice numerico per partecipanti che entrano senza account (#163) |
 | [033_drop_dead_schema.sql](../migrations/033_drop_dead_schema.sql) | Rimuove `event_categories` (sostituita da `roadbooks.category`) e `roadbooks.is_public` (sostituita da `status`) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,

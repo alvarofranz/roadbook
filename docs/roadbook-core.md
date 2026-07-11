@@ -31,12 +31,13 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
 | `simplifyRoadbook`, `reverseRoadbook`, `nearestOnTrack` | operazioni traccia (§7) |
 | `gpxDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / OpenRally (§7) |
-| `WP_TYPES`, `wpType`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius` | tipizzazione waypoint FIA + raggio di rilevamento |
+| `WP_TYPES`, `wpType`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
 | `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
 | **scoring** — `scoredNoteSet`, `isScoredIdx`, `validationPenalties`, `speedPenalty`, `skipPenalty`, `rankEntry`, `speedBand` | motore di punteggio condiviso Reader↔Ranking (vedi [ranking-model.md](ranking-model.md)) |
 | `hhmmss`, `ddmmyy`, `parseHms` | codec orari del payload META |
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
 | `iconSrc`         | risoluzione sorgente di un'icona (§10) |
+| `tulipToDataURL`  | converte il tulip SVG di una nota in data URI PNG (usato per esportazione/embedding) |
 | `filterByText`, `filterRoadbooks` | filtro testuale generico / di una lista di roadbook (§11) |
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |
@@ -192,10 +193,11 @@ nota seguente, `cap_distance` = distanza in linea d'aria in metri. Non *crea* CA
 
 ## 7. Operazioni sulla traccia ed export GPX
 
+**Interna (non esportata su `window.RB`):**
 [`simplifyTrack(trkpts, toleranceM, keepIdx)`](../public/assets/js/roadbook-core.js#L240) —
 Douglas-Peucker con tolleranza in **metri**, implementazione **iterativa** (stack, niente limite
 di ricorsione) su una proiezione equirettangolare locale. Gli indici elencati in `keepIdx`
-(le ancore delle note) e i due estremi **sopravvivono sempre**.
+(le ancore delle note) e i due estremi **sopravvivono sempre**. Usata da `simplifyRoadbook`.
 
 [`simplifyRoadbook(rb, toleranceM)`](../public/assets/js/roadbook-core.js#L285) — semplifica
 `rb.track` proteggendo gli `idx` delle note, poi ri-ancora ogni nota al punto più vicino e
