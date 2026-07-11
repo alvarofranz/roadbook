@@ -8,14 +8,16 @@
  *
  * Today it owns the one thing the browser cannot do: keep logging GPS while the
  * screen is locked / the app is backgrounded (a native foreground-service location
- * watch via @capgo/background-geolocation), and trigger the native share sheet so
- * file downloads actually work (the WebView ignores `<a download>`; navigator.share
- * with File objects works in both the Android System WebView and iOS WKWebView).
- * RBGpsMeter calls RBNative.geo when it
- * is present, so the Reader, Tripmaster and Recorder gain uninterrupted tracking
- * with no change to their own code. */
+ * watch via @capgo/background-geolocation), and save the files the app generates to
+ * device storage (the WebView ignores `<a download>` — we write the blob with the
+ * native Filesystem plugin and, on iOS, open the OS "Save to Files" sheet). RBGpsMeter
+ * calls RBNative.geo when it is present, so the Reader, Tripmaster and Recorder gain
+ * uninterrupted tracking with no change to their own code. */
+import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -23,16 +25,43 @@ const GOOGLE_WEB_CLIENT_ID = '300694269526-qhtr54a7rvagseohbt3l5b4gdhmn9n7t.apps
 const GOOGLE_IOS_CLIENT_ID = '300694269526-q9evtli556sb0ag4trp42b8ko7qq1ldf.apps.googleusercontent.com';
 let googleReady = null;   // SocialLogin.initialize() promise, run once
 
+// The Filesystem plugin takes bare base64 (no data: prefix); strip it off a Blob.
+async function blobToBase64(blob) {
+    const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onloadend = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+    });
+    return dataUrl.slice(dataUrl.indexOf(',') + 1);
+}
+
 const RBNative = {
     available: true,                       // the bundle only loads inside a native shell
 
-    // Save a Blob as a file on-device via the native share sheet. The Web Share API
-    // (navigator.share with files) works in both the Android System WebView and iOS
-    // WKWebView — the OS handles the rest (Files, Drive, email…). The `<a download>`
-    // trick is ignored inside a WebView, so this is the native path for every download.
+    // Save a Blob to device storage. `<a download>` is ignored inside a WebView, so
+    // this is the native path for every download the app generates (GPX, .rdbk, CSV…).
+    // The two OSes hand the file to a folder in different, native ways:
+    //   · Android — the WebView has no folder picker (the File System Access API is
+    //             desktop-Chromium only, and the share sheet has no reliable "save here").
+    //             So write straight into the public Documents folder — the file lands where
+    //             the Files / Downloads apps can see it — and confirm with a toast.
+    //   · iOS   — apps are sandboxed; the only way to reach an arbitrary folder is the
+    //             system share sheet, whose "Save to Files" entry IS the folder chooser.
+    // Android before 10 (API < 29) has no scoped-storage write to Documents without the
+    // storage permission, so that path can throw — we fall back to the share sheet, which
+    // always works on every OS version.
     async downloadFile(blob, filename) {
-        const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
-        await navigator.share({ files: [file], title: filename });
+        const data = await blobToBase64(blob);
+        if (Capacitor.getPlatform() === 'android') {
+            try {
+                await Filesystem.writeFile({ path: filename, data, directory: Directory.Documents, recursive: true });
+                if (window.RBToast) RBToast('Saved to your Documents folder');
+                return;
+            } catch (e) { /* old Android / no Documents access — fall back to the share sheet */ }
+        }
+        const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: filename, files: [uri] });
     },
 
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
