@@ -421,7 +421,12 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
    where every page is a field tool and the tall footer just overflowed the viewport (#198) */
 .native .foot { display: none; }
 /* app version readout on the home launcher (installed build + latest live), #198 */
-.app-ver { text-align: center; margin: 1.2rem 0 0; font-variant-numeric: tabular-nums; }
+.app-ver { text-align: center; margin: 0; font-variant-numeric: tabular-nums; }
+
+/* App-only footer: version bar pinned to the bottom of the home screen, with safe-area spacing
+   so it never sits under the iOS home indicator. Subtle top line to separate it from the gallery. */
+.app-foot { margin-top: 1rem; padding: .9rem 0; border-top: 1px solid var(--line); background: var(--bg); }
+.native .app-foot { padding-bottom: calc(.9rem + env(safe-area-inset-bottom)); }
 /* iPad/native (viewport-fit=cover): the sticky tool bars (Reader/Tripmaster) must drop below the
    iOS status bar. Normally they sit under the 56px top bar (itself safe-area-padded); in fullscreen
    the top bar is hidden, so they pin just below the status bar instead of under it (#198). */
@@ -432,6 +437,11 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .launch-tile i { color: var(--sand); font-size: 2rem; }
 .launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
 .launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
+
+/* App home header: logo + title above the launcher grid */
+.app-head { display: flex; align-items: center; justify-content: center; gap: .6rem; margin-bottom: 1.4rem; }
+.app-logo { width: 40px; height: 40px; }
+.app-title { font-size: 1.5rem; font-weight: 900; color: var(--sand); letter-spacing: .04em; margin: 0; }
 @media (max-width: 860px) {
     .flow { grid-template-columns: repeat(2, 1fr); }
 }

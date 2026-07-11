@@ -97,14 +97,19 @@
 
     <!-- APP LAUNCHER (native app only — hidden on the web; all tools) -->
     <section class="block app-only">
-        <nav class="wrap launcher" aria-label="RDBK tools">
-            <a class="launch-tile" href="reader/"><i class="fa-solid fa-compass"></i><span class="launch-name">Roadbook Reader</span><span class="launch-sub" data-i18n="Navigate a roadbook">Navigate a roadbook</span></a>
-            <a class="launch-tile" href="editor/"><i class="fa-solid fa-pen-ruler"></i><span class="launch-name">Roadbook Editor</span><span class="launch-sub" data-i18n="Build a roadbook">Build a roadbook</span></a>
-            <a class="launch-tile" href="tripmaster/"><i class="fa-solid fa-gauge-high"></i><span class="launch-name">Tripmaster</span><span class="launch-sub" data-i18n="GPS trip computer">GPS trip computer</span></a>
-            <a class="launch-tile" href="recorder/"><i class="fa-solid fa-circle-dot"></i><span class="launch-name">Track Recorder</span><span class="launch-sub" data-i18n="Record a GPS track">Record a GPS track</span></a>
-            <a class="launch-tile" href="ranking/"><i class="fa-solid fa-ranking-star"></i><span class="launch-name">Ranking</span><span class="launch-sub" data-i18n="Score events">Score events</span></a>
-        </nav>
-        <p class="app-ver muted small" id="appVer" hidden></p>
+        <div class="wrap">
+            <div class="app-head">
+                <img class="app-logo" src="assets/logo.png" alt="" width="40" height="40">
+                <h2 class="app-title">RDBK</h2>
+            </div>
+            <nav class="launcher" aria-label="RDBK tools">
+                <a class="launch-tile" href="reader/"><i class="fa-solid fa-compass"></i><span class="launch-name">Roadbook Reader</span><span class="launch-sub" data-i18n="Navigate a roadbook">Navigate a roadbook</span></a>
+                <a class="launch-tile" href="editor/"><i class="fa-solid fa-pen-ruler"></i><span class="launch-name">Roadbook Editor</span><span class="launch-sub" data-i18n="Build a roadbook">Build a roadbook</span></a>
+                <a class="launch-tile" href="tripmaster/"><i class="fa-solid fa-gauge-high"></i><span class="launch-name">Tripmaster</span><span class="launch-sub" data-i18n="GPS trip computer">GPS trip computer</span></a>
+                <a class="launch-tile" href="recorder/"><i class="fa-solid fa-circle-dot"></i><span class="launch-name">Track Recorder</span><span class="launch-sub" data-i18n="Record a GPS track">Record a GPS track</span></a>
+                <a class="launch-tile" href="ranking/"><i class="fa-solid fa-ranking-star"></i><span class="launch-name">Ranking</span><span class="launch-sub" data-i18n="Score events">Score events</span></a>
+            </nav>
+        </div>
     </section>
 
     <!-- PUBLIC ROADBOOKS teaser (website + app): the last few; the full list lives at /roadbooks -->
@@ -116,6 +121,13 @@
             </div>
             <div class="gallery" id="galleryGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
             <div class="btnrow"><a class="btn btn-ghost" href="roadbooks/" data-i18n="See all public roadbooks"><i class="fa-solid fa-globe"></i> See all public roadbooks</a></div>
+        </div>
+    </section>
+
+    <!-- App-only: version readout at the very bottom (installed build + latest live) -->
+    <section class="block app-only app-foot">
+        <div class="wrap app-foot-inner">
+            <p class="muted small app-ver" id="appVer" hidden></p>
         </div>
     </section>
 
