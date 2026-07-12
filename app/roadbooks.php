@@ -138,8 +138,7 @@ function rb_require_own(array $user, int $id): array {
 // Create an empty draft when recording starts, so photos can attach to it live.
 // Drafts that never get finished (note_count = 0) are purged by the cron.
 function rb_draft(array $user, array $d = []): void {
-    // Title the draft with the recorder's date+time name; fall back to a server date if none was
-    // sent — never the old "Recording…" placeholder (#148).
+    // Title the draft with the recorder's date+time name; fall back to a server date if none was sent.
     $title = mb_substr(trim((string)($d['name'] ?? '')), 0, 200);
     if ($title === '') $title = date('Y-m-d H:i');
     db()->prepare("INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, filename) VALUES (?,?,?,?,'draft',?)")

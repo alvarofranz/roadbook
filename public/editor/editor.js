@@ -1632,8 +1632,8 @@
         let html = '';
         if (yours.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + yours.map((n) => iconBtn(n, lib[n], true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
         html += Object.entries(std.categories || {}).map(([cat, files]) => {
-            // #94: speed-limit signs are no longer placed by hand — the Speed dropdown sets the
-            // limit (and renders the matching sign), so hide the S* signs from the palette.
+            // #94: the Speed dropdown sets the limit (and renders the matching sign), so the S*
+            // speed-limit signs are hidden from the palette.
             const shown = files.filter((f) => RB.speedLimitFromName(f) == null);
             return shown.length ? `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + shown.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('') : '';
         }).join('');
