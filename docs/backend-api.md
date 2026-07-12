@@ -215,6 +215,13 @@ prima prova la sessione, poi ricade su `Authorization: Bearer <token>`
 `apache_request_headers`), aggiornando `last_used_at`. Il web non tocca mai questo percorso.
 `logout` revoca il token usato ([auth.php:199](../app/auth.php#L199)).
 
+> ⚠️ **PHP-FPM scarta l'header `Authorization`.** Sotto FPM Apache non passa l'header a PHP se
+> non lo si inoltra esplicitamente, quindi `public/.htaccess` lo espone
+> (`RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]` → `REDIRECT_HTTP_AUTHORIZATION`).
+> Senza quella riga OGNI chiamata dell'app arriva non autenticata (`current_user` → null) e l'app
+> sembra disconnessa anche dopo un login riuscito — il sintomo è `api_tokens.last_used_at` sempre
+> NULL. Non rimuovere quella regola.
+
 ### Reset password
 [`forgot_password`](../app/auth.php#L205): genera un `reset_token` valido 1 h e invia la mail,
 ma **risponde sempre positivamente** per non rivelare se un'email è registrata
