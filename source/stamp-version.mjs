@@ -5,22 +5,32 @@
  * ignores .htaccess and pins old JS for hours otherwise). The app polls version.json and
  * force-refreshes every open client when it changes.
  *
- * Usage:  node source/stamp-version.mjs <YYYY.MM.DD-N>   (e.g. 2026.06.23-5)
- * Run on every release — see CLAUDE.md "Releasing". */
+ * Versioning (unified across web + Android + iOS):
+ *   · version = semver MAJOR.MINOR.PATCH — the ONE human-facing version, identical on the
+ *     web footer, the Android versionName and the iOS MARKETING_VERSION. You bump it.
+ *   · build   = a monotonic integer that ALWAYS grows, auto-incremented here every run. It
+ *     drives the web cache-buster + the PWA force-refresh (so a same-version redeploy still
+ *     refreshes clients). Each store keeps its OWN required build counter too (Android
+ *     versionCode from the semver, iOS via Xcode Cloud) — the stores mandate that; the
+ *     shared thing is the semver.
+ *
+ * Usage:  node source/stamp-version.mjs <MAJOR.MINOR.PATCH>   (e.g. 1.1.0)
+ * Run on every web release — see CLAUDE.md "Releasing". */
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const version = process.argv[2];
-if (!version || !/^\d{4}\.\d{2}\.\d{2}-\d+$/.test(version)) {
-    console.error('Usage: node source/stamp-version.mjs <YYYY.MM.DD-N>  (e.g. 2026.06.23-5)');
+if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
+    console.error('Usage: node source/stamp-version.mjs <MAJOR.MINOR.PATCH>  (e.g. 1.1.0)');
     process.exit(1);
 }
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
-// Every ?v=<version> cache-buster token, whatever its current value — so a release stamps
-// them all to the new version even if some HTML drifted out of sync.
-const CACHE_BUST = /\?v=\d{4}\.\d{2}\.\d{2}-\d+/g;
+const versionFile = join(publicDir, 'version.json');
+// Any existing ?v=<token> cache-buster, whatever its format — so a release stamps them all to
+// the new release id even when older HTML still carries a previous scheme's token.
+const CACHE_BUST = /\?v=[\w.+-]+/g;
 
 async function htmlFiles(dir) {
     const out = [];
@@ -32,8 +42,15 @@ async function htmlFiles(dir) {
     return out;
 }
 
+// build: the ever-growing counter, read from the current version.json and incremented. It never
+// resets — not even when the semver bumps — so every release has a strictly larger build.
+let prevBuild = 0;
+try { prevBuild = JSON.parse(await readFile(versionFile, 'utf8')).build || 0; } catch { /* first run under this scheme */ }
+const build = prevBuild + 1;
+const release = `${version}-${build}`; // the unique per-release token (cache-buster + refresh key)
+
 // version.json — the trigger the app polls to force-refresh open clients.
-await writeFile(join(publicDir, 'version.json'), JSON.stringify({ version }) + '\n');
+await writeFile(versionFile, JSON.stringify({ version, build }) + '\n');
 
 let stamped = 0, files = 0;
 const unstamped = []; // first-party asset refs with NO ?v= token — this stamper would never touch them
@@ -42,20 +59,20 @@ const ASSET_REF = /(?:src|href)="([^"]+\.(?:js|css))(\?[^"]*)?"/g;
 for (const file of await htmlFiles(publicDir)) {
     const src = await readFile(file, 'utf8');
     let n = 0;
-    const out = src.replace(CACHE_BUST, () => { n++; return `?v=${version}`; });
+    const out = src.replace(CACHE_BUST, () => { n++; return `?v=${release}`; });
     if (n) { await writeFile(file, out); stamped += n; files++; }
     for (const m of out.matchAll(ASSET_REF)) {
         if (/^(?:[a-z]+:)?\/\//i.test(m[1])) continue; // third-party CDN — not ours to stamp
         if (!m[2] || !m[2].startsWith('?v=')) unstamped.push(`${file.slice(publicDir.length + 1)} → ${m[1]}`);
     }
 }
-console.log(`Stamped ${version}: version.json + ${stamped} cache-buster(s) across ${files} HTML file(s).`);
+console.log(`Stamped v${version} (build ${build}): version.json + ${stamped} cache-buster(s) across ${files} HTML file(s).`);
 // A ref without a buster serves stale through the host's static cache for hours after every
 // deploy — the exact bug this stamper exists to prevent. Fail the release until it gets one.
 if (unstamped.length) {
     console.error(`\nERROR: ${unstamped.length} first-party asset reference(s) carry NO ?v= cache-buster:`);
     for (const u of unstamped) console.error('  ' + u);
-    console.error('Add ?v=' + version + ' to each (the stamper only rewrites existing tokens), then re-run.');
+    console.error('Add ?v=' + release + ' to each (the stamper only rewrites existing tokens), then re-run.');
     process.exit(1);
 }
 
