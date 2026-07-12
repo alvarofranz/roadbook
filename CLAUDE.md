@@ -248,21 +248,33 @@ as non-fast-forward; never force-push). The push triggers the **Deploy** GitHub 
 deploy hook via one authenticated POST; the endpoint and key are repository secrets
 (`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
 about the host is in this repo. You can also run it from the Actions tab
-(`workflow_dispatch`). **On every release run `node source/stamp-version.mjs <version>`**
-(e.g. `2026.06.13-1`) — it writes `public/version.json` (the app polls it and
+(`workflow_dispatch`). **On every web release run `node source/stamp-version.mjs <MAJOR.MINOR.PATCH>`**
+(e.g. `1.1.0`) — it writes `public/version.json` (the app polls it and
 force-refreshes every open client) AND stamps the `?v=` cache-buster on every first-party
 script/style URL in the HTML, so each release gets fresh asset URLs through every cache
 layer (browser, CDN edge, the host's static-file cache — which ignores `.htaccess` and
 pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fontawesome/`,
 `public/assets/js/config.js`, `.env`, `vendor/`) are not in git and persist across deploys.
+
+**Versioning — one semver everywhere, an auto-growing build per surface.** The **version** is
+`MAJOR.MINOR.PATCH` (semver) and is the ONE human-facing number — identical on the web footer,
+the Android `versionName` and the iOS `MARKETING_VERSION`. You bump it deliberately. Alongside it
+each surface keeps a **build number that only ever grows** (the stores require it): `version.json`
+carries `{version, build}` where `stamp-version.mjs` auto-increments `build` every run (it drives
+the web cache-buster + the PWA force-refresh, so a same-version redeploy still refreshes clients);
+Android's `versionCode` = `MAJOR*10000 + MINOR*100 + PATCH` (so it climbs with the semver, always
+above the last upload); iOS's `CFBundleVersion` = Xcode Cloud's monotonic `CI_BUILD_NUMBER`. Never
+lower the semver, never reset a build counter.
+
 **Native app releases are separate from the web deploy** and are **tag-triggered CI**, never a
 `main` push: **iOS** on an `ios-*` tag (Xcode Cloud → TestFlight), **Android** on an `android-*`
 tag (`.github/workflows/android-release.yml`: rehydrate assets from the live site → build the
 native bridge → `cap sync android` → sign from repo secrets → `bundleRelease` → upload the AAB to
 the Play **Closed testing (alpha)** track via the service account). Cut a release by bumping the
-tag and pushing it — **iOS** `git tag ios-<v> && git push origin ios-<v>`, **Android**
-`git tag android-<v> && git push origin android-<v>` (e.g. `android-1.0.5`; versionName comes from
-the tag, versionCode from the run number so it always climbs). The Android build then appears under
+tag and pushing it — the tag carries the semver: **iOS** `git tag ios-<X.Y.Z> && git push origin ios-<X.Y.Z>`,
+**Android** `git tag android-<X.Y.Z> && git push origin android-<X.Y.Z>` (e.g. `android-1.1.0`).
+The Android workflow derives `versionName`/`versionCode` from the tag; the iOS `ci_pre_xcodebuild.sh`
+sets `MARKETING_VERSION` from the tag and `CFBundleVersion` from `CI_BUILD_NUMBER`. The Android build then appears under
 **Closed testing – Alpha** in the Play Console; promote Closed → Production there when ready. Note:
 a new personal Play account keeps Production **locked** until it has run a closed test with **≥12
 testers opted in for 14 days** — testers are managed on the closed track itself (add them any time,

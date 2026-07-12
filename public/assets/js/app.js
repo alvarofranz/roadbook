@@ -151,13 +151,14 @@
         // its code is bundled and updates ship through the store — so this is web-only.
         if (!isNativeApp() && pendingRefresh && !window.RB_BUSY && !refreshing) { refreshing = true; return hardRefresh(); }
         try {
-            const v = (await (await fetch(API_ROOT + 'version.json', { cache: 'no-store' })).json()).version;
-            if (!v) return;
-            const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + v;
+            const j = await (await fetch(API_ROOT + 'version.json', { cache: 'no-store' })).json();
+            if (!j.version) return;
+            const rel = j.version + '-' + (j.build || 0);     // unique per release (version stays, build always grows)
+            const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + j.version;
             if (isNativeApp()) return;                        // app: just show the live version; never hot-refresh
-            if (appVer == null) { appVer = v; return; }      // first read: set the reference
-            if (v !== appVer && !refreshing) {
-                appVer = v;
+            if (appVer == null) { appVer = rel; return; }     // first read: set the reference
+            if (rel !== appVer && !refreshing) {
+                appVer = rel;
                 if (window.RB_BUSY) pendingRefresh = true;   // wait for the session to end
                 else { refreshing = true; await hardRefresh(); }
             }

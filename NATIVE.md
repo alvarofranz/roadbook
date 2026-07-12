@@ -220,11 +220,15 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
   Node 22 + `npm ci`, then `config.js` and the licensed FontAwesome Pro files
   fetched from the live site (public client assets by design — no workflow
   secrets), then the native bridge + `npx cap sync ios`.
-- **Build numbers are managed by Xcode Cloud itself**: each build gets the next
-  integer (1, 2, 3…) and App Store Connect uses that number for the TestFlight /
-  App Store build, overriding the project's `CURRENT_PROJECT_VERSION`. Change the
-  counter under App Store Connect → Xcode Cloud → Settings → Build Number; bump
-  the user-facing version by editing `MARKETING_VERSION` in the Xcode project.
+- **`ci_pre_xcodebuild.sh`** stamps the version from the release tag, so the tag is
+  the single source of truth (like Android's workflow): `MARKETING_VERSION`
+  (CFBundleShortVersionString) ← the semver in `ios-X.Y.Z`, and `CFBundleVersion`
+  (the build number) ← Xcode Cloud's monotonic `CI_BUILD_NUMBER`. The semver is the
+  ONE human-facing version — identical on the web footer and the Android
+  `versionName`. Because each new semver is a fresh CFBundleVersion train, App Store
+  Connect never rejects the build number. (If App Store Connect's own "manage build
+  number" is left on it simply overrides with the same kind of monotonic integer —
+  harmless; ideally leave it off so the repo/CI is the source of truth.)
 
 **One-time setup:**
 1. Register the App ID: https://developer.apple.com → Certificates, Identifiers &
@@ -241,9 +245,11 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
    iOS build. Action **Archive** (Release) → post-action **TestFlight (internal
    group)**. No environment variables needed.
 
-**Cutting a TestFlight build:** `git tag ios-<version> && git push origin ios-<version>`
-— or press ▶ Start Build on the workflow in Xcode / App Store Connect. Promote
-to App Store review from TestFlight when happy.
+**Cutting a TestFlight build:** the tag carries the semver —
+`git tag ios-<X.Y.Z> && git push origin ios-<X.Y.Z>` (e.g. `ios-1.1.0`) — or press
+▶ Start Build on the workflow in Xcode / App Store Connect. `ci_pre_xcodebuild.sh`
+turns that tag into `MARKETING_VERSION`. Promote to App Store review from TestFlight
+when happy.
 
 **First submission:** fill the privacy nutrition labels (you collect **Location**
 for app functionality, and account email if signed in), add screenshots, and
@@ -255,13 +261,13 @@ capture and offline use — native capabilities, not a website.
 Releases build in the cloud from a tag — no local archive step — mirroring the iOS `ios-*` flow.
 The pipeline is `.github/workflows/android-release.yml`: it rehydrates the gitignored client
 assets from the live site (config.js + FontAwesome, public by design), builds the native bridge,
-`cap sync android`, restores the signing keystore from secrets, `bundleRelease` (versionCode from
-the run number, versionName from the tag), and uploads the `.aab` to the **Closed testing (alpha)**
-track via the service account. It fires **only on an `android-*` tag**, so a web release never
-triggers an app build.
+`cap sync android`, restores the signing keystore from secrets, `bundleRelease` (versionName from
+the tag, versionCode = `MAJOR*10000 + MINOR*100 + PATCH` from that semver so it always climbs above
+the last upload), and uploads the `.aab` to the **Closed testing (alpha)** track via the service
+account. It fires **only on an `android-*` tag**, so a web release never triggers an app build.
 
-**Cutting a release:** bump the version in the tag and push it, e.g.
-`git tag android-1.0.5 && git push origin android-1.0.5` (or run the workflow from the Actions tab).
+**Cutting a release:** the tag carries the semver — push it, e.g.
+`git tag android-1.1.0 && git push origin android-1.1.0` (or run the workflow from the Actions tab).
 The build lands straight in **Closed testing – Alpha**. Promote Closed → Production in the Play
 Console once the closed-test gate is met (a new personal Play account must keep **≥12 testers opted
 in for 14 days** before Production unlocks; testers are managed on the closed track itself, so you
