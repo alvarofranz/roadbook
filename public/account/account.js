@@ -66,13 +66,16 @@
         const el = $('gBtn'); if (!el) return;
         el.className = ''; el.innerHTML = gButton();
         el.querySelector('button').onclick = async () => {
-            // The bridge script loads async — if a tap lands before it's ready, wait for it
-            // briefly instead of doing nothing (#250).
-            for (let i = 0; i < 40 && !(window.RBNative && RBNative.googleSignIn); i++) await new Promise((r) => setTimeout(r, 50));
             try {
-                if (!window.RBNative || !RBNative.googleSignIn) throw new Error('native bridge unavailable');
-                const idToken = await RBNative.googleSignIn(); if (idToken) onGoogle(idToken);      // null = cancelled
-            } catch (e) { msg('Google sign-in failed. Please try again.', false); }
+                const native = await RBNativeReady(); // the bridge script loads async (#250)
+                if (!native || !native.googleSignIn) throw new Error('native bridge unavailable');
+                const idToken = await native.googleSignIn(); if (idToken) onGoogle(idToken);      // null = cancelled
+            } catch (e) {
+                if (/cancel/i.test((e && e.message) || '')) return; // closing the OS picker is a choice, not an error
+                // Always show the underlying reason — a generic message made native sign-in
+                // failures (plugin config, Play Services…) undiagnosable in the field.
+                msg(t('Google sign-in failed. Please try again.') + ((e && e.message) ? ' (' + e.message + ')' : ''), false);
+            }
         };
     }
     // Feedback while the ID token is verified server-side; restoreGoogle() puts the button back on a

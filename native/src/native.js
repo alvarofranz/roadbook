@@ -41,11 +41,14 @@ const RBNative = {
 
     // Save a Blob to device storage. `<a download>` is ignored inside a WebView, so
     // this is the native path for every download the app generates (GPX, .rdbk, CSV…).
-    // The two OSes hand the file to a folder in different, native ways:
+    // Resolves with where the file went — 'documents' (Android public Documents),
+    // 'share' (handed to the OS share sheet) or 'canceled' (the user dismissed the
+    // sheet) — and throws when nothing could save it; the caller (RBDownload) owns
+    // the user feedback. The two OSes hand the file to a folder in different ways:
     //   · Android — the WebView has no folder picker (the File System Access API is
     //             desktop-Chromium only, and the share sheet has no reliable "save here").
     //             So write straight into the public Documents folder — the file lands where
-    //             the Files / Downloads apps can see it — and confirm with a toast.
+    //             the Files / Downloads apps can see it.
     //   · iOS   — apps are sandboxed; the only way to reach an arbitrary folder is the
     //             system share sheet, whose "Save to Files" entry IS the folder chooser.
     // Android before 10 (API < 29) has no scoped-storage write to Documents without the
@@ -56,12 +59,16 @@ const RBNative = {
         if (Capacitor.getPlatform() === 'android') {
             try {
                 await Filesystem.writeFile({ path: filename, data, directory: Directory.Documents, recursive: true });
-                if (window.RBToast) RBToast('Saved to your Documents folder');
-                return;
+                return 'documents';
             } catch (e) { /* old Android / no Documents access — fall back to the share sheet */ }
         }
         const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
-        await Share.share({ title: filename, files: [uri] });
+        try { await Share.share({ title: filename, files: [uri] }); }
+        catch (e) {
+            if (/cancel/i.test((e && e.message) || '')) return 'canceled'; // dismissing the sheet is a choice, not an error
+            throw e;
+        }
+        return 'share';
     },
 
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
@@ -77,10 +84,12 @@ const RBNative = {
                     iOSServerClientId: GOOGLE_WEB_CLIENT_ID,
                     mode: 'online',                          // returns an ID token (not just an auth code)
                 },
-            });
+            }).catch((e) => { googleReady = null; throw e; }); // a failed init must not poison every later attempt
         }
         await googleReady;
-        const res = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+        // No explicit scopes: the plugin already requests email/profile/openid by default, and on
+        // Android passing ANY makes it reject outright (custom scopes demand a modified MainActivity).
+        const res = await SocialLogin.login({ provider: 'google', options: {} });
         return (res && res.result && res.result.idToken) || null;
     },
 

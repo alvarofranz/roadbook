@@ -253,7 +253,10 @@ password se rieseguita.
 ### Cloudflare Turnstile
 [`verify_turnstile`](../app/auth.php#L125) protegge `register`/`login`/`forgot`. È un **no-op se
 `turnstile_secret` è vuoto** (feature non ancora attivata): in locale e senza configurazione,
-i form passano senza challenge.
+i form passano senza challenge. Le **app native sono esenti**: il widget è domain-locked e non
+può girare nella WebView (origin `localhost`), quindi un Origin app fidato (`is_app_origin`,
+lo stesso whitelist della guardia CSRF, non falsificabile da una pagina web) salta il challenge —
+sotto restano i rate limit per IP su ogni endpoint di auth. Il web lo richiede come sempre.
 
 ---
 

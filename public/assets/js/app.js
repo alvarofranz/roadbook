@@ -660,12 +660,28 @@
         return { ok: false, offline: true, user };
     };
     window.RBIsParticipant = isParticipant;
-    // Trigger a download from a Blob or a URL. Inside the native app the `<a download>` trick
-    // is ignored by the WebView — use the native bridge (navigator.share) if available, and
-    // fall back to `<a download>` if the native path fails or is unavailable.
+    // The native bridge (RBNative) loads async after app.js — wait for it briefly so a tap
+    // that lands right after startup still reaches the native capability. Resolves with
+    // RBNative, or null when it never arrives (or outside the app). (#250)
+    window.RBNativeReady = async () => {
+        for (let i = 0; i < 40 && isNativeApp() && !window.RBNative; i++) await new Promise((r) => setTimeout(r, 50));
+        return window.RBNative || null;
+    };
+    // Trigger a download from a Blob or a URL. On the web: an `<a download>` click. The app's
+    // WebView ignores that trick, so there the file goes through the native bridge (Android →
+    // public Documents, iOS → the "Save to Files" share sheet) and the outcome is ALWAYS
+    // surfaced — a save that silently does nothing is a bug.
     window.RBDownload = async (data, filename) => {
-        if (isNativeApp() && window.RBNative && RBNative.downloadFile && typeof data !== 'string') {
-            try { await RBNative.downloadFile(data, filename); return; } catch (e) {}
+        if (isNativeApp()) {
+            try {
+                const blob = (typeof data === 'string') ? await (await fetch(data)).blob() : data;
+                const native = await RBNativeReady();
+                if (!native) throw new Error('native bridge unavailable');
+                if (await native.downloadFile(blob, filename) === 'documents') RBToast('Saved to your Documents folder');
+            } catch (e) {
+                RBToast(RBt('Could not save the file.') + ((e && e.message) ? ' (' + e.message + ')' : ''));
+            }
+            return;
         }
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
         const a = document.createElement('a'); a.href = url; a.download = filename;

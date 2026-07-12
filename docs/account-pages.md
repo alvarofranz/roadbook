@@ -177,7 +177,9 @@ avatar via `RBUpload` (→ `upload.php`). Tutto attraverso `RBApi`/`RBUpload`.
 
 - **Cloudflare Turnstile** (anti-bot) è renderizzato su login/register/forgot **solo se**
   il server espone una site key in `config` ([account.js:18](../public/account/account.js#L18));
-  senza configurazione i widget restano vuoti e inerti.
+  senza configurazione i widget restano vuoti e inerti. Nell'**app nativa non viene mai
+  caricato** (il widget è domain-locked e non gira in WebView) e il backend esenta gli
+  Origin app fidati dal challenge (`verify_turnstile`).
 - Ogni campo password riceve un toggle "occhio" mostra/nascondi iniettato a runtime
   ([account.js:65](../public/account/account.js#L65)).
 - I form usano `submit` con `preventDefault` per non ricaricare mai la pagina
