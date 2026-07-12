@@ -618,8 +618,10 @@
         try { await navigator.clipboard.writeText(text); RBToast('Link copied'); }
         catch (e) { RBToast('Could not copy the link.'); }
     };
-    // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL.
-    window.RBReaderLink = (slug) => location.origin + '/reader/' + encodeURIComponent(slug);
+    // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL. In the
+    // native app location.origin is the WebView-local host, so a copied link would be a dead
+    // localhost URL — always share the production domain instead.
+    window.RBReaderLink = (slug) => (isNativeApp() ? 'https://rdbk.app' : location.origin) + '/reader/' + encodeURIComponent(slug);
     // API auth: a Capacitor webview can't carry the cross-origin session cookie, so in the
     // native apps login returns a Bearer token we store and replay on every call. In the
     // browser this is completely inert — the httponly session cookie is used as before and

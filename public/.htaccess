@@ -40,6 +40,11 @@ AddType audio/mpeg .mp3
 # relative ../ paths, which would break one level deeper.
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    # PHP-FPM does not receive the Authorization header unless it is explicitly forwarded.
+    # The native apps authenticate with a Bearer token (no cross-origin cookie), so without
+    # this every app API call arrives unauthenticated and the app looks signed out — expose it.
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
     RewriteRule ^(challenge|reader|editor|event|go)/([A-Za-z0-9_-]+)/$ /$1/$2 [R=301,L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

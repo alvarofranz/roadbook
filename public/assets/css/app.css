@@ -84,16 +84,22 @@ img { max-width: 100%; display: block; }
     /* full-screen opaque overlay (inset:0 covers the whole viewport); its rows are centred in a
        slim column and scrollable + top-padded so every item (incl. the account submenu) stays
        reachable on short screens. */
-    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: flex-start; gap: .2rem; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(56px + .7rem) 1.1rem calc(1.2rem + env(safe-area-inset-bottom)); }
-    .topnav.open .nav-link { display: flex; align-items: center; justify-content: flex-start; gap: 1rem; width: 100%; max-width: 420px; font-size: 1.06rem; font-weight: 700; color: var(--text); padding: .6rem 1rem; border-radius: 12px; transition: background .12s ease, color .12s ease; }
+    /* top padding clears the header AND the notch (the header grows by safe-area-inset-top in the
+       native app), so the first row never tucks under the status bar / header. Roomy gap so the
+       stacked rows read as a real menu, not a cramped list. */
+    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: flex-start; gap: .45rem; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(56px + env(safe-area-inset-top) + 1.1rem) 1.1rem calc(1.2rem + env(safe-area-inset-bottom)); }
+    .topnav.open .nav-link { display: flex; align-items: center; justify-content: flex-start; gap: 1rem; width: 100%; max-width: 420px; font-size: 1.18rem; font-weight: 700; color: var(--text); padding: .85rem 1.1rem; border-radius: 14px; transition: background .12s ease, color .12s ease; }
     .topnav.open .nav-link:hover { background: var(--card); }
     .topnav.open .nav-link.active { background: var(--card); color: var(--sand); }
-    .topnav.open .nav-ico { display: inline-flex; width: 1.6rem; justify-content: center; color: var(--sand); font-size: 1.05rem; }
+    /* every leading icon in the stacked menu — tool icons AND the account/Sign-in row — is the
+       same sand glyph in the same gutter, so the whole list lines up as one column. */
+    .topnav.open .nav-ico, .topnav.open .account-login > i, .topnav.open .account-button > i { display: inline-flex; width: 1.7rem; justify-content: center; color: var(--sand); font-size: 1.15rem; }
     .topnav.open .nav-tool::after { display: none; }         /* no underline in the stacked menu */
     /* account sits FIRST (order:-1) so it's reachable without scrolling; its second-level menu
        drops as a floating overlay ON TOP of the tool links (not inline), so opening it never
        pushes the list down. Long (admin) lists scroll inside the overlay. */
     .topnav.open .account-control { order: -1; flex-direction: column; align-items: stretch; margin: 0 0 .3rem; width: 100%; max-width: 420px; }
+    .topnav.open .account-button span { max-width: none; }   /* full-width row → no ellipsis clipping the name */
     /* sized to its content like the desktop dropdown — never a screen-wide half-empty panel (#243);
        capped at the viewport, where a too-long label wraps instead of clipping */
     .topnav.open .account-menu { position: absolute; top: calc(100% + 4px); left: 0; right: auto; width: max-content; min-width: 220px; max-width: calc(100vw - 2.2rem); margin: 0; max-height: 68vh; overflow-y: auto; z-index: 85; }

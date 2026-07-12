@@ -52,11 +52,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 // (/reader/, /editor/, /tripmaster/ …). Capacitor's default router collapses any
 // extension-less path to the ROOT index.html (SPA behaviour), so every tool URL served
 // the landing page instead of the tool. This router maps an extension-less path to
-// <path>/index.html, so directory routes resolve to the right page.
+// <path>/index.html, so directory routes resolve to the right page. It also mirrors the
+// server's friendly-URL rewrite: /challenge|reader|editor|event/<slug> resolves to the
+// SECTION's index.html (the page reads the slug from location.pathname), so a public
+// roadbook or event opens in-app instead of 404-ing on <slug>/index.html.
 public struct RDBKRouter: Router {
     public var basePath: String = ""
 
+    // Friendly slug URLs, same set the .htaccess RewriteRule handles.
+    private static let slugRoute = try! NSRegularExpression(pattern: "^/(challenge|reader|editor|event)/[A-Za-z0-9_-]+/?$")
+
     public func route(for path: String) -> String {
+        let range = NSRange(path.startIndex..., in: path)
+        if let match = RDBKRouter.slugRoute.firstMatch(in: path, range: range),
+           let section = Range(match.range(at: 1), in: path) {
+            return basePath + "/" + path[section] + "/index.html"
+        }
         let pathUrl = URL(fileURLWithPath: path)
         if pathUrl.pathExtension.isEmpty {
             var dir = path
