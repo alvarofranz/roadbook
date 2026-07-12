@@ -33,7 +33,7 @@
                             'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
                             'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'] } },
                     layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
-            if (hqMap.map) { var m = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
+            if (hqMap.map) { new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         } else mapEl.hidden = true;
         const statusBadge = (r) => {
             if (r.status === 'draft') return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';

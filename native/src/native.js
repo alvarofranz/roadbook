@@ -37,8 +37,6 @@ async function blobToBase64(blob) {
 }
 
 const RBNative = {
-    available: true,                       // the bundle only loads inside a native shell
-
     // Save a Blob to device storage. `<a download>` is ignored inside a WebView, so
     // this is the native path for every download the app generates (GPX, .rdbk, CSV…).
     // Resolves with where the file went — 'documents' (Android public Documents),
