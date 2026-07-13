@@ -91,13 +91,15 @@ img { max-width: 100%; display: block; }
     transition: color .12s ease, transform .08s ease; }
 .app-tabbar .tabbar-link.active { color: var(--sand); }
 .app-tabbar .tabbar-link:active { transform: scale(.88); }
-/* show the bar + leave room so content and any fixed bottom controls clear it */
+/* show the bar + leave room so content and any fixed bottom controls clear it. With no top bar,
+   the top padding is the notch / status-bar inset (viewport-fit=cover), so content never sits
+   under the clock. The sticky tool bars pin to the same inset, so they line up with no gap. */
 .native .app-tabbar { display: flex; }
-.native body { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+.native body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 .native .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 @media (max-width: 1024px) {
     .app-tabbar { display: flex; }
-    body { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+    body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
     .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 }
 /* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
@@ -194,7 +196,6 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .foot a { color: var(--sand-2); }
 /* shared fullscreen mode (Tripmaster, Reader): hide the site chrome for a distraction-free view */
 body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
-body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar where the header was */
 /* GPS tool pages (Reader · Recorder · Tripmaster): short landscape gives the dashboard the whole screen */
 @media (orientation: landscape) and (max-height: 540px) { body.gps-tool header.topbar { display: none; } }
 
@@ -448,7 +449,8 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 /* the sticky tool bars (Reader odometer · Tripmaster status) pin to the top by default — correct
    wherever there is no top bar (native + every mobile-width view). Only desktop web, which keeps
    the 56px top bar, offsets them below it. */
-@media (min-width: 1025px) { html:not(.native) .odometer-bar, html:not(.native) .status-bar { top: 56px; } }
+/* only desktop web WITH the top bar showing (not fullscreen) offsets the tool bars below it */
+@media (min-width: 1025px) { html:not(.native) body:not(.rb-fs) .odometer-bar, html:not(.native) body:not(.rb-fs) .status-bar { top: 56px; } }
 .launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
 .launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
 .launch-tile i { color: var(--sand); font-size: 2rem; }
