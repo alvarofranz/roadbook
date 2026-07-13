@@ -17,8 +17,8 @@
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.3.2-7">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1.3.2-7">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.3.3-8">
+    <link rel="stylesheet" href="/assets/css/app.css?v=1.3.3-8">
     <style>
         #evWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
         .ev-head { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
@@ -27,8 +27,10 @@
         /* the event logo (#151): boxed like an avatar, never squeezing the title */
         .ev-logo { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card); border: 1px solid var(--line); flex: none; }
         .ev-desc { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-        /* a READY roadbook delivered to entrants only (#25): small reserved chip on its card */
-        .ev-rb-reserved { margin-top: .3rem; font-size: .78rem; color: var(--sand); }
+        /* per-card status chip on an event roadbook: sand = reserved to entrants (#25), green = public (#251) */
+        .ev-rb-status { margin-top: .3rem; font-size: .78rem; }
+        .ev-rb-status.reserved { color: var(--sand); }
+        .ev-rb-status.public { color: var(--ok); }
         /* join-with-code (#123): a compact inline form / joined banner between description and roadbooks */
         .ev-join { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .8rem 1rem; margin: 1rem 0; }
         .ev-join .field { max-width: 12rem; margin: 0; font-family: ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
@@ -79,16 +81,16 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=1.3.2-7"></script>
-<script src="/assets/js/roadbook-core.js?v=1.3.2-7"></script>
-<script src="/assets/js/rbmap.js?v=1.3.2-7"></script>
-<script src="/assets/js/i18n.es.js?v=1.3.2-7"></script>
-<script src="/assets/js/i18n.it.js?v=1.3.2-7"></script>
-<script src="/assets/js/i18n.de.js?v=1.3.2-7"></script>
-<script src="/assets/js/i18n.fr.js?v=1.3.2-7"></script>
-<script src="/assets/js/i18n.js?v=1.3.2-7"></script>
-<script src="/assets/js/qrcode.min.js?v=1.3.2-7"></script>
-<script src="/assets/js/app.js?v=1.3.2-7"></script>
-<script src="event.js?v=1.3.2-7"></script>
+<script src="/assets/js/config.js?v=1.3.3-8"></script>
+<script src="/assets/js/roadbook-core.js?v=1.3.3-8"></script>
+<script src="/assets/js/rbmap.js?v=1.3.3-8"></script>
+<script src="/assets/js/i18n.es.js?v=1.3.3-8"></script>
+<script src="/assets/js/i18n.it.js?v=1.3.3-8"></script>
+<script src="/assets/js/i18n.de.js?v=1.3.3-8"></script>
+<script src="/assets/js/i18n.fr.js?v=1.3.3-8"></script>
+<script src="/assets/js/i18n.js?v=1.3.3-8"></script>
+<script src="/assets/js/qrcode.min.js?v=1.3.3-8"></script>
+<script src="/assets/js/app.js?v=1.3.3-8"></script>
+<script src="event.js?v=1.3.3-8"></script>
 </body>
 </html>
