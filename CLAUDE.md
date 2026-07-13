@@ -393,8 +393,8 @@ Operational notes:
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
   voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
   `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·
-  `items()` (queued records, for a local export) · `clear()` ·
-  `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
+  `items()` (queued records, for a local export) · `clear()` · `flush()` (drain now, e.g. once a
+  draft exists after sign-in) · `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in). Signed-out
   captures stay local and are bundled into a self-contained `.rdbk` (RBZip). Pure `createQueue`
   core (module.exports) is unit-tested; used by the Recorder (Editor recording next).

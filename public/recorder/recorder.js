@@ -12,6 +12,9 @@
     const t = RBt, toast = RBToast;
     const pad2 = RB.pad2;
     const SESSION_KEY = 'rb_recorder_session';
+    // A finished recording waiting to be saved to an account across the sign-in redirect (the app
+    // has no in-page login): stashed here, then saved automatically when the user returns signed in.
+    const PENDING_SAVE = 'rb_recorder_pending_save';
     // Default roadbook name proposed when a recording starts: date + time, "YYYY-MM-DD HH-MM" (#148).
     const recName = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()); };
 
@@ -55,15 +58,27 @@
         },
     });
 
-    /* ---------- startup: know the user, then resume → rescue → idle ---------- */
-    RBConfig().then((c) => {
+    /* ---------- startup: know the user, then pending-save → resume → rescue → idle ---------- */
+    RBConfig().then(async (c) => {
         meUser = c.user || null; // offline falls back to the last-known user, so capture stays available (#189)
         updateRecUi(); // login known → reveal WP audio (signed-in) or show the sign-in hint
         // Before the first fix, centre on the user's saved default location if they set one.
         if (meUser && meUser.default_lat != null && meUser.default_lon != null && !here && map && map.map)
             map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 13 });
-    }).catch(() => {});
-    (async function () {
+
+        // Returning from the sign-in redirect with a recording queued for a save-to-account: save it
+        // now (signed in), or re-open the finish options if sign-in was skipped. This finished track
+        // is not resumable, so clear the in-progress session either way.
+        let pend; try { pend = JSON.parse(localStorage.getItem(PENDING_SAVE) || 'null'); } catch (e) {}
+        if (pend && pend.pts) {
+            localStorage.removeItem(PENDING_SAVE);
+            clearSession();
+            wpts = pend.wpts || [];
+            recordedM = pend.recordedM || 0; // restore the odometer so the finish modal shows the real km
+            if (meUser) { await saveAfterLogin(pend); return; }
+            finishModal(pend.pts, pend.name); return; // sign-in skipped — show the options again
+        }
+
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         if (session && session.recording) {
             // Declining must never destroy a run: it's replaced as it records, or cleared on Finish.
@@ -78,7 +93,7 @@
             clearSession();
         }
         await RBGpxRecorder.offerRecovery();
-    })();
+    }).catch(() => {});
 
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = () => RBGpxRecorder.settings({ defaultName: recName(), nameLabel: t('Roadbook name'), onStart: begin });
@@ -378,54 +393,87 @@
         return bundled;
     }
 
-    // Signed in, the primary action SAVES the recording to the profile in one tap (#143): it
-    // builds the roadbook from the track + waypoints and writes it into the draft that already
-    // holds the geotagged photos and voice notes (rb_save with id=draftId), so nothing has to go
-    // through the Editor. Signed out, the primary action exports a self-contained .rdbk (with the
-    // buffered media). Export GPX is a local file without media; "Open in the editor" refines it.
-    function finishModal(pts, name) {
+    // Build the roadbook from the track + waypoints and write it into the draft that holds the
+    // geotagged photos and voice notes (rb_save with id=draft), so nothing has to go through the
+    // Editor. ensureDraft() first guarantees a single container for both the notes and the media.
+    // Returns { id, roadbook } or null (too short / save failed — a toast is shown).
+    async function saveToProfile(pts, nm) {
+        let roadbook;
+        try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts }); }
+        catch (e) { toast(t('Route too short to save.')); return null; }
+        const id = await ensureDraft(); // the draft the queued photos/voice notes also attach to
+        const r = await RBApi('rb_save', { id: id || draftId || 0, status: 'draft', roadbook });
+        if (!r.ok) { toast(r.error || t('Could not save.')); return null; }
+        draftId = r.id;
+        try { RBMediaQueue.flush(); } catch (e) {} // push any still-buffered media into this draft
+        return { id: r.id, roadbook };
+    }
+
+    // Back from the sign-in redirect with a recording that was queued for a save-to-account: save it,
+    // then show the finish options in a "saved" state (so the user can still export it elsewhere).
+    async function saveAfterLogin(pend) {
+        const built = await saveToProfile(pend.pts, pend.name);
+        finishModal(pend.pts, pend.name, built ? built.id : 0);
+    }
+
+    const savedLine = (id) => '<i class="fa-solid fa-circle-check icon-accent"></i> ' + t('Saved to your profile.') +
+        ' <a href="../editor/?rb=' + id + '">' + t('Edit') + '</a>';
+    const markDone = (btn, label) => { btn.innerHTML = '<i class="fa-solid fa-check icon-accent"></i> ' + label; };
+
+    // The finish options STAY open after each action (#268-style): you can export the track here and
+    // still save it to your account, or export it in more than one place. Only "Open in the editor"
+    // navigates away, and "Close" dismisses. `savedId` renders the modal already in its saved state
+    // (used when returning from the sign-in redirect). "Save to account" saves in place when signed
+    // in; signed out it stashes the recording and rounds through the sign-in page (no in-page login).
+    function finishModal(pts, name, savedId) {
         const km = (recordedM / 1000).toFixed(2);
         const nm = name || recName();
         const signedIn = !!meUser;
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷</p>
             <div class="btnrow center wrap">
-                ${signedIn
-                    ? `<button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to server')}</button>`
-                    : `<button class="btn btn-primary" id="rfRdbk"><i class="fa-solid fa-file-zipper"></i> ${t('Export .rdbk')}</button>`}
-                <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Open in the editor')}</button>
+                <button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to account')}</button>
+                ${signedIn ? '' : `<button class="btn btn-ghost" id="rfRdbk"><i class="fa-solid fa-file-zipper"></i> ${t('Export .rdbk')}</button>`}
                 <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-file-arrow-down"></i> ${t('Export GPX')}</button>
+                <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Open in the editor')}</button>
             </div>
-            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('The .rdbk keeps your photos and voice notes in one file; GPX has the track only.')}</p>
+            <p class="muted small" id="rfStatus"${savedId ? '' : ' hidden'}>${savedId ? savedLine(savedId) : ''}</p>
+            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('Save to your account, or export a self-contained .rdbk with your photos and voice notes.')}</p>
             <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
-        if (signedIn) d.q('#rfSave').onclick = async () => {
-            let roadbook;
-            try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts }); }
-            catch (e) { return toast('Track too short to save.'); }
-            const btn = d.q('#rfSave'); btn.disabled = true;
-            // reuse the draft (id) so the already-uploaded photos/audio stay attached
-            const r = await RBApi('rb_save', { id: draftId || 0, status: 'draft', roadbook });
-            btn.disabled = false;
-            if (!r.ok) return toast(r.error || 'Could not save.');
-            d.close();
-            // stay on the Recorder — a small confirmation with a link to refine in the Editor
-            const c = RBModal(`<h3><i class="fa-solid fa-circle-check icon-accent"></i> ${t('Saved to your profile.')}</h3>
-                <p class="muted small">${RBesc(roadbook.meta.title)} · ${roadbook.notes.length} ${t('notes')}</p>
-                <div class="btnrow center wrap">
-                    <a class="btn btn-primary" href="../editor/?rb=${r.id}"><i class="fa-solid fa-pen-ruler"></i> ${t('Edit')}</a>
-                    <button class="btn btn-ghost" id="scClose">${t('Close')}</button>
-                </div>`, 'slim center');
-            c.q('#scClose').onclick = c.close;
+        const showSaved = (id) => { const s = d.q('#rfStatus'); s.hidden = false; s.innerHTML = savedLine(id); };
+
+        d.q('#rfSave').onclick = async () => {
+            const btn = d.q('#rfSave');
+            if (signedIn) {
+                btn.disabled = true;
+                const built = await saveToProfile(pts, nm);
+                btn.disabled = false;
+                if (built) { showSaved(built.id); markDone(btn, t('Save to account')); }
+                return;
+            }
+            // Signed out: no in-page login — stash the recording and round-trip through the sign-in page.
+            if (!(await RBConfirm(t('Sign in to save this recording to your account.'), t('Sign in')))) return;
+            // Only leave for sign-in once the recording is safely stashed — otherwise a storage-quota
+            // failure on a huge track would redirect and lose it.
+            let stashed = false;
+            try { localStorage.setItem(PENDING_SAVE, JSON.stringify({ pts, wpts, name: nm, recordedM })); stashed = true; } catch (e) {}
+            if (!stashed) return toast(t('Could not save.'));
+            location.href = RBLoginUrl();
         };
-        else d.q('#rfRdbk').onclick = async () => {
+        if (!signedIn) d.q('#rfRdbk').onclick = async () => {
             const btn = d.q('#rfRdbk'); btn.disabled = true;
             const n = await exportLocalRdbk(pts, nm);
             btn.disabled = false;
             if (n == null) return; // track too short — toast already shown
-            d.close();
+            markDone(btn, t('Export .rdbk'));
             // the media now lives in the downloaded file → offer to free it from the device
             if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?'), t('Remove')))
                 await RBMediaQueue.clear();
+        };
+        d.q('#rfDl').onclick = () => {
+            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
+            RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
+            markDone(d.q('#rfDl'), t('Export GPX')); toast(t('Exported'));
         };
         d.q('#rfEd').onclick = () => {
             try {
@@ -435,11 +483,6 @@
                 if (draftId) sessionStorage.setItem('rb_trip_draft', String(draftId));
             } catch (e) {}
             location.href = '../editor/?trip=1';
-        };
-        d.q('#rfDl').onclick = () => {
-            const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
-            RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
-            d.close();
         };
         d.q('#rfClose').onclick = d.close;
     }
