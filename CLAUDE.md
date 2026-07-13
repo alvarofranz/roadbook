@@ -240,10 +240,15 @@ migration-only `.sql` to `main`, which auto-deploys it, then apply it as above),
 and only after that does the code that uses the column ship.
 
 ## Releasing
-**Trunk-based: deploy by pushing `main`. That is the whole deploy step — there is no
-manual server access and nothing else to run.** Work straight on `main`: commit, then
-`git pull --ff-only` and `git push origin main` (rebase + retry if the push is rejected
-as non-fast-forward; never force-push). The push triggers the **Deploy** GitHub Action
+**Deploy = a commit landing on `main`, and `main` is a PROTECTED branch: NO direct pushes for
+ANYONE — not collaborators, not admins, not this agent. Every change ships through a pull
+request, even a one-line fix and even your own** (a direct `git push origin main` is rejected
+with `GH006: … Changes must be made through a pull request`). Self-approval / self-merge IS
+allowed (0 required approvals), so the flow is: branch → commit → `git push -u origin <branch>`
+→ `gh pr create` → `gh pr merge <n> --merge --delete-branch`. The merge's push to `main` is what
+triggers the **Deploy** GitHub Action — there is no manual server access and nothing else to run.
+(Force-push and deletion of `main` are also blocked. If you ever need to change this protection,
+it's set via `gh api ... /branches/main/protection`.) The Deploy Action
 (`.github/workflows/deploy.yml`), which runs the unit tests and then fires the production
 deploy hook via one authenticated POST; the endpoint and key are repository secrets
 (`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
