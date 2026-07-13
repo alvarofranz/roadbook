@@ -1,3 +1,8 @@
+# Custom error pages (#286)
+ErrorDocument 403 /403.html
+ErrorDocument 404 /404.html
+ErrorDocument 500 /500.html
+
 # Never list directory contents: private media (photos/, audio/) relies on unguessable
 # filenames, and an autoindex would hand the whole list to anyone (#210).
 Options -Indexes
