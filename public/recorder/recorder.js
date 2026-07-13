@@ -357,7 +357,9 @@
         photos.push({ token, url: localUrl, lat, lon, local: true, pending: true });
         refreshMap(); saveSession(); renderBar();
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
-        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); } });
+        // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
+        // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
+        if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); }
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
