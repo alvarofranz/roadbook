@@ -672,6 +672,19 @@
         const trk = (pts && pts.length) ? `<trk><name>${x(name || 'RDBK route')}</name><trkseg>${trkpts}</trkseg></trk>` : ''; // omit the track for a waypoints-only GPX
         return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1"${ns}><metadata><name>${x(name || 'RDBK route')}</name></metadata>${wptXml}${trk}</gpx>`;
     }
+    // Serialize a KML 2.2 document (for KMZ export): route as a LineString + waypoints as
+    // Point Placemarks. KMZ = a ZIP containing doc.kml — the caller wraps it with RBZip.
+    function kmlDocument(name, pts, wpts) {
+        const x = xmlEsc;
+        const coords = pts.map((p) => `${p.lon},${p.lat}${p.ele != null ? ',' + Math.round(p.ele) : ''}`).join(' ');
+        const trk = (pts && pts.length) ? `<Placemark><name>${x(name || 'RDBK route')}</name><LineString><coordinates>${coords}</coordinates></LineString></Placemark>` : '';
+        const wptXml = (wpts || []).map((w) => {
+            let desc = '';
+            if (w.desc) desc += '<description>' + x(w.desc) + '</description>';
+            return `<Placemark><name>${x(w.name || '')}</name>${desc}<Point><coordinates>${w.lon},${w.lat}</coordinates></Point></Placemark>`;
+        }).join('');
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${x(name || 'RDBK route')}</name>${trk}${wptXml}</Document></kml>`;
+    }
     // Map a note to a Garmin <sym> + OSMAnd icon/colour for GPX export (issue #33). Curated for
     // the POI-like Info icons; a note with `danger` is always red; everything else is generic.
     const APP_WPT = {
@@ -1003,7 +1016,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, gpxDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
