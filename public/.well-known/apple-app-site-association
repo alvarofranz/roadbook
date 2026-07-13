@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["6STWTTP329.app.rdbk"],
+        "components": [
+          { "/": "/go/*", "comment": "event join deep link" },
+          { "/": "/event/*", "comment": "event page" },
+          { "/": "/challenge/*", "comment": "public roadbook" },
+          { "/": "/reader/*", "comment": "public roadbook in the reader" },
+          { "/": "/editor/*", "comment": "public roadbook in the editor" }
+        ]
+      }
+    ]
+  }
+}

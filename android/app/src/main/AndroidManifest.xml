@@ -19,6 +19,21 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- App Links (#268): an installed app opens rdbk.app links instead of the browser
+                 (the /go/<code> event join + event / public-roadbook pages). autoVerify checks
+                 https://rdbk.app/.well-known/assetlinks.json against the signing cert. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="rdbk.app" />
+                <data android:pathPrefix="/go" />
+                <data android:pathPrefix="/event" />
+                <data android:pathPrefix="/challenge" />
+                <data android:pathPrefix="/reader" />
+                <data android:pathPrefix="/editor" />
+            </intent-filter>
         </activity>
 
         <provider

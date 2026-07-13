@@ -304,7 +304,8 @@ function event_join(array $user, array $d): void {
     db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
         ->execute([(int)$e['id'], (int)$user['id'], $actCode, $actCode]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
-    json_out(['ok' => true, 'activation_code' => $actCode]);
+    // slug lets the native App-Links deep link (#268) open the event page after a join-by-code.
+    json_out(['ok' => true, 'activation_code' => $actCode, 'slug' => $e['slug']]);
 }
 
 function event_leave(array $user, array $d): void {
