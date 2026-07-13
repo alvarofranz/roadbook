@@ -445,10 +445,14 @@
         d.q('#rfSave').onclick = async () => {
             const btn = d.q('#rfSave');
             if (signedIn) {
-                btn.disabled = true;
+                // Visible progress while the save is in flight (#279): the network write can take a
+                // moment, and a silent disabled button reads as "nothing happened".
+                const label = btn.innerHTML;
+                btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + t('Saving…');
                 const built = await saveToProfile(pts, nm);
                 btn.disabled = false;
                 if (built) { showSaved(built.id); markDone(btn, t('Save to account')); }
+                else btn.innerHTML = label; // failed — restore so the user can retry
                 return;
             }
             // Signed out: no in-page login — stash the recording and round-trip through the sign-in page.
