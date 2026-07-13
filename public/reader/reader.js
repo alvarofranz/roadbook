@@ -37,7 +37,21 @@
     $('pickRb').onclick = () => $('rbFile').click();
     RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast('Could not load the roadbook.'); } };
-    $('pickChallenge').onclick = () => { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.pick((r) => loadRb(r)); };
+    // Public roadbook gallery, inline on the load screen (below the "Open from" card). Each card
+    // links to /reader/<slug> — the same deep link the Navigate button uses — so opening one just
+    // navigates here with the slug, where the startup below loads it (sign-in gate included).
+    (function publicGallery() {
+        const grid = $('readerGallery'); if (!grid) return;
+        RBChallenges.listPublic().then((rbs) => {
+            if (rbs === null) { grid.innerHTML = `<p class="gallery-empty">${t('Could not load.')}</p>`; return; }
+            if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('No public roadbooks yet.')}</p>`; return; }
+            grid.innerHTML = rbs.map((r) => RBGalleryCard({
+                href: RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug),
+                thumb: r.thumb, title: r.title,
+                meta: '@' + esc(r.username) + ' · ' + RBSummary(r.total_distance, r.note_count),
+            })).join('');
+        });
+    })();
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
     // #146: the same config load also tells us whether public roadbooks may be opened at all.
     let evCtx = null;
@@ -165,6 +179,9 @@
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
+        // Immersive navigation: the Reader owns the screen (its own action row carries the exit
+        // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
+        document.body.classList.add('rb-immersive');
         $('finishBtn').hidden = !comp;
         syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;

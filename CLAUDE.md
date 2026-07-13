@@ -411,7 +411,18 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   watch in the app, the Web Geolocation watch otherwise.
 - **One contextual home:** `index.html` shows the marketing landing on the web and the
   field-tool launcher in the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second
-  page. App scope: **Reader · Editor · Tripmaster · Recorder · Ranking** — all tools available in the app.
+  page. The launcher is the app's opening screen (one tile per section, explained); there is no
+  "home" button back to it — navigation is the bottom tab bar.
+- **Navigation — one section catalog, two presentations (`SECTION`/`WEB_NAV`/`APP_TABS` in
+  `app.js`).** Sections: **Reader · Editor · Navigate · Events · Profile** (bottom bar) plus
+  **Roadbooks · Ranking** (web top nav only). *Desktop web* renders the top bar (Tripmaster +
+  Recorder collapse into a single **Navigate** entry → the `/navigate/` hub). *Every mobile-width
+  view — web, PWA and the native app alike* — hides the top bar and shows a fixed icon-only
+  **bottom tab bar** (Instagram-style); there is no hamburger/full-screen menu. "Navigate" covers
+  `/tripmaster/` + `/recorder/`; "Events" covers `/event/` + `/ranking/` (Ranking lives under
+  Events). The **language is browser-detected** and only changed at the bottom of the Profile page
+  (no picker in the nav). The site footer is hidden on mobile (its About/Privacy/Terms links move
+  to the Profile page); Install + unsaved-work chips float above the tab bar.
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
   client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token
   only inside the app.
@@ -494,4 +505,6 @@ The `roadbook.json` schema:
   and the native launcher — never a different glyph for the same tool. Canonical set: **Track
   Recorder** `fa-circle-dot` · **Roadbook Editor** `fa-pen-ruler` · **Roadbook Reader**
   `fa-compass` · **Tripmaster** `fa-gauge-high` · **Event classification (Ranking)**
-  `fa-ranking-star`. The two-level-deep `/features/<tool>/` pages use `../../assets/…`.
+  `fa-ranking-star`. The nav sections add **Navigate** `fa-location-arrow` (the Tripmaster +
+  Recorder hub) · **Events** `fa-calendar-check` · **Profile** `fa-circle-user`. The two-level-deep
+  `/features/<tool>/` pages use `../../assets/…`.

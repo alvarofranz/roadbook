@@ -9,12 +9,12 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.1.1-2">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.2.0-3">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.1.1-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.2.0-3">
     <style>
         /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
-        .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
+        .odometer-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item.right { align-items: flex-end; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
@@ -56,27 +56,32 @@
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
+        /* load screen: the "Open from" card centred at the top, the public gallery flowing below */
+        .reader-load { max-width: var(--maxw); padding: 1.6rem 1.1rem 5rem; }
+        .reader-open { max-width: 480px; margin: 0 auto 1.8rem; text-align: center; }
+        .reader-gallery .section-head { margin-bottom: 1rem; }
     </style>
 </head>
 <body class="gps-tool">
 <header class="topbar"></header>
 
-<!-- load -->
-<main id="loadScreen" class="wrap center-screen">
-    <div class="center-card">
+<!-- load: "Open from…" chooser on top, the public roadbook gallery inline below -->
+<main id="loadScreen" class="wrap reader-load">
+    <div class="center-card reader-open">
         <div class="big"><i class="fa-solid fa-compass"></i></div>
         <div class="tool-titlebar">
             <h1 data-i18n="fp.tool.reader">Roadbook Reader</h1>
             <a class="tool-help" href="../features/reader/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
         </div>
-        <p class="muted" data-i18n="Load a roadbook and navigate it with GPS.">Load a roadbook and navigate it with GPS.</p>
+        <p class="muted" data-i18n="Open from a file or your roadbooks, or pick a public one below.">Open from a file or your roadbooks, or pick a public one below.</p>
         <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
         <div class="btnrow mt-2"><button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button></div>
         <div class="btnrow"><button class="btn btn-ghost" id="pickMine" hidden data-i18n="Load one of your RBs"><i class="fa-solid fa-book"></i> Load one of your RBs</button></div>
-        <div class="btnrow">
-            <button class="btn btn-ghost" id="pickChallenge" data-i18n="Load from public roadbooks"><i class="fa-solid fa-globe"></i> Load from public roadbooks</button>
-        </div>
     </div>
+    <section class="reader-gallery">
+        <div class="section-head"><h2 data-i18n="Public roadbooks">Public roadbooks</h2></div>
+        <div class="gallery" id="readerGallery"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
+    </section>
 </main>
 
 <!-- navigation with a roadbook -->
@@ -165,22 +170,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.1.1-2"></script>
-<script src="../assets/js/roadbook-core.js?v=1.1.1-2"></script>
-<script src="../assets/js/rbzip.js?v=1.1.1-2"></script>
-<script src="../assets/js/rbmap.js?v=1.1.1-2"></script>
-<script src="../assets/js/gps-meter.js?v=1.1.1-2"></script>
-<script src="../assets/js/status-bar.js?v=1.1.1-2"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.1.1-2"></script>
-<script src="../assets/js/note-canvas.js?v=1.1.1-2"></script>
-<script src="../assets/js/qrcode.min.js?v=1.1.1-2"></script>
-<script src="../assets/js/challenges.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.es.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.it.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.de.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.fr.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.js?v=1.1.1-2"></script>
-<script src="../assets/js/app.js?v=1.1.1-2"></script>
-<script src="reader.js?v=1.1.1-2"></script>
+<script src="../assets/js/config.js?v=1.2.0-3"></script>
+<script src="../assets/js/roadbook-core.js?v=1.2.0-3"></script>
+<script src="../assets/js/rbzip.js?v=1.2.0-3"></script>
+<script src="../assets/js/rbmap.js?v=1.2.0-3"></script>
+<script src="../assets/js/gps-meter.js?v=1.2.0-3"></script>
+<script src="../assets/js/status-bar.js?v=1.2.0-3"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.2.0-3"></script>
+<script src="../assets/js/note-canvas.js?v=1.2.0-3"></script>
+<script src="../assets/js/qrcode.min.js?v=1.2.0-3"></script>
+<script src="../assets/js/challenges.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.es.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.it.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.de.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.fr.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.js?v=1.2.0-3"></script>
+<script src="../assets/js/app.js?v=1.2.0-3"></script>
+<script src="reader.js?v=1.2.0-3"></script>
 </body>
 </html>

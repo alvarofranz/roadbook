@@ -54,58 +54,52 @@
         document.head.appendChild(nativeBridge);
     }
 
-    /* ---------------- Global header + footer (same on every page) ---------------- */
+    /* ---------------- Global header + footer (same on every page) ----------------
+       ONE section catalog is the single source of truth for navigation. The web renders it as
+       the top bar; the native app renders it as a fixed icon-only bottom tab bar (the top bar is
+       hidden by CSS there). Tripmaster + Recorder live under a single "Navigate" section on both
+       surfaces; in the app, "Events" is also where Ranking lives. */
+    // path · i18n label · canonical FontAwesome icon · `covers`: extra route prefixes that light it up.
+    const SECTION = {
+        reader:    { path: 'reader/',    label: 'Reader',    icon: 'fa-compass' },
+        editor:    { path: 'editor/',    label: 'Editor',    icon: 'fa-pen-ruler' },
+        navigate:  { path: 'navigate/',  label: 'Navigate',  icon: 'fa-location-arrow', covers: ['tripmaster', 'recorder'] },
+        roadbooks: { path: 'roadbooks/', label: 'Roadbooks', icon: 'fa-book-open' },
+        events:    { path: 'events/',    label: 'Events',    icon: 'fa-calendar-check', covers: ['event', 'ranking'] },
+        ranking:   { path: 'ranking/',   label: 'Ranking',   icon: 'fa-ranking-star' },
+        profile:   { path: 'account/',   label: 'Profile',   icon: 'fa-circle-user', covers: ['account'] },
+    };
+    // Web top nav: Tripmaster + Recorder collapse into one "Navigate" entry; the rest is unchanged.
+    // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
+    const WEB_NAV = ['reader', 'editor', 'navigate', 'roadbooks', 'events', 'ranking'];
+    const APP_TABS = ['reader', 'editor', 'navigate', 'events', 'profile'];
+    // Common words are translated; product names stay as-is (RBt falls back to English regardless).
+    const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
+
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
-        const active = (p) => rel.indexOf(p) === 0 ? ' active' : '';
-        // Each tool → [short nav label, canonical FontAwesome icon]. Short single-word labels keep
-        // the desktop bar clean and even; the icon is CSS-hidden there and only shows in the
-        // mobile full-screen menu, where it makes the list scannable.
-        const TOOLS = {
-            recorder:   ['Recorder',   'fa-circle-dot'],
-            editor:     ['Editor',     'fa-pen-ruler'],
-            reader:     ['Reader',     'fa-compass'],
-            tripmaster: ['Tripmaster', 'fa-gauge-high'],
-            roadbooks:  ['Roadbooks',  'fa-book-open'],
-            events:     ['Events',     'fa-calendar-check'],
-            ranking:    ['Ranking',    'fa-ranking-star']
-        };
-        // The native app is a field companion: the GPS tools + Events (#198). Editor/Ranking/Roadbooks
-        // stay web-only in the top nav. The website keeps the full set.
-        const order = isNativeApp()
-            ? ['reader', 'tripmaster', 'recorder', 'events']
-            : ['recorder', 'editor', 'reader', 'tripmaster', 'roadbooks', 'events', 'ranking'];
-        // Each tool's "How it works" link lives on the tool page itself (beside the title, or at
-        // the foot of the Tripmaster dashboard) — never in the top menu. "Events" is the lone
-        // translated label (the future feature); the rest are proper tool names.
-        const navLinks = order.map((p) => {
-            const [label, icon] = TOOLS[p];
-            const text = p === 'events' ? '<span data-i18n="Events">Events</span>' : label;
-            return `<a class="nav-link nav-tool${active(p)}" href="${ROOT}${p}/"><i class="fa-solid ${icon} nav-ico"></i><span class="nav-txt">${text}</span></a>`;
+        const seg = rel.split('/')[0] || '';
+        // Active entry within a bar: an exact segment match wins, else the entry that "covers" it.
+        const activeKey = (keys) => keys.find((k) => k === seg) || keys.find((k) => (SECTION[k].covers || []).includes(seg)) || null;
+        const navLabel = (k) => NAV_TRANSLATE[k] ? `<span data-i18n="${SECTION[k].label}">${SECTION[k].label}</span>` : SECTION[k].label;
+
+        const webActive = activeKey(WEB_NAV);
+        const navLinks = WEB_NAV.map((k) => {
+            const s = SECTION[k];
+            return `<a class="nav-link nav-tool${k === webActive ? ' active' : ''}" href="${ROOT}${s.path}"><i class="fa-solid ${s.icon} nav-ico"></i><span class="nav-txt">${navLabel(k)}</span></a>`;
         }).join('');
+        // Top bar — the desktop-web navigation only. Hidden on every mobile-width view (web · PWA ·
+        // native), where the fixed bottom tab bar below takes over — so there is no hamburger and no
+        // full-screen menu. No language switcher either: the language is browser-detected and only
+        // ever changed at the bottom of the Profile page.
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
             <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a></span>
-            <div class="lang lang-bar"></div>
-            <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-            <nav class="topnav" id="topnav">${navLinks}<div class="lang lang-top"></div></nav>
+            <nav class="topnav" id="topnav">${navLinks}</nav>
         </div>`;
-        const toggle = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
-        const setOpen = (open) => {
-            nav.classList.toggle('open', open);
-            header.classList.toggle('nav-open', open); // drops the blur so the menu can cover the viewport
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            toggle.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
-            // closing the menu also folds the account submenu — the X stops propagation, so the
-            // document-level closer never sees it and it would still be open on the next ☰ (#243)
-            if (!open) { const m = nav.querySelector('.account-menu'); if (m) m.hidden = true; }
-        };
-        toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!nav.classList.contains('open')); });
-        document.addEventListener('click', (e) => { if (!nav.contains(e.target) && !toggle.contains(e.target)) setOpen(false); });
-        nav.addEventListener('click', (e) => { if (e.target.closest('a, button:not(.account-button)')) setOpen(false); });
 
         let footer = document.querySelector('footer.foot');
         if (!footer) { footer = document.createElement('footer'); footer.className = 'foot'; document.body.appendChild(footer); }
@@ -121,6 +115,21 @@
                 <span class="small" id="appVersion"></span>
             </div>
         </div>`;
+
+        // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
+        // every mobile-width view — web, installed PWA and the native app — and hides it on desktop
+        // (where the top bar is used instead). One catalog, two presentations.
+        const appActive = activeKey(APP_TABS);
+        let bar = document.querySelector('nav.app-tabbar');
+        if (!bar) { bar = document.createElement('nav'); document.body.appendChild(bar); }
+        bar.className = 'app-tabbar';
+        bar.setAttribute('aria-label', RBt('Sections'));
+        // labels are fixed, safe ASCII words; i18n.js localises the aria-label via data-i18n-aria.
+        // (renderChrome runs before RBesc is defined, so it must not be used here.)
+        bar.innerHTML = APP_TABS.map((k) => {
+            const s = SECTION[k];
+            return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
+        }).join('');
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
@@ -197,17 +206,23 @@
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; showInstall(); });
     window.addEventListener('appinstalled', () => { deferred = null; if (installBtn) installBtn.hidden = true; });
 
+    // A floating stack, above the bottom tab bar on mobile and bottom-right on desktop, for the
+    // contextual chips (Install prompt, unsaved-work alert). Independent of the top bar, which is
+    // hidden on every mobile-width view — so the chips work on every layout. Created on first use.
+    function chipStack() {
+        let s = document.querySelector('.app-chip-stack');
+        if (!s) { s = document.createElement('div'); s.className = 'app-chip-stack'; document.body.appendChild(s); }
+        return s;
+    }
     function ensureBtn() {
         if (installBtn || isStandalone()) return installBtn;
-        const slot = document.querySelector('header .topnav') || document.querySelector('header .wrap');
-        if (!slot) return null;
         installBtn = document.createElement('button');
         installBtn.id = 'installBtn';
-        installBtn.className = 'nav-link install-btn';
-        installBtn.textContent = RBt('Install');
+        installBtn.className = 'install-btn';
+        installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> ${RBt('Install')}`;
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
-        slot.appendChild(installBtn);
+        chipStack().appendChild(installBtn);
         return installBtn;
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
@@ -872,17 +887,15 @@
         draw();
     }
     function refreshPendingPill() {
-        const slot = document.querySelector('header.topbar .wrap');
-        if (!slot) return;
         const n = listPending().length;
-        let pill = slot.querySelector('#pendingPill');
+        let pill = document.querySelector('#pendingPill');
         if (!n) { if (pill) pill.hidden = true; return; }
         if (!pill) {
             pill = document.createElement('button');
             pill.id = 'pendingPill'; pill.className = 'pending-pill';
             pill.setAttribute('aria-label', RBt('Unsaved work'));
             pill.onclick = openPendingModal;
-            slot.insertBefore(pill, slot.querySelector('#navToggle'));
+            chipStack().appendChild(pill);
         }
         pill.hidden = false;
         pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;

@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.1.1-2">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.2.0-3">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.1.1-2">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.2.0-3">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -41,6 +41,9 @@
         .pass-toggle { position: absolute; top: 0; bottom: 0; right: .3rem; width: 2.4rem; display: flex; align-items: center; justify-content: center; background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1rem; }
         .pass-toggle:hover { color: var(--text); }
         .pass-toggle:focus-visible { outline: 2px solid var(--sand); border-radius: 8px; }
+        .acc-lang { display: flex; align-items: center; justify-content: center; gap: .6rem; margin: 2.4rem auto 1rem; }
+        .acc-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; justify-content: center; margin: 0 auto 1.5rem; }
+        .acc-links a { color: var(--sand-2); }
     </style>
 </head>
 <body>
@@ -210,21 +213,36 @@
 
         <div class="btnrow mt-2"><a class="btn btn-primary" href="../myroadbooks/" data-i18n="My roadbooks"><i class="fa-solid fa-book"></i> My roadbooks</a></div>
     </section>
+    <!-- Language is browser-detected by default; this is the one place to change it (no picker in
+         the nav). Sits at the very bottom of the page, in every account view. -->
+    <div class="acc-lang">
+        <span class="muted small" data-i18n="Language">Language</span>
+        <div class="lang"></div>
+    </div>
+    <!-- About / legal links live here on mobile (the site footer is hidden below the tab-bar
+         breakpoint); on desktop the footer carries them too. -->
+    <nav class="acc-links muted small">
+        <a href="../about/" data-i18n="About">About</a>
+        <a href="../standard/">The .rdbk standard</a>
+        <a href="../privacy/" data-i18n="Privacy">Privacy</a>
+        <a href="../terms/" data-i18n="Terms of Use">Terms of Use</a>
+        <a href="../contact/" data-i18n="Contact">Contact</a>
+    </nav>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.1.1-2"></script>
-<script src="../assets/js/rbmap.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.es.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.it.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.de.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.fr.js?v=1.1.1-2"></script>
-<script src="../assets/js/i18n.js?v=1.1.1-2"></script>
-<script src="../assets/js/rbzip.js?v=1.1.1-2"></script>
-<script src="../assets/js/roadbook-core.js?v=1.1.1-2"></script>
-<script src="../assets/js/app.js?v=1.1.1-2"></script>
-<script src="account.js?v=1.1.1-2"></script>
+<script src="../assets/js/config.js?v=1.2.0-3"></script>
+<script src="../assets/js/rbmap.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.es.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.it.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.de.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.fr.js?v=1.2.0-3"></script>
+<script src="../assets/js/i18n.js?v=1.2.0-3"></script>
+<script src="../assets/js/rbzip.js?v=1.2.0-3"></script>
+<script src="../assets/js/roadbook-core.js?v=1.2.0-3"></script>
+<script src="../assets/js/app.js?v=1.2.0-3"></script>
+<script src="account.js?v=1.2.0-3"></script>
 </body>
 </html>
