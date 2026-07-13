@@ -1,17 +1,18 @@
 'use strict';
 /* RBMap — MapLibre GL helper used by the Editor (full roadbook editing) and the
  * Reader (the interactive per-note map): draws a roadbook (track + waypoints),
- * live recording, photo pins, a draggable edit marker, a satellite ↔ topo layer
- * toggle, and lets you select waypoints and highlight the active one. */
+ * live recording, photo pins, a draggable edit marker, a 3-way layer toggle
+ * (satellite ↔ topo ↔ OSM), and lets you select waypoints and highlight the
+ * active one. */
 (function () {
-// The two base styles the built-in layer toggle flips between (satellite photo ↔ topo).
-// Free, no-key raster defaults: ESRI World Imagery (satellite) and CyclOSM (topo with
-// contours + tracks/trails). Override via RB_CONFIG.styleSatellite / styleTopo (a MapLibre
-// style URL or spec) for licensed providers. A style can be a URL string OR a spec object;
-// MapLibre accepts both, so the identity-based topo check still holds.
+// The three base styles the built-in layer toggle cycles through:
+// satellite (ESRI World Imagery), topo (CyclOSM), OSM (OpenFreeMap standard).
+// Override via RB_CONFIG.styleSatellite / styleTopo / styleOsm for licensed
+// providers. A style can be a URL string OR a spec object; MapLibre accepts both,
+// so the identity-based check still holds.
 const RASTER_TOPO = {
     version: 8,
-    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', // fonts for the symbol-text layers (note numbers, photo "IMG")
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 20,
         tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'],
         attribution: '© OpenStreetMap · CyclOSM' } },
@@ -19,14 +20,25 @@ const RASTER_TOPO = {
 };
 const RASTER_SATELLITE = {
     version: 8,
-    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', // fonts for the symbol-text layers (note numbers, photo "IMG")
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: { esri: { type: 'raster', tileSize: 256, maxzoom: 19,
         tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
         attribution: 'Imagery © Esri' } },
     layers: [{ id: 'esri', type: 'raster', source: 'esri' }],
 };
+const RASTER_OSM = {
+    version: 8,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 20,
+        tiles: ['https://tiles.openfreemap.org/standard/{z}/{x}/{y}.png'],
+        attribution: '© OpenStreetMap' } },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+};
 const STYLE_TOPO = (window.RB_CONFIG && RB_CONFIG.styleTopo) || RASTER_TOPO;
 const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || RASTER_SATELLITE;
+const STYLE_OSM = (window.RB_CONFIG && RB_CONFIG.styleOsm) || RASTER_OSM;
+const STYLES = [STYLE_SATELLITE, STYLE_TOPO, STYLE_OSM];
+const STYLE_LABELS = ['Satellite', 'Topo', 'OSM'];
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
@@ -55,7 +67,7 @@ window.RBMap = class RBMap {
             this.map = null;
             return;
         }
-        this._topo = (mapOpts.style || STYLE_SATELLITE) === STYLE_TOPO; // tracks which base style is live
+        this._mapLayer = STYLES.indexOf(mapOpts.style || STYLE_SATELLITE); if (this._mapLayer < 0) this._mapLayer = 0;
         this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
         // "centre on my position" button, sitting just under the zoom controls (top-right)
         if (geolocate) this.map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false, showUserLocation: true }), 'top-right');
@@ -123,21 +135,22 @@ window.RBMap = class RBMap {
         m.on('mouseup', photoUp); m.on('touchend', photoUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
     }
-    // Swap the base style (satellite ↔ topo). MapLibre wipes every custom
+    // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom
     // source/layer on setStyle, so everything is rebuilt and the caller repaints
     // its data in onReady.
     setBaseStyle(styleUrl, onReady) {
         if (!this.map) return;
         this.ready = false;
-        this._topo = (styleUrl === STYLE_TOPO);
+        this._mapLayer = STYLES.indexOf(styleUrl); if (this._mapLayer < 0) this._mapLayer = 0;
         this.map.setStyle(styleUrl);
         this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; if (onReady) onReady(); });
     }
-    // Built-in layer toggle (satellite photo ↔ topo): swap the base style and
-    // repaint the last roadbook + selection. Simple consumers (the Reader) get
-    // this for free via `{ layerToggle: true }`.
+    // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base
+    // styles and repaints the last roadbook + selection. Simple consumers (the
+    // Reader) get this for free via `{ layerToggle: true }`.
     toggleBaseStyle() {
-        this.setBaseStyle(this._topo ? STYLE_SATELLITE : STYLE_TOPO, () => {
+        const next = (this._mapLayer + 1) % STYLES.length;
+        this.setBaseStyle(STYLES[next], () => {
             if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
             if (this._lastSel) this.select(this._lastSel, true);
         });
@@ -333,7 +346,7 @@ window.RBMap = class RBMap {
         } : this._empty());
     }
 };
-// A small MapLibre control button that flips the base style (satellite ↔ topo).
+// A small MapLibre control button that cycles the base style (satellite ↔ topo ↔ OSM).
 function layerToggleControl(rbmap) {
     return {
         onAdd() {
@@ -341,10 +354,17 @@ function layerToggleControl(rbmap) {
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
             const b = document.createElement('button');
             b.type = 'button';
-            b.title = window.RBt ? RBt('Map style') : 'Map style';
+            const label = document.createElement('span');
+            label.className = 'rb-map-style-label';
+            const update = () => {
+                label.textContent = STYLE_LABELS[rbmap._mapLayer];
+                b.title = (window.RBt ? RBt('Map style') : 'Map style') + ': ' + STYLE_LABELS[rbmap._mapLayer];
+            };
             b.setAttribute('aria-label', b.title);
-            b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i>';
-            b.onclick = () => rbmap.toggleBaseStyle();
+            b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i> ';
+            b.appendChild(label);
+            update();
+            b.onclick = () => { rbmap.toggleBaseStyle(); update(); };
             c.appendChild(b); this._c = c;
             return c;
         },
@@ -394,4 +414,5 @@ function wpIconsToggleControl(rbmap) {
 // The canonical base-style URLs, exposed so the Editor's own toggle reuses them.
 window.RBMap.STYLE_SATELLITE = STYLE_SATELLITE;
 window.RBMap.STYLE_TOPO = STYLE_TOPO;
+window.RBMap.STYLE_OSM = STYLE_OSM;
 })();

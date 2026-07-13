@@ -25,7 +25,7 @@
     let showMap = true; // per-note map button
     let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
-    let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
+    let inlineMap = null, inlineMapIdx = -1, lastHere = null; // the one interactive per-note map + last GPS position
     // Auto-validation: a note is reached the moment you enter its detection radius — you've
     // arrived, so it validates immediately (no waiting to overshoot it). The reach gate itself
     // (per-note radius, capped by neighbour spacing, floored above GPS noise) is RB.reachRadius.
@@ -251,6 +251,8 @@
     const capEls = { bar: $('capbar'), heading: $('capHeading'), speed: $('capSpeed'), dist: $('capDist'), arrow: $('capArrow') };
     function onFix(fix) {
         const { here, coords, disp, speedKmh } = fix;
+        lastHere = here;
+        if (inlineMap && inlineMap.ready) inlineMap.setPosition(here.lat, here.lon, false, meter.heading);
         setGps(coords.accuracy <= 25 ? 'ok' : 'bad', Math.round(coords.accuracy));
         tripTotalM += disp; tripPartialM += disp;
         RBGpxRecorder.feed(coords, here, fix.tnow);
@@ -378,9 +380,10 @@
         const n = notes[i];
         el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
         el.hidden = false; inlineMapIdx = i;
-        inlineMap = new RBMap('nmapMap', { zoom: 13, center: [+n.lon, +n.lat], layerToggle: true });
+        inlineMap = new RBMap('nmapMap', { zoom: 13, center: [+n.lon, +n.lat], layerToggle: true, geolocate: true });
         inlineMap.showRoadbook(rb, true); // no auto-fit: keep our centre on this note
         inlineMap.select(n, true);        // highlight the note
+        if (lastHere) inlineMap.setPosition(lastHere.lat, lastHere.lon, false); // show user position
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
