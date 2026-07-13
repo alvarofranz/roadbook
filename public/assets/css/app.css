@@ -206,9 +206,9 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 /* tool-page title + its "How it works" link, side by side (centred in the idle card, left-aligned on the editor landing) */
 /* One page-header pattern for every section: the title on the left, the "Info" link at the
    top-right of the same row. No big decorative icon, no centring — identical across sections. */
-.tool-titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem 1rem; flex-wrap: wrap; margin: .4rem 0 .8rem; }
-.tool-titlebar h1 { margin: 0; }
-.tool-titlebar .tool-help { flex-shrink: 0; align-self: center; }
+.tool-titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem 1rem; margin: .4rem 0 .8rem; }
+.tool-titlebar h1 { margin: 0; min-width: 0; }  /* let a long title wrap on its own line instead of pushing "Info" below it */
+.tool-titlebar .tool-help { flex-shrink: 0; }   /* "Info" stays pinned at the top-right */
 
 /* ---------- tool pages ---------- */
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
