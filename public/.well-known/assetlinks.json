@@ -5,8 +5,8 @@
       "namespace": "android_app",
       "package_name": "app.rdbk",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256",
-        "REPLACE_WITH_UPLOAD_KEY_SHA256"
+        "33:EB:6B:DB:9C:5F:37:16:DC:3D:1C:C9:23:10:B8:84:CC:43:DD:BF:C6:52:21:54:E9:83:4E:1C:08:CC:B9:B6",
+        "82:18:57:75:0B:C3:81:48:1E:72:E2:58:85:E3:4B:C5:88:7A:B3:4E:38:97:9A:8F:C1:B7:A3:FE:68:FC:6B:D5"
       ]
     }
   }
