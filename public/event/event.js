@@ -36,8 +36,9 @@
             if (hqMap.map) { new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         } else mapEl.hidden = true;
         const statusBadge = (r) => {
-            if (r.status === 'draft') return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';
-            if (r.status === 'ready' && !(j.event.active_participant || j.event.org_read)) return '<div class="ev-rb-reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('Active participants only')) + '</div>';
+            if (r.status === 'public') return '<div class="ev-rb-status public"><i class="fa-solid fa-globe"></i> ' + esc(t('Public')) + '</div>';
+            if (r.status === 'draft') return '<div class="ev-rb-status reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';
+            if (r.status === 'ready' && !(j.event.active_participant || j.event.org_read)) return '<div class="ev-rb-status reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('Active participants only')) + '</div>';
             return '';
         };
         const card = (r) => RBGalleryCard({
