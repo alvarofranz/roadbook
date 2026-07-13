@@ -42,6 +42,8 @@
         .pass-toggle:hover { color: var(--text); }
         .pass-toggle:focus-visible { outline: 2px solid var(--sand); border-radius: 8px; }
         .acc-lang { display: flex; align-items: center; justify-content: center; gap: .6rem; margin: 2.4rem auto 1rem; }
+        .acc-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; justify-content: center; margin: 0 auto 1.5rem; }
+        .acc-links a { color: var(--sand-2); }
     </style>
 </head>
 <body>
@@ -217,6 +219,15 @@
         <span class="muted small" data-i18n="Language">Language</span>
         <div class="lang"></div>
     </div>
+    <!-- About / legal links live here on mobile (the site footer is hidden below the tab-bar
+         breakpoint); on desktop the footer carries them too. -->
+    <nav class="acc-links muted small">
+        <a href="../about/" data-i18n="About">About</a>
+        <a href="../standard/">The .rdbk standard</a>
+        <a href="../privacy/" data-i18n="Privacy">Privacy</a>
+        <a href="../terms/" data-i18n="Terms of Use">Terms of Use</a>
+        <a href="../contact/" data-i18n="Contact">Contact</a>
+    </nav>
 </main>
 
 <div id="toast" class="toast" hidden></div>

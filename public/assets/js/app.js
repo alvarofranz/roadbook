@@ -124,9 +124,11 @@
         if (!bar) { bar = document.createElement('nav'); document.body.appendChild(bar); }
         bar.className = 'app-tabbar';
         bar.setAttribute('aria-label', RBt('Sections'));
+        // labels are fixed, safe ASCII words; i18n.js localises the aria-label via data-i18n-aria.
+        // (renderChrome runs before RBesc is defined, so it must not be used here.)
         bar.innerHTML = APP_TABS.map((k) => {
             const s = SECTION[k];
-            return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${RBesc(RBt(s.label))}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
+            return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }

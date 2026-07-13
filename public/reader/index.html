@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=1.1.1-2">
     <style>
         /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
-        .odometer-bar { position: sticky; top: 56px; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
+        .odometer-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item.right { align-items: flex-end; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
