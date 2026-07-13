@@ -17,7 +17,9 @@
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
     const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
     let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true, wpIconsToggle: true });
+    // The editor map IS the work surface (draw the route, drag notes, tap to add) — it needs
+    // one-finger pan / free wheel-zoom, so it opts out of the shared cooperative-gestures default.
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true, wpIconsToggle: true, cooperativeGestures: false });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.

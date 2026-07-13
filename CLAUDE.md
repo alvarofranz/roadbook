@@ -332,9 +332,13 @@ Operational notes:
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
   upcoming white · <50 m to next blue) with an optional per-note
   MapLibre mini-map; a note's FIA waypoint-type badge (`wp_type`) sits beside its number.
-  Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook**. The
-  start modal sets Trip vs Competition mode, the per-note map button and optional live GPX
-  logging. Advancement is automatic by default (GPS marks a note on entering its **detection
+  Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
+  landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
+  **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
+  you might only want to look; the **"Navigate"** button is what opens the mode chooser. That
+  modal sets Trip vs Competition mode, the per-note map button and optional live GPX logging, then
+  navigation starts (`body.rb-immersive`: the tool owns the screen, tab bar hidden). Advancement
+  is automatic by default (GPS marks a note on entering its **detection
   radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius` → the type
   default → the system default `CONST.REACH_DEFAULT_M` (30 m)), with a live Auto on/off switch
   in the nav bar, or manual (tap "reached"). Competition validates with

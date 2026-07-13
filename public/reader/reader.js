@@ -23,6 +23,7 @@
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
     let showMap = true; // per-note map button
+    let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map currently open (RBMap)
     // Auto-validation: a note is reached the moment you enter its detection radius — you've
@@ -122,7 +123,20 @@
         // "Map access from player" is a roadbook-level setting (default allowed when absent)
         $('optMap').checked = mapAllowed();
         $('optMapRow').hidden = !mapAllowed();
-        openModeModal();
+        showPreview();
+    }
+    // Preview an opened roadbook read-only, BEFORE choosing a mode — you might just want to look.
+    // No GPS, no active-note highlighting; the bottom tab bar stays (not immersive). The sticky
+    // "Navigate" CTA is what opens the mode chooser and starts the actual navigation.
+    function showPreview() {
+        preview = true;
+        document.body.classList.remove('rb-immersive');
+        document.body.classList.add('rb-preview');
+        showMap = mapAllowed();
+        $('loadScreen').hidden = true; $('navScreen').hidden = false;
+        $('previewTitle').textContent = (rb.meta && rb.meta.title) || t('Roadbook');
+        renderNotes();
+        window.scrollTo(0, 0);
     }
     // Usage-mode modal. For a roadbook opened from an event (?event=<slug>) the organizer's mode is
     // fetched from the public event and the Trip/Competition choice is locked to it (#155).
@@ -168,6 +182,7 @@
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
     };
+    $('navigateBtn').onclick = openModeModal; // preview → choose a mode → navigate
     $('modeTrip').onclick = startTrip;
     $('modeComp').onclick = startComp;
     $('modeLockedStart').onclick = () => (eventMode === 'competition' ? startComp() : startTrip());
@@ -176,6 +191,7 @@
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
+        preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
@@ -300,13 +316,15 @@
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
             const cls = ['nrow'];
-            if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
-            if (i === activeIdx) cls.push('active');
+            if (!preview) { // no state colouring in the read-only preview — nothing is active/reached yet
+                if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
+                if (i === activeIdx) cls.push('active');
+            }
             const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const reach = (!preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
             const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
             return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${close}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
@@ -317,7 +335,7 @@
         }).join('');
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
-        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => tapNote(+c.dataset.i));
+        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => preview ? (showMap && toggleNoteMap(+c.dataset.i)) : tapNote(+c.dataset.i));
         // only rescroll when the active note actually changed (not on every redraw)
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         updateCapBar();
