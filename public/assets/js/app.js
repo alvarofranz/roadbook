@@ -54,35 +54,40 @@
         document.head.appendChild(nativeBridge);
     }
 
-    /* ---------------- Global header + footer (same on every page) ---------------- */
+    /* ---------------- Global header + footer (same on every page) ----------------
+       ONE section catalog is the single source of truth for navigation. The web renders it as
+       the top bar; the native app renders it as a fixed icon-only bottom tab bar (the top bar is
+       hidden by CSS there). Tripmaster + Recorder live under a single "Navigate" section on both
+       surfaces; in the app, "Events" is also where Ranking lives. */
+    // path · i18n label · canonical FontAwesome icon · `covers`: extra route prefixes that light it up.
+    const SECTION = {
+        reader:    { path: 'reader/',    label: 'Reader',    icon: 'fa-compass' },
+        editor:    { path: 'editor/',    label: 'Editor',    icon: 'fa-pen-ruler' },
+        navigate:  { path: 'navigate/',  label: 'Navigate',  icon: 'fa-location-arrow', covers: ['tripmaster', 'recorder'] },
+        roadbooks: { path: 'roadbooks/', label: 'Roadbooks', icon: 'fa-book-open' },
+        events:    { path: 'events/',    label: 'Events',    icon: 'fa-calendar-check', covers: ['event', 'ranking'] },
+        ranking:   { path: 'ranking/',   label: 'Ranking',   icon: 'fa-ranking-star' },
+        profile:   { path: 'account/',   label: 'Profile',   icon: 'fa-circle-user', covers: ['account'] },
+    };
+    // Web top nav: Tripmaster + Recorder collapse into one "Navigate" entry; the rest is unchanged.
+    // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
+    const WEB_NAV = ['reader', 'editor', 'navigate', 'roadbooks', 'events', 'ranking'];
+    const APP_TABS = ['reader', 'editor', 'navigate', 'events', 'profile'];
+    // Common words are translated; product names stay as-is (RBt falls back to English regardless).
+    const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
+
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
-        const active = (p) => rel.indexOf(p) === 0 ? ' active' : '';
-        // Each tool → [short nav label, canonical FontAwesome icon]. Short single-word labels keep
-        // the desktop bar clean and even; the icon is CSS-hidden there and only shows in the
-        // mobile full-screen menu, where it makes the list scannable.
-        const TOOLS = {
-            recorder:   ['Recorder',   'fa-circle-dot'],
-            editor:     ['Editor',     'fa-pen-ruler'],
-            reader:     ['Reader',     'fa-compass'],
-            tripmaster: ['Tripmaster', 'fa-gauge-high'],
-            roadbooks:  ['Roadbooks',  'fa-book-open'],
-            events:     ['Events',     'fa-calendar-check'],
-            ranking:    ['Ranking',    'fa-ranking-star']
-        };
-        // The native app is a field companion: the GPS tools + Events (#198). Editor/Ranking/Roadbooks
-        // stay web-only in the top nav. The website keeps the full set.
-        const order = isNativeApp()
-            ? ['reader', 'tripmaster', 'recorder', 'events']
-            : ['recorder', 'editor', 'reader', 'tripmaster', 'roadbooks', 'events', 'ranking'];
-        // Each tool's "How it works" link lives on the tool page itself (beside the title, or at
-        // the foot of the Tripmaster dashboard) — never in the top menu. "Events" is the lone
-        // translated label (the future feature); the rest are proper tool names.
-        const navLinks = order.map((p) => {
-            const [label, icon] = TOOLS[p];
-            const text = p === 'events' ? '<span data-i18n="Events">Events</span>' : label;
-            return `<a class="nav-link nav-tool${active(p)}" href="${ROOT}${p}/"><i class="fa-solid ${icon} nav-ico"></i><span class="nav-txt">${text}</span></a>`;
+        const seg = rel.split('/')[0] || '';
+        // Active entry within a bar: an exact segment match wins, else the entry that "covers" it.
+        const activeKey = (keys) => keys.find((k) => k === seg) || keys.find((k) => (SECTION[k].covers || []).includes(seg)) || null;
+        const navLabel = (k) => NAV_TRANSLATE[k] ? `<span data-i18n="${SECTION[k].label}">${SECTION[k].label}</span>` : SECTION[k].label;
+
+        const webActive = activeKey(WEB_NAV);
+        const navLinks = WEB_NAV.map((k) => {
+            const s = SECTION[k];
+            return `<a class="nav-link nav-tool${k === webActive ? ' active' : ''}" href="${ROOT}${s.path}"><i class="fa-solid ${s.icon} nav-ico"></i><span class="nav-txt">${navLabel(k)}</span></a>`;
         }).join('');
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
@@ -121,6 +126,20 @@
                 <span class="small" id="appVersion"></span>
             </div>
         </div>`;
+
+        // Native app: a fixed icon-only bottom tab bar (the top bar is hidden by CSS there).
+        // Built from the same catalog as the web nav — one nav definition, two presentations.
+        if (isNativeApp()) {
+            const appActive = activeKey(APP_TABS);
+            let bar = document.querySelector('nav.app-tabbar');
+            if (!bar) { bar = document.createElement('nav'); document.body.appendChild(bar); }
+            bar.className = 'app-tabbar';
+            bar.setAttribute('aria-label', RBt('Sections'));
+            bar.innerHTML = APP_TABS.map((k) => {
+                const s = SECTION[k];
+                return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${RBesc(RBt(s.label))}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
+            }).join('');
+        }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.

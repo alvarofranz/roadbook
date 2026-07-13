@@ -422,10 +422,35 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .app-only { display: none; }
 .native .app-only { display: block; }
 .native .web-only { display: none; }
-.native .topbar { padding-top: env(safe-area-inset-top); } /* notch / status bar, viewport-fit=cover */
+/* The app navigates via the bottom tab bar, not a web-style header — hide the top bar entirely. */
+.native .topbar { display: none; }
 /* the marketing footer (About / standard / privacy / social…) is web-only — hide it in the app,
    where every page is a field tool and the tall footer just overflowed the viewport (#198) */
 .native .foot { display: none; }
+
+/* ---------- native app bottom tab bar (icon-only, Instagram-style; web renders the same
+   sections as the top bar instead) ---------- */
+.app-tabbar { display: none; }
+.native .app-tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    justify-content: space-around; align-items: stretch;
+    background: rgba(14, 17, 22, .96); backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.native .app-tabbar .tabbar-link {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: .65rem 0; color: var(--muted); font-size: 1.4rem; text-decoration: none;
+    transition: color .12s ease, transform .08s ease;
+}
+.native .app-tabbar .tabbar-link.active { color: var(--sand); }
+.native .app-tabbar .tabbar-link:active { transform: scale(.88); }
+/* leave room so page content + any bottom controls clear the fixed bar */
+.native body { padding-bottom: calc(3.1rem + env(safe-area-inset-bottom)); }
+.native .fabrow { bottom: calc(3.1rem + env(safe-area-inset-bottom)); }
+/* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden */
+.native body.rb-fs .app-tabbar { display: none; }
+.native body.rb-fs { padding-bottom: 0; }
 /* app version readout on the home launcher (installed build + latest live), #198 */
 .app-ver { text-align: center; margin: 0; font-variant-numeric: tabular-nums; }
 
@@ -433,11 +458,9 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
    so it never sits under the iOS home indicator. Subtle top line to separate it from the gallery. */
 .app-foot { margin-top: 1rem; padding: .9rem 0; border-top: 1px solid var(--line); background: var(--bg); }
 .native .app-foot { padding-bottom: calc(.9rem + env(safe-area-inset-bottom)); }
-/* iPad/native (viewport-fit=cover): the sticky tool bars (Reader/Tripmaster) must drop below the
-   iOS status bar. Normally they sit under the 56px top bar (itself safe-area-padded); in fullscreen
-   the top bar is hidden, so they pin just below the status bar instead of under it (#198). */
-.native .odometer-bar, .native .status-bar { top: calc(56px + env(safe-area-inset-top)); }
-.native body.rb-fs .odometer-bar, .native body.rb-fs .status-bar { top: env(safe-area-inset-top); }
+/* native (viewport-fit=cover): the app has no top bar, so the sticky tool bars (Reader/Tripmaster)
+   pin just below the iOS status bar / notch. */
+.native .odometer-bar, .native .status-bar { top: env(safe-area-inset-top); }
 .launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
 .launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
 .launch-tile i { color: var(--sand); font-size: 2rem; }
