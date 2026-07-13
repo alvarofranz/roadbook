@@ -101,9 +101,13 @@ img { max-width: 100%; display: block; }
     .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 }
 /* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
-   `body.rb-fs` outweighs the plain-`body` padding rules above on specificity, so no !important. */
-body.rb-fs .app-tabbar { display: none; }
-body.rb-fs { padding-bottom: 0; }
+   `body.rb-fs`/`body.rb-immersive` outweigh the plain-`body` padding rules above on specificity,
+   so no !important is needed. */
+body.rb-fs .app-tabbar, body.rb-immersive .app-tabbar { display: none; }
+body.rb-fs, body.rb-immersive { padding-bottom: 0; }
+/* immersive mode (Reader navigating): the tool has its OWN bottom action row (with an exit
+   button), so it returns to the screen edge — no tab bar underneath to clear. */
+body.rb-immersive .fabrow { bottom: 0; }
 
 /* language switcher — collapsed flag-only trigger that opens a flag + name list */
 .lang { position: relative; display: inline-flex; }
@@ -163,6 +167,8 @@ section.block { padding: 2.4rem 0; }
    on mobile, bottom-right on desktop — independent of the top bar, so they show on every layout */
 .app-chip-stack { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 55; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
 .app-chip-stack:empty { display: none; }
+/* no floating chips during focused field use (Reader navigating / fullscreen) */
+body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }

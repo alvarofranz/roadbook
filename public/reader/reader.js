@@ -179,6 +179,9 @@
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
+        // Immersive navigation: the Reader owns the screen (its own action row carries the exit
+        // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
+        document.body.classList.add('rb-immersive');
         $('finishBtn').hidden = !comp;
         syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
