@@ -34,6 +34,14 @@ AddType audio/mpeg .mp3
     </Files>
 </IfModule>
 
+# Universal Links / App Links (#268): the /.well-known association files let an installed
+# iOS/Android app open rdbk.app links (the /go/<code> event join, event + public-roadbook
+# pages) instead of the browser. Apple's file has NO extension, so force its JSON type;
+# assetlinks.json already serves as JSON. Both must be reachable over HTTPS with no redirect.
+<Files "apple-app-site-association">
+    ForceType application/json
+</Files>
+
 # Friendly URLs: /challenge/<slug>, /reader/<slug>, /editor/<slug>, /event/<slug> → the page
 # (only when the path isn't a real file or directory). The trailing-slash form
 # redirects to the canonical one first — the pages load their assets via

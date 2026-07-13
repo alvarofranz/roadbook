@@ -445,6 +445,17 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   **cross-origin**. The server whitelists the app origins (`cors_for_app` in `app/bootstrap.php` —
   CORS headers + preflight; `require_same_origin` exempts them, still Bearer-gated); `version.json`
   gets `Access-Control-Allow-Origin: *` in `public/.htaccess`. The cookie notice is web-only.
+- **Deep links (Universal Links / App Links, #268):** an installed app opens `https://rdbk.app/…`
+  links itself (the event QR `/go/<code>` + `/event`·`/challenge`·`/reader`·`/editor` slug pages).
+  Wired via the association files `public/.well-known/apple-app-site-association` (iOS,
+  `6STWTTP329.app.rdbk`) + `assetlinks.json` (Android, `app.rdbk`), the iOS `App.entitlements`
+  (`applinks:rdbk.app`) and an `autoVerify` intent-filter on `MainActivity`. `native/src/deeplink.js`
+  (`parseDeepLink`, unit-tested) maps a URL to an action; `native.js` runs a `/go/<code>` as an
+  API join (`event_join`, Bearer — no PHP in the app) then opens `/event/<slug>`, else navigates
+  to the bundled route. No true *deferred* deep link exists (links route only to an already-installed
+  app; for a fresh user the web `/go/` join persists on the account). Before it verifies: fill the
+  Play signing SHA-256 in `assetlinks.json` and enable Associated Domains on the iOS App ID — see
+  `NATIVE.md` §4.
 - **Projects:** `android/` is committed (build artifacts git-ignored); generate iOS with
   `npx cap add ios` on a Mac with Xcode.
 

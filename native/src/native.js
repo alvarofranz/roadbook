@@ -14,10 +14,12 @@
  * calls RBNative.geo when it is present, so the Reader, Tripmaster and Recorder gain
  * uninterrupted tracking with no change to their own code. */
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { parseDeepLink } from './deeplink.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -123,3 +125,58 @@ const RBNative = {
 };
 
 window.RBNative = RBNative;
+
+/* Universal Links / App Links (#268). When the app is installed, tapping or scanning an
+ * https://rdbk.app/… link opens it here instead of the browser (the association files at
+ * /.well-known/ + the iOS entitlement / Android intent-filter wire this up). A /go/<code>
+ * link is an event join: there is no PHP server in the app, so the join runs through the
+ * API (Bearer) and then the event page opens; any other rdbk.app link is a real bundled
+ * route we just navigate to. A signed-out user's code is stashed and replayed after login,
+ * so the join survives the sign-in detour. */
+const PENDING_JOIN = 'rb_pending_join';
+
+// The bundle can evaluate before app.js has defined the shared globals — wait for them.
+function whenAppReady() {
+    return new Promise((resolve) => {
+        (function poll() {
+            if (typeof window.RBApi === 'function' && typeof window.RBConfig === 'function') resolve();
+            else setTimeout(poll, 50);
+        })();
+    });
+}
+
+async function joinEvent(code) {
+    await whenAppReady();
+    const cfg = await window.RBConfig();
+    if (!cfg || !cfg.user) {                     // must be signed in to join — stash, log in, resume
+        localStorage.setItem(PENDING_JOIN, code);
+        window.location.href = '/account/';
+        return;
+    }
+    const res = await window.RBApi('event_join', { code });
+    if (res && res.ok && res.slug) {
+        localStorage.removeItem(PENDING_JOIN);
+        window.location.href = '/event/' + encodeURIComponent(res.slug);
+    }
+    // On failure the pending code is left in place; the next launch / sign-in retries it.
+}
+
+// Replay a join deferred while the user was signed out (runs on every app page load).
+async function consumePendingJoin() {
+    const code = localStorage.getItem(PENDING_JOIN);
+    if (!code) return;
+    await whenAppReady();
+    const cfg = await window.RBConfig();
+    if (cfg && cfg.user) { localStorage.removeItem(PENDING_JOIN); joinEvent(code); }
+}
+
+function handleDeepLink(url) {
+    const action = parseDeepLink(url);
+    if (!action) return;
+    if (action.join) joinEvent(action.join);
+    else window.location.href = action.navigate;
+}
+
+App.addListener('appUrlOpen', (e) => { if (e && e.url) handleDeepLink(e.url); });
+App.getLaunchUrl().then((res) => { if (res && res.url) handleDeepLink(res.url); }).catch(() => {});
+consumePendingJoin();

@@ -148,6 +148,42 @@ MapTiler style in your `public/assets/js/config.js`:
 styleSatellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAPTILER_KEY'
 ```
 
+### Deep links — Universal Links / App Links (#268)
+When the app is installed, scanning/tapping an `https://rdbk.app/…` link opens the app
+instead of the browser — the whole point of the event QR (`/go/<code>`). What's wired in the
+repo:
+- **Association files** served from the web root: `public/.well-known/apple-app-site-association`
+  (iOS, `appIDs: ["6STWTTP329.app.rdbk"]`) and `public/.well-known/assetlinks.json` (Android,
+  `package_name: app.rdbk`). `.htaccess` forces the Apple file's `application/json` type (it has
+  no extension). Paths claimed: `/go/*`, `/event/*`, `/challenge/*`, `/reader/*`, `/editor/*`.
+- **iOS**: `ios/App/App/App.entitlements` declares `applinks:rdbk.app` (wired into both build
+  configs via `CODE_SIGN_ENTITLEMENTS`). AppDelegate already forwards `continue userActivity`.
+- **Android**: an `autoVerify` intent-filter on `MainActivity` for `https://rdbk.app` + the path
+  prefixes above.
+- **In-app routing** (`native/src/deeplink.js` + the handler in `native.js`): a `/go/<code>` link
+  runs the event join through the API (`event_join`, Bearer — there is **no PHP server in the
+  app**, so `/go/` cannot run there) and opens `/event/<slug>`; any other rdbk.app link is opened
+  as its bundled route. A signed-out user's code is stashed and replayed after login.
+
+**Two external values are still required before it verifies** (the OSes check the association
+both ways):
+1. **Android — the signing SHA-256** in `assetlinks.json`. Replace the placeholders with the
+   **Play App Signing** certificate SHA-256 (Play Console → *Test and release → App integrity →
+   App signing*) **and** the upload-key SHA-256. Until then Android App Links fall back to opening
+   the browser (no crash).
+2. **iOS — enable the Associated Domains capability** on the `app.rdbk` App ID (Apple Developer
+   portal). With automatic signing the Xcode Cloud build provisions it, but if the capability is
+   not available to the account **the iOS build fails at signing** — so confirm it before the
+   next iOS release.
+
+**Rollout order**: deploy the web first so the `/.well-known/` files are live, *then* bump the
+version to ship the native builds that declare the association (a native build that declares an
+association the server can't confirm just won't verify). No true *deferred* deep link exists
+(Universal/App Links only route to an **already-installed** app; Firebase Dynamic Links was shut
+down in 2025) — for a not-installed user the web `/go/` join persists on the account, so
+installing + signing in shows the event. Android could add true deferral later via the Play
+Install Referrer API (native, no third party); iOS has no clean equivalent.
+
 ---
 
 ## 5. App icon & splash
