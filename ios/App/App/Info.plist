@@ -61,6 +61,8 @@
 	<string>RDBK uses the camera to add geotagged photos and scan result QR codes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>RDBK lets you attach photos from your library to a roadbook.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>RDBK uses the microphone to record voice notes for your waypoints.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
