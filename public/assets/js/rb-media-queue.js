@@ -154,6 +154,9 @@
         add: (kind, blob, fields, name, token) => queue.add(kind, blob, fields, name, token),
         items: () => queue.items(),
         clear: () => queue.clear(),
+        // Kick a drain now (e.g. right after a draft becomes available post sign-in), instead of
+        // waiting for the retry timer or the next `online` event.
+        flush: () => queue.flush(),
         // Wire the reconciliation/badge callbacks (+ optional roadbook resolver) and drain
         // anything left from a previous session (blobs persist in IndexedDB across reloads).
         init: (cb) => { cb = cb || {}; resolveRoadbook = cb.resolveRoadbook || null; queue.init(cb); queue.flush(); },
