@@ -12,3 +12,5 @@ Note specifiche per opencode:
 - **Migration al DB**: dopo aver pushato, applica via panel con
   `curl -sS -X POST -H "X-Admin-Key: $VPS_ADMIN_KEY" "https://alvarofranz.com/api/projects/rdbk/migrations/<file>/apply"`
   Se il panel non trova il file, riprovare dopo 30-60 secondi (deploy non ancora completato).
+- **Issue GitHub**: non assegnare mai nuove issue a nessuno a meno che non venga richiesto esplicitamente.
+  Le fix vanno assegnate a chi ha aperto l'issue.

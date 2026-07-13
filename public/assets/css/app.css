@@ -240,6 +240,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .maplibregl-ctrl-group button { color: #222; }
 /* a map control button in its active state (e.g. heading-up engaged) */
 .maplibregl-ctrl button.rb-ctrl-on { color: var(--sand); }
+/* style label under the layer-toggle icon (satellite / topo / OSM) */
+.rb-map-style-label { display: block; font-size: 9px; line-height: 1; margin-top: -1px; }
 /* WP-type icon overlay marker (RBMap): a visual badge over a note's dot — never intercepts map interaction */
 .rb-wp-badge { pointer-events: none; line-height: 0; }
 /* per-tool feature pages (/features/<tool>/): hero recap + a grid of feature cards */

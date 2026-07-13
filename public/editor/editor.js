@@ -13,13 +13,15 @@
     // A field label followed by an inline ⓘ help tooltip (#89). `tipKey` is an i18n key.
     const labelHelp = (label, tipKey) => `${t(label)}<button type="button" class="help-tip" data-tip="${esc(t(tipKey))}" aria-label="${esc(t(tipKey))}"><i class="fa-solid fa-circle-info"></i></button>`;
     const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
-    // base map style: satellite photo, or terrain (detailed off-road tracks + contours).
+    // base map style: satellite photo, terrain (detailed off-road tracks + contours), or OSM.
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
-    const MAP_STYLES = { satellite: RBMap.STYLE_SATELLITE, terrain: RBMap.STYLE_TOPO };
-    let mapStyle = localStorage.getItem('rb_map_style') === 'terrain' ? 'terrain' : 'satellite';
+    const MAP_STYLES = [RBMap.STYLE_SATELLITE, RBMap.STYLE_TOPO, RBMap.STYLE_OSM];
+    const MAP_STYLE_KEYS = ['satellite', 'terrain', 'osm'];
+    let mapStyleIdx = MAP_STYLE_KEYS.indexOf(localStorage.getItem('rb_map_style'));
+    if (mapStyleIdx < 0) mapStyleIdx = 0;
     // The editor map IS the work surface (draw the route, drag notes, tap to add) — it needs
     // one-finger pan / free wheel-zoom, so it opts out of the shared cooperative-gestures default.
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyle], geolocate: true, wpIconsToggle: true, cooperativeGestures: false });
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyleIdx], geolocate: true, wpIconsToggle: true, cooperativeGestures: false });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.
@@ -379,9 +381,9 @@
         if (rb) { renderNotes(); renderIcons(); updateSaveBtn(); if (editorOpen) { renderEditor(); canvas.render(); } }
     });
     function toggleMapStyle() {
-        mapStyle = mapStyle === 'satellite' ? 'terrain' : 'satellite';
-        try { localStorage.setItem('rb_map_style', mapStyle); } catch (e) {}
-        map.setBaseStyle(MAP_STYLES[mapStyle], () => {
+        mapStyleIdx = (mapStyleIdx + 1) % MAP_STYLES.length;
+        try { localStorage.setItem('rb_map_style', MAP_STYLE_KEYS[mapStyleIdx]); } catch (e) {}
+        map.setBaseStyle(MAP_STYLES[mapStyleIdx], () => {
             if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
             if (rb) { refreshMap(true); map.select(rb.notes[sel], true); } // setStyle wiped the selection layer
             if (currentRbId > 0) loadPhotos();
@@ -394,7 +396,7 @@
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group rb-mapctl';
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'rb-mapctl-layers';
-            b.title = t('Satellite / terrain map'); b.setAttribute('aria-label', b.title);
+            b.title = t('Satellite / terrain / OSM map'); b.setAttribute('aria-label', b.title);
             b.innerHTML = '<i class="fa-solid fa-layer-group"></i>';
             b.onclick = toggleMapStyle;
             const z = document.createElement('div');
