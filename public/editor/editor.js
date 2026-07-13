@@ -1811,6 +1811,14 @@
         const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_OR';
         RBDownload(new Blob([RB.openRallyDocument(rb, { tulips, name: base })], { type: 'application/gpx+xml' }), base + '.gpx');
     }
+    // KMZ export: KML 2.2 inside a ZIP (doc.kml). Track + waypoints, no icon mapping.
+    async function exportKmz() {
+        stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
+        const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_KMZ';
+        const kml = RB.kmlDocument(base, rb.track, wpts);
+        RBDownload(await RBZip.write({ 'doc.kml': kml }), base + '.kmz');
+    }
     // One Export button → a popup: .rdbk / PDF buttons, and GPX as a single button whose
     // typologies (track · track+WPT · OpenRally) are picked with checkboxes.
     function openExportModal() {
@@ -1827,7 +1835,9 @@
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>
             <label class="checkbox-row"><input type="checkbox" data-g="openrally"> ${esc(t('OpenRally'))}</label>
-            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-route"></i> ${esc(t('Export GPX'))}</button></div>`, 'narrow scroll');
+            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-route"></i> ${esc(t('Export GPX'))}</button></div>
+            <h3>${esc(t('KMZ'))}</h3>
+            <div class="btnrow end"><button class="btn btn-primary" data-x="kmz"><i class="fa-solid fa-map"></i> ${esc(t('Export KMZ'))}</button></div>`, 'narrow scroll');
         const cb = (g) => m.q(`[data-g="${g}"]`);
         const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
         cb('wpt').onchange = syncIcons; syncIcons();
@@ -1841,6 +1851,7 @@
             if (o.track || o.wpt) exportCustomGpx(o);
             if (o.or) await exportOpenRally();
         };
+        m.q('[data-x="kmz"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportKmz(); };
     }
     $('exportBtn').onclick = openExportModal;
     $('rawJsonBtn').onclick = openRawJson;
