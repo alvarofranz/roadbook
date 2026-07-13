@@ -52,3 +52,28 @@ jobs:
             "$DEPLOY_URL")
           echo "$resp"
           echo "$resp" | grep -qE '"ok"[[:space:]]*:[[:space:]]*true' || { echo "::error::Deploy reported failure"; exit 1; }
+
+  # Auto fan-out: a push to main that BUMPS public/version.json is a release, so the iOS build
+  # ships alongside the web deploy — cut the ios-<version> tag, which Xcode Cloud picks up (it
+  # watches the git ref, so a GITHUB_TOKEN tag push triggers it; no PAT needed). Android is handled
+  # the same way by its own workflow (also gated on the bump). A merge with no version bump does
+  # nothing here. Manual iOS release: push an ios-<version> tag by hand.
+  ios-tag:
+    needs: deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Cut ios-<version> on a version bump
+        run: |
+          VERSION=$(jq -r .version public/version.json)
+          OLD=$(git show HEAD^:public/version.json 2>/dev/null | jq -r .version 2>/dev/null || echo "")
+          if [ "$VERSION" = "$OLD" ]; then echo "No version bump ($VERSION) — iOS build not triggered."; exit 0; fi
+          if git ls-remote --tags origin "ios-$VERSION" | grep -q .; then echo "Tag ios-$VERSION already exists — skipping."; exit 0; fi
+          git tag "ios-$VERSION"
+          git push origin "ios-$VERSION"
+          echo "Pushed ios-$VERSION → Xcode Cloud builds it to TestFlight."
