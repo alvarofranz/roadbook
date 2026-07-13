@@ -41,6 +41,7 @@
         .pass-toggle { position: absolute; top: 0; bottom: 0; right: .3rem; width: 2.4rem; display: flex; align-items: center; justify-content: center; background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1rem; }
         .pass-toggle:hover { color: var(--text); }
         .pass-toggle:focus-visible { outline: 2px solid var(--sand); border-radius: 8px; }
+        .acc-lang { display: flex; align-items: center; justify-content: center; gap: .6rem; margin: 2.4rem auto 1rem; }
     </style>
 </head>
 <body>
@@ -210,6 +211,12 @@
 
         <div class="btnrow mt-2"><a class="btn btn-primary" href="../myroadbooks/" data-i18n="My roadbooks"><i class="fa-solid fa-book"></i> My roadbooks</a></div>
     </section>
+    <!-- Language is browser-detected by default; this is the one place to change it (no picker in
+         the nav). Sits at the very bottom of the page, in every account view. -->
+    <div class="acc-lang">
+        <span class="muted small" data-i18n="Language">Language</span>
+        <div class="lang"></div>
+    </div>
 </main>
 
 <div id="toast" class="toast" hidden></div>

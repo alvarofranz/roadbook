@@ -89,28 +89,17 @@
             const s = SECTION[k];
             return `<a class="nav-link nav-tool${k === webActive ? ' active' : ''}" href="${ROOT}${s.path}"><i class="fa-solid ${s.icon} nav-ico"></i><span class="nav-txt">${navLabel(k)}</span></a>`;
         }).join('');
+        // Top bar — the desktop-web navigation only. Hidden on every mobile-width view (web · PWA ·
+        // native), where the fixed bottom tab bar below takes over — so there is no hamburger and no
+        // full-screen menu. No language switcher either: the language is browser-detected and only
+        // ever changed at the bottom of the Profile page.
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
         header.innerHTML = `<div class="wrap">
             <span class="brand-wrap"><a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a></span>
-            <div class="lang lang-bar"></div>
-            <button class="navtoggle" id="navToggle" aria-label="Menu" data-i18n-aria="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-            <nav class="topnav" id="topnav">${navLinks}<div class="lang lang-top"></div></nav>
+            <nav class="topnav" id="topnav">${navLinks}</nav>
         </div>`;
-        const toggle = header.querySelector('#navToggle'), nav = header.querySelector('#topnav');
-        const setOpen = (open) => {
-            nav.classList.toggle('open', open);
-            header.classList.toggle('nav-open', open); // drops the blur so the menu can cover the viewport
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            toggle.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
-            // closing the menu also folds the account submenu — the X stops propagation, so the
-            // document-level closer never sees it and it would still be open on the next ☰ (#243)
-            if (!open) { const m = nav.querySelector('.account-menu'); if (m) m.hidden = true; }
-        };
-        toggle.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!nav.classList.contains('open')); });
-        document.addEventListener('click', (e) => { if (!nav.contains(e.target) && !toggle.contains(e.target)) setOpen(false); });
-        nav.addEventListener('click', (e) => { if (e.target.closest('a, button:not(.account-button)')) setOpen(false); });
 
         let footer = document.querySelector('footer.foot');
         if (!footer) { footer = document.createElement('footer'); footer.className = 'foot'; document.body.appendChild(footer); }
@@ -127,19 +116,18 @@
             </div>
         </div>`;
 
-        // Native app: a fixed icon-only bottom tab bar (the top bar is hidden by CSS there).
-        // Built from the same catalog as the web nav — one nav definition, two presentations.
-        if (isNativeApp()) {
-            const appActive = activeKey(APP_TABS);
-            let bar = document.querySelector('nav.app-tabbar');
-            if (!bar) { bar = document.createElement('nav'); document.body.appendChild(bar); }
-            bar.className = 'app-tabbar';
-            bar.setAttribute('aria-label', RBt('Sections'));
-            bar.innerHTML = APP_TABS.map((k) => {
-                const s = SECTION[k];
-                return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${RBesc(RBt(s.label))}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
-            }).join('');
-        }
+        // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
+        // every mobile-width view — web, installed PWA and the native app — and hides it on desktop
+        // (where the top bar is used instead). One catalog, two presentations.
+        const appActive = activeKey(APP_TABS);
+        let bar = document.querySelector('nav.app-tabbar');
+        if (!bar) { bar = document.createElement('nav'); document.body.appendChild(bar); }
+        bar.className = 'app-tabbar';
+        bar.setAttribute('aria-label', RBt('Sections'));
+        bar.innerHTML = APP_TABS.map((k) => {
+            const s = SECTION[k];
+            return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${RBesc(RBt(s.label))}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
+        }).join('');
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
@@ -216,17 +204,23 @@
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; showInstall(); });
     window.addEventListener('appinstalled', () => { deferred = null; if (installBtn) installBtn.hidden = true; });
 
+    // A floating stack, above the bottom tab bar on mobile and bottom-right on desktop, for the
+    // contextual chips (Install prompt, unsaved-work alert). Independent of the top bar, which is
+    // hidden on every mobile-width view — so the chips work on every layout. Created on first use.
+    function chipStack() {
+        let s = document.querySelector('.app-chip-stack');
+        if (!s) { s = document.createElement('div'); s.className = 'app-chip-stack'; document.body.appendChild(s); }
+        return s;
+    }
     function ensureBtn() {
         if (installBtn || isStandalone()) return installBtn;
-        const slot = document.querySelector('header .topnav') || document.querySelector('header .wrap');
-        if (!slot) return null;
         installBtn = document.createElement('button');
         installBtn.id = 'installBtn';
-        installBtn.className = 'nav-link install-btn';
-        installBtn.textContent = RBt('Install');
+        installBtn.className = 'install-btn';
+        installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> ${RBt('Install')}`;
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
-        slot.appendChild(installBtn);
+        chipStack().appendChild(installBtn);
         return installBtn;
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
@@ -891,17 +885,15 @@
         draw();
     }
     function refreshPendingPill() {
-        const slot = document.querySelector('header.topbar .wrap');
-        if (!slot) return;
         const n = listPending().length;
-        let pill = slot.querySelector('#pendingPill');
+        let pill = document.querySelector('#pendingPill');
         if (!n) { if (pill) pill.hidden = true; return; }
         if (!pill) {
             pill = document.createElement('button');
             pill.id = 'pendingPill'; pill.className = 'pending-pill';
             pill.setAttribute('aria-label', RBt('Unsaved work'));
             pill.onclick = openPendingModal;
-            slot.insertBefore(pill, slot.querySelector('#navToggle'));
+            chipStack().appendChild(pill);
         }
         pill.hidden = false;
         pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;

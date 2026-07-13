@@ -17,6 +17,7 @@
     --radius: 16px;
     --shadow: 0 10px 40px rgba(0, 0, 0, .45);
     --maxw: 1080px;
+    --tabbar-h: 3.25rem;  /* app-like bottom tab bar height (mobile web · PWA · native) */
     color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -73,40 +74,35 @@ img { max-width: 100%; display: block; }
 /* animated underline indicator under the tool links (grows on hover, pinned when active) */
 .nav-tool::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--sand); transform: scaleX(0); transform-origin: center; transition: transform .18s ease; }
 .nav-tool:hover::after, .nav-tool.active::after { transform: scaleX(1); }
-.navtoggle { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; background: none; color: var(--text); font-size: 1.25rem; cursor: pointer; }
-/* The full inline nav (7 tools + language + account) only fits comfortably on a real desktop;
-   at/below 1024px — every iPad included — collapse to the hamburger + full-screen menu so the
-   bar never overflows and the account control can't be pushed off-screen (#188). */
+/* Desktop shows the nav links inline in the top bar. On every mobile-width view — web, installed
+   PWA and the native app — the top bar is hidden and the fixed icon-only bottom tab bar takes over
+   (no hamburger, no full-screen menu). */
+.native .topbar { display: none; }
+@media (max-width: 1024px) { .topbar { display: none; } }
+
+/* ---------- app-like bottom tab bar (Instagram-style, icon-only). One definition shown wherever
+   the top bar is hidden: the native app AND any mobile-width web/PWA view; hidden on desktop. ---------- */
+.app-tabbar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    justify-content: space-around; align-items: stretch;
+    background: rgba(14, 17, 22, .96); backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+.app-tabbar .tabbar-link { flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: .6rem 0; color: var(--muted); font-size: 1.4rem; text-decoration: none;
+    transition: color .12s ease, transform .08s ease; }
+.app-tabbar .tabbar-link.active { color: var(--sand); }
+.app-tabbar .tabbar-link:active { transform: scale(.88); }
+/* show the bar + leave room so content and any fixed bottom controls clear it */
+.native .app-tabbar { display: flex; }
+.native body { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+.native .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 @media (max-width: 1024px) {
-    .navtoggle { display: inline-flex; position: relative; z-index: 90; }
-    .topnav { display: none; }
-    .topbar.nav-open { backdrop-filter: none; background: var(--bg); }
-    /* full-screen opaque overlay (inset:0 covers the whole viewport); its rows are centred in a
-       slim column and scrollable + top-padded so every item (incl. the account submenu) stays
-       reachable on short screens. */
-    /* top padding clears the header AND the notch (the header grows by safe-area-inset-top in the
-       native app), so the first row never tucks under the status bar / header. Roomy gap so the
-       stacked rows read as a real menu, not a cramped list. */
-    .topnav.open { display: flex; position: fixed; inset: 0; z-index: 80; flex-direction: column; align-items: center; justify-content: flex-start; gap: .45rem; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(56px + env(safe-area-inset-top) + 1.1rem) 1.1rem calc(1.2rem + env(safe-area-inset-bottom)); }
-    .topnav.open .nav-link { display: flex; align-items: center; justify-content: flex-start; gap: 1rem; width: 100%; max-width: 420px; font-size: 1.18rem; font-weight: 700; color: var(--text); padding: .85rem 1.1rem; border-radius: 14px; transition: background .12s ease, color .12s ease; }
-    .topnav.open .nav-link:hover { background: var(--card); }
-    .topnav.open .nav-link.active { background: var(--card); color: var(--sand); }
-    /* every leading icon in the stacked menu — tool icons AND the account/Sign-in row — is the
-       same sand glyph in the same gutter, so the whole list lines up as one column. */
-    .topnav.open .nav-ico, .topnav.open .account-login > i, .topnav.open .account-button > i { display: inline-flex; width: 1.7rem; justify-content: center; color: var(--sand); font-size: 1.15rem; }
-    .topnav.open .nav-tool::after { display: none; }         /* no underline in the stacked menu */
-    /* account sits FIRST (order:-1) so it's reachable without scrolling; its second-level menu
-       drops as a floating overlay ON TOP of the tool links (not inline), so opening it never
-       pushes the list down. Long (admin) lists scroll inside the overlay. */
-    .topnav.open .account-control { order: -1; flex-direction: column; align-items: stretch; margin: 0 0 .3rem; width: 100%; max-width: 420px; }
-    .topnav.open .account-button span { max-width: none; }   /* full-width row → no ellipsis clipping the name */
-    /* sized to its content like the desktop dropdown — never a screen-wide half-empty panel (#243);
-       capped at the viewport, where a too-long label wraps instead of clipping */
-    .topnav.open .account-menu { position: absolute; top: calc(100% + 4px); left: 0; right: auto; width: max-content; min-width: 220px; max-width: calc(100vw - 2.2rem); margin: 0; max-height: 68vh; overflow-y: auto; z-index: 85; }
-    .topnav.open .account-menu a, .topnav.open .account-menu button { white-space: normal; }
-    /* keep the brand logo visible at the top of the open full-screen menu */
-    .topbar.nav-open .brand-wrap { position: relative; z-index: 90; }
+    .app-tabbar { display: flex; }
+    body { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+    .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 }
+/* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden */
+body.rb-fs .app-tabbar { display: none; }
+body.rb-fs { padding-bottom: 0 !important; }
 
 /* language switcher — collapsed flag-only trigger that opens a flag + name list */
 .lang { position: relative; display: inline-flex; }
@@ -118,13 +114,6 @@ img { max-width: 100%; display: block; }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
-/* The selector lives in the top bar on both breakpoints — inline in the nav on desktop
-   (.lang-top), and top-right in the header bar on mobile (.lang-bar), where it stays above
-   the full-screen menu overlay so the language is switchable whether the menu is open or not. */
-.lang-top { margin-left: .5rem; }
-.lang-bar { margin-left: auto; position: relative; z-index: 90; }
-@media (min-width: 1025px) { .lang-bar { display: none; } }
-@media (max-width: 1024px) { .lang-top { display: none; } }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -166,9 +155,15 @@ section.block { padding: 2.4rem 0; }
 .flow .step p { margin: 0; font-size: .86rem; color: var(--muted); line-height: 1.5; }
 
 /* header controls — Install is a pill CTA that reads apart from the plain tool links */
-.install-btn { white-space: nowrap; order: 90; background: rgba(232, 176, 89, .14); border: 1px solid rgba(232, 176, 89, .40); color: var(--sand-2); border-radius: 999px; padding: .38rem .95rem; font-weight: 700; }
+.install-btn { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; font: inherit; background: rgba(232, 176, 89, .14); border: 1px solid rgba(232, 176, 89, .40); color: var(--sand-2); border-radius: 999px; padding: .42rem 1rem; font-weight: 700; box-shadow: var(--shadow); }
 .install-btn:hover { background: rgba(232, 176, 89, .26); border-color: var(--sand); color: var(--sand-2); }
-.topnav.open .install-btn { justify-content: center; padding: .8rem 1rem; }
+
+/* floating contextual chips (Install prompt · unsaved-work alert): fixed above the bottom tab bar
+   on mobile, bottom-right on desktop — independent of the top bar, so they show on every layout */
+.app-chip-stack { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 55; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
+.app-chip-stack:empty { display: none; }
+.native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
+@media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
 .account-button span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
@@ -181,7 +176,7 @@ section.block { padding: 2.4rem 0; }
 .mv-opt:hover { border-color: var(--sand); }
 /* "unsaved work" pill: sits in the bar (always visible, not behind the mobile menu) and only
    appears when another tool has in-progress work to resume or discard */
-.pending-pill { margin-left: auto; display: inline-flex; align-items: center; gap: .4rem; background: var(--sand); color: var(--on-sand); border: 0; border-radius: 999px; padding: .32rem .7rem; font: inherit; font-weight: 800; font-size: .82rem; cursor: pointer; white-space: nowrap; }
+.pending-pill { display: inline-flex; align-items: center; gap: .4rem; background: var(--sand); color: var(--on-sand); border: 0; border-radius: 999px; padding: .42rem .85rem; font: inherit; font-weight: 800; font-size: .82rem; cursor: pointer; white-space: nowrap; box-shadow: var(--shadow); }
 .pending-pill:hover { filter: brightness(.93); }
 .pending-pill .pending-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.25em; height: 1.25em; padding: 0 .25em; border-radius: 999px; background: var(--on-sand); color: var(--sand); font-size: .82em; }
 .pending-list { display: flex; flex-direction: column; gap: .5rem; }
@@ -422,35 +417,9 @@ body.rb-fs .status-bar, body.rb-fs .odometer-bar { top: 0; } /* pin the tool bar
 .app-only { display: none; }
 .native .app-only { display: block; }
 .native .web-only { display: none; }
-/* The app navigates via the bottom tab bar, not a web-style header — hide the top bar entirely. */
-.native .topbar { display: none; }
 /* the marketing footer (About / standard / privacy / social…) is web-only — hide it in the app,
    where every page is a field tool and the tall footer just overflowed the viewport (#198) */
 .native .foot { display: none; }
-
-/* ---------- native app bottom tab bar (icon-only, Instagram-style; web renders the same
-   sections as the top bar instead) ---------- */
-.app-tabbar { display: none; }
-.native .app-tabbar {
-    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    justify-content: space-around; align-items: stretch;
-    background: rgba(14, 17, 22, .96); backdrop-filter: blur(14px);
-    border-top: 1px solid var(--line);
-    padding-bottom: env(safe-area-inset-bottom);
-}
-.native .app-tabbar .tabbar-link {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    padding: .65rem 0; color: var(--muted); font-size: 1.4rem; text-decoration: none;
-    transition: color .12s ease, transform .08s ease;
-}
-.native .app-tabbar .tabbar-link.active { color: var(--sand); }
-.native .app-tabbar .tabbar-link:active { transform: scale(.88); }
-/* leave room so page content + any bottom controls clear the fixed bar */
-.native body { padding-bottom: calc(3.1rem + env(safe-area-inset-bottom)); }
-.native .fabrow { bottom: calc(3.1rem + env(safe-area-inset-bottom)); }
-/* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden */
-.native body.rb-fs .app-tabbar { display: none; }
-.native body.rb-fs { padding-bottom: 0; }
 /* app version readout on the home launcher (installed build + latest live), #198 */
 .app-ver { text-align: center; margin: 0; font-variant-numeric: tabular-nums; }
 
