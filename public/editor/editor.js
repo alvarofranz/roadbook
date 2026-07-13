@@ -389,7 +389,8 @@
             if (currentRbId > 0) loadPhotos();
         });
     }
-    // Top-right map control (beside the zoom buttons): satellite/terrain toggle + live zoom level.
+    // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle + live zoom level.
+    const MAP_STYLE_LABELS = ['Satellite', 'Topo', 'OSM'];
     if (map.map) map.map.addControl({
         onAdd(m) {
             const c = document.createElement('div');
@@ -397,8 +398,12 @@
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'rb-mapctl-layers';
             b.title = t('Satellite / terrain / OSM map'); b.setAttribute('aria-label', b.title);
-            b.innerHTML = '<i class="fa-solid fa-layer-group"></i>';
-            b.onclick = toggleMapStyle;
+            b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i> ';
+            const label = document.createElement('span');
+            label.className = 'rb-map-style-label';
+            label.textContent = MAP_STYLE_LABELS[mapStyleIdx];
+            b.appendChild(label);
+            b.onclick = () => { toggleMapStyle(); label.textContent = MAP_STYLE_LABELS[mapStyleIdx]; };
             const z = document.createElement('div');
             z.className = 'rb-mapctl-zoom'; z.setAttribute('aria-hidden', 'true');
             this._upd = () => { z.textContent = 'z' + m.getZoom().toFixed(1); };
