@@ -8,9 +8,10 @@ running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/*
 - Front-end: vanilla HTML/CSS/JS PWA, web root `public/` (no build step on the web).
 - Native apps: the same `public/` is wrapped by **Capacitor** into iOS + Android. The only
   built artifact is the native bridge (`native/src/native.js` → `public/assets/js/native.bundle.js`,
-  esbuild). Both stores ship via **tag-triggered CI** (not a `main` push): iOS on an `ios-*`
-  tag (Xcode Cloud → TestFlight), Android on an `android-*` tag (GitHub Actions → Play). See
-  **Native apps** below and `NATIVE.md`.
+  esbuild). Both stores ship via CI, fanning out **automatically with the web deploy on a
+  version bump**: Android via GitHub Actions → Play, iOS via Xcode Cloud → TestFlight (a merge to
+  `main` that bumps `version.json` emits all three; see **Releasing**). See **Native apps** below
+  and `NATIVE.md`.
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
@@ -271,15 +272,19 @@ Android's `versionCode` = `MAJOR*10000 + MINOR*100 + PATCH` (so it climbs with t
 above the last upload); iOS's `CFBundleVersion` = Xcode Cloud's monotonic `CI_BUILD_NUMBER`. Never
 lower the semver, never reset a build counter.
 
-**Native app releases are separate from the web deploy** and are **tag-triggered CI**, never a
-`main` push: **iOS** on an `ios-*` tag (Xcode Cloud → TestFlight), **Android** on an `android-*`
-tag (`.github/workflows/android-release.yml`: rehydrate assets from the live site → build the
-native bridge → `cap sync android` → sign from repo secrets → `bundleRelease` → upload the AAB to
-the Play **Closed testing (alpha)** track via the service account). Cut a release by bumping the
-tag and pushing it — the tag carries the semver: **iOS** `git tag ios-<X.Y.Z> && git push origin ios-<X.Y.Z>`,
-**Android** `git tag android-<X.Y.Z> && git push origin android-<X.Y.Z>` (e.g. `android-1.1.0`).
-The Android workflow derives `versionName`/`versionCode` from the tag; the iOS `ci_pre_xcodebuild.sh`
-sets `MARKETING_VERSION` from the tag and `CFBundleVersion` from `CI_BUILD_NUMBER`. The Android build then appears under
+**Native releases fan out automatically with the web deploy — all three ship together, gated on a
+version bump.** A push to `main` (i.e. a merged PR) whose `public/version.json` **version changed**
+IS a release: the **Deploy** workflow ships the web AND (because the version bumped) the Android
+workflow builds + uploads to Play, and the Deploy workflow pushes the `ios-<version>` tag that
+Xcode Cloud picks up for TestFlight. A merge that does NOT bump the version just deploys the web —
+no native build (which also avoids a duplicate Play `versionCode`, which Play rejects). **So the
+whole release flow for anyone (incl. Maurizio) is: `node source/stamp-version.mjs <X.Y.Z>` → commit
+→ branch → PR → merge. That single merge emits web + Android + iOS at the same semver.** No tags to
+push by hand. (`version.json` is the single source of truth: Android reads `versionName`/`versionCode`
+from it — `MAJOR*10000+MINOR*100+PATCH` for the code; iOS's `ci_pre_xcodebuild.sh` reads the semver
+from the `ios-<version>` tag and takes `CFBundleVersion` from `CI_BUILD_NUMBER`.) A manual override
+is still possible — push an `android-<X.Y.Z>` / `ios-<X.Y.Z>` tag, or run the Android workflow via
+`workflow_dispatch` — to re-cut a build without a fresh bump. The Android build then appears under
 **Closed testing – Alpha** in the Play Console; promote Closed → Production there when ready. Note:
 a new personal Play account keeps Production **locked** until it has run a closed test with **≥12
 testers opted in for 14 days** — testers are managed on the closed track itself (add them any time,

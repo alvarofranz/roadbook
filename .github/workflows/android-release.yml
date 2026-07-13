@@ -1,12 +1,16 @@
 name: Android release
 
-# Ship the Android app to Google Play. Fires ONLY on an `android-*` tag (never on a normal push
-# to main), so a web release never triggers an app build — mirrors the iOS `ios-*` tag flow.
-# Prereqs (one-time): the app exists in Play Console with a first manual AAB uploaded, Play App
-# Signing enabled, and the service account (PLAY_SERVICE_ACCOUNT_JSON) invited in Play Console
-# with release permissions. Cut a release: `git tag android-1.0.5 && git push origin android-1.0.5`.
+# Ships the Android app to Google Play. It runs on:
+#   · a push to main that BUMPS public/version.json (a release) — the auto fan-out, so Android goes
+#     out together with the web deploy and the iOS build; a merge with no version bump is skipped;
+#   · an explicit `android-*` tag, or a manual run (workflow_dispatch) — override / re-run.
+# versionName + versionCode come from public/version.json (the single source of truth), so all
+# three surfaces always ship the same semver. Prereqs (one-time): the app exists in Play Console
+# with a first manual AAB uploaded, Play App Signing enabled, and the service account
+# (PLAY_SERVICE_ACCOUNT_JSON) invited with release permissions.
 on:
   push:
+    branches: [main]
     tags: ['android-*']
   workflow_dispatch:
 
@@ -15,7 +19,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Cheap gate: build only on a real release. A main push builds iff public/version.json changed;
+  # an explicit tag or manual dispatch always builds. Keeps trivial merges (docs, small fixes) from
+  # wasting a build — and from a duplicate versionCode that Play would reject.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.g.outputs.build }}
+      version: ${{ steps.g.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: g
+        run: |
+          VERSION=$(jq -r .version public/version.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" != "push" ] || [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "build=1" >> "$GITHUB_OUTPUT"
+            echo "gate: explicit tag/dispatch → build $VERSION"
+          else
+            OLD=$(git show HEAD^:public/version.json 2>/dev/null | jq -r .version 2>/dev/null || echo "")
+            if [ "$VERSION" != "$OLD" ]; then
+              echo "build=1" >> "$GITHUB_OUTPUT"; echo "gate: version bump $OLD → $VERSION → build"
+            else
+              echo "build=0" >> "$GITHUB_OUTPUT"; echo "gate: no version bump ($VERSION) → skip"
+            fi
+          fi
+
   release:
+    needs: gate
+    if: needs.gate.outputs.build == '1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,22 +109,14 @@ jobs:
             echo "keyPassword=$KEY_PASS"
           } > android/keystore.properties
 
-      - name: Compute version (name from the tag, code from tag components)
+      - name: versionName/versionCode from version.json
         id: ver
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          case "$TAG" in android-*)
-            VN="${TAG#android-}"
-            MAJ=$(echo "$VN" | cut -d. -f1)
-            MIN=$(echo "$VN" | cut -d. -f2)
-            PAT=$(echo "$VN" | cut -d. -f3)
-            VC=$((MAJ * 10000 + MIN * 100 + PAT))
-            ;;
-          *)
-            VN="1.0.$GITHUB_RUN_NUMBER"
-            VC=$((100 + GITHUB_RUN_NUMBER))
-            ;;
-          esac
+          VN="${{ needs.gate.outputs.version }}"
+          MAJ=$(echo "$VN" | cut -d. -f1)
+          MIN=$(echo "$VN" | cut -d. -f2)
+          PAT=$(echo "$VN" | cut -d. -f3)
+          VC=$((MAJ * 10000 + MIN * 100 + PAT))
           echo "name=$VN" >> "$GITHUB_OUTPUT"
           echo "code=$VC" >> "$GITHUB_OUTPUT"
           echo "Building versionName=$VN versionCode=$VC"
