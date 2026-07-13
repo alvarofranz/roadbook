@@ -807,7 +807,7 @@
                         <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
                         <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>
                         <a href="${ROOT}admin/trash/"><i class="fa-solid fa-trash-can"></i> ${RBt('Roadbook trash')}</a>
-                        <a href="${ROOT}admin/logs/"><i class="fa-solid fa-list-check"></i> ${RBt('Logs')}</a>` : ''}
+                        <a href="${ROOT}admin/logs/"><i class="fa-solid fa-list-check"></i> ${RBt('Logs')}</a>` : '')}
                         ${participant ? '' : ((!user.is_admin && (user.is_organizer || user.manages_events)) ? `<hr class="menu-sep"><a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a><a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>` : '')}
                         ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
