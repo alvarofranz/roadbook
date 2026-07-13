@@ -29,14 +29,14 @@
     // management (#233); a signed-in visitor without event rights gets the guide (learn /
     // request the role); whoever already manages events (admin, organiser, co-organiser)
     // gets the direct "Organise an event" shortcut into Event management.
+    // Route the "Create" CTA by rights (label stays a short one-word action): signed out → LOGIN
+    // first, then Event management (#233); an organiser (admin / organiser / co-organiser) → straight
+    // into Event management; a signed-in visitor without rights keeps the guide (learn / request it).
     RBApi('config').then((c) => {
-        const u = c && c.user, link = $('evOrganise'), txt = $('evOrganiseTxt');
+        const u = c && c.user, link = $('evOrganise');
         if (!link) return;
-        if (!u) { link.href = '../account/?next=' + encodeURIComponent('/admin/events/'); return; }
-        if (!(u.is_admin || u.is_organizer || u.manages_events)) return;
-        link.href = '../admin/events/';
-        txt.removeAttribute('data-i18n'); // set directly, don't let a later i18n pass revert it
-        txt.textContent = t('Organise an event');
+        if (!u) link.href = '../account/?next=' + encodeURIComponent('/admin/events/');
+        else if (u.is_admin || u.is_organizer || u.manages_events) link.href = '../admin/events/';
     }).catch(() => {});
 
     RBApi('events_list').then((r) => {

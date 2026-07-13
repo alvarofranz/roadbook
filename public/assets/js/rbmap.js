@@ -45,6 +45,10 @@ window.RBMap = class RBMap {
                 // map defaults to maxZoom 22 and zooming past the available tiles destabilises the camera,
                 // snapping it back to the initial zoom (#112).
                 center: [-3.6, 37.178], zoom: 12, maxZoom: 20, attributionControl: true,
+                // Embedded maps live inside scrolling pages, so by default they DON'T hijack the scroll:
+                // one finger / plain wheel scrolls the page, two fingers / ⌘+wheel move the map. A caller
+                // whose map IS the work surface (the Editor) opts out with cooperativeGestures:false.
+                cooperativeGestures: true,
             }, mapOpts));
         } catch (e) { // no WebGL on this device — degrade to a placeholder, never kill the page
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable (WebGL).</div>';

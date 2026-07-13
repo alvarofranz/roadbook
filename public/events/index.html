@@ -25,25 +25,33 @@
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.2.0-3">
     <link rel="stylesheet" href="../assets/css/app.css?v=1.2.0-3">
     <style>
-        #evWrap { max-width: var(--maxw); padding: 1.4rem 1.1rem 5rem; }
-        /* title on the left, the "organise your own event" claim link top-right (override the
-           column direction .rbp-head sets, else the button stacks below the title) */
-        .ev-head-row { flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
-        /* a chunkier, squarer CTA: the label wraps onto ~two lines instead of one long pill */
-        .ev-organise { flex-shrink: 0; margin-top: .3rem; max-width: 13rem; white-space: normal; text-align: left; line-height: 1.25; border-radius: 12px; padding: .7rem 1rem; }
+        #evWrap { max-width: var(--maxw); padding: 1.2rem 1.1rem 5rem; }
+        /* organiser CTA: an explained card (title + one line) with a short action button, plus the
+           secondary "classify results" — a clean row, not a fat button floating in the header */
+        .ev-cta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1rem 0 1.4rem; }
+        .ev-cta-text { display: flex; flex-direction: column; gap: .15rem; min-width: 12rem; }
+        .ev-cta-text b { font-size: 1.02rem; }
+        .ev-cta-actions { display: flex; gap: .5rem; flex-shrink: 0; flex-wrap: wrap; }
     </style>
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="wrap" id="evWrap">
-    <div class="rbp-head ev-head-row">
-        <div>
-            <h1 data-i18n="Events">Events</h1>
-            <p class="muted" data-i18n="Browse the events organised by the community.">Browse the events organised by the community.</p>
-            <div class="btnrow"><a class="btn btn-ghost" href="../ranking/"><i class="fa-solid fa-ranking-star"></i> <span data-i18n="Classify results">Classify results</span></a></div>
+    <div class="tool-titlebar">
+        <h1 data-i18n="Events">Events</h1>
+        <a class="tool-help" href="../features/events/"><i class="fa-solid fa-circle-info"></i> Info</a>
+    </div>
+    <p class="muted" data-i18n="Browse the events organised by the community.">Browse the events organised by the community.</p>
+    <div class="ev-cta">
+        <div class="ev-cta-text">
+            <b data-i18n="Organise your event on RDBK.app">Organise your event on RDBK.app</b>
+            <span class="muted small" data-i18n="Set up an event with its roadbooks, participants and rankings.">Set up an event with its roadbooks, participants and rankings.</span>
         </div>
-        <a class="btn btn-primary ev-organise" id="evOrganise" href="../features/events/"><i class="fa-solid fa-calendar-check"></i> <span id="evOrganiseTxt" data-i18n="Organise your event on RDBK.app">Organise your event on RDBK.app</span></a>
+        <div class="ev-cta-actions">
+            <a class="btn btn-primary" id="evOrganise" href="../features/events/" data-i18n="Create">Create</a>
+            <a class="btn btn-ghost" href="../ranking/" data-i18n="Classify results">Classify results</a>
+        </div>
     </div>
     <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="evSearch" placeholder="Search events…" data-i18n-ph="Search events…" autocomplete="off" spellcheck="false"></div>
     <div class="gallery" id="evGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>

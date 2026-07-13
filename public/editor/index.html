@@ -218,11 +218,12 @@
             .note-list-zone .icon-category { margin-top: .2rem; flex-shrink: 0; }
             #noteList { flex: 1; min-height: 0; overflow-y: auto; }
         }
-        /* phones & portrait tablets (stacked): pin the map at the top of the screen and let
-           the notes scroll beneath it — editing a note always keeps its map in view */
+        /* phones & portrait tablets (stacked): the map is a normal in-flow block at the top, the
+           palette + notes flow beneath it. NOT sticky — a pinned interactive map both overlapped
+           the content scrolling under it and hijacked the page scroll (it needs one-finger pan). */
         @media (max-width: 1023px) {
-            .map-editor { position: sticky; top: 56px; z-index: 20; }
-            #edMap { height: 40vh; min-height: 240px; }
+            .map-editor { position: relative; }
+            #edMap { height: 46vh; min-height: 240px; }
         }
         @media (max-width: 600px) {
             #edMap { height: 46vh; }
@@ -248,7 +249,7 @@
         <div id="landing">
             <div class="tool-titlebar">
                 <h1 data-i18n="fp.tool.editor">Roadbook Editor</h1>
-                <a class="tool-help" href="../features/editor/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
+                <a class="tool-help" href="../features/editor/"><i class="fa-solid fa-circle-info"></i> Info</a>
             </div>
             <div id="loadFrom">
                 <div class="icon-category" data-i18n="Start new Roadbook from:">Start new Roadbook from:</div>

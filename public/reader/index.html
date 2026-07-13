@@ -57,9 +57,17 @@
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }
         .opt-row { margin-top: 1rem; display: flex; flex-direction: column; gap: .55rem; text-align: left; }
         /* load screen: the "Open from" card centred at the top, the public gallery flowing below */
-        .reader-load { max-width: var(--maxw); padding: 1.6rem 1.1rem 5rem; }
-        .reader-open { max-width: 480px; margin: 0 auto 1.8rem; text-align: center; }
+        .reader-load { max-width: var(--maxw); padding: 1.2rem 1.1rem 5rem; }
+        .reader-gallery { margin-top: 1.6rem; }
         .reader-gallery .section-head { margin-bottom: 1rem; }
+        /* preview: look at an opened roadbook (read-only) before committing to a mode. The live
+           odometer / CAP / action bars are for navigation only, so they're hidden here; a sticky
+           header carries the title + a prominent "Navigate" CTA. */
+        #previewBar { display: none; position: sticky; top: env(safe-area-inset-top); z-index: 30; background: var(--bg); padding: .6rem 1.1rem 1rem; border-bottom: 1px solid var(--line); }
+        #previewBar .tool-titlebar { margin: 0 0 .6rem; }
+        body.rb-preview #previewBar { display: block; }
+        body.rb-preview .odometer-bar, body.rb-preview .capbar, body.rb-preview .fabrow { display: none; }
+        body.rb-preview #noteList { padding-bottom: 2rem; }
     </style>
 </head>
 <body class="gps-tool">
@@ -67,16 +75,15 @@
 
 <!-- load: "Open from…" chooser on top, the public roadbook gallery inline below -->
 <main id="loadScreen" class="wrap reader-load">
-    <div class="center-card reader-open">
-        <div class="big"><i class="fa-solid fa-compass"></i></div>
-        <div class="tool-titlebar">
-            <h1 data-i18n="fp.tool.reader">Roadbook Reader</h1>
-            <a class="tool-help" href="../features/reader/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
-        </div>
-        <p class="muted" data-i18n="Open from a file or your roadbooks, or pick a public one below.">Open from a file or your roadbooks, or pick a public one below.</p>
-        <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
-        <div class="btnrow mt-2"><button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button></div>
-        <div class="btnrow"><button class="btn btn-ghost" id="pickMine" hidden data-i18n="Load one of your RBs"><i class="fa-solid fa-book"></i> Load one of your RBs</button></div>
+    <div class="tool-titlebar">
+        <h1 data-i18n="fp.tool.reader">Roadbook Reader</h1>
+        <a class="tool-help" href="../features/reader/"><i class="fa-solid fa-circle-info"></i> Info</a>
+    </div>
+    <p class="muted" data-i18n="Open from a file or your roadbooks, or pick a public one below.">Open from a file or your roadbooks, or pick a public one below.</p>
+    <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
+    <div class="btnrow start mt-2">
+        <button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button>
+        <button class="btn btn-ghost" id="pickMine" hidden data-i18n="Load one of your RBs"><i class="fa-solid fa-book"></i> Load one of your RBs</button>
     </div>
     <section class="reader-gallery">
         <div class="section-head"><h2 data-i18n="Public roadbooks">Public roadbooks</h2></div>
@@ -84,8 +91,16 @@
     </section>
 </main>
 
-<!-- navigation with a roadbook -->
+<!-- opened roadbook: preview (read-only) → "Navigate" opens the mode chooser → live navigation -->
 <div id="navScreen" hidden>
+    <!-- preview header: only shown before navigation starts (body.rb-preview) -->
+    <div id="previewBar">
+        <div class="tool-titlebar">
+            <h1 id="previewTitle" data-i18n="fp.tool.reader">Roadbook Reader</h1>
+            <a class="tool-help" href="../features/reader/"><i class="fa-solid fa-circle-info"></i> Info</a>
+        </div>
+        <div class="btnrow start"><button class="btn btn-primary" id="navigateBtn"><i class="fa-solid fa-location-arrow"></i> <span data-i18n="Navigate">Navigate</span></button></div>
+    </div>
     <!-- top odometer bar: total · bearing+clock · partial -->
     <div class="odometer-bar" role="status" aria-live="polite">
         <div class="odo-toprow">

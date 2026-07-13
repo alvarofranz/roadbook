@@ -56,18 +56,15 @@
 
 <main class="wrap rec-main">
     <!-- idle: start a recording -->
-    <div id="recIdle" class="center-screen">
-        <div class="center-card">
-            <div class="big"><i class="fa-solid fa-circle-dot"></i></div>
-            <div class="tool-titlebar">
-                <h1 data-i18n="fp.tool.recorder">Track Recorder</h1>
-                <a class="tool-help" href="../features/recorder/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="How it works">How it works</span></a>
-            </div>
-            <p class="muted" data-i18n="Record a GPX track live with GPS.">Record a GPX track live with GPS.</p>
-            <p id="recLoginHint" class="muted small" data-i18n="Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account." hidden>Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.</p>
-            <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
-            <div class="btnrow mt-2"><button class="btn btn-primary" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Start recording">Start recording</span></button></div>
+    <div id="recIdle">
+        <div class="tool-titlebar">
+            <h1 data-i18n="fp.tool.recorder">Track Recorder</h1>
+            <a class="tool-help" href="../features/recorder/"><i class="fa-solid fa-circle-info"></i> Info</a>
         </div>
+        <p class="muted" data-i18n="Record a GPX track live with GPS.">Record a GPX track live with GPS.</p>
+        <p id="recLoginHint" class="muted small" data-i18n="Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account." hidden>Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.</p>
+        <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
+        <div class="btnrow mt-2"><button class="btn btn-primary" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Start recording">Start recording</span></button></div>
     </div>
 
     <!-- running: readouts + controls, the live map between the action buttons and Finish -->
