@@ -10,6 +10,12 @@ database:
     type: mariadb
     version: "10.11"
 use_dns_when_possible: true
+upload_dirs:
+  - "avatars"
+  - "photos"
+  - "event-logos"
+  - "audio"
+  - "../storage"
 composer_version: "2"
 web_environment: []
 corepack_enable: false
