@@ -98,7 +98,7 @@
             'Show this QR to the event organizer to activate your participation.': 'Show this QR to the event organizer to activate your participation.',
             'Activation code': 'Activation code', 'Invalid activation code.': 'Invalid activation code.',
             'Participant activated.': 'Participant activated.', 'Could not activate.': 'Could not activate.',
-            'Could not activate.': 'Could not activate.', 'Link for participants': 'Link for participants',
+            'Could not activate.': 'Could not activate.', 'Link for participants': 'Link for participants', 'Manage participants': 'Manage participants',
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:',
             'Participant management': 'Participant management', 'Select an event to manage its participants.': 'Select an event to manage its participants.',
             'Add': 'Add', 'Search users…': 'Search users…', 'added.': 'added.', 'Activate': 'Activate',

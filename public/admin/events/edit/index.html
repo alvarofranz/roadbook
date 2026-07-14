@@ -14,8 +14,7 @@
     <link rel="stylesheet" href="../../../assets/css/app.css?v=1.3.6-11">
     <style>
         /* title + page actions (View · Save) share one row */
-        .ev-head-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-        .ev-head-row h1 { margin: 0; flex: 1; min-width: 12rem; }
+        .ev-head-row { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; flex-wrap: wrap; }
         .ev-head-row .btnrow { margin: 0; }
         .ev-section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
         .ev-section h2 { font-size: 1.1rem; margin: .2rem 0 .8rem; }
@@ -31,25 +30,34 @@
             .ev-rb-head span { display: none; }
         }
         /* dates + Public on ONE row, labels inline to the LEFT of each date box */
-        .ev-dates-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .35rem 0; }
+        .ev-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin: .7rem 0 .35rem; }
+        .ev-dates-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 0; }
         .ev-dates-row .field { width: auto; margin: 0; }
         .ev-dates-row .field-label, .ev-dates-row .checkbox-row { margin: 0; }
-        .ev-dates-row .checkbox-row { margin-left: auto; }
         .ev-add-row { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; }
         .ev-add-row .field { flex: 1; margin: 0; }
         .ev-add-row .btn { width: auto; }
         .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
+        /* join code + all its actions (Copy · New code · Disable · View participants) stay on one row (#291) */
+        #joinRow { flex-wrap: nowrap; }
+        #joinRow .meta { min-width: 0; white-space: nowrap; }
         /* the add-roadbook picker (inside the modal): scrollable result list */
         .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
         /* the event logo (#151): avatar-style preview beside its upload/remove actions */
         .ev-logo-thumb { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
         /* the duplicated Save at the foot of the form (#179) */
         .ev-save-bottom { margin: 1rem 0 2rem; }
-        .ev-hq-map { width: 100%; height: 280px; border-radius: 12px; border: 1px solid var(--line); margin: .4rem 0; }
-        .ev-coords-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .2rem 0; }
+        /* HQ block: smaller map left, hint + coords column to its right; stacks on narrow screens */
+        .ev-hq-grid { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin: .4rem 0; }
+        .ev-hq-map { flex: 2 1 320px; min-width: 260px; height: 300px; border-radius: 12px; border: 1px solid var(--line); }
+        .ev-hq-side { flex: 1 1 200px; min-width: 180px; display: flex; flex-direction: column; gap: .5rem; }
+        .ev-coords-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 0; }
         .ev-coords-row .field-label { margin: 0; white-space: nowrap; }
-        .ev-coord { width: 10rem; font-family: ui-monospace, monospace; font-size: .82rem; }
+        .ev-coord { flex: 1; width: auto; min-width: 0; font-family: ui-monospace, monospace; font-size: .82rem; }
         .ev-link-url { font-family: ui-monospace, monospace; font-size: .95rem; word-break: break-all; }
+        /* the participant link sits inside the participants card, set off by a divider (#291) */
+        .ev-participant-link { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+        .ev-participant-link h3 { font-size: 1rem; margin: 0 0 .3rem; }
     </style>
 </head>
 <body>
@@ -59,7 +67,6 @@
     <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
     <!-- heading row: the title with the page actions (View · Save) on the SAME line -->
     <div class="ev-head-row">
-        <h1 id="evHeading" data-i18n="Event">Event</h1>
         <div class="btnrow" id="evActions" hidden>
             <a class="btn btn-ghost" id="evView" hidden><i class="fa-solid fa-eye"></i> <span data-i18n="View">View</span></a>
             <button class="btn btn-primary" id="evSave" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
@@ -70,30 +77,35 @@
     <div id="evBody" hidden>
         <!-- 1 · the event's own parameters -->
         <section class="ev-section">
-            <div class="ev-line" id="logoRow" hidden>
-                <img id="evLogoImg" class="ev-logo-thumb" alt="" hidden>
-                <span class="grow"></span>
-                <button class="btn btn-ghost" id="evLogoUpload" type="button"><i class="fa-solid fa-image"></i> <span data-i18n="Upload logo">Upload logo</span></button>
-                <button class="btn btn-ghost" id="evLogoRemove" type="button" hidden><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Remove logo">Remove logo</span></button>
-                <input id="evLogoFile" type="file" accept="image/*" hidden>
-            </div>
             <label class="field-label" for="evTitleIn" data-i18n="Title">Title</label>
             <input id="evTitleIn" class="field" autocomplete="off">
+            <!-- dates on the left, event logo + its actions on the right, one line (#291) -->
+            <div class="ev-meta-row">
+                <div class="ev-dates-row">
+                    <label class="field-label" for="evStart" data-i18n="Start date">Start date</label><input id="evStart" type="date" class="field">
+                    <label class="field-label" for="evEnd" data-i18n="End date">End date</label><input id="evEnd" type="date" class="field">
+                    <label class="checkbox-row"><input type="checkbox" id="evPublic"> <span data-i18n="Public">Public</span></label>
+                </div>
+                <div class="ev-line" id="logoRow" hidden>
+                    <img id="evLogoImg" class="ev-logo-thumb" alt="" hidden>
+                    <button class="btn btn-ghost" id="evLogoUpload" type="button"><i class="fa-solid fa-image"></i> <span data-i18n="Upload logo">Upload logo</span></button>
+                    <button class="btn btn-ghost" id="evLogoRemove" type="button" hidden><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Remove logo">Remove logo</span></button>
+                    <input id="evLogoFile" type="file" accept="image/*" hidden>
+                </div>
+            </div>
             <label class="field-label" for="evDescIn" data-i18n="Description">Description</label>
             <textarea id="evDescIn" class="field" rows="3"></textarea>
             <label class="field-label" for="evWebsiteIn" data-i18n="Organizer website">Organizer website</label>
             <input id="evWebsiteIn" class="field" type="url" placeholder="https://…" autocomplete="off">
             <label class="field-label" data-i18n="Event headquarters">Event headquarters</label>
-            <div id="evHqMap" class="ev-hq-map"></div>
-            <div class="ev-coords-row">
-                <span class="muted small" data-i18n="Tap the map to set the event headquarters location.">Tap the map to set the event headquarters location.</span>
-                <label class="field-label" for="evHqLat">Lat</label><input id="evHqLat" class="field ev-coord" type="number" step="any" placeholder="Latitude" data-i18n-ph="Latitude" autocomplete="off">
-                <label class="field-label" for="evHqLon">Lon</label><input id="evHqLon" class="field ev-coord" type="number" step="any" placeholder="Longitude" data-i18n-ph="Longitude" autocomplete="off">
-            </div>
-            <div class="ev-dates-row">
-                <label class="field-label" for="evStart" data-i18n="Start date">Start date</label><input id="evStart" type="date" class="field">
-                <label class="field-label" for="evEnd" data-i18n="End date">End date</label><input id="evEnd" type="date" class="field">
-                <label class="checkbox-row"><input type="checkbox" id="evPublic"> <span data-i18n="Public">Public</span></label>
+            <!-- map on the left (smaller), hint + coordinates in a column to its right (#291) -->
+            <div class="ev-hq-grid">
+                <div id="evHqMap" class="ev-hq-map"></div>
+                <div class="ev-hq-side">
+                    <p class="muted small" data-i18n="Tap the map to set the event headquarters location.">Tap the map to set the event headquarters location.</p>
+                    <div class="ev-coords-row"><label class="field-label" for="evHqLat">Lat</label><input id="evHqLat" class="field ev-coord" type="number" step="any" placeholder="Latitude" data-i18n-ph="Latitude" autocomplete="off"></div>
+                    <div class="ev-coords-row"><label class="field-label" for="evHqLon">Lon</label><input id="evHqLon" class="field ev-coord" type="number" step="any" placeholder="Longitude" data-i18n-ph="Longitude" autocomplete="off"></div>
+                </div>
             </div>
         </section>
 
@@ -119,25 +131,26 @@
             <div class="btnrow"><button class="btn btn-ghost" id="rbAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add roadbook">Add roadbook</span></button></div>
         </section>
 
-        <!-- 4 · the join code; the roster itself lives on its own page (#144) -->
+        <!-- 4 · participant management: the join code + the shareable participant link in ONE card
+             (#144 roster on its own page, #163 link). -->
         <section class="ev-section" id="ppSection" hidden>
-            <h2><span data-i18n="Participants">Participants</span> <span class="muted" id="ppHeadCount"></span></h2>
+            <h2><span data-i18n="Manage participants">Manage participants</span> <span class="muted" id="ppHeadCount"></span></h2>
             <div class="ev-line" id="joinRow">
                 <span class="meta" id="joinCodeOut"></span>
                 <button class="btn btn-ghost" id="joinCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
                 <button class="btn btn-ghost" id="joinRotate" type="button"><i class="fa-solid fa-rotate"></i> <span data-i18n="New join code">New join code</span></button>
                 <button class="btn btn-ghost" id="joinClear" type="button" hidden><i class="fa-solid fa-ban icon-danger"></i> <span data-i18n="Disable joining">Disable joining</span></button>
+                <a class="btn btn-ghost" id="ppPageLink"><i class="fa-solid fa-users"></i> <span data-i18n="View participants">View participants</span></a>
             </div>
-            <div class="btnrow"><a class="btn btn-ghost" id="ppPageLink"><i class="fa-solid fa-users"></i> <span data-i18n="View participants">View participants</span></a></div>
-        </section>
 
-        <!-- 5 · participant link for attendees (#163) -->
-        <section class="ev-section" id="evLink" hidden>
-            <h2 data-i18n="Link for participants">Link for participants</h2>
-            <p class="muted small" data-i18n="Share this link with attendees so they access a simplified view showing only this event and its roadbooks:">Share this link with attendees so they access a simplified view showing only this event and its roadbooks:</p>
-            <div class="ev-line" id="evLinkRow">
-                <a class="meta ev-link-url" id="evLinkUrl" href="" target="_blank" rel="noopener"></a>
-                <button class="btn btn-ghost" id="evLinkCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
+            <!-- the shareable participant link (#163) — same card, shown only when a join code exists -->
+            <div class="ev-participant-link" id="evLink" hidden>
+                <h3 data-i18n="Link for participants">Link for participants</h3>
+                <p class="muted small" data-i18n="Share this link with attendees so they access a simplified view showing only this event and its roadbooks:">Share this link with attendees so they access a simplified view showing only this event and its roadbooks:</p>
+                <div class="ev-line" id="evLinkRow">
+                    <a class="meta ev-link-url" id="evLinkUrl" href="" target="_blank" rel="noopener"></a>
+                    <button class="btn btn-ghost" id="evLinkCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
+                </div>
             </div>
         </section>
 
