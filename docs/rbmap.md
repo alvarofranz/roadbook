@@ -9,9 +9,10 @@ limiti.
 
 > **Non è Mapbox.** Nonostante il nome storico, il modulo usa
 > [MapLibre GL](https://maplibre.org/) con tile **gratuite, senza chiave**: il **topo** è
-> CyclOSM (`RASTER_TOPO`), il **satellite** è ESRI World Imagery (`RASTER_SATELLITE`);
-> OpenFreeMap serve solo i glyph/font. Non serve un token in `config.js` per la mappa di
-> base; una chiave MapTiler eventuale migliora solo il satellite.
+> CyclOSM (`RASTER_TOPO`), il **satellite** è ESRI World Imagery (`RASTER_SATELLITE`),
+> **OSM** è OpenFreeMap standard (`RASTER_OSM`); OpenFreeMap serve anche i glyph/font.
+> Non serve un token in `config.js` per la mappa di base; una chiave MapTiler eventuale
+> migliora solo il satellite.
 
 ---
 
@@ -175,22 +176,25 @@ trascinando direttamente il suo marker blu, esattamente come un punto traccia.
 
 ---
 
-## 7. Toggle layer satellite ↔ topo
+## 7. Toggle layer satellite ↔ topo ↔ OSM
 
 - **`setBaseStyle(styleUrl, onReady)`** — cambia lo stile base. Poiché MapLibre **azzera
   ogni source/layer custom** su `setStyle`, mette `ready=false`, attende `style.load`, poi
   rifà `_init()` + `_terrain()` e richiama `onReady`
   ([rbmap.js:64](../public/assets/js/rbmap.js#L64)).
-- **`toggleBaseStyle()`** — alterna satellite↔topo e **ridipinge** l'ultimo roadbook +
-  selezione nel callback `onReady` ([rbmap.js:74](../public/assets/js/rbmap.js#L74)).
-- Il bottone di toggle (`{layerToggle:true}`) è un piccolo controllo MapLibre con icona
-  FontAwesome `layer-group`, titolo tradotto via `RBt('Map style')`
+- **`toggleBaseStyle()`** — cicla satellite→topo→OSM→satellite e **ridipinge** l'ultimo
+  roadbook + selezione nel callback `onReady`
+  ([rbmap.js:74](../public/assets/js/rbmap.js#L74)).
+- Il bottone di toggle (`{layerToggle:true}`) è un piccolo controllo MapLibre che mostra
+  il nome dello stile corrente sotto l'icona (`<span class="rb-map-style-label">`),
+  titolo tradotto via `RBt('Map style')`
   ([rbmap.js:216](../public/assets/js/rbmap.js#L216)).
 - Gli URL canonici degli stili sono esposti come `RBMap.STYLE_SATELLITE` /
-  `RBMap.STYLE_TOPO` così l'Editor può riusare il proprio toggle
+  `RBMap.STYLE_TOPO` / `RBMap.STYLE_OSM` così l'Editor può riusare il proprio toggle
   ([rbmap.js:234](../public/assets/js/rbmap.js#L234)).
 
-`_topo` traccia quale stile è attualmente vivo ([rbmap.js:31](../public/assets/js/rbmap.js#L31)).
+`_mapLayer` (index 0-2) traccia quale stile è attualmente vivo
+([rbmap.js:31](../public/assets/js/rbmap.js#L31)).
 
 ### Distruzione
 `destroy()` smonta il contesto GL (`map.remove()`); il Reader chiude così la mappa inline

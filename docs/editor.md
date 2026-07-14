@@ -347,6 +347,7 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 | **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | un set di checkbox componibili (vedi §7.1) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto); file `…_OR.gpx` |
+| **KMZ** | `exportKmz` | `RB.kmlDocument` + `RBZip.write({ 'doc.kml': kml })` → `.kmz` (vedi §7.2) |
 
 `embedUsed` garantisce la regola auto-contenuta del formato: ogni simbolo usato finisce in
 `rb.icons` come data-URI; le icone non più referenziate vengono rimosse.
@@ -434,6 +435,25 @@ Le icone app (un solo file, allineato agli export di riferimento):
 L'icona della nota → simbolo app è scelta da `RB.appWaypointSymbol(note)`: si guarda la prima
 icona riconosciuta della nota; le **note con `danger`** diventano rosse a prescindere; tutto ciò
 che non è mappato ricade sul **generico** (Garmin *Flag, Blue* · OSMAnd `special_point`, blu).
+
+### 7.2 KMZ Export (#276)
+
+Il formato **KMZ** è un contenitore ZIP che contiene un singolo file `doc.kml` in KML 2.2.
+L'export KMZ è un'alternativa leggera al GPX, supportata nativamente da Google Earth e da
+molti navigatori GPS.
+
+- **Funzione**: `exportKmz()` ([editor.js:1814](../public/editor/editor.js#L1814))
+- **Serializzatore**: `RB.kmlDocument(name, pts, wpts)` in `roadbook-core.js` — genera KML 2.2
+- **Come funziona**: build del KML (`LineString` per la traccia, `Point` per ogni nota),
+  poi `RBZip.write({ 'doc.kml': kml })` produce il KMZ, infine `RBDownload(blob, name)` lo
+  scarica
+- **File prodotto**: `<slug>_<data>_KMZ.kmz`
+- **Contenuto**: tutta la traccia + tutti i waypoint (non c'è selezione traccia/solo-waypoint
+  come nel GPX)
+- **Naming waypoint**: `<name>` = numero nota zero-pad a 3 cifre (`001`),
+  `<description>` = testo nota se presente
+- **Icone**: non c'è mapping Garmin/OSMAnd nel KML (formato più semplice, solo nome + descrizione)
+- **Nessuna nuova dipendenza**: riusa `RBZip.write()` già presente per il formato `.rdbk`
 
 | RDBK (icona nota) | Garmin `<sym>` | OSMAnd `osmand:icon` | colore |
 |---|---|---|---|
