@@ -212,6 +212,22 @@ aperta la richiude. `closeInlineMap` ([reader.js:251](../public/reader/reader.js
 distrugge pulitamente la mappa GL — ed è chiamata **all'inizio di ogni `renderNotes`**, dato
 che la lista viene ricostruita per intero. Se MapLibre non è configurato, mostra un toast.
 
+### Posizione GPS sulla mappa (#265)
+
+Durante una navigazione attiva, la mappa per-nota mostra il **pallino blu** della posizione
+GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
+
+- **`geolocate: true`** passato a `new RBMap()` → aggiunge il pulsante GeolocateControl
+  (mirino) in alto a destra, che l'utente può cliccare per centrare sulla propria posizione
+- **`onFix()`** memorizza l'ultima posizione in `lastHere` e chiama
+  `inlineMap.setPosition(lat, lon, false, heading)` a ogni fix, così il pallino blu segue
+  il movimento in tempo reale
+- **All'apertura** di una nuova mappa, se `lastHere` è disponibile chiama subito
+  `setPosition` (la posizione viene comunque reinviata dal prossimo fix)
+- Quando non c'è una navigazione attiva (modalità preview), `lastHere` è null e la mappa
+  mostra solo il pulsante GeolocateControl — l'utente può comunque cliccare il mirino per
+  attivare la geolocalizzazione del browser
+
 ---
 
 ## 7. Avanzamento: automatico e manuale
