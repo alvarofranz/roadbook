@@ -44,6 +44,10 @@
         .acc-lang { display: flex; align-items: center; justify-content: center; gap: .6rem; margin: 2.4rem auto 1rem; }
         .acc-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; justify-content: center; margin: 0 auto 1.5rem; }
         .acc-links a { color: var(--sand-2); }
+        /* the global site footer already carries these links on desktop — show this mobile
+           stand-in only below the footer breakpoint (matches .foot hiding ≤1024px), so the
+           About/Privacy/Terms links don't appear twice (#295) */
+        @media (min-width: 1025px) { .acc-links { display: none; } }
     </style>
 </head>
 <body>
