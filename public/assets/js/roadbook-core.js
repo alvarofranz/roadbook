@@ -88,8 +88,11 @@
         { id: 'stop', tier: 'rally', cap: 'STOP', name: 'Stop',             color: '#ff5a45', sym: 'Stop',        osm: 'special_marker' },
     ];
     const WP_TYPE_BY_ID = {}; WP_TYPES.forEach((w) => { WP_TYPE_BY_ID[w.id] = w; });
+    const WP_TYPE_BY_CAP = {}; WP_TYPES.forEach((w) => { if (w.cap) WP_TYPE_BY_CAP[w.cap] = w; });
     // Look up a type by id (null when unset/unknown). The badge label is its acronym or glyph.
     function wpType(id) { return (id && WP_TYPE_BY_ID[id]) || null; }
+    // Look up a type by its OpenRally cap code (e.g. 'WPM' → masked).
+    function wpTypeByCap(cap) { return (cap && WP_TYPE_BY_CAP[cap]) || null; }
     // The types offered for a roadbook profile: core always; rally adds the full FIA set.
     function wpTypesForProfile(profile) { return WP_TYPES.filter((w) => w.tier === 'core' || profile === 'rally'); }
     // The geofence radius (metres) for auto-validating a note. Precedence: the note's own
@@ -280,7 +283,7 @@
             };
             if (r.danger >= 1 && r.danger <= 3) note.danger = Math.round(r.danger);
             const orPass = r.or.filter((e) => {
-                if (e.tag === 'wptType') { if (wpType(e.text)) note.wp_type = e.text; return false; }
+                if (e.tag === 'wptType') { const w = wpType(e.text) || wpTypeByCap(e.text); if (w) { note.wp_type = w.id; return false; } }
                 return true;
             });
             if (orPass.length) note.openrally = orPass;
@@ -767,7 +770,7 @@
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
-            if (n.wp_type) ext.push(`<openrally:wptType>${x(n.wp_type)}</openrally:wptType>`);
+            if (n.wp_type) { const w = wpType(n.wp_type); ext.push(`<openrally:wptType>${x(w ? w.cap : n.wp_type)}</openrally:wptType>`); }
             if (Array.isArray(n.openrally) && n.openrally.length) {
                 // imported note: re-emit every preserved param verbatim (cap·danger·speed·wp types·zones·…)
                 n.openrally.forEach((e) => ext.push(emitOr(e)));
@@ -1012,7 +1015,7 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,

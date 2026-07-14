@@ -559,6 +559,15 @@ describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
         expect(RB.wpType(null)).toBeNull();
         expect(RB.wpType('nope')).toBeNull();
     });
+    it('wpTypeByCap() reverse-lookup: OpenRally cap code → type', () => {
+        expect(RB.wpTypeByCap('WPM').id).toBe('masked');
+        expect(RB.wpTypeByCap('WPN').id).toBe('navigation');
+        expect(RB.wpTypeByCap('WPE').id).toBe('eclipse');
+        expect(RB.wpTypeByCap('DSS').id).toBe('ss_start');
+        expect(RB.wpTypeByCap('STOP').id).toBe('stop');
+        expect(RB.wpTypeByCap(null)).toBeNull();
+        expect(RB.wpTypeByCap('NOPE')).toBeNull();
+    });
     it('wpTypesForProfile() scopes the vocabulary: core-only vs the full FIA set', () => {
         const basic = RB.wpTypesForProfile('basic');
         const rally = RB.wpTypesForProfile('rally');
@@ -655,7 +664,7 @@ describe('OpenRally round-trip (openRallyDocument → parseOpenRally)', () => {
         const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
         rb.notes[0].wp_type = 'masked';
         const xml = RB.openRallyDocument(rb, { tulips: [] });
-        expect(xml).toContain('<openrally:wptType>masked</openrally:wptType>');
+        expect(xml).toContain('<openrally:wptType>WPM</openrally:wptType>');
         expect(xml.split('<openrally:wptType>').length - 1).toBe(1);
     });
     it('does not emit wptType for notes without wp_type', () => {
