@@ -38,6 +38,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
 | `iconSrc`         | risoluzione sorgente di un'icona (§10) |
 | `tulipToDataURL`  | converte il tulip SVG di una nota in data URI PNG (usato per esportazione/embedding) |
+| `roadbookForExport` | deep-clona il roadbook sostituendo gli ID interni di `wp_type` con i codici OpenRally standard (WPM, WPN, …) — usato prima di serializzare .rdbk / salvare sul server |
 | `filterByText`, `filterRoadbooks` | filtro testuale generico / di una lista di roadbook (§11) |
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |

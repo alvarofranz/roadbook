@@ -378,7 +378,7 @@
         let roadbook;
         try { roadbook = RB.buildRoadbook({ name, trkpts: pts, wpts }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
-        const files = { 'roadbook.json': JSON.stringify(roadbook) };
+        const files = { 'roadbook.json': JSON.stringify(RB.roadbookForExport(roadbook)) };
         const media = { photos: [], audio: [] };
         let n = 0;
         for (const it of await RBMediaQueue.items()) {
@@ -404,7 +404,7 @@
         try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
         const id = await ensureDraft(); // the draft the queued photos/voice notes also attach to
-        const r = await RBApi('rb_save', { id: id || draftId || 0, status: 'draft', roadbook });
+        const r = await RBApi('rb_save', { id: id || draftId || 0, status: 'draft', roadbook: RB.roadbookForExport(roadbook) });
         if (!r.ok) { toast(r.error || t('Could not save.')); return null; }
         draftId = r.id;
         try { RBMediaQueue.flush(); } catch (e) {} // push any still-buffered media into this draft

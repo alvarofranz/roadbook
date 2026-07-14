@@ -472,6 +472,9 @@
         delete meta.titolo; delete meta.km_totali;
         delete meta.logo_path; // server-side path from the suite — not embeddable, not part of the format
         rb.notes = (rb.notes || []).map((n) => {
+            // Normalize wp_type: accept both internal IDs (masked, navigation…) and
+            // OpenRally cap codes (WPM, WPN…) from third-party .rdbk files.
+            if (n.wp_type) { const w = wpType(n.wp_type) || wpTypeByCap(n.wp_type); if (w) n.wp_type = w.id; }
             if ('testo' in n) { n.text ??= n.testo; delete n.testo; }
             if ('km_prog' in n) { n.distance ??= Math.round((n.km_prog || 0) * 1000); delete n.km_prog; }
             if ('km_parz' in n) { n.partial_distance ??= Math.round((n.km_parz || 0) * 1000); delete n.km_parz; }
@@ -790,6 +793,17 @@
             + `${wpts}<trk><name>${x(name)}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
     }
 
+    // Deep-clone the roadbook with OpenRally cap codes in place of internal wp_type
+    // IDs, so .rdbk export / server save carry interoperable codes (WPM, WPN, …)
+    // instead of internal ones (masked, navigation, …). The clone leaves rb unchanged.
+    function roadbookForExport(rb) {
+        const out = JSON.parse(JSON.stringify(rb));
+        (out.notes || []).forEach((n) => {
+            if (n.wp_type) { const w = wpType(n.wp_type); if (w && w.cap) n.wp_type = w.cap; }
+        });
+        return out;
+    }
+
     // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
     function speedLimitFromName(name) {
         if (!name) return null;
@@ -1022,6 +1036,7 @@
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
+        roadbookForExport,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, recStepM,
     };
