@@ -487,7 +487,7 @@ The `roadbook.json` schema:
     "road_type_in": 0..4, "road_type_out": 0..4,
     "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
-    "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|security|navigation|precise|visible|eclipse + start/finish/zone/control markers); editor badge + GPX sym
+    "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|…); on disk (.rdbk/server) written as its OpenRally cap code (WPM, WPN…), normalized to internal ids on import (wpTypeByCap/importRoadbook) and re-emitted by roadbookForExport; editor badge + GPX sym
     "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
     "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..4 } ]
