@@ -599,7 +599,7 @@
             'Show this QR to the event organizer to activate your participation.': 'Zeige diesen QR-Code dem Veranstalter, um deine Teilnahme zu aktivieren.',
             'Activation code': 'Aktivierungscode', 'Invalid activation code.': 'Ungültiger Aktivierungscode.',
             'Participant activated.': 'Teilnehmer aktiviert.', 'Could not activate.': 'Konnte nicht aktiviert werden.',
-            'Could not activate.': 'Konnte nicht aktiviert werden.', 'Link for participants': 'Link für Teilnehmer',
+            'Could not activate.': 'Konnte nicht aktiviert werden.', 'Link for participants': 'Link für Teilnehmer', 'Manage participants': 'Teilnehmerverwaltung',
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Teile diesen Link mit den Teilnehmern, damit sie eine vereinfachte Ansicht sehen, die nur diese Veranstaltung und ihre Roadbooks zeigt:',
             'Participant management': 'Teilnehmerverwaltung', 'Select an event to manage its participants.': 'Wähle eine Veranstaltung, um deren Teilnehmer zu verwalten.',
             'added.': 'hinzugefügt.',

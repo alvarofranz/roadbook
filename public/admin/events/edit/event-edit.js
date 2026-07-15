@@ -18,7 +18,6 @@
 
     /* ---------- 1 · parameters ---------- */
     function renderParams() {
-        $('evHeading').textContent = ev ? ev.title : t('New event');
         $('evTitleIn').value = ev ? ev.title : '';
         $('evDescIn').value = (ev && ev.description) || '';
         $('evWebsiteIn').value = (ev && ev.organizer_website) || '';
@@ -203,7 +202,7 @@
     function setHqPin(lat, lon) {
         if (settingHq) return;
         settingHq = true;
-        $('evHqLat').value = lat; $('evHqLon').value = lon;
+        $('evHqLat').value = (+lat).toFixed(6); $('evHqLon').value = (+lon).toFixed(6); // ~0.1 m — no debug-precision coords (#291)
         if (hqMap && hqMap.map) {
             if (hqMarker) hqMarker.remove();
             hqMarker = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([lon, lat]).addTo(hqMap.map);
