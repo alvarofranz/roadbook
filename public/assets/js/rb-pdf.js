@@ -74,12 +74,52 @@
         } catch (e) { /* unreadable logo — skip it */ }
     }
 
+    function fmtDate(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function drawCover(doc, rb, logo) {
+        const title = (rb.meta && rb.meta.title) || 'Roadbook';
+        const author = (rb.meta && rb.meta.author) || '';
+        const now = new Date();
+        const cx = PW / 2;
+        // vertical centre of the page — everything stacks around it
+        let y = PH / 2 - 60;
+        // logo
+        if (logo) {
+            try {
+                const p = doc.getImageProperties(logo);
+                let h = 40, w = h * (p.width / p.height);
+                if (w > 100) { w = 100; h = w * (p.height / p.width); }
+                doc.addImage(logo, p.fileType || 'PNG', cx - w / 2, y, w, h);
+                y += h + 14;
+            } catch (e) { /* skip */ }
+        }
+        // title
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(20);
+        doc.text(title, cx, y, { align: 'center' }); y += 14;
+        // author
+        if (author) {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(60);
+            doc.text(author, cx, y, { align: 'center' }); y += 12;
+        }
+        y = PH / 2 + 30;
+        // date
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100);
+        doc.text(fmtDate(now), cx, y, { align: 'center' }); y += 8;
+        // footer line
+        doc.setFontSize(9); doc.setTextColor(130);
+        doc.text('Roadbook produced with RDBK.app', cx, y, { align: 'center' });
+    }
+
     function buildDoc(jsPDF, rb, tulips, logo) {
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const notes = rb.notes, N = notes.length;
         const total = (rb.meta && rb.meta.total_distance) || (notes[N - 1] && notes[N - 1].distance) || 0;
         const title = (rb.meta && rb.meta.title) || 'Roadbook';
-        const totalPages = N <= ROWS_FIRST ? 1 : 1 + Math.ceil((N - ROWS_FIRST) / ROWS_REST);
+        // cover page + content pages
+        const contentPages = N <= ROWS_FIRST ? 1 : 1 + Math.ceil((N - ROWS_FIRST) / ROWS_REST);
+        const totalPages = 1 + contentPages;
 
         function firstHeader(pageNum) {
             doc.setTextColor(60); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
@@ -102,6 +142,12 @@
             doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(60);
             doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 4, { align: 'right' });
             doc.setDrawColor(120); doc.setLineWidth(0.3); doc.line(LEFT, TOP + H2 - 2, PW - RIGHT, TOP + H2 - 2);
+        }
+        function drawFooter(pageNum) {
+            const fy = PH - BOTTOM + 2;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(140);
+            doc.text(fmtDate(new Date()), LEFT, fy);
+            doc.text(RB.slug(title) + '.pdf', PW - RIGHT, fy, { align: 'right' });
         }
 
         function drawRow(n, tulip, close, x, y, h) {
@@ -137,9 +183,10 @@
             doc.text(`${(+n.lat).toFixed(6)}°  ${(+n.lon).toFixed(6)}°`, x + CW - pad, y + h - 3, { align: 'right' });
         }
 
+        drawCover(doc, rb, logo);
         let i = 0, page = 0;
         while (i < N) {
-            if (page > 0) doc.addPage();
+            doc.addPage();
             const first = page === 0;
             first ? firstHeader(page + 1) : runHeader(page + 1);
             const rows = first ? ROWS_FIRST : ROWS_REST;
@@ -148,6 +195,7 @@
                 const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50;
                 drawRow(notes[i], tulips[i], close, LEFT, top + r * rowH, rowH);
             }
+            drawFooter(page + 1);
             page++;
         }
         doc.save(RB.slug(title) + '.pdf');
