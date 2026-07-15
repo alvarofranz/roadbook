@@ -57,22 +57,23 @@
     /* ---------------- Global header + footer (same on every page) ----------------
        ONE section catalog is the single source of truth for navigation. The web renders it as
        the top bar; the native app renders it as a fixed icon-only bottom tab bar (the top bar is
-       hidden by CSS there). Tripmaster + Recorder live under a single "Navigate" section on both
-       surfaces; in the app, "Events" is also where Ranking lives. */
+       hidden by CSS there). The Recorder is a top-level entry; Reader + Tripmaster live under a
+       single "Navigate" section; in the app, "Events" is also where Ranking lives. */
     // path · i18n label · canonical FontAwesome icon · `covers`: extra route prefixes that light it up.
     const SECTION = {
-        reader:    { path: 'reader/',    label: 'Reader',    icon: 'fa-compass' },
+        recorder:  { path: 'recorder/',  label: 'Recorder',  icon: 'fa-circle-dot' },
         editor:    { path: 'editor/',    label: 'Editor',    icon: 'fa-pen-ruler' },
-        navigate:  { path: 'navigate/',  label: 'Navigate',  icon: 'fa-location-arrow', covers: ['tripmaster', 'recorder'] },
+        navigate:  { path: 'navigate/',  label: 'Navigate',  icon: 'fa-location-arrow', covers: ['tripmaster', 'reader'] },
+        reader:    { path: 'reader/',    label: 'Reader',    icon: 'fa-compass' },
         roadbooks: { path: 'roadbooks/', label: 'Roadbooks', icon: 'fa-book-open' },
         events:    { path: 'events/',    label: 'Events',    icon: 'fa-calendar-check', covers: ['event', 'ranking'] },
         ranking:   { path: 'ranking/',   label: 'Ranking',   icon: 'fa-ranking-star' },
         profile:   { path: 'account/',   label: 'Profile',   icon: 'fa-circle-user', covers: ['account'] },
     };
-    // Web top nav: Tripmaster + Recorder collapse into one "Navigate" entry; the rest is unchanged.
+    // Web top nav: the Recorder is its own entry; Reader + Tripmaster collapse into "Navigate".
     // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
-    const WEB_NAV = ['reader', 'editor', 'navigate', 'roadbooks', 'events', 'ranking'];
-    const APP_TABS = ['reader', 'editor', 'navigate', 'events', 'profile'];
+    const WEB_NAV = ['recorder', 'editor', 'navigate', 'roadbooks', 'events', 'ranking'];
+    const APP_TABS = ['recorder', 'editor', 'navigate', 'events', 'profile'];
     // Common words are translated; product names stay as-is (RBt falls back to English regardless).
     const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
 
