@@ -12,7 +12,7 @@
             'flow.kicker': 'Features', 'flow.title': 'Everything you need',
             'flow.s1': 'Record a route', 'flow.s2': 'Build a roadbook', 'flow.s3': 'Use it with friends', 'flow.s4': 'Run a club event',
             'feat.1.t': 'Roadbook Editor', 'feat.1.d': 'Build a roadbook from a GPX, Design each note with rally standards.',
-            'feat.2.t': 'Track Recorder', 'feat.2.d': 'Record live GPX, dropping waypoints with voice recognition and photos.',
+            'feat.2.t': 'Roadbook Recorder', 'feat.2.d': 'Record a Roadbook with waypoints, voice memos, photos and geotags.',
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Navigate with odometer, bearing, a live map and the CAP direction bar.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'A precise GPS odometer with no roadbook — partial and total distance.',
             'feat.7.t': 'Event classification', 'feat.7.d': 'Run a rally on one roadbook: compare every team’s run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.',
@@ -89,7 +89,7 @@
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.',
             'seo.feat_reader.title': 'Roadbook Reader — RDBK.app', 'seo.feat_reader.desc': 'Navigate any roadbook with GPS: odometer, bearing, live map, CAP direction bar and automatic waypoint validation.',
-            'seo.feat_recorder.title': 'Track Recorder — RDBK.app', 'seo.feat_recorder.desc': 'Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos.',
+            'seo.feat_recorder.title': 'Roadbook Recorder — RDBK.app', 'seo.feat_recorder.desc': 'Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos.',
             'seo.feat_tripmaster.title': 'Tripmaster — RDBK.app', 'seo.feat_tripmaster.desc': 'A precise GPS trip computer: partial and total odometer, speed alerts, heading, stopwatch and GPX recording — no roadbook needed.',
             'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',
             'seo.feat_events.title': 'Organising an event — RDBK.app', 'seo.feat_events.desc': 'How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.',
@@ -110,6 +110,7 @@
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live classification for this event. Scan the result QR from each vehicle after their run.',
             'Ranking': 'Ranking',
+            'Record a GPX track live with GPS.': 'Record a Roadbook with geotagged notes, photos and voice memos.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
