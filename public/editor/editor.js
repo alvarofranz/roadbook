@@ -1139,7 +1139,8 @@
         const prog = RBTranscribe.ready() ? null : progressModal();
         btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>';
         try {
-            const text = await RBTranscribe.run(url, { lang: meUser && meUser.voice_lang, onProgress: (p) => prog && prog.set(p.pct) });
+            const lang = (meUser && meUser.voice_lang) || navigator.language; // force a language — tiny auto-detect is unreliable
+            const text = await RBTranscribe.run(url, { lang, onProgress: (p) => prog && prog.set(p.pct) });
             if (prog) prog.close();
             if (!text) return toast(t('No speech detected.'));
             const n = rb.notes[i];
