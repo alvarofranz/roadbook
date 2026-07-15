@@ -769,12 +769,45 @@
         el.querySelector('.site-banner-x').onclick = () => { el.remove(); try { localStorage.setItem(BANNER_DISMISSED, banner.text); } catch (e) {} };
     }
 
+    // Management links (admin console + organizer tools), as data so the header account dropdown
+    // (desktop) and the Profile page's mobile panel render from ONE source (#303). On mobile the
+    // top bar — and its dropdown — is hidden, so admins/organizers reach these from the Profile page.
+    function manageLinks(user, participant) {
+        if (participant || !user) return [];
+        if (user.is_admin) return [
+            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Public Roadbooks',       group: 0 },
+            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
+            { href: 'admin/participants/', icon: 'fa-users',          label: 'Participant management', group: 1 },
+            { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
+            { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },
+            { href: 'admin/trash/',        icon: 'fa-trash-can',      label: 'Roadbook trash',         group: 2 },
+            { href: 'admin/logs/',         icon: 'fa-list-check',     label: 'Logs',                   group: 2 },
+        ];
+        if (user.is_organizer || user.manages_events) return [
+            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 0 },
+            { href: 'admin/participants/', icon: 'fa-users',          label: 'Participant management', group: 0 },
+        ];
+        return [];
+    }
+    // Render management links as <a> rows, with a separator between groups.
+    function manageLinksHTML(links) {
+        return links.map((l, i) => (i && l.group !== links[i - 1].group ? '<hr class="menu-sep">' : '')
+            + `<a href="${ROOT}${l.href}"><i class="fa-solid ${l.icon}"></i> ${RBt(l.label)}</a>`).join('');
+    }
+
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
         const cfg = await RBConfig();
         const user = cfg.user || null;
         const participant = cfg.participant || null;
         renderBanner(cfg.banner);
+        // Profile page (mobile): the header dropdown that lists the management links is hidden below
+        // the tab-bar breakpoint, so surface them in the page body for admins/organizers (#303).
+        const manageSlot = document.getElementById('accManage');
+        if (manageSlot) {
+            const linksHTML = manageLinksHTML(manageLinks(user, participant));
+            if (linksHTML) { manageSlot.querySelector('.acc-manage-links').innerHTML = linksHTML; manageSlot.hidden = false; }
+        }
         // Admins get the in-context UI translation editor (#118) — a small script loaded only for
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
         if (user && user.is_admin) { const s = document.createElement('script'); s.src = ROOT + 'assets/js/i18n-edit.js'; s.async = true; document.head.appendChild(s); }
@@ -799,16 +832,7 @@
                     <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
                         ${participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`}
-                        ${participant ? '' : (user.is_admin ? `<a href="${ROOT}admin/roadbooks/"><i class="fa-solid fa-globe"></i> ${RBt('Public Roadbooks')}</a>
-                        <hr class="menu-sep">
-                        <a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a>
-                        <a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>
-                        <hr class="menu-sep">
-                        <a href="${ROOT}admin/"><i class="fa-solid fa-users-gear"></i> ${RBt('User management')}</a>
-                        <a href="${ROOT}admin/config/"><i class="fa-solid fa-sliders"></i> ${RBt('Site settings')}</a>
-                        <a href="${ROOT}admin/trash/"><i class="fa-solid fa-trash-can"></i> ${RBt('Roadbook trash')}</a>
-                        <a href="${ROOT}admin/logs/"><i class="fa-solid fa-list-check"></i> ${RBt('Logs')}</a>` : '')}
-                        ${participant ? '' : ((!user.is_admin && (user.is_organizer || user.manages_events)) ? `<hr class="menu-sep"><a href="${ROOT}admin/events/"><i class="fa-solid fa-flag-checkered"></i> ${RBt('Event management')}</a><a href="${ROOT}admin/participants/"><i class="fa-solid fa-users"></i> ${RBt('Participant management')}</a>` : '')}
+                        ${manageLinksHTML(manageLinks(user, participant))}
                         ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
