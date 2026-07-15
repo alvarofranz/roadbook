@@ -17,3 +17,5 @@ Note specifiche per opencode:
 - **Deploy**: mai mergiare PR o pushare in produzione senza il tuo esplicito OK dopo che hai
   testato su ddev. Dopo aver implementato una modifica, chiedo sempre conferma prima di
   procedere al merge/deploy.
+- **PR**: prima di aprire una nuova PR devo chiederti di testare le modifiche su DDEV e
+  attendere il tuo ok.
