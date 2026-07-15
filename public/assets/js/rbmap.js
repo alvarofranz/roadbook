@@ -28,9 +28,8 @@ const RASTER_SATELLITE = {
 };
 const RASTER_OSM = {
     version: 8,
-    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 20,
-        tiles: ['https://tiles.openfreemap.org/standard/{z}/{x}/{y}.png'],
+    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19,
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         attribution: '© OpenStreetMap' } },
     layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
