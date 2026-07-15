@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.3.6-11">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.3.6-11">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.4.0-12">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.4.0-12">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -135,7 +135,7 @@
         <tr><td><code>road_type_out</code></td><td>0–4</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
         <tr><td><code>speed_limit</code></td><td>integer, optional</td><td data-i18n="Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.">Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.</td></tr>
         <tr><td><code>danger</code></td><td>1–3, optional</td><td data-i18n-html="notes.danger">FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
-        <tr><td><code>wp_type</code></td><td>string, optional</td><td data-i18n="notes.wp_type">Optional. FIA waypoint type: the seven types masked / control / security / navigation / precise / visible / eclipse, plus the start/finish, selective-section, zone and control markers. Rendered as a coloured acronym badge by the note number and mapped to a Garmin/OSMAnd symbol on GPX export.</td></tr>
+        <tr><td><code>wp_type</code></td><td>string, optional</td><td data-i18n="notes.wp_type">Optional. FIA waypoint type: the seven types masked / control / security / navigation / precise / visible / eclipse, plus the start/finish, selective-section, zone and control markers. In a stored .rdbk file the value is written as its OpenRally standard code (WPM, WPN, WPE, WPS, WPC, WPP, WPV, DSS, ASS, DZ, FZ, DN, FN, DT, FT, CP, PC, STOP), which a reader maps back to these types on import. Rendered as a coloured acronym badge by the note number and mapped to a Garmin/OSMAnd symbol on GPX export.</td></tr>
         <tr><td><code>wp_radius</code></td><td>integer, optional</td><td data-i18n="notes.wp_radius">Optional. Per-note validation radius (metres). When absent, falls back to <code>meta.default_wp_radius</code> then the type default.</td></tr>
         <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
         <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
@@ -258,12 +258,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.3.6-11"></script>
-<script src="../assets/js/i18n.it.js?v=1.3.6-11"></script>
-<script src="../assets/js/i18n.de.js?v=1.3.6-11"></script>
-<script src="../assets/js/i18n.fr.js?v=1.3.6-11"></script>
-<script src="../assets/js/i18n.js?v=1.3.6-11"></script>
-<script src="../assets/js/roadbook-core.js?v=1.3.6-11"></script>
-<script src="../assets/js/app.js?v=1.3.6-11"></script>
+<script src="../assets/js/i18n.es.js?v=1.4.0-12"></script>
+<script src="../assets/js/i18n.it.js?v=1.4.0-12"></script>
+<script src="../assets/js/i18n.de.js?v=1.4.0-12"></script>
+<script src="../assets/js/i18n.fr.js?v=1.4.0-12"></script>
+<script src="../assets/js/i18n.js?v=1.4.0-12"></script>
+<script src="../assets/js/roadbook-core.js?v=1.4.0-12"></script>
+<script src="../assets/js/app.js?v=1.4.0-12"></script>
 </body>
 </html>

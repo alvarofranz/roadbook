@@ -188,7 +188,7 @@
             'meta.map_access': 'Optional. Gibt an ob ein Reader während der Navigation eine Karte anzeigen darf. Fehlt oder <code>true</code> = erlaubt; <code>false</code> verbirgt die Karte.',
             'meta.profile': 'Optional. Definiert das Wegpunkt-Typ-Vokabular: <code>basic</code> (Standard) oder <code>rally</code> (vollständiger FIA-Satz). Fehlt = basic.',
             'meta.default_wp_radius': 'Optional. Standard-Validierungsradius (Meter) für Wegpunkte ohne eigenen <code>wp_radius</code>.',
-            'notes.wp_type': 'Optional. FIA-Wegpunkt-Typ: masked / control / security / navigation / precise / visible / eclipse sowie Start/Ziel- und Kontrollmarkierungen.',
+            'notes.wp_type': 'Optional. FIA-Wegpunkt-Typ: masked / control / security / navigation / precise / visible / eclipse sowie Start/Ziel- und Kontrollmarkierungen. In einer .rdbk-Datei wird der Wert als OpenRally-Standardcode (WPM, WPN, WPE, …) gespeichert, den ein Reader beim Import auf diese Typen zurückführt.',
             'notes.wp_radius': 'Optional. Validierungsradius der Note (Meter). Fehlt er, wird auf <code>meta.default_wp_radius</code> zurückgegriffen.',
             'track.intro': 'Ein geordnetes Array von Punkten das die Route beschreibt. Jeder Punkt kann ein optionales <code>ele</code> tragen — Höhe in ganzen Metern.',
             'The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.': 'Das Herzstück eines Roadbooks: eine geordnete Liste von Wegpunkten, jeder mit einer Anweisung, einem Kurs und Symbolen.',
