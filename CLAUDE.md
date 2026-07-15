@@ -428,12 +428,13 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   page. The launcher is the app's opening screen (one tile per section, explained); there is no
   "home" button back to it — navigation is the bottom tab bar.
 - **Navigation — one section catalog, two presentations (`SECTION`/`WEB_NAV`/`APP_TABS` in
-  `app.js`).** Sections: **Reader · Editor · Navigate · Events · Profile** (bottom bar) plus
-  **Roadbooks · Ranking** (web top nav only). *Desktop web* renders the top bar (Tripmaster +
-  Recorder collapse into a single **Navigate** entry → the `/navigate/` hub). *Every mobile-width
+  `app.js`).** Sections: **Recorder · Editor · Navigate · Events · Profile** (bottom bar) plus
+  **Roadbooks · Ranking** (web top nav only). *Desktop web* renders the top bar (the Recorder is a
+  top-level entry; Reader + Tripmaster collapse into a single **Navigate** entry → the `/navigate/`
+  hub). *Every mobile-width
   view — web, PWA and the native app alike* — hides the top bar and shows a fixed icon-only
   **bottom tab bar** (Instagram-style); there is no hamburger/full-screen menu. "Navigate" covers
-  `/tripmaster/` + `/recorder/`; "Events" covers `/event/` + `/ranking/` (Ranking lives under
+  `/tripmaster/` + `/reader/`; "Events" covers `/event/` + `/ranking/` (Ranking lives under
   Events). The **language is browser-detected** and only changed at the bottom of the Profile page
   (no picker in the nav). The site footer is hidden on mobile (its About/Privacy/Terms links move
   to the Profile page); Install + unsaved-work chips float above the tab bar.
@@ -527,9 +528,9 @@ The `roadbook.json` schema:
   `.rbp-head`), override it to `row` or the action stacks under the title.
 - **Icon consistency — one canonical FontAwesome icon per tool, everywhere.** A tool must use
   the SAME icon across the home workflow step, its Features card, its `/features/<tool>/` page
-  and the native launcher — never a different glyph for the same tool. Canonical set: **Track
+  and the native launcher — never a different glyph for the same tool. Canonical set: **Roadbook
   Recorder** `fa-circle-dot` · **Roadbook Editor** `fa-pen-ruler` · **Roadbook Reader**
   `fa-compass` · **Tripmaster** `fa-gauge-high` · **Event classification (Ranking)**
-  `fa-ranking-star`. The nav sections add **Navigate** `fa-location-arrow` (the Tripmaster +
-  Recorder hub) · **Events** `fa-calendar-check` · **Profile** `fa-circle-user`. The two-level-deep
+  `fa-ranking-star`. The nav sections add **Navigate** `fa-location-arrow` (the Reader +
+  Tripmaster hub) · **Events** `fa-calendar-check` · **Profile** `fa-circle-user`. The two-level-deep
   `/features/<tool>/` pages use `../../assets/…`.

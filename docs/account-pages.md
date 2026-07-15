@@ -26,7 +26,7 @@ mostra `.app-only`.
 | Blocco | Visibilità | Contenuto |
 |--------|------------|-----------|
 | Hero | solo web (`.web-only`) | Titolo, lead, e i 4 passi del workflow: registra → costruisci → usa con amici → organizza un evento ([index.html:24](../public/index.html#L24)) |
-| Features | solo web | Le card degli strumenti: Track Recorder, Roadbook Editor, Roadbook Reader, Tripmaster, Event classification, più *Events* (coming soon) |
+| Features | solo web | Le card degli strumenti: Roadbook Recorder, Roadbook Editor, Roadbook Reader, Tripmaster, Event classification, più *Events* (coming soon) |
 | Install / Cross-platform | solo web | PWA installabile su Windows, macOS/iOS, Android ([index.html:63](../public/index.html#L63)) |
 | App launcher | solo app nativa (`.app-only`) | Tre tile verso Reader, Tripmaster, Recorder ([index.html:77](../public/index.html#L77)) |
 | Gallery / Public Challenges | web **e** app | Griglia delle challenge pubbliche, popolata da JS ([index.html:86](../public/index.html#L86)) |

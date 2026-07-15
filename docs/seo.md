@@ -119,11 +119,11 @@ Reading a public roadbook requires a signed-in account (#146): the Reader and th
 
 | Lang | Title | Description |
 |---|---|---|
-| English | Track Recorder — RDBK.app | Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos. |
-| Italiano | Track Recorder — RDBK.app | Registra il tuo percorso dal vivo con il GPS — campionamento consapevole dell’accuratezza, pausa/ripresa, GPX a prova di crash e foto geotaggate. |
-| Español | Track Recorder — RDBK.app | Graba tu ruta en directo con GPS — muestreo según la precisión, pausa/reanudación, GPX a prueba de fallos y fotos geolocalizadas. |
-| Deutsch | Track Recorder — RDBK.app | Zeichne deine Strecke live mit GPS auf — genauigkeitsbewusstes Sampling, Pause/Fortsetzen, absturzsicheres GPX und geotaggte Fotos. |
-| Français | Track Recorder — RDBK.app | Enregistrez votre parcours en direct au GPS — échantillonnage selon la précision, pause/reprise, GPX à l’épreuve des plantages et photos géolocalisées. |
+| English | Roadbook Recorder — RDBK.app | Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos. |
+| Italiano | Roadbook Recorder — RDBK.app | Registra il tuo percorso dal vivo con il GPS — campionamento consapevole dell’accuratezza, pausa/ripresa, GPX a prova di crash e foto geotaggate. |
+| Español | Roadbook Recorder — RDBK.app | Graba tu ruta en directo con GPS — muestreo según la precisión, pausa/reanudación, GPX a prueba de fallos y fotos geolocalizadas. |
+| Deutsch | Roadbook Recorder — RDBK.app | Zeichne deine Strecke live mit GPS auf — genauigkeitsbewusstes Sampling, Pause/Fortsetzen, absturzsicheres GPX und geotaggte Fotos. |
+| Français | Roadbook Recorder — RDBK.app | Enregistrez votre parcours en direct au GPS — échantillonnage selon la précision, pause/reprise, GPX à l’épreuve des plantages et photos géolocalisées. |
 
 ### `/features/tripmaster/`
 
