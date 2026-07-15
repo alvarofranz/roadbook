@@ -1013,7 +1013,7 @@
     }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const r = await RBApi('rb_save', { id: currentRbId, status, reusable, roadbook: rb });
+        const r = await RBApi('rb_save', { id: currentRbId, status, reusable, roadbook: RB.roadbookForExport(rb) });
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft();
             if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
@@ -1756,7 +1756,7 @@
     // (so a later import can re-upload them). Media-less exports are just a ZIP with roadbook.json.
     async function exportRdbk(includeMedia) {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const files = { 'roadbook.json': JSON.stringify(rb) };
+        const files = { 'roadbook.json': JSON.stringify(RB.roadbookForExport(rb)) };
         if (includeMedia) {
             const media = { photos: [], audio: [] };
             const grab = async (list, dir, bucket) => {

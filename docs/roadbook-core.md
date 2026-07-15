@@ -31,13 +31,14 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
 | `simplifyRoadbook`, `reverseRoadbook`, `nearestOnTrack` | operazioni traccia (§7) |
 | `gpxDocument`, `kmlDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / KML / OpenRally (§7) |
-| `WP_TYPES`, `wpType`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
+| `WP_TYPES`, `wpType`, `wpTypeByCap`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
 | `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
 | **scoring** — `scoredNoteSet`, `isScoredIdx`, `validationPenalties`, `speedPenalty`, `skipPenalty`, `rankEntry`, `speedBand` | motore di punteggio condiviso Reader↔Ranking (vedi [ranking-model.md](ranking-model.md)) |
 | `hhmmss`, `ddmmyy`, `parseHms` | codec orari del payload META |
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
 | `iconSrc`         | risoluzione sorgente di un'icona (§10) |
 | `tulipToDataURL`  | converte il tulip SVG di una nota in data URI PNG (usato per esportazione/embedding) |
+| `roadbookForExport` | deep-clona il roadbook sostituendo gli ID interni di `wp_type` con i codici OpenRally standard (WPM, WPN, …) — usato prima di serializzare .rdbk / salvare sul server |
 | `filterByText`, `filterRoadbooks` | filtro testuale generico / di una lista di roadbook (§11) |
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |

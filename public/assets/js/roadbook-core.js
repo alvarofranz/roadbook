@@ -88,8 +88,11 @@
         { id: 'stop', tier: 'rally', cap: 'STOP', name: 'Stop',             color: '#ff5a45', sym: 'Stop',        osm: 'special_marker' },
     ];
     const WP_TYPE_BY_ID = {}; WP_TYPES.forEach((w) => { WP_TYPE_BY_ID[w.id] = w; });
+    const WP_TYPE_BY_CAP = {}; WP_TYPES.forEach((w) => { if (w.cap) WP_TYPE_BY_CAP[w.cap] = w; });
     // Look up a type by id (null when unset/unknown). The badge label is its acronym or glyph.
     function wpType(id) { return (id && WP_TYPE_BY_ID[id]) || null; }
+    // Look up a type by its OpenRally cap code (e.g. 'WPM' → masked).
+    function wpTypeByCap(cap) { return (cap && WP_TYPE_BY_CAP[cap]) || null; }
     // The types offered for a roadbook profile: core always; rally adds the full FIA set.
     function wpTypesForProfile(profile) { return WP_TYPES.filter((w) => w.tier === 'core' || profile === 'rally'); }
     // The geofence radius (metres) for auto-validating a note. Precedence: the note's own
@@ -280,7 +283,7 @@
             };
             if (r.danger >= 1 && r.danger <= 3) note.danger = Math.round(r.danger);
             const orPass = r.or.filter((e) => {
-                if (e.tag === 'wptType') { if (wpType(e.text)) note.wp_type = e.text; return false; }
+                if (e.tag === 'wptType') { const w = wpType(e.text) || wpTypeByCap(e.text); if (w) { note.wp_type = w.id; return false; } }
                 return true;
             });
             if (orPass.length) note.openrally = orPass;
@@ -469,6 +472,9 @@
         delete meta.titolo; delete meta.km_totali;
         delete meta.logo_path; // server-side path from the suite — not embeddable, not part of the format
         rb.notes = (rb.notes || []).map((n) => {
+            // Normalize wp_type: accept both internal IDs (masked, navigation…) and
+            // OpenRally cap codes (WPM, WPN…) from third-party .rdbk files.
+            if (n.wp_type) { const w = wpType(n.wp_type) || wpTypeByCap(n.wp_type); if (w) n.wp_type = w.id; }
             if ('testo' in n) { n.text ??= n.testo; delete n.testo; }
             if ('km_prog' in n) { n.distance ??= Math.round((n.km_prog || 0) * 1000); delete n.km_prog; }
             if ('km_parz' in n) { n.partial_distance ??= Math.round((n.km_parz || 0) * 1000); delete n.km_parz; }
@@ -767,7 +773,7 @@
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
-            if (n.wp_type) ext.push(`<openrally:wptType>${x(n.wp_type)}</openrally:wptType>`);
+            if (n.wp_type) { const w = wpType(n.wp_type); ext.push(`<openrally:wptType>${x(w ? w.cap : n.wp_type)}</openrally:wptType>`); }
             if (Array.isArray(n.openrally) && n.openrally.length) {
                 // imported note: re-emit every preserved param verbatim (cap·danger·speed·wp types·zones·…)
                 n.openrally.forEach((e) => ext.push(emitOr(e)));
@@ -785,6 +791,17 @@
         return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1" xmlns:openrally="${NS}">`
             + `<metadata><name>${x(name)}</name><extensions><openrally:units>metric</openrally:units><openrally:distance>${(totalM / 1000).toFixed(3)}</openrally:distance></extensions></metadata>`
             + `${wpts}<trk><name>${x(name)}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
+    }
+
+    // Deep-clone the roadbook with OpenRally cap codes in place of internal wp_type
+    // IDs, so .rdbk export / server save carry interoperable codes (WPM, WPN, …)
+    // instead of internal ones (masked, navigation, …). The clone leaves rb unchanged.
+    function roadbookForExport(rb) {
+        const out = JSON.parse(JSON.stringify(rb));
+        (out.notes || []).forEach((n) => {
+            if (n.wp_type) { const w = wpType(n.wp_type); if (w && w.cap) n.wp_type = w.cap; }
+        });
+        return out;
     }
 
     // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
@@ -1012,13 +1029,14 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
+        roadbookForExport,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, recStepM,
     };

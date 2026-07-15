@@ -378,11 +378,20 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 > **solo-distanza** (l'example ufficiale, wpt a 0,0) → **traccia segnaposto** spaziata per
 > `openrally:distance`, con avviso a ridisegnarla sulla mappa.
 >
-> **Passthrough completo:** ogni elemento `openrally:` del wpt **tranne** `distance`/`tulip`
-> (rigenerati) è conservato verbatim in **`note.openrally`** — `cap`, `danger`, `speed`, tipi
-> WP (`wpm/wpe/wps/wpc/wpv/wpp/wpn`), zone (`dss/ass/dz/fz/dt/ft/fn/checkpoint/stop/timecontrol/
-> neutralization/fuel/reset`), `show_coordinates`, `notes`. Essendo dentro il JSON del roadbook,
-> **sopravvive a save/reimport** (sia `.rdbk` sia profilo server) e viene riemesso all'export.
+> **Mappatura `wp_type` (Phase-2, #13):** i codici OpenRally standard (`WPM`, `WPN`, `WPE`,
+> `WPS`, `WPC`, `WPP`, `WPV`, `DSS`, `ASS`, `DZ`, `FZ`, `DN`, `FN`, `DT`, `FT`, `CP`, `PC`,
+> `STOP`) sono riconosciuti all'import e tradotti negli ID interni RDBK (`masked`, `navigation`,
+> ecc.) tramite `wpTypeByCap()`. All'export avviene la conversione inversa: gli ID interni sono
+> emessi come codici standard. Il campo `note.wp_type` viene quindi popolato correttamente →
+> badge colore, raggio FIA predefinito e comportamento nel Reader. I codici non riconosciuti
+> passano ancora verbatim in `note.openrally`.
+>
+> **Passthrough (elementi non mappati):** ogni elemento `openrally:` del wpt **tranne**
+> `distance`/`tulip` (rigenerati) e `wptType` (ora mappato) è conservato verbatim in
+> **`note.openrally`** — `cap`, `danger`, `speed`, zone (`dss/ass/dz/fz/dt/ft/fn/checkpoint/
+> stop/timecontrol/neutralization/fuel/reset`), `show_coordinates`, `notes`. Essendo dentro il
+> JSON del roadbook, **sopravvive a save/reimport** (sia `.rdbk` sia profilo server) e viene
+> riemesso all'export.
 >
 > **Tulip importato:** è un'immagine opaca → diventa un'icona **`cover`** che `NoteCanvas.toSVG`
 > rende a tutto-box, da sola (vale anche per Reader e PDF). Nel picker "Tuoi (in questo

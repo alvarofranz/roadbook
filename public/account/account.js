@@ -273,7 +273,7 @@
             if (!r.ok || !r.roadbook) continue;
             const rb = r.roadbook;
             if (!rb.meta) rb.meta = {}; if (!rb.meta.title) rb.meta.title = rbMeta.title;
-            const innerFiles = { 'roadbook.json': JSON.stringify(rb) };
+            const innerFiles = { 'roadbook.json': JSON.stringify(RB.roadbookForExport(rb)) };
             const media = { photos: [], audio: [] };
             const ph = await api('ph_list', { roadbook: rbMeta.id });
             if (ph.ok && ph.photos) {
