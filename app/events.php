@@ -281,6 +281,15 @@ function event_join_code(array $user, array $d): void {
         db()->prepare('UPDATE events SET join_code = NULL WHERE id = ?')->execute([(int)$e['id']]);
         json_out(['ok' => true, 'join_code' => null]);
     }
+    $code = trim((string)($d['code'] ?? ''));
+    if ($code !== '') {
+        $code = strtoupper($code);
+        if (strlen($code) < 4 || strlen($code) > 16) fail('Join code must be 4–16 characters.');
+        try {
+            db()->prepare('UPDATE events SET join_code = ? WHERE id = ?')->execute([$code, (int)$e['id']]);
+            json_out(['ok' => true, 'join_code' => $code]);
+        } catch (\Throwable $x) { fail('Code already in use.', 409); }
+    }
     for ($try = 0; $try < 5; $try++) { // regenerate until unique (the column is UNIQUE; collisions are ~impossible)
         $code = strtoupper(bin2hex(random_bytes(4)));
         try {

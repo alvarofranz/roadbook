@@ -38,9 +38,8 @@
         .ev-add-row .field { flex: 1; margin: 0; }
         .ev-add-row .btn { width: auto; }
         .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
-        /* join code + all its actions (Copy · New code · Disable · View participants) stay on one row (#291) */
-        #joinRow { flex-wrap: nowrap; }
-        #joinRow .meta { min-width: 0; white-space: nowrap; }
+        /* the join code sits on its own row; its actions (Copy · New code · Disable · View participants) wrap to the next row (#309) */
+        #joinRow .meta { flex-basis: 100%; white-space: nowrap; }
         /* the add-roadbook picker (inside the modal): scrollable result list */
         .ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
         /* the event logo (#151): avatar-style preview beside its upload/remove actions */
@@ -142,6 +141,11 @@
                 <button class="btn btn-ghost" id="joinClear" type="button" hidden><i class="fa-solid fa-ban icon-danger"></i> <span data-i18n="Disable joining">Disable joining</span></button>
                 <a class="btn btn-ghost" id="ppPageLink"><i class="fa-solid fa-users"></i> <span data-i18n="View participants">View participants</span></a>
             </div>
+            <!-- set a specific join code manually -->
+            <div class="ev-add-row" id="joinSetRow" hidden>
+                <input id="joinCodeIn" class="field" placeholder="ABCD1234" maxlength="16" autocomplete="off" style="max-width:12rem;font-family:ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase">
+                <button class="btn btn-ghost" id="joinSetBtn" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Set join code">Set join code</span></button>
+            </div>
 
             <!-- the shareable participant link (#163) — same card, shown only when a join code exists -->
             <div class="ev-participant-link" id="evLink" hidden>
@@ -150,6 +154,9 @@
                 <div class="ev-line" id="evLinkRow">
                     <a class="meta ev-link-url" id="evLinkUrl" href="" target="_blank" rel="noopener"></a>
                     <button class="btn btn-ghost" id="evLinkCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
+                </div>
+                <div class="ev-line" id="evQrRow" style="margin-top:.6rem;gap:1rem;">
+                    <canvas id="evQrCode" width="140" height="140" style="background:#fff;border-radius:8px;padding:4px;flex:none;" hidden></canvas>
                 </div>
             </div>
         </section>
@@ -164,6 +171,7 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="../../../assets/js/qrcode.min.js?v=1.4.1-13"></script>
 <script src="../../../assets/js/config.js?v=1.4.1-13"></script>
 <script src="../../../assets/js/roadbook-core.js?v=1.4.1-13"></script>
 <script src="../../../assets/js/rbmap.js?v=1.4.1-13"></script>

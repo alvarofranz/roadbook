@@ -2017,9 +2017,12 @@
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
                     currentRbId = id; setStatus(r.status); reusable = !!r.reusable; setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
+            } else {
+                toast(t('Roadbook not found or no edit rights.')); // explicit target failed → show error, don't fall through to the list
+                return;
             }
         }
-        if (!rb && meUser) {
+        if (!id && !rb && meUser) {
             const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; // landing → list the user's saved roadbooks
             // …plus the roadbooks you can edit through your events (#123), each named after its event
             const ce = await RBApi('rb_coedit_list');

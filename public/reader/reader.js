@@ -31,6 +31,7 @@
     // (per-note radius, capped by neighbour spacing, floored above GPS noise) is RB.reachRadius.
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
+    const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop(); // roadbook slug from URL
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
 
@@ -146,7 +147,6 @@
         if (!eventSlug) return;
         try {
             const j = await RBApi('event_get', { slug: eventSlug });
-            const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop();
             const rbId = +(new URLSearchParams(location.search).get('rb') || 0);
             const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug || (rbId && x.id === rbId));
             if (er) applyModeLock(er.scoring_mode && er.scoring_mode !== 'free' ? 'competition' : 'trip');
@@ -489,6 +489,7 @@
             team, date: RB.ddmmyy(endedAt || new Date()), start: RB.hhmmss(startedAt), end: RB.hhmmss(endedAt),
             accuracy: Math.min(9999, Math.round(pen.acc)), skip: Math.min(9999, pen.skip), extra: Math.min(9999, Math.round(pen.extra)),
             cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, penSpeed), km: Math.min(99999, km), avg: Math.min(999, avg),
+            rb: rbSlug || '',
         });
         lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
         const qr = qrcode(0, 'M'); qr.addData(lastPayload); qr.make();

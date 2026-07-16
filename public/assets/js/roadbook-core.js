@@ -141,7 +141,7 @@
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
-        META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],
+        META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3, 6],
     };
 
     /* ---------------- GPX parsing ---------------- */
@@ -893,13 +893,17 @@
     }
 
     /* ---------------- result META (49-char QR payload) ---------------- */
-    const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg'];
+    const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg', 'rb'];
     function buildMeta(f) {
-        // Fixed-width numeric fields: clamp negatives to 0 and saturate to all-9s on
-        // overflow (never let a '-' or a left-truncated value corrupt the string).
-        // padStart restores leading zeros for fields like date/start/end.
+        // Fixed-width fields: numeric (padStart zero, saturate all-9s) or string (padEnd space, truncate).
+        // `rb` is the 6-char roadbook slug prefix.
         return META_KEYS.map((k, i) => {
             const w = CONST.META_WIDTHS[i];
+            if (k === 'rb') {
+                let s = String(f[k] || '');
+                if (s.length > w) s = s.slice(0, w);
+                return s.padEnd(w, ' ');
+            }
             const v = Math.max(0, Math.round(Number(f[k]) || 0));
             let s = String(v);
             if (s.length > w) s = '9'.repeat(w);

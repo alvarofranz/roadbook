@@ -72,7 +72,7 @@
     };
     // Web top nav: the Recorder is its own entry; Reader + Tripmaster collapse into "Navigate".
     // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
-    const WEB_NAV = ['recorder', 'editor', 'navigate', 'roadbooks', 'events', 'ranking'];
+    const WEB_NAV = ['recorder', 'editor', 'navigate', 'roadbooks', 'events'];
     const APP_TABS = ['recorder', 'editor', 'navigate', 'events', 'profile'];
     // Common words are translated; product names stay as-is (RBt falls back to English regardless).
     const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };

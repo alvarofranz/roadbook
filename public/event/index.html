@@ -42,6 +42,7 @@
         .ev-qr-right { flex: 1; min-width: 12rem; }
         .ev-qr-right p { margin: 0 0 .4rem; font-size: .88rem; color: var(--text); }
         .ev-token { font-size: 2.4rem; font-weight: 800; letter-spacing: .25em; word-break: break-all; user-select: all; background: var(--card); padding: .3rem .8rem; border-radius: 8px; text-align: center; font-family: ui-monospace, monospace; }
+        .ev-rb-list { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
     </style>
 </head>
 <body>
@@ -71,12 +72,13 @@
             </div>
         </div>
         <div class="ev-join" id="evJoin" hidden></div>
-        <div class="ev-ranking" id="evRanking" hidden>
-            <div class="card-head"><h2><i class="fa-solid fa-ranking-star icon-accent"></i> <span data-i18n="Ranking">Ranking</span></h2><a class="btn btn-primary" id="evRankingLink" href="#"><i class="fa-solid fa-ranking-star"></i> <span data-i18n="Open ranking">Open ranking</span></a></div>
-            <p class="muted small" data-i18n="Live classification for this event. Scan the result QR from each vehicle after their run.">Live classification for this event. Scan the result QR from each vehicle after their run.</p>
-        </div>
         <div class="icon-category" data-i18n="Roadbooks">Roadbooks</div>
         <div class="gallery" id="evRoadbooks"></div>
+        <div class="ev-ranking" id="evRanking" hidden>
+            <div class="card-head"><h2><i class="fa-solid fa-ranking-star icon-accent"></i> <span data-i18n="Ranking">Ranking</span></h2></div>
+            <p class="muted small" data-i18n="Live classification for this event. Open the ranking for a specific competition roadbook to scan result QRs.">Live classification for this event. Open the ranking for a specific competition roadbook to scan result QRs.</p>
+            <div id="evRankingLinks" class="ev-rb-list"></div>
+        </div>
     </article>
 </main>
 
