@@ -160,7 +160,7 @@ describe('producer → consumer: a scored run through META and back', () => {
             accuracy: Math.round(pen.acc), skip: pen.skip, extra: Math.round(pen.extra),
             cap: Math.round(pen.cap), speed: pen.speed, km: 15, avg: 300,
         });
-        expect(meta).toHaveLength(49);
+        expect(meta).toHaveLength(55); // 49 + 6 (rb field added by #294)
         const r = RB.rankEntry(RB.parseMeta(meta), 30);
         expect(r.team).toBe(12);
         expect(r.km).toBe(1.5);
