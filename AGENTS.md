@@ -17,3 +17,8 @@ Note specifiche per opencode:
 - **Deploy**: mai mergiare PR o pushare in produzione senza il tuo esplicito OK dopo che hai
   testato su ddev. Dopo aver implementato una modifica, chiedo sempre conferma prima di
   procedere al merge/deploy.
+- **Test automatici**: prima di chiedere all'utente di testare, esegui `npm test` su ddev per
+  verificare che i test passino. Se non passano, risolvi prima.
+- **Test di non regressione**: dopo l'approvazione della PR, i test relativi alla modifica
+  vanno inseriti nella suite automatica come test di non regressione (stessa directory
+  `tests/` con Vitest).

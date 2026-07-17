@@ -48,6 +48,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Camera: QR code scanning for the event participants page (#311). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <!-- Voice notes: capture the WP-audio clip in the Recorder (#36). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

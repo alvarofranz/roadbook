@@ -37,14 +37,14 @@
 ### Web desktop
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ [RDBK.app]  Reader  Editor  Navigate  Roadbooks  Events  Ranking   [👤 Acct] │
+│ [RDBK.app]  Reader  Editor  Navigate  Roadbooks  Events   [👤 Acct] │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Web mobile / PWA (bottom tab bar)
 ```
 ┌────────────────────────────────────────────────┐
-│  Reader  Editor  Navigate  Roadbooks  Events  Ranking │
+│  Reader  Editor  Navigate  Roadbooks  Events │
 └────────────────────────────────────────────────┘
 ```
 
@@ -68,7 +68,7 @@
 
 - La tab bar mobile mostra 6 voci sul web, 5 nell'app (manca Roadbooks).
 - In modalità partecipante la tab bar inferiore **non viene nascosta** — l'utente può ancora navigare verso Editor, Tripmaster, etc.
-- Ranking è una sezione autonoma sul web (`/ranking/`) ma è raggruppato dentro Events sull'app.
+- Ranking **non ha una voce di menu propria**: `/ranking/` si apre per singolo roadbook di competizione dalla pagina dell'evento (`?event=<slug>&rb=<slug>`), riservato a partecipanti/organizzatori.
 - "Navigate" raggruppa Tripmaster e Recorder sotto un'unica voce con landing page.
 - I link amministrativi appaiono solo nell'account menu dropdown (web), non nella tab bar dell'app.
 

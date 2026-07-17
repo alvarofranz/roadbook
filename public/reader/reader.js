@@ -31,6 +31,7 @@
     // (per-note radius, capped by neighbour spacing, floored above GPS noise) is RB.reachRadius.
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
+    const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop(); // roadbook slug from URL
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
 
@@ -90,8 +91,12 @@
         const pub = RBChallenges.publicFromUrl();
         const rbId = +(new URLSearchParams(location.search).get('rb') || 0); // open a personal (private) roadbook by id — owner only (#71)
         const loadFromUrl = () => {
-            if (pub) { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.')); }
-            else if (rbId > 0) RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+            if (pub) {
+                if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
+                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load challenge.'));
+            } else if (rbId > 0) {
+                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+            }
         };
         if (session) {
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
@@ -146,7 +151,6 @@
         if (!eventSlug) return;
         try {
             const j = await RBApi('event_get', { slug: eventSlug });
-            const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop();
             const rbId = +(new URLSearchParams(location.search).get('rb') || 0);
             const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug || (rbId && x.id === rbId));
             if (er) applyModeLock(er.scoring_mode && er.scoring_mode !== 'free' ? 'competition' : 'trip');
@@ -489,6 +493,7 @@
             team, date: RB.ddmmyy(endedAt || new Date()), start: RB.hhmmss(startedAt), end: RB.hhmmss(endedAt),
             accuracy: Math.min(9999, Math.round(pen.acc)), skip: Math.min(9999, pen.skip), extra: Math.min(9999, Math.round(pen.extra)),
             cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, penSpeed), km: Math.min(99999, km), avg: Math.min(999, avg),
+            rb: rbSlug || '',
         });
         lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
         const qr = qrcode(0, 'M'); qr.addData(lastPayload); qr.make();

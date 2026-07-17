@@ -179,6 +179,12 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; /* the dropdown widens to its longest label — no two-line entries (#243) */ }
 .account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
 .account-menu .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
+/* Tab-bar profile dropup (mobile, #303 → #310): positioned above the fixed bottom tab bar. */
+.tabbar-dropup { position: fixed; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 6px); right: max(.5rem, env(safe-area-inset-right)); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: 0 -4px 20px rgba(0,0,0,.18); min-width: 185px; z-index: 61; display: flex; flex-direction: column; gap: .15rem; }
+.tabbar-dropup a, .tabbar-dropup button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; }
+.tabbar-dropup a:hover, .tabbar-dropup button:hover { background: var(--card-2); text-decoration: none; }
+.tabbar-dropup .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
+@media (min-width: 1025px) { .tabbar-dropup { display: none; } }
 /* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */
 .mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
 .mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }

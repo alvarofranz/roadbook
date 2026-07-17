@@ -141,7 +141,7 @@
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
-        META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3],
+        META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3, 6],
     };
 
     /* ---------------- GPX parsing ---------------- */
@@ -892,14 +892,18 @@
         return speedKmh < limitKmh - 5 ? 0 : speedKmh < limitKmh ? 1 : speedKmh < limitKmh + 5 ? 2 : 3;
     }
 
-    /* ---------------- result META (49-char QR payload) ---------------- */
-    const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg'];
+    /* ---------------- result META (55-char QR payload) ---------------- */
+    const META_KEYS = ['team', 'date', 'start', 'end', 'accuracy', 'skip', 'extra', 'cap', 'speed', 'km', 'avg', 'rb'];
+    // `rb` carries only a fixed-width slug PREFIX (the payload must stay a compact QR).
+    // metaRbPrefix is the single source of truth for how many characters count, so the
+    // producer (buildMeta) and the consumer (ranking's roadbook match) never disagree.
+    function metaRbPrefix(slug) { return String(slug || '').slice(0, CONST.META_WIDTHS[META_KEYS.indexOf('rb')]); }
     function buildMeta(f) {
-        // Fixed-width numeric fields: clamp negatives to 0 and saturate to all-9s on
-        // overflow (never let a '-' or a left-truncated value corrupt the string).
-        // padStart restores leading zeros for fields like date/start/end.
+        // Fixed-width fields: numeric (padStart zero, saturate all-9s) or the `rb` string
+        // (slug prefix, padEnd with spaces). padStart restores leading zeros for date/start/end.
         return META_KEYS.map((k, i) => {
             const w = CONST.META_WIDTHS[i];
+            if (k === 'rb') return metaRbPrefix(f[k]).padEnd(w, ' ');
             const v = Math.max(0, Math.round(Number(f[k]) || 0));
             let s = String(v);
             if (s.length > w) s = '9'.repeat(w);
@@ -926,9 +930,10 @@
         try { return meta + '-' + (await hmacHex(meta, key || '')).slice(0, 10); } catch (e) { return meta; }
     }
     async function verifyMeta(payload, key) {
-        const i = String(payload).lastIndexOf('-');
-        if (i < 0) return { meta: String(payload).trim(), valid: false }; // no signature → not a valid result
-        const meta = payload.slice(0, i).trim(), sig = payload.slice(i + 1).trim();
+        const s = String(payload).trim(); // tolerate stray whitespace around the whole QR text
+        const i = s.lastIndexOf('-'); // the signature is 10 hex chars (never a '-'), so the last '-' is always the separator
+        if (i < 0) return { meta: s, valid: false }; // no signature → not a valid result
+        const meta = s.slice(0, i), sig = s.slice(i + 1); // never trim the meta: the rb field's trailing padding is part of the signed string
         try { return { meta, valid: (await hmacHex(meta, key || '')).slice(0, 10) === sig }; }
         catch (e) { return { meta, valid: false }; }
     }
@@ -1034,7 +1039,7 @@
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
-        buildMeta, parseMeta, signMeta, verifyMeta, iconSrc,
+        buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
