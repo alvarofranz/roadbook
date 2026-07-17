@@ -44,9 +44,7 @@
             finally { $('chPdf').disabled = false; }
         };
 
-        if (j.photos && j.photos.length) {
-            $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(RBMediaSrc(u))}" target="_blank" rel="noopener"><img src="${esc(RBMediaSrc(u))}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');
-        }
+        // Photos and audio are editor-only working material — not shown here (#316).
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
         // same white "paper" rows as the Reader (read-only: no buttons/state)

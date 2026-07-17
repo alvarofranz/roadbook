@@ -473,11 +473,12 @@
     // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
     // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
     window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
-        `<a class="gallery-card" href="${RBesc(href)}">`
+        (href ? `<a class="gallery-card" href="${RBesc(href)}">` : `<div class="gallery-card">`)
         + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
         + overlays
-        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div></a>`;
+        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div>`
+        + (href ? '</a>' : '</div>');
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).

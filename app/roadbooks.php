@@ -381,15 +381,13 @@ function public_get(array $d): void {
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
     $rb = json_decode((string)file_get_contents($path), true);
-    // gallery photos exclude the reserved route-map cover (sort -1); it is returned separately as `cover`
-    $p = db()->prepare('SELECT id, filename FROM roadbook_photos WHERE roadbook_id = ? AND sort >= 0 ORDER BY sort, id');
-    $p->execute([$row['id']]);
-    $photos = array_map(fn($r) => '/photos/' . $row['id'] . '/' . $r['filename'], $p->fetchAll());
+    // Cover only (route-map preview, sort = -1). Gallery photos and audio are editor-only
+    // working material — not disclosed through the challenge/player (#316).
     $c = db()->prepare('SELECT filename FROM roadbook_photos WHERE roadbook_id = ? AND sort = -1');
     $c->execute([$row['id']]);
     $coverFn = $c->fetchColumn();
     $cover = $coverFn ? '/photos/' . $row['id'] . '/' . $coverFn : null;
-    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'roadbook' => $rb, 'photos' => $photos, 'cover' => $cover,
+    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'roadbook' => $rb, 'cover' => $cover,
         'owner' => ['username' => $row['username'], 'name' => trim($row['first_name'] . ' ' . $row['last_name']), 'bio' => $row['bio'], 'avatar' => $row['avatar']]]);
 }
 

@@ -17,7 +17,7 @@
         const e = ev = j.event;
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
-        if (e.logo) { $('evLogo').src = RBMediaSrc(e.logo); $('evLogo').hidden = false; }
+        if (e.logo) { $('evLogo').src = RBMediaSrc(e.logo); $('evLogo').hidden = false; $('evLogo').onerror = () => { $('evLogo').hidden = true; }; }
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
         $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';
@@ -38,15 +38,21 @@
         const statusBadge = (r) => {
             if (r.status === 'public') return '<div class="ev-rb-status public"><i class="fa-solid fa-globe"></i> ' + esc(t('Public')) + '</div>';
             if (r.status === 'draft') return '<div class="ev-rb-status reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('In preparation')) + '</div>';
-            if (r.status === 'ready' && !(j.event.active_participant || j.event.org_read)) return '<div class="ev-rb-status reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('Active participants only')) + '</div>';
+            if (r.status === 'ready') {
+                if (j.event.active_participant || j.event.org_read) return '<div class="ev-rb-status ready"><i class="fa-solid fa-check"></i> ' + esc(t('Ready')) + '</div>';
+                return '<div class="ev-rb-status reserved"><i class="fa-solid fa-lock"></i> ' + esc(t('Active participants only')) + '</div>';
+            }
             return '';
         };
-        const card = (r) => RBGalleryCard({
-            href: '/challenge/' + encodeURIComponent(r.slug) + '?event=' + encodeURIComponent(slug),
-            thumb: r.thumb, title: r.title,
-            meta: (r.category ? '<span class="u-badge">' + esc(r.category) + '</span> ' : '') + '@' + esc(r.username) + ' \u00b7 ' + RBSummary(r.total_distance, r.note_count),
-            body: statusBadge(r),
-        });
+        const card = (r) => {
+            const canOpen = r.status !== 'ready' || j.event.active_participant || j.event.org_read;
+            return RBGalleryCard({
+                href: canOpen ? '/challenge/' + encodeURIComponent(r.slug) + '?event=' + encodeURIComponent(slug) : null,
+                thumb: r.thumb, title: r.title,
+                meta: (r.category ? '<span class="u-badge">' + esc(r.category) + '</span> ' : '') + '@' + esc(r.username) + ' \u00b7 ' + RBSummary(r.total_distance, r.note_count),
+                body: statusBadge(r),
+            });
+        };
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
