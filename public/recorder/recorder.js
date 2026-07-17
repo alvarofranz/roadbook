@@ -81,9 +81,9 @@
 
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         if (session && session.recording) {
-            // Declining must never destroy a run: it's replaced as it records, or cleared on Finish.
             if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>', t('Resume'))) {
                 RBGpxRecorder.resume(session.fileName);
+                try { localStorage.removeItem('rb_trip_gpx'); } catch (e) {} // GPX data already loaded via resume; drop the redundant checkpoint
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
                 track = []; wpts = session.wpts || []; photos = (session.photos || []).filter((p) => !p.local); draftId = session.draftId || 0;
                 updateRecUi(); // photo/audio buttons follow sign-in, not the draft (#147 F2)
@@ -91,8 +91,9 @@
                 return;
             }
             clearSession();
+            try { localStorage.removeItem('rb_trip_gpx'); } catch (e) {} // clear the orphaned GPX data too — one simple prompt (#260)
         }
-        await RBGpxRecorder.offerRecovery();
+        await RBGpxRecorder.offerRecovery(); // orphaned GPX (no session) → offer rescue
     }).catch(() => {});
 
     /* ---------- start / pause / finish ---------- */
