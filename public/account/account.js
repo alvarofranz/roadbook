@@ -5,7 +5,7 @@
  * when a site key is configured server-side. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt; // shared helpers (app.js / i18n.js)
+    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const params = new URLSearchParams(location.search);
     let tsSite = '', tsTokens = {};
     let me = null; // the signed-in user (held so the change-password handler knows the credential id)
