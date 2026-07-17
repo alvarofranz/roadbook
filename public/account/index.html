@@ -48,15 +48,6 @@
            stand-in only below the footer breakpoint (matches .foot hiding ≤1024px), so the
            About/Privacy/Terms links don't appear twice (#295) */
         @media (min-width: 1025px) { .acc-links { display: none; } }
-        /* admin / organizer console panel (#303) — filled by app.js on the Profile page */
-        .acc-manage h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
-        .acc-manage-links { display: flex; flex-direction: column; gap: .1rem; }
-        .acc-manage-links a { display: flex; align-items: center; gap: .7rem; padding: .6rem .3rem; color: var(--text); border-radius: 8px; }
-        .acc-manage-links a:hover { background: var(--card-2); }
-        .acc-manage-links a i { width: 1.2rem; text-align: center; color: var(--sand-2); }
-        .acc-manage-links .menu-sep { width: 100%; border: 0; border-top: 1px solid var(--line); margin: .4rem 0; }
-        /* the header account dropdown already lists these on desktop — panel is mobile-only */
-        @media (min-width: 1025px) { .acc-manage { display: none; } }
         /* grants recap card (#310) */
         .grants-list { display: flex; flex-direction: column; gap: .4rem; }
         .grants-list .grant-row { display: flex; align-items: center; gap: .6rem; padding: .35rem 0; }
@@ -161,14 +152,6 @@
                 <button class="btn btn-ghost" id="logoutBtn" data-i18n="Sign out"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
             </div>
         </div>
-
-        <!-- Admin / organizer console. On mobile the header account dropdown that lists these pages
-             is hidden (below the tab-bar breakpoint), so signed-in admins/organizers reach them
-             from here (#303). Filled by app.js; mobile-only (desktop uses the header dropdown). -->
-        <nav id="accManage" class="auth-card profile-form acc-manage" hidden aria-label="Administration">
-            <h2 data-i18n="Administration">Administration</h2>
-            <div class="acc-manage-links"></div>
-        </nav>
 
         <div id="profileForm" class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>

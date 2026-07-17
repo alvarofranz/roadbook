@@ -129,6 +129,9 @@
         // (renderChrome runs before RBesc is defined, so it must not be used here.)
         bar.innerHTML = APP_TABS.map((k) => {
             const s = SECTION[k];
+            if (k === 'profile') {
+                return `<button class="tabbar-link${k === appActive ? ' active' : ''}" id="tabProfileBtn" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></button>`;
+            }
             return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
     }
@@ -770,9 +773,7 @@
         el.querySelector('.site-banner-x').onclick = () => { el.remove(); try { localStorage.setItem(BANNER_DISMISSED, banner.text); } catch (e) {} };
     }
 
-    // Management links (admin console + organizer tools), as data so the header account dropdown
-    // (desktop) and the Profile page's mobile panel render from ONE source (#303). On mobile the
-    // top bar — and its dropdown — is hidden, so admins/organizers reach these from the Profile page.
+    // Management links (admin console + organizer tools) for the header account dropdown (#303).
     function manageLinks(user, participant) {
         if (participant || !user) return [];
         if (user.is_admin) return [
@@ -802,13 +803,6 @@
         const user = cfg.user || null;
         const participant = cfg.participant || null;
         renderBanner(cfg.banner);
-        // Profile page (mobile): the header dropdown that lists the management links is hidden below
-        // the tab-bar breakpoint, so surface them in the page body for admins/organizers (#303).
-        const manageSlot = document.getElementById('accManage');
-        if (manageSlot) {
-            const linksHTML = manageLinksHTML(manageLinks(user, participant));
-            if (linksHTML) { manageSlot.querySelector('.acc-manage-links').innerHTML = linksHTML; manageSlot.hidden = false; }
-        }
         // Admins get the in-context UI translation editor (#118) — a small script loaded only for
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
         if (user && user.is_admin) { const s = document.createElement('script'); s.src = ROOT + 'assets/js/i18n-edit.js'; s.async = true; document.head.appendChild(s); }
@@ -864,6 +858,33 @@
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
+        // Tab-bar profile dropup (mobile, #303 → #310): replace the prev page-based accManage card.
+        const tabProfileBtn = document.getElementById('tabProfileBtn');
+        if (tabProfileBtn) {
+            let tabMenu = document.getElementById('tabProfileMenu');
+            if (!tabMenu) {
+                tabMenu = document.createElement('div');
+                tabMenu.id = 'tabProfileMenu';
+                tabMenu.className = 'tabbar-dropup';
+                tabMenu.hidden = true;
+                tabProfileBtn.parentNode.appendChild(tabMenu);
+            }
+            if (!user) {
+                tabProfileBtn.onclick = () => { location.href = RBLoginUrl(); };
+            } else {
+                tabMenu.innerHTML =
+                    `<a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>`
+                    + (participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`)
+                    + manageLinksHTML(manageLinks(user, participant))
+                    + (participant ? `<hr class="menu-sep"><button id="tabLeaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : '')
+                    + `<hr class="menu-sep"><button id="tabLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>`;
+                tabProfileBtn.onclick = (e) => { e.stopPropagation(); tabMenu.hidden = !tabMenu.hidden; };
+                document.addEventListener('click', () => { tabMenu.hidden = true; });
+                tabMenu.querySelector('#tabLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
+                const tabLp = tabMenu.querySelector('#tabLeaveParticipant');
+                if (tabLp) tabLp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
+            }
+        }
     })();
 
     /* ---------------- Unsaved-work guard (cross-tool) ----------------
