@@ -332,9 +332,19 @@ describe('QR meta payload', () => {
     it('builds a fixed-width string that parses back to the same numbers', () => {
         const fields = { team: 7, date: 626, start: 1200, end: 1330, accuracy: 42, skip: 1, extra: 3, cap: 5, speed: 9, km: 12345, avg: 88 };
         const meta = RB.buildMeta(fields);
-        expect(meta).toHaveLength(49); // sum of META_WIDTHS
+        expect(meta).toHaveLength(55); // sum of META_WIDTHS (incl. the 6-char rb field)
         const parsed = RB.parseMeta(meta);
         for (const k of Object.keys(fields)) expect(Number(parsed[k])).toBe(fields[k]);
+    });
+
+    it('carries the roadbook slug prefix in the rb field and truncates it to the field width', () => {
+        expect(RB.metaRbPrefix('monza-stage-1')).toBe('monza-'); // truncated to 6 chars
+        expect(RB.metaRbPrefix('ab')).toBe('ab');                // shorter slugs pass through
+        expect(RB.metaRbPrefix('')).toBe('');
+        const meta = RB.buildMeta({ team: 3, rb: 'monza-stage-1' });
+        expect(RB.parseMeta(meta).rb).toBe('monza-');            // round-trips back to the prefix (trailing pad trimmed)
+        const shortMeta = RB.buildMeta({ team: 3, rb: 'ab' });
+        expect(RB.parseMeta(shortMeta).rb).toBe('ab');
     });
 
     it('clamps negatives to zero and saturates on overflow', () => {
@@ -355,6 +365,18 @@ describe('QR signing (HMAC-SHA256)', () => {
         const v = await RB.verifyMeta(payload, key);
         expect(v.valid).toBe(true);
         expect(v.meta).toBe(meta);
+    });
+
+    it('verifies a payload whose rb field is space-padded (the padding is part of the signed string)', async () => {
+        // Regression: verifyMeta must NOT trim the meta, or the rb field's trailing padding is
+        // dropped before the HMAC is recomputed and every real result fails to validate.
+        const meta = RB.buildMeta({ team: 1, accuracy: 10, rb: 'ab' }); // 'ab' → 'ab    ' (4 trailing spaces)
+        expect(meta.endsWith('    ')).toBe(true);
+        const payload = await RB.signMeta(meta, key);
+        const v = await RB.verifyMeta(payload, key);
+        expect(v.valid).toBe(true);
+        expect(v.meta).toBe(meta);
+        expect(RB.parseMeta(v.meta).rb).toBe('ab');
     });
 
     it('fails verification with the wrong key or a tampered payload', async () => {

@@ -132,10 +132,15 @@ function event_manage_get(array $user, array $d): void {
 function event_participants_list(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     $q = trim((string)($d['q'] ?? ''));
+    $status = trim((string)($d['status'] ?? ''));
     $page = max(1, (int)($d['page'] ?? 1));
     $perPage = min(100, max(1, (int)($d['per_page'] ?? 25)));
     $where = 'ep.event_id = ?';
     $args = [(int)$e['id']];
+    if ($status === 'pending' || $status === 'active') {
+        $where .= ' AND ep.status = ?';
+        $args[] = $status;
+    }
     if ($q !== '') {
         $where .= " AND (u.username LIKE ? OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?)";
         $like = '%' . $q . '%';
@@ -280,6 +285,15 @@ function event_join_code(array $user, array $d): void {
     if (!empty($d['clear'])) {
         db()->prepare('UPDATE events SET join_code = NULL WHERE id = ?')->execute([(int)$e['id']]);
         json_out(['ok' => true, 'join_code' => null]);
+    }
+    $code = trim((string)($d['code'] ?? ''));
+    if ($code !== '') {
+        $code = strtoupper($code);
+        if (strlen($code) < 4 || strlen($code) > 16) fail('Join code must be 4–16 characters.');
+        try {
+            db()->prepare('UPDATE events SET join_code = ? WHERE id = ?')->execute([$code, (int)$e['id']]);
+            json_out(['ok' => true, 'join_code' => $code]);
+        } catch (\Throwable $x) { fail('Code already in use.', 409); }
     }
     for ($try = 0; $try < 5; $try++) { // regenerate until unique (the column is UNIQUE; collisions are ~impossible)
         $code = strtoupper(bin2hex(random_bytes(4)));

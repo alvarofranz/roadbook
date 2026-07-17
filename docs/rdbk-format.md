@@ -285,11 +285,13 @@ Il valore è `null` quando la nota non disegna incroci espliciti.
 ## 11. Token risultato (opzionale, per gli eventi)
 
 Quando un roadbook è seguito in gara, un reader può emettere un **token risultato a
-larghezza fissa di 49 caratteri** (adatto a un QR), una sequenza di campi numerici con
-zero-padding e senza dati personali: `team`(3) · `date`(6, DDMMYY) · `start`(6, HHMMSS) ·
+larghezza fissa di 55 caratteri** (adatto a un QR), senza dati personali: 11 campi numerici con
+zero-padding — `team`(3) · `date`(6, DDMMYY) · `start`(6, HHMMSS) ·
 `end`(6, HHMMSS) · `accuracy`(4) · `skip`(4) · `extra`(4) · `cap`(4) · `speed`(4) ·
-`km`(5, deci-km) · `avg`(3, deci-km/h). Può essere suffissato con `-<sig>`, un HMAC
-troncato sul token, per evidenza di manomissione tra reader e giudice. Il dettaglio del
+`km`(5, deci-km) · `avg`(3, deci-km/h) — seguiti da `rb`(6): il prefisso dello slug del
+roadbook (testo, padding a spazi) con cui il Ranking rifiuta un QR di un altro roadbook. Può
+essere suffissato con `-<sig>`, un HMAC troncato sul token, per evidenza di manomissione tra
+reader e giudice. Il dettaglio del
 modello di punteggio è in [ranking-model.md](ranking-model.md).
 
 ---
@@ -355,8 +357,9 @@ modello di punteggio è in [ranking-model.md](ranking-model.md).
   c'è un campo separato per attributi della strada (larghezza reale, fondo specifico).
 - **`danger` è una scala 1–3** stile FIA: non rappresenta tipologie di pericolo, solo la
   gravità.
-- **Il token risultato è a 49 caratteri fissi**: estensioni di gara (settori multipli,
-  controlli orari, validazione per-waypoint) non ci stanno senza ridisegnare token e firma.
+- **Il token risultato è a 55 caratteri fissi** (49 numerici + `rb`): estensioni di gara (settori
+  multipli, controlli orari, validazione per-waypoint) vanno aggiunte a `META_KEYS` + `META_WIDTHS`
+  insieme, allargando il token e adeguando reader e firma.
   Vedi i limiti del modello in [ranking-model.md](ranking-model.md#8-limiti-del-modello-attuale).
 - **`cap`/`cap_distance` sono per-nota e in linea retta**: descrivono un singolo segmento a
   bussola verso la nota successiva, non una sequenza di sub-rilevamenti.

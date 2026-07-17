@@ -172,6 +172,8 @@
             : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
         $('joinCopy').hidden = !code;
         $('joinClear').hidden = !code;
+        $('joinSetRow').hidden = false;
+        $('joinCodeIn').value = code || '';
         renderLink();
     }
     $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
@@ -181,6 +183,25 @@
         var url = location.origin + '/go/' + ev.join_code;
         $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;
         $('evLinkCopy').hidden = false;
+        renderQr(url);
+    }
+    function renderQr(url) {
+        var c = $('evQrCode');
+        try {
+            var qr = new qrcode(0, 'M');
+            qr.addData(url); qr.make();
+            c.hidden = false; c.width = 140; c.height = 140;
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 140, 140);
+            var cellSize = Math.floor(140 / qr.getModuleCount());
+            var offset = Math.floor((140 - cellSize * qr.getModuleCount()) / 2);
+            ctx.fillStyle = '#000000';
+            for (var row = 0; row < qr.getModuleCount(); row++) {
+                for (var col = 0; col < qr.getModuleCount(); col++) {
+                    if (qr.isDark(row, col)) ctx.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
+                }
+            }
+        } catch (e) { c.hidden = true; }
     }
     $('evLinkCopy').onclick = async () => {
         try { await navigator.clipboard.writeText($('evLinkUrl').textContent); toast('Copied.'); } catch (e) { toast('Could not copy.'); }
@@ -196,6 +217,15 @@
         const x = await api('event_join_code', { event_id: id, clear: 1 });
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
+    $('joinSetBtn').onclick = async () => {
+        var code = $('joinCodeIn').value.trim().toUpperCase();
+        if (!code) return;
+        if (code.length < 4 || code.length > 16) { toast('Join code must be 4–16 characters.'); return; }
+        const x = await api('event_join_code', { event_id: id, code: code });
+        if (x.ok) toast('Join code set.'); else toast(x.error || 'Could not save.');
+        load();
+    };
+    $('joinCodeIn').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') $('joinSetBtn').click(); });
 
     /* ---------- headquarters map (#249) ---------- */
     let hqMap = null, hqMarker = null, settingHq = false;

@@ -50,11 +50,13 @@
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
-        const hasCompetition = j.roadbooks.some(function(r) { return r.scoring_mode && r.scoring_mode !== 'free'; });
         if (window.RBIsParticipant && RBIsParticipant()) { $('evJoin').hidden = true; $('evWebsite').hidden = true; $('evHqMap').hidden = true; }
-        if (j.event.active_participant && hasCompetition) {
+        var compRbs = j.roadbooks.filter(function(r) { return r.scoring_mode && r.scoring_mode !== 'free'; });
+        if (compRbs.length && (j.event.active_participant || j.event.org_read)) {
             var rl = $('evRanking'); rl.hidden = false;
-            $('evRankingLink').href = '/ranking/?event=' + encodeURIComponent(slug);
+            $('evRankingLinks').innerHTML = compRbs.map(function(r) {
+                return '<a class="btn btn-primary btn-sm" href="/ranking/?event=' + encodeURIComponent(slug) + '&rb=' + encodeURIComponent(r.slug) + '"><i class="fa-solid fa-ranking-star"></i> ' + esc(r.title || r.slug) + '</a>';
+            }).join(' ');
         }
         renderJoin(e);
     }
@@ -79,12 +81,7 @@
         }
         if (e.joined && e.participant_status !== 'pending') {
             box.hidden = false;
-            box.innerHTML = '<span class="grow"><i class="fa-solid fa-flag-checkered icon-accent"></i> ' + esc(t('You are participating in this event.')) + '</span><button class="btn btn-ghost" id="evLeave">' + esc(t('Leave event')) + '</button>';
-            box.querySelector('#evLeave').onclick = async () => {
-                if (!(await RBConfirmDanger(t('Leave event') + ' "' + esc(e.title) + '"?', t('Leave event')))) return;
-                const x = await RBApi('event_leave', { slug: e.slug });
-                if (x.ok) { if (x.clear_participant) { document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch (e) {} } load(); } else toast(x.error || 'Could not save.');
-            };
+            box.innerHTML = '<span class="grow"><i class="fa-solid fa-flag-checkered icon-accent"></i> ' + esc(t('You are participating in this event.')) + '</span>';
             return;
         }
         if (e.participant_status !== 'pending') {
@@ -95,7 +92,7 @@
                 if (!code) return;
                 const x = await RBApi('event_join', { code, slug: e.slug });
                 if (x.ok) { toast('You are participating in this event.'); load(); }
-                else RBModal(`<p class="modal-text">${esc(x.error || t('Wrong join code.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`);
+                else { var m2 = RBModal(`<p class="modal-text">${esc(x.error || t('Wrong join code.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`); m2.q('.modal-close').onclick = m2.close; }
             };
             box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
         } else {

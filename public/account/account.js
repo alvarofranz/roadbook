@@ -5,7 +5,7 @@
  * when a site key is configured server-side. */
 (function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt; // shared helpers (app.js / i18n.js)
+    const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const params = new URLSearchParams(location.search);
     let tsSite = '', tsTokens = {};
     let me = null; // the signed-in user (held so the change-password handler knows the credential id)
@@ -366,6 +366,12 @@
         $('pfOrg').value = user.organization || '';
         RBOrgDatalist($('orgSuggest')); // suggest existing clubs so the same one isn't retyped differently (#116)
         $('pfVoiceLang').value = user.voice_lang || '';
+        // Grants recap (#310)
+        const grants = [];
+        if (user.is_admin) grants.push({ label: t('Admin'), cls: 'admin' });
+        if (user.is_organizer) grants.push({ label: t('Organizer'), cls: 'organizer' });
+        if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: 'basic' });
+        $('grantsList').innerHTML = grants.map((g) => `<div class="grant-row"><span class="grant-badge ${g.cls}">${esc(g.label)}</span></div>`).join('');
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
