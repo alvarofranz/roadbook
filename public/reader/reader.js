@@ -91,8 +91,12 @@
         const pub = RBChallenges.publicFromUrl();
         const rbId = +(new URLSearchParams(location.search).get('rb') || 0); // open a personal (private) roadbook by id — owner only (#71)
         const loadFromUrl = () => {
-            if (pub) { if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.'); RBChallenges.loadPublic(pub).then((j) => loadRb(j.roadbook)).catch(() => toast('Could not load challenge.')); }
-            else if (rbId > 0) RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+            if (pub) {
+                if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
+                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load challenge.'));
+            } else if (rbId > 0) {
+                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+            }
         };
         if (session) {
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');

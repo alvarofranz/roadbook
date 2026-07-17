@@ -132,10 +132,15 @@ function event_manage_get(array $user, array $d): void {
 function event_participants_list(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     $q = trim((string)($d['q'] ?? ''));
+    $status = trim((string)($d['status'] ?? ''));
     $page = max(1, (int)($d['page'] ?? 1));
     $perPage = min(100, max(1, (int)($d['per_page'] ?? 25)));
     $where = 'ep.event_id = ?';
     $args = [(int)$e['id']];
+    if ($status === 'pending' || $status === 'active') {
+        $where .= ' AND ep.status = ?';
+        $args[] = $status;
+    }
     if ($q !== '') {
         $where .= " AND (u.username LIKE ? OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?)";
         $like = '%' . $q . '%';

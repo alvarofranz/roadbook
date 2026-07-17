@@ -6,10 +6,10 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     const id = +(new URLSearchParams(location.search).get('id') || 0);
-    let q = '', page = 1, searchTimer = null, eventTitle = '';
+    let q = '', page = 1, status = 'pending', searchTimer = null, refreshTimer = null, eventTitle = '';
 
     async function load() {
-        const r = await api('event_participants_list', { event_id: id, q, page });
+        const r = await api('event_participants_list', { event_id: id, q, status, page });
         if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
         $('adminMsg').hidden = true; $('ppBody').hidden = false;
         const pages = Math.max(1, Math.ceil(r.total / r.per_page));
@@ -38,6 +38,27 @@
         searchTimer = setTimeout(() => { q = $('ppSearchIn').value.trim(); page = 1; load(); }, 300);
     };
     window.addEventListener('rb-lang', () => load());
+
+    // Pending-only filter toggle (#311) — active by default
+    $('ppPendingFilter').classList.add('active');
+    $('ppPendingFilter').onclick = () => {
+        status = status === 'pending' ? '' : 'pending';
+        $('ppPendingFilter').classList.toggle('active', status === 'pending');
+        page = 1;
+        load();
+    };
+
+    // Auto-refresh every 10 s when pending filter is on (#311)
+    function startRefresh() {
+        clearInterval(refreshTimer);
+        refreshTimer = setInterval(() => {
+            if (!document.hidden && status === 'pending') load();
+        }, 10000);
+    }
+    startRefresh();
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && status === 'pending') load();
+    });
 
     $('ppActivate').onclick = async () => {
         const code = $('ppActivateIn').value.trim().toUpperCase();
@@ -117,7 +138,7 @@
 
     // CSV export (first name, last name, email) of the whole roster — or of the current search
     // when one is active. Collected page by page (100 at a time), quoted RFC-4180 style.
-    $('ppExport').onclick = async () => {
+    async function exportCSV() {
         const cell = (v) => /[",\n]/.test(v = String(v ?? '')) ? '"' + v.replace(/"/g, '""') + '"' : v;
         const rows = [];
         for (let p = 1; ; p++) {
@@ -131,7 +152,8 @@
         // the file is named after the event (filesystem-hostile characters stripped)
         const name = (eventTitle || 'rdbk-participants').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
         RBDownload(new Blob([lines.join('\n')], { type: 'text/csv' }), name + '.csv');
-    };
+    }
+    $('ppExportBottom').onclick = exportCSV;
 
     (async function init() {
         if (!(await RBRequireUser($('adminMsg')))) return;

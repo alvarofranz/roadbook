@@ -16,6 +16,7 @@
         .pp-search .field { flex: 1; max-width: 360px; margin: 0; }
         .pp-search .btn { width: auto; margin: 0 0 0 auto; }
         .pp-add-search { margin: 0 0 .8rem; }
+        #ppPendingFilter.active { background: var(--accent); color: #fff; }
     </style>
 </head>
 <body>
@@ -29,7 +30,6 @@
 
     <div id="ppBody" hidden>
         <div class="toolbar pp-search">
-            <i class="fa-solid fa-qrcode icon-accent"></i>
             <input id="ppActivateIn" class="field ev-act-code" data-i18n-ph="Activation code" placeholder="Activation code" autocomplete="off" maxlength="6" style="text-transform:uppercase;font-size:1.4rem;font-weight:800;letter-spacing:.3em;width:10rem">
             <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
             <button class="btn btn-ghost" id="ppScanQr" type="button" title="Scan QR"><i class="fa-solid fa-camera"></i></button>
@@ -38,11 +38,14 @@
         <div class="toolbar pp-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="ppSearchIn" class="field" type="search" data-i18n-ph="Search participants…" placeholder="Search participants…" autocomplete="off">
-            <button class="btn btn-ghost" id="ppExport" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
-            <button class="btn btn-primary" id="ppAdd" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add">Add</span></button>
+            <button class="btn btn-ghost" id="ppPendingFilter" type="button"><i class="fa-solid fa-hourglass-half"></i> <span data-i18n="Pending only">Pending only</span></button>
+            <button class="btn btn-primary" id="ppAdd" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add participant">Add participant</span></button>
         </div>
         <div id="ppList"></div>
         <div class="pager" id="ppPager"></div>
+        <div class="btnrow end" style="margin-top:1rem">
+            <button class="btn btn-ghost" id="ppExportBottom" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
+        </div>
     </div>
 </main>
 

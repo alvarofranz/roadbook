@@ -43,6 +43,9 @@
         <a class="tool-help" href="../features/events/"><i class="fa-solid fa-circle-info"></i> Info</a>
     </div>
     <p class="muted" data-i18n="Browse the events organised by the community.">Browse the events organised by the community.</p>
+    <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="evSearch" placeholder="Search events…" data-i18n-ph="Search events…" autocomplete="off" spellcheck="false"></div>
+    <div class="gallery" id="evGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
+    <div class="pager" id="evPager"></div>
     <div class="ev-cta">
         <div class="ev-cta-text">
             <b data-i18n="Organise your event on RDBK.app">Organise your event on RDBK.app</b>
@@ -52,9 +55,6 @@
             <a class="btn btn-primary" id="evOrganise" href="../features/events/" data-i18n="Create">Create</a>
         </div>
     </div>
-    <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="evSearch" placeholder="Search events…" data-i18n-ph="Search events…" autocomplete="off" spellcheck="false"></div>
-    <div class="gallery" id="evGrid"><p class="gallery-empty" data-i18n="gallery.loading">Loading…</p></div>
-    <div class="pager" id="evPager"></div>
 </main>
 
 <script src="../assets/js/i18n.es.js?v=1.4.1-13"></script>
