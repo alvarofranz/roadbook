@@ -17,7 +17,7 @@
         const e = ev = j.event;
         $('evLoading').hidden = true; $('evContent').hidden = false;
         $('evTitle').textContent = e.title;
-        if (e.logo) { $('evLogo').src = RBMediaSrc(e.logo); $('evLogo').hidden = false; }
+        if (e.logo) { $('evLogo').src = RBMediaSrc(e.logo) + (e.logo.includes('?') ? '&' : '?') + 'v=' + Date.now(); $('evLogo').hidden = false; } // bust the 7-day .avif cache after a re-upload (parity with the manage view)
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug) });
         $('evMeta').textContent = meta(e);
         $('evDesc').textContent = e.description || '';
