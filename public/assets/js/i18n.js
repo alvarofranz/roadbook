@@ -102,6 +102,7 @@
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:',
             'Participant management': 'Participant management', 'Select an event to manage its participants.': 'Select an event to manage its participants.',
             'Add': 'Add', 'Add participant': 'Add participant', 'Pending only': 'Pending only', 'Search users…': 'Search users…', 'added.': 'added.', 'Activate': 'Activate',
+            'Grants': 'Grants', 'Admin': 'Admin', 'Organizer': 'Organizer', 'Basic user': 'Basic user',
             'Point the camera at the participant\'s QR code.': 'Point the camera at the participant\'s QR code.',
             'Waiting for QR code…': 'Waiting for QR code…', 'Scanning…': 'Scanning…',
             'QR scanner not supported in this browser.': 'QR scanner not supported in this browser.',

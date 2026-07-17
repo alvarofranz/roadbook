@@ -57,6 +57,13 @@
         .acc-manage-links .menu-sep { width: 100%; border: 0; border-top: 1px solid var(--line); margin: .4rem 0; }
         /* the header account dropdown already lists these on desktop — panel is mobile-only */
         @media (min-width: 1025px) { .acc-manage { display: none; } }
+        /* grants recap card (#310) */
+        .grants-list { display: flex; flex-direction: column; gap: .4rem; }
+        .grants-list .grant-row { display: flex; align-items: center; gap: .6rem; padding: .35rem 0; }
+        .grants-list .grant-row .grant-badge { display: inline-block; padding: .15rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+        .grant-badge.admin { background: #c62828; color: #fff; }
+        .grant-badge.organizer { background: #1565c0; color: #fff; }
+        .grant-badge.basic { background: var(--card-2); color: var(--muted); }
     </style>
 </head>
 <body>
@@ -182,6 +189,11 @@
                 <option value="it-IT">Italiano</option>
             </select>
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
+        </div>
+
+        <div class="auth-card profile-form" id="grantsCard">
+            <h2 data-i18n="Grants">Grants</h2>
+            <div id="grantsList" class="grants-list"></div>
         </div>
 
         <div class="auth-card profile-form">

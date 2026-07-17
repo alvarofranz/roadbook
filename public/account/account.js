@@ -366,6 +366,12 @@
         $('pfOrg').value = user.organization || '';
         RBOrgDatalist($('orgSuggest')); // suggest existing clubs so the same one isn't retyped differently (#116)
         $('pfVoiceLang').value = user.voice_lang || '';
+        // Grants recap (#310)
+        const grants = [];
+        if (user.is_admin) grants.push({ label: t('Admin'), cls: 'admin' });
+        if (user.is_organizer) grants.push({ label: t('Organizer'), cls: 'organizer' });
+        if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: 'basic' });
+        $('grantsList').innerHTML = grants.map((g) => `<div class="grant-row"><span class="grant-badge ${g.cls}">${esc(g.label)}</span></div>`).join('');
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
