@@ -139,6 +139,8 @@
         <tr><td><code>wp_radius</code></td><td>integer, optional</td><td data-i18n="notes.wp_radius">Optional. Per-note validation radius (metres). When absent, falls back to <code>meta.default_wp_radius</code> then the type default.</td></tr>
         <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
         <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
+        <tr><td><code>note_kind</code></td><td>string, optional</td><td data-i18n-html="notes.note_kind">Optional. When set to <code>"comment"</code>, the note is a non-navigational <b>comment note</b> (e.g. a sponsor logo). It carries no <code>lat</code>/<code>lon</code>/<code>idx</code>/<code>num</code> and no geodata, keeps a fixed position in the list, and is shown in the Reader, PDF and challenge view but skipped by the map, scoring, GPS validation and GPX/KMZ export. Absent = a normal navigational note.</td></tr>
+        <tr><td><code>image</code></td><td>string, optional</td><td data-i18n-html="notes.image">Optional (comment notes). An embedded image as a <code>data:</code> URI, rendered in the note's diagram box.</td></tr>
     </table>
     <pre><code>{
   "num": 12, "idx": 184,
@@ -156,6 +158,12 @@
   "junctions": [
     { "pivot": [0, 0], "tip": [45, 25], "width": 3, "road_type": 3 }
   ]
+}</code></pre>
+    <p data-i18n-html="notes.comment.intro">A <b>comment note</b> (<code>note_kind: "comment"</code>) is coordinate-less — it holds only its text and an optional embedded <code>image</code>:</p>
+    <pre><code>{
+  "note_kind": "comment",
+  "text": "Sponsored by ACME Rally Gear",
+  "image": "data:image/png;base64,iVBORw0KGgo…"
 }</code></pre>
 
     <h2 id="icons" data-i18n-html="icons.h2">Symbols (note <code>icons</code> + top-level <code>icons</code> library)</h2>
@@ -224,6 +232,7 @@
         <li data-i18n-html="conformance.reader">A conforming <b>reader</b> MUST read <code>roadbook.json</code> from the container, render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
         <li data-i18n-html="conformance.writer">A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so <code>roadbook.json</code> is self-contained.</li>
         <li data-i18n="Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).">Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
+        <li data-i18n-html="conformance.comment">A conforming reader MUST render notes with <code>note_kind: "comment"</code> in the roadbook list but MUST NOT number them, place them on the map, score them or emit them as GPX/KMZ waypoints.</li>
     </ul>
 
     <h2 id="example" data-i18n="Full minimal example">Full minimal example</h2>

@@ -87,6 +87,8 @@
             'help.danger': 'Gradazione di pericolo FIA, mostrata come ! / !! / !!! nella vignetta: più alto il grado, più attenzione richiede il punto.',
             'help.speed': 'Un limite di velocità dichiarativo (km/h) in vigore da questa nota; “Fine limite” lo toglie. Impostare un limite segna anche la nota come zona controllata.',
             'help.capType': 'Qualifica il rilevamento CAP della nota (FIA): Uscita, Medio, Calcolato o di Svolta. Attivo quando la nota ha un CAP.',
+            'help.kind': 'Una Nota normale è posizionata sul percorso e navigata. Uno Sponsor è una riga senza coordinate (un logo e una didascalia) mostrata nel roadbook ma ignorata da navigazione, punteggio ed esportazione GPX.',
+            'help.image': 'Un logo o un’immagine opzionale per questa riga sponsor. Viene incorporata nel roadbook e mostrata nel Reader e nel PDF.',
             'help.wpType': 'Il tipo di waypoint FIA. Definisce l’icona sulla mappa e, in un roadbook rally, come il waypoint viene validato e punteggiato.',
             'help.radius': 'Raggio di validazione in metri: il geofence per il rilevamento automatico del passaggio. Se vuoto, ricade sul valore predefinito del roadbook e poi su quello del tipo (mostrato come segnaposto).',
             'help.visibility': 'Bozza tiene il roadbook privato mentre ci lavori. Pronto lo segna come finito ma resta privato. Pubblico lo elenca sul sito così chiunque può leggerlo o esportare un PDF, ma solo tu puoi scaricare il .rdbk.',

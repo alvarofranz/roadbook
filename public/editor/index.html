@@ -37,7 +37,8 @@
         .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
         /* the icon search sits on its own row above the icons; it grows to fill the width */
         #iconSearch { min-width: 0; }
-        #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot, #wpTypeSlot, #wpRadiusSlot { flex-shrink: 0; }
+        #kindSlot, #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot, #wpTypeSlot, #wpRadiusSlot { flex-shrink: 0; }
+        #kindSlot select, #sponsorSlot input { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
         #roadSlot select, #dangerSlot select, #speedSlot select, #capTypeSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
         #wpRadiusSlot input { width: 4.2rem; padding: .3rem .4rem; }
         /* the waypoint-type badge (RB.wpBadgeSVG) shown in a note row, next to the number */
@@ -90,6 +91,14 @@
         .note-mini .note-del { font-size: .8rem; font-weight: 800; }
         .note-mini .note-nav { font-size: .95rem; font-weight: 700; line-height: 1; color: var(--muted); }
         .note-mini .note-nav:disabled { opacity: .3; cursor: default; }
+        /* sponsor/comment rows: no number/km/tulip accent — just a logo thumb and its caption */
+        .note-mini.comment { border-left-color: var(--sand); border-left-style: dashed; }
+        .note-mini.comment .note-number.comment-badge { color: var(--muted); font-weight: 400; }
+        .note-mini.comment .note-km.comment-km { min-width: 3.4rem; }
+        .note-mini.comment .note-tulip.comment-logo { width: 160px; }
+        .note-mini.comment .comment-thumb { max-width: 160px; max-height: 64px; width: auto; height: auto; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+        .note-list-zone > .icon-category { display: flex; align-items: center; gap: .4rem; }
+        .note-add-sponsor { margin-left: auto; padding: .15rem .5rem; font-size: .72rem; }
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
         .note-edit-slot:empty { display: none; }
         .note-edit-slot { margin: .1rem 0 .5rem; }
@@ -339,7 +348,7 @@
             </div>
             <!-- ZONE 1: the notes list (its own scroll area) -->
             <div class="note-list-zone">
-                <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
+                <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span><button type="button" class="btn btn-ghost note-add-sponsor" id="addSponsorBtn" data-i18n="Add sponsor" title="Add sponsor"><i class="fa-solid fa-image"></i> Add sponsor</button></div>
                 <div id="noteList" class="note-list"></div>
             </div>
             <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
@@ -350,7 +359,7 @@
                     </div>
                     <div class="vig-icons">
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
+                        <div class="ed-row"><span id="kindSlot"></span><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
                         <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>

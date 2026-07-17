@@ -151,7 +151,31 @@
         }
 
         function drawRow(n, tulip, close, x, y, h) {
+            const comment = n.note_kind === 'comment';
             const colDist = 26, colVig = 46, colText = CW - colDist - colVig, pad = 2;
+            if (comment) {
+                doc.setDrawColor(20); doc.setLineWidth(0.3); doc.rect(x, y, CW, h);
+                if (n.image && tulip) {
+                    // Comment note with embedded image: show image in the vignette column
+                    doc.line(x + colDist, y, x + colDist, y + h);
+                    doc.line(x + colDist + colVig, y, x + colDist + colVig, y + h);
+                    const aw = colVig - 2 * pad, ah = h - 2 * pad, ar = 230 / 162;
+                    let iw = aw, ih = iw / ar; if (ih > ah) { ih = ah; iw = ih * ar; }
+                    doc.addImage(tulip, 'PNG', x + colDist + (colVig - iw) / 2, y + (h - ih) / 2, iw, ih);
+                    const tx = x + colDist + colVig, tcx = tx + colText / 2;
+                    doc.setTextColor(20); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+                    const lines = doc.splitTextToSize(String(n.text || ''), colText - 2 * pad);
+                    const block = Math.min(lines.length, 4) * 4.4;
+                    doc.text(lines.slice(0, 4), tcx, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
+                } else {
+                    // Comment note without image: text spans full row width
+                    doc.setTextColor(60); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+                    const lines = doc.splitTextToSize(String(n.text || ''), CW - 2 * pad);
+                    const block = Math.min(lines.length, 4) * 4.4;
+                    doc.text(lines.slice(0, 4), x + CW / 2, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
+                }
+                return;
+            }
             // close-to-next notes get the light-blue distance cell (mirrors the Reader)
             if (close) { doc.setFillColor(191, 227, 255); doc.rect(x, y, colDist, h, 'F'); }
             doc.setDrawColor(20); doc.setLineWidth(0.3);
