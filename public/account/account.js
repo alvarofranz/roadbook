@@ -110,7 +110,7 @@
     // Confirm: create the account (new, Terms accepted) or sign in (existing), then land in the profile.
     async function confirmGoogle(exists) {
         const r = await api('google_auth', { credential: googleCred, confirm: true, accept_terms: !exists });
-        if (r.ok) { me = r.user; return finishLogin(me); }
+        if (r.ok) { me = r.user; try { localStorage.setItem('rb_cfg_user', JSON.stringify(r.user)); } catch (e) {} return finishLogin(me); }
         restoreGoogle(); msg(r.error || 'Google sign-in failed. Please try again.', false);
     }
     // Shared post-sign-in step (classic login + Google): force a password change if flagged, else
@@ -224,7 +224,7 @@
     onSubmit('loginForm', async () => {
         const pass = $('loginPass').value;
         const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
-        if (r.ok) { me = r.user; await storeCredential(me.email, pass); finishLogin(me); }
+        if (r.ok) { me = r.user; try { localStorage.setItem('rb_cfg_user', JSON.stringify(r.user)); } catch (e) {} await storeCredential(me.email, pass); finishLogin(me); }
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
     });

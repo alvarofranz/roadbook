@@ -261,6 +261,11 @@ function login_user(array $d): void {
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
+    // Force the new session cookie explicitly — session_regenerate_id() may not reliably send the
+    // Set-Cookie header over fetch() POST in all PHP versions / browser combinations (#308).
+    $https = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
+        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+    setcookie(session_name(), session_id(), ['expires' => time() + SESSION_LIFETIME, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
     log_activity((int)$u['id'], 'login');
     // A Bearer token only for the native apps (recognised by their trusted Origin): the web uses
     // the session cookie and discards the token, so minting one there would only pile up
@@ -329,6 +334,10 @@ function google_auth(array $d): void {
     if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
+    // Force the new session cookie explicitly (#308)
+    $https = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
+        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+    setcookie(session_name(), session_id(), ['expires' => time() + SESSION_LIFETIME, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
     log_activity((int)$u['id'], 'login_google');
     // token: app logins only — same rule as the classic login (#213)
     $token = is_app_origin($_SERVER['HTTP_ORIGIN'] ?? '') ? issue_api_token((int)$u['id']) : null;
