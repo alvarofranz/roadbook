@@ -308,7 +308,7 @@
     }
     // A note's confirm label, e.g. "#3 — Sharp left". The text comes from the loaded
     // .rdbk (user/untrusted) and the confirm message is rendered as HTML, so escape it.
-    const noteLabel = (n) => RB.isComment(n) ? (t('sponsor') + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
+    const noteLabel = (n) => RB.isComment(n) ? (t('comment') + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
@@ -1310,11 +1310,11 @@
             // Comment/sponsor rows carry no number, distance, tulip or geo-meta — just an optional
             // logo and its caption. They keep the reorder/delete controls so they can be positioned.
             if (RB.isComment(n)) return `<div class="note-mini comment${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                <span class="note-number comment-badge" aria-hidden="true"><i class="fa-solid fa-image"></i></span>
+                <span class="note-number comment-badge" aria-hidden="true"><i class="fa-solid fa-comment"></i></span>
                 <span class="note-km comment-km"></span>
-                <span class="note-tulip comment-logo">${n.image ? `<img src="${esc(n.image)}" alt="" class="comment-thumb">` : ''}</span>
+                <span class="comment-logo">${n.image ? `<img src="${esc(n.image)}" alt="" class="comment-thumb">` : ''}</span>
                 <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(sponsor caption)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
+                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(comment caption)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                 </div>
                 <div class="note-actions">
                     <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
@@ -1393,8 +1393,9 @@
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
     const tulipSVG = (n) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'));
     function placeTulips() {
-        $('noteList').querySelectorAll('.note-tulip').forEach((slot) => {
+        $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
+            if (!Number.isInteger(i) || !rb.notes[i] || RB.isComment(rb.notes[i])) return; // comment rows have no tulip
             if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
             slot.innerHTML = tulipSVG(rb.notes[i]);
         });
@@ -1406,6 +1407,8 @@
     function openEditZoneAt(i) {
         const slot = $('editSlot' + i), tulip = $('tulipSlot' + i);
         if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
+        // A comment row has no tulip slot and no live canvas — park the canvas and keep it hidden.
+        if (RB.isComment(rb.notes[i])) { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; $('noteEditZone').hidden = false; return; }
         if (tulip && $('canvasWrap').parentNode !== tulip) { tulip.innerHTML = ''; tulip.appendChild($('canvasWrap')); } // drop the static preview, host the live canvas
         $('canvasWrap').hidden = false;
         $('noteEditZone').hidden = false;
@@ -1422,7 +1425,8 @@
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
-        openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
+        openEditZoneAt(i); renderEditor();
+        if (!RB.isComment(rb.notes[i])) canvas.setNote(rb.notes[i]); // comment notes have no tulip canvas
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
@@ -1442,42 +1446,46 @@
 
     function renderEditor() {
         const n = rb.notes[sel];
-        const isComment = (n.note_kind === 'comment');
-        // Toggle note kind: Normal / Comment.
-        const kindOpts = [['', 'Note'], ['comment', 'Sponsor']].map(([v, l]) => `<option value="${v}" ${v === (n.note_kind || '') ? 'selected' : ''}>${t(l)}</option>`).join('');
-        $('kindSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Kind', 'help.kind')}</span><select id="edKind" class="field">${kindOpts}</select></label>`;
-        $('edKind').onchange = (e) => {
-            const v = e.target.value;
-            if (v === 'comment') { n.note_kind = 'comment'; delete n.lat; delete n.lon; delete n.idx; delete n.num; }
-            else { delete n.note_kind; RB.recomputeMetrics(rb); }
-            markDirty(); renderEditor(); renderNotes();
-        };
-        // Sponsor image upload (only for comment notes).
-        const hasImage = !!n.image;
-        $('kindSlot').insertAdjacentHTML('afterend',
-            `<span id="sponsorSlot"${isComment ? '' : ' hidden'}><label class="prop-field"><span>${labelHelp('Image', 'help.image')}</span>`
-            + `<input type="file" id="edSponsorImg" accept="image/*"${hasImage ? '' : ''}>`
-            + `${hasImage ? `<img id="edSponsorPrev" src="${esc(n.image)}" alt="" style="height:32px;border-radius:6px;vertical-align:middle">` : '<img id="edSponsorPrev" hidden alt="">'}`
-            + `<button type="button" id="edSponsorClr"${hasImage ? '' : ' hidden'} class="btn btn-ghost" style="padding:.2rem .5rem;font-size:.85rem">✕</button></label></span>`
-        );
-        const imgInput = $('edSponsorImg');
-        const imgPrev = $('edSponsorPrev');
-        const imgClr = $('edSponsorClr');
-        if (imgInput) {
-            imgInput.onchange = async (e) => {
-                const f = e.target.files[0];
-                if (!f) return;
-                n.image = await RBImg.toDataURL(f, 512); // downscale sponsor logos so the .rdbk stays small
+        // A comment note gets a dedicated form (no tulip / icons / geo params, no kind selector) —
+        // the standard vignette+properties editor is hidden entirely and we return early.
+        if (RB.isComment(n)) {
+            $('noteEditStd').hidden = true;
+            $('commentForm').hidden = false;
+            // The "position" field lets the user move the comment note along the roadbook by
+            // typing a new 1-based list position (comment notes carry no num of their own).
+            const num = $('edCommentNum');
+            num.max = rb.notes.length;
+            num.value = rb.notes.indexOf(n) + 1;
+            num.onchange = () => {
+                const from = rb.notes.indexOf(n);
+                let to = Math.round(parseInt(num.value, 10)) - 1;
+                if (isNaN(to)) { num.value = from + 1; return; }
+                to = Math.max(0, Math.min(rb.notes.length - 1, to));
+                if (to === from) { num.value = from + 1; return; }
+                rb.notes.splice(from, 1);
+                rb.notes.splice(to, 0, n);
+                RB.recomputeMetrics(rb);
+                sel = to;
                 markDirty(); renderEditor(); renderNotes();
             };
+            const txt = $('edCommentText');
+            txt.value = n.text || '';
+            txt.oninput = () => { n.text = txt.value; markDirty(); const ta = $('noteList').querySelector('.note-title[data-i="' + sel + '"]'); if (ta && ta !== txt) ta.value = txt.value; };
+            const prev = $('edCommentPrev'), clr = $('edCommentClr');
+            if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; } else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; }
+            $('edCommentImg').value = '';
+            $('edCommentImg').onchange = async (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                n.image = await RBImg.toDataURL(f, 512); // downscale so the .rdbk stays small
+                markDirty(); renderEditor(); renderNotes();
+            };
+            clr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
+            return;
         }
-        if (imgClr) {
-            imgClr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
-        }
-        // Hide geo properties for comment notes.
-        const geoSlots = ['roadSlot', 'dangerSlot', 'speedSlot', 'capTypeSlot', 'wpTypeSlot', 'wpRadiusSlot'];
-        geoSlots.forEach((id) => { const el = $(id); if (el) el.closest ? el.closest('span').hidden = isComment : el.hidden = isComment; });
-        if (isComment) return; // nothing else to render for a sponsor note
+        // Normal note: show the standard editor, hide the comment form.
+        $('noteEditStd').hidden = false;
+        $('commentForm').hidden = true;
 
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
@@ -1625,7 +1633,7 @@
         refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
     }
-    // "Add sponsor": a coordinate-less comment note (sponsor logo/text). It sits after the
+    // "Add comment": a coordinate-less comment note (image + text). It sits after the
     // currently-selected note (or at the end), carries no track point, num, or geodata, and is
     // skipped by scoring/GPS/GPX export. See docs/rdbk-format.md §6 (note_kind: "comment").
     function addComment() {
@@ -1635,7 +1643,7 @@
         RB.recomputeMetrics(rb);
         sel = at; editorOpen = true;
         renderNotes(); openEditZoneAt(at); markDirty();
-        toast('Sponsor note added.');
+        toast('Comment note added.');
     }
     // "Add point here": just a track point at the exact clicked point, no note.
     function addPointAtExact(pt) {
