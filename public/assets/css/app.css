@@ -121,6 +121,12 @@ body.rb-immersive .fabrow { bottom: 0; }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
+/* Fixed floating lang for mobile: appears above the tab bar when the footer is hidden.
+   The dropdown opens upward so it fits below the top of the screen. */
+.lang-mobile { display: none; position: fixed; right: .6rem; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .6rem); z-index: 55; }
+.lang-mobile .lang-menu { bottom: calc(100% + 6px); top: auto; right: 0; }
+@media (max-width: 1024px) { .lang-mobile { display: inline-flex; } }
+.native .lang-mobile { display: inline-flex; }
 
 /* ---------- buttons ---------- */
 .btn {

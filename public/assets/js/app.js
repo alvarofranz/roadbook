@@ -112,6 +112,7 @@
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
                 <a href="${ROOT}contact/"><i class="fa-solid fa-envelope"></i> ${RBt('Contact')}</a>
+                <span class="lang"></span>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
@@ -134,6 +135,12 @@
             }
             return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
+        // Floating language selector for mobile (visible above the tab bar when the footer is hidden).
+        if (!document.querySelector('.lang-mobile')) {
+            const ml = document.createElement('div');
+            ml.className = 'lang lang-mobile';
+            document.body.appendChild(ml);
+        }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
