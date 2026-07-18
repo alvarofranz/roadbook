@@ -37,6 +37,7 @@
     /* ---------------- road types ---------------- */
     // width: stroke width in vignette reference units — indicative of the road
     // type (motorway widest, off-piste thinnest).
+    const isComment = (n) => n && n.note_kind === 'comment';
     const ROAD_TYPES = [
         { id: 0, color: '#9aa4b2', width: 5, dashed: false }, // default
         { id: 1, color: '#3b82f6', width: 9, dashed: false }, // motorway
@@ -537,33 +538,47 @@
     // road_type_out is authored per note — the road simply continues until a note
     // changes it. Run after every edit so the invariant always holds.
     function normalizeRoadTypes(rb) {
-        rb.notes.forEach((n, i) => { n.road_type_in = i > 0 ? rb.notes[i - 1].road_type_out : n.road_type_out; });
+        let prev = null;
+        rb.notes.forEach((n) => {
+            if (isComment(n)) return;
+            n.road_type_in = prev ? prev.road_type_out : n.road_type_out;
+            prev = n;
+        });
         return rb;
     }
     // Recomputes num, clamped idx, lat/lon, distance/partial_distance and bearings from the track.
     function recomputeMetrics(rb) {
         const cum = cumulativeM(rb.track);
-        rb.notes.sort((a, b) => a.idx - b.idx);
-        rb.notes.forEach((n, i) => {
-            n.num = i + 1;
+        // Extract comment notes — they have no idx/geo fields to recompute
+        const commentNotes = [], normalNotes = [];
+        rb.notes.forEach((n) => { (isComment(n) ? commentNotes : normalNotes).push(n); });
+        normalNotes.sort((a, b) => a.idx - b.idx);
+        normalNotes.forEach((n, i) => {
             const idx = Math.max(0, Math.min(rb.track.length - 1, n.idx | 0));
             n.idx = idx;
             const tp = rb.track[idx];
             n.lat = round6(tp.lat); n.lon = round6(tp.lon);
             n.distance = Math.round(cum[idx]);
-            n.partial_distance = Math.round(i === 0 ? 0 : Math.max(0, cum[idx] - cum[rb.notes[i - 1].idx]));
+            n.partial_distance = Math.round(i === 0 ? 0 : Math.max(0, cum[idx] - cum[normalNotes[i - 1].idx]));
             const { bIn, bOut } = deriveBearings(rb.track, idx);
             n.bearing_in = round3(bIn); n.bearing_out = round3(bOut);
         });
+        // Re-interleave comment notes at their original positions, then renumber normal notes
+        const merged = []; let ci = 0, ni = 0;
+        for (const n of rb.notes) merged.push(isComment(n) ? commentNotes[ci++] : normalNotes[ni++]);
+        rb.notes = merged;
+        let num = 0;
+        rb.notes.forEach((n) => { if (!isComment(n)) { num++; n.num = num; } });
         normalizeRoadTypes(rb);
         rb.meta.total_distance = Math.round(cum[cum.length - 1] || 0);
-        rb.meta.note_count = rb.notes.length;
+        rb.meta.note_count = num; // navigational notes only — comment notes don't count
         return rb;
     }
     // Recompute the red CAP (heading + straight-line distance in metres to the next note) where active.
     function recomputeCaps(rb) {
-        for (let i = 0; i < rb.notes.length; i++) {
-            const n = rb.notes[i], nx = rb.notes[i + 1];
+        const normal = rb.notes.filter((n) => !isComment(n));
+        for (let i = 0; i < normal.length; i++) {
+            const n = normal[i], nx = normal[i + 1];
             if (n.cap != null && nx) { n.cap = Math.round(bearingDeg(n, nx)); n.cap_distance = Math.round(haversineM(n, nx)); }
             else if (n.cap != null) { n.cap = null; n.cap_distance = null; } // target note was deleted → clear stale cap
         }
@@ -645,10 +660,10 @@
     // so road_type_out becomes the old road_type_in; recomputeMetrics re-derives
     // road_type_in (and bearings/CAPs follow).
     function reverseRoadbook(rb) {
-        const last = rb.track.length - 1;
         rb.track.reverse();
-        rb.track.forEach((p) => { delete p.t; }); // reversed timestamps would be non-monotonic
-        rb.notes.forEach((n) => { n.idx = last - n.idx; n.road_type_out = n.road_type_in; });
+        const last = rb.track.length - 1;
+        rb.track.forEach((p) => { delete p.t; });
+        rb.notes.forEach((n) => { if (!isComment(n)) { n.idx = last - n.idx; n.road_type_out = n.road_type_in; } });
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
@@ -772,6 +787,7 @@
         };
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
+            if (isComment(n)) return '';
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
             if (n.wp_type) { const w = wpType(n.wp_type); ext.push(`<openrally:wptType>${x(w ? w.cap : n.wp_type)}</openrally:wptType>`); }
             if (Array.isArray(n.openrally) && n.openrally.length) {
@@ -786,7 +802,7 @@
             }
             if (tulips[i]) ext.push(`<openrally:tulip><![CDATA[${tulips[i]}]]></openrally:tulip>`);
             return `<wpt lat="${n.lat}" lon="${n.lon}"><name>${x(n.num != null ? n.num : i + 1)}</name><extensions>${ext.join('')}</extensions></wpt>`;
-        }).join('');
+        }).filter(Boolean).join('');
         const totalM = (rb.track && rb.track.length > 1) ? cumulativeM(rb.track)[rb.track.length - 1] : (rb.meta && rb.meta.total_distance) || 0;
         return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="RDBK.app" xmlns="http://www.topografix.com/GPX/1/1" xmlns:openrally="${NS}">`
             + `<metadata><name>${x(name)}</name><extensions><openrally:units>metric</openrally:units><openrally:distance>${(totalM / 1000).toFixed(3)}</openrally:distance></extensions></metadata>`
@@ -832,10 +848,10 @@
         const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
         const opens = (n) => n.wp_type === 'ss_start' || has(n, START_ICON);
         const closes = (n) => n.wp_type === 'ss_end' || has(n, FINISH_ICON);
-        if (!notes.some(opens)) return null;
+        if (!notes.some((n) => !isComment(n) && opens(n))) return null;
         const set = new Set();
         let inStage = false;
-        notes.forEach((n, i) => { if (opens(n)) inStage = true; if (inStage) set.add(i); if (closes(n)) inStage = false; });
+        notes.forEach((n, i) => { if (isComment(n)) return; if (opens(n)) inStage = true; if (inStage) set.add(i); if (closes(n)) inStage = false; });
         return set;
     }
     const isScoredIdx = (scoredSet, i) => scoredSet === null || scoredSet.has(i);
@@ -844,6 +860,7 @@
     // point. Both zero without a GPS fix — a manual run has nothing to measure against.
     function validationPenalties(notes, i, here) {
         if (!here) return { acc: 0, cap: 0 };
+        if (isComment(notes[i])) return { acc: 0, cap: 0 };
         const n = notes[i], prev = notes[i - 1];
         const acc = i > 0 ? haversineM(here, n) : 0;
         const cap = (prev && prev.cap != null && prev.cap_distance != null)
@@ -975,12 +992,13 @@
     // vertex was kept / nothing was deleted. (The Editor's "Transform" keeps the point instead.)
     function deleteNote(rb, i) {
         if (!rb || i < 0 || i >= rb.notes.length) return -1;
+        if (isComment(rb.notes[i])) { rb.notes.splice(i, 1); recomputeMetrics(rb); return -1; }
         const idx = rb.notes[i].idx;
         rb.notes.splice(i, 1);
         let removed = -1;
         if (rb.track.length > 2) {
             rb.track.splice(idx, 1);
-            rb.notes.forEach((n) => { if (n.idx > idx) n.idx -= 1; });
+            rb.notes.forEach((n) => { if (!isComment(n) && n.idx > idx) n.idx -= 1; });
             removed = idx;
         }
         recomputeMetrics(rb); recomputeCaps(rb);
@@ -1041,7 +1059,7 @@
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        roadbookForExport,
+        roadbookForExport, isComment,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, recStepM,
     };

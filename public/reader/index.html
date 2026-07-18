@@ -52,6 +52,10 @@
         #noteList .col-distance .num-row .num { margin-top: 0; align-self: center; }
         #noteList .col-distance .num-row .wp-badge { display: block; flex-shrink: 0; }
         #noteList .col-text .coords { font-size: .9rem; }
+        /* comment note: empty distance column, no navigation, no pointer cursor */
+        .nrow.comment { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
+        .nrow.comment .col-vignette-empty { display: none; }
+        .nrow.comment .col-text-wide { flex: 1; max-width: none; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
         .nmap { background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* interactive per-note map (zoom buttons + satellite/topo toggle, one open at a time) */
         .rb-inline-map { height: 320px; width: 100%; border-radius: 6px; overflow: hidden; }

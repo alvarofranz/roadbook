@@ -16,6 +16,11 @@
     function closeModal(id) { $(id).hidden = true; if (modalTrap) { modalTrap(); modalTrap = null; } }
 
     let rb = null, notes = [], activeIdx = 0, team = '0';
+    // Comment notes (note_kind 'comment') are coordinate-less and non-navigational: the active
+    // cursor must always skip over them, else onFix reads a note with no lat/lon and auto-advance
+    // stalls forever on a NaN distance. nextNav/prevNav resolve the nearest real note each way.
+    const nextNav = (i) => { while (i < notes.length && RB.isComment(notes[i])) i++; return i; };
+    const prevNav = (i) => { while (i >= 0 && notes[i] && RB.isComment(notes[i])) i--; return i; };
     let reached = new Set(); // indices actually validated — a passed-over note that is not in here was skipped
     let tripTotalM = 0, tripPartialM = 0;
     let curLimit = null, maxSpdSeg = 0;
@@ -198,6 +203,7 @@
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
+        activeIdx = nextNav(activeIdx); // never sit the cursor on a leading/edge comment note
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         // Immersive navigation: the Reader owns the screen (its own action row carries the exit
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
@@ -285,7 +291,7 @@
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
-    const reachRadius = (i) => RB.reachRadius(notes[i], notes[i + 1], rb && rb.meta);
+    const reachRadius = (i) => RB.reachRadius(notes[i], notes[nextNav(i + 1)], rb && rb.meta);
     // Auto-validation on arrival: the moment the current fix is within the active note's reach,
     // the note is reached → validate against that fix. Immune to the cascade since reaches can't
     // overlap (reachRadius caps to half the neighbour gap), so the next note's gate only opens
@@ -321,17 +327,28 @@
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
+            const comment = n.note_kind === 'comment';
             const cls = ['nrow'];
-            if (!preview) { // no state colouring in the read-only preview — nothing is active/reached yet
+            if (comment) cls.push('comment');
+            if (!preview && !comment) { // no state colouring in the preview, nor on non-navigational comment rows
                 if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
                 if (i === activeIdx) cls.push('active');
             }
-            const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
+            const close = !comment && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
-            const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            const reach = (!comment && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const mapb = (!comment && showMap) ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            const textClass = comment && !n.image ? ' col-text-wide' : '';
+            if (comment) {
+                return `<div class="${cls.join(' ')}" data-i="${i}">
+                <div class="col-distance"></div>
+                <div class="col-vignette${comment && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
+                <div class="col-buttons"></div>
+            </div><div class="nmap" id="nmap${i}" hidden></div>`;
+            }
             return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${close}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
@@ -341,7 +358,10 @@
         }).join('');
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
-        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => preview ? (showMap && toggleNoteMap(+c.dataset.i)) : tapNote(+c.dataset.i));
+        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
+            if (c.classList.contains('comment')) return;
+            preview ? (showMap && toggleNoteMap(+c.dataset.i)) : tapNote(+c.dataset.i);
+        });
         // only rescroll when the active note actually changed (not on every redraw)
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         updateCapBar();
@@ -360,7 +380,7 @@
             row.classList.toggle('active', i === activeIdx);
         });
         list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
-        if (!auto) {
+        if (!auto && notes[activeIdx] && notes[activeIdx].note_kind !== 'comment') {
             const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
             if (cell) {
                 const b = document.createElement('button');
@@ -396,7 +416,7 @@
     // Bottom CAP bar: heading to hold (prev note's CAP) · speed · live distance to
     // destination · direction arrow. Appears only while a CAP is active.
     function updateCapBar(here) {
-        const an = notes[activeIdx], prev = notes[activeIdx - 1];
+        const an = notes[activeIdx], prev = notes[prevNav(activeIdx - 1)];
         if (!prev || prev.cap == null || !an) { capEls.bar.hidden = true; return; }
         capEls.bar.hidden = false;
         capEls.heading.textContent = Math.round(prev.cap) + '°';
@@ -413,7 +433,7 @@
         if (competition) { tapNote(i); return; } // scored validation
         reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
-        activeIdx = i + 1; updateNoteStates();
+        activeIdx = nextNav(i + 1); updateNoteStates();
     }
     // Scored sections (rally special stages) live in the core — RB.scoredNoteSet: only notes
     // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
@@ -447,7 +467,7 @@
         if (lim != null) { if (scored) pen.speed += RB.speedPenalty(maxSpdSeg, curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
         reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
-        activeIdx = i + 1; updateNoteStates();
+        activeIdx = nextNav(i + 1); updateNoteStates();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
     $('validateBtn').onclick = () => {

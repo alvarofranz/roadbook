@@ -64,6 +64,14 @@
     const ROWS_FIRST = 4, ROWS_REST = 6;
     const km = (m) => ((m || 0) / 1000).toFixed(2);
 
+    // Draw centred text, shrinking the font size so a long title never runs past maxW (mm).
+    function centeredFit(doc, text, cx, y, size, maxW) {
+        let s = size;
+        doc.setFontSize(s);
+        while (s > 6 && doc.getTextWidth(text) > maxW) { s -= 0.5; doc.setFontSize(s); }
+        doc.text(text, cx, y, { align: 'center' });
+    }
+
     // Place a logo (data URI) fitted into maxW×maxH, anchored by its centre-x / top-y.
     function placeLogo(doc, logo, cx, top, maxW, maxH) {
         try {
@@ -96,8 +104,8 @@
             } catch (e) { /* skip */ }
         }
         // title
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(20);
-        doc.text(title, cx, y, { align: 'center' }); y += 14;
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
+        centeredFit(doc, title, cx, y, 26, CW); y += 14;
         // author
         if (author) {
             doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(60);
@@ -131,14 +139,14 @@
             doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text(String(N), LEFT, TOP + 31);
             doc.setDrawColor(180); doc.setLineWidth(0.3); doc.line(LEFT + 34, TOP + 1, LEFT + 34, TOP + 33);
             if (logo) placeLogo(doc, logo, (LEFT + 34 + PW - RIGHT) / 2, TOP, 60, 24);
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(20);
-            doc.text(title, PW / 2, TOP + 43, { align: 'center' });
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
+            centeredFit(doc, title, PW / 2, TOP + 43, 15, CW);
             doc.setDrawColor(40); doc.setLineWidth(0.4); doc.line(LEFT, TOP + H1 - 2, PW - RIGHT, TOP + H1 - 2);
         }
         function runHeader(pageNum) {
             if (logo) placeLogo(doc, logo, LEFT + 10, TOP - 2, 20, 10); // cx keeps a max-width logo inside the 30 mm bind margin
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(20);
-            doc.text(title, PW / 2, TOP + 4, { align: 'center' });
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
+            centeredFit(doc, title, PW / 2, TOP + 4, 11, PW - 2 * (LEFT + 20));
             doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(60);
             doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 4, { align: 'right' });
             doc.setDrawColor(120); doc.setLineWidth(0.3); doc.line(LEFT, TOP + H2 - 2, PW - RIGHT, TOP + H2 - 2);
@@ -151,7 +159,31 @@
         }
 
         function drawRow(n, tulip, close, x, y, h) {
+            const comment = n.note_kind === 'comment';
             const colDist = 26, colVig = 46, colText = CW - colDist - colVig, pad = 2;
+            if (comment) {
+                doc.setDrawColor(20); doc.setLineWidth(0.3); doc.rect(x, y, CW, h);
+                if (n.image && tulip) {
+                    // Comment note with embedded image: show image in the vignette column
+                    doc.line(x + colDist, y, x + colDist, y + h);
+                    doc.line(x + colDist + colVig, y, x + colDist + colVig, y + h);
+                    const aw = colVig - 2 * pad, ah = h - 2 * pad, ar = 230 / 162;
+                    let iw = aw, ih = iw / ar; if (ih > ah) { ih = ah; iw = ih * ar; }
+                    doc.addImage(tulip, 'PNG', x + colDist + (colVig - iw) / 2, y + (h - ih) / 2, iw, ih);
+                    const tx = x + colDist + colVig, tcx = tx + colText / 2;
+                    doc.setTextColor(20); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+                    const lines = doc.splitTextToSize(String(n.text || ''), colText - 2 * pad);
+                    const block = Math.min(lines.length, 4) * 4.4;
+                    doc.text(lines.slice(0, 4), tcx, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
+                } else {
+                    // Comment note without image: text spans full row width
+                    doc.setTextColor(60); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+                    const lines = doc.splitTextToSize(String(n.text || ''), CW - 2 * pad);
+                    const block = Math.min(lines.length, 4) * 4.4;
+                    doc.text(lines.slice(0, 4), x + CW / 2, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
+                }
+                return;
+            }
             // close-to-next notes get the light-blue distance cell (mirrors the Reader)
             if (close) { doc.setFillColor(191, 227, 255); doc.rect(x, y, colDist, h, 'F'); }
             doc.setDrawColor(20); doc.setLineWidth(0.3);

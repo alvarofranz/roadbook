@@ -1,5 +1,6 @@
 /* RDBK.app i18n — ES translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).es = {
+            'Add comment': 'Añadir comentario', '(comment caption)': '(texto del comentario)', 'comment': 'comentario', 'Comment note added.': 'Nota de comentario añadida.', 'Image': 'Imagen', 'Text': 'Texto',
             'Continue as': 'Continuar como', 'Use a different account': 'Usar otra cuenta',
             'Signing you in…': 'Iniciando sesión…', 'Sign in or create your account — no password needed.': 'Inicia sesión o crea tu cuenta — sin contraseña.',
             'Sign in to read this roadbook.': 'Inicia sesión para leer este roadbook.', 'Sign in to read public roadbooks.': 'Inicia sesión para leer los roadbooks públicos.',
@@ -87,6 +88,8 @@
             'help.danger': 'Gradación de peligro FIA, mostrada como ! / !! / !!! en la viñeta: a mayor grado, más precaución exige el punto.',
             'help.speed': 'Un límite de velocidad declarativo (km/h) vigente desde esta nota; “Fin de límite” lo levanta. Fijar un límite también marca la nota como zona controlada.',
             'help.capType': 'Califica el rumbo CAP de la nota (FIA): Salida, Medio, Calculado o de Giro. Se activa cuando la nota lleva un CAP.',
+            'Position': 'Posición',
+            'help.image': 'Una imagen opcional para esta fila de comentario. Se incrusta en el roadbook y se muestra en el Reader y en el PDF.',
             'help.wpType': 'El tipo de waypoint FIA. Define el icono en el mapa y, en un roadbook de rally, cómo se valida y puntúa el waypoint.',
             'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook y luego al del tipo (mostrado como marcador).',
             'help.visibility': 'Borrador mantiene el roadbook privado mientras lo trabajas. Listo lo marca como terminado pero sigue privado. Público lo lista en el sitio para que cualquiera pueda leerlo o exportar un PDF, pero solo tú puedes descargar el .rdbk.',

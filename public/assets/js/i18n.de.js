@@ -1,5 +1,6 @@
 /* RDBK.app i18n — DE translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).de = {
+            'Add comment': 'Kommentar hinzufügen', '(comment caption)': '(Kommentartext)', 'comment': 'Kommentar', 'Comment note added.': 'Kommentarnotiz hinzugefügt.', 'Image': 'Bild', 'Text': 'Text',
             'Continue as': 'Weiter als', 'Use a different account': 'Anderes Konto verwenden',
             'Signing you in…': 'Anmeldung läuft…', 'Sign in or create your account — no password needed.': 'Anmelden oder Konto erstellen — kein Passwort nötig.',
             'Sign in to read this roadbook.': 'Melde dich an, um dieses Roadbook zu lesen.', 'Sign in to read public roadbooks.': 'Melde dich an, um öffentliche Roadbooks zu lesen.',
@@ -87,6 +88,8 @@
             'help.danger': 'FIA-Gefahreneinstufung, in der Vignette als ! / !! / !!! angezeigt — je höher die Stufe, desto mehr Vorsicht ist geboten.',
             'help.speed': 'Eine deklarative Geschwindigkeitsbegrenzung (km/h) ab dieser Note; „Ende der Begrenzung" hebt sie auf. Eine Begrenzung markiert die Note zugleich als Kontrollzone.',
             'help.capType': 'Qualifiziert die CAP-Richtung der Note (FIA): Ausfahrt, Mittel, Berechnet oder Kurve. Aktiv, sobald die Note ein CAP hat.',
+            'Position': 'Position',
+            'help.image': 'Ein optionales Bild für diese Kommentarzeile. Es wird ins Roadbook eingebettet und im Reader und PDF angezeigt.',
             'help.wpType': 'Der FIA-Waypoint-Typ. Legt das Kartensymbol fest und – in einem Rally-Roadbook – wie der Waypoint validiert und gewertet wird.',
             'help.radius': 'Validierungsradius in Metern – der Geofence für die automatische Durchfahrtserkennung. Leer greift er auf den Roadbook-Standard, dann den Typ-Standard zurück (als Platzhalter angezeigt).',
             'help.visibility': 'Entwurf hält das Roadbook privat, während du daran arbeitest. Fertig markiert es als abgeschlossen, bleibt aber privat. Öffentlich listet es auf der Seite, sodass jeder es lesen oder als PDF exportieren kann – nur du kannst die .rdbk herunterladen.',

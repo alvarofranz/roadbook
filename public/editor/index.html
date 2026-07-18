@@ -90,6 +90,22 @@
         .note-mini .note-del { font-size: .8rem; font-weight: 800; }
         .note-mini .note-nav { font-size: .95rem; font-weight: 700; line-height: 1; color: var(--muted); }
         .note-mini .note-nav:disabled { opacity: .3; cursor: default; }
+        /* sponsor/comment rows: no number/km/tulip accent — just a logo thumb and its caption */
+        .note-mini.comment { border-left-color: var(--sand); border-left-style: dashed; }
+        .note-mini.comment .note-number.comment-badge { color: var(--muted); font-weight: 400; }
+        .note-mini.comment .note-km.comment-km { min-width: 3.4rem; }
+        .note-mini.comment .comment-logo { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
+        .note-mini.comment .comment-thumb { max-width: 160px; max-height: 64px; width: auto; height: auto; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+        .note-list-zone > .icon-category { display: flex; align-items: center; gap: .4rem; }
+        .note-add-sponsor { margin-left: auto; padding: .15rem .5rem; font-size: .72rem; }
+        /* comment-note dedicated form (no tulip / icons / geo params) */
+        #commentForm { display: flex; flex-direction: column; gap: .6rem; padding: .2rem 0; }
+        #commentForm .prop-field { display: flex; flex-direction: column; gap: .25rem; }
+        #commentForm .prop-field > span { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        #commentForm #edCommentNum { max-width: 6rem; font-weight: 800; }
+        #commentForm .comment-img-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+        #commentForm .comment-form-prev { max-width: 160px; max-height: 72px; width: auto; height: auto; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+        #commentForm #edCommentClr { padding: .2rem .5rem; }
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
         .note-edit-slot:empty { display: none; }
         .note-edit-slot { margin: .1rem 0 .5rem; }
@@ -339,12 +355,12 @@
             </div>
             <!-- ZONE 1: the notes list (its own scroll area) -->
             <div class="note-list-zone">
-                <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
+                <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span><button type="button" class="btn btn-ghost note-add-sponsor" id="addSponsorBtn" data-i18n="Add comment" title="Add comment"><i class="fa-solid fa-comment"></i> Add comment</button></div>
                 <div id="noteList" class="note-list"></div>
             </div>
             <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
             <div id="noteEditZone" class="note-edit-zone" hidden>
-                <div class="vig-split">
+                <div class="vig-split" id="noteEditStd">
                     <div class="vig-canvas">
                         <div id="noteToolbar"></div>
                     </div>
@@ -355,6 +371,18 @@
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
                         <div class="btnrow end"><button class="btn btn-ghost" id="addIconBtn" data-i18n="Upload icon"><i class="fa-solid fa-plus"></i> Upload icon</button></div>
+                    </div>
+                </div>
+                <!-- Specialized form for a comment note (no tulip / icons / geo params) -->
+                <div id="commentForm" hidden>
+                    <label class="prop-field"><span data-i18n="Position">Position</span><input id="edCommentNum" class="field" type="number" min="1" step="1" inputmode="numeric"></label>
+                    <label class="prop-field"><span data-i18n="Text">Text</span><textarea id="edCommentText" class="field" rows="2" placeholder="" data-i18n-ph="(comment caption)"></textarea></label>
+                    <div class="prop-field"><span data-i18n="Image">Image</span>
+                        <div class="comment-img-row">
+                            <input id="edCommentImg" type="file" accept="image/*">
+                            <img id="edCommentPrev" class="comment-form-prev" alt="" hidden>
+                            <button type="button" id="edCommentClr" class="btn btn-ghost" hidden><i class="fa-solid fa-xmark"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>

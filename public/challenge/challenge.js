@@ -49,6 +49,15 @@
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
         // same white "paper" rows as the Reader (read-only: no buttons/state)
         $('chNotes').innerHTML = rb.notes.map((n) => {
+            const comment = n.note_kind === 'comment';
+            if (comment) {
+                const textClass = n.image ? '' : ' col-text-wide';
+                return `<div class="nrow readonly comment">
+                    <div class="col-distance"></div>
+                    <div class="col-vignette${n.image ? '' : ' col-vignette-empty'}">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                    <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
+                </div>`;
+            }
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
             return `<div class="nrow readonly">
                 <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>

@@ -1,5 +1,6 @@
 /* RDBK.app i18n — FR translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).fr = {
+            'Add comment': 'Ajouter un commentaire', '(comment caption)': '(texte du commentaire)', 'comment': 'commentaire', 'Comment note added.': 'Note de commentaire ajoutée.', 'Image': 'Image', 'Text': 'Texte',
             'Continue as': 'Continuer en tant que', 'Use a different account': 'Utiliser un autre compte',
             'Signing you in…': 'Connexion en cours…', 'Sign in or create your account — no password needed.': 'Connectez-vous ou créez votre compte — sans mot de passe.',
             'Sign in to read this roadbook.': 'Connectez-vous pour lire ce roadbook.', 'Sign in to read public roadbooks.': 'Connectez-vous pour lire les roadbooks publics.',
@@ -87,6 +88,8 @@
             'help.danger': 'Cotation de danger FIA, affichée en ! / !! / !!! dans la vignette — plus la cotation est élevée, plus l’endroit exige de prudence.',
             'help.speed': 'Une limite de vitesse déclarative (km/h) en vigueur depuis cette note ; « Fin de limite » la lève. Définir une limite marque aussi la note comme zone contrôlée.',
             'help.capType': 'Qualifie le cap CAP de la note (FIA) : Sortie, Moyen, Calculé ou Virage. Activé dès que la note porte un CAP.',
+            'Position': 'Position',
+            'help.image': 'Une image facultative pour cette ligne commentaire. Elle est intégrée au roadbook et affichée dans le Reader et le PDF.',
             'help.wpType': 'Le type de waypoint FIA. Il définit l’icône sur la carte et, dans un roadbook rallye, comment le waypoint est validé et noté.',
             'help.radius': 'Rayon de validation en mètres — la géo-clôture pour la détection automatique de passage. Vide, il revient au défaut du roadbook, puis au défaut du type (affiché comme indicateur).',
             'help.visibility': 'Brouillon garde le roadbook privé pendant que vous y travaillez. Prêt le marque comme terminé mais toujours privé. Public le liste sur le site afin que chacun puisse le lire ou exporter un PDF — mais vous seul pouvez télécharger le .rdbk.',

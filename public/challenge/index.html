@@ -34,6 +34,10 @@
         .ch-gallery img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); display: block; }
         .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+        /* comment note rows (no geo, no nav) */
+        .nrow.comment { background: #f9f7f4; border-bottom: 1px dashed #e0ddd8; }
+        .nrow.comment .col-vignette-empty { display: none; }
+        .nrow.comment .col-text-wide { flex: 1; max-width: none; padding: .8rem .6rem; text-align: center; font-style: italic; color: #666; }
     </style>
 </head>
 <body>

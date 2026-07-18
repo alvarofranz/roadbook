@@ -1,5 +1,6 @@
 /* RDBK.app i18n — IT translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
+            'Add comment': 'Aggiungi commento', '(comment caption)': '(testo del commento)', 'comment': 'commento', 'Comment note added.': 'Nota commento aggiunta.', 'Image': 'Immagine', 'Text': 'Testo',
             'Continue as': 'Continua come', 'Use a different account': 'Usa un altro account',
             'Signing you in…': 'Accesso in corso…', 'Sign in or create your account — no password needed.': 'Accedi o crea il tuo account — senza password.',
             'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
@@ -87,6 +88,8 @@
             'help.danger': 'Gradazione di pericolo FIA, mostrata come ! / !! / !!! nella vignetta: più alto il grado, più attenzione richiede il punto.',
             'help.speed': 'Un limite di velocità dichiarativo (km/h) in vigore da questa nota; “Fine limite” lo toglie. Impostare un limite segna anche la nota come zona controllata.',
             'help.capType': 'Qualifica il rilevamento CAP della nota (FIA): Uscita, Medio, Calcolato o di Svolta. Attivo quando la nota ha un CAP.',
+            'Position': 'Posizione',
+            'help.image': 'Un’immagine opzionale per questa riga commento. Viene incorporata nel roadbook e mostrata nel Reader e nel PDF.',
             'help.wpType': 'Il tipo di waypoint FIA. Definisce l’icona sulla mappa e, in un roadbook rally, come il waypoint viene validato e punteggiato.',
             'help.radius': 'Raggio di validazione in metri: il geofence per il rilevamento automatico del passaggio. Se vuoto, ricade sul valore predefinito del roadbook e poi su quello del tipo (mostrato come segnaposto).',
             'help.visibility': 'Bozza tiene il roadbook privato mentre ci lavori. Pronto lo segna come finito ma resta privato. Pubblico lo elenca sul sito così chiunque può leggerlo o esportare un PDF, ma solo tu puoi scaricare il .rdbk.',
