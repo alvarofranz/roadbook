@@ -86,6 +86,7 @@
     // After Google consent: probe the server (who is this? does the account exist?) WITHOUT signing in,
     // then show a clear "Sign in / Create account as <email>" confirmation.
     async function onGoogle(cred) {
+        if (me) return;                                                     // already signed in — ignore stray GIS re-callbacks (#308)
         if (!cred) return;
         googleCred = cred; googleBusy();
         const p = await api('google_auth', { credential: cred });          // probe (no confirm)
@@ -110,7 +111,13 @@
     // Confirm: create the account (new, Terms accepted) or sign in (existing), then land in the profile.
     async function confirmGoogle(exists) {
         const r = await api('google_auth', { credential: googleCred, confirm: true, accept_terms: !exists });
-        if (r.ok) { me = r.user; return finishLogin(me); }
+        if (r.ok) {
+            me = r.user; googleCred = null;
+            // Stop Google's GIS library from auto re-firing the callback (One Tap / button
+            // re-render) once we're signed in, which otherwise re-showed the chooser (#308).
+            try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.cancel(); } catch (e) {}
+            return finishLogin(me);
+        }
         restoreGoogle(); msg(r.error || 'Google sign-in failed. Please try again.', false);
     }
     // Shared post-sign-in step (classic login + Google): force a password change if flagged, else

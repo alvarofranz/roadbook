@@ -56,7 +56,7 @@
         $('logoRow').hidden = false;
         const img = $('evLogoImg');
         img.hidden = !ev.logo;
-        if (ev.logo) img.src = ev.logo + '?v=' + Date.now(); // bust caches after a re-upload
+        if (ev.logo) img.src = (window.RBMediaSrc ? RBMediaSrc(ev.logo) : ev.logo) + '?v=' + Date.now(); // bust caches after a re-upload
         $('evLogoRemove').hidden = !ev.logo;
     }
     $('evLogoUpload').onclick = () => $('evLogoFile').click();
