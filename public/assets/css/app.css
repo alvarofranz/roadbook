@@ -577,7 +577,8 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .help-tip:hover::after, .help-tip:focus::after { opacity: 1; visibility: visible; }
 /* saved-roadbook list (shared by My roadbooks + the Editor landing, via RBRoadbookList) */
 .rb-grid { display: flex; flex-direction: column; gap: .6rem; }
-.roadbook-row { display: flex; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
+.roadbook-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }
+@media (max-width: 640px) { .roadbook-row .meta { min-width: 100%; } }
 .roadbook-row .meta { flex: 1; min-width: 0; }
 .roadbook-row .meta b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .roadbook-row .meta small { color: var(--muted); white-space: nowrap; }
