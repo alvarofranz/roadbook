@@ -1,5 +1,6 @@
 /* RDBK.app i18n — DE translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).de = {
+            'Add comment': 'Kommentar hinzufügen', '(comment caption)': '(Kommentartext)', 'comment': 'Kommentar', 'Comment note added.': 'Kommentarnotiz hinzugefügt.', 'Image': 'Bild', 'Text': 'Text',
             'Continue as': 'Weiter als', 'Use a different account': 'Anderes Konto verwenden',
             'Signing you in…': 'Anmeldung läuft…', 'Sign in or create your account — no password needed.': 'Anmelden oder Konto erstellen — kein Passwort nötig.',
             'Sign in to read this roadbook.': 'Melde dich an, um dieses Roadbook zu lesen.', 'Sign in to read public roadbooks.': 'Melde dich an, um öffentliche Roadbooks zu lesen.',

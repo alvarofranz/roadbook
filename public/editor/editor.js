@@ -1373,7 +1373,8 @@
         const nc = $('noteCount');
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
-            nc.textContent = rb.notes.length ? `· ${rb.notes.length} · KM: ${(totalM / 1000).toFixed(1)}` : '';
+            const navCount = rb.notes.filter((n) => !RB.isComment(n)).length; // comment notes aren't counted
+            nc.textContent = navCount ? `· ${navCount} · KM: ${(totalM / 1000).toFixed(1)}` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
@@ -1954,7 +1955,7 @@
             return out.join('\n');
         };
         const gpxText = () => {
-            const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
+            const wpts = rb.notes.filter((n) => !RB.isComment(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
             return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
         };
         const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>

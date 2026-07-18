@@ -79,7 +79,7 @@ Lo scheletro è prodotto da `buildRoadbook` in
 |------------------|----------|------------------------------------------------------------------------------|
 | `title`          | string   | Titolo leggibile del roadbook.                                              |
 | `total_distance` | integer  | Lunghezza totale del percorso in metri (derivata da `track`).               |
-| `note_count`     | integer  | Numero di note.                                                             |
+| `note_count`     | integer  | Numero di note navigabili (le note commento non sono conteggiate).          |
 | `description`    | string   | Opzionale. Testo libero mostrato nella pagina pubblica della challenge.     |
 | `author`         | string   | Opzionale. Nome dell'autore del roadbook.                                   |
 | `organization`   | string   | Opzionale. Club organizzatore / organizzatore dell'evento.                  |

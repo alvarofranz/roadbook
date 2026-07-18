@@ -571,7 +571,7 @@
         rb.notes.forEach((n) => { if (!isComment(n)) { num++; n.num = num; } });
         normalizeRoadTypes(rb);
         rb.meta.total_distance = Math.round(cum[cum.length - 1] || 0);
-        rb.meta.note_count = rb.notes.length;
+        rb.meta.note_count = num; // navigational notes only — comment notes don't count
         return rb;
     }
     // Recompute the red CAP (heading + straight-line distance in metres to the next note) where active.
@@ -992,7 +992,7 @@
     // vertex was kept / nothing was deleted. (The Editor's "Transform" keeps the point instead.)
     function deleteNote(rb, i) {
         if (!rb || i < 0 || i >= rb.notes.length) return -1;
-        if (isComment(rb.notes[i])) { rb.notes.splice(i, 1); return -1; }
+        if (isComment(rb.notes[i])) { rb.notes.splice(i, 1); recomputeMetrics(rb); return -1; }
         const idx = rb.notes[i].idx;
         rb.notes.splice(i, 1);
         let removed = -1;
