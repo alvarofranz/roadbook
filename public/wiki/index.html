@@ -42,12 +42,12 @@
     <div class="wiki-container">
         <h1><i class="fa-solid fa-book-open"></i> Wiki</h1>
         <div class="wiki-nav">
-            <a href="../"><i class="fa-solid fa-house"></i> Home</a>
-            <a href="javascript:void(0)" onclick="showPage('welcome')"><i class="fa-solid fa-star"></i> Primi passi</a>
-            <a href="javascript:void(0)" onclick="showPage('recorder')"><i class="fa-solid fa-microphone"></i> Registrare una traccia</a>
-            <a href="javascript:void(0)" onclick="showPage('editor')"><i class="fa-solid fa-pen-ruler"></i> Creare / modificare un roadbook</a>
-            <a href="javascript:void(0)" onclick="showPage('reader')"><i class="fa-solid fa-compass"></i> Navigare con il Reader</a>
-            <a href="javascript:void(0)" onclick="showPage('tripmaster')"><i class="fa-solid fa-gauge-high"></i> Usare il Tripmaster</a>
+            <a href="../"><i class="fa-solid fa-house"></i> <span data-i18n="wiki.nav.home">Home</span></a>
+            <a href="javascript:void(0)" onclick="showPage('welcome')"><i class="fa-solid fa-star"></i> <span data-i18n="wiki.nav.welcome">Primi passi</span></a>
+            <a href="javascript:void(0)" onclick="showPage('recorder')"><i class="fa-solid fa-microphone"></i> <span data-i18n="wiki.nav.recorder">Registrare una traccia</span></a>
+            <a href="javascript:void(0)" onclick="showPage('editor')"><i class="fa-solid fa-pen-ruler"></i> <span data-i18n="wiki.nav.editor">Creare / modificare un roadbook</span></a>
+            <a href="javascript:void(0)" onclick="showPage('reader')"><i class="fa-solid fa-compass"></i> <span data-i18n="wiki.nav.reader">Navigare con il Reader</span></a>
+            <a href="javascript:void(0)" onclick="showPage('tripmaster')"><i class="fa-solid fa-gauge-high"></i> <span data-i18n="wiki.nav.tripmaster">Usare il Tripmaster</span></a>
         </div>
         
         <div id="wikiContent" class="wiki-content">
@@ -97,6 +97,10 @@
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="../assets/js/config.js?v=1.6.0-15"></script>
 <script src="../assets/js/rbmap.js?v=1.6.0-15"></script>
+<script src="../assets/js/i18n.es.js?v=1.6.0-15"></script>
+<script src="../assets/js/i18n.it.js?v=1.6.0-15"></script>
+<script src="../assets/js/i18n.de.js?v=1.6.0-15"></script>
+<script src="../assets/js/i18n.fr.js?v=1.6.0-15"></script>
 <script src="../assets/js/i18n.js?v=1.6.0-15"></script>
 <script src="../assets/js/app.js?v=1.6.0-15"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -117,17 +121,13 @@ const pageFile = {
     'tripmaster': '05-tripmaster',
 };
 
-const pageTitle = {
-    'welcome': 'Primi passi',
-    'recorder': 'Roadbook Recorder',
-    'editor': 'Editor',
-    'reader': 'Roadbook Reader',
-    'tripmaster': 'Roadbook Player',
-};
+function currentLang() {
+    return (window.RBi18n && RBi18n.current()) || 'it';
+}
 
 async function loadWikiPage(pageName) {
     try {
-        const response = await fetch('md.php?page=' + encodeURIComponent(pageName));
+        const response = await fetch('md.php?page=' + encodeURIComponent(pageName) + '&lang=' + encodeURIComponent(currentLang()));
         if (!response.ok) throw new Error('Wiki page not found');
         const md = await response.text();
         document.getElementById('wikiContent').innerHTML = marked.parse(md);
@@ -135,19 +135,23 @@ async function loadWikiPage(pageName) {
         document.getElementById('wikiContent').innerHTML =
             '<h1>Page Not Found</h1>' +
             '<p>The wiki page "' + pageName + '" could not be found.</p>' +
-            '<a href="#" onclick="location.reload()" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Wiki Home</a>';
+            '<a href="javascript:void(0)" onclick="showPage(\'welcome\')" class="back-link"><i class="fa-solid fa-arrow-left"></i> Return to Wiki Home</a>';
     }
 }
 
+let currentPage = 'welcome';
+
 function showPage(pageName) {
-    const file = pageName === 'welcome' ? '01-getting-started' : (pageFile[pageName] || pageName);
+    if (!pageFile[pageName]) pageName = 'welcome';
+    currentPage = pageName;
+    const file = pageFile[pageName];
     try { sessionStorage.setItem('wiki_page', pageName); } catch (e) {}
     if (pageName === 'welcome') {
         if (location.hash) history.replaceState(null, '', window.location.pathname);
     } else if (location.hash !== '#' + pageName) {
         location.hash = pageName;
     }
-    document.title = (pageTitle[pageName] || 'Wiki') + ' · RDBK.app';
+    document.title = (window.RBi18n ? RBi18n.t('wiki.title.' + pageName) : 'Wiki') + ' · RDBK.app';
     loadWikiPage(file);
 }
 
@@ -170,6 +174,14 @@ function initWiki() {
     }
     showPage(page && pageFile[page] ? page : 'welcome');
 }
+
+// The wiki follows the app's shared language (RBi18n). Nav labels are
+// re-translated automatically by RBi18n on language change; here we reload
+// the markdown in the new language and update the document title.
+window.addEventListener('rb-lang', function () {
+    document.documentElement.lang = currentLang();
+    showPage(currentPage);
+});
 
 window.addEventListener('hashchange', function () {
     const page = location.hash.replace('#', '') || 'welcome';

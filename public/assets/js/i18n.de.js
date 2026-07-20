@@ -666,3 +666,11 @@
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Wertungen für diese Veranstaltung. Der Organisator sammelt die Ergebnis-QR-Codes nach jeder Fahrt und fügt sie hier hinzu.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live-Wertung für diese Veranstaltung. Scanne den Ergebnis-QR jedes Fahrzeugs nach seiner Fahrt.',
         };
+
+        // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
+        Object.assign(window.RBi18nLangs.de, {
+            'wiki.nav.home': 'Start', 'wiki.nav.welcome': 'Erste Schritte', 'wiki.nav.recorder': 'Eine Strecke aufnehmen',
+            'wiki.nav.editor': 'Roadbook erstellen / bearbeiten', 'wiki.nav.reader': 'Mit dem Reader navigieren', 'wiki.nav.tripmaster': 'Tripmaster verwenden',
+            'wiki.title.welcome': 'Erste Schritte', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+        });
