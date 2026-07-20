@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=1.6.0-15">
     <style>
         .wiki-container { max-width: 860px; margin: 1.5rem auto; }
+        .wiki-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .wiki-head .lang { margin: 0; }
         .wiki-nav { display: flex; gap: .5rem; margin: .5rem 0 1.5rem; flex-wrap: wrap; }
         .wiki-nav a { padding: .35rem .8rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; transition: all .15s ease; }
         .wiki-nav a:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -40,7 +42,10 @@
 
 <main class="wrap">
     <div class="wiki-container">
-        <h1><i class="fa-solid fa-book-open"></i> Wiki</h1>
+        <div class="wiki-head">
+            <h1><i class="fa-solid fa-book-open"></i> Wiki</h1>
+            <span class="lang" id="wikiLangSelector" aria-label="Language"></span>
+        </div>
         <div class="wiki-nav">
             <a href="../"><i class="fa-solid fa-house"></i> <span data-i18n="wiki.nav.home">Home</span></a>
             <a href="javascript:void(0)" onclick="showPage('welcome')"><i class="fa-solid fa-star"></i> <span data-i18n="wiki.nav.welcome">Primi passi</span></a>
