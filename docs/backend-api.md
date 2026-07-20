@@ -173,12 +173,14 @@ false`). Tutte le query passano da prepared statement: non c'è concatenazione d
 ### Helper trasversali (bootstrap.php)
 - `json_out($data, $code)` / `json_in()` / `fail($msg, $code)` — I/O JSON
   ([bootstrap.php:45](../app/bootstrap.php#L45)).
-- `rate_limit($key, $max, $window)` — rate limit leggero via **APCu**; è un **no-op se
-  l'estensione non è caricata** ([bootstrap.php:66](../app/bootstrap.php#L66)). Usato su
-  `register` (10/h), `login` (20/15min), `forgot` (8/15min) per IP. Al primo hit della
-  finestra registra quando scade, così la risposta `429` include `retry_after` (secondi
-  da attendere) oltre a `{ok:false, error:'Too many attempts. Please wait a moment.'}` — il
-  form di login lo trasforma in un countdown.
+- `rate_limit($key, $max, $window)` — rate limit leggero: **APCu** come via veloce, con
+  **fallback su file** (un contatore per chiave sotto la temp dir, con `flock`) quando
+  l'estensione non è caricata, così il limite è **sempre applicato**
+  ([bootstrap.php](../app/bootstrap.php)). Usato su `register` (10/h), `login` (20/15min),
+  `forgot` (8/15min) per IP. Al primo hit della finestra registra quando scade, così la
+  risposta `429` include `retry_after` (secondi da attendere) oltre a `{ok:false,
+  error:'Too many attempts. Please wait a moment.'}` — il form di login lo trasforma in un
+  countdown.
 - `client_ip()` — legge `REMOTE_ADDR` ([bootstrap.php:77](../app/bootstrap.php#L77)).
 
 ---
@@ -455,9 +457,14 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   same-origin guard. Non c'è un token anti-CSRF esplicito: la difesa si regge su quei tre
   pilastri (e sull'header `Origin`, che però è facoltativo nel controllo —
   [index.php:15](../public/api/index.php#L15) salta il guard se `Origin` è assente).
-- **Rate limiting:** dipende da **APCu**; se l'estensione non è installata, `rate_limit` è un
-  **silenzioso no-op** e register/login/forgot non hanno alcun freno
-  ([bootstrap.php:66](../app/bootstrap.php#L66)).
+- **Rate limiting:** **APCu** come via veloce, con **fallback su file** quando l'estensione
+  non c'è, così register/login/forgot/reset/join restano limitati su ogni hosting
+  ([bootstrap.php](../app/bootstrap.php)).
+- **CSP + header di sicurezza:** `public/.htaccess` invia una `Content-Security-Policy` che
+  **vieta gli script inline** (il sito non ne ha — l'unico bootstrap è in
+  `assets/js/native-detect.js`) e ammette solo gli origin realmente usati (MapLibre da unpkg,
+  transformers.js/Whisper da jsdelivr + Hugging Face, Google Sign-In, Turnstile, i tile dei
+  mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,
   nessuna concatenazione.
 - **Foto e note vocali priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in
@@ -482,7 +489,7 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   ma lo **username** lo cambia solo un admin (`admin_update`).
 - **Niente re-invio della mail di verifica:** se il link a 24 h scade, l'account resta
   inattivabile dai soli endpoint qui presenti.
-- **Rate limit fragile:** assente senza APCu (vedi §9).
+- **Rate limit:** APCu con fallback su file, sempre applicato (vedi §9).
 - **Quota disco per-utente (#99):** oltre ai tetti locali (60 foto *per galleria*, 200 note
   vocali *per roadbook*, 12 MB *per upload*) c'è un limite di spazio totale per account
   (`DEFAULT_QUOTA_BYTES` 50 MB, sovrascrivibile per utente da un admin via `quota_bytes`):

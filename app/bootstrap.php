@@ -46,13 +46,7 @@ const SESSION_LIFETIME = 60 * 24 * 3600; // 60 days
 // AVIF-compressed on upload, so 50 MB holds hundreds of photos.
 const DEFAULT_QUOTA_BYTES = 50 * 1024 * 1024;
 if (PHP_SAPI !== 'cli' && session_status() !== PHP_SESSION_ACTIVE) {
-    // Secure cookie on real HTTPS only. On the on-VPS dev clone (plain http on
-    // localhost) and behind the production proxy the internal hop to PHP is plain
-    // HTTP, so trust X-Forwarded-Proto: this keeps the cookie Secure in production
-    // (https) while letting it work on a local http dev URL — otherwise the session
-    // is dropped over http.
-    $https = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
-        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+    $https = request_is_https();
     @ini_set('session.gc_maxlifetime', (string)SESSION_LIFETIME);
     session_set_cookie_params(['lifetime' => SESSION_LIFETIME, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
     session_name('rdbksid');
@@ -71,21 +65,51 @@ function json_out($data, int $code = 200): void {
 function json_in(): array { $d = json_decode(file_get_contents('php://input'), true); return is_array($d) ? $d : []; }
 function fail(string $msg, int $code = 400): void { json_out(['ok' => false, 'error' => $msg], $code); }
 
-// Light rate limit via APCu (no-op if the extension isn't loaded). On the first hit of a
-// window we record when it ends, so a blocked response can tell the client how long to wait
-// (retry_after, seconds) — the login form turns that into a countdown.
+// Light rate limit. APCu is the fast path; where it isn't loaded a file-based counter keeps the
+// limit enforced regardless — login/register/forgot/reset/join must never silently become
+// unlimited. On the first hit of a window we record when it ends, so a blocked response can tell
+// the client how long to wait (retry_after, seconds) — the login form turns that into a countdown.
 function rate_limit(string $key, int $max, int $window): void {
-    if (!function_exists('apcu_inc')) return;
-    $k = 'rl_' . sha1($key);
-    $n = apcu_inc($k, 1, $ok, $window);
-    if ($n === 1) apcu_store($k . '_exp', time() + $window, $window);
+    [$n, $exp] = function_exists('apcu_inc') ? rate_hit_apcu($key, $window) : rate_hit_file($key, $window);
     if ($n > $max) {
-        $exp = (int) apcu_fetch($k . '_exp');
         $retry = $exp ? max(1, $exp - time()) : $window;
         json_out(['ok' => false, 'error' => 'Too many attempts. Please wait a moment.', 'retry_after' => $retry], 429);
     }
 }
+// APCu counter: an atomic per-window increment plus a paired _exp key holding the window's end.
+// Returns [hits-this-window, window-end-epoch].
+function rate_hit_apcu(string $key, int $window): array {
+    $k = 'rl_' . sha1($key);
+    $n = apcu_inc($k, 1, $ok, $window);
+    if ($n === 1) apcu_store($k . '_exp', time() + $window, $window);
+    return [(int)$n, (int)apcu_fetch($k . '_exp')];
+}
+// File counter (APCu absent): one small file per key under the temp dir holding "windowEnd count";
+// flock serialises concurrent hits and an elapsed window resets it. Fails open (never blocks a
+// legitimate request) if the file can't be opened. Returns [hits-this-window, window-end-epoch].
+function rate_hit_file(string $key, int $window): array {
+    $now = time();
+    $fh = @fopen(sys_get_temp_dir() . '/rdbk_rl_' . sha1($key), 'c+');
+    if (!$fh) return [1, $now + $window];
+    flock($fh, LOCK_EX);
+    $raw = trim((string)stream_get_contents($fh));
+    [$exp, $count] = $raw !== '' ? array_map('intval', explode(' ', $raw) + [0, 0]) : [0, 0];
+    if ($exp <= $now) { $exp = $now + $window; $count = 0; } // window elapsed → start a fresh one
+    $count++;
+    ftruncate($fh, 0); rewind($fh); fwrite($fh, $exp . ' ' . $count);
+    flock($fh, LOCK_UN); fclose($fh);
+    return [$count, $exp];
+}
 function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
+
+// True when the request reached the user over HTTPS — directly, or via the production proxy whose
+// internal hop to PHP is plain HTTP (so trust X-Forwarded-Proto). Drives the Secure cookie flag:
+// Secure in production (https) but off on the plain-http dev clone, which would otherwise drop the
+// cookie. Used by the session cookie and the participant-mode cookie (public/go/index.php).
+function request_is_https(): bool {
+    return (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
+        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+}
 
 // The native app shells (Capacitor) serve their bundled UI from a WebView-local origin, so their
 // API calls reach us cross-origin. These are the only non-web origins we trust: a real website
