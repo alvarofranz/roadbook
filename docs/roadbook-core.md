@@ -231,14 +231,11 @@ Il limite è **dichiarativo** sul campo `note.speed_limit`, con le icone come fa
 
 ## 9. Payload del risultato (`buildMeta`/`parseMeta`)
 
-Il "ponte" tra Reader e Ranking è una stringa META a **larghezza fissa di 55 caratteri**: i primi
-49 caratteri sono numerici, seguiti dal campo `rb` (prefisso dello slug del roadbook, 6 caratteri,
-riempito con spazi — usato dal Ranking per rifiutare un QR di un altro roadbook; vedi
-`RB.metaRbPrefix`). I campi e l'ordine sono definiti da
+Il "ponte" tra Reader e Ranking è una stringa META a **larghezza fissa di 49 caratteri**, tutta
+numerica. I campi e l'ordine sono definiti da
 [`META_KEYS`](../public/assets/js/roadbook-core.js#L325) +
 [`CONST.META_WIDTHS`](../public/assets/js/roadbook-core.js#L52):
-`team(3) date(6) start(6) end(6) accuracy(4) skip(4) extra(4) cap(4) speed(4) km(5) avg(3) rb(6)`
-(i primi 11 numerici; `rb` è testo — prefisso dello slug del roadbook).
+`team(3) date(6) start(6) end(6) accuracy(4) skip(4) extra(4) cap(4) speed(4) km(5) avg(3)`.
 
 [`buildMeta(f)`](../public/assets/js/roadbook-core.js#L326) impacchetta i campi numerici:
 **clampa i negativi a 0**, **satura a tutti-9** in overflow (così un `-` o un troncamento a
@@ -318,11 +315,9 @@ Helper finali:
   `simplifyRoadbook` lo invocano per ogni waypoint/nota, quindi il costo è O(note × punti).
 - **`road_type` default = 3 (sterrato).** Ogni roadbook costruito da GPX nasce "sterrato"
   finché l'autore non cambia i tipi.
-- **Payload META a larghezza fissa (55 caratteri).** Ogni nuovo campo va aggiunto a `META_KEYS`
-  + `META_WIDTHS` insieme (allarga il payload) e va adeguato sia il Reader che il Ranking — è il
-  vincolo chiave per estensioni future (vedi [docs/ranking-model.md §8](ranking-model.md)). Il
-  campo `rb` è **stringa** (riempita con spazi), non numerico: `verifyMeta` NON deve fare trim del
-  META, altrimenti il padding del campo `rb` sparisce prima del ricalcolo HMAC e ogni firma fallisce.
+- **Payload META rigido a 49 caratteri.** Nuovi campi non ci stanno senza ridisegnare META +
+  firma e adeguare Reader e Ranking — è il vincolo chiave per estensioni future
+  (vedi [docs/ranking-model.md §8](ranking-model.md)).
 - **La firma è solo anti-manomissione casuale**: la chiave è nel client.
 - **`importRoadbook` non valida** la struttura oltre alle rinomine: un file con `notes`/`track`
   incoerenti passa comunque (saranno i `recompute*`/il rendering a doverci convivere).

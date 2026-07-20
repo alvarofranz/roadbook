@@ -297,7 +297,7 @@ impedisce l'auto-refresh di versione a metà gara.
 ## 10. Punteggio, QR e ranking
 
 Tutta la logica di **sezione cronometrata, penalità (accuracy/CAP/skip/extra/speed), payload
-META a 55 caratteri, firma HMAC e QR del risultato** è documentata altrove:
+META a 49 caratteri, firma HMAC e QR del risultato** è documentata altrove:
 vedi **[ranking-model.md](./ranking-model.md)**. Le sezioni cronometrate e le formule di
 penalità vivono nel core (`RB.scoredNoteSet`/`RB.isScoredIdx`, `RB.validationPenalties`,
 `RB.skipPenalty`, `RB.speedPenalty`, #169); il Reader le richiama, accumula in `validateAt`, e

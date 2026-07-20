@@ -206,7 +206,6 @@
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
-    $('addSponsorBtn').onclick = () => addComment();
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
@@ -308,11 +307,10 @@
     }
     // A note's confirm label, e.g. "#3 — Sharp left". The text comes from the loaded
     // .rdbk (user/untrusted) and the confirm message is rendered as HTML, so escape it.
-    const noteLabel = (n) => RB.isComment(n) ? (t('comment') + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
+    const noteLabel = (n) => '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
-        // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
-        if (!RB.isComment(rb.notes[ni]) && rb.notes.filter((n) => !RB.isComment(n)).length <= 2) return toast('At least 2 notes must remain.');
+        if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
         const label = noteLabel(rb.notes[ni]);
         if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
         delNote(ni);
@@ -1306,23 +1304,7 @@
         };
         const photosByNote = byNearestNote(notePhotos);
         const audioByNote = byNearestNote(noteAudio);
-        $('noteList').innerHTML = rb.notes.map((n, i) => {
-            // Comment/sponsor rows carry no number, distance, tulip or geo-meta — just an optional
-            // logo and its caption. They keep the reorder/delete controls so they can be positioned.
-            if (RB.isComment(n)) return `<div class="note-mini comment${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                <span class="note-number comment-badge" aria-hidden="true"><i class="fa-solid fa-comment"></i></span>
-                <span class="note-km comment-km"></span>
-                <span class="comment-logo">${n.image ? `<img src="${esc(n.image)}" alt="" class="comment-thumb">` : ''}</span>
-                <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(comment caption)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
-                </div>
-                <div class="note-actions">
-                    <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
-                    <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
-                    <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
-                </div>
-            </div><div class="note-edit-slot" id="editSlot${i}"></div>`;
-            return `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
+        $('noteList').innerHTML = rb.notes.map((n, i) => `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}</span>
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
@@ -1336,11 +1318,10 @@
                     <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
                     <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
                 </div>
-            </div><div class="note-edit-slot" id="editSlot${i}"></div>`;
-        }).join('');
-        // road-type accent colour is data-driven → set the CSS variable per row (comment rows skip it)
+            </div><div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
+        // road-type accent colour is data-driven → set the CSS variable per row
         const rows = $('noteList').querySelectorAll('.note-mini');
-        rows.forEach((el, i) => { if (!RB.isComment(rb.notes[i])) el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color); });
+        rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         rows.forEach((el) => el.onclick = (e) => {
             const capBtn = e.target.closest('[data-cap]');
             if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
@@ -1373,8 +1354,7 @@
         const nc = $('noteCount');
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
-            const navCount = rb.notes.filter((n) => !RB.isComment(n)).length; // comment notes aren't counted
-            nc.textContent = navCount ? `· ${navCount} · KM: ${(totalM / 1000).toFixed(1)}` : '';
+            nc.textContent = rb.notes.length ? `· ${rb.notes.length} · KM: ${(totalM / 1000).toFixed(1)}` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
@@ -1385,7 +1365,6 @@
     }
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
-        if (RB.isComment(n)) return ''; // sponsor rows have no CAP/coords meta
         const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
             : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : esc(t('CAP disabled'))}</button>`;
         return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
@@ -1394,9 +1373,8 @@
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
     const tulipSVG = (n) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'));
     function placeTulips() {
-        $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
+        $('noteList').querySelectorAll('.note-tulip').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
-            if (!Number.isInteger(i) || !rb.notes[i] || RB.isComment(rb.notes[i])) return; // comment rows have no tulip
             if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
             slot.innerHTML = tulipSVG(rb.notes[i]);
         });
@@ -1408,8 +1386,6 @@
     function openEditZoneAt(i) {
         const slot = $('editSlot' + i), tulip = $('tulipSlot' + i);
         if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
-        // A comment row has no tulip slot and no live canvas — park the canvas and keep it hidden.
-        if (RB.isComment(rb.notes[i])) { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; $('noteEditZone').hidden = false; return; }
         if (tulip && $('canvasWrap').parentNode !== tulip) { tulip.innerHTML = ''; tulip.appendChild($('canvasWrap')); } // drop the static preview, host the live canvas
         $('canvasWrap').hidden = false;
         $('noteEditZone').hidden = false;
@@ -1426,8 +1402,7 @@
     function select(i) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
-        openEditZoneAt(i); renderEditor();
-        if (!RB.isComment(rb.notes[i])) canvas.setNote(rb.notes[i]); // comment notes have no tulip canvas
+        openEditZoneAt(i); renderEditor(); canvas.setNote(rb.notes[i]);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
@@ -1447,47 +1422,9 @@
 
     function renderEditor() {
         const n = rb.notes[sel];
-        // A comment note gets a dedicated form (no tulip / icons / geo params, no kind selector) —
-        // the standard vignette+properties editor is hidden entirely and we return early.
-        if (RB.isComment(n)) {
-            $('noteEditStd').hidden = true;
-            $('commentForm').hidden = false;
-            // The "position" field lets the user move the comment note along the roadbook by
-            // typing a new 1-based list position (comment notes carry no num of their own).
-            const num = $('edCommentNum');
-            num.max = rb.notes.length;
-            num.value = rb.notes.indexOf(n) + 1;
-            num.onchange = () => {
-                const from = rb.notes.indexOf(n);
-                let to = Math.round(parseInt(num.value, 10)) - 1;
-                if (isNaN(to)) { num.value = from + 1; return; }
-                to = Math.max(0, Math.min(rb.notes.length - 1, to));
-                if (to === from) { num.value = from + 1; return; }
-                rb.notes.splice(from, 1);
-                rb.notes.splice(to, 0, n);
-                RB.recomputeMetrics(rb);
-                sel = to;
-                markDirty(); renderEditor(); renderNotes();
-            };
-            const txt = $('edCommentText');
-            txt.value = n.text || '';
-            txt.oninput = () => { n.text = txt.value; markDirty(); const ta = $('noteList').querySelector('.note-title[data-i="' + sel + '"]'); if (ta && ta !== txt) ta.value = txt.value; };
-            const prev = $('edCommentPrev'), clr = $('edCommentClr');
-            if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; } else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; }
-            $('edCommentImg').value = '';
-            $('edCommentImg').onchange = async (e) => {
-                const f = e.target.files[0];
-                if (!f) return;
-                n.image = await RBImg.toDataURL(f, 512); // downscale so the .rdbk stays small
-                markDirty(); renderEditor(); renderNotes();
-            };
-            clr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
-            return;
-        }
-        // Normal note: show the standard editor, hide the comment form.
-        $('noteEditStd').hidden = false;
-        $('commentForm').hidden = true;
-
+        // Only the road you LEAVE on is authored: the road you arrive on is the
+        // previous note's road_out (derived in recomputeMetrics/normalizeRoadTypes),
+        // and the road simply continues until a note changes it.
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
         // The note's segment/CAP attributes all live in the icon-search row: Road (the road type
@@ -1633,18 +1570,6 @@
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
         toast('Waypoint added.');
-    }
-    // "Add comment": a coordinate-less comment note (image + text). It sits after the
-    // currently-selected note (or at the end), carries no track point, num, or geodata, and is
-    // skipped by scoring/GPS/GPX export. See docs/rdbk-format.md §6 (note_kind: "comment").
-    function addComment() {
-        if (!rb) return toast('Load a roadbook first.');
-        const at = editorOpen && sel >= 0 ? sel + 1 : rb.notes.length;
-        rb.notes.splice(at, 0, { note_kind: 'comment', text: '', image: null });
-        RB.recomputeMetrics(rb);
-        sel = at; editorOpen = true;
-        renderNotes(); openEditZoneAt(at); markDirty();
-        toast('Comment note added.');
     }
     // "Add point here": just a track point at the exact clicked point, no note.
     function addPointAtExact(pt) {
@@ -1862,7 +1787,7 @@
     // icons on the waypoints. The filename carries synthetic suffixes for the content.
     function exportCustomGpx(o) {
         const pts = o.track ? rb.track : [];
-        const wpts = o.wpt ? rb.notes.filter((n) => !RB.isComment(n)).map((n) => { // sponsor notes carry no coords → never exported as waypoints
+        const wpts = o.wpt ? rb.notes.map((n) => {
             const w = { lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }; // name = note text (examples), number as fallback
             if (o.grm || o.osm) {
                 const a = n.appwpt || {};               // imported icon re-emitted verbatim where present…
@@ -1895,7 +1820,7 @@
     // KMZ export: KML 2.2 inside a ZIP (doc.kml). Track + waypoints, no icon mapping.
     async function exportKmz() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        const wpts = rb.notes.filter((n) => !RB.isComment(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
+        const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
         const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_KMZ';
         const kml = RB.kmlDocument(base, rb.track, wpts);
         RBDownload(await RBZip.write({ 'doc.kml': kml }), base + '.kmz');
@@ -1955,7 +1880,7 @@
             return out.join('\n');
         };
         const gpxText = () => {
-            const wpts = rb.notes.filter((n) => !RB.isComment(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
+            const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
             return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
         };
         const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>

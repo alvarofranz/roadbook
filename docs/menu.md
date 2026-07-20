@@ -4,14 +4,14 @@
 
 | Voce di menu | Web desktop<br>non aut. | Web desktop<br>autenticato | Web desktop<br>admin | Web mobile<br>/ PWA | App nativa<br>iOS/Android | Modalità<br>partecipante |
 |---|---|---|---|---|---|---|
-| **Recorder** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
+| **Reader** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ⬜ (solo da evento) |
 | **Editor** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
 | **Navigate** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
-| ├ Reader | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ⬜ (solo da evento) |
-| └ Tripmaster | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ❌ |
+| ├ Tripmaster | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ❌ |
+| └ Recorder | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ❌ |
 | **Roadbooks** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ❌ | ❌ |
 | **Events** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ⬜ (solo evento corrente) |
-| ├ Event list | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| └ Event list | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | └ Ranking | via Events | via Events | via Events | via Events | via Events | ⬜ (solo da evento) |
 | **Profile / Account** | ❌ (Sign in) | ✅ dropdown | ✅ dropdown | ✅ dropdown | ✅ tab bar | ✅ (ridotto) |
 | ├ My profile | — | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -34,25 +34,25 @@
 
 ## Schema navigazione
 
-### Web desktop (top bar — `WEB_NAV`)
+### Web desktop
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ [RDBK.app]  Recorder  Editor  Navigate  Roadbooks  Events   [👤 Acct] │
+│ [RDBK.app]  Reader  Editor  Navigate  Roadbooks  Events  Ranking   [👤 Acct] │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Web mobile / PWA (bottom tab bar — `WEB_NAV`)
+### Web mobile / PWA (bottom tab bar)
 ```
 ┌────────────────────────────────────────────────┐
-│  Recorder  Editor  Navigate  Roadbooks  Events │
+│  Reader  Editor  Navigate  Roadbooks  Events  Ranking │
 └────────────────────────────────────────────────┘
 ```
 
-### App nativa iOS/Android (bottom tab bar — `APP_TABS`)
+### App nativa iOS/Android (bottom tab bar)
 ```
-┌───────────────────────────────────────────────┐
-│  Recorder  Editor  Navigate  Events  Profile  │
-└───────────────────────────────────────────────┘
+┌─────────────────────────────────┐
+│  Reader  Editor  Navigate  Events  Profile  │
+└─────────────────────────────────┘
 ```
 
 ### Modalità partecipante (dopo `/go/<codice>`)
@@ -61,17 +61,16 @@
 │ [RDBK.app]  ← Nome Evento    [👤 Acct]│
 └──────────────────────────────────────┘
   ↓ home page reindirizza a /event/<slug>
-  ↓ tab bar ridotta (Reader · Evento · Profile) — non ancora implementata (#163)
+  ↓ tab bar ancora visibile (bug #258)
 ```
 
 ## Note
 
-- Un'unica sorgente di verità: il catalogo `SECTION` in `public/assets/js/app.js`. Il web lo rende come top bar (`WEB_NAV`), l'app come bottom tab bar icon-only (`APP_TABS`); la top bar è nascosta via CSS su ogni viewport mobile (web · PWA · nativa), dove prende il posto la tab bar inferiore.
-- La tab bar mostra **5 voci** sia sul web mobile/PWA (`Recorder · Editor · Navigate · Roadbooks · Events`) sia nell'app nativa (`Recorder · Editor · Navigate · Events · Profile`, senza Roadbooks ma con Profile).
-- **Recorder** è una voce di primo livello. **"Navigate"** raggruppa **Reader** e **Tripmaster** (hub `/navigate/`, `covers: ['tripmaster', 'reader']`).
-- Ranking **non ha una voce di menu propria**: è dentro **Events** (`covers: ['event', 'ranking']`) e si apre per singolo roadbook di competizione dalla pagina dell'evento (`?event=<slug>&rb=<slug>`), riservato a partecipanti/organizzatori.
-- I link amministrativi/organizzatore appaiono solo nel dropdown del menu account (web), non nella tab bar dell'app.
-- La **tab bar ridotta per il partecipante** (3 voci: Reader · Evento · Profile) non è ancora implementata — tracciata in **#163**.
+- La tab bar mobile mostra 6 voci sul web, 5 nell'app (manca Roadbooks).
+- In modalità partecipante la tab bar inferiore **non viene nascosta** — l'utente può ancora navigare verso Editor, Tripmaster, etc.
+- Ranking è una sezione autonoma sul web (`/ranking/`) ma è raggruppato dentro Events sull'app.
+- "Navigate" raggruppa Tripmaster e Recorder sotto un'unica voce con landing page.
+- I link amministrativi appaiono solo nell'account menu dropdown (web), non nella tab bar dell'app.
 
 ---
 
@@ -143,4 +142,119 @@
 1. **Deep link nativo** — `/go/<codice>` deve funzionare come universal link (iOS) / app link (Android) per aprire l'app direttamente. Oggi non è implementato.
 2. **Poster QR** — il QR sul manifesto codifica `https://rdbk.app/go/<codice>`. Se l'app non è installata → store. Se è installata → apre l'app e arriva alla pagina evento.
 3. **Primo accesso senza account** — il flusso porta al login/registrazione, poi torna al `/go/<codice>`. Funziona già.
-4. **Tab bar in modalità partecipante** — oggi mostra ancora tutti i tool. Dovrebbe mostrare solo Reader · Evento · Profile. Tracciato in **#163** (participant home).
+4. **Tab bar in modalità partecipante** — oggi mostra ancora tutti i tool. Dovrebbe mostrare solo:
+   - **Reader** (per navigare i roadbook dell'evento)
+   - **Evento** (il singolo evento, non la lista)
+   - **Profile** (con "Switch to full mode")
+
+---
+
+## Proposta revisione menu (#258)
+
+### Obiettivi
+
+- Max 5 voci nella bottom tab bar (come Instagram)
+- Raggruppare funzionalità simili
+- Events come sezione comprensibile (con spiegazione di cosa sono)
+- Ranking dentro Events
+- Adattamento automatico in modalità partecipante
+
+### Proposta tab bar (app nativa)
+
+```
+┌──────────────────────────────────────┐
+│  Reader  │  Editor  │  Navigate  │  Events  │  Profile  │
+└──────────────────────────────────────┘
+    ↑          ↑          ↑           ↑          ↑
+    Leggi     Crea/     Tripmaster   Elenco     Account
+    roadbook   modifica  + Recorder   eventi +   + impost.
+                        (GPS)        Ranking   
+```
+
+### Proposta tab bar (web mobile / PWA)
+
+Stessa struttura, 5 tab. **Roadbooks** (community pubblici) va dentro **Events** o **Profile**.
+
+### Proposta top bar (web desktop)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ [RDBK.app]  Reader  Editor  Navigate  Events  [👤 Acct] │
+└──────────────────────────────────────────────────────────┘
+```
+
+(5 link, senza Roadbooks e Ranking separati — entrambi dentro Events)
+
+### Modalità partecipante — tab bar proposta
+
+```
+┌──────────────────────────────┐
+│  Reader  │  Evento  │  Profile  │  ← solo 3 voci
+└──────────────────────────────┘
+```
+
+- **Reader**: apre i roadbook dell'evento (non la lista globale)
+- **Evento**: landing page dell'evento specifico (con roadbook, classifica)
+- **Profile**: con "Switch to full mode" per uscire
+
+Il partecipante non deve vedere Editor, Navigate/Tripmaster/Recorder, né la lista eventi globale.
+
+### Landing Events con spiegazione
+
+La pagina `/events/` deve includere, oltre alla lista eventi pubblici, una sezione introduttiva:
+
+> *"Un evento è un raduno organizzato attorno a uno o più roadbook. Puoi partecipare con un codice fornito dall'organizzatore, seguire i percorsi con il Reader e confrontare i tuoi risultati in classifica."*
+
+Con link a:
+- "Come funzionano gli eventi" (`/features/events/`)
+- "Trova un evento" (lista)
+- "Ho un codice di partecipazione" (campo per inserire il codice → `/go/<codice>`)
+
+### Schema navigazione revisionato
+
+```
+                    ┌──────────────────────────────────────────────┐
+                    │                   RDBK.app                   │
+                    └──────────────────────────────────────────────┘
+                                     │
+                    ┌────────────────┼────────────────┬───────────────┐
+                    ▼                ▼                ▼               ▼
+              ┌──────────┐   ┌──────────┐   ┌──────────────┐   ┌──────────┐
+              │  Reader  │   │  Editor  │   │   Events     │   │ Navigate │
+              │ (leggi)  │   │ (crea)   │   │              │   │ (GPS)    │
+              └──────────┘   └──────────┘   └──────┬───────┘   └──────────┘
+                                                   │
+                          ┌────────────────────────┼──────────────────┐
+                          ▼                        ▼                  ▼
+                   ┌──────────────┐        ┌──────────────┐   ┌────────────┐
+                   │ Lista eventi │        │  Partecipo   │   │  Ranking   │
+                   │ (/events/)   │        │  con codice  │   │ (per evento)│
+                   └──────┬───────┘        └──────┬───────┘   └────────────┘
+                          │                       │
+                          ▼                       ▼
+                   ┌──────────────┐        ┌──────────────┐
+                   │ Pagina evento│        │  /go/<codice>│
+                   │ (/event/<s>) │        │  → auto-join │
+                   │              │        │  → pending   │
+                   │ • roadbook   │        │  → QR attiv. │
+                   │ • reader     │        └──────────────┘
+                   │ • ranking    │
+                   │ • info       │
+                   └──────────────┘
+
+    ─── Modalità partecipante (dopo attivazione) ───
+
+                   ┌──────────────────────────────────────────────┐
+                   │            Modalità partecipante             │
+                   │     (solo 3 tab: Reader · Evento · Profile)  │
+                   └──────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+              ┌────────────┐ ┌────────────┐ ┌──────────────┐
+              │ Reader     │ │ Evento     │ │ Profile      │
+              │ (solo RB   │ │ corrente   │ │ • Switch to  │
+              │  evento)   │ │ + ranking  │ │   full mode  │
+              └────────────┘ └────────────┘ │ • Sign out   │
+                                            └──────────────┘
+```

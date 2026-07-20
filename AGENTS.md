@@ -22,3 +22,7 @@ Note specifiche per opencode:
 - **Test di non regressione**: dopo l'approvazione della PR, i test relativi alla modifica
   vanno inseriti nella suite automatica come test di non regressione (stessa directory
   `tests/` con Vitest).
+- **CRLF line endings**: su Windows WSL, git può convertire i line-ending in CRLF.
+  Prima di ogni commit, verifica con `git diff --ignore-space-at-eol` che non ci siano
+  modifiche spurie dovute a CRLF. Se necessario, configura `git config core.autocrlf input`
+  o esegui `git add --renormalize .` per risolvere.

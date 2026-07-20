@@ -13,7 +13,7 @@ classifica. Documento di riferimento per il modello dati e la logica di calcolo.
 Il ranking non misura nulla da sé: **consuma il risultato firmato** prodotto dal Reader.
 
 ```
-Reader (Competition) ──finish()──▶ stringa META (55 char) + firma HMAC
+Reader (Competition) ──finish()──▶ stringa META (49 char) + firma HMAC
         │                                   │
         │  penalità (core)                  ▼
         │  (acc/cap/skip/extra/speed)   QR code  ──scan / incolla──▶ Ranking
@@ -36,13 +36,13 @@ Reader (Competition) ──finish()──▶ stringa META (55 char) + firma HMAC
 
 ## 2. Il payload del risultato (stringa META)
 
-È una stringa **a larghezza fissa di 55 caratteri** (49 numerici + il campo testo `rb` da 6),
-seguita da `-` e dai primi 10 caratteri esadecimali della firma HMAC-SHA256. Esempio:
+È una stringa **a larghezza fissa di 49 caratteri**, tutta numerica, seguita da `-` e dai
+primi 10 caratteri esadecimali della firma HMAC-SHA256. Esempio:
 
 ```
-0070618541230154300012000004500300027001234023monza1-a1b2c3d4e5
-└┬┘└──┬─┘└──┬─┘└──┬─┘└┬┘└┬┘└┬┘└┬┘└┬┘└─┬┘└┬┘└──┬─┘ └────┬────┘
-team date  start  end  ac sk ex cap sp  km  av   rb     firma
+0070618541230154300012000004500300027001234023-a1b2c3d4e5
+└┬┘└──┬─┘└──┬─┘└──┬─┘└┬┘└┬┘└┬┘└┬┘└┬┘└─┬┘└┬┘ └────┬────┘
+team date  start  end  ac sk ex cap sp  km  av    firma
 ```
 
 | Campo      | Largh. | Significato                                   | Codifica            |
@@ -58,7 +58,6 @@ team date  start  end  ac sk ex cap sp  km  av   rb     firma
 | `speed`    | 4     | Penalità di velocità                          | punti               |
 | `km`       | 5     | Distanza totale percorsa                      | **decimi** di km    |
 | `avg`      | 3     | Velocità media raggiunta                      | **decimi** di km/h  |
-| `rb`       | 6     | Prefisso dello slug del roadbook (match nel Ranking) | testo, padding a spazi |
 
 Note di codifica (in [buildMeta](../public/assets/js/roadbook-core.js#L326)):
 - I campi numerici sono **clampati a 0** se negativi e **saturati a tutti-9** in overflow
@@ -188,11 +187,9 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 
 - Le sezioni cronometrate START→FINISH possono essere **più d'una** (`RB.scoredNoteSet`), ma il
   payload aggrega comunque le penalità in un unico totale.
-- Il payload è **a 55 caratteri fissi** (49 numerici + il campo `rb` da 6): ogni nuovo campo va
-  aggiunto a `META_KEYS` + `META_WIDTHS` insieme (allarga il payload) e va adeguato il Reader e il
-  Ranking. Attenzione: `rb` è **testo** riempito con spazi, quindi `verifyMeta` **non deve fare
-  trim** del META (il padding fa parte della stringa firmata). È il vincolo chiave da tenere
-  presente per estensioni tipo cronometraggio FIA per-settore.
+- Il payload è **a 49 caratteri fissi**: nuovi campi (es. tempi per-settore, controlli orari)
+  **non ci stanno** senza ridisegnare META + firma e adeguare il Reader e il Ranking. È il
+  vincolo chiave da tenere presente per estensioni tipo cronometraggio FIA per-settore.
 - **Il raggio di convalida per-nota** è dato da `RB.detectionRadius` (`wp_radius` → default del
   roadbook → default del tipo → 30 m), poi ristretto dai vicini in `reachRadius`: non è un
   valore uniforme fisso, ma non esistono raggi `open`/`clear` distinti per tipo di controllo.

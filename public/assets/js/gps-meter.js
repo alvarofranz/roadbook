@@ -33,14 +33,8 @@ window.RBGpsMeter = class RBGpsMeter {
                 RBNative.geo.start((c) => this._fix(c, Date.now()), this._onError);
             } else if (navigator.geolocation) {
                 this.watchId = navigator.geolocation.watchPosition(
-                    (pos) => this._fix(pos.coords, Date.now()),
-                    (err) => {
-                        if (err && err.TIMEOUT && this._running) {
-                            // Cold-start GPS on Android can take >30s; retry once.
-                            this._retryTimer = setTimeout(() => { if (this._running) this.resume(); }, 5000);
-                        } else this._onError(err);
-                    },
-                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 45000 });
+                    (pos) => this._fix(pos.coords, Date.now()), this._onError,
+                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
             } else this._onError();
         });
         this._wake();
@@ -70,7 +64,6 @@ window.RBGpsMeter = class RBGpsMeter {
         document.removeEventListener('visibilitychange', this._onVis);
         if (this._native) RBNative.geo.stop();
         if (this.watchId != null) { navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
-        if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
         if (this._wakeLock) { this._wakeLock.release().catch(() => {}); this._wakeLock = null; }
     }
 };

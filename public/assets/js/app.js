@@ -112,7 +112,6 @@
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
                 <a href="${ROOT}contact/"><i class="fa-solid fa-envelope"></i> ${RBt('Contact')}</a>
-                <span class="lang"></span>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
@@ -135,12 +134,6 @@
             }
             return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
-        // Floating language selector for mobile (visible above the tab bar when the footer is hidden).
-        if (!document.querySelector('.lang-mobile')) {
-            const ml = document.createElement('div');
-            ml.className = 'lang lang-mobile';
-            document.body.appendChild(ml);
-        }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
@@ -480,12 +473,11 @@
     // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
     // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
     window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
-        (href ? `<a class="gallery-card" href="${RBesc(href)}">` : `<div class="gallery-card">`)
+        `<a class="gallery-card" href="${RBesc(href)}">`
         + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
         + overlays
-        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div>`
-        + (href ? '</a>' : '</div>');
+        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div></a>`;
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).

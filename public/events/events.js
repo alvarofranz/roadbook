@@ -9,7 +9,7 @@
     const grid = $('evGrid'), pager = $('evPager'), search = $('evSearch');
 
     const card = (e) => RBGalleryCard({
-        href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo ? e.logo + (e.logo.includes('?') ? '&' : '?') + 'v=' + Date.now() : e.logo, title: e.title, icon: 'fa-flag-checkered',
+        href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered',
         meta: `@${esc(e.organizer)}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''} · ${e.roadbooks} ${esc(t('roadbooks'))}`,
     });
 
