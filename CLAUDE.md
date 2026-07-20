@@ -189,7 +189,7 @@ automatically.
 `npm install` then `npm test`
 (Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
 GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
-the 49-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
+the 55-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
 (`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
 tests can import it — no build step is introduced on the web. Tests live in `tests/`; CI
 runs them on every push/PR via `.github/workflows/test.yml`.
@@ -358,8 +358,11 @@ Operational notes:
   ±10 m corrections and hold-to-reset, speed with configurable alert bands, heading,
   stopwatch, waypoint counter and crash-safe GPX recording; the session checkpoints
   to localStorage and resumes after a kill.
-- **Ranking** — scan/paste result QRs, verify the signature, build accuracy / CAP /
-  speed / regularity rankings + a final score; per-row delete and CSV export.
+- **Ranking** — scoped to ONE competition roadbook inside an event: reached only via
+  `/ranking/?event=<slug>&rb=<slug>` (the per-roadbook links on the event page), and gated to the
+  event's participants/organizers. Scan/paste result QRs, verify the signature (each result QR
+  carries the roadbook's slug prefix so a QR from another roadbook is rejected), build accuracy /
+  CAP / speed / regularity rankings + a final score; organizers get per-row delete and CSV export.
 - **Public pages** — `/roadbooks/` lists every public roadbook (search + pagination) and the
   per-roadbook public view lives at `/challenge/<slug>` (read on site · Navigate · PDF export;
   a non-owner can't fork or download the `.rdbk`). The home shows a last-6 teaser linking there.
@@ -376,7 +379,8 @@ Operational notes:
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
   the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
-  `detectionRadius` — the Reader's geofence radius), `buildMeta`/`parseMeta` (49-char QR),
+  `detectionRadius` — the Reader's geofence radius), `buildMeta`/`parseMeta` (55-char QR,
+  incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
   `deleteNote`, `pendingWork`), `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
@@ -429,13 +433,14 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   "home" button back to it — navigation is the bottom tab bar.
 - **Navigation — one section catalog, two presentations (`SECTION`/`WEB_NAV`/`APP_TABS` in
   `app.js`).** Sections: **Recorder · Editor · Navigate · Events · Profile** (bottom bar) plus
-  **Roadbooks · Ranking** (web top nav only). *Desktop web* renders the top bar (the Recorder is a
+  **Roadbooks** (web top nav only). *Desktop web* renders the top bar (the Recorder is a
   top-level entry; Reader + Tripmaster collapse into a single **Navigate** entry → the `/navigate/`
   hub). *Every mobile-width
   view — web, PWA and the native app alike* — hides the top bar and shows a fixed icon-only
   **bottom tab bar** (Instagram-style); there is no hamburger/full-screen menu. "Navigate" covers
-  `/tripmaster/` + `/reader/`; "Events" covers `/event/` + `/ranking/` (Ranking lives under
-  Events). The **language is browser-detected** and only changed at the bottom of the Profile page
+  `/tripmaster/` + `/reader/`; "Events" covers `/event/` + `/ranking/` (Ranking has no nav entry of
+  its own — it opens per competition roadbook from the event page). The **language is
+  browser-detected** and only changed at the bottom of the Profile page
   (no picker in the nav). The site footer is hidden on mobile (its About/Privacy/Terms links move
   to the Profile page); Install + unsaved-work chips float above the tab bar.
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored

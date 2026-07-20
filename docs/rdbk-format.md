@@ -79,7 +79,7 @@ Lo scheletro è prodotto da `buildRoadbook` in
 |------------------|----------|------------------------------------------------------------------------------|
 | `title`          | string   | Titolo leggibile del roadbook.                                              |
 | `total_distance` | integer  | Lunghezza totale del percorso in metri (derivata da `track`).               |
-| `note_count`     | integer  | Numero di note.                                                             |
+| `note_count`     | integer  | Numero di note navigabili (le note commento non sono conteggiate).          |
 | `description`    | string   | Opzionale. Testo libero mostrato nella pagina pubblica della challenge.     |
 | `author`         | string   | Opzionale. Nome dell'autore del roadbook.                                   |
 | `organization`   | string   | Opzionale. Club organizzatore / organizzatore dell'evento.                  |
@@ -131,8 +131,8 @@ la traccia GPS.
 | `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (30 m); il Reader lo usa come geofence per il rilevamento automatico. |
 | `icons`            | array           | Simboli posizionati — vedi [§7 Simboli](#7-simboli).                                |
 | `junctions`        | array \| null   | Vettori di incrocio — vedi [§9 Vettori di incrocio](#9-vettori-di-incrocio).       |
-| `note_kind`        | string, opzionale | `"comment"` per una **nota commento** (tipicamente il logo di uno sponsor): resta nella sequenza del roadbook ma **non è un waypoint di navigazione**. Assente = nota di navigazione normale. |
-| `image`            | string, opzionale | Solo per `note_kind: "comment"`: immagine **incorporata** come data URI (es. il logo di uno sponsor), mostrata al posto del diagramma tulip. |
+| `note_kind`        | string, opzionale | `"comment"` per una **nota commento** (una riga informativa con testo e/o immagine, es. il logo di uno sponsor): resta nella sequenza del roadbook ma **non è un waypoint di navigazione**. Assente = nota di navigazione normale. |
+| `image`            | string, opzionale | Solo per `note_kind: "comment"`: immagine **incorporata** come data URI, mostrata al posto del diagramma tulip. |
 
 ```jsonc
 {
@@ -159,16 +159,17 @@ la traccia GPS.
 > ([roadbook-core.js:204](../public/assets/js/roadbook-core.js#L204)). Si autora solo
 > `road_type_out`.
 
-> **Nota commento (`note_kind: "comment"`, #284).** Una nota puramente informativa — di
-> norma il **logo di uno sponsor**, con un testo opzionale. **Non ha coordinate**
+ > **Nota commento (`note_kind: "comment"`, #284).** Una nota puramente informativa — un
+> testo con un'immagine opzionale (es. il logo di uno sponsor). **Non ha coordinate**
 > (`lat`/`lon`/`idx` assenti), quindi non compare sulla mappa, non è rilevata dal GPS, non
 > viene mai "raggiunta" e non entra nel punteggio; non si applicano neppure `distance`,
-> `cap`, i `bearing_*`, i `road_type_*` né i simboli tulip. L'autore la **inserisce a una
-> posizione fissa** nella lista, dove resta ancorata tra due note attraverso i rinumeri;
-> non porta un `num`. Nel diagramma mostra l'`image` incorporata (data URI); se l'immagine
-> manca o non carica, il testo occupa sia la colonna del testo sia quella del diagramma. Un
-> reader conforme la rende nella lista (Reader), nell'export PDF e nella pagina pubblica, e
-> la **salta** nell'export GPX (non è un waypoint georeferenziato).
+> `cap`, i `bearing_*`, i `road_type_*` né i simboli tulip. Nell'editor si aggiunge con il
+> pulsante **"Add comment"** (non c'è un selettore di tipo) e si sposta lungo il roadbook
+> cambiandone la **posizione** nella lista, dove resta ancorata tra due note attraverso i
+> rinumeri; non porta un `num`. Nel diagramma mostra l'`image` incorporata (data URI); se
+> l'immagine manca o non carica, il testo occupa sia la colonna del testo sia quella del
+> diagramma. Un reader conforme la rende nella lista (Reader), nell'export PDF e nella
+> pagina pubblica, e la **salta** nell'export GPX (non è un waypoint georeferenziato).
 
 ```jsonc
 {
@@ -285,11 +286,13 @@ Il valore è `null` quando la nota non disegna incroci espliciti.
 ## 11. Token risultato (opzionale, per gli eventi)
 
 Quando un roadbook è seguito in gara, un reader può emettere un **token risultato a
-larghezza fissa di 49 caratteri** (adatto a un QR), una sequenza di campi numerici con
-zero-padding e senza dati personali: `team`(3) · `date`(6, DDMMYY) · `start`(6, HHMMSS) ·
+larghezza fissa di 55 caratteri** (adatto a un QR), senza dati personali: 11 campi numerici con
+zero-padding — `team`(3) · `date`(6, DDMMYY) · `start`(6, HHMMSS) ·
 `end`(6, HHMMSS) · `accuracy`(4) · `skip`(4) · `extra`(4) · `cap`(4) · `speed`(4) ·
-`km`(5, deci-km) · `avg`(3, deci-km/h). Può essere suffissato con `-<sig>`, un HMAC
-troncato sul token, per evidenza di manomissione tra reader e giudice. Il dettaglio del
+`km`(5, deci-km) · `avg`(3, deci-km/h) — seguiti da `rb`(6): il prefisso dello slug del
+roadbook (testo, padding a spazi) con cui il Ranking rifiuta un QR di un altro roadbook. Può
+essere suffissato con `-<sig>`, un HMAC troncato sul token, per evidenza di manomissione tra
+reader e giudice. Il dettaglio del
 modello di punteggio è in [ranking-model.md](ranking-model.md).
 
 ---
@@ -355,8 +358,9 @@ modello di punteggio è in [ranking-model.md](ranking-model.md).
   c'è un campo separato per attributi della strada (larghezza reale, fondo specifico).
 - **`danger` è una scala 1–3** stile FIA: non rappresenta tipologie di pericolo, solo la
   gravità.
-- **Il token risultato è a 49 caratteri fissi**: estensioni di gara (settori multipli,
-  controlli orari, validazione per-waypoint) non ci stanno senza ridisegnare token e firma.
+- **Il token risultato è a 55 caratteri fissi** (49 numerici + `rb`): estensioni di gara (settori
+  multipli, controlli orari, validazione per-waypoint) vanno aggiunte a `META_KEYS` + `META_WIDTHS`
+  insieme, allargando il token e adeguando reader e firma.
   Vedi i limiti del modello in [ranking-model.md](ranking-model.md#8-limiti-del-modello-attuale).
 - **`cap`/`cap_distance` sono per-nota e in linea retta**: descrivono un singolo segmento a
   bussola verso la nota successiva, non una sequenza di sub-rilevamenti.

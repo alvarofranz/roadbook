@@ -179,6 +179,12 @@ window.NoteCanvas.toSVG = function (note, resolveIcon) {
     const cover = (note.icons || []).find((ic) => ic.cover);
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<image x="0" y="0" width="${W}" height="${H}" href="${RBesc(resolveIcon(cover))}" preserveAspectRatio="xMidYMid meet"/></svg>`;
+    // Comment note: show the embedded image full-box, or an empty vignette (text spans
+    // both columns in the reader/challenge).
+    if (note.note_kind === 'comment') {
+        if (note.image) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><image x="0" y="0" width="${W}" height="${H}" href="${RBesc(note.image)}" preserveAspectRatio="xMidYMid meet"/></svg>`;
+        return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"></svg>`;
+    }
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
         + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;

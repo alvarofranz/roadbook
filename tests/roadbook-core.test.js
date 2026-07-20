@@ -227,6 +227,80 @@ describe('reverseRoadbook', () => {
     });
 });
 
+describe('comment notes (note_kind: comment)', () => {
+    const withComment = () => ({
+        meta: {},
+        track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
+        notes: [
+            { idx: 0, road_type_out: 2 },
+            { note_kind: 'comment', text: 'Sponsor logo' },
+            { idx: 2, road_type_out: 2 },
+        ],
+    });
+
+    it('isComment recognises only note_kind "comment"', () => {
+        expect(RB.isComment({ note_kind: 'comment' })).toBe(true);
+        expect(RB.isComment({ num: 1 })).toBe(false);
+        expect(RB.isComment(null)).toBeFalsy();
+    });
+
+    it('recomputeMetrics renumbers only navigational notes, leaves the comment in place & untouched', () => {
+        const rb = withComment();
+        RB.recomputeMetrics(rb);
+        expect(rb.notes.map((n) => n.note_kind || 'nav')).toEqual(['nav', 'comment', 'nav']);
+        expect(rb.notes[0].num).toBe(1);
+        expect(rb.notes[2].num).toBe(2); // numbering skips the comment
+        const c = rb.notes[1];
+        expect(c.text).toBe('Sponsor logo');
+        expect(c.idx).toBeUndefined(); // no geo/idx recompute for a coordinate-less note
+        expect(c.lat).toBeUndefined();
+        expect(c.num).toBeUndefined();
+    });
+
+    it('note_count counts navigational notes only (comment notes excluded)', () => {
+        const rb = withComment();
+        RB.recomputeMetrics(rb);
+        expect(rb.meta.note_count).toBe(2);
+    });
+
+    it('deleteNote removes a comment and recomputes (note_count stays consistent)', () => {
+        const rb = withComment();
+        RB.recomputeMetrics(rb);
+        const removed = RB.deleteNote(rb, 1);
+        expect(removed).toBe(-1); // no track vertex belongs to a comment
+        expect(rb.notes.length).toBe(2);
+        expect(rb.notes.every((n) => !RB.isComment(n))).toBe(true);
+        expect(rb.meta.note_count).toBe(2);
+        expect(rb.track.length).toBe(3); // the track is untouched
+    });
+
+    it('reverseRoadbook mirrors the navigational notes without touching the comment', () => {
+        const rb = withComment();
+        RB.recomputeMetrics(rb);
+        const total = rb.meta.total_distance;
+        expect(() => RB.reverseRoadbook(rb)).not.toThrow();
+        expect(rb.notes.some((n) => RB.isComment(n))).toBe(true);
+        expect(rb.meta.note_count).toBe(2);
+        const nav = rb.notes.filter((n) => !RB.isComment(n));
+        expect(nav[0].distance).toBe(0);
+        expect(nav[nav.length - 1].distance).toBe(total);
+    });
+
+    it('scoredNoteSet excludes comment notes even inside a start→finish stage', () => {
+        const notes = [
+            { num: 1, wp_type: 'ss_start' },
+            { note_kind: 'comment', text: 'C' },
+            { num: 2 },
+            { num: 3, wp_type: 'ss_end' },
+        ];
+        const set = RB.scoredNoteSet(notes);
+        expect(set.has(0)).toBe(true);
+        expect(set.has(1)).toBe(false); // the comment is never scored
+        expect(set.has(2)).toBe(true);
+        expect(set.has(3)).toBe(true);
+    });
+});
+
 describe('simplifyRoadbook', () => {
     it('drops collinear intermediate points but keeps note anchors and total length', () => {
         const trkpts = [];
@@ -332,9 +406,19 @@ describe('QR meta payload', () => {
     it('builds a fixed-width string that parses back to the same numbers', () => {
         const fields = { team: 7, date: 626, start: 1200, end: 1330, accuracy: 42, skip: 1, extra: 3, cap: 5, speed: 9, km: 12345, avg: 88 };
         const meta = RB.buildMeta(fields);
-        expect(meta).toHaveLength(49); // sum of META_WIDTHS
+        expect(meta).toHaveLength(55); // sum of META_WIDTHS (incl. the 6-char rb field)
         const parsed = RB.parseMeta(meta);
         for (const k of Object.keys(fields)) expect(Number(parsed[k])).toBe(fields[k]);
+    });
+
+    it('carries the roadbook slug prefix in the rb field and truncates it to the field width', () => {
+        expect(RB.metaRbPrefix('monza-stage-1')).toBe('monza-'); // truncated to 6 chars
+        expect(RB.metaRbPrefix('ab')).toBe('ab');                // shorter slugs pass through
+        expect(RB.metaRbPrefix('')).toBe('');
+        const meta = RB.buildMeta({ team: 3, rb: 'monza-stage-1' });
+        expect(RB.parseMeta(meta).rb).toBe('monza-');            // round-trips back to the prefix (trailing pad trimmed)
+        const shortMeta = RB.buildMeta({ team: 3, rb: 'ab' });
+        expect(RB.parseMeta(shortMeta).rb).toBe('ab');
     });
 
     it('clamps negatives to zero and saturates on overflow', () => {
@@ -355,6 +439,18 @@ describe('QR signing (HMAC-SHA256)', () => {
         const v = await RB.verifyMeta(payload, key);
         expect(v.valid).toBe(true);
         expect(v.meta).toBe(meta);
+    });
+
+    it('verifies a payload whose rb field is space-padded (the padding is part of the signed string)', async () => {
+        // Regression: verifyMeta must NOT trim the meta, or the rb field's trailing padding is
+        // dropped before the HMAC is recomputed and every real result fails to validate.
+        const meta = RB.buildMeta({ team: 1, accuracy: 10, rb: 'ab' }); // 'ab' → 'ab    ' (4 trailing spaces)
+        expect(meta.endsWith('    ')).toBe(true);
+        const payload = await RB.signMeta(meta, key);
+        const v = await RB.verifyMeta(payload, key);
+        expect(v.valid).toBe(true);
+        expect(v.meta).toBe(meta);
+        expect(RB.parseMeta(v.meta).rb).toBe('ab');
     });
 
     it('fails verification with the wrong key or a tampered payload', async () => {

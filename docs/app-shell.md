@@ -43,7 +43,7 @@ andato in race.
 | Contesto | Tool nel menu |
 |----------|---------------|
 | App nativa (companion da campo) | Reader · Tripmaster · Recorder |
-| Sito web | Recorder · Editor · Reader · Tripmaster · **Roadbooks** · **Events** · Ranking |
+| Sito web | Recorder · Editor · Reader · Tripmaster · **Roadbooks** · **Events** |
 
 > Le etichette dei tool a due parole vengono spezzate su due righe nella barra desktop
 > (`twoLine` → `<span class="nl-w">`); un'etichetta già HTML (es. lo `Events` tradotto) passa

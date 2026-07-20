@@ -44,13 +44,20 @@
             finally { $('chPdf').disabled = false; }
         };
 
-        if (j.photos && j.photos.length) {
-            $('chGallery').innerHTML = j.photos.map((u, i) => `<a href="${esc(RBMediaSrc(u))}" target="_blank" rel="noopener"><img src="${esc(RBMediaSrc(u))}" loading="lazy" alt="${esc(title + ' — ' + t('photo') + ' ' + (i + 1))}"></a>`).join('');
-        }
+        // Photos and audio are editor-only working material — not shown here (#316).
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
         // same white "paper" rows as the Reader (read-only: no buttons/state)
         $('chNotes').innerHTML = rb.notes.map((n) => {
+            const comment = n.note_kind === 'comment';
+            if (comment) {
+                const textClass = n.image ? '' : ' col-text-wide';
+                return `<div class="nrow readonly comment">
+                    <div class="col-distance"></div>
+                    <div class="col-vignette${n.image ? '' : ' col-vignette-empty'}">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                    <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
+                </div>`;
+            }
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
             return `<div class="nrow readonly">
                 <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>

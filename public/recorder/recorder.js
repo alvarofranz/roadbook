@@ -126,7 +126,7 @@
     }
     function startMeter() {
         segStart = paused ? 0 : Date.now();
-        meter = new RBGpsMeter(onFix, () => toast(t('No geolocation on this device.')));
+        meter = new RBGpsMeter(onFix, () => toast(t('GPS could not get a fix. Move to an open area and restart the recording.')));
         tick = setInterval(renderBar, 1000);
     }
     function stopMeter() {

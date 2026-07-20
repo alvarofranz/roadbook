@@ -66,7 +66,8 @@
         const { meta, valid } = await RB.verifyMeta(str, (window.RB_CONFIG || {}).signKey);
         const m = RB.parseMeta(meta);
         if (!m.team || !/^\d+$/.test(m.team)) { msg('Code not recognized.', true); return; }
-        if (m.rb && m.rb.trim() !== rbSlug) { msg('This result is for a different roadbook (' + esc(m.rb.trim()) + ').', true); return; }
+        // The QR carries only a fixed-width slug prefix (RB.metaRbPrefix), so compare like against like.
+        if (m.rb && m.rb !== RB.metaRbPrefix(rbSlug)) { msg('This result is for a different roadbook (' + esc(m.rb) + ').', true); return; }
         entries.push({ raw: str, m, valid, ts: Date.now() + '.' + Math.floor(Math.random() * 1e6) });
         save(); render();
         $('manualMeta').value = '';
