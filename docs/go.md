@@ -32,8 +32,9 @@ the event, and redirects to the event page in **participant mode**.
    a **pending** row (with a generated `activation_code`, #163). If they already
    exist the row is **upserted** (reset to pending). The activity is logged.
 4. **Participant context** — `set_participant_context()` + `setcookie('rb_participant',
-   '1')` switch the UI to **participant mode**: reduced nav (only event‑scoped
-   tools), home redirects to the event page.
+   '1', …)` switch the UI to **participant mode**: reduced nav (only event‑scoped
+   tools), home redirects to the event page. The cookie is a UX flag the header reads
+   in JS (so **not** `HttpOnly`); it carries `Secure` (on HTTPS) + `SameSite=Lax`.
 5. **Redirect** — the browser lands on `/event/<slug>` where the participant sees
    the full roadbook gallery (public + `ready`) and the ranking link if applicable.
 

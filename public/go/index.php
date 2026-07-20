@@ -35,7 +35,10 @@ if (!$row) {
 // reduced surface removes irrelevant nav tools (#163). A pending participant waits on
 // the event page for the organizer's activation but already sees only event-scoped UI.
 set_participant_context((int)$event['id']);
-setcookie('rb_participant', '1', 0, '/', '', false, false);
+// A UX flag the header reads (document.cookie) to show the participant-scoped nav — not an auth
+// credential (that's the session). HttpOnly stays off because the client JS reads it; Secure follows
+// the request scheme so it isn't sent in clear over HTTP, and SameSite=Lax matches the session cookie.
+setcookie('rb_participant', '1', ['expires' => 0, 'path' => '/', 'secure' => request_is_https(), 'httponly' => false, 'samesite' => 'Lax']);
 
 header('Location: /event/' . $event['slug']);
 exit;
