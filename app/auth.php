@@ -40,9 +40,13 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, blocked, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
+    // A blocked account gets no access even with a still-valid session or Bearer token: treat it as
+    // signed out on every request. The session isn't destroyed, so unblocking is transparent — no
+    // re-login needed. Blocking (admin_block) only flips the flag; this is what enforces it live.
+    if ($u && !empty($u['blocked'])) return null;
     if ($u) {
         $u['has_password'] = (int)$u['has_password']; // 0 = Google-created account with no password yet (#211)
         $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
