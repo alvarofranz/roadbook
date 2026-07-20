@@ -236,4 +236,12 @@
         document.querySelectorAll('.lang').forEach(buildLangControl);
         apply(pickLang());
     });
+
+    // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
+    Object.assign(T.en, {
+        'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Getting started', 'wiki.nav.recorder': 'Record a track',
+        'wiki.nav.editor': 'Create / edit a roadbook', 'wiki.nav.reader': 'Navigate with the Reader', 'wiki.nav.tripmaster': 'Use the Tripmaster',
+        'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
+        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+    });
 })();

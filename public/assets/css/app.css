@@ -154,6 +154,15 @@ section.block { padding: 2.4rem 0; }
 /* install / cross-platform band */
 #install .section-head { text-align: center; }
 #install .install-lead { max-width: 70ch; margin: .6rem auto 0; }
+#install .install-grid { display: grid; gap: 1.5rem; align-items: center; }
+@media (min-width: 1025px) { #install .install-grid { grid-template-columns: 1fr 2fr; } }
+.wiki-cta a { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .3rem; background: linear-gradient(135deg, rgba(232,176,89,.12), rgba(232,176,89,.06)); border: 1px solid rgba(232,176,89,.3); border-radius: 16px; padding: 1.6rem 1.2rem; text-decoration: none; transition: border-color .15s ease, transform .12s ease; }
+.wiki-cta a:hover { border-color: var(--sand); transform: translateY(-2px); }
+.wiki-cta a i { font-size: 1.8rem; color: var(--sand); }
+.wiki-cta a h3 { margin: .4rem 0 0; font-size: 1.1rem; font-weight: 800; color: var(--sand-2); }
+.wiki-cta a p { margin: 0; font-size: .86rem; color: var(--muted); line-height: 1.5; max-width: 26ch; }
+.wiki-cta .cta-link { font-weight: 700; font-size: .9rem; color: var(--sand); margin-top: .3rem; }
+@media (max-width: 1024px) { .wiki-cta a { flex-direction: row; text-align: left; padding: 1rem 1.2rem; } .wiki-cta a p { max-width: none; } .wiki-cta a i { flex-shrink: 0; } }
 /* cross-platform band: each platform sits in a soft pill */
 .platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem; margin-top: 1.4rem; color: var(--text); font-weight: 700; }
 .platforms span { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; }
@@ -420,7 +429,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .workflow a.wf-step:hover { transform: translateY(-3px); }
 .workflow a.wf-step:hover i { background: rgba(232, 176, 89, .22); border-color: var(--sand); }
 .workflow a.wf-step:hover span { color: var(--sand); }
-.workflow .wf-arrow { color: var(--muted); font-size: 1.3rem; font-weight: 700; height: 3.4rem; display: inline-flex; align-items: center; }
+.workflow .wf-arrow { height: 3.4rem; display: inline-flex; align-items: center; }
+.workflow .wf-arrow svg { display: block; }
 @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
     .hero-copy { text-align: center; }
