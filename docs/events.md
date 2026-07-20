@@ -163,7 +163,7 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 | Gestione | `events_manage`, `event_manage_get`, `event_save`, `event_delete`, `event_logo_remove` |
 | Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode` |
 | Co-organizzatori | `user_search`, `event_org_add`, `event_org_remove` |
-| Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participants_list` |
+| Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate` |
 
 ---
 

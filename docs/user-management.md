@@ -99,11 +99,13 @@ Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel r
 | `admin_set_role` | `admin_set_role()` | promuove/declassa admin **o** organizer (rifiuta la demozione admin di un superuser `.env`) |
 | `admin_block` | `admin_block()` | blocca/sblocca (rifiuta su superuser `.env` e su se stessi) |
 | `admin_update` | `admin_update_user()` | modifica nome/cognome/username/email; password opzionale → forza il cambio; anche `quota_bytes` e `is_organizer` |
+| `admin_create` | `admin_create_user()` | crea un nuovo account (verificato subito, con `must_change_password`) |
 | `admin_delete` | `admin_delete_user()` | elimina utente + file personali; i roadbook passano a `deleted-user` (#234); rifiuta su superuser `.env`, su se stessi e sull'account di sistema |
 | `admin_activity` | `admin_activity()` | timeline attività dell'utente (#86, IP anonimizzati) |
 | `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126) |
 | `admin_roadbooks` / `admin_unpublish` | — | moderazione dei roadbook pubblici |
-| `admin_settings` / `admin_save_settings` / `admin_logs` | — | banner del sito + log operativi (#103/#86) |
+| `admin_settings` / `admin_save_settings` / `admin_logs` / `admin_activity_log` | — | banner del sito + log operativi (#103/#86) |
+| `admin_trash_list` / `admin_rb_trash` / `admin_rb_restore` / `admin_rb_purge` | — | cestino roadbook: elenca, cestina, ripristina, elimina permanentemente (#187) |
 
 Dettagli rilevanti:
 

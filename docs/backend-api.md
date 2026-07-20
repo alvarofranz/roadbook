@@ -86,10 +86,10 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `account_delete` | Elimina il proprio account (vedi [user-management](user-management.md)) | richiesta |
 
 **Admin** (`auth.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
-`admin_verify`, `admin_block`, `admin_update`, `admin_delete`, `admin_activity`,
-`admin_settings`/`admin_save_settings`, `admin_logs`, `admin_roadbooks`, `admin_unpublish`,
+`admin_verify`, `admin_block`, `admin_update`, `admin_create`, `admin_delete`, `admin_activity`,
+`admin_settings`/`admin_save_settings`, `admin_logs`, `admin_activity_log`, `admin_roadbooks`, `admin_unpublish`,
 `admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`,
-`admin_trash_list`/`admin_rb_restore`/`admin_rb_purge` (cestino roadbook, #187) — gestione utenti,
+`admin_trash_list`/`admin_rb_trash`/`admin_rb_restore`/`admin_rb_purge` (cestino roadbook, #187) — gestione utenti,
 ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (vedi
 [user-management](user-management.md)).
 
@@ -105,7 +105,8 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
 | `event_join_code` | Genera/rigenera il codice di adesione dell'evento | richiesta |
 | `event_join`/`event_leave` | Adesione con codice / abbandono (`event_participants`) | richiesta |
-| `event_participant_remove` / `event_participants_list` | Rimuove / elenca (paginato) i partecipanti | richiesta |
+| `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge / elenca (paginato) i partecipanti | richiesta |
+| `event_activate_by_code` / `participant_activate` | Attiva un partecipante tramite codice di attivazione / attivazione diretta da organizzatore | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
 | `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti), filtrata per organizzazione — restituisce le email, quindi è riservata a chi gestisce eventi | organizzatore/admin |
 | `events_list` | Elenco pubblico degli eventi | nessuna |
