@@ -4,6 +4,7 @@ const pageKey = {
     '03-editor': 'editor',
     '04-reader': 'reader',
     '05-tripmaster': 'tripmaster',
+    '06-event-management': 'events',
 };
 
 const pageFile = {
@@ -12,6 +13,7 @@ const pageFile = {
     'editor': '03-editor',
     'reader': '04-reader',
     'tripmaster': '05-tripmaster',
+    'events': '06-event-management',
 };
 
 function currentLang() {

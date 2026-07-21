@@ -209,6 +209,35 @@
         el.hidden = !parts.length;
     });
 
+    /* ---------------- App info pop-up (smartphone menu, #335) ---------------- */
+    window.showAppInfo = function () {
+        const ver = (document.getElementById('appVersion') || {}).textContent || '';
+        const siteUrl = ROOT.replace(/\/+$/, '');
+        const env = siteUrl === PROD_ROOT.replace(/\/+$/, '') ? 'Produzione (rdbk.app)'
+            : (siteUrl.includes('ddev') ? 'Sviluppo (DDEV · ' + RBesc(siteUrl) + ')' : RBesc(siteUrl));
+        let html = `<div class="app-info-card">
+            <h2><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</h2>
+            <table class="app-info-table">
+                <tr><td>${RBt('Version')}</td><td>${RBesc(ver || '—')}</td></tr>
+                <tr><td>URL</td><td>${RBesc(siteUrl)}</td></tr>
+                <tr><td>${RBt('Environment')}</td><td>${env}</td></tr>`;
+        if (isNativeApp()) {
+            const foot = document.getElementById('appVer');
+            if (foot && !foot.hidden) {
+                html += `<tr><td>Build nativa</td><td>${RBesc(foot.textContent)}</td></tr>`;
+            }
+        }
+        html += `</table>
+            <div class="btnrow" style="margin-top:1rem">
+                <button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>
+                <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
+            </div>
+        </div>`;
+        const modal = RBModal(html, 'narrow');
+        modal.q('#appInfoUpdate').onclick = () => { modal.close(); hardRefresh(); };
+        modal.q('.modal-close').onclick = () => modal.close();
+    };
+
     /* ---------------- Install (PWA) + iOS ---------------- */
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -887,12 +916,15 @@
                     + `<a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>`
                     + manageLinksHTML(manageLinks(user, participant))
                     + (participant ? `<hr class="menu-sep"><button id="tabLeaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : '')
+                    + `<hr class="menu-sep"><button id="tabAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>`
                     + `<hr class="menu-sep"><button id="tabLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>`;
                 tabProfileBtn.onclick = (e) => { e.stopPropagation(); tabMenu.hidden = !tabMenu.hidden; };
                 document.addEventListener('click', () => { tabMenu.hidden = true; });
                 tabMenu.querySelector('#tabLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
                 const tabLp = tabMenu.querySelector('#tabLeaveParticipant');
                 if (tabLp) tabLp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
+                const tabInfo = tabMenu.querySelector('#tabAppInfo');
+                if (tabInfo) tabInfo.onclick = () => { tabMenu.hidden = true; showAppInfo(); };
             }
         }
     })();

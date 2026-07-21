@@ -671,6 +671,9 @@
         Object.assign(window.RBi18nLangs.de, {
             'wiki.nav.home': 'Start', 'wiki.nav.welcome': 'Erste Schritte', 'wiki.nav.recorder': 'Eine Strecke aufnehmen',
             'wiki.nav.editor': 'Roadbook erstellen / bearbeiten', 'wiki.nav.reader': 'Mit dem Reader navigieren', 'wiki.nav.tripmaster': 'Tripmaster verwenden',
+            'wiki.nav.events': 'Event-Verwaltung',
             'wiki.title.welcome': 'Erste Schritte', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
-            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Event-Verwaltung',
+            'wiki.cta.title': 'Schritt-für-Schritt-Anleitung', 'wiki.cta.desc': 'Folge der Anleitung, um deine Roadbooks zu erstellen', 'wiki.cta.link': 'Zur Wiki →',
+            'App Info': 'App-Info', 'Version': 'Version', 'Environment': 'Umgebung', 'Update': 'Aktualisieren',
         });

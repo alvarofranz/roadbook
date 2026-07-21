@@ -241,7 +241,10 @@
     Object.assign(T.en, {
         'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Getting started', 'wiki.nav.recorder': 'Record a track',
         'wiki.nav.editor': 'Create / edit a roadbook', 'wiki.nav.reader': 'Navigate with the Reader', 'wiki.nav.tripmaster': 'Use the Tripmaster',
+        'wiki.nav.events': 'Event management',
         'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
-        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Event management',
+        'wiki.cta.title': 'Step-by-step guide', 'wiki.cta.desc': 'Follow the step-by-step guide to build your roadbooks', 'wiki.cta.link': 'Go to the wiki →',
+        'App Info': 'App Info', 'Version': 'Version', 'Environment': 'Environment', 'Update': 'Update',
     });
 })();
