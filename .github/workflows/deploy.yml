@@ -1,6 +1,11 @@
 name: Deploy
 
 # Deploys on every push to main (direct commit or merged pull request).
+# Before deploying it auto-increments the build number in public/version.json
+# and updates the ?v= cache-busters in every HTML file, so each deployment
+# force-refreshes all open clients (the app polls version.json and calls
+# hardRefresh() when it changes). The increment commit carries [skip ci] to
+# prevent an infinite workflow loop.
 # Reuses the same production deploy hook the rest of the site uses — a single
 # authenticated POST. The endpoint URL and key live in repository secrets, so
 # nothing about the server is committed to this public repo.
@@ -34,12 +39,33 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    environment: production   # gate the secret behind environment protection rules
+    environment: production
+    permissions:
+      contents: write       # needed to push the auto-increment build commit
     steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Auto-increment build number
+        id: stamp
+        run: |
+          VERSION=$(jq -r .version public/version.json)
+          node source/stamp-version.mjs "$VERSION"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m "chore: auto-increment build [skip ci]"
+          git push
+          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build=$(jq -r .build public/version.json)" >> "$GITHUB_OUTPUT"
+
       - name: Trigger production deploy
         env:
           DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_SHA: ${{ steps.stamp.outputs.new_sha }}
         run: |
           if [ -z "$DEPLOY_URL" ] || [ -z "$DEPLOY_KEY" ]; then
             echo "::error::Set the DEPLOY_URL and DEPLOY_KEY repository secrets (Settings → Secrets and variables → Actions)."
@@ -48,16 +74,17 @@ jobs:
           resp=$(curl -fsS --max-time 120 -X POST \
             -H "X-Admin-Key: $DEPLOY_KEY" \
             -H "Accept: application/json" \
-            -H "X-Deploy-Sha: $GITHUB_SHA" \
+            -H "X-Deploy-Sha: $DEPLOY_SHA" \
             "$DEPLOY_URL")
           echo "$resp"
           echo "$resp" | grep -qE '"ok"[[:space:]]*:[[:space:]]*true' || { echo "::error::Deploy reported failure"; exit 1; }
 
-  # Auto fan-out: a push to main that BUMPS public/version.json is a release, so the iOS build
-  # ships alongside the web deploy — cut the ios-<version> tag, which Xcode Cloud picks up (it
-  # watches the git ref, so a GITHUB_TOKEN tag push triggers it; no PAT needed). Android is handled
-  # the same way by its own workflow (also gated on the bump). A merge with no version bump does
-  # nothing here. Manual iOS release: push an ios-<version> tag by hand.
+  # Auto fan-out: a push to main that BUMPS the semver in public/version.json (not just the build
+  # number) is a release, so the iOS build ships alongside the web deploy — cut the ios-<version>
+  # tag, which Xcode Cloud picks up (it watches the git ref, so a GITHUB_TOKEN tag push triggers it;
+  # no PAT needed). Android is handled the same way by its own workflow (also gated on the semver).
+  # The auto-increment step only changes the build field, so this job skips on regular commits.
+  # Manual iOS release: push an ios-<version> tag by hand.
   ios-tag:
     needs: deploy
     if: github.event_name == 'push'
