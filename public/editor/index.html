@@ -215,9 +215,10 @@
             #viewMap { max-width: 1100px; }
             .load-opts { grid-template-columns: repeat(4, 1fr); }
         }
-        /* tablet landscape (iPad) and up: RB-suite split — the map pinned on the
-           left, the notes + inline editor column on the right */
-        @media (min-width: 1025px) {
+        /* tablet portrait and up: RB-suite split — the map pinned on the
+           left, the notes + inline editor column on the right.
+           The topbar is hidden ≤1024px so sticky offset is 0 there. */
+        @media (min-width: 769px) {
             main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
             /* the split grid is for editing only — on the landing screen #viewMap stays the
                centred 1100px column (otherwise the start cards hug the left of a 1680px row) */
@@ -225,19 +226,22 @@
             .map-box { border-radius: 0; }
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
+            @media (max-width: 1024px) { .map-editor { top: 0; } }
             #edMap { height: calc(100vh - 112px); }
+            @media (max-width: 1024px) { #edMap { height: calc(100vh - 56px); } }
             /* the notes column is its own pane: commands + "Notes" heading stay fixed, the list
                scrolls inside its own area (like an iframe) and ends at the pane's bottom edge */
             #rbPanel { position: sticky; top: 66px; height: calc(100vh - 112px); display: flex; flex-direction: column; }
+            @media (max-width: 1024px) { #rbPanel { top: 0; height: calc(100vh - 56px); } }
             .rb-actions { margin-top: 0; flex-shrink: 0; }
             .note-list-zone { margin-top: .2rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }
             .note-list-zone .icon-category { margin-top: .2rem; flex-shrink: 0; }
             #noteList { flex: 1; min-height: 0; overflow-y: auto; }
         }
-        /* phones & portrait tablets (stacked): the map is a normal in-flow block at the top, the
+        /* phones (stacked): the map is a normal in-flow block at the top, the
            palette + notes flow beneath it. NOT sticky — a pinned interactive map both overlapped
            the content scrolling under it and hijacked the page scroll (it needs one-finger pan). */
-        @media (max-width: 1023px) {
+        @media (max-width: 768px) {
             .map-editor { position: relative; }
             #edMap { height: 46vh; min-height: 240px; }
         }

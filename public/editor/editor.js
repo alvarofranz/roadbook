@@ -1439,7 +1439,7 @@
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.
-        if (window.matchMedia('(min-width: 1024px)').matches) {
+        if (window.matchMedia('(min-width: 769px)').matches) {
             const row = $('noteList').querySelector('.note-mini[data-i="' + i + '"]');
             if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
