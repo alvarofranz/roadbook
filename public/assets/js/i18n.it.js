@@ -711,4 +711,5 @@
             'wiki.nav.editor': 'Creare / modificare un roadbook', 'wiki.nav.reader': 'Navigare con il Reader', 'wiki.nav.tripmaster': 'Usare il Tripmaster',
             'wiki.title.welcome': 'Primi passi', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
             'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+            'App Info': 'Info app', 'Version': 'Versione', 'Environment': 'Ambiente', 'Update': 'Aggiorna',
         });
