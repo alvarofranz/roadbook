@@ -82,7 +82,8 @@ function initWiki() {
 // the markdown in the new language and update the document title.
 window.addEventListener('rb-lang', function () {
     document.documentElement.lang = currentLang();
-    showPage(currentPage);
+    const file = pageFile[currentPage];
+    if (file) { loadWikiPage(file); document.title = (window.RBi18n ? RBi18n.t('wiki.title.' + currentPage) : 'Wiki') + ' · RDBK.app'; }
 });
 
 window.addEventListener('hashchange', function () {
