@@ -174,7 +174,7 @@
             const j = await (await fetch(API_ROOT + 'version.json', { cache: 'no-store' })).json();
             if (!j.version) return;
             const rel = j.version + '-' + (j.build || 0);     // unique per release (version stays, build always grows)
-            const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + j.version;
+            const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + rel;
             if (isNativeApp()) return;                        // app: just show the live version; never hot-refresh
             if (appVer == null) { appVer = rel; return; }     // first read: set the reference
             if (rel !== appVer && !refreshing) {
