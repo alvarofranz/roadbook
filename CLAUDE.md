@@ -251,10 +251,18 @@ triggers the **Deploy** GitHub Action — there is no manual server access and n
 (Force-push and deletion of `main` are also blocked. If you ever need to change this protection,
 it's set via `gh api ... /branches/main/protection`.) The Deploy Action
 (`.github/workflows/deploy.yml`), which runs the unit tests and then fires the production
-deploy hook via one authenticated POST; the endpoint and key are repository secrets
+deploy hook via one authenticated POST with the commit SHA; the endpoint and key are repository secrets
 (`DEPLOY_URL` / `DEPLOY_KEY`, under Settings → Secrets and variables → Actions), so nothing
 about the host is in this repo. You can also run it from the Actions tab
-(`workflow_dispatch`). **On every web release run `node source/stamp-version.mjs <MAJOR.MINOR.PATCH>`**
+(`workflow_dispatch`).
+
+**The deploy SERVER must run `stamp-version.mjs` after checkout** so every deployment gets a fresh
+build number and updated `?v=` cache-busters. Add this to the server-side deploy script:
+```
+node source/stamp-version.mjs "$(jq -r .version public/version.json)"
+```
+
+**On every web release run `node source/stamp-version.mjs <MAJOR.MINOR.PATCH>`**
 (e.g. `1.1.0`) — it writes `public/version.json` (the app polls it and
 force-refreshes every open client) AND stamps the `?v=` cache-buster on every first-party
 script/style URL in the HTML, so each release gets fresh asset URLs through every cache
