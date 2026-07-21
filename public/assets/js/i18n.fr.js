@@ -670,6 +670,9 @@
         Object.assign(window.RBi18nLangs.fr, {
             'wiki.nav.home': 'Accueil', 'wiki.nav.welcome': 'Premiers pas', 'wiki.nav.recorder': 'Enregistrer une trace',
             'wiki.nav.editor': 'Créer / modifier un roadbook', 'wiki.nav.reader': 'Naviguer avec le Reader', 'wiki.nav.tripmaster': 'Utiliser le Tripmaster',
+            'wiki.nav.events': 'Gestion des événements',
             'wiki.title.welcome': 'Premiers pas', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Éditeur',
-            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Gestion des événements',
+            'wiki.cta.title': 'Guide pas à pas', 'wiki.cta.desc': 'Suivez le guide pas à pas pour créer vos roadbooks', 'wiki.cta.link': 'Aller au wiki →',
+            'App Info': 'Infos app', 'Version': 'Version', 'Environment': 'Environnement', 'Update': 'Mettre à jour',
         });
