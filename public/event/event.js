@@ -93,15 +93,25 @@
         }
         if (e.participant_status !== 'pending') {
             box.hidden = false;
-            box.innerHTML = '<span class="grow">' + esc(t('Have a join code from the organizer?')) + '</span><input id="evCode" class="field" data-i18n-ph="Join code" placeholder="' + esc(t('Join code')) + '" autocomplete="off" maxlength="16"><button class="btn btn-primary" id="evJoinBtn"><i class="fa-solid fa-flag-checkered"></i> ' + esc(t('Join')) + '</button>';
-            box.querySelector('#evJoinBtn').onclick = async () => {
-                const code = box.querySelector('#evCode').value.trim();
-                if (!code) return;
-                const x = await RBApi('event_join', { code, slug: e.slug });
-                if (x.ok) { toast('You are participating in this event.'); load(); }
-                else { var m2 = RBModal(`<p class="modal-text">${esc(x.error || t('Wrong join code.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`); m2.q('.modal-close').onclick = m2.close; }
-            };
-            box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
+            if (e.open_join) {
+                // open join: one-click join, no code required
+                box.innerHTML = '<span class="grow"><i class="fa-solid fa-flag-checkered"></i> ' + esc(t('Join this event as a participant.')) + '</span><button class="btn btn-primary" id="evJoinOpenBtn"><i class="fa-solid fa-right-to-bracket"></i> ' + esc(t('Join')) + '</button>';
+                box.querySelector('#evJoinOpenBtn').onclick = async () => {
+                    const x = await RBApi('event_join', { slug: e.slug });
+                    if (x.ok) { toast(t('You are participating in this event.')); load(); }
+                    else { var m2 = RBModal(`<p class="modal-text">${esc(x.error || t('Could not join.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`); m2.q('.modal-close').onclick = m2.close; }
+                };
+            } else {
+                box.innerHTML = '<span class="grow">' + esc(t('Have a join code from the organizer?')) + '</span><input id="evCode" class="field" data-i18n-ph="Join code" placeholder="' + esc(t('Join code')) + '" autocomplete="off" maxlength="16"><button class="btn btn-primary" id="evJoinBtn"><i class="fa-solid fa-flag-checkered"></i> ' + esc(t('Join')) + '</button>';
+                box.querySelector('#evJoinBtn').onclick = async () => {
+                    const code = box.querySelector('#evCode').value.trim();
+                    if (!code) return;
+                    const x = await RBApi('event_join', { code, slug: e.slug });
+                    if (x.ok) { toast(t('You are participating in this event.')); load(); }
+                    else { var m3 = RBModal(`<p class="modal-text">${esc(x.error || t('Wrong join code.'))}</p><div class="btnrow"><button class="btn btn-primary modal-close">${esc(t('OK'))}</button></div>`); m3.q('.modal-close').onclick = m3.close; }
+                };
+                box.querySelector('#evCode').addEventListener('keydown', function(ev2) { if (ev2.key === 'Enter') box.querySelector('#evJoinBtn').click(); });
+            }
         } else {
             box.hidden = true;
             renderActivateQr(e);

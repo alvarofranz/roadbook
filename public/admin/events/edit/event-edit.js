@@ -24,6 +24,7 @@
         $('evStart').value = (ev && ev.starts_on) || '';
         $('evEnd').value = (ev && ev.ends_on) || '';
         $('evPublic').checked = !!(ev && ev.is_public);
+        $('evOpenJoin').checked = !!(ev && ev.open_join);
         const view = $('evView');
         view.hidden = !(ev && ev.is_public);
         if (ev) view.href = '/event/' + ev.slug;
@@ -40,6 +41,7 @@
             hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
+            open_join: $('evOpenJoin').checked ? 1 : 0,
         });
         if (!x.ok) return toast(x.error || 'Could not save.');
         toast('Saved.');
