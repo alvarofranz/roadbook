@@ -24,7 +24,6 @@
         $('evStart').value = (ev && ev.starts_on) || '';
         $('evEnd').value = (ev && ev.ends_on) || '';
         $('evPublic').checked = !!(ev && ev.is_public);
-        $('evOpenJoin').checked = !!(ev && ev.open_join);
         const view = $('evView');
         view.hidden = !(ev && ev.is_public);
         if (ev) view.href = '/event/' + ev.slug;
@@ -35,13 +34,15 @@
     }
 
     async function save() {
+        const openJoin = $('evOpenJoin').checked ? 1 : 0;
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             organizer_website: $('evWebsiteIn').value.trim(),
             hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
-            open_join: $('evOpenJoin').checked ? 1 : 0,
+            open_join: openJoin,
+            clear_join_code: openJoin ? 1 : 0,
         });
         if (!x.ok) return toast(x.error || 'Could not save.');
         toast('Saved.');
@@ -189,19 +190,42 @@
         $('ppSection').hidden = false;
         $('ppHeadCount').textContent = ev.participant_count ? `(${ev.participant_count})` : '';
         $('ppPageLink').href = '../participants/?id=' + id;
-        const code = ev.join_code;
+        $('evOpenJoin').checked = !!(ev && ev.open_join);
+        const openJoin = $('evOpenJoin').checked;
+        const code = openJoin ? null : ev.join_code;
         $('joinCodeOut').innerHTML = code
             ? `${esc(t('Join code'))}: <span class="ev-join-code">${esc(code)}</span>`
             : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
-        $('joinCopy').hidden = !code;
-        $('joinClear').hidden = !code;
-        $('joinSetRow').hidden = false;
         $('joinCodeIn').value = code || '';
-        renderLink();
+        $('joinCodeIn').disabled = openJoin;
+        $('joinSetBtn').disabled = openJoin;
+        $('joinCopy').hidden = !code;
+        $('joinClear').hidden = !code || openJoin;
+        $('joinRotate').hidden = openJoin;
+        $('joinSetRow').hidden = false;
+        renderLink(openJoin);
+        $('evOpenJoin').onchange = () => {
+            if ($('evOpenJoin').checked) {
+                // open join → clear any existing join code
+                $('joinCodeIn').value = '';
+                $('joinCodeIn').disabled = true;
+                $('joinSetBtn').disabled = true;
+                $('joinCopy').hidden = true;
+                $('joinClear').hidden = true;
+                $('joinRotate').hidden = true;
+                $('joinCodeOut').innerHTML = `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
+                $('evLink').hidden = true;
+            } else {
+                $('joinCodeIn').disabled = false;
+                $('joinSetBtn').disabled = false;
+                $('joinRotate').hidden = false;
+                renderLink(false);
+            }
+        };
     }
     $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
-    function renderLink() {
-        if (!ev.join_code) { $('evLink').hidden = true; return; }
+    function renderLink(openJoin) {
+        if (openJoin || !ev.join_code) { $('evLink').hidden = true; return; }
         $('evLink').hidden = false;
         var url = location.origin + '/go/' + ev.join_code;
         $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;

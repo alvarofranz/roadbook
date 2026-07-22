@@ -108,7 +108,7 @@
             'Start new Roadbook from:': 'Nouveau roadbook depuis :', 'Start from a public RB': 'Partir d\'un RB public', 'Public Roadbooks': 'Roadbooks publics', 'Import a GPS track': 'Importer une trace GPS',
             'Open an existing roadbook': 'Ouvrir un roadbook existant',
             'Finish': 'Terminer', 'Save': 'Enregistrer',
-            'Public': 'Public', 'Visibility': 'Visibilité', 'Draft': 'Brouillon', 'Ready': 'Prêt', 'Status': 'Statut', 'Status updated.': 'Statut mis à jour.',
+            'Ready and visible in the event gallery': 'Prêt et visible dans la galerie d\'événements', 'Public': 'Public', 'Visibility': 'Visibilité', 'Draft': 'Brouillon', 'Ready': 'Prêt', 'Status': 'Statut', 'Status updated.': 'Statut mis à jour.',
             'Move to the row above': 'Aller à la ligne du dessus', 'Move to the row below': 'Aller à la ligne du dessous',
             'Open in Google Maps': 'Ouvrir dans Google Maps', 'Open in Google Earth': 'Ouvrir dans Google Earth', 'Coords Lat/Lng:': 'Coord. Lat/Lng :', 'View photo': 'Voir la photo',
             'Record a Roadbook with geotagged notes, photos and voice memos.': 'Enregistrez un Roadbook avec des notes, photos et notes vocales géoréférencées.', 'Start recording': 'Démarrer l\'enregistrement',
