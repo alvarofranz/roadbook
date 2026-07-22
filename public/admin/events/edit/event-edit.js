@@ -197,28 +197,20 @@
             ? `${esc(t('Join code'))}: <span class="ev-join-code">${esc(code)}</span>`
             : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
         $('joinCodeIn').value = code || '';
-        $('joinCodeIn').disabled = openJoin;
-        $('joinSetBtn').disabled = openJoin;
+        $('joinCodeIn').disabled = false;
+        $('joinSetBtn').disabled = false;
         $('joinCopy').hidden = !code;
         $('joinClear').hidden = !code || openJoin;
-        $('joinRotate').hidden = openJoin;
         $('joinSetRow').hidden = false;
         renderLink(openJoin);
         $('evOpenJoin').onchange = () => {
             if ($('evOpenJoin').checked) {
-                // open join → clear any existing join code
                 $('joinCodeIn').value = '';
-                $('joinCodeIn').disabled = true;
-                $('joinSetBtn').disabled = true;
                 $('joinCopy').hidden = true;
                 $('joinClear').hidden = true;
-                $('joinRotate').hidden = true;
                 $('joinCodeOut').innerHTML = `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
                 $('evLink').hidden = true;
             } else {
-                $('joinCodeIn').disabled = false;
-                $('joinSetBtn').disabled = false;
-                $('joinRotate').hidden = false;
                 renderLink(false);
             }
         };
