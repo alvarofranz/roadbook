@@ -667,6 +667,10 @@
             'Open ranking': 'Ouvrir le classement',
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores pour cet événement. L\'organisateur collecte les QR codes de résultat après chaque parcours et les ajoute ici.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Classement en direct pour cet événement. Scannez le QR de résultat de chaque véhicule après son parcours.',
+            'native.better.gps': 'Pour une meilleure précision GPS et un enregistrement en arrière-plan, utilisez l\'application native iOS ou Android.',
+            'native.better.gps.recorder': 'Pour l\'enregistrement GPS en arrière-plan et une meilleure précision, utilisez l\'application native iOS ou Android.',
+            'native.better.gps.reader': 'Pour une navigation GPS ininterrompue et un suivi en arrière-plan, utilisez l\'application native iOS ou Android.',
+            'native.better.gps.tripmaster': 'Pour un odomètre GPS continu et un enregistrement en arrière-plan, utilisez l\'application native iOS ou Android.',
         };
 
         // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
