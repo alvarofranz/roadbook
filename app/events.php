@@ -179,9 +179,16 @@ function event_save(array $user, array $d): void {
     // title is the same, and only regenerates it after a real rename.
     if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
+    // open join → clear the join code so it's not usable
+    if ($openJoin) $clearJoin = 1;
+    else $clearJoin = !empty($d['clear_join_code']) ? 1 : 0;
     if ($id > 0) {
-        db()->prepare('UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, open_join = ?, slug = ? WHERE id = ?')
-            ->execute([$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin, $slug, $id]);
+        $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, open_join = ?, slug = ?';
+        $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin, $slug];
+        if ($clearJoin) { $sql .= ', join_code = NULL'; }
+        $sql .= ' WHERE id = ?';
+        $args[] = $id;
+        db()->prepare($sql)->execute($args);
     } else {
         db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, open_join) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
             ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin]);
