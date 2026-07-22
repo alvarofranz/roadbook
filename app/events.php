@@ -306,14 +306,21 @@ function event_join_code(array $user, array $d): void {
     fail('Could not generate a join code.', 500); // 5 straight failures = the DB is unhappy, not a collision
 }
 
-// A signed-in user joins the event whose page they're on by typing its join code.
-// Open-join events skip the code: any signed-in user can join with a single click.
+// A signed-in user joins an event — from the event page (Join button, by slug) or from the
+// native /go/<code> App-Links deep link (#268), which carries only the join code, no slug.
+// Open-join events skip the code: any signed-in user joins with one click and is active at once.
 function event_join(array $user, array $d): void {
     rate_limit('join_' . $user['id'], 20, 3600); // stop code guessing
     $code = strtoupper(trim((string)($d['code'] ?? '')));
     $slug = (string)($d['slug'] ?? '');
-    if ($slug === '') fail('Event slug is required.', 400);
-    $st = db()->prepare('SELECT id, slug, open_join, is_public FROM events WHERE slug = ?'); $st->execute([$slug]);
+    // Locate the event by slug when the page supplies one, else by the join code alone.
+    if ($slug !== '') {
+        $st = db()->prepare('SELECT id, slug, open_join, is_public, join_code FROM events WHERE slug = ?'); $st->execute([$slug]);
+    } elseif ($code !== '') {
+        $st = db()->prepare('SELECT id, slug, open_join, is_public, join_code FROM events WHERE join_code = ?'); $st->execute([$code]);
+    } else {
+        fail('Enter the join code.');
+    }
     $e = $st->fetch();
     if (!$e || !(int)$e['is_public']) fail('Not found.', 404);
     if ((int)$e['open_join']) {
@@ -324,11 +331,8 @@ function event_join(array $user, array $d): void {
         json_out(['ok' => true, 'activation_code' => null, 'slug' => $e['slug']]);
         return;
     }
-    if ($code === '') fail('Enter the join code.');
-    if ($slug !== '' && $e['slug'] !== $slug) fail('Wrong join code.', 404);
-    $st2 = db()->prepare('SELECT id, slug FROM events WHERE join_code = ?'); $st2->execute([$code]);
-    $e2 = $st2->fetch();
-    if (!$e2 || $e2['slug'] !== $e['slug']) fail('Wrong join code.', 404);
+    // Code-required event: the supplied code must match this event's own join code.
+    if ($code === '' || $e['join_code'] === null || $code !== $e['join_code']) fail('Wrong join code.', 404);
     $actCode = gen_activation_code();
     db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
         ->execute([(int)$e['id'], (int)$user['id'], $actCode, $actCode]);
