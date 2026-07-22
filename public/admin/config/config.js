@@ -25,5 +25,6 @@
             } });
             toast(x.ok ? 'Saved.' : (x.error || 'Could not save.'));
         };
+        $('transEditOn').onclick = () => { if (window.RBI18nSetEdit) { RBI18nSetEdit(true); toast(t('Translation editor is on. Navigate to any page and right-click a label to edit it.')); } };
     })();
 })();

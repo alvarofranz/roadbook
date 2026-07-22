@@ -111,14 +111,9 @@
 
         <!-- 2 · who manages this event (and can edit its roadbook associations) -->
         <section class="ev-section" id="orgSection" hidden>
-            <h2 data-i18n="Organizers">Organizers</h2>
+            <h2 data-i18n="Event collaborators">Event collaborators</h2>
             <div id="orgList"></div>
-            <div class="ev-add-row" id="orgAddRow">
-                <input id="orgSearchIn" class="field" data-i18n-ph="Search users…" placeholder="Search users…" autocomplete="off">
-                <input id="orgOrgIn" class="field" data-i18n-ph="Organization" placeholder="Organization" autocomplete="off" list="orgSuggest">
-                <datalist id="orgSuggest"></datalist>
-            </div>
-            <div id="orgResults"></div>
+            <div class="btnrow" id="orgAddRow"><button class="btn btn-ghost" id="orgAddBtn" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add organizer">Add organizer</span></button></div>
         </section>
 
         <!-- 3 · the associated roadbooks -->
