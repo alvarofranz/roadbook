@@ -19,6 +19,7 @@ import { BackgroundGeolocation } from '@capgo/background-geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { FileSharer } from '@capgo/capacitor-file-sharer';
 import { parseDeepLink } from './deeplink.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
@@ -46,21 +47,17 @@ const RBNative = {
     // sheet) — and throws when nothing could save it; the caller (RBDownload) owns
     // the user feedback. The two OSes hand the file to a folder in different ways:
     //   · Android — the WebView has no folder picker (the File System Access API is
-    //             desktop-Chromium only, and the share sheet has no reliable "save here").
-    //             So write straight into the public Documents folder — the file lands where
-    //             the Files / Downloads apps can see it.
+    //             desktop-Chromium only), so the file-sharer plugin writes the blob
+    //             through MediaStore into the public Documents collection. It lands where
+    //             the Files / Downloads apps can see it and needs no storage permission on
+    //             any Android version — MediaStore is the scoped-storage-safe write path.
     //   · iOS   — apps are sandboxed; the only way to reach an arbitrary folder is the
     //             system share sheet, whose "Save to Files" entry IS the folder chooser.
-    // Android before 10 (API < 29) has no scoped-storage write to Documents without the
-    // storage permission, so that path can throw — we fall back to the share sheet, which
-    // always works on every OS version.
     async downloadFile(blob, filename) {
         const data = await blobToBase64(blob);
         if (Capacitor.getPlatform() === 'android') {
-            try {
-                await Filesystem.writeFile({ path: filename, data, directory: Directory.Documents, recursive: true });
-                return 'documents';
-            } catch (e) { /* old Android / no Documents access — fall back to the share sheet */ }
+            await FileSharer.save({ filename, base64Data: data, android: { saveDirectory: 'documents' } });
+            return 'documents';
         }
         const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
         try { await Share.share({ title: filename, files: [uri] }); }
