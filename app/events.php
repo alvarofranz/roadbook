@@ -118,7 +118,7 @@ function event_manage_get(array $user, array $d): void {
         'id' => $id, 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
-        'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
+        'join_code' => $e['join_code'], 'open_join' => (int)$e['open_join'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
@@ -173,14 +173,15 @@ function event_save(array $user, array $d): void {
     $hqLat = isset($d['hq_lat']) && is_numeric($d['hq_lat']) ? (float)$d['hq_lat'] : null;
     $hqLon = isset($d['hq_lon']) && is_numeric($d['hq_lon']) ? (float)$d['hq_lon'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
+    $openJoin = !empty($d['open_join']) ? 1 : 0;
     // rights + slug first, then save — no transaction needed for a single UPDATE/INSERT.
     // The slug follows the current title (#194); excludeId keeps it unchanged when the slugified
     // title is the same, and only regenerates it after a real rename.
     if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
     if ($id > 0) {
-        db()->prepare('UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, slug = ? WHERE id = ?')
-            ->execute([$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $slug, $id]);
+        db()->prepare('UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, open_join = ?, slug = ? WHERE id = ?')
+            ->execute([$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin, $slug, $id]);
     } else {
         db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?,?,?,?)')
             ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic]);
@@ -306,14 +307,28 @@ function event_join_code(array $user, array $d): void {
 }
 
 // A signed-in user joins the event whose page they're on by typing its join code.
+// Open-join events skip the code: any signed-in user can join with a single click.
 function event_join(array $user, array $d): void {
     rate_limit('join_' . $user['id'], 20, 3600); // stop code guessing
     $code = strtoupper(trim((string)($d['code'] ?? '')));
     $slug = (string)($d['slug'] ?? '');
-    if ($code === '') fail('Enter the join code.');
-    $st = db()->prepare('SELECT id, slug FROM events WHERE join_code = ?'); $st->execute([$code]);
+    if ($slug === '') fail('Event slug is required.', 400);
+    $st = db()->prepare('SELECT id, slug, open_join, is_public FROM events WHERE slug = ?'); $st->execute([$slug]);
     $e = $st->fetch();
-    if (!$e || ($slug !== '' && $e['slug'] !== $slug)) fail('Wrong join code.', 404);
+    if (!$e || !(int)$e['is_public']) fail('Not found.', 404);
+    if ((int)$e['open_join']) {
+        // open join: any signed-in user joins directly as active, no code needed
+        db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")
+            ->execute([(int)$e['id'], (int)$user['id']]);
+        log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
+        json_out(['ok' => true, 'activation_code' => null, 'slug' => $e['slug']]);
+        return;
+    }
+    if ($code === '') fail('Enter the join code.');
+    if ($slug !== '' && $e['slug'] !== $slug) fail('Wrong join code.', 404);
+    $st2 = db()->prepare('SELECT id, slug FROM events WHERE join_code = ?'); $st2->execute([$code]);
+    $e2 = $st2->fetch();
+    if (!$e2 || $e2['slug'] !== $e['slug']) fail('Wrong join code.', 404);
     $actCode = gen_activation_code();
     db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
         ->execute([(int)$e['id'], (int)$user['id'], $actCode, $actCode]);
@@ -389,7 +404,7 @@ function events_public_list(): void {
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_code, e.logo, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.open_join, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -436,7 +451,7 @@ function event_public_get(array $d): void {
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
-            'can_join' => $e['join_code'] !== null, 'joined' => $joined, 'participant_status' => $participantStatus,
+            'can_join' => $e['join_code'] !== null || (int)$e['open_join'], 'open_join' => (int)$e['open_join'], 'joined' => $joined, 'participant_status' => $participantStatus,
             'activation_code' => $activationCode,
             'org_read' => $orgRead, 'active_participant' => $activeParticipant,
     ], 'roadbooks' => $roadbooks]);

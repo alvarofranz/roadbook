@@ -1,24 +1,57 @@
 # RDBK.app — AGENTS.md
 
-Per tutte le informazioni sul progetto (architettura, convenzioni, strumenti, deploy),
-leggi il file **`CLAUDE.md`** nella root del progetto. È la fonte di verità.
+Per architettura, strumenti, deploy e convenzioni dettagliate leggi **`CLAUDE.md`** (root). Qui solo ciò che un agente OpenCode sbaglierebbe senza aiuto.
 
-Note specifiche per opencode:
-- Usa `/connect` per aggiungere provider (DeepSeek, LM Studio, etc.)
-- Usa `/models` per cambiare modello
-- **Tutte le linee guida in CLAUDE.md si applicano anche qui** (test prima del deploy, nessun deploy senza approvazione,
-  partire da `main` fresco, etc.). Leggilo integralmente all'inizio di ogni sessione.
-- **Chiavi DB/produzione**: in `db.md` (gitignored) — contiene VPS_ADMIN_KEY
-- **Migration al DB**: dopo aver pushato, applica via panel con
-  `curl -sS -X POST -H "X-Admin-Key: $VPS_ADMIN_KEY" "https://alvarofranz.com/api/projects/rdbk/migrations/<file>/apply"`
-  Se il panel non trova il file, riprovare dopo 30-60 secondi (deploy non ancora completato).
-- **Issue GitHub**: non assegnare mai nuove issue a nessuno a meno che non venga richiesto esplicitamente.
-  Le fix vanno assegnate a chi ha aperto l'issue.
-- **Deploy**: mai mergiare PR o pushare in produzione senza il tuo esplicito OK dopo che hai
-  testato su ddev. Dopo aver implementato una modifica, chiedo sempre conferma prima di
-  procedere al merge/deploy.
-- **Test automatici**: prima di chiedere all'utente di testare, esegui `npm test` su ddev per
-  verificare che i test passino. Se non passano, risolvi prima.
-- **Test di non regressione**: dopo l'approvazione della PR, i test relativi alla modifica
-  vanno inseriti nella suite automatica come test di non regressione (stessa directory
-  `tests/` con Vitest).
+## Sicurezza
+
+- **CSP: `script-src 'self'`** — niente inline `<script>`, `onclick=`, `javascript:` URL. Tutto il JS va in file `.js` esterni, la UI si lega con `addEventListener` delegato.
+- **Conferma prima di distruggere dati.** Ogni delete/overwrite deve passare da `RBConfirm` che nomina l'oggetto (es. numero nota + testo). Mai silenzioso.
+
+## i18n
+
+- **Tutte le lingue (EN/ES/IT/DE/FR) devono avere le stesse chiavi.** Se aggiungi/rimuovi una chiave in `i18n.js` (EN), aggiorna SUBITO anche `i18n.{es,it,de,fr}.js`. Il test `npm test` include `tests/i18n.test.js` che verifica la parità.
+
+## Branch e PR
+
+- **`main` è protetto** — nessun push diretto (GH006). Ogni modifica va su un branch → PR → merge. Self-merge consentito (`gh pr merge --squash --delete-branch`).
+- **PR di process/architettura/db/deploy/CI** → chiedere review ad Álvaro prima di mergiare (`CLAUDE.md` "Process/architecture changes need an Alvaro review").
+
+## Test e lint
+
+```bash
+npm test                    # Vitest (tests/**/*.test.js, happy-dom)
+node --check <file>.js      # syntax check JS (CI lo fa su tutti i .js non minified)
+npm run check               # syntax check su tutta la codebase (source/check-syntax.mjs)
+```
+
+- Prima di chiedere all'utente di testare, esegui `npm test` e risolvi eventuali rossi.
+- I test di non regressione vanno in `tests/` con Vitest.
+
+## Sviluppo
+
+- **Niente ambiente locale.** Lo sviluppo è sul dev clone del VPS (`http://localhost:8806`). Nessun Docker, nessun Mac.
+- `public/` è la web root. **Niente build step** per il web — i file `.js` sono serviti così come sono.
+- Config gitignorata: `public/assets/js/config.js`, `.env`, `vendor/`, `public/assets/fontawesome/`. Nel dev clone sono copiati da produzione.
+
+## Versioni e deploy
+
+- `stamp-version.mjs` scrive `public/version.json` e aggiorna i `?v=` cache-buster. Il server DEVE eseguirlo dopo ogni checkout.
+- **Release:** `node source/stamp-version.mjs <X.Y.Z>` → commit → branch → PR → merge. Quel merge fa partire web + Android (Play) + iOS (Xcode Cloud).
+- **Build nativo:** `npm run build:native` (esbuild `native/src/native.js` → `public/assets/js/native.bundle.js`). Serve prima di `npx cap sync`.
+
+## API DB
+
+```bash
+# List migrations pendenti
+curl -fsS -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects/rdbk/migrations | jq '.parsed'
+# Applicare una migration
+curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects/rdbk/migrations/<file>.sql/apply | jq -r '.stdout // .'
+```
+- **Schema prima del codice**: una nuova colonna/tabella deve esistere in prod PRIMA che il codice che la usa venga deployato.
+- **Chiave DB/produzione**: in `db.md` (gitignored).
+
+## Convenzioni rapide
+
+- **Nessun CSS inline** (`style="…"`). Tutto in stylesheet con classi descrittive.
+- **Nessun commento legacy** ("prima era X, ora Y"). Quando cambi qualcosa, riscrivi i commenti come se fosse sempre stato così.
+- **Stesso FontAwesome icona per tool** in tutta l'app (`fa-circle-dot` Recorder, `fa-pen-ruler` Editor, `fa-compass` Reader, `fa-gauge-high` Tripmaster).

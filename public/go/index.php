@@ -10,7 +10,7 @@ function go_error(string $msg): never {
 $tag = $_GET['tag'] ?? '';
 if (!preg_match('/^[A-Za-z0-9_-]+$/', $tag)) go_error('Not found');
 
-$st = db()->prepare('SELECT id, slug FROM events WHERE join_code = ? AND is_public = 1');
+$st = db()->prepare('SELECT id, slug, open_join FROM events WHERE join_code = ? AND is_public = 1');
 $st->execute([$tag]);
 $event = $st->fetch();
 if (!$event) go_error('Event not found');
@@ -26,9 +26,15 @@ $st->execute([(int)$event['id'], (int)$user['id']]);
 $row = $st->fetch();
 
 if (!$row) {
-    $actCode = gen_activation_code();
-    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
-        ->execute([(int)$event['id'], (int)$user['id'], $actCode, $actCode]);
+    if ((int)$event['open_join']) {
+        // open join: participant is active immediately, no activation code
+        db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")
+            ->execute([(int)$event['id'], (int)$user['id']]);
+    } else {
+        $actCode = gen_activation_code();
+        db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
+            ->execute([(int)$event['id'], (int)$user['id'], $actCode, $actCode]);
+    }
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$event['id']);
 }
 // Everyone entering via the /go/ link gets participant mode (pending or active): the
