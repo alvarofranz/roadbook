@@ -6,6 +6,7 @@ Per architettura, strumenti, deploy e convenzioni dettagliate leggi **`CLAUDE.md
 
 - **CSP: `script-src 'self'`** — niente inline `<script>`, `onclick=`, `javascript:` URL. Tutto il JS va in file `.js` esterni, la UI si lega con `addEventListener` delegato.
 - **Conferma prima di distruggere dati.** Ogni delete/overwrite deve passare da `RBConfirm` che nomina l'oggetto (es. numero nota + testo). Mai silenzioso.
+- **Migrazioni DB: mai perdere dati.** Prima di droppare colonne, tabelle, container Docker, volumi o fare reset, **CHIEDI CONFERMA** (con testo in **rosso**). Spiega esattamente cosa stai per fare e quali dati rischi di perdere.
 
 ## i18n
 

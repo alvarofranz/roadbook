@@ -79,7 +79,6 @@
     function renderOrgs() {
         $('orgSection').hidden = false;
         $('orgAddRow').hidden = !isOwner(); // only the owner (or an admin) edits who co-manages
-        $('orgResults').hidden = !isOwner();
         $('orgList').innerHTML = ev.organizers.map((o) => `<div class="ev-line">
             <span class="meta"><i class="fa-solid fa-user icon-accent"></i> ${esc(o.username)}${o.id === ev.owner_id ? ` <span class="muted small">(${esc(t('owner'))})</span>` : ''}
                 <span class="muted small">· ${esc(o.email)}${o.organization ? ' · ' + esc(o.organization) : ''}</span></span>
@@ -91,31 +90,53 @@
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });
     }
-    // Live user search (debounced) to pick a co-organizer; the organization filter narrows it
-    // and defaults to YOUR organization (set once in init).
-    let orgSearchTimer = null, orgSearchSeq = 0;
-    function orgSearch() {
-        clearTimeout(orgSearchTimer);
-        orgSearchTimer = setTimeout(async () => {
-            const q = $('orgSearchIn').value.trim(), organization = $('orgOrgIn').value.trim();
-            if (!q && !organization) { $('orgResults').innerHTML = ''; return; }
+    // "Add organizer": opens a modal with search + paginated user list
+    let orgSearchSeq = 0;
+    $('orgAddBtn').onclick = () => {
+        const m = RBModal(`<h2>${esc(t('Add organizer'))}</h2>
+            <div class="ev-add-row" style="margin-bottom:.5rem">
+                <input id="orgSearchIn" class="field" data-i18n-ph="Search users…" placeholder="${esc(t('Search users…'))}" autocomplete="off">
+                <input id="orgOrgIn" class="field" data-i18n-ph="Organization" placeholder="${esc(t('Organization'))}" autocomplete="off" list="orgSuggest">
+                <datalist id="orgSuggest"></datalist>
+            </div>
+            <div id="orgListModal" class="ev-pick-list"></div>
+            <div class="btnrow" id="orgPages" style="justify-content:center;gap:.5rem;margin-top:.5rem">
+                <button class="btn btn-ghost" id="orgPrevBtn" hidden><i class="fa-solid fa-chevron-left"></i> ${esc(t('Previous'))}</button>
+                <span id="orgPageInfo" class="muted small"></span>
+                <button class="btn btn-ghost" id="orgNextBtn" hidden>${esc(t('Next'))} <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
+        RBOrgDatalist(m.q('#orgSuggest'));
+        let curPage = 1, q = '', org = '';
+        const render = async (page) => {
+            curPage = page;
             const seq = ++orgSearchSeq;
-            const r = await api('user_search', { q, organization });
-            if (seq !== orgSearchSeq) return; // a newer search is in flight — never paint stale results (#220)
+            const r = await api('user_search', { q, organization: org, page, per_page: 10 });
+            if (seq !== orgSearchSeq) return;
             const have = new Set(ev ? ev.organizers.map((o) => o.username) : []);
-            const list = ((r.ok && r.users) || []).filter((u) => !have.has(u.username));
-            $('orgResults').innerHTML = list.length ? list.map((u) => `<div class="ev-line">
-                <span class="meta"><i class="fa-solid fa-user"></i> ${esc(u.username)}${u.organization ? ` <span class="muted small">· ${esc(u.organization)}</span>` : ''}</span>
-                <button class="btn btn-ghost" data-orgadd="${esc(u.username)}" title="${esc(t('Add organizer'))}" aria-label="${esc(t('Add organizer'))}"><i class="fa-solid fa-user-plus"></i> ${esc(t('Add'))}</button>
-            </div>`).join('') : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
-            $('orgResults').querySelectorAll('[data-orgadd]').forEach((b) => b.onclick = async () => {
+            if (!r.ok) { m.q('#orgListModal').innerHTML = `<p class="muted small">${esc(r.error || 'Error.')}</p>`; return; }
+            const list = (r.users || []).filter((u) => !have.has(u.username));
+            m.q('#orgListModal').innerHTML = list.length
+                ? list.map((u) => `<div class="ev-line"><span class="meta"><i class="fa-solid fa-user"></i> ${esc(u.username)}${u.organization ? ` <span class="muted small">· ${esc(u.organization)}</span>` : ''}</span>
+                    <button class="btn btn-ghost" data-orgadd="${esc(u.username)}" title="${esc(t('Add organizer'))}" aria-label="${esc(t('Add organizer'))}"><i class="fa-solid fa-user-plus"></i> ${esc(t('Add'))}</button>
+                </div>`).join('')
+                : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
+            m.q('#orgListModal').querySelectorAll('[data-orgadd]').forEach((b) => b.onclick = async () => {
                 const x = await api('event_org_add', { event_id: id, username: b.dataset.orgadd });
-                if (x.ok) { $('orgResults').innerHTML = ''; $('orgSearchIn').value = ''; load(); } else toast(x.error || 'Could not add.');
+                if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not add.');
             });
-        }, 300);
-    }
-    $('orgSearchIn').oninput = orgSearch;
-    $('orgOrgIn').oninput = orgSearch;
+            const total = r.total || 0, pages = Math.ceil(total / 10);
+            m.q('#orgPrevBtn').hidden = page <= 1;
+            m.q('#orgNextBtn').hidden = page >= pages || pages === 0;
+            m.q('#orgPageInfo').textContent = total > 0 ? `${page} / ${pages} (${total})` : '';
+        };
+        m.q('#orgSearchIn').oninput = () => { q = m.q('#orgSearchIn').value.trim(); render(1); };
+        m.q('#orgOrgIn').oninput = () => { org = m.q('#orgOrgIn').value.trim(); render(1); };
+        m.q('#orgPrevBtn').onclick = () => render(curPage - 1);
+        m.q('#orgNextBtn').onclick = () => render(curPage + 1);
+        m.q('[data-cancel]').onclick = m.close;
+        render(1); // show initial (empty) results
+    };
 
     /* ---------- 3 · associated roadbooks ---------- */
     function renderRbs() {
@@ -291,8 +312,7 @@
     (async function init() {
         me = await RBRequireUser($('adminMsg'));
         if (!me) return;
-        $('orgOrgIn').value = ''; // the organizer search defaults to no org filter (#253)
-        RBOrgDatalist($('orgSuggest')); // suggest the clubs already in use, so spellings stay consistent (#116)
+        // organizer search is modal — RBOrgDatalist is called when the modal opens
         if (id > 0) return load();
         // new event: only the parameters section until the first save creates it
         if (!me.is_admin && !me.is_organizer) { $('adminMsg').textContent = t('Organizers only.'); return; }

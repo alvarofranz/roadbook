@@ -121,25 +121,15 @@
         d.q('[data-close]').onclick = d.close;
     }
 
-    /* ---------- chrome: the admin toggle + the edit bar ---------- */
-    let toggleEl = null, barEl = null;
+    /* ---------- chrome: the edit bar (shown only when mode is on) ---------- */
+    let barEl = null;
     function refreshBar() {
         const n = deltaCount();
-        document.querySelectorAll('[data-count]').forEach((e) => { e.textContent = n; }); // bar + any open popup
-        if (toggleEl) toggleEl.classList.toggle('has-pending', n > 0);
+        document.querySelectorAll('[data-count]').forEach((e) => { e.textContent = n; });
     }
     function render() {
         const on = isOn();
         document.body.classList.toggle('i18ne-on', on);
-        if (!toggleEl) {
-            toggleEl = document.createElement('button');
-            toggleEl.type = 'button'; toggleEl.className = 'i18ne-toggle';
-            toggleEl.title = 'UI translation editor';
-            toggleEl.onclick = () => setOn(!isOn());
-            document.body.appendChild(toggleEl);
-        }
-        toggleEl.innerHTML = `<i class="fa-solid fa-language"></i>`;
-        toggleEl.classList.toggle('active', on);
         if (barEl) { barEl.remove(); barEl = null; }
         if (on) {
             barEl = document.createElement('div');
@@ -156,6 +146,7 @@
         }
         refreshBar();
     }
+    window.RBI18nSetEdit = (v) => { setOn(v); };
 
     // Right-click a translatable element (edit mode only) → edit just its key(s).
     document.addEventListener('contextmenu', (e) => {
