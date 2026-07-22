@@ -253,7 +253,23 @@
     $('evLinkCopy').onclick = async () => {
         try { await navigator.clipboard.writeText($('evLinkUrl').textContent); toast('Copied.'); } catch (e) { toast('Could not copy.'); }
     };
+    async function confirmDisableOpenJoin() {
+        if (!$('evOpenJoin').checked) return true;
+        if (!(await RBConfirm(t('Open join is enabled. Setting a join code will disable open join. Continue?'), t('Disable open join')))) return false;
+        $('evOpenJoin').checked = false;
+        const x = await api('event_save', {
+            id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
+            organizer_website: $('evWebsiteIn').value.trim(),
+            hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
+            starts_on: $('evStart').value, ends_on: $('evEnd').value,
+            is_public: $('evPublic').checked ? 1 : 0,
+            open_join: 0, clear_join_code: 0,
+        });
+        if (!x.ok) { toast(x.error || 'Could not save.'); return false; }
+        return true;
+    }
     $('joinRotate').onclick = async () => {
+        if (!(await confirmDisableOpenJoin())) return;
         // rotating invalidates the currently shared code, so it must be confirmed
         if (!(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;
         const x = await api('event_join_code', { event_id: id });
@@ -265,6 +281,7 @@
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
     $('joinSetBtn').onclick = async () => {
+        if (!(await confirmDisableOpenJoin())) return;
         var code = $('joinCodeIn').value.trim().toUpperCase();
         if (!code) return;
         if (code.length < 4 || code.length > 16) { toast('Join code must be 4–16 characters.'); return; }
