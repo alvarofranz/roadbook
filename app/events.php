@@ -183,8 +183,8 @@ function event_save(array $user, array $d): void {
         db()->prepare('UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, open_join = ?, slug = ? WHERE id = ?')
             ->execute([$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin, $slug, $id]);
     } else {
-        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public) VALUES (?,?,?,?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic]);
+        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, open_join) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin]);
         $id = (int)db()->lastInsertId();
         // the owner is also listed among the event's organizers
         db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
@@ -250,14 +250,19 @@ function user_search(array $user, array $d): void {
     if (!is_organizer($user) && !user_manages_events((int)$user['id'])) fail('Organizers only.', 403);
     $q = trim((string)($d['q'] ?? ''));
     $org = trim((string)($d['organization'] ?? ''));
-    if ($q === '' && $org === '') json_out(['ok' => true, 'users' => []]);
-    $sql = "SELECT id, username, first_name, last_name, email, organization FROM users WHERE blocked = 0";
+    $page = max(1, (int)($d['page'] ?? 1));
+    $perPage = min(50, max(1, (int)($d['per_page'] ?? 10)));
+    if ($q === '' && $org === '') json_out(['ok' => true, 'total' => 0, 'page' => $page, 'per_page' => $perPage, 'users' => []]);
+    $where = 'WHERE blocked = 0';
     $args = [];
-    if ($q !== '') { $sql .= " AND (username LIKE ? OR CONCAT(first_name, ' ', last_name) LIKE ? OR email LIKE ?)"; $like = '%' . $q . '%'; array_push($args, $like, $like, $like); }
-    if ($org !== '') { $sql .= ' AND organization LIKE ?'; $args[] = '%' . $org . '%'; }
-    $st = db()->prepare($sql . ' ORDER BY username LIMIT 10');
+    if ($q !== '') { $where .= " AND (username LIKE ? OR CONCAT(first_name, ' ', last_name) LIKE ? OR email LIKE ?)"; $like = '%' . $q . '%'; array_push($args, $like, $like, $like); }
+    if ($org !== '') { $where .= ' AND organization LIKE ?'; $args[] = '%' . $org . '%'; }
+    $st = db()->prepare("SELECT COUNT(*) FROM users $where"); $st->execute($args);
+    $total = (int)$st->fetchColumn();
+    $st = db()->prepare("SELECT id, username, first_name, last_name, email, organization FROM users $where ORDER BY username LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
     $st->execute($args);
-    json_out(['ok' => true, 'users' => array_map(fn($r) => ['id' => (int)$r['id'], 'username' => $r['username'], 'first_name' => $r['first_name'], 'last_name' => $r['last_name'], 'email' => $r['email'], 'organization' => $r['organization']], $st->fetchAll())]);
+    json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage,
+        'users' => array_map(fn($r) => ['id' => (int)$r['id'], 'username' => $r['username'], 'first_name' => $r['first_name'], 'last_name' => $r['last_name'], 'email' => $r['email'], 'organization' => $r['organization']], $st->fetchAll())]);
 }
 
 // Only the owner (or an admin) edits the organizer list; co-organizers manage content, not access.
