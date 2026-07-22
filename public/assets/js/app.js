@@ -69,11 +69,12 @@
         events:    { path: 'events/',    label: 'Events',    icon: 'fa-calendar-check', covers: ['event', 'ranking'] },
         ranking:   { path: 'ranking/',   label: 'Ranking',   icon: 'fa-ranking-star' },
         profile:   { path: 'account/',   label: 'Profile',   icon: 'fa-circle-user', covers: ['account'] },
+        back:      { label: 'Back',      icon: 'fa-arrow-left' },
     };
     // Web top nav: the Recorder is its own entry; Reader + Tripmaster collapse into "Navigate".
     // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
     const WEB_NAV = ['recorder', 'editor', 'navigate', 'roadbooks', 'events'];
-    const APP_TABS = ['recorder', 'editor', 'navigate', 'events', 'profile'];
+    const APP_TABS = ['back', 'recorder', 'editor', 'navigate', 'events', 'profile'];
     // Common words are translated; product names stay as-is (RBt falls back to English regardless).
     const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
 
@@ -130,6 +131,9 @@
         // (renderChrome runs before RBesc is defined, so it must not be used here.)
         bar.innerHTML = APP_TABS.map((k) => {
             const s = SECTION[k];
+            if (k === 'back') {
+                return `<button type="button" class="tabbar-link" id="tabBackBtn" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></button>`;
+            }
             if (k === 'profile') {
                 return `<button class="tabbar-link${k === appActive ? ' active' : ''}" id="tabProfileBtn" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></button>`;
             }
@@ -927,6 +931,8 @@
                 if (tabInfo) tabInfo.onclick = () => { tabMenu.hidden = true; showAppInfo(); };
             }
         }
+        const tabBackBtn = document.getElementById('tabBackBtn');
+        if (tabBackBtn) tabBackBtn.onclick = () => { if (window.history.length > 1) history.back(); else location.href = ROOT; };
     })();
 
     /* ---------------- Unsaved-work guard (cross-tool) ----------------
