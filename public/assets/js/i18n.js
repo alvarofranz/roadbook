@@ -115,6 +115,7 @@
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live classification for this event. Scan the result QR from each vehicle after their run.',
             'Ranking': 'Ranking',
+            'native.promo': 'For best GPS accuracy and background tracking with the screen locked, use the free <a href="../features/recorder/">native app</a> for Android and iOS.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)

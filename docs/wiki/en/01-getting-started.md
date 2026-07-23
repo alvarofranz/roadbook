@@ -96,3 +96,4 @@ Choose the tool you need and read its guide:
 - ✏️ [Create/edit a roadbook →](03-editor.md)
 - 🧭 [Navigate with the Reader →](04-reader.md)
 - 📊 [Use the Tripmaster →](05-tripmaster.md)
+- 🏁 [Organise an event →](06-event-management.md)
