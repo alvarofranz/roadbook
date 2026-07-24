@@ -3,6 +3,12 @@
 A free PWA suite for **digital roadbooks** for any adventure (4x4, moto, bike,
 running…), plus the open **`.rdbk`** file format. Live at **https://rdbk.app/**.
 
+This file is the full reference for any agent working in this repo. **`AGENTS.md`** (root,
+Italian) is a short OpenCode-specific pointer file — it links back here for everything except
+a handful of things an OpenCode agent would otherwise get wrong; keep the two in sync when
+either changes (in particular Sicurezza/i18n/Branch e PR/Test e lint/Versioni e deploy/API
+DB/Convenzioni rapide below have counterparts there).
+
 - **One codebase → four surfaces:** the same `public/` ships as the **website**, an
   **installable PWA**, and native **iOS** + **Android** apps.
 - Front-end: vanilla HTML/CSS/JS PWA, web root `public/` (no build step on the web).
