@@ -678,5 +678,4 @@
             'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Gestion des événements',
             'wiki.cta.title': 'Guide pas à pas', 'wiki.cta.desc': 'Suivez le guide pas à pas pour créer vos roadbooks', 'wiki.cta.link': 'Aller au wiki →',
             'App Info': 'Infos app', 'Version': 'Version', 'Environment': 'Environnement', 'Update': 'Mettre à jour',
-            'native.promo': 'Pour la meilleure précision GPS et le suivi en arrière-plan avec l\'écran verrouillé, utilisez l\'<a href="../features/recorder/">application native</a> gratuite pour Android et iOS.',
         });
