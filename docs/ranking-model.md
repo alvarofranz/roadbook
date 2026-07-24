@@ -175,8 +175,9 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 
 ## 7. Input, persistenza, export
 
-- **Input**: scansione QR via `BarcodeDetector` (fotocamera ambiente) o incolla manuale del
-  testo del codice.
+- **Input**: scansione QR via fotocamera ambiente (`RBQrScan` — `BarcodeDetector` nativo, con
+  fallback a `jsQR` sui browser WebKit che non lo implementano, incl. iOS/iPadOS) o incolla
+  manuale del testo del codice.
 - **Persistenza**: `localStorage` chiave `rb_ranking` (sopravvive al refresh; è locale al
   dispositivo del giudice — nessun salvataggio server).
 - **Gestione righe**: cancellazione per riga (con conferma) e "Clear all".

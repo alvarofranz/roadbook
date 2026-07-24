@@ -335,8 +335,6 @@ remains is polish, best done with the app running:
   (Today the map streams tiles online, as before.)
 - **Vendor MapLibre** — it loads from a CDN (as Mapbox did), so the map needs a connection on
   first load. Vendor `maplibre-gl` into `public/assets/` for a fully offline shell.
-- **Native QR scanner** — live QR scanning uses the Web `BarcodeDetector`, which iOS WebViews
-  lack; the Ranking page's **paste** fallback covers it. Add a barcode plugin for live scan.
 - **`.rdbk` open-from-OS** — wire `@capacitor/app` `appUrlOpen` to the Reader so tapping a
   `.rdbk` file opens it in the app (the web already handles this via `launchQueue`).
 

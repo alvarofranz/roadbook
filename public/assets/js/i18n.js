@@ -109,7 +109,6 @@
             'Grants': 'Grants', 'Admin': 'Admin', 'Organizer': 'Organizer', 'Basic user': 'Basic user',
             'Point the camera at the participant\'s QR code.': 'Point the camera at the participant\'s QR code.',
             'Waiting for QR code…': 'Waiting for QR code…', 'Scanning…': 'Scanning…',
-            'QR scanner not supported in this browser.': 'QR scanner not supported in this browser.',
             'Could not access camera.': 'Could not access camera.',
             'Open ranking': 'Open ranking',
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',

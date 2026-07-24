@@ -71,8 +71,6 @@
     $('ppActivateIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ppActivate').click(); });
 
     $('ppScanQr').onclick = async () => {
-        if (!('BarcodeDetector' in window)) { toast('QR scanner not supported in this browser.'); return; }
-        const detector = new BarcodeDetector({ formats: ['qr_code'] });
         const modal = RBModal(`<div class="pp-scanner"><p class="muted small" style="margin-bottom:.5rem">${esc(t('Point the camera at the participant\'s QR code.'))}</p>
             <video id="ppScannerVideo" autoplay playsinline style="width:100%;max-width:360px;border-radius:8px;background:#000"></video>
             <p class="muted small" id="ppScanStatus" style="margin-top:.5rem">${esc(t('Waiting for QR code…'))}</p>
@@ -85,9 +83,9 @@
             video.srcObject = stream; await video.play();
             (function scan() {
                 if (modal.el.hidden) return;
-                detector.detect(video).then((codes) => {
-                    if (codes.length > 0) {
-                        const code = codes[0].rawValue.trim().toUpperCase();
+                RBQrScan.detect(video).then((raw) => {
+                    if (raw) {
+                        const code = raw.trim().toUpperCase();
                         if (/^[A-Z2-9]{6}$/.test(code)) {
                             stream.getTracks().forEach((t) => t.stop());
                             modal.close();
