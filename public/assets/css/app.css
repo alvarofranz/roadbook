@@ -43,6 +43,10 @@ img { max-width: 100%; display: block; }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1.1rem; }
+/* native app recommendation banner — shown in browser, hidden in native apps */
+.native-hint { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .7rem .9rem; margin: .8rem 0; font-size: .85rem; color: var(--text); display: flex; align-items: flex-start; gap: .5rem; }
+.native-hint i { color: var(--sand); flex-shrink: 0; margin-top: .1rem; font-size: 1.1rem; }
+.native .native-hint { display: none; }
 /* keyboard accessibility: a clear ring on focus-visible only (no mouse-click rings) */
 :focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
 :focus:not(:focus-visible) { outline: none; }

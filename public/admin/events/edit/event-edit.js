@@ -219,7 +219,7 @@
     function renderLink(openJoin) {
         if (openJoin || !ev.join_code) { $('evLink').hidden = true; return; }
         $('evLink').hidden = false;
-        var url = location.origin + '/go/' + ev.join_code;
+        var url = window.RBEventLink(ev.join_code);
         $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;
         $('evLinkCopy').hidden = false;
         renderQr(url);

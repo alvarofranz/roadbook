@@ -221,11 +221,12 @@
     // the local queue. Signed in, they upload to the draft; signed out, they're kept on the device and
     // saved into a self-contained .rdbk at the end (audio only where the device can record). The idle
     // hint tells signed-out users their media is kept locally. Called once config() is known.
-    function updateRecUi() {
+function updateRecUi() {
         wptBtn.hidden = !(SR_REC || CAN_REC_AUDIO);
         $('recPhoto').hidden = false;
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
-        const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native'); // only the native app records in the background
+        const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native');
+        const nativeHint = $('recNativeHint'); if (nativeHint) nativeHint.hidden = document.documentElement.classList.contains('native');
     }
     let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 5, wptFinish = null;
     const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown

@@ -115,6 +115,10 @@
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Live classification for this event. Scan the result QR from each vehicle after their run.',
             'Ranking': 'Ranking',
+            'native.better.gps': 'For better GPS accuracy and background recording, use the native iOS or Android app.',
+            'native.better.gps.recorder': 'For background GPS recording and better accuracy, use the native iOS or Android app.',
+            'native.better.gps.reader': 'For uninterrupted GPS navigation and background tracking, use the native iOS or Android app.',
+            'native.better.gps.tripmaster': 'For continuous GPS odometer and background recording, use the native iOS or Android app.',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
