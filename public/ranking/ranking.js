@@ -10,10 +10,8 @@
     const rbSlug = params.get('rb');
     const storageKey = 'rb_ranking' + (eventSlug && rbSlug ? '_' + eventSlug + '_' + rbSlug : '');
     let entries = load();
-    let stream = null, scanning = false, detector = null;
+    let stream = null, scanning = false;
     let authed = false, isOrg = false;
-
-    if ('BarcodeDetector' in window) { try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {} }
 
     /* ---------- guard: require event + roadbook scope ---------- */
     if (!eventSlug || !rbSlug) {
@@ -77,7 +75,6 @@
 
     async function scan() {
         if (scanning) return stopScan();
-        if (!detector) { msg('Your browser does not support camera scanning; paste the code by hand.', true); return; }
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             const v = $('video'); v.hidden = false; v.srcObject = stream; await v.play();
@@ -90,10 +87,9 @@
         const track = stream && stream.getVideoTracks()[0];
         if (!track || track.readyState === 'ended') { stopScan(); msg('Camera stopped.', true); return; }
         try {
-            const codes = await detector.detect($('video'));
-            if (codes && codes.length) {
-                const val = codes[0].rawValue;
-                await addMeta(val.trim());
+            const raw = await RBQrScan.detect($('video'));
+            if (raw) {
+                await addMeta(raw.trim());
                 stopScan();
                 return;
             }
