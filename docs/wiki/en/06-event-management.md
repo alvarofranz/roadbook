@@ -220,4 +220,5 @@ The public event page shows:
 ## 2.7 Next step
 
 Want to see what events look like from a participant's view? → [Navigate with the Reader →](04-reader.md)  
-Ready to score? → [Tripmaster →](05-tripmaster.md)
+Need a GPS on-board computer? → [Tripmaster →](05-tripmaster.md)  
+Want to record a new track? → [Recorder →](02-recorder.md)
