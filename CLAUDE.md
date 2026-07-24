@@ -423,7 +423,8 @@ Operational notes:
 - `rb-transcribe.js` (`RBTranscribe`, #133) — in-browser voice-note→text (Whisper via
   transformers.js/WASM, imported from a CDN only on first use; `Xenova/whisper-tiny`, browser-cached).
   `run(url, {lang, onProgress})` → text; no server, audio never leaves the device. Used by the
-  Editor's per-voice-note "➜ text" button (appends to the note, never overwrites).
+  Editor's per-voice-note "➜ text" button (appends to the note, never overwrites). Desktop-only:
+  gated off on iOS/iPadOS (`RBIsIOS()`, app.js) since WebKit can't run the model (#340).
 - `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
   auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
 - `i18n-edit.js` (`#118`, admin-only) — in-context UI translation editor. `app.js` loads it
