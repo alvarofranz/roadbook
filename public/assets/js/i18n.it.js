@@ -148,6 +148,7 @@
             'No photos yet.': 'Ancora nessuna foto.', '(no text)': '(senza testo)', 'No icons.': 'Nessuna icona.',
             'Delete this voice note?': 'Eliminare questa nota vocale?',
             'Transcribe to text': 'Trascrivi in testo',
+            'Transcription is only available on desktop browsers.': 'La trascrizione è disponibile solo su browser desktop (PC).',
             'No speech detected.': 'Nessun parlato rilevato.',
             'Transcription added.': 'Trascrizione aggiunta.',
             'Transcription failed. Please try again.': 'Trascrizione non riuscita. Riprova.',

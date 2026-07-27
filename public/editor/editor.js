@@ -1125,6 +1125,9 @@
         if (rb) renderNotes(); // refresh the per-note 📷 indicators
     }
     /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
+    // WebKit (Safari, every iOS/iPadOS browser) can't run the Whisper WASM model — say so upfront
+    // instead of downloading it and failing with a generic error (#340).
+    const TRANSCRIBE_LABEL = RBIsIOS() ? 'Transcription is only available on desktop browsers.' : 'Transcribe to text';
     function updateAudio() {
         if (currentRbId > 0) loadAudio();
         else { noteAudio = []; if (rb) renderNotes(); }
@@ -1138,6 +1141,7 @@
     // overwrite). The Whisper model downloads once on first use — show its progress in a modal.
     async function transcribeInto(i, url, btn) {
         if (!window.RBTranscribe || !rb || !rb.notes[i]) return;
+        if (RBIsIOS()) return toast(t(TRANSCRIBE_LABEL));
         const prog = RBTranscribe.ready() ? null : progressModal();
         btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>';
         try {
@@ -1329,7 +1333,7 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t('Transcribe to text'))}" title="${esc(t('Transcribe to text'))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
                 <div class="note-actions">
                     <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>

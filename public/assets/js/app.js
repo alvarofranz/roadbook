@@ -244,7 +244,9 @@
 
     /* ---------------- Install (PWA) + iOS ---------------- */
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    // iPadOS reports as "Macintosh" (desktop-class UA) unless it's a touch device — catches iPhone/iPad/iPod alike.
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    window.RBIsIOS = isIOS; // shared: WebKit-only feature gates (e.g. the Editor's transcription, #340)
     let deferred = null, installBtn = null;
 
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; showInstall(); });

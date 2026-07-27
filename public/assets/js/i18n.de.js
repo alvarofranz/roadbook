@@ -147,6 +147,7 @@
             'No photos yet.': 'Noch keine Fotos.', '(no text)': '(kein Text)', 'No icons.': 'Keine Icons.',
             'Delete this voice note?': 'Diese Sprachnotiz löschen?',
             'Transcribe to text': 'In Text umwandeln',
+            'Transcription is only available on desktop browsers.': 'Die Transkription ist nur in Desktop-Browsern verfügbar.',
             'No speech detected.': 'Keine Sprache erkannt.',
             'Transcription added.': 'Transkription hinzugefügt.',
             'Transcription failed. Please try again.': 'Transkription fehlgeschlagen. Bitte erneut versuchen.',
