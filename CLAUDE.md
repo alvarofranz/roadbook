@@ -55,6 +55,16 @@ DB/Convenzioni rapide below have counterparts there).
   discarding unsaved work…) MUST ask for confirmation first via `RBConfirm` before it runs.
   No silent data loss, ever. A **deletion** confirm MUST name the object being deleted in its
   message (e.g. the note number + text), so the user knows exactly what they're removing.
+- **NEVER SYNC OR RESET THE LOCAL DDEV ENVIRONMENT WITHOUT ASKING FIRST — EVERY SINGLE TIME.**
+  ANY refresh of DDEV from prod or from `main` — importing a DB dump, pulling media/roadbook
+  files, `ddev import-db`, wiping/recreating the DB, `git reset --hard origin/main` over the
+  working tree — **MUST be proposed and explicitly approved by the user BEFORE it runs**. These
+  sync threads burn a LOT of time, are almost never actually needed for the task at hand, and they
+  DESTROY the untracked local data (test roadbooks, drafts, photos, voice notes that exist
+  nowhere else — half the DDEV content is simply gone afterwards, and the DB dump carries no
+  files, so what it replaces is not even restored). When you think a sync is needed: say why, say
+  exactly what would be overwritten, and WAIT for a yes. Default answer is NO SYNC — work with
+  the data that is already there.
 - **Edit freely, but WAIT for the user's test confirmation before deploying.** You may read and
   modify the code in the dev clone as needed. But do NOT commit/stamp/push (a push to
   `main` is a production deploy) until the user has tested the change (the dev clone serves the
@@ -151,13 +161,16 @@ DB/Convenzioni rapide below have counterparts there).
   easily, **I**dentify it at a glance, keep structure **F**lat, **T**ry to stay DRY.
 - **Refactor as you go.** When you touch an area, simplify and tidy it up; remove dead
   code and stale comments instead of leaving them.
-- **Automated tests before manual testing.** Before asking the user to test a change by hand,
-  ADD or extend automated tests (Vitest in `tests/`) that cover the change and get `npm test`
-  green. Prefer testing pure logic in `roadbook-core.js` — and *extract* logic there so it is
-  testable, rather than leaving it untestable inside a page IIFE. For server-side PHP or purely
-  visual UI the harness can't unit-test, say so explicitly and state what you verified instead
-  (`node --check`/PHP lint, a manual API call, etc.). Never hand off for testing with new,
-  untested logic.
+- **Automated tests before manual testing — and they run in DDEV.** Before asking the user to
+  test a change by hand, ADD or extend automated tests (Vitest in `tests/`) that cover the change
+  and get `ddev exec npm test` green. **Every local test/lint command runs inside the DDEV web
+  container** (`ddev exec …`), never on the host — the container is the one pinned toolchain
+  (PHP 8.4 · Node 24 · MariaDB 10.11), so a green run there means the same thing for everyone
+  and matches CI. Prefer testing pure logic in `roadbook-core.js` — and *extract* logic there so
+  it is testable, rather than leaving it untestable inside a page IIFE. For server-side PHP or
+  purely visual UI the harness can't unit-test, say so explicitly and state what you verified
+  instead (`ddev exec node --check`/PHP lint, a manual API call, etc.). Never hand off for
+  testing with new, untested logic.
 - **After making changes, list what to test.** Before asking the user to deploy, propose a
   short checklist of specific things they should verify on the dev clone (`http://localhost:8806`):
   what pages to visit, what interactions to try, and what the expected result is. Keep it
@@ -180,8 +193,15 @@ seeded via `dev-sync rdbk rdbk_dev` (see *Production DB* below). In the dev clon
 `config.js` and `fontawesome` are copied from prod, the DB name comes from `.env` `DB_NAME`,
 and `BASE_URL=http://localhost:8806`. Edit the working tree, check `http://localhost:8806`
 from the box (`dev-shot`/`curl`), and only push once the user has tested (see *Releasing*).
-There is no Mac/local dev and no Docker — the dev clone on the box IS the development
-environment.
+The dev clone on the box IS where the app is *served and exercised by hand*; the **DDEV project
+(`.ddev/config.yaml`, `https://rdbk.ddev.site`) is where the automated tests run** — see *Tests
+and lint* below.
+
+`public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
+style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
+(in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
+in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
+`rdbk_dev`, BASE_URL `http://localhost:8806`).
 
 **On-box browser tools** — use them only when the task really needs to see or drive the
 page (`curl` first, it's cheaper): `dev-shot <url> [out.png]` screenshot ·
@@ -191,24 +211,29 @@ in as a user, click, fill forms — the script exports
 `module.exports = async (page, browser) => {…}` and the page's console/errors are echoed
 automatically.
 
-`node --check <file>.js` checks a file's syntax. **Unit tests** run anywhere Node is installed:
-`npm install` then `npm test`
-(Vitest + happy-dom). The suite covers the pure core of `roadbook-core.js` — geo math,
+## Tests and lint (always through DDEV)
+**ALL local tests and lints run inside the DDEV web container — never on the host.** The
+container carries the pinned toolchain (PHP 8.4 · Node 24 · MariaDB 10.11), so everyone's run is
+identical and matches CI; a host Node of another version is not a valid way to check a change.
+```bash
+ddev start                      # once per session, if the project isn't up (ddev describe to check)
+ddev exec npm install           # first run / after a package.json change
+ddev exec npm test              # Vitest + happy-dom — the suite that must be green before hand-off
+ddev exec npm run check         # syntax-check the whole codebase (source/check-syntax.mjs)
+ddev exec node --check public/event/event.js   # one file
+```
+The suite covers the pure core of `roadbook-core.js` — geo math,
 GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
 the 55-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
 (`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
 tests can import it — no build step is introduced on the web. Tests live in `tests/`; CI
 runs them on every push/PR via `.github/workflows/test.yml`.
-`public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
-style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
-(in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
-in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
-`rdbk_dev`, BASE_URL `http://localhost:8806`) — there is no separate local PHP/MariaDB to set up.
 
 ## Production DB (migrations + fresh dev DB)
-Two prod-DB workflows: **reseeding the dev DB from a fresh copy of prod** and
-**applying a schema migration to prod**. The fresh dev DB reseed runs entirely on
-the box (`dev-sync`, below — no panel, no key). **Migrations** go through the **VPS
+Three prod-DB workflows: **reseeding the dev DB from a fresh copy of prod**, **refreshing the
+local DDEV stack with prod data** and **applying a schema migration to prod**. The dev DB reseed
+runs entirely on the box (`dev-sync`, below — no panel, no key); the local DDEV refresh and
+**migrations** go through the **VPS
 panel** with the rdbk-scoped **`VPS_KEY`** (panel slug `rdbk`); that one key
 covers the panel's migrate + dump routes — there is no separate dump secret. Keep it
 in `.claude/settings.local.json` under `env` (gitignored) so Claude always has it,
@@ -226,6 +251,38 @@ refuses any target DB not ending in `_dev`, so prod is only ever read, never a w
 To test a schema change against dev before it ships, apply one file to the dev DB with
 `dev-migrate rdbk_dev <file.sql>` (throwaway — no panel, no backup; prod is never touched).
 DB access on the box is the native `mariadb` client.
+
+**Refresh the local DDEV stack with prod data — ASK THE USER FIRST, ALWAYS (see the working
+guideline above): it wipes untracked local data and is rarely needed. TWO steps, DB *and*
+files.** The panel dump is
+**DB-only**: roadbook payloads live on disk (`storage/users/<user_id>/<id>.rdbk`,
+`app/roadbooks.php`) with photos in `public/photos/<id>/` and voice notes in `public/audio/<id>/`.
+Import the dump alone and every row points at a file that isn't there — the API answers
+`{"ok":false,"error":"File missing."}` on every roadbook. So:
+```bash
+# 1. DB — dump from the panel (key: see DB.md), import, then DELETE the file
+curl -fsSL -H "X-Admin-Key: $VPS_KEY" \
+  https://alvarofranz.com/api/projects/rdbk/dump -o ~/rdbk-fresh.sql.gz
+ddev import-db --file=~/rdbk-fresh.sql.gz && rm -f ~/rdbk-fresh.sql.gz
+
+# 2. files — for each PUBLIC roadbook, pull the payload prod already serves publicly
+#    (repeat per slug from `public_list`; same idea for /photos/<id>/<file>,
+#     /audio/<id>/<file> and /event-logos/<id>.avif)
+curl -s -X POST https://rdbk.app/api/index.php -H 'Content-Type: application/json' \
+  -d '{"action":"public_get","slug":"<slug>"}' | jq -c '.roadbook' \
+  > storage/users/<user_id>/<id>.rdbk
+```
+The dump holds real emails + password hashes — keep it private and delete it right after
+importing. Step 2 only reaches **public** roadbooks; drafts have no public URL and the panel has
+no file route, so their pages stay "File missing" locally until someone `rsync`s
+`storage/users/`, `public/photos/` and `public/audio/` off the prod host.
+
+Verify with the API, not by eye: `public_list` should return prod's ids and `public_get` on a
+slug should come back `ok` with the note/track counts prod reports. If the site still shows stale
+data, check that the ddev CLI and the browser are talking to the SAME containers — compare the
+ports in `ddev describe` with `docker ps`; a second web+db pair over the same folder (its own
+database, `ddev exec` hitting one while `https://<project>.ddev.site` serves the other) looks
+exactly like an import that "didn't work". Fix it with `ddev poweroff` + one `ddev start`.
 
 **Migrations.** List pending and apply through the same panel key:
 ```bash
