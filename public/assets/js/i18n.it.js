@@ -642,6 +642,7 @@
             'In preparation': 'In preparazione', 'Active participants only': 'Solo partecipanti attivi',
 'Open join (no code required)': 'Iscrizione libera (nessun codice richiesto)',
 'Join this event as a participant.': 'Partecipa a questo evento.',
+'Sign in to join this event.': 'Accedi per partecipare a questo evento.',
 'Could not join.': 'Impossibile partecipare.',
             'Switch to full mode': 'Passa alla modalità completa',
             'Show this QR to the event organizer to activate your participation.': 'Mostra questo QR all\'organizzatore per attivare la tua partecipazione.',

@@ -96,6 +96,7 @@
             'seo.feat_events.title': 'Organising an event — RDBK.app', 'seo.feat_events.desc': 'How to create and run an event on RDBK.app: get organiser rights, build your team, gather roadbooks and bring in participants.',
             'In preparation': 'In preparation', 'Active participants only': 'Active participants only',
             'Join this event as a participant.': 'Join this event as a participant.',
+            'Sign in to join this event.': 'Sign in to join this event.',
             'Could not join.': 'Could not join.',
             'Open join (no code required)': 'Open join (no code required)',
             'Switch to full mode': 'Switch to full mode',

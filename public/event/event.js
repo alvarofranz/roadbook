@@ -75,15 +75,18 @@
     window.addEventListener('rb-lang', () => { if (ev) $('evMeta').textContent = meta(ev); });
     load();
 
-    // Join with code (#123): shown when the organizer enabled joining. Signed-in users enter
-    // the shared code; a participant sees their state and can leave.
+    // Joining (#123): shown when the organizer enabled joining, either open (one click) or
+    // behind the shared code. A participant sees their state and can leave. Signed-out
+    // visitors get the prompt matching the event's mode — asking for a code the event does
+    // not use only confuses them (#367).
     async function renderJoin(e) {
         const box = $('evJoin');
         if (!e.can_join && !e.joined) { box.hidden = true; return; }
         const cfg = await whoami;
         if (!cfg.user) {
             box.hidden = false;
-            box.innerHTML = '<span class="grow">' + esc(t('Sign in to join this event with the organizer\'s code.')) + '</span><a class="btn btn-primary" href="/account/?next=' + encodeURIComponent(location.pathname) + '">' + esc(t('Sign in')) + '</a>';
+            const prompt = e.open_join ? t('Sign in to join this event.') : t('Sign in to join this event with the organizer\'s code.');
+            box.innerHTML = '<span class="grow">' + esc(prompt) + '</span><a class="btn btn-primary" href="/account/?next=' + encodeURIComponent(location.pathname) + '">' + esc(t('Sign in')) + '</a>';
             return;
         }
         if (e.joined && e.participant_status !== 'pending') {
