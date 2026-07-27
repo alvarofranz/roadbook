@@ -51,8 +51,9 @@ URL there.
 
 #### Unit tests
 
-Node ≥ 22, then `npm install` and `npm test` (Vitest). CI runs the suite on every pull
-request and before every deploy.
+The suite (Vitest) runs inside the project's DDEV container, which carries the pinned
+toolchain: `ddev start`, then `ddev exec npm install` and `ddev exec npm test`. CI runs the
+same suite on every pull request and before every deploy.
 
 ## 🗺️ Directory Structure Overview
 
