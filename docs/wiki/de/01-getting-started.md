@@ -50,7 +50,7 @@ Der Login erlaubt dir, deine roadbook in der Cloud zu speichern und auf jedem Ge
 5. Du erhältst eine E-Mail: klicke **Meine E-Mail bestätigen** innerhalb von 24 h
 6. Kehre in die App zurück und mache **Login** mit E-Mail/Benutzername + Passwort
 
-> **Google Sign-In**: wenn du den Button „Mit Google fortfahren" siehst, kannst du ihn nutzen, um ohne Passwort zu erstellen/anzumelden.
+> **Anmeldung mit Google / Apple**: wenn du den Button „Mit Google fortfahren" oder „Mit Apple fortfahren" siehst, kannst du ihn nutzen, um ohne Passwort zu erstellen/anzumelden. Bei Apple kannst du deine E-Mail-Adresse verbergen (E-Mail-Adresse verbergen).
 
 ---
 

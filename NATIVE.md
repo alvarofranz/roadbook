@@ -33,6 +33,12 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   cookie) and `current_user()` accepts it; `RBApi`/`RBUpload` send & store it **only in the
   app**, so accounts, save-to-profile, challenges and photo upload work inside the app while
   the browser stays cookie-only and unchanged. Requires migration `006_api_tokens.sql` (§4).
+- **Sign-in providers** — the providers' web SDKs can't run in a WebView, so the app signs in
+  through the OS sheets: `RBNative.googleSignIn` (Credential Manager on Android, GoogleSignIn on
+  iOS) and `RBNative.appleSignIn` (**iOS only** — the Apple sheet is an Apple-platform feature and
+  guideline 4.8 only asks for it there). Both return an identity token the account page posts to the
+  same `google_auth`/`apple_auth` endpoints the web uses. Apple needs the capability on the App ID
+  (§4).
 - **Production API host + CORS** — the app serves its bundled UI from a WebView-local origin
   (`https://localhost`) with no backend, so `app.js` points every API/upload/version call at the
   production domain (`RB_API_ROOT = https://rdbk.app/`), reached **cross-origin**. `cors_for_app()`
@@ -140,6 +146,27 @@ code is in `app/auth.php` + `public/api`; to make it live you must:
    ```
    Until both are done, in-app login returns an error; the offline tools (editor, reader,
    tripmaster, GPX recording, background GPS) work regardless.
+
+### Sign in with Apple (#370)
+App Store **guideline 4.8** rejects an app that offers Google Sign-In without a login option that
+can hide the user's real email — so the iOS app must ship Sign in with Apple. The code is done (the
+`com.apple.developer.applesignin` entitlement in `ios/App/App/App.entitlements`,
+`RBNative.appleSignIn`, the `apple_auth` endpoint). What has to be done **in the portals**, once:
+
+1. **Apple Developer → Identifiers → App ID `app.rdbk`** — enable the **Sign In with Apple**
+   capability. With automatic signing Xcode Cloud then provisions it; if the capability is missing
+   from the App ID, **the build fails at signing** (same failure mode as Associated Domains).
+2. **`.env` on the server** — `APPLE_APP_ID=app.rdbk`. That alone unblocks the iOS app: the
+   identity token from the OS sheet carries the bundle id as its `aud`, and the backend accepts it.
+3. **The web button is optional and comes later** — it needs a **Services ID** (Apple Developer →
+   Identifiers → Services IDs) with `rdbk.app` verified (host the association file Apple hands you
+   at `public/.well-known/`) and `https://rdbk.app/account/` as a Return URL. Put that id in
+   `APPLE_SERVICE_ID` and the button appears; leave it empty and the web keeps Google only.
+4. **Email delivery to relay addresses** — a user who picks *Hide My Email* gets an
+   `@privaterelay.appleid.com` address. To be able to mail those addresses (password reset,
+   notifications), register the sending domain/address under **Certificates, Identifiers & Profiles
+   → More → Configure Sign in with Apple for Email Communication**. Unregistered senders are
+   rejected by Apple's relay.
 
 ### Maps — satellite layer (optional)
 Topo + 3D terrain work out of the box (free, no key). For real satellite imagery, set a

@@ -73,12 +73,15 @@
             <div class="turnstile" data-ts="login"></div>
             <button class="btn btn-primary" id="loginBtn" type="submit" data-i18n="Sign in"><i class="fa-solid fa-right-to-bracket"></i> Sign in</button>
         </form>
-        <!-- Google Sign-In (#46): our dark button renders into #gBtn; after consent it swaps to a
-             confirmation panel (detected email + Terms for new accounts + a Sign in / Create CTA). -->
-        <div class="or-sep"><span data-i18n="or">or</span></div>
-        <div class="google-signin">
-            <div class="gbtn" id="gBtn"></div>
-            <p class="google-hint muted small" data-i18n="Sign in or create your account — no password needed.">Sign in or create your account — no password needed.</p>
+        <!-- Social sign-in — Google (#46) + Apple (#370). Each provider's dark button renders into
+             its own box; after consent the box swaps to a confirmation panel (detected email +
+             Terms for new accounts + a Sign in / Create CTA). A box only appears where that
+             provider is available on this surface, and the whole block hides if none is. -->
+        <div class="social-signin" id="socialSignin" hidden>
+            <div class="or-sep"><span data-i18n="or">or</span></div>
+            <div id="googleBtn" hidden></div>
+            <div id="appleBtn" hidden></div>
+            <p class="social-hint muted small" data-i18n="Sign in or create your account — no password needed.">Sign in or create your account — no password needed.</p>
         </div>
         <div class="links"><a href="#" id="toRegister" data-i18n="Create account">Create account</a><a href="#" id="toForgot" data-i18n="Forgot password?">Forgot password?</a></div>
     </section>
@@ -205,7 +208,7 @@
 
         <div class="auth-card profile-form">
             <h2 id="pwTitle" data-i18n="Change password">Change password</h2>
-            <p class="muted small" id="pwGoogleHint" hidden data-i18n="You signed up with Google — set a password to also sign in with email and password.">You signed up with Google — set a password to also sign in with email and password.</p>
+            <p class="muted small" id="pwNoPasswordHint" hidden data-i18n="You signed up with Google or Apple — set a password to also sign in with email and password.">You signed up with Google or Apple — set a password to also sign in with email and password.</p>
             <form id="pwForm">
                 <label class="field-label" id="pwCurrentLabel" for="pwCurrent" data-i18n="Current password">Current password</label>
                 <input id="pwCurrent" class="field" type="password" autocomplete="current-password">

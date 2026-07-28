@@ -17,6 +17,10 @@
 
     // True only inside a Capacitor native shell (available synchronously at startup).
     const isNativeApp = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+    // Which shell we are running in: 'ios' · 'android' · 'web' (any browser, PWA included). Also
+    // synchronous at startup, so the UI can branch per platform without waiting for RBNative — the
+    // Apple sign-in button (#370) is iOS-only.
+    window.RBPlatform = () => (isNativeApp() ? Capacitor.getPlatform() : 'web');
     // True when the user entered via an event participant landing page (#163).
     const isParticipant = () => {
         if (document.cookie.includes('rb_participant=1')) return true;

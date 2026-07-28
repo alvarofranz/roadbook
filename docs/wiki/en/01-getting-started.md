@@ -50,7 +50,7 @@ Logging in lets you save your roadbooks to the cloud and find them on any device
 5. You'll receive an email: click **Verify my email** within 24 h
 6. Return to the app and **Log in** with email/username + password
 
-> **Google Sign-In**: if you see the "Continue with Google" button, you can use it to create/log in without a password.
+> **Google / Apple sign-in**: if you see the "Continue with Google" or "Continue with Apple" button, you can use it to create/log in without a password. With Apple you may keep your email private (Hide My Email).
 
 ---
 

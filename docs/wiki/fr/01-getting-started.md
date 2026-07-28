@@ -50,7 +50,7 @@ La connexion vous permet de sauvegarder vos roadbooks sur le cloud et de les ret
 5. Vous recevrez un e-mail : cliquez sur **Vérifier mon e-mail** sous 24 h
 6. Revenez dans l'application et faites **Connexion** avec e-mail/nom d'utilisateur + mot de passe
 
-> **Connexion Google** : si vous voyez le bouton « Continuer avec Google », vous pouvez l'utiliser pour créer/accéder sans mot de passe.
+> **Connexion Google / Apple** : si vous voyez le bouton « Continuer avec Google » ou « Continuer avec Apple », vous pouvez l'utiliser pour créer/accéder sans mot de passe. Avec Apple, vous pouvez garder votre e-mail privé (Masquer mon adresse e-mail).
 
 ---
 

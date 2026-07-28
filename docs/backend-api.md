@@ -71,11 +71,13 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
-| `config` | Bootstrap del front-end: chiave Turnstile (sito), **`google_client`** (id OAuth Web per il pulsante GIS, #46), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
+| `config` | Bootstrap del front-end: chiave Turnstile (sito), **`google_client`** (id OAuth Web per il pulsante GIS, #46), **`apple_client`** (Services ID per il pulsante Apple sul web, #370 — vuoto = pulsante nascosto), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
 | `register` | Crea l'account (richiede `password_confirm` **e** `accept_terms`, timbra `terms_accepted_at`/`terms_version`) e invia la mail di verifica | nessuna |
 | `verify` | Verifica l'email tramite token | nessuna |
 | `login` | Login (email **o** username), rigenera la sessione, restituisce anche un Bearer token | nessuna |
-| `google_auth` | **Google Sign-In (#46)**: verifica l'ID token Google (tokeninfo: firma/`iss`/`exp`, `aud` ∈ `GOOGLE_CLIENT_IDS`), poi (1) accede all'account già collegato via `google_sub`, (2) lo collega a un account con email **verificata** corrispondente, o (3) crea un account Google *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Rigenera la sessione + Bearer token come `login` | nessuna |
+| `google_auth` | **Google Sign-In (#46)**: verifica l'ID token Google (tokeninfo: firma/`iss`/`exp`, `aud` ∈ `GOOGLE_CLIENT_IDS`), poi passa l'identità a `social_auth` | nessuna |
+| `apple_auth` | **Sign in with Apple (#370)** — richiesto dalla guideline 4.8 dell'App Store accanto a Google. Verifica l'identity token in casa: JWT RS256 controllato contro le chiavi pubbliche Apple (`appleid.apple.com/auth/keys`, `kid` dall'header, `alg` MAI preso dal token), più `iss`/`exp` e `aud` ∈ `APPLE_SERVICE_ID` (web) o `APPLE_APP_ID` (app iOS). L'email può essere l'indirizzo relay di *Hide My Email* — Apple la attesta comunque; il nome arriva dal client, perché Apple lo rivela solo alla PRIMA autorizzazione e mai nel token. Poi passa l'identità a `social_auth` | nessuna |
+| — `social_auth` | Coda condivisa dei due social login: (1) accede all'account già collegato via `google_sub`/`apple_sub`, (2) lo collega a un account con email **verificata** corrispondente, o (3) crea un account *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Due fasi: senza `confirm` fa solo il **probe** (`email` + `exists`, non tocca nulla), con `confirm` accede/crea. Rigenera la sessione + Bearer token come `login` | nessuna |
 | `logout` | Distrugge la sessione e revoca il Bearer token usato | sessione |
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
 | `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
@@ -440,6 +442,8 @@ loro somma.
 | [032_event_participant_status.sql](../migrations/032_event_participant_status.sql) | `event_participants.status` (`pending`/`active`, attivazione partecipanti #163) |
 | [033_activation_code.sql](../migrations/033_activation_code.sql) | Aggiunge `users.activation_code` — codice numerico per partecipanti che entrano senza account (#163) |
 | [033_drop_dead_schema.sql](../migrations/033_drop_dead_schema.sql) | Rimuove `event_categories` (sostituita da `roadbooks.category`) e `roadbooks.is_public` (sostituita da `status`) |
+| [034_event_open_join.sql](../migrations/034_event_open_join.sql) | `events.open_join` (evento a iscrizione aperta, senza codice, #351) |
+| [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `users.apple_sub` (UNIQUE) — Sign in with Apple, gemello di `google_sub` (#370) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,
@@ -464,8 +468,9 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **CSP + header di sicurezza:** `public/.htaccess` invia una `Content-Security-Policy` che
   **vieta gli script inline** (il sito non ne ha — l'unico bootstrap è in
   `assets/js/native-detect.js`) e ammette solo gli origin realmente usati (MapLibre da unpkg,
-  transformers.js/Whisper da jsdelivr + Hugging Face, Google Sign-In, Turnstile, i tile dei
-  mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
+  transformers.js/Whisper da jsdelivr + Hugging Face, Google Sign-In, Sign in with Apple
+  (`appleid.cdn-apple.com` per lo script, `appleid.apple.com` per connect/frame), Turnstile, i
+  tile delle mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,
   nessuna concatenazione.
 - **Foto e note vocali priv<i>ate</i>:** non sono dietro auth a livello di file — stanno in

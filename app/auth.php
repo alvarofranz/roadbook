@@ -48,7 +48,7 @@ function current_user(): ?array {
     // re-login needed. Blocking (admin_block) only flips the flag; this is what enforces it live.
     if ($u && !empty($u['blocked'])) return null;
     if ($u) {
-        $u['has_password'] = (int)$u['has_password']; // 0 = Google-created account with no password yet (#211)
+        $u['has_password'] = (int)$u['has_password']; // 0 = social-login account with no password yet (#211)
         $u['is_admin'] = is_admin($u) ? 1 : 0; // effective: the DB flag OR an .env ADMIN_EMAILS match
         $u['is_organizer'] = (int)($u['is_organizer'] ?? 0); // raw grant flag (admins manage events regardless)
         $u['email_verified'] = (int)$u['email_verified'];
@@ -142,7 +142,7 @@ function save_location(array $user, array $d): void {
 
 // Change password while signed in. Normally the current password is required; a user the
 // admin flagged must_change_password sets a new one WITHOUT it (the admin gave a temp one),
-// and a Google-created account (no password yet, hash NULL) sets its FIRST one the same way
+// and a social-login account (no password yet, hash NULL) sets its FIRST one the same way
 // (#211). Either way the flag is cleared.
 function change_password(array $user, array $d): void {
     $new = (string)($d['new'] ?? '');
@@ -157,7 +157,7 @@ function change_password(array $user, array $d): void {
     json_out(['ok' => true, 'message' => 'Password updated.']);
 }
 
-// Self-service account deletion. Password-gated when the account has one; a Google-created
+// Self-service account deletion. Password-gated when the account has one; a social-login
 // account (hash NULL) deletes on the signed-in session + the client's explicit confirm alone —
 // self-deletion must always be possible (#211). The media locations are collected BEFORE the
 // row goes (the cascade wipes the roadbook rows that resolve them), the row is deleted, THEN
@@ -259,7 +259,7 @@ function login_user(array $d): void {
     $st = db()->prepare('SELECT id, password_hash, blocked, email_verified FROM users WHERE email = ? OR username = ?');
     $st->execute([$id, $id]);
     $u = $st->fetch();
-    // a Google-created account has no password (hash NULL) → a password login can only fail (#211)
+    // a social-login account has no password (hash NULL) → a password login can only fail (#211)
     if (!$u || !$u['password_hash'] || !password_verify($pass, $u['password_hash'])) { log_activity($u ? (int)$u['id'] : null, 'login_failed'); fail('Wrong email/username or password.', 401); }
     if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
     if (!(int)$u['email_verified']) fail('Please verify your email first (check your inbox).', 403);
@@ -273,11 +273,9 @@ function login_user(array $d): void {
     json_out(['ok' => true, 'user' => current_user(), 'token' => $token]);
 }
 
-// Google Sign-In (#46). The client posts { credential: <Google ID token> } from the GIS button.
-// We verify the token with Google, then: (1) an account already linked by google_sub signs in;
-// (2) otherwise a verified-email match links Google to that existing account; (3) otherwise a new
-// Google-only account is created (no password) — which requires accepting the Terms, exactly like
-// classic registration. Issues a session + a Bearer token (the app path), same as login_user.
+// Google Sign-In (#46). The client posts { credential: <Google ID token> } from the GIS button (web)
+// or the OS account picker (app). We verify the token with Google and hand the identity to
+// social_auth, which owns the account resolution shared with Sign in with Apple.
 function google_auth(array $d): void {
     global $CFG;
     rate_limit('google_' . client_ip(), 30, 900);
@@ -300,40 +298,145 @@ function google_auth(array $d): void {
     if (!in_array((string)($c['iss'] ?? ''), ['accounts.google.com', 'https://accounts.google.com'], true)) fail('Invalid Google token.', 401);
     $sub = (string)($c['sub'] ?? '');
     $email = strtolower(trim((string)($c['email'] ?? '')));
-    $verified = ($c['email_verified'] ?? null);
-    $verified = ($verified === true || $verified === 'true' || $verified === 1 || $verified === '1');
-    if ($sub === '' || !valid_email($email) || !$verified) fail('Your Google account has no verified email.', 401);
+    if ($sub === '' || !valid_email($email) || !claim_is_true($c['email_verified'] ?? null)) fail('Your Google account has no verified email.', 401);
 
-    // Resolve the account this Google identity maps to: linked by google_sub, or a verified-email match.
-    $st = db()->prepare('SELECT id, blocked FROM users WHERE google_sub = ?'); $st->execute([$sub]);
+    social_auth('google', ['sub' => $sub, 'email' => $email, 'first' => (string)($c['given_name'] ?? ''), 'last' => (string)($c['family_name'] ?? '')], $d);
+}
+
+// Sign in with Apple (#370) — the guideline-4.8 counterpart of Google Sign-In (Apple requires a
+// login option that can hide the user's real email, which the relay address provides). The client
+// posts { credential: <Apple identity token> } from the OS sheet (iOS app) or the Apple JS popup
+// (web), plus first_name/last_name when it has them: Apple reveals the name ONLY in the very first
+// authorization response and never inside the token, so it can only come from the client — it just
+// seeds the profile fields the user can edit anyway.
+function apple_auth(array $d): void {
+    global $CFG;
+    rate_limit('apple_' . client_ip(), 30, 900);
+    $cred = (string)($d['credential'] ?? '');
+    if ($cred === '') fail('Missing Apple credential.', 400);
+    if (empty($CFG['apple_client_ids'])) fail('Sign in with Apple is not configured.', 500);
+
+    // Apple has no tokeninfo endpoint: the identity token is an RS256 JWT we verify ourselves
+    // against Apple's published public keys.
+    $jwks = apple_public_keys();
+    $c = $jwks ? jwt_claims_rs256($cred, $jwks) : null;
+    if (!$c) fail('Could not verify Apple sign-in. Please try again.', 401);
+    if (!in_array((string)($c['aud'] ?? ''), $CFG['apple_client_ids'], true)) fail('This Apple sign-in is not for RDBK.', 401);
+    if ((string)($c['iss'] ?? '') !== 'https://appleid.apple.com') fail('Invalid Apple token.', 401);
+    if ((int)($c['exp'] ?? 0) <= time()) fail('That Apple sign-in has expired. Please try again.', 401);
+    $sub = (string)($c['sub'] ?? '');
+    if ($sub === '') fail('Invalid Apple token.', 401);
+    // The email is the relay address when the user chose "Hide My Email" — Apple attests it either
+    // way, and it receives mail like any other address. It is missing only if the user revoked the
+    // email scope; without it there is no account to create, so say how to fix it.
+    $email = strtolower(trim((string)($c['email'] ?? '')));
+    if (!valid_email($email) || !claim_is_true($c['email_verified'] ?? null)) {
+        fail('Your Apple ID shared no verified email with RDBK. Remove RDBK under Settings → Apple Account → Sign in with Apple, then try again.', 401);
+    }
+
+    social_auth('apple', ['sub' => $sub, 'email' => $email, 'first' => (string)($d['first_name'] ?? ''), 'last' => (string)($d['last_name'] ?? '')], $d);
+}
+
+// Google and Apple both send booleans as real booleans in one flow and as strings in another.
+function claim_is_true($v): bool { return $v === true || $v === 1 || $v === 'true' || $v === '1'; }
+
+// Apple's JSON Web Key Set — the public keys their identity tokens are signed with. Fetched per
+// sign-in (Apple rotates the keys and a sign-in is rare), like Google's tokeninfo call.
+function apple_public_keys(): ?array {
+    $ch = curl_init('https://appleid.apple.com/auth/keys');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 12]);
+    $body = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $jwks = json_decode((string)$body, true);
+    return ($code === 200 && is_array($jwks) && !empty($jwks['keys'])) ? $jwks : null;
+}
+
+// Claims of an RS256 JWT whose signature checks out against one of the JWKS keys (matched by the
+// header's `kid`), or null if ANYTHING fails — a malformed token, an unknown key, another
+// algorithm (never trust the header's own `alg`), a broken signature. The caller still has to
+// validate the claims themselves (aud/iss/exp).
+function jwt_claims_rs256(string $jwt, array $jwks): ?array {
+    $parts = explode('.', $jwt);
+    if (count($parts) !== 3) return null;
+    [$head64, $claims64, $sig64] = $parts;
+    $header = json_decode(base64url_decode($head64), true);
+    $claims = json_decode(base64url_decode($claims64), true);
+    $sig = base64url_decode($sig64);
+    if (!is_array($header) || !is_array($claims) || $sig === '') return null;
+    if (($header['alg'] ?? '') !== 'RS256') return null;
+    $pem = jwks_rsa_pem($jwks, (string)($header['kid'] ?? ''));
+    if (!$pem) return null;
+    return openssl_verify($head64 . '.' . $claims64, $sig, $pem, OPENSSL_ALGO_SHA256) === 1 ? $claims : null;
+}
+
+function base64url_decode(string $s): string { return (string)base64_decode(strtr($s, '-_', '+/')); }
+
+// The PEM public key for a JWKS entry. openssl can't read a JWK, so the RSA modulus + exponent are
+// DER-encoded by hand into a SubjectPublicKeyInfo: SEQUENCE { rsaEncryption AlgorithmIdentifier,
+// BIT STRING { SEQUENCE { INTEGER n, INTEGER e } } }.
+function jwks_rsa_pem(array $jwks, string $kid): ?string {
+    foreach ($jwks['keys'] as $key) {
+        if (($key['kid'] ?? '') !== $kid || ($key['kty'] ?? '') !== 'RSA') continue;
+        $modulus = base64url_decode((string)($key['n'] ?? ''));
+        $exponent = base64url_decode((string)($key['e'] ?? ''));
+        if ($modulus === '' || $exponent === '') return null;
+        $rsaKey = der_value(0x30, der_integer($modulus) . der_integer($exponent));
+        $spki = der_value(0x30, hex2bin('300d06092a864886f70d0101010500') . der_value(0x03, "\x00" . $rsaKey));
+        return "-----BEGIN PUBLIC KEY-----\n" . chunk_split(base64_encode($spki), 64, "\n") . "-----END PUBLIC KEY-----\n";
+    }
+    return null;
+}
+// One DER value: tag, length (long form past 127 bytes), body. DER integers are signed, so a
+// leading 0x00 keeps a high-bit-set modulus positive.
+function der_value(int $tag, string $body): string {
+    $size = strlen($body);
+    if ($size < 0x80) return chr($tag) . chr($size) . $body;
+    $sizeBytes = ltrim(pack('N', $size), "\x00");
+    return chr($tag) . chr(0x80 | strlen($sizeBytes)) . $sizeBytes . $body;
+}
+function der_integer(string $bytes): string { return der_value(0x02, (ord($bytes[0]) & 0x80) ? "\x00" . $bytes : $bytes); }
+
+// The shared tail of both social sign-ins: they verify their provider's token upstream and arrive
+// here with a trusted identity (sub + email, and a name when the provider gave one). Two phases, so
+// the user always sees WHICH account is about to be used:
+//   PROBE   — report the email and whether that account exists, touching nothing;
+//   CONFIRM — sign in (linking the provider to an existing account matched by verified email), or
+//             create a passwordless account, which requires accepting the Terms exactly like
+//             classic registration.
+// Issues a session + a Bearer token (the app path), same as login_user.
+function social_auth(string $provider, array $identity, array $d): void {
+    $column = ['google' => 'google_sub', 'apple' => 'apple_sub'][$provider];  // whitelisted: it goes into SQL
+    $sub = $identity['sub'];
+    $email = $identity['email'];
+
+    // Resolve the account this identity maps to: linked by <provider>_sub, or a verified-email match.
+    $st = db()->prepare("SELECT id, blocked FROM users WHERE $column = ?"); $st->execute([$sub]);
     $u = $st->fetch(); $linkEmail = false;
     if (!$u) {
         $st = db()->prepare('SELECT id, blocked FROM users WHERE email = ?'); $st->execute([$email]);
-        $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (Google-verified) email
+        $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (provider-verified) email
     }
 
-    // Phase 1 — PROBE: tell the client who this is and whether the account exists, WITHOUT signing in
-    // or creating anything, so it can show a clear "Sign in / Create account as <email>" confirmation.
     if (empty($d['confirm'])) { json_out(['ok' => false, 'probe' => true, 'email' => $email, 'exists' => (bool)$u]); return; }
 
-    // Phase 2 — CONFIRM: sign in (existing; link the email match) or create a passwordless account.
     if ($u) {
-        if ($linkEmail) db()->prepare('UPDATE users SET google_sub = ?, email_verified = 1 WHERE id = ?')->execute([$sub, $u['id']]);
+        if ($linkEmail) db()->prepare("UPDATE users SET $column = ?, email_verified = 1 WHERE id = ?")->execute([$sub, $u['id']]);
     } else {
         if (empty($d['accept_terms'])) { json_out(['ok' => false, 'need_terms' => true, 'email' => $email]); return; }
-        $first = mb_substr(trim((string)($c['given_name'] ?? '')), 0, 80) ?: 'RDBK';
-        $last  = mb_substr(trim((string)($c['family_name'] ?? '')), 0, 80);
-        $username = google_unique_username($email);
-        db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,google_sub,email_verified,terms_accepted_at,terms_version) VALUES (?,?,?,?,NULL,?,1,NOW(),?)')
+        $first = mb_substr(trim((string)$identity['first']), 0, 80) ?: 'RDBK';
+        $last  = mb_substr(trim((string)$identity['last']), 0, 80);
+        $username = social_unique_username($email);
+        db()->prepare("INSERT INTO users (first_name,last_name,username,email,password_hash,$column,email_verified,terms_accepted_at,terms_version) VALUES (?,?,?,?,NULL,?,1,NOW(),?)")
             ->execute([$first, $last, $username, $email, $sub, TERMS_VERSION]);
         $u = ['id' => (int)db()->lastInsertId(), 'blocked' => 0];
-        log_activity((int)$u['id'], 'register_google');
+        log_activity((int)$u['id'], 'register_' . $provider);
     }
 
     if ((int)($u['blocked'] ?? 0)) { log_activity((int)$u['id'], 'login_blocked'); fail('Your account has been blocked — contact the administrator.', 403); }
     session_regenerate_id(true);
     $_SESSION['uid'] = (int)$u['id'];
-    log_activity((int)$u['id'], 'login_google');
+    log_activity((int)$u['id'], 'login_' . $provider);
     // token: app logins only — same rule as the classic login (#213)
     $token = is_app_origin($_SERVER['HTTP_ORIGIN'] ?? '') ? issue_api_token((int)$u['id']) : null;
     json_out(['ok' => true, 'user' => current_user(), 'token' => $token]);
@@ -341,7 +444,7 @@ function google_auth(array $d): void {
 
 // A unique username seeded from the email local-part, sanitised to the register charset
 // (letters, numbers, _ . -), 3–40 chars; a numeric suffix breaks any collision.
-function google_unique_username(string $email): string {
+function social_unique_username(string $email): string {
     $base = strtolower(preg_replace('/[^a-z0-9_.-]/i', '', explode('@', $email)[0]));
     $base = substr($base, 0, 34);
     if (strlen($base) < 3) $base = 'rdbk' . $base;
