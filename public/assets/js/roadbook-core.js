@@ -836,6 +836,50 @@
         return lim;
     }
 
+    /* ---------------- consistency report (#339) ---------------- */
+    // What is probably a mistake in a roadbook but is NOT something the editor can fix on its own,
+    // so it has to be shown to the author before a save. Returns one finding per problem, in
+    // reading order: { code, count?, notes? } where `notes` holds the note NUMBERS involved.
+    // Codes and numbers only — the wording lives in the UI, translated, never here.
+    //
+    //   notes_without_radius  — notes with no wp_radius of their own; they fall back to the
+    //                           roadbook default, then the type default, then the system one.
+    //   no_default_radius     — no roadbook-wide default AND notes rely on that fallback, so their
+    //                           validation radius silently comes from the system default. Reported
+    //                           only in that case: a roadbook where every note carries its own
+    //                           radius needs no default and must not be nagged about one.
+    //   speed_zone_unclosed   — a note imposes a speed limit that no later note ever lifts (a
+    //                           controlled zone with a start and no finish).
+    //   speed_zone_unopened   — a note lifts a speed limit while none is in force.
+    function consistencyReport(rb) {
+        const notes = (rb && rb.notes) || [];
+        const meta = (rb && rb.meta) || {};
+        const findings = [];
+        const numberOf = (note, i) => (note.num != null ? note.num : i + 1);
+
+        const withoutRadius = notes.reduce((acc, n, i) => (n.wp_radius == null ? acc.concat(numberOf(n, i)) : acc), []);
+        if (withoutRadius.length) {
+            findings.push({ code: 'notes_without_radius', count: withoutRadius.length, notes: withoutRadius });
+            if (meta.default_wp_radius == null) findings.push({ code: 'no_default_radius' });
+        }
+
+        // Walk the notes once, tracking the limit in force: >0 opens a controlled zone, 0 lifts it.
+        // Only the LAST zone can stay unclosed — any later 0 closes whatever was open.
+        const unopened = [];
+        let openedAt = null;
+        notes.forEach((n, i) => {
+            const limit = speedLimitOfNote(n);
+            if (limit == null) return;
+            if (limit > 0) { if (openedAt == null) openedAt = numberOf(n, i); }   // a further limit inside a zone just changes it
+            else if (openedAt != null) openedAt = null;
+            else unopened.push(numberOf(n, i));
+        });
+        if (openedAt != null) findings.push({ code: 'speed_zone_unclosed', count: 1, notes: [openedAt] });
+        if (unopened.length) findings.push({ code: 'speed_zone_unopened', count: unopened.length, notes: unopened });
+
+        return findings;
+    }
+
     /* ---------------- competition scoring (the Reader accrues → META → the Ranking scores) ---------------- */
     // Scored sections (rally special stages): only notes between a stage-start marker and the
     // next stage-end marker (both inclusive) are penalised; liaison/transfer notes outside them
@@ -1055,7 +1099,7 @@
         ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
-        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, appwptFromImport, tulipToDataURL,
+        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,

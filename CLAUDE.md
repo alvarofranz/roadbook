@@ -429,8 +429,9 @@ Operational notes:
   is automatic by default (GPS marks a note on entering its **detection
   radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius` → the type
   default → the system default `CONST.REACH_DEFAULT_M` (30 m)), with a live Auto on/off switch
-  in the nav bar, or manual (tap "reached"). Competition validates with
-  penalties + an HMAC-signed result QR; validating syncs the total odometer to the
+  in the nav bar, or manual (tap "reached" — or hands-free from an **external remote**, a Bluetooth
+  pedal/clicker that pairs as a keyboard: `RBRemote`, switch in the mode chooser, #20). Competition
+  validates with penalties + an HMAC-signed result QR; validating syncs the total odometer to the
   note's distance. Opens `.rdbk` from the OS on installed PWAs.
 - **Tripmaster** — a GPS trip computer with no roadbook: total/partial odometer with
   ±10 m corrections and hold-to-reset, speed with configurable alert bands, heading,
@@ -472,6 +473,15 @@ Operational notes:
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
   settings modal, localStorage checkpoint with recovery, live file handle, finished-track
   modal (download / convert into a roadbook).
+- `rb-remote.js` (`RBRemote`, #20) — hands-free advance from an external remote. The cheap
+  hardware (Bluetooth page-turner **pedals**, camera clickers, ring remotes) pairs as a
+  keyboard, so the whole transport is `keydown` — no permissions, no plugin, identical in the
+  browser, the PWA and the app. `KEYMAP` (next: → ↓ Page↓ Space Enter · prev: ← ↑ Page↑) ·
+  `commandFor(event)` (pure, unit-tested) · `attach({next, prev})` → detach. The page owns what
+  the commands DO; the module owns the mapping and the guards (silent while typing or with a
+  modal open, and Space/Enter left to a focused button so it never advances twice). Used by the
+  **Reader** (switch in the mode chooser, remembered per device); a Gamepad or BLE transport can
+  feed the same commands later.
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
   voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
   `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·

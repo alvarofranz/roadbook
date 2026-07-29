@@ -90,6 +90,14 @@ Tap sur la note active ou sur le bouton « Atteinte » pour valider.
 - En Competition : valide avec score (GPS requis dans les 100 m)
 - Impossible de valider en arrière
 
+### Mains libres avec une télécommande externe
+Cochez **Télécommande externe (pédale / clicker)** dans le sélecteur de mode pour avancer sans toucher l'écran.
+
+- Une **pédale Bluetooth** tourne-pages, un clicker photo ou une télécommande de présentation s'appairent comme un clavier : rien à configurer, fonctionne hors ligne, dans le navigateur comme dans l'app
+- **Avancer** : → · ↓ · Page ↓ · Space · Enter — **Retour** : ← · ↑ · Page ↑ (mode Trip uniquement ; en Competition une note validée ne peut pas être annulée)
+- Une pédale garde les deux mains sur le volant ; un clicker au guidon convient à la moto et au vélo
+- Le réglage est mémorisé sur cet appareil, et les touches sont ignorées pendant la saisie ou quand une fenêtre est ouverte
+
 ---
 
 ## 5. Barre CAP (entre deux notes)

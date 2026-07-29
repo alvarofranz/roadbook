@@ -90,6 +90,14 @@ Tap the active note or the "Reached" button to validate.
 - In Competition: validates with score (requires GPS within 100 m)
 - Cannot validate backwards
 
+### Hands-free with an external remote
+Tick **External remote (pedal / clicker)** in the mode chooser to advance without touching the screen.
+
+- A Bluetooth **page-turner pedal**, camera clicker or presentation remote pairs as a keyboard: nothing to configure, works offline, in the browser and in the app alike
+- **Advance**: → · ↓ · Page ↓ · Space · Enter — **Back**: ← · ↑ · Page ↑ (Trip mode only; a validated note cannot be un-validated in Competition)
+- A foot pedal keeps both hands on the wheel; a handlebar clicker suits moto and bike
+- The setting is remembered on that device, and keys are ignored while you type or a dialog is open
+
 ---
 
 ## 5. CAP bar (between two notes)

@@ -152,6 +152,7 @@
     // fetched from the public event and the Trip/Competition choice is locked to it (#155).
     async function openModeModal() {
         applyModeLock(null);
+        $('optRemote').checked = remoteEnabled(); syncRemoteRow(); // the device's remote preference, remembered across runs
         openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses → back to the load screen
         if (!eventSlug) return;
         try {
@@ -223,6 +224,7 @@
         try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
         renderNotes();
         paused = false; updatePauseBtn();
+        syncRemote(); // hands-free advance while navigating (#20)
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
         clearInterval(clockTimer); // startNav can run again in the same page life — never stack clocks
         clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
@@ -470,9 +472,48 @@
         activeIdx = nextNav(i + 1); updateNoteStates();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
-    $('validateBtn').onclick = () => {
-        if (competition) { if (activeIdx < notes.length) tapNote(activeIdx); }
-        else if (activeIdx < notes.length) markReached(activeIdx);
+    // What "advance" means here: validate in competition, mark reached in trip. The Validate /
+    // Note done button and the remote's next command run this same action.
+    function advanceNote() {
+        if (activeIdx >= notes.length) return;
+        if (competition) tapNote(activeIdx); else markReached(activeIdx);
+    }
+    $('validateBtn').onclick = advanceNote;
+
+    /* External remote (#20): a Bluetooth page-turner PEDAL or a camera clicker pairs as a keyboard,
+     * so the two commands the on-screen buttons run are also reachable with your hands on the wheel.
+     * RBRemote owns the key mapping and the guards (never while typing, never with a modal open);
+     * the Reader only says what the commands MEAN:
+     *   next — advance, exactly the Validate / Note done button;
+     *   prev — step the active note back. Trip mode only: a validated note cannot be un-validated in
+     *          competition, so there it does nothing rather than pretend otherwise.
+     * The pedal belongs to the device, not to one trip, so the switch is remembered in localStorage
+     * instead of the run's session checkpoint. */
+    const REMOTE_KEY = 'rb_remote';
+    const remoteEnabled = () => { try { return localStorage.getItem(REMOTE_KEY) === '1'; } catch (e) { return false; } };
+    let detachRemote = null;
+    function stepBackNote() {
+        if (competition) return;
+        const back = prevNav(activeIdx - 1);
+        if (back >= 0) tapNote(back);
+    }
+    // Called whenever navigation (re)starts or the switch flips — start.Nav can run twice in one page
+    // life, and attaching twice would advance twice per press.
+    function syncRemote() {
+        if (detachRemote) { detachRemote(); detachRemote = null; }
+        if (remoteEnabled() && !$('navScreen').hidden && !preview) detachRemote = RBRemote.attach({ next: advanceNote, prev: stepBackNote });
+    }
+    // The legend is built FROM the key map, so what it promises is always what actually works.
+    const KEY_LABELS = { ArrowRight: '→', ArrowLeft: '←', ArrowUp: '↑', ArrowDown: '↓', PageDown: 'Page ↓', PageUp: 'Page ↑', ' ': 'Space', Spacebar: 'Space', Enter: 'Enter' };
+    const keyList = (keys) => [...new Set(keys.map((k) => KEY_LABELS[k] || k))].join(' · ');
+    function syncRemoteRow() {
+        const on = $('optRemote').checked;
+        $('remoteLegend').hidden = !on;
+        $('remoteLegend').innerHTML = `<b>${esc(t('Advance'))}:</b> ${esc(keyList(RBRemote.KEYMAP.next))} · <b>${esc(t('Back'))}:</b> ${esc(keyList(RBRemote.KEYMAP.prev))} (${esc(t('trip mode'))})`;
+    }
+    $('optRemote').onchange = () => {
+        try { localStorage.setItem(REMOTE_KEY, $('optRemote').checked ? '1' : '0'); } catch (e) {}
+        syncRemoteRow(); syncRemote();
     };
     // The auto-advance control is a toggle SWITCH: the knob position shows the current state
     // (on = GPS validates notes automatically), so it never reads as "press to set to the label".

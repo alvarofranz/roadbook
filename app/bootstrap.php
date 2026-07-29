@@ -144,7 +144,17 @@ function cors_for_app(): void {
 function require_same_origin(): void {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     if ($origin === '' || is_app_origin($origin)) return;
-    if (parse_url($origin, PHP_URL_HOST) !== ($_SERVER['HTTP_HOST'] ?? '')) fail('Bad origin.', 403);
+    // Compare the full AUTHORITY (host + port), because HTTP_HOST carries the port and the Origin's
+    // host alone does not: on a site served on a non-default port the two could never match, so the
+    // guard rejected the site's own requests (#375 — the dev clone on :8806 could not call its API).
+    // Just as strict as before; a default port on either side is normalised away, since a browser
+    // omits :80/:443 from Origin while a proxy may keep it in Host.
+    $authority = static function (string $host, ?int $port): string {
+        return preg_replace('/:(80|443)$/', '', strtolower($host . ($port ? ':' . $port : '')));
+    };
+    $from = $authority((string)parse_url($origin, PHP_URL_HOST), parse_url($origin, PHP_URL_PORT));
+    $here = $authority((string)($_SERVER['HTTP_HOST'] ?? ''), null);
+    if ($from === '' || $from !== $here) fail('Bad origin.', 403);
 }
 
 // A URL slug unique within a table (roadbooks · events): the slugified title, then -2, -3, …
