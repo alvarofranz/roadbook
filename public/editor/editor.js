@@ -351,6 +351,38 @@
         if (!resolveGaps().length) return true;
         return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'), t('Continue'));
     }
+    /* Pre-save consistency check (#339). RB.consistencyReport finds what is probably a mistake but
+     * that the editor can't decide on its own — notes with no validation radius, no roadbook-wide
+     * default behind them, a speed-controlled zone that never ends. A clean roadbook saves with no
+     * interruption; otherwise the findings are listed and the author chooses to fix or save anyway,
+     * so the check informs and never blocks. Numbers come from the core, wording from here. */
+    const CONSISTENCY_TEXT = {
+        notes_without_radius: (f) => t('Notes with no validation radius of their own') + ': ' + f.count + ' (' + noteList(f.notes) + ')',
+        no_default_radius: () => t('No roadbook-wide default radius is set, so those notes fall back to the system default.'),
+        speed_zone_unclosed: (f) => t('A speed-controlled zone is never lifted — it starts at note') + ' ' + f.notes[0],
+        speed_zone_unopened: (f) => t('A speed limit is lifted where no zone is open') + ': ' + noteList(f.notes),
+    };
+    // "3, 7, 12 … (+4)" — enough to find them without a wall of numbers, and nothing to translate.
+    function noteList(nums) {
+        const shown = nums.slice(0, 8).join(', ');
+        return nums.length > 8 ? shown + ' … (+' + (nums.length - 8) + ')' : shown;
+    }
+    async function confirmConsistency() {
+        const findings = RB.consistencyReport(rb);
+        if (!findings.length) return true;
+        return new Promise((resolve) => {
+            const rows = findings.map((f) => `<li>${esc(CONSISTENCY_TEXT[f.code](f))}</li>`).join('');
+            const d = RBModal(`<h3><i class="fa-solid fa-triangle-exclamation icon-accent"></i> ${t('Consistency check')}</h3>
+                <p class="muted">${t('Have a look before saving — none of this stops the roadbook from working:')}</p>
+                <ul class="modal-list">${rows}</ul>
+                <div class="btnrow center wrap">
+                    <button class="btn btn-primary" id="ckSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save anyway')}</button>
+                    <button class="btn btn-ghost" id="ckFix">${t('Let me fix it')}</button>
+                </div>`, 'slim', () => resolve(false));
+            d.q('#ckSave').onclick = () => { resolve(true); d.close(); };
+            d.q('#ckFix').onclick = () => { resolve(false); d.close(); };
+        });
+    }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
     const MODE_TOOLS = ['toolCut']; // the only mode with a toolbar button; Move ('points') is the default, Draw is entered from the landing
@@ -1025,10 +1057,15 @@
         }
         return r;
     }
+    // Every gate both saves (Save · Save as) share: signed in, something to save, the route's open
+    // cuts acknowledged, and the consistency findings seen (#339).
+    async function readyToSave() {
+        if (!meUser) { RBNeedAuth('Sign in to save this roadbook to your profile.'); return false; }
+        if (!rb) { toast('Nothing to save.'); return false; }
+        return (await confirmOpenCuts()) && (await confirmConsistency());
+    }
     async function saveRoadbook() {
-        if (!meUser) return RBNeedAuth('Sign in to save this roadbook to your profile.');
-        if (!rb) return toast('Nothing to save.');
-        if (!(await confirmOpenCuts())) return;
+        if (!(await readyToSave())) return;
         const r = await doSave();
         toast(r.ok ? (status === 'public' && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
         if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
@@ -1071,9 +1108,7 @@
     // untouched). The copy starts private and gets a "… (copy)" title; the editor
     // then keeps editing the copy. Photos stay with the original (they live server-side).
     $('saveAsAccount').onclick = async () => {
-        if (!meUser) return RBNeedAuth('Sign in to save this roadbook to your profile.');
-        if (!rb) return toast('Nothing to save.');
-        if (!(await confirmOpenCuts())) return;
+        if (!(await readyToSave())) return;
         // the copy identity holds only if the save SUCCEEDS — a failure (offline/quota/lock)
         // must leave the editor on the original roadbook, not a detached "(copy)" (#220)
         const prev = { title: rb.meta.title, id: currentRbId, status, reusable };

@@ -293,7 +293,7 @@
     function showIosModal() {
         const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> ${RBt('Install on iPhone')}</h2>
             <p class="muted small">${RBt('From Safari, in 3 steps:')}</p>
-            <ol class="ios-steps">
+            <ol class="modal-list">
                 <li>${RBt('Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.')}</li>
                 <li>${RBt('Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.')}</li>
                 <li>${RBt('Tap <b>Add</b>. Done!')}</li>

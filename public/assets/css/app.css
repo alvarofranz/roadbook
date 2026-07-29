@@ -580,7 +580,8 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .social-confirm-other { background: none; border: 0; color: var(--sand-2); font: inherit; font-size: .88rem; cursor: pointer; padding: .2rem; }
 .social-confirm-other:hover { text-decoration: underline; }
 .field-grid { display: grid; grid-template-columns: 1fr auto; gap: .4rem .6rem; align-items: center; margin-top: .3rem; }
-.ios-steps { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }
+/* an airy list inside a modal — install steps, consistency findings… */
+.modal-list { line-height: 1.9; padding-left: 1.2rem; margin: .4rem 0; }
 .grow { flex: 1; }
 .clickable { cursor: pointer; }
 .icon-danger { color: var(--track); }
