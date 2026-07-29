@@ -371,6 +371,7 @@
             'Paused': 'En pausa', 'End navigation': 'Terminar navegación', 'End navigation? Your progress on the notes will be lost.': '¿Terminar la navegación? Perderás el progreso en las notas.',
             'Recover the unsaved draft?': '¿Recuperar el borrador sin guardar?',
             'Show map button per note': 'Botón de mapa por nota', 'Record a GPX track': 'Grabar una traza GPX', 'Sound on note': 'Sonido en cada nota',
+            /* external remote (#20) */ 'External remote (pedal / clicker)': 'Mando externo (pedal / clicker)', 'A Bluetooth page-turner pedal or camera clicker works as a keyboard — keep your hands on the wheel.': 'Un pedal Bluetooth de pasar páginas o un clicker de cámara funciona como un teclado — manos al volante.', 'Advance': 'Avanzar', 'trip mode': 'modo viaje',
             'Note reached': 'Nota alcanzada', 'Open on map': 'Abrir en mapa', 'Map not configured.': 'Mapa no configurado.',
             'Author': 'Autor', 'Organization': 'Organización', 'Upload logo': 'Subir logo', 'Organizer website': 'Web del organizador', 'Event headquarters': 'Sede del evento', 'Tap the map to set the event headquarters location.': 'Toca el mapa para fijar la sede del evento.', 'Last modified': 'Última modificación', 'Author name': 'Nombre del autor',
             'Photos uploaded.': 'Fotos subidas.', 'Save to your profile first.': 'Guarda primero en tu perfil.',

@@ -148,6 +148,11 @@
             <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
+            <!-- External remote (#20): a Bluetooth pedal / clicker pairs as a keyboard, so advancing
+                 needs no screen tap. Remembered per device; the legend is generated from the key map. -->
+            <label class="checkbox-row"><input type="checkbox" id="optRemote"> <span data-i18n="External remote (pedal / clicker)">External remote (pedal / clicker)</span></label>
+            <p class="muted small" id="remoteLegend" hidden></p>
+            <p class="muted small" data-i18n="A Bluetooth page-turner pedal or camera clicker works as a keyboard — keep your hands on the wheel.">A Bluetooth page-turner pedal or camera clicker works as a keyboard — keep your hands on the wheel.</p>
         </div>
         <div class="mode-grid" id="modeGrid">
             <button class="mode-btn" id="modeTrip"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
@@ -198,6 +203,7 @@
 <script src="../assets/js/gps-meter.js?v=1.7.0-17"></script>
 <script src="../assets/js/status-bar.js?v=1.7.0-17"></script>
 <script src="../assets/js/gpx-recorder.js?v=1.7.0-17"></script>
+<script src="../assets/js/rb-remote.js?v=1.7.0-17"></script>
 <script src="../assets/js/note-canvas.js?v=1.7.0-17"></script>
 <script src="../assets/js/qrcode.min.js?v=1.7.0-17"></script>
 <script src="../assets/js/challenges.js?v=1.7.0-17"></script>

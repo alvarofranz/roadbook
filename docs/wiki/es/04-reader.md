@@ -90,6 +90,14 @@ Tap sobre la nota activa o en el botón "Raggiunta" para convalidar.
 - En Competition: valida con puntuación (requiere GPS dentro de 100 m)
 - No se puede validar hacia atrás
 
+### Manos libres con un mando externo
+Marca **Mando externo (pedal / clicker)** en el selector de modo para avanzar sin tocar la pantalla.
+
+- Un **pedal Bluetooth** de pasar páginas, un clicker de cámara o un mando de presentaciones se emparejan como un teclado: nada que configurar, funciona sin conexión, en el navegador y en la app igual
+- **Avanzar**: → · ↓ · Page ↓ · Space · Enter — **Atrás**: ← · ↑ · Page ↑ (solo en modo Trip; en Competition una nota validada no se puede desvalidar)
+- Un pedal deja las dos manos en el volante; un clicker al manillar va bien en moto y bici
+- La preferencia se recuerda en ese dispositivo, y las teclas se ignoran mientras escribes o hay un diálogo abierto
+
 ---
 
 ## 5. Barra CAP (entre dos notas)
