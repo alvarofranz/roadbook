@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title data-i18n="seo.install.title">Install RDBK.app — on any device</title>
+    <meta name="description" data-i18n-content="seo.install.desc" content="Install RDBK.app on your phone, tablet or computer — it works offline, opens .rdbk files and keeps recording with the screen locked.">
+    <link rel="canonical" href="https://rdbk.app/install/">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RDBK.app">
+    <meta property="og:title" content="Install RDBK.app — on any device">
+    <meta property="og:description" content="Install RDBK.app on your phone, tablet or computer — it works offline, opens .rdbk files and keeps recording with the screen locked.">
+    <meta property="og:url" content="https://rdbk.app/install/">
+    <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
+    <meta property="og:locale" content="en">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Install RDBK.app — on any device">
+    <meta name="twitter:description" content="Install RDBK.app on your phone, tablet or computer — it works offline, opens .rdbk files and keeps recording with the screen locked.">
+    <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        .install-page { max-width: 780px; margin: 0 auto; padding: 1.5rem 0 3rem; }
+        .install-page h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .4rem; }
+        .install-page .lead { max-width: 60ch; margin: 0 0 1.6rem; }
+        /* One card per platform. The detected one is opened and highlighted; the others collapse
+           behind "Using another device?" so the page still answers for every platform. */
+        .install-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin: 0 0 .9rem; }
+        .install-card.detected { border-color: var(--sand); }
+        .install-card h2 { display: flex; align-items: center; gap: .6rem; font-size: 1.15rem; margin: 0 0 .5rem; }
+        .install-card h2 .fa-brands, .install-card h2 .fa-solid { color: var(--sand); }
+        .install-badge { margin-left: auto; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--bg); background: var(--sand); border-radius: 999px; padding: .15rem .6rem; }
+        .install-others { margin-top: 1.8rem; }
+        .install-others > summary { cursor: pointer; color: var(--sand-2); font-weight: 600; padding: .4rem 0; }
+        .install-note { margin: 1.6rem 0 0; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap install-page">
+    <h1 data-i18n="Install RDBK.app">Install RDBK.app</h1>
+    <p class="muted lead" data-i18n="Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.">Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.</p>
+
+    <!-- One card per platform; install.js opens the detected one and moves it to the top. -->
+    <div id="installCards"></div>
+
+    <p class="muted small install-note" data-i18n-html="Already installed? Open RDBK from your home screen or app list — this page is only needed once.">Already installed? Open RDBK from your home screen or app list — this page is only needed once.</p>
+</main>
+
+<script src="../assets/js/i18n.es.js"></script>
+<script src="../assets/js/i18n.it.js"></script>
+<script src="../assets/js/i18n.de.js"></script>
+<script src="../assets/js/i18n.fr.js"></script>
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="install.js"></script>
+</body>
+</html>
