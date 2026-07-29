@@ -90,6 +90,14 @@ Tap auf die aktive Note oder den Button „Raggiunta" zum Validieren.
 - In Competition: validiert mit Punktestand (GPS innerhalb 100 m erforderlich)
 - Rückwärts validieren ist nicht möglich
 
+### Freihändig mit einer externen Fernbedienung
+Aktiviere **Externe Fernbedienung (Pedal / Clicker)** in der Modusauswahl, um ohne Bildschirmberührung weiterzuschalten.
+
+- Ein Bluetooth-**Blätterpedal**, ein Kamera-Clicker oder eine Präsentations-Fernbedienung koppelt sich als Tastatur: nichts zu konfigurieren, funktioniert offline, im Browser wie in der App
+- **Weiter**: → · ↓ · Page ↓ · Space · Enter — **Zurück**: ← · ↑ · Page ↑ (nur im Trip-Modus; in Competition lässt sich eine validierte Note nicht zurücknehmen)
+- Ein Fußpedal lässt beide Hände am Lenkrad; ein Clicker am Lenker passt für Motorrad und Fahrrad
+- Die Einstellung bleibt auf dem Gerät gespeichert, und Tasten werden ignoriert, während du tippst oder ein Dialog offen ist
+
 ---
 
 ## 5. CAP-Leiste (zwischen zwei Notizen)
