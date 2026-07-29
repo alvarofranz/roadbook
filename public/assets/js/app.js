@@ -113,6 +113,9 @@
             <div class="muted foot-links">
                 <b>RDBK.app</b>
                 <a href="${ROOT}about/"><i class="fa-solid fa-circle-info"></i> ${RBt('About')}</a>
+                <!-- desktop entry point to the install guide; on mobile the floating Install chip is
+                     the one that leads there, and inside the app the footer is hidden anyway (#333) -->
+                <a href="${ROOT}install/"><i class="fa-solid fa-circle-down"></i> ${RBt('Install')}</a>
                 <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
@@ -251,6 +254,11 @@
     // iPadOS reports as "Macintosh" (desktop-class UA) unless it's a touch device — catches iPhone/iPad/iPod alike.
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     window.RBIsIOS = isIOS; // shared: WebKit-only feature gates (e.g. the Editor's transcription, #340)
+    // The device this page runs on: 'ios' · 'android' · 'desktop'. UA-based on purpose — it decides
+    // which INSTALL INSTRUCTIONS to show, never whether a feature exists. Shared so the Install chip
+    // and the /install/ guide always agree on the device (#333). RBPlatform answers a different
+    // question: which native shell (if any) we are inside.
+    window.RBDevice = () => (isIOS() ? 'ios' : (/android/i.test(navigator.userAgent) ? 'android' : 'desktop'));
     let deferred = null, installBtn = null;
 
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; showInstall(); });
@@ -278,29 +286,27 @@
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
     // display-mode:standalone / navigator.standalone, so without this it would wrongly show (#198).
     function showInstall() { if (isStandalone() || isNativeApp()) return; const b = ensureBtn(); if (b) b.hidden = false; }
-    async function onInstall() {
-        if (deferred) {
+    // The captured install prompt, shared with the /install/ guide (#333) so both offer the same
+    // one-tap install. Chromium only — iOS Safari never fires beforeinstallprompt, which is exactly
+    // why the guide exists.
+    window.RBInstallPrompt = {
+        available: () => !!deferred,
+        async fire() {
+            if (!deferred) return false;
             deferred.prompt();
             const r = await deferred.userChoice; deferred = null;
             if (r.outcome === 'accepted' && installBtn) installBtn.hidden = true;
-            return;
-        }
-        if (isIOS()) showIosModal();
+            return r.outcome === 'accepted';
+        },
+    };
+    // One tap installs where the browser can do it; everywhere else the chip opens the per-device
+    // guide instead of doing nothing (it used to dead-end outside Chromium and iOS).
+    async function onInstall() {
+        if (RBInstallPrompt.available()) return void await RBInstallPrompt.fire();
+        location.href = ROOT + 'install/';
     }
     // iOS Safari never fires beforeinstallprompt: offer the button when not installed (never in the app).
     if (isIOS() && !isStandalone() && !isNativeApp()) document.addEventListener('DOMContentLoaded', showInstall);
-
-    function showIosModal() {
-        const d = RBModal(`<h2><i class="fa-solid fa-mobile-screen icon-accent"></i> ${RBt('Install on iPhone')}</h2>
-            <p class="muted small">${RBt('From Safari, in 3 steps:')}</p>
-            <ol class="modal-list">
-                <li>${RBt('Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.')}</li>
-                <li>${RBt('Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.')}</li>
-                <li>${RBt('Tap <b>Add</b>. Done!')}</li>
-            </ol>
-            <div class="btnrow"><button class="btn btn-primary" data-ok>${RBt('Got it')}</button></div>`);
-        d.q('[data-ok]').onclick = d.close;
-    }
 
     /* ---------------- Client-side image downscaler ----------------
        Shrinks photos in the browser BEFORE upload so they never hit PHP's
