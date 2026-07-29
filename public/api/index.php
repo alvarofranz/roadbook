@@ -18,12 +18,13 @@ try {
             $u = current_user();
             // a plain user who co-organizes an event still needs the Events entry point (#123)
             if ($u && !is_admin($u) && empty($u['is_organizer'])) $u['manages_events'] = user_manages_events((int)$u['id']) ? 1 : 0;
-            json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'google_client' => $CFG['google_client_ids'][0] ?? '', 'user' => $u, 'participant' => participant_context(), 'banner' => site_banner()]);
+            json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'google_client' => $CFG['google_client_ids'][0] ?? '', 'apple_client' => $CFG['apple_service_id'], 'user' => $u, 'participant' => participant_context(), 'banner' => site_banner()]);
             break;
         case 'register':  register_user($d); break;
         case 'verify':    verify_email($d); break;
         case 'login':     login_user($d); break;
         case 'google_auth': google_auth($d); break;
+        case 'apple_auth':  apple_auth($d); break;
         case 'logout':    logout_user(); break;
         case 'forgot':    forgot_password($d); break;
         case 'reset':     reset_password($d); break;

@@ -154,7 +154,7 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
   link (basato su token, senza sessione, come il reset), rifà il controllo di unicità e fa lo
   switch `email ← pending_email`. È self-service: lo username, invece, lo cambia solo un admin.
 - **`account_delete()`** ([app/auth.php](../app/auth.php)): verifica la password (non richiesta
-  per gli account solo-Google, #211), **riassegna i roadbook** all'account di sistema
+  per gli account social-only Google/Apple, #211), **riassegna i roadbook** all'account di sistema
   `deleted-user` (#234 — titolo prefissato con lo username, `.rdbk` spostati nel suo storage,
   e **status `deleted`**: finiscono nel cestino e il cron li purga dopo 30 giorni), poi
   cancella i file personali residui (`purge_user_files`: avatar + storage ormai vuoto) e la

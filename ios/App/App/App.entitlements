@@ -9,5 +9,13 @@
 	<array>
 		<string>applinks:rdbk.app</string>
 	</array>
+	<!-- Sign in with Apple (#370): required by App Store guideline 4.8 next to Google Sign-In. The
+	     OS sheet returns the identity token straight to the app, which posts it to /api apple_auth.
+	     Requires the Sign In with Apple capability enabled on the App ID in the Apple Developer
+	     portal (the provisioning profile carries it). -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

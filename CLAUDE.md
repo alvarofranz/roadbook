@@ -21,12 +21,19 @@ DB/Convenzioni rapide below have counterparts there).
 - Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
-- **Sign-in:** email/password **or Google Sign-In** (#46). `google_auth` (`app/auth.php`)
-  verifies the Google ID token and links/creates the account. The web renders the GIS button;
-  the app uses the OS account picker (`RBNative.googleSignIn`, `@capgo/capacitor-social-login` —
-  the web GIS button can't run in a WebView). Both hand the ID token to the same endpoint;
-  `.env` `GOOGLE_CLIENT_IDS` lists every OAuth client whose tokens the backend accepts as `aud`
-  (web + Android + iOS — the client ids are public, in `native/src/native.js`).
+- **Sign-in:** email/password, **Google Sign-In** (#46) or **Sign in with Apple** (#370 — App Store
+  guideline 4.8 requires it next to Google). Both social flows verify their identity token
+  server-side, then share one tail: `social_auth` (`app/auth.php`) links the identity by
+  `google_sub`/`apple_sub`, or to an account with the same verified email, or creates a passwordless
+  account — always after a **probe** phase that shows the user which email is about to be used.
+  `google_auth` verifies with Google's tokeninfo; `apple_auth` verifies the RS256 JWT itself against
+  Apple's JWKS. The web renders each provider's own button (GIS overlay · Apple JS popup); the app
+  uses the OS sheets (`RBNative.googleSignIn`/`appleSignIn`, `@capgo/capacitor-social-login` — the
+  web SDKs can't run in a WebView), and Apple is iOS-only there. `.env`: `GOOGLE_CLIENT_IDS` lists
+  every OAuth client whose tokens the backend accepts as `aud` (web + Android + iOS — the client ids
+  are public, in `native/src/native.js`); `APPLE_SERVICE_ID` (web Services ID, also drives the web
+  button) + `APPLE_APP_ID` (iOS bundle id) are the accepted Apple audiences, each optional so a
+  surface's button only appears once it is configured.
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
   `roadbook_audio`, `roadbook_locks`, `api_tokens`, `activity_log`, `settings`, plus the events
   family (`events`, `event_roadbooks`, `event_categories`, `event_organizers`, `event_participants`).

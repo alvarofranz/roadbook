@@ -23,6 +23,11 @@ $CFG = [
     // Google Sign-In (#46): comma-separated OAuth client IDs, WEB first then Android. Every id is
     // an accepted `aud` when verifying a Google ID token; the first (web) drives the GIS button.
     'google_client_ids' => array_values(array_filter(array_map('trim', explode(',', $_ENV['GOOGLE_CLIENT_IDS'] ?? '')))),
+    // Sign in with Apple (#370): the web Services ID (it also drives the Apple JS button) and the
+    // iOS bundle id. An Apple identity token's `aud` is whichever of the two minted it, so both are
+    // accepted; each is optional — configure only the surfaces that are set up.
+    'apple_service_id'  => trim($_ENV['APPLE_SERVICE_ID'] ?? ''),
+    'apple_client_ids'  => array_values(array_filter([trim($_ENV['APPLE_SERVICE_ID'] ?? ''), trim($_ENV['APPLE_APP_ID'] ?? '')])),
     'storage'          => $ROOT . '/storage/users',   // per-user private storage (volume-backed)
     'avatars_dir'      => $ROOT . '/public/avatars',  // public avatars (web: /avatars/)
     'event_logos_dir'  => $ROOT . '/public/event-logos', // public event logos (web: /event-logos/)

@@ -26,7 +26,30 @@ import { parseDeepLink } from './deeplink.js';
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
 const GOOGLE_WEB_CLIENT_ID = '300694269526-qhtr54a7rvagseohbt3l5b4gdhmn9n7t.apps.googleusercontent.com';
 const GOOGLE_IOS_CLIENT_ID = '300694269526-q9evtli556sb0ag4trp42b8ko7qq1ldf.apps.googleusercontent.com';
-let googleReady = null;   // SocialLogin.initialize() promise, run once
+let socialReady = null;   // SocialLogin.initialize() promise, run once for every provider
+
+// One initialize() call configures every provider this platform signs in with. A failed init must
+// not poison every later attempt, so the promise is dropped on rejection and the next tap retries.
+function initSocialLogin() {
+    if (!socialReady) {
+        const config = {
+            google: {
+                webClientId: GOOGLE_WEB_CLIENT_ID,      // Android serverClientId + token audience
+                iOSClientId: GOOGLE_IOS_CLIENT_ID,
+                iOSServerClientId: GOOGLE_WEB_CLIENT_ID,
+                mode: 'online',                          // returns an ID token (not just an auth code)
+            },
+        };
+        // Sign in with Apple (#370) is configured on iOS ONLY. There an EMPTY redirectUrl selects
+        // the native path, where the OS sheet returns the identity token straight to the app (no
+        // web redirect, no Services ID — the token's audience is the bundle id). On Android the
+        // plugin would reject the WHOLE initialize() over the empty redirectUrl and never reach the
+        // Google block, taking Google sign-in down with it.
+        if (Capacitor.getPlatform() === 'ios') config.apple = { redirectUrl: '' };
+        socialReady = SocialLogin.initialize(config).catch((e) => { socialReady = null; throw e; });
+    }
+    return socialReady;
+}
 
 // The Filesystem plugin takes bare base64 (no data: prefix); strip it off a Blob.
 async function blobToBase64(blob) {
@@ -71,23 +94,28 @@ const RBNative = {
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
     // uses the OS Google account picker (Credential Manager on Android, GoogleSignIn on iOS) via
     // @capgo/capacitor-social-login, then hands the ID token to /api google_auth — the same
-    // endpoint the web uses. Returns the ID token string, or null if the user cancelled.
+    // endpoint the web uses. Returns { credential } for that call, or null if the user cancelled.
     async googleSignIn() {
-        if (!googleReady) {
-            googleReady = SocialLogin.initialize({
-                google: {
-                    webClientId: GOOGLE_WEB_CLIENT_ID,      // Android serverClientId + token audience
-                    iOSClientId: GOOGLE_IOS_CLIENT_ID,
-                    iOSServerClientId: GOOGLE_WEB_CLIENT_ID,
-                    mode: 'online',                          // returns an ID token (not just an auth code)
-                },
-            }).catch((e) => { googleReady = null; throw e; }); // a failed init must not poison every later attempt
-        }
-        await googleReady;
+        await initSocialLogin();
         // No explicit scopes: the plugin already requests email/profile/openid by default, and on
         // Android passing ANY makes it reject outright (custom scopes demand a modified MainActivity).
         const res = await SocialLogin.login({ provider: 'google', options: {} });
-        return (res && res.result && res.result.idToken) || null;
+        const idToken = res && res.result && res.result.idToken;
+        return idToken ? { credential: idToken } : null;     // the name comes from the verified token, server-side
+    },
+
+    // Native Sign in with Apple (#370). iOS only: the Apple sheet is an Apple-platform feature, and
+    // guideline 4.8 only asks for it there — the Android app keeps Google alone. Returns
+    // { credential, first_name, last_name } for /api apple_auth, or null if the user cancelled.
+    // Apple discloses the name ONLY in the first authorization (never inside the token), so it has
+    // to travel next to it; the plugin remembers it for later sign-ins.
+    async appleSignIn() {
+        await initSocialLogin();
+        const res = await SocialLogin.login({ provider: 'apple', options: { scopes: ['name', 'email'] } });
+        const apple = (res && res.result) || null;
+        if (!apple || !apple.idToken) return null;
+        const profile = apple.profile || {};
+        return { credential: apple.idToken, first_name: profile.givenName || '', last_name: profile.familyName || '' };
     },
 
     geo: {

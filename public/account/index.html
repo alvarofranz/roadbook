@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.6.1-16">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.7.0-17">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.6.1-16">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.7.0-17">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -73,12 +73,15 @@
             <div class="turnstile" data-ts="login"></div>
             <button class="btn btn-primary" id="loginBtn" type="submit" data-i18n="Sign in"><i class="fa-solid fa-right-to-bracket"></i> Sign in</button>
         </form>
-        <!-- Google Sign-In (#46): our dark button renders into #gBtn; after consent it swaps to a
-             confirmation panel (detected email + Terms for new accounts + a Sign in / Create CTA). -->
-        <div class="or-sep"><span data-i18n="or">or</span></div>
-        <div class="google-signin">
-            <div class="gbtn" id="gBtn"></div>
-            <p class="google-hint muted small" data-i18n="Sign in or create your account — no password needed.">Sign in or create your account — no password needed.</p>
+        <!-- Social sign-in — Google (#46) + Apple (#370). Each provider's dark button renders into
+             its own box; after consent the box swaps to a confirmation panel (detected email +
+             Terms for new accounts + a Sign in / Create CTA). A box only appears where that
+             provider is available on this surface, and the whole block hides if none is. -->
+        <div class="social-signin" id="socialSignin" hidden>
+            <div class="or-sep"><span data-i18n="or">or</span></div>
+            <div id="googleBtn" hidden></div>
+            <div id="appleBtn" hidden></div>
+            <p class="social-hint muted small" data-i18n="Sign in or create your account — no password needed.">Sign in or create your account — no password needed.</p>
         </div>
         <div class="links"><a href="#" id="toRegister" data-i18n="Create account">Create account</a><a href="#" id="toForgot" data-i18n="Forgot password?">Forgot password?</a></div>
     </section>
@@ -205,7 +208,7 @@
 
         <div class="auth-card profile-form">
             <h2 id="pwTitle" data-i18n="Change password">Change password</h2>
-            <p class="muted small" id="pwGoogleHint" hidden data-i18n="You signed up with Google — set a password to also sign in with email and password.">You signed up with Google — set a password to also sign in with email and password.</p>
+            <p class="muted small" id="pwNoPasswordHint" hidden data-i18n="You signed up with Google or Apple — set a password to also sign in with email and password.">You signed up with Google or Apple — set a password to also sign in with email and password.</p>
             <form id="pwForm">
                 <label class="field-label" id="pwCurrentLabel" for="pwCurrent" data-i18n="Current password">Current password</label>
                 <input id="pwCurrent" class="field" type="password" autocomplete="current-password">
@@ -249,16 +252,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.6.1-16"></script>
-<script src="../assets/js/rbmap.js?v=1.6.1-16"></script>
-<script src="../assets/js/i18n.es.js?v=1.6.1-16"></script>
-<script src="../assets/js/i18n.it.js?v=1.6.1-16"></script>
-<script src="../assets/js/i18n.de.js?v=1.6.1-16"></script>
-<script src="../assets/js/i18n.fr.js?v=1.6.1-16"></script>
-<script src="../assets/js/i18n.js?v=1.6.1-16"></script>
-<script src="../assets/js/rbzip.js?v=1.6.1-16"></script>
-<script src="../assets/js/roadbook-core.js?v=1.6.1-16"></script>
-<script src="../assets/js/app.js?v=1.6.1-16"></script>
-<script src="account.js?v=1.6.1-16"></script>
+<script src="../assets/js/config.js?v=1.7.0-17"></script>
+<script src="../assets/js/rbmap.js?v=1.7.0-17"></script>
+<script src="../assets/js/i18n.es.js?v=1.7.0-17"></script>
+<script src="../assets/js/i18n.it.js?v=1.7.0-17"></script>
+<script src="../assets/js/i18n.de.js?v=1.7.0-17"></script>
+<script src="../assets/js/i18n.fr.js?v=1.7.0-17"></script>
+<script src="../assets/js/i18n.js?v=1.7.0-17"></script>
+<script src="../assets/js/rbzip.js?v=1.7.0-17"></script>
+<script src="../assets/js/roadbook-core.js?v=1.7.0-17"></script>
+<script src="../assets/js/app.js?v=1.7.0-17"></script>
+<script src="account.js?v=1.7.0-17"></script>
 </body>
 </html>

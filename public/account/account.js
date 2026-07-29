@@ -32,95 +32,166 @@
     }
     function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
-    /* ---------- Google Sign-In ---------- */
-    let gClientId = '', googleCred = null;
-    // Google's four-colour "G" (no white circle) so our OWN dark button matches the site theme.
-    const GOOGLE_G = '<svg class="gicon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
-    const gButton = () => `<button type="button" class="btn btn-ghost gbtn-btn">${GOOGLE_G}<span>${t('Continue with Google')}</span></button>`;
+    /* ---------- Social sign-in: Google (#46) + Apple (#370) ---------- */
+    // Both providers run the SAME two-phase server flow — probe (who is this? does the account
+    // exist?) then confirm (sign in / create) — so ONE pipeline drives them and a provider only has
+    // to produce its identity token. Apple is what App Store guideline 4.8 asks for alongside
+    // Google: its relay address lets a user keep their real email private.
+    // Google's four-colour "G" (no white circle) so our OWN dark button matches the site theme;
+    // Apple's mark is the FontAwesome brand glyph, white on the same dark button (their guideline).
+    const GOOGLE_G = '<svg class="social-mark" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+    const APPLE_MARK = '<i class="fa-brands fa-apple social-mark" aria-hidden="true"></i>';
+    const PROVIDERS = {
+        google: { action: 'google_auth', label: 'Continue with Google', mark: GOOGLE_G, failed: 'Google sign-in failed. Please try again.', renderWeb: renderGoogleWeb },
+        apple: { action: 'apple_auth', label: 'Continue with Apple', mark: APPLE_MARK, failed: 'Apple sign-in failed. Please try again.', webSignIn: appleWebSignIn },
+    };
+    let googleClientId = '', appleClientId = '';
+    let pendingSocial = null;                                   // { key, identity } held between probe and confirm
+    const socialBox = (key) => $(key + 'Btn');                  // #googleBtn / #appleBtn
+    const socialButton = (key) => `<button type="button" class="btn btn-ghost social-btn">${PROVIDERS[key].mark}<span>${t(PROVIDERS[key].label)}</span></button>`;
+    // Closing the OS sheet or the popup is a choice, not a failure: the plugins reject with a
+    // "cancel" message, Apple's web SDK with { error: 'popup_closed_by_user' }.
+    const wasCancelled = (e) => /cancel|popup_closed/i.test((e && (e.error || e.message)) || '');
     // `reg.acceptTerms` is a namespaced key whose English text lives inline in the HTML (not in T.en),
     // so RBt returns the key itself for English — fall back to the English literal in that one case.
     const termsLabel = () => { const tr = t('reg.acceptTerms'); return tr === 'reg.acceptTerms' ? 'I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a>' : tr; };
 
-    function loadGoogle(clientId) {
-        gClientId = clientId || '';
-        if (!gClientId) return;
+    // Which providers this surface offers. Google: the OS picker in the app, the GIS button on the
+    // web once a client id is configured. Apple: the OS sheet on iOS (nothing to configure) and the
+    // Apple JS popup on the web once a Services ID is configured — never in the Android app, where
+    // there is no Apple sheet and guideline 4.8 doesn't apply.
+    function initSocial(cfg) {
+        googleClientId = cfg.google_client || '';
+        appleClientId = cfg.apple_client || '';
+        const available = {
+            google: IS_APP ? true : !!googleClientId,
+            apple: IS_APP ? RBPlatform() === 'ios' : !!appleClientId,
+        };
+        Object.keys(PROVIDERS).forEach((key) => {
+            socialBox(key).hidden = !available[key];
+            if (available[key]) renderSocial(key);              // the web Google button renders when GIS lands
+        });
+        $('socialSignin').hidden = !(available.google || available.apple);
+        if (!IS_APP && available.google) loadGoogleScript();
+    }
+
+    // Our own dark button: a tap asks the provider for an identity token. On the web a provider may
+    // instead insist on drawing its own button (Google) — that's what renderWeb is for.
+    function renderSocial(key) {
+        const box = socialBox(key); if (!box) return;
+        const provider = PROVIDERS[key];
+        if (!IS_APP && provider.renderWeb) return provider.renderWeb(box);
+        box.className = '';
+        box.innerHTML = socialButton(key);
+        box.querySelector('button').onclick = () => startSocial(key);
+    }
+    function loadGoogleScript() {
         const s = document.createElement('script');
         s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
-        s.onload = renderGoogle; document.head.appendChild(s);
+        s.onload = () => renderSocial('google'); document.head.appendChild(s);
     }
-    // Web: our own dark button (matches the theme) with Google's real button rendered INVISIBLY on
-    // top of it, so a click reliably triggers the official ID-token flow without the white-box GIS look.
-    function renderGoogle() {
-        if (!gClientId || !window.google || !google.accounts || !google.accounts.id) return;
-        google.accounts.id.initialize({ client_id: gClientId, callback: (resp) => onGoogle(resp && resp.credential) });
-        const el = $('gBtn'); if (!el) return;
-        el.className = 'gbtn-wrap';
-        el.innerHTML = `${gButton()}<div class="gis-overlay"></div>`;
-        google.accounts.id.renderButton(el.querySelector('.gis-overlay'), { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 280 });
+    // Web Google: our dark button with Google's real button rendered INVISIBLY on top of it, so a
+    // click reliably triggers the official ID-token flow without the white-box GIS look.
+    function renderGoogleWeb(box) {
+        if (!window.google || !google.accounts || !google.accounts.id) return;   // renders when the GIS script lands
+        google.accounts.id.initialize({ client_id: googleClientId, callback: (resp) => onSocialIdentity('google', { credential: resp && resp.credential }) });
+        box.className = 'social-overlay-wrap';
+        box.innerHTML = `${socialButton('google')}<div class="social-overlay"></div>`;
+        google.accounts.id.renderButton(box.querySelector('.social-overlay'), { type: 'standard', theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 280 });
         // If the invisible GIS iframe never rendered (blocked frame/script), taps fall through to
         // the wrap — trigger Google's One Tap prompt so pressing the button always reacts (#250).
-        el.onclick = () => { if (!el.querySelector('.gis-overlay iframe')) { try { google.accounts.id.prompt(); } catch (e) {} } };
+        box.onclick = () => { if (!box.querySelector('.social-overlay iframe')) { try { google.accounts.id.prompt(); } catch (e) {} } };
     }
-    // App: a real dark button that opens the native OS Google picker (RBNative), then the SAME flow.
-    function renderNativeGoogle() {
-        const el = $('gBtn'); if (!el) return;
-        el.className = ''; el.innerHTML = gButton();
-        el.querySelector('button').onclick = async () => {
-            try {
-                const native = await RBNativeReady(); // the bridge script loads async (#250)
-                if (!native || !native.googleSignIn) throw new Error('native bridge unavailable');
-                const idToken = await native.googleSignIn(); if (idToken) onGoogle(idToken);      // null = cancelled
-            } catch (e) {
-                if (/cancel/i.test((e && e.message) || '')) return; // closing the OS picker is a choice, not an error
-                // Always show the underlying reason — a generic message made native sign-in
-                // failures (plugin config, Play Services…) undiagnosable in the field.
-                msg(t('Google sign-in failed. Please try again.') + ((e && e.message) ? ' (' + e.message + ')' : ''), false);
-            }
-        };
+    // Ask the provider for an identity: the OS sheet inside the app, the provider's own web flow
+    // otherwise. Both resolve with { credential, first_name?, last_name? } or null when cancelled.
+    async function startSocial(key) {
+        try {
+            const identity = IS_APP ? await nativeSignIn(key) : await PROVIDERS[key].webSignIn();
+            if (identity) onSocialIdentity(key, identity);
+        } catch (e) {
+            if (wasCancelled(e)) return;
+            // Always show the underlying reason — a generic message made native sign-in
+            // failures (plugin config, Play Services…) undiagnosable in the field.
+            msg(t(PROVIDERS[key].failed) + ((e && e.message) ? ' (' + e.message + ')' : ''), false);
+        }
     }
-    // Feedback while the ID token is verified server-side; restoreGoogle() puts the button back on a
-    // terminal failure (on success the page navigates away, so no restore is needed).
-    function googleBusy() { const el = $('gBtn'); if (el) { el.className = ''; el.innerHTML = `<div class="gbtn-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
-    function restoreGoogle() { IS_APP ? renderNativeGoogle() : renderGoogle(); }
+    async function nativeSignIn(key) {
+        const native = await RBNativeReady();                   // the bridge script loads async (#250)
+        const signIn = native && native[key + 'SignIn'];
+        if (!signIn) throw new Error('native bridge unavailable');
+        return signIn.call(native);
+    }
+    // Apple on the web: their JS SDK, loaded on the first tap and initialised once. The popup keeps
+    // the user on the page and hands us the identity token. The name comes with it on the FIRST
+    // authorization only — Apple never repeats it, so it travels to the server alongside the token.
+    const APPLE_LOCALES = { en: 'en_US', es: 'es_ES', it: 'it_IT', de: 'de_DE', fr: 'fr_FR' };
+    let appleWebReady = null;
+    function appleWebInit() {
+        if (!appleWebReady) appleWebReady = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/' + (APPLE_LOCALES[RBi18n.current()] || APPLE_LOCALES.en) + '/appleid.auth.js';
+            s.async = true;
+            s.onload = () => {
+                AppleID.auth.init({ clientId: appleClientId, scope: 'name email', redirectURI: location.origin + '/account/', usePopup: true });
+                resolve();
+            };
+            s.onerror = () => { appleWebReady = null; reject(new Error('Apple sign-in script blocked')); };
+            document.head.appendChild(s);
+        });
+        return appleWebReady;
+    }
+    async function appleWebSignIn() {
+        await appleWebInit();
+        const res = await AppleID.auth.signIn();
+        const credential = res && res.authorization && res.authorization.id_token;
+        if (!credential) return null;
+        const name = (res.user && res.user.name) || {};
+        return { credential: credential, first_name: name.firstName || '', last_name: name.lastName || '' };
+    }
+    // Feedback while the identity token is verified server-side; restoreSocial() puts the button back
+    // on a terminal failure (on success the page navigates away, so no restore is needed).
+    function busySocial(key) { const box = socialBox(key); if (box) { box.className = ''; box.innerHTML = `<div class="social-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
+    function restoreSocial(key) { pendingSocial = null; renderSocial(key); }
 
-    // After Google consent: probe the server (who is this? does the account exist?) WITHOUT signing in,
-    // then show a clear "Sign in / Create account as <email>" confirmation.
-    async function onGoogle(cred) {
+    // After the provider's consent: probe the server (who is this? does the account exist?) WITHOUT
+    // signing in, then show a clear "Sign in / Create account as <email>" confirmation.
+    async function onSocialIdentity(key, identity) {
         if (me) return;                                                     // already signed in — ignore stray GIS re-callbacks (#308)
-        if (!cred) return;
-        googleCred = cred; googleBusy();
-        const p = await api('google_auth', { credential: cred });          // probe (no confirm)
-        if (p && p.probe) return showGoogleConfirm(p.email, !!p.exists);
-        restoreGoogle(); msg((p && p.error) || 'Google sign-in failed. Please try again.', false);
+        if (!identity || !identity.credential) return;
+        pendingSocial = { key: key, identity: identity }; busySocial(key);
+        const p = await api(PROVIDERS[key].action, identity);              // probe (no confirm)
+        if (p && p.probe) return showSocialConfirm(key, p.email, !!p.exists);
+        restoreSocial(key); msg((p && p.error) || PROVIDERS[key].failed, false);
     }
     // The confirmation panel: the detected email, the Terms (new accounts only) and the final CTA.
-    function showGoogleConfirm(email, exists) {
-        const el = $('gBtn'); if (!el) return;
-        el.className = 'gconfirm';
-        el.innerHTML =
-            `<p class="gconfirm-as">${t('Continue as')} <b>${RBesc(email)}</b></p>`
-            + (exists ? '' : `<label class="checkbox-row gconfirm-terms"><input type="checkbox" id="gConfirmTerms"> <span>${termsLabel()}</span></label>`)
-            + `<button type="button" class="btn btn-primary gconfirm-go">${exists ? t('Sign in') : t('Create account')}</button>`
-            + `<button type="button" class="gconfirm-other">${t('Use a different account')}</button>`;
-        el.querySelector('.gconfirm-go').onclick = () => {
-            if (!exists && !el.querySelector('#gConfirmTerms').checked) return msg('You must accept the Terms of Use to register.', false);
-            googleBusy(); confirmGoogle(exists);
+    function showSocialConfirm(key, email, exists) {
+        const box = socialBox(key); if (!box) return;
+        box.className = 'social-confirm';
+        box.innerHTML =
+            `<p class="social-confirm-as">${t('Continue as')} <b>${RBesc(email)}</b></p>`
+            + (exists ? '' : `<label class="checkbox-row social-confirm-terms"><input type="checkbox" id="socialConfirmTerms"> <span>${termsLabel()}</span></label>`)
+            + `<button type="button" class="btn btn-primary social-confirm-go">${exists ? t('Sign in') : t('Create account')}</button>`
+            + `<button type="button" class="social-confirm-other">${t('Use a different account')}</button>`;
+        box.querySelector('.social-confirm-go').onclick = () => {
+            if (!exists && !box.querySelector('#socialConfirmTerms').checked) return msg('You must accept the Terms of Use to register.', false);
+            busySocial(key); confirmSocial(exists);
         };
-        el.querySelector('.gconfirm-other').onclick = () => { googleCred = null; msg(''); restoreGoogle(); };
+        box.querySelector('.social-confirm-other').onclick = () => { msg(''); restoreSocial(key); };
     }
     // Confirm: create the account (new, Terms accepted) or sign in (existing), then land in the profile.
-    async function confirmGoogle(exists) {
-        const r = await api('google_auth', { credential: googleCred, confirm: true, accept_terms: !exists });
+    async function confirmSocial(exists) {
+        const { key, identity } = pendingSocial;
+        const r = await api(PROVIDERS[key].action, Object.assign({}, identity, { confirm: true, accept_terms: !exists }));
         if (r.ok) {
-            me = r.user; googleCred = null;
+            me = r.user; pendingSocial = null;
             // Stop Google's GIS library from auto re-firing the callback (One Tap / button
             // re-render) once we're signed in, which otherwise re-showed the chooser (#308).
             try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.cancel(); } catch (e) {}
             return finishLogin(me);
         }
-        restoreGoogle(); msg(r.error || 'Google sign-in failed. Please try again.', false);
+        restoreSocial(key); msg(r.error || PROVIDERS[key].failed, false);
     }
-    // Shared post-sign-in step (classic login + Google): force a password change if flagged, else
+    // Shared post-sign-in step (classic login + social): force a password change if flagged, else
     // return to ?next= (safe same-origin path only) or show the profile.
     function finishLogin(user) {
         if (user.must_change_password) return showForce();
@@ -189,12 +260,11 @@
         // trusted app origins from the challenge to match (see verify_turnstile).
         tsSite = IS_APP ? '' : (cfg.turnstile || '');
         loadTurnstile();
-        // In the Capacitor app the web GIS button can't run (Google blocks OAuth in a WebView), so
-        // ALWAYS use the native OS picker there. Decided by the shell class — set synchronously at
+        // In the Capacitor app the providers' web SDKs can't run (they block OAuth in a WebView), so
+        // ALWAYS use the native OS sheets there. Decided by the shell class — set synchronously at
         // startup — never by whether the async RBNative bridge finished loading: racing on it could
-        // render the web button inside the app, where pressing it does nothing (#250).
-        if (IS_APP) renderNativeGoogle();
-        else loadGoogle(cfg.google_client || '');
+        // render a web button inside the app, where pressing it does nothing (#250).
+        initSocial(cfg);
 
         if (params.get('verify')) {
             const r = await api('verify', { token: params.get('verify') });
@@ -351,13 +421,13 @@
     async function showAccount(user) {
         me = user;
         show('vAccount'); msg('');
-        // A Google-created account has no password yet (#211): hide the "current password"
+        // A social-login account has no password yet (#211): hide the "current password"
         // fields (the server doesn't require them either), retitle the card to "Set a
         // password" and explain — setting one also enables email/password sign-in.
         const hasPassword = !!user.has_password;
         $('pwTitle').setAttribute('data-i18n', hasPassword ? 'Change password' : 'Set a password');
         $('pwTitle').textContent = t(hasPassword ? 'Change password' : 'Set a password');
-        $('pwGoogleHint').hidden = hasPassword;
+        $('pwNoPasswordHint').hidden = hasPassword;
         $('pwCurrentLabel').hidden = !hasPassword;
         $('pwCurrent').hidden = !hasPassword;
         $('delPassLabel').hidden = !hasPassword;
