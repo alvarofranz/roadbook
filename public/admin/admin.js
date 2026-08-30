@@ -135,7 +135,9 @@
         loadAct();
     }
 
-    // A user's roadbooks (any status) with an admin status control + owner reassignment (#126).
+    // A user's roadbooks (any status) with an admin status control, owner reassignment (#126),
+    // a per-row view in the Reader (admin-authenticated, works for draft/ready/public) and a
+    // .rdbk export (media-less, like the Editor without "Include photos & audio").
     // Pagination + search (#244).
     function viewRoadbooks(u) {
         const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
@@ -155,7 +157,8 @@
                 <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
                 <td><button class="btn btn-ghost" data-mv="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move'))}" aria-label="${esc(t('Move'))}"><i class="fa-solid fa-right-left"></i></button></td>
                 <td><button class="btn btn-ghost" data-trash="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move to trash'))}" aria-label="${esc(t('Move to trash'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>
-                <td>${rb.status === 'public' && rb.slug ? `<a class="btn btn-ghost" href="/challenge/${esc(rb.slug)}" target="_blank" rel="noopener" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a>` : ''}</td>
+                <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a></td>
+                <td><button class="btn btn-ghost" data-rbexp="${rb.id}" title="${esc(t('Export'))}" aria-label="${esc(t('Export'))}"><i class="fa-solid fa-download"></i></button></td>
             </tr>`).join('')}</tbody></table>`;
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
                 const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
@@ -168,6 +171,17 @@
                 const x = await api('admin_rb_trash', { id: +b.dataset.trash });
                 if (!x.ok) toast(x.error || 'Could not delete.');
                 render();
+            });
+            body.querySelectorAll('[data-rbexp]').forEach((b) => b.onclick = async () => {
+                b.disabled = true; // no double clicks while the payload is fetched and zipped
+                try {
+                    const j = await api('admin_rb_get', { id: +b.dataset.rbexp });
+                    if (!j.ok || !j.roadbook) return toast(j.error || 'Could not export.');
+                    const d = new Date(), p = RB.pad2;
+                    const base = RB.slug((j.roadbook.meta && j.roadbook.meta.title) || j.title)
+                        + '_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+                    await RBDownload(await RBZip.write({ 'roadbook.json': JSON.stringify(RB.roadbookForExport(j.roadbook)) }), base + '.rdbk');
+                } finally { b.disabled = false; }
             });
             const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 25)));
             RBPager(m.q('#rbsPager'), rbPage, pages, (p) => { rbPage = p; render(); });

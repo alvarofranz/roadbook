@@ -194,6 +194,26 @@ function admin_user_roadbooks(array $user, array $d): void {
     json_out(['ok' => true, 'roadbooks' => $list, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
 }
 
+// Admin: read ANY user's roadbook payload (draft/ready/public) so the per-user view can open
+// it in the Reader. Mirrors rb_get's file read — no ownership filter, no edit lock; a
+// recording draft with no route yet (filename 'pending') returns an empty skeleton.
+function admin_rb_get(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare('SELECT id, slug, title, status, filename, user_id FROM roadbooks WHERE id = ? AND status <> \'deleted\'');
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    if ($row['filename'] === 'pending') {
+        $rb = ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
+    } else {
+        $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
+        if (!is_file($path)) fail('File missing.', 404);
+        $rb = json_decode((string)file_get_contents($path), true);
+    }
+    json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $row['slug'], 'status' => $row['status'],
+        'title' => $row['title'], 'roadbook' => $rb]);
+}
+
 // Admin: set any roadbook's publication status (draft/ready/public) from the per-user view (#126).
 function admin_set_status(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
