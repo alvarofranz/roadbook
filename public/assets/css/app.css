@@ -171,6 +171,9 @@ section.block { padding: 2.4rem 0; }
 .platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem; margin-top: 1.4rem; color: var(--text); font-weight: 700; }
 .platforms span { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; }
 .platforms i { color: var(--sand); }
+.platforms a.plat-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; font-weight: 700; color: var(--text); transition: border-color .2s, color .2s; }
+.platforms a.plat-link:hover { border-color: var(--sand); color: var(--sand-2); }
+.platforms .soon { opacity: .55; filter: grayscale(1); cursor: default; }
 
 /* features grid (home): 6 cards → 3 balanced columns (2 rows on desktop) */
 .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
