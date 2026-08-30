@@ -74,6 +74,7 @@ try {
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
+        case 'admin_rb_get':     admin_rb_get(require_admin(), $d); break;
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;
         case 'admin_trash_list':  admin_trash_list(require_admin()); break;
