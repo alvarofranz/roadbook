@@ -174,6 +174,7 @@ section.block { padding: 2.4rem 0; }
 .platforms a.plat-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; font-weight: 700; color: var(--text); transition: border-color .2s, color .2s; }
 .platforms a.plat-link:hover { border-color: var(--sand); color: var(--sand-2); }
 .platforms .soon { opacity: .55; filter: grayscale(1); cursor: default; }
+.install-note { max-width: 62ch; margin: 1rem auto 0; color: var(--muted); font-size: .85rem; }
 
 /* features grid (home): 6 cards → 3 balanced columns (2 rows on desktop) */
 .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
@@ -338,6 +339,15 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .cookie-notice .cookie-text { color: var(--muted); font-size: .86rem; max-width: 70ch; }
 .cookie-notice .cookie-text a { color: var(--sand-2); }
 .cookie-notice .cookie-ok { flex-shrink: 0; }
+
+/* Web-GPS reliability banner (#381): a floating warning shown on the GPS tools when running
+   in a browser (never in the native app via .native .webgps-banner). */
+.webgps-banner { position: fixed; left: 0; right: 0; top: 0; z-index: 250; display: flex; align-items: center; gap: .7rem; background: #4a3210; border-bottom: 1px solid var(--line); color: var(--text); padding: .7rem 1rem calc(.7rem + env(safe-area-inset-top)); font-size: .86rem; }
+.webgps-banner i { color: var(--sand); flex-shrink: 0; }
+.webgps-banner .webgps-text { flex: 1; }
+.webgps-banner .webgps-x { background: none; border: 0; color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: .1rem .3rem; }
+.webgps-banner .webgps-x:hover { color: var(--text); }
+.native .webgps-banner { display: none; }
 
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; gap: .6rem; padding: .7rem 1rem; padding-bottom: calc(.7rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
 .fabrow .btn { flex: 1; justify-content: center; min-width: 0; white-space: nowrap; }

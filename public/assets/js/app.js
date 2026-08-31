@@ -1026,4 +1026,44 @@
         el.querySelector('.cookie-ok').onclick = () => { try { localStorage.setItem(COOKIE_OK_KEY, '1'); } catch (e) {} el.remove(); };
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cookieNotice); else cookieNotice();
+
+    /* ---------------- Web-GPS reliability messaging (#381) ----------------
+       The browser Geolocation API is far less dependable than the native app's
+       background-capable GPS: on phones (especially Android, sometimes iOS) it is less
+       accurate, can drift, and stops when the screen locks or the tab is backgrounded. That
+       is invisible to a user who trusts the web app, so we surface it where it matters —
+       a persistent floating banner on the GPS tools, and a one-time gate before any
+       recording or navigation starts. Never in the native app, where the watch is solid. */
+    const GPS_WARN_KEY = 'rb_web_gps_warn_seen';
+    const IS_NATIVE = () => isNativeApp();
+    // Show a dismissable (per-session) floating warning when running in a browser. A page
+    // calls it once; it returns silently in the native app or once dismissed this session.
+    window.RBWebGpsWarn = (msg) => {
+        if (IS_NATIVE()) return;
+        if (document.querySelector('.webgps-banner')) return;
+        let seen = false; try { seen = sessionStorage.getItem(GPS_WARN_KEY) === '1'; } catch (e) {}
+        if (seen) return;
+        const el = document.createElement('div');
+        el.className = 'webgps-banner'; el.setAttribute('role', 'note');
+        el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span class="webgps-text">${RBt(msg || 'web.gps.warn')}</span>`;
+        const close = document.createElement('button');
+        close.type = 'button'; close.className = 'webgps-x'; close.setAttribute('aria-label', RBt('Close'));
+        close.textContent = '×'; close.onclick = () => { try { sessionStorage.setItem(GPS_WARN_KEY, '1'); } catch (e) {} el.remove(); };
+        el.appendChild(close);
+        document.body.appendChild(el);
+    };
+    // One-time (per-browser, remembered) confirmation before a GPS-critical action starts in
+    // the browser. Returns a Promise<boolean>. `comp` picks the stronger competition wording.
+    window.RBWebGpsConfirm = (comp) => {
+        if (IS_NATIVE()) return Promise.resolve(true);
+        try { if (localStorage.getItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav')) === '1') return Promise.resolve(true); } catch (e) {}
+        return new Promise((resolve) => {
+            const d = RBModal(`<h2><i class="fa-solid fa-triangle-exclamation icon-danger"></i> ${RBt(comp ? 'web.gps.comp.title' : 'web.gps.title')}</h2>
+                <p class="modal-text">${RBt(comp ? 'web.gps.comp.warn' : 'web.gps.warn')}</p>
+                <p class="muted small"><i class="fa-solid fa-mobile-screen-button"></i> ${RBt('web.gps.alt')}</p>
+                <div class="btnrow end"><button class="btn btn-ghost" data-x>${RBt('Cancel')}</button><button class="btn btn-primary" data-go>${RBt('Use the web app anyway')}</button></div>`, 'narrow', () => resolve(false));
+            d.q('[data-x]').onclick = () => d.close();
+            d.q('[data-go]').onclick = () => { try { localStorage.setItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav'), '1'); } catch (e) {} d.close(); resolve(true); };
+        });
+    };
 })();

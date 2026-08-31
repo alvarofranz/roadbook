@@ -41,6 +41,7 @@
 
     function start() {
         window.RB_BUSY = true; // never auto-refresh mid-trip
+        RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
         RBStatusBar.show(); // shared bar: clock · battery · satellite/GPS
         meter = new RBGpsMeter(onFix, () => toast('No geolocation'));
         setInterval(() => {

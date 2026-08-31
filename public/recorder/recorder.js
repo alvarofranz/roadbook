@@ -97,7 +97,10 @@
     }).catch(() => {});
 
     /* ---------- start / pause / finish ---------- */
-    $('recStart').onclick = () => RBGpxRecorder.settings({ defaultName: recName(), nameLabel: t('Roadbook name'), onStart: begin });
+    $('recStart').onclick = async () => {
+        if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning: web GPS is unreliable
+        RBGpxRecorder.settings({ defaultName: recName(), nameLabel: t('Roadbook name'), onStart: begin });
+    };
 
     function begin() {
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
@@ -227,6 +230,7 @@ function updateRecUi() {
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
         const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native');
         const nativeHint = $('recNativeHint'); if (nativeHint) nativeHint.hidden = document.documentElement.classList.contains('native');
+        RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
     }
     let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 5, wptFinish = null;
     const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
