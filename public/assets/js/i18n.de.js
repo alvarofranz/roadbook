@@ -675,6 +675,12 @@
             'native.better.gps.recorder': 'Für GPS-Hintergrundaufzeichnung und bessere Genauigkeit, nutze die native iOS- oder Android-App.',
             'native.better.gps.reader': 'Für unterbrechungsfreie GPS-Navigation und Hintergrund-Tracking, nutze die native iOS- oder Android-App.',
             'native.better.gps.tripmaster': 'Für kontinuierliches GPS-Odometrie und Hintergrundaufzeichnung, nutze die native iOS- oder Android-App.',
+            'web.gps.warn': 'Im Browser ist GPS auf Telefonen unzuverlässiger — vor allem auf Android (und manchmal iOS): es ist weniger genau, kann abweichen und stoppt, wenn der Bildschirm gesperrt wird oder du die Seite verlässt. Nutze für alles, was davon abhängt, die native RDBK-App.',
+            'web.gps.alt': 'Die native RDBK-App läuft im Hintergrund weiter und ist genauer. Erhältlich für iOS (App Store) und Android.',
+            'web.gps.title': 'Browser-GPS kann auf Telefonen unzuverlässig sein',
+            'web.gps.comp.title': 'Diese Fahrt wird nach GPS-Genauigkeit bewertet',
+            'web.gps.comp.warn': 'In einem Handy-Browser kann GPS-Drift zu falschen Strafen führen, die nicht am Roadbook liegen. Für eine faire Wettbewerbsrunde nutze die native RDBK-App.',
+            'Use the web app anyway': 'Web trotzdem nutzen',
         };
 
         // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.

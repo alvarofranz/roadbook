@@ -85,6 +85,7 @@
     // in the URL, then to rescuing an orphaned GPX recording.
     (async function () {
         await cfgReady; // #146: know sign-in state before deciding to open a public roadbook
+        RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         let savedRb = null;
         if (session && session.pen) {
@@ -189,8 +190,12 @@
             o.start(t0); o.stop(t0 + 0.2);
         } catch (e) { /* audio unavailable */ }
     }
-    const startTrip = () => { readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin(); };
-    const startComp = () => {
+    const startTrip = async () => {
+        if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning before navigation
+        readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin();
+    };
+    const startComp = async () => {
+        if (!(await RBWebGpsConfirm(true))) return; // stronger warning: a scored run depends on GPS
         readModeOpts(); closeModal('modeModal'); $('teamInput').value = '1';
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
