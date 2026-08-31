@@ -94,6 +94,12 @@ in background (il logging sopravvive a schermo bloccato); altrimenti è il
 con la stessa forma di `GeolocationCoordinates`, così il resto del codice è identico
 ([gps-meter.js:26-33](../public/assets/js/gps-meter.js#L26)).
 
+Poiché la GPS nel browser è strutturalmente meno affidabile che nell'app nativa (vedi sotto
+"Accessibilità e UX"), i tool espongono due avvisi condivisi definiti in `app.js`:
+`RBWebGpsWarn` (banner flottante persistente, solo browser) e `RBWebGpsConfirm` (gate one-time
+prima di registrazione/navigazione, con copia più severa per le prove di competizione). Dettagli
+in [app-shell.md § `RB*` helper](app-shell.md#rbconfirmmsg-oklabel-danger--promiseboolean).
+
 ### Il wake lock
 
 `_wake()` richiede `navigator.wakeLock.request('screen')` per tenere lo schermo acceso. I wake

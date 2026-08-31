@@ -243,6 +243,22 @@ passano invariate). `danger === true` colora il pulsante di conferma come azione
 Scorciatoia per `RBConfirm(msg, okLabel, true)` — la conferma usata per **ogni azione che
 distrugge dati** (cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
 
+#### `RBWebGpsWarn(msg?)`
+([app.js:1041](../public/assets/js/app.js#L1041)) — Banner **flottante persistente** che avverte
+che la GPS del browser è inaffidabile sui telefoni. Chiamata una volta per pagina dai tool di
+navigazione (Recorder, Reader, Tripmaster). Inerte nell'app nativa (`.webgps-banner` è nascosto
+da `.native`). Il banner si chiude per **sessione** (`sessionStorage`), quindi non assilla ma
+riappare a ogni visita — la scelta è temporanea e rispecchia il fatto che l'inaffidabilità è una
+proprietà persistente del browser. `msg` è una chiave i18n che di default è `web.gps.warn`.
+
+#### `RBWebGpsConfirm(comp) → Promise<boolean>`
+Gate **one-time** (deciso una volta per browser, `localStorage`) che precede ogni azione
+critica per la GPS in un browser: start di registrazione (Recorder) e inizio di navigazione
+(Reader). Mostra una modale su `RBModal` (card `narrow`) e risolve `true` se l'utente prosegue,
+`false` se annulla. Se l'utente sceglie "usa comunque la web" la scelta viene ricordata e il gate
+non riappare. `comp === true` seleziona la variante con copia più severa (prova a punteggio:
+`web.gps.comp.*`); altrimenti usa `web.gps.*`.
+
 #### `RBNeedAuth(msg)` → (apre una modale, nessun ritorno)
 ([app.js:290](../public/assets/js/app.js#L290)) — Prompt "serve un account" con CTA verso
 `account/`. `msg` ha un default tradotto.
