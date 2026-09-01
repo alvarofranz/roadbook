@@ -69,7 +69,7 @@ Then choose the **mode**:
 
 1. **Odometer bar** (sticky at top): title, total, partial, CAP compass, time, GPS status, battery
 2. **Note table**: each note on a row with distance, tulip vignette, text, CAP, road type
-3. **Note states**: ✅ Reached (green) · ⏭ Skipped (pink) · ▶ Active (red border) · white (future)
+3. **Note states**: ✅ Reached (green) · ⏭ Skipped (pink) · ▶ Active (red border) · white (future). The active note also turns **blue as you close in on it**, and shows the metres still to run
 4. **Columns**: Distances + number | Vignette | Directions | Buttons (map, reached)
 
 ---
@@ -77,18 +77,20 @@ Then choose the **mode**:
 ## 4. Progress: automatic vs manual
 
 ### Automatic (default)
-As soon as the GPS enters the **validation radius** of the active note, the note is marked as reached automatically.
+As soon as you drive into the **validation radius** of the active note, the note is marked as reached automatically.
 
-- The radius is adaptive: it depends on the note's `wp_radius`, with a maximum that avoids overlaps
-- Works regardless of speed
+- The radius is adaptive: it depends on the note's `wp_radius`, with a maximum that avoids overlaps and a minimum that stays above GPS noise (18 m)
+- What is tested is the **path driven between two GPS fixes**, not just the fixes themselves: at speed a phone can move 25 m between two positions, so a tight waypoint would otherwise fit right between them and never validate
+- A position the phone is not sure about (poor accuracy) is ignored rather than acted on — it can neither validate a note nor add distance to the odometer
 - Toggle with the **Auto** switch in the bar
 
 ### Manual
-Tap the active note or the "Reached" button to validate.
+Tap **anywhere on the active note's row**, or the "Reached" button, or the Validate button — all three do the same thing (the whole row is the target, so you don't have to aim at a small button while moving).
 
 - In Trip: marks green and syncs the odometer
-- In Competition: validates with score (requires GPS within 100 m)
-- Cannot validate backwards
+- In Competition: validates with score (you must be within 100 m of the note, plus whatever margin your GPS accuracy needs)
+- Tapping **another** note moves the run to it and asks for confirmation first: the notes in between stay unvalidated, and in Competition each scored one skipped costs 450 points
+- In Competition you cannot go back to an already validated note
 
 ### Hands-free with an external remote
 Tick **External remote (pedal / clicker)** in the mode chooser to advance without touching the screen.

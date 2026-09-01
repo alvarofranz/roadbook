@@ -43,6 +43,8 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |
 | `recJunkFix`, `recStepM` | soglia scarto fix / passo di campionamento della registrazione live |
+| `odometerStep` | il gate di ingresso dell'odometro: giudica un fix contro l'ultima posizione affidabile (`junk` / `noise` / `teleport` / `ok`) — vedi [gps-stack.md](./gps-stack.md) §2 |
+| `noteReached` | il gate di convalida automatica del Reader: la nota è raggiunta se il **segmento** percorso fra due fix entra nel raggio |
 | `nearestIdx`, `nearestIdxByTime`, `resolveIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |
 
 Quasi tutte le funzioni di mutazione (`recompute*`, `simplify*`, `reverse*`, `importRoadbook`,
@@ -70,9 +72,12 @@ sul punteggio:
 
 | Chiave             | Valore | Significato |
 |--------------------|:------:|-------------|
-| `MANUAL_RADIUS_M`  | 100    | raggio di "armamento" per il calcolo dell'overshoot |
-| `MIN_DISP_M`       | 5      | spostamento minimo considerato (filtro deriva GPS) |
+| `MANUAL_RADIUS_M`  | 100    | raggio di "armamento" per il calcolo dell'overshoot, e gate della convalida manuale |
+| `MIN_DISP_M`       | 5      | spostamento minimo considerato — pavimento del rumore quando l'accuratezza è ignota |
+| `FIX_ACC_MAX_M`    | 35     | oltre questa accuratezza un fix è spazzatura: né registrato né contato |
+| `MAX_SPEED_MS`     | 70     | 252 km/h: un passo più veloce di così non è mai successo (fix in cache) |
 | `REACH_DEFAULT_M`  | 30     | raggio di rilevamento di default (geofence del Reader) |
+| `REACH_MIN_M`      | 18     | pavimento del reach: sotto si chiederebbe al GPS una precisione che non ha |
 | `P_SKIP`           | 450    | penalità per nota saltata |
 | `P_SPEED_PER_KMH`  | 10     | penalità per km/h di eccesso |
 | `REG_GRACE_S`      | 59     | tolleranza in secondi sul ritardo (regolarità) |

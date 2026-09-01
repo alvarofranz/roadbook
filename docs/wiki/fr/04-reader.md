@@ -69,7 +69,7 @@ Puis choisissez le **mode** :
 
 1. **Barre odomètre** (collante en haut) : titre, total, partiel, boussole CAP, heure, état GPS, batterie
 2. **Tableau des notes** : chaque note sur une ligne avec distance, vignette tulipe, texte, CAP, type de route
-3. **États de note** : ✅ Atteinte (vert) · ⏭ Sautée (rose) · ▶ Active (bord rouge) · blanc (à venir)
+3. **États de note** : ✅ Atteinte (vert) · ⏭ Sautée (rose) · ▶ Active (bord rouge) · blanc (à venir). La note active devient en plus **bleue à mesure que vous approchez**, et affiche les mètres restants
 4. **Colonnes** : Distances + numéro | Vignette | Indications | Boutons (carte, atteinte)
 
 ---
@@ -77,18 +77,20 @@ Puis choisissez le **mode** :
 ## 4. Avancement : automatique vs manuel
 
 ### Automatique (défaut)
-Dès que le GPS entre dans le **rayon de validation** de la note active, la note est marquée comme atteinte automatiquement.
+Dès que vous entrez dans le **rayon de validation** de la note active, la note est marquée comme atteinte automatiquement.
 
-- Le rayon est adaptatif : dépend du `wp_radius` de la note, avec un maximum évitant les chevauchements
-- Fonctionne indépendamment de la vitesse
+- Le rayon est adaptatif : dépend du `wp_radius` de la note, avec un maximum évitant les chevauchements et un minimum au-dessus du bruit GPS (18 m)
+- Ce qui est testé, c'est le **trajet parcouru entre deux positions GPS**, pas seulement les positions : à vitesse le téléphone avance de 25 m entre deux relevés, un waypoint serré tiendrait donc pile entre les deux et ne validerait jamais
+- Une position dont le téléphone n'est pas sûr (mauvaise précision) est ignorée plutôt qu'utilisée : elle ne valide aucune note et n'ajoute aucun kilomètre à l'odomètre
 - Activez/désactivez avec l'interrupteur **Auto** dans la barre
 
 ### Manuel
-Tap sur la note active ou sur le bouton « Atteinte » pour valider.
+Touchez **n'importe où sur la ligne de la note active**, ou le bouton « Atteinte », ou le bouton Valider : les trois font la même chose (toute la ligne est la cible, pour ne pas avoir à viser un petit bouton en roulant).
 
 - En Trip : marque en vert et synchronise l'odomètre
-- En Competition : valide avec score (GPS requis dans les 100 m)
-- Impossible de valider en arrière
+- En Competition : valide avec score (vous devez être à moins de 100 m de la note, plus la marge que demande la précision de votre GPS)
+- Toucher une **autre** note y déplace le parcours et demande confirmation d'abord : les notes intermédiaires restent non validées, et en Competition chaque note comptée sautée coûte 450 points
+- En Competition, impossible de revenir à une note déjà validée
 
 ### Mains libres avec une télécommande externe
 Cochez **Télécommande externe (pédale / clicker)** dans le sélecteur de mode pour avancer sans toucher l'écran.

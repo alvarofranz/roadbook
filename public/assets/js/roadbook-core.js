@@ -115,6 +115,18 @@
         const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
+    /* Has the active note been reached? — the Reader's auto-validation gate (#384). Testing the
+       CURRENT FIX alone silently misses waypoints: fixes land about a second apart, so at 90 km/h
+       the phone moves ~25 m between two of them and a tight gate (the REACH_MIN_M floor is 18 m)
+       fits entirely inside that gap — the driver passes right over the waypoint and nothing
+       validates. So the question is asked of the travel SEGMENT from the previous trusted position
+       to this fix, which cannot be jumped over. `from` is null when there is no path to speak of
+       (the first fix, or after an implausible jump), where the single point is all we have. */
+    function noteReached(note, from, here, radiusM) {
+        if (!note || !here || note.lat == null) return false;
+        const d = from ? nearestOnTrack([from, here], note).dist : haversineM(here, note);
+        return d <= radiusM;
+    }
     // Dark or light ink for legible text on a solid colour fill (perceived luminance).
     function textInk(hex) {
         const c = String(hex).replace('#', '');
@@ -140,6 +152,7 @@
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
+        FIX_ACC_MAX_M: 35, MAX_SPEED_MS: 70, // a fix worse than this is junk; a step faster than this never happened (252 km/h)
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
         META_WIDTHS: [3, 6, 6, 6, 4, 4, 4, 4, 4, 5, 3, 6],
@@ -367,10 +380,39 @@
         return { bIn, bOut };
     }
     // Live-recording intake (Recorder · the Editor's record/adjust · the GPX logger): a fix
-    // worse than 35 m is junk; the sampling step scales with the accuracy — dense detail with
-    // a good fix, no jitter with a weak one.
-    const recJunkFix = (acc) => acc != null && acc > 35;
+    // worse than FIX_ACC_MAX_M is junk; the sampling step scales with the accuracy — dense
+    // detail with a good fix, no jitter with a weak one.
+    const recJunkFix = (acc) => acc != null && acc > CONST.FIX_ACC_MAX_M;
     const recStepM = (acc) => Math.max(2.5, (acc || 10) * 0.35);
+
+    /* Odometer intake (the Reader's and Tripmaster's travelled distance, #383). A phone's
+       position stream is not a trajectory: it interleaves usable fixes with cell/wifi ones
+       hundreds of metres off, a cached position from wherever the phone last was, and — while
+       standing still — a wander as wide as the fix's own error circle. Integrating that raw
+       stream is what put 57 km on the odometer after 3 km of driving. So every fix is judged
+       against the last position we trusted, and only a real step counts:
+         · junk     — accuracy beyond FIX_ACC_MAX_M: dropped, and the anchor HOLDS, so the
+                      ground actually covered meanwhile is counted when a good fix returns;
+         · noise    — the step is inside the fix's own uncertainty, i.e. indistinguishable from
+                      standing still: no distance, anchor holds (a slow, real movement is not
+                      lost, it accumulates until it clears the floor);
+         · teleport — the step implies a speed no vehicle reaches: no distance, but the anchor
+                      MOVES there, or one bogus fix (a stale cached position) would freeze the
+                      odometer for the rest of the run;
+         · ok       — counted.
+       `anchor` is the last trusted position + the time of its fix; pass null to start. Pure, so
+       the whole gate is unit-tested — RBGpsMeter is its only caller. */
+    function odometerStep(anchor, fix) {
+        const acc = (fix.acc != null && isFinite(fix.acc)) ? fix.acc : null;
+        const pos = { lat: fix.lat, lon: fix.lon, t: fix.t };
+        if (recJunkFix(acc)) return { disp: 0, anchor, verdict: 'junk' };
+        if (!anchor) return { disp: 0, anchor: pos, verdict: 'first' };
+        const d = haversineM(anchor, pos);
+        const dt = (fix.t - anchor.t) / 1000;
+        if (dt > 0 && d / dt > CONST.MAX_SPEED_MS) return { disp: 0, anchor: pos, verdict: 'teleport' };
+        if (d < Math.max(CONST.MIN_DISP_M, acc || 0)) return { disp: 0, anchor, verdict: 'noise' };
+        return { disp: d, anchor: pos, verdict: 'ok' };
+    }
 
     // Build the roadbook JSON from a track + waypoints.
     function buildRoadbook({ name, trkpts, wpts }) {
@@ -1096,7 +1138,7 @@
 
     /* ---------------- export ---------------- */
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
@@ -1105,7 +1147,7 @@
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, isComment,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
-        cumulativeM, deriveBearings, recJunkFix, recStepM,
+        cumulativeM, deriveBearings, recJunkFix, recStepM, odometerStep,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
     if (typeof window !== 'undefined') window.RB = RB;

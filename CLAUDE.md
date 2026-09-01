@@ -418,7 +418,8 @@ Operational notes:
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
   `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
   buttons), colour-coded by state (reached green · skipped pink · active red border ·
-  upcoming white · <50 m to next blue) with an optional per-note
+  upcoming white) — and the ACTIVE row alone takes the live GPS proximity state (blue as you
+  close in, with the metres still to run) — with an optional per-note
   MapLibre mini-map; a note's FIA waypoint-type badge (`wp_type`) sits beside its number.
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
@@ -426,13 +427,18 @@ Operational notes:
   you might only want to look; the **"Navigate"** button is what opens the mode chooser. That
   modal sets Trip vs Competition mode, the per-note map button and optional live GPX logging, then
   navigation starts (`body.rb-immersive`: the tool owns the screen, tab bar hidden). Advancement
-  is automatic by default (GPS marks a note on entering its **detection
-  radius** — `RB.detectionRadius`: per-note `wp_radius` → `meta.default_wp_radius` → the type
-  default → the system default `CONST.REACH_DEFAULT_M` (30 m)), with a live Auto on/off switch
-  in the nav bar, or manual (tap "reached" — or hands-free from an **external remote**, a Bluetooth
-  pedal/clicker that pairs as a keyboard: `RBRemote`, switch in the mode chooser, #20). Competition
-  validates with penalties + an HMAC-signed result QR; validating syncs the total odometer to the
-  note's distance. Opens `.rdbk` from the OS on installed PWAs.
+  is automatic by default: the note validates the moment the **driven segment** between two GPS
+  fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
+  slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
+  `meta.default_wp_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
+  (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
+  the whole active row (and the Validate button, and the per-row check) marks it done — or
+  hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
+  (`RBRemote`, switch in the mode chooser, #20). Tapping any OTHER row moves the run cursor and
+  always asks first — it leaves notes unvalidated and in competition costs 450 pts each.
+  Competition validates with penalties + an HMAC-signed result QR (its 100 m proximity gate is
+  widened by the fix's own accuracy); validating syncs the total odometer to the note's distance.
+  Opens `.rdbk` from the OS on installed PWAs.
 - **Tripmaster** — a GPS trip computer with no roadbook: total/partial odometer with
   ±10 m corrections and hold-to-reset, speed with configurable alert bands, heading,
   stopwatch, waypoint counter and crash-safe GPX recording; the session checkpoints
@@ -458,7 +464,9 @@ Operational notes:
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
   the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
-  `detectionRadius` — the Reader's geofence radius), `buildMeta`/`parseMeta` (55-char QR,
+  `detectionRadius` — the Reader's geofence radius), the live-GPS gates `odometerStep` (what may
+  count as distance travelled) and `noteReached` (auto-validation on the driven segment),
+  `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
   `deleteNote`, `pendingWork`), `CONST`, `ROAD_TYPES`.
@@ -468,8 +476,11 @@ Operational notes:
   pins, draggable edit marker, satellite↔topo layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
 - `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
-  position watch + wake lock, one clean `{here, disp, speedKmh, heading}` per fix. In the
-  native app it uses RBNative's background-capable watch (logging survives a locked screen).
+  position watch + wake lock, one *judged* `{here, trusted, disp, from, speedKmh, heading}` per
+  fix — `RB.odometerStep` decides whether a fix is trustworthy and whether its step is real
+  movement, so `disp` is only ever ground actually covered (a junk or jittering fix used to add
+  phantom kilometres, #383). In the native app it uses RBNative's background-capable watch
+  (logging survives a locked screen).
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
   settings modal, localStorage checkpoint with recovery, live file handle, finished-track
   modal (download / convert into a roadbook).

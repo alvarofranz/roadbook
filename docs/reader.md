@@ -87,9 +87,9 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 - La riga CAP (`.note-cap`) appare solo se la nota ha un `cap`, mostrando `CAP n°` ed
   eventualmente la `cap_distance` in km ([reader.js:219](../public/reader/reader.js#L219)).
 - Sotto ogni riga c'è un contenitore `.nmap` nascosto, slot per la mappa per-nota (§6).
-- Dopo il render, gli handler vengono ricablati: `[data-reach]` → `markReached`,
-  `[data-map]` → `toggleNoteMap`, e il tap sull'intera riga → `tapNote`
-  ([reader.js:229-231](../public/reader/reader.js#L229)).
+- Dopo il render, gli handler vengono ricablati: `[data-reach]` e il tap sulla riga **attiva**
+  → `advanceNote` (la stessa azione del pulsante Convalida), `[data-map]` → `toggleNoteMap`, e
+  il tap su **qualsiasi altra** riga → `jumpToNote` (spostamento cursore, con conferma — §7).
 - **Rebuild completo vs aggiornamento in place**: `renderNotes` ricostruisce l'intera lista
   solo ai cambi *strutturali* (avvio, toggle Auto, cambio lingua). Avanzamento e validazione
   aggiornano invece solo lo **stato** delle righe con `updateNoteStates` (classi
@@ -112,13 +112,20 @@ vero è in `app.css`.
 | **Saltata** | `.skipped` | `i < activeIdx` ma non in `reached` (superata senza validare) | rosa |
 | **Attiva** | `.active` | `i === activeIdx` | bordo rosso |
 | **Imminente** | (nessuna) | nota futura | bianco |
-| **≤50 m alla prossima** | `.close` (sulla `.col-distance`) | la nota *successiva* ha `partial_distance < 50` | blu |
+| **In avvicinamento** | `.near` (solo sulla riga attiva) | distanza GPS dalla nota attiva ≤ `MANUAL_RADIUS_M` (100 m) | azzurro tenue |
+| **In arrivo** | `.arriving` (solo sulla riga attiva) | distanza GPS ≤ `reachRadius` — il raggio in cui scatta la convalida automatica | azzurro pieno |
+| **Coppia ravvicinata** | `.tight` (sulla `.col-distance`) | la nota *successiva* ha `partial_distance < 50` | grigio-azzurro |
 
 Distinzioni chiave:
 - La differenza fra **raggiunta** e **saltata** dipende interamente dal `Set` `reached`: una
   nota oltrepassata che non è dentro `reached` è considerata saltata.
-- Lo stato **`.close`** (blu) è agganciato alla `partial_distance` della nota *seguente*, non
-  al GPS — è una proprietà statica del roadbook.
+- `.near` e `.arriving` sono gli **unici stati guidati dal GPS in tempo reale** (`paintApproach`,
+  chiamata da `refreshLive` a ogni fix affidabile): appartengono solo alla nota attiva e
+  vengono ripuliti dalle altre righe da `updateNoteStates`. La riga attiva porta anche il
+  readout `.togo` con la distanza che resta da percorrere (#387).
+- Lo stato **`.tight`** è agganciato alla `partial_distance` della nota *seguente*, non al GPS
+  — è una proprietà statica del roadbook (una coppia di note a meno di 50 m), non dice nulla
+  su dove si trovi chi guida.
 
 ---
 
@@ -139,14 +146,21 @@ riga raccoglie tutti i readout, aggiornati a ogni fix in `onFix`
 | **GPS** | `#gpsDot` / `#gpsTxt` | `setGps`: pallino `ok`/`bad` e `±N m`; verde se `accuracy ≤ 25 m` ([reader.js:157](../public/reader/reader.js#L157), [reader.js:181](../public/reader/reader.js#L181)) |
 | **Batteria** | `#odoBatt` / `#odoBattIcon` | alimentata dal feed condiviso `RBStatusBar.watchBattery` (`startBattery`); icona per livello/carica; `N/A` se l'API manca |
 
-L'odometro avanza di `disp` (lo spostamento per-fix fornito da `RBGpsMeter`) sia sul totale
-sia sul parziale ([reader.js:158](../public/reader/reader.js#L158)).
+L'odometro avanza di `disp` (lo spostamento per-fix **già giudicato** da `RBGpsMeter` /
+`RB.odometerStep`: solo terreno realmente percorso) sia sul totale sia sul parziale. Un fix non
+affidabile — `fix.trusted === false`, accuratezza oltre `FIX_ACC_MAX_M` — aggiorna **solo** il
+readout GPS ed esce subito da `onFix`: non è dove siamo, quindi non può muovere un contatore,
+una nota o un marker (#383).
 
 ### La barra CAP in basso
-`.capbar` ([index.html:82-87](../public/reader/index.html#L82)) appare **solo quando la nota
-precedente porta un CAP** ([reader.js:257-269](../public/reader/reader.js#L257)). Mostra:
-rotta da tenere (`prev.cap`), velocità corrente, distanza viva alla destinazione e una
-freccia direzionale data-driven. È un ausilio di navigazione "a bussola" tra due note.
+`.capbar` ([index.html:82-87](../public/reader/index.html#L82)) resta visibile **per tutta la
+navigazione** (una barra che va e viene è una barra che chi guida smette di guardare): mostra
+la rotta da tenere (il `cap` della nota *precedente* — un CAP è la rotta da mantenere *dopo* un
+waypoint), la velocità corrente, la **distanza viva alla nota attiva** e una freccia
+direzionale data-driven. Senza CAP in vigore legge `—°` e nasconde solo la freccia; entro il
+reach della nota attiva prende la classe `.arriving` (blu, come la riga). `refreshLive` la
+riallinea sia a ogni fix affidabile sia a ogni cambio di nota attiva, così la distanza non
+resta mai a descrivere la nota precedente.
 
 ### Sincronizzazione dell'odometro alla distanza nota
 A ogni validazione, se la nota ha una `distance`, il totale viene **riallineato** alla
@@ -219,9 +233,10 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
 
 - **`geolocate: true`** passato a `new RBMap()` → aggiunge il pulsante GeolocateControl
   (mirino) in alto a destra, che l'utente può cliccare per centrare sulla propria posizione
-- **`onFix()`** memorizza l'ultima posizione in `lastHere` e chiama
-  `inlineMap.setPosition(lat, lon, false, heading)` a ogni fix, così il pallino blu segue
-  il movimento in tempo reale
+- **`onFix()`** memorizza in `lastHere`/`lastAcc` l'ultima posizione **affidabile** (è da
+  quella che si misura ogni distanza del Reader) e chiama
+  `inlineMap.setPosition(lat, lon, false, heading)`, così il pallino blu segue il movimento in
+  tempo reale senza saltare su un fix spazzatura
 - **All'apertura** di una nuova mappa, se `lastHere` è disponibile chiama subito
   `setPosition` (la posizione viene comunque reinviata dal prossimo fix)
 - Quando non c'è una navigazione attiva (modalità preview), `lastHere` è null e la mappa
@@ -232,29 +247,53 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
 
 ## 7. Avanzamento: automatico e manuale
 
-### Automatico — arrivo nel raggio (`autoAdvance`)
-La validazione automatica scatta **appena il fix corrente entra nel reach** della nota attiva:
-`autoAdvance(dist, here)` fa semplicemente `if (dist <= reachRadius(activeIdx)) validateAt(activeIdx, here)`,
-punteggiando contro il fix corrente `here`. Sei arrivato, quindi valida subito — senza
-aspettare di oltrepassare la nota. Conseguenze del design:
+### Automatico — attraversamento del raggio (`RB.noteReached`)
+La validazione automatica scatta **appena il percorso guidato entra nel reach** della nota
+attiva. La domanda non viene posta al singolo fix ma al **segmento** fra la posizione affidabile
+precedente (`fix.from`) e quella corrente: `RB.noteReached(note, from, here, reachRadius(i))`
+proietta la nota sul segmento (`nearestOnTrack`) e confronta la distanza minima col reach.
 
-- È **indipendente dalla velocità** (nessun delta fix-a-fix).
+Il motivo è il bug #384: i fix arrivano circa una volta al secondo, quindi a 90 km/h il telefono
+si sposta ~25 m fra due fix e un gate stretto (il floor `REACH_MIN_M` è 18 m) può stare
+**interamente nel buco** fra due posizioni — si passa esattamente sopra il waypoint e il test
+sul punto singolo non vede nulla. Il segmento non si può saltare. Quando `from` è `null` (primo
+fix, o fix successivo a un salto implausibile: non c'è percorso di cui parlare) si ricade sul
+punto singolo.
+
+Conseguenze del design:
+
+- Vale **a qualunque velocità**, purché i fix siano affidabili (§ `RBGpsMeter`: un fix non
+  affidabile non entra nemmeno nella logica delle note).
 - È **immune al cascade**: i reach non possono sovrapporsi (`reachRadius` li limita a metà del
   gap col vicino), quindi il gate della nota successiva si apre solo dopo che la corrente
-  avanza; note ammassate si validano *una a una*, mai tutte insieme.
+  avanza; note ammassate si validano *una a una*, mai tutte insieme. Per lo stesso motivo un
+  singolo fix valida **una sola** nota: un buco GPS lungo che scavalca più note ne valida la
+  prima e lascia le altre "saltate" (in competizione è la scelta meno costosa: validarle dalla
+  posizione attuale caricherebbe penalità di accuratezza enormi).
 
 `auto` è commutabile a metà sessione col pulsante `#autoBtn`.
 
 ### Manuale — tap
-- In **Trip mode** (`!competition`), `tapNote` è navigazione libera: imposta `activeIdx`,
-  azzera il parziale, ridisegna — nessun punteggio ([reader.js:291](../public/reader/reader.js#L291)).
-  Il pulsante "raggiunta" (`markReached`) marca verde e sincronizza l'odometro
-  ([reader.js:271](../public/reader/reader.js#L271)).
-- In **Competition**, `tapNote` ([reader.js:290](../public/reader/reader.js#L290)) valida con
-  punteggio. Il tracking manuale funziona **anche senza alcun GPS**; quando *c'è* un fix, vale
-  il gate di prossimità di `MANUAL_RADIUS_M = 100 m` ("Too far from note") per impedire
-  validazioni lontane ([reader.js:295-296](../public/reader/reader.js#L295)).
-- Non si può validare all'indietro (`i < activeIdx` viene ignorato).
+Il tap sulla riga **attiva** (tutta la riga, non solo il pulsantino) e il pulsante Convalida
+fanno la stessa cosa: `advanceNote()`.
+
+- In **Trip mode** (`!competition`) `advanceNote` chiama `markReached`: marca verde, azzera il
+  parziale, sincronizza il totale sulla `distance` della nota e avanza. Nessun punteggio, nessun
+  gate di prossimità — un viaggio si segue a vista.
+- In **Competition** chiama `validateHere`, che valida con punteggio. Il tracking manuale
+  funziona **anche senza alcun GPS**; quando *c'è* un fix vale il gate di prossimità
+  `MANUAL_RADIUS_M = 100 m`, **allargato dell'accuratezza del fix** — l'incertezza del telefono
+  non è colpa di chi guida (#385) — e il rifiuto dice la distanza reale ("Too far from note 4 ·
+  320 m") invece di un generico "troppo lontano".
+- Il tap su **un'altra** riga è `jumpToNote(i)`: spostamento esplicito del cursore, **con
+  conferma** che nomina la nota e dice il prezzo (le note intermedie restano non validate; in
+  competizione `RB.skipPenalty`, 450 pt per nota valutata). Prima era un semplice tap su riga
+  senza conferma: mirare al pulsantino e mancarlo spostava il cursore, marcava righe come
+  saltate, riallineava l'odometro sulla nota toccata e in competizione bruciava centinaia di
+  punti in silenzio (#386).
+- Indietro: in Trip mode è permesso (conferma inclusa, o senza conferma dal pedale remoto —
+  `setActiveNote`, una pressione su un dispositivo dedicato *è* la conferma); in Competition no,
+  e lo dice con un toast invece di ignorare il tap.
 
 `validateAt` ([reader.js:303](../public/reader/reader.js#L303)) è il punto comune di
 validazione (auto e manuale): avvia/aggiorna l'orologio (`startedAt`/`endedAt`), accumula le
@@ -262,8 +301,10 @@ penalità (dettaglio in [ranking-model.md](./ranking-model.md)), marca `reached`
 parziale e l'arancione, sincronizza il totale e avanza `activeIdx`. All'ultima nota mostra un
 toast "Tap Finish".
 
-Il pulsante centrale `#validateBtn` instrada secondo la modalità: `tapNote(activeIdx)` in
-competition, `markReached(activeIdx)` in trip ([reader.js:326](../public/reader/reader.js#L326)).
+Il pulsante centrale `#validateBtn`, il tap sulla riga attiva, il pulsantino "raggiunta" e il
+comando *next* del remoto passano tutti da `advanceNote()`: `validateHere(activeIdx)` in
+competition, `markReached(activeIdx)` in trip — un solo punto di ingresso, così nessuna via
+scavalca il gate di prossimità della competizione.
 
 ---
 
@@ -315,6 +356,13 @@ in `finish` impacchetta e firma il risultato generandone il QR (`#qrModal`, con 
   gate resta largo e i loro reach potrebbero comunque sovrapporsi nello spazio.
 - **Penalità posizionali dipendenti dal GPS**: una gara manuale senza segnale azzera
   accuracy/CAP/extra (vedi [ranking-model.md](./ranking-model.md)).
+- **Un buco GPS lungo scavalca più note**: un solo fix valida una sola nota (vedi §7), quindi
+  le altre restano "saltate". Voluto: validarle dalla posizione attuale costerebbe penalità di
+  accuratezza enormi.
+- **Il floor del reach è 18 m** (`REACH_MIN_M`): un `wp_radius` più stretto nel roadbook non
+  rende il gate più fine di così, perché sotto quella soglia si chiederebbe al GPS una
+  precisione che non ha. La convalida automatica resta comunque affidabile perché il test è
+  sull'attraversamento del segmento, non sul singolo fix (§7).
 - **Indicatore batteria best-effort**: la Battery Status API non è esposta su tutti i browser
   (es. Safari/iOS) → mostra `N/A`.
 - **Rifiutare la ripresa non cancella la sessione**: è un comportamento voluto (anti

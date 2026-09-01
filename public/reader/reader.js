@@ -30,10 +30,8 @@
     let showMap = true; // per-note map button
     let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
-    let inlineMap = null, inlineMapIdx = -1, lastHere = null; // the one interactive per-note map + last GPS position
-    // Auto-validation: a note is reached the moment you enter its detection radius — you've
-    // arrived, so it validates immediately (no waiting to overshoot it). The reach gate itself
-    // (per-note radius, capped by neighbour spacing, floored above GPS noise) is RB.reachRadius.
+    let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map
+    let lastHere = null, lastAcc = null;     // last TRUSTED position + its accuracy — what every distance is measured from
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
     const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop(); // roadbook slug from URL
@@ -218,6 +216,7 @@
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
         document.body.classList.add('rb-immersive');
         $('finishBtn').hidden = !comp;
+        sizeCapBar(); // the action row just changed height (Competition adds Finish)
         syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
@@ -269,13 +268,18 @@
     // The odometer + CAP bars are static markup, touched on every GPS fix — cache the refs once.
     const odoEls = { total: $('odoTotal'), partial: $('odoPartial'), brg: $('odoBrg'), arrow: $('odoBrgArrow'), gpsDot: $('gpsDot'), gpsTxt: $('gpsTxt') };
     const capEls = { bar: $('capbar'), heading: $('capHeading'), speed: $('capSpeed'), dist: $('capDist'), arrow: $('capArrow') };
+    // Every fix arrives judged (RBGpsMeter · RB.odometerStep): `disp` is ground actually covered
+    // and `trusted` says whether this position may drive anything at all. An untrusted fix only
+    // updates the accuracy readout — it is not where we are, so it must never move a counter, a
+    // note or a marker (#383).
     function onFix(fix) {
-        const { here, coords, disp, speedKmh } = fix;
-        lastHere = here;
+        const { here, coords, disp, speedKmh, trusted } = fix;
+        setGps(trusted && coords.accuracy <= 25 ? 'ok' : 'bad', Math.round(coords.accuracy));
+        RBGpxRecorder.feed(coords, here, fix.tnow); // the logger applies its own accuracy gate
+        if (!trusted) return;
+        lastHere = here; lastAcc = coords.accuracy;
         if (inlineMap && inlineMap.ready) inlineMap.setPosition(here.lat, here.lon, false, meter.heading);
-        setGps(coords.accuracy <= 25 ? 'ok' : 'bad', Math.round(coords.accuracy));
         tripTotalM += disp; tripPartialM += disp;
-        RBGpxRecorder.feed(coords, here, fix.tnow);
         if (curLimit && curLimit > 0 && speedKmh > curLimit) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
         const an = notes[activeIdx];
         if (an) {
@@ -283,7 +287,11 @@
             // P_extra: armed on entering the 100 m radius; moving away again accumulates the overshoot
             if (dist <= C.MANUAL_RADIUS_M) armed = true;
             else if (armed) extraAccum += disp;
-            if (auto) autoAdvance(dist, here);
+            // Auto-validation on arrival: the gate is the driven SEGMENT (RB.noteReached), so a
+            // waypoint can't slip between two fixes. It can't cascade either — reach radii never
+            // overlap, so the next note's gate only opens once this one advances. The row-state
+            // update happens inside validateAt.
+            if (auto && RB.noteReached(an, fix.from, here, reachRadius(activeIdx))) validateAt(activeIdx, here);
         }
         // top odometer bar
         odoEls.total.textContent = (tripTotalM / 1000).toFixed(2);
@@ -294,28 +302,34 @@
         odoEls.brg.textContent = brg == null ? '—°' : pad(Math.round(brg), 3) + '°';
         const relBrg = brg == null ? 0 : (an ? ((brg - (meter.heading != null ? meter.heading : 0)) + 360) % 360 : 0);
         odoEls.arrow.style.setProperty('--cap-rotation', relBrg + 'deg');
-        updateCapBar(here);
+        refreshLive();
         saveSession();
     }
+    // The CAP bar rides directly on top of the action row, whose height depends on the mode
+    // (Competition adds Finish), on the viewport and on fullscreen — measure it instead of
+    // trusting a constant, or the bar clips the top of the buttons it sits on.
+    function sizeCapBar() {
+        const fab = document.querySelector('.fabrow');
+        const top = fab.getBoundingClientRect().top;
+        if (top > 0) document.body.style.setProperty('--capbar-bottom', Math.round(window.innerHeight - top) + 'px');
+    }
+    window.addEventListener('resize', sizeCapBar);
     function setGps(state, acc) { odoEls.gpsDot.className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); odoEls.gpsTxt.textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
     const reachRadius = (i) => RB.reachRadius(notes[i], notes[nextNav(i + 1)], rb && rb.meta);
-    // Auto-validation on arrival: the moment the current fix is within the active note's reach,
-    // the note is reached → validate against that fix. Immune to the cascade since reaches can't
-    // overlap (reachRadius caps to half the neighbour gap), so the next note's gate only opens
-    // once this one advances. The row-state update happens inside validateAt.
-    function autoAdvance(dist, here) {
-        if (dist <= reachRadius(activeIdx)) validateAt(activeIdx, here);
-    }
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
-    // reached = green · skipped (passed over, never reached) = pink · active = red border ·
-    // upcoming = white · ≤50 m to next = blue.
+    // Row states: reached = green · skipped (passed over, never reached) = pink · active = red
+    // border · upcoming = white. The active row additionally takes the LIVE GPS proximity state
+    // (near → arriving, painted by paintApproach); `tight` marks the distance cell of a note whose
+    // successor is under 50 m away — a property of the roadbook, not of where the driver is.
     const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
+    // live distances read in metres up close and in km further out — the co-pilot's own units
+    const fmtDist = (m) => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
     const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
     // Keep the just-completed note on screen when advancing (#177). Centring the active (next)
@@ -344,11 +358,11 @@
                 if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
                 if (i === activeIdx) cls.push('active');
             }
-            const close = !comment && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' close' : '';
+            const tight = !comment && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!comment && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach="${i}" title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const reach = (!comment && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
             const mapb = (!comment && showMap) ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
             const textClass = comment && !n.image ? ' col-text-wide' : '';
             if (comment) {
@@ -360,21 +374,25 @@
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
             }
             return `<div class="${cls.join(' ')}" data-i="${i}">
-                <div class="col-distance${close}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
+                <div class="col-distance${tight}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
                 <div class="col-buttons">${reach}${mapb}</div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');
-        $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); markReached(+b.dataset.reach); });
+        $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); advanceNote(); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
             if (c.classList.contains('comment')) return;
-            preview ? (showMap && toggleNoteMap(+c.dataset.i)) : tapNote(+c.dataset.i);
+            const i = +c.dataset.i;
+            if (preview) { if (showMap) toggleNoteMap(i); return; }
+            // The whole active row is the "done" target — aiming at a 42 px button on a moving
+            // vehicle is what made validation "scomoda" (#386) — and any other row asks first.
+            if (i === activeIdx) advanceNote(); else jumpToNote(i);
         });
         // only rescroll when the active note actually changed (not on every redraw)
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
-        updateCapBar();
+        refreshLive();
         saveSession();
     }
     // Advancing/validating only changes row STATE: update the classes and the reach button
@@ -388,20 +406,24 @@
             row.classList.toggle('done', reached.has(i));
             row.classList.toggle('skipped', !reached.has(i) && i < activeIdx);
             row.classList.toggle('active', i === activeIdx);
+            if (i !== activeIdx) { // the live proximity state belongs to the active note alone
+                row.classList.remove('near', 'arriving');
+                const togo = row.querySelector('.togo'); if (togo) togo.textContent = '';
+            }
         });
         list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
         if (!auto && notes[activeIdx] && notes[activeIdx].note_kind !== 'comment') {
             const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
             if (cell) {
                 const b = document.createElement('button');
-                b.className = 'note-button reach'; b.dataset.reach = activeIdx; b.title = t('Note reached');
+                b.className = 'note-button reach'; b.dataset.reach = ''; b.title = t('Note reached');
                 b.innerHTML = '<i class="fa-solid fa-check"></i>';
-                b.onclick = (e) => { e.stopPropagation(); markReached(activeIdx); };
+                b.onclick = (e) => { e.stopPropagation(); advanceNote(); };
                 cell.prepend(b);
             }
         }
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
-        updateCapBar();
+        refreshLive();
         saveSession();
     }
     // One interactive map at a time: zoom buttons + satellite/topo toggle (RBMap),
@@ -423,24 +445,50 @@
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
         if (inlineMapIdx >= 0) { const el = $('nmap' + inlineMapIdx); if (el) { el.hidden = true; el.innerHTML = ''; } inlineMapIdx = -1; }
     }
-    // Bottom CAP bar: heading to hold (prev note's CAP) · speed · live distance to
-    // destination · direction arrow. Appears only while a CAP is active.
-    function updateCapBar(here) {
-        const an = notes[activeIdx], prev = notes[prevNav(activeIdx - 1)];
-        if (!prev || prev.cap == null || !an) { capEls.bar.hidden = true; return; }
+    // Everything that depends on where we are RIGHT NOW: the active row's proximity state and the
+    // bottom CAP bar. Driven by every trusted fix, and again whenever the active note changes, so
+    // no readout is ever left describing the note before it (#387).
+    function refreshLive() {
+        const an = notes[activeIdx];
+        const dist = (an && lastHere) ? RB.geo.haversineM(lastHere, an) : null;
+        paintApproach(dist);
+        updateCapBar(dist);
+    }
+    // Live proximity on the active row: the roadbook stays paper, but the note you are driving to
+    // reacts as you close in — `near` inside the manual radius, `arriving` once inside the reach
+    // circle, where auto-validation fires — and carries its own distance-to-go.
+    function paintApproach(dist) {
+        const row = $('noteList').querySelector('.nrow.active');
+        if (!row) return;
+        const arriving = dist != null && dist <= reachRadius(activeIdx);
+        row.classList.toggle('arriving', arriving);
+        row.classList.toggle('near', !arriving && dist != null && dist <= C.MANUAL_RADIUS_M);
+        const togo = row.querySelector('.togo');
+        if (togo) togo.textContent = dist == null ? '' : fmtDist(dist);
+    }
+    // Bottom CAP bar: the heading to hold (the previous note's CAP — a CAP is the bearing to keep
+    // AFTER a waypoint), live speed, live distance to the active note, direction arrow. It stays up
+    // for the whole run: a bar that comes and goes is one the driver stops looking at, so with no
+    // CAP in force it reads —° and drops just the arrow.
+    function updateCapBar(dist) {
+        const an = notes[activeIdx];
+        if (!an || preview) { capEls.bar.hidden = true; return; }
+        const prev = notes[prevNav(activeIdx - 1)];
+        const cap = prev && prev.cap != null ? Math.round(prev.cap) : null;
         capEls.bar.hidden = false;
-        capEls.heading.textContent = Math.round(prev.cap) + '°';
+        capEls.heading.textContent = cap == null ? '—°' : cap + '°';
         capEls.speed.textContent = meter && meter.speedKmh ? Math.round(meter.speedKmh) + ' km/h' : '--';
-        if (here) {
-            const dist = RB.geo.haversineM(here, an);
-            capEls.dist.textContent = dist >= 1000 ? (dist / 1000).toFixed(2) + ' km' : Math.round(dist) + ' m';
-            const rel = ((prev.cap - (meter.heading != null ? meter.heading : 0)) + 360) % 360;
+        capEls.dist.textContent = dist == null ? '—' : fmtDist(dist);
+        capEls.arrow.hidden = cap == null;
+        if (cap != null) {
+            const rel = ((cap - (meter && meter.heading != null ? meter.heading : 0)) + 360) % 360;
             capEls.arrow.style.setProperty('--cap-rotation', (rel - 45) + 'deg'); // data-driven arrow direction
         }
+        capEls.bar.classList.toggle('arriving', dist != null && dist <= reachRadius(activeIdx));
     }
-    // "Note reached" button: advance sequentially and mark green (both modes).
+    // Trip mode's "note done": mark it green and move on. No scoring, no proximity gate — a
+    // trip is followed by eye, and the driver saying they are there is the whole authority.
     function markReached(i) {
-        if (competition) { tapNote(i); return; } // scored validation
         reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = nextNav(i + 1); updateNoteStates();
@@ -449,17 +497,43 @@
     // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
     const isScored = (i) => RB.isScoredIdx(scoredSet, i);
 
-    function tapNote(i) {
-        if (!competition) { activeIdx = i; tripPartialM = 0; updateNoteStates(); return; } // Trip mode: free navigation, no scoring
-        if (i < activeIdx) return;
-        // Manual tracking works with NO GPS at all; when a fix IS present, keep the
-        // 100 m proximity gate so a validation can't be faked far from the note.
-        const here = meter && meter.lastPos;
-        if (here && RB.geo.haversineM(here, notes[i]) > C.MANUAL_RADIUS_M) return toast(t('Too far from note') + ' ' + notes[i].num);
-        if (i > activeIdx) { // overshoot belonged to the skipped notes — only scored ones cost points
-            pen.skip += RB.skipPenalty(scoredSet, activeIdx, i); extraAccum = 0; armed = false;
+    // The competition proximity gate, asked BEFORE anything is charged or moved. Manual tracking
+    // works with NO GPS at all; when a fix IS present the gate stops a validation being faked far
+    // from the note — widened by that fix's own accuracy, so the phone's uncertainty is never
+    // charged to the driver — and the refusal states the real distance, so a "too far" can be
+    // understood in the field instead of just contradicting the driver (#385).
+    function tooFarFrom(i) {
+        if (!lastHere) return false;
+        const dist = RB.geo.haversineM(lastHere, notes[i]);
+        if (dist <= C.MANUAL_RADIUS_M + (lastAcc || 0)) return false;
+        toast(t('Too far from note') + ' ' + notes[i].num + ' · ' + fmtDist(dist));
+        return true;
+    }
+    const validateHere = (i) => { if (!tooFarFrom(i)) validateAt(i, lastHere); };
+    // Put the run on note i. A trip only moves its cursor; in competition, arriving at a later
+    // note means validating it there and paying the skip penalty for every scored note jumped
+    // over (the overshoot belonged to those, so P_extra resets with them). The gate is asked
+    // FIRST: a refused validation must leave the run exactly as it was, penalty included.
+    function setActiveNote(i) {
+        if (!competition) { activeIdx = i; tripPartialM = 0; updateNoteStates(); return; }
+        if (tooFarFrom(i)) return;
+        pen.skip += RB.skipPenalty(scoredSet, activeIdx, i); extraAccum = 0; armed = false;
+        validateAt(i, lastHere);
+    }
+    // Moving the cursor by TAPPING the roadbook is an explicit act, never the outcome of a mis-tap
+    // aimed at the note-done button: it leaves the notes in between unvalidated and, in competition,
+    // costs 450 pts each — so it names the note and states the price first (#386). A remote's Back
+    // press needs no confirm: a dedicated device pressed on purpose is already the confirmation.
+    async function jumpToNote(i) {
+        const n = notes[i];
+        if (competition && i < activeIdx) return toast('A validated note cannot be changed in competition mode.');
+        let msg = t('Jump to note') + ' ' + n.num + (n.text ? ' — ' + esc(n.text) : '') + '?';
+        if (i > activeIdx) {
+            msg += '<br>' + t('The notes in between will be left unvalidated.');
+            const pts = competition ? RB.skipPenalty(scoredSet, activeIdx, i) : 0;
+            if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
         }
-        validateAt(i, here || null);
+        if (await RBConfirm(msg, t('Jump'))) setActiveNote(i);
     }
     function validateAt(i, here) {
         const n = notes[i], now = new Date();
@@ -481,10 +555,10 @@
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
     // What "advance" means here: validate in competition, mark reached in trip. The Validate /
-    // Note done button and the remote's next command run this same action.
+    // Note done button, a tap on the active row and the remote's next command run this same action.
     function advanceNote() {
         if (activeIdx >= notes.length) return;
-        if (competition) tapNote(activeIdx); else markReached(activeIdx);
+        if (competition) validateHere(activeIdx); else markReached(activeIdx);
     }
     $('validateBtn').onclick = advanceNote;
 
@@ -503,7 +577,7 @@
     function stepBackNote() {
         if (competition) return;
         const back = prevNav(activeIdx - 1);
-        if (back >= 0) tapNote(back);
+        if (back >= 0) setActiveNote(back);
     }
     // Called whenever navigation (re)starts or the switch flips — start.Nav can run twice in one page
     // life, and attaching twice would advance twice per press.

@@ -69,7 +69,7 @@ Dann wählst du den **Modus**:
 
 1. **Odometer-Leiste** (sticky oben): Titel, Gesamt, Teil, CAP-Kompass, Uhrzeit, GPS-Status, Akku
 2. **Notiz-Tabelle**: jede Note in einer Zeile mit Distanz, Tulpen-Vignette, Text, CAP, Straßentyp
-3. **Notiz-Zustände**: ✅ Raggiunta (erreicht, grün) · ⏭ Saltata (übersprungen, rosa) · ▶ Attiva (aktiv, roter Rand) · weiß (zukünftig)
+3. **Notiz-Zustände**: ✅ Raggiunta (erreicht, grün) · ⏭ Saltata (übersprungen, rosa) · ▶ Attiva (aktiv, roter Rand) · weiß (zukünftig). Die aktive Note wird zudem **blau, während du dich näherst**, und zeigt die verbleibenden Meter
 4. **Spalten**: Distanzen + Nummer | Vignette | Indicazioni | Buttons (Karte, erreicht)
 
 ---
@@ -77,18 +77,20 @@ Dann wählst du den **Modus**:
 ## 4. Fortschritt: automatisch vs. manuell
 
 ### Automatisch (Standard)
-Sobald das GPS in den **Validierungsradius** der aktiven Note eintritt, wird die Note automatisch als erreicht markiert.
+Sobald du in den **Validierungsradius** der aktiven Note fährst, wird die Note automatisch als erreicht markiert.
 
-- Der Radius ist adaptiv: hängt vom `wp_radius` der Note ab, mit einem Maximum, das Überlappungen vermeidet
-- Funktioniert unabhängig von der Geschwindigkeit
+- Der Radius ist adaptiv: hängt vom `wp_radius` der Note ab, mit einem Maximum, das Überlappungen vermeidet, und einem Minimum oberhalb des GPS-Rauschens (18 m)
+- Geprüft wird der **zwischen zwei GPS-Positionen gefahrene Weg**, nicht nur die Positionen selbst: bei Tempo bewegt sich das Telefon 25 m zwischen zwei Fixes, ein enger Wegpunkt läge sonst genau dazwischen und würde nie validieren
+- Eine Position, bei der sich das Telefon unsicher ist (schlechte Genauigkeit), wird ignoriert statt verwendet — sie validiert keine Note und zählt keine Kilometer
 - Ein/Aus schalten mit dem Schalter **Auto** in der Leiste
 
 ### Manuell
-Tap auf die aktive Note oder den Button „Raggiunta" zum Validieren.
+Tippe **irgendwo auf die Zeile der aktiven Note**, oder auf „Raggiunta", oder auf Validieren — alle drei tun dasselbe (die ganze Zeile ist das Ziel, damit du unterwegs keinen kleinen Button treffen musst).
 
 - Im Trip: markiert grün und synchronisiert den Odometer
-- In Competition: validiert mit Punktestand (GPS innerhalb 100 m erforderlich)
-- Rückwärts validieren ist nicht möglich
+- In Competition: validiert mit Punktestand (du musst innerhalb von 100 m zur Note sein, plus dem Spielraum, den die Genauigkeit deines GPS braucht)
+- Ein Tap auf eine **andere** Note setzt den Lauf dorthin und fragt vorher nach: die Noten dazwischen bleiben unbestätigt, und in Competition kostet jede übersprungene gewertete Note 450 Punkte
+- In Competition kann man nicht zu einer bereits validierten Note zurück
 
 ### Freihändig mit einer externen Fernbedienung
 Aktiviere **Externe Fernbedienung (Pedal / Clicker)** in der Modusauswahl, um ohne Bildschirmberührung weiterzuschalten.
