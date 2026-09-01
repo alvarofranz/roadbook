@@ -69,7 +69,7 @@ Luego eliges la **modalidad**:
 
 1. **Barra odómetro** (sticky arriba): título, total, parcial, brújula CAP, hora, estado GPS, batería
 2. **Tabla de notas**: cada nota en una fila con distancia, viñeta tulip, texto, CAP, tipo de carretera
-3. **Estados de nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (borde rojo) · blanco (futura)
+3. **Estados de nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (borde rojo) · blanco (futura). La nota activa además se pone **azul a medida que te acercas**, y muestra los metros que faltan
 4. **Columnas**: Distancias + número | Viñeta | Indicaciones | Botones (mapa, raggiunta)
 
 ---
@@ -77,18 +77,20 @@ Luego eliges la **modalidad**:
 ## 4. Avance: automático vs manual
 
 ### Automático (por defecto)
-En cuanto el GPS entra en el **radio de validación** de la nota activa, la nota se marca como alcanzada automáticamente.
+En cuanto entras en el **radio de validación** de la nota activa, la nota se marca como alcanzada automáticamente.
 
-- El radio es adaptativo: depende del `wp_radius` de la nota, con un máximo que evita solapamientos
-- Funciona independientemente de la velocidad
+- El radio es adaptativo: depende del `wp_radius` de la nota, con un máximo que evita solapamientos y un mínimo por encima del ruido del GPS (18 m)
+- Lo que se comprueba es el **trayecto recorrido entre dos posiciones GPS**, no solo las posiciones: a velocidad el móvil avanza 25 m entre una y otra, así que un waypoint estrecho cabría justo en medio y nunca se validaría
+- Una posición de la que el móvil no está seguro (mala precisión) se ignora en vez de usarse: ni valida una nota ni suma kilómetros al odómetro
 - Activa/desactiva con el interruptor **Auto** en la barra
 
 ### Manual
-Tap sobre la nota activa o en el botón "Raggiunta" para convalidar.
+Toca **cualquier punto de la fila de la nota activa**, o el botón "Raggiunta", o el botón Validar: los tres hacen lo mismo (toda la fila es el objetivo, para no tener que acertar en un botón pequeño en movimiento).
 
 - En Trip: marca en verde y sincroniza el odómetro
-- En Competition: valida con puntuación (requiere GPS dentro de 100 m)
-- No se puede validar hacia atrás
+- En Competition: valida con puntuación (hay que estar a menos de 100 m de la nota, más el margen que necesite la precisión de tu GPS)
+- Tocar **otra** nota mueve el recorrido hasta ella y pide confirmación antes: las notas intermedias quedan sin validar, y en Competition cada nota puntuable saltada cuesta 450 puntos
+- En Competition no se puede volver a una nota ya validada
 
 ### Manos libres con un mando externo
 Marca **Mando externo (pedal / clicker)** en el selector de modo para avanzar sin tocar la pantalla.

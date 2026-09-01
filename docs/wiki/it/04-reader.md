@@ -69,7 +69,7 @@ Poi scegli la **modalità**:
 
 1. **Barra odometro** (sticky in alto): titolo, totale, parziale, bussola CAP, ora, stato GPS, batteria
 2. **Tabella note**: ogni nota su una riga con distanza, vignetta tulip, testo, CAP, tipo strada
-3. **Stati nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (bordo rosso) · bianco (futura)
+3. **Stati nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (bordo rosso) · bianco (futura). La nota attiva diventa inoltre **azzurra man mano che ti avvicini**, e mostra i metri che mancano
 4. **Colonne**: Distanze + numero | Vignetta | Indicazioni | Pulsanti (mappa, raggiunta)
 
 ---
@@ -77,18 +77,20 @@ Poi scegli la **modalità**:
 ## 4. Avanzamento: automatico vs manuale
 
 ### Automatico (default)
-Appena il GPS entra nel **raggio di validazione** della nota attiva, la nota viene segnata come raggiunta automaticamente.
+Appena entri nel **raggio di validazione** della nota attiva, la nota viene segnata come raggiunta automaticamente.
 
-- Il raggio è adattivo: dipende dal `wp_radius` della nota, con un massimo che evita sovrapposizioni
-- Funziona indipendentemente dalla velocità
+- Il raggio è adattivo: dipende dal `wp_radius` della nota, con un massimo che evita sovrapposizioni e un minimo sopra il rumore GPS (18 m)
+- A essere verificato è il **percorso fatto fra due posizioni GPS**, non solo le posizioni: in velocità il telefono avanza 25 m fra una e l'altra, quindi un waypoint stretto starebbe proprio in mezzo e non si convaliderebbe mai
+- Una posizione di cui il telefono non è sicuro (accuratezza scarsa) viene ignorata invece che usata: non convalida una nota e non aggiunge chilometri all'odometro
 - Attiva/disattiva con l'interruttore **Auto** nella barra
 
 ### Manuale
-Tap sulla nota attiva o sul pulsante "Raggiunta" per convalidare.
+Tap **su qualsiasi punto della riga della nota attiva**, oppure sul pulsante "Raggiunta", oppure sul pulsante Convalida: fanno tutti la stessa cosa (il bersaglio è tutta la riga, così non devi centrare un pulsantino in movimento).
 
 - In Trip: marca verde e sincronizza l'odometro
-- In Competition: valida con punteggio (serve GPS entro 100 m)
-- Non si può validare all'indietro
+- In Competition: valida con punteggio (devi essere entro 100 m dalla nota, più il margine richiesto dall'accuratezza del tuo GPS)
+- Il tap su **un'altra** nota sposta lì la corsa e chiede conferma prima: le note intermedie restano non convalidate e in Competition ogni nota valutata saltata costa 450 punti
+- In Competition non si può tornare a una nota già convalidata
 
 ### A mani libere con un telecomando esterno
 Spunta **Telecomando esterno (pedale / clicker)** nel selettore di modalità per avanzare senza toccare lo schermo.

@@ -43,7 +43,7 @@ volta passando due callback; da lì in poi emette un oggetto pulito a ogni posiz
 const meter = new RBGpsMeter(onFix, onError);
 ```
 
-- `onFix({ here, coords, disp, speedKmh, heading, tnow })` — chiamata a ogni fix.
+- `onFix({ here, coords, disp, from, trusted, speedKmh, heading, tnow })` — chiamata a ogni fix.
 - `onError()` — chiamata **una volta** se il GPS è assente o negato.
 
 ### Il modello del fix
@@ -52,20 +52,41 @@ L'oggetto passato a `onFix` ([gps-meter.js:52](../public/assets/js/gps-meter.js#
 
 | Campo | Tipo | Significato |
 |-------|------|-------------|
-| `here` | `{lat, lon}` | la posizione corrente |
+| `here` | `{lat, lon}` | la posizione di **questo** fix, grezza (per il readout di accuratezza e il logger GPX, che filtra da sé) |
+| `trusted` | bool | il fix è abbastanza accurato da agire: chi decide in base alla posizione deve ignorare tutto il resto |
 | `coords` | `GeolocationCoordinates` | il fix grezzo (`accuracy`, `altitude`, `speed`, `heading`…) |
-| `disp` | metri | spostamento "da odometro" dall'ultimo punto **contato** (vedi sotto) |
+| `disp` | metri | metri da sommare a un odometro: terreno **realmente percorso**, 0 se il passo non è movimento reale |
+| `from` | `{lat, lon}` \| `null` | la posizione affidabile precedente quando questo fix la **continua**: il segmento percorso, per chi deve sapere cosa ha attraversato fra due fix |
 | `speedKmh` | km/h | velocità, dal GPS o derivata (vedi sotto) |
 | `heading` | gradi \| `null` | direzione del dispositivo, quando disponibile |
 | `tnow` | ms | `Date.now()` del fix |
 
-### Lo spostamento `disp` (gate anti-rumore)
+Il meter espone anche `meter.pos` / `meter.accuracy`: l'ultima posizione **affidabile** e la sua
+accuratezza.
 
-`disp` non è la distanza grezza tra due fix: è **0** finché lo spostamento non supera
-`RB.CONST.MIN_DISP_M` (5 m, [roadbook-core.js:49](../public/assets/js/roadbook-core.js#L49)).
-Solo quando lo supera, `disp` vale quella distanza e `lastPos` avanza
-([gps-meter.js:41-44](../public/assets/js/gps-meter.js#L41)). Questo dà un odometro che non
-"striscia" da fermo per via del jitter GPS: chi somma `disp` ottiene una distanza pulita.
+### Il giudizio del fix (`RB.odometerStep`) — #383
+
+Lo stream di posizioni di un telefono non è una traiettoria: alterna fix usabili a fix
+cella/wifi centinaia di metri fuori, a una posizione in cache di dov'era il telefono prima, e —
+da fermo — a un vagare largo quanto il cerchio d'errore. Sommare quello stream grezzo è ciò che
+ha messo **57 km sull'odometro dopo 3 km** di guida (segnalato dal campo su un Oppo A54S).
+
+Il gate è una funzione **pura** nel core (`RB.odometerStep(anchor, fix)`, unit-testata in
+[tests/gps-intake.test.js](../tests/gps-intake.test.js)); `RBGpsMeter` è il suo unico chiamante.
+Ogni fix è giudicato contro l'ultima posizione di cui ci siamo fidati (`anchor` = posizione +
+istante del suo fix):
+
+| Verdetto | Quando | Effetto |
+|----------|--------|---------|
+| `first` | non c'è ancora un'ancora | 0 m, si ancora qui |
+| `junk` | `accuracy > CONST.FIX_ACC_MAX_M` (35 m) | scartato, e **l'ancora resta**: il terreno coperto nel frattempo viene contato quando torna un fix buono |
+| `noise` | il passo sta dentro l'incertezza del fix (`max(MIN_DISP_M, accuracy)`) | 0 m, ancora ferma — un movimento reale ma lento non si perde, si accumula finché supera la soglia |
+| `teleport` | il passo implica una velocità che nessun veicolo tiene (`CONST.MAX_SPEED_MS`, 70 m/s) | 0 m, ma l'ancora **si sposta** lì: altrimenti un solo fix in cache (da un'altra città) congelerebbe l'odometro per tutta la corsa |
+| `ok` | tutto il resto | contato |
+
+Da qui derivano i tre campi che contano per chi consuma: `disp` (solo `ok` lo alimenta),
+`trusted` (tutto tranne `junk`) e `from` (valorizzato su `ok` e `noise` — un teleport non è un
+percorso, un fix spazzatura non è nemmeno una posizione).
 
 ### La velocità `speedKmh` (con fallback)
 

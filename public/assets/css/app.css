@@ -383,14 +383,17 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
 .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
-.nrow .col-distance.close { background: #bfe3ff; } /* light blue: < 50 m to the next note */
+/* live distance still to run to the ACTIVE note — written by the Reader, empty on every other row */
+.nrow .col-distance .togo { font-weight: 800; color: #1b6bb5; font-variant-numeric: tabular-nums; }
+.nrow .col-distance.tight { background: #dbe7f2; } /* the next note is under 50 m ahead: a tight pair */
 .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
 .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }
 /* phones: give the tulip more room (it's the thing you read while driving) */
 @media (max-width: 600px) {
-    .nrow { grid-template-columns: 64px minmax(150px, 44vw) 1fr 44px; }
+    .nrow { grid-template-columns: 64px minmax(150px, 44vw) 1fr 54px; }
     .nrow.readonly { grid-template-columns: 64px minmax(150px, 44vw) 1fr; }
     .nrow .col-vignette svg { max-height: 170px; }
+    .nrow .col-buttons { padding-left: .15rem; padding-right: .15rem; } /* the column is the button's, not padding's */
 }
 .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
 .nrow .col-text .text { flex: 1; word-break: break-word; }
@@ -400,11 +403,17 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-text .note-speed .lim.lifted { border-color: #777; color: #777; }
 .nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
 .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
-.nrow .col-buttons .note-button { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
-.nrow .col-buttons .note-button.reach { background: #2ecc71; color: #fff; border-color: #27ae60; }
+.nrow .col-buttons .note-button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
+/* the note-done button is what you aim for on a moving vehicle: taller than the rest, and the
+   whole active row validates too, so a missed tap still does the right thing (#386) */
+.nrow .col-buttons .note-button.reach { height: 58px; font-size: 1.35rem; background: #2ecc71; color: #fff; border-color: #27ae60; }
 .nrow.done { background: #d6f5e0; }     /* light green: reached */
 .nrow.skipped { background: #ffe1ec; }  /* pink: passed over without being reached */
 .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
+/* live GPS proximity to the active note (Reader): closing in · inside the validation radius */
+.nrow.near { background: #eaf3ff; }
+.nrow.arriving { background: #bfe3ff; }
+.nrow.arriving .col-distance .togo { color: #0b4d8c; }
 /* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
 .vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
 .gallery-card .gallery-body { padding: .9rem 1rem; }

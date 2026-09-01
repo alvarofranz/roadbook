@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.7.0-20">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.7.1-21">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.7.0-20">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.7.1-21">
     <style>
         /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
         .odometer-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
@@ -30,9 +30,12 @@
         /* bearing indicator: the shared .cap-arrow rotation (0° = up = straight ahead), accented */
         .odometer-bar .cap-arrow { color: var(--sand); }
         .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
-        /* bottom CAP bar */
-        .capbar { position: fixed; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+        /* bottom CAP bar: CAP to hold · speed · distance to the active note · direction arrow.
+           Up for the whole run — a bar that comes and goes is one the driver stops looking at. */
+        .capbar { position: fixed; bottom: var(--capbar-bottom, calc(62px + env(safe-area-inset-bottom))); left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
         .capbar .cap-arrow { font-size: 1.4rem; --cap-rotation: -45deg; } /* the location-arrow glyph points NE, hence the -45° rest */
+        /* inside the active note's validation radius — the same blue the note row turns */
+        .capbar.arriving { border-top-color: #3aa6ff; color: #8ccdff; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
         .mode-grid { margin-top: 1rem; grid-template-columns: 1fr 1fr; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
@@ -43,10 +46,12 @@
            meaning and the freed width keeps all buttons on one overflow-free row (#250) */
         @media (max-width: 480px) { #autoBtn > i, #validateBtn > i, #finishBtn > i { display: none; } }
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
-           (done/skipped/active/close) are toggled by reader.js */
+           (done/skipped/active + the live near/arriving) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
         /* larger per-note readouts: partial km just under the total, coordinates legible */
         #noteList .col-distance .partial { font-size: 1.6rem; }
+        /* distance still to run to the active note, live from the GPS */
+        #noteList .col-distance .togo { font-size: 1.5rem; }
         /* the note number and its FIA waypoint-type badge sit side by side at the bottom of the column */
         #noteList .col-distance .num-row { margin-top: auto; display: flex; align-items: center; gap: .4rem; }
         #noteList .col-distance .num-row .num { margin-top: 0; align-self: center; }
@@ -196,23 +201,23 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.7.0-20"></script>
-<script src="../assets/js/roadbook-core.js?v=1.7.0-20"></script>
-<script src="../assets/js/rbzip.js?v=1.7.0-20"></script>
-<script src="../assets/js/rbmap.js?v=1.7.0-20"></script>
-<script src="../assets/js/gps-meter.js?v=1.7.0-20"></script>
-<script src="../assets/js/status-bar.js?v=1.7.0-20"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.7.0-20"></script>
-<script src="../assets/js/rb-remote.js?v=1.7.0-20"></script>
-<script src="../assets/js/note-canvas.js?v=1.7.0-20"></script>
-<script src="../assets/js/qrcode.min.js?v=1.7.0-20"></script>
-<script src="../assets/js/challenges.js?v=1.7.0-20"></script>
-<script src="../assets/js/i18n.es.js?v=1.7.0-20"></script>
-<script src="../assets/js/i18n.it.js?v=1.7.0-20"></script>
-<script src="../assets/js/i18n.de.js?v=1.7.0-20"></script>
-<script src="../assets/js/i18n.fr.js?v=1.7.0-20"></script>
-<script src="../assets/js/i18n.js?v=1.7.0-20"></script>
-<script src="../assets/js/app.js?v=1.7.0-20"></script>
-<script src="reader.js?v=1.7.0-20"></script>
+<script src="../assets/js/config.js?v=1.7.1-21"></script>
+<script src="../assets/js/roadbook-core.js?v=1.7.1-21"></script>
+<script src="../assets/js/rbzip.js?v=1.7.1-21"></script>
+<script src="../assets/js/rbmap.js?v=1.7.1-21"></script>
+<script src="../assets/js/gps-meter.js?v=1.7.1-21"></script>
+<script src="../assets/js/status-bar.js?v=1.7.1-21"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.7.1-21"></script>
+<script src="../assets/js/rb-remote.js?v=1.7.1-21"></script>
+<script src="../assets/js/note-canvas.js?v=1.7.1-21"></script>
+<script src="../assets/js/qrcode.min.js?v=1.7.1-21"></script>
+<script src="../assets/js/challenges.js?v=1.7.1-21"></script>
+<script src="../assets/js/i18n.es.js?v=1.7.1-21"></script>
+<script src="../assets/js/i18n.it.js?v=1.7.1-21"></script>
+<script src="../assets/js/i18n.de.js?v=1.7.1-21"></script>
+<script src="../assets/js/i18n.fr.js?v=1.7.1-21"></script>
+<script src="../assets/js/i18n.js?v=1.7.1-21"></script>
+<script src="../assets/js/app.js?v=1.7.1-21"></script>
+<script src="reader.js?v=1.7.1-21"></script>
 </body>
 </html>
