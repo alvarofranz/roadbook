@@ -227,19 +227,8 @@
     function renderQr(url) {
         var c = $('evQrCode');
         try {
-            var qr = new qrcode(0, 'M');
-            qr.addData(url); qr.make();
             c.hidden = false; c.width = 140; c.height = 140;
-            var ctx = c.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 140, 140);
-            var cellSize = Math.floor(140 / qr.getModuleCount());
-            var offset = Math.floor((140 - cellSize * qr.getModuleCount()) / 2);
-            ctx.fillStyle = '#000000';
-            for (var row = 0; row < qr.getModuleCount(); row++) {
-                for (var col = 0; col < qr.getModuleCount(); col++) {
-                    if (qr.isDark(row, col)) ctx.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
-                }
-            }
+            RBQr.draw(c, url);
         } catch (e) { c.hidden = true; }
     }
     $('evLinkCopy').onclick = async () => {

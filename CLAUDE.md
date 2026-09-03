@@ -512,6 +512,11 @@ Operational notes:
   gated off on iOS/iPadOS (`RBIsIOS()`, app.js) since WebKit can't run the model (#340).
 - `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
   auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
+- `rb-qr.js` (`RBQr`) — every QR in the product, drawn on a canvas: `draw(canvas, payload)`
+  (the event activation code, on screen) · `dataURL(payload, size)` → a **PNG** data URI (the
+  Reader's signed result — the vendor library only emits GIF, and a GIF under a `.png` name is
+  rejected by the OS pickers the app hands files to, #392). Loaded next to `qrcode.min.js` on
+  the pages that show a QR; the vendor global is read at call time, so it is unit-testable.
 - `i18n-edit.js` (`#118`, admin-only) — in-context UI translation editor. `app.js` loads it
   ONLY for admins; dormant until edit mode is toggled on (the floating language chip). In edit
   mode every translatable label (`data-i18n*`) is editable in place — the bottom bar edits all of

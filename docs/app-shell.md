@@ -287,8 +287,11 @@ Carica **una clip audio** (una nota vocale) su `upload.php` come campo `audio` �
 downscaler immagini. Usato dal *WP audio* del Recorder e dalla registrazione dell'Editor.
 
 #### `RBDownload(data, filename)`
-([app.js:263](../public/assets/js/app.js#L263)) — Scarica un Blob **o** una URL stringa creando un
-`<a download>` e cliccandolo.
+([app.js:263](../public/assets/js/app.js#L263)) — Scarica un Blob **o** una URL stringa. Nel browser
+crea un `<a download>` e lo clicca; **nell'app** `<a download>` è ignorato dalla WebView, quindi il
+file passa da `RBNative.downloadFile`, che risponde con la cartella in cui è finito e da lì il toast
+("Saved to your Pictures/Downloads folder"). Il `contentType` del blob viaggia col file ed è quello
+che sceglie la cartella su Android — vedi `native/src/save-target.js` (#392).
 
 ### Immagini
 
