@@ -92,7 +92,7 @@
             'Position': 'Posizione',
             'help.image': 'Un’immagine opzionale per questa riga commento. Viene incorporata nel roadbook e mostrata nel Reader e nel PDF.',
             'help.wpType': 'Il tipo di waypoint FIA. Definisce l’icona sulla mappa e, in un roadbook rally, come il waypoint viene validato e punteggiato.',
-            'help.radius': 'Raggio di validazione in metri: il geofence per il rilevamento automatico del passaggio. Se vuoto, ricade sul valore predefinito del roadbook e poi su quello del tipo (mostrato come segnaposto).',
+            'help.radius': 'Raggio di validazione in metri: il geofence per il rilevamento automatico del passaggio. Se vuoto, ricade sul valore predefinito del roadbook, poi su quello del tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) e infine sui 30 m di sistema. Il segnaposto mostra quale valore viene applicato.',
             'help.visibility': 'Bozza tiene il roadbook privato mentre ci lavori. Pronto lo segna come finito ma resta privato. Pubblico lo elenca sul sito così chiunque può leggerlo o esportare un PDF, ma solo tu puoi scaricare il .rdbk.',
             'help.description': 'Mostrata sulla pagina pubblica del roadbook: un breve riassunto del percorso o dell’evento.',
             'help.author': 'Il nome dell’autore, incorporato nel roadbook e mostrato ai lettori.',

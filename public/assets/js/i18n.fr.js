@@ -92,7 +92,7 @@
             'Position': 'Position',
             'help.image': 'Une image facultative pour cette ligne commentaire. Elle est intégrée au roadbook et affichée dans le Reader et le PDF.',
             'help.wpType': 'Le type de waypoint FIA. Il définit l’icône sur la carte et, dans un roadbook rallye, comment le waypoint est validé et noté.',
-            'help.radius': 'Rayon de validation en mètres — la géo-clôture pour la détection automatique de passage. Vide, il revient au défaut du roadbook, puis au défaut du type (affiché comme indicateur).',
+            'help.radius': 'Rayon de validation en mètres — la géo-clôture pour la détection automatique de passage. Vide, il revient au défaut du roadbook, puis au défaut du type (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m), puis aux 30 m du système. L’indicateur affiche la valeur appliquée.',
             'help.visibility': 'Brouillon garde le roadbook privé pendant que vous y travaillez. Prêt le marque comme terminé mais toujours privé. Public le liste sur le site afin que chacun puisse le lire ou exporter un PDF — mais vous seul pouvez télécharger le .rdbk.',
             'help.description': 'Affichée sur la page publique du roadbook — un bref résumé de l’itinéraire ou de l’événement.',
             'help.author': 'Le nom de l’auteur, intégré au roadbook et montré aux lecteurs.',
