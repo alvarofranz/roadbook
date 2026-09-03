@@ -6,16 +6,16 @@
  * active one. */
 (function () {
 // The three base styles the built-in layer toggle cycles through:
-// satellite (ESRI World Imagery), topo (CyclOSM), OSM (OpenFreeMap standard).
+// satellite (ESRI World Imagery), topo (OpenStreetMap standard), OSM (OpenFreeMap standard).
 // Override via RB_CONFIG.styleSatellite / styleTopo / styleOsm for licensed
 // providers. A style can be a URL string OR a spec object; MapLibre accepts both,
 // so the identity-based check still holds.
 const RASTER_TOPO = {
     version: 8,
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-    sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 20,
-        tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', 'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'],
-        attribution: '© OpenStreetMap · CyclOSM' } },
+    sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 19,
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        attribution: '© OpenStreetMap' } },
     layers: [{ id: 'cyclosm', type: 'raster', source: 'cyclosm' }],
 };
 const RASTER_SATELLITE = {

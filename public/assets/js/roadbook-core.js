@@ -1137,6 +1137,13 @@
     }
 
     /* ---------------- export ---------------- */
+    // Shareable event join link (#349): inside the native app location.origin is the
+    // WebView-local host (capacitor://localhost), so links use the public web root there.
+    function eventLink(code) {
+        const native = typeof window !== 'undefined' && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        const root = native ? 'https://rdbk.app' : (typeof location !== 'undefined' ? location.origin : 'https://rdbk.app');
+        return root + '/go/' + code;
+    }
     const RB = {
         ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached,
         geo: { haversineM, bearingDeg, destPoint },
@@ -1148,8 +1155,9 @@
         roadbookForExport, isComment,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, recStepM, odometerStep,
+        eventLink,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
-    if (typeof window !== 'undefined') window.RB = RB;
+    if (typeof window !== 'undefined') { window.RB = RB; window.RBEventLink = eventLink; }
     if (typeof module !== 'undefined' && module.exports) module.exports = RB;
 })();

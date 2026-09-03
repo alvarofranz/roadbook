@@ -313,12 +313,14 @@
         const center = hasCoords ? [ev.hq_lon, ev.hq_lat] : [12.5, 43.7];
         hqMap = new RBMap('evHqMap', { zoom: hasCoords ? 10 : 5, center,
             style: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-                sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 20,
-                    tiles: ['https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-                        'https://b.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-                        'https://c.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'] } },
+                sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19,
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'] } },
                 layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
         if (!hqMap.map) return;
+        hqMap.map.on('error', (e) => { // surface tile/style failures in-page (once) instead of a silent black box
+            if (hqMap._errShown) return; hqMap._errShown = true;
+            toast('Map error: ' + ((e && e.error && e.error.message) || 'failed to load tiles'));
+        });
         hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
         if (hasCoords) { setHqPin(ev.hq_lat, ev.hq_lon); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         else if ('geolocation' in navigator) {

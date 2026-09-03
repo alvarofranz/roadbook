@@ -1,16 +1,16 @@
 'use strict';
-/* RBCoverMap — a roadbook's cover image: the route polyline drawn over CyclOSM raster tiles,
+/* RBCoverMap — a roadbook's cover image: the route polyline drawn over OpenStreetMap raster tiles,
  * composited on a <canvas> and returned as a PNG Blob. No MapLibre/WebGL and no waypoint markers
  * (just the route over the map). Generated at save time and stored as the roadbook's fixed cover.
  * Tiles are CORS-enabled (Access-Control-Allow-Origin: *), so the canvas stays exportable. */
 (function () {
-    const TILE = 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png'; // same source as the app maps
+    const TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // same source as the app maps
 
     // Web-Mercator world fraction [0..1] of a coordinate (the tiles' projection).
     const project = (lat, lon) => { const s = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360, 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)]; };
     const loadImg = (url) => new Promise((res) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; });
 
-    // Render the route of `track` (array of {lat,lon}) as a PNG Blob sized W×H, framed over CyclOSM
+    // Render the route of `track` (array of {lat,lon}) as a PNG Blob sized W×H, framed over OSM
     // tiles. Resolves null for a missing / degenerate (single-spot) track or if export is blocked.
     async function capture(track, opts) {
         opts = opts || {};
@@ -55,8 +55,8 @@
         dot(pts[0], '#3ddc84'); dot(pts[pts.length - 1], '#ff5a45'); // start / finish
 
         ctx.font = '600 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.strokeText('© OpenStreetMap, CyclOSM', W - 10, H - 8);
-        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillText('© OpenStreetMap, CyclOSM', W - 10, H - 8);
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.strokeText('© OpenStreetMap', W - 10, H - 8);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillText('© OpenStreetMap', W - 10, H - 8);
 
         try { return await new Promise((res) => canvas.toBlob((b) => res(b), 'image/png')); }
         catch (e) { return null; } // a tainted canvas would throw — shouldn't happen with CORS tiles
