@@ -98,7 +98,7 @@
             'help.author': 'El nombre del autor, incrustado en el roadbook y mostrado a los lectores.',
             'help.org': 'El club u organización del evento, incrustado en el roadbook y mostrado a los lectores.',
             'help.profile': 'Básico (aventura) ofrece un conjunto sencillo de waypoints; Rally (FIA) añade todos los tipos de waypoint FIA, que determinan la puntuación.',
-            'help.defRadius': 'Un radio de validación aplicado solo a las notas donde no has fijado uno. Si se deja vacío, cada waypoint recurre al valor por defecto de su tipo.',
+            'help.defRadius': 'Un radio de validación aplicado solo a las notas donde no has fijado uno. Si se deja vacío, cada waypoint recurre al valor por defecto de su tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y luego a los 30 m del sistema.',
             'help.mapAccess': 'Si está activo, el Lector puede mostrar el mapa. Desactívalo para que los lectores naveguen solo con las notas del roadbook.',
             'help.route': 'Invertir cambia el sentido de marcha: la traza, el orden de las notas y todos los rumbos se recalculan.',
             'Copy link': 'Copiar enlace', 'Link copied': 'Enlace copiado', 'Could not copy the link.': 'No se pudo copiar el enlace.',

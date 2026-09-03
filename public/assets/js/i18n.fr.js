@@ -98,7 +98,7 @@
             'help.author': 'Le nom de l’auteur, intégré au roadbook et montré aux lecteurs.',
             'help.org': 'Le club ou l’événement organisateur, intégré au roadbook et montré aux lecteurs.',
             'help.profile': 'Basique (aventure) propose un jeu de waypoints simple ; Rallye (FIA) ajoute tous les types de waypoints FIA, qui déterminent la notation.',
-            'help.defRadius': 'Un rayon de validation appliqué uniquement aux notes où vous n’en avez pas défini un. Vide, chaque waypoint revient au défaut de son type.',
+            'help.defRadius': 'Un rayon de validation appliqué uniquement aux notes où vous n’en avez pas défini un. Vide, chaque waypoint revient au défaut de son type (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m), puis aux 30 m du système.',
             'help.mapAccess': 'Quand activé, le Reader peut afficher la carte. Désactivez pour que les lecteurs naviguent uniquement avec les notes du roadbook.',
             'help.route': 'Inverser change le sens de marche — la trace, l’ordre des notes et tous les caps sont recalculés.',
             'Copy link': 'Copier le lien', 'Link copied': 'Lien copié', 'Could not copy the link.': 'Impossible de copier le lien.',
