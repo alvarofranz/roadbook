@@ -92,7 +92,7 @@
             'Position': 'Position',
             'help.image': 'Ein optionales Bild für diese Kommentarzeile. Es wird ins Roadbook eingebettet und im Reader und PDF angezeigt.',
             'help.wpType': 'Der FIA-Waypoint-Typ. Legt das Kartensymbol fest und – in einem Rally-Roadbook – wie der Waypoint validiert und gewertet wird.',
-            'help.radius': 'Validierungsradius in Metern – der Geofence für die automatische Durchfahrtserkennung. Leer greift er auf den Roadbook-Standard, dann den Typ-Standard zurück (als Platzhalter angezeigt).',
+            'help.radius': 'Validierungsradius in Metern – der Geofence für die automatische Durchfahrtserkennung. Leer greift er auf den Roadbook-Standard, dann den Typ-Standard (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) und schließlich die 30 m des System-Standards zurück. Der Platzhalter zeigt, welcher Wert gilt.',
             'help.visibility': 'Entwurf hält das Roadbook privat, während du daran arbeitest. Fertig markiert es als abgeschlossen, bleibt aber privat. Öffentlich listet es auf der Seite, sodass jeder es lesen oder als PDF exportieren kann – nur du kannst die .rdbk herunterladen.',
             'help.description': 'Wird auf der öffentlichen Seite des Roadbooks angezeigt – eine kurze Zusammenfassung der Route oder Veranstaltung.',
             'help.author': 'Der Name des Autors, im Roadbook eingebettet und den Lesern angezeigt.',

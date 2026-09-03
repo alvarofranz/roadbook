@@ -92,7 +92,7 @@
             'Position': 'Posición',
             'help.image': 'Una imagen opcional para esta fila de comentario. Se incrusta en el roadbook y se muestra en el Reader y en el PDF.',
             'help.wpType': 'El tipo de waypoint FIA. Define el icono en el mapa y, en un roadbook de rally, cómo se valida y puntúa el waypoint.',
-            'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook y luego al del tipo (mostrado como marcador).',
+            'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook, luego al del tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y por último a los 30 m del sistema. El marcador muestra qué valor se aplica.',
             'help.visibility': 'Borrador mantiene el roadbook privado mientras lo trabajas. Listo lo marca como terminado pero sigue privado. Público lo lista en el sitio para que cualquiera pueda leerlo o exportar un PDF, pero solo tú puedes descargar el .rdbk.',
             'help.description': 'Se muestra en la página pública del roadbook: un breve resumen de la ruta o el evento.',
             'help.author': 'El nombre del autor, incrustado en el roadbook y mostrado a los lectores.',
