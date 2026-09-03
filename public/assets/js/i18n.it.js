@@ -98,7 +98,7 @@
             'help.author': 'Il nome dell’autore, incorporato nel roadbook e mostrato ai lettori.',
             'help.org': 'Il club o l’organizzazione dell’evento, incorporato nel roadbook e mostrato ai lettori.',
             'help.profile': 'Base (avventura) offre un set semplice di waypoint; Rally (FIA) aggiunge tutti i tipi di waypoint FIA, che determinano il punteggio.',
-            'help.defRadius': 'Un raggio di validazione applicato solo alle note in cui non ne hai impostato uno. Se vuoto, ogni waypoint ricade sul valore predefinito del suo tipo.',
+            'help.defRadius': 'Un raggio di validazione applicato solo alle note in cui non ne hai impostato uno. Se vuoto, ogni waypoint ricade sul valore predefinito del suo tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) e infine sui 30 m di sistema.',
             'help.mapAccess': 'Quando attivo, il Reader può mostrare la mappa. Disattivalo per far navigare i lettori solo con le note del roadbook.',
             'help.route': 'Inverti cambia il senso di marcia: traccia, ordine delle note e tutti i rilevamenti vengono ricalcolati.',
             'Copy link': 'Copia link', 'Link copied': 'Link copiato', 'Could not copy the link.': 'Impossibile copiare il link.',
