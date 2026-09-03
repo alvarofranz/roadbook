@@ -123,21 +123,8 @@
         var c = $('evQrCode');
         $('evQrToken').textContent = e.activation_code;
         try {
-            var qr = new qrcode(0, 'M');
-            qr.addData(e.activation_code); qr.make();
             c.hidden = false; c.width = 180; c.height = 180;
-            var ctx = c.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 180, 180);
-            var cellSize = Math.floor(180 / qr.getModuleCount());
-            var offset = Math.floor((180 - cellSize * qr.getModuleCount()) / 2);
-            ctx.fillStyle = '#000000';
-            for (var row = 0; row < qr.getModuleCount(); row++) {
-                for (var col = 0; col < qr.getModuleCount(); col++) {
-                    if (qr.isDark(row, col)) {
-                        ctx.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
-                    }
-                }
-            }
+            RBQr.draw(c, e.activation_code);
         } catch (er) { c.hidden = true; }
     }
     var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = function() { navigator.clipboard.writeText($('evQrToken').textContent).then(function() { toast('Copied.'); }, function() { toast('Could not copy.'); }); };

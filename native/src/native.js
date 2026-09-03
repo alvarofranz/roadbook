@@ -21,6 +21,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { FileSharer } from '@capgo/capacitor-file-sharer';
 import { parseDeepLink } from './deeplink.js';
+import { androidSaveFolder } from './save-target.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -65,22 +66,28 @@ async function blobToBase64(blob) {
 const RBNative = {
     // Save a Blob to device storage. `<a download>` is ignored inside a WebView, so
     // this is the native path for every download the app generates (GPX, .rdbk, CSV…).
-    // Resolves with where the file went — 'documents' (Android public Documents),
-    // 'share' (handed to the OS share sheet) or 'canceled' (the user dismissed the
-    // sheet) — and throws when nothing could save it; the caller (RBDownload) owns
-    // the user feedback. The two OSes hand the file to a folder in different ways:
+    // Resolves with where the file went — on Android the folder it landed in ('pictures',
+    // 'downloads'…), on iOS 'share' (handed to the OS share sheet) or 'canceled' (the user
+    // dismissed the sheet) — and throws when nothing could save it; the caller
+    // (RBDownload) owns the user feedback. The two OSes hand the file to a folder in
+    // different ways:
     //   · Android — the WebView has no folder picker (the File System Access API is
-    //             desktop-Chromium only), so the file-sharer plugin writes the blob
-    //             through MediaStore into the public Documents collection. It lands where
-    //             the Files / Downloads apps can see it and needs no storage permission on
-    //             any Android version — MediaStore is the scoped-storage-safe write path.
+    //             desktop-Chromium only), so the file-sharer plugin writes the blob through
+    //             MediaStore into a public collection. It lands where the Files / Downloads
+    //             apps can see it and needs no storage permission on any Android version —
+    //             MediaStore is the scoped-storage-safe write path. The blob's own content
+    //             type travels with it and picks the folder (androidSaveFolder), because
+    //             MediaStore rejects a folder that contradicts the collection the type
+    //             selects — which is what made every save fail (#392).
     //   · iOS   — apps are sandboxed; the only way to reach an arbitrary folder is the
     //             system share sheet, whose "Save to Files" entry IS the folder chooser.
     async downloadFile(blob, filename) {
         const data = await blobToBase64(blob);
+        const contentType = blob.type || 'application/octet-stream';
         if (Capacitor.getPlatform() === 'android') {
-            await FileSharer.save({ filename, base64Data: data, android: { saveDirectory: 'documents' } });
-            return 'documents';
+            const saveDirectory = androidSaveFolder(contentType);
+            await FileSharer.save({ filename, base64Data: data, contentType, android: { saveDirectory } });
+            return saveDirectory;
         }
         const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
         try { await Share.share({ title: filename, files: [uri] }); }

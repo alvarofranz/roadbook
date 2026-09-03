@@ -746,13 +746,18 @@
     // WebView ignores that trick, so there the file goes through the native bridge (Android →
     // public Documents, iOS → the "Save to Files" share sheet) and the outcome is ALWAYS
     // surfaced — a save that silently does nothing is a bug.
+    const SAVED_IN = { pictures: 'Saved to your Pictures folder', downloads: 'Saved to your Downloads folder' };
     window.RBDownload = async (data, filename) => {
         if (isNativeApp()) {
             try {
                 const blob = (typeof data === 'string') ? await (await fetch(data)).blob() : data;
                 const native = await RBNativeReady();
                 if (!native) throw new Error('native bridge unavailable');
-                if (await native.downloadFile(blob, filename) === 'documents') RBToast('Saved to your Documents folder');
+                const saved = await native.downloadFile(blob, filename);
+                // Android answers with the folder it filed the download in; iOS answers 'share'
+                // or 'canceled', where the OS sheet has already told the user what happened.
+                if (SAVED_IN[saved]) RBToast(SAVED_IN[saved]);
+                else if (saved && saved !== 'share' && saved !== 'canceled') RBToast('Saved to your device');
             } catch (e) {
                 RBToast(RBt('Could not save the file.') + ((e && e.message) ? ' (' + e.message + ')' : ''));
             }

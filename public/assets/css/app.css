@@ -384,7 +384,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
 .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
 /* live distance still to run to the ACTIVE note — written by the Reader, empty on every other row */
-.nrow .col-distance .togo { font-weight: 800; color: #1b6bb5; font-variant-numeric: tabular-nums; }
+.nrow .col-distance .togo { font-weight: 800; color: #1b6bb5; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nrow .col-distance.tight { background: #dbe7f2; } /* the next note is under 50 m ahead: a tight pair */
 .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
 .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }

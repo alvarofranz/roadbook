@@ -639,8 +639,7 @@
             rb: rbSlug || '',
         });
         lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
-        const qr = qrcode(0, 'M'); qr.addData(lastPayload); qr.make();
-        lastQrUrl = qr.createDataURL(6, 2);
+        lastQrUrl = RBQr.dataURL(lastPayload); // PNG: the name, the declared type and the bytes must agree (#392)
         $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
         $('qrMeta').textContent = lastPayload;
         $('qrStats').innerHTML = `${esc(t('Vehicle'))} <b>${team}</b> · ${km / 10} km<br>${esc(t('Accuracy'))} ${Math.round(pen.acc)} · ${esc(t('Skips'))} ${pen.skip} · ${esc(t('Extra'))} ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · ${esc(t('Speed'))} ${penSpeed} ${esc(t('pts'))}`;

@@ -344,6 +344,12 @@ penalità vivono nel core (`RB.scoredNoteSet`/`RB.isScoredIdx`, `RB.validationPe
 `RB.skipPenalty`, `RB.speedPenalty`, #169); il Reader le richiama, accumula in `validateAt`, e
 in `finish` impacchetta e firma il risultato generandone il QR (`#qrModal`, con Save/Share).
 
+Il QR è disegnato da **`RBQr.dataURL(payload)`** come **PNG** (512 px). La libreria vendor sa
+emettere solo GIF, e un GIF consegnato al sistema sotto un nome `.png` è ciò che rompeva sia il
+salvataggio sia la condivisione dall'app (#392): nome, tipo dichiarato e byte devono coincidere.
+`RBQr` è anche l'unico posto dove un QR viene renderizzato (prima il codice di attivazione evento
+ne aveva una copia propria).
+
 ---
 
 ## 11. Limiti e quirk
