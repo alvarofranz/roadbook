@@ -1076,7 +1076,9 @@
         if (!window.RBCoverMap) return;
         try {
             const blob = await RBCoverMap.capture(rb.track);
-            if (blob) await RBUpload({ type: 'cover', roadbook: String(currentRbId) }, new File([blob], 'cover.png', { type: 'image/png' }));
+            if (!blob) return; // no track or tile outage: keep the previous cover (cover-map.js)
+            const up = await RBUpload({ type: 'cover', roadbook: String(currentRbId) }, new File([blob], 'cover.png', { type: 'image/png' }));
+            if (!up || !up.ok) toast('Cover not updated: ' + ((up && up.error) || 'upload failed'));
         } catch (e) { /* a cover is non-essential — never let it break a save */ }
     }
     $('saveAccount').onclick = saveRoadbook;
