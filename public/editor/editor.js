@@ -1070,7 +1070,7 @@
         toast(r.ok ? (status === 'public' && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
         if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
     }
-    // Generate the roadbook's cover map (route over CyclOSM tiles) and store it under its reserved
+    // Generate the roadbook's cover map (route over map tiles) and store it under its reserved
     // filename. Best-effort and non-blocking: a missing cover just falls back to the route shape.
     async function updateCover() {
         if (!window.RBCoverMap) return;
