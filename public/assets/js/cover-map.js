@@ -4,7 +4,7 @@
  * (just the route over the map). Generated at save time and stored as the roadbook's fixed cover.
  * Tiles are CORS-enabled (Access-Control-Allow-Origin: *), so the canvas stays exportable. */
 (function () {
-    const TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // same source as the app maps
+    const TILE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'; // bare host: CSP-whitelisted (img-src)
 
     // Web-Mercator world fraction [0..1] of a coordinate (the tiles' projection).
     const project = (lat, lon) => { const s = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360, 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)]; };
@@ -37,7 +37,7 @@
         for (let tx = Math.floor(tlx / 256); tx * 256 < tlx + W; tx++) {
             for (let ty = Math.floor(tly / 256); ty * 256 < tly + H; ty++) {
                 if (ty < 0 || ty >= n) continue;
-                const url = TILE.replace('{s}', 'abc'[Math.abs(tx + ty) % 3]).replace('{z}', z).replace('{x}', ((tx % n) + n) % n).replace('{y}', ty);
+                const url = TILE.replace('{z}', z).replace('{x}', ((tx % n) + n) % n).replace('{y}', ty);
                 const dx = tx * 256 - tlx, dy = ty * 256 - tly;
                 jobs.push(loadImg(url).then((im) => { if (im) { painted++; ctx.drawImage(im, dx, dy, 256, 256); } }));
             }
