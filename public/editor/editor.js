@@ -1076,7 +1076,10 @@
         if (!window.RBCoverMap) return;
         try {
             const blob = await RBCoverMap.capture(rb.track);
-            if (!blob) return; // no track or tile outage: keep the previous cover (cover-map.js)
+            if (!blob) { // no track, or no map tile loaded (offline/CORS): keep the previous cover
+                if (rb.track && rb.track.length >= 2) toast('Cover not updated: map tiles unavailable');
+                return;
+            }
             const up = await RBUpload({ type: 'cover', roadbook: String(currentRbId) }, new File([blob], 'cover.png', { type: 'image/png' }));
             if (!up || !up.ok) toast('Cover not updated: ' + ((up && up.error) || 'upload failed'));
         } catch (e) { /* a cover is non-essential — never let it break a save */ }
