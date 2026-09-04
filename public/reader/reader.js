@@ -216,7 +216,7 @@
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
         document.body.classList.add('rb-immersive');
         $('finishBtn').hidden = !comp;
-        sizeCapBar(); // the action row just changed height (Competition adds Finish)
+        sizeBottomBars(); // the action row just changed height (Competition adds Finish)
         syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
@@ -308,12 +308,27 @@
     // The CAP bar rides directly on top of the action row, whose height depends on the mode
     // (Competition adds Finish), on the viewport and on fullscreen — measure it instead of
     // trusting a constant, or the bar clips the top of the buttons it sits on.
-    function sizeCapBar() {
+    // The same measurement publishes `--bottom-stack`, the height of everything the Reader pins
+    // to the viewport bottom, so anything the shared layer floats down there — the cookie notice
+    // (#401) — stacks above the controls instead of covering them.
+    function sizeBottomBars() {
         const fab = document.querySelector('.fabrow');
         const top = fab.getBoundingClientRect().top;
         if (top > 0) document.body.style.setProperty('--capbar-bottom', Math.round(window.innerHeight - top) + 'px');
+        // The CAP bar is the top of the stack whenever it is up; with it down the action row is.
+        const stackTop = capEls.bar.hidden ? top : capEls.bar.getBoundingClientRect().top;
+        if (stackTop > 0) document.body.style.setProperty('--bottom-stack', Math.round(window.innerHeight - stackTop) + 'px');
+        else document.body.style.removeProperty('--bottom-stack'); // nothing pinned yet (load screen)
     }
-    window.addEventListener('resize', sizeCapBar);
+    window.addEventListener('resize', sizeBottomBars);
+    // Raising or dropping the CAP bar changes the stack's height, so re-measure on the flip — and
+    // only on the flip: updateCapBar runs on every GPS fix, and a layout read per fix is a reflow
+    // for nothing.
+    function showCapBar(up) {
+        if (up === !capEls.bar.hidden) return;
+        capEls.bar.hidden = !up;
+        sizeBottomBars();
+    }
     function setGps(state, acc) { odoEls.gpsDot.className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); odoEls.gpsTxt.textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
@@ -472,10 +487,10 @@
     // CAP in force it reads —° and drops just the arrow.
     function updateCapBar(dist) {
         const an = notes[activeIdx];
-        if (!an || preview) { capEls.bar.hidden = true; return; }
+        if (!an || preview) { showCapBar(false); return; }
         const prev = notes[prevNav(activeIdx - 1)];
         const cap = prev && prev.cap != null ? Math.round(prev.cap) : null;
-        capEls.bar.hidden = false;
+        showCapBar(true);
         capEls.heading.textContent = cap == null ? '—°' : cap + '°';
         capEls.speed.textContent = meter && meter.speedKmh ? Math.round(meter.speedKmh) + ' km/h' : '--';
         capEls.dist.textContent = dist == null ? '—' : fmtDist(dist);

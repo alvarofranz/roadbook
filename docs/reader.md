@@ -162,6 +162,26 @@ reach della nota attiva prende la classe `.arriving` (blu, come la riga). `refre
 riallinea sia a ogni fix affidabile sia a ogni cambio di nota attiva, così la distanza non
 resta mai a descrivere la nota precedente.
 
+### La pila di barre in basso (`--bottom-stack`)
+Riga d'azione (`.fabrow`) e barra CAP sono entrambe fissate al fondo del viewport, e l'altezza va
+**misurata** invece che stimata: dipende dalla modalità (Competizione aggiunge Finish), dal
+viewport e dal fullscreen, quindi una costante farebbe tagliare i pulsanti su cui la barra CAP
+poggia. `sizeBottomBars()` ([reader.js:314](../public/reader/reader.js#L314)) fa quella misura una
+volta sola e ne pubblica due variabili CSS:
+
+| Variabile | Chi la legge | A cosa serve |
+|-----------|--------------|--------------|
+| `--capbar-bottom` | `.capbar` ([index.html](../public/reader/index.html)) | posa la barra CAP esattamente sopra la riga d'azione |
+| `--bottom-stack` | `.cookie-notice` ([app.css:340](../public/assets/css/app.css#L340)) | altezza dell'**intera** pila, così ciò che il livello condiviso fissa in basso si impila sopra i comandi invece di coprirli (#401) |
+
+L'avviso cookie ha uno `z-index` molto più alto delle barre del Reader: senza questo contratto
+atterra sopra Valida / Auto / Pausa / Fine — proprio i comandi che servono mentre si guida, e in
+navigazione la tab bar globale è nascosta (`body.rb-immersive`), quindi lo scarto pensato per
+scavalcarla lo poserebbe esattamente sui pulsanti. La misura viene rifatta al `resize` e a ogni
+salita/discesa della barra CAP (`showCapBar`), mai a ogni fix GPS: un reflow per fix non
+servirebbe a nulla. In anteprima la `.fabrow` è `display: none`, la variabile viene rimossa e
+l'avviso torna a poggiare sul fondo.
+
 ### Sincronizzazione dell'odometro alla distanza nota
 A ogni validazione, se la nota ha una `distance`, il totale viene **riallineato** alla
 distanza cumulativa della nota: `tripTotalM = n.distance`
