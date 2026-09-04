@@ -33,15 +33,17 @@
         ctx.fillStyle = '#10151c'; ctx.fillRect(0, 0, W, H);
 
         const jobs = [];
+        let painted = 0; // tiles that actually loaded — with none, the canvas would stay black
         for (let tx = Math.floor(tlx / 256); tx * 256 < tlx + W; tx++) {
             for (let ty = Math.floor(tly / 256); ty * 256 < tly + H; ty++) {
                 if (ty < 0 || ty >= n) continue;
                 const url = TILE.replace('{s}', 'abc'[Math.abs(tx + ty) % 3]).replace('{z}', z).replace('{x}', ((tx % n) + n) % n).replace('{y}', ty);
                 const dx = tx * 256 - tlx, dy = ty * 256 - tly;
-                jobs.push(loadImg(url).then((im) => { if (im) ctx.drawImage(im, dx, dy, 256, 256); }));
+                jobs.push(loadImg(url).then((im) => { if (im) { painted++; ctx.drawImage(im, dx, dy, 256, 256); } }));
             }
         }
         await Promise.all(jobs);
+        if (!painted) return null; // tile outage: keep the previous cover instead of baking a black one
 
         const pts = S.map((p) => [p[0] - tlx, p[1] - tly]);
         const stroke = (color, width) => {
