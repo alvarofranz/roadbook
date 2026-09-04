@@ -220,7 +220,7 @@
         el.hidden = !parts.length;
     });
 
-    /* ---------------- App info pop-up (smartphone menu, #335) ---------------- */
+    /* ---------------- App info pop-up (account menus, #335) ---------------- */
     window.showAppInfo = function () {
         const ver = (document.getElementById('appVersion') || {}).textContent || '';
         const siteUrl = ROOT.replace(/\/+$/, '');
@@ -888,6 +888,7 @@
                         <a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>
                         ${manageLinksHTML(manageLinks(user, participant))}
                         ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
+                        <hr class="menu-sep"><button id="accAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
                     </div>`;
             }
@@ -897,6 +898,8 @@
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
                 w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
+                const accInfo = w.querySelector('#accAppInfo');
+                if (accInfo) accInfo.onclick = () => { menu.hidden = true; showAppInfo(); };
                 const lp = w.querySelector('#leaveParticipant');
                 if (lp) lp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
             }
