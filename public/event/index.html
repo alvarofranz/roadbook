@@ -17,8 +17,8 @@
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.7.2-23">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1.7.2-23">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.7.2-24">
+    <link rel="stylesheet" href="/assets/css/app.css?v=1.7.2-24">
     <style>
         #evWrap { max-width: 880px; padding: 1rem 1.1rem 5rem; }
         .ev-head { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
@@ -60,6 +60,12 @@
         </div>
         <p id="evDesc" class="ev-desc"></p>
         <p id="evWebsite" class="ev-desc" hidden></p>
+        <!-- #350: an event link (the QR lands here) should say that the app is the better tool for it.
+             `.native-hint` is the shared component and hides itself inside the app. -->
+        <p class="native-hint">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span class="grow"><span data-i18n="native.better.event">Driving this event? Install the RDBK app on your phone: GPS that keeps running with the screen locked, your roadbooks available offline, and event links that open straight in the app.</span> <a href="/install/" data-i18n="Get the app">Get the app</a></span>
+        </p>
         <div id="evHqMap" class="ev-hq-map" hidden></div>
         <div class="ev-join" id="evActivate" hidden>
             <div class="ev-qr-box">
@@ -83,17 +89,17 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=1.7.2-23"></script>
-<script src="/assets/js/roadbook-core.js?v=1.7.2-23"></script>
-<script src="/assets/js/rbmap.js?v=1.7.2-23"></script>
-<script src="/assets/js/i18n.es.js?v=1.7.2-23"></script>
-<script src="/assets/js/i18n.it.js?v=1.7.2-23"></script>
-<script src="/assets/js/i18n.de.js?v=1.7.2-23"></script>
-<script src="/assets/js/i18n.fr.js?v=1.7.2-23"></script>
-<script src="/assets/js/i18n.js?v=1.7.2-23"></script>
-<script src="/assets/js/qrcode.min.js?v=1.7.2-23"></script>
-<script src="/assets/js/rb-qr.js?v=1.7.2-23"></script>
-<script src="/assets/js/app.js?v=1.7.2-23"></script>
-<script src="event.js?v=1.7.2-23"></script>
+<script src="/assets/js/config.js?v=1.7.2-24"></script>
+<script src="/assets/js/roadbook-core.js?v=1.7.2-24"></script>
+<script src="/assets/js/rbmap.js?v=1.7.2-24"></script>
+<script src="/assets/js/i18n.es.js?v=1.7.2-24"></script>
+<script src="/assets/js/i18n.it.js?v=1.7.2-24"></script>
+<script src="/assets/js/i18n.de.js?v=1.7.2-24"></script>
+<script src="/assets/js/i18n.fr.js?v=1.7.2-24"></script>
+<script src="/assets/js/i18n.js?v=1.7.2-24"></script>
+<script src="/assets/js/qrcode.min.js?v=1.7.2-24"></script>
+<script src="/assets/js/rb-qr.js?v=1.7.2-24"></script>
+<script src="/assets/js/app.js?v=1.7.2-24"></script>
+<script src="event.js?v=1.7.2-24"></script>
 </body>
 </html>
