@@ -93,6 +93,12 @@ Per un utente loggato compare il **form di adesione con codice** (`event_join`) 
 l'accesso appena acquisito/perso. Da un roadbook della lista si va al Reader / alla pagina
 `/challenge/<slug>`.
 
+Questa è anche la pagina su cui **atterra il QR dell'evento** (`/go/<code>` unisce e redirige
+qui), quindi porta un `.native-hint`: un evento si guida con l'app nativa — GPS che continua a
+schermo bloccato, roadbook offline, link evento che si aprono direttamente nell'app (#350). Il
+componente è condiviso e si nasconde da sé dentro l'app (`.native .native-hint`), così non
+consiglia l'app all'app.
+
 ---
 
 ## 4. La console di gestione (`/admin/events/…`)

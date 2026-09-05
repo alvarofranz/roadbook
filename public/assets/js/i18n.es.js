@@ -711,6 +711,7 @@
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Puntuaciones de este evento. El organizador recoge los códigos QR de resultado tras cada recorrido y los añade aquí.',
             'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Clasificación en vivo de este evento. Escanea el código QR de resultado de cada vehículo tras su recorrido.',
             'native.better.gps': 'Para mejor precisión GPS y grabación en segundo plano, usa la app nativa de iOS o Android.',
+            'native.better.event': 'Vas a rodar este evento? Instala la app de RDBK en el móvil: GPS que sigue funcionando con la pantalla bloqueada, tus roadbooks disponibles sin conexión y enlaces de evento que se abren directamente en la app.', 'Get the app': 'Descargar la app',
             'native.better.gps.recorder': 'Para grabación GPS en segundo plano y mejor precisión, usa la app nativa de iOS o Android.',
             'native.better.gps.reader': 'Para navegación GPS ininterrumpida y seguimiento en segundo plano, usa la app nativa de iOS o Android.',
             'native.better.gps.tripmaster': 'Para odómetro GPS continuo y grabación en segundo plano, usa la app nativa de iOS o Android.',
