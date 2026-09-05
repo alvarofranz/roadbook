@@ -244,12 +244,31 @@ Scorciatoia per `RBConfirm(msg, okLabel, true)` — la conferma usata per **ogni
 distrugge dati** (cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
 
 #### `RBWebGpsWarn(msg?)`
-([app.js:1041](../public/assets/js/app.js#L1041)) — Banner **flottante persistente** che avverte
-che la GPS del browser è inaffidabile sui telefoni. Chiamata una volta per pagina dai tool di
-navigazione (Recorder, Reader, Tripmaster). Inerte nell'app nativa (`.webgps-banner` è nascosto
-da `.native`). Il banner si chiude per **sessione** (`sessionStorage`), quindi non assilla ma
-riappare a ogni visita — la scelta è temporanea e rispecchia il fatto che l'inaffidabilità è una
-proprietà persistente del browser. `msg` è una chiave i18n che di default è `web.gps.warn`.
+([app.js:1041](../public/assets/js/app.js#L1041)) — Banner che avverte che la GPS del browser è
+inaffidabile sui telefoni. Chiamata una volta per pagina dai tool di navigazione (Recorder,
+Reader, Tripmaster). Inerte nell'app nativa (`.webgps-banner` è nascosto da `.native`). Si chiude
+per **sessione** (`sessionStorage`), quindi non assilla ma riappare a ogni visita — la scelta è
+temporanea e rispecchia il fatto che l'inaffidabilità è una proprietà persistente del browser.
+`msg` è una chiave i18n che di default è `web.gps.warn`.
+
+Va in `body.prepend`, **nel flusso**, e il CSS non gli dà alcun `position`: prende il suo spazio e
+spinge giù la pagina. Fissato in alto copriva ciò che il tool ci ancora — su un telefono, dove va
+a capo su tre righe (151 px), nascondeva l'odometro totale del Reader e rendeva del tutto
+inaccessibile il pulsante "Navigate" dell'anteprima (#403). È un avviso una-tantum, non una barra
+di stato: scorrere via è il comportamento giusto.
+
+### La regola delle barre condivise
+
+Quattro bug di fila (#401 · #403 · #404 · #405) sono venuti dallo stesso errore — una barra che il
+livello condiviso ancora a un bordo del viewport, con uno `z-index` molto sopra la pagina, senza
+riservare spazio. Il contratto, verificato staticamente da
+[tests/shared-chrome.test.js](../tests/shared-chrome.test.js):
+
+| Regola | Come |
+|--------|------|
+| Una barra ancorata a un bordo **prende spazio** oppure **pubblica la sua altezza** | il banner GPS sta nel flusso; l'avviso cookie pubblica `--notice-h` e il `padding-bottom` di `body` lo riserva (in tutte le modalità, immersive compresa); il Reader pubblica `--bottom-stack` (vedi [reader.md](reader.md)) |
+| Una **modale è il livello più alto** | `.modal` sta sopra ogni barra condivisa: altrimenti disegnavano sui suoi pulsanti, e un avviso non si può nemmeno chiudere mentre una modale è aperta (il backdrop mangia il click) |
+| Su telefono un avviso resta **compatto** | l'avviso cookie tiene il pulsante accanto al testo: impilato era alto 177 px su 390, un quinto dello schermo, e arrivava sul pulsante di avvio del Recorder |
 
 #### `RBWebGpsConfirm(comp) → Promise<boolean>`
 Gate **one-time** (deciso una volta per browser, `localStorage`) che precede ogni azione

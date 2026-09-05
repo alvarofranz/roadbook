@@ -62,3 +62,4 @@ curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects
 - **Nessun CSS inline** (`style="…"`). Tutto in stylesheet con classi descrittive.
 - **Nessun commento legacy** ("prima era X, ora Y"). Quando cambi qualcosa, riscrivi i commenti come se fosse sempre stato così.
 - **Stesso FontAwesome icona per tool** in tutta l'app (`fa-circle-dot` Recorder, `fa-pen-ruler` Editor, `fa-compass` Reader, `fa-gauge-high` Tripmaster).
+- **Le barre condivise non coprono i comandi del tool** (#401 · #403 · #404 · #405): una barra ancorata a un bordo prende spazio nel flusso o pubblica la sua altezza (`--notice-h`, `--bottom-stack`); una modale sta sopra tutto. Dettagli in `docs/app-shell.md § La regola delle barre condivise`.

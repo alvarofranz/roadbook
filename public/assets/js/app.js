@@ -1031,7 +1031,18 @@
         el.innerHTML = `<span class="cookie-text">${RBt('RDBK uses only essential cookies (to keep you signed in) and local storage for your preferences and offline data — no ads, no tracking, no profiling.')} <a href="${ROOT}privacy/">${RBt('Privacy')}</a></span>
             <button class="btn btn-primary cookie-ok" type="button">${RBt('I accept')}</button>`;
         document.body.appendChild(el);
-        el.querySelector('.cookie-ok').onclick = () => { try { localStorage.setItem(COOKIE_OK_KEY, '1'); } catch (e) {} el.remove(); };
+        // Pinned to the bottom, the notice would sit on whatever the page has down there — and on
+        // a screen that fills the viewport exactly (the Recorder's start screen) there is nowhere
+        // to scroll the control to, so its main button becomes untappable (#405). Publishing the
+        // height lets the shared body padding reserve the room; dismissing gives it straight back.
+        const publishHeight = () => document.body.style.setProperty('--notice-h', Math.ceil(el.getBoundingClientRect().height) + 'px');
+        publishHeight();
+        window.addEventListener('resize', publishHeight); // it re-wraps, so its height changes with the width
+        el.querySelector('.cookie-ok').onclick = () => {
+            try { localStorage.setItem(COOKIE_OK_KEY, '1'); } catch (e) {}
+            window.removeEventListener('resize', publishHeight);
+            el.remove(); document.body.style.removeProperty('--notice-h');
+        };
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cookieNotice); else cookieNotice();
 
@@ -1044,8 +1055,10 @@
        recording or navigation starts. Never in the native app, where the watch is solid. */
     const GPS_WARN_KEY = 'rb_web_gps_warn_seen';
     const IS_NATIVE = () => isNativeApp();
-    // Show a dismissable (per-session) floating warning when running in a browser. A page
-    // calls it once; it returns silently in the native app or once dismissed this session.
+    // Show a dismissable (per-session) warning when running in a browser. A page calls it once;
+    // it returns silently in the native app or once dismissed this session. It goes FIRST in the
+    // body, in the flow, so it pushes the page down instead of covering the tool's own top bar
+    // (#403) — the CSS carries no `position` for exactly that reason.
     window.RBWebGpsWarn = (msg) => {
         if (IS_NATIVE()) return;
         if (document.querySelector('.webgps-banner')) return;
@@ -1058,7 +1071,7 @@
         close.type = 'button'; close.className = 'webgps-x'; close.setAttribute('aria-label', RBt('Close'));
         close.textContent = '×'; close.onclick = () => { try { sessionStorage.setItem(GPS_WARN_KEY, '1'); } catch (e) {} el.remove(); };
         el.appendChild(close);
-        document.body.appendChild(el);
+        document.body.prepend(el);
     };
     // One-time (per-browser, remembered) confirmation before a GPS-critical action starts in
     // the browser. Returns a Promise<boolean>. `comp` picks the stronger competition wording.
