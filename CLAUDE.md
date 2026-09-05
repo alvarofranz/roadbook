@@ -158,6 +158,12 @@ DB/Convenzioni rapide below have counterparts there).
   something misnamed or inconsistent, rename it properly *everywhere* as part of your change. 
 - **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names -—
   never `style="…"` attributes in HTML or in JS-built markup. Inline styles are a bug.
+- **Shared chrome NEVER covers a tool's controls.** A bar the shared layer pins to a viewport
+  edge (the cookie notice, the web-GPS banner) either sits **in the flow** and takes its own
+  space, or **publishes its height** for the page to reserve (`--notice-h`, and the Reader's
+  `--bottom-stack`); a dialog (`.modal`) is always the top layer. Four bugs came from getting
+  this wrong (#401 · #403 · #404 · #405) — each one left a button that could not be tapped
+  while driving. `tests/shared-chrome.test.js` pins the contract; `docs/app-shell.md` explains it.
 - **Reuse CSS, don't multiply it — real DRY.** BEFORE adding a class, read the existing
   styles and reuse what fits. Name classes **abstractly** so they're reusable across features
   (`.btnrow.center`, `.icon-accent`, `.field-grid`) — never a throwaway class per feature.

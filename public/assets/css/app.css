@@ -27,6 +27,9 @@
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
 body {
+    /* room for whatever the shared layer pins to the bottom edge: the cookie notice publishes
+       its height so page content can always be scrolled clear of it (#405) */
+    padding-bottom: var(--notice-h, 0px);
     background:
         radial-gradient(1200px 600px at 85% -8%, rgba(232, 176, 89, .14), transparent 60%),
         radial-gradient(900px 500px at -10% 5%, rgba(217, 102, 59, .10), transparent 55%),
@@ -103,14 +106,14 @@ img { max-width: 100%; display: block; }
 .native .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 @media (max-width: 1024px) {
     .app-tabbar { display: flex; }
-    body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+    body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--notice-h, 0px)); }
     .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 }
 /* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
    `body.rb-fs`/`body.rb-immersive` outweigh the plain-`body` padding rules above on specificity,
    so no !important is needed. */
 body.rb-fs .app-tabbar, body.rb-immersive .app-tabbar { display: none; }
-body.rb-fs, body.rb-immersive { padding-bottom: 0; }
+body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 /* immersive mode (Reader navigating): the tool has its OWN bottom action row (with an exit
    button), so it returns to the screen edge — no tab bar underneath to clear. */
 body.rb-immersive .fabrow { bottom: 0; }
@@ -339,15 +342,26 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    variable unset and the notice sits on the floor. */
 .cookie-notice { position: fixed; left: 0; right: 0; bottom: var(--bottom-stack, 0px); z-index: 200; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0, 0, 0, .35); padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom)); }
 /* on mobile it also clears the bottom tab bar (web-only banner; never covers the nav) — whichever
-   of the two is taller wins, since a tool that hides the tab bar puts its own row in that space */
-@media (max-width: 1024px) { .cookie-notice { bottom: max(calc(var(--tabbar-h) + env(safe-area-inset-bottom)), var(--bottom-stack, 0px)); padding-bottom: .8rem; } }
+   of the two is taller wins, since a tool that hides the tab bar puts its own row in that space.
+   It is also COMPACT there: stacked, it stood 177 px tall on a 390 px screen — a fifth of the
+   viewport for an essential-cookies note — and that is what reached down onto the Recorder's start
+   button (#405). Keeping the button beside the text, and the text tighter, halves it. */
+@media (max-width: 1024px) {
+    .cookie-notice { bottom: max(calc(var(--tabbar-h) + env(safe-area-inset-bottom)), var(--bottom-stack, 0px)); flex-wrap: nowrap; gap: .6rem; padding: .55rem .8rem; }
+    .cookie-notice .cookie-text { flex: 1; min-width: 0; max-width: none; font-size: .74rem; line-height: 1.35; }
+    .cookie-notice .cookie-ok { padding: .45rem .7rem; font-size: .8rem; }
+}
 .cookie-notice .cookie-text { color: var(--muted); font-size: .86rem; max-width: 70ch; }
 .cookie-notice .cookie-text a { color: var(--sand-2); }
 .cookie-notice .cookie-ok { flex-shrink: 0; }
 
-/* Web-GPS reliability banner (#381): a floating warning shown on the GPS tools when running
-   in a browser (never in the native app via .native .webgps-banner). */
-.webgps-banner { position: fixed; left: 0; right: 0; top: 0; z-index: 250; display: flex; align-items: center; gap: .7rem; background: #4a3210; border-bottom: 1px solid var(--line); color: var(--text); padding: .7rem 1rem calc(.7rem + env(safe-area-inset-top)); font-size: .86rem; }
+/* Web-GPS reliability banner (#388): shown on the GPS tools when running in a browser (never in
+   the native app via .native .webgps-banner). It sits IN THE FLOW at the very top of the page and
+   takes its own space — pinned, it floated over whatever the tool pins up there and, on a phone
+   where it wraps to three lines, it hid the Reader's total odometer and left the preview's
+   Navigate button unreachable (#403). It is a one-time dismissable notice, not a status bar, so
+   scrolling past it is the right behaviour. */
+.webgps-banner { display: flex; align-items: center; gap: .7rem; background: #4a3210; border-bottom: 1px solid var(--line); color: var(--text); padding: calc(.7rem + env(safe-area-inset-top)) 1rem .7rem; font-size: .86rem; }
 .webgps-banner i { color: var(--sand); flex-shrink: 0; }
 .webgps-banner .webgps-text { flex: 1; }
 .webgps-banner .webgps-x { background: none; border: 0; color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: .1rem .3rem; }
@@ -433,7 +447,10 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .challenge-row small { color: var(--muted); }
 
 /* ---------- modals + toast (Reader/Editor/Ranking/Challenges) ---------- */
-.modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
+/* A dialog is what the app is asking you to answer, so it is the TOP layer: above the cookie
+   notice and the web-GPS banner, which otherwise drew over its buttons on a short screen — and a
+   notice can't be dismissed while a modal is up, since the backdrop swallows the click (#404). */
+.modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
