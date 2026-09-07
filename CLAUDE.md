@@ -533,9 +533,10 @@ Operational notes:
   rejected by the OS pickers the app hands files to, #392). Loaded next to `qrcode.min.js` on
   the pages that show a QR; the vendor global is read at call time, so it is unit-testable.
 - `i18n-edit.js` (`#118`, admin-only) — in-context UI translation editor. `app.js` loads it
-  ONLY for admins; dormant until edit mode is toggled on (the floating language chip). In edit
-  mode every translatable label (`data-i18n*`) is editable in place — the bottom bar edits all of
-  the page's labels, right-click edits a single one — with a live preview. Edits accumulate in
+  ONLY for admins; dormant until an admin turns edit mode on from **Site settings**
+  (`/admin/config/` → `RBI18nSetEdit`). In edit mode every translatable label (`data-i18n*`) is
+  editable in place — the bottom bar edits all of the page's labels, right-click edits a single
+  one — with a live preview. Edits accumulate in
   `localStorage` across pages; **Export** produces a paste-ready DELTA of the changed keys per
   language to commit into `i18n.<lang>.js` (Option B: nothing served from a DB at runtime).
 
