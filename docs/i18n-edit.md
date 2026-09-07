@@ -12,12 +12,12 @@ files.
 
 ## 1. Activation
 
-- **Toggle button**: a floating `fa-language` icon in the bottom‑right corner of
-  the page. Click toggles edit mode on/off. Its state (`rb_i18n_edit` in
-  `localStorage`) persists across navigation.
-- The toggle is only injected when `RBt`, `RBModal`, `RBi18nLangs` and `RBi18n`
-  are all available — meaning it only activates on pages that load the full i18n
-  stack.
+- **Turned on from Site settings**: `/admin/config/` exposes the switch, which calls the
+  module's `window.RBI18nSetEdit(true)`
+  ([config.js:28](../public/admin/config/config.js#L28)). Its state (`rb_i18n_edit` in
+  `localStorage`) persists across navigation, so edit mode follows the admin onto every page.
+- `app.js` loads `i18n-edit.js` only for admins, and only pages carrying the full i18n stack
+  (`RBt`, `RBModal`, `RBi18nLangs`, `RBi18n`) can render the editor.
 
 When **edit mode is on**:
 
