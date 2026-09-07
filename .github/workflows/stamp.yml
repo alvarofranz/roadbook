@@ -1,0 +1,58 @@
+name: Stamp
+
+# The repo-side guard of the cache-busting scheme (#407). Two independent checks:
+#
+#   · consistency — every first-party asset reference in public/ HTML carries the CURRENT
+#     ?v=<version>-<build> token from version.json (source/check-stamp.mjs, also runnable
+#     locally as `ddev exec npm run check:stamp`);
+#   · freshness — a PR that changes a served asset must move `build`, so the changed file
+#     reaches clients through the host cache, the CDN edge and the PWA version poll.
+#
+# The semver stays deliberate: bumping `build` alone deploys the web without firing the
+# Android/iOS store builds, which are gated on the semver. See CLAUDE.md "Releasing".
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Every asset reference carries the current release token
+        run: node source/check-stamp.mjs
+      - name: A PR that changes a served asset carries its own stamp
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # Served, cache-busted assets only: .php is dynamic, images/JSON are not stamped, and
+          # version.json is the stamp itself.
+          assets=$(git diff --name-only "$BASE"...HEAD -- 'public/**/*.js' 'public/**/*.css' 'public/**/*.html' 'public/*.js' 'public/*.css' 'public/*.html')
+          if [ -z "$assets" ]; then
+            echo "No served asset changed in this PR — no stamp needed."
+            exit 0
+          fi
+          echo "Served assets changed by this PR:"; echo "$assets" | sed 's/^/  /'
+          was=$(git show "$BASE:public/version.json" | jq -r '.build')
+          now=$(jq -r '.build' public/version.json)
+          echo "build: $was (base) → $now (this PR)"
+          if [ "$now" -le "$was" ]; then
+            echo "::error::This PR changes served assets but does not stamp them, so every client keeps the cached copy (#407). Run: node source/stamp-version.mjs \$(jq -r .version public/version.json) — and commit public/ ."
+            exit 1
+          fi
+          # The semver is the store-release dial: it may stay put or rise, never fall.
+          verWas=$(git show "$BASE:public/version.json" | jq -r '.version')
+          verNow=$(jq -r '.version' public/version.json)
+          if [ "$verWas" != "$verNow" ] && [ "$(printf '%s\n%s\n' "$verWas" "$verNow" | sort -V | head -1)" != "$verWas" ]; then
+            echo "::error::version.json moved BACKWARDS ($verWas → $verNow). The semver only ever grows — the stores reject a lower one."
+            exit 1
+          fi
+          echo "Stamped: build advanced with the asset change."
