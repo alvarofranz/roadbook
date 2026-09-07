@@ -4,10 +4,11 @@
 /.fleet
 /.claude
 /node_modules
-# /source holds local-only dev scripts, except the versioned release stamper + syntax checker
+# /source holds local-only dev scripts, except the versioned release stamper + the checkers
 /source/*
 !/source/stamp-version.mjs
 !/source/check-syntax.mjs
+!/source/check-stamp.mjs
 /public/assets/fontawesome
 /public/assets/js/config.js
 /.env

@@ -8,6 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "node source/check-syntax.mjs",
+    "check:stamp": "node source/check-stamp.mjs",
     "stamp": "node source/stamp-version.mjs",
     "build:native": "esbuild native/src/native.js --bundle --format=iife --outfile=public/assets/js/native.bundle.js --target=es2019",
     "sync": "npm run build:native && cap sync",
