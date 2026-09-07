@@ -42,7 +42,13 @@ ddev exec node --check public/event/event.js   # syntax check di un singolo file
 ## Versioni e deploy
 
 - `stamp-version.mjs` scrive `public/version.json` e aggiorna i `?v=` cache-buster. Il server DEVE eseguirlo dopo ogni checkout.
-- **Ogni merge su `main` incrementa la patch.** Ogni PR mergiata su `main` deve includere `node source/stamp-version.mjs <X.Y.(Z+1)>` (commitato nella PR stessa), così `version.json` avanza sempre, il footer mostra la versione corrente e i client ricevono asset freschi senza hard refresh. Nota: il bump della versione fa scattare anche le build native (vedi sotto).
+- **Ogni PR che tocca `public/` porta il suo stamp, commitato nella PR.** Per una modifica ordinaria
+  `node source/stamp-version.mjs $(jq -r .version public/version.json)` — stesso semver, `build`
+  incrementato: `version.json` avanza, tutti i `?v=` vengono riscritti, gli asset arrivano freschi
+  senza hard refresh e i client PWA aperti si force-refreshano. Usa invece
+  `node source/stamp-version.mjs <X.Y.Z>` **solo** quando la modifica merita una release sugli
+  store: cambiare il semver fa scattare Android (Play) + iOS (TestFlight), il `build` da solo no.
+  Il check CI `stamp` fallisce la PR che cambia asset senza stamp.
 - **Release:** `node source/stamp-version.mjs <X.Y.Z>` → commit → branch → PR → merge. Quel merge fa partire web + Android (Play) + iOS (Xcode Cloud).
 - **Build nativo:** `npm run build:native` (esbuild `native/src/native.js` → `public/assets/js/native.bundle.js`). Serve prima di `npx cap sync`.
 
