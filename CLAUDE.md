@@ -338,6 +338,15 @@ build number and updated `?v=` cache-busters. Add this to the server-side deploy
 node source/stamp-version.mjs "$(jq -r .version public/version.json)"
 ```
 
+**Every PR that touches `public/` carries its own stamp, committed in the PR.** For an ordinary
+change that is `node source/stamp-version.mjs "$(jq -r .version public/version.json)"` — same semver,
+`build` incremented: `version.json` advances, every `?v=` token is rewritten, so the changed assets
+arrive fresh through every cache and open PWA clients force-refresh. Use
+`node source/stamp-version.mjs <X.Y.Z>` **only** when the change is worth a release on the stores,
+because moving the semver is what fires the Android + iOS builds — bumping `build` alone does not.
+The **`stamp` CI check** (`.github/workflows/stamp.yml`) fails any PR that changes a first-party
+asset without a stamp, so the rule holds even when the server-side stamp is missing (#407).
+
 **On every web release run `node source/stamp-version.mjs <MAJOR.MINOR.PATCH>`**
 (e.g. `1.1.0`) — it writes `public/version.json` (the app polls it and
 force-refreshes every open client) AND stamps the `?v=` cache-buster on every first-party
