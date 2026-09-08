@@ -53,8 +53,10 @@
         });
     }
     async function save() {
-        const gate = $('evJoinGate').value;
-        const needAct = $('evRequireActivation').checked ? 1 : 0;
+        // new events are born open (no invite code) with organizer activation on; the
+        // registration section stays hidden until the first save creates them
+        const gate = ev ? currentGate() : 'open';
+        const needAct = ev ? ($('evRequireActivation').checked ? 1 : 0) : 1;
         const extra = {};
         if (id > 0 && ev) {
             const pending = ev.pending_count || 0;

@@ -128,5 +128,18 @@
             RBQr.draw(c, e.activation_code);
         } catch (er) { c.hidden = true; }
     }
-    var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = function() { navigator.clipboard.writeText($('evQrToken').textContent).then(function() { toast('Copied.'); }, function() { toast('Could not copy.'); }); };
+    var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = async function() {
+        const token = $('evQrToken').textContent;
+        try { await navigator.clipboard.writeText(token); }
+        catch (e) {
+            try { // no async Clipboard API (non-secure context, old browser): legacy fallback
+                const ta = document.createElement('textarea');
+                ta.value = token; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                if (!document.execCommand('copy')) throw new Error('copy failed');
+                ta.remove();
+            } catch (e2) { toast('Could not copy.'); return; }
+        }
+        toast('Copied.');
+    };
 })();
