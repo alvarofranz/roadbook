@@ -2035,7 +2035,7 @@
             ta.scrollTop = 0; msg.textContent = '';
         };
         m.q('[data-x="copy"]').onclick = async () => {
-            try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+            RBCopy(ta.value, 'Copied.');
             setMsg(t('Copied.'), true);
         };
     }
@@ -2125,7 +2125,7 @@
             }
         }
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load challenge.'); } return; }
+        if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load the roadbook.'); } return; }
         await account;
         if (id && meUser) {
             const r = await RBApi('rb_get', { id, lock: 1 }); // editing intent: take the soft lock (#154)

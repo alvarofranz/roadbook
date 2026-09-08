@@ -128,5 +128,5 @@
             RBQr.draw(c, e.activation_code);
         } catch (er) { c.hidden = true; }
     }
-    var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = function() { navigator.clipboard.writeText($('evQrToken').textContent).then(function() { toast('Copied.'); }, function() { toast('Could not copy.'); }); };
+    var qrCopyBtn = $('evQrCopy'); if (qrCopyBtn) qrCopyBtn.onclick = function() { RBCopy($('evQrToken').textContent, 'Copied.'); };
 })();

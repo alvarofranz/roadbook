@@ -249,7 +249,7 @@
         $('joinSetRow').hidden = !isCode;
         renderLink();
     }
-    $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
+    $('joinCopy').onclick = () => RBCopy(ev.join_code, 'Copied.');
     function renderLink() {
         if (currentGate() !== 'code' || !ev.join_code) { $('evLink').hidden = true; return; }
         $('evLink').hidden = false;
@@ -266,7 +266,7 @@
         } catch (e) { c.hidden = true; }
     }
     $('evLinkCopy').onclick = async () => {
-        try { await navigator.clipboard.writeText($('evLinkUrl').textContent); toast('Copied.'); } catch (e) { toast('Could not copy.'); }
+        RBCopy($('evLinkUrl').textContent, 'Copied.');
     };
     async function confirmCodeGate() {
         if (currentGate() === 'code') return true;

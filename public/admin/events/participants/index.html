@@ -9,14 +9,16 @@
     <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.7.3-28">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.7.3-28">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.7.4-29">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.7.4-29">
     <style>
         .pp-search { margin: .8rem 0; }
         .pp-search .field { flex: 1; max-width: 360px; margin: 0; }
         .pp-search .btn { width: auto; margin: 0 0 0 auto; }
         .pp-add-search { margin: 0 0 .8rem; }
-        #ppPendingFilter.active { background: var(--accent); color: #fff; }
+        /* the palette has no --accent (it is --sand), so this rule used to paint nothing at all and
+           the toggle looked identical on and off (#422) — same tokens as any other active chip */
+        #ppPendingFilter.active { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
     </style>
 </head>
 <body>
@@ -52,15 +54,15 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../../assets/js/config.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/i18n.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/app.js?v=1.7.3-28"></script>
-<script src="../../../assets/js/qr-scan.js?v=1.7.3-28"></script>
-<script src="participants.js?v=1.7.3-28"></script>
+<script src="../../../assets/js/config.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/i18n.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/app.js?v=1.7.4-29"></script>
+<script src="../../../assets/js/qr-scan.js?v=1.7.4-29"></script>
+<script src="participants.js?v=1.7.4-29"></script>
 </body>
 </html>

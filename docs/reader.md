@@ -259,8 +259,13 @@ Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio 
 
 Opzionale (`showMap`), una mappa per volta. `toggleNoteMap`
 ([reader.js:239](../public/reader/reader.js#L239)) apre un `RBMap` nello slot `.nmap` sotto la
-riga: centro sulla nota a zoom ~13, con l'intera traccia + pin per contesto
-(`showRoadbook(rb, true)` senza auto-fit) e la nota evidenziata (`select`). Toccare la mappa
+riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
+`NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
+true)`), evidenziato con `select(n, true)` — `noEase` per non spostare il centro dal pilota. Senza
+fix GPS la nota stessa è l'unica posizione nota e diventa il centro. Prima erano l'intera traccia
+e tutti i pin a zoom 13: troppo grosso per leggere un incrocio, e gli altri pin sono rumore
+quando la domanda è "dove sono rispetto a QUESTO waypoint" (#427). La vista d'insieme del
+percorso resta sulla pagina pubblica del roadbook e nell'Editor. Toccare la mappa
 aperta la richiude. `closeInlineMap` ([reader.js:251](../public/reader/reader.js#L251))
 distrugge pulitamente la mappa GL — ed è chiamata **all'inizio di ogni `renderNotes`**, dato
 che la lista viene ricostruita per intero. Se MapLibre non è configurato, mostra un toast.
