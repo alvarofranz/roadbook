@@ -135,3 +135,36 @@ describe('noteReached — the auto-validation gate (#384)', () => {
         expect(RB.noteReached(null, null, { lat: 0, lon: 0 }, gate)).toBe(false);
     });
 });
+
+describe('manualGate — may this note be validated by hand from here? (#385 · #431)', () => {
+    const note = { lat: 0, lon: 0 };
+    const at = (m) => ({ lat: 0, lon: deg(m) });
+
+    it('never objects when there is no position — manual tracking works with no GPS at all', () => {
+        expect(RB.manualGate(note, null, 8)).toBeNull();
+        expect(RB.manualGate(note, undefined, null)).toBeNull();
+    });
+
+    it('allows a validation inside the 100 m radius', () => {
+        expect(RB.manualGate(note, at(40), 8)).toBeNull();
+        expect(RB.manualGate(note, at(99), 0)).toBeNull();
+    });
+
+    it("does not charge the driver for the phone's uncertainty", () => {
+        // 130 m away with a ±40 m fix could genuinely be standing on the note; refusing that is
+        // the app contradicting the driver, which is what #385 was about
+        expect(RB.manualGate(note, at(130), 40)).toBeNull();
+        expect(RB.manualGate(note, at(130), 5)).toBeCloseTo(130, 0); // a good fix, genuinely far
+    });
+
+    it('reports HOW far when it refuses, so the refusal can be acted on', () => {
+        // the distance is what the Reader puts in the "skip it and continue?" offer (#431) —
+        // a bare boolean could only dead-end
+        expect(RB.manualGate(note, at(5000), 8)).toBeCloseTo(5000, -1);
+    });
+
+    it('never objects about a note with no coordinates (a comment row)', () => {
+        expect(RB.manualGate({ note_kind: 'comment', text: 'careful' }, at(5000), 8)).toBeNull();
+        expect(RB.manualGate(null, at(5000), 8)).toBeNull();
+    });
+});

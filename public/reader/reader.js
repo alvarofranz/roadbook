@@ -216,7 +216,7 @@
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
         document.body.classList.add('rb-immersive');
         $('finishBtn').hidden = !comp;
-        sizeBottomBars(); // the action row just changed height (Competition adds Finish)
+        publishBottomStack(); // the action row just changed height (Competition adds Finish)
         syncAutoBtn();
         $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
@@ -305,29 +305,28 @@
         refreshLive();
         saveSession();
     }
-    // The CAP bar rides directly on top of the action row, whose height depends on the mode
-    // (Competition adds Finish), on the viewport and on fullscreen — measure it instead of
-    // trusting a constant, or the bar clips the top of the buttons it sits on.
-    // The same measurement publishes `--bottom-stack`, the height of everything the Reader pins
-    // to the viewport bottom, so anything the shared layer floats down there — the cookie notice
-    // (#401) — stacks above the controls instead of covering them.
-    function sizeBottomBars() {
+    // Inside the shell the CAP bar and the action row are laid-out rows (#429), so nothing here
+    // has to position them. What still needs their height is what the SHARED layer pins to the
+    // viewport bottom over the top of them — the cookie notice (#401) and the toast — and the
+    // answer is simply how tall those two bars are. No `window.innerHeight`: that arithmetic is
+    // exactly what left the CAP bar floating mid-list on iOS, because the viewport it read moves
+    // after load, on resize and on rotation, while the value did not.
+    function publishBottomStack() {
         const fab = document.querySelector('.fabrow');
-        const top = fab.getBoundingClientRect().top;
-        if (top > 0) document.body.style.setProperty('--capbar-bottom', Math.round(window.innerHeight - top) + 'px');
-        // The CAP bar is the top of the stack whenever it is up; with it down the action row is.
-        const stackTop = capEls.bar.hidden ? top : capEls.bar.getBoundingClientRect().top;
-        if (stackTop > 0) document.body.style.setProperty('--bottom-stack', Math.round(window.innerHeight - stackTop) + 'px');
-        else document.body.style.removeProperty('--bottom-stack'); // nothing pinned yet (load screen)
+        // offsetHeight is 0 for a hidden bar, so the preview (which hides both) clears the
+        // variable on its own and the notice drops back to the floor.
+        const stack = (fab.offsetHeight || 0) + (capEls.bar.hidden ? 0 : capEls.bar.offsetHeight || 0);
+        if (stack > 0) document.body.style.setProperty('--bottom-stack', stack + 'px');
+        else document.body.style.removeProperty('--bottom-stack');
     }
-    window.addEventListener('resize', sizeBottomBars);
-    // Raising or dropping the CAP bar changes the stack's height, so re-measure on the flip — and
+    window.addEventListener('resize', publishBottomStack); // the rows re-wrap, so their height changes
+    // Raising or dropping the CAP bar changes the stack's height, so re-publish on the flip — and
     // only on the flip: updateCapBar runs on every GPS fix, and a layout read per fix is a reflow
     // for nothing.
     function showCapBar(up) {
         if (up === !capEls.bar.hidden) return;
         capEls.bar.hidden = !up;
-        sizeBottomBars();
+        publishBottomStack();
     }
     function setGps(state, acc) { odoEls.gpsDot.className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); odoEls.gpsTxt.textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
@@ -347,21 +346,20 @@
     const fmtDist = (m) => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
     const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
-    // Keep the just-completed note on screen when advancing (#177). Centring the active (next)
-    // note slid the note you just used up behind the sticky odometer bar; instead anchor the
-    // PREVIOUS row just below that bar, so the completed note stays visible with the active note
-    // right under it. Measures the sticky-bar height at runtime (it collapses in fullscreen).
+    // Keep the just-completed note on screen when advancing (#177): anchor the PREVIOUS row at the
+    // top of the list, so the note you have just used stays visible with the active note right
+    // under it. Inside the shell the list is the scroller and the odometer bar is a sibling ABOVE
+    // it (#429), so this is arithmetic in the list's own coordinates — no page scroll, and no
+    // allowance for a bar that no longer overlaps anything.
     function scrollActiveIntoView() {
         const list = $('noteList');
         const act = list.querySelector('.nrow.active');
         if (!act) return;
-        const rows = list.querySelectorAll('.nrow');
-        let anchor = act;
-        for (let k = 0; k < rows.length; k++) { if (rows[k] === act) { if (k > 0) anchor = rows[k - 1]; break; } }
-        const odo = document.querySelector('.odometer-bar');
-        const topOcc = odo ? odo.getBoundingClientRect().bottom : 56; // pixels hidden behind the sticky top bar(s)
-        const y = anchor.getBoundingClientRect().top + window.scrollY - topOcc - 8;
-        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        const rows = [...list.querySelectorAll('.nrow')];
+        const at = rows.indexOf(act);
+        const anchor = at > 0 ? rows[at - 1] : act;
+        const top = list.scrollTop + anchor.getBoundingClientRect().top - list.getBoundingClientRect().top;
+        list.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
     }
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
@@ -517,10 +515,13 @@
     // from the note — widened by that fix's own accuracy, so the phone's uncertainty is never
     // charged to the driver — and the refusal states the real distance, so a "too far" can be
     // understood in the field instead of just contradicting the driver (#385).
+    // How far the last trusted fix is from note i when that is too far to validate by hand, else
+    // null. The rule itself lives in the core (RB.manualGate) because the Reader and the Ranking
+    // must agree on it; here it is only ever asked about the position we trust.
+    const farFrom = (i) => RB.manualGate(notes[i], lastHere, lastAcc);
     function tooFarFrom(i) {
-        if (!lastHere) return false;
-        const dist = RB.geo.haversineM(lastHere, notes[i]);
-        if (dist <= C.MANUAL_RADIUS_M + (lastAcc || 0)) return false;
+        const dist = farFrom(i);
+        if (dist == null) return false;
         toast(t('Too far from note') + ' ' + notes[i].num + ' · ' + fmtDist(dist));
         return true;
     }
@@ -571,9 +572,24 @@
     }
     // What "advance" means here: validate in competition, mark reached in trip. The Validate /
     // Note done button, a tap on the active row and the remote's next command run this same action.
-    function advanceNote() {
+    //
+    // In competition the proximity gate can refuse — correctly: a scored validation cannot be
+    // faked from a distance. But refusing was a dead end (#431): the cursor stayed put and the
+    // button did nothing on every further press, so a driver who had genuinely missed a waypoint
+    // was stuck on it. A note you did not reach is *skipped*, which the scoring already models,
+    // so that is what gets offered — named, priced, and never a fake validation from far away,
+    // which would corrupt the accuracy score.
+    async function advanceNote() {
         if (activeIdx >= notes.length) return;
-        if (competition) validateHere(activeIdx); else markReached(activeIdx);
+        if (!competition) return markReached(activeIdx);
+        const i = activeIdx, far = farFrom(i);
+        if (far == null) return validateAt(i, lastHere);
+        const n = notes[i], pts = RB.skipPenalty(scoredSet, i, nextNav(i + 1));
+        let msg = t('Too far from note') + ' ' + n.num + ' · ' + fmtDist(far) + '<br>' + t('Skip it and continue?');
+        if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
+        if (!(await RBConfirm(msg, t('Skip note')))) return;
+        pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
+        activeIdx = nextNav(i + 1); tripPartialM = 0; updateNoteStates();
     }
     $('validateBtn').onclick = advanceNote;
 
@@ -635,7 +651,10 @@
     // End navigation: leave the run and return to the load screen. The note progress
     // (reached/skipped) is discarded — warn before doing it.
     $('endBtn').onclick = async () => {
-        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) { clearSession(); window.RB_BUSY = false; location.href = '../'; } // back to the home page; unblock the version auto-refresh before leaving
+        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) {
+            if (meter) meter.stop();      // release the GPS explicitly, not via the unload path (#430)
+            clearSession(); window.RB_BUSY = false; location.href = '../'; // unblock the version auto-refresh before leaving
+        }
     };
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 

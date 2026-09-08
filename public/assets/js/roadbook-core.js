@@ -127,6 +127,17 @@
         const d = from ? nearestOnTrack([from, here], note).dist : haversineM(here, note);
         return d <= radiusM;
     }
+    /* May note i be validated by hand from `here`? — the Reader's manual/competition gate (#385,
+       #431). Manual tracking works with NO GPS at all, so no position means no objection. With a
+       position, a scored validation must not be fakeable from a distance, but the phone's own
+       uncertainty is not the driver's fault: the 100 m radius is widened by the fix's accuracy.
+       Returns the distance when it is too far (so the refusal can say how far, and offer to skip
+       the note instead of dead-ending), or null when the validation is allowed. */
+    function manualGate(note, here, accuracy) {
+        if (!note || !here || note.lat == null) return null;
+        const dist = haversineM(here, note);
+        return dist > CONST.MANUAL_RADIUS_M + (accuracy || 0) ? dist : null;
+    }
     // Dark or light ink for legible text on a solid colour fill (perceived luminance).
     function textInk(hex) {
         const c = String(hex).replace('#', '');
@@ -1145,7 +1156,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,

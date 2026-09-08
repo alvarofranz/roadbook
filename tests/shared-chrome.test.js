@@ -79,8 +79,12 @@ describe('the Reader publishes its bottom stack', () => {
         expect(readerJs).toContain("setProperty('--bottom-stack'");
     });
 
-    it('still positions the CAP bar on the action row', () => {
-        expect(readerJs).toContain("setProperty('--capbar-bottom'");
+    it('publishes it from the bars\' own heights, not from the viewport', () => {
+        // `window.innerHeight` arithmetic is what left the CAP bar floating mid-list on iOS: the
+        // viewport it read moves after load, on resize and on rotation, the value did not (#429)
+        expect(readerJs).toContain('capEls.bar.offsetHeight');
+        expect(readerJs).not.toMatch(/window\.innerHeight\s*-/); // the offset-from-the-viewport pattern
+        expect(readerJs).not.toContain('--capbar-bottom'); // the CAP bar is a flow row in the shell
     });
 
     it('clears the variable when nothing is pinned, so the notice drops back down', () => {
@@ -94,11 +98,11 @@ describe('the Reader publishes its bottom stack', () => {
         expect(assignments).toHaveLength(1);
         const showCapBar = readerJs.match(/function showCapBar\(up\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(showCapBar).toContain('capEls.bar.hidden = !up;');
-        expect(showCapBar).toContain('sizeBottomBars();');
+        expect(showCapBar).toContain('publishBottomStack();');
     });
 
     it('re-measures when the viewport changes', () => {
-        expect(readerJs).toContain("window.addEventListener('resize', sizeBottomBars)");
+        expect(readerJs).toContain("window.addEventListener('resize', publishBottomStack)");
     });
 });
 
@@ -165,5 +169,79 @@ describe('the cookie notice reserves its own room (#405)', () => {
         // stacked it stood 177px tall on a 390px screen and reached down onto the Recorder's
         // start button; keeping it on one row is what halves it
         expect(declOf(mobileRuleOf('.cookie-notice'), 'flex-wrap')).toBe('nowrap');
+    });
+});
+
+describe('the immersive Reader is an app shell, not pinned bars (#429)', () => {
+    const readerHtml = read('public/reader/index.html');
+    // rules from the Reader's own <style> block, which is indented inside the page
+    const readerRule = (sel) => readerHtml.match(new RegExp(esc(sel) + '\\s*\\{([^}]*)\\}'))[1];
+
+    it('#navScreen is a viewport-sized flex column', () => {
+        const shell = readerRule('body.rb-immersive #navScreen');
+        expect(declOf(shell, 'position')).toBe('fixed');
+        expect(declOf(shell, 'inset')).toBe('0');
+        expect(declOf(shell, 'flex-direction')).toBe('column');
+        expect(declOf(shell, 'overflow')).toBe('hidden'); // the document must not scroll at all
+    });
+
+    it('carries the safe-area insets, so the status bar and home indicator are handled once', () => {
+        const shell = readerRule('body.rb-immersive #navScreen');
+        expect(declOf(shell, 'padding-top')).toContain('env(safe-area-inset-top)');
+        expect(declOf(shell, 'padding-bottom')).toContain('env(safe-area-inset-bottom)');
+    });
+
+    it('the note list is the only scroller, and can shrink enough to be one', () => {
+        const list = readerRule('body.rb-immersive #noteList');
+        expect(declOf(list, 'flex')).toBe('1');
+        expect(declOf(list, 'min-height')).toBe('0'); // without this a flex child pushes the bars off-screen
+        expect(declOf(list, 'overflow-y')).toBe('auto');
+        expect(declOf(list, 'padding-bottom')).toBe('0'); // no padding standing in for a bar's height
+    });
+
+    it('every bar is a flow row inside the shell', () => {
+        for (const sel of ['body.rb-immersive .odometer-bar', 'body.rb-immersive .fabrow']) {
+            expect(declOf(readerRule(sel), 'position'), sel).toBe('static');
+        }
+        // the CAP bar's base rule must not pin it either
+        expect(declOf(readerRule('.capbar'), 'position')).toBeNull();
+    });
+
+    it('nothing shared floats onto the tool while it owns the screen', () => {
+        // the language chip was sitting on the CAP bar's distance readout mid-drive
+        const hidden = appCss.match(/body\.rb-immersive \.app-chip-stack[^{]*\{([^}]*)\}/)[1];
+        expect(declOf(hidden, 'display')).toBe('none');
+        expect(appCss).toMatch(/body\.rb-immersive \.lang-mobile|body\.rb-fs \.lang-mobile/);
+        expect(declOf(readerRule('body.rb-immersive .webgps-banner'), 'display')).toBe('none');
+    });
+
+    it('the toast clears whatever is pinned to the bottom', () => {
+        // the one message explaining why a tap did nothing must not land behind the buttons (#431)
+        expect(declOf(ruleOf('.toast'), 'bottom')).toContain('var(--bottom-stack');
+    });
+});
+
+describe('the GPS watch does not outlive the page (#430)', () => {
+    const meter = read('public/assets/js/gps-meter.js');
+
+    it('releases the watch on pagehide, and re-arms a page restored from the cache', () => {
+        expect(meter).toContain("window.addEventListener('pagehide'");
+        expect(meter).toContain("window.addEventListener('pageshow'");
+        expect(meter).toMatch(/persisted/); // a bfcache restore keeps the JS state but not the watch
+    });
+
+    it('does NOT hang the watch off visibilitychange', () => {
+        // backgrounding the app is exactly when logging must keep going — that is the whole
+        // reason the native watch exists
+        const onVis = meter.match(/_onVis = [^\n]*/)[0];
+        expect(onVis).toContain('_wake()');
+        expect(onVis).not.toContain('stop()');
+    });
+
+    it('the native watch is started idempotently', () => {
+        const native = read('native/src/native.js');
+        const start = native.match(/async start\(onUpdate, onError\) \{([\s\S]*?)\n {8}\}/)[1];
+        expect(start.indexOf('BackgroundGeolocation.stop()')).toBeGreaterThan(-1);
+        expect(start.indexOf('BackgroundGeolocation.stop()')).toBeLessThan(start.indexOf('BackgroundGeolocation.start('));
     });
 });

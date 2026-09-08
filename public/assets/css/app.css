@@ -114,10 +114,6 @@ img { max-width: 100%; display: block; }
    so no !important is needed. */
 body.rb-fs .app-tabbar, body.rb-immersive .app-tabbar { display: none; }
 body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
-/* immersive mode (Reader navigating): the tool has its OWN bottom action row (with an exit
-   button), so it returns to the screen edge — no tab bar underneath to clear. */
-body.rb-immersive .fabrow { bottom: 0; }
-
 /* language switcher — collapsed flag-only trigger that opens a flag + name list */
 .lang { position: relative; display: inline-flex; }
 .lang-trigger { display: inline-flex; align-items: center; gap: .35rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 9px; padding: .3rem .45rem; color: var(--text); cursor: pointer; }
@@ -195,8 +191,11 @@ section.block { padding: 2.4rem 0; }
    on mobile, bottom-right on desktop — independent of the top bar, so they show on every layout */
 .app-chip-stack { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 55; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
 .app-chip-stack:empty { display: none; }
-/* no floating chips during focused field use (Reader navigating / fullscreen) */
-body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
+/* nothing floats during focused field use (Reader navigating / fullscreen): the tool owns the
+   screen, and with the tab bar hidden these chips land straight on its own bars — the language
+   chip was sitting on the CAP bar's distance readout while driving (#429) */
+body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack,
+body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
 .native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
@@ -453,7 +452,10 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
-.toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
+/* A toast must clear whatever the page has pinned to the bottom edge, or the one message that
+   explains why a tap did nothing lands behind the buttons (#431): `--bottom-stack` is published
+   by pages that stack their own bars there (the Reader), 90px is the standing default elsewhere. */
+.toast { position: fixed; left: 50%; bottom: max(90px, calc(var(--bottom-stack, 0px) + .8rem)); transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
 .mode-grid { display: grid; gap: .7rem; margin-top: .8rem; }
 .mode-btn { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; color: var(--text); cursor: pointer; transition: border-color .15s; }
 .mode-btn:hover { border-color: var(--sand); }

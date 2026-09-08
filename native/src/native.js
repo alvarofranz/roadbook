@@ -132,6 +132,11 @@ const RBNative = {
         // identically. A single watch runs at a time (start replaces, stop ends it).
         async start(onUpdate, onError) {
             try {
+                // Idempotent on purpose: a watch that outlived its page (an old tool left without
+                // stopping) would otherwise still be registered and the plugin would refuse this
+                // one, leaving the tool with no fixes at all (#430). What the plugin does on a
+                // double start is not something the app should have to depend on.
+                try { await BackgroundGeolocation.stop(); } catch (e) { /* nothing was running */ }
                 await BackgroundGeolocation.start({
                     backgroundTitle: 'RDBK',
                     backgroundMessage: 'Recording your route',  // its presence is what keeps updates alive in the background

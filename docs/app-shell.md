@@ -269,6 +269,7 @@ riservare spazio. Il contratto, verificato staticamente da
 | Una barra ancorata a un bordo **prende spazio** oppure **pubblica la sua altezza** | il banner GPS sta nel flusso; l'avviso cookie pubblica `--notice-h` e il `padding-bottom` di `body` lo riserva (in tutte le modalità, immersive compresa); il Reader pubblica `--bottom-stack` (vedi [reader.md](reader.md)) |
 | Una **modale è il livello più alto** | `.modal` sta sopra ogni barra condivisa: altrimenti disegnavano sui suoi pulsanti, e un avviso non si può nemmeno chiudere mentre una modale è aperta (il backdrop mangia il click) |
 | Su telefono un avviso resta **compatto** | l'avviso cookie tiene il pulsante accanto al testo: impilato era alto 177 px su 390, un quinto dello schermo, e arrivava sul pulsante di avvio del Recorder |
+| Uno strumento che possiede lo schermo usa un **guscio applicativo**, non barre fissate | il Reader in navigazione è un `position: fixed; inset: 0` a colonna flex, con la lista note come unico scroller e le barre come righe di flusso — vedi [reader.md § Il guscio applicativo](reader.md). Fissare le barre e calcolarne la posizione contro `window.innerHeight` non regge su iOS, dove quel viewport si muove dopo il load, al resize e alla rotazione (#429) |
 
 #### `RBWebGpsConfirm(comp) → Promise<boolean>`
 Gate **one-time** (deciso una volta per browser, `localStorage`) che precede ogni azione

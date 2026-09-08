@@ -164,6 +164,14 @@ DB/Convenzioni rapide below have counterparts there).
   `--bottom-stack`); a dialog (`.modal`) is always the top layer. Four bugs came from getting
   this wrong (#401 · #403 · #404 · #405) — each one left a button that could not be tapped
   while driving. `tests/shared-chrome.test.js` pins the contract; `docs/app-shell.md` explains it.
+- **A tool that owns the screen is an app SHELL, not a set of pinned bars.** The Reader in
+  navigation is `position: fixed; inset: 0` as a flex column whose only scroller is the note
+  list, with every bar an ordinary flow row and the safe-area insets on the shell (#429). Never
+  pin a bar and compute its offset from `window.innerHeight`: on iOS that viewport settles after
+  load, changes on resize/rotation and moves with Safari's toolbar, so the value is stale the
+  moment it is taken — that is how the CAP bar ended up floating mid-list on a phone. The
+  document must not scroll at all in that mode, so scrolling code works in the scroller's
+  coordinates, never `window.scrollY`.
 - **Reuse CSS, don't multiply it — real DRY.** BEFORE adding a class, read the existing
   styles and reuse what fits. Name classes **abstractly** so they're reusable across features
   (`.btnrow.center`, `.icon-accent`, `.field-grid`) — never a throwaway class per feature.
@@ -441,7 +449,8 @@ Operational notes:
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
   you might only want to look; the **"Navigate"** button is what opens the mode chooser. That
   modal sets Trip vs Competition mode, the per-note map button and optional live GPX logging, then
-  navigation starts (`body.rb-immersive`: the tool owns the screen, tab bar hidden). Advancement
+  navigation starts (`body.rb-immersive`: the tool owns the screen — `#navScreen` becomes the app
+  shell, a fixed flex column whose only scroller is the note list, #429). Advancement
   is automatic by default: the note validates the moment the **driven segment** between two GPS
   fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
   slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
