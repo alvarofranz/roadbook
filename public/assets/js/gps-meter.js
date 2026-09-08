@@ -24,8 +24,20 @@ window.RBGpsMeter = class RBGpsMeter {
         this.pos = null; this.accuracy = null; this.speedKmh = 0; this.heading = null; this.watchId = null;
         this._anchor = null; // last trusted position + fix time — the odometer's reference
         this._lastSpeedPos = null; this._lastSpeedT = null; this._wakeLock = null;
-        this._native = false; this._running = false;
+        this._native = false; this._running = false; this._wasRunning = false;
         this._onVis = () => { if (document.visibilityState === 'visible' && this._running) this._wake(); }; // re-acquire the wake lock when the tab comes back
+        /* The watch must not outlive the page (#430). In a browser the teardown takes the
+         * Geolocation watch with it, but in the app it is a native foreground service: it kept
+         * running after the user left the tool, and the next run then asked for a watch while
+         * that stale one was still registered and got an error instead of fixes — GPS simply
+         * never came alive, with permission already granted. `pagehide` is the right hook:
+         * unlike `visibilitychange` it does NOT fire when the app is merely backgrounded, which
+         * is exactly when logging must keep going. A page restored from the back/forward cache
+         * comes back with its JS state intact, so it also has to be re-armed. */
+        this._onHide = () => { if (this._running) { this._wasRunning = true; this.stop(); } };
+        this._onShow = (e) => { if (e.persisted && this._wasRunning) { this._wasRunning = false; this.resume(); } };
+        window.addEventListener('pagehide', this._onHide);
+        window.addEventListener('pageshow', this._onShow);
         this.resume();
     }
     // (Re)start the watch and re-acquire the screen wake lock — also used to resume after

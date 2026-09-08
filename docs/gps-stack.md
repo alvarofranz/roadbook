@@ -99,12 +99,26 @@ tachimetro non resta "incollato" all'ultimo valore.
 
 | Metodo | Effetto |
 |--------|---------|
-| `constructor(onFix, onError)` | salva le callback, *definisce* l'handler di visibilità e chiama `resume()` |
+| `constructor(onFix, onError)` | salva le callback, *definisce* l'handler di visibilità, aggancia il ciclo di vita della pagina (sotto) e chiama `resume()` |
 | `resume()` | (ri)avvia il watch, **aggiunge** il listener `visibilitychange` e riacquisisce il wake lock; no-op se già attivo |
 | `stop()` | ferma il watch, **rimuove** il listener `visibilitychange` e rilascia il wake lock |
 
 `stop()` + `resume()` sono la coppia Pausa/Riprendi (il Reader li usa così,
 [reader.js:345](../public/reader/reader.js#L345)).
+
+**Il watch non sopravvive alla pagina (#430).** Nel browser lo smontaggio della pagina si porta
+via il watch della Geolocation, ma nell'app il watch **è un foreground service nativo**: restava
+attivo dopo che l'utente aveva lasciato il tool, e la corsa successiva chiedeva un watch mentre
+quello vecchio era ancora registrato, ricevendo un errore invece dei fix — il GPS non partiva più,
+col permesso già concesso. Quindi:
+
+- `pagehide` → `stop()`. È l'hook giusto: a differenza di `visibilitychange` **non** scatta quando
+  l'app va solo in background, che è esattamente quando il logging deve continuare;
+- `pageshow` con `event.persisted` → `resume()`, perché una pagina ripristinata dalla back/forward
+  cache torna con lo stato JS ma senza il watch;
+- `RBNative.geo.start()` è **idempotente**: fa `stop()` prima di `start()`, così un watch
+  sopravvissuto non può comunque bloccare il successivo. Difensivo di proposito: cosa faccia il
+  plugin a un doppio `start()` non è qualcosa da cui l'app debba dipendere.
 
 ### Native vs browser
 

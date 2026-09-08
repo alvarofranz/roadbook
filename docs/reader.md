@@ -162,25 +162,44 @@ reach della nota attiva prende la classe `.arriving` (blu, come la riga). `refre
 riallinea sia a ogni fix affidabile sia a ogni cambio di nota attiva, così la distanza non
 resta mai a descrivere la nota precedente.
 
-### La pila di barre in basso (`--bottom-stack`)
-Riga d'azione (`.fabrow`) e barra CAP sono entrambe fissate al fondo del viewport, e l'altezza va
-**misurata** invece che stimata: dipende dalla modalità (Competizione aggiunge Finish), dal
-viewport e dal fullscreen, quindi una costante farebbe tagliare i pulsanti su cui la barra CAP
-poggia. `sizeBottomBars()` ([reader.js:314](../public/reader/reader.js#L314)) fa quella misura una
-volta sola e ne pubblica due variabili CSS:
+### Il guscio applicativo (#429)
+In navigazione il Reader **possiede lo schermo**, e `#navScreen` racchiude già esattamente i figli
+giusti — barra odometro · lista note · barra CAP · riga d'azione. Quindi è lui il **guscio**:
 
-| Variabile | Chi la legge | A cosa serve |
-|-----------|--------------|--------------|
-| `--capbar-bottom` | `.capbar` ([index.html](../public/reader/index.html)) | posa la barra CAP esattamente sopra la riga d'azione |
-| `--bottom-stack` | `.cookie-notice` ([app.css:340](../public/assets/css/app.css#L340)) | altezza dell'**intera** pila, così ciò che il livello condiviso fissa in basso si impila sopra i comandi invece di coprirli (#401) |
+```
+body.rb-immersive #navScreen   position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden
+├── .odometer-bar              position: static; flex: none
+├── #noteList                  flex: 1; min-height: 0; overflow-y: auto     ← l'UNICO scroller
+├── .capbar                    riga di flusso
+└── .fabrow                    position: static; flex: none
+```
 
-L'avviso cookie ha uno `z-index` molto più alto delle barre del Reader: senza questo contratto
-atterra sopra Valida / Auto / Pausa / Fine — proprio i comandi che servono mentre si guida, e in
-navigazione la tab bar globale è nascosta (`body.rb-immersive`), quindi lo scarto pensato per
-scavalcarla lo poserebbe esattamente sui pulsanti. La misura viene rifatta al `resize` e a ogni
-salita/discesa della barra CAP (`showCapBar`), mai a ogni fix GPS: un reflow per fix non
-servirebbe a nulla. In anteprima la `.fabrow` è `display: none`, la variabile viene rimossa e
-l'avviso torna a poggiare sul fondo.
+Prima le tre barre erano `position: fixed` e la loro posizione veniva **calcolata** contro
+`window.innerHeight`. Su iOS quel viewport non sta fermo: si assesta dopo il load, cambia quando
+la WebView viene ridimensionata o si ruota il telefono, e si muove mentre la toolbar di Safari si
+richiude. Un valore preso nell'istante sbagliato non veniva più corretto, e il risultato era la
+barra CAP che **galleggiava in mezzo alla lista** con le righe delle note che passavano dietro la
+riga d'azione. Nel guscio non c'è niente da calcolare: le barre sono righe di flusso, non possono
+galleggiare, non possono essere coperte e non possono essere obsolete; il rubber-band di iOS
+avviene dentro la lista, dove deve stare. `min-height: 0` è ciò che permette al figlio flex di
+rimpicciolirsi e scrollare invece di spingere le barre fuori schermo. Gli inset di sicurezza
+(status bar, home indicator) sono gestiti una volta sola, sul guscio.
+
+Conseguenze da tenere a mente:
+- **il documento non scrolla affatto** in navigazione (`overflow: hidden` sul guscio): chi cerca
+  `window.scrollY` sta guardando il posto sbagliato. `scrollActiveIntoView` lavora nelle coordinate
+  della lista (`list.scrollTop`);
+- `#noteList` non ha più `padding-bottom` a fare da segnaposto per l'altezza delle barre;
+- niente di condiviso può galleggiarci sopra: chip di lingua e chip flottanti sono nascosti in
+  `body.rb-immersive`/`body.rb-fs` (il chip lingua stava sulla lettura di distanza della barra CAP
+  mentre si guidava), e il banner GPS-web pure — la partenza è già stata filtrata dalla sua modale.
+
+Resta una sola variabile CSS, `--bottom-stack`, pubblicata da `publishBottomStack()`: l'altezza
+delle due barre in basso, presa **da loro** (`offsetHeight`), non dal viewport. La leggono le uniche
+cose ancora fissate al bordo dal livello condiviso — l'avviso cookie (#401) e il **toast**, che
+altrimenti finisce dietro i pulsanti proprio quando è l'unico messaggio che spiega perché un tap
+non ha fatto nulla (#431). In anteprima le barre sono `display: none`, `offsetHeight` è 0 e la
+variabile viene rimossa da sé.
 
 ### Sincronizzazione dell'odometro alla distanza nota
 A ogni validazione, se la nota ha una `distance`, il totale viene **riallineato** alla
@@ -300,11 +319,18 @@ fanno la stessa cosa: `advanceNote()`.
 - In **Trip mode** (`!competition`) `advanceNote` chiama `markReached`: marca verde, azzera il
   parziale, sincronizza il totale sulla `distance` della nota e avanza. Nessun punteggio, nessun
   gate di prossimità — un viaggio si segue a vista.
-- In **Competition** chiama `validateHere`, che valida con punteggio. Il tracking manuale
-  funziona **anche senza alcun GPS**; quando *c'è* un fix vale il gate di prossimità
-  `MANUAL_RADIUS_M = 100 m`, **allargato dell'accuratezza del fix** — l'incertezza del telefono
-  non è colpa di chi guida (#385) — e il rifiuto dice la distanza reale ("Too far from note 4 ·
-  320 m") invece di un generico "troppo lontano".
+- In **Competition** valida con punteggio. Il tracking manuale funziona **anche senza alcun
+  GPS**; quando *c'è* un fix vale il gate di prossimità `RB.manualGate` — `MANUAL_RADIUS_M = 100 m`
+  **allargato dell'accuratezza del fix**, perché l'incertezza del telefono non è colpa di chi
+  guida (#385) — e il rifiuto dice la distanza reale invece di un generico "troppo lontano".
+- **Il rifiuto non è un vicolo cieco** (#431). Rifiutare è giusto: una convalida a punteggio non
+  si può falsificare da lontano. Ma prima il cursore restava fermo e il pulsante non faceva più
+  nulla a ogni pressione successiva, quindi chi aveva davvero mancato un waypoint ci rimaneva
+  incastrato. Una nota non raggiunta è **saltata**, cosa che il punteggio già modella, quindi è
+  esattamente quello che viene offerto: "Too far from note 4 · 5.00 km — Skip it and continue?
+  Penalty: 450 pts". Accettando, la nota **non** entra in `reached` (resta rosa), il cursore
+  avanza e `RB.skipPenalty` viene addebitata una volta. Mai una convalida finta da lontano, che
+  falserebbe il punteggio di accuratezza.
 - Il tap su **un'altra** riga è `jumpToNote(i)`: spostamento esplicito del cursore, **con
   conferma** che nomina la nota e dice il prezzo (le note intermedie restano non validate; in
   competizione `RB.skipPenalty`, 450 pt per nota valutata). Prima era un semplice tap su riga

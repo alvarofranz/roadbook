@@ -163,6 +163,7 @@
             'Reset the partial trip?': 'Teildistanz zurücksetzen?', 'Colour for the band {band}': 'Farbe für Band {band}', 'Show password': 'Passwort anzeigen', 'Hide password': 'Passwort verbergen', 'photo': 'Foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
             'Smaller': 'Kleiner', 'Bigger': 'Größer', 'Rotate left': 'Links drehen', 'Rotate right': 'Rechts drehen', 'Flip': 'Spiegeln', 'Thinner': 'Dünner', 'Thicker': 'Dicker', 'Road type': 'Straßentyp', 'Reset timer': 'Timer zurücksetzen',
             'Add junction': 'Kreuzung hinzufügen', 'Remove logo': 'Logo entfernen', 'GPS lost': 'GPS verloren', 'Too far from note': 'Zu weit von Note entfernt', 'Could not load the roadbook.': 'Roadbook konnte nicht geladen werden.',
+            'Skip it and continue?': 'Überspringen und weiter?', 'Skip note': 'Note überspringen',
             'Jump to note': 'Zu Note springen', 'Jump': 'Springen', 'The notes in between will be left unvalidated.': 'Die Noten dazwischen bleiben unbestätigt.', 'Penalty:': 'Strafe:', 'A validated note cannot be changed in competition mode.': 'Im Wettbewerbsmodus kann eine bestätigte Note nicht geändert werden.',
             'Camera stopped.': 'Kamera gestoppt.', 'Removed': 'Entfernt',
             'Could not generate the PDF.': 'PDF konnte nicht erstellt werden.',
