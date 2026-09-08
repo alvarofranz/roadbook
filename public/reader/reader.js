@@ -615,7 +615,7 @@
     // The auto-advance control is a toggle SWITCH: the knob position shows the current state
     // (on = GPS validates notes automatically), so it never reads as "press to set to the label".
     const syncAutoBtn = () => { $('autoBtn').classList.toggle('on', auto); $('autoBtn').setAttribute('aria-checked', String(auto)); };
-    $('autoBtn').onclick = () => { auto = !auto; syncAutoBtn(); renderNotes(); };
+    $('autoBtn').onclick = () => { auto = !auto; syncAutoBtn(); toast(t(auto ? 'Auto validation on' : 'Auto validation off'), 3000); renderNotes(); };
     // re-render the translated note rows when the language changes mid-session
     window.addEventListener('rb-lang', () => { if (notes.length && !$('navScreen').hidden) renderNotes(); });
     // Pause: stop the GPS watch and release the wake lock to save battery (e.g. a lunch
