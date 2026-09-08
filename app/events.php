@@ -403,13 +403,30 @@ function participant_activate(array $user, array $d): void {
 
 /* ---- public (no auth) ---- */
 function events_public_list(): void {
-    // grouped LEFT JOINs count each event's PUBLIC roadbooks in one pass instead of a
-    // correlated subquery per listed event
+    // grouped LEFT JOINs count each event's roadbooks in one pass instead of a
+    // correlated subquery per listed event. The count mirrors the event page's
+    // visibility (#419): anyone sees PUBLIC roadbooks; participants (pending
+    // included) and organizers also see READY ones; organizers see DRAFTs too.
+    // Signed out, that collapses to PUBLIC only.
+    $me = current_user();
+    $countExpr = "COUNT(DISTINCT CASE WHEN r.status = 'public' THEN r.id END)";
+    $epJoin = '';
+    if ($me) {
+        $mid = (int)$me['id'];
+        $managed = is_admin($me) ? '1=1' : "(e.organizer_id = $mid OR EXISTS
+            (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = $mid))";
+        $epJoin = "LEFT JOIN event_participants ep ON ep.event_id = e.id AND ep.user_id = $mid";
+        $countExpr = "COUNT(DISTINCT CASE WHEN r.status = 'public'
+                OR (r.status = 'ready' AND (ep.user_id IS NOT NULL OR $managed))
+                OR (r.status = 'draft' AND $managed)
+                THEN r.id END)";
+    }
     $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, e.logo, u.username AS organizer,
-            COUNT(DISTINCT CASE WHEN r.status = 'public' THEN r.id END) AS roadbooks
+            $countExpr AS roadbooks
         FROM events e JOIN users u ON u.id = e.organizer_id
         LEFT JOIN event_roadbooks er ON er.event_id = e.id
         LEFT JOIN roadbooks r ON r.id = er.roadbook_id
+        $epJoin
         WHERE e.is_public = 1
         GROUP BY e.id ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
     json_out(['ok' => true, 'events' => array_map(fn($r) => [
