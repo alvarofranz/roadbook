@@ -158,6 +158,15 @@ DB/Convenzioni rapide below have counterparts there).
   something misnamed or inconsistent, rename it properly *everywhere* as part of your change. 
 - **No inline CSS.** Styling lives in stylesheets with clear, descriptive class names -—
   never `style="…"` attributes in HTML or in JS-built markup. Inline styles are a bug.
+- **Only use CSS variables that exist.** `var(--accent)` and `var(--primary)` painted NOTHING
+  for months — the palette calls that colour `--sand` — so an "active" filter looked identical
+  on and off and two page borders were invisible (#422). CSS never complains about a token that
+  was never declared, so `tests/ui-contracts.test.js` does: every `var(--x)` without a fallback
+  must be declared in `:root` or be one of the handful published at runtime by JS.
+- **One way to reach the clipboard: `RBCopy(text, okMsg)`.** A bare
+  `navigator.clipboard.writeText()` throws where the API is absent (non-secure context, older
+  WebView, refused write) — outside any promise chain, so the copy silently fails and not even
+  the error toast shows (#423). RBCopy checks, falls back, and always reports.
 - **Shared chrome NEVER covers a tool's controls.** A bar the shared layer pins to a viewport
   edge (the cookie notice, the web-GPS banner) either sits **in the flow** and takes its own
   space, or **publishes its height** for the page to reserve (`--notice-h`, and the Reader's

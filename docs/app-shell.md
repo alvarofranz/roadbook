@@ -257,6 +257,18 @@ a capo su tre righe (151 px), nascondeva l'odometro totale del Reader e rendeva 
 inaccessibile il pulsante "Navigate" dell'anteprima (#403). È un avviso una-tantum, non una barra
 di stato: scorrere via è il comportamento giusto.
 
+#### `RBCopy(text, okMsg?)`
+L'**unico** modo di copiare negli appunti. `okMsg` nomina cosa è stato copiato; il messaggio di
+errore è lo stesso per tutti. La Clipboard API asincrona non è sempre lì da attendere: fuori da un
+contesto sicuro, in WebView vecchie o quando la scrittura viene rifiutata, `navigator.clipboard`
+può essere `undefined` — e un `navigator.clipboard.writeText(...)` non protetto **lancia dove il
+chiamante non può intercettare**, quindi la copia non avviene in silenzio e non compare nemmeno il
+toast di errore (#423, il pulsante Copia del QR di evento). Quindi: si verifica che l'API ci sia,
+e in caso contrario (o se rifiuta) si ripiega su una `textarea` usa-e-getta fuori schermo
+(`.copy-shuttle`) selezionata e copiata con `execCommand` — deprecato ma è l'unica strada in un
+contesto non sicuro, e non chiede permessi. Nessuna pagina chiama la Clipboard API da sé: lo
+verifica [tests/ui-contracts.test.js](../tests/ui-contracts.test.js).
+
 ### La regola delle barre condivise
 
 Quattro bug di fila (#401 · #403 · #404 · #405) sono venuti dallo stesso errore — una barra che il
@@ -373,7 +385,7 @@ e ritorna `null` (con `admin: true` esige anche il ruolo admin).
 | `RBDateField(input)` | rende un input data localizzato |
 | `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
 | `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
-| `RBCopy(text)` · `RBReaderLink(slug)` | copia negli appunti · link Reader pubblico di uno slug |
+| `RBCopy(text, okMsg?)` · `RBReaderLink(slug)` | copia negli appunti (vedi sotto) · link Reader pubblico di uno slug |
 
 ### Lista roadbook condivisa
 

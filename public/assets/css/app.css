@@ -452,6 +452,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
 .modal-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
+/* the throwaway textarea RBCopy falls back to: reachable by the selection, invisible to the eye */
+.copy-shuttle { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
 /* A toast must clear whatever the page has pinned to the bottom edge, or the one message that
    explains why a tap did nothing lands behind the buttons (#431): `--bottom-stack` is published
    by pages that stack their own bars there (the Reader), 90px is the standing default elsewhere. */

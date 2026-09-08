@@ -38,20 +38,28 @@ dalle sottocartelle dei tool senza percorsi hard-coded.
 
 | Metodo | Cosa fa | Endpoint API |
 |--------|---------|--------------|
-| `listPublic(opts)` | Elenco dei roadbook pubblici per gallery e picker; con `{reusable:true}` filtra ai soli riusabili (la ricerca-fork dell'Editor) | `api/index.php?action=public_list[&reusable=1]` |
-| `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + foto + owner + `reusable`) | `api/index.php?action=public_get&slug=…` |
+| `listPublic(opts)` | Elenco dei roadbook pubblici per gallery e picker; con `{reusable:true}` filtra ai soli riusabili (la ricerca-fork dell'Editor) | `RBApi('public_list')` (POST, col Bearer nell'app) |
+| `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + foto + owner + `reusable`) | `RBApi('public_get', {slug})` (POST, col Bearer nell'app) |
 | `pick(onPick, opts)` | Apre il picker modale e richiama `onPick(roadbook, slug)`; passa `opts` a `listPublic` | (usa `listPublic`/`loadPublic`) |
 | `publicFromUrl()` | Estrae lo slug dall'URL amichevole corrente | — |
 | `ROOT` | Radice dell'app, riusata altrove (es. home, gallery) | — |
 
+> **Entrambe passano da `RBApi`, e questo è il punto** (#426). Un `fetch` grezzo funzionava solo
+> nel browser, dove il cookie di sessione same-origin viaggia da sé: dentro l'app la WebView
+> chiama `https://rdbk.app` **cross-origin**, senza cookie, e il Bearer che `RBApi` allega è
+> l'unica prova di identità. Senza di esso il server vedeva un visitatore anonimo — e un roadbook
+> **`ready`** di un evento è invisibile a un anonimo (`public_get` lo consegna solo a
+> proprietario, partecipanti e organizzatori) — quindi rispondeva "privato" e l'app non riusciva
+> ad aprire un roadbook che lo stesso utente apriva senza problemi sul web.
+
 ### `listPublic()`
-([challenges.js:8-11](../public/assets/js/challenges.js#L8)) — `fetch` GET su `public_list`,
-ritorna `j.roadbooks` o `[]`. **Inghiotte ogni errore** (rete o JSON) tornando lista vuota: i
-chiamanti mostrano solo lo stato "nessuna sfida", senza distinguere il guasto.
+`RBApi('public_list')`, con `{ reusable: 1 }` per la ricerca-fork dell'Editor. Ritorna
+`j.roadbooks`, `[]` se non ce ne sono, e **`null` se la chiamata è FALLITA** (rete, offline,
+rifiuto): i chiamanti mostrano un errore e mai "nessun roadbook" (#218). `RBApi` non lancia mai —
+riporta `{ok:false}` — quindi la distinzione è su `j.ok === false`.
 
 ### `loadPublic(slug)`
-([challenges.js:12-16](../public/assets/js/challenges.js#L12)) — `fetch` GET su `public_get`
-con lo slug url-encoded. A differenza di `listPublic`, qui un `j.ok` falso **lancia**
+`RBApi('public_get', { slug })`. A differenza di `listPublic`, qui un `j.ok` falso **lancia**
 (`throw new Error(j.error || 'Not found')`), così i chiamanti possono mostrare un messaggio di
 errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, photos, owner, ... }`.
 

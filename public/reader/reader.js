@@ -98,7 +98,7 @@
         const loadFromUrl = () => {
             if (pub) {
                 if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
-                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load challenge.'));
+                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load the roadbook.'));
             } else if (rbId > 0) {
                 RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             } else if (adminRbId > 0) {
@@ -439,8 +439,13 @@
         refreshLive();
         saveSession();
     }
-    // One interactive map at a time: zoom buttons + satellite/topo toggle (RBMap),
-    // centred on the note at zoom ~13, with the whole route + pins for context.
+    // One interactive map at a time: zoom buttons + satellite/topo toggle (RBMap). It opens as a
+    // CLOSE-UP of where the rider is, carrying only this note's waypoint (#427): the whole route
+    // at zoom 13 was too coarse to read a junction, and the other notes' pins are noise when the
+    // question is "where am I relative to THIS waypoint". Without a fix the note itself is the
+    // only position we know, so it becomes the centre. The full route stays on the roadbook's
+    // own page and in the Editor.
+    const NOTE_MAP_ZOOM = 16;
     function toggleNoteMap(i) {
         if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
         closeInlineMap();
@@ -449,10 +454,11 @@
         const n = notes[i];
         el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
         el.hidden = false; inlineMapIdx = i;
-        inlineMap = new RBMap('nmapMap', { zoom: 13, center: [+n.lon, +n.lat], layerToggle: true, geolocate: true });
-        inlineMap.showRoadbook(rb, true); // no auto-fit: keep our centre on this note
-        inlineMap.select(n, true);        // highlight the note
-        if (lastHere) inlineMap.setPosition(lastHere.lat, lastHere.lon, false); // show user position
+        const centre = lastHere || { lat: +n.lat, lon: +n.lon };
+        inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], layerToggle: true, geolocate: true });
+        inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
+        inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
+        if (lastHere) inlineMap.setPosition(lastHere.lat, lastHere.lon, false, meter && meter.heading);
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }

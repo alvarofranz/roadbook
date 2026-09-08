@@ -686,11 +686,38 @@
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2500);
     };
-    // Copy text (e.g. a roadbook share link) to the clipboard, with a translated toast.
-    window.RBCopy = async (text) => {
-        try { await navigator.clipboard.writeText(text); RBToast('Link copied'); }
-        catch (e) { RBToast('Could not copy the link.'); }
+    // Copy text (a share link, an activation token…) to the clipboard, with a translated toast.
+    // `okMsg` names what was copied; the failure message is the same for everyone.
+    //
+    // The async Clipboard API is not always there to be awaited: outside a secure context, in
+    // older WebViews, or when the write is refused, `navigator.clipboard` can be undefined — and
+    // an unguarded `navigator.clipboard.writeText(...)` then throws where a caller cannot catch
+    // it, so the copy silently never happens and not even the failure toast shows (#423). Hence
+    // one helper, with the selection-based fallback every caller used to have to write itself.
+    window.RBCopy = async (text, okMsg) => {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+            else if (!legacyCopy(text)) throw new Error('no clipboard');
+            RBToast(okMsg || 'Link copied');
+        } catch (e) {
+            if (legacyCopy(text)) return void RBToast(okMsg || 'Link copied');
+            RBToast('Could not copy.');
+        }
     };
+    // Pre-Clipboard-API copy: a throwaway off-screen textarea, selected and cut by the document.
+    // Deprecated but still the only path in a non-secure context, and it needs no permission.
+    function legacyCopy(text) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.setAttribute('readonly', '');
+            ta.className = 'copy-shuttle';
+            document.body.appendChild(ta);
+            ta.select(); ta.setSelectionRange(0, ta.value.length); // iOS needs the explicit range
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (e) { return false; }
+    }
     // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL. In the
     // native app location.origin is the WebView-local host, so a copied link would be a dead
     // localhost URL — always share the production domain instead.

@@ -110,7 +110,7 @@
                 <button class="btn btn-danger" data-clear><i class="fa-solid fa-trash"></i> ${t('Clear pending')}</button>
                 <button class="btn btn-primary" data-close>${t('Close')}</button>
             </div>`, 'wide');
-        d.q('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(text); RBToast('Copied'); } catch (e) {} };
+        d.q('[data-copy]').onclick = () => RBCopy(text, 'Copied.');
         // Prepend a UTF-8 BOM so Windows tools (Notepad, etc.) read the accents correctly instead
         // of mis-decoding the UTF-8 bytes as Windows-1252 (#118).
         d.q('[data-dl]').onclick = () => RBDownload(new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' }), 'i18n-delta.txt');

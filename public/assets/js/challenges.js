@@ -4,14 +4,20 @@
 (function () {
     const ROOT = window.RB_ROOT || '../'; // set by app.js; fallback for isolated loads
 
+    /* Both calls go through RBApi, which is what carries WHO IS ASKING. A raw fetch() only ever
+       worked in the browser, where the same-origin session cookie tags along by itself: inside
+       the app the WebView calls https://rdbk.app cross-origin with no cookie, and the Bearer
+       token RBApi attaches is the only proof of identity. Without it the server saw an anonymous
+       visitor — and a READY event roadbook is invisible to one, so it answered "private" and the
+       app could not open a roadbook the same user opened fine on the web (#426). */
     async function listPublic(opts) {
-        const q = opts && opts.reusable ? '&reusable=1' : ''; // #106: the Editor fork search asks for reusable-only
-        // null = the call FAILED (offline/network): callers show an error, never "no roadbooks yet" (#218)
-        try { return (await (await fetch((window.RB_API_ROOT || ROOT) + 'api/index.php?action=public_list' + q)).json()).roadbooks || []; }
-        catch (e) { return null; }
+        // null = the call FAILED (offline/network/refused): callers show an error, never
+        // "no roadbooks yet" (#218). RBApi never throws — it reports {ok:false} instead.
+        const j = await RBApi('public_list', opts && opts.reusable ? { reusable: 1 } : {});
+        return (j && j.ok === false) ? null : (j.roadbooks || []);
     }
     async function loadPublic(slug) {
-        const j = await (await fetch((window.RB_API_ROOT || ROOT) + 'api/index.php?action=public_get&slug=' + encodeURIComponent(slug))).json();
+        const j = await RBApi('public_get', { slug });
         if (!j.ok) throw new Error(j.error || 'Not found');
         return j; // { slug, roadbook, photos, owner }
     }
