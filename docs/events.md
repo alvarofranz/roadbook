@@ -24,10 +24,10 @@ Cinque tabelle (migrazioni 019, 022, 023 — dettaglio in [backend-api §8](back
 
 | Tabella | Campi chiave | Ruolo |
 |---|---|---|
-| `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. |
+| `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_gate` (`closed`/`code`/`open`), `require_activation` (0/1), `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. La registrazione è governata da due impostazioni indipendenti (#414): il gate (COME si entra) e `require_activation` (se l'organizzatore deve attivarti con il QR personale). |
 | `event_roadbooks` | `event_id`, `roadbook_id`, `sort`, **`scoring_mode`** | I roadbook associati all'evento, ordinati, ognuno con la propria modalità di punteggio. |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
-| `event_participants` | `event_id`, `user_id`, `status`, `created_at` | Chi ha aderito (con il join code): `pending` finché l'organizzatore non lo attiva, poi `active` (#163). |
+| `event_participants` | `event_id`, `user_id`, `status`, `activation_code`, `created_at` | Chi ha aderito: `pending` finché l'organizzatore non lo attiva (QR personale), poi `active` (#163). |
 
 Le categorie/classi vivono sul singolo roadbook (`roadbooks.category`, #248), non più
 sull'evento.
@@ -127,7 +127,12 @@ il join code. Le azioni:
   `event_org_add`/`event_org_remove` (**solo il proprietario/admin**; il proprietario non è
   rimovibile).
 - **Join code** — `event_join_code` genera/rigenera (o azzera) il codice condiviso con i
-  partecipanti.
+  partecipanti. Il codice serve solo con gate `code`; gli altri gate lo azzerano al salvataggio.
+- **Registration** — gate (`closed`/`code`/`open`) + `require_activation` (#414): `event_save`
+  li persiste; togliendo l'attivazione con pendenti in attesa, `admit_pending=1` li ammette
+  nella stessa transazione (previa conferma, #415); aggiungendola, `reset_active=1` rimanda
+  gli attivi in pending con nuovi codici. `event_participants_activate_pending` ammette tutti
+  i pendenti in un colpo solo (#416).
 - **Logo** — upload via `RBUpload({ type: 'event_logo', event })` (AVIF 512px, vedi
   [backend-api §6](backend-api.md)); `event_logo_remove` lo toglie.
 

@@ -6,12 +6,31 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     const id = +(new URLSearchParams(location.search).get('id') || 0);
-    let q = '', page = 1, status = 'pending', searchTimer = null, refreshTimer = null, eventTitle = '';
+    let q = '', page = 1, status = 'pending', searchTimer = null, refreshTimer = null, eventTitle = '', pendingTotal = 0;
+
+    function renderActivateAll() {
+        const b = $('ppActivateAll');
+        b.hidden = pendingTotal < 1;
+        b.querySelector('span').textContent = t('Activate all') + (pendingTotal > 0 ? ` (${pendingTotal})` : '');
+    }
+    $('ppActivateAll').onclick = async () => {
+        if (pendingTotal < 1) return;
+        if (!(await RBConfirm(pendingTotal + ' ' + t('participants are waiting for activation. Admit all of them?'), t('Activate all')))) return;
+        const x = await api('event_participants_activate_pending', { event_id: id });
+        if (x.ok) { toast(x.admitted + ' ' + t('participants activated.')); page = 1; load(); }
+        else toast(x.error || 'Could not activate.');
+    };
 
     async function load() {
         const r = await api('event_participants_list', { event_id: id, q, status, page });
         if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
         $('adminMsg').hidden = true; $('ppBody').hidden = false;
+        if (status === 'pending' && !q) pendingTotal = r.total; // the unfiltered pending count drives Activate all
+        if (status !== 'pending' || q) {
+            const c = await api('event_participants_list', { event_id: id, status: 'pending', page: 1, per_page: 1 });
+            if (c.ok) pendingTotal = c.total;
+        }
+        renderActivateAll();
         const pages = Math.max(1, Math.ceil(r.total / r.per_page));
         if (page > pages) { page = pages; return load(); } // e.g. the last row of the last page was removed
         if (!q) $('ppHeadCount').textContent = r.total ? `(${r.total})` : '';

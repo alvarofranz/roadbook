@@ -68,6 +68,7 @@ try {
         case 'event_participant_add': event_participant_add(require_user(), $d); break;
         case 'event_activate_by_code': event_activate_by_code(require_user(), $d); break;
         case 'participant_activate': participant_activate(require_user(), $d); break;
+        case 'event_participants_activate_pending': event_participants_activate_pending(require_user(), $d); break;
         case 'event_participants_list': event_participants_list(require_user(), $d); break;
         case 'event_logo_remove': event_logo_remove(require_user(), $d); break;
         case 'leave_participant_mode': clear_participant_context(); json_out(['ok' => true]); break;
