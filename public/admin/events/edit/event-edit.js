@@ -33,16 +33,52 @@
         else if (hqMap && hqMap.map) hqMap.map.jumpTo({ center: [lon, lat], zoom: 5 });
     }
 
+    const GATE_LABELS = [['closed', 'Closed — nobody can join'], ['code', 'Invite code only'], ['open', 'Open — anyone can join']];
+    const oldNeedsActivation = () => ev && ev.require_activation != null ? !!ev.require_activation : !(ev && ev.open_join);
+    // Three-way choice for enabling activation with active participants already in:
+    // keep them (grandfathered) or send them back to pending for the QR. Resolves
+    // 'keep' | 'reset' | null (cancelled — the save is aborted, mode unchanged).
+    function confirmEnableActivation(n) {
+        return new Promise((resolve) => {
+            const d = RBModal(`<p class="modal-text">${n} ${esc(t('participants are already active. Keep them active, or send them back to pending for the QR code?'))}</p>
+                <div class="btnrow end">
+                    <button class="btn btn-ghost" data-x="cancel">${esc(t('Cancel'))}</button>
+                    <button class="btn btn-danger" data-x="reset">${esc(t('Require QR code'))}</button>
+                    <button class="btn btn-primary" data-x="keep">${esc(t('Keep active'))}</button>
+                </div>`, 'narrow', () => resolve(null));
+            const done = (v) => { d.close(); resolve(v); };
+            d.q('[data-x="cancel"]').onclick = () => done(null);
+            d.q('[data-x="reset"]').onclick = () => done('reset');
+            d.q('[data-x="keep"]').onclick = () => done('keep');
+        });
+    }
     async function save() {
-        const openJoin = $('evOpenJoin').checked ? 1 : 0;
+        const gate = $('evJoinGate').value;
+        const needAct = $('evRequireActivation').checked ? 1 : 0;
+        const extra = {};
+        if (id > 0 && ev) {
+            const pending = ev.pending_count || 0;
+            const active = Math.max(0, (ev.participant_count || 0) - pending);
+            if (!needAct && oldNeedsActivation() && pending > 0) {
+                // removing the activation requirement strands nobody: admit them now (#415)
+                if (!(await RBConfirm(pending + ' ' + t('participants are waiting for activation. Switching will admit all of them. Continue?'), t('Admit all')))) return;
+                extra.admit_pending = 1;
+            } else if (needAct && !oldNeedsActivation() && active > 0) {
+                // newly requiring activation: grandfather the active ones, or send them to the QR
+                const choice = await confirmEnableActivation(active);
+                if (!choice) return;
+                if (choice === 'reset') extra.reset_active = 1;
+            }
+        }
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             organizer_website: $('evWebsiteIn').value.trim(),
             hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
-            open_join: openJoin,
-            clear_join_code: openJoin ? 1 : 0,
+            join_gate: gate, require_activation: needAct,
+            clear_join_code: gate !== 'code' ? 1 : 0,
+            ...extra,
         });
         if (!x.ok) return toast(x.error || 'Could not save.');
         toast('Saved.');
@@ -185,39 +221,37 @@
         m.q('[data-cancel]').onclick = m.close;
     };
 
-    /* ---------- 4 · join code (the roster lives on participants/, #144) ---------- */
+    /* ---------- 4 · registration (the roster lives on participants/, #144) ---------- */
+    function currentGate() { return ($('evJoinGate').value === 'code' || $('evJoinGate').value === 'open') ? $('evJoinGate').value : 'closed'; }
     function renderJoinCode() {
         $('ppSection').hidden = false;
         $('ppHeadCount').textContent = ev.participant_count ? `(${ev.participant_count})` : '';
         $('ppPageLink').href = '../participants/?id=' + id;
-        $('evOpenJoin').checked = !!(ev && ev.open_join);
-        const openJoin = $('evOpenJoin').checked;
-        const code = openJoin ? null : ev.join_code;
+        $('evJoinGate').innerHTML = GATE_LABELS.map(([v, l]) => `<option value="${v}">${esc(t(l))}</option>`).join('');
+        $('evJoinGate').value = (ev && ev.join_gate) || 'code';
+        $('evRequireActivation').checked = !ev || ev.require_activation == null || !!ev.require_activation;
+        renderCodeRow();
+        $('evJoinGate').onchange = renderCodeRow;
+        $('evRequireActivation').onchange = renderCodeRow;
+    }
+    function renderCodeRow() {
+        const isCode = currentGate() === 'code';
+        const code = isCode && ev ? ev.join_code : null;
         $('joinCodeOut').innerHTML = code
             ? `${esc(t('Join code'))}: <span class="ev-join-code">${esc(code)}</span>`
-            : `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
+            : `<span class="muted small">${esc(t(isCode ? 'No join code yet — generate one below.' : 'No join code in this mode.'))}</span>`;
         $('joinCodeIn').value = code || '';
-        $('joinCodeIn').disabled = false;
-        $('joinSetBtn').disabled = false;
+        $('joinCodeIn').disabled = !isCode;
+        $('joinSetBtn').disabled = !isCode;
+        $('joinRotate').disabled = !isCode;
         $('joinCopy').hidden = !code;
-        $('joinClear').hidden = !code || openJoin;
-        $('joinSetRow').hidden = false;
-        renderLink(openJoin);
-        $('evOpenJoin').onchange = () => {
-            if ($('evOpenJoin').checked) {
-                $('joinCodeIn').value = '';
-                $('joinCopy').hidden = true;
-                $('joinClear').hidden = true;
-                $('joinCodeOut').innerHTML = `<span class="muted small">${esc(t('Joining with a code is disabled.'))}</span>`;
-                $('evLink').hidden = true;
-            } else {
-                renderLink(false);
-            }
-        };
+        $('joinClear').hidden = !code;
+        $('joinSetRow').hidden = !isCode;
+        renderLink();
     }
     $('joinCopy').onclick = async () => { try { await navigator.clipboard.writeText(ev.join_code); toast('Copied.'); } catch (e) { toast('Could not copy.'); } };
-    function renderLink(openJoin) {
-        if (openJoin || !ev.join_code) { $('evLink').hidden = true; return; }
+    function renderLink() {
+        if (currentGate() !== 'code' || !ev.join_code) { $('evLink').hidden = true; return; }
         $('evLink').hidden = false;
         var url = window.RBEventLink(ev.join_code);
         $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;
@@ -234,23 +268,24 @@
     $('evLinkCopy').onclick = async () => {
         try { await navigator.clipboard.writeText($('evLinkUrl').textContent); toast('Copied.'); } catch (e) { toast('Could not copy.'); }
     };
-    async function confirmDisableOpenJoin() {
-        if (!$('evOpenJoin').checked) return true;
-        if (!(await RBConfirm(t('Open join is enabled. Setting a join code will disable open join. Continue?'), t('Disable open join')))) return false;
-        $('evOpenJoin').checked = false;
+    async function confirmCodeGate() {
+        if (currentGate() === 'code') return true;
+        if (!(await RBConfirm(t('A join code needs the Invite code mode. Switch registration to Invite code?'), t('Switch to Invite code')))) return false;
+        $('evJoinGate').value = 'code';
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             organizer_website: $('evWebsiteIn').value.trim(),
             hq_lat: $('evHqLat').value || null, hq_lon: $('evHqLon').value || null,
             starts_on: $('evStart').value, ends_on: $('evEnd').value,
             is_public: $('evPublic').checked ? 1 : 0,
-            open_join: 0, clear_join_code: 0,
+            join_gate: 'code', require_activation: $('evRequireActivation').checked ? 1 : 0, clear_join_code: 0,
         });
         if (!x.ok) { toast(x.error || 'Could not save.'); return false; }
+        renderCodeRow();
         return true;
     }
     $('joinRotate').onclick = async () => {
-        if (!(await confirmDisableOpenJoin())) return;
+        if (!(await confirmCodeGate())) return;
         // rotating invalidates the currently shared code, so it must be confirmed
         if (!(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;
         const x = await api('event_join_code', { event_id: id });
@@ -262,7 +297,7 @@
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
     $('joinSetBtn').onclick = async () => {
-        if (!(await confirmDisableOpenJoin())) return;
+        if (!(await confirmCodeGate())) return;
         var code = $('joinCodeIn').value.trim().toUpperCase();
         if (!code) return;
         if (code.length < 4 || code.length > 16) { toast('Join code must be 4–16 characters.'); return; }

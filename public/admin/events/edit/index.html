@@ -129,7 +129,9 @@
              (#144 roster on its own page, #163 link). -->
         <section class="ev-section" id="ppSection" hidden>
             <h2><span data-i18n="Manage participants">Manage participants</span> <span class="muted" id="ppHeadCount"></span></h2>
-            <label class="checkbox-row"><input type="checkbox" id="evOpenJoin"> <span data-i18n="Open join (no code required)">Open join (no code required)</span></label>
+            <label class="field-label" for="evJoinGate" data-i18n="Registration">Registration</label>
+            <select id="evJoinGate" class="field"></select>
+            <label class="checkbox-row"><input type="checkbox" id="evRequireActivation"> <span data-i18n="Require organizer activation (personal QR)">Require organizer activation (personal QR)</span></label>
             <div class="ev-line" id="joinRow">
                 <span class="meta" id="joinCodeOut"></span>
                 <button class="btn btn-ghost" id="joinCopy" type="button" hidden><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>

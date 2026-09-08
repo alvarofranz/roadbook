@@ -73,17 +73,18 @@
     window.addEventListener('rb-lang', () => { if (ev) $('evMeta').textContent = meta(ev); });
     load();
 
-    // Joining (#123): shown when the organizer enabled joining, either open (one click) or
-    // behind the shared code. A participant sees their state and can leave. Signed-out
-    // visitors get the prompt matching the event's mode — asking for a code the event does
-    // not use only confuses them (#367).
+    // Joining (#123): shown when the organizer enabled joining. The gate decides HOW:
+    // invite code or open one-click; require_activation decides whether you land pending
+    // with a personal QR or active at once. Signed-out visitors get the prompt matching
+    // the event's mode — asking for a code the event does not use only confuses them (#367).
     async function renderJoin(e) {
         const box = $('evJoin');
-        if (!e.can_join && !e.joined) { box.hidden = true; return; }
+        const gate = e.join_gate || (e.open_join ? 'open' : 'code');
+        if ((gate === 'closed' || !e.can_join) && !e.joined) { box.hidden = true; return; }
         const cfg = await whoami;
         if (!cfg.user) {
             box.hidden = false;
-            const prompt = e.open_join ? t('Sign in to join this event.') : t('Sign in to join this event with the organizer\'s code.');
+            const prompt = gate === 'code' ? t('Sign in to join this event with the organizer\'s code.') : t('Sign in to join this event.');
             box.innerHTML = '<span class="grow">' + esc(prompt) + '</span><a class="btn btn-primary" href="/account/?next=' + encodeURIComponent(location.pathname) + '">' + esc(t('Sign in')) + '</a>';
             return;
         }
@@ -94,8 +95,8 @@
         }
         if (e.participant_status !== 'pending') {
             box.hidden = false;
-            if (e.open_join) {
-                // open join: one-click join, no code required
+            if (gate === 'open') {
+                // open gate: one-click join, no code required
                 box.innerHTML = '<span class="grow"><i class="fa-solid fa-flag-checkered"></i> ' + esc(t('Join this event as a participant.')) + '</span><button class="btn btn-primary" id="evJoinOpenBtn"><i class="fa-solid fa-right-to-bracket"></i> ' + esc(t('Join')) + '</button>';
                 box.querySelector('#evJoinOpenBtn').onclick = async () => {
                     const x = await RBApi('event_join', { slug: e.slug });

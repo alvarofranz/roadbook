@@ -24,6 +24,34 @@ function gen_activation_code(): string {
     return $code;
 }
 
+/* ---- registration mode transitions (#415/#416) ---- */
+// Admit everyone waiting for activation. Shared by the mode-switch reconcile in
+// event_save and the bulk "activate all pending" action — one query, never a
+// client-side loop. Returns the admitted count for the confirm copy + activity log.
+function event_admit_pending(int $eventId): int {
+    $st = db()->prepare("UPDATE event_participants SET status = 'active', activation_code = NULL WHERE event_id = ? AND status = 'pending'");
+    $st->execute([$eventId]);
+    return $st->rowCount();
+}
+// Send active participants back to pending with fresh personal codes (the organizer
+// chose "require QR" when enabling activation). Returns the reset count.
+function event_reset_active_to_pending(int $eventId): int {
+    $st = db()->prepare("SELECT user_id FROM event_participants WHERE event_id = ? AND status = 'active'");
+    $st->execute([$eventId]);
+    $n = 0;
+    $up = db()->prepare("UPDATE event_participants SET status = 'pending', activation_code = ? WHERE event_id = ? AND user_id = ?");
+    foreach ($st->fetchAll() as $row) {
+        $up->execute([gen_activation_code(), $eventId, (int)$row['user_id']]);
+        $n += $up->rowCount();
+    }
+    return $n;
+}
+// The registration gate: HOW you get in. Independent from require_activation (#414):
+// whether an organizer must still activate you (personal QR) once you are in.
+function event_join_gate($g): string {
+    return in_array($g, ['closed', 'code', 'open'], true) ? $g : 'code';
+}
+
 /* ---- per-event management rights: admin, the owner, or a listed co-organizer (#123) ---- */
 // Does this user own or co-organize at least one event? Drives the header's Events link for
 // users without the global organizer role.
@@ -114,15 +142,18 @@ function event_manage_get(array $user, array $d): void {
     // page only needs the total here, for the section header.
     $pp = db()->prepare('SELECT COUNT(*) FROM event_participants WHERE event_id = ?');
     $pp->execute([$id]);
+    $pend = db()->prepare("SELECT COUNT(*) FROM event_participants WHERE event_id = ? AND status = 'pending'");
+    $pend->execute([$id]);
     json_out(['ok' => true, 'event' => [
         'id' => $id, 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
+        'join_gate' => event_join_gate($e['join_gate'] ?? null), 'require_activation' => (int)($e['require_activation'] ?? 1),
         'join_code' => $e['join_code'], 'open_join' => (int)$e['open_join'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
-        'participant_count' => (int)$pp->fetchColumn(),
+        'participant_count' => (int)$pp->fetchColumn(), 'pending_count' => (int)$pend->fetchColumn(),
     ]]);
 }
 
@@ -173,25 +204,43 @@ function event_save(array $user, array $d): void {
     $hqLat = isset($d['hq_lat']) && is_numeric($d['hq_lat']) ? (float)$d['hq_lat'] : null;
     $hqLon = isset($d['hq_lon']) && is_numeric($d['hq_lon']) ? (float)$d['hq_lon'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
-    $openJoin = !empty($d['open_join']) ? 1 : 0;
+    if (array_key_exists('join_gate', $d)) {
+        $gate = event_join_gate($d['join_gate']);
+        $needActivation = !empty($d['require_activation']) ? 1 : 0;
+    } else {
+        // stale client speaking the legacy open_join flag: preserve its exact semantics
+        $legacyOpen = !empty($d['open_join']) ? 1 : 0;
+        $gate = $legacyOpen ? 'open' : 'code';
+        $needActivation = $legacyOpen ? 0 : 1;
+    }
     // rights + slug first, then save — no transaction needed for a single UPDATE/INSERT.
     // The slug follows the current title (#194); excludeId keeps it unchanged when the slugified
     // title is the same, and only regenerates it after a real rename.
     if ($id > 0) { require_event_manage($user, $id); $slug = unique_slug('events', $title, 'event', $id); }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
-    // open join → clear the join code so it's not usable
-    if ($openJoin) $clearJoin = 1;
+    // only the code gate uses a join code — any other gate clears it so it is not usable
+    if ($gate !== 'code') $clearJoin = 1;
     else $clearJoin = !empty($d['clear_join_code']) ? 1 : 0;
     if ($id > 0) {
-        $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, open_join = ?, slug = ?';
-        $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin, $slug];
+        $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, join_gate = ?, require_activation = ?, open_join = ?, slug = ?';
+        $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $gate === 'open' ? 1 : 0, $slug];
         if ($clearJoin) { $sql .= ', join_code = NULL'; }
         $sql .= ' WHERE id = ?';
         $args[] = $id;
         db()->prepare($sql)->execute($args);
+        // mode switch reconcile (#415): the flags only take effect when the NEW setting no
+        // longer / newly requires activation — the client confirms first with RBConfirm.
+        if (!$needActivation && !empty($d['admit_pending'])) {
+            $n = event_admit_pending($id);
+            if ($n) log_activity((int)$user['id'], 'event_admit_pending', 'event #' . $id . ' admit ' . $n);
+        }
+        if ($needActivation && !empty($d['reset_active'])) {
+            $n = event_reset_active_to_pending($id);
+            if ($n) log_activity((int)$user['id'], 'event_reset_active', 'event #' . $id . ' reset ' . $n);
+        }
     } else {
-        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, open_join) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $openJoin]);
+        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, join_gate, require_activation, open_join) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $gate === 'open' ? 1 : 0]);
         $id = (int)db()->lastInsertId();
         // the owner is also listed among the event's organizers
         db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
@@ -320,34 +369,40 @@ function event_join_code(array $user, array $d): void {
 
 // A signed-in user joins an event — from the event page (Join button, by slug) or from the
 // native /go/<code> App-Links deep link (#268), which carries only the join code, no slug.
-// Open-join events skip the code: any signed-in user joins with one click and is active at once.
+// The gate decides HOW you get in (closed/code/open); require_activation decides whether you
+// land pending (personal QR) or active at once (#414).
 function event_join(array $user, array $d): void {
     rate_limit('join_' . $user['id'], 20, 3600); // stop code guessing
     $code = strtoupper(trim((string)($d['code'] ?? '')));
     $slug = (string)($d['slug'] ?? '');
     // Locate the event by slug when the page supplies one, else by the join code alone.
     if ($slug !== '') {
-        $st = db()->prepare('SELECT id, slug, open_join, is_public, join_code FROM events WHERE slug = ?'); $st->execute([$slug]);
+        $st = db()->prepare('SELECT id, slug, join_gate, require_activation, is_public, join_code FROM events WHERE slug = ?'); $st->execute([$slug]);
     } elseif ($code !== '') {
-        $st = db()->prepare('SELECT id, slug, open_join, is_public, join_code FROM events WHERE join_code = ?'); $st->execute([$code]);
+        $st = db()->prepare('SELECT id, slug, join_gate, require_activation, is_public, join_code FROM events WHERE join_code = ?'); $st->execute([$code]);
     } else {
         fail('Enter the join code.');
     }
     $e = $st->fetch();
     if (!$e || !(int)$e['is_public']) fail('Not found.', 404);
-    if ((int)$e['open_join']) {
-        // open join: any signed-in user joins directly as active, no code needed
-        db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")
-            ->execute([(int)$e['id'], (int)$user['id']]);
+    $gate = event_join_gate($e['join_gate'] ?? null);
+    if ($gate === 'closed') fail('Registration is closed.', 403);
+    if ($gate === 'open') {
+        // open gate: any signed-in user joins with one click, no code needed
+        $status = (int)($e['require_activation'] ?? 1) ? 'pending' : 'active';
+        $actCode = $status === 'pending' ? gen_activation_code() : null;
+        db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, activation_code = ?")
+            ->execute([(int)$e['id'], (int)$user['id'], $status, $actCode, $status, $actCode]);
         log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
-        json_out(['ok' => true, 'activation_code' => null, 'slug' => $e['slug']]);
+        json_out(['ok' => true, 'activation_code' => $actCode, 'slug' => $e['slug']]);
         return;
     }
-    // Code-required event: the supplied code must match this event's own join code.
+    // Code gate: the supplied code must match this event's own join code.
     if ($code === '' || $e['join_code'] === null || $code !== $e['join_code']) fail('Wrong join code.', 404);
-    $actCode = gen_activation_code();
-    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
-        ->execute([(int)$e['id'], (int)$user['id'], $actCode, $actCode]);
+    $status = (int)($e['require_activation'] ?? 1) ? 'pending' : 'active';
+    $actCode = $status === 'pending' ? gen_activation_code() : null;
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, activation_code = ?")
+        ->execute([(int)$e['id'], (int)$user['id'], $status, $actCode, $status, $actCode]);
     log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
     // slug lets the native App-Links deep link (#268) open the event page after a join-by-code.
     json_out(['ok' => true, 'activation_code' => $actCode, 'slug' => $e['slug']]);
@@ -389,6 +444,14 @@ function event_activate_by_code(array $user, array $d): void {
     db()->prepare("UPDATE event_participants SET status = 'active', activation_code = NULL WHERE event_id = ? AND user_id = ?")
         ->execute([(int)$row['event_id'], (int)$row['user_id']]);
     json_out(['ok' => true, 'user_id' => (int)$row['user_id']]);
+}
+
+// #416: admit everyone waiting for activation in one query (no client-side loop).
+function event_participants_activate_pending(array $user, array $d): void {
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    $n = event_admit_pending((int)$e['id']);
+    log_activity((int)$user['id'], 'event_admit_pending', 'event #' . (int)$e['id'] . ' admit ' . $n);
+    json_out(['ok' => true, 'admitted' => $n]);
 }
 
 // #163: organizer activates a participant by signed token (verified client-side)
@@ -437,7 +500,7 @@ function events_public_list(): void {
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.open_join, e.join_code, e.logo, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_gate, e.require_activation, e.open_join, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -484,7 +547,8 @@ function event_public_get(array $d): void {
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'ended' => $e['ends_on'] !== null && $e['ends_on'] < date('Y-m-d'),
-            'can_join' => $e['join_code'] !== null || (int)$e['open_join'], 'open_join' => (int)$e['open_join'], 'joined' => $joined, 'participant_status' => $participantStatus,
+            'can_join' => ($e['join_gate'] ?? 'code') !== 'closed', 'join_gate' => event_join_gate($e['join_gate'] ?? null),
+            'require_activation' => (int)($e['require_activation'] ?? 1), 'open_join' => (int)($e['open_join'] ?? 0), 'joined' => $joined, 'participant_status' => $participantStatus,
             'activation_code' => $activationCode,
             'org_read' => $orgRead, 'active_participant' => $activeParticipant,
     ], 'roadbooks' => $roadbooks]);

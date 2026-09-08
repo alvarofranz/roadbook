@@ -106,7 +106,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_rb_add`/`event_rb_remove`/`event_rb_mode` | Associa/dissocia un roadbook all'evento; imposta la sua `scoring_mode` | richiesta |
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
 | `event_join_code` | Genera/rigenera il codice di adesione dell'evento | richiesta |
-| `event_join`/`event_leave` | Adesione con codice / abbandono (`event_participants`) | richiesta |
+| `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414) | richiesta |
 | `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge / elenca (paginato) i partecipanti | richiesta |
 | `event_activate_by_code` / `participant_activate` | Attiva un partecipante tramite codice di attivazione / attivazione diretta da organizzatore | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
@@ -444,6 +444,7 @@ loro somma.
 | [033_drop_dead_schema.sql](../migrations/033_drop_dead_schema.sql) | Rimuove `event_categories` (sostituita da `roadbooks.category`) e `roadbooks.is_public` (sostituita da `status`) |
 | [034_event_open_join.sql](../migrations/034_event_open_join.sql) | `events.open_join` (evento a iscrizione aperta, senza codice, #351) |
 | [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `users.apple_sub` (UNIQUE) — Sign in with Apple, gemello di `google_sub` (#370) |
+| [036_event_registration.sql](../migrations/036_event_registration.sql) | `events.join_gate` (`closed`/`code`/`open`) + `events.require_activation` — gate e attivazione indipendenti, con backfill da `open_join`/`join_code` (#414) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,

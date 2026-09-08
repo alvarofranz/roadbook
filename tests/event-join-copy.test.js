@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
 /* The event page's copy, where getting it wrong sends the visitor somewhere that does not exist.
-   · the signed-out join prompt must match the event's joining mode (#367): an open-join event
-     asks for no code, so telling the visitor to get one from the organizer was a dead end;
+   · the signed-out join prompt must match the event's joining gate (#367, #414): an open-gate
+     event asks for no code, so telling the visitor to get one from the organizer was a dead end;
    · an event link — which is what the event QR resolves to — must say that the native app is the
      better tool for driving it (#350), without saying it to the app itself. */
 
@@ -21,8 +21,8 @@ function loadLangs() {
 describe('event join prompt (signed out)', () => {
     const source = read('public/event/event.js');
 
-    it('picks the prompt from open_join instead of always asking for a code', () => {
-        expect(source).toContain(String.raw`e.open_join ? t('Sign in to join this event.')`);
+    it('picks the prompt from the gate instead of always asking for a code', () => {
+        expect(source).toContain(String.raw`gate === 'code' ? t('Sign in to join this event with the organizer\'s code.')`);
     });
 
     it('still asks for the code when the event is code-gated', () => {
