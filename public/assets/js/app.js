@@ -680,11 +680,11 @@
     };
     // Translated toast (every tool page ships an empty #toast element).
     let toastTimer = null;
-    window.RBToast = (msg) => {
+    window.RBToast = (msg, ms) => {
         const el = document.getElementById('toast'); if (!el) return;
         el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); // announce to screen readers
         el.textContent = RBt(msg); el.hidden = false;
-        clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2500);
+        clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2500);
     };
     // Copy text (e.g. a roadbook share link) to the clipboard, with a translated toast.
     window.RBCopy = async (text) => {

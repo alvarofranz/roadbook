@@ -375,6 +375,7 @@
             'Show map button per note': 'Pulsante mappa per nota', 'Record a GPX track': 'Registra una traccia GPX', 'Sound on note': 'Suono su nota',
             /* external remote (#20) */ 'External remote (pedal / clicker)': 'Telecomando esterno (pedale / clicker)', 'A Bluetooth page-turner pedal or camera clicker works as a keyboard — keep your hands on the wheel.': 'Un pedale Bluetooth per voltare pagina o un clicker per fotocamera funziona come una tastiera — mani sul volante.', 'Advance': 'Avanza', 'trip mode': 'modalità viaggio',
             'Note reached': 'Nota raggiunta', 'Open on map': 'Apri sulla mappa', 'Map not configured.': 'Mappa non configurata.',
+            'Auto validation on': 'Validazione auto attivata', 'Auto validation off': 'Validazione auto disattivata',
             'Author': 'Autore', 'Organization': 'Organizzazione', 'Upload logo': 'Carica logo', 'Organizer website': 'Sito dell’organizzatore', 'Event headquarters': 'Sede dell’evento', 'Tap the map to set the event headquarters location.': 'Tocca la mappa per impostare la sede dell’evento.', 'Last modified': 'Ultima modifica', 'Author name': 'Nome autore',
             'Photos uploaded.': 'Foto caricate.', 'Save to your profile first.': 'Salva prima nel tuo profilo.',
             'No geolocation': 'Niente geolocalizzazione',
