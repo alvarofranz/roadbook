@@ -686,6 +686,44 @@
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2500);
     };
+    // A button that reports its own async work (#459): disabled with a spinner while it runs, then
+    // — on success — the SAME button green with a check for 3 s, then back to exactly how it was.
+    // Saving used to say so only in a toast, which is easy to miss, so a user could not tell a
+    // stored roadbook from a failed save; the button that was pressed is where the answer belongs.
+    //
+    // Only the icon is swapped when there is one, so a labelled button keeps its text and width
+    // and nothing jumps. `ok()`/`fail()` end the busy state; `fail()` returns at once, since the
+    // toast carries the reason. Re-enabling is left to the caller's own updater when it has one
+    // (a saved roadbook has nothing left to save, so its Save goes back to disabled) — hence
+    // `onEnd`.
+    window.RBBusy = (el, { onEnd } = {}) => {
+        const btn = typeof el === 'string' ? document.getElementById(el) : el;
+        if (!btn) return { ok() {}, fail() {} };
+        const icon = btn.querySelector('i');
+        const html = icon ? icon.outerHTML : btn.innerHTML;
+        const paint = (h) => { if (icon) { const t = btn.querySelector('i, .spinner'); if (t) t.outerHTML = h; } else btn.innerHTML = h; };
+        let timer = null;
+        btn.disabled = true;
+        btn.classList.add('btn-busy');
+        paint('<span class="spinner" aria-hidden="true"></span>');
+        const back = () => {
+            clearTimeout(timer);
+            btn.classList.remove('btn-busy', 'btn-ok');
+            paint(html);
+            btn.disabled = false;
+            if (onEnd) onEnd();
+        };
+        return {
+            ok() { // stays disabled while it shows the tick: the work is done, there is nothing to press
+                clearTimeout(timer);
+                btn.classList.remove('btn-busy');
+                btn.classList.add('btn-ok');
+                paint('<i class="fa-solid fa-check" aria-hidden="true"></i>');
+                timer = setTimeout(back, 3000);
+            },
+            fail: back,
+        };
+    };
     // Copy text (a share link, an activation token…) to the clipboard, with a translated toast.
     // `okMsg` names what was copied; the failure message is the same for everyone.
     //

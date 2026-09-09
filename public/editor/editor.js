@@ -180,7 +180,7 @@
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
     let draftTimer = null;
-    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps, rbIsOwner, rbOwner })); } catch (e) {} };
+    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps, rbIsOwner, rbOwner, at: Date.now() })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
     // A declined recovery is marked, not deleted (#436): the work stays recoverable until the next
     // checkpoint replaces it, but the offer is not repeated. `saveDraft` writes a fresh object, so
@@ -1099,9 +1099,14 @@
         if (!rb) { toast('Nothing to save.'); return false; }
         return (await confirmOpenCuts()) && (await confirmConsistency());
     }
-    async function saveRoadbook() {
+    // `btn` is the Save that was pressed (there are two, and the settings view has its own): it
+    // spins while the roadbook goes up and then turns green with a tick, so the answer to "did it
+    // save?" is on the button, not only in a toast that has already faded (#459).
+    async function saveRoadbook(btn) {
         if (!(await readyToSave())) return;
+        const busy = RBBusy(btn, { onEnd: updateSaveBtn });
         const r = await doSave();
+        if (r.ok) busy.ok(); else busy.fail();
         toast(r.ok ? (status === 'public' && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
         if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
     }
@@ -1119,8 +1124,8 @@
             if (!up || !up.ok) toast('Cover not updated: ' + ((up && up.error) || 'upload failed'));
         } catch (e) { /* a cover is non-essential — never let it break a save */ }
     }
-    $('saveAccount').onclick = saveRoadbook;
-    $('cfgSave').onclick = saveRoadbook; // the same Save, available inside the settings view too
+    $('saveAccount').onclick = () => saveRoadbook('saveAccount');
+    $('cfgSave').onclick = () => saveRoadbook('cfgSave'); // the same Save, available inside the settings view too
     // Leave the editor: unsaved changes get a save prompt first, then return to the editor
     // landing (the roadbook list), not the home page.
     async function leaveEditor() {
@@ -1155,7 +1160,9 @@
         rb.meta.title = ((rb.meta.title || 'Untitled') + ' (copy)').slice(0, 200);
         $('rbTitle').value = rb.meta.title;
         currentRbId = 0; setStatus('draft'); // new identity, a fresh draft
+        const busy = RBBusy('saveAsAccount', { onEnd: updateSaveBtn });
         const r = await doSave();
+        if (r.ok) busy.ok(); else busy.fail();
         if (!r.ok) {
             rb.meta.title = prev.title; $('rbTitle').value = prev.title || '';
             currentRbId = prev.id; setStatus(prev.status); reusable = prev.reusable;
@@ -2205,7 +2212,11 @@
         // question at all (#436).
         const draftFits = draft && draft.rb && draft.rb.notes && !draft.declined && (!explicitTarget || (id > 0 && draft.currentRbId === id));
         if (draftFits && !loadStarted) {
-            if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'))) {
+            // Named for what it IS — edits that were never stored — with the moment they were made,
+            // so it cannot be read as "your save failed", which is how the old wording landed (#459).
+            const when = draft.at ? new Date(draft.at).toLocaleString(window.RBi18n ? RBi18n.current() : undefined) : '';
+            const what = '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes') + (when ? ' · ' + esc(when) : '');
+            if (await RBConfirm(t('You left unsaved changes here. Continue from them?') + what)) {
                 currentRbId = draft.currentRbId || 0; setStatus(draft.status);
                 setOwnership(draft.rbIsOwner !== false, draft.rbOwner || '');
                 setRoadbook(draft.rb);

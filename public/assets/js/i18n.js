@@ -179,7 +179,7 @@
 
     // Turn an empty .lang container into the collapsible control + wire open/close + selection.
     function buildLangControl(el) {
-        const cur = document.documentElement.lang || pickLang();
+        const cur = applied || pickLang(); // the attribute still says "en" here — apply() runs next
         el.innerHTML =
             `<button type="button" class="lang-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${window.RBt ? RBt('Language') : 'Language'}"><span class="lang-flag">${flagOf(cur)}</span><span class="lang-chev">▾</span></button>`
             + '<div class="lang-menu" role="listbox" hidden>'
@@ -202,7 +202,14 @@
     const orig = new WeakMap();
     const baseOf = (el, field, getter) => { let o = orig.get(el); if (!o) orig.set(el, o = {}); if (!(field in o)) o[field] = getter(); return o[field]; };
 
+    // The language actually applied. Every page ships `<html lang="en">`, so the attribute lies
+    // until apply() runs on DOMContentLoaded — and anything rendering before that (the Editor's
+    // recovery prompt) got an English date next to Spanish text (#459). This is also the only
+    // record that survives blocked storage, where apply() cannot persist the choice.
+    let applied = null;
+
     function apply(lang) {
+        applied = lang;
         document.documentElement.lang = lang;
         document.querySelectorAll('[data-i18n]').forEach((el) => {
             // replace just the text, keeping any leading icon (<i>) intact
@@ -246,7 +253,7 @@
 
     window.RBi18n = {
         t(key) { const v = tr(pickLang(), key); return v != null ? v : key; },
-        current() { return document.documentElement.lang || pickLang(); },
+        current() { return applied || pickLang(); }, // always agrees with t(), which resolves through pickLang()
         set(lang) { if (T[lang]) apply(lang); }, // programmatic switch (e.g. a signed-in user's saved preference)
     };
     // Global shorthand used across every page (falls back to the key if i18n is missing).

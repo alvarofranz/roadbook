@@ -124,3 +124,22 @@ describe('i18n apply round-trip', () => {
         expect(el.textContent.trim()).toBe('Tips & tricks'); // restored, not stuck on Italian
     });
 });
+
+describe('the active language is one answer, not two (#459)', () => {
+    // Every page ships `<html lang="en">`, so an attribute-first current() reported English for the
+    // whole window before DOMContentLoaded — long enough for the Editor's recovery prompt to render
+    // a Spanish sentence next to an American date.
+    const src = read('public/assets/js/i18n.js');
+
+    it('current() resolves through the same source as t()', () => {
+        expect(src).toContain('t(key) { const v = tr(pickLang(), key);');
+        expect(src).toContain('current() { return applied || pickLang(); }');
+        expect(src).not.toContain('document.documentElement.lang || pickLang()');
+    });
+
+    it('apply() records what it applied, which outlives blocked storage', () => {
+        const apply = src.match(/function apply\(lang\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(apply).toContain('applied = lang;');
+        expect(apply).toContain("localStorage.setItem('rb_lang', lang)");
+    });
+});

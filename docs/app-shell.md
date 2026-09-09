@@ -276,6 +276,22 @@ e in caso contrario (o se rifiuta) si ripiega su una `textarea` usa-e-getta fuor
 contesto non sicuro, e non chiede permessi. Nessuna pagina chiama la Clipboard API da sé: lo
 verifica [tests/ui-contracts.test.js](../tests/ui-contracts.test.js).
 
+#### `RBBusy(el, { onEnd }) → { ok(), fail() }`
+Il pulsante che ha lanciato un'operazione asincrona ne **riporta l'esito su sé stesso**: disabilitato
+con uno spinner mentre gira, poi — su `ok()` — verde con la spunta per 3 s, e infine di nuovo com'era.
+`fail()` ripristina subito: il motivo è nel toast. Un toast è facile da perdere e sparisce in pochi
+secondi, quindi dopo un salvataggio non si sapeva se il roadbook fosse davvero sul server (#459); la
+risposta sta sul pulsante che si è premuto.
+
+Sostituisce l'icona **solo** se c'è un `<i>`, così un pulsante con etichetta tiene testo e larghezza e
+nulla salta. Riabilitare è lasciato all'`onEnd` del chiamante quando ne ha uno: un roadbook appena
+salvato non ha più niente da salvare, quindi il suo *Save* torna disabilitato — e `.btn:disabled` ora
+si vede (opacità .45), perché un pulsante inerte è esso stesso la risposta a "si è salvato?". Lo
+spinner dentro un pulsante prende `currentColor`: quello standard è un anello `--line` con la cima
+`--sand`, invisibile su un `.btn-primary` sabbia. Un `el` che non esiste restituisce uno stub inerte —
+`leaveEditor` salva senza alcun pulsante a schermo. Comportamento verificato in
+[tests/busy-button.test.js](../tests/busy-button.test.js).
+
 ### La regola delle barre condivise
 
 Quattro bug di fila (#401 · #403 · #404 · #405) sono venuti dallo stesso errore — una barra che il
@@ -393,6 +409,7 @@ e ritorna `null` (con `admin: true` esige anche il ruolo admin).
 | `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
 | `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
 | `RBCopy(text, okMsg?)` · `RBReaderLink(slug)` | copia negli appunti (vedi sotto) · link Reader pubblico di uno slug |
+| `RBBusy(el, { onEnd })` | il pulsante che ha lanciato un'operazione ne riporta l'esito (vedi sotto) |
 
 ### Lista roadbook condivisa
 

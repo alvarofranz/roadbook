@@ -142,6 +142,17 @@ body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 .btn-primary:hover { filter: brightness(.9); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0, 0, 0, .4); text-decoration: none; }
 .btn-ghost { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--line); }
 .btn-ghost:hover { background: rgba(255, 255, 255, .18); border-color: var(--sand); text-decoration: none; }
+/* A disabled button has to LOOK inert: a Save with nothing left to save is itself the answer to
+   "did it save?" (#459) — and .btn had no disabled state at all, so it looked pressable forever. */
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:disabled:hover { filter: none; transform: none; box-shadow: none; }
+/* the two states RBBusy paints on the button doing the work: spinning while it runs, then green
+   with a tick for 3 s once the work is stored (both stay fully opaque — they are not "inert") */
+.btn.btn-busy { opacity: 1; cursor: progress; }
+/* the stock spinner is a --line ring topped with --sand: invisible on a sand button. Inside a
+   button it borrows the button's own ink instead, so it reads on any fill. */
+.btn-busy .spinner { border-color: currentColor; border-top-color: transparent; opacity: .8; }
+.btn.btn-ok { background: var(--ok); color: var(--on-sand); border-color: var(--ok); opacity: 1; text-shadow: none; }
 
 /* ---------- hero ---------- */
 .hero { padding: 3.6rem 0 2.4rem; }
