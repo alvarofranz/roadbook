@@ -151,6 +151,9 @@
             return; // leave undo/redo and the browser's own paste alone
         }
         const k = (e.key === 'Delete' || e.key === 'Backspace') ? 'del' : e.key.toLowerCase();
+        if (!ctxMenu && k === 'm' && rb.track.length) { // M: back to Move, the default mode (#456)
+            e.preventDefault(); setMapTool('points'); return;
+        }
         if (ctxMenu) { // menu open: its commands are the accelerators
             const run = ctxMenu.keys[k];
             if (!run) return;
@@ -404,6 +407,19 @@
     // the landing. Add note is a mode again (#437): W adds one at the pointer, but a tablet has no
     // W — without a tool there was no touch path to add a note at all.
     const MODE_TOOLS = ['toolNote', 'toolCut'];
+    /* What each map mode is called, with the key that reaches it. Move is the default and has no
+       button, so until now it was the one mode with no feedback at all (#456). */
+    const MODE_LABEL = { points: ['M', 'Move'], note: ['A', 'Add note'], draw: ['', 'Draw route'], cut: ['', 'Cut'], pan: ['', 'Navigate'] };
+    let modeLabelTimer = null;
+    function showModeLabel(tool) {
+        const el = $('mapModeLabel'), m = MODE_LABEL[tool];
+        if (!el) return;
+        if (!m) { el.hidden = true; return; }
+        el.innerHTML = (m[0] ? `<b>${m[0]}</b> — ` : '') + esc(t(m[1]));
+        el.hidden = false;
+        clearTimeout(modeLabelTimer);
+        modeLabelTimer = setTimeout(() => { el.hidden = true; }, 3000); // says its piece and gets out of the way
+    }
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
@@ -413,6 +429,7 @@
         else if (tool === 'draw' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) so you see the points while drawing (#52)
         else { map.setVertexEditor(null); map.setWaypointEditor(null); map.setPhotoEditor(null); }
         $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
+        showModeLabel(tool);
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
@@ -1240,6 +1257,8 @@
         const files = [...(e.clipboardData?.items || [])].filter((it) => /^image\//.test(it.type)).map((it) => it.getAsFile()).filter(Boolean);
         if (!files.length) return; // plain text/other paste → leave it to the browser
         e.preventDefault();
+        // An armed icon paste wins, and needs no saved roadbook: an icon is embedded in the file (#455)
+        if (pasteIconArmed) { pasteIconArmed = false; await addIconFiles(files, true); return; }
         if (!(currentRbId > 0)) { pastePoint = null; return toast('Save to your profile first.'); }
         if (pastePoint) { // a context-menu "Paste photo" armed a point → geotag the image there
             const p = pastePoint; pastePoint = null;
@@ -1771,10 +1790,12 @@
         }));
         markDirty(); renderNotes(); if (rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
     }
+    // The standard palette's file names, lowercased — what tells a shipped icon from the user's
+    // own upload. Used by the palette listing and by the export prune (#454).
+    const stdIconNames = async () => { await loadStd(); return new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase())); };
     async function renderIcons() {
-        await loadStd();
         const lib = rb ? rb.icons || {} : {};
-        const stdNames = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
+        const stdNames = await stdIconNames();
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
         // `cover` icons are per-note opaque vignettes (e.g. imported OpenRally tulips), not
         // shared palette items — list only the current note's, never every note's.
@@ -1856,11 +1877,43 @@
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
         delete rb.icons[name]; renderIcons();
     }
-    $('addIconBtn').onclick = () => $('iconFile').click();
-    $('iconFile').onchange = async (e) => {
+    /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note.
+       markDirty matters: without it an upload was not checkpointed, so a crash between adding the
+       icon and the next edit lost it (#454). A pasted image has no meaningful file name — the
+       clipboard calls everything "image.png" — so it gets a unique one instead of overwriting the
+       last paste (#455). A picked file keeps its name, so re-uploading one deliberately replaces it. */
+    async function addIconFiles(files, pasted) {
         if (!rb) return toast('Load a roadbook first.');
-        for (const f of e.target.files) rb.icons[safeName(f.name)] = await fileToDataURL(f);
-        renderIcons(); toast('Icon(s) uploaded — tap them to place.'); e.target.value = '';
+        let n = 0;
+        for (const f of files) {
+            const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name);
+            rb.icons[name] = await fileToDataURL(f);
+            n++;
+        }
+        if (!n) return;
+        markDirty(); await renderIcons();
+        toast(n === 1 ? 'Icon added — tap it to place.' : 'Icons added — tap them to place.');
+    }
+    $('addIconBtn').onclick = () => $('iconFile').click();
+    $('iconFile').onchange = async (e) => { await addIconFiles([...e.target.files], false); e.target.value = ''; };
+    /* Paste an image straight into the gallery (#455). Two ways in, because neither works
+       everywhere: the button reads the clipboard itself where that is allowed (Chromium, with
+       permission), and otherwise arms the next Ctrl+V — which the `paste` listener honours before
+       the photo paths, since an icon is embedded in the roadbook and needs no server. */
+    let pasteIconArmed = false;
+    $('pasteIconBtn').onclick = async () => {
+        if (!rb) return toast('Load a roadbook first.');
+        try {
+            window.focus(); // clipboard.read() needs the document focused
+            for (const it of await navigator.clipboard.read()) {
+                const ty = it.types.find((x) => /^image\//.test(x));
+                if (ty) return void addIconFiles([new File([await it.getType(ty)], 'clipboard.png', { type: ty })], true);
+            }
+            toast('No image in the clipboard.');
+        } catch (e) {
+            pasteIconArmed = true;
+            toast('Now press Ctrl+V to paste the image.');
+        }
     };
     const safeName = (n) => n.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileToDataURL = (f) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
@@ -2075,7 +2128,18 @@
             const u = await RB.urlToDataURL('../assets/icons/' + base);
             if (u) { Object.keys(r.icons).forEach((k) => { if (k !== base && k.toLowerCase() === base.toLowerCase()) delete r.icons[k]; }); r.icons[base] = u; }
         }
-        Object.keys(r.icons).forEach((k) => { if (![...used].some((b) => b.toLowerCase() === k.toLowerCase())) delete r.icons[k]; });
+        // Prune only what can be got back. An unused STANDARD icon is re-fetchable from
+        // assets/icons/, so dropping it keeps the file lean. A CUSTOM icon is the user's own
+        // artwork and rb.icons is its only copy — pruning that destroyed uploads and left notes
+        // pointing at a name that resolves to a 404, which is the broken image in #454. The
+        // custom library is shared by every note on purpose (it is listed as "Yours in this
+        // roadbook" precisely so any note can use it).
+        const stdNames = await stdIconNames();
+        Object.keys(r.icons).forEach((k) => {
+            const low = k.toLowerCase();
+            if ([...used].some((b) => b.toLowerCase() === low)) return; // in use
+            if (stdNames.has(low)) delete r.icons[k];                    // unused and recoverable
+        });
     }
 
 
