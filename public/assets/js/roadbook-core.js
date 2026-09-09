@@ -392,13 +392,54 @@
         for (let i = 1; i < trkpts.length; i++) cum[i] = cum[i - 1] + haversineM(trkpts[i - 1], trkpts[i]);
         return cum;
     }
-    // A note's bearings at track index `idx`: in = from the previous point (falling back to the
-    // outgoing one at the track start), out = to the next point (falling back to in at the end).
+    /* A bearing needs two points that are actually apart: `bearingDeg(p, p)` is 0 (atan2(0,0)), so
+       a DUPLICATE vertex next to a note — drawing over an existing point, a GPS pair with no
+       movement, a rejoin — used to hand that note a bearing of 0°. The tulip's exit angle is
+       `bearing_out − bearing_in`, so one bogus value swings the arrow anywhere: a note whose route
+       goes straight on was drawn as a sharp right (#452). Hence: walk outwards to the first vertex
+       far enough away to carry a direction. The threshold is deliberately small — this fixes
+       degenerate neighbours, it does not try to smooth GPS jitter, which would change the angle of
+       tulips that are not broken. */
+    const BEARING_MIN_M = 1;
+    // The bearing at `from` looking in `dir` (+1 = onwards, -1 = where we came from), or null when
+    // there is no vertex that far away on that side (the track's ends, or an all-duplicate tail).
+    function bearingAlong(trkpts, from, dir) {
+        const a = trkpts[from];
+        for (let i = from + dir; i >= 0 && i < trkpts.length; i += dir) {
+            if (haversineM(a, trkpts[i]) >= BEARING_MIN_M) return dir > 0 ? bearingDeg(a, trkpts[i]) : bearingDeg(trkpts[i], a);
+        }
+        return null;
+    }
+    // A note's bearings at track index `idx`: in = where it came from (falling back to the outgoing
+    // one at the track start), out = where it goes (falling back to in at the end).
     function deriveBearings(trkpts, idx) {
-        const tp = trkpts[idx];
-        const bIn = idx > 0 ? bearingDeg(trkpts[idx - 1], tp) : (idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : 0);
-        const bOut = idx < trkpts.length - 1 ? bearingDeg(tp, trkpts[idx + 1]) : bIn;
-        return { bIn, bOut };
+        const bIn = bearingAlong(trkpts, idx, -1), bOut = bearingAlong(trkpts, idx, 1);
+        return { bIn: bIn != null ? bIn : (bOut != null ? bOut : 0), bOut: bOut != null ? bOut : (bIn != null ? bIn : 0) };
+    }
+    // Is the vertex a note sits on cut off from its neighbour on that side by duplicates?
+    const degenerateSide = (trkpts, idx, dir) => {
+        const j = idx + dir;
+        return j >= 0 && j < trkpts.length && haversineM(trkpts[idx], trkpts[j]) < BEARING_MIN_M;
+    };
+    /* Bearings are STORED in the .rdbk, and the Reader, the public page and the PDF read them as
+       they are — so a roadbook saved with a poisoned bearing would keep pointing the wrong way
+       until someone re-saved it in the Editor. Repair, on load, exactly the ones that are provably
+       broken: those derived from a degenerate neighbour. Every authored or imported value is left
+       alone (an OpenRally file may carry bearings its own way, and a note placed by distance has
+       an approximate `idx` — re-deriving everything could be worse than what is there). In memory
+       only: the file itself changes when something is saved. */
+    function repairDegenerateBearings(rb) {
+        if (!rb || !Array.isArray(rb.track) || rb.track.length < 2) return rb;
+        (rb.notes || []).forEach((n) => {
+            const i = n.idx;
+            if (isComment(n) || i == null || !rb.track[i]) return;
+            const badIn = degenerateSide(rb.track, i, -1), badOut = degenerateSide(rb.track, i, 1);
+            if (!badIn && !badOut) return;
+            const b = deriveBearings(rb.track, i);
+            if (badIn) n.bearing_in = b.bIn;
+            if (badOut) n.bearing_out = b.bOut;
+        });
+        return rb;
     }
     // Live-recording intake (Recorder · the Editor's record/adjust · the GPX logger): a fix
     // worse than FIX_ACC_MAX_M is junk; the sampling step scales with the accuracy — dense
@@ -594,6 +635,7 @@
                 if (n.wp_type == null) n.wp_type = sp === 0 ? 'fz' : 'dz';
             }
         });
+        repairDegenerateBearings(rb); // a bearing taken from a duplicate vertex is meaningless (#452)
         return rb;
     }
 
@@ -1178,7 +1220,7 @@
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, isComment, isEndNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
-        cumulativeM, deriveBearings, recJunkFix, recStepM, odometerStep,
+        cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
     };
     // The browser uses the global; Node (the test runner) imports the same object.

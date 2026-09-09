@@ -28,6 +28,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `buildRoadbook`, `importRoadbook` | costruzione/normalizzazione del roadbook (§5) |
 | `recomputeMetrics`, `recomputeCaps`, `normalizeRoadTypes` | ricalcoli (§6) |
 | `cumulativeM`, `deriveBearings` | distanza cumulativa / bearing in-out a un indice (§5-6) |
+| `repairDegenerateBearings(rb)` | ripara **solo** i bearing derivati da un vertice duplicato — vedi sotto (#452). Chiamata da `importRoadbook` |
 | `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
 | `simplifyRoadbook`, `reverseRoadbook`, `nearestOnTrack` | operazioni traccia (§7) |
 | `gpxDocument`, `kmlDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / KML / OpenRally (§7) |
@@ -147,6 +148,27 @@ Passaggi:
    individua anche start/end.)
 4. Per ogni nota deriva `num` (riprogressivo), `distance`, `partial_distance`, `lat`/`lon` dal
    punto traccia, `bearing_in`/`bearing_out` (via `deriveBearings`), e il testo via `wptText`.
+
+### Bearing e vertici duplicati (#452)
+
+Un bearing ha bisogno di due punti **distinti**: `bearingDeg(p, p)` è `0` (`atan2(0,0)`). Un vertice
+**duplicato** accanto a una nota — si disegna sopra un punto esistente, una coppia GPS senza
+movimento, un ricongiungimento — dava quindi a quella nota un bearing di 0°, e siccome l'angolo
+d'uscita del tulip è `bearing_out − bearing_in`, un solo valore falso sposta la freccia dove
+capita: una nota che va **dritto** veniva disegnata come **svolta secca a destra**.
+
+Quindi `deriveBearings` non guarda più il vicino immediato ma **cammina verso l'esterno fino al
+primo vertice abbastanza lontano** (`BEARING_MIN_M = 1 m`) da portare una direzione. La soglia è
+piccola di proposito: sistema i vicini degeneri, non prova a smussare il jitter GPS — farlo
+cambierebbe l'angolo di tulip che non sono rotti.
+
+I bearing sono **salvati** nel `.rdbk`, e Reader, pagina pubblica ed export PDF li leggono così
+come sono: un roadbook già salvato continuerebbe a puntare male finché qualcuno non lo ri-salva
+dall'Editor. Per questo `importRoadbook` chiama `repairDegenerateBearings`, che ri-deriva
+**soltanto** i bearing il cui vicino è degenere e lascia intatto ogni valore autorato o importato
+(un file OpenRally può portarsi i bearing suoi, e una nota posizionata per distanza ha un `idx`
+approssimativo: ri-derivare tutto potrebbe peggiorare le cose). Solo in memoria — il file cambia
+quando si salva. Sul roadbook del report: 5 note corrette, 34 su 39 intatte.
 
 Il **modello nota** prodotto:
 

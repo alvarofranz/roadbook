@@ -79,6 +79,10 @@ non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js
   PDF concordano su quale sia quella nota (ed è l'ultima **non-commento**: una riga di commento
   non si naviga e può stare dopo l'arrivo).
 
+> I bearing arrivano dalla traccia (`RB.deriveBearings`), che **salta i vertici duplicati**: un
+> vicino coincidente dava bearing 0° e quindi una freccia puntata dove capita — una nota dritta
+> disegnata come svolta secca (#452, vedi [roadbook-core.md](roadbook-core.md)).
+
 L'angolo di uscita è la **variazione di rotta** `(bearing_out − bearing_in)` normalizzata a
 `0..360` ([note-canvas.js:214](../public/assets/js/note-canvas.js#L214)); `θ=0` = dritto in
 su, senso **orario** come una bussola. La punta è quindi
