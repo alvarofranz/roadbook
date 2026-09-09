@@ -127,6 +127,8 @@
             'Title': 'Titel', 'Description': 'Beschreibung', 'Shown on the public roadbook page': 'Auf der öffentlichen Roadbook-Seite angezeigt',
             'Photos': 'Fotos', 'Add photos': 'Fotos hinzufügen', 'Notes': 'Noten', 'Back': 'Zurück',
             'Delete': 'Löschen',
+            'Cut': 'Schneiden',
+            'Paste icon': 'Symbol einfügen', 'Icon added — tap it to place.': 'Symbol hinzugefügt — antippen zum Platzieren.', 'Icons added — tap them to place.': 'Symbole hinzugefügt — antippen zum Platzieren.', 'Now press Ctrl+V to paste the image.': 'Jetzt Strg+V drücken, um das Bild einzufügen.', 'Draw route': 'Route zeichnen',
             'Icons': 'Icons', 'Upload icon': 'Icon hochladen', 'All': 'Alle', 'Yours': 'Deine',
             'Simplify': 'Vereinfachen', 'Apply': 'Anwenden',
             'Route reversed — review the vignettes.': 'Route umgekehrt — Vignetten prüfen.',

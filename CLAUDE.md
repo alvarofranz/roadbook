@@ -443,7 +443,10 @@ Operational notes:
   (Douglas-Peucker, note anchors kept) · adjust on the trail (live re-record) ·
   undo/redo (debounced snapshots, Ctrl+Z/Y)*. Whatever the source pieces, the route
   is always ONE continuous track. Title, description,
-  author, organization, event logo (downscaled, embedded) and a photo gallery;
+  author, organization, event logo (downscaled, embedded) and a photo gallery; uploaded or
+  pasted **custom icons live in the roadbook's own library (`rb.icons`) and are offered to
+  every note** — only unused *standard* art is pruned on export, since a custom icon has no
+  other copy (#454);
   **Export `.rdbk`** (self-contained), **Export GPX** (track + notes as named
   waypoints) and **Save to profile** (public/private — saving pins `?rb=<id>` to the
   URL so re-saves update the same roadbook; importing fresh content starts a new

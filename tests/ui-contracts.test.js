@@ -153,3 +153,37 @@ describe('the per-note map is a close-up, not the whole route (#427)', () => {
         expect(open).not.toMatch(/showRoadbook\(rb\b/);
     });
 });
+
+describe('the roadbook\'s icon library is not a cache (#454)', () => {
+    const editor = read('public/editor/editor.js');
+    const prune = editor.match(/async function embedUsed\(r\) \{([\s\S]*?)\n {4}\}/)[1];
+
+    it('only deletes icons the standard palette can give back', () => {
+        // rb.icons is the ONLY copy of a custom icon: pruning it destroyed uploads and left notes
+        // pointing at a name that resolves to a 404 — the broken image in the report
+        expect(prune).toContain('stdIconNames()');
+        expect(prune).toMatch(/if \(stdNames\.has\(low\)\) delete r\.icons\[k\]/);
+        // the unconditional prune is gone (the other `delete` in there resolves a case collision
+        // on a name that IS in use, which is a different thing)
+        expect(prune).not.toMatch(/if \(!\[\.\.\.used\]\.some[^)]*\)\) delete r\.icons\[k\]/);
+    });
+
+    it('an upload is checkpointed, so a crash cannot lose it', () => {
+        const add = editor.match(/async function addIconFiles\(files, pasted\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(add).toContain('markDirty()');
+    });
+
+    it('a pasted image gets a unique name instead of overwriting the last paste (#455)', () => {
+        // the clipboard calls everything "image.png"
+        const add = editor.match(/async function addIconFiles\(files, pasted\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(add).toMatch(/pasted \? '[^']*' \+ Date\.now\(\)/);
+    });
+
+    it('an armed icon paste is honoured before the photo paths, with no saved roadbook needed', () => {
+        // an icon is embedded in the .rdbk; a photo needs a server id, and that check used to
+        // reject the paste before it could ever become an icon
+        const handler = editor.match(/document\.addEventListener\('paste'[\s\S]*?\n {4}\}\);/)[0];
+        expect(handler.indexOf('pasteIconArmed')).toBeGreaterThan(-1);
+        expect(handler.indexOf('pasteIconArmed')).toBeLessThan(handler.indexOf("currentRbId > 0"));
+    });
+});

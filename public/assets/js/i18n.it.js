@@ -128,6 +128,8 @@
             'Title': 'Titolo', 'Description': 'Descrizione', 'Shown on the public roadbook page': 'Mostrato nella pagina pubblica del roadbook',
             'Photos': 'Foto', 'Add photos': 'Aggiungi foto', 'Notes': 'Note', 'Back': 'Torna',
             'Delete': 'Elimina',
+            'Cut': 'Taglia',
+            'Paste icon': 'Incolla icona', 'Icon added — tap it to place.': 'Icona aggiunta — toccala per posizionarla.', 'Icons added — tap them to place.': 'Icone aggiunte — toccale per posizionarle.', 'Now press Ctrl+V to paste the image.': 'Ora premi Ctrl+V per incollare l\'immagine.', 'Draw route': 'Disegna percorso',
             'Icons': 'Icone', 'Upload icon': 'Carica icona', 'All': 'Tutte', 'Yours': 'Tue',
             'Simplify': 'Semplifica', 'Apply': 'Applica',
             'Route reversed — review the vignettes.': 'Percorso invertito — controlla le vignette.',

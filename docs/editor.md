@@ -87,6 +87,13 @@ il cursore. Il dispatch dei tap mappa (`map.map.on('click', …)`) gestisce solo
 I mode tool con pulsante vivono nel menu ☰ (`#mapMenuPanel`), non nella barra: #138 l'ha
 snellita di proposito e resta snella.
 
+**Il modo attivo si annuncia** (#456): a ogni `setMapTool` compare in basso a sinistra sulla mappa
+un'etichetta col nome del modo e il suo tasto (`A — Add note`, `M — Move`) che **si toglie da sola
+dopo 3 s**. Serviva perché **Move**, il modo di default, non ha pulsante: era l'unico modo senza
+alcun riscontro visivo. **M** riporta a Move da qualunque punto — gestito prima del ramo
+"vertice selezionato", che ingoia i tasti che non conosce (là **A** resta l'inserimento del punto
+intermedio, che è un comando suo).
+
 > **Add note è tornato un mode tool** (#437). Era stato rimosso lasciando come vie d'accesso il
 > tasto **W** al puntatore e il menu contestuale — ma **su un tablet non esiste il tasto W**, e
 > l'Editor si usa su iPad: senza tool non c'era modo di aggiungere una nota col dito. Il tasto
@@ -225,6 +232,23 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 (#65, §3.3), cancellare una nota e selezionare la successiva **non ricentra la vista**.
 
 ### 4.1 Palette icone
+
+> **`rb.icons` è una libreria, non una cache** (#454). Le icone standard che nessuna nota usa si
+> possono buttare — si rifanno da `assets/icons/` — ma di un'icona **custom** `rb.icons` è l'**unica
+> copia**: è l'immagine che l'utente ha caricato. `embedUsed` (export e save) prunava tutto ciò che
+> non era referenziato, quindi un'icona caricata e non ancora piazzata veniva **distrutta al primo
+> salvataggio**, spariva da *Yours (in this roadbook)* e le note che la referenziavano finivano su
+> un nome che `RB.iconSrc` risolveva in `assets/icons/<nome>` → 404 → immagine rotta. Ora il prune
+> tocca **solo i nomi della palette standard** (`stdIconNames()`), e la libreria custom resta
+> disponibile a **tutte** le note, che è il suo scopo.
+>
+> `addIconFiles(files, pasted)` è l'unico ingresso: file picker o **paste** (#455). Fa `markDirty`
+> — senza, un upload non finiva nel checkpoint e un crash lo perdeva — e a un'immagine incollata dà
+> un nome unico, perché la clipboard chiama tutto `image.png` e la paste successiva avrebbe
+> sovrascritto la precedente. Il paste da clipboard ha due strade perché nessuna funziona
+> ovunque: il pulsante legge la clipboard dove è permesso (`navigator.clipboard.read()`), altrimenti
+> **arma** il Ctrl+V successivo; il listener `paste` onora l'arma **prima** dei rami foto, perché
+> un'icona è embedded nel roadbook e non richiede un roadbook già salvato sul server.
 
 `renderIcons` ([editor.js:874](../public/editor/editor.js#L874)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook

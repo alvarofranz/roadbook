@@ -126,6 +126,8 @@
             'Adjust on the trail (live GPS)': 'Ajuster sur le terrain (GPS en direct)',
             'Title': 'Titre', 'Description': 'Description', 'Shown on the public roadbook page': 'Affiché sur la page publique du roadbook',
             'Photos': 'Photos', 'Add photos': 'Ajouter des photos', 'Notes': 'Notes', 'Back': 'Retour', 'Delete': 'Supprimer',
+            'Cut': 'Couper',
+            'Paste icon': 'Coller une icône', 'Icon added — tap it to place.': 'Icône ajoutée — touchez-la pour la placer.', 'Icons added — tap them to place.': 'Icônes ajoutées — touchez-les pour les placer.', 'Now press Ctrl+V to paste the image.': 'Appuyez maintenant sur Ctrl+V pour coller l\'image.', 'Draw route': 'Dessiner le tracé',
             'Icons': 'Icônes', 'Upload icon': 'Importer une icône', 'All': 'Toutes', 'Yours': 'Les vôtres',
             'Simplify': 'Simplifier', 'Apply': 'Appliquer',
             'Route reversed — review the vignettes.': 'Itinéraire inversé — vérifiez les vignettes.',
