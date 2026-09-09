@@ -54,14 +54,14 @@
                 const textClass = n.image ? '' : ' col-text-wide';
                 return `<div class="nrow readonly comment">
                     <div class="col-distance"></div>
-                    <div class="col-vignette${n.image ? '' : ' col-vignette-empty'}">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                    <div class="col-vignette${n.image ? '' : ' col-vignette-empty'}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(rb.notes, i))}</div>
                     <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
                 </div>`;
             }
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
             return `<div class="nrow readonly">
                 <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
-                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc)}</div>
+                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(rb.notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
             </div>`;
         }).join('');

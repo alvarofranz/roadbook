@@ -508,7 +508,8 @@ Operational notes:
   `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
-  `deleteNote`, `pendingWork`), `CONST`, `ROAD_TYPES`.
+  `deleteNote`, `pendingWork`, `isEndNote` — the last non-comment note, whose tulip draws no exit
+  road because past the finish there is nothing to follow, #447), `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by both the Reader rows and the challenge page).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo

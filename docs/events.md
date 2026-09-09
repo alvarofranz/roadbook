@@ -147,14 +147,20 @@ La lista partecipanti su pagina propria (#144): un evento può averne centinaia,
 ## 5. Consegna ed editing dei roadbook di evento
 
 Il collante col resto dell'app sono due controlli in `events.php`, entrambi costruiti su
-`event_rights_on_roadbook`:
+`event_rights_on_roadbook($user, $roadbookId, $includeParticipants)` — prende la **riga utente**,
+non un id, perché un **admin** lo è per riga (`is_admin` onora anche la lista di admin bloccati) e
+un admin ha questi diritti: è la prima riga della tabella in §2. Quel ramo mancava, ed è ciò che
+permetteva a un admin di aprire la gestione di un evento (`event_can_manage`, che invece controlla)
+e poi di essere respinto dal gate del roadbook, pulsante Edit compreso (#450). Con il ramo al suo
+posto la pagina di gestione è onesta per costruzione: chiunque possa arrivarci (admin ·
+proprietario · co-organizzatore) può anche editare i roadbook associati.
 
-- **Lettura consegnata (#25):** `event_grants_read($uid, $roadbookId)` — un roadbook `ready`
+- **Lettura consegnata (#25):** `event_grants_read($user, $roadbookId)` — un roadbook `ready`
   associato a un evento è leggibile da **partecipanti e organizzatori** di quell'evento. È il
   gate usato da [`public_get`](backend-api.md) per servire una rotta "pronta" agli iscritti pur
   restando privata al pubblico. *(La protezione completa — niente download/GPX/PDF per i
   partecipanti, finestra temporale — è la P4 ancora aperta, #25.)*
-- **Co-editing (#123):** `event_co_edits_roadbook($uid, $roadbookId)` — gli organizzatori
+- **Co-editing (#123):** `event_co_edits_roadbook($user, $roadbookId)` — gli organizzatori
   possono **editare** un roadbook associato all'evento anche se non ne sono proprietari. È il gate
   usato da `rb_require_edit` nell'[Editor](editor.md): la proprietà e la pubblicazione restano del
   proprietario, l'editing è condiviso, e la concorrenza è gestita dal **soft lock** (#154, vedi

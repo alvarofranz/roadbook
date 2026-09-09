@@ -44,6 +44,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |
 | `recJunkFix`, `recStepM` | soglia scarto fix / passo di campionamento della registrazione live |
 | `odometerStep` | il gate di ingresso dell'odometro: giudica un fix contro l'ultima posizione affidabile (`junk` / `noise` / `teleport` / `ok`) — vedi [gps-stack.md](./gps-stack.md) §2 |
+| `isEndNote(notes, i)` | la nota di **fine** del roadbook: l'ultima non-commento. Il suo tulip non disegna la strada d'uscita (#447) |
 | `noteReached` | il gate di convalida automatica del Reader: la nota è raggiunta se il **segmento** percorso fra due fix entra nel raggio |
 | `manualGate` | il gate della convalida **manuale**: `null` se è permessa (nessun fix, o dentro i 100 m allargati dall'accuratezza), altrimenti la distanza — che il Reader usa per dire quanto sei lontano e offrire di saltare la nota (#431) |
 | `nearestIdx`, `nearestIdxByTime`, `resolveIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |

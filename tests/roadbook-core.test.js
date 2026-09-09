@@ -1010,3 +1010,51 @@ describe('parseOpenRally — fallback paths and tulipToDataURL', () => {
     // the existing wp_type round-trip test above — it exercises the namespace parsing + emitOr
     // passthrough path through openRallyDocument.
 });
+
+describe('isEndNote — which note is the roadbook\'s finish (#447)', () => {
+    const nav = (num) => ({ num, lat: 0, lon: 0 });
+    const comment = (num) => ({ num, note_kind: 'comment', text: 'careful' });
+
+    it('is the last note, and only it', () => {
+        const notes = [nav(1), nav(2), nav(3)];
+        expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, false, true]);
+    });
+
+    it('skips comment rows sitting after the finish', () => {
+        // a comment carries no coordinates and is never navigated to, so the note you actually
+        // finish on is the last NON-comment one — the tulip that must drop its exit arrow
+        const notes = [nav(1), nav(2), comment(3), comment(4)];
+        expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, true, false, false]);
+    });
+
+    it('never says yes about a comment row, or out of range', () => {
+        const notes = [comment(1)];
+        expect(RB.isEndNote(notes, 0)).toBe(false);
+        expect(RB.isEndNote(notes, 5)).toBe(false);
+        expect(RB.isEndNote([], 0)).toBe(false);
+        expect(RB.isEndNote(null, 0)).toBe(false);
+    });
+
+    it('a single navigational note is both start and end', () => {
+        expect(RB.isEndNote([nav(1)], 0)).toBe(true);
+    });
+});
+
+describe('the end note\'s tulip has no exit road (#447)', () => {
+    const note = (num) => ({ num, road_type_in: 2, road_type_out: 2, bearing_in: 0, bearing_out: 90, icons: [] });
+
+    it('a middle note draws the exit segment with its arrow', () => {
+        const svg = NoteCanvas.toSVG(note(2), (ic) => ic.name, false);
+        expect(svg.match(/<line /g)).toHaveLength(2);          // incoming + exit
+        expect(svg).toContain('marker-end="url(#vig-arr)"');
+    });
+
+    it('the end note draws only the incoming road — no exit, no arrow', () => {
+        // past the finish there is nothing to follow, so the arrow pointed at nothing; the
+        // validation dot at the centre is the end of the road
+        const svg = NoteCanvas.toSVG(note(9), (ic) => ic.name, true);
+        expect(svg.match(/<line /g)).toHaveLength(1);
+        expect(svg).not.toContain('marker-end="url(#vig-arr)"');
+        expect(svg).toContain('<circle');                       // the centre dot stays
+    });
+});

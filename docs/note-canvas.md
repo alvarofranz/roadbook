@@ -70,7 +70,14 @@ non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js
 - la **provenienza** entra dritta dal bordo inferiore (`cx,154`) fino al centro (`cx,cy`),
   stilizzata da `road_type_in`;
 - la **strada da seguire** esce dal centro con una freccia (`marker-end`), lunga `L=63`,
-  orientata sulla virata reale.
+  orientata sulla virata reale — **tranne sulla nota di FINE**, che non ha uscita affatto
+  (#447): oltre l'arrivo non c'è nulla da seguire, quindi la freccia puntava al nulla; in gara
+  quella nota è l'arco d'arrivo. La provenienza si ferma al centro, dove il punto di convalida
+  segna il posto. Chi disegna passa il flag (`trunkSegments(note, isEnd)`,
+  `NoteCanvas.toSVG(note, resolveIcon, isEnd)`, `setNote(note, isEnd)`) e lo ricava da
+  **`RB.isEndNote(notes, i)`** — una regola sola, così Editor, Reader, pagina pubblica ed export
+  PDF concordano su quale sia quella nota (ed è l'ultima **non-commento**: una riga di commento
+  non si naviga e può stare dopo l'arrivo).
 
 L'angolo di uscita è la **variazione di rotta** `(bearing_out − bearing_in)` normalizzata a
 `0..360` ([note-canvas.js:214](../public/assets/js/note-canvas.js#L214)); `θ=0` = dritto in

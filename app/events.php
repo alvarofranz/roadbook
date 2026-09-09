@@ -66,7 +66,15 @@ function user_manages_events(int $uid): bool {
 // co-organizer) can EDIT it (#123); with $includeParticipants an ACTIVE participant may also
 // READ a non-public one (#25/#163 — pending participants wait for the organizer's activation).
 // One query, the participant clause added only for the read check.
-function event_rights_on_roadbook(int $uid, int $roadbookId, bool $includeParticipants): bool {
+// Rights an EVENT gives a user over a roadbook attached to it. Takes the user row, not an id,
+// because an admin is one by row (`is_admin` also honours the locked-admin email list) — and an
+// admin has these rights: it is the first line of the table in docs/events.md §2. Leaving that
+// branch out is what let an admin open an event's management page (`event_can_manage`, which does
+// check) and then be refused by the roadbook gate, Edit button and all (#450).
+function event_rights_on_roadbook(?array $user, int $roadbookId, bool $includeParticipants): bool {
+    if (!$user) return false;
+    if (is_admin($user)) return true;
+    $uid = (int)$user['id'];
     $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
         WHERE er.roadbook_id = ? AND (e.organizer_id = ?
             OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)'
@@ -75,8 +83,8 @@ function event_rights_on_roadbook(int $uid, int $roadbookId, bool $includePartic
     $st->execute($includeParticipants ? [$roadbookId, $uid, $uid, $uid] : [$roadbookId, $uid, $uid]);
     return (bool)$st->fetch();
 }
-function event_grants_read(int $uid, int $roadbookId): bool { return event_rights_on_roadbook($uid, $roadbookId, true); }
-function event_co_edits_roadbook(int $uid, int $roadbookId): bool { return event_rights_on_roadbook($uid, $roadbookId, false); }
+function event_grants_read(?array $user, int $roadbookId): bool { return event_rights_on_roadbook($user, $roadbookId, true); }
+function event_co_edits_roadbook(?array $user, int $roadbookId): bool { return event_rights_on_roadbook($user, $roadbookId, false); }
 function event_can_manage(array $user, array $eventRow): bool {
     if (is_admin($user) || (int)$eventRow['organizer_id'] === (int)$user['id']) return true;
     $st = db()->prepare('SELECT 1 FROM event_organizers WHERE event_id = ? AND user_id = ?');

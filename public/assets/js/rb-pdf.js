@@ -251,7 +251,7 @@
         const iconMap = await resolveIcons(rb, basePath);
         const resolver = (ic) => iconMap[ic.name] || RB.iconSrc(ic, rb, basePath);
         const tulips = [];
-        for (const n of rb.notes) tulips.push(await svgToPng(NoteCanvas.toSVG(n, resolver), 3));
+        for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.isEndNote(rb.notes, i)), 3));
         // Whoever exports this copy signs it in the footer (#411). RBConfig falls back to the
         // cached user, so an offline export is credited too.
         const cfg = await RBConfig();
