@@ -42,7 +42,7 @@ function rb_require_edit(array $user, int $id): array {
     $st->execute([$id]);
     $row = $st->fetch();
     // a trashed roadbook (#187) is invisible to everyone but the admin trash page
-    if (!$row || $row['status'] === 'deleted' || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook((int)$user['id'], $id))) fail('Not found.', 404);
+    if (!$row || $row['status'] === 'deleted' || ((int)$row['user_id'] !== (int)$user['id'] && !event_co_edits_roadbook($user, $id))) fail('Not found.', 404);
     return $row;
 }
 
@@ -292,7 +292,7 @@ function rb_media_readable(?array $user, int $rbId): void {
     $rb = $st->fetch();
     if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404);
     if ($rb['status'] === 'public') return;
-    if ($user && ((int)$user['id'] === (int)$rb['user_id'] || event_co_edits_roadbook((int)$user['id'], $rbId))) return;
+    if ($user && ((int)$user['id'] === (int)$rb['user_id'] || event_co_edits_roadbook($user, $rbId))) return;
     fail('This roadbook is private.', 403);
 }
 // Owner-only media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY).
@@ -376,7 +376,7 @@ function public_get(array $d): void {
     $isOwner = $me && (int)$me['id'] === (int)$row['user_id'];
     // Event delivery (#25): a READY roadbook attached to an event is readable by that event's
     // participants and organizers — never anonymously; drafts stay owner-only.
-    $viaEvent = !$isOwner && $me && $row['status'] === 'ready' && event_grants_read((int)$me['id'], (int)$row['id']);
+    $viaEvent = !$isOwner && $me && $row['status'] === 'ready' && event_grants_read($me, (int)$row['id']);
     if ($row['status'] !== 'public' && !$isOwner && !$viaEvent) fail('This roadbook is private.', 403);
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);

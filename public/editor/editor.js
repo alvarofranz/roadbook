@@ -215,6 +215,9 @@
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
+    // Show note i on the canvas. One place asks whether it is the roadbook's end note, so the
+    // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
+    const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i));
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
     $('addSponsorBtn').onclick = () => addComment();
@@ -242,7 +245,7 @@
     function onVertexCommit() {
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); map.refreshVertices(rb.track); renderNotes();
-        if (editorOpen) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
+        if (editorOpen) { renderEditor(); showOnCanvas(sel); map.select(rb.notes[sel], true); }
         markDirty();
     }
     // Waypoint drag (default Move): the blue note marker moves its underlying track vertex, so the
@@ -258,7 +261,7 @@
     function onWptCommit() {
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes();
-        if (editorOpen && sel >= 0) { renderEditor(); canvas.setNote(rb.notes[sel]); map.select(rb.notes[sel], true); }
+        if (editorOpen && sel >= 0) { renderEditor(); showOnCanvas(sel); map.select(rb.notes[sel], true); }
         markDirty();
     }
     // Photo pins drag exactly like waypoints in Move mode (#41): move the pin live, then persist
@@ -766,7 +769,7 @@
         updatePhotos(); updateAudio(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
         sel = 0;
-        if (rb.notes.length) { canvas.setNote(rb.notes[0]); renderEditor(); } else canvas.setNote(null);
+        if (rb.notes.length) { showOnCanvas(0); renderEditor(); } else canvas.setNote(null);
         histReset();
         const routeless = rb.track.length < 2;
         setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to moving points
@@ -794,7 +797,7 @@
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false; $('cfgReusable').checked = reusable;
-        refreshMap(true); renderNotes(); renderIcons(); renderEditor(); canvas.setNote(rb.notes[sel]);
+        refreshMap(true); renderNotes(); renderIcons(); renderEditor(); showOnCanvas(sel);
         map.select(rb.notes[sel], true);
         updateHistBtns();
     }
@@ -981,7 +984,7 @@
             if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        sel = 0; refreshMap(false); renderNotes(); renderEditor(); canvas.setNote(rb.notes[0]); updatePhotos(); updateAudio(); markDirty();
+        sel = 0; refreshMap(false); renderNotes(); renderEditor(); showOnCanvas(0); updatePhotos(); updateAudio(); markDirty();
         toast('Trail adjusted · metrics recomputed.');
     }
     function spliceByIndex(r, newTrk, i1, i2) {
@@ -1451,13 +1454,13 @@
     };
     function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i], i); }
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
-    const tulipSVG = (n) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'));
+    const tulipSVG = (n, i) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.isEndNote(rb.notes, i));
     function placeTulips() {
         $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
             if (!Number.isInteger(i) || !rb.notes[i] || RB.isComment(rb.notes[i])) return; // comment rows have no tulip
             if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
-            slot.innerHTML = tulipSVG(rb.notes[i]);
+            slot.innerHTML = tulipSVG(rb.notes[i], i);
         });
     }
     // The editor lives in two movable pieces: the tulip canvas goes INTO the selected
@@ -1486,7 +1489,7 @@
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
         openEditZoneAt(i); renderEditor();
-        if (!RB.isComment(rb.notes[i])) canvas.setNote(rb.notes[i]); // comment notes have no tulip canvas
+        if (!RB.isComment(rb.notes[i])) showOnCanvas(i); // comment notes have no tulip canvas
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
@@ -1575,7 +1578,7 @@
             const v = e.target.value; if (v === '') delete n.speed_limit; else n.speed_limit = +v;
             syncSpeedIcon(n);  // the matching S-icon follows the limit (set/changed/lifted/cleared)
             syncSpeedZone(n);  // a speed limit also tags the note as a controlled zone (DZ / FZ)
-            markDirty(); canvas.setNote(n); canvas.render(); renderEditor(); renderNotes();
+            markDirty(); showOnCanvas(sel); canvas.render(); renderEditor(); renderNotes();
         };
         // CAP type qualifies an existing CAP (FIA: exit/average/calculated/turning); exit is the
         // implicit default, stored absent. Disabled until the note carries a CAP.
@@ -1766,7 +1769,7 @@
             const flag = t('Note: add icon') + ' ' + orig;
             if (!(n.text || '').includes(flag)) n.text = n.text ? n.text + '\n' + flag : flag;
         }));
-        markDirty(); renderNotes(); if (rb.notes[sel]) { canvas.setNote(rb.notes[sel]); renderEditor(); }
+        markDirty(); renderNotes(); if (rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
     }
     async function renderIcons() {
         await loadStd();
@@ -1846,7 +1849,7 @@
         if (isCover) {
             rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
             delete rb.icons[name];
-            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { canvas.setNote(rb.notes[sel]); renderEditor(); }
+            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
             renderIcons();
             return;
         }
@@ -1865,7 +1868,7 @@
     // refresh everything after a whole-route operation
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
-        refreshMap(true); renderNotes(); renderEditor(); canvas.setNote(rb.notes[sel]); markDirty();
+        refreshMap(true); renderNotes(); renderEditor(); showOnCanvas(sel); markDirty();
         map.select(rb.notes[sel], true);
         if (toastMsg) toast(toastMsg);
     }
@@ -1953,7 +1956,7 @@
     // (portable, no external files). See RB.openRallyDocument + github.com/openrally/openrally.
     async function exportOpenRally() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const tulips = rb.notes.map((n) => tulipSVG(n));
+        const tulips = rb.notes.map((n, i) => tulipSVG(n, i));
         const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_OR';
         RBDownload(new Blob([RB.openRallyDocument(rb, { tulips, name: base })], { type: 'application/gpx+xml' }), base + '.gpx');
     }

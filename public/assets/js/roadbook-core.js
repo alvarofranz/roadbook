@@ -115,6 +115,16 @@
         const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
+    /* Is note i the roadbook's END — the last one you actually navigate to? Comment rows carry no
+       coordinates and can sit after it, so it is the last NON-comment note, not simply the last
+       index. Its tulip draws no exit road: past the finish there is nothing to follow, and in a
+       race that note is the finish arch (#447). One rule, so the Editor, the Reader, the public
+       page and the PDF all agree about which note that is. */
+    function isEndNote(notes, i) {
+        if (!notes || !notes[i] || isComment(notes[i])) return false;
+        for (let k = notes.length - 1; k >= 0; k--) if (!isComment(notes[k])) return k === i;
+        return false;
+    }
     /* Has the active note been reached? — the Reader's auto-validation gate (#384). Testing the
        CURRENT FIX alone silently misses waypoints: fixes land about a second apart, so at 90 km/h
        the phone moves ~25 m between two of them and a tight gate (the REACH_MIN_M floor is 18 m)
@@ -1166,7 +1176,7 @@
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        roadbookForExport, isComment,
+        roadbookForExport, isComment, isEndNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
