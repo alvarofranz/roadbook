@@ -234,14 +234,21 @@ il focus dentro, cicla il Tab all'interno e su Escape chiama `onEscape`. Ritorna
 sgancia il listener e ripristina il focus precedente. Usata da `RBModal` **e** dai dialoghi statici
 del Reader — una sola casa per la logica.
 
-#### `RBConfirm(msg, okLabel, danger) → Promise<boolean>`
-Conferma stilizzata costruita su `RBModal` (card `narrow`). Risolve `true`/`false`. `msg` e
-`okLabel` passano per `RBt` (le chiavi inglesi si traducono, le stringhe già tradotte/composte
-passano invariate). `danger === true` colora il pulsante di conferma come azione distruttiva.
+#### `RBConfirm(msg, danger) → Promise<boolean>`
+Conferma stilizzata costruita su `RBModal` (card `narrow`). Risolve `true`/`false`. `msg` passa per
+`RBt` (le chiavi inglesi si traducono, le stringhe già tradotte/composte passano invariate).
+`danger === true` colora il pulsante di conferma come azione distruttiva.
 
-#### `RBConfirmDanger(msg, okLabel) → Promise<boolean>`
-Scorciatoia per `RBConfirm(msg, okLabel, true)` — la conferma usata per **ogni azione che
-distrugge dati** (cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
+**I pulsanti sono sempre No / Sì**, e non sono configurabili (#435). Prima il pulsante affermativo
+prendeva un'etichetta dal chiamante ("Recover", "Delete", "Resume"…) e il negativo diceva
+*Cancel*: ma *Cancel* è la parola sbagliata per la metà negativa di una domanda — si legge come
+"annulla quello che stavo facendo", non "no". Una conferma fa una domanda, e i pulsanti la
+rispondono; tutto ciò che è specifico della decisione sta in `msg`, che è esattamente dove una
+conferma di cancellazione deve già nominare ciò che sta cancellando.
+
+#### `RBConfirmDanger(msg) → Promise<boolean>`
+Scorciatoia per `RBConfirm(msg, true)` — la conferma usata per **ogni azione che distrugge dati**
+(cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
 
 #### `RBWebGpsWarn(msg?)`
 ([app.js:1041](../public/assets/js/app.js#L1041)) — Banner che avverte che la GPS del browser è

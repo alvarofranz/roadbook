@@ -15,7 +15,7 @@
     }
     $('ppActivateAll').onclick = async () => {
         if (pendingTotal < 1) return;
-        if (!(await RBConfirm(pendingTotal + ' ' + t('participants are waiting for activation. Admit all of them?'), t('Activate all')))) return;
+        if (!(await RBConfirm(pendingTotal + ' ' + t('participants are waiting for activation. Admit all of them?')))) return;
         const x = await api('event_participants_activate_pending', { event_id: id });
         if (x.ok) { toast(x.admitted + ' ' + t('participants activated.')); page = 1; load(); }
         else toast(x.error || 'Could not activate.');
@@ -42,7 +42,7 @@
         </div>`).join('') : `<p class="muted small">${esc(t(q ? 'No matching users.' : 'No participants yet.'))}</p>`;
         RBPager($('ppPager'), page, pages, (p) => { page = p; load(); }, pages > 1 ? `${r.total} ${esc(t('participants'))}` : '');
         $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?'))) return;
             const x = await api('event_participant_remove', { event_id: id, user_id: +b.dataset.ppdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });

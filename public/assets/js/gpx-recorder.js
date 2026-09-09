@@ -72,7 +72,7 @@ window.RBGpxRecorder = (() => {
         let saved; try { saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || 'null'); } catch (e) {}
         if (!saved || !saved.pts || saved.pts.length < 2) return;
         const t = RBt;
-        const yes = await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')', t('Recover'));
+        const yes = await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')');
         try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
         if (yes) finishedModal(saved.pts, saved.name || defaultName());
     }
@@ -120,7 +120,7 @@ window.RBGpxRecorder = (() => {
         d.q('#trDl').onclick = () => { download(finished, name); clearCheckpoint(); d.close(); };
         d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(finished)); } catch (e) {} clearCheckpoint(); location.href = '../editor/?trip=1'; };
         d.q('#trClose').onclick = async () => {
-            if (!(await RBConfirmDanger(t('Discard this recording?') + ' (' + finished.length + ' ' + t('points') + ')', t('Discard')))) return;
+            if (!(await RBConfirmDanger(t('Discard this recording?') + ' (' + finished.length + ' ' + t('points') + ')'))) return;
             clearCheckpoint(); d.close();
         };
     }

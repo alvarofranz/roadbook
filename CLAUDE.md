@@ -57,6 +57,12 @@ DB/Convenzioni rapide below have counterparts there).
   exactly one way to do each thing, and the codebase always reads fresh and clean — as if
   written from scratch today. If a rename/refactor leaves dead code or stale comments, that's
   not done until they're gone.
+- **A confirm answers a question: the buttons are always No / Yes.** `RBConfirm(msg, danger)`
+  takes no button label — whatever is specific belongs in the message, which for a deletion must
+  name the object anyway. "Cancel" is the wrong word for the negative half of a question (#435).
+- **A prompt the user declines must not come back.** Mark the checkpoint declined (never delete
+  it — that would be the data loss the prompt exists to prevent) and stop asking; and never ask
+  about a saved run/draft when the URL explicitly names a different roadbook (#436).
 - **Confirm before destroying data.** ANY action that loses or overwrites user data
   (deleting a note/point, transforming something in a lossy way, clearing/replacing content,
   discarding unsaved work…) MUST ask for confirmation first via `RBConfirm` before it runs.
@@ -464,7 +470,7 @@ Operational notes:
   fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
   slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
   `meta.default_wp_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
-  (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
+  (50 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
   the whole active row (and the Validate button, and the per-row check) marks it done — or
   hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
   (`RBRemote`, switch in the mode chooser, #20). Tapping any OTHER row moves the run cursor and

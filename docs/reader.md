@@ -375,6 +375,14 @@ home.
 
 ## 9. Checkpoint di sessione (resilienza a crash/kill)
 
+Il prompt "Resume the run in progress?" si fa solo quando **ha senso chiederlo** (#436): quando
+questa visita non ha un bersaglio suo (`/reader/` nudo) oppure quando la corsa salvata **è** questo
+roadbook — il checkpoint registra `openedAs` (lo slug, `?rb=` o `?admin_rb=`) proprio per poterlo
+distinguere. Aprire un roadbook *diverso* è una scelta esplicita: interrogare l'utente sulla corsa
+precedente in quel momento è solo rumore. E un "No" viene **ricordato** (`declined` sul
+checkpoint), quindi si chiede una volta sola; i dati restano (la corsa successiva li sovrascrive,
+l'uscita esplicita li cancella), così declinare non distrugge niente.
+
 `saveSession` ([reader.js:136](../public/reader/reader.js#L136)) serializza i contatori vivi
 (modalità, team, indice attivo, `reached`, odometri, penalità, limiti velocità, orologio
 gara, stato GPX) nella chiave `rb_session`, scritta **a ogni fix e a ogni cambio di stato**.

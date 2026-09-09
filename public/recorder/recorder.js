@@ -81,7 +81,7 @@
 
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
         if (session && session.recording) {
-            if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>', t('Resume'))) {
+            if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>')) {
                 RBGpxRecorder.resume(session.fileName);
                 try { localStorage.removeItem('rb_trip_gpx'); } catch (e) {} // GPX data already loaded via resume; drop the redundant checkpoint
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
@@ -180,7 +180,7 @@
         renderPauseBtn(); renderBar();
     };
     $('recStop').onclick = async () => {
-        if (!(await RBConfirm(t('Finish the recording?'), t('Finish')))) return;
+        if (!(await RBConfirm(t('Finish the recording?')))) return;
         stopMeter();
         const r = await RBGpxRecorder.finish(); // stops logging, returns the full track, onChange(false) → idle
         clearSession();
@@ -464,7 +464,7 @@ function updateRecUi() {
                 return;
             }
             // Signed out: no in-page login — stash the recording and round-trip through the sign-in page.
-            if (!(await RBConfirm(t('Sign in to save this recording to your account.'), t('Sign in')))) return;
+            if (!(await RBConfirm(t('Sign in to save this recording to your account.')))) return;
             // Only leave for sign-in once the recording is safely stashed — otherwise a storage-quota
             // failure on a huge track would redirect and lose it.
             let stashed = false;
@@ -479,7 +479,7 @@ function updateRecUi() {
             if (n == null) return; // track too short — toast already shown
             markDone(btn, t('Export .rdbk'));
             // the media now lives in the downloaded file → offer to free it from the device
-            if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?'), t('Remove')))
+            if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?')))
                 await RBMediaQueue.clear();
         };
         d.q('#rfDl').onclick = () => {

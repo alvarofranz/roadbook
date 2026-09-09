@@ -16,7 +16,7 @@
             <button class="btn btn-ghost" data-del="${e.id}" data-title="${esc(e.title)}" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(t('No events yet.'))}</p>`;
         $('evList').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Delete event') + ' “' + esc(b.dataset.title || '') + '”?', t('Delete')))) return;
+            if (!(await RBConfirmDanger(t('Delete event') + ' “' + esc(b.dataset.title || '') + '”?'))) return;
             const x = await api('event_delete', { id: +b.dataset.del });
             if (x.ok) load(); else toast(x.error || 'Could not delete.');
         });

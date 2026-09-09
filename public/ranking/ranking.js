@@ -124,7 +124,7 @@
     }
 
     async function clearAll() {
-        if (await RBConfirmDanger('Clear all results?', 'Clear')) { entries = []; save(); render(); }
+        if (await RBConfirmDanger('Clear all results?')) { entries = []; save(); render(); }
     }
     function exportCsv() {
         if (!lastRows.length) return;

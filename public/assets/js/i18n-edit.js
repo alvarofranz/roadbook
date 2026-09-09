@@ -115,7 +115,7 @@
         // of mis-decoding the UTF-8 bytes as Windows-1252 (#118).
         d.q('[data-dl]').onclick = () => RBDownload(new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' }), 'i18n-delta.txt');
         d.q('[data-clear]').onclick = async () => {
-            if (!(await RBConfirm(t('Discard all pending translation edits?'), t('Discard'), true))) return;
+            if (!(await RBConfirm(t('Discard all pending translation edits?'), true))) return;
             LANGS.forEach((l) => { delta[l] = {}; }); saveDelta(); d.close(); location.reload();
         };
         d.q('[data-close]').onclick = d.close;

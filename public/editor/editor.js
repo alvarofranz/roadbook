@@ -164,6 +164,8 @@
         } else if (editorOpen && sel >= 0 && (k === 't' || k === 'del')) { // a note is open: T transforms it, Del deletes it
             e.preventDefault();
             if (k === 't') transformNote(sel); else deleteNoteConfirm(sel);
+        } else if (k === 'a' && rb.track.length) { // no selection: A arms the Add-note mode (#437)
+            e.preventDefault(); setMapTool('note');
         } else if (hoverPt) { // act at the mouse position (no menu needed)
             if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
             else if (k === 'l') { e.preventDefault(); addPointAtExact(hoverPt); }
@@ -177,6 +179,15 @@
     let draftTimer = null;
     const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps, rbIsOwner, rbOwner })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
+    // A declined recovery is marked, not deleted (#436): the work stays recoverable until the next
+    // checkpoint replaces it, but the offer is not repeated. `saveDraft` writes a fresh object, so
+    // any later edit naturally clears the flag along with the stale draft.
+    const declineDraft = () => {
+        try {
+            const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+            if (d) { d.declined = true; localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
+        } catch (e) {}
+    };
     const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     // Floppy save button: clickable only when there's something to save (a new roadbook, or
     // pending edits) — disabled once it's saved to the profile with no further changes.
@@ -216,6 +227,7 @@
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
         if (mapTool === 'draw') drawPoint(here);
         else if (mapTool === 'cut') cutPoint(here);
+        else if (mapTool === 'note') addNoteAtExact(here); // stays in note mode, so notes can be dropped in a row
     });
 
     /* ---------- move points: drag any track vertex to reshape the route ---------- */
@@ -301,7 +313,7 @@
     async function transformNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        if (!(await RBConfirmDanger(t('Turn this waypoint into a plain track point? Its note will be removed.'), t('Transform')))) return;
+        if (!(await RBConfirmDanger(t('Turn this waypoint into a plain track point? Its note will be removed.')))) return;
         rb.notes.splice(ni, 1);
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Waypoint turned into a track point.');
@@ -314,7 +326,7 @@
         // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
         if (!RB.isComment(rb.notes[ni]) && rb.notes.filter((n) => !RB.isComment(n)).length <= 2) return toast('At least 2 notes must remain.');
         const label = noteLabel(rb.notes[ni]);
-        if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?', t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?'))) return;
         delNote(ni);
     }
 
@@ -349,7 +361,7 @@
     const centerOnDefault = () => { if (map.map && meUser && meUser.default_lat != null && meUser.default_lon != null) map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 12 }); };
     async function confirmOpenCuts() {
         if (!resolveGaps().length) return true;
-        return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'), t('Continue'));
+        return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'));
     }
     /* Pre-save consistency check (#339). RB.consistencyReport finds what is probably a mistake but
      * that the editor can't decide on its own — notes with no validation radius, no roadbook-wide
@@ -385,7 +397,10 @@
     }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    const MODE_TOOLS = ['toolCut']; // the only mode with a toolbar button; Move ('points') is the default, Draw is entered from the landing
+    // Modes with a button in the ☰ menu; Move ('points') is the default and Draw is entered from
+    // the landing. Add note is a mode again (#437): W adds one at the pointer, but a tablet has no
+    // W — without a tool there was no touch path to add a note at all.
+    const MODE_TOOLS = ['toolNote', 'toolCut'];
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
@@ -401,7 +416,7 @@
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
         const tips = {
-            toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
+            toolNote: 'Add note (tap the route) — A', toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
         };
@@ -606,7 +621,7 @@
         if (D(rb.track[iS], pieceStart) < NEAR_M && D(rb.track[iE], pieceEnd) < NEAR_M && Math.abs(iE - iS) > 2) {
             let piece = trkpts, i1 = iS, i2 = iE;
             if (i1 > i2) { piece = trkpts.slice().reverse(); i1 = iE; i2 = iS; }
-            if (!(await RBConfirm(t('Both ends of the loaded track touch the route — replace the segment between them?'), t('Replace')))) return;
+            if (!(await RBConfirm(t('Both ends of the loaded track touch the route — replace the segment between them?')))) return;
             spliceByIndex(rb, piece, i1, i2);
             sel = 0; routeChanged('Spliced · metrics recomputed.');
             return;
@@ -641,7 +656,7 @@
     // Reverse lives in the roadbook settings (it flips the whole route) and asks first.
     $('cfgReverse').onclick = async () => {
         if (!rb) return toast('Load a roadbook first.');
-        if (!(await RBConfirm(t('Reverse the whole route? Start and finish swap, and every vignette is recomputed.'), t('Reverse direction')))) return;
+        if (!(await RBConfirm(t('Reverse the whole route? Start and finish swap, and every vignette is recomputed.')))) return;
         RB.reverseRoadbook(rb); sel = 0;
         routeChanged('Route reversed — review the vignettes.');
     };
@@ -740,7 +755,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolNote', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -957,7 +972,7 @@
             ? t('Replace the trail between points {a} and {b} with your {n}-point variant?').replace('{a}', adjP1).replace('{b}', adjP2)
             : t('Replace everything after point {a} with your new {n}-point ending?').replace('{a}', adjP1)
         ).replace('{n}', recTrack.length);
-        const ok = await RBConfirm(msg, 'Apply');
+        const ok = await RBConfirm(msg);
         if (!ok) { if (map) refreshMap(false); return; }
         spliceByIndex(rb, smoothTrack(recTrack), adjP1, rejoin ? adjP2 : null);
         // merge any waypoints dropped during the adjust session (snap to the new track)
@@ -1008,7 +1023,7 @@
         updateSaveBtn();
     }
     $('lockForce').onclick = async () => {
-        if (!(await RBConfirmDanger(t('Force unlock? The other editor may lose unsaved changes.'), t('Force unlock')))) return;
+        if (!(await RBConfirmDanger(t('Force unlock? The other editor may lose unsaved changes.')))) return;
         const x = await RBApi('rb_lock_force', { id: currentRbId });
         if (x.ok) location.reload(); // reload picks up their last saved state — and the lock is now ours
         else toast(x.error || 'Could not save.');
@@ -1133,7 +1148,7 @@
     $('deleteRb').onclick = async () => {
         if (!(currentRbId > 0)) return;
         const title = (rb && rb.meta && rb.meta.title) || 'Untitled';
-        if (!(await RBConfirmDanger(t('Delete roadbook') + ' “' + esc(title) + '”?', t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete roadbook') + ' “' + esc(title) + '”?'))) return;
         const r = await RBApi('rb_delete', { id: currentRbId });
         if (r.ok) { clearDraft(); location.href = '../myroadbooks/'; }
         else toast(r.error || 'Could not delete.');
@@ -1150,12 +1165,12 @@
         const r = await RBApi('ph_list', { roadbook: currentRbId });
         if (seq !== photosSeq) return; // a newer load is already in flight
         const g = $('photoGrid');
-        if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<span class="muted small">${esc(t('No photos yet.'))}</span>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
+        if (!r.ok || !r.photos.length) { notePhotos = []; g.innerHTML = `<p class="photo-empty">${esc(t('No photos yet.'))}</p>`; if (map) map.setPhotos([]); if (rb) renderNotes(); return; }
         notePhotos = r.photos.map((p) => ({ ...p, url: RBMediaSrc(p.url) })); // absolute in the app (#232)
         g.innerHTML = notePhotos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => {
             e.stopPropagation();
-            if (!(await RBConfirmDanger(t('Delete this photo?'), t('Delete')))) return; // never delete a stored photo silently (#209)
+            if (!(await RBConfirmDanger(t('Delete this photo?')))) return; // never delete a stored photo silently (#209)
             await RBApi('ph_delete', { id: +s.dataset.delp });
             loadPhotos();
         });
@@ -1306,7 +1321,7 @@
     $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(p); };
     $('lbDelete').onclick = async () => {
         const p = lbList[lbIdx]; if (!p) return;
-        if (!(await RBConfirmDanger(t('Delete this photo?'), t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete this photo?')))) return;
         const keep = new Set(lbList.map((x) => +x.id)); keep.delete(+p.id); // stay within the current set (all, or a note's group)
         await RBApi('ph_delete', { id: +p.id });
         await loadPhotos();
@@ -1405,7 +1420,7 @@
         // delete a voice note straight from its note row
         $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
-            if (await RBConfirm(t('Delete this voice note?'), t('Delete'), true)) { await RBApi('audio_delete', { id: +b.dataset.dela }); loadAudio(); }
+            if (await RBConfirm(t('Delete this voice note?'), true)) { await RBApi('audio_delete', { id: +b.dataset.dela }); loadAudio(); }
         });
         // transcribe a voice note → append the text to its note (#133, in-browser Whisper)
         $('noteList').querySelectorAll('[data-totext]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); transcribeInto(+b.dataset.totext, b.dataset.aurl, b); });
@@ -1516,8 +1531,14 @@
             const txt = $('edCommentText');
             txt.value = n.text || '';
             txt.oninput = () => { n.text = txt.value; markDirty(); const ta = $('noteList').querySelector('.note-title[data-i="' + sel + '"]'); if (ta && ta !== txt) ta.value = txt.value; };
-            const prev = $('edCommentPrev'), clr = $('edCommentClr');
-            if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; } else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; }
+            // Image: a styled button drives the hidden input, and the thumbnail itself doubles as
+            // "change image" — the same pattern as the roadbook logo (#440). With an image chosen
+            // the Add button steps aside for the preview + remove pair.
+            const prev = $('edCommentPrev'), clr = $('edCommentClr'), add = $('edCommentBtn');
+            if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; add.hidden = true; }
+            else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; add.hidden = false; }
+            add.onclick = () => $('edCommentImg').click();
+            prev.onclick = () => $('edCommentImg').click();
             $('edCommentImg').value = '';
             $('edCommentImg').onchange = async (e) => {
                 const f = e.target.files[0];
@@ -1705,7 +1726,7 @@
         const isNote = rb.notes.some((n) => n.idx === k);
         if (isNote) {
             if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            if (!(await RBConfirmDanger(t('This point is a note — delete the point and its note?'), t('Delete')))) return;
+            if (!(await RBConfirmDanger(t('This point is a note — delete the point and its note?')))) return;
         }
         if (rb.track.length <= 2) return toast('At least 2 points must remain.');
         rb.track.splice(k, 1);
@@ -2111,11 +2132,13 @@
         const explicitTarget = !!ch || id > 0;
 
         let draft; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
-        const draftFits = draft && draft.rb && draft.rb.notes && (!explicitTarget || (id > 0 && draft.currentRbId === id));
+        // `declined` is why this is asked ONCE: declining keeps the draft (it is overwritten by the
+        // next checkpoint and cleared on save/export, so a mis-tap cannot destroy unsaved work)
+        // but the question does not come back for it — a "No" the app ignores is worse than no
+        // question at all (#436).
+        const draftFits = draft && draft.rb && draft.rb.notes && !draft.declined && (!explicitTarget || (id > 0 && draft.currentRbId === id));
         if (draftFits && !loadStarted) {
-            // Declining keeps the draft — it is overwritten by the next checkpoint and
-            // cleared on save/export, so a mis-tap can't destroy unsaved work.
-            if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'), t('Recover'))) {
+            if (await RBConfirm(t('Recover the unsaved draft?') + '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes'))) {
                 currentRbId = draft.currentRbId || 0; setStatus(draft.status);
                 setOwnership(draft.rbIsOwner !== false, draft.rbOwner || '');
                 setRoadbook(draft.rb);
@@ -2123,6 +2146,7 @@
                 markDirty();
                 return;
             }
+            declineDraft();
         }
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load the roadbook.'); } return; }
@@ -2133,7 +2157,7 @@
                 // A roadbook saved with no route yet would open on an empty map: warn, and on
                 // Continue load it straight into draw mode (Cancel falls through to the list).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
-                if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?', 'Continue')) {
+                if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?')) {
                     currentRbId = id; setStatus(r.status); reusable = !!r.reusable; setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
             } else {

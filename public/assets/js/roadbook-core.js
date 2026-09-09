@@ -162,7 +162,7 @@
 
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
-        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
+        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 50, REACH_MIN_M: 18,
         FIX_ACC_MAX_M: 35, MAX_SPEED_MS: 70, // a fix worse than this is junk; a step faster than this never happened (252 km/h)
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
@@ -466,7 +466,10 @@
         });
 
         return {
-            meta: { title: name || 'roadbook', total_distance: Math.round(totalM), note_count: notes.length },
+            // default_wp_radius is written out rather than left implicit: the organizer sees the
+            // number they are working with in the editor instead of an em-dash, and the file says
+            // what it means without the reader having to know the system fallback (#439).
+            meta: { title: name || 'roadbook', total_distance: Math.round(totalM), note_count: notes.length, default_wp_radius: CONST.REACH_DEFAULT_M },
             track: trkpts.map((p) => {
                 const tp = { lat: round6(p.lat), lon: round6(p.lon) };
                 if (p.ele != null && isFinite(p.ele)) tp.ele = Math.round(p.ele);

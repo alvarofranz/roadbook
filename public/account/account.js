@@ -371,8 +371,8 @@
         RBDownload(await RBZip.write(outerFiles), 'rdbk-export_' + (me ? me.username : 'user') + '.zip');
     }
     onSubmit('delForm', async () => {
-        if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.'), t('Delete account')))) return;
-        if (await RBConfirm(t('Download all your data as a ZIP before deleting?'), t('Download data'))) await buildTakeout();
+        if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.')))) return;
+        if (await RBConfirm(t('Download all your data as a ZIP before deleting?'))) await buildTakeout();
         const r = await api('account_delete', { password: $('delPass').value });
         if (r.ok) location.href = '../'; else RBToast(r.error);
     });

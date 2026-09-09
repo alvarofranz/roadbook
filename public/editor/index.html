@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.7.4-30">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.7.5-31">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.7.4-30">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.7.5-31">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -104,6 +104,8 @@
         #commentForm .prop-field > span { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
         #commentForm #edCommentNum { max-width: 6rem; font-weight: 800; }
         #commentForm .comment-img-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+        #commentForm .comment-form-prev { cursor: pointer; }
+        #commentForm .comment-form-prev:hover { border-color: var(--sand); }
         #commentForm .comment-form-prev { max-width: 160px; max-height: 72px; width: auto; height: auto; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
         #commentForm #edCommentClr { padding: .2rem .5rem; }
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
@@ -111,7 +113,7 @@
         .note-edit-slot { margin: .1rem 0 .5rem; }
         .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-weight: 800; cursor: pointer; }
         .photo-thumb { position: relative; }
-        .photo-thumb img { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; }
+        .photo-thumb img { width: 100%; height: 84px; object-fit: cover; border-radius: 8px; cursor: pointer; } /* sized for the photo grid, not the icon grid */
         /* voice-note rows: nearest-note label · audio player · delete */
         .audio-item { display: flex; align-items: center; gap: .5rem; }
         .audio-item audio { flex: 1; min-width: 0; height: 34px; }
@@ -209,10 +211,23 @@
         .meta-grouphead { display: flex; align-items: center; gap: .6rem; margin-bottom: .75rem; font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; color: var(--sand); font-weight: 800; }
         .meta-grouphead::after { content: ""; flex: 1; height: 1px; background: var(--line); }
         .meta-modified { margin-top: 1.2rem; padding-top: .7rem; border-top: 1px solid var(--line); font-size: .72rem; color: var(--muted); }
+        /* a group heading with an action on its right (Photos + Add photos) */
+        .meta-grouphead > .btn { margin-left: auto; flex: 0 0 auto; }
+        .meta-grouphead:has(> .btn)::after { display: none; }
+        /* photos: a grid sized for photographs, not for the 58 px icon buttons */
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .5rem; }
+        .photo-grid .photo-empty { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; margin: 0; }
+        .danger-card { border-color: rgba(255, 90, 69, .35); }
+        .danger-card .meta-grouphead { color: var(--track); }
+        .danger-card p { margin: 0 0 .8rem; }
+        .config-bottom { display: grid; gap: 1rem; align-items: start; }
         .meta-modified #rbModified { color: var(--text); }
         /* desktop: wider editor, the start cards on one line */
         @media (min-width: 900px) {
-            #viewMap { max-width: 1100px; }
+            #viewMap, #viewConfig { max-width: 1100px; }
+            /* the screen is there: photos take the space, the destructive action sits beside them
+               instead of under everything (#438) */
+            .config-bottom { grid-template-columns: 2fr 1fr; }
             .load-opts { grid-template-columns: repeat(4, 1fr); }
         }
         /* tablet portrait and up: RB-suite split — the map pinned on the
@@ -314,6 +329,7 @@
             <!-- ☰ submenu (sibling of the toolbar so its overflow never clips it): every tool lives here.
                  Move is the default map mode (no button); only the menu toggle + undo/redo stay on the bar (#61). -->
             <div class="map-tools-menu" id="mapMenuPanel" hidden>
+                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
                 <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
@@ -383,9 +399,12 @@
                     <label class="prop-field"><span data-i18n="Text">Text</span><textarea id="edCommentText" class="field" rows="2" placeholder="" data-i18n-ph="(comment caption)"></textarea></label>
                     <div class="prop-field"><span data-i18n="Image">Image</span>
                         <div class="comment-img-row">
-                            <input id="edCommentImg" type="file" accept="image/*">
-                            <img id="edCommentPrev" class="comment-form-prev" alt="" hidden>
-                            <button type="button" id="edCommentClr" class="btn btn-ghost" hidden><i class="fa-solid fa-xmark"></i></button>
+                            <!-- the same styled-button-over-hidden-input pattern as the roadbook logo
+                                 next door; a raw file input was the last one left on show (#440) -->
+                            <input id="edCommentImg" type="file" accept="image/*" hidden>
+                            <img id="edCommentPrev" class="comment-form-prev" alt="" title="Change image" data-i18n-title="Change image" hidden>
+                            <button type="button" id="edCommentBtn" class="btn btn-ghost"><i class="fa-solid fa-image"></i> <span data-i18n="Add image">Add image</span></button>
+                            <button type="button" id="edCommentClr" class="btn btn-ghost" hidden title="Remove image" data-i18n-title="Remove image" aria-label="Remove image" data-i18n-aria="Remove image"><i class="fa-solid fa-xmark icon-danger"></i></button>
                         </div>
                     </div>
                 </div>
@@ -418,7 +437,7 @@
                 <div class="meta-grouphead" data-i18n="Waypoints & scoring">Waypoints &amp; scoring</div>
                 <div class="meta-grid">
                     <label class="meta-field"><span><span data-i18n="Roadbook type">Roadbook type</span><button class="help-tip" data-i18n-tip="help.profile" data-i18n-aria="help.profile" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
-                    <label class="meta-field"><span><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="—" data-i18n-ph="Per-type default"></label>
+                    <label class="meta-field"><span><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="50"></label>
                 </div>
             </div>
             <div class="meta-group">
@@ -445,13 +464,20 @@
             </div>
             <div class="meta-modified"><span data-i18n="Last modified">Last modified</span>: <span id="rbModified">—</span></div>
         </div>
-        <div id="photosSection" hidden>
-            <div class="ed-row between"><div class="icon-category flush" data-i18n="Photos">Photos</div><button class="btn btn-ghost" id="addPhotoBtn" data-i18n="Add photos"><i class="fa-solid fa-camera"></i> Add photos</button></div>
-            <input id="photoFile" type="file" accept="image/*" multiple hidden>
-            <div id="photoGrid" class="icon-grid"></div>
-        </div>
-        <div id="deleteSection" class="ed-row" hidden>
-            <button class="btn btn-danger" id="deleteRb"><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete roadbook">Delete roadbook</span></button>
+        <!-- Photos and the destructive action are part of the same form, so they are cards like the
+             rest of it (#438) — they used to be bare rows, and the empty-photos sentence was a cell
+             of the 58 px icon grid, which wrapped it one word per line. -->
+        <div class="config-bottom">
+            <div class="meta-card" id="photosSection" hidden>
+                <div class="meta-grouphead"><span data-i18n="Photos">Photos</span><button class="btn btn-ghost btn-sm" id="addPhotoBtn"><i class="fa-solid fa-camera"></i> <span data-i18n="Add photos">Add photos</span></button></div>
+                <input id="photoFile" type="file" accept="image/*" multiple hidden>
+                <div id="photoGrid" class="photo-grid"></div>
+            </div>
+            <div class="meta-card danger-card" id="deleteSection" hidden>
+                <div class="meta-grouphead" data-i18n="Danger zone">Danger zone</div>
+                <p class="muted small" data-i18n="Deleting a roadbook moves it to the trash, with its photos and voice notes.">Deleting a roadbook moves it to the trash, with its photos and voice notes.</p>
+                <button class="btn btn-danger" id="deleteRb"><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete roadbook">Delete roadbook</span></button>
+            </div>
         </div>
     </section>
 </main>
@@ -459,22 +485,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.7.4-30"></script>
-<script src="../assets/js/roadbook-core.js?v=1.7.4-30"></script>
-<script src="../assets/js/rbzip.js?v=1.7.4-30"></script>
-<script src="../assets/js/rbmap.js?v=1.7.4-30"></script>
-<script src="../assets/js/cover-map.js?v=1.7.4-30"></script>
-<script src="../assets/js/note-canvas.js?v=1.7.4-30"></script>
-<script src="../assets/js/rb-pdf.js?v=1.7.4-30"></script>
-<script src="../assets/js/challenges.js?v=1.7.4-30"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.7.4-30"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.7.4-30"></script>
-<script src="../assets/js/i18n.es.js?v=1.7.4-30"></script>
-<script src="../assets/js/i18n.it.js?v=1.7.4-30"></script>
-<script src="../assets/js/i18n.de.js?v=1.7.4-30"></script>
-<script src="../assets/js/i18n.fr.js?v=1.7.4-30"></script>
-<script src="../assets/js/i18n.js?v=1.7.4-30"></script>
-<script src="../assets/js/app.js?v=1.7.4-30"></script>
-<script src="editor.js?v=1.7.4-30"></script>
+<script src="../assets/js/config.js?v=1.7.5-31"></script>
+<script src="../assets/js/roadbook-core.js?v=1.7.5-31"></script>
+<script src="../assets/js/rbzip.js?v=1.7.5-31"></script>
+<script src="../assets/js/rbmap.js?v=1.7.5-31"></script>
+<script src="../assets/js/cover-map.js?v=1.7.5-31"></script>
+<script src="../assets/js/note-canvas.js?v=1.7.5-31"></script>
+<script src="../assets/js/rb-pdf.js?v=1.7.5-31"></script>
+<script src="../assets/js/challenges.js?v=1.7.5-31"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.7.5-31"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.7.5-31"></script>
+<script src="../assets/js/i18n.es.js?v=1.7.5-31"></script>
+<script src="../assets/js/i18n.it.js?v=1.7.5-31"></script>
+<script src="../assets/js/i18n.de.js?v=1.7.5-31"></script>
+<script src="../assets/js/i18n.fr.js?v=1.7.5-31"></script>
+<script src="../assets/js/i18n.js?v=1.7.5-31"></script>
+<script src="../assets/js/app.js?v=1.7.5-31"></script>
+<script src="editor.js?v=1.7.5-31"></script>
 </body>
 </html>

@@ -61,7 +61,7 @@
             const active = Math.max(0, (ev.participant_count || 0) - pending);
             if (!needAct && oldNeedsActivation() && pending > 0) {
                 // removing the activation requirement strands nobody: admit them now (#415)
-                if (!(await RBConfirm(pending + ' ' + t('participants are waiting for activation. Switching will admit all of them. Continue?'), t('Admit all')))) return;
+                if (!(await RBConfirm(pending + ' ' + t('participants are waiting for activation. Switching will admit all of them. Continue?')))) return;
                 extra.admit_pending = 1;
             } else if (needAct && !oldNeedsActivation() && active > 0) {
                 // newly requiring activation: grandfather the active ones, or send them to the QR
@@ -107,7 +107,7 @@
         if (r.ok) { ev.logo = r.logo; renderLogo(); toast('Saved.'); } else toast(r.error || 'Could not save.');
     };
     $('evLogoRemove').onclick = async () => {
-        if (!(await RBConfirmDanger(t('Remove the event logo?'), t('Remove')))) return;
+        if (!(await RBConfirmDanger(t('Remove the event logo?')))) return;
         const x = await api('event_logo_remove', { event_id: id });
         if (x.ok) { ev.logo = null; renderLogo(); } else toast(x.error || 'Could not remove.');
     };
@@ -122,7 +122,7 @@
             ${isOwner() && o.id !== ev.owner_id ? `<button class="btn btn-ghost" data-orgdel="${o.id}" data-name="${esc(o.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : ''}
         </div>`).join('');
         $('orgList').querySelectorAll('[data-orgdel]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Remove organizer') + ' “' + esc(b.dataset.name) + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove organizer') + ' “' + esc(b.dataset.name) + '”?'))) return;
             const x = await api('event_org_remove', { event_id: id, user_id: +b.dataset.orgdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });
@@ -190,7 +190,7 @@
         });
         $('rbList').querySelectorAll('[data-rbdel]').forEach((b) => b.onclick = async () => {
             // removing only detaches it from the event — the roadbook itself is never deleted
-            if (!(await RBConfirmDanger(t('Remove from event') + ' “' + esc(b.dataset.title) + '”?', t('Remove')))) return;
+            if (!(await RBConfirmDanger(t('Remove from event') + ' “' + esc(b.dataset.title) + '”?'))) return;
             const x = await api('event_rb_remove', { event_id: id, roadbook_id: +b.dataset.rbdel });
             if (x.ok) load(); else toast(x.error || 'Could not remove.');
         });
@@ -270,7 +270,7 @@
     };
     async function confirmCodeGate() {
         if (currentGate() === 'code') return true;
-        if (!(await RBConfirm(t('A join code needs the Invite code mode. Switch registration to Invite code?'), t('Switch to Invite code')))) return false;
+        if (!(await RBConfirm(t('A join code needs the Invite code mode. Switch registration to Invite code?')))) return false;
         $('evJoinGate').value = 'code';
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
@@ -287,12 +287,12 @@
     $('joinRotate').onclick = async () => {
         if (!(await confirmCodeGate())) return;
         // rotating invalidates the currently shared code, so it must be confirmed
-        if (!(await RBConfirm(t('Generate a new join code? The current one stops working.'), t('New join code')))) return;
+        if (!(await RBConfirm(t('Generate a new join code? The current one stops working.')))) return;
         const x = await api('event_join_code', { event_id: id });
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
     $('joinClear').onclick = async () => {
-        if (!(await RBConfirm(t('Disable joining? The current code stops working.'), t('Disable joining')))) return;
+        if (!(await RBConfirm(t('Disable joining? The current code stops working.')))) return;
         const x = await api('event_join_code', { event_id: id, clear: 1 });
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };

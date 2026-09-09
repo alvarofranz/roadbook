@@ -35,6 +35,17 @@
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
     const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop(); // roadbook slug from URL
+    // Which roadbook this visit is FOR, if any (the friendly slug, ?rb= or ?admin_rb=). The run
+    // checkpoint records it, so a later visit can tell "resume this very run" from "you asked for
+    // something else" — in which case there is nothing to ask about (#436).
+    const openedAs = (() => {
+        const q = new URLSearchParams(location.search);
+        const pub = RBChallenges.publicFromUrl();
+        if (pub) return 'slug:' + pub;
+        if (+(q.get('rb') || 0) > 0) return 'rb:' + q.get('rb');
+        if (+(q.get('admin_rb') || 0) > 0) return 'admin:' + q.get('admin_rb');
+        return '';
+    })();
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
     const SESSION_KEY = 'rb_session', SESSION_RB_KEY = 'rb_session_roadbook';
 
@@ -105,15 +116,19 @@
                 RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             }
         };
-        if (session) {
+        // Worth asking about only when this visit has no target of its own, or when the saved run
+        // IS this roadbook (a crash mid-run). Opening a different one is an explicit choice, and
+        // interrogating the user about the previous run then is just noise. A "No" is remembered
+        // on the checkpoint, so it is asked ONCE — the data is kept either way (the next run
+        // overwrites it, an explicit exit clears it), so nothing is destroyed by declining (#436).
+        if (session && !session.declined && (!openedAs || session.openedAs === openedAs)) {
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
-            // Declining does NOT delete the session — a mis-tap must never destroy a
-            // run; it is replaced when a new run starts or cleared on explicit exit.
-            // Its GPX log (if any) stays with it, so skip the recovery prompt too.
-            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km', t('Resume'))) { resumeSession(session, savedRb); return; }
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km')) { resumeSession(session, savedRb); return; }
+            declineSession();
             loadFromUrl(); // declined → still navigate the roadbook the user explicitly opened
             return;
         }
+        if (session) { loadFromUrl(); return; } // a run is parked but this visit is not about it
         await RBGpxRecorder.offerRecovery();
         loadFromUrl();
     })();
@@ -248,10 +263,18 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
+    // A declined resume is marked, not deleted: asking twice is nagging, deleting is data loss.
+    // The flag lives only on this checkpoint — the next run writes a fresh one without it.
+    function declineSession() {
+        try {
+            const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+            if (s) { s.declined = true; localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+        } catch (e) {}
+    }
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
@@ -555,7 +578,7 @@
             const pts = competition ? RB.skipPenalty(scoredSet, activeIdx, i) : 0;
             if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
         }
-        if (await RBConfirm(msg, t('Jump'))) setActiveNote(i);
+        if (await RBConfirm(msg)) setActiveNote(i);
     }
     function validateAt(i, here) {
         const n = notes[i], now = new Date();
@@ -593,7 +616,7 @@
         const n = notes[i], pts = RB.skipPenalty(scoredSet, i, nextNav(i + 1));
         let msg = t('Too far from note') + ' ' + n.num + ' · ' + fmtDist(far) + '<br>' + t('Skip it and continue?');
         if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
-        if (!(await RBConfirm(msg, t('Skip note')))) return;
+        if (!(await RBConfirm(msg))) return;
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
         activeIdx = nextNav(i + 1); tripPartialM = 0; updateNoteStates();
     }
@@ -657,7 +680,7 @@
     // End navigation: leave the run and return to the load screen. The note progress
     // (reached/skipped) is discarded — warn before doing it.
     $('endBtn').onclick = async () => {
-        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'), t('End navigation'))) {
+        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'))) {
             if (meter) meter.stop();      // release the GPS explicitly, not via the unload path (#430)
             clearSession(); window.RB_BUSY = false; location.href = '../'; // unblock the version auto-refresh before leaving
         }

@@ -816,13 +816,18 @@
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
     // msg and okLabel run through RBt: plain English keys translate, already-
     // translated or composed strings fall through unchanged.
-    window.RBConfirm = (msg, okLabel, danger) => new Promise((resolve) => {
+    // A confirmation asks a question, so its buttons answer it: **No / Yes**, always. They used to
+    // be "Cancel" next to a named action ("Recover", "Delete"…), and *Cancel* is the wrong word for
+    // the negative half of a question — it reads as "cancel what I was doing" rather than "no"
+    // (#435). Whatever is specific to the decision belongs in `msg`, which is where a delete
+    // confirm already has to name what it is deleting.
+    window.RBConfirm = (msg, danger) => new Promise((resolve) => {
         const ok = danger
-            ? `<button class="btn btn-danger" data-yes><i class="fa-solid fa-triangle-exclamation"></i> ${RBt(okLabel || 'OK')}</button>`
-            : `<button class="btn btn-primary" data-yes>${RBt(okLabel || 'OK')}</button>`;
+            ? `<button class="btn btn-danger" data-yes><i class="fa-solid fa-triangle-exclamation"></i> ${RBt('Yes')}</button>`
+            : `<button class="btn btn-primary" data-yes>${RBt('Yes')}</button>`;
         const d = RBModal(`<p class="modal-text">${RBt(msg)}</p>
             <div class="btnrow end">
-                <button class="btn btn-ghost" data-no>${RBt('Cancel')}</button>
+                <button class="btn btn-ghost" data-no>${RBt('No')}</button>
                 ${ok}
             </div>`, 'narrow', () => resolve(false));
         const done = (v) => { d.close(); resolve(v); };
@@ -831,7 +836,7 @@
     });
     // Confirm for a destructive/data-losing action: same as RBConfirm but a red button + warning
     // icon. Use it for anything that deletes or overwrites; name the object in `msg` (e.g. its title).
-    window.RBConfirmDanger = (msg, okLabel) => window.RBConfirm(msg, okLabel, true);
+    window.RBConfirmDanger = (msg) => window.RBConfirm(msg, true);
     window.RBNeedAuth = (msg) => {
         const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> ${RBt('Sign in')}</h2>
             <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>

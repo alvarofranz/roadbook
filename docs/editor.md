@@ -81,11 +81,17 @@ il cursore. Il dispatch dei tap mappa (`map.map.on('click', …)`) gestisce solo
 |------------|-----------|----------|---------------|
 | **Move** (default, no button) | `points` | `setVertexEditor` + `setWaypointEditor` → `onVertexDrag`/`onWptDrag` | trascina qualunque punto, **traccia o nota** (sposta il vertice, la linea segue); metriche ricalcolate al rilascio |
 | **draw**   | `draw`    | `drawPoint` | ogni tap estende dall'estremità **aperta più vicina**; avviato dalla landing |
-| **cut**    | `cut`     | `cutPoint` | tap due punti → taglia (unico mode tool con pulsante in barra) |
+| **note**   | `note`    | `addNoteAtExact` | tap sulla rotta → nota lì, e si **resta** nel modo, così se ne possono mettere in fila |
+| **cut**    | `cut`     | `cutPoint` | tap due punti → taglia |
 
-> Aggiungere una nota non è più un *mode tool*: `addWaypointNear` si raggiunge dal menu
-> contestuale / dal menu per-vertice; l'inserimento di un punto intermedio è l'azione `mid`
-> del menu per-vertice.
+I mode tool con pulsante vivono nel menu ☰ (`#mapMenuPanel`), non nella barra: #138 l'ha
+snellita di proposito e resta snella.
+
+> **Add note è tornato un mode tool** (#437). Era stato rimosso lasciando come vie d'accesso il
+> tasto **W** al puntatore e il menu contestuale — ma **su un tablet non esiste il tasto W**, e
+> l'Editor si usa su iPad: senza tool non c'era modo di aggiungere una nota col dito. Il tasto
+> **A** arma il modo quando non c'è un vertice selezionato (con un vertice selezionato A resta
+> l'inserimento del punto intermedio, `mid`, che si concatena).
 
 **Draw.** Con nulla caricato, i primi due tap costruiscono un roadbook da zero
 (`drawSeed` → `RB.buildRoadbook`). Con una rotta presente, ogni tap calcola la candidata più
@@ -253,7 +259,13 @@ server (`recPhoto`) — si agganciano al roadbook in adjust (serve un roadbook s
 
 ## 6. Configurazione, logo, galleria
 
-La vista config (`#viewConfig`) edita `rb.meta`. Titolo (`#rbTitle`), descrizione, autore,
+La vista config (`#viewConfig`) edita `rb.meta`. **Foto** e **Elimina roadbook** sono `.meta-card`
+come il resto del form, dentro `.config-bottom` — che su desktop (≥900px, dove la vista si allarga
+a 1100px come quella mappa) diventa due colonne, foto a sinistra e azione distruttiva a destra,
+e su telefono torna una colonna sola. Prima erano righe nude appese sotto la card, e il messaggio
+"No photos yet." era una cella della griglia icone da 58px, quindi andava a capo una parola per
+riga (#438); ora la griglia foto è sua (`.photo-grid`, colonne da 110px) e il messaggio è una
+frase a tutta larghezza. Titolo (`#rbTitle`), descrizione, autore,
 organizzazione sono legati con handler `oninput` che fanno `markDirty`
 ([editor.js:411](../public/editor/editor.js#L411)). `stampMeta`
 ([editor.js:426](../public/editor/editor.js#L426)) riempie l'autore di default e timbra
@@ -516,6 +528,12 @@ schedula un **checkpoint debounced (2 s)** dell'intero stato in `localStorage` (
 ([editor.js:435](../public/editor/editor.js#L435)) e `visibilitychange`
 ([editor.js:474](../public/editor/editor.js#L474)) flushano il draft prima di un'eventuale
 chiusura/kill dell'OS.
+
+Il prompt di recupero si fa **una volta sola**: un "No" marca il draft `declined` invece di
+cancellarlo (cancellarlo sarebbe esattamente la perdita di dati che il prompt esiste per evitare),
+e la domanda non torna più per quel draft — un "No" che l'app ignora è peggio di nessuna domanda
+(#436). Il draft resta recuperabile finché il checkpoint successivo lo sostituisce; qualunque
+modifica scrive un oggetto nuovo, senza il flag.
 
 La sequenza di startup ([editor.js:998](../public/editor/editor.js#L998)) ha una precedenza
 precisa:

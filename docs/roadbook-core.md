@@ -77,7 +77,7 @@ sul punteggio:
 | `MIN_DISP_M`       | 5      | spostamento minimo considerato — pavimento del rumore quando l'accuratezza è ignota |
 | `FIX_ACC_MAX_M`    | 35     | oltre questa accuratezza un fix è spazzatura: né registrato né contato |
 | `MAX_SPEED_MS`     | 70     | 252 km/h: un passo più veloce di così non è mai successo (fix in cache) |
-| `REACH_DEFAULT_M`  | 30     | raggio di rilevamento di default (geofence del Reader) |
+| `REACH_DEFAULT_M`  | 50     | raggio di rilevamento di default (geofence del Reader). Era 30: troppo stretto come punto di partenza, un waypoint si mancava facilmente se non passandoci piano e preciso (#439). `buildRoadbook` lo scrive anche in `meta.default_wp_radius`, così il file dice quello che vale invece di lasciarlo implicito |
 | `REACH_MIN_M`      | 18     | pavimento del reach: sotto si chiederebbe al GPS una precisione che non ha |
 | `P_SKIP`           | 450    | penalità per nota saltata |
 | `P_SPEED_PER_KMH`  | 10     | penalità per km/h di eccesso |
