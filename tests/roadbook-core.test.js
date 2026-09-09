@@ -684,7 +684,7 @@ describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
         expect(RB.detectionRadius({ wp_type: 'precise' }, {})).toBe(30); // the type's own default
         expect(RB.detectionRadius({}, {})).toBe(RB.CONST.REACH_DEFAULT_M);
         expect(RB.detectionRadius(null, null)).toBe(RB.CONST.REACH_DEFAULT_M);
-        expect(RB.CONST.REACH_DEFAULT_M).toBe(30); // system default when the roadbook defines nothing
+        expect(RB.CONST.REACH_DEFAULT_M).toBe(50); // system default when the roadbook defines nothing (#439)
     });
     it('reachRadius = detection radius, capped to half the smaller neighbour gap, floored above GPS noise (#87)', () => {
         const wide = { wp_radius: 40, partial_distance: 1000 };

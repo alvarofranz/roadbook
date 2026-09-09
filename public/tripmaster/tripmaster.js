@@ -26,7 +26,7 @@
         if (session && (session.totalM > 0 || session.waypoints > 0 || session.timerOn || session.timerAcc > 0 || session.gpxRecording)) {
             // Declining does NOT delete the session — a mis-tap must never destroy a
             // trip; it is replaced as soon as this one moves or cleared on exit.
-            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>Tripmaster</b> · ' + (session.totalM / 1000).toFixed(2) + ' km', t('Resume'))) {
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>Tripmaster</b> · ' + (session.totalM / 1000).toFixed(2) + ' km')) {
                 totalM = session.totalM; partialM = session.partialM; maxKmh = session.maxKmh; waypoints = session.waypoints;
                 timerAcc = session.timerAcc; timerOn = session.timerOn; timerStart = session.timerStart;
                 $('tmNotes').textContent = waypoints;
@@ -104,7 +104,7 @@
     }
     $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimerButton(); saveSession(); };
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
-    $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'), t('End & close'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
+    $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
 
     RBFullscreen($('tmFs')); // shared: hides header + footer, uses the Fullscreen API (app.js)
 
@@ -127,7 +127,7 @@
         btn.addEventListener('keydown', (e) => {
             if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return;
             e.preventDefault(); viaKeyboard = true;
-            RBConfirmDanger(t('Reset the partial trip?'), t('Reset')).then((ok) => { if (ok) doReset(); });
+            RBConfirmDanger(t('Reset the partial trip?')).then((ok) => { if (ok) doReset(); });
         });
         btn.addEventListener('click', (e) => { if (viaKeyboard) { viaKeyboard = false; e.preventDefault(); } });
     })();

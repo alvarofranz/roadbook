@@ -68,7 +68,7 @@
                 ? matches.map((u) => `<button class="mv-opt" data-pick="${u.id}" data-name="${esc(u.username)}"><b>@${esc(u.username)}</b> <span class="muted small">${esc(u.email)}</span></button>`).join('')
                 : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
             listEl.querySelectorAll('[data-pick]').forEach((b) => b.onclick = async () => {
-                if (!(await RBConfirm(t('Move this roadbook to') + ' @' + b.dataset.name + '?', t('Restore')))) return;
+                if (!(await RBConfirm(t('Move this roadbook to') + ' @' + b.dataset.name + '?'))) return;
                 const r = await RBApi('admin_rb_restore', { id: rb.id });
                 if (!r.ok) { toast(r.error || 'Error'); d.close(); load(); return; }
                 const m = await RBApi('admin_move_roadbook', { id: rb.id, user_id: +b.dataset.pick });
@@ -84,7 +84,7 @@
     async function purge(rb) {
         const title = rb.title || t('Untitled');
         // deletion confirm names the object being removed (CLAUDE.md); this is irreversible
-        if (!(await RBConfirm(t('Permanently delete') + ' “' + esc(title) + '”? ' + t('This cannot be undone.'), t('Delete'), true))) return;
+        if (!(await RBConfirm(t('Permanently delete') + ' “' + esc(title) + '”? ' + t('This cannot be undone.'), true))) return;
         const r = await RBApi('admin_rb_purge', { id: rb.id });
         if (!r.ok) return toast(r.error || 'Error');
         toast(t('Permanently deleted.')); load();
