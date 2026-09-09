@@ -1058,3 +1058,74 @@ describe('the end note\'s tulip has no exit road (#447)', () => {
         expect(svg).toContain('<circle');                       // the centre dot stays
     });
 });
+
+describe('bearings survive a duplicate track vertex (#452)', () => {
+    // a straight line north, then a right-angle turn west — with a DUPLICATE vertex at the corner
+    const north = (m) => ({ lat: m / M_PER_DEG, lon: 0 });
+    const west = (m) => ({ lat: 100 / M_PER_DEG, lon: -m / M_PER_DEG });
+    const track = [north(0), north(50), north(100), north(100), west(50), west(100)]; // [2] === [3]
+
+    it('takes the first neighbour that is actually somewhere else', () => {
+        // the note sits on the corner: its exit is the leg to the WEST (270°), but the vertex
+        // straight after it is a duplicate, and bearingDeg(p, p) is 0 — which is how a left turn
+        // came out drawn as a right one
+        const b = RB.deriveBearings(track, 2);
+        expect(b.bIn).toBeCloseTo(0, 0);     // came from the south heading north
+        expect(b.bOut).toBeCloseTo(270, 0);  // …and leaves to the west
+        const turn = ((b.bOut - b.bIn) % 360 + 360) % 360;
+        expect(turn).toBeCloseTo(270, 0);    // a LEFT turn; it used to compute 0 → straight on
+    });
+
+    it('reads through a duplicate on the incoming side too', () => {
+        const b = RB.deriveBearings(track, 3); // the second copy of the corner
+        expect(b.bIn).toBeCloseTo(0, 0);
+        expect(b.bOut).toBeCloseTo(270, 0);
+    });
+
+    it('keeps the end fallbacks: the first note borrows its exit, the last its entry', () => {
+        expect(RB.deriveBearings(track, 0).bIn).toBeCloseTo(RB.deriveBearings(track, 0).bOut, 3);
+        const last = RB.deriveBearings(track, track.length - 1);
+        expect(last.bOut).toBeCloseTo(last.bIn, 3);
+    });
+
+    it('does not throw on a track that is all one point', () => {
+        expect(RB.deriveBearings([north(0), north(0)], 0)).toEqual({ bIn: 0, bOut: 0 });
+    });
+});
+
+describe('repairDegenerateBearings — fix the broken ones, touch nothing else (#452)', () => {
+    const north = (m) => ({ lat: m / M_PER_DEG, lon: 0 });
+    const west = (m) => ({ lat: 100 / M_PER_DEG, lon: -m / M_PER_DEG });
+    const track = [north(0), north(50), north(100), north(100), west(50), west(100)];
+
+    it('re-derives only the side that came from a duplicate', () => {
+        // stored: out = 0 (poisoned by the duplicate), in = 0 (genuinely north) — the real case
+        const rb = { track, notes: [{ num: 3, idx: 2, bearing_in: 0, bearing_out: 0 }] };
+        RB.repairDegenerateBearings(rb);
+        expect(rb.notes[0].bearing_in).toBeCloseTo(0, 0);    // was fine, left alone
+        expect(rb.notes[0].bearing_out).toBeCloseTo(270, 0); // was garbage, re-derived
+    });
+
+    it('leaves a note with healthy neighbours exactly as authored', () => {
+        // an imported roadbook may carry bearings of its own, and a note placed by distance has an
+        // approximate idx — re-deriving those could be worse than what is in the file
+        const rb = { track, notes: [{ num: 2, idx: 1, bearing_in: 123, bearing_out: 456 }] };
+        RB.repairDegenerateBearings(rb);
+        expect(rb.notes[0]).toMatchObject({ bearing_in: 123, bearing_out: 456 });
+    });
+
+    it('skips comment rows and survives a degenerate roadbook', () => {
+        const rb = { track, notes: [{ num: 1, idx: 2, note_kind: 'comment', bearing_out: 7 }] };
+        RB.repairDegenerateBearings(rb);
+        expect(rb.notes[0].bearing_out).toBe(7);
+        expect(() => RB.repairDegenerateBearings({ track: [north(0)], notes: [{ idx: 0 }] })).not.toThrow();
+        expect(() => RB.repairDegenerateBearings(null)).not.toThrow();
+    });
+
+    it('runs on import, so a stored roadbook is corrected on every surface', () => {
+        // the Reader, the public page and the PDF read the stored bearings as they are: without
+        // this they would keep pointing the wrong way until someone re-saved in the Editor
+        const rb = RB.importRoadbook({ meta: {}, track, notes: [{ num: 3, idx: 2, bearing_in: 0, bearing_out: 0 }] });
+        expect(rb.notes[0].bearing_out).toBeCloseTo(270, 0);
+    });
+});
