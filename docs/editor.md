@@ -521,6 +521,11 @@ stesso roadbook, e i successivi save aggiornano la stessa entità. `$('saveAccou
 login (`RBNeedAuth`). **"Save as"** azzera l'identità, aggiunge "(copy)" al titolo e salva una
 nuova entità privata, lasciando intatto l'originale.
 
+`saveRoadbook(btn)` riceve **quale** Save è stato premuto (ce ne sono due: quello in alto e quello
+dentro le impostazioni) e lo passa a `RBBusy` (vedi [app-shell.md](app-shell.md)): gira mentre il
+roadbook sale, poi diventa verde con la spunta. Prima l'unico segnale era un toast, e non si
+distingueva un salvataggio riuscito da uno fallito (#459).
+
 ### 7.2 Co-editing, lock e chiusura (#123 · #154 · #166)
 
 Un roadbook di evento può essere modificato da più persone; proprietà e blocco tengono le
@@ -553,7 +558,12 @@ schedula un **checkpoint debounced (2 s)** dell'intero stato in `localStorage` (
 ([editor.js:474](../public/editor/editor.js#L474)) flushano il draft prima di un'eventuale
 chiusura/kill dell'OS.
 
-Il prompt di recupero si fa **una volta sola**: un "No" marca il draft `declined` invece di
+Il prompt di recupero dice **cosa sono** quelle modifiche — lavoro mai salvato, col titolo, il
+numero di note e **l'istante del checkpoint** (`at`, formattato nella lingua attiva) — perché la
+formulazione precedente ("Recuperare la bozza non salvata?") si leggeva come *il salvataggio è
+fallito*, mentre il prompt offre le modifiche fatte **dopo** l'ultimo salvataggio riuscito (#459).
+
+Si fa **una volta sola**: un "No" marca il draft `declined` invece di
 cancellarlo (cancellarlo sarebbe esattamente la perdita di dati che il prompt esiste per evitare),
 e la domanda non torna più per quel draft — un "No" che l'app ignora è peggio di nessuna domanda
 (#436). Il draft resta recuperabile finché il checkpoint successivo lo sostituisce; qualunque

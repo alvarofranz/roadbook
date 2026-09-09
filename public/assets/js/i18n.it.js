@@ -379,7 +379,7 @@
             'Neutralisation start': 'Inizio neutralizzazione', 'Neutralisation end': 'Fine neutralizzazione', 'Transfer start': 'Inizio trasferimento', 'Transfer end': 'Fine trasferimento',
             'Check point': 'Punto di controllo', 'Passage control': 'Controllo di passaggio',
             'Paused': 'In pausa', 'End navigation? Your progress on the notes will be lost.': 'Terminare la navigazione? Perderai i progressi sulle note.',
-            'Recover the unsaved draft?': 'Recuperare la bozza non salvata?',
+            'You left unsaved changes here. Continue from them?': 'Hai lasciato modifiche non salvate qui. Continuare da quelle?',
             'Show map button per note': 'Pulsante mappa per nota', 'Record a GPX track': 'Registra una traccia GPX', 'Sound on note': 'Suono su nota',
             /* external remote (#20) */ 'External remote (pedal / clicker)': 'Telecomando esterno (pedale / clicker)', 'A Bluetooth page-turner pedal or camera clicker works as a keyboard — keep your hands on the wheel.': 'Un pedale Bluetooth per voltare pagina o un clicker per fotocamera funziona come una tastiera — mani sul volante.', 'Advance': 'Avanza', 'trip mode': 'modalità viaggio',
             'Note reached': 'Nota raggiunta', 'Open on map': 'Apri sulla mappa', 'Map not configured.': 'Mappa non configurata.',

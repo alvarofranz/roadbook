@@ -137,7 +137,9 @@ DB/Convenzioni rapide below have counterparts there).
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
-    `RBesc(str)` (HTML-escape), plus the global header/footer (minimal nav, full-viewport
+    `RBesc(str)` (HTML-escape), `RBBusy(el, {onEnd})` (the button that launched an async job
+    reports it: spinner while it runs, green tick for 3 s on `ok()`, straight back on `fail()`),
+    plus the global header/footer (minimal nav, full-viewport
     mobile menu), version auto-refresh and install button.
   - **`i18n.js`** (+ per-language `i18n.<lang>.js`): `RBt(key)` (translate; a missing key falls
     back to English, then to the key) + `data-i18n` / `data-i18n-html` / `data-i18n-ph` /
