@@ -65,12 +65,13 @@ si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate
 
 > Caricata una rotta, il tool attivo di **default** è **Move** (`setMapTool('points')` in
 > `setRoadbook`): si trascina qualunque punto — traccia **o** nota — e la linea segue (#61).
-> La barra mostra **solo** ☰ · Undo · Redo; l'unico *mode tool* con un pulsante è **Cut**
-> (`MODE_TOOLS = ['toolCut']`). Il menu **☰** (`#mapMenuPanel`) contiene **Cut · Add GPX ·
-> Simplify · Adjust**. Non esiste un pulsante Move: **Esc** (o il completamento di un taglio)
-> riporta a Move. **Draw** si avvia dalla landing (`drawRoute`) ed è il default per un roadbook
-> senza rotta. **Reverse** è nei *Settings* del roadbook (§7). Vedi §3.3 per l'intero
-> comportamento della mappa.
+> La barra mostra **solo** ☰ · Undo · Redo; il menu **☰** (`#mapMenuPanel`) contiene le righe
+> etichettate **Move `M` · Add note `A` · Draw route `D` · Cut `C`** (icona + nome + tasto, leggibili
+> anche su touch, #458), poi gli one-shot **Add GPX · Simplify · Adjust** e il foglio
+> **Shortcuts** (`fa-keyboard`). Non esiste un pulsante Move *fuori* dal menu: **Esc** (o il
+> completamento di un taglio) riporta a Move. **Draw** parte anche dal menu/ tasto `D` (oltre che
+> dalla landing) ed è il default per un roadbook senza rotta. **Reverse** è nei *Settings* del
+> roadbook (§7). Vedi §3.3 per l'intero comportamento della mappa.
 
 ### 3.1 Mode tool
 
@@ -85,26 +86,27 @@ il cursore. Il dispatch dei tap mappa (`map.map.on('click', …)`) gestisce solo
 | **cut**    | `cut`     | `cutPoint` | tap due punti → taglia |
 
 I mode tool con pulsante vivono nel menu ☰ (`#mapMenuPanel`), non nella barra: #138 l'ha
-snellita di proposito e resta snella.
+snellita di proposito e resta snella — ma le righe mostrano nome + tasto, così su touch
+(senza hover né tastiera) ogni modo è raggiungibile (#458).
 
 **Il modo attivo si annuncia** (#456): a ogni `setMapTool` compare in basso a sinistra sulla mappa
-un'etichetta col nome del modo e il suo tasto (`A — Add note`, `M — Move`) che **si toglie da sola
-dopo 3 s**. Serviva perché **Move**, il modo di default, non ha pulsante: era l'unico modo senza
-alcun riscontro visivo. **M** riporta a Move da qualunque punto — gestito prima del ramo
-"vertice selezionato", che ingoia i tasti che non conosce (là **A** resta l'inserimento del punto
-intermedio, che è un comando suo).
+un'etichetta col nome del modo e il suo tasto (`A — Add note`, `M — Move`, `D — Draw route`,
+`C — Cut`) che **si toglie da sola dopo 3 s**.
 
-> **Add note è tornato un mode tool** (#437). Era stato rimosso lasciando come vie d'accesso il
-> tasto **W** al puntatore e il menu contestuale — ma **su un tablet non esiste il tasto W**, e
-> l'Editor si usa su iPad: senza tool non c'era modo di aggiungere una nota col dito. Il tasto
-> **A** arma il modo quando non c'è un vertice selezionato (con un vertice selezionato A resta
-> l'inserimento del punto intermedio, `mid`, che si concatena).
+**Foglio shortcut** (#458): l'ultima voce del menu ☰ (`fa-keyboard`) elenca tutti i tasti per
+contesto (modi · vertice · nota · ovunque), incluse le due righe che non stanno scritte da
+nessun'altra parte — tasto destro apre il menu su desktop, pressione lunga su touch.
+
+> **Add note è un mode tool** (#437) con tasto **A**: **A significa sempre Aggiungi nota** —
+> sul vertice selezionato il punto intermedio è passato al tasto **I** (#458). Su un tablet
+> (niente W) il tool nel menu ☰ è l'unica via per aggiungere una nota col dito.
 
 **Draw.** Con nulla caricato, i primi due tap costruiscono un roadbook da zero
-(`drawSeed` → `RB.buildRoadbook`). Con una rotta presente, ogni tap calcola la candidata più
-vicina tra: estremità finale, estremità iniziale, e i due bordi di ogni taglio aperto, e
-applica la più vicina; toccare il bordo opposto di un taglio lo **chiude** invece di
-estenderlo ([editor.js:182](../public/editor/editor.js#L182)).
+(`drawSeed` → `RB.buildRoadbook`). Si entra in Draw dalla landing, dal menu ☰ o col tasto
+`D` — così un taglio lasciato aperto si riempie disegnando senza ricaricare (#458). Con una
+rotta presente, ogni tap calcola la candidata più vicina tra: estremità finale, estremità
+iniziale, e i due bordi di ogni taglio aperto, e applica la più vicina; toccare il bordo
+opposto di un taglio lo **chiude** invece di estenderlo.
 
 **Posizionamento esatto.** `splitTrackAt(p)`
 ([editor.js:201](../public/editor/editor.js#L201)) usa `RB.nearestOnTrack`: se il tap cade
@@ -173,8 +175,9 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   visibili. I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move
   mode) hanno `minzoom: 13` → compaiono solo a zoom alto, per non intasare l'overview.
 - **Selezione vertice (#32).** Un **tap** su un vertice (senza trascinare) lo seleziona
-  (anello **arancione**, layer `rb-vsel`) e abilita le shortcut W/A/L/Del al punto; il menu
-  per-punto (tasto destro) offre *Aggiungi nota · Aggiungi punto · Cancella · immagine* — non
+  (anello **arancione**, layer `rb-vsel`) e abilita le shortcut W/I/L/Del al punto (`I` = punto
+  intermedio, così `A` resta sempre Aggiungi nota, #458); il menu
+  per-punto (tasto destro) offre *nota · punto intermedio · punto · Cancella · immagine* — non
   più "Sposta il punto", visto che Move è il default e si trascina direttamente. Il trascinamento
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
 - **Selezione nota = solo evidenziazione (#65).** Selezionare una nota — dalla riga lista
@@ -186,10 +189,9 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   [editor.js:1166](../public/editor/editor.js#L1166)), se la mappa era ruotata.
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
-- **Menu contestuale (tasto destro).** `map.map.on('contextmenu')` apre un popup: *Open in
-  Google Maps* · — con una rotta caricata — *Add note here* (`addWaypointNear`) · *Delete this
-  point* (`deleteTrackPointNear`; se è una nota chiede conferma, min 2 punti/2 note) · *Upload a
-  photo here* · *Paste photo* (un-click `clipboard.read()`, con fallback Ctrl+V). Funziona anche
+- **Menu contestuale (tasto destro, pressione lunga su touch).** `map.map.on('contextmenu')` apre un popup: *Open in
+  Google Maps* · — con una rotta caricata — i comandi sul punto con tasto dedicato (`W` nota · `I` punto intermedio · `L` punto · `Del` cancella; su nota aperta `T` la ritrasforma in punto) · *Upload a
+  photo here* · *Paste photo* (un-click `clipboard.read()`, con fallback Ctrl+V). `Esc` chiude il menu. Funziona anche
   in move mode (il tasto destro non avvia il drag del vertice).
 
 ---
