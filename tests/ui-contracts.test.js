@@ -187,3 +187,18 @@ describe('the roadbook\'s icon library is not a cache (#454)', () => {
         expect(handler.indexOf('pasteIconArmed')).toBeLessThan(handler.indexOf("currentRbId > 0"));
     });
 });
+
+describe('comment rows span the description area (#463)', () => {
+    // .col-vignette-empty is display:none, which removes the cell from the grid — without an
+    // explicit span the comment text auto-placed into the narrow vignette column instead of
+    // the description area (flex is inert in grid, so flex:1 never did anything there).
+    for (const page of ['public/reader/index.html', 'public/challenge/index.html']) {
+        it(`${page} pins the wide comment text across the vacated columns`, () => {
+            const html = read(page);
+            const rule = html.match(/\.nrow\.comment \.col-text-wide \{([^}]*)\}/);
+            expect(rule, `${page} has no .col-text-wide rule`).not.toBeNull();
+            expect(rule[1]).toMatch(/grid-column\s*:\s*2\s*\/\s*-1/);
+            expect(rule[1]).not.toMatch(/flex\s*:/);
+        });
+    }
+});
