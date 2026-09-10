@@ -115,10 +115,15 @@ function admin_users(array $user, array $d = []): void {
         FROM users' . $where . ' ORDER BY id');
     $st->execute($args);
     $rows = $st->fetchAll();
-    // One query maps every user to their roadbook ids: it feeds both the per-user roadbook
-    // count and the disk scan, instead of two queries per listed user.
+    // One query maps every user to their roadbook ids: it feeds the disk scan, instead of
+    // one query per listed user. Trashed roadbooks still occupy disk until the 30-day purge,
+    // so they stay in — quota enforcement counts them too.
     $rbByUser = [];
     foreach (db()->query('SELECT user_id, id FROM roadbooks')->fetchAll() as $r) $rbByUser[(int)$r['user_id']][] = (int)$r['id'];
+    // The per-user count instead hides trashed roadbooks, agreeing with the per-user list
+    // which excludes them (#441).
+    $rbCount = [];
+    foreach (db()->query("SELECT user_id, COUNT(*) c FROM roadbooks WHERE status <> 'deleted' GROUP BY user_id")->fetchAll() as $r) $rbCount[(int)$r['user_id']] = (int)$r['c'];
     // One set for the manages-events flag: event owners + co-organizers (same rule as
     // user_manages_events, #442) — cheaper than a per-user check.
     $manages = [];
@@ -138,7 +143,7 @@ function admin_users(array $user, array $d = []): void {
         'mustchange' => (int)$r['must_change_password'],
         'blocked'    => (int)$r['blocked'],
         'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete
-        'roadbooks'  => count($rbByUser[(int)$r['id']] ?? []),
+        'roadbooks'  => $rbCount[(int)$r['id']] ?? 0,
         'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),
         'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
         'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
