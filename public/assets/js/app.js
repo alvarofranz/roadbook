@@ -238,14 +238,22 @@
                 html += `<tr><td>Build nativa</td><td>${RBesc(foot.textContent)}</td></tr>`;
             }
         }
+        // In the native app a reload cannot update the binary — the Update control
+        // deep-links to the store listing instead (Play / App Store handle the update).
+        // On web it refreshes the app shell to the latest deployed release.
+        const storeUrl = isNativeApp()
+            ? (RBDevice() === 'ios' ? 'https://apps.apple.com/app/rdbk/id6787167327' : 'https://play.google.com/store/apps/details?id=app.rdbk')
+            : null;
         html += `</table>
             <div class="btnrow" style="margin-top:1rem">
-                <button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>
+                ${storeUrl
+                    ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>`
+                    : `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>`}
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
         </div>`;
         const modal = RBModal(html, 'narrow');
-        modal.q('#appInfoUpdate').onclick = () => { modal.close(); hardRefresh(); };
+        if (!storeUrl) modal.q('#appInfoUpdate').onclick = () => { modal.close(); hardRefresh(); };
         modal.q('.modal-close').onclick = () => modal.close();
     };
 
