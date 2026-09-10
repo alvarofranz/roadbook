@@ -692,13 +692,14 @@
     // stored roadbook from a failed save; the button that was pressed is where the answer belongs.
     //
     // Only the icon is swapped when there is one, so a labelled button keeps its text and width
-    // and nothing jumps. `ok()`/`fail()` end the busy state; `fail()` returns at once, since the
-    // toast carries the reason. Re-enabling is left to the caller's own updater when it has one
+    // and nothing jumps. `ok()` reports success; `reset()` just puts the button back — a failure
+    // (the toast carries the reason), or a caller that paints its own outcome on it. Re-enabling
+    // is left to the caller's own updater when it has one
     // (a saved roadbook has nothing left to save, so its Save goes back to disabled) — hence
     // `onEnd`.
     window.RBBusy = (el, { onEnd } = {}) => {
         const btn = typeof el === 'string' ? document.getElementById(el) : el;
-        if (!btn) return { ok() {}, fail() {} };
+        if (!btn) return { ok() {}, reset() {} };
         const icon = btn.querySelector('i');
         const html = icon ? icon.outerHTML : btn.innerHTML;
         const paint = (h) => { if (icon) { const t = btn.querySelector('i, .spinner'); if (t) t.outerHTML = h; } else btn.innerHTML = h; };
@@ -721,7 +722,7 @@
                 paint('<i class="fa-solid fa-check" aria-hidden="true"></i>');
                 timer = setTimeout(back, 3000);
             },
-            fail: back,
+            reset: back,
         };
     };
     // Copy text (a share link, an activation token…) to the clipboard, with a translated toast.

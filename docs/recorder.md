@@ -312,8 +312,7 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 ## 8. Termine: salva sul server / esporta .rdbk, GPX o apri nell'Editor
 
 A *Finish* confermato si apre `finishModal(pts, name)` con il riepilogo
-(punti · km · waypoint · foto) e **tre** azioni (più *Close*). L'azione **primaria dipende dal
-login**:
+(punti · km · waypoint · foto) e **tre** azioni. L'azione **primaria dipende dal login**:
 
 - **Save to server** *(loggato, primaria, #143)*: in un tap costruisce il roadbook dalla
   traccia + waypoint (`RB.buildRoadbook`) e lo scrive **dentro il draft già esistente**
@@ -332,8 +331,26 @@ login**:
   `{ lat, lon, name, t }` (testo del waypoint o `wptN` se vuoto, più il timestamp). Il file
   scende via `RBDownload`. Le foto/audio **non** sono nel GPX.
 
-`clearSession()` viene chiamata subito dopo `finish()`, quindi la sessione di recovery è
-scartata appena la traccia è in mano al modale finale.
+### L'uscita del modale (#460)
+
+Finché la registrazione non è arrivata da qualche parte, **questo modale è l'unica copia**: quindi
+segue il contratto delle uscite (vedi [gps-stack.md](gps-stack.md) e `CLAUDE.md`), lo stesso del
+modale condiviso di Reader/Tripmaster:
+
+- **non è dismissable** — né backdrop né Escape;
+- l'uscita è un **Discard** (`btn-danger` + cestino) che chiede conferma nominando lo stesso
+  riepilogo mostrato in cima (punti · km · waypoint · foto);
+- appena un esito **atterra** (`land()`: salvataggio, export `.rdbk`, export GPX, apertura
+  nell'Editor, o lo stash prima del login) l'uscita diventa un normale **Close** e il checkpoint
+  anti-crash si spegne.
+
+Prima l'ultimo pulsante era un *Close* collegato al semplice dismiss: un tap buttava via traccia,
+waypoint, foto e note vocali in silenzio.
+
+`clearSession()` viene chiamata subito dopo lo stop — la registrazione *in corso* è finita — ma il
+**checkpoint GPX resta acceso**: `RBGpxRecorder.end()` lo tiene apposta, e a spegnerlo è solo un
+esito. Prima si usava `finish()`, che lo puliva all'istante dello stop: la rete di sicurezza si
+spegneva proprio mentre il modale con l'unica copia era ancora a schermo.
 
 ---
 
@@ -346,7 +363,8 @@ scartata appena la traccia è in mano al modale finale.
 | `startMeter`/`stopMeter` | ciclo `RBGpsMeter` + cronometro |
 | `dropWaypoint()`    | crea e registra un waypoint (con timestamp `t`) |
 | `saveSession()`     | checkpoint metadati in localStorage |
-| `finishModal()`     | loggato: salva sul server · sloggato: esporta `.rdbk` · apri nell'Editor · esporta GPX |
+| `finishModal()`     | loggato: salva sul server · sloggato: esporta `.rdbk` · apri nell'Editor · esporta GPX; non dismissable, esce con Discard confermato finché non è atterrata (#460) |
+| `land()`            | un esito ha messo la traccia al sicuro: pulisce il checkpoint e l'uscita diventa *Close* |
 | `exportLocalRdbk()` | costruisce e scarica un `.rdbk` ZIP con i media in coda (percorso di salvataggio da sloggato, #147 F3) |
 | `refreshMap()`      | ridisegno mappa live |
 | `ensureDraft()`     | crea il draft una sola volta (memoizzato), pigro/best-effort — il resolver della coda (#147 F2); ritorna `null` da sloggato |

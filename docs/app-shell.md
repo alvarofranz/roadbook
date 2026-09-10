@@ -276,10 +276,12 @@ e in caso contrario (o se rifiuta) si ripiega su una `textarea` usa-e-getta fuor
 contesto non sicuro, e non chiede permessi. Nessuna pagina chiama la Clipboard API da sé: lo
 verifica [tests/ui-contracts.test.js](../tests/ui-contracts.test.js).
 
-#### `RBBusy(el, { onEnd }) → { ok(), fail() }`
+#### `RBBusy(el, { onEnd }) → { ok(), reset() }`
 Il pulsante che ha lanciato un'operazione asincrona ne **riporta l'esito su sé stesso**: disabilitato
 con uno spinner mentre gira, poi — su `ok()` — verde con la spunta per 3 s, e infine di nuovo com'era.
-`fail()` ripristina subito: il motivo è nel toast. Un toast è facile da perdere e sparisce in pochi
+`reset()` rimette semplicemente il pulsante com'era: un fallimento (il motivo è nel toast), oppure un
+chiamante che sul pulsante dipinge il proprio esito — il modale di fine registrazione del Recorder
+segna lì la destinazione raggiunta. Un toast è facile da perdere e sparisce in pochi
 secondi, quindi dopo un salvataggio non si sapeva se il roadbook fosse davvero sul server (#459); la
 risposta sta sul pulsante che si è premuto.
 

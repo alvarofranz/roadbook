@@ -68,6 +68,15 @@ DB/Convenzioni rapide below have counterparts there).
   discarding unsaved work…) MUST ask for confirmation first via `RBConfirm` before it runs.
   No silent data loss, ever. A **deletion** confirm MUST name the object being deleted in its
   message (e.g. the note number + text), so the user knows exactly what they're removing.
+- **A modal holding the only copy of the user's work has no "Close".** It is NOT dismissable
+  (no backdrop tap, no Escape), and its exit is an explicit outcome that says what it does: a
+  **Discard** (`btn-danger` + trash) that confirms and names exactly what would be lost. The
+  moment the work reaches a safe destination the same exit becomes an ordinary **Close**. And
+  the crash checkpoint stays on until that destination is reached — never cleared when the work
+  merely *stops*. The Recorder's finish options had a bare Close wired to dismiss, and its Stop
+  had already dropped the checkpoint, so one tap silently abandoned the track, the waypoints,
+  the photos and the voice notes with nothing left to recover (#217 · #460). Pinned by
+  `tests/recording-exit.test.js`.
 - **NEVER SYNC OR RESET THE LOCAL DDEV ENVIRONMENT WITHOUT ASKING FIRST — EVERY SINGLE TIME.**
   ANY refresh of DDEV from prod or from `main` — importing a DB dump, pulling media/roadbook
   files, `ddev import-db`, wiping/recreating the DB, `git reset --hard origin/main` over the
@@ -138,7 +147,7 @@ DB/Convenzioni rapide below have counterparts there).
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), `RBBusy(el, {onEnd})` (the button that launched an async job
-    reports it: spinner while it runs, green tick for 3 s on `ok()`, straight back on `fail()`),
+    reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
     plus the global header/footer (minimal nav, full-viewport
     mobile menu), version auto-refresh and install button.
   - **`i18n.js`** (+ per-language `i18n.<lang>.js`): `RBt(key)` (translate; a missing key falls
