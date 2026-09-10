@@ -144,7 +144,14 @@
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: var(--on-sand); }
         /* collapsible "more tools" menu (Navigate + Add note) flying out to the right of the bar */
-        .map-tools-menu { position: absolute; top: 14px; left: 60px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 8; }
+        .map-tools-menu { position: absolute; top: 14px; left: 60px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 8; min-width: 220px; }
+        /* labelled tool rows (icon + name + key chip): readable without hover, so touch sees them too (#458) */
+        .map-tool-row { display: flex; align-items: center; gap: .6rem; width: 100%; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 600; padding: .5rem .6rem; text-align: left; white-space: nowrap; }
+        .map-tool-row:hover { background: var(--card-2); }
+        .map-tool-row.on { background: var(--sand); color: var(--on-sand); }
+        .map-tool-row.on .map-ctx-key { color: var(--on-sand); }
+        .map-tool-row:disabled { opacity: .35; cursor: default; }
+        .map-tool-row > i { width: 1.2em; text-align: center; flex-shrink: 0; }
         .map-tool:disabled { opacity: .35; cursor: default; }
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
         /* top-right map control (next to the zoom buttons): satellite/terrain toggle + zoom level */
@@ -333,12 +340,16 @@
             <!-- ☰ submenu (sibling of the toolbar so its overflow never clips it): every tool lives here.
                  Move is the default map mode (no button); only the menu toggle + undo/redo stay on the bar (#61). -->
             <div class="map-tools-menu" id="mapMenuPanel" hidden>
-                <button class="map-tool" id="toolNote" data-tool="note" aria-label="Add note" disabled><i class="fa-solid fa-map-pin"></i></button>
-                <button class="map-tool" id="toolCut" data-tool="cut" aria-label="Cut" disabled><i class="fa-solid fa-scissors"></i></button>
+                <button class="map-tool-row" id="toolMove" data-tool="points"><i class="fa-solid fa-arrows-up-down-left-right"></i><span data-i18n="Move">Move</span><span class="map-ctx-key">M</span></button>
+                <button class="map-tool-row" id="toolNote" data-tool="note" disabled><i class="fa-solid fa-map-pin"></i><span data-i18n="Add note">Add note</span><span class="map-ctx-key">A</span></button>
+                <button class="map-tool-row" id="toolDraw" data-tool="draw" disabled><i class="fa-solid fa-pen"></i><span data-i18n="Draw route">Draw route</span><span class="map-ctx-key">D</span></button>
+                <button class="map-tool-row" id="toolCut" data-tool="cut" disabled><i class="fa-solid fa-scissors"></i><span data-i18n="Cut">Cut</span><span class="map-ctx-key">C</span></button>
                 <span class="map-tools-sep"></span>
-                <button class="map-tool" id="toolAddGpx" aria-label="Add a GPX track" disabled><i class="fa-solid fa-file-circle-plus"></i></button>
-                <button class="map-tool" id="toolSimplify" aria-label="Simplify" disabled><i class="fa-solid fa-broom"></i></button>
-                <button class="map-tool" id="toolAdjust" aria-label="Adjust on the trail" disabled><i class="fa-solid fa-location-crosshairs"></i></button>
+                <button class="map-tool-row" id="toolAddGpx"><i class="fa-solid fa-file-circle-plus"></i><span data-i18n="Add a GPX track">Add a GPX track</span></button>
+                <button class="map-tool-row" id="toolSimplify"><i class="fa-solid fa-broom"></i><span data-i18n="Simplify">Simplify</span></button>
+                <button class="map-tool-row" id="toolAdjust"><i class="fa-solid fa-location-crosshairs"></i><span data-i18n="Adjust on the trail">Adjust on the trail</span></button>
+                <span class="map-tools-sep"></span>
+                <button class="map-tool-row" id="toolShortcuts"><i class="fa-solid fa-keyboard"></i><span data-i18n="Shortcuts">Shortcuts</span></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
             <!-- #456: which mode you just switched into, bottom-left over the map, gone after 3 s -->

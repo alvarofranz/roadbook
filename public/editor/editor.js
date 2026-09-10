@@ -94,16 +94,16 @@
         if (wf) {                                   // a note (waypoint)
             const ni = parseInt(wf.properties.i, 10);
             openCtxMenu(lngLat, [
-                { id: 'trk', icon: 'fa-link-slash', label: 'Transform waypoint into track point', key: 'T', run: () => transformNote(ni) },
+                { id: 'trk', icon: 'fa-link-slash', label: 'Turn this note into a track point', key: 'T', run: () => transformNote(ni) },
                 ...photo(rb.notes[ni]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
                 maps, earth, coords], rb.notes[ni]);
         } else if (vf) {                            // a plain track point
             const ti = parseInt(vf.properties.i, 10);
             openCtxMenu(lngLat, [
-                { id: 'note', icon: 'fa-map-pin', label: 'Add waypoint', key: 'W', run: () => vertexAction('note', ti) },
-                { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'A', run: () => vertexAction('mid', ti) },
-                { id: 'line', icon: 'fa-plus', label: 'Add point on line', key: 'L', run: () => vertexAction('line', ti) },
+                { id: 'note', icon: 'fa-map-pin', label: 'Turn this point into a note', key: 'W', run: () => vertexAction('note', ti) },
+                { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'I', run: () => vertexAction('mid', ti) },
+                { id: 'line', icon: 'fa-plus', label: 'Add track point here', key: 'L', run: () => vertexAction('line', ti) },
                 ...photo(rb.track[ti]),
                 { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
                 maps, earth, coords], rb.track[ti]);
@@ -111,7 +111,7 @@
             openCtxMenu(lngLat, [
                 ...(rb ? [
                     { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
-                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add point here', key: 'L', run: () => addPointAtExact(here) },
+                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add track point here', key: 'L', run: () => addPointAtExact(here) },
                     { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
@@ -140,10 +140,12 @@
         map.map.on('mousemove', (e) => { hoverPt = { lat: e.lngLat.lat, lon: e.lngLat.lng }; });
         map.map.on('mouseout', () => { hoverPt = null; });
     }
-    // Editor shortcuts (#35): the context menu's commands accelerate while it's open; otherwise the
-    // keys act on the current selection (a tap-selected track vertex takes W/A/L/Del; an open note
-    // takes T/Del), and any key left unclaimed — W/L always, Del with no selection — acts at the
-    // mouse position on the map, so W/L keep adding points even while a note is open (#141).
+    // Editor shortcuts (#35, #458): the context menu's commands accelerate while it's open
+    // (Esc closes it); otherwise the keys act on the current selection (a tap-selected track
+    // vertex takes W/I/L/Del — I for the midpoint, since bare A always arms Add-note mode;
+    // an open note takes T/Del), D/C arm Draw/Cut, and any key left unclaimed — W/L always,
+    // Del with no selection — acts at the mouse position on the map, so W/L keep adding
+    // points even while a note is open (#141).
     window.addEventListener('keydown', (e) => {
         if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
@@ -151,15 +153,22 @@
             return; // leave undo/redo and the browser's own paste alone
         }
         const k = (e.key === 'Delete' || e.key === 'Backspace') ? 'del' : e.key.toLowerCase();
+        if (k === 'escape') { if (ctxMenu) { e.preventDefault(); closeCtxMenu(); } return; }
         if (!ctxMenu && k === 'm' && rb.track.length) { // M: back to Move, the default mode (#456)
             e.preventDefault(); setMapTool('points'); return;
+        }
+        if (!ctxMenu && k === 'd' && rb.track.length) { // D: Draw route (#458)
+            e.preventDefault(); setMapTool('draw'); return;
+        }
+        if (!ctxMenu && k === 'c' && rb.track.length) { // C: Cut (#458)
+            e.preventDefault(); setMapTool('cut'); return;
         }
         if (ctxMenu) { // menu open: its commands are the accelerators
             const run = ctxMenu.keys[k];
             if (!run) return;
             e.preventDefault(); closeCtxMenu(); run();
         } else if (selVertex >= 0) { // a track vertex is selected
-            const act = { w: 'note', a: 'mid', l: 'line', del: 'del' }[k];
+            const act = { w: 'note', i: 'mid', l: 'line', del: 'del' }[k];
             if (!act) return;
             e.preventDefault();
             const i = selVertex; selVertex = -1; // the index goes stale once the route changes
@@ -403,13 +412,11 @@
     }
     // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    // Modes with a button in the ☰ menu; Move ('points') is the default and Draw is entered from
-    // the landing. Add note is a mode again (#437): W adds one at the pointer, but a tablet has no
-    // W — without a tool there was no touch path to add a note at all.
-    const MODE_TOOLS = ['toolNote', 'toolCut'];
-    /* What each map mode is called, with the key that reaches it. Move is the default and has no
-       button, so until now it was the one mode with no feedback at all (#456). */
-    const MODE_LABEL = { points: ['M', 'Move'], note: ['A', 'Add note'], draw: ['', 'Draw route'], cut: ['', 'Cut'], pan: ['', 'Navigate'] };
+    // Modes with a button in the ☰ menu; Move ('points') is the default. Every mode shows
+    // its name + key in the panel, so touch users (no hover, no keyboard) can find them (#458).
+    const MODE_TOOLS = ['toolMove', 'toolNote', 'toolDraw', 'toolCut'];
+    /* What each map mode is called, with the key that reaches it (#458). */
+    const MODE_LABEL = { points: ['M', 'Move'], note: ['A', 'Add note'], draw: ['D', 'Draw route'], cut: ['C', 'Cut'], pan: ['', 'Navigate'] };
     let modeLabelTimer = null;
     function showModeLabel(tool) {
         const el = $('mapModeLabel'), m = MODE_LABEL[tool];
@@ -433,12 +440,28 @@
     }
     MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
     $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
+    // Shortcut sheet (#458): every key grouped by context, including the two lines written
+    // nowhere else — right-click on desktop, long-press on touch, opens the context menu.
+    function shortcutSheet() {
+        const row = (label, key) => `<div class="ev-line"><span class="meta">${esc(t(label))}</span><span class="map-ctx-key">${key}</span></div>`;
+        const sec = (h, rows) => `<h3>${esc(t(h))}</h3>` + rows.map(([l, k]) => row(l, k)).join('');
+        const m = RBModal(`<h2><i class="fa-solid fa-keyboard"></i> ${esc(t('Keyboard shortcuts'))}</h2>`
+            + sec('Modes', [['Move', 'M'], ['Add note', 'A'], ['Draw route', 'D'], ['Cut', 'C'], ['Back to Move', 'Esc']])
+            + sec('Track point', [['Turn this point into a note', 'W'], ['Add intermediate point', 'I'], ['Add track point here', 'L'], ['Delete point', 'Del']])
+            + sec('Note', [['Turn this note into a track point', 'T'], ['Delete note', 'Del']])
+            + sec('Anywhere', [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']])
+            + `<p class="muted small">${esc(t('Right-click opens the menu — long-press on touch.'))}</p>`
+            + `<div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
+        m.q('.modal-close').onclick = m.close;
+    }
+    $('toolShortcuts').onclick = () => { $('mapMenuPanel').hidden = true; shortcutSheet(); };
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
         const tips = {
-            toolNote: 'Add note (tap the route) — A', toolCut: 'Cut (tap two points)', toolAddGpx: 'Add a GPX track',
+            toolMove: 'Move (drag points) — M', toolNote: 'Add note (tap the route) — A', toolDraw: 'Draw route — D', toolCut: 'Cut (tap two points) — C',
+            toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
-            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools',
+            undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools', toolShortcuts: 'Keyboard shortcuts',
         };
         // the same translated string drives the hover tooltip AND the screen-reader name
         Object.entries(tips).forEach(([id, key]) => { const v = t(key); $(id).setAttribute('data-tip', v); $(id).setAttribute('aria-label', v); });
@@ -775,7 +798,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolNote', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolMove', 'toolNote', 'toolDraw', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust', 'toolShortcuts'].forEach((id) => $(id).disabled = false); // route ops need a route
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
