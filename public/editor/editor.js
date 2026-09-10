@@ -1106,7 +1106,7 @@
         if (!(await readyToSave())) return;
         const busy = RBBusy(btn, { onEnd: updateSaveBtn });
         const r = await doSave();
-        if (r.ok) busy.ok(); else busy.fail();
+        if (r.ok) busy.ok(); else busy.reset();
         toast(r.ok ? (status === 'public' && r.slug ? t('Saved · public at') + ' /challenge/' + r.slug : 'Saved to your profile.') : (r.error || 'Could not save.'));
         if (r.ok && currentRbId > 0) updateCover(); // refresh the stored route-map cover (best-effort)
     }
@@ -1136,7 +1136,7 @@
                     <div class="btnrow center wrap">
                         <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
                         <button class="btn btn-ghost" id="ccDiscard">${t('Close without saving')}</button>
-                        <button class="btn btn-ghost" id="ccCancel">${t('Cancel')}</button>
+                        <button class="btn btn-ghost" id="ccCancel">${t('Keep editing')}</button>
                     </div>`, 'slim center', () => resolve('cancel'));
                 d.q('#ccSave').onclick = () => { resolve('save'); d.close(); };
                 d.q('#ccDiscard').onclick = () => { resolve('discard'); d.close(); };
@@ -1162,7 +1162,7 @@
         currentRbId = 0; setStatus('draft'); // new identity, a fresh draft
         const busy = RBBusy('saveAsAccount', { onEnd: updateSaveBtn });
         const r = await doSave();
-        if (r.ok) busy.ok(); else busy.fail();
+        if (r.ok) busy.ok(); else busy.reset();
         if (!r.ok) {
             rb.meta.title = prev.title; $('rbTitle').value = prev.title || '';
             currentRbId = prev.id; setStatus(prev.status); reusable = prev.reusable;

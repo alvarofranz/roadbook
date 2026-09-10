@@ -51,10 +51,10 @@ describe('RBBusy: a button that reports its own work', () => {
         expect(onEnd).toHaveBeenCalledTimes(1);    // …then the page decides the real disabled state
     });
 
-    it('restores immediately on failure — the toast carries the reason', () => {
+    it('reset() just puts the button back — a failure, or a caller painting its own outcome', () => {
         const btn = mkBtn('<i class="fa-solid fa-floppy-disk"></i>');
         const onEnd = vi.fn();
-        window.RBBusy(btn, { onEnd }).fail();
+        window.RBBusy(btn, { onEnd }).reset();
         expect(btn.disabled).toBe(false);
         expect(btn.classList.contains('btn-busy')).toBe(false);
         expect(btn.querySelector('.fa-floppy-disk')).toBeTruthy();
@@ -66,15 +66,15 @@ describe('RBBusy: a button that reports its own work', () => {
         const busy = window.RBBusy(btn);
         expect(btn.textContent).toContain('Save');
         expect(btn.querySelector('.spinner')).toBeTruthy();
-        busy.fail();
+        busy.reset();
         expect(btn.innerHTML).toBe('<i class="fa-solid fa-floppy-disk"></i> <span>Save</span>');
     });
 
     it('takes an element id, and a missing button is a harmless no-op', () => {
         mkBtn('<i class="fa-solid fa-floppy-disk"></i>');
-        window.RBBusy('save').fail();
+        window.RBBusy('save').reset();
         // leaveEditor saves with no button on screen: that call must not throw
-        expect(() => { const b = window.RBBusy(undefined); b.ok(); b.fail(); }).not.toThrow();
+        expect(() => { const b = window.RBBusy(undefined); b.ok(); b.reset(); }).not.toThrow();
     });
 });
 
@@ -87,7 +87,7 @@ describe('the editor saves through it', () => {
         expect(editor).toContain("RBBusy('saveAsAccount'");
         const save = editor.match(/async function saveRoadbook\(btn\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(save).toContain('RBBusy(btn, { onEnd: updateSaveBtn })');
-        expect(save).toContain('if (r.ok) busy.ok(); else busy.fail();');
+        expect(save).toContain('if (r.ok) busy.ok(); else busy.reset();');
     });
 
     it('a disabled, busy and done button are all visibly distinct', () => {

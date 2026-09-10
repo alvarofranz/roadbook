@@ -161,8 +161,9 @@ traccia GPX e fa di tutto per non perderla.
 | `begin(opts)` | avvia la registrazione senza UI ([gpx-recorder.js:30](../public/assets/js/gpx-recorder.js#L30)) |
 | `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js:32](../public/assets/js/gpx-recorder.js#L32)) |
 | `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js:38](../public/assets/js/gpx-recorder.js#L38)) |
-| `finish()` | chiude il log, fa il flush finale e **ritorna** la traccia, senza UI ([gpx-recorder.js:40](../public/assets/js/gpx-recorder.js#L40)) |
-| `stop()` | chiama `finish()` e mostra il modal "traccia registrata" ([gpx-recorder.js:49](../public/assets/js/gpx-recorder.js#L49)) |
+| `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js:46](../public/assets/js/gpx-recorder.js#L46)) |
+| `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
+| `stop()` | chiama `end()` e mostra il modal "traccia registrata" |
 | `resume(savedName)` | riprende un log interrotto da un reload, dal checkpoint ([gpx-recorder.js:54](../public/assets/js/gpx-recorder.js#L54)) |
 | `offerRecovery()` | offre di recuperare un checkpoint orfano (crash senza sessione) ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)) |
 | `recording` (getter) | `true` mentre registra |
@@ -213,10 +214,15 @@ Due percorsi distinti, in base a se la pagina ha una sessione da riprendere:
 
 ### Il modal "traccia registrata"
 
-`finishedModal` ([gpx-recorder.js:103](../public/assets/js/gpx-recorder.js#L103)) mostra punti
-+ km e offre **Download GPX** (nascosto se già salvato su file) e **Convert into roadbook**,
-che parcheggia la traccia in `sessionStorage` e apre l'Editor con `?trip=1`
-([gpx-recorder.js:113](../public/assets/js/gpx-recorder.js#L113)).
+`finishedModal` mostra punti + km e offre **Download GPX** (nascosto se già salvato su file) e
+**Convert into roadbook**, che parcheggia la traccia in `sessionStorage` e apre l'Editor con
+`?trip=1`.
+
+Il modal tiene l'**unica copia** della registrazione, quindi segue il contratto delle uscite
+(#217 · #460), lo stesso del Recorder: **non è dismissable** (né backdrop né Escape) e l'unica
+uscita è **Discard**, `btn-danger` col cestino, che chiede conferma nominando la stessa riga di
+riepilogo mostrata nel modal. Il checkpoint anti-crash lo pulisce **solo** un esito reale —
+download, conversione o discard confermato.
 
 ### Impostazioni persistite
 

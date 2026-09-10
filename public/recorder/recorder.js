@@ -182,9 +182,12 @@
     $('recStop').onclick = async () => {
         if (!(await RBConfirm(t('Finish the recording?')))) return;
         stopMeter();
-        const r = await RBGpxRecorder.finish(); // stops logging, returns the full track, onChange(false) → idle
-        clearSession();
-        if (!r.pts || r.pts.length < 2) return toast(t('Route too short to save.'));
+        // end() stops logging and hands over the track but KEEPS the crash checkpoint: from here
+        // until the finish options land it somewhere, this is the only copy of the recording, so
+        // the net stays on and a kill mid-modal is still recoverable (#460).
+        const r = RBGpxRecorder.end();
+        clearSession(); // the in-progress recording is over; what remains is a finished track
+        if (!r.pts || r.pts.length < 2) { RBGpxRecorder.clearCheckpoint(); return toast(t('Route too short to save.')); }
         finishModal(r.pts, r.name);
     };
 
@@ -429,16 +432,25 @@ function updateRecUi() {
     const markDone = (btn, label) => { btn.innerHTML = '<i class="fa-solid fa-check icon-accent"></i> ' + label; };
 
     // The finish options STAY open after each action (#268-style): you can export the track here and
-    // still save it to your account, or export it in more than one place. Only "Open in the editor"
-    // navigates away, and "Close" dismisses. `savedId` renders the modal already in its saved state
-    // (used when returning from the sign-in redirect). "Save to account" saves in place when signed
-    // in; signed out it stashes the recording and rounds through the sign-in page (no in-page login).
+    // still save it to your account, or export it in more than one place. `savedId` renders the modal
+    // already in its saved state (used when returning from the sign-in redirect). "Save to account"
+    // saves in place when signed in; signed out it stashes the recording and rounds through the
+    // sign-in page (no in-page login).
+    //
+    // Until one of those destinations is reached this modal holds the ONLY copy of the recording, so
+    // it follows the same contract as the shared finished-track modal (#217): it cannot be dismissed
+    // by a backdrop tap or Escape, and its exit is a **Discard** that names what would be lost. A
+    // plain "Close" there abandoned the track, the waypoints, the photos and the voice notes in
+    // silence (#460). Once anything HAS landed, there is nothing left to lose and the same exit
+    // becomes an ordinary Close.
     function finishModal(pts, name, savedId) {
         const km = (recordedM / 1000).toFixed(2);
         const nm = name || recName();
         const signedIn = !!meUser;
+        const summary = `${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷`;
+        let landed = !!savedId; // has the recording reached somewhere safe?
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
-            <p class="muted small">${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷</p>
+            <p class="muted small">${summary}</p>
             <div class="btnrow center wrap">
                 <button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to account')}</button>
                 ${signedIn ? '' : `<button class="btn btn-ghost" id="rfRdbk"><i class="fa-solid fa-file-zipper"></i> ${t('Export .rdbk')}</button>`}
@@ -447,20 +459,27 @@ function updateRecUi() {
             </div>
             <p class="muted small" id="rfStatus"${savedId ? '' : ' hidden'}>${savedId ? savedLine(savedId) : ''}</p>
             <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('Save to your account, or export a self-contained .rdbk with your photos and voice notes.')}</p>
-            <div class="btnrow center"><button class="btn btn-ghost" id="rfClose">${t('Close')}</button></div>`, 'slim center');
+            <div class="btnrow center"><button class="btn" id="rfClose"></button></div>`, 'slim center', null, { dismissable: false });
         const showSaved = (id) => { const s = d.q('#rfStatus'); s.hidden = false; s.innerHTML = savedLine(id); };
+        // The exit says what it will do: discard the recording, or — once it is safe somewhere — close.
+        function renderExit() {
+            const b = d.q('#rfClose');
+            b.className = 'btn ' + (landed ? 'btn-ghost' : 'btn-danger');
+            b.innerHTML = landed ? t('Close') : '<i class="fa-solid fa-trash"></i> ' + t('Discard');
+        }
+        // A destination was reached: the crash checkpoint has done its job, and the exit is no
+        // longer destructive.
+        const land = () => { landed = true; RBGpxRecorder.clearCheckpoint(); renderExit(); };
+        renderExit();
+        if (savedId) RBGpxRecorder.clearCheckpoint();
 
         d.q('#rfSave').onclick = async () => {
             const btn = d.q('#rfSave');
             if (signedIn) {
-                // Visible progress while the save is in flight (#279): the network write can take a
-                // moment, and a silent disabled button reads as "nothing happened".
-                const label = btn.innerHTML;
-                btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + t('Saving…');
+                const busy = RBBusy(btn); // the network write takes a moment; a silent button reads as "nothing happened" (#279)
                 const built = await saveToProfile(pts, nm);
-                btn.disabled = false;
-                if (built) { showSaved(built.id); markDone(btn, t('Save to account')); }
-                else btn.innerHTML = label; // failed — restore so the user can retry
+                busy.reset();
+                if (built) { showSaved(built.id); markDone(btn, t('Save to account')); land(); }
                 return;
             }
             // Signed out: no in-page login — stash the recording and round-trip through the sign-in page.
@@ -470,14 +489,16 @@ function updateRecUi() {
             let stashed = false;
             try { localStorage.setItem(PENDING_SAVE, JSON.stringify({ pts, wpts, name: nm, recordedM })); stashed = true; } catch (e) {}
             if (!stashed) return toast(t('Could not save.'));
+            land(); // the stash is the copy now
             location.href = RBLoginUrl();
         };
         if (!signedIn) d.q('#rfRdbk').onclick = async () => {
-            const btn = d.q('#rfRdbk'); btn.disabled = true;
+            const btn = d.q('#rfRdbk');
+            const busy = RBBusy(btn);
             const n = await exportLocalRdbk(pts, nm);
-            btn.disabled = false;
+            busy.reset();
             if (n == null) return; // track too short — toast already shown
-            markDone(btn, t('Export .rdbk'));
+            markDone(btn, t('Export .rdbk')); land();
             // the media now lives in the downloaded file → offer to free it from the device
             if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?')))
                 await RBMediaQueue.clear();
@@ -485,7 +506,7 @@ function updateRecUi() {
         d.q('#rfDl').onclick = () => {
             const gpxWpts = wpts.map((w) => ({ lat: w.lat, lon: w.lon, name: w.text || w.name, t: w.t }));
             RBDownload(new Blob([RB.gpxDocument(nm, pts, gpxWpts)], { type: 'application/gpx+xml' }), nm + '.gpx');
-            markDone(d.q('#rfDl'), t('Export GPX')); toast(t('Exported'));
+            markDone(d.q('#rfDl'), t('Export GPX')); land(); toast(t('Exported'));
         };
         d.q('#rfEd').onclick = () => {
             try {
@@ -494,9 +515,14 @@ function updateRecUi() {
                 if (name) sessionStorage.setItem('rb_trip_name', name); // carry the chosen roadbook name (#54)
                 if (draftId) sessionStorage.setItem('rb_trip_draft', String(draftId));
             } catch (e) {}
+            land(); // the Editor takes it from here, on its own draft checkpoint
             location.href = '../editor/?trip=1';
         };
-        d.q('#rfClose').onclick = d.close;
+        d.q('#rfClose').onclick = async () => {
+            if (!landed && !(await RBConfirmDanger(t('Discard this recording?') + '<br>' + summary))) return;
+            RBGpxRecorder.clearCheckpoint();
+            d.close();
+        };
     }
 
     /* ---------- the running dashboard (the clock/battery/GPS bar is RBStatusBar) ---------- */
