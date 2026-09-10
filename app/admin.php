@@ -119,6 +119,10 @@ function admin_users(array $user, array $d = []): void {
     // count and the disk scan, instead of two queries per listed user.
     $rbByUser = [];
     foreach (db()->query('SELECT user_id, id FROM roadbooks')->fetchAll() as $r) $rbByUser[(int)$r['user_id']][] = (int)$r['id'];
+    // One set for the manages-events flag: event owners + co-organizers (same rule as
+    // user_manages_events, #442) — cheaper than a per-user check.
+    $manages = [];
+    foreach (db()->query('SELECT DISTINCT organizer_id AS id FROM events UNION SELECT DISTINCT user_id FROM event_organizers')->fetchAll() as $r) $manages[(int)$r['id']] = true;
     $users = array_map(fn($r) => [
         'id'         => (int)$r['id'],
         'first_name' => $r['first_name'],
@@ -130,6 +134,7 @@ function admin_users(array $user, array $d = []): void {
         'verified'   => (int)$r['email_verified'],
         'is_admin'   => is_admin($r) ? 1 : 0,
         'is_organizer' => (int)$r['is_organizer'],
+        'manages_events' => isset($manages[(int)$r['id']]) ? 1 : 0,
         'mustchange' => (int)$r['must_change_password'],
         'blocked'    => (int)$r['blocked'],
         'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete

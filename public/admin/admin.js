@@ -6,7 +6,7 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, allUsers = [], byId = {}, page = 1, query = '', orgFilter = '';
+    let me = 0, allUsers = [], byId = {}, page = 1, query = '', orgFilter = '', fltRb = false, fltEv = false;
 
     function rowHtml(u) {
         const isMe = u.id === me;
@@ -240,11 +240,13 @@
         });
     }
 
-    // Filter (by username/email/name) → paginate (25/page) → draw the visible rows + pager.
+    // Filter (by username/email/name) → quick toggles → paginate (25/page) → draw the visible rows + pager.
     function render() {
-        const filtered = (window.RB && RB.filterByText)
+        let filtered = (window.RB && RB.filterByText)
             ? RB.filterByText(allUsers, query, ['username', 'email', 'first_name', 'last_name', 'name'])
             : allUsers;
+        if (fltRb) filtered = filtered.filter((u) => (u.roadbooks || 0) > 0);
+        if (fltEv) filtered = filtered.filter((u) => !!u.manages_events);
         const pages = Math.max(1, Math.ceil(filtered.length / PER));
         if (page > pages) page = pages;
         const slice = filtered.slice((page - 1) * PER, page * PER);
@@ -318,6 +320,9 @@
     async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
+        const syncToggle = (btn, on) => btn.classList.toggle('active', on);
+        $('userRbFilter').onclick = () => { fltRb = !fltRb; syncToggle($('userRbFilter'), fltRb); page = 1; render(); };
+        $('userEvFilter').onclick = () => { fltEv = !fltEv; syncToggle($('userEvFilter'), fltEv); page = 1; render(); };
         $('userCreate').onclick = createUser;
         $('userOrgFilter').oninput = () => { orgFilter = $('userOrgFilter').value; page = 1; load(); };
         loadEventFilter();
