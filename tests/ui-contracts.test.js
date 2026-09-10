@@ -202,3 +202,37 @@ describe('comment rows span the description area (#463)', () => {
         });
     }
 });
+
+describe('editor map modes and keys (#458)', () => {
+    const editor = read('public/editor/editor.js');
+    const html = read('public/editor/index.html');
+
+    it('Draw and Cut are reachable by key, not only from the landing', () => {
+        expect(editor).toMatch(/k === 'd'[^]*?setMapTool\('draw'\)/);
+        expect(editor).toMatch(/k === 'c'[^]*?setMapTool\('cut'\)/);
+        expect(editor).toContain("MODE_TOOLS = ['toolMove', 'toolNote', 'toolDraw', 'toolCut']");
+    });
+
+    it('A always means Add note: the vertex midpoint moved to I', () => {
+        expect(editor).toContain("const act = { w: 'note', i: 'mid', l: 'line', del: 'del' }[k]");
+        expect(editor).not.toContain("a: 'mid'");
+        expect(editor).toContain("label: 'Add intermediate point', key: 'I'");
+    });
+
+    it('the W/T pair is named as a pair, and L names the track point', () => {
+        expect(editor).toContain("label: 'Turn this point into a note', key: 'W'");
+        expect(editor).toContain("label: 'Turn this note into a track point', key: 'T'");
+        expect(editor).toContain("label: 'Add track point here', key: 'L'");
+    });
+
+    it('the ☰ panel shows every mode with its key chip', () => {
+        for (const [id, tool, key] of [['toolMove', 'points', 'M'], ['toolNote', 'note', 'A'], ['toolDraw', 'draw', 'D'], ['toolCut', 'cut', 'C']]) {
+            expect(html).toContain(`id="${id}" data-tool="${tool}"`);
+        }
+        expect(html.match(/<span class="map-ctx-key">[MADC]<\/span>/g).length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('Esc closes the open context menu instead of leaving it hanging', () => {
+        expect(editor).toMatch(/k === 'escape'[^]*?closeCtxMenu\(\)/);
+    });
+});
