@@ -48,8 +48,9 @@ window.NoteCanvas = class NoteCanvas {
     toM(vx, vy) { return [vx - this.REF_W / 2, this.REF_H / 2 - vy]; }
     evToV(e) { const p = this.svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const l = p.matrixTransform(this.svg.getScreenCTM().inverse()); return [l.x, l.y]; }
 
-    setNote(note, isEnd) {
+    setNote(note, isEnd, isFirst) {
         this.isEnd = !!isEnd;
+        this.isFirst = !!isFirst;
         this.note = note;
         if (note) {
             note.icons = Array.isArray(note.icons) ? note.icons : [];
@@ -63,7 +64,7 @@ window.NoteCanvas = class NoteCanvas {
         [...this.svg.querySelectorAll('.vignette-box-dyn')].forEach((n) => n.remove());
         if (!this.note) { this.toolbarEl.innerHTML = ''; return; }
         this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn vignette-box-bg', x: 0, y: 0, width: this.REF_W, height: this.REF_H, fill: 'transparent' }));
-        trunkSegments(this.note, this.isEnd).forEach((s) => {
+        trunkSegments(this.note, this.isEnd, this.isFirst).forEach((s) => {
             const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': s.dashed ? 'butt' : 'round', 'stroke-dasharray': s.dashed ? DASH : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
             this.svg.appendChild(svg('line', attrs));
@@ -170,7 +171,7 @@ window.NoteCanvas = class NoteCanvas {
 };
 /* Static, read-only render of a note's vignette as an SVG string — used by the
  * Reader and the challenge page to show each note exactly as designed. */
-window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd) {
+window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd, isFirst) {
     const W = 230, H = 162, cx = W / 2, cy = H / 2;
     const toV = (px, py) => [cx + px, cy - py];
     resolveIcon = resolveIcon || ((ic) => ic.name);
@@ -189,7 +190,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd) {
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
         + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
-    trunkSegments(note, isEnd).forEach((g) => {
+    trunkSegments(note, isEnd, isFirst).forEach((g) => {
         s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${g.color}" stroke-width="${g.width}" stroke-linecap="${g.dashed ? 'butt' : 'round'}"${g.arrow ? ' marker-end="url(#vig-arr)"' : ''}${g.dashed ? ' stroke-dasharray="' + DASH + '"' : ''}/>`;
         if (g.double) s += `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="#fff" stroke-width="${Math.max(3, g.width * 0.3)}" stroke-linecap="round"/>`; // motorway: white centre → double line
     });
@@ -239,7 +240,7 @@ const roadStyle = (rt) => ROAD_STYLE[rt] || ROAD_STYLE[3];
 // off-piste dash: red dash 12 / white gap 9. Dashed lines use butt caps — round caps would
 // swallow the gap at these widths. One source for all render spots.
 const DASH = '12 9';
-function trunkSegments(note, isEnd) {
+function trunkSegments(note, isEnd, isFirst) {
     const cx = 115, cy = 81, L = 63; // centre of the 230×162 reference box; exit length
     const seg = (roadType, x1, y1, x2, y2, arrow, onRoute) => {
         const st = roadStyle(roadType);
@@ -250,8 +251,10 @@ function trunkSegments(note, isEnd) {
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     // incoming (provenance): styled by road_type_in — which normalizeRoadTypes derives from the
     // PREVIOUS note's road_type_out — and coloured by road type like the rest of the route, except
-    // on the first note (no real provenance → grey).
-    const segs = [seg(note.road_type_in, cx, 154, cx, cy, false, note.num > 1)];
+    // on the first note (no real provenance → grey). The roadbook's START draws no incoming road
+    // at all: nothing comes before it, so a line from the bottom edge points from nowhere (#472).
+    const segs = [];
+    if (!isFirst) segs.push(seg(note.road_type_in, cx, 154, cx, cy, false, note.num > 1));
     // The END note has no exit road and no arrow: past the finish there is nothing to follow, so
     // an arrow leaving the waypoint points at nothing — in a race that note is the finish arch
     // (#447). The incoming road stops at the centre, where the validation dot marks the spot.

@@ -125,6 +125,15 @@
         for (let k = notes.length - 1; k >= 0; k--) if (!isComment(notes[k])) return k === i;
         return false;
     }
+    /* Is note i the roadbook's START — the first one you navigate from? Symmetrical to isEndNote:
+       comment rows can sit before it, so it is the first NON-comment note. Its tulip draws no
+       incoming road: nothing comes before the start, so a line from the bottom edge points from
+       nowhere — just the validation dot at the centre (#472). */
+    function isFirstNote(notes, i) {
+        if (!notes || !notes[i] || isComment(notes[i])) return false;
+        for (let k = 0; k < notes.length; k++) if (!isComment(notes[k])) return k === i;
+        return false;
+    }
     /* Has the active note been reached? — the Reader's auto-validation gate (#384). Testing the
        CURRENT FIX alone silently misses waypoints: fixes land about a second apart, so at 90 km/h
        the phone moves ~25 m between two of them and a tight gate (the REACH_MIN_M floor is 18 m)
@@ -1218,7 +1227,7 @@
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        roadbookForExport, isComment, isEndNote,
+        roadbookForExport, isComment, isEndNote, isFirstNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
