@@ -236,3 +236,33 @@ describe('editor map modes and keys (#458)', () => {
         expect(editor).toMatch(/k === 'escape'[^]*?closeCtxMenu\(\)/);
     });
 });
+
+describe('GPS readiness alerts (#443-446)', () => {
+    const meter = read('public/assets/js/gps-meter.js');
+    const bridge = read('native/src/native.js');
+
+    it('the meter reports stalls, coarse fixes and preflight states instead of staying silent', () => {
+        expect(meter).toContain("this._onAlert('stalled')");
+        expect(meter).toContain("this._onAlert('coarse')");
+        expect(meter).toContain("this._onAlert('battery')");
+        expect(meter).toContain("this._onAlert('notifications')");
+    });
+
+    it('the bridge exposes readiness + settings deep-links backed by real plugins', () => {
+        expect(bridge).toContain("import { PushNotifications } from '@capacitor/push-notifications'");
+        expect(bridge).toContain("import { BatteryOptimization } from '@capawesome-team/capacitor-android-battery-optimization'");
+        expect(bridge).toContain('PushNotifications.checkPermissions()');
+        expect(bridge).toContain('BatteryOptimization.isBatteryOptimizationEnabled()');
+        expect(bridge).toContain('BatteryOptimization.openBatteryOptimizationSettings()');
+        expect(bridge).toContain('async readiness()');
+        expect(bridge).toContain('async openSettings()');
+        expect(bridge).toContain('async openBatterySettings()');
+    });
+
+    it('the alert copy exists in English', () => {
+        const en = read('public/assets/js/i18n.js');
+        for (const k of ['No GPS fixes yet', 'too coarse for a reliable track', 'Battery optimization is on', 'Notifications are off', 'Open battery settings', 'Open settings']) {
+            expect(en, k).toContain(k);
+        }
+    });
+});

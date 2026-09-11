@@ -16,6 +16,8 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { BatteryOptimization } from '@capawesome-team/capacitor-android-battery-optimization';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -158,6 +160,29 @@ const RBNative = {
             } catch (e) { if (onError) onError(e); }
         },
         async stop() { try { await BackgroundGeolocation.stop(); } catch (e) {} },
+        // App details page (permissions, notifications, battery) for guided fixes.
+        async openSettings() { try { await BackgroundGeolocation.openSettings(); } catch (e) {} },
+        // Battery optimization settings page (Android only) — the manual exclusion path,
+        // which needs no special permission (Play policy, #443).
+        async openBatterySettings() {
+            try {
+                if (Capacitor.getPlatform() === 'android') await BatteryOptimization.openBatteryOptimizationSettings();
+                else await BackgroundGeolocation.openSettings();
+            } catch (e) {}
+        },
+        // Readiness preflight for a GPS run (#443/#444). Returns { battery, notifications }:
+        // battery is true when exempt (false when optimization may kill background GPS, null
+        // when not applicable/unknown); notifications is the POST_NOTIFICATIONS state on
+        // Android ('granted'/'denied'/..., null elsewhere). Never throws.
+        async readiness() {
+            const out = { battery: null, notifications: null };
+            try {
+                if (Capacitor.getPlatform() !== 'android') return out;
+                try { out.battery = !(await BatteryOptimization.isBatteryOptimizationEnabled()).enabled; } catch (e) {}
+                try { out.notifications = (await PushNotifications.checkPermissions()).receive || null; } catch (e) {}
+            } catch (e) { /* non-Android or plugin unavailable */ }
+            return out;
+        },
     },
 };
 
