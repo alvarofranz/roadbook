@@ -760,4 +760,6 @@
             'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Gestión de eventos',
             'wiki.cta.title': 'Guía paso a paso', 'wiki.cta.desc': 'Consulta la guía paso a paso para crear tus roadbooks', 'wiki.cta.link': 'Ir a la wiki →',
             'App Info': 'Información de la app', 'Version': 'Versión', 'Environment': 'Entorno', 'Update': 'Actualizar',
+            'Platform': 'Plataforma', 'Running': 'En ejecución', 'Available': 'Disponible', 'Latest web content': 'Último contenido web',
+            'iOS app': 'App iOS', 'Android app': 'App Android', 'Web app': 'App web', 'Web app (installed)': 'App web (instalada)',
         });
