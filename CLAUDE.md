@@ -180,6 +180,13 @@ DB/Convenzioni rapide below have counterparts there).
   on and off and two page borders were invisible (#422). CSS never complains about a token that
   was never declared, so `tests/ui-contracts.test.js` does: every `var(--x)` without a fallback
   must be declared in `:root` or be one of the handful published at runtime by JS.
+- **A responsive `@media` block goes AFTER the rules it overrides.** Same selector = same
+  specificity, so the one written LAST wins at every width and the other is dead code CSS never
+  complains about. Written above its base rule, `@media (max-width: 640px) { .roadbook-row .meta
+  { min-width: 100% } }` never applied: every saved-roadbook card collapsed to 6 px on a phone and
+  its summary line ran straight across the action buttons, and two more overrides (the compact
+  cookie notice, the action row that clears the tab bar) were dead the same way (#476). Pinned by
+  `tests/ui-contracts.test.js`.
 - **One way to reach the clipboard: `RBCopy(text, okMsg)`.** A bare
   `navigator.clipboard.writeText()` throws where the API is absent (non-secure context, older
   WebView, refused write) — outside any promise chain, so the copy silently fails and not even
