@@ -52,10 +52,9 @@
         $('clearAll').onclick = clearAll;
         $('exportCsv').onclick = exportCsv;
         render();
-        if (!isOrg) {
+        if (!isOrg) { // the per-row delete column is not rendered at all for a participant
             $('clearAll').hidden = true;
             $('exportCsv').hidden = true;
-            $('table').classList.add('no-delete');
         }
     }
 

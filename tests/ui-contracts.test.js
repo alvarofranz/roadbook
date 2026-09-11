@@ -9,6 +9,20 @@ import path from 'path';
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
+// Every first-party page and module — the files a human wrote, not a vendor bundle.
+function firstPartySources() {
+    const out = [];
+    const walk = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, e.name);
+            if (e.isDirectory()) { if (!['fontawesome', 'icons', 'photos', 'audio', 'avatars', 'event-logos'].includes(e.name)) walk(p); continue; }
+            if (/\.(html|js)$/.test(e.name) && !/\.min\.js$|native\.bundle\.js$/.test(e.name)) out.push(p);
+        }
+    };
+    walk('public');
+    return out;
+}
+
 // Every .css and every page <style> block in the site.
 function styleSources() {
     const out = [];
@@ -372,5 +386,80 @@ describe('the saved-roadbook card is readable on a phone (#476)', () => {
 
     it('spreads the status pill and the actions over the row below, so none is orphaned', () => {
         expect(mobile).toContain('.roadbook-row .btn, .roadbook-row .rb-status { flex: 1 1 auto; }');
+    });
+});
+
+describe('styling lives in stylesheets, never in a style attribute (#480)', () => {
+    // CLAUDE.md: inline styles ARE the bug. They also hide dead class names — the App Info card
+    // leaned on `style="…"` over two classes no stylesheet ever defined (#478).
+    it('no page or JS-built markup carries a style attribute', () => {
+        const offenders = [];
+        for (const file of firstPartySources()) {
+            for (const m of read(file).matchAll(/style="[^"]*"/g)) offenders.push(`${file} → ${m[0]}`);
+        }
+        expect(offenders).toEqual([]);
+    });
+});
+
+describe('one tool, one icon, everywhere (#480)', () => {
+    // CLAUDE.md's canonical set. The home workflow step for the Ranking wore a trophy while every
+    // other surface used fa-ranking-star, and the Editor's "start from a public roadbook" card
+    // still wore the trophy of the old "challenge" naming (#426).
+    const CANONICAL = {
+        recorder: 'fa-circle-dot', editor: 'fa-pen-ruler', reader: 'fa-compass',
+        tripmaster: 'fa-gauge-high', ranking: 'fa-ranking-star',
+    };
+
+    it('every link to a tool from the home, the launcher or a feature page wears the tool icon', () => {
+        const pages = ['public/index.html', 'public/navigate/index.html',
+            ...Object.keys(CANONICAL).map((t) => `public/features/${t}/index.html`)];
+        const offenders = [];
+        for (const page of pages) {
+            for (const m of read(page).matchAll(/<a[^>]*href="([^"]*)"[^>]*class="(wf-step|launch-tile|feat-card)"[^>]*>([\s\S]*?)<\/a>|<a[^>]*class="(wf-step|launch-tile|feat-card)"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g)) {
+                const href = m[1] || m[5], inner = m[3] || m[6];
+                for (const [tool, icon] of Object.entries(CANONICAL)) {
+                    if (!new RegExp(`(^|/)(features/)?${tool}/$`).test(href)) continue;
+                    const used = (inner.match(/fa-(?!solid|brands|regular)[a-z-]+/) || [])[0];
+                    if (used && used !== icon) offenders.push(`${page} → ${href} uses ${used}, not ${icon}`);
+                }
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+
+    it('each feature page leads with its own tool icon', () => {
+        for (const [tool, icon] of Object.entries(CANONICAL)) {
+            const hero = read(`public/features/${tool}/index.html`).match(/<i class="fa-solid (fa-[a-z-]+) feat-ico"/);
+            expect(hero && hero[1], tool).toBe(icon);
+        }
+    });
+
+    it('nothing wears the retired challenge trophy', () => {
+        for (const file of firstPartySources()) expect(read(file), file).not.toContain('fa-trophy');
+    });
+});
+
+describe('the page itself never scrolls sideways (#480)', () => {
+    // A horizontal page scroll on a phone is never cosmetic here: the shared bars (tab bar,
+    // language chip, cookie notice) are sized from the layout viewport, so one over-wide element
+    // drags them off-screen with it. German found three: "Datenschutzerklärung" in an h1,
+    // "Veranstaltungsklassement" in a grid cell, and the 540 px spec tables.
+    const app = read('public/assets/css/app.css');
+
+    it('running text breaks a word that cannot fit its box', () => {
+        expect(app).toMatch(/h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, \.lead \{ overflow-wrap: break-word; \}/);
+    });
+
+    it('the feature-page title can shrink below its longest word', () => {
+        expect(app).toContain('.feat-titlerow h1 { margin: 0; min-width: 0; }'); // a grid item defaults to min-content
+    });
+
+    it('a table too wide for a phone scrolls inside its own box', () => {
+        for (const [page, selector] of [['public/standard/index.html', '.doc table'], ['public/wiki/index.html', '.wiki-content table']]) {
+            const css = read(page).match(/<style>([\s\S]*?)<\/style>/)[1];
+            const mobile = css.match(/@media \(max-width: 640px\) \{([\s\S]*?)\n *\}/);
+            expect(mobile, page).toBeTruthy();
+            expect(mobile[1], page).toContain(`${selector} { display: block; width: max-content; max-width: 100%; overflow-x: auto; }`);
+        }
     });
 });

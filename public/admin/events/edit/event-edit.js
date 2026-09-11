@@ -131,13 +131,13 @@
     let orgSearchSeq = 0;
     $('orgAddBtn').onclick = () => {
         const m = RBModal(`<h2>${esc(t('Add organizer'))}</h2>
-            <div class="ev-add-row" style="margin-bottom:.5rem">
+            <div class="ev-add-row">
                 <input id="orgSearchIn" class="field" data-i18n-ph="Search users…" placeholder="${esc(t('Search users…'))}" autocomplete="off">
                 <input id="orgOrgIn" class="field" data-i18n-ph="Organization" placeholder="${esc(t('Organization'))}" autocomplete="off" list="orgSuggest">
                 <datalist id="orgSuggest"></datalist>
             </div>
             <div id="orgListModal" class="ev-pick-list"></div>
-            <div class="btnrow" id="orgPages" style="justify-content:center;gap:.5rem;margin-top:.5rem">
+            <div class="btnrow" id="orgPages">
                 <button class="btn btn-ghost" id="orgPrevBtn" hidden><i class="fa-solid fa-chevron-left"></i> ${esc(t('Previous'))}</button>
                 <span id="orgPageInfo" class="muted small"></span>
                 <button class="btn btn-ghost" id="orgNextBtn" hidden>${esc(t('Next'))} <i class="fa-solid fa-chevron-right"></i></button>

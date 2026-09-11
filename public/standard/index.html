@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.0-45">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.0-45">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.1-46">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -41,6 +41,12 @@
         .lead-spec { font-size: 1.15rem; color: var(--text); }
         .cta-row { margin-top: 2.5rem; }
         .danger-marks { color: #e01414; font-weight: 900; }
+        /* A wide table scrolls inside its own box on a phone — the PAGE never scrolls sideways
+           (the spec tables are 540 px wide against a 390 px screen). After the base rule: same
+           specificity, last one wins (#476). */
+        @media (max-width: 640px) {
+            .doc table { display: block; width: max-content; max-width: 100%; overflow-x: auto; }
+        }
     </style>
 </head>
 <body>
@@ -267,12 +273,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.8.0-45"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.0-45"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.0-45"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.0-45"></script>
-<script src="../assets/js/i18n.js?v=1.8.0-45"></script>
-<script src="../assets/js/roadbook-core.js?v=1.8.0-45"></script>
-<script src="../assets/js/app.js?v=1.8.0-45"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.1-46"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.1-46"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.1-46"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.1-46"></script>
+<script src="../assets/js/i18n.js?v=1.8.1-46"></script>
+<script src="../assets/js/roadbook-core.js?v=1.8.1-46"></script>
+<script src="../assets/js/app.js?v=1.8.1-46"></script>
 </body>
 </html>

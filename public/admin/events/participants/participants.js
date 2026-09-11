@@ -90,9 +90,9 @@
     $('ppActivateIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ppActivate').click(); });
 
     $('ppScanQr').onclick = async () => {
-        const modal = RBModal(`<div class="pp-scanner"><p class="muted small" style="margin-bottom:.5rem">${esc(t('Point the camera at the participant\'s QR code.'))}</p>
-            <video id="ppScannerVideo" autoplay playsinline style="width:100%;max-width:360px;border-radius:8px;background:#000"></video>
-            <p class="muted small" id="ppScanStatus" style="margin-top:.5rem">${esc(t('Waiting for QR code…'))}</p>
+        const modal = RBModal(`<div class="pp-scanner"><p class="muted small">${esc(t('Point the camera at the participant\'s QR code.'))}</p>
+            <video id="ppScannerVideo" class="pp-scan-video" autoplay playsinline></video>
+            <p class="muted small" id="ppScanStatus">${esc(t('Waiting for QR code…'))}</p>
             <div class="btnrow"><button class="btn btn-ghost modal-close">${esc(t('Cancel'))}</button></div></div>`);
         const video = modal.q('#ppScannerVideo');
         const status = modal.q('#ppScanStatus');

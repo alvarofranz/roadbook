@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
+import path from 'path';
 
 /* i18n regression guards (happy-dom env gives us window/document):
    - every data-i18n key the /features/ pages use must be translated in ALL languages
@@ -10,6 +11,19 @@ import fs from 'fs';
 const LANGS = ['es', 'it', 'de', 'fr'];
 const TOOLS = ['recorder', 'editor', 'reader', 'tripmaster', 'ranking'];
 const read = (p) => fs.readFileSync(p, 'utf8');
+
+// Every .html under a directory — the runtime dictionaries have to cover all of them.
+function htmlPages(dir) {
+    const out = [];
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) { if (!['fontawesome', 'icons', 'photos', 'audio', 'avatars', 'event-logos'].includes(e.name)) out.push(...htmlPages(p)); }
+        else if (e.name.endsWith('.html')) out.push(p);
+    }
+    return out;
+}
+// `data-i18n="End &amp; close"` reaches RBt as `End & close`: the browser decodes the attribute.
+const decodeEntities = (s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
 // The per-language files attach window.RBi18nLangs.<lang>; eval them in the happy-dom window.
 function loadLangs() {
@@ -77,24 +91,20 @@ describe('i18n — English key parity + all-page data-i18n keys', () => {
         }
     });
 
-    // Scan feature pages + main user-facing pages (events, roadbooks, about, terms, privacy,
-    // the home page) for data-i18n keys. Excludes admin and per-tool pages whose keys are
-    // already covered by the fp.* test above.
-    it('every data-i18n key on the main user-facing pages is defined in every language', () => {
-        const re = /data-i18n(?:-html|-ph|-title|-aria|-tip)?="([^"]+)"/g;
-        const pages = ['index.html', 'events/index.html', 'event/index.html', 'roadbooks/index.html',
-            'about/index.html', 'terms/index.html', 'privacy/index.html', 'contact/index.html',
-            'challenge/index.html', 'myroadbooks/index.html'];
-        for (const t of TOOLS) pages.push('features/' + t + '/index.html');
+    // EVERY page, not a hand-kept list: the spec page at /standard/ was fully translated into
+    // German and French and left in English for Spanish and Italian for months, because no test
+    // ever looked at it (#480). Walking the tree means a new page is covered the day it lands.
+    it('every data-i18n key on every page is defined in every language', () => {
         const allKeys = new Set();
-        for (const p of pages) {
-            let m;
-            while ((m = re.exec(read('public/' + p)))) allKeys.add(m[1]);
+        for (const p of htmlPages('public')) {
+            for (const m of read(p).matchAll(/data-i18n(?:-html|-ph|-title|-aria|-tip|-content)?="([^"]+)"/g)) {
+                allKeys.add(decodeEntities(m[1])); // the attribute is decoded before the key reaches RBt
+            }
         }
-        expect(allKeys.size).toBeGreaterThan(100);
+        expect(allKeys.size).toBeGreaterThan(400);
         for (const lang of LANGS) {
             const missing = [...allKeys].filter((k) => !(k in langs[lang]));
-            expect(missing).toEqual([]);
+            expect(missing, lang).toEqual([]);
         }
     });
 });
