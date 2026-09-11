@@ -292,3 +292,76 @@ describe('app info pop-up states running vs available (#474)', () => {
         expect(fn).toContain('RDBK.app</div>');
     });
 });
+
+/* Every declaration a stylesheet makes, in document order, flattened to one entry per
+   selector × property, with the media queries it sits in noted. Enough to answer the one
+   question below: does a later rule silently kill an earlier responsive one? */
+function declarations(css) {
+    const out = [];
+    const collect = (text, inMedia) => {
+        let k = 0;
+        while (k < text.length) {
+            const brace = text.indexOf('{', k);
+            if (brace < 0) break;
+            const selector = text.slice(k, brace).trim();
+            let depth = 0, end = brace;
+            for (; end < text.length; end++) {
+                if (text[end] === '{') depth++;
+                else if (text[end] === '}' && !--depth) break;
+            }
+            const body = text.slice(brace + 1, end);
+            if (selector.startsWith('@')) { if (/^@media/i.test(selector)) collect(body, true); }
+            else for (const declaration of body.split(';')) {
+                const colon = declaration.indexOf(':');
+                if (colon < 0) continue;
+                const property = declaration.slice(0, colon).trim().toLowerCase();
+                if (!/^[a-z-]+$/.test(property)) continue; // a chunk of a data: URI, not a declaration
+                for (const one of selector.split(',')) out.push({ selector: one.trim().replace(/\s+/g, ' '), property, inMedia });
+            }
+            k = end + 1;
+        }
+    };
+    collect(css.replace(/\/\*[\s\S]*?\*\//g, ''), false);
+    return out;
+}
+
+describe('a responsive override is never killed by the rule written below it (#476)', () => {
+    // A @media block and a plain rule with the SAME selector have the SAME specificity, so the one
+    // written last wins at every width — the media query is dead code. That is how the My-roadbooks
+    // card collapsed on every phone: `@media (max-width: 640px) { .roadbook-row .meta { min-width:
+    // 100% } }` sat above `.roadbook-row .meta { min-width: 0 }`, so the card's text shrank to 6 px
+    // and its summary line ran straight across the action buttons. Nothing warns about it: the CSS
+    // is valid, the rule is simply never applied. Responsive blocks go AFTER the base rules.
+    it('no @media declaration is overridden by a later base rule with the same selector', () => {
+        const dead = [];
+        for (const [file, css] of styleSources()) {
+            const decls = declarations(css);
+            decls.forEach((d, i) => {
+                if (!d.inMedia) return;
+                for (let k = i + 1; k < decls.length; k++) {
+                    if (decls[k].inMedia || decls[k].selector !== d.selector || decls[k].property !== d.property) continue;
+                    dead.push(`${file}: @media … { ${d.selector} { ${d.property} } } — killed by the base rule below it`);
+                    break;
+                }
+            });
+        }
+        expect(dead).toEqual([]);
+    });
+});
+
+describe('the saved-roadbook card is readable on a phone (#476)', () => {
+    const css = read('public/assets/css/app.css');
+    const mobile = css.match(/@media \(max-width: 640px\) \{([\s\S]*?)\n\}/)[1];
+
+    it('gives the title + summary a full-width row of their own', () => {
+        expect(mobile).toContain('.roadbook-row .meta { min-width: 100%; }');
+    });
+
+    it('lets the summary wrap instead of running across the buttons', () => {
+        expect(mobile).toContain('.roadbook-row .meta small { white-space: normal; }');
+    });
+
+    it('spreads the status pill and the actions over the row below, so none is orphaned', () => {
+        expect(mobile).toContain('.roadbook-row .btn, .roadbook-row .rb-status { flex: 1 1 auto; }');
+    });
+});
