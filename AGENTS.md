@@ -50,6 +50,7 @@ ddev exec node --check public/event/event.js   # syntax check di un singolo file
   store: cambiare il semver fa scattare Android (Play) + iOS (TestFlight), il `build` da solo no.
   Il check CI `stamp` fallisce la PR che cambia asset senza stamp.
 - **Release:** `node source/stamp-version.mjs <X.Y.Z>` → commit → branch → PR → merge. Quel merge fa partire web + Android (Play) + iOS (Xcode Cloud).
+- **Una release semver scrive prima la sua nota:** `public/assets/js/changelog.js` è l'unica fonte di "Novità" (una voce per release: versione · data · titolo · cosa è cambiato), mostrata sulla pagina About (`/about/#changelog`) e linkata dal pop-up App Info. Aggiungi la voce PRIMA di stampare il nuovo `X.Y.Z`: `tests/about-page.test.js` fallisce se `version.json` è avanti alla lista o se la nota non è tradotta in tutte e cinque le lingue.
 - **Build nativo:** `npm run build:native` (esbuild `native/src/native.js` → `public/assets/js/native.bundle.js`). Serve prima di `npx cap sync`.
 
 ## API DB

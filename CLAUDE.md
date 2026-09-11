@@ -388,6 +388,15 @@ because moving the semver is what fires the Android + iOS builds — bumping `bu
 The **`stamp` CI check** (`.github/workflows/stamp.yml`) fails any PR that changes a first-party
 asset without a stamp, so the rule holds even when the server-side stamp is missing (#407).
 
+**A semver release writes its own release note first.** `public/assets/js/changelog.js` is the
+single source of "What's new" — one entry per release (version · date · headline · what changed),
+newest first — rendered on the About page (`/about/#changelog`, next to the panel that states the
+platform, the release running and the release available) and linked from the App Info pop-up. Add
+the entry for the new `X.Y.Z` BEFORE stamping it: `tests/about-page.test.js` fails a build whose
+`version.json` is ahead of the list, and fails a note that isn't translated into all five
+languages. The strings are English source strings, translated through `RBt` like the rest of the
+UI, so a new entry is readable everywhere the moment it is written.
+
 **On every web release run `node source/stamp-version.mjs <MAJOR.MINOR.PATCH>`**
 (e.g. `1.1.0`) — it writes `public/version.json` (the app polls it and
 force-refreshes every open client) AND stamps the `?v=` cache-buster on every first-party
@@ -562,6 +571,8 @@ Operational notes:
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in). Signed-out
   captures stay local and are bundled into a self-contained `.rdbk` (RBZip). Pure `createQueue`
   core (module.exports) is unit-tested; used by the Recorder (Editor recording next).
+- `changelog.js` (`RBChangelog`) — the release notes, one entry per release, newest first;
+  rendered by `about/about.js` and linked from App Info. See **Releasing**.
 - `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
