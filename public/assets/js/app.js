@@ -220,40 +220,62 @@
         el.hidden = !parts.length;
     });
 
-    /* ---------------- App info pop-up (account menus, #335) ---------------- */
-    window.showAppInfo = function () {
-        const ver = (document.getElementById('appVersion') || {}).textContent || '';
+    /* ---------------- App info pop-up (account menus, #335, #474) ----------------
+       Refreshed every time it opens (never the stale footer text): Running is what this
+       page booted with — the native binary there —, Available is the live version.json.
+       The Update control appears only when Available is newer: a shell refresh on web,
+       the store listing in the app (a reload cannot update the binary). */
+    window.showAppInfo = async function () {
         const siteUrl = ROOT.replace(/\/+$/, '');
         const env = siteUrl === PROD_ROOT.replace(/\/+$/, '') ? 'Produzione (rdbk.app)'
             : (siteUrl.includes('ddev') ? 'Sviluppo (DDEV · ' + RBesc(siteUrl) + ')' : RBesc(siteUrl));
+        const platform = isNativeApp()
+            ? (RBDevice() === 'ios' ? RBt('iOS app') : RBt('Android app'))
+            : (isStandalone() ? RBt('Web app (installed)') : RBt('Web app'));
+        const relText = (rel) => { const m = String(rel || '').match(/^(\d+\.\d+\.\d+)-(\d+)$/); return m ? `v${m[1]} build ${m[2]}` : '—'; };
+        const liveRel = async (root) => {
+            try { const j = await (await fetch(root + 'version.json', { cache: 'no-store' })).json(); return `${j.version}-${j.build || 0}`; }
+            catch (e) { return null; }
+        };
+        let running = '—', available = '—', updateUrl = null;
+        if (isNativeApp()) {
+            try {
+                const info = await Capacitor.Plugins.App.getInfo();
+                running = `${info.version}${info.build ? ` (${info.build})` : ''}`;
+            } catch (e) {}
+            const [live, bundled] = await Promise.all([liveRel(API_ROOT), liveRel(ROOT)]);
+            if (live) {
+                const lb = +String(live).split('-')[1], bb = bundled ? +String(bundled).split('-')[1] : 0;
+                available = relText(live);
+                if (lb > bb) updateUrl = RBDevice() === 'ios' ? 'https://apps.apple.com/app/rdbk/id6787167327' : 'https://play.google.com/store/apps/details?id=app.rdbk';
+            }
+        } else {
+            running = relText(appVer);
+            const live = await liveRel(API_ROOT);
+            if (live) available = relText(live);
+        }
         let html = `<div class="app-info-card">
             <h2><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</h2>
             <table class="app-info-table">
-                <tr><td>${RBt('Version')}</td><td>${RBesc(ver || '—')}</td></tr>
+                <tr><td>${RBt('Platform')}</td><td>${RBesc(platform)}</td></tr>
+                <tr><td>${RBt('Running')}</td><td>${RBesc(running)}</td></tr>
+                <tr><td>${RBt(isNativeApp() ? 'Latest web content' : 'Available')}</td><td>${RBesc(available)}</td></tr>
                 <tr><td>URL</td><td>${RBesc(siteUrl)}</td></tr>
                 <tr><td>${RBt('Environment')}</td><td>${env}</td></tr>`;
-        if (isNativeApp()) {
-            const foot = document.getElementById('appVer');
-            if (foot && !foot.hidden) {
-                html += `<tr><td>Build nativa</td><td>${RBesc(foot.textContent)}</td></tr>`;
-            }
-        }
-        // In the native app a reload cannot update the binary — the Update control
-        // deep-links to the store listing instead (Play / App Store handle the update).
-        // On web it refreshes the app shell to the latest deployed release.
-        const storeUrl = isNativeApp()
-            ? (RBDevice() === 'ios' ? 'https://apps.apple.com/app/rdbk/id6787167327' : 'https://play.google.com/store/apps/details?id=app.rdbk')
-            : null;
         html += `</table>
             <div class="btnrow" style="margin-top:1rem">
-                ${storeUrl
-                    ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>`
-                    : `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>`}
+                ${updateUrl
+                    ? `<a class="btn btn-primary" href="${updateUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>`
+                    : (!isNativeApp() && available !== '—' && available !== running
+                        ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>`
+                        : '')}
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
+            <div class="muted small" style="text-align:center;margin-top:.6rem"><a href="https://rdbk.app" target="_blank" rel="noopener">rdbk.app</a> · © ${new Date().getFullYear()} RDBK.app</div>
         </div>`;
         const modal = RBModal(html, 'narrow');
-        if (!storeUrl) modal.q('#appInfoUpdate').onclick = () => { modal.close(); hardRefresh(); };
+        const up = modal.q('#appInfoUpdate');
+        if (up) up.onclick = () => { modal.close(); hardRefresh(); };
         modal.q('.modal-close').onclick = () => modal.close();
     };
 
