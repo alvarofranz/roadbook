@@ -24,9 +24,11 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/ios": "^8.4.0",
     "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capawesome-team/capacitor-android-battery-optimization": "^8.0.1",
     "@capgo/background-geolocation": "^8.0.42",
     "@capgo/capacitor-file-sharer": "^8.1.8",
     "@capgo/capacitor-social-login": "^8.3.33"
