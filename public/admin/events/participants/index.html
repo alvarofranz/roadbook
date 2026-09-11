@@ -9,10 +9,16 @@
     <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.8.0-45">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.8.0-45">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.8.1-46">
     <style>
         .pp-search { margin: .8rem 0; }
+        /* the activation code is typed, read back and compared by eye: big, spaced, upper-case */
+        .ev-act-code { width: 10rem; font-size: 1.4rem; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+        /* QR scanner dialog (built in participants.js) */
+        .pp-scanner p { margin: 0 0 .5rem; }
+        .pp-scanner .pp-scan-video { display: block; width: 100%; max-width: 360px; border-radius: 8px; background: #000; }
+        .pp-scanner #ppScanStatus { margin: .5rem 0 0; }
         .pp-search .field { flex: 1; max-width: 360px; margin: 0; }
         .pp-search .btn { width: auto; margin: 0 0 0 auto; }
         .pp-add-search { margin: 0 0 .8rem; }
@@ -32,7 +38,7 @@
 
     <div id="ppBody" hidden>
         <div class="toolbar pp-search">
-            <input id="ppActivateIn" class="field ev-act-code" data-i18n-ph="Activation code" placeholder="Activation code" autocomplete="off" maxlength="6" style="text-transform:uppercase;font-size:1.4rem;font-weight:800;letter-spacing:.3em;width:10rem">
+            <input id="ppActivateIn" class="field ev-act-code" data-i18n-ph="Activation code" placeholder="Activation code" autocomplete="off" maxlength="6">
             <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
             <button class="btn btn-ghost" id="ppScanQr" type="button" title="Scan QR"><i class="fa-solid fa-camera"></i></button>
         </div>
@@ -46,7 +52,7 @@
         </div>
         <div id="ppList"></div>
         <div class="pager" id="ppPager"></div>
-        <div class="btnrow end" style="margin-top:1rem">
+        <div class="btnrow end spaced">
             <button class="btn btn-ghost" id="ppExportBottom" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
         </div>
     </div>
@@ -54,15 +60,15 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../../assets/js/config.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/i18n.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/app.js?v=1.8.0-45"></script>
-<script src="../../../assets/js/qr-scan.js?v=1.8.0-45"></script>
-<script src="participants.js?v=1.8.0-45"></script>
+<script src="../../../assets/js/config.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/i18n.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/app.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/qr-scan.js?v=1.8.1-46"></script>
+<script src="participants.js?v=1.8.1-46"></script>
 </body>
 </html>

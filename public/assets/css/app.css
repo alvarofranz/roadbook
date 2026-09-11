@@ -43,6 +43,11 @@ body {
 a { color: var(--sand-2); text-decoration: none; }
 a:hover { text-decoration: underline; }
 img { max-width: 100%; display: block; }
+/* A word too long for its box breaks instead of pushing the whole page sideways: the German
+   "Datenschutzerklärung" widened the privacy page past a 390 px screen, and with it every bar
+   the shared layer pins to the viewport (#480). Applies to running text, not to code/pre —
+   those scroll inside their own box. */
+h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-word; }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1.1rem; }
@@ -304,7 +309,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* prev/next nav across the tool feature pages */
 /* prev/next links flank the page title at the same height (icon sits above, centred) */
 .feat-titlerow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin: .4rem 0 .2rem; }
-.feat-titlerow h1 { margin: 0; }
+.feat-titlerow h1 { margin: 0; min-width: 0; } /* a grid item defaults to min-content: without this, German's "Veranstaltungsklassement" widens the page instead of wrapping */
 .feat-titlerow .prev { justify-self: start; }
 .feat-titlerow .next { justify-self: end; }
 @media (max-width: 760px) {

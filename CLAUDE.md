@@ -180,6 +180,19 @@ DB/Convenzioni rapide below have counterparts there).
   on and off and two page borders were invisible (#422). CSS never complains about a token that
   was never declared, so `tests/ui-contracts.test.js` does: every `var(--x)` without a fallback
   must be declared in `:root` or be one of the handful published at runtime by JS.
+- **Nothing makes the page scroll sideways.** A word too long for its box (German's
+  "Datenschutzerklärung"), a grid cell that cannot shrink below its longest word, a 540 px spec
+  table on a 390 px screen — each one widened the layout viewport, and with it every bar the
+  shared layer pins to it, dragging the tab bar and the language chip off-screen. Running text
+  breaks (`overflow-wrap: break-word`), a grid item that holds a title carries `min-width: 0`,
+  and wide content (tables, code) scrolls INSIDE its own box (#480). Pinned by
+  `tests/ui-contracts.test.js`.
+- **Every translatable label is translated in all five languages — on EVERY page.** The `/standard/`
+  spec page shipped fully translated into German and French and untranslated into Spanish and
+  Italian for months, because the i18n test only looked at a hand-kept list of pages (#480). It now
+  walks every `.html` under `public/`, so a new page is covered the day it lands. Note that the
+  browser DECODES the attribute: `data-i18n="End &amp; close"` reaches `RBt` as `End & close`, and
+  an apostrophe must be the typographic `’` everywhere (a straight `'` is a different key, #114).
 - **A responsive `@media` block goes AFTER the rules it overrides.** Same selector = same
   specificity, so the one written LAST wins at every width and the other is dead code CSS never
   complains about. Written above its base rule, `@media (max-width: 640px) { .roadbook-row .meta

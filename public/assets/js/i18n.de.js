@@ -783,3 +783,31 @@ Object.assign(window.RBi18nLangs.de, {
     'A Bluetooth remote or pedal advances the notes without touching the screen.': 'Eine Bluetooth-Fernbedienung oder ein Pedal blättert die Noten weiter, ohne den Bildschirm zu berühren.',
     'An install guide for every device, and a consistency check before saving a roadbook.': 'Eine Installationsanleitung für jedes Gerät und eine Konsistenzprüfung vor dem Speichern eines Roadbooks.',
 });
+
+/* the .rdbk standard page (/standard/) */
+Object.assign(window.RBi18nLangs.de, {
+    'Number of navigational notes (comment notes are not counted).': 'Anzahl der Navigationsnoten (Kommentarnoten zählen nicht mit).',
+    'notes.note_kind': 'Optional. Mit dem Wert <code>"comment"</code> ist die Note eine nicht-navigatorische <b>Kommentarnote</b> (z. B. ein Sponsorenlogo). Sie trägt kein <code>lat</code>/<code>lon</code>/<code>idx</code>/<code>num</code> und keine Geodaten, behält eine feste Position in der Liste und erscheint im Reader, im PDF und in der öffentlichen Ansicht, wird aber von Karte, Wertung, GPS-Validierung und GPX/KMZ-Export übersprungen. Fehlt = normale Navigationsnote.',
+    'notes.image': 'Optional (Kommentarnoten). Ein eingebettetes Bild als <code>data:</code>-URI, dargestellt im Diagrammfeld der Note.',
+    'notes.comment.intro': 'Eine <b>Kommentarnote</b> (<code>note_kind: "comment"</code>) ist koordinatenlos — sie enthält nur ihren Text und ein optionales eingebettetes <code>image</code>:',
+    'conformance.comment': 'Ein konformer Reader MUSS Noten mit <code>note_kind: "comment"</code> in der Roadbook-Liste darstellen, darf sie aber NICHT nummerieren, auf der Karte platzieren, werten oder als GPX/KMZ-Wegpunkte ausgeben.',
+});
+
+/* labels that had never been translated anywhere (#480) */
+Object.assign(window.RBi18nLangs.de, {
+    'UI translation editor': 'Editor für UI-Übersetzungen',
+    'Edit any label on the site in every language. Edits preview live and accumulate in your browser. When done, use Export to get a delta to commit.': 'Bearbeite jede Beschriftung der Website in allen Sprachen. Änderungen werden live angezeigt und sammeln sich in deinem Browser. Zum Schluss liefert Export ein Delta zum Committen.',
+    'Enable translation editor': 'Übersetzungseditor aktivieren',
+    '(used for regularity if the QR doesn’t carry it)': '(wird für die Regularität genutzt, wenn der QR sie nicht mitbringt)',
+    'End & close': 'Beenden und schließen',
+    'Roadbook Reader': 'Roadbook Reader',
+    'Tripmaster': 'Tripmaster',
+});
+
+/* release notes — v1.8.1 */
+Object.assign(window.RBi18nLangs.de, {
+    'A tidy-up pass across the whole app': 'Ein Aufräumdurchgang durch die ganze App',
+    'The .rdbk specification reads in Spanish and Italian too, like the rest of the site.': 'Die .rdbk-Spezifikation liest sich jetzt auch auf Spanisch und Italienisch, wie der Rest der Website.',
+    'No page drifts sideways on a phone any more: long words wrap and wide tables scroll on their own.': 'Keine Seite verrutscht am Handy mehr zur Seite: lange Wörter brechen um und breite Tabellen scrollen für sich.',
+    'Every tool wears the same icon everywhere, and an event roadbook marked Ready finally looks it.': 'Jedes Werkzeug trägt überall dasselbe Symbol, und ein als Bereit markiertes Event-Roadbook sieht endlich danach aus.',
+});

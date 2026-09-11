@@ -782,3 +782,31 @@ Object.assign(window.RBi18nLangs.fr, {
     'A Bluetooth remote or pedal advances the notes without touching the screen.': 'Une télécommande ou une pédale Bluetooth fait avancer les notes sans toucher l’écran.',
     'An install guide for every device, and a consistency check before saving a roadbook.': 'Un guide d’installation pour chaque appareil et une vérification de cohérence avant d’enregistrer un roadbook.',
 });
+
+/* the .rdbk standard page (/standard/) */
+Object.assign(window.RBi18nLangs.fr, {
+    'Number of navigational notes (comment notes are not counted).': 'Nombre de notes de navigation (les notes de commentaire ne sont pas comptées).',
+    'notes.note_kind': 'Optionnel. Avec la valeur <code>"comment"</code>, la note est une <b>note de commentaire</b> non navigationnelle (par exemple un logo de sponsor). Elle ne porte ni <code>lat</code>/<code>lon</code>/<code>idx</code>/<code>num</code> ni géodonnées, garde une position fixe dans la liste et s’affiche dans le Reader, le PDF et la vue publique, mais la carte, le score, la validation GPS et l’export GPX/KMZ l’ignorent. Absent = note de navigation normale.',
+    'notes.image': 'Optionnel (notes de commentaire). Une image intégrée sous forme d’URI <code>data:</code>, dessinée dans le cadre de la note.',
+    'notes.comment.intro': 'Une <b>note de commentaire</b> (<code>note_kind: "comment"</code>) est sans coordonnées : elle ne contient que son texte et une <code>image</code> intégrée optionnelle :',
+    'conformance.comment': 'Un lecteur conforme DOIT afficher les notes portant <code>note_kind: "comment"</code> dans la liste du roadbook, mais NE DOIT PAS les numéroter, les placer sur la carte, les noter ni les exporter comme waypoints GPX/KMZ.',
+});
+
+/* labels that had never been translated anywhere (#480) */
+Object.assign(window.RBi18nLangs.fr, {
+    'UI translation editor': 'Éditeur de traductions de l’interface',
+    'Edit any label on the site in every language. Edits preview live and accumulate in your browser. When done, use Export to get a delta to commit.': 'Modifiez n’importe quel libellé du site dans toutes les langues. Les modifications s’affichent en direct et s’accumulent dans votre navigateur. À la fin, Exporter fournit un delta à committer.',
+    'Enable translation editor': 'Activer l’éditeur de traductions',
+    '(used for regularity if the QR doesn’t carry it)': '(utilisé pour la régularité si le QR ne la porte pas)',
+    'End & close': 'Terminer et fermer',
+    'Roadbook Reader': 'Roadbook Reader',
+    'Tripmaster': 'Tripmaster',
+});
+
+/* release notes — v1.8.1 */
+Object.assign(window.RBi18nLangs.fr, {
+    'A tidy-up pass across the whole app': 'Une passe de finition sur toute l’application',
+    'The .rdbk specification reads in Spanish and Italian too, like the rest of the site.': 'La spécification .rdbk se lit aussi en espagnol et en italien, comme le reste du site.',
+    'No page drifts sideways on a phone any more: long words wrap and wide tables scroll on their own.': 'Plus aucune page ne dérive sur le côté au téléphone : les mots longs se coupent et les tableaux larges défilent tout seuls.',
+    'Every tool wears the same icon everywhere, and an event roadbook marked Ready finally looks it.': 'Chaque outil porte la même icône partout, et un roadbook d’événement marqué Prêt en a enfin l’air.',
+});

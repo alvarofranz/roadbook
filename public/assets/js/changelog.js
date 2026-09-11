@@ -11,6 +11,15 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.8.1', date: '2026-09-11',
+        title: 'A tidy-up pass across the whole app',
+        items: [
+            'The .rdbk specification reads in Spanish and Italian too, like the rest of the site.',
+            'No page drifts sideways on a phone any more: long words wrap and wide tables scroll on their own.',
+            'Every tool wears the same icon everywhere, and an event roadbook marked Ready finally looks it.',
+        ],
+    },
+    {
         version: '1.8.0', date: '2026-09-11',
         title: 'A clearer About page, app info and these release notes',
         items: [
