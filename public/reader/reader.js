@@ -404,14 +404,14 @@
             if (comment) {
                 return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance"></div>
-                <div class="col-vignette${comment && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i))}</div>
+                <div class="col-vignette${comment && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
                 <div class="col-buttons"></div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
             }
             return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${tight}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
-                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i))}</div>
+                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
                 <div class="col-buttons">${reach}${mapb}</div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
