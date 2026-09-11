@@ -267,29 +267,38 @@ describe('GPS readiness alerts (#443-446)', () => {
     });
 });
 
-describe('app info pop-up states running vs available (#474)', () => {
+describe('app info pop-up states running vs available (#474, #478)', () => {
     const app = read('public/assets/js/app.js');
     const fn = app.match(/window\.showAppInfo = (?:async )?function \(\) \{([\s\S]*?)modal\.q\('\.modal-close'\)\.onclick = \(\) => modal\.close\(\);\s*\};/)[1];
 
-    it('refreshes the versions when opened instead of showing the stale footer text', () => {
-        expect(fn).toContain("version.json', { cache: 'no-store' }");
+    it('asks the shared helpers every time it opens, never the stale footer text', () => {
+        expect(fn).toContain('RBRunningRelease()');
+        expect(fn).toContain('RBLiveVersion()');
         expect(fn).not.toContain('appVersion');
     });
 
     it('names platform, running and available rows, with the web-content reference in-app', () => {
-        for (const k of ["RBt('Platform')", "RBt('Running')", "'Available'", "'Latest web content'"]) {
+        for (const k of ["row('Platform'", "row('Running'", "'Available'", "'Latest web content'"]) {
             expect(fn, k).toContain(k);
         }
     });
 
     it('offers Update only when something is actually newer', () => {
-        expect(fn).toContain('lb > bb'); // native: live build ahead of the bundled one
-        expect(fn).toContain("available !== '—' && available !== running"); // web: live ahead of boot
+        expect(fn).toContain('live.build > (bundled ? bundled.build : 0)');           // app: the store, live web content ahead of the binary
+        expect(fn).toContain('live.version !== running.version || live.build !== running.build'); // web: a shell refresh
     });
 
-    it('links the official site with the copyright line', () => {
+    it('links what changed and the official site', () => {
+        expect(fn).toContain("about/#changelog");
         expect(fn).toContain('https://rdbk.app');
         expect(fn).toContain('RDBK.app</div>');
+    });
+
+    it('styles the card with classes, never an inline style attribute', () => {
+        expect(fn).not.toMatch(/style="/);
+        for (const cls of ['app-info-card', 'app-info-table', 'app-info-foot']) {
+            expect(read('public/assets/css/app.css'), cls).toContain('.' + cls);
+        }
     });
 });
 

@@ -123,10 +123,18 @@ Registrazione network-first con auto-reload all'aggiornamento
 Quando `version.json` cambia, il guscio aggiorna **tutto** — SW, cache e app — sia da browser sia
 da PWA installata.
 
+`RBLiveVersion(root)` è **l'unico** punto che legge un `version.json` (mai dalla cache): `root`
+sceglie quale — `API_ROOT` è la release viva del server, `ROOT` la copia servita con la pagina
+(nell'app, il contenuto web incluso nel binario). Restituisce `{version, build}` oppure `null`
+se irraggiungibile. Accanto ci sono `RBPlatformName()` (la piattaforma a parole) e
+`RBRunningRelease()` (la release realmente in esecuzione: il binario nativo nell'app, altrimenti
+lo stamp `?v=` con cui è stata servita questa pagina). Li usano `checkVersion`, il pop-up
+**App Info** e la pagina About.
+
 `checkVersion()` ([app.js:93](../public/assets/js/app.js#L93)):
 
-- fa `fetch('version.json', { cache: 'no-store' })` e legge `version`;
-- scrive `v<versione>` in `#appVersion` nel footer;
+- chiede la release viva a `RBLiveVersion()`;
+- scrive `v<versione> · build: <build>` in `#appVersion` nel footer;
 - alla **prima** lettura registra solo il riferimento (`appVer`), senza ricaricare;
 - se in seguito la versione cambia, esegue `hardRefresh()`.
 
