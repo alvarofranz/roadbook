@@ -561,6 +561,25 @@
             : (label ? `<span class="muted small">${label}</span>` : '');
         el.querySelectorAll('[data-pg]').forEach((b) => b.onclick = () => { const p = +b.dataset.pg; if (p >= 1 && p <= pages) onGo(p); });
     };
+    /* One filtered, paged list: filter → clamp the cursor → slice → draw → pager. Four lists wrote
+       the same four lines each (public roadbooks · events · My roadbooks · user management),
+       including the same clamp for when a filter shrinks the list under the current page.
+       `source()` returns everything, `filter()` narrows it, `draw(slice, total)` paints it, and
+       `label(total)` is what the pager shows when there is only one page. */
+    window.RBPagedList = ({ pager, per, source, filter, draw, label }) => {
+        let page = 1;
+        const list = {
+            render() {
+                const items = filter ? filter(source()) : source();
+                const pages = Math.max(1, Math.ceil(items.length / per));
+                if (page > pages) page = pages;
+                draw(items.slice((page - 1) * per, page * per), items.length);
+                RBPager(pager, page, pages, (p) => { page = p; list.render(); }, label ? label(items.length) : '');
+            },
+            reset() { page = 1; list.render(); }, // a new search or filter starts at the first page
+        };
+        return list;
+    };
     // An event's date range for a meta line: "start – end", the single date, or '' when undated.
     window.RBDateRange = (startIso, endIso) => startIso ? (endIso && endIso !== startIso ? RBFmtDate(startIso) + ' – ' + RBFmtDate(endIso) : RBFmtDate(startIso)) : '';
     // One public gallery card (Roadbooks · Events · event page · home teaser): thumb (or an icon
@@ -573,6 +592,18 @@
         + overlays
         + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div>`
         + (href ? '</a>' : '</div>');
+    /* A thumbnail whose file is gone (a deleted photo, a failed upload) used to leave the card's
+       alt text sprawled across a grey box. One capture-phase listener — `error` does not bubble —
+       swaps in the very placeholder the card uses when it has no image at all. */
+    document.addEventListener('error', (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement) || !img.classList.contains('thumb')) return;
+        const placeholder = document.createElement('div');
+        placeholder.className = 'thumb thumb-placeholder';
+        placeholder.innerHTML = '<i class="fa-solid fa-map-location-dot"></i>';
+        img.replaceWith(placeholder);
+    }, true);
+
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).
@@ -654,7 +685,7 @@
         const all = r.roadbooks || [];
         if (!all.length) { container.innerHTML = `<p class="muted small">${RBesc(RBt('No roadbooks yet. Create one in the Editor.'))}</p>`; return 0; }
         const PER = 12;
-        let page = 1, q = '';
+        let q = '';
         // Search box only once the list is long enough to need it; the pager appears only past one page.
         container.innerHTML =
             ((r.used_bytes != null && r.quota_bytes) ? `<div class="rb-usage muted small"><i class="fa-solid fa-database"></i> ${RBesc(RBt('Storage'))}: ${RBFmtSize(r.used_bytes)} / ${RBFmtSize(r.quota_bytes)}</div>` : '') +
@@ -687,18 +718,17 @@
                 RBRoadbookList(container, onChange); // re-render from the server truth (also resets on error)
             });
         };
-        const render = () => {
-            const filtered = (window.RB && RB.filterRoadbooks) ? RB.filterRoadbooks(all, q) : all;
-            const pages = Math.max(1, Math.ceil(filtered.length / PER));
-            if (page > pages) page = pages;
-            const slice = filtered.slice((page - 1) * PER, page * PER);
-            rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('No matching roadbooks.'))}</p>`;
-            RBPager(pagerEl, page, pages, (p) => { page = p; render(); });
-            wireRows();
-        };
+        const list = RBPagedList({
+            pager: pagerEl, per: PER, source: () => all,
+            filter: (items) => RB.filterRoadbooks(items, q),
+            draw: (slice) => {
+                rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('No matching roadbooks.'))}</p>`;
+                wireRows();
+            },
+        });
         const search = container.querySelector('.rb-search');
-        if (search) search.oninput = () => { q = search.value; page = 1; render(); };
-        render();
+        if (search) search.oninput = () => { q = search.value; list.reset(); };
+        list.render();
         return all.length;
     };
     // Admin-only: every public roadbook (any owner) as .roadbook-row cards, each with a

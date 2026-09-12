@@ -206,15 +206,22 @@ describe('comment rows span the description area (#463)', () => {
     // .col-vignette-empty is display:none, which removes the cell from the grid — without an
     // explicit span the comment text auto-placed into the narrow vignette column instead of
     // the description area (flex is inert in grid, so flex:1 never did anything there).
-    for (const page of ['public/reader/index.html', 'public/challenge/index.html']) {
-        it(`${page} pins the wide comment text across the vacated columns`, () => {
-            const html = read(page);
-            const rule = html.match(/\.nrow\.comment \.col-text-wide \{([^}]*)\}/);
-            expect(rule, `${page} has no .col-text-wide rule`).not.toBeNull();
-            expect(rule[1]).toMatch(/grid-column\s*:\s*2\s*\/\s*-1/);
-            expect(rule[1]).not.toMatch(/flex\s*:/);
-        });
-    }
+    const app = read('public/assets/css/app.css');
+
+    it('pins the wide comment text across the vacated columns', () => {
+        const rule = app.match(/\.nrow\.comment \.col-text-wide \{([^}]*)\}/);
+        expect(rule, 'app.css has no .col-text-wide rule').not.toBeNull();
+        expect(rule[1]).toMatch(/grid-column\s*:\s*2\s*\/\s*-1/);
+        expect(rule[1]).not.toMatch(/flex\s*:/);
+    });
+
+    // The Reader and the public roadbook page render the SAME paper roadbook, and each used to
+    // paint the comment row in its own slightly different shade of paper (#482).
+    it('is one rule, not a copy per page', () => {
+        for (const page of ['public/reader/index.html', 'public/challenge/index.html']) {
+            expect(read(page), page).not.toContain('.nrow.comment');
+        }
+    });
 });
 
 describe('editor map modes and keys (#458)', () => {
@@ -384,8 +391,11 @@ describe('the saved-roadbook card is readable on a phone (#476)', () => {
         expect(mobile).toContain('.roadbook-row .meta small { white-space: normal; }');
     });
 
-    it('spreads the status pill and the actions over the row below, so none is orphaned', () => {
-        expect(mobile).toContain('.roadbook-row .btn, .roadbook-row .rb-status { flex: 1 1 auto; }');
+    it('gives the status pill its own line and spreads the actions evenly below it', () => {
+        // six buttons, or seven for a public roadbook: they share one row instead of leaving one
+        // of them stretched alone across the card (#482)
+        expect(mobile).toContain('.roadbook-row .rb-status { flex: 1 1 100%; }');
+        expect(mobile).toContain('.roadbook-row .btn { flex: 1 1 auto; }');
     });
 });
 
@@ -455,11 +465,83 @@ describe('the page itself never scrolls sideways (#480)', () => {
     });
 
     it('a table too wide for a phone scrolls inside its own box', () => {
-        for (const [page, selector] of [['public/standard/index.html', '.doc table'], ['public/wiki/index.html', '.wiki-content table']]) {
-            const css = read(page).match(/<style>([\s\S]*?)<\/style>/)[1];
-            const mobile = css.match(/@media \(max-width: 640px\) \{([\s\S]*?)\n *\}/);
-            expect(mobile, page).toBeTruthy();
-            expect(mobile[1], page).toContain(`${selector} { display: block; width: max-content; max-width: 100%; overflow-x: auto; }`);
+        // one rule for every table written as plain markup — the spec page, the wiki's rendered
+        // Markdown and the activity log; the rest are wrapped in .table-scroll
+        expect(app).toContain('.doc table, .wiki-content table, .act-table { display: block; width: max-content; max-width: 100%; overflow-x: auto; }');
+        for (const page of ['public/standard/index.html', 'public/wiki/index.html']) {
+            expect(read(page), `${page} keeps its own copy`).not.toContain('width: max-content');
         }
+    });
+});
+
+describe('one heading-row pattern, one class (#482)', () => {
+    // Title left, actions right, wrapping when there is no room — the "a destra" layout. It had
+    // four names across the site (.section-bar · three different .ev-head-row bodies · .sec-head)
+    // and a fifth, .card-head, that no stylesheet ever defined, so the Ranking panel's export
+    // buttons simply stacked under the title.
+    const app = read('public/assets/css/app.css');
+
+    it('app.css carries the layout', () => {
+        expect(app).toContain('.head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;');
+        expect(app).toContain('.head-row h1, .head-row h2 { margin: 0; flex: 1; min-width: 12rem; }');
+    });
+
+    it('no page re-invents it under another name', () => {
+        for (const file of firstPartySources()) {
+            for (const dead of ['section-bar', 'ev-head-row', 'sec-head', 'card-head']) {
+                expect(read(file), `${file} still uses .${dead}`).not.toContain(dead);
+            }
+        }
+    });
+});
+
+describe('every map is the shared map (#482)', () => {
+    // Both event HQ maps pasted their own OSM style object: no attribution, and RBMap's layer
+    // toggle could not tell which style was showing (it compares by identity against its own).
+    it('no page hand-rolls a MapLibre style', () => {
+        for (const file of firstPartySources()) {
+            if (file.endsWith('assets/js/rbmap.js')) continue;   // the one place that defines them
+            const src = read(file);
+            expect(/sources:\s*\{[\s\S]{0,200}type:\s*'raster'/.test(src), `${file} declares its own raster style`).toBe(false);
+        }
+        // RBCoverMap is not an exception to this: it paints tiles straight onto a canvas with no
+        // MapLibre and no style object, which is why it names a tile URL of its own.
+        expect(read('public/assets/js/cover-map.js')).not.toContain('sources:');
+    });
+
+    it('the HQ maps ask RBMap for the street style', () => {
+        for (const file of ['public/event/event.js', 'public/admin/events/edit/event-edit.js']) {
+            expect(read(file), file).toContain('style: RBMap.STYLE_TOPO');
+        }
+    });
+});
+
+describe('a control row wraps on a phone (#482)', () => {
+    // The admin toolbar (search · organization · event · two filters · Create user) ran 814 px
+    // wide on a 390 px screen and took the whole page sideways with it, because the shared
+    // .toolbar never wrapped. The fields it holds are sized once, in the shared rule — two pages
+    // had written the same `flex: 1; max-width: 360px` themselves.
+    const app = read('public/assets/css/app.css');
+
+    it('the shared control row wraps and owns its field sizing', () => {
+        expect(app).toContain('.rb-toolbar, .toolbar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }');
+        expect(app).toContain('.toolbar .field { flex: 1; max-width: 360px; margin: 0; }');
+        expect(app).toMatch(/@media \(max-width: 560px\) \{\s*\n\s*\.toolbar \.field \{ flex: 1 1 100%; max-width: none; \}/);
+    });
+
+    it('no page re-declares the field sizing', () => {
+        for (const page of ['public/admin/index.html', 'public/admin/events/participants/index.html']) {
+            expect(read(page), page).not.toMatch(/\.field \{ flex: 1; max-width: 360px/);
+        }
+    });
+});
+
+describe('a thumbnail that fails to load falls back to the placeholder (#482)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('listens for the error in one place, in the capture phase', () => {
+        expect(app).toContain("document.addEventListener('error'");
+        expect(app).toContain("placeholder.className = 'thumb thumb-placeholder'");
+        expect(app).toMatch(/\}, true\);/); // `error` does not bubble
     });
 });

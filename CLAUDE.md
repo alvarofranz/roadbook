@@ -145,6 +145,8 @@ DB/Convenzioni rapide below have counterparts there).
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
+    `RBPagedList({pager, per, source, filter, draw, label})` (ONE filtered, paged list — the
+    galleries, My roadbooks and user management all drive their search + pager through it),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
@@ -163,8 +165,12 @@ DB/Convenzioni rapide below have counterparts there).
     voice notes (blobs in IndexedDB) with deferred upload + retry (Recorder; Editor recording
     next).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
-    + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.icon-accent`/`.icon-danger`,
-    `.field-grid`, `.btn-group`, `.grow`, the note rows, etc.
+    + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.head-row` (a heading with its
+    actions on the same row — title left, actions right, stacking on a phone), `.toolbar` (a
+    wrapping control row), `.icon-accent`/`.icon-danger`, `.field-grid`, `.btn-group`, `.grow`,
+    the note rows, etc. **Before inventing a class, look for the pattern here**: the heading row
+    alone had been re-invented four times under four names, one of which was never styled at all
+    (#482).
 - **Module shape.** Each page is one IIFE. Page-local-only helpers (`$`, `msg`) stay local
   and short; alias the globals at the top (`const t = RBt, esc = RBesc, toast = RBToast;`).
   Anything two pages share becomes an `RB*` global — that's the naming convention (no

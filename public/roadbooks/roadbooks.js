@@ -6,7 +6,7 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
     const PER = 12;
-    let all = [], page = 1, q = '', isAdmin = false;
+    let all = [], q = '', isAdmin = false;
     const grid = $('rbGrid'), pager = $('rbPager'), search = $('rbSearch');
 
     const card = (r) => RBGalleryCard({
@@ -25,28 +25,25 @@
             e.preventDefault(); e.stopPropagation();
             if (!(await RBConfirm(t('Make this roadbook private?') + ' “' + esc(up.dataset.title || '') + '”'))) return;
             const x = await RBApi('admin_unpublish', { id: +up.dataset.unpub });
-            if (x.ok) { RBToast('Roadbook is now private.'); all = all.filter((r) => String(r.id) !== up.dataset.unpub); render(); }
+            if (x.ok) { RBToast('Roadbook is now private.'); all = all.filter((r) => String(r.id) !== up.dataset.unpub); list.render(); }
             else RBToast(x.error || 'Could not change visibility.');
         }
     });
 
-    function render() {
-        const filtered = (window.RB && RB.filterByText) ? RB.filterByText(all, q, ['title', 'username']) : all;
-        const pages = Math.max(1, Math.ceil(filtered.length / PER));
-        if (page > pages) page = pages;
-        const slice = filtered.slice((page - 1) * PER, page * PER);
-        grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No matching roadbooks.'))}</p>`;
-        RBPager(pager, page, pages, (p) => { page = p; render(); });
-    }
+    const list = RBPagedList({
+        pager, per: PER, source: () => all,
+        filter: (items) => RB.filterByText(items, q, ['title', 'username']),
+        draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No matching roadbooks.'))}</p>`; },
+    });
 
-    if (search) search.oninput = () => { q = search.value; page = 1; render(); };
-    window.addEventListener('rb-lang', () => { if (all.length) render(); }); // re-render labels on language switch
+    if (search) search.oninput = () => { q = search.value; list.reset(); };
+    window.addEventListener('rb-lang', () => { if (all.length) list.render(); }); // re-render labels on language switch
 
-    Promise.all([RBChallenges.listPublic(), RBApi('config').catch(() => ({}))]).then(([list, cfg]) => {
+    Promise.all([RBChallenges.listPublic(), RBApi('config').catch(() => ({}))]).then(([roadbooks, cfg]) => {
         isAdmin = !!(cfg && cfg.user && cfg.user.is_admin); // admins get a force-private control per card
-        if (list === null) { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; return; } // failed ≠ empty (#218)
-        all = list;
+        if (roadbooks === null) { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; return; } // failed ≠ empty (#218)
+        all = roadbooks;
         if (!all.length) { grid.innerHTML = `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; return; }
-        render();
+        list.render();
     }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load roadbooks.'))}</p>`; });
 })();

@@ -27,11 +27,7 @@
         const mapEl = $('evHqMap');
         if (e.hq_lat != null && e.hq_lon != null) {
             mapEl.hidden = false;
-            const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat],
-                style: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-                    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19,
-                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'] } },
-                    layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
+            const hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat], style: RBMap.STYLE_TOPO });
             if (hqMap.map) { new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
         } else mapEl.hidden = true;
         const statusBadge = (r) => {

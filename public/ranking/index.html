@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.1-46">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-47">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-47">
     <style>
         table.rank { width: 100%; border-collapse: collapse; font-size: .9rem; }
         table.rank th, table.rank td { padding: .55rem .5rem; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
@@ -24,7 +24,6 @@
         .config-row { margin-top: .8rem; align-items: center; }
         #msg { margin-top: .5rem; }
         .rank-results { margin-top: 1rem; }
-        .card-head h2 { margin: 0; }
     </style>
 </head>
 <body>
@@ -60,7 +59,7 @@
     </section>
 
     <section class="panel rank-results" id="rankResults">
-        <div class="card-head"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
+        <div class="head-row"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
         <div class="table-scroll"><table class="rank" id="table"></table></div>
         <p class="muted small" id="empty" data-i18n="No results yet. Scan or paste a QR.">No results yet. Scan or paste a QR.</p>
     </section>
@@ -68,15 +67,15 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/config.js?v=1.8.1-46"></script>
-<script src="../assets/js/roadbook-core.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.es.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.js?v=1.8.1-46"></script>
-<script src="../assets/js/app.js?v=1.8.1-46"></script>
-<script src="../assets/js/qr-scan.js?v=1.8.1-46"></script>
-<script src="ranking.js?v=1.8.1-46"></script>
+<script src="../assets/js/config.js?v=1.8.2-47"></script>
+<script src="../assets/js/roadbook-core.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-47"></script>
+<script src="../assets/js/app.js?v=1.8.2-47"></script>
+<script src="../assets/js/qr-scan.js?v=1.8.2-47"></script>
+<script src="ranking.js?v=1.8.2-47"></script>
 </body>
 </html>

@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.8.2', date: '2026-09-12',
+        title: 'Same patterns everywhere, and a tidier phone',
+        items: [
+            'Every heading now carries its actions the same way, and on a phone the title keeps its own line.',
+            'Saved-roadbook cards, admin filters and the activity log all fit a phone screen instead of pushing the page sideways.',
+            'A thumbnail whose image is missing shows the map placeholder instead of a stretch of alt text.',
+            'The event map credits OpenStreetMap again, like every other map in the app.',
+        ],
+    },
+    {
         version: '1.8.1', date: '2026-09-11',
         title: 'A tidy-up pass across the whole app',
         items: [

@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.1-46">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-47">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-47">
     <style>
         /* Column table; min-width keeps the columns intact and the shared .table-scroll wrapper
            scrolls horizontally on narrow/medium screens instead of squeezing the layout. */
@@ -28,9 +28,12 @@
         .u-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
         .u-actions .btn { padding: .25rem .55rem; font-size: .78rem; }
         .users-toolbar { margin-bottom: .7rem; color: var(--muted); }
-        .users-toolbar .field { flex: 1; max-width: 360px; margin: 0; }
         .users-toolbar .users-event-filter { flex: none; width: auto; max-width: 16rem; }
         .users-toolbar #userOrgFilter { max-width: 180px; }
+        /* on a phone every filter takes the full width, like the search field above them */
+        @media (max-width: 560px) {
+            .users-toolbar #userOrgFilter, .users-toolbar .users-event-filter { flex: 1 1 100%; width: 100%; max-width: none; }
+        }
         #userRbFilter.active, #userEvFilter.active { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
         /* the per-user roadbook list needs more room than the default wide modal; let titles wrap */
         .rb-list { max-width: min(820px, 94vw); }
@@ -69,14 +72,14 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=1.8.1-46"></script>
-<script src="../assets/js/rbzip.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.es.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.js?v=1.8.1-46"></script>
-<script src="../assets/js/app.js?v=1.8.1-46"></script>
-<script src="admin.js?v=1.8.1-46"></script>
+<script src="../assets/js/roadbook-core.js?v=1.8.2-47"></script>
+<script src="../assets/js/rbzip.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-47"></script>
+<script src="../assets/js/app.js?v=1.8.2-47"></script>
+<script src="admin.js?v=1.8.2-47"></script>
 </body>
 </html>

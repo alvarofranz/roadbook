@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.1-46">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-47">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-47">
     <style>
         .about-page { max-width: 880px; margin: 0 auto; padding: 1.5rem 0 3rem; }
         .about-page .lead { max-width: 62ch; }
@@ -44,9 +44,7 @@
         .team-card .role { color: var(--sand); font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin: .15rem 0 .6rem; }
         .team-card p { color: var(--muted); margin: 0; }
         .team-card .team-link { margin-top: .7rem; font-size: .85rem; }
-        /* section heading with its own action on the same row (title left, link right) */
-        .sec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-        .sec-head h2 { margin-bottom: 0; }
+        .about-sec .head-row h2 { margin: 0; }   /* the shared row centres it; .about-sec h2 would push it up */
         /* "The app": what this copy is — platform, the release it runs, the release available */
         .app-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-top: 1rem; }
         .app-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem 1.4rem; }
@@ -106,7 +104,7 @@
     </section>
 
     <section class="about-sec" id="changelog">
-        <div class="sec-head">
+        <div class="head-row">
             <h2 data-i18n="What’s new">What’s new</h2>
             <a class="btn btn-ghost" href="https://github.com/alvarofranz/roadbook/commits/main" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> <span data-i18n="Full history">Full history</span></a>
         </div>
@@ -156,13 +154,13 @@
     </section>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.js?v=1.8.1-46"></script>
-<script src="../assets/js/app.js?v=1.8.1-46"></script>
-<script src="../assets/js/changelog.js?v=1.8.1-46"></script>
-<script src="about.js?v=1.8.1-46"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-47"></script>
+<script src="../assets/js/app.js?v=1.8.2-47"></script>
+<script src="../assets/js/changelog.js?v=1.8.2-47"></script>
+<script src="about.js?v=1.8.2-47"></script>
 </body>
 </html>

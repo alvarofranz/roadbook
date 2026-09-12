@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-47">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-47">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* recorded km box sits to the right of Waypoints → four readouts in a row */
@@ -47,8 +47,7 @@
         #wfMic.on, #recWptAudio.on { color: var(--track); animation: recpulse 1.2s infinite; }
         /* press-and-hold (#129): no text selection, no iOS long-press callout, no touch-scroll steal */
         #recWptAudio { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-        /* offline-first: photos/voice notes awaiting upload (RBMediaQueue, #147) */
-        .rec-pending { color: var(--muted); font-size: .82rem; text-align: center; margin-bottom: .6rem; }
+        .rec-pending { margin-bottom: .6rem; }   /* the readout itself is styled in app.css */
     </style>
 </head>
 <body class="gps-tool">
@@ -97,20 +96,20 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.8.1-46"></script>
-<script src="../assets/js/roadbook-core.js?v=1.8.1-46"></script>
-<script src="../assets/js/rbzip.js?v=1.8.1-46"></script>
-<script src="../assets/js/rbmap.js?v=1.8.1-46"></script>
-<script src="../assets/js/gps-meter.js?v=1.8.1-46"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.es.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.1-46"></script>
-<script src="../assets/js/i18n.js?v=1.8.1-46"></script>
-<script src="../assets/js/app.js?v=1.8.1-46"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.8.1-46"></script>
-<script src="../assets/js/status-bar.js?v=1.8.1-46"></script>
-<script src="recorder.js?v=1.8.1-46"></script>
+<script src="../assets/js/config.js?v=1.8.2-47"></script>
+<script src="../assets/js/roadbook-core.js?v=1.8.2-47"></script>
+<script src="../assets/js/rbzip.js?v=1.8.2-47"></script>
+<script src="../assets/js/rbmap.js?v=1.8.2-47"></script>
+<script src="../assets/js/gps-meter.js?v=1.8.2-47"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-47"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-47"></script>
+<script src="../assets/js/app.js?v=1.8.2-47"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.8.2-47"></script>
+<script src="../assets/js/status-bar.js?v=1.8.2-47"></script>
+<script src="recorder.js?v=1.8.2-47"></script>
 </body>
 </html>

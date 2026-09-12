@@ -811,3 +811,12 @@ Object.assign(window.RBi18nLangs.de, {
     'No page drifts sideways on a phone any more: long words wrap and wide tables scroll on their own.': 'Keine Seite verrutscht am Handy mehr zur Seite: lange Wörter brechen um und breite Tabellen scrollen für sich.',
     'Every tool wears the same icon everywhere, and an event roadbook marked Ready finally looks it.': 'Jedes Werkzeug trägt überall dasselbe Symbol, und ein als Bereit markiertes Event-Roadbook sieht endlich danach aus.',
 });
+
+/* release notes — v1.8.2 */
+Object.assign(window.RBi18nLangs.de, {
+    'Same patterns everywhere, and a tidier phone': 'Überall dieselben Muster, und ein aufgeräumteres Handy',
+    'Every heading now carries its actions the same way, and on a phone the title keeps its own line.': 'Jede Überschrift trägt ihre Aktionen auf dieselbe Weise, und am Handy behält der Titel seine eigene Zeile.',
+    'Saved-roadbook cards, admin filters and the activity log all fit a phone screen instead of pushing the page sideways.': 'Die Karten gespeicherter Roadbooks, die Admin-Filter und das Aktivitätsprotokoll passen aufs Handy, statt die Seite zur Seite zu schieben.',
+    'A thumbnail whose image is missing shows the map placeholder instead of a stretch of alt text.': 'Ein Vorschaubild ohne Datei zeigt das Kartensymbol statt eines ausgebreiteten Alt-Textes.',
+    'The event map credits OpenStreetMap again, like every other map in the app.': 'Die Event-Karte nennt wieder OpenStreetMap, wie jede andere Karte der App.',
+});
