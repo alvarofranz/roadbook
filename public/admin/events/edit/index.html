@@ -10,12 +10,10 @@
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.8.1-46">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.8.1-46">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.8.2-47">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.8.2-47">
     <style>
         /* title + page actions (View · Save) share one row */
-        .ev-head-row { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; flex-wrap: wrap; }
-        .ev-head-row .btnrow { margin: 0; }
         .ev-section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
         .ev-section h2 { font-size: 1.1rem; margin: .2rem 0 .8rem; }
         /* associated roadbooks: header + rows share one grid so the participation-mode label
@@ -52,7 +50,7 @@
         .ev-save-bottom { margin: 1rem 0 2rem; }
         /* HQ block: smaller map left, hint + coords column to its right; stacks on narrow screens */
         .ev-hq-grid { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin: .4rem 0; }
-        .ev-hq-map { flex: 2 1 320px; min-width: 260px; height: 300px; border-radius: 12px; border: 1px solid var(--line); }
+        .ev-hq-map { flex: 2 1 320px; min-width: 260px; height: 300px; }   /* frame in app.css */
         .ev-hq-side { flex: 1 1 200px; min-width: 180px; display: flex; flex-direction: column; gap: .5rem; }
         .ev-coords-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 0; }
         .ev-coords-row .field-label { margin: 0; white-space: nowrap; }
@@ -68,12 +66,10 @@
 
 <main class="wrap admin-wrap">
     <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
-    <!-- heading row: the title with the page actions (View · Save) on the SAME line -->
-    <div class="ev-head-row">
-        <div class="btnrow" id="evActions" hidden>
-            <a class="btn btn-ghost" id="evView" hidden><i class="fa-solid fa-eye"></i> <span data-i18n="View">View</span></a>
-            <button class="btn btn-primary" id="evSave" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
-        </div>
+    <!-- page actions (View · Save), right-aligned above the form -->
+    <div class="btnrow end" id="evActions" hidden>
+        <a class="btn btn-ghost" id="evView" hidden><i class="fa-solid fa-eye"></i> <span data-i18n="View">View</span></a>
+        <button class="btn btn-primary" id="evSave" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
     </div>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
 
@@ -173,17 +169,17 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../../../assets/js/qrcode.min.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/rb-qr.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/config.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/rbmap.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/i18n.js?v=1.8.1-46"></script>
-<script src="../../../assets/js/app.js?v=1.8.1-46"></script>
-<script src="event-edit.js?v=1.8.1-46"></script>
+<script src="../../../assets/js/qrcode.min.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/rb-qr.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/config.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/rbmap.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/i18n.js?v=1.8.2-47"></script>
+<script src="../../../assets/js/app.js?v=1.8.2-47"></script>
+<script src="event-edit.js?v=1.8.2-47"></script>
 </body>
 </html>

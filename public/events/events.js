@@ -5,7 +5,7 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
     const PER = 12;
-    let all = [], page = 1, q = '';
+    let all = [], q = '';
     const grid = $('evGrid'), pager = $('evPager'), search = $('evSearch');
 
     const card = (e) => RBGalleryCard({
@@ -13,17 +13,14 @@
         meta: `@${esc(e.organizer)}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''} · ${e.roadbooks} ${esc(t('roadbooks'))}`,
     });
 
-    function render() {
-        const filtered = (window.RB && RB.filterByText) ? RB.filterByText(all, q, ['title', 'organizer']) : all;
-        const pages = Math.max(1, Math.ceil(filtered.length / PER));
-        if (page > pages) page = pages;
-        const slice = filtered.slice((page - 1) * PER, page * PER);
-        grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No events yet.'))}</p>`;
-        RBPager(pager, page, pages, (p) => { page = p; render(); });
-    }
+    const list = RBPagedList({
+        pager, per: PER, source: () => all,
+        filter: (items) => RB.filterByText(items, q, ['title', 'organizer']),
+        draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No events yet.'))}</p>`; },
+    });
 
-    if (search) search.oninput = () => { q = search.value; page = 1; render(); };
-    window.addEventListener('rb-lang', () => { if (all.length) render(); });
+    if (search) search.oninput = () => { q = search.value; list.reset(); };
+    window.addEventListener('rb-lang', () => { if (all.length) list.render(); });
 
     // The header claim: signed out it goes through the LOGIN first and lands on Event
     // management (#233); a signed-in visitor without event rights gets the guide (learn /
@@ -41,6 +38,6 @@
 
     RBApi('events_list').then((r) => {
         all = (r.ok && r.events) || [];
-        render();
+        list.render();
     }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load.'))}</p>`; });
 })();

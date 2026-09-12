@@ -335,11 +335,7 @@
     function initHqMap() {
         const hasCoords = ev && ev.hq_lat != null && ev.hq_lon != null;
         const center = hasCoords ? [ev.hq_lon, ev.hq_lat] : [12.5, 43.7];
-        hqMap = new RBMap('evHqMap', { zoom: hasCoords ? 10 : 5, center,
-            style: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-                sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19,
-                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'] } },
-                layers: [{ id: 'osm', type: 'raster', source: 'osm' }] } });
+        hqMap = new RBMap('evHqMap', { zoom: hasCoords ? 10 : 5, center, style: RBMap.STYLE_TOPO });
         if (!hqMap.map) return;
         hqMap.map.on('error', (e) => { // surface tile/style failures in-page (once) instead of a silent black box
             if (hqMap._errShown) return; hqMap._errShown = true;

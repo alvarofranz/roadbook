@@ -260,6 +260,21 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
+/* A heading with its own actions on the same row: title left, actions right, wrapping when the
+   screen is too narrow — the "a destra" layout. ONE pattern: it used to be .section-bar, three
+   different .ev-head-row bodies, .sec-head and a .card-head that was never styled at all (#482). */
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.head-row h1, .head-row h2 { margin: 0; flex: 1; min-width: 12rem; }
+.head-row .btn, .head-row .btnrow, .head-row .btn-group { margin: 0; }
+/* On a phone the title takes its own line and the actions sit under it — squeezed beside a button,
+   a title like "Event management" broke mid-word. AFTER the base rule: last one wins (#476). */
+@media (max-width: 560px) {
+    .head-row h1, .head-row h2 { min-width: 100%; }
+}
+/* the event HQ map — the frame is shared, each page sets its own size */
+.ev-hq-map { border: 1px solid var(--line); border-radius: 12px; }
+/* media waiting to be uploaded (Recorder + Editor recording) */
+.rec-pending { color: var(--muted); font-size: .82rem; text-align: center; }
 .action-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
 /* small accent section heading (Editor panels, challenge page) */
 .icon-category { color: var(--sand); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .8rem 0 .3rem; }
@@ -441,6 +456,12 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-text .note-speed .lim.lifted { border-color: #777; color: #777; }
 .nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
 .nrow .col-buttons { display: flex; flex-direction: column; gap: .35rem; align-items: center; justify-content: center; border-right: 0; }
+/* comment note (note_kind: "comment"): no distance, no navigation, no pointer — the same row in
+   the Reader and on the public roadbook page, which used to paint it in two slightly different
+   shades of paper (#482). */
+.nrow.comment { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
+.nrow.comment .col-vignette-empty { display: none; }
+.nrow.comment .col-text-wide { grid-column: 2 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
 .nrow .col-buttons .note-button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
 /* the note-done button is what you aim for on a moving vehicle: taller than the rest, and the
    whole active row validates too, so a missed tap still does the right thing (#386) */
@@ -684,7 +705,11 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 @media (max-width: 640px) {
     .roadbook-row .meta { min-width: 100%; }
     .roadbook-row .meta small { white-space: normal; }
-    .roadbook-row .btn, .roadbook-row .rb-status { flex: 1 1 auto; }
+    /* the status pill carries a word, so it takes its own line; the icon buttons then share the
+       row below it evenly, whether there are six of them or seven (a public roadbook adds the
+       copy-link one) — never one orphan stretched across the card */
+    .roadbook-row .rb-status { flex: 1 1 100%; }
+    .roadbook-row .btn { flex: 1 1 auto; }
 }
 /* public badge — green globe; the admin moderation control in the public roadbooks list */
 .rb-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line); }
@@ -699,13 +724,29 @@ button.rb-badge:hover { background: var(--card); }
 .rb-status-public { color: var(--ok); border-color: var(--ok); }
 .rb-status option { color: var(--text); background: var(--card-2); }
 /* shared search / filter toolbar (card style) */
-.rb-toolbar, .toolbar { display: flex; align-items: center; gap: .5rem; }
+/* A control row wraps: on a phone the admin toolbar (search · organization · event · filters ·
+   Create user) ran 814 px wide and took the whole page sideways with it (#482). */
+.rb-toolbar, .toolbar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.toolbar .field { flex: 1; max-width: 360px; margin: 0; }
 .rb-toolbar { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .35rem .8rem; margin-bottom: .6rem; color: var(--muted); }
+/* On a phone the fields in a control row take the full width instead of being squeezed into
+   slivers beside each other; the buttons share the row below them. AFTER the base rules (#476). */
+@media (max-width: 560px) {
+    .toolbar .field { flex: 1 1 100%; max-width: none; }
+    .toolbar .btn { flex: 1 1 auto; }
+    .toolbar > i { display: none; }   /* the decorative magnifier: a lone icon on its own line reads as a glitch */
+}
 .rb-toolbar .rb-search { flex: 1; min-width: 0; margin: 0; border: 0; background: none; padding: .35rem 0; }
 .rb-usage { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; } /* My-roadbooks storage indicator */
 /* Admin activity-inspection timeline (#86) */
 .act-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .act-table td { padding: .25rem .45rem; border-top: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+/* Wide tables scroll inside their own box on a phone, so the PAGE never scrolls sideways (#480).
+   The ones wrapped in .table-scroll already do; these three are plain markup — the spec page, the
+   wiki's rendered Markdown and the activity log. The block sits after their base rules (#476). */
+@media (max-width: 640px) {
+    .doc table, .wiki-content table, .act-table { display: block; width: max-content; max-width: 100%; overflow-x: auto; }
+}
 /* Admin site-settings page (#103) + the site-wide announcement banner */
 .cfg-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
 .log-pre { max-height: 320px; overflow: auto; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .6rem; font-family: ui-monospace, monospace; font-size: .78rem; white-space: pre-wrap; }
