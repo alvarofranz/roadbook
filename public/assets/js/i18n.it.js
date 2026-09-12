@@ -331,7 +331,7 @@
             'Username': 'Username', 'Email': 'Email', 'Already have an account? Sign in': 'Hai già un account? Accedi',
             'Reset password': 'Reimposta password', 'Your email': 'La tua email', 'Send reset link': 'Invia link', 'Back to sign in': 'Torna ad accedere',
             'Set a new password': 'Imposta una nuova password', 'Update password': 'Aggiorna password',
-            'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook',
+            'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook', 'My activity': 'Le mie attività',
             'Save as': 'Salva come', 'Roadbook duplicated.': 'Roadbook duplicato.', 'Could not duplicate.': 'Impossibile duplicare.',
             'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts

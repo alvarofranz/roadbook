@@ -534,3 +534,24 @@ function verify_email_change(array $d): void {
         ->execute([$u['pending_email'], $u['id']]);
     json_out(['ok' => true, 'message' => 'Email updated.']);
 }
+
+// Personal activity timeline (#448, easy half): the signed-in user's own activity_log rows —
+// same shape as the admin inspection, but scoped to self and without anyone else's data.
+function activity_mine(array $user, array $d): void {
+    $q = trim((string)($d['q'] ?? ''));
+    $page = max(1, (int)($d['page'] ?? 1));
+    $perPage = min(100, max(1, (int)($d['per_page'] ?? 20)));
+    $where = 'user_id = ?';
+    $args = [(int)$user['id']];
+    if ($q !== '') {
+        $where .= ' AND (action LIKE ? OR detail LIKE ?)';
+        $like = '%' . $q . '%';
+        $args[] = $like; $args[] = $like;
+    }
+    $tc = db()->prepare("SELECT COUNT(*) FROM activity_log WHERE $where");
+    $tc->execute($args);
+    // LIMIT/OFFSET are sanitized ints inlined directly: PDO string-binds bound placeholders there
+    $st = db()->prepare("SELECT action, detail, created_at FROM activity_log WHERE $where ORDER BY id DESC LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
+    $st->execute($args);
+    json_out(['ok' => true, 'events' => $st->fetchAll(), 'total' => (int)$tc->fetchColumn(), 'page' => $page, 'per_page' => $perPage]);
+}
