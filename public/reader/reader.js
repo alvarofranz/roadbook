@@ -301,7 +301,10 @@
         RBGpxRecorder.feed(coords, here, fix.tnow); // the logger applies its own accuracy gate
         if (!trusted) return;
         lastHere = here; lastAcc = coords.accuracy;
-        if (inlineMap && inlineMap.ready) inlineMap.setPosition(here.lat, here.lon, false, meter.heading);
+        if (inlineMap && inlineMap.ready) {
+            inlineMap.setPosition(here.lat, here.lon, false, meter.heading);
+            if (inlineMapIdx >= 0 && notes[inlineMapIdx]) inlineMap.setGuide(here, notes[inlineMapIdx]); // the line + arrow follow the live fix
+        }
         tripTotalM += disp; tripPartialM += disp;
         if (curLimit && curLimit > 0 && speedKmh > curLimit) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
         const an = notes[activeIdx];
@@ -481,7 +484,7 @@
         inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], layerToggle: true, geolocate: true });
         inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
         inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
-        if (lastHere) inlineMap.setPosition(lastHere.lat, lastHere.lon, false, meter && meter.heading);
+        if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, false, meter && meter.heading); inlineMap.setGuide(lastHere, n); }
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
