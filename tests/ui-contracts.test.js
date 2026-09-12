@@ -572,3 +572,20 @@ describe('per-note map guidance line + 1 cm arrow (#485)', () => {
         expect(rbmap).toContain('this._guideArrow.remove()');
     });
 });
+
+describe('activity log modal, filtered by user type (#448)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('both account menus link My activity to the shared modal', () => {
+        expect(app).toContain("id=\"accActivity\"");
+        expect(app).toContain("id=\"tabActivity\"");
+        expect(app.match(/RBActivityLog\(\);/g).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('plain users stay scoped to self while admins may pick any user', () => {
+        const fn = app.match(/window\.RBActivityLog = async function \(\) \{([\s\S]*?)\n    \};/)[1];
+        expect(fn).toContain("RBApi('activity_mine'");
+        expect(fn).toContain("RBApi('admin_activity'");
+        expect(fn).toContain('user_search');
+    });
+});

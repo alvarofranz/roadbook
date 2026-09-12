@@ -294,7 +294,7 @@
             'Username': 'Benutzername', 'Email': 'E-Mail', 'Already have an account? Sign in': 'Bereits ein Konto? Anmelden',
             'Reset password': 'Passwort zurücksetzen', 'Your email': 'Deine E-Mail', 'Send reset link': 'Reset-Link senden', 'Back to sign in': 'Zurück zur Anmeldung',
             'Set a new password': 'Neues Passwort setzen', 'Update password': 'Passwort aktualisieren',
-            'Sign out': 'Abmelden', 'New roadbook': 'Neues Roadbook', 'My roadbooks': 'Meine Roadbooks', 'My activity': 'Meine Aktivitäten',
+            'Sign out': 'Abmelden', 'New roadbook': 'Neues Roadbook', 'My roadbooks': 'Meine Roadbooks', 'My activity': 'Meine Aktivitäten', 'Me': 'Ich',
             'Save as': 'Speichern unter', 'Roadbook duplicated.': 'Roadbook dupliziert.', 'Could not duplicate.': 'Konnte nicht duplizieren.',
             'Change photo': 'Foto ändern', 'Save profile': 'Profil speichern', 'Loading…': 'Lädt…', 'Fork': 'Fork', 'Edit': 'Bearbeiten',
             'Load a roadbook first.': 'Zuerst ein Roadbook laden.', 'Nothing to save.': 'Nichts zu speichern.',
