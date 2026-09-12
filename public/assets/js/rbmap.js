@@ -132,7 +132,7 @@ window.RBMap = class RBMap {
         m.on('touchstart', 'rb-photos', photoDown);
         m.on('mousemove', photoMove); m.on('touchmove', photoMove);
         m.on('mouseup', photoUp); m.on('touchend', photoUp);
-        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); });
+        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
     }
     // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom
     // source/layer on setStyle, so everything is rebuilt and the caller repaints
@@ -152,10 +152,11 @@ window.RBMap = class RBMap {
         this.setBaseStyle(STYLES[next], () => {
             if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
             if (this._lastSel) this.select(this._lastSel, true);
+            if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
         });
     }
     // Tear down the GL context (Reader closes the inline note map this way).
-    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
     // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
     setHeadingUp(on) { this._headingUp = !!on; if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
@@ -187,6 +188,11 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-photos-i', type: 'symbol', source: 'rb-photos', layout: { 'text-field': 'IMG', 'text-font': ['Noto Sans Bold'], 'text-size': 10, 'text-allow-overlap': true }, paint: { 'text-color': '#fff', 'text-halo-color': '#0e1116', 'text-halo-width': 0.8 } });
         m.addSource('rb-pos', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-pos', type: 'circle', source: 'rb-pos', paint: { 'circle-radius': 7, 'circle-color': '#5aa9ff', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
+        // Guidance to one waypoint (Reader per-note map, #485): a line from the live position
+        // to the note plus a 1 cm arrow at the position pointing that way. Repainted with the
+        // rest after a style swap (see toggleBaseStyle).
+        m.addSource('rb-guide', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-guide', type: 'line', source: 'rb-guide', paint: { 'line-color': '#e8b059', 'line-width': 4 } });
         // Track vertices (move-points tool) — topmost so they stay grabbable; empty until armed.
         m.addSource('rb-verts', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', minzoom: 13, paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } }); // non-note track points: only at high zoom (hidden below ~13 to avoid clutter)
@@ -292,6 +298,25 @@ window.RBMap = class RBMap {
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-sel').setData(note ? { type: 'Feature', geometry: { type: 'Point', coordinates: [note.lon, note.lat] } } : this._empty());
         if (note && !noEase) this.map.easeTo({ center: [note.lon, note.lat], duration: 500 });
+    }
+    // Guidance line from the live position to one waypoint + a 1 cm arrow at the position
+    // pointing that way (#485). Pass nulls to clear. The arrow is an HTML marker (fixed CSS
+    // size, so it stays 1 cm at any zoom) rotated to the bearing, tail pinned on the position.
+    setGuide(from, to) {
+        this._lastGuide = (from && to) ? { from, to } : null; // remembered for style swaps
+        if (!this.map || !this.ready) return;
+        const show = !!(from && to && window.RB && RB.geo
+            && RB.geo.haversineM(from, to) > 5); // arrived: the waypoint halo says it all
+        this.map.getSource('rb-guide').setData(!show ? this._empty()
+            : { type: 'Feature', geometry: { type: 'LineString', coordinates: [[from.lon, from.lat], [to.lon, to.lat]] } });
+        if (!show) { if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } return; }
+        if (!this._guideArrow) {
+            const el = document.createElement('div');
+            el.className = 'rb-guide-arrow';
+            el.innerHTML = '<svg viewBox="0 0 38 12" width="100%" height="100%"><line x1="2" y1="6" x2="28" y2="6" stroke="#e8b059" stroke-width="5" stroke-linecap="round"/><path d="M26 1 L37 6 L26 11 z" fill="#e8b059"/></svg>';
+            this._guideArrow = new maplibregl.Marker({ element: el, anchor: 'left', rotationAlignment: 'map' }).setLngLat([from.lon, from.lat]).addTo(this.map);
+        }
+        this._guideArrow.setLngLat([from.lon, from.lat]).setRotation(RB.geo.bearingDeg(from, to) - 90); // the artwork points east; rotation 0 is north
     }
     _fit(rb) {
         if (!this.map || !rb.track.length) return;
