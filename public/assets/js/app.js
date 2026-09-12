@@ -1077,6 +1077,7 @@
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
                     <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
+                        <button id="accActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>
                         ${participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`}
                         <a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>
                         ${manageLinksHTML(manageLinks(user, participant))}
@@ -1132,6 +1133,7 @@
             } else {
                 tabMenu.innerHTML =
                     `<a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>`
+                    + `<button id="tabActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>`
                     + (participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`)
                     + `<a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>`
                     + manageLinksHTML(manageLinks(user, participant))
