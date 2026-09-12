@@ -418,6 +418,19 @@
     }
 
     /* ---------- account ---------- */
+    // Personal activity timeline (#448): the signed-in user's own log, paged + searchable.
+    let actPage = 1, actQuery = '';
+    function loadActivity() {
+        api('activity_mine', { page: actPage, q: actQuery }).then((r) => {
+            const body = $('actBody');
+            if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
+            body.innerHTML = (r.events || []).length
+                ? `<table class="act-table"><tbody>${r.events.map((e) => `<tr><td class="small">${esc(e.created_at)}</td><td>${esc((e.action || '').replace(/_/g, ' '))}</td><td class="muted small">${esc(e.detail || '')}</td></tr>`).join('')}</tbody></table>`
+                : `<p class="muted small">${esc(t('No activity yet.'))}</p>`;
+            const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 20)));
+            RBPager($('actPager'), actPage, pages, (p) => { actPage = p; loadActivity(); });
+        }).catch(() => { $('actBody').textContent = t('Could not load.'); });
+    }
     async function showAccount(user) {
         me = user;
         show('vAccount'); msg('');
@@ -449,6 +462,9 @@
         if (user.is_organizer) grants.push({ label: t('Organizer'), cls: 'organizer' });
         if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: 'basic' });
         $('grantsList').innerHTML = grants.map((g) => `<div class="grant-row"><span class="grant-badge ${g.cls}">${esc(g.label)}</span></div>`).join('');
+        actPage = 1; actQuery = ''; $('actSearch').value = '';
+        $('actSearch').oninput = () => { actQuery = $('actSearch').value; actPage = 1; loadActivity(); };
+        loadActivity();
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
