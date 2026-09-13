@@ -1892,12 +1892,13 @@
         canvas.addIcon(mkIcon(name, [0, 0]));
         toast('Icon added — drag it on the vignette');
     }
-    function delCustomIcon(name) {
+    async function delCustomIcon(name) {
         const low = name.toLowerCase();
         // A `cover` tulip (imported OpenRally vignette) is meant to be deletable in place: drop it
         // from its note too, so the vignette reverts to the editable one and export emits that.
-        const isCover = rb.notes.some((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
-        if (isCover) {
+        const hitNotes = rb.notes.filter((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
+        if (hitNotes.length) {
+            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '” ' + t('and remove it from its notes?'), t('Delete')))) return;
             rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
             delete rb.icons[name];
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
@@ -1905,6 +1906,7 @@
             return;
         }
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
+        if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '”?', t('Delete')))) return;
         delete rb.icons[name]; renderIcons();
     }
     /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note.

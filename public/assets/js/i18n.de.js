@@ -421,7 +421,7 @@
                         'Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.': '<b>Teilen</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in der Leiste antippen.',
             'Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.': '<b>Zum Home-Bildschirm</b> <i class="fa-solid fa-square-plus icon-accent"></i> wählen.',
             'Tap <b>Add</b>. Done!': '<b>Hinzufügen</b> antippen. Fertig!',
-            'Remove': 'Entfernen', 'Scan QR': 'QR scannen', 'Stop': 'Stopp',
+            'Remove': 'Entfernen', 'Delete icon': 'Icon löschen', 'and remove it from its notes?': 'und aus seinen Notes entfernen?', 'Scan QR': 'QR scannen', 'Stop': 'Stopp',
             'Code not recognized.': 'Code nicht erkannt.',
             'Could not read the image.': 'Bild konnte nicht gelesen werden.',
             'In use; remove it from the notes first.': 'In Verwendung; zuerst aus den Noten entfernen.',

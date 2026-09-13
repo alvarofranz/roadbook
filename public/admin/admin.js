@@ -219,6 +219,8 @@
     function wireRows() {
         const body = $('usersBody');
         body.querySelectorAll('[data-org]').forEach((b) => b.onclick = async () => {
+            const u = byId[+b.dataset.org];
+            if (+b.dataset.make === 0 && !(await RBConfirmDanger(t('Remove event organizer') + ' @' + ((u && u.username) || '') + '?', t('Remove')))) return;
             const x = await api('admin_set_role', { id: +b.dataset.org, is_organizer: +b.dataset.make });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
@@ -227,6 +229,8 @@
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
+            const u = byId[+b.dataset.block];
+            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + ((u && u.username) || '') + '?', t('Block')))) return;
             const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
