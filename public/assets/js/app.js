@@ -281,7 +281,7 @@
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${webUpdate ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
-                <a class="btn btn-ghost" href="${ROOT}about/#changelog"><i class="fa-solid fa-list-check"></i> ${RBt('What’s new')}</a>
+                <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-list-check"></i> ${RBt('What’s new')}</a>
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
             <div class="muted small app-info-foot"><a href="https://rdbk.app" target="_blank" rel="noopener">rdbk.app</a> · © ${new Date().getFullYear()} RDBK.app</div>

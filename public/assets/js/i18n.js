@@ -38,6 +38,7 @@
             'help.route': 'Reverse flips the travel direction — the track, note order and all headings are recomputed.',
             'seo.home.title': 'RDBK.app — digital roadbooks for your adventures', 'seo.home.desc': 'Create, navigate, validate and rank roadbooks for any adventure. Free PWA and the open .rdbk format.',
             'seo.about.title': 'Who we are — RDBK.app', 'seo.about.desc': 'The people and mission behind RDBK.app — free digital roadbook tools and the open .rdbk format for every adventure.',
+            'seo.changelog.title': 'What’s new — RDBK.app', 'seo.changelog.desc': 'Every RDBK.app release and what changed in it, newest first.', 'Full changelog': 'Full changelog',
             'seo.privacy.title': 'Privacy Policy — RDBK.app', 'seo.privacy.desc': 'How RDBK.app handles your data — accounts, roadbooks and photos — on our free digital roadbook tools.',
             'seo.terms.title': 'Terms of Use — RDBK.app', 'seo.terms.desc': 'The terms for using RDBK.app, the free digital roadbook suite and the open .rdbk format.',
             'about.title': 'Who we are',

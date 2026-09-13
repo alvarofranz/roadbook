@@ -6,6 +6,7 @@
             'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
             'seo.home.title': 'RDBK.app — roadbook digitali per le tue avventure', 'seo.home.desc': 'Crea, naviga, valida e classifica roadbook per ogni avventura. PWA gratuita e il formato aperto .rdbk.',
             'seo.about.title': 'Chi siamo — RDBK.app', 'seo.about.desc': 'Le persone e la missione dietro RDBK.app — strumenti gratuiti per roadbook digitali e il formato aperto .rdbk per ogni avventura.',
+            'seo.changelog.title': 'Novità — RDBK.app', 'seo.changelog.desc': 'Ogni release di RDBK.app e cosa è cambiato, dalla più recente.', 'Full changelog': 'Changelog completo',
             'seo.privacy.title': 'Informativa sulla privacy — RDBK.app', 'seo.privacy.desc': 'Come RDBK.app tratta i tuoi dati — account, roadbook e foto — nei nostri strumenti gratuiti per roadbook digitali.',
             'seo.terms.title': 'Condizioni d’uso — RDBK.app', 'seo.terms.desc': 'Le condizioni per usare RDBK.app, la suite gratuita per roadbook digitali e il formato aperto .rdbk.',
             'about.title': 'Chi siamo',

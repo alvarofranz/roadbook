@@ -310,7 +310,8 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
     });
 
     it('links what changed and the official site', () => {
-        expect(fn).toContain("about/#changelog");
+        expect(fn).toContain("ROOT}changelog/");
+        expect(fn).not.toContain('about/#changelog');
         expect(fn).toContain('https://rdbk.app');
         expect(fn).toContain('RDBK.app</div>');
     });

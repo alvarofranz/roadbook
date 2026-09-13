@@ -1,5 +1,5 @@
-/* RDBK.app release notes — the single source for "What's new", rendered on the About page
-   (`/about/#changelog`) and linked from the App Info pop-up.
+/* RDBK.app release notes — the single source for "What's new", rendered on the changelog
+   page (`/changelog/`) and linked from the App Info pop-up.
 
    ONE ENTRY PER RELEASE, newest first. `version` matches the semver in version.json and `date`
    is the day it shipped (YYYY-MM-DD). The strings are English SOURCE strings, translated the
