@@ -123,7 +123,8 @@
     }
 
     async function clearAll() {
-        if (await RBConfirmDanger('Clear all results?')) { entries = []; save(); render(); }
+        if (!entries.length) return;
+        if (await RBConfirmDanger(t('Clear all results?') + ' (' + entries.length + ')', t('Clear'))) { entries = []; save(); render(); }
     }
     function exportCsv() {
         if (!lastRows.length) return;

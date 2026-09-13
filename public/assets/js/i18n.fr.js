@@ -420,7 +420,7 @@
                         'Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.': 'Tapez <b>Partager</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> dans la barre.',
             'Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.': 'Choisissez <b>Sur l\'écran d\'accueil</b> <i class="fa-solid fa-square-plus icon-accent"></i>.',
             'Tap <b>Add</b>. Done!': 'Tapez <b>Ajouter</b>. Voilà !',
-            'Remove': 'Retirer', 'Scan QR': 'Scanner QR', 'Stop': 'Arrêter',
+            'Remove': 'Retirer', 'Delete icon': 'Supprimer l’icône', 'and remove it from its notes?': 'et la retirer de ses notes ?', 'Scan QR': 'Scanner QR', 'Stop': 'Arrêter',
             'Code not recognized.': 'Code non reconnu.',
             'Could not read the image.': 'Impossible de lire l\'image.',
             'In use; remove it from the notes first.': 'En cours d\'utilisation ; retirez-le d\'abord des notes.',
