@@ -6,6 +6,7 @@
             'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
             'seo.home.title': 'RDBK.app — roadbook digitali per le tue avventure', 'seo.home.desc': 'Crea, naviga, valida e classifica roadbook per ogni avventura. PWA gratuita e il formato aperto .rdbk.',
             'seo.about.title': 'Chi siamo — RDBK.app', 'seo.about.desc': 'Le persone e la missione dietro RDBK.app — strumenti gratuiti per roadbook digitali e il formato aperto .rdbk per ogni avventura.',
+            'seo.changelog.title': 'Novità — RDBK.app', 'seo.changelog.desc': 'Ogni release di RDBK.app e cosa è cambiato, dalla più recente.', 'Full changelog': 'Changelog completo',
             'seo.privacy.title': 'Informativa sulla privacy — RDBK.app', 'seo.privacy.desc': 'Come RDBK.app tratta i tuoi dati — account, roadbook e foto — nei nostri strumenti gratuiti per roadbook digitali.',
             'seo.terms.title': 'Condizioni d’uso — RDBK.app', 'seo.terms.desc': 'Le condizioni per usare RDBK.app, la suite gratuita per roadbook digitali e il formato aperto .rdbk.',
             'about.title': 'Chi siamo',
@@ -331,7 +332,7 @@
             'Username': 'Username', 'Email': 'Email', 'Already have an account? Sign in': 'Hai già un account? Accedi',
             'Reset password': 'Reimposta password', 'Your email': 'La tua email', 'Send reset link': 'Invia link', 'Back to sign in': 'Torna ad accedere',
             'Set a new password': 'Imposta una nuova password', 'Update password': 'Aggiorna password',
-            'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook',
+            'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook', 'My activity': 'Le mie attività', 'Me': 'Io',
             'Save as': 'Salva come', 'Roadbook duplicated.': 'Roadbook duplicato.', 'Could not duplicate.': 'Impossibile duplicare.',
             'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts

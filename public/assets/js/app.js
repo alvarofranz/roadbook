@@ -281,7 +281,7 @@
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${webUpdate ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
-                <a class="btn btn-ghost" href="${ROOT}about/#changelog"><i class="fa-solid fa-list-check"></i> ${RBt('What’s new')}</a>
+                <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-list-check"></i> ${RBt('What’s new')}</a>
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
             <div class="muted small app-info-foot"><a href="https://rdbk.app" target="_blank" rel="noopener">rdbk.app</a> · © ${new Date().getFullYear()} RDBK.app</div>
@@ -289,6 +289,56 @@
         const up = modal.q('#appInfoUpdate');
         if (up) up.onclick = () => { modal.close(); hardRefresh(); };
         modal.q('.modal-close').onclick = () => modal.close();
+    };
+
+    /* ---------------- Activity log modal (#448): the same timeline for everyone, filtered by
+       user type — plain users see only their own rows (activity_mine), admins may also pick
+       any user (admin_activity). Opened from the account menus as "My activity". */
+    window.RBActivityLog = async function () {
+        const cfg = await window.RBConfig().catch(() => ({}));
+        const me = (cfg && cfg.user) || null;
+        if (!me) { window.RBNeedAuth(); return; }
+        const isAdmin = !!me.is_admin;
+        let targetId = null, actPage = 1, actQuery = '';
+        const m = RBModal(`<h2><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</h2>
+            ${isAdmin ? `<div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input class="field" id="myActUser" placeholder="${RBt('Search users…')}" autocomplete="off"><button class="btn btn-ghost" id="myActMe">${RBt('Me')}</button></div><div id="myActPick"></div>` : ''}
+            <div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="myActSearch" placeholder="${RBt('Search…')}" autocomplete="off" spellcheck="false"></div>
+            <div id="myActBody" class="muted small">${RBt('Loading…')}</div>
+            <div class="pager" id="myActPager"></div>
+            <div class="btnrow end"><button class="btn btn-ghost modal-close">${RBt('Close')}</button></div>`, 'wide');
+        m.q('.modal-close').onclick = m.close;
+        const loadAct = () => {
+            const call = (isAdmin && targetId) ? RBApi('admin_activity', { id: targetId, page: actPage, q: actQuery }) : RBApi('activity_mine', { page: actPage, q: actQuery });
+            call.then((r) => {
+                const body = m.q('#myActBody');
+                if (!r.ok) { body.textContent = r.error || RBt('Could not load.'); return; }
+                body.innerHTML = (r.events || []).length
+                    ? `<table class="act-table"><tbody>${r.events.map((e) => `<tr><td class="small">${RBesc(e.created_at)}</td><td>${RBesc((e.action || '').replace(/_/g, ' '))}</td><td class="muted small">${RBesc(e.detail || '')}</td></tr>`).join('')}</tbody></table>`
+                    : `<p class="muted small">${RBesc(RBt('No activity yet.'))}</p>`;
+                const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 20)));
+                RBPager(m.q('#myActPager'), actPage, pages, (p) => { actPage = p; loadAct(); });
+            }).catch(() => { m.q('#myActBody').textContent = RBt('Could not load.'); });
+        };
+        m.q('#myActSearch').oninput = () => { actQuery = m.q('#myActSearch').value; actPage = 1; loadAct(); };
+        if (isAdmin) {
+            let pickTimer = null;
+            const pickBox = m.q('#myActPick');
+            m.q('#myActMe').onclick = () => { targetId = null; pickBox.innerHTML = ''; actPage = 1; loadAct(); };
+            m.q('#myActUser').oninput = () => {
+                clearTimeout(pickTimer);
+                pickTimer = setTimeout(() => {
+                    const q = m.q('#myActUser').value.trim();
+                    if (!q) { pickBox.innerHTML = ''; return; }
+                    RBApi('user_search', { q }).then((r) => {
+                        if (!r.ok || !r.users) return;
+                        pickBox.innerHTML = r.users.slice(0, 8).map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}"><b>${RBesc(u.username)}</b> <span class="muted small">${RBesc(((u.first_name || '') + ' ' + (u.last_name || '')).trim())}</span></span></div>`).join('')
+                            || `<p class="muted small">${RBesc(RBt('No matching users.'))}</p>`;
+                        pickBox.querySelectorAll('[data-pu]').forEach((el) => el.onclick = () => { targetId = +el.dataset.pu; pickBox.innerHTML = ''; actPage = 1; loadAct(); });
+                    });
+                }, 300);
+            };
+        }
+        loadAct();
     };
 
     /* ---------------- Install (PWA) + iOS ---------------- */
@@ -1030,6 +1080,7 @@
                         ${participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`}
                         <a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>
                         ${manageLinksHTML(manageLinks(user, participant))}
+                        <button id="accActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>
                         ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
                         <hr class="menu-sep"><button id="accAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
@@ -1041,6 +1092,8 @@
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
                 w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
+                const accAct = w.querySelector('#accActivity');
+                if (accAct) accAct.onclick = () => { menu.hidden = true; window.RBActivityLog(); };
                 const accInfo = w.querySelector('#accAppInfo');
                 if (accInfo) accInfo.onclick = () => { menu.hidden = true; showAppInfo(); };
                 const lp = w.querySelector('#leaveParticipant');
@@ -1082,6 +1135,7 @@
                     + (participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`)
                     + `<a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>`
                     + manageLinksHTML(manageLinks(user, participant))
+                    + `<button id="tabActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>`
                     + (participant ? `<hr class="menu-sep"><button id="tabLeaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : '')
                     + `<hr class="menu-sep"><button id="tabAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>`
                     + `<hr class="menu-sep"><button id="tabLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>`;
@@ -1090,6 +1144,8 @@
                 tabMenu.querySelector('#tabLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
                 const tabLp = tabMenu.querySelector('#tabLeaveParticipant');
                 if (tabLp) tabLp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
+                const tabAct = tabMenu.querySelector('#tabActivity');
+                if (tabAct) tabAct.onclick = () => { tabMenu.hidden = true; window.RBActivityLog(); };
                 const tabInfo = tabMenu.querySelector('#tabAppInfo');
                 if (tabInfo) tabInfo.onclick = () => { tabMenu.hidden = true; showAppInfo(); };
             }

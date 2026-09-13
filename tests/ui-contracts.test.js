@@ -310,7 +310,8 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
     });
 
     it('links what changed and the official site', () => {
-        expect(fn).toContain("about/#changelog");
+        expect(fn).toContain("ROOT}changelog/");
+        expect(fn).not.toContain('about/#changelog');
         expect(fn).toContain('https://rdbk.app');
         expect(fn).toContain('RDBK.app</div>');
     });
@@ -570,5 +571,22 @@ describe('per-note map guidance line + 1 cm arrow (#485)', () => {
     it('the guide survives style swaps and dies with the map', () => {
         expect(rbmap).toContain('if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to)');
         expect(rbmap).toContain('this._guideArrow.remove()');
+    });
+});
+
+describe('activity log modal, filtered by user type (#448)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('both account menus link My activity to the shared modal', () => {
+        expect(app).toContain("id=\"accActivity\"");
+        expect(app).toContain("id=\"tabActivity\"");
+        expect(app.match(/RBActivityLog\(\);/g).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('plain users stay scoped to self while admins may pick any user', () => {
+        const fn = app.match(/window\.RBActivityLog = async function \(\) \{([\s\S]*?)\n    \};/)[1];
+        expect(fn).toContain("RBApi('activity_mine'");
+        expect(fn).toContain("RBApi('admin_activity'");
+        expect(fn).toContain('user_search');
     });
 });

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title data-i18n="seo.changelog.title">What’s new — RDBK.app</title>
+    <meta name="description" data-i18n-content="seo.changelog.desc" content="Every RDBK.app release and what changed in it, newest first.">
+    <link rel="canonical" href="https://rdbk.app/changelog/">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RDBK.app">
+    <meta property="og:title" content="What’s new — RDBK.app">
+    <meta property="og:description" content="Every RDBK.app release and what changed in it, newest first.">
+    <meta property="og:url" content="https://rdbk.app/changelog/">
+    <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
+    <meta property="og:locale" content="en">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="What’s new — RDBK.app">
+    <meta name="twitter:description" content="Every RDBK.app release and what changed in it, newest first.">
+    <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-49">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-49">
+    <style>
+        .changelog-page { max-width: 880px; margin: 0 auto; padding: 1.5rem 0 3rem; }
+        .changelog-page .lead { max-width: 62ch; }
+        /* release timeline: the version rides a rail on the left, what changed reads on the right */
+        .rel-list { list-style: none; margin: 1.2rem 0 0; padding: 0; }
+        .rel { display: grid; grid-template-columns: 5.4rem 1fr; gap: 1rem; }
+        .rel-rail { position: relative; display: flex; align-items: flex-start; justify-content: flex-end; padding-top: .15rem; }
+        .rel-rail::after { content: ''; position: absolute; top: 2.1rem; bottom: -.4rem; right: 1.6rem; width: 1px; background: var(--line); }
+        .rel:last-child .rel-rail::after { display: none; }
+        .rel-ver { background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; padding: .2rem .6rem; font-size: .8rem; font-weight: 800; color: var(--sand); }
+        .rel-body { padding-bottom: 1.6rem; min-width: 0; }
+        .rel-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; color: var(--muted); font-size: .78rem; }
+        .rel-badge { background: var(--sand); color: #1a1408; border-radius: 999px; padding: .05rem .5rem; font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+        .rel-badge-here { background: var(--card-2); border: 1px solid var(--ok); color: var(--ok); }
+        .rel-title { margin: .25rem 0 .5rem; font-size: 1.05rem; }
+        .rel-items { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+        .rel-items li { margin: .2rem 0; }
+        @media (max-width: 560px) {
+            .rel { grid-template-columns: 1fr; gap: .2rem; }
+            .rel-rail { justify-content: flex-start; }
+            .rel-rail::after { display: none; }
+            .rel-body { padding-bottom: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap changelog-page">
+    <h1 data-i18n="What’s new">What’s new</h1>
+    <p class="lead" data-i18n="about.news.text">Every recent release and what changed in it, newest first. RDBK.app updates itself: the web and the installed PWA refresh on their own, and the apps ship the same version through their stores.</p>
+    <div class="btnrow">
+        <a class="btn btn-ghost" href="https://github.com/alvarofranz/roadbook/commits/main" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> <span data-i18n="Full history">Full history</span></a>
+    </div>
+    <ol class="rel-list" id="relList"></ol>
+    <div class="btnrow center"><button class="btn btn-ghost" id="relMore" hidden></button></div>
+</main>
+
+<script src="../assets/js/i18n.es.js?v=1.8.2-49"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-49"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-49"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-49"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-49"></script>
+<script src="../assets/js/app.js?v=1.8.2-49"></script>
+<script src="../assets/js/changelog.js?v=1.8.2-49"></script>
+<script src="changelog.js?v=1.8.2-49"></script>
+</body>

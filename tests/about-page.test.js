@@ -68,20 +68,22 @@ describe('the release notes are a usable list (#478)', () => {
     });
 });
 
-describe('the About page renders both live sections (#478)', () => {
+describe('the About page keeps the app panel and teasers the changelog (#478)', () => {
     const html = read('public/about/index.html');
     const js = read('public/about/about.js');
 
-    it('ships the changelog data and the page module', () => {
-        expect(html).toMatch(/src="\.\.\/assets\/js\/changelog\.js\?v=/);
+    it('ships the page module and anchors the app panel', () => {
         expect(html).toMatch(/src="about\.js\?v=/);
+        expect(html).toContain('id="appFacts"');
     });
 
-    it('anchors the app panel and the release list the pop-up links to', () => {
-        expect(html).toContain('id="appFacts"');
-        expect(html).toContain('id="relList"');
-        expect(html).toContain('id="changelog"');           // showAppInfo links /about/#changelog
-        expect(read('public/assets/js/app.js')).toContain('about/#changelog');
+    it('links the dedicated changelog page instead of embedding the list', () => {
+        expect(html).toContain('id="changelog"');           // old /about/#changelog bookmarks still land here
+        expect(html).toContain('href="../changelog/"');
+        expect(html).not.toContain('id="relList"');
+        expect(html).not.toMatch(/changelog\.js\?v=/);
+        expect(read('public/assets/js/app.js')).toContain('ROOT}changelog/');
+        expect(read('public/assets/js/app.js')).not.toContain('about/#changelog');
     });
 
     it('asks the shared helpers what this copy is, instead of fetching version.json again', () => {
@@ -89,6 +91,22 @@ describe('the About page renders both live sections (#478)', () => {
         expect(js).toContain('RBLiveVersion()');
         expect(js).toContain('RBPlatformName()');
         expect(js).not.toContain('version.json');
+        expect(js).not.toContain('relList');
+    });
+});
+
+describe('the changelog page renders the release list', () => {
+    const html = read('public/changelog/index.html');
+    const js = read('public/changelog/changelog.js');
+
+    it('ships the changelog data and the page module', () => {
+        expect(html).toMatch(/src="\.\.\/assets\/js\/changelog\.js\?v=/);
+        expect(html).toMatch(/src="changelog\.js\?v=/);
+    });
+
+    it('anchors the release list', () => {
+        expect(html).toContain('id="relList"');
+        expect(html).toContain('id="relMore"');
     });
 
     it('translates the notes it renders, and re-renders on a language switch', () => {
