@@ -1077,10 +1077,10 @@
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
                     <div class="account-menu" hidden>
                         <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
-                        <button id="accActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>
                         ${participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`}
                         <a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>
                         ${manageLinksHTML(manageLinks(user, participant))}
+                        <button id="accActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>
                         ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
                         <hr class="menu-sep"><button id="accAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>
                         <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
@@ -1132,10 +1132,10 @@
             } else {
                 tabMenu.innerHTML =
                     `<a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>`
-                    + `<button id="tabActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>`
                     + (participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`)
                     + `<a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>`
                     + manageLinksHTML(manageLinks(user, participant))
+                    + `<button id="tabActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>`
                     + (participant ? `<hr class="menu-sep"><button id="tabLeaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : '')
                     + `<hr class="menu-sep"><button id="tabAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>`
                     + `<hr class="menu-sep"><button id="tabLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>`;
