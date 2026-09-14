@@ -101,7 +101,6 @@
         modal.q('.modal-close').onclick = () => modal.close();
         const video = modal.q('#ppScannerVideo');
         const status = modal.q('#ppScanStatus');
-        let stream = null;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
             video.srcObject = stream; await video.play();
