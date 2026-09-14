@@ -613,9 +613,10 @@ describe('modal confirm order + dismiss paths (#490)', () => {
     });
 
     it('the QR scanner stops the camera on every dismiss path, and Cancel is wired', () => {
-        expect(parts).toContain('() => stopStream()');
+        expect(parts).toContain('() => stopStream()'); // onDismiss: backdrop + Escape
+        expect(parts).toContain('modal.close = function() { stopStream(); origClose(); };'); // buttons
         expect(parts).toContain("modal.q('.modal-close').onclick = () => modal.close();");
-        expect(parts).not.toContain('origClose');
+        expect(parts).toContain('document.body.contains(modal.el)'); // the scan loop ends too
     });
 
     it('the reader roadbook picker has an explicit Close row', () => {
