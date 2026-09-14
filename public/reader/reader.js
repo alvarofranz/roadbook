@@ -73,7 +73,9 @@
     let evCtx = null;
     const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; evCtx = (c && c.participant) || null; }).catch(() => {});
     $('pickMine').onclick = async () => {
+        const busy = RBBusy('pickMine');
         const r = await RBApi('rb_list');
+        busy.reset();
         const list = (r.ok && r.roadbooks) || [];
         if (!list.length) return toast('No roadbooks yet.');
         const rows = list.map((rb) => `<button type="button" class="challenge-row" data-id="${rb.id}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`).join('');
