@@ -90,37 +90,41 @@
     $('ppActivateIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ppActivate').click(); });
 
     $('ppScanQr').onclick = async () => {
+        let stream = null;
+        const stopStream = () => { if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } };
+        // onDismiss covers the backdrop/Escape paths (they call the internal close closure
+        // directly); the wrapped close() below covers the buttons. stopStream is idempotent,
+        // so every path ends the camera exactly once.
         const modal = RBModal(`<div class="pp-scanner"><p class="muted small">${esc(t('Point the camera at the participant\'s QR code.'))}</p>
             <video id="ppScannerVideo" class="pp-scan-video" autoplay playsinline></video>
             <p class="muted small" id="ppScanStatus">${esc(t('Waiting for QR code…'))}</p>
-            <div class="btnrow"><button class="btn btn-ghost modal-close">${esc(t('Cancel'))}</button></div></div>`);
+            <div class="btnrow"><button class="btn btn-ghost modal-close">${esc(t('Cancel'))}</button></div></div>`, '', () => stopStream());
+        const origClose = modal.close;
+        modal.close = function() { stopStream(); origClose(); };
+        modal.q('.modal-close').onclick = () => modal.close();
         const video = modal.q('#ppScannerVideo');
         const status = modal.q('#ppScanStatus');
-        let stream = null;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
             video.srcObject = stream; await video.play();
             (function scan() {
-                if (modal.el.hidden) return;
+                if (!document.body.contains(modal.el)) return; // closed by any path: stop polling
                 RBQrScan.detect(video).then((raw) => {
                     if (raw) {
                         const code = raw.trim().toUpperCase();
                         if (/^[A-Z2-9]{6}$/.test(code)) {
-                            stream.getTracks().forEach((t) => t.stop());
+                            stopStream();
                             modal.close();
                             $('ppActivateIn').value = code;
                             $('ppActivate').click();
                             return;
                         }
                     }
-                    if (!modal.el.hidden) status.textContent = esc(t('Scanning…'));
+                    if (document.body.contains(modal.el)) status.textContent = esc(t('Scanning…'));
                     requestAnimationFrame(scan);
                 }).catch(() => { requestAnimationFrame(scan); });
             })();
         } catch (e) { toast('Could not access camera.'); modal.close(); return; }
-        modal.el.addEventListener('click', (e) => { if (e.target === modal.el) { if (stream) stream.getTracks().forEach((t) => t.stop()); } });
-        const origClose = modal.close;
-        modal.close = function() { if (stream) stream.getTracks().forEach((t) => t.stop()); origClose(); };
     };
 
     let addSearchTimer = null;
