@@ -590,3 +590,36 @@ describe('activity log modal, filtered by user type (#448)', () => {
         expect(fn).toContain('user_search');
     });
 });
+
+describe('modal confirm order + dismiss paths (#490)', () => {
+    const app = read('public/assets/js/app.js');
+    const reader = read('public/reader/reader.js');
+    const editor = read('public/editor/editor.js');
+    const parts = read('public/admin/events/participants/participants.js');
+
+    it('RBConfirm puts the ghost dismiss first and the primary action last', () => {
+        // source order lies (the data-yes const is built first): assert on the rendered row
+        const fn = app.slice(app.indexOf('window.RBConfirm = '));
+        const row = fn.match(/<div class="btnrow end">([\s\S]*?)<\/div>`/)[1];
+        expect(row).toContain('data-no'); // the affirmative button is the ${ok} interpolation after it
+        expect(row.indexOf('data-no')).toBeLessThan(row.indexOf('${ok}'));
+    });
+
+    it('the editor consistency and unsaved-changes rows end with the primary action', () => {
+        for (const id of ['ckSave', 'ccSave']) {
+            const row = editor.match(new RegExp(`<div class="btnrow center wrap">([\\s\\S]*?id="${id}"[\\s\\S]*?)</div>`))[1];
+            expect(row.lastIndexOf('btn-ghost')).toBeLessThan(row.lastIndexOf('btn-primary'));
+        }
+    });
+
+    it('the QR scanner stops the camera on every dismiss path, and Cancel is wired', () => {
+        expect(parts).toContain('() => stopStream()');
+        expect(parts).toContain("modal.q('.modal-close').onclick = () => modal.close();");
+        expect(parts).not.toContain('origClose');
+    });
+
+    it('the reader roadbook picker has an explicit Close row', () => {
+        expect(reader).toContain('Your roadbooks');
+        expect(reader).toContain('modal-close');
+    });
+});

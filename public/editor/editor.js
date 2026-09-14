@@ -403,8 +403,8 @@
                 <p class="muted">${t('Have a look before saving — none of this stops the roadbook from working:')}</p>
                 <ul class="modal-list">${rows}</ul>
                 <div class="btnrow center wrap">
-                    <button class="btn btn-primary" id="ckSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save anyway')}</button>
                     <button class="btn btn-ghost" id="ckFix">${t('Let me fix it')}</button>
+                    <button class="btn btn-primary" id="ckSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save anyway')}</button>
                 </div>`, 'slim', () => resolve(false));
             d.q('#ckSave').onclick = () => { resolve(true); d.close(); };
             d.q('#ckFix').onclick = () => { resolve(false); d.close(); };
@@ -1157,9 +1157,9 @@
                 const d = RBModal(`<h3>${t('Unsaved changes')}</h3>
                     <p class="muted">${t('Save your changes before closing?')}</p>
                     <div class="btnrow center wrap">
-                        <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
-                        <button class="btn btn-ghost" id="ccDiscard">${t('Close without saving')}</button>
                         <button class="btn btn-ghost" id="ccCancel">${t('Keep editing')}</button>
+                        <button class="btn btn-ghost" id="ccDiscard">${t('Close without saving')}</button>
+                        <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
                     </div>`, 'slim center', () => resolve('cancel'));
                 d.q('#ccSave').onclick = () => { resolve('save'); d.close(); };
                 d.q('#ccDiscard').onclick = () => { resolve('discard'); d.close(); };
