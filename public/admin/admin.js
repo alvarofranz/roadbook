@@ -280,8 +280,9 @@
     async function loadEventFilter() {
         const r = await api('events_manage');
         const sel = $('userEventFilter');
+        const events = ((r.ok && r.events) || []).slice().sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' }));
         sel.innerHTML = `<option value="">${esc(t('All events'))}</option>`
-            + ((r.ok && r.events) || []).map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
+            + events.map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
         sel.onchange = () => { page = 1; load(); };
     }
 
