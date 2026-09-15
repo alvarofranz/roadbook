@@ -38,6 +38,7 @@ try {
         case 'verify_email_change': verify_email_change($d); break;
         case 'account_delete':  account_delete(require_user(), $d); break;
         case 'admin_users':     admin_users(require_admin(), $d); break;
+        case 'admin_user_locations': admin_user_locations(require_admin()); break;
         case 'admin_set_role':  admin_set_role(require_admin(), $d); break;
         case 'admin_verify':    admin_verify(require_admin(), $d); break;
         case 'admin_block':     admin_block(require_admin(), $d); break;

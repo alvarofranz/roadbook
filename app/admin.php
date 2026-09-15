@@ -152,6 +152,17 @@ function admin_users(array $user, array $d = []): void {
     json_out(['ok' => true, 'me' => (int)$user['id'], 'users' => $users]);
 }
 
+// Admin: every user with a default map location, for the locations map (#499).
+function admin_user_locations(array $user): void {
+    $st = db()->query("SELECT id, username, first_name, last_name, default_lat, default_lon FROM users
+        WHERE default_lat IS NOT NULL AND default_lon IS NOT NULL ORDER BY username");
+    json_out(['ok' => true, 'users' => array_map(fn($r) => [
+        'id' => (int)$r['id'], 'username' => $r['username'],
+        'name' => trim($r['first_name'] . ' ' . $r['last_name']),
+        'lat' => (float)$r['default_lat'], 'lon' => (float)$r['default_lon'],
+    ], $st->fetchAll())]);
+}
+
 // Moderation: every public roadbook with its owner, so an admin can review the public site.
 function admin_public_roadbooks(array $user): void {
     $rows = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.updated_at, u.username
