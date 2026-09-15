@@ -333,6 +333,7 @@
             'Reset password': 'Restablecer contraseña', 'Your email': 'Tu email', 'Send reset link': 'Enviar enlace', 'Back to sign in': 'Volver a entrar',
             'Set a new password': 'Pon una nueva contraseña', 'Update password': 'Actualizar contraseña',
             'Sign out': 'Cerrar sesión', 'New roadbook': 'Nuevo roadbook', 'My roadbooks': 'Mis roadbooks', 'My activity': 'Mi actividad', 'Me': 'Yo',
+            'User locations': 'Ubicaciones de usuarios', 'Back to users': 'Volver a usuarios', 'No locations yet.': 'Aún no hay ubicaciones.', 'View user': 'Ver usuario',
             'Save as': 'Guardar como', 'Roadbook duplicated.': 'Roadbook duplicado.', 'Could not duplicate.': 'No se pudo duplicar.',
             'Change photo': 'Cambiar foto', 'Save profile': 'Guardar perfil', 'Loading…': 'Cargando…', 'Fork': 'Fork', 'Edit': 'Editar',
             // toasts

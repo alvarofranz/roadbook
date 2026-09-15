@@ -4,39 +4,41 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
-    <title>Participant management · RDBK.app</title>
+    <title>User locations · RDBK.app</title>
     <meta name="robots" content="noindex">
     <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../manifest.json">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.8.2-52">
     <link rel="stylesheet" href="../../assets/css/app.css?v=1.8.2-52">
     <style>
+        .uloc-map { width: 100%; height: 70vh; min-height: 420px; border-radius: 12px; border: 1px solid var(--line); }
     </style>
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="wrap admin-wrap">
-    <div class="head-row">
-        <h1 data-i18n="Participant management">Participant management</h1>
-    </div>
-    <p class="muted small" data-i18n="Select an event to manage its participants.">Select an event to manage its participants.</p>
-    <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
-    <div id="ppBody" hidden>
-        <div id="ppList" class="rb-grid"></div>
+    <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to users">Back to users</span></a></p>
+    <h1><span data-i18n="User locations">User locations</span> <span class="muted" id="ulocCount"></span></h1>
+    <div class="muted small" id="adminMsg" data-i18n="Loading…">Loading…</div>
+    <div id="ulocBody" hidden>
+        <div id="ulocMap" class="uloc-map"></div>
     </div>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="../../assets/js/config.js?v=1.8.2-52"></script>
 <script src="../../assets/js/roadbook-core.js?v=1.8.2-52"></script>
+<script src="../../assets/js/rbmap.js?v=1.8.2-52"></script>
 <script src="../../assets/js/i18n.es.js?v=1.8.2-52"></script>
 <script src="../../assets/js/i18n.it.js?v=1.8.2-52"></script>
 <script src="../../assets/js/i18n.de.js?v=1.8.2-52"></script>
 <script src="../../assets/js/i18n.fr.js?v=1.8.2-52"></script>
 <script src="../../assets/js/i18n.js?v=1.8.2-52"></script>
 <script src="../../assets/js/app.js?v=1.8.2-52"></script>
-<script src="pick.js?v=1.8.2-52"></script>
+<script src="users-map.js?v=1.8.2-52"></script>
 </body>
-</html>

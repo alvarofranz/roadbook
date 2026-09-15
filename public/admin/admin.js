@@ -330,7 +330,11 @@
         $('userCreate').onclick = createUser;
         $('userOrgFilter').oninput = () => { orgFilter = $('userOrgFilter').value; page = 1; load(); };
         loadEventFilter();
-        load();
+        load().then(() => {
+            // deep link from the locations map (#499): open the user card directly
+            const deepId = +(new URLSearchParams(location.search).get('user') || 0);
+            if (deepId && byId[deepId]) editUser(byId[deepId]);
+        });
     }
     init();
 })();
