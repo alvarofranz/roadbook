@@ -20,7 +20,7 @@
             users.forEach((u) => {
                 const m = new maplibregl.Marker({ color: '#3a8dff' }).setLngLat([u.lon, u.lat]).addTo(hqMap.map);
                 const pop = new maplibregl.Popup({ offset: 18, closeButton: false });
-                pop.setHTML(`<b>@${esc(u.username)}</b>${u.name ? `<br><span>${esc(u.name)}</span>` : ''}<br><a href="../?user=${u.id}">${esc(t('View user'))}</a>`);
+                pop.setHTML(`<div class="uloc-pop"><b>@${esc(u.username)}</b>${u.name ? `<br><span>${esc(u.name)}</span>` : ''}<br><a href="../?user=${u.id}">${esc(t('View user'))}</a></div>`);
                 m.setPopup(pop);
             });
             const lons = users.map((u) => u.lon), lats = users.map((u) => u.lat);
