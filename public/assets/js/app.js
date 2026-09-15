@@ -755,15 +755,23 @@
         </div>`;
         const wireRows = () => {
             rowsEl.querySelectorAll('[data-dup]').forEach((b) => b.onclick = async () => {
+                const busy = RBBusy(b);
                 const x = await RBApi('rb_duplicate', { id: +b.dataset.dup });
-                if (x.ok) { RBToast('Roadbook duplicated.'); RBRoadbookList(container, onChange); if (onChange) onChange(); } else RBToast(x.error || 'Could not duplicate.');
+                if (x.ok) { busy.ok(); RBToast('Roadbook duplicated.'); RBRoadbookList(container, onChange); if (onChange) onChange(); } else { busy.reset(); RBToast(x.error || 'Could not duplicate.'); }
             });
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) { await RBApi('rb_delete', { id: +b.dataset.del }); RBRoadbookList(container, onChange); if (onChange) onChange(); }
+                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) {
+                    const busy = RBBusy(b);
+                    const x = await RBApi('rb_delete', { id: +b.dataset.del });
+                    if (x.ok) { busy.ok(); RBRoadbookList(container, onChange); if (onChange) onChange(); }
+                    else { busy.reset(); RBToast(x.error || 'Could not delete.'); }
+                }
             });
             rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
             rowsEl.querySelectorAll('[data-status]').forEach((sel) => sel.onchange = async () => {
+                sel.disabled = true;
                 const r = await RBApi('rb_status', { id: +sel.dataset.status, status: sel.value });
+                sel.disabled = false;
                 RBToast(r.ok ? 'Status updated.' : (r.error || 'Could not change visibility.'));
                 RBRoadbookList(container, onChange); // re-render from the server truth (also resets on error)
             });

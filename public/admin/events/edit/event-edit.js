@@ -52,7 +52,7 @@
             d.q('[data-x="keep"]').onclick = () => done('keep');
         });
     }
-    async function save() {
+    async function save(btn) {
         const gate = $('evJoinGate').value;
         const needAct = $('evRequireActivation').checked ? 1 : 0;
         const extra = {};
@@ -70,6 +70,7 @@
                 if (choice === 'reset') extra.reset_active = 1;
             }
         }
+        const busy = btn ? RBBusy(btn) : null;
         const x = await api('event_save', {
             id, title: $('evTitleIn').value.trim(), description: $('evDescIn').value.trim(),
             organizer_website: $('evWebsiteIn').value.trim(),
@@ -80,15 +81,16 @@
             clear_join_code: gate !== 'code' ? 1 : 0,
             ...extra,
         });
-        if (!x.ok) return toast(x.error || 'Could not save.');
+        if (!x.ok) { if (busy) busy.reset(); return toast(x.error || 'Could not save.'); }
+        if (busy) busy.ok();
         toast('Saved.');
         if (!id) { id = x.id; history.replaceState(null, '', '?id=' + id); } // a new event now exists: pin it to the URL
         load();
     }
     // Save is offered at both the top (in the heading row) and the foot of the form, so a long
     // event page never forces a scroll back up to save (#179).
-    $('evSave').onclick = save;
-    $('evSaveBottom').onclick = save;
+    $('evSave').onclick = (e) => save(e.currentTarget);
+    $('evSaveBottom').onclick = (e) => save(e.currentTarget);
 
     /* ---------- the event logo (#151): preview + upload + remove ---------- */
     function renderLogo() {
@@ -284,24 +286,30 @@
         renderCodeRow();
         return true;
     }
-    $('joinRotate').onclick = async () => {
+    $('joinRotate').onclick = async (e) => {
         if (!(await confirmCodeGate())) return;
         // rotating invalidates the currently shared code, so it must be confirmed
         if (!(await RBConfirm(t('Generate a new join code? The current one stops working.')))) return;
+        const busy = RBBusy(e.currentTarget);
         const x = await api('event_join_code', { event_id: id });
+        busy.reset();
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
-    $('joinClear').onclick = async () => {
+    $('joinClear').onclick = async (e) => {
         if (!(await RBConfirm(t('Disable joining? The current code stops working.')))) return;
+        const busy = RBBusy(e.currentTarget);
         const x = await api('event_join_code', { event_id: id, clear: 1 });
+        busy.reset();
         if (x.ok) load(); else toast(x.error || 'Could not save.');
     };
-    $('joinSetBtn').onclick = async () => {
+    $('joinSetBtn').onclick = async (e) => {
         if (!(await confirmCodeGate())) return;
         var code = $('joinCodeIn').value.trim().toUpperCase();
         if (!code) return;
         if (code.length < 4 || code.length > 16) { toast('Join code must be 4–16 characters.'); return; }
+        const busy = RBBusy(e.currentTarget);
         const x = await api('event_join_code', { event_id: id, code: code });
+        busy.reset();
         if (x.ok) toast('Join code set.'); else toast(x.error || 'Could not save.');
         load();
     };

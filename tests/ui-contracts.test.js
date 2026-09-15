@@ -590,3 +590,75 @@ describe('activity log modal, filtered by user type (#448)', () => {
         expect(fn).toContain('user_search');
     });
 });
+
+describe('modal confirm order + dismiss paths (#490)', () => {
+    const app = read('public/assets/js/app.js');
+    const reader = read('public/reader/reader.js');
+    const editor = read('public/editor/editor.js');
+    const parts = read('public/admin/events/participants/participants.js');
+
+    it('RBConfirm puts the ghost dismiss first and the primary action last', () => {
+        // source order lies (the data-yes const is built first): assert on the rendered row
+        const fn = app.slice(app.indexOf('window.RBConfirm = '));
+        const row = fn.match(/<div class="btnrow end">([\s\S]*?)<\/div>`/)[1];
+        expect(row).toContain('data-no'); // the affirmative button is the ${ok} interpolation after it
+        expect(row.indexOf('data-no')).toBeLessThan(row.indexOf('${ok}'));
+    });
+
+    it('the editor consistency and unsaved-changes rows end with the primary action', () => {
+        for (const id of ['ckSave', 'ccSave']) {
+            const row = editor.match(new RegExp(`<div class="btnrow center wrap">([\\s\\S]*?id="${id}"[\\s\\S]*?)</div>`))[1];
+            expect(row.lastIndexOf('btn-ghost')).toBeLessThan(row.lastIndexOf('btn-primary'));
+        }
+    });
+
+    it('the QR scanner stops the camera on every dismiss path, and Cancel is wired', () => {
+        expect(parts).toContain('() => stopStream()'); // onDismiss: backdrop + Escape
+        expect(parts).toContain('modal.close = function() { stopStream(); origClose(); };'); // buttons
+        expect(parts).toContain("modal.q('.modal-close').onclick = () => modal.close();");
+        expect(parts).toContain('document.body.contains(modal.el)'); // the scan loop ends too
+    });
+
+    it('the reader roadbook picker has an explicit Close row', () => {
+        expect(reader).toContain('Your roadbooks');
+        expect(reader).toContain('modal-close');
+    });
+});
+
+describe('async actions report on their own button (#491)', () => {
+    // RBBusy disables + spins, then ticks or resets: the operation reports where it was
+    // launched, so a second tap cannot double-submit and silence never reads as failure.
+    const cases = [
+        ['public/assets/js/app.js', "[data-dup]"],
+        ['public/assets/js/app.js', "[data-del]"],
+        ['public/myroadbooks/myroadbooks.js', "[data-restore]"],
+        ['public/reader/reader.js', "'pickMine'"],
+        ['public/admin/admin.js', "[data-org]"],
+        ['public/admin/admin.js', "[data-verify]"],
+        ['public/admin/admin.js', "[data-block]"],
+        ['public/admin/admin.js', "[data-trash]"],
+        ['public/admin/admin.js', "'#euSave'"],
+        ['public/admin/admin.js', "'#cuSave'"],
+        ['public/admin/events/edit/event-edit.js', "'evSave'"],
+        ['public/admin/events/edit/event-edit.js', "'joinRotate').onclick"],
+        ['public/admin/events/edit/event-edit.js', "'joinClear').onclick"],
+        ['public/admin/events/edit/event-edit.js', "'joinSetBtn').onclick"],
+        ['public/admin/events/participants/participants.js', "'ppActivateAll'"],
+        ['public/admin/events/participants/participants.js', "'ppActivate'"],
+        ['public/account/account.js', "'loginForm'"],
+        ['public/account/account.js', "'registerForm'"],
+        ['public/account/account.js', "'delForm'"],
+        ['public/account/account.js', "'pfSave'"],
+        ['public/event/event.js', "'#evJoinOpenBtn'"],
+        ['public/event/event.js', "'#evJoinBtn'"],
+    ];
+    for (const [file, marker] of cases) {
+        it(`${file} reports around ${marker}`, () => {
+            const src = read(file);
+            const at = src.indexOf(marker);
+            expect(at, `${marker} not found in ${file}`).toBeGreaterThan(-1);
+            const window = src.slice(Math.max(0, at - 1500), at + 1500);
+            expect(window, `${file} ${marker} has no RBBusy/disabled feedback`).toMatch(/RBBusy|busySubmit|disabled\s*=\s*true/);
+        });
+    }
+});

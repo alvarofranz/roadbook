@@ -73,11 +73,14 @@
     let evCtx = null;
     const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; evCtx = (c && c.participant) || null; }).catch(() => {});
     $('pickMine').onclick = async () => {
+        const busy = RBBusy('pickMine');
         const r = await RBApi('rb_list');
+        busy.reset();
         const list = (r.ok && r.roadbooks) || [];
         if (!list.length) return toast('No roadbooks yet.');
         const rows = list.map((rb) => `<button type="button" class="challenge-row" data-id="${rb.id}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`).join('');
-        const d = RBModal(`<h2><i class="fa-solid fa-book icon-accent"></i> ${t('Your roadbooks')}</h2><div class="challenge-list">${rows}</div>`, 'wide');
+        const d = RBModal(`<h2><i class="fa-solid fa-book icon-accent"></i> ${t('Your roadbooks')}</h2><div class="challenge-list">${rows}</div><div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'wide');
+        d.q('.modal-close').onclick = d.close;
         d.el.querySelectorAll('[data-id]').forEach((b) => b.onclick = async () => {
             d.close();
             const j = await RBApi('rb_get', { id: +b.dataset.id });
