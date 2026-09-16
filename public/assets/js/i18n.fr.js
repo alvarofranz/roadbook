@@ -684,6 +684,7 @@
             'Deleted roadbooks are kept for a while, then permanently removed.': 'Les roadbooks supprimés sont conservés un temps, puis définitivement effacés.',
             'Permanently delete': 'Supprimer définitivement',
             'Permanently deleted.': 'Supprimé définitivement.',
+            'Delete expired': 'Supprimer les expirés', 'roadbooks past retention will be permanently deleted. Continue?': 'les roadbooks hors rétention seront définitivement supprimés. Continuer ?', 'remaining — run again.': 'restants — relancer.',
             'This cannot be undone.': 'Impossible d\'annuler.',
             'Expired': 'Expiré',
             'Organizers only.': 'Organisateurs uniquement.',

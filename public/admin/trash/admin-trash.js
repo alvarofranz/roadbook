@@ -17,8 +17,19 @@
         const box = $('trashList');
         $('adminMsg').hidden = true; box.hidden = false;
         if (!list.length) { box.innerHTML = `<p class="muted">${esc(t('The trash is empty.'))}</p>`; return; }
+        const expired = list.filter((rb) => (rb.days_left || 0) <= 0).length;
         box.innerHTML = `<p class="muted small">${esc(t('Deleted roadbooks are kept for a while, then permanently removed.'))}</p>`
+            + (expired > 0 ? `<div class="btnrow end"><button class="btn btn-danger" id="trashPurgeExpired"><i class="fa-solid fa-trash"></i> ${esc(t('Delete expired'))} (${expired})</button></div>` : '')
             + '<div class="trash-rows">' + list.map(rowHtml).join('') + '</div>';
+        if (expired > 0) $('trashPurgeExpired').onclick = async (e) => {
+            if (!(await RBConfirmDanger(expired + ' ' + t('roadbooks past retention will be permanently deleted. Continue?')))) return;
+            const busy = RBBusy(e.currentTarget);
+            const x = await RBApi('admin_trash_purge_expired', {});
+            busy.reset();
+            if (!x.ok) return toast(x.error || 'Could not delete.');
+            toast(t('Permanently deleted.') + ' ' + (x.deleted || 0) + (x.remaining > 0 ? ' · ' + x.remaining + ' ' + t('remaining — run again.') : ''));
+            load();
+        };
         list.forEach((rb) => {
             box.querySelector(`[data-restore="${rb.id}"]`).onclick = () => restore(rb);
             box.querySelector(`[data-purge="${rb.id}"]`).onclick = () => purge(rb);
