@@ -1,6 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Served by the web server for this status code. Deliberately SELF-CONTAINED: no app.css,
+     no app.js, no i18n — an error page has to render when the very thing that is broken is the
+     asset pipeline, the session or the API. That is why the three error pages (403 · 404 · 500)
+     carry the same inline stylesheet: it is duplication on purpose, kept identical by
+     tests/ui-contracts.test.js, which fails the build if one of them drifts (#496). -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
