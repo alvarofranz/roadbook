@@ -56,7 +56,7 @@
         const title = rb.title || t('Untitled');
         const d = RBModal(`<h2>${esc(t('Restore'))} · ${esc(title)}</h2>
             <p class="muted small">${esc(t('Pick the user who gets this roadbook back (as a draft).'))}</p>
-            <input id="rtSearch" class="field" type="search" placeholder="${esc(t('Search users…'))}" autocomplete="off">
+            <input id="rtSearch" class="field" type="search" placeholder="${esc(t('Search users…'))}" aria-label="${esc(t('Search users…'))}" autocomplete="off">
             <div id="rtList" class="mv-list"></div>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button></div>`, 'narrow');
         d.q('[data-cancel]').onclick = d.close;

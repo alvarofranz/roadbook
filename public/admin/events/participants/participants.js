@@ -138,7 +138,7 @@
         const modal = RBModal(`<div>
             <div class="toolbar pp-add-search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input class="field" id="ppAddSearch" data-i18n-ph="Search users…" placeholder="${esc(t('Search users…'))}" autocomplete="off">
+                <input class="field" id="ppAddSearch" data-i18n-ph="Search users…" placeholder="${esc(t('Search users…'))}" aria-label="${esc(t('Search users…'))}" autocomplete="off">
             </div>
             <div id="ppAddResults"></div>
         </div>`, 'slim', () => { clearTimeout(addSearchTimer); });
