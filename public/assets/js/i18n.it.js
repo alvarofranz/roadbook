@@ -769,7 +769,7 @@ Object.assign(window.RBi18nLangs.it, {
     'Install guide': 'Guida all’installazione',
     'The .rdbk format': 'Il formato .rdbk',
     'What’s new': 'Novità',
-    'about.news.text': 'Ogni versione recente e cosa è cambiato, dalla più nuova alla più vecchia. RDBK.app si aggiorna da sola: il sito e la PWA installata si ricaricano da soli e le app pubblicano la stessa versione sui rispettivi store.',
+    'about.news.text': 'Ogni versione e cosa è cambiato vivono in una pagina dedicata, dalla più nuova alla più vecchia. RDBK.app si aggiorna da sola: il sito e la PWA installata si ricaricano da soli e le app pubblicano la stessa versione sui rispettivi store.',
     'Full history': 'Cronologia completa',
     'Latest': 'Ultima',
     'Your version': 'La tua versione',

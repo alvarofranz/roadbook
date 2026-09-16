@@ -487,6 +487,9 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .gallery-card .gallery-meta { color: var(--muted); font-size: .82rem; }
 .gallery-empty { color: var(--muted); }
 .challenge-row { display: flex; gap: .8rem; align-items: center; width: 100%; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem; margin-bottom: .5rem; cursor: pointer; color: var(--text); }
+/* The picker's list scrolls inside the dialog, so its search box and its Close row stay put
+   while you scroll through the roadbooks (RBRowPicker, #493). */
+.challenge-list { max-height: 55vh; overflow-y: auto; }
 .challenge-row:hover { border-color: var(--sand); }
 .challenge-row img { width: 84px; height: 54px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; background: var(--card); }
 .challenge-row span { display: flex; flex-direction: column; min-width: 0; }
