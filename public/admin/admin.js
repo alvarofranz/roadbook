@@ -77,6 +77,7 @@
         m.q('#euAdmin').disabled = u.locked || u.id === me;
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
+            const busy = RBBusy(m.q('#euSave'));
             const x = await api('admin_update', {
                 id: u.id,
                 first_name: m.q('#euFirst').value.trim(),
@@ -88,13 +89,13 @@
                 quota_bytes: m.q('#euQuota').value.trim() === '' ? '' : Math.max(0, Math.round(parseFloat(m.q('#euQuota').value) * 1048576)),
                 is_organizer: m.q('#euOrganizer').checked ? 1 : 0,
             });
-            if (!x.ok) return toast(x.error || 'Could not save.');
+            if (!x.ok) { busy.reset(); return toast(x.error || 'Could not save.'); }
             const wantAdmin = m.q('#euAdmin').checked ? 1 : 0;
             if (!m.q('#euAdmin').disabled && wantAdmin !== (u.is_admin ? 1 : 0)) {
                 const r2 = await api('admin_set_role', { id: u.id, is_admin: wantAdmin });
-                if (!r2.ok) { toast(r2.error || 'Could not save.'); load(); return; }
+                if (!r2.ok) { busy.reset(); toast(r2.error || 'Could not save.'); load(); return; }
             }
-            m.close(); load();
+            busy.ok(); m.close(); load();
         };
     }
 
@@ -161,14 +162,18 @@
                 <td><button class="btn btn-ghost" data-rbexp="${rb.id}" title="${esc(t('Export'))}" aria-label="${esc(t('Export'))}"><i class="fa-solid fa-download"></i></button></td>
             </tr>`).join('')}</tbody></table>`;
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
+                sel.disabled = true;
                 const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
+                sel.disabled = false;
                 if (!x.ok) toast(x.error || 'Could not save.');
                 render();
             });
             body.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => movePicker(b.dataset.mv, b.dataset.title));
             body.querySelectorAll('[data-trash]').forEach((b) => b.onclick = async () => {
                 if (!(await RBConfirmDanger(t('Move to trash') + ' "' + esc(b.dataset.title || '') + '"?'))) return;
+                const busy = RBBusy(b); // the re-render below is the success feedback
                 const x = await api('admin_rb_trash', { id: +b.dataset.trash });
+                busy.reset();
                 if (!x.ok) toast(x.error || 'Could not delete.');
                 render();
             });
@@ -189,7 +194,7 @@
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
             const m2 = RBModal(`<h2>${esc(t('Move'))} \u00b7 ${esc(rbTitle)}</h2>
-                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" autocomplete="off">
+                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" aria-label="${esc(t('Search users\u2026'))}" autocomplete="off">
                 <div id="mvList" class="mv-list"></div>
                 <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button></div>`, 'narrow');
             m2.q('[data-cancel]').onclick = m2.close;
@@ -221,17 +226,23 @@
         body.querySelectorAll('[data-org]').forEach((b) => b.onclick = async () => {
             const u = byId[+b.dataset.org];
             if (+b.dataset.make === 0 && !(await RBConfirmDanger(t('Remove event organizer') + ' @' + ((u && u.username) || '') + '?', t('Remove')))) return;
+            const busy = RBBusy(b);
             const x = await api('admin_set_role', { id: +b.dataset.org, is_organizer: +b.dataset.make });
+            busy.reset();
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {
+            const busy = RBBusy(b);
             const x = await api('admin_verify', { id: +b.dataset.verify });
+            busy.reset();
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
             const u = byId[+b.dataset.block];
             if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + ((u && u.username) || '') + '?', t('Block')))) return;
+            const busy = RBBusy(b);
             const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
+            busy.reset();
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
@@ -239,7 +250,9 @@
         body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')'))) return;
+            const busy = RBBusy(b);
             const x = await api('admin_delete', { id: +b.dataset.del });
+            busy.reset();
             x.ok ? load() : toast(x.error || 'Could not delete.');
         });
     }
@@ -280,8 +293,9 @@
     async function loadEventFilter() {
         const r = await api('events_manage');
         const sel = $('userEventFilter');
+        const events = ((r.ok && r.events) || []).slice().sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' }));
         sel.innerHTML = `<option value="">${esc(t('All events'))}</option>`
-            + ((r.ok && r.events) || []).map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
+            + events.map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
         sel.onchange = () => { page = 1; load(); };
     }
 
@@ -313,9 +327,10 @@
             const email = m.q('#cuEmail').value.trim();
             const pass = m.q('#cuPass').value;
             if (!first || !last || !username || !email || !pass) { toast(t('All fields are required.')); return; }
+            const busy = RBBusy(m.q('#cuSave'));
             const x = await api('admin_create', { first_name: first, last_name: last, username, email, password: pass });
-            if (!x.ok) return toast(x.error || t('Could not create user.'));
-            m.close();
+            if (!x.ok) { busy.reset(); return toast(x.error || t('Could not create user.')); }
+            busy.ok(); m.close();
             load();
         };
         setTimeout(() => m.q('#cuFirst').focus(), 50);
@@ -330,7 +345,11 @@
         $('userCreate').onclick = createUser;
         $('userOrgFilter').oninput = () => { orgFilter = $('userOrgFilter').value; page = 1; load(); };
         loadEventFilter();
-        load();
+        load().then(() => {
+            // deep link from the locations map (#499): open the user card directly
+            const deepId = +(new URLSearchParams(location.search).get('user') || 0);
+            if (deepId && byId[deepId]) editUser(byId[deepId]);
+        });
     }
     init();
 })();

@@ -17,9 +17,10 @@
             <button class="btn btn-ghost" data-restore="${rb.id}"><i class="fa-solid fa-rotate-left"></i> ${esc(t('Restore'))}</button>
         </div>`).join('');
         list.querySelectorAll('[data-restore]').forEach((b) => b.onclick = async () => {
+            const busy = RBBusy(b);
             const x = await RBApi('rb_restore', { id: +b.dataset.restore });
-            if (x.ok) { RBToast('Restored as a draft.'); RBRoadbookList($('rbList'), loadTrash); loadTrash(); }
-            else RBToast(x.error || 'Could not restore.');
+            if (x.ok) { busy.ok(); RBToast('Restored as a draft.'); RBRoadbookList($('rbList'), loadTrash); loadTrash(); }
+            else { busy.reset(); RBToast(x.error || 'Could not restore.'); }
         });
     }
 

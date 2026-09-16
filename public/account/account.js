@@ -202,6 +202,8 @@
 
     /* Submit on Enter / button: run the handler, never reload the page. */
     function onSubmit(formId, handler) { $(formId).addEventListener('submit', (e) => { e.preventDefault(); handler(); }); }
+    // Busy state for a form's submit button (no double submits, visible progress).
+    const busySubmit = (formId) => RBBusy(document.querySelector('#' + formId + ' [type=submit]'));
 
     /* Our forms post by fetch (no navigation), so the browser never sees a credential
      * submission and won't offer to save/update the password. The Credential Management
@@ -299,8 +301,10 @@
     $('toForgot').onclick = (e) => { e.preventDefault(); msg(''); show('vForgot'); };
 
     onSubmit('loginForm', async () => {
+        const busy = busySubmit('loginForm');
         const pass = $('loginPass').value;
         const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
+        busy.reset();
         if (r.ok) { me = r.user; await storeCredential(me.email, pass); finishLogin(me); }
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
         else { msg(r.error, false); resetTs('login'); }
@@ -308,23 +312,31 @@
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
         if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
+        const busy = busySubmit('forceForm');
         const r = await api('change_password', { new: $('forcePass').value });
+        busy.reset();
         if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
         if ($('regPass').value !== $('regPass2').value) return msg("Passwords don't match.", false);
         if (!$('regTerms').checked) return msg('You must accept the Terms of Use to register.', false);
+        const busy = busySubmit('registerForm');
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsTokens.register });
+        busy.reset();
         msg(r.message || r.error, !!r.ok); if (r.ok) show('vLogin'); else resetTs('register');
     });
     onSubmit('forgotForm', async () => {
+        const busy = busySubmit('forgotForm');
         const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot });
+        busy.reset();
         msg(r.message || r.error, !!r.ok); resetTs('forgot');
     });
     // change password (signed in) + delete account — bound once; the forms live in #vAccount
     onSubmit('pwForm', async () => {
         if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
+        const busy = busySubmit('pwForm');
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
+        busy.reset();
         RBToast(r.message || r.error); // toast: visible even when scrolled down in the profile
         if (r.ok) {
             await storeCredential(me && me.email, $('pwNew').value);
@@ -335,7 +347,9 @@
     // change email (signed in): re-verifies the new address — see change_email() server-side
     onSubmit('emailForm', async () => {
         if ($('emNew').value.trim().toLowerCase() !== $('emNew2').value.trim().toLowerCase()) return RBToast("Emails don't match.");
+        const busy = busySubmit('emailForm');
         const r = await api('change_email', { email: $('emNew').value });
+        busy.reset();
         RBToast(r.message || r.error);
         if (r.ok) { $('emNew').value = ''; $('emNew2').value = ''; }
     });
@@ -373,7 +387,9 @@
     onSubmit('delForm', async () => {
         if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.')))) return;
         if (await RBConfirm(t('Download all your data as a ZIP before deleting?'))) await buildTakeout();
+        const busy = busySubmit('delForm');
         const r = await api('account_delete', { password: $('delPass').value });
+        busy.reset();
         if (r.ok) location.href = '../'; else RBToast(r.error);
     });
     wirePasswordToggles();
@@ -401,8 +417,10 @@
             locMap = new RBMap('pfLocMap', { style: RBMap.STYLE_TOPO, zoom: has ? 11 : 3, geolocate: true, center: has ? [lon, lat] : [0, 20] });
             locMap.map.on('click', (e) => setLoc(+e.lngLat.lat.toFixed(7), +e.lngLat.lng.toFixed(7)));
             $('pfLocClear').onclick = () => setLoc(null, null);
-            $('pfLocSave').onclick = async () => {
+            $('pfLocSave').onclick = async (e) => {
+                const busy = RBBusy(e.currentTarget);
                 const r = await api('save_location', { default_lat: locLat, default_lon: locLon });
+                if (r.ok) busy.ok(); else busy.reset();
                 RBToast(r.ok ? 'Location saved.' : r.error);
             };
             $('pfLocHere').onclick = () => {
@@ -457,9 +475,11 @@
             const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
             if (r.ok) { $('accAvatar').src = RBMediaSrc(r.avatar); msg('Photo updated.', true); } else msg(r.error, false);
         };
-        $('pfSave').onclick = async () => {
+        $('pfSave').onclick = async (e) => {
+            const busy = RBBusy(e.currentTarget);
             const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value, voice_lang: $('pfVoiceLang').value });
-            if (r.ok) $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; // keep the header name in sync
+            if (r.ok) { busy.ok(); $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; } // keep the header name in sync
+            else busy.reset();
             msg(r.ok ? 'Profile saved.' : r.error, !!r.ok);
         };
     }
