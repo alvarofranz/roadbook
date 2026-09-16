@@ -194,7 +194,7 @@
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
             const m2 = RBModal(`<h2>${esc(t('Move'))} \u00b7 ${esc(rbTitle)}</h2>
-                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" autocomplete="off">
+                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" aria-label="${esc(t('Search users\u2026'))}" autocomplete="off">
                 <div id="mvList" class="mv-list"></div>
                 <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button></div>`, 'narrow');
             m2.q('[data-cancel]').onclick = m2.close;
