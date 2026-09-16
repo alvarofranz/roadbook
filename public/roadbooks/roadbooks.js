@@ -12,8 +12,8 @@
     const card = (r) => RBGalleryCard({
         href: `/challenge/${encodeURIComponent(r.slug)}`, thumb: r.thumb, title: r.title,
         meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
-        overlays: `<button type="button" class="card-btn card-copy" data-copy="${esc(r.slug)}" title="${esc(t('Copy link'))}" aria-label="${esc(t('Copy link'))}"><i class="fa-solid fa-link"></i></button>`
-            + (isAdmin ? `<button type="button" class="card-btn card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-lock"></i></button>` : ''),
+        overlays: RBCopyLinkOverlay(r.slug)
+            + (isAdmin ? `<button type="button" class="card-btn card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-globe"></i></button>` : ''),
     });
 
     // the overlay buttons live inside the card link → don't let their click navigate
@@ -33,7 +33,7 @@
     const list = RBPagedList({
         pager, per: PER, source: () => all,
         filter: (items) => RB.filterByText(items, q, ['title', 'username']),
-        draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No matching roadbooks.'))}</p>`; },
+        draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('Nothing matches that search.'))}</p>`; },
     });
 
     if (search) search.oninput = () => { q = search.value; list.reset(); };

@@ -20,16 +20,22 @@
     }
 
     /* ---------- auth: must be participant or organizer of the event ---------- */
+    // The gate, with a reason: a failed call is not the same as "you are not a participant" —
+    // offline, the ranking is simply unreachable and saying so beats accusing the user (#493).
+    function gate(reason) {
+        if (reason) $('authGateMsg').textContent = t(reason);
+        $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true;
+    }
     async function checkAuth() {
         const cfg = await RBConfig();
-        if (!cfg.user) { $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
+        if (!cfg.user) { gate(); return; }
         const r = await RBApi('event_get', { slug: eventSlug }).catch(() => ({}));
-        if (!r.ok) { $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
+        if (!r.ok) { gate(navigator.onLine === false ? 'You are offline — reconnect to load this event.' : null); return; }
         const ev = r.event;
         isOrg = ev.org_read || cfg.user.is_admin || cfg.user.is_organizer || cfg.user.manages_events;
-        if (!ev.active_participant && !isOrg) { $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
+        if (!ev.active_participant && !isOrg) { gate(); return; }
         const rbInEvent = (r.roadbooks || []).find((x) => x.slug === rbSlug);
-        if (!rbInEvent) { $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
+        if (!rbInEvent) { gate(); return; }
         if (!rbInEvent.scoring_mode || rbInEvent.scoring_mode === 'free') { RBToast(RBt('This roadbook is not in competition mode.')); $('authGate').hidden = true; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
         authed = true;
         $('authGate').hidden = true;

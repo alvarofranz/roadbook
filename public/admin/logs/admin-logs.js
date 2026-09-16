@@ -25,9 +25,8 @@
                 <td class="muted small">${esc(e.ip || '')}</td></tr>`).join('')}</tbody></table>`
             : `<span class="muted">${esc(t('No activity yet.'))}</span>`;
         const pages = Math.max(1, Math.ceil((r.total || 0) / per));
-        $('logPageInfo').textContent = t('Page') + ' ' + page + ' / ' + pages + '  ·  ' + (r.total || 0);
-        $('logPrev').disabled = page <= 1;
-        $('logNext').disabled = page >= pages;
+        // the shared pager, like every other list: it also reports the total when there is one page
+        RBPager($('logPager'), page, pages, (p) => { page = p; loadActivity(); }, (r.total || 0) + ' ' + esc(t('entries')));
     }
 
     (async function init() {
@@ -37,8 +36,6 @@
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => { q = $('logSearch').value.trim(); page = 1; loadActivity(); }, 300);
         });
-        $('logPrev').onclick = () => { if (page > 1) { page--; loadActivity(); } };
-        $('logNext').onclick = () => { page++; loadActivity(); };
         loadActivity();
         loadCron();
     })();

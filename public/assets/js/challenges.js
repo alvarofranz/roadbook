@@ -28,22 +28,24 @@
     };
 
     // Picker: choose a public roadbook to open in the current tool.
+    /* The public-roadbook picker (the Editor's "start from a public roadbook"): the shared row
+       picker draws it, so it gets the same rows and the same search box as the Reader's. */
     async function pick(onPick, opts) {
-        const d = RBModal(`<h2>${RBt('Public Roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
+        const loading = RBModal(`<h2>${RBt('Public Roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
         const rbs = await listPublic(opts);
-        const rows = rbs === null
-            ? `<p class="muted"><i class="fa-solid fa-triangle-exclamation"></i> ${RBt('Could not load.')}</p>`
-            : (rbs.length ? rbs.map((r) => `<button class="challenge-row" data-s="${RBesc(r.slug)}">
+        loading.close();
+        if (rbs === null) { RBToast('Could not load.'); return; } // a failed call is not an empty list (#218)
+        RBRowPicker({
+            title: 'Public Roadbooks', icon: 'fa-globe', items: rbs, fields: ['title', 'username'],
+            empty: 'No public roadbooks yet.',
+            rowHTML: (r, i) => `<button class="challenge-row" data-pick="${i}">
                 ${r.thumb ? `<img src="${RBesc(RBMediaSrc(r.thumb))}" alt="" loading="lazy">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
                 <span><b>${RBesc(r.title)}</b><small>@${RBesc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}</small></span>
-            </button>`).join('') : `<p class="muted">${RBt('No public roadbooks yet.')}</p>`);
-        d.el.querySelector('.modal-card').innerHTML = `<h2>${RBt('Public Roadbooks')}</h2>
-            ${rows}
-            <div class="btnrow spaced"><button class="btn btn-ghost" id="chCancel">${RBt('Close')}</button></div>`;
-        d.q('#chCancel').onclick = d.close;
-        d.el.querySelectorAll('.challenge-row').forEach((b) => b.onclick = async () => {
-            d.close();
-            try { const j = await loadPublic(b.dataset.s); onPick(j.roadbook, b.dataset.s); } catch (e) { console.error(e); }
+            </button>`,
+            onPick: async (r, modal) => {
+                modal.close();
+                try { const j = await loadPublic(r.slug); onPick(j.roadbook, r.slug); } catch (e) { console.error(e); RBToast('Could not load the roadbook.'); }
+            },
         });
     }
 

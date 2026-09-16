@@ -46,11 +46,18 @@
                 thumb: r.thumb, title: r.title,
                 meta: (r.category ? '<span class="u-badge">' + esc(r.category) + '</span> ' : '') + '@' + esc(r.username) + ' \u00b7 ' + RBSummary(r.total_distance, r.note_count),
                 body: statusBadge(r),
+                overlays: r.status === 'public' ? RBCopyLinkOverlay(r.slug) : '', // public ones are shareable (#493)
             });
         };
         $('evRoadbooks').innerHTML = j.roadbooks.length
             ? j.roadbooks.map(card).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
+        $('evRoadbooks').addEventListener('click', (e) => { // the copy control floats over a card link
+            const b = e.target.closest('.card-copy');
+            if (!b) return;
+            e.preventDefault(); e.stopPropagation();
+            RBCopy(RBReaderLink(b.dataset.copy));
+        });
         if (window.RBIsParticipant && RBIsParticipant()) { $('evJoin').hidden = true; $('evWebsite').hidden = true; $('evHqMap').hidden = true; }
         var compRbs = j.roadbooks.filter(function(r) { return r.scoring_mode && r.scoring_mode !== 'free'; });
         if (compRbs.length && (j.event.active_participant || j.event.org_read)) {

@@ -623,8 +623,11 @@ describe('modal confirm order + dismiss paths (#490)', () => {
     });
 
     it('the reader roadbook picker has an explicit Close row', () => {
-        expect(reader).toContain('Your roadbooks');
-        expect(reader).toContain('modal-close');
+        // the picker itself is the shared RBRowPicker now (#493) — it owns the Close row, so every
+        // picker built on it keeps the explicit exit this contract was written for
+        expect(reader).toContain("title: 'Your roadbooks'");
+        expect(read('public/assets/js/app.js')).toContain('window.RBRowPicker = ');
+        expect(read('public/assets/js/app.js')).toContain('<button class="btn btn-ghost modal-close">${RBesc(RBt(\'Close\'))}</button>');
     });
 });
 
@@ -728,5 +731,50 @@ describe('an open menu follows a language switch (#495)', () => {
         expect(home).toContain('<span class="launch-name" data-i18n="Recorder">Recorder</span>');
         expect(home).toContain('<span class="launch-name" data-i18n="Editor">Editor</span>');
         expect(home).toContain('data-i18n-aria="RDBK sections"');
+    });
+});
+
+describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('every pick-one dialog is the shared picker, with its search box', () => {
+        expect(app).toContain('window.RBRowPicker = ');
+        for (const [file, title] of [
+            ['public/reader/reader.js', "title: 'Your roadbooks'"],
+            ['public/assets/js/challenges.js', "title: 'Public Roadbooks'"],
+            ['public/admin/trash/admin-trash.js', "title: 'Restore'"],
+            ['public/admin/admin.js', "title: 'Move'"],
+        ]) {
+            const src = read(file);
+            expect(src, `${file} does not use RBRowPicker`).toContain('RBRowPicker({');
+            expect(src, file).toContain(title);
+        }
+    });
+
+    it('no list keeps its own prev/next pager', () => {
+        for (const file of firstPartySources()) {
+            expect(read(file), `${file} hand-rolls a pager`).not.toMatch(/id="log(Prev|Next)"|mvSearch|rtSearch/);
+        }
+        expect(read('public/admin/logs/admin-logs.js')).toContain("RBPager($('logPager')");
+    });
+
+    it('a search that finds nothing says the same thing everywhere', () => {
+        for (const file of firstPartySources()) {
+            expect(read(file), file).not.toContain('No matching users.');
+            expect(read(file), file).not.toContain('No matching roadbooks.');
+        }
+    });
+
+    it('the copy-link control is one helper, on every public roadbook card', () => {
+        expect(app).toContain('window.RBCopyLinkOverlay = ');
+        for (const file of ['public/roadbooks/roadbooks.js', 'public/reader/reader.js', 'public/event/event.js']) {
+            expect(read(file), file).toContain('RBCopyLinkOverlay(');
+        }
+    });
+
+    it('the ranking tells offline apart from "not a participant"', () => {
+        const ranking = read('public/ranking/ranking.js');
+        expect(ranking).toContain('function gate(reason)');
+        expect(ranking).toContain("navigator.onLine === false ? 'You are offline — reconnect to load this event.'");
     });
 });

@@ -193,28 +193,19 @@
         });
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
-            const m2 = RBModal(`<h2>${esc(t('Move'))} \u00b7 ${esc(rbTitle)}</h2>
-                <input id="mvSearch" class="field" type="search" placeholder="${esc(t('Search users\u2026'))}" aria-label="${esc(t('Search users\u2026'))}" autocomplete="off">
-                <div id="mvList" class="mv-list"></div>
-                <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button></div>`, 'narrow');
-            m2.q('[data-cancel]').onclick = m2.close;
-            const listEl = m2.q('#mvList');
-            const draw = (q) => {
-                const matches = ((window.RB && RB.filterByText) ? RB.filterByText(allUsers, q, ['username', 'name', 'email']) : allUsers)
-                    .filter((au) => au.id !== u.id).slice(0, 50);
-                listEl.innerHTML = matches.length
-                    ? matches.map((au) => `<button class="mv-opt" data-pick="${au.id}" data-name="${esc(au.username)}"><b>@${esc(au.username)}</b> <span class="muted small">${esc(au.email)}</span></button>`).join('')
-                    : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
-                listEl.querySelectorAll('[data-pick]').forEach((b) => b.onclick = async () => {
-                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + esc(b.dataset.name) + '?'))) return;
-                    const x = await api('admin_move_roadbook', { id: +rbId, user_id: +b.dataset.pick });
+            RBRowPicker({
+                title: 'Move', icon: 'fa-right-left', card: 'narrow', lead: rbTitle,
+                items: allUsers.filter((au) => au.id !== u.id),
+                fields: ['username', 'name', 'email'], limit: 50, empty: 'No users yet.',
+                rowHTML: (au, i) => `<button class="mv-opt" data-pick="${i}"><b>@${esc(au.username)}</b> <span class="muted small">${esc(au.email)}</span></button>`,
+                onPick: async (au, modal) => {
+                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + au.username + '?'))) return;
+                    modal.close();
+                    const x = await api('admin_move_roadbook', { id: +rbId, user_id: +au.id });
                     toast(x.ok ? t('Roadbook moved.') : (x.error || 'Could not move.'));
-                    m2.close(); render();
-                });
-            };
-            m2.q('#mvSearch').oninput = (e) => draw(e.target.value);
-            draw('');
-            setTimeout(() => m2.q('#mvSearch').focus(), 50);
+                    render();
+                },
+            });
         };
         render();
     }
@@ -269,7 +260,7 @@
         const slice = filtered.slice((page - 1) * PER, page * PER);
         $('usersBody').innerHTML = slice.length
             ? slice.map(rowHtml).join('')
-            : `<tr><td colspan="3" class="muted">${esc(t('No matching users.'))}</td></tr>`;
+            : `<tr><td colspan="3" class="muted">${esc(t('Nothing matches that search.'))}</td></tr>`;
         wireRows();
         RBPager($('usersPager'), page, pages, (p) => { page = p; render(); }, filtered.length ? `${filtered.length} ${esc(t('users'))}` : '');
     }

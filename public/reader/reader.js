@@ -65,7 +65,14 @@
                 href: RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug),
                 thumb: r.thumb, title: r.title,
                 meta: '@' + esc(r.username) + ' · ' + RBSummary(r.total_distance, r.note_count),
+                overlays: RBCopyLinkOverlay(r.slug), // same control as the Roadbooks gallery (#493)
             })).join('');
+            grid.addEventListener('click', (e) => {
+                const b = e.target.closest('.card-copy');
+                if (!b) return;
+                e.preventDefault(); e.stopPropagation();
+                RBCopy(RBReaderLink(b.dataset.copy));
+            });
         });
     })();
     // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
@@ -76,15 +83,16 @@
         const busy = RBBusy('pickMine');
         const r = await RBApi('rb_list');
         busy.reset();
-        const list = (r.ok && r.roadbooks) || [];
-        if (!list.length) return toast('No roadbooks yet.');
-        const rows = list.map((rb) => `<button type="button" class="challenge-row" data-id="${rb.id}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`).join('');
-        const d = RBModal(`<h2><i class="fa-solid fa-book icon-accent"></i> ${t('Your roadbooks')}</h2><div class="challenge-list">${rows}</div><div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'wide');
-        d.q('.modal-close').onclick = d.close;
-        d.el.querySelectorAll('[data-id]').forEach((b) => b.onclick = async () => {
-            d.close();
-            const j = await RBApi('rb_get', { id: +b.dataset.id });
-            if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.');
+        if (!r.ok) return toast(navigator.onLine === false ? 'You are offline — reconnect to see your roadbooks.' : (r.error || 'Could not load.'));
+        RBRowPicker({
+            title: 'Your roadbooks', icon: 'fa-book', items: r.roadbooks || [], fields: ['title'],
+            empty: 'No roadbooks yet. Create one in the Editor.',
+            rowHTML: (rb, i) => `<button type="button" class="challenge-row" data-pick="${i}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`,
+            onPick: async (rb, modal) => {
+                modal.close();
+                const j = await RBApi('rb_get', { id: +rb.id });
+                if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.');
+            },
         });
     };
     RBGpxRecorder.init({ toast, onChange: (recording) => { // recording = an unmistakable red STOP button

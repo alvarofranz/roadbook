@@ -9,8 +9,8 @@
     <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../manifest.json">
-    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.8.2-57">
-    <link rel="stylesheet" href="../../assets/css/app.css?v=1.8.2-57">
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.8.2-58">
+    <link rel="stylesheet" href="../../assets/css/app.css?v=1.8.2-58">
     <style>
         .logs-toolbar { margin: .2rem 0 .8rem; }
         .logs-toolbar .field { flex: 1; min-width: 180px; margin: 0; }
@@ -27,14 +27,11 @@
         <section class="cfg-card">
             <h2 data-i18n="Activity">Activity</h2>
             <div class="toolbar logs-toolbar">
+                <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="search" id="logSearch" class="field" placeholder="Search action, user, IP…" data-i18n-ph="Search action, user, IP…" autocomplete="off" spellcheck="false">
             </div>
             <div id="logTable" class="muted small">—</div>
-            <div class="pager">
-                <button class="btn btn-ghost" id="logPrev" aria-label="Previous" data-i18n-aria="Previous"><i class="fa-solid fa-chevron-left"></i></button>
-                <span id="logPageInfo" class="muted small"></span>
-                <button class="btn btn-ghost" id="logNext" aria-label="Next" data-i18n-aria="Next"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+            <div class="pager" id="logPager"></div>
         </section>
         <section class="cfg-card">
             <h2 data-i18n="Cron log">Cron log</h2>
@@ -46,13 +43,13 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../assets/js/roadbook-core.js?v=1.8.2-57"></script>
-<script src="../../assets/js/i18n.es.js?v=1.8.2-57"></script>
-<script src="../../assets/js/i18n.it.js?v=1.8.2-57"></script>
-<script src="../../assets/js/i18n.de.js?v=1.8.2-57"></script>
-<script src="../../assets/js/i18n.fr.js?v=1.8.2-57"></script>
-<script src="../../assets/js/i18n.js?v=1.8.2-57"></script>
-<script src="../../assets/js/app.js?v=1.8.2-57"></script>
-<script src="admin-logs.js?v=1.8.2-57"></script>
+<script src="../../assets/js/roadbook-core.js?v=1.8.2-58"></script>
+<script src="../../assets/js/i18n.es.js?v=1.8.2-58"></script>
+<script src="../../assets/js/i18n.it.js?v=1.8.2-58"></script>
+<script src="../../assets/js/i18n.de.js?v=1.8.2-58"></script>
+<script src="../../assets/js/i18n.fr.js?v=1.8.2-58"></script>
+<script src="../../assets/js/i18n.js?v=1.8.2-58"></script>
+<script src="../../assets/js/app.js?v=1.8.2-58"></script>
+<script src="admin-logs.js?v=1.8.2-58"></script>
 </body>
 </html>
