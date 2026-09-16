@@ -723,7 +723,8 @@ describe('an open menu follows a language switch (#495)', () => {
         const footer = app.match(/footer\.innerHTML = `([\s\S]*?)`;/);
         expect(footer, 'footer markup not found').toBeTruthy();
         expect(footer[1]).not.toContain('The .rdbk standard</a>');
-        expect(footer[1]).toContain("${RBt('The .rdbk standard')}");
+        expect(footer[1]).toContain('${RBSiteLinksHTML()}');    // the shared list, every label translated (#496)
+        expect(app).toContain("label: 'The .rdbk standard'");
     });
 
     it('the launcher tiles name themselves through i18n', () => {
@@ -776,5 +777,32 @@ describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
         const ranking = read('public/ranking/ranking.js');
         expect(ranking).toContain('function gate(reason)');
         expect(ranking).toContain("navigator.onLine === false ? 'You are offline — reconnect to load this event.'");
+    });
+});
+
+describe('site chrome comes from one list; the error pages stand alone (#496)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('the footer and the Profile page render the SAME site links', () => {
+        expect(app).toContain('const SITE_LINKS = [');
+        expect(app).toContain('window.RBSiteLinksHTML = ');
+        expect(app).toContain('${RBSiteLinksHTML()}');                 // the footer
+        expect(app).toContain("document.getElementById('accSiteLinks')"); // the Profile page
+        // the Profile page no longer keeps a hand-written copy that can drift
+        const account = read('public/account/index.html');
+        expect(account).toContain('id="accSiteLinks"');
+        expect(account).not.toContain('href="../terms/" data-i18n="Terms of Use"');
+    });
+
+    it('the three error pages carry the same stylesheet, on purpose', () => {
+        const css = ['403', '404', '500'].map((code) => {
+            const page = read(`public/${code}.html`);
+            expect(page, `${code} must load no script`).not.toMatch(/<script[^>]*src=/);
+            expect(page, `${code} must load no stylesheet`).not.toMatch(/<link[^>]*rel="stylesheet"/);
+            expect(page, `${code} must explain why it is self-contained`).toContain('Deliberately SELF-CONTAINED');
+            return page.match(/<style>([\s\S]*?)<\/style>/)[1];
+        });
+        expect(css[0], '403 and 404 have drifted apart').toBe(css[1]);
+        expect(css[1], '404 and 500 have drifted apart').toBe(css[2]);
     });
 });

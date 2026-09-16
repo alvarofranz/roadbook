@@ -85,6 +85,25 @@
     // Common words are translated; product names stay as-is (RBt falls back to English regardless).
     const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
 
+    // HTML-escape, defined up here because the chrome below builds markup as soon as this file runs.
+    window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    /* The site's own links (About · Install · the spec · Privacy · Terms · Contact) — ONE list.
+       The footer carries them on desktop; the Profile page repeats them on mobile, where the
+       footer is hidden, and used to keep its own hand-written copy that drifted (#496).
+       `data-i18n` on every label, so a language switch reaches them (#495). */
+    const SITE_LINKS = [
+        { path: 'about/',    icon: 'fa-circle-info',    label: 'About' },
+        // desktop entry point to the install guide; on mobile the floating Install chip leads
+        // there, and inside the app the footer is hidden anyway (#333)
+        { path: 'install/',  icon: 'fa-circle-down',    label: 'Install' },
+        { path: 'standard/', icon: 'fa-book',           label: 'The .rdbk standard' },
+        { path: 'privacy/',  icon: 'fa-shield-halved',  label: 'Privacy' },
+        { path: 'terms/',    icon: 'fa-file-contract',  label: 'Terms of Use' },
+        { path: 'contact/',  icon: 'fa-envelope',       label: 'Contact' },
+    ];
+    window.RBSiteLinksHTML = () => SITE_LINKS.map((l) =>
+        `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`).join('\n');
+
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
         const rel = location.pathname.slice(rootPath.length).replace(/^\/+/, '');
@@ -115,19 +134,16 @@
         footer.innerHTML = `<div class="wrap">
             <div class="muted foot-links">
                 <b>RDBK.app</b>
-                <a href="${ROOT}about/"><i class="fa-solid fa-circle-info"></i> ${RBt('About')}</a>
-                <!-- desktop entry point to the install guide; on mobile the floating Install chip is
-                     the one that leads there, and inside the app the footer is hidden anyway (#333) -->
-                <a href="${ROOT}install/"><i class="fa-solid fa-circle-down"></i> ${RBt('Install')}</a>
-                <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> ${RBt('The .rdbk standard')}</a>
-                <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
-                <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
-                <a href="${ROOT}contact/"><i class="fa-solid fa-envelope"></i> ${RBt('Contact')}</a>
+                ${RBSiteLinksHTML()}
                 <span class="lang"></span>
                 <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
                 <span class="small" id="appVersion"></span>
             </div>
         </div>`;
+
+        // The Profile page repeats the site links where the footer is hidden — same list, filled here.
+        const accLinks = document.getElementById('accSiteLinks');
+        if (accLinks) accLinks.innerHTML = RBSiteLinksHTML();
 
         // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
         // every mobile-width view — web, installed PWA and the native app — and hides it on desktop
@@ -506,7 +522,6 @@
         return { el: m, q: (s) => m.querySelector(s), close };
     };
     // HTML-escape for safe interpolation into innerHTML.
-    window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
     // Set SEO meta at runtime for the public dynamic pages (challenge, event): title + description
