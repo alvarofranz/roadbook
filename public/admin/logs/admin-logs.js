@@ -10,18 +10,24 @@
        know is whether the runner ran AT ALL — every minute it writes a `[YYYY-MM-DD HH:MM:SS]`
        line, so the newest one answers it. Without the `* * * * *` entry on the host nothing ever
        purges, and until now the only way to notice was to read the log and do the arithmetic. */
-    function cronHealth(log) {
+    /* `serverNow` is the server's own clock, which is also the clock the log's timestamps were
+       written with: both are parsed the same naive way, so the age is exact whatever timezone the
+       admin is browsing from. (Measuring against the BROWSER's clock reported a cron that had run
+       one minute earlier as "120 minutes ago" for an admin two hours ahead of the server.) */
+    function cronHealth(log, serverNow) {
         const stamps = String(log || '').match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/g) || [];
         if (!stamps.length) return { state: 'never', minutes: null };
-        const last = new Date(stamps[stamps.length - 1].slice(1, -1).replace(' ', 'T'));
-        const minutes = Math.round((Date.now() - last.getTime()) / 60000);
+        const parse = (s) => new Date(String(s).replace(' ', 'T'));
+        const last = parse(stamps[stamps.length - 1].slice(1, -1));
+        const now = serverNow ? parse(serverNow) : new Date();
+        const minutes = Math.max(0, Math.round((now.getTime() - last.getTime()) / 60000));
         return { state: minutes <= 10 ? 'ok' : 'stale', minutes, last };
     }
     async function loadCron() {
         const r = await RBApi('admin_logs');
         if (!r.ok) return;
         $('logCron').textContent = r.cron || t('No cron log yet.');
-        const h = cronHealth(r.cron);
+        const h = cronHealth(r.cron, r.now);
         const el = $('cronHealth');
         if (h.state === 'never') {
             el.className = 'cron-health bad';
