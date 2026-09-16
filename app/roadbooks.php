@@ -399,6 +399,7 @@ function rb_delete(array $user, array $d): void {
     // trash (#238) and can restore it, as can an admin. The cron hard-deletes it after that.
     // `updated_at` (auto) records when it was trashed.
     db()->prepare("UPDATE roadbooks SET status = 'deleted' WHERE id = ?")->execute([$id]);
+    log_activity((int)$user['id'], 'rb_delete', 'roadbook #' . $id . ' → trash');
     json_out(['ok' => true]);
 }
 

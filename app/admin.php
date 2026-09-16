@@ -312,6 +312,7 @@ function admin_rb_purge(array $user, array $d): void {
 // caller offers another round while remaining > 0). Never touches roadbooks inside retention.
 function admin_trash_purge_expired(array $user): void {
     $deleted = 0;
+    $ids = [];
     for ($round = 0; $round < 5; $round++) {
         $rows = db()->query("SELECT id, user_id, filename FROM roadbooks
             WHERE status = 'deleted' AND updated_at < (NOW() - INTERVAL " . TRASH_DAYS . " DAY) LIMIT 200")->fetchAll();
@@ -320,11 +321,12 @@ function admin_trash_purge_expired(array $user): void {
             db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([(int)$r['id']]);
             purge_roadbook_files((int)$r['id'], (int)$r['user_id'], (string)$r['filename']);
             $deleted++;
+            if (count($ids) < 30) $ids[] = (int)$r['id']; // audit trail (detail caps at 255 chars)
         }
     }
     $left = (int)db()->query("SELECT COUNT(*) FROM roadbooks
         WHERE status = 'deleted' AND updated_at < (NOW() - INTERVAL " . TRASH_DAYS . " DAY)")->fetchColumn();
-    log_activity((int)$user['id'], 'admin_trash_purge_expired', 'deleted ' . $deleted);
+    log_activity((int)$user['id'], 'admin_trash_purge_expired', 'deleted ' . $deleted . ': ' . implode(',', $ids));
     json_out(['ok' => true, 'deleted' => $deleted, 'remaining' => $left]);
 }
 
