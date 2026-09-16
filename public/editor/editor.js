@@ -328,7 +328,7 @@
     async function transformNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        if (!(await RBConfirmDanger(t('Turn this waypoint into a plain track point? Its note will be removed.')))) return;
+        if (!(await RBConfirmDanger(t('Turn this note into a plain track point? Its text and symbols will be removed.')))) return;
         rb.notes.splice(ni, 1);
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Waypoint turned into a track point.');
@@ -654,7 +654,7 @@
         if (!added) return toast(skipped ? 'No waypoints within 10 m of the route.' : 'The GPX has no usable track or waypoints.');
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0;
-        routeChanged(t('Waypoints added from the GPX') + ': ' + added + (skipped ? ' (' + skipped + ' ' + t('skipped, too far') + ')' : '') + '.');
+        routeChanged(t('Notes added from the GPX') + ': ' + added + (skipped ? ' (' + skipped + ' ' + t('skipped, too far') + ')' : '') + '.');
     }
     async function addGpxTrack(trkpts) {
         if (!trkpts || trkpts.length < 2) return toast('The GPX track has too few points.');
@@ -998,7 +998,7 @@
         recPhotos.push({ token, url: localUrl, lat, lon, local: true, pending: true }); if (map) map.setPhotos(recPhotos);
         updateRecStats();
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
-        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Waypoint dropped'); } });
+        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note dropped'); } });
     };
     $('recStop').onclick = () => {
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
@@ -1644,7 +1644,7 @@
         const menuHtml = optRow('', `<span class="wp-dd-none">— ${esc(t('None'))}</span>`)
             + RB.wpTypesForProfile(rb.meta && rb.meta.profile).map((w) =>
                 optRow(w.id, RB.wpBadgeSVG(w.id, 20) + `<span class="wp-dd-cap">${esc(w.cap)}</span><span class="wp-dd-nm">${esc(t(w.name))}</span>`)).join('');
-        $('wpTypeSlot').innerHTML = `<div class="prop-field wp-dd"><span>${labelHelp('WP type', 'help.wpType')}</span>
+        $('wpTypeSlot').innerHTML = `<div class="prop-field wp-dd"><span>${labelHelp('Note type', 'help.wpType')}</span>
             <div class="wp-dd-wrap">
                 <button type="button" class="field wp-dd-btn" id="wpDDBtn" aria-haspopup="listbox" aria-expanded="false">${curHtml}<span class="wp-dd-chev">▾</span></button>
                 <div class="wp-dd-menu" id="wpDDMenu" role="listbox" hidden>${menuHtml}</div>
@@ -1718,7 +1718,7 @@
         RB.recomputeMetrics(rb); markDirty();
         refreshMap(true); renderNotes();
         select(rb.notes.findIndex((n) => n.idx === i)); // open the new note to fill it in
-        toast('Waypoint added.');
+        toast('Note added.');
     }
     function addWaypointNear(pt) {
         const idx = splitTrackAt(pt);
@@ -1728,7 +1728,7 @@
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
-        toast('Waypoint added.');
+        toast('Note added.');
     }
     // Insert the EXACT clicked point into the track at the nearest segment (a small detour off the
     // route, rather than snapping onto it); returns its new track index. Used by the off-track menu.
@@ -1749,7 +1749,7 @@
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
-        toast('Waypoint added.');
+        toast('Note added.');
     }
     // "Add comment": a coordinate-less comment note (image + text). It sits after the
     // currently-selected note (or at the end), carries no track point, num, or geodata, and is

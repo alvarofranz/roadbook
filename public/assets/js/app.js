@@ -119,7 +119,7 @@
                 <!-- desktop entry point to the install guide; on mobile the floating Install chip is
                      the one that leads there, and inside the app the footer is hidden anyway (#333) -->
                 <a href="${ROOT}install/"><i class="fa-solid fa-circle-down"></i> ${RBt('Install')}</a>
-                <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> The .rdbk standard</a>
+                <a href="${ROOT}standard/"><i class="fa-solid fa-book"></i> ${RBt('The .rdbk standard')}</a>
                 <a href="${ROOT}privacy/" data-i18n="Privacy"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
                 <a href="${ROOT}terms/"><i class="fa-solid fa-file-contract"></i> ${RBt('Terms of Use')}</a>
                 <a href="${ROOT}contact/"><i class="fa-solid fa-envelope"></i> ${RBt('Contact')}</a>
@@ -684,7 +684,7 @@
         const inputHtml = SR
             ? `<div class="wf-row"><input id="wfText" class="field" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off"><button class="btn btn-ghost" type="button" id="wfMic" aria-label="${RBesc(RBt('Dictate'))}" title="${RBesc(RBt('Dictate'))}"><i class="fa-solid fa-microphone"></i></button></div>`
             : `<input id="wfText" class="modal-in" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off">`;
-        const d = RBModal(`<h3>${RBesc(RBt('Waypoint'))} ${num}</h3>
+        const d = RBModal(`<h3>${RBesc(RBt('Note'))} ${num}</h3>
             ${inputHtml}
             <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${RBesc(RBt('Edit later'))} (5)</button></div>`, 'narrow', () => finish());
         const inp = d.q('#wfText'), btn = d.q('#wfBtn');
@@ -715,7 +715,7 @@
         const d = RBModal(`<img src="${RBesc(url)}" alt="" class="photo-preview">
             <div class="btnrow center">
                 <button class="btn btn-ghost" id="ptOk">OK</button>
-                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${RBesc(RBt('Convert into waypoint'))}</button>
+                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${RBesc(RBt('Convert into note'))}</button>
             </div>`, 'slim center');
         d.q('#ptOk').onclick = d.close;
         d.q('#ptWpt').onclick = () => { onWaypoint(); d.close(); };
@@ -745,7 +745,7 @@
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${RBFmtDate(rb.updated_at)}${rb.total_bytes ? ` · <i class="fa-solid fa-database"></i> ${RBFmtSize(rb.total_bytes)}` : ''}</small></div>
             <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RB_STATUS_LABEL[s]))}</option>`).join('')}</select>
-            <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-book-open"></i></a>
+            <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-compass"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             ${rb.status === 'public' && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
@@ -1053,7 +1053,36 @@
     // Render management links as <a> rows, with a separator between groups.
     function manageLinksHTML(links) {
         return links.map((l, i) => (i && l.group !== links[i - 1].group ? '<hr class="menu-sep">' : '')
-            + `<a href="${ROOT}${l.href}"><i class="fa-solid ${l.icon}"></i> ${RBt(l.label)}</a>`).join('');
+            + `<a href="${ROOT}${l.href}">${menuLabel(l.icon, l.label)}</a>`).join('');
+    }
+    /* Every item of the account menu carries its label as a <span data-i18n>, so switching the
+       language re-translates an OPEN menu instead of leaving it in the previous one (#495) —
+       RBt() alone paints the text once and the i18n pass has nothing to find later. */
+    const menuLabel = (icon, label) => `<i class="fa-solid ${icon}"></i> <span data-i18n="${RBesc(label)}">${RBesc(RBt(label))}</span>`;
+    /* The account menu is ONE list, rendered into the desktop dropdown and the tab-bar dropup
+       alike; `p` prefixes the ids the wiring below looks for. */
+    function accountMenuHTML(user, participant, p) {
+        return `<a href="${ROOT}account/">${menuLabel('fa-user', 'My profile')}</a>`
+            + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-book', 'My roadbooks')}</a>`)
+            + `<a href="${ROOT}wiki/">${menuLabel('fa-book-open', 'Wiki / Guida')}</a>`
+            + manageLinksHTML(manageLinks(user, participant))
+            + `<button id="${p}Activity">${menuLabel('fa-clock-rotate-left', 'My activity')}</button>`
+            + (participant ? `<hr class="menu-sep"><button id="${p}Leave">${menuLabel('fa-up-right-from-square', 'Switch to full mode')}</button>` : '')
+            + `<hr class="menu-sep"><button id="${p}AppInfo">${menuLabel('fa-circle-info', 'App Info')}</button>`
+            + `<button id="${p}Logout">${menuLabel('fa-right-from-bracket', 'Sign out')}</button>`;
+    }
+    // …and one wiring for both: close the menu, then do the thing.
+    function wireAccountMenu(root, p, closeMenu) {
+        const on = (id, fn) => { const el = root.querySelector('#' + p + id); if (el) el.onclick = fn; };
+        on('Logout', async () => { await RBApi('logout'); location.reload(); });
+        on('Activity', () => { closeMenu(); window.RBActivityLog(); });
+        on('AppInfo', () => { closeMenu(); showAppInfo(); });
+        on('Leave', async () => {
+            await RBApi('leave_participant_mode');
+            document.cookie = 'rb_participant=; max-age=0; path=/';
+            try { localStorage.removeItem('rb_participant'); } catch (e) {}
+            location.href = ROOT;
+        });
     }
 
     /* ---------------- Account control in the header ---------------- */
@@ -1083,29 +1112,14 @@
                 w.innerHTML = `<a class="nav-link account-login" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Sign in">${RBt('Sign in')}</span></a>`;
             } else {
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
-                    <div class="account-menu" hidden>
-                        <a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>
-                        ${participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`}
-                        <a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>
-                        ${manageLinksHTML(manageLinks(user, participant))}
-                        <button id="accActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>
-                        ${participant ? `<hr class="menu-sep"><button id="leaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : ''}
-                        <hr class="menu-sep"><button id="accAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>
-                        <button id="accountLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>
-                    </div>`;
+                    <div class="account-menu" hidden>${accountMenuHTML(user, participant, 'acc')}</div>`;
             }
             slot.appendChild(w);
             if (user) {
                 const btn = w.querySelector('.account-button'), menu = w.querySelector('.account-menu');
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
-                w.querySelector('#accountLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
-                const accAct = w.querySelector('#accActivity');
-                if (accAct) accAct.onclick = () => { menu.hidden = true; window.RBActivityLog(); };
-                const accInfo = w.querySelector('#accAppInfo');
-                if (accInfo) accInfo.onclick = () => { menu.hidden = true; showAppInfo(); };
-                const lp = w.querySelector('#leaveParticipant');
-                if (lp) lp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
+                wireAccountMenu(w, 'acc', () => { menu.hidden = true; });
             }
             if (participant) {
                 const n = document.querySelector('#topnav');
@@ -1138,24 +1152,10 @@
             if (!user) {
                 tabProfileBtn.onclick = () => { location.href = RBLoginUrl(); };
             } else {
-                tabMenu.innerHTML =
-                    `<a href="${ROOT}account/"><i class="fa-solid fa-user"></i> ${RBt('My profile')}</a>`
-                    + (participant ? '' : `<a href="${ROOT}myroadbooks/"><i class="fa-solid fa-book"></i> ${RBt('My roadbooks')}</a>`)
-                    + `<a href="${ROOT}wiki/"><i class="fa-solid fa-book-open"></i> ${RBt('Wiki / Guida')}</a>`
-                    + manageLinksHTML(manageLinks(user, participant))
-                    + `<button id="tabActivity"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</button>`
-                    + (participant ? `<hr class="menu-sep"><button id="tabLeaveParticipant"><i class="fa-solid fa-up-right-from-square"></i> ${RBt('Switch to full mode')}</button>` : '')
-                    + `<hr class="menu-sep"><button id="tabAppInfo"><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</button>`
-                    + `<hr class="menu-sep"><button id="tabLogout"><i class="fa-solid fa-right-from-bracket"></i> ${RBt('Sign out')}</button>`;
+                tabMenu.innerHTML = accountMenuHTML(user, participant, 'tab');
                 tabProfileBtn.onclick = (e) => { e.stopPropagation(); tabMenu.hidden = !tabMenu.hidden; };
                 document.addEventListener('click', () => { tabMenu.hidden = true; });
-                tabMenu.querySelector('#tabLogout').onclick = async () => { await RBApi('logout'); location.reload(); };
-                const tabLp = tabMenu.querySelector('#tabLeaveParticipant');
-                if (tabLp) tabLp.onclick = async () => { await RBApi('leave_participant_mode'); document.cookie = 'rb_participant=; max-age=0; path=/'; try { localStorage.removeItem('rb_participant'); } catch(e) {} location.href = ROOT; };
-                const tabAct = tabMenu.querySelector('#tabActivity');
-                if (tabAct) tabAct.onclick = () => { tabMenu.hidden = true; window.RBActivityLog(); };
-                const tabInfo = tabMenu.querySelector('#tabAppInfo');
-                if (tabInfo) tabInfo.onclick = () => { tabMenu.hidden = true; showAppInfo(); };
+                wireAccountMenu(tabMenu, 'tab', () => { tabMenu.hidden = true; });
             }
         }
         const tabBackBtn = document.getElementById('tabBackBtn');
@@ -1169,7 +1169,7 @@
        recording, a run or an unsaved draft left in one tool is never silently orphaned. */
     const PENDING_KEYS = ['rb_editor_draft', 'rb_recorder_session', 'rb_tripmaster_session', 'rb_session', 'rb_session_roadbook'];
     const PENDING_LABEL = { editor: 'Unsaved draft', recorder: 'Recording in progress', tripmaster: 'Tripmaster run', reader: 'Run in progress' };
-    const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-book-open' };
+    const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-compass' };
     const curTool = (location.pathname.slice(new URL(ROOT, location.href).pathname.length).replace(/^\/+/, '').split('/')[0]) || '';
     const km = (m) => (m / 1000).toFixed(2) + ' km';
     // The work left in OTHER tools (the current tool already prompts to resume its own work).

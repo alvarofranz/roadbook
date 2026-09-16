@@ -423,7 +423,7 @@ function wpIconsToggleControl(rbmap) {
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
             const b = document.createElement('button');
             b.type = 'button';
-            b.title = window.RBt ? RBt('Waypoint icons') : 'Waypoint icons';
+            b.title = window.RBt ? RBt('Note icons') : 'Note icons';
             b.setAttribute('aria-label', b.title);
             b.innerHTML = '<i class="fa-solid fa-location-dot" aria-hidden="true"></i>';
             const sync = () => b.classList.toggle('rb-ctrl-on', rbmap._wpIcons);

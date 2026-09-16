@@ -578,9 +578,12 @@ describe('activity log modal, filtered by user type (#448)', () => {
     const app = read('public/assets/js/app.js');
 
     it('both account menus link My activity to the shared modal', () => {
-        expect(app).toContain("id=\"accActivity\"");
-        expect(app).toContain("id=\"tabActivity\"");
-        expect(app.match(/RBActivityLog\(\);/g).length).toBeGreaterThanOrEqual(2);
+        // one builder feeds the desktop dropdown ('acc') and the tab-bar dropup ('tab'), so the
+        // item exists in both and the wiring is written once (#495)
+        expect(app).toContain('`<button id="${p}Activity">${menuLabel(\'fa-clock-rotate-left\', \'My activity\')}</button>`');
+        expect(app).toContain("accountMenuHTML(user, participant, 'acc')");
+        expect(app).toContain("accountMenuHTML(user, participant, 'tab')");
+        expect(app).toContain("on('Activity', () => { closeMenu(); window.RBActivityLog(); });");
     });
 
     it('plain users stay scoped to self while admins may pick any user', () => {
@@ -677,5 +680,53 @@ describe('the app keeps its tab-bar chrome at every width (#484)', () => {
         for (const selector of ['.app-tabbar', '.lang-mobile', '.app-chip-stack', '.fabrow']) {
             expect(app, `${selector} has no .native rule`).toContain(`.native ${selector}`);
         }
+    });
+});
+
+describe('the UI says "note"; only the data keeps wp_* (#494)', () => {
+    // A nota IS a GPX waypoint, so the user-facing word is "note" everywhere — while `wp_type`,
+    // `wp_radius` and the GPX/OpenRally vocabulary stay exactly as they are, on disk and in the
+    // export dialogs that talk about the GPX file itself.
+    it('no control is labelled Waypoint any more', () => {
+        for (const file of firstPartySources()) {
+            expect(read(file), file).not.toMatch(/data-i18n(?:-[a-z]+)?="Waypoints?"/);
+            expect(read(file), file).not.toMatch(/RBt\('Waypoints?'\)|[^A-Za-z]t\('Waypoints?'\)/);
+        }
+    });
+
+    it('the controls that drop one say Note', () => {
+        expect(read('public/recorder/index.html')).toContain('<span data-i18n="Note">Note</span>');
+        expect(read('public/editor/index.html')).toContain('id="recWaypoint" data-i18n="Note"');
+        for (const page of ['public/recorder/index.html', 'public/tripmaster/index.html']) {
+            expect(read(page), page).toContain('<div class="key" data-i18n="Notes">Notes</div>');
+        }
+    });
+
+    it('the format keys are untouched', () => {
+        const core = read('public/assets/js/roadbook-core.js');
+        for (const key of ['wp_type', 'wp_radius', 'default_wp_radius']) expect(core, key).toContain(key);
+    });
+});
+
+describe('an open menu follows a language switch (#495)', () => {
+    const app = read('public/assets/js/app.js');
+
+    it('every account-menu label is a data-i18n span, not painted once by RBt', () => {
+        expect(app).toContain('const menuLabel = (icon, label) =>');
+        expect(app).toContain('<span data-i18n="${RBesc(label)}">${RBesc(RBt(label))}</span>');
+    });
+
+    it('the footer has no hard-coded label left', () => {
+        const footer = app.match(/footer\.innerHTML = `([\s\S]*?)`;/);
+        expect(footer, 'footer markup not found').toBeTruthy();
+        expect(footer[1]).not.toContain('The .rdbk standard</a>');
+        expect(footer[1]).toContain("${RBt('The .rdbk standard')}");
+    });
+
+    it('the launcher tiles name themselves through i18n', () => {
+        const home = read('public/index.html');
+        expect(home).toContain('<span class="launch-name" data-i18n="Recorder">Recorder</span>');
+        expect(home).toContain('<span class="launch-name" data-i18n="Editor">Editor</span>');
+        expect(home).toContain('data-i18n-aria="RDBK sections"');
     });
 });

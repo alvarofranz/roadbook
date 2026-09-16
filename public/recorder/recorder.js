@@ -205,7 +205,7 @@
     // #53: surface the latest waypoint's note (especially the dictated audio text) on the running screen.
     function showWpText(note) {
         const el = $('recLastWp');
-        if (note && note.text) { el.textContent = t('Waypoint') + ' ' + note.num + ': ' + note.text; el.hidden = false; }
+        if (note && note.text) { el.textContent = t('Note') + ' ' + note.num + ': ' + note.text; el.hidden = false; }
         else el.hidden = true;
     }
     // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s),
@@ -368,7 +368,7 @@ function updateRecUi() {
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
         // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
         // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
-        if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Waypoint')); }
+        if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Note')); }
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
