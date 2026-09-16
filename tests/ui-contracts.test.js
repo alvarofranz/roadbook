@@ -662,3 +662,20 @@ describe('async actions report on their own button (#491)', () => {
         });
     }
 });
+
+describe('the app keeps its tab-bar chrome at every width (#484)', () => {
+    // The native app shows its bottom tab bar on ANY screen, so a rule that hides mobile chrome
+    // above the desktop breakpoint has to exclude it. On an iPad in landscape (1080 px) the
+    // profile tab sat there with `display: none` on the menu behind it: tapping it did nothing.
+    const app = read('public/assets/css/app.css');
+
+    it('the profile dropup is hidden above the breakpoint on the WEB only', () => {
+        expect(app).toContain('@media (min-width: 1025px) { html:not(.native) .tabbar-dropup { display: none; } }');
+    });
+
+    it('every piece of tab-bar chrome carries its .native counterpart', () => {
+        for (const selector of ['.app-tabbar', '.lang-mobile', '.app-chip-stack', '.fabrow']) {
+            expect(app, `${selector} has no .native rule`).toContain(`.native ${selector}`);
+        }
+    });
+});
