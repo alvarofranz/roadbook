@@ -269,6 +269,12 @@ describe('GPS readiness alerts (#443-446)', () => {
         expect(meter).toContain("this._onAlert('notifications')");
     });
 
+    it('old binaries without the bridge do not crash, and dismissing snoozes the battery nag', () => {
+        expect(meter).toContain("typeof RBNative.geo.readiness === 'function'");
+        expect(meter).toContain("this.snoozed('battery')");
+        expect(meter).toContain("self.snooze('battery', 30)");
+    });
+
     it('the bridge exposes readiness + settings deep-links backed by real plugins', () => {
         expect(bridge).toContain("import { PushNotifications } from '@capacitor/push-notifications'");
         expect(bridge).toContain("import { BatteryOptimization } from '@capawesome-team/capacitor-android-battery-optimization'");

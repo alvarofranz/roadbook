@@ -63,12 +63,13 @@ window.RBGpsMeter = class RBGpsMeter {
             this._native = !!(native && native.geo);
             if (this._native) {
                 RBNative.geo.start((c) => this._fix(c, Date.now()), err);
-                // preflight once per meter lifetime (not every resume — no nagging on pause cycles)
-                if (!this._preflightDone) {
+                // preflight once per meter lifetime (not every resume — no nagging on pause cycles).
+                // The bridge may predate it (old binaries have no readiness): guard, don't crash.
+                if (!this._preflightDone && RBNative.geo && typeof RBNative.geo.readiness === 'function') {
                     this._preflightDone = true;
                     RBNative.geo.readiness().then((r) => {
                         if (!this._running || !r) return;
-                        if (r.battery === false && !this._warned.battery) { this._warned.battery = true; this._onAlert('battery'); }
+                        if (r.battery === false && !this._warned.battery && !this.snoozed('battery')) { this._warned.battery = true; this._onAlert('battery'); }
                         if (r.notifications === 'denied' && !this._warned.notifications) { this._warned.notifications = true; this._onAlert('notifications'); }
                     }).catch(() => {});
                 }
@@ -102,6 +103,14 @@ window.RBGpsMeter = class RBGpsMeter {
     // Built-in alert UI so tools get readiness warnings for free (override via onAlert).
     // Toasts for the advisory ones; a modal with a settings action where the user must act.
     // Every global is guarded — under test there is no app shell.
+    // Battery snooze (#443 follow-up): dismissing means "I handled it / my OEM lies" — nagging
+    // every recording would train the user to ignore it. Silent for 30 days, then ask again.
+    snoozed(which) {
+        try { return Date.now() < +(localStorage.getItem('rb_nag_' + which + '_until') || 0); } catch (e) { return false; }
+    }
+    snooze(which, days) {
+        try { localStorage.setItem('rb_nag_' + which + '_until', String(Date.now() + (days || 30) * 86400000)); } catch (e) {}
+    }
     _defaultAlert(kind) {
         const t = (typeof window.RBt === 'function') ? window.RBt : ((k) => k);
         const toast = (typeof window.RBToast === 'function') ? window.RBToast : null;
@@ -111,6 +120,7 @@ window.RBGpsMeter = class RBGpsMeter {
         if (kind === 'coarse') { if (toast) toast(t('Position too coarse for a reliable track — grant precise location.')); return; }
         if (!modal) return;
         const battery = kind === 'battery';
+        const self = this;
         const m = modal(`<p class="modal-text">${t(battery
             ? 'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.'
             : 'Notifications are off, so background recording may stop with the screen off.')}</p>
@@ -118,7 +128,7 @@ window.RBGpsMeter = class RBGpsMeter {
                 <button class="btn btn-ghost" data-no>${t('Not now')}</button>
                 <button class="btn btn-primary" data-yes>${t(battery ? 'Open battery settings' : 'Open settings')}</button>
             </div>`, 'narrow', () => {});
-        m.q('[data-no]').onclick = m.close;
+        m.q('[data-no]').onclick = () => { if (battery) self.snooze('battery', 30); m.close(); };
         m.q('[data-yes]').onclick = () => {
             m.close();
             if (!nativeGeo) return;
