@@ -806,3 +806,33 @@ describe('site chrome comes from one list; the error pages stand alone (#496)', 
         expect(css[1], '404 and 500 have drifted apart').toBe(css[2]);
     });
 });
+
+describe('cron health is measured on the server\'s clock (#505)', () => {
+    // Reported from production: "Last cron run: 17:53 — 120 minutes ago", read at 17:54. The log
+    // is written with the SERVER's clock and the age was measured against the BROWSER's, so every
+    // admin in another timezone saw a healthy cron as hours stale.
+    const src = read('public/admin/logs/admin-logs.js');
+    const body = src.match(/function cronHealth\(log, serverNow\) \{([\s\S]*?)\n    \}/)[1];
+    // eslint-disable-next-line no-new-func
+    const cronHealth = new Function('log', 'serverNow', body);
+    const log = '[2026-09-16 17:52:01] task 2\n[2026-09-16 17:53:01] task 3\n';
+
+    it('a run one minute ago reads as healthy, whatever timezone the admin is in', () => {
+        const h = cronHealth(log, '2026-09-16 17:54:10');
+        expect(h.state).toBe('ok');
+        expect(h.minutes).toBe(1);
+    });
+
+    it('a runner that stopped hours ago still reads as stale', () => {
+        expect(cronHealth(log, '2026-09-16 19:30:00').state).toBe('stale');
+    });
+
+    it('an empty log means it never ran', () => {
+        expect(cronHealth('', '2026-09-16 17:54:10').state).toBe('never');
+    });
+
+    it('the endpoint sends the clock the log was written with', () => {
+        expect(read('app/settings.php')).toContain("'now' => date('Y-m-d H:i:s')");
+        expect(src).toContain('cronHealth(r.cron, r.now)');
+    });
+});

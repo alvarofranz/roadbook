@@ -53,7 +53,10 @@ function admin_save_settings(array $user, array $d): void {
 function admin_logs(array $user): void {
     $cronLog = dirname(__DIR__) . '/cron/cron.log';
     $cron = is_file($cronLog) ? substr((string)file_get_contents($cronLog), -8000) : '';
-    json_out(['ok' => true, 'cron' => $cron]);
+    // …and the server's own clock: the log's timestamps are written with it, so the "last run"
+    // age has to be measured against it. Comparing them with the BROWSER's clock reported a cron
+    // that had just run as two hours stale, for every admin in a different timezone (#505).
+    json_out(['ok' => true, 'cron' => $cron, 'now' => date('Y-m-d H:i:s')]);
 }
 
 // Admin: paginated + searchable global activity log for the Logs page (#200). `q` matches the
