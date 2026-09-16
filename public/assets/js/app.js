@@ -332,7 +332,7 @@
                     RBApi('user_search', { q }).then((r) => {
                         if (!r.ok || !r.users) return;
                         pickBox.innerHTML = r.users.slice(0, 8).map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}"><b>${RBesc(u.username)}</b> <span class="muted small">${RBesc(((u.first_name || '') + ' ' + (u.last_name || '')).trim())}</span></span></div>`).join('')
-                            || `<p class="muted small">${RBesc(RBt('No matching users.'))}</p>`;
+                            || `<p class="muted small">${RBesc(RBt('Nothing matches that search.'))}</p>`;
                         pickBox.querySelectorAll('[data-pu]').forEach((el) => el.onclick = () => { targetId = +el.dataset.pu; pickBox.innerHTML = ''; actPage = 1; loadAct(); });
                     });
                 }, 300);
@@ -630,6 +630,32 @@
         };
         return list;
     };
+    /* Pick one thing from a list, in a dialog: the Reader's "your roadbooks" and the Editor's
+       "public roadbooks" were two hand-rolled copies of the same modal, neither of which could
+       be searched — painful once you have more than a screenful (#493). `rowHTML(item)` draws a
+       row, `fields` are what the search box looks at, and the search only appears when the list
+       is long enough to need it. */
+    window.RBRowPicker = ({ title, icon = 'fa-book', lead = '', items, fields, rowHTML, onPick, empty, limit = 0, card = 'wide' }) => {
+        const searchable = items.length > 5;
+        const modal = RBModal(`<h2><i class="fa-solid ${icon} icon-accent"></i> ${RBesc(RBt(title))}</h2>
+            ${lead ? `<p class="muted small">${RBesc(RBt(lead))}</p>` : ''}
+            ${searchable ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false"></div>` : ''}
+            <div class="challenge-list"></div>
+            <div class="btnrow end spaced"><button class="btn btn-ghost modal-close">${RBesc(RBt('Close'))}</button></div>`, card);
+        const list = modal.q('.challenge-list'), search = modal.q('.rb-search');
+        const draw = (q) => {
+            let shown = q ? RB.filterByText(items, q, fields) : items;
+            if (limit) shown = shown.slice(0, limit);
+            list.innerHTML = shown.length ? shown.map(rowHTML).join('')
+                : `<p class="muted small">${RBesc(RBt('Nothing matches that search.'))}</p>`;
+            list.querySelectorAll('[data-pick]').forEach((b) => b.onclick = () => onPick(shown[+b.dataset.pick], modal));
+        };
+        if (!items.length) list.innerHTML = `<p class="muted small">${RBesc(RBt(empty))}</p>`;
+        else draw('');
+        if (search) { search.oninput = () => draw(search.value); setTimeout(() => search.focus(), 50); }
+        modal.q('.modal-close').onclick = modal.close;
+        return modal;
+    };
     // An event's date range for a meta line: "start – end", the single date, or '' when undated.
     window.RBDateRange = (startIso, endIso) => startIso ? (endIso && endIso !== startIso ? RBFmtDate(startIso) + ' – ' + RBFmtDate(endIso) : RBFmtDate(startIso)) : '';
     // One public gallery card (Roadbooks · Events · event page · home teaser): thumb (or an icon
@@ -653,6 +679,11 @@
         placeholder.innerHTML = '<i class="fa-solid fa-map-location-dot"></i>';
         img.replaceWith(placeholder);
     }, true);
+
+    /* The copy-link control that floats over a public roadbook's card. It lived only on the
+       Roadbooks gallery; wherever a public roadbook is shown, the same control shows (#493).
+       The card is a link, so the click handler that reads `data-copy` must stop it. */
+    window.RBCopyLinkOverlay = (slug) => `<button type="button" class="card-btn card-copy" data-copy="${RBesc(slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>`;
 
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
@@ -780,7 +811,7 @@
             pager: pagerEl, per: PER, source: () => all,
             filter: (items) => RB.filterRoadbooks(items, q),
             draw: (slice) => {
-                rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('No matching roadbooks.'))}</p>`;
+                rowsEl.innerHTML = slice.length ? slice.map(rowHtml).join('') : `<p class="muted small">${RBesc(RBt('Nothing matches that search.'))}</p>`;
                 wireRows();
             },
         });

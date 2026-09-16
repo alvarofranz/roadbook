@@ -159,7 +159,7 @@
                 ? list.map((u) => `<div class="ev-line"><span class="meta"><i class="fa-solid fa-user"></i> ${esc(u.username)}${u.organization ? ` <span class="muted small">· ${esc(u.organization)}</span>` : ''}</span>
                     <button class="btn btn-ghost" data-orgadd="${esc(u.username)}" title="${esc(t('Add organizer'))}" aria-label="${esc(t('Add organizer'))}"><i class="fa-solid fa-user-plus"></i> ${esc(t('Add'))}</button>
                 </div>`).join('')
-                : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
+                : `<p class="muted small">${esc(t('Nothing matches that search.'))}</p>`;
             m.q('#orgListModal').querySelectorAll('[data-orgadd]').forEach((b) => b.onclick = async () => {
                 const x = await api('event_org_add', { event_id: id, username: b.dataset.orgadd });
                 if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not add.');
@@ -212,7 +212,7 @@
             m.q('#pickList').innerHTML = list.length ? list.map((x) => `<div class="ev-line">
                 <span class="meta"><b>${esc(x.title)}</b> <span class="muted small">${x.status === 'public' ? esc(t('Public')) : esc(t('Draft'))}</span></span>
                 <button class="btn btn-ghost" data-pick="${x.id}"><i class="fa-solid fa-plus"></i> ${esc(t('Add'))}</button>
-            </div>`).join('') : `<p class="muted small">${esc(t('No matching roadbooks.'))}</p>`;
+            </div>`).join('') : `<p class="muted small">${esc(t('Nothing matches that search.'))}</p>`;
             m.q('#pickList').querySelectorAll('[data-pick]').forEach((b) => b.onclick = async () => {
                 const x = await api('event_rb_add', { event_id: id, roadbook_id: +b.dataset.pick });
                 if (x.ok) { m.close(); load(); } else toast(x.error || 'Could not add.');

@@ -41,7 +41,7 @@
                 <span class="muted small">· ${esc((p.first_name + ' ' + p.last_name).trim())} · ${esc(p.email)} · ${esc(RBFmtDate(p.joined))}</span></span>
             ${p.status === 'pending' ? `<button class="btn btn-ghost" data-ppact="${p.id}" title="${esc(t('Activate'))}" aria-label="${esc(t('Activate'))}"><i class="fa-solid fa-check icon-ok"></i> ${esc(t('Activate'))}</button>` : ''}
             <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
-        </div>`).join('') : `<p class="muted small">${esc(t(q ? 'No matching users.' : 'No participants yet.'))}</p>`;
+        </div>`).join('') : `<p class="muted small">${esc(t(q ? 'Nothing matches that search.' : 'No participants yet.'))}</p>`;
         RBPager($('ppPager'), page, pages, (p) => { page = p; load(); }, pages > 1 ? `${r.total} ${esc(t('participants'))}` : '');
         $('ppList').querySelectorAll('[data-ppdel]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Remove participant') + ' “' + esc(b.dataset.name) + '”?'))) return;
@@ -150,7 +150,7 @@
                 modal.q('#ppAddResults').innerHTML = r.users.length
                     ? r.users.map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}" data-pun="${esc(u.username)}">
                         <b>${esc(u.username)}</b> <span class="muted small">${esc((u.first_name + ' ' + u.last_name).trim())} · ${esc(u.email)}</span></span></div>`).join('')
-                    : `<p class="muted small">${esc(t('No matching users.'))}</p>`;
+                    : `<p class="muted small">${esc(t('Nothing matches that search.'))}</p>`;
                 modal.el.querySelectorAll('[data-pu]').forEach((el) => el.onclick = async () => {
                     const busy = RBBusy(el);
                     const x = await api('event_participant_add', { event_id: id, user_id: +el.dataset.pu });
@@ -178,7 +178,7 @@
             if (p * r.per_page >= r.total) break;
         }
         if (busy) busy.ok();
-        if (!rows.length) return toast(q ? 'No matching users.' : 'No participants yet.');
+        if (!rows.length) return toast(q ? 'Nothing matches that search.' : 'No participants yet.');
         const lines = ['first_name,last_name,email', ...rows.map((p) => [cell(p.first_name), cell(p.last_name), cell(p.email)].join(','))];
         // the file is named after the event (filesystem-hostile characters stripped)
         const name = (eventTitle || 'rdbk-participants').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();

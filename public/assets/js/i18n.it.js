@@ -122,8 +122,8 @@
             'Use my location': 'Usa la mia posizione', 'Not set': 'Non impostata', 'Could not get your location.': 'Impossibile ottenere la tua posizione.', 'W': 'O',
             'Save location': 'Salva posizione', 'Location saved.': 'Posizione salvata.',
             'Too many attempts. Please wait a moment.': 'Troppi tentativi. Attendi un momento.', 'Try again in': 'Riprova tra',
-            'Read': 'Leggi', 'View': 'Vedi', 'Search roadbooks…': 'Cerca roadbook…', 'No matching roadbooks.': 'Nessun roadbook corrispondente.',
-            'Search users…': 'Cerca utenti…', 'Search participants…': 'Cerca partecipanti…', 'Remove the event logo?': 'Rimuovere il logo dell’evento?', 'View participants': 'Vedi partecipanti', 'All events': 'Tutti gli eventi', 'Export CSV': 'Esporta CSV', 'Only the owner can change the visibility.': 'Solo il proprietario può cambiare la visibilità.', 'From your events': 'Dai tuoi eventi', 'is editing this roadbook — read-only.': 'sta modificando questo roadbook — sola lettura.', 'Force unlock': 'Forza sblocco', 'Force unlock? The other editor may lose unsaved changes.': 'Forzare lo sblocco? L’altro editor potrebbe perdere le modifiche non salvate.', 'This roadbook is being edited by someone else.': 'Questo roadbook è in modifica da un altro utente.', 'No matching users.': 'Nessun utente corrispondente.', 'users': 'utenti',
+            'Read': 'Leggi', 'View': 'Vedi', 'Search roadbooks…': 'Cerca roadbook…',
+            'Search users…': 'Cerca utenti…', 'Search participants…': 'Cerca partecipanti…', 'Remove the event logo?': 'Rimuovere il logo dell’evento?', 'View participants': 'Vedi partecipanti', 'All events': 'Tutti gli eventi', 'Export CSV': 'Esporta CSV', 'Only the owner can change the visibility.': 'Solo il proprietario può cambiare la visibilità.', 'From your events': 'Dai tuoi eventi', 'is editing this roadbook — read-only.': 'sta modificando questo roadbook — sola lettura.', 'Force unlock': 'Forza sblocco', 'Force unlock? The other editor may lose unsaved changes.': 'Forzare lo sblocco? L’altro editor potrebbe perdere le modifiche non salvate.', 'This roadbook is being edited by someone else.': 'Questo roadbook è in modifica da un altro utente.', 'users': 'utenti',
             'Roadbook name': 'Nome del roadbook', 'Recorded trip': 'Percorso registrato',
             'Elapsed': 'Tempo', 'No GPS': 'No GPS', 'Resume the recording in progress?': 'Riprendere la registrazione in corso?', 'Finish the recording?': 'Terminare la registrazione?', 'Dictate': 'Detta',
             'Adjust on the trail (live GPS)': 'Regola sul percorso (GPS dal vivo)',
@@ -977,4 +977,15 @@ Object.assign(window.RBi18nLangs.it, {
     'Note type': 'Tipo di nota',
     'Turn this note into a plain track point? Its text and symbols will be removed.': 'Trasformare questa nota in un semplice punto della traccia? Il suo testo e i suoi simboli andranno persi.',
     'The heart of a roadbook: an ordered list of notes, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.': 'Il cuore di un roadbook: un elenco ordinato di note, ognuna con la sua istruzione, la sua rotta e i suoi simboli. Un reader evidenzia la nota attiva e convalida l’avanzamento rispetto alla traccia GPS.',
+});
+
+/* one empty-state vocabulary + the shared row picker (#493) */
+Object.assign(window.RBi18nLangs.it, {
+    'Nothing matches that search.': 'Nessun risultato per questa ricerca.',
+    'entries': 'voci',
+    'No users yet.': 'Ancora nessun utente.',
+});
+
+Object.assign(window.RBi18nLangs.it, {
+    'You are offline — reconnect to load this event.': 'Sei offline: riconnettiti per caricare questo evento.',
 });
