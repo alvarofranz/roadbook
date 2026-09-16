@@ -84,6 +84,7 @@ try {
         case 'admin_rb_trash':    admin_rb_trash(require_admin(), $d); break;
         case 'admin_rb_restore':  admin_rb_restore(require_admin(), $d); break;
         case 'admin_rb_purge':    admin_rb_purge(require_admin(), $d); break;
+        case 'admin_trash_purge_expired': admin_trash_purge_expired(require_admin()); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_coedit_list': rb_coedit_list(require_user()); break;
         case 'rb_lock_refresh': rb_lock_refresh(require_user(), $d); break;
