@@ -6,9 +6,34 @@
     const t = RBt, esc = RBesc;
     let q = '', page = 1, per = 50, searchTimer = null;
 
+    /* Cron health, at a glance (#505). The log itself is a wall of text; what an admin needs to
+       know is whether the runner ran AT ALL — every minute it writes a `[YYYY-MM-DD HH:MM:SS]`
+       line, so the newest one answers it. Without the `* * * * *` entry on the host nothing ever
+       purges, and until now the only way to notice was to read the log and do the arithmetic. */
+    function cronHealth(log) {
+        const stamps = String(log || '').match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/g) || [];
+        if (!stamps.length) return { state: 'never', minutes: null };
+        const last = new Date(stamps[stamps.length - 1].slice(1, -1).replace(' ', 'T'));
+        const minutes = Math.round((Date.now() - last.getTime()) / 60000);
+        return { state: minutes <= 10 ? 'ok' : 'stale', minutes, last };
+    }
     async function loadCron() {
         const r = await RBApi('admin_logs');
-        if (r.ok) $('logCron').textContent = r.cron || t('No cron log yet.');
+        if (!r.ok) return;
+        $('logCron').textContent = r.cron || t('No cron log yet.');
+        const h = cronHealth(r.cron);
+        const el = $('cronHealth');
+        if (h.state === 'never') {
+            el.className = 'cron-health bad';
+            el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${esc(t('The cron runner has never run — nothing is being purged or cleaned up.'))}`;
+        } else if (h.state === 'stale') {
+            el.className = 'cron-health bad';
+            el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${esc(t('Last cron run'))}: ${esc(RBFmtDateTime(h.last))} — ${h.minutes} ${esc(t('minutes ago'))}. ${esc(t('It should run every minute; check the crontab entry on the server.'))}`;
+        } else {
+            el.className = 'cron-health ok';
+            el.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t('Last cron run'))}: ${esc(RBFmtDateTime(h.last))} — ${h.minutes} ${esc(t('minutes ago'))}.`;
+        }
+        el.hidden = false;
     }
 
     async function loadActivity() {
@@ -18,7 +43,7 @@
         const rows = r.rows || [];
         $('logTable').innerHTML = rows.length
             ? `<table class="act-table"><tbody>${rows.map((e) => `<tr>
-                <td class="small">${esc(e.created_at)}</td>
+                <td class="small">${esc(RBFmtDateTime(e.created_at))}</td>
                 <td>${e.username ? esc(e.username) : (e.user_id ? '#' + esc(e.user_id) : '—')}</td>
                 <td>${esc(String(e.action).replace(/_/g, ' '))}</td>
                 <td class="muted small">${esc(e.detail || '')}</td>
