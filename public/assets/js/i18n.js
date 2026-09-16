@@ -12,7 +12,7 @@
             'flow.kicker': 'Features', 'flow.title': 'Everything you need',
             'flow.s1': 'Record a route', 'flow.s2': 'Build a roadbook', 'flow.s3': 'Use it with friends', 'flow.s4': 'Run a club event',
             'feat.1.t': 'Roadbook Editor', 'feat.1.d': 'Build a roadbook from a GPX, Design each note with rally standards.',
-            'feat.2.t': 'Roadbook Recorder', 'feat.2.d': 'Record a Roadbook with waypoints, voice memos, photos and geotags.',
+            'feat.2.t': 'Roadbook Recorder', 'feat.2.d': 'Record a Roadbook with notes, voice memos, photos and geotags.',
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Navigate with odometer, bearing, a live map and the CAP direction bar.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'A precise GPS odometer with no roadbook — partial and total distance.',
             'feat.7.t': 'Event classification', 'feat.7.d': 'Run a rally on one roadbook: compare every team’s run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.',

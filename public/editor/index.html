@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-56">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.8.2-57">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-56">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.8.2-57">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -320,7 +320,7 @@
             <div class="rec-btns">
                 <button class="btn btn-ghost" id="recPause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden aria-label="WP photo" data-i18n-aria="WP photo"><i class="fa-solid fa-camera"></i></button>
-                <button class="btn btn-ghost" id="recWaypoint" data-i18n="Waypoint"><i class="fa-solid fa-location-dot"></i> Waypoint</button>
+                <button class="btn btn-ghost" id="recWaypoint" data-i18n="Note"><i class="fa-solid fa-location-dot"></i> Note</button>
                 <button class="btn btn-primary" id="recStop" data-i18n="Finish"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
             </div>
             <div id="recPending" class="rec-pending" hidden></div>
@@ -361,7 +361,7 @@
                 <button type="button" id="lbNext" class="lb-nav lb-next" aria-label="Next" data-i18n-aria="Next">›</button>
                 <div class="lb-actions">
                     <button type="button" id="lbMove" class="btn btn-ghost"><i class="fa-solid fa-up-down-left-right"></i> <span data-i18n="Move on map">Move on map</span></button>
-                    <button type="button" id="lbWaypoint" class="btn btn-primary"><i class="fa-solid fa-map-pin"></i> <span data-i18n="Waypoint">Waypoint</span></button>
+                    <button type="button" id="lbWaypoint" class="btn btn-primary"><i class="fa-solid fa-map-pin"></i> <span data-i18n="Note">Note</span></button>
                     <button type="button" id="lbDelete" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete">Delete</span></button>
                 </div>
             </div>
@@ -450,7 +450,7 @@
                 </div>
             </div>
             <div class="meta-group">
-                <div class="meta-grouphead" data-i18n="Waypoints & scoring">Waypoints &amp; scoring</div>
+                <div class="meta-grouphead" data-i18n="Notes & scoring">Notes &amp; scoring</div>
                 <div class="meta-grid">
                     <label class="meta-field"><span><span data-i18n="Roadbook type">Roadbook type</span><button class="help-tip" data-i18n-tip="help.profile" data-i18n-aria="help.profile" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
                     <label class="meta-field"><span><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="50"></label>
@@ -501,22 +501,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.8.2-56"></script>
-<script src="../assets/js/roadbook-core.js?v=1.8.2-56"></script>
-<script src="../assets/js/rbzip.js?v=1.8.2-56"></script>
-<script src="../assets/js/rbmap.js?v=1.8.2-56"></script>
-<script src="../assets/js/cover-map.js?v=1.8.2-56"></script>
-<script src="../assets/js/note-canvas.js?v=1.8.2-56"></script>
-<script src="../assets/js/rb-pdf.js?v=1.8.2-56"></script>
-<script src="../assets/js/challenges.js?v=1.8.2-56"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.8.2-56"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.8.2-56"></script>
-<script src="../assets/js/i18n.es.js?v=1.8.2-56"></script>
-<script src="../assets/js/i18n.it.js?v=1.8.2-56"></script>
-<script src="../assets/js/i18n.de.js?v=1.8.2-56"></script>
-<script src="../assets/js/i18n.fr.js?v=1.8.2-56"></script>
-<script src="../assets/js/i18n.js?v=1.8.2-56"></script>
-<script src="../assets/js/app.js?v=1.8.2-56"></script>
-<script src="editor.js?v=1.8.2-56"></script>
+<script src="../assets/js/config.js?v=1.8.2-57"></script>
+<script src="../assets/js/roadbook-core.js?v=1.8.2-57"></script>
+<script src="../assets/js/rbzip.js?v=1.8.2-57"></script>
+<script src="../assets/js/rbmap.js?v=1.8.2-57"></script>
+<script src="../assets/js/cover-map.js?v=1.8.2-57"></script>
+<script src="../assets/js/note-canvas.js?v=1.8.2-57"></script>
+<script src="../assets/js/rb-pdf.js?v=1.8.2-57"></script>
+<script src="../assets/js/challenges.js?v=1.8.2-57"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.8.2-57"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.8.2-57"></script>
+<script src="../assets/js/i18n.es.js?v=1.8.2-57"></script>
+<script src="../assets/js/i18n.it.js?v=1.8.2-57"></script>
+<script src="../assets/js/i18n.de.js?v=1.8.2-57"></script>
+<script src="../assets/js/i18n.fr.js?v=1.8.2-57"></script>
+<script src="../assets/js/i18n.js?v=1.8.2-57"></script>
+<script src="../assets/js/app.js?v=1.8.2-57"></script>
+<script src="editor.js?v=1.8.2-57"></script>
 </body>
 </html>
