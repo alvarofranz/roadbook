@@ -23,7 +23,7 @@
         const filtered = (window.RB && RB.filterByText) ? RB.filterByText(list, query, ['title', 'username']) : list;
         const pages = Math.max(1, Math.ceil(filtered.length / PER));
         if (page > pages) page = pages;
-        if (!filtered.length) { box.innerHTML = `<p class="muted">${esc(t(query ? 'No matching roadbooks.' : 'The trash is empty.'))}</p>`; RBPager($('trashPager'), 1, 1, () => {}); return; }
+        if (!filtered.length) { box.innerHTML = `<p class="muted">${esc(t(query ? 'Nothing matches that search.' : 'The trash is empty.'))}</p>`; RBPager($('trashPager'), 1, 1, () => {}); return; }
         const slice = filtered.slice((page - 1) * PER, page * PER);
         const expired = filtered.filter((rb) => (rb.days_left || 0) <= 0).length;
         box.innerHTML = `<p class="muted small">${esc(t('Deleted roadbooks are kept for a while, then permanently removed.'))}</p>`

@@ -681,7 +681,7 @@
             'The user must change this at first login.': 'Der Benutzer muss es bei der ersten Anmeldung ändern.',
             'Search action, user, IP…': 'Aktion, Benutzer, IP suchen…',
             'Delete now': 'Jetzt löschen',
-            'The trash is empty.': 'Der Papierkorb ist leer.', 'No matching roadbooks.': 'Keine passenden Roadbooks.',
+            'The trash is empty.': 'Der Papierkorb ist leer.',
             'Deleted roadbooks are kept for a while, then permanently removed.': 'Gelöschte Roadbooks werden eine Zeit lang aufbewahrt und dann endgültig entfernt.',
             'Permanently delete': 'Endgültig löschen',
             'Permanently deleted.': 'Endgültig gelöscht.',
