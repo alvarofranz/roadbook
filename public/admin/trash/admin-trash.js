@@ -6,21 +6,30 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast;
     const km = (m) => (m / 1000).toFixed(1) + ' km';
+    const PER = 25;
+    let allRows = [], query = '', page = 1, trashDays = 30;
 
     async function load() {
         const r = await RBApi('admin_trash_list');
         if (!r.ok) { $('adminMsg').hidden = false; $('adminMsg').textContent = t(r.error || 'Could not load the trash.'); return; }
-        render(r.roadbooks, r.trash_days || 30);
+        allRows = r.roadbooks || [];
+        trashDays = r.trash_days || 30;
+        render(allRows, trashDays);
     }
 
     function render(list, days) {
         const box = $('trashList');
         $('adminMsg').hidden = true; box.hidden = false;
-        if (!list.length) { box.innerHTML = `<p class="muted">${esc(t('The trash is empty.'))}</p>`; return; }
-        const expired = list.filter((rb) => (rb.days_left || 0) <= 0).length;
+        const filtered = (window.RB && RB.filterByText) ? RB.filterByText(list, query, ['title', 'username']) : list;
+        const pages = Math.max(1, Math.ceil(filtered.length / PER));
+        if (page > pages) page = pages;
+        if (!filtered.length) { box.innerHTML = `<p class="muted">${esc(t(query ? 'No matching roadbooks.' : 'The trash is empty.'))}</p>`; RBPager($('trashPager'), 1, 1, () => {}); return; }
+        const slice = filtered.slice((page - 1) * PER, page * PER);
+        const expired = filtered.filter((rb) => (rb.days_left || 0) <= 0).length;
         box.innerHTML = `<p class="muted small">${esc(t('Deleted roadbooks are kept for a while, then permanently removed.'))}</p>`
             + (expired > 0 ? `<div class="btnrow end"><button class="btn btn-danger" id="trashPurgeExpired"><i class="fa-solid fa-trash"></i> ${esc(t('Delete expired'))} (${expired})</button></div>` : '')
-            + '<div class="trash-rows">' + list.map(rowHtml).join('') + '</div>';
+            + '<div class="trash-rows">' + slice.map(rowHtml).join('') + '</div>';
+        RBPager($('trashPager'), page, pages, (p) => { page = p; render(list, days); }, filtered.length ? `${filtered.length} ${esc(t('roadbooks'))}` : '');
         if (expired > 0) $('trashPurgeExpired').onclick = async (e) => {
             if (!(await RBConfirmDanger(expired + ' ' + t('roadbooks past retention will be permanently deleted. Continue?')))) return;
             const busy = RBBusy(e.currentTarget);
@@ -30,7 +39,7 @@
             toast(t('Permanently deleted.') + ' ' + (x.deleted || 0) + (x.remaining > 0 ? ' · ' + x.remaining + ' ' + t('remaining — run again.') : ''));
             load();
         };
-        list.forEach((rb) => {
+        slice.forEach((rb) => {
             box.querySelector(`[data-restore="${rb.id}"]`).onclick = () => restore(rb);
             box.querySelector(`[data-purge="${rb.id}"]`).onclick = () => purge(rb);
         });
@@ -93,6 +102,7 @@
 
     (async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
+        $('trashSearch').oninput = () => { query = $('trashSearch').value; page = 1; render(allRows, trashDays); };
         load();
     })();
 })();

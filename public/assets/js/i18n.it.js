@@ -719,7 +719,7 @@
             'The user must change this at first login.': 'L\'utente deve cambiarla al primo accesso.',
             'Search action, user, IP…': 'Cerca azione, utente, IP…',
             'Delete now': 'Elimina ora',
-            'The trash is empty.': 'Il cestino è vuoto.',
+            'The trash is empty.': 'Il cestino è vuoto.', 'No matching roadbooks.': 'Nessun roadbook corrispondente.',
             'Deleted roadbooks are kept for a while, then permanently removed.': 'I roadbook eliminati vengono conservati per un po\' e poi rimossi definitivamente.',
             'Permanently delete': 'Elimina definitivamente',
             'Permanently deleted.': 'Eliminato definitivamente.',
