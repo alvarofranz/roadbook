@@ -850,3 +850,11 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     'You are offline — reconnect to load this event.': 'Du bist offline — verbinde dich neu, um dieses Event zu laden.',
 });
+
+/* cron health on the Logs page (#505) */
+Object.assign(window.RBi18nLangs.de, {
+    'Last cron run': 'Letzter Cron-Lauf',
+    'minutes ago': 'Minuten her',
+    'The cron runner has never run — nothing is being purged or cleaned up.': 'Der Cron-Runner lief noch nie — es wird nichts bereinigt oder gelöscht.',
+    'It should run every minute; check the crontab entry on the server.': 'Er sollte jede Minute laufen; prüfe den Crontab-Eintrag auf dem Server.',
+});

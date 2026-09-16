@@ -553,6 +553,14 @@
     window.RBFmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
     // An ISO YYYY-MM-DD date in the ACTIVE UI language's format (event dates). The parts are
     // used as-is — never parsed as UTC, so the day can't shift across timezones.
+    /* A timestamp in the reader's language: the date as RBFmtDate writes it plus the clock.
+       Takes what the API returns ("YYYY-MM-DD HH:MM:SS") or a Date. */
+    window.RBFmtDateTime = (value) => {
+        const d = value instanceof Date ? value : new Date(String(value || '').replace(' ', 'T'));
+        if (isNaN(d.getTime())) return String(value || '');
+        const lang = window.RBi18n ? RBi18n.current() : undefined;
+        return d.toLocaleDateString(lang) + ' ' + d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+    };
     window.RBFmtDate = (iso) => {
         const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
         if (!m) return iso || '';
