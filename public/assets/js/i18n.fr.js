@@ -857,3 +857,17 @@ Object.assign(window.RBi18nLangs.fr, {
     'The cron runner has never run — nothing is being purged or cleaned up.': 'Le cron n’a jamais tourné : rien n’est purgé ni nettoyé.',
     'It should run every minute; check the crontab entry on the server.': 'Il devrait tourner chaque minute ; vérifiez l’entrée crontab sur le serveur.',
 });
+
+/* app vs web content, in the app (#515) */
+Object.assign(window.RBi18nLangs.fr, {
+    'Web content in this app': 'Contenu web de cette application',
+    'This app was built with older web content, so some newer features are missing. Update it from the store.': 'Cette application a été compilée avec un contenu web plus ancien : certaines nouveautés manquent. Mettez-la à jour depuis le store.',
+    'web content': 'contenu web',
+});
+
+/* release notes — v1.9.0 */
+Object.assign(window.RBi18nLangs.fr, {
+    'Everything since 1.8.2 reaches the apps, and they say what they carry': 'Tout ce qui a suivi la 1.8.2 arrive dans les applications, qui disent enfin ce qu’elles embarquent',
+    'The iOS and Android apps ship five days of work at once: the profile menu on an iPad in landscape, the map of where your users are, the note wording, searchable pickers and the rest.': 'Les applications iOS et Android apportent cinq jours de travail d’un coup : le menu profil sur un iPad en paysage, la carte des emplacements de vos utilisateurs, le vocabulaire des notes, les sélecteurs avec recherche et le reste.',
+    'App info now names the web content your app was built with, next to the latest one, and says plainly when the app is behind.': 'Les infos de l’application indiquent désormais le contenu web avec lequel elle a été compilée, à côté du plus récent, et disent clairement quand elle est en retard.',
+});

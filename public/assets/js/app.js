@@ -256,10 +256,13 @@
     // app never hot-updates its code (that ships through TestFlight/Play), so this is how you tell.
     if (isNativeApp()) document.addEventListener('DOMContentLoaded', async () => {
         const el = document.getElementById('appVer'); if (!el) return;
-        const [running, live] = await Promise.all([RBRunningRelease(), RBLiveVersion()]);
+        // The binary, the web content it carries and the web content that is live: comparing the
+        // semvers alone made a five-day-old app read as up to date (#515).
+        const [running, bundled, live] = await Promise.all([RBRunningRelease(), RBLiveVersion(ROOT), RBLiveVersion()]);
         const parts = [];
         if (running) parts.push(RBt('Installed') + ' ' + running.text);
-        if (live) parts.push(RBt('latest') + ' ' + live.version);
+        if (bundled) parts.push(RBt('web content') + ' ' + bundled.build);
+        if (live) parts.push(RBt('latest') + ' ' + live.version + ' · ' + live.build);
         el.textContent = parts.join('  ·  ');
         el.hidden = !parts.length;
     });
@@ -279,10 +282,13 @@
         const [running, live, bundled] = await Promise.all([
             RBRunningRelease(), RBLiveVersion(), isNativeApp() ? RBLiveVersion(ROOT) : null,
         ]);
-        // The app can only be updated through its store, and only when the live web content is
-        // ahead of the copy bundled in the binary.
-        const storeUrl = isNativeApp() && live && live.build > (bundled ? bundled.build : 0)
-            ? RBStore[RBDevice() === 'ios' ? 'ios' : 'android'] : null;
+        /* An installed app carries the web content of the day its binary was built, and the app's
+           VERSION is the semver — which does not move between store releases. So "1.8.2" in the
+           app and "1.8.2" on the web can be sixteen builds apart, which is exactly how a missing
+           button goes unexplained (#515). The panel therefore names the BUNDLED build too, and
+           says plainly when it is behind; only the store can move it. */
+        const behind = isNativeApp() && live && bundled && live.build > bundled.build;
+        const storeUrl = behind ? RBStore[RBDevice() === 'ios' ? 'ios' : 'android'] : null;
         const webUpdate = !isNativeApp() && live && running && (live.version !== running.version || live.build !== running.build);
         const row = (label, value) => `<tr><td>${RBesc(RBt(label))}</td><td>${RBesc(value)}</td></tr>`;
         const modal = RBModal(`<div class="app-info-card">
@@ -290,10 +296,12 @@
             <table class="app-info-table">
                 ${row('Platform', RBPlatformName())}
                 ${row('Running', running ? running.text : '—')}
+                ${isNativeApp() ? row('Web content in this app', relText(bundled)) : ''}
                 ${row(isNativeApp() ? 'Latest web content' : 'Available', relText(live))}
                 ${row('URL', siteUrl)}
                 ${row('Environment', env)}
             </table>
+            ${behind ? `<p class="app-info-behind"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt('This app was built with older web content, so some newer features are missing. Update it from the store.'))}</p>` : ''}
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${webUpdate ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}

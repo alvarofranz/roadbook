@@ -305,8 +305,21 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
     });
 
     it('offers Update only when something is actually newer', () => {
-        expect(fn).toContain('live.build > (bundled ? bundled.build : 0)');           // app: the store, live web content ahead of the binary
+        expect(fn).toContain('live.build > bundled.build');                               // app: the store, live web content ahead of the binary
         expect(fn).toContain('live.version !== running.version || live.build !== running.build'); // web: a shell refresh
+    });
+
+    it('names the web content the app carries, and says when it is behind (#515)', () => {
+        // "1.8.2" in the app and "1.8.2" on the web can be sixteen builds apart: the semver does
+        // not move between store releases, so the BUNDLED build is the number that explains a
+        // missing feature.
+        expect(fn).toContain("row('Web content in this app', relText(bundled))");
+        expect(fn).toContain('const behind = isNativeApp() && live && bundled && live.build > bundled.build');
+        expect(fn).toContain('This app was built with older web content');
+        const about = read('public/about/about.js');
+        expect(about).toContain("fact('Web content in this app', rel(bundled))");
+        // the launcher line compares builds too, not just semvers
+        expect(app).toContain("parts.push(RBt('web content') + ' ' + bundled.build)");
     });
 
     it('links what changed and the official site', () => {
