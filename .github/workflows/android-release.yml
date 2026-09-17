@@ -67,7 +67,13 @@ jobs:
           cache: npm
 
       - name: Android SDK + licenses
+        # `packages: ''` on purpose: the action's default installs the obsolete `tools` package,
+        # which Google removed from the SDK repository — since it disappeared, every build died
+        # at this step with "Failed to find package 'tools'" (#515). The runner image already
+        # ships platform-tools, and Gradle pulls the platform/build-tools it needs by itself.
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
       - run: npm ci
 
