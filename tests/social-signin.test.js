@@ -123,3 +123,83 @@ describe('Sign in with Apple plumbing', () => {
         }
     });
 });
+
+describe('social sign-in goes straight in (#519)', () => {
+    // Picking the account in Google's chooser (or Apple's sheet) IS the decision. There used to be
+    // a second panel — "Continue as <email>" with another Sign in button — which asked twice for
+    // one intent; the Terms moved next to the buttons, so pressing one is the acceptance.
+    const account = read('public/account/account.js');
+
+    it('one call carries the confirmation and the Terms', () => {
+        expect(account).toContain("Object.assign({}, identity, { confirm: true, accept_terms: true })");
+        expect(account.match(/api\(PROVIDERS\[key\]\.action/g).length).toBe(1); // no probe round trip
+    });
+
+    // The function itself, run against stubs: one identity in, one API call out, straight to the
+    // signed-in screen — no intermediate step to click.
+    const runHandler = async (apiReply) => {
+        const body = account.match(/async function onSocialIdentity\(key, identity\) \{([\s\S]*?)\n    \}/)[1];
+        const sent = [];
+        const state = { me: null, finished: null, restored: null, message: null, busy: null };
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('key', 'identity', 'ctx', `
+            let me = ctx.me; const PROVIDERS = ctx.PROVIDERS;
+            const api = ctx.api, busySocial = ctx.busySocial, restoreSocial = ctx.restoreSocial;
+            const msg = ctx.msg, finishLogin = ctx.finishLogin, window = ctx.window;
+            return (async () => {${body}})();`);
+        await fn('google', { credential: 'tok', sub: 's' }, {
+            me: state.me,
+            PROVIDERS: { google: { action: 'google_auth', failed: 'Google sign-in failed. Please try again.' } },
+            api: async (action, payload) => { sent.push({ action, payload }); return apiReply; },
+            busySocial: (k) => { state.busy = k; },
+            restoreSocial: (k) => { state.restored = k; },
+            msg: (m) => { state.message = m; },
+            finishLogin: (u) => { state.finished = u; },
+            window: {},
+        });
+        return { sent, state };
+    };
+
+    it('an accepted account lands signed in, with no second step', async () => {
+        const { sent, state } = await runHandler({ ok: true, user: { id: 7, username: 'x' } });
+        expect(sent.length, 'more than one round trip').toBe(1);
+        expect(sent[0].action).toBe('google_auth');
+        expect(sent[0].payload.confirm).toBe(true);
+        expect(sent[0].payload.accept_terms).toBe(true);
+        expect(state.finished).toEqual({ id: 7, username: 'x' });
+        expect(state.restored, 'the button was put back instead of signing in').toBeNull();
+    });
+
+    it('a refusal puts the button back and says why', async () => {
+        const { state } = await runHandler({ ok: false, error: 'Your account has been blocked.' });
+        expect(state.restored).toBe('google');
+        expect(state.message).toBe('Your account has been blocked.');
+        expect(state.finished).toBeNull();
+    });
+
+    it('no confirmation panel is left anywhere', () => {
+        for (const gone of ['showSocialConfirm', 'social-confirm', 'Continue as', 'Use a different account']) {
+            expect(account, `${gone} survives`).not.toContain(gone);
+        }
+        expect(read('public/assets/css/app.css'), 'the panel styles survive').not.toContain('.social-confirm');
+    });
+
+    it('the Terms are disclosed beside the social buttons', () => {
+        const html = read('public/account/index.html');
+        expect(html).toContain('data-i18n-html="social.hint"');
+        expect(html).toMatch(/social-hint[\s\S]{0,200}href="\/terms\/"/);
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            expect(read(`public/assets/js/i18n.${lang}.js`), lang).toContain("'social.hint'");
+        }
+    });
+
+    it('a failure still restores the button and says why', () => {
+        expect(account).toContain("restoreSocial(key); msg(r.error || PROVIDERS[key].failed, false);");
+    });
+
+    it('the server still answers the old two-phase call for installed app binaries', () => {
+        const auth = read('app/auth.php');
+        expect(auth).toContain("'probe' => true");
+        expect(auth).toContain('INSTALLED app still runs the JS bundled in its');
+    });
+});
