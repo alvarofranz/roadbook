@@ -1,8 +1,7 @@
 /* RDBK.app i18n — IT translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
             'Add comment': 'Aggiungi commento', '(comment caption)': '(testo del commento)', 'comment': 'commento', 'Comment note added.': 'Nota commento aggiunta.', 'Image': 'Immagine', 'Text': 'Testo',
-            'Continue as': 'Continua come', 'Use a different account': 'Usa un altro account',
-            'Signing you in…': 'Accesso in corso…', 'Sign in or create your account — no password needed.': 'Accedi o crea il tuo account — senza password.',
+            'Signing you in…': 'Accesso in corso…',
             'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
             'seo.home.title': 'RDBK.app — roadbook digitali per le tue avventure', 'seo.home.desc': 'Crea, naviga, valida e classifica roadbook per ogni avventura. PWA gratuita e il formato aperto .rdbk.',
             'seo.about.title': 'Chi siamo — RDBK.app', 'seo.about.desc': 'Le persone e la missione dietro RDBK.app — strumenti gratuiti per roadbook digitali e il formato aperto .rdbk per ogni avventura.',
@@ -73,7 +72,6 @@
             'terms.s13h': '13. Titolare e contatti',
             'terms.s13': 'Il Servizio è offerto da <b>Maurizio Andreotti e Álvaro Franz</b>. Per informazioni è possibile scrivere a <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a>.',
             'reg.acceptTerms': 'Ho letto e accetto le <a href="/terms/" target="_blank" rel="noopener">Condizioni d’uso</a>',
-            'You must accept the Terms of Use to register.': 'Devi accettare le Condizioni d’uso per registrarti.',
             'hero.title': 'Roadbook digitali per le <span class="accent">tue avventure</span>',
             'hero.lead': 'Crea un roadbook da un GPX, seguilo col GPS e condividilo. 4x4, moto, bici, corsa… ogni avventura.',
             'flow.kicker': 'Funzioni', 'flow.title': 'Tutto ciò che serve',
@@ -1012,3 +1010,9 @@ Object.assign(window.RBi18nLangs.it, {
     'The iOS and Android apps ship five days of work at once: the profile menu on an iPad in landscape, the map of where your users are, the note wording, searchable pickers and the rest.': 'Le app iOS e Android portano cinque giorni di lavoro in una volta: il menu del profilo su un iPad in orizzontale, la mappa di dove sono i tuoi utenti, il lessico delle note, i selettori con ricerca e il resto.',
     'App info now names the web content your app was built with, next to the latest one, and says plainly when the app is behind.': 'Le info dell’app ora indicano il contenuto web con cui è stata compilata, accanto all’ultimo disponibile, e dicono chiaramente quando l’app è rimasta indietro.',
 });
+
+/* social sign-in goes straight in; the Terms sit beside the buttons (#519) */
+Object.assign(window.RBi18nLangs.it, {
+    'social.hint': 'Accedi o crea il tuo account — senza password. Continuando accetti le <a href="/terms/" target="_blank" rel="noopener">Condizioni d’uso</a>.',
+});
+Object.assign(window.RBi18nLangs.it, { 'You must accept the Terms of Use to register.': 'Devi accettare le Condizioni d’uso per registrarti.' });

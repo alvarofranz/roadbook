@@ -25,7 +25,10 @@ DB/Convenzioni rapide below have counterparts there).
   guideline 4.8 requires it next to Google). Both social flows verify their identity token
   server-side, then share one tail: `social_auth` (`app/auth.php`) links the identity by
   `google_sub`/`apple_sub`, or to an account with the same verified email, or creates a passwordless
-  account — always after a **probe** phase that shows the user which email is about to be used.
+  account — **in one call**: picking the account in Google's chooser or Apple's sheet IS the
+  decision, so there is no second confirmation to click, and the Terms sit beside the buttons
+  (pressing one accepts them). The server still answers the older two-phase `probe` call because
+  installed app binaries bundle their own JS and only change through a store release.
   `google_auth` verifies with Google's tokeninfo; `apple_auth` verifies the RS256 JWT itself against
   Apple's JWKS. The web renders each provider's own button (GIS overlay · Apple JS popup); the app
   uses the OS sheets (`RBNative.googleSignIn`/`appleSignIn`, `@capgo/capacitor-social-login` — the

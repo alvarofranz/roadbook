@@ -33,9 +33,9 @@
     function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
 
     /* ---------- Social sign-in: Google (#46) + Apple (#370) ---------- */
-    // Both providers run the SAME two-phase server flow — probe (who is this? does the account
-    // exist?) then confirm (sign in / create) — so ONE pipeline drives them and a provider only has
-    // to produce its identity token. Apple is what App Store guideline 4.8 asks for alongside
+    // Both providers run through the SAME one-call server flow — verify the identity token, then
+    // sign in or create the account — so ONE pipeline drives them and a provider only has to
+    // produce its identity token. Apple is what App Store guideline 4.8 asks for alongside
     // Google: its relay address lets a user keep their real email private.
     // Google's four-colour "G" (no white circle) so our OWN dark button matches the site theme;
     // Apple's mark is the FontAwesome brand glyph, white on the same dark button (their guideline).
@@ -46,15 +46,11 @@
         apple: { action: 'apple_auth', label: 'Continue with Apple', mark: APPLE_MARK, failed: 'Apple sign-in failed. Please try again.', webSignIn: appleWebSignIn },
     };
     let googleClientId = '', appleClientId = '';
-    let pendingSocial = null;                                   // { key, identity } held between probe and confirm
     const socialBox = (key) => $(key + 'Btn');                  // #googleBtn / #appleBtn
     const socialButton = (key) => `<button type="button" class="btn btn-ghost social-btn">${PROVIDERS[key].mark}<span>${t(PROVIDERS[key].label)}</span></button>`;
     // Closing the OS sheet or the popup is a choice, not a failure: the plugins reject with a
     // "cancel" message, Apple's web SDK with { error: 'popup_closed_by_user' }.
     const wasCancelled = (e) => /cancel|popup_closed/i.test((e && (e.error || e.message)) || '');
-    // `reg.acceptTerms` is a namespaced key whose English text lives inline in the HTML (not in T.en),
-    // so RBt returns the key itself for English — fall back to the English literal in that one case.
-    const termsLabel = () => { const tr = t('reg.acceptTerms'); return tr === 'reg.acceptTerms' ? 'I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a>' : tr; };
 
     // Which providers this surface offers. Google: the OS picker in the app, the GIS button on the
     // web once a client id is configured. Apple: the OS sheet on iOS (nothing to configure) and the
@@ -151,39 +147,20 @@
     // Feedback while the identity token is verified server-side; restoreSocial() puts the button back
     // on a terminal failure (on success the page navigates away, so no restore is needed).
     function busySocial(key) { const box = socialBox(key); if (box) { box.className = ''; box.innerHTML = `<div class="social-loading"><span class="spinner"></span> ${t('Signing you in…')}</div>`; } }
-    function restoreSocial(key) { pendingSocial = null; renderSocial(key); }
+    function restoreSocial(key) { renderSocial(key); }
 
-    // After the provider's consent: probe the server (who is this? does the account exist?) WITHOUT
-    // signing in, then show a clear "Sign in / Create account as <email>" confirmation.
+    /* Straight in: choosing the account in Google's chooser (or Apple's sheet) IS the decision, so
+       one verified identity means one call and the user lands in their profile — an existing
+       account and a new one alike. The Terms sit beside the buttons, which makes pressing one the
+       acceptance; that is what `accept_terms` carries here, and the server ignores it for an
+       account that already exists (#519). */
     async function onSocialIdentity(key, identity) {
         if (me) return;                                                     // already signed in — ignore stray GIS re-callbacks (#308)
         if (!identity || !identity.credential) return;
-        pendingSocial = { key: key, identity: identity }; busySocial(key);
-        const p = await api(PROVIDERS[key].action, identity);              // probe (no confirm)
-        if (p && p.probe) return showSocialConfirm(key, p.email, !!p.exists);
-        restoreSocial(key); msg((p && p.error) || PROVIDERS[key].failed, false);
-    }
-    // The confirmation panel: the detected email, the Terms (new accounts only) and the final CTA.
-    function showSocialConfirm(key, email, exists) {
-        const box = socialBox(key); if (!box) return;
-        box.className = 'social-confirm';
-        box.innerHTML =
-            `<p class="social-confirm-as">${t('Continue as')} <b>${RBesc(email)}</b></p>`
-            + (exists ? '' : `<label class="checkbox-row social-confirm-terms"><input type="checkbox" id="socialConfirmTerms"> <span>${termsLabel()}</span></label>`)
-            + `<button type="button" class="btn btn-primary social-confirm-go">${exists ? t('Sign in') : t('Create account')}</button>`
-            + `<button type="button" class="social-confirm-other">${t('Use a different account')}</button>`;
-        box.querySelector('.social-confirm-go').onclick = () => {
-            if (!exists && !box.querySelector('#socialConfirmTerms').checked) return msg('You must accept the Terms of Use to register.', false);
-            busySocial(key); confirmSocial(exists);
-        };
-        box.querySelector('.social-confirm-other').onclick = () => { msg(''); restoreSocial(key); };
-    }
-    // Confirm: create the account (new, Terms accepted) or sign in (existing), then land in the profile.
-    async function confirmSocial(exists) {
-        const { key, identity } = pendingSocial;
-        const r = await api(PROVIDERS[key].action, Object.assign({}, identity, { confirm: true, accept_terms: !exists }));
+        busySocial(key);
+        const r = await api(PROVIDERS[key].action, Object.assign({}, identity, { confirm: true, accept_terms: true }));
         if (r.ok) {
-            me = r.user; pendingSocial = null;
+            me = r.user;
             // Stop Google's GIS library from auto re-firing the callback (One Tap / button
             // re-render) once we're signed in, which otherwise re-showed the chooser (#308).
             try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.cancel(); } catch (e) {}

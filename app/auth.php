@@ -418,6 +418,10 @@ function social_auth(string $provider, array $identity, array $d): void {
         $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (provider-verified) email
     }
 
+    /* The web signs in on ONE call (#519): the provider's chooser is the user's decision, so the
+       client sends `confirm` straight away. An INSTALLED app still runs the JS bundled in its
+       binary, which asks the old two-phase way and can only change through a store release — so
+       this answer stays until those builds are gone. */
     if (empty($d['confirm'])) { json_out(['ok' => false, 'probe' => true, 'email' => $email, 'exists' => (bool)$u]); return; }
 
     if ($u) {
