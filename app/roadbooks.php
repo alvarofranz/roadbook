@@ -101,7 +101,7 @@ function rb_get(array $user, array $d): void {
     } else {
         $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
         if (!is_file($path)) fail('File missing.', 404);
-        $rb = json_decode((string)file_get_contents($path), true);
+        $rb = rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
     }
     // is_owner/owner drive the Editor's co-editing UI (visibility + delete stay with the owner).
     // The soft edit lock (#154) is taken only when the caller ASKS for it (the Editor does;
@@ -165,6 +165,16 @@ function rb_assert_quota(int $ownerId, int $prevBytes, int $newBytes): void {
     if (user_disk_bytes($ownerId) - $prevBytes + $newBytes > $quota) fail('Storage limit reached — free up space or ask an admin for more.', 413);
 }
 
+/* `icons` is a MAP (symbol name → data URI), and PHP does not distinguish an empty map from an
+   empty list: json_decode(..., true) turns `{}` into `[]` and json_encode writes `[]` back. The
+   editor then sets named keys on what JavaScript sees as an ARRAY, and JSON.stringify serialises
+   only its indexed elements — so every icon the user added was silently dropped on the way back
+   here (#523). Forcing the empty case to an object keeps the shape the .rdbk format defines. */
+function rb_shape_maps(array $rb): array {
+    if (!isset($rb['icons']) || $rb['icons'] === [] || $rb['icons'] === null) $rb['icons'] = new stdClass();
+    return $rb;
+}
+
 function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
     if (!is_array($rb) || empty($rb['notes']) || empty($rb['track'])) fail('Invalid roadbook.');
@@ -188,7 +198,7 @@ function rb_save(array $user, array $d): void {
         $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: unique_slug('roadbooks', $title, 'roadbook', $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
-        $json = json_encode($rb);
+        $json = json_encode(rb_shape_maps($rb));
         $path = $dir . '/' . $fn;
         rb_assert_quota((int)$row['user_id'], is_file($path) ? (int)filesize($path) : 0, strlen($json));
         if (!rb_write_file($path, $json)) fail('Could not write the roadbook file.', 500);
@@ -197,7 +207,7 @@ function rb_save(array $user, array $d): void {
         rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
-        $json = json_encode($rb);
+        $json = json_encode(rb_shape_maps($rb));
         rb_assert_quota((int)$user['id'], 0, strlen($json));
         db()->prepare('INSERT INTO roadbooks (user_id, title, category, total_distance, note_count, status, filename) VALUES (?,?,?,?,?,?,?)')
             ->execute([$user['id'], $title, $category, $dist, $nc, $status, 'pending']);
@@ -380,7 +390,7 @@ function public_get(array $d): void {
     if ($row['status'] !== 'public' && !$isOwner && !$viaEvent) fail('This roadbook is private.', 403);
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
-    $rb = json_decode((string)file_get_contents($path), true);
+    $rb = rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
     // Cover only (route-map preview, sort = -1). Gallery photos and audio are editor-only
     // working material — not disclosed through the challenge/player (#316).
     $c = db()->prepare('SELECT filename FROM roadbook_photos WHERE roadbook_id = ? AND sort = -1');

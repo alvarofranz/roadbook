@@ -1165,3 +1165,32 @@ describe('repairDegenerateBearings — fix the broken ones, touch nothing else (
         expect(rb.notes[0].bearing_out).toBeCloseTo(270, 0);
     });
 });
+
+describe('the icon library is a map, never a list (#523)', () => {
+    // PHP cannot tell an empty map from an empty list: `{}` decoded and re-encoded comes back as
+    // `[]`. Named keys written onto a JS array are dropped by JSON.stringify, so every icon the
+    // author added vanished on the way back to the server. importRoadbook heals the shape.
+    it('an icon added after a round trip survives serialisation', () => {
+        const rb = RB.importRoadbook({
+            meta: { title: 'round trip' },
+            track: [{ lat: 41.4, lon: 2.1 }, { lat: 41.41, lon: 2.11 }],
+            notes: [{ num: 1, idx: 0, lat: 41.4, lon: 2.1, text: '', icons: [], junctions: null }],
+            icons: [],                                   // what a PHP round trip hands back
+        });
+        expect(Array.isArray(rb.icons), 'the library is still a list').toBe(false);
+        rb.icons['pasted-1-0.png'] = 'data:image/png;base64,AAAA';
+        const wire = JSON.parse(JSON.stringify(rb));
+        expect(Object.keys(wire.icons)).toEqual(['pasted-1-0.png']);
+        expect(wire.icons['pasted-1-0.png']).toBe('data:image/png;base64,AAAA');
+    });
+
+    it('an existing library is left exactly as it is', () => {
+        const rb = RB.importRoadbook({
+            meta: { title: 'keeps its icons' },
+            track: [{ lat: 41.4, lon: 2.1 }, { lat: 41.41, lon: 2.11 }],
+            notes: [{ num: 1, idx: 0, lat: 41.4, lon: 2.1, text: '', icons: [], junctions: null }],
+            icons: { 'mine.png': 'data:image/png;base64,BBBB' },
+        });
+        expect(rb.icons).toEqual({ 'mine.png': 'data:image/png;base64,BBBB' });
+    });
+});

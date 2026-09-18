@@ -905,3 +905,20 @@ describe('the editor never edits what the author wrote (#521)', () => {
         expect(css).toMatch(/#noteList::-webkit-scrollbar \{ width: 10px; \}/);
     });
 });
+
+describe('a map-shaped field is stored as an object (#523)', () => {
+    const php = read('app/roadbooks.php');
+
+    it('the server shapes the icon map on the way in and on the way out', () => {
+        expect(php).toContain('function rb_shape_maps(array $rb): array');
+        expect(php).toContain("$rb['icons'] = new stdClass();");
+        // both save branches and both read paths go through it
+        expect(php.match(/json_encode\(rb_shape_maps\(\$rb\)\)/g).length).toBe(2);
+        expect(php.match(/rb_shape_maps\(\(array\)json_decode/g).length).toBe(2);
+    });
+
+    it('the editor never writes an icon onto a list', () => {
+        expect(read('public/editor/editor.js')).toContain('if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {};');
+        expect(read('public/assets/js/roadbook-core.js')).toContain('rb.icons = (rb.icons && !Array.isArray(rb.icons)) ? rb.icons : {};');
+    });
+});
