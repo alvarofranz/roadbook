@@ -19,7 +19,7 @@ Per architettura, strumenti, deploy e convenzioni dettagliate leggi **`CLAUDE.md
 
 ## Test e lint (SEMPRE via DDEV)
 
-**TUTTI i test e i lint locali si eseguono dentro il container web di DDEV, mai sull'host.** Il container ha la toolchain fissata (PHP 8.4 · Node 24 · MariaDB 10.11): così ogni run è identico per tutti e coincide con la CI. Un `npm test` lanciato sull'host, con un Node di un'altra versione, non è una verifica valida.
+**TUTTI i test e i lint locali si eseguono dentro il container web di DDEV, mai sull'host.** Il container ha la toolchain fissata (PHP 8.4 · Node 24 · MariaDB 10.11): così ogni run è identico per tutti e coincide con la CI su PHP/DB (la CI usa Node 22 — se un test dipende dalla versione di Node, verifica su entrambe). Un `npm test` lanciato sull'host, con un Node di un'altra versione, non è una verifica valida.
 
 ```bash
 ddev start                                     # una volta per sessione, se il progetto non è su (verifica: ddev describe)

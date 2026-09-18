@@ -375,6 +375,18 @@ function event_join_code(array $user, array $d): void {
     fail('Could not generate a join code.', 500); // 5 straight failures = the DB is unhappy, not a collision
 }
 
+// Resolve a join into (status, activation_code) from the event's settings alone (#414):
+// require_activation=1 lands pending with a personal QR, =0 activates at once. Shared by
+// event_join and the /go/ deep link so both paths admit identically.
+function event_join_outcome(array $e): array {
+    $status = (int)($e['require_activation'] ?? 1) ? 'pending' : 'active';
+    return [$status, $status === 'pending' ? gen_activation_code() : null];
+}
+function event_join_insert(int $eventId, int $userId, string $status, ?string $actCode): void {
+    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, activation_code = ?")
+        ->execute([$eventId, $userId, $status, $actCode, $status, $actCode]);
+    log_activity($userId, 'event_join', 'event #' . $eventId);
+}
 // A signed-in user joins an event — from the event page (Join button, by slug) or from the
 // native /go/<code> App-Links deep link (#268), which carries only the join code, no slug.
 // The gate decides HOW you get in (closed/code/open); require_activation decides whether you
@@ -397,21 +409,15 @@ function event_join(array $user, array $d): void {
     if ($gate === 'closed') fail('Registration is closed.', 403);
     if ($gate === 'open') {
         // open gate: any signed-in user joins with one click, no code needed
-        $status = (int)($e['require_activation'] ?? 1) ? 'pending' : 'active';
-        $actCode = $status === 'pending' ? gen_activation_code() : null;
-        db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, activation_code = ?")
-            ->execute([(int)$e['id'], (int)$user['id'], $status, $actCode, $status, $actCode]);
-        log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
+        [$status, $actCode] = event_join_outcome($e);
+        event_join_insert((int)$e['id'], (int)$user['id'], $status, $actCode);
         json_out(['ok' => true, 'activation_code' => $actCode, 'slug' => $e['slug']]);
         return;
     }
     // Code gate: the supplied code must match this event's own join code.
     if ($code === '' || $e['join_code'] === null || $code !== $e['join_code']) fail('Wrong join code.', 404);
-    $status = (int)($e['require_activation'] ?? 1) ? 'pending' : 'active';
-    $actCode = $status === 'pending' ? gen_activation_code() : null;
-    db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, activation_code = ?")
-        ->execute([(int)$e['id'], (int)$user['id'], $status, $actCode, $status, $actCode]);
-    log_activity((int)$user['id'], 'event_join', 'event #' . (int)$e['id']);
+    [$status, $actCode] = event_join_outcome($e);
+    event_join_insert((int)$e['id'], (int)$user['id'], $status, $actCode);
     // slug lets the native App-Links deep link (#268) open the event page after a join-by-code.
     json_out(['ok' => true, 'activation_code' => $actCode, 'slug' => $e['slug']]);
 }

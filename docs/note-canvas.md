@@ -19,7 +19,7 @@ Una sola IIFE espone due superfici pubbliche più alcuni helper privati:
 | Nome | Tipo | Usato da |
 |------|------|----------|
 | `NoteCanvas` (classe) | editor interattivo SVG | Editor |
-| `NoteCanvas.toSVG(note, resolveIcon)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
+| `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
 | `trunkSegments` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
 
 Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che poi
@@ -73,8 +73,8 @@ non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js
   orientata sulla virata reale — **tranne sulla nota di FINE**, che non ha uscita affatto
   (#447): oltre l'arrivo non c'è nulla da seguire, quindi la freccia puntava al nulla; in gara
   quella nota è l'arco d'arrivo. La provenienza si ferma al centro, dove il punto di convalida
-  segna il posto. Chi disegna passa il flag (`trunkSegments(note, isEnd)`,
-  `NoteCanvas.toSVG(note, resolveIcon, isEnd)`, `setNote(note, isEnd)`) e lo ricava da
+  segna il posto. Chi disegna passa i flag (`trunkSegments(note, isEnd, isFirst)`,
+  `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)`, `setNote(note, isEnd, isFirst)`) e lo ricava da
   **`RB.isEndNote(notes, i)`** — una regola sola, così Editor, Reader, pagina pubblica ed export
   PDF concordano su quale sia quella nota (ed è l'ultima **non-commento**: una riga di commento
   non si naviga e può stare dopo l'arrivo).
@@ -179,7 +179,7 @@ Le icone arrivano in due modi:
 
 ## 6. Selezione, drag e callback
 
-- `setNote(note)` ([note-canvas.js:48](../public/assets/js/note-canvas.js#L48)) carica la
+- `setNote(note, isEnd, isFirst)` ([note-canvas.js:48](../public/assets/js/note-canvas.js#L48)) carica la
   nota, normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
 - `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e notifica
   `onSelect(sel)` ([note-canvas.js:121](../public/assets/js/note-canvas.js#L121)); toccare
@@ -230,8 +230,9 @@ colonna di testo ([note-canvas.js:88](../public/assets/js/note-canvas.js#L88) pe
 
 ## 9. Il render statico `NoteCanvas.toSVG`
 
-### `NoteCanvas.toSVG(note, resolveIcon)` → stringa SVG
-Render di sola lettura, identico per geometria all'editor: stessi `trunkSegments`, stesse
+### `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)` → stringa SVG
+Render di sola lettura, identico per geometria all'editor: stessi `trunkSegments` (con soppressione
+strada entrante sulla prima nota e uscita sull'ultima, #447/#472), stesse
 giunzioni, stesse icone, stesso pericolo, ma come **stringa** `<svg>…</svg>` da iniettare. È
 quello che mostra ogni riga `.nrow` del Reader, la pagina challenge e l'export PDF. È l'unico
 render statico del modulo: la classe interattiva e questa funzione sono le sole superfici

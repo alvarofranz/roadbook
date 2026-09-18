@@ -243,14 +243,14 @@ consentito (`#modeLockedStart`).
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
 di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
-`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (30 m) — poi
+`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (50 m) — poi
 lo limita a **metà del gap along-track più piccolo** verso un vicino (usando `partial_distance`,
 così i reach di due note non si sovrappongono) e lo *flooring* sopra il rumore GPS:
 
 ```
 reach = max(REACH_MIN_M=18, min(detectionRadius, min(gapPrev, gapNext) / 2))
 ```
-Non c'è un cap fisso: il limite superiore è il raggio di rilevamento della nota (default 30 m).
+Non c'è un cap fisso: il limite superiore è il raggio di rilevamento della nota (default di sistema 50 m).
 Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio del tipo.
 
 ---
@@ -283,6 +283,9 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   tempo reale senza saltare su un fix spazzatura
 - **All'apertura** di una nuova mappa, se `lastHere` è disponibile chiama subito
   `setPosition` (la posizione viene comunque reinviata dal prossimo fix)
+- **Guida al waypoint** (#485): `setGuide(from, to)` disegna la linea dalla posizione live al
+  waypoint più una freccia fisica da 1 cm sulla posizione, ruotata sul bearing — la riga segue
+  ogni fix senza ricentrare; sotto i 5 m linea e freccia spariscono (sei arrivato).
 - Quando non c'è una navigazione attiva (modalità preview), `lastHere` è null e la mappa
   mostra solo il pulsante GeolocateControl — l'utente può comunque cliccare il mirino per
   attivare la geolocalizzazione del browser

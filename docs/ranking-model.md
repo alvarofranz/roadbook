@@ -178,7 +178,7 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 - **Input**: scansione QR via fotocamera ambiente (`RBQrScan` — `BarcodeDetector` nativo, con
   fallback a `jsQR` sui browser WebKit che non lo implementano, incl. iOS/iPadOS) o incolla
   manuale del testo del codice.
-- **Persistenza**: `localStorage` chiave `rb_ranking` (sopravvive al refresh; è locale al
+- **Persistenza**: `localStorage` chiave `rb_ranking` (+ `_<event>_<rb>` quando classifiche un roadbook di un evento; sopravvive al refresh; è locale al
   dispositivo del giudice — nessun salvataggio server).
 - **Gestione righe**: cancellazione per riga (con conferma) e "Clear all".
 - **Export CSV**: `rank, vehicle, km, accuracy, cap, speed, regularity, final, valid`.
@@ -195,7 +195,7 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
   trim** del META (il padding fa parte della stringa firmata). È il vincolo chiave da tenere
   presente per estensioni tipo cronometraggio FIA per-settore.
 - **Il raggio di convalida per-nota** è dato da `RB.detectionRadius` (`wp_radius` → default del
-  roadbook → default del tipo → 30 m), poi ristretto dai vicini in `reachRadius`: non è un
+  roadbook → default del tipo → 50 m di sistema), poi ristretto dai vicini in `reachRadius`: non è un
   valore uniforme fisso, ma non esistono raggi `open`/`clear` distinti per tipo di controllo.
 - Le penalità posizionali (accuracy/CAP/extra) **dipendono dal GPS**: una prova manuale senza
   segnale le azzera.

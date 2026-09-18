@@ -61,7 +61,7 @@
 │ [RDBK.app]  ← Nome Evento    [👤 Acct]│
 └──────────────────────────────────────┘
   ↓ home page reindirizza a /event/<slug>
-  ↓ tab bar ridotta (Reader · Evento · Profile) — non ancora implementata (#163)
+  ↓ nav ridotta: i tool spariscono, resta il back-link all'evento + menu account ridotto
 ```
 
 ## Note
@@ -71,7 +71,7 @@
 - **Recorder** è una voce di primo livello. **"Navigate"** raggruppa **Reader** e **Tripmaster** (hub `/navigate/`, `covers: ['tripmaster', 'reader']`).
 - Ranking **non ha una voce di menu propria**: è dentro **Events** (`covers: ['event', 'ranking']`) e si apre per singolo roadbook di competizione dalla pagina dell'evento (`?event=<slug>&rb=<slug>`), riservato a partecipanti/organizzatori.
 - I link amministrativi/organizzatore appaiono solo nel dropdown del menu account (web), non nella tab bar dell'app.
-- La **tab bar ridotta per il partecipante** (3 voci: Reader · Evento · Profile) non è ancora implementata — tracciata in **#163**.
+- In modalità partecipante non c'è una tab bar ridotta a 3 voci: i tool si nascondono e resta il back-link all'evento con menu account ridotto (#163).
 
 ---
 
@@ -143,4 +143,4 @@
 1. **Deep link nativo** — `/go/<codice>` deve funzionare come universal link (iOS) / app link (Android) per aprire l'app direttamente. Oggi non è implementato.
 2. **Poster QR** — il QR sul manifesto codifica `https://rdbk.app/go/<codice>`. Se l'app non è installata → store. Se è installata → apre l'app e arriva alla pagina evento.
 3. **Primo accesso senza account** — il flusso porta al login/registrazione, poi torna al `/go/<codice>`. Funziona già.
-4. **Tab bar in modalità partecipante** — oggi mostra ancora tutti i tool. Dovrebbe mostrare solo Reader · Evento · Profile. Tracciato in **#163** (participant home).
+4. **Nav in modalità partecipante** — i tool si nascondono (topnav) e il menu account si riduce; non esiste una tab bar dedicata a 3 voci (scelta implementativa, #163).

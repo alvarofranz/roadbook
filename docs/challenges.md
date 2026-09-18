@@ -31,7 +31,7 @@ pagina mostra `RBNeedAuth` invece del roadbook. La gallery/elenco resta pubblica
 ## 2. Il modulo `RBChallenges`
 
 Un'unica IIFE ([challenges.js](../public/assets/js/challenges.js)) che espone il global
-`window.RBChallenges` ([challenges.js:40](../public/assets/js/challenges.js#L40)). La radice
+`window.RBChallenges` ([challenges.js:52](../public/assets/js/challenges.js#L52)). La radice
 dell'app (`ROOT`) è derivata **dall'URL dello script stesso**
 ([challenges.js:5-6](../public/assets/js/challenges.js#L5)), così funziona sia dalla home sia
 dalle sottocartelle dei tool senza percorsi hard-coded.
@@ -64,16 +64,17 @@ riporta `{ok:false}` — quindi la distinzione è su `j.ok === false`.
 errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, photos, owner, ... }`.
 
 ### `publicFromUrl()`
-([challenges.js:18-21](../public/assets/js/challenges.js#L18)) — vedi §4.
+([challenges.js:25-28](../public/assets/js/challenges.js#L25)) — vedi §4.
 
-> Tutte le chiamate di rete usano `fetch` diretto, **non** il wrapper `RBApi` (che fa POST
-> JSON). Le challenge sono GET di sola lettura, quindi `RBApi` non serve.
+> Entrambe le chiamate passano da `RBApi`, che porta con sé l'identità del chiamante
+> (cookie di sessione sul web, token Bearer nell'app): senza, il server vedrebbe un
+> anonimo e i roadbook `ready` degli eventi resterebbero invisibili (#426).
 
 ---
 
 ## 3. Il picker
 
-`pick(onPick)` ([challenges.js:24-38](../public/assets/js/challenges.js#L24)) è il selettore
+`pick(onPick, opts)` ([challenges.js:32-50](../public/assets/js/challenges.js#L32)) è il selettore
 condiviso "apri una sfida pubblica nel tool corrente". Flusso:
 
 1. apre subito un `RBModal` `wide` con uno stato di caricamento;
@@ -99,7 +100,7 @@ Chi lo usa e con quale intento:
 
 ## 4. Gli URL amichevoli
 
-`publicFromUrl()` ([challenges.js:18-21](../public/assets/js/challenges.js#L18)) ricava lo
+`publicFromUrl()` ([challenges.js:25-28](../public/assets/js/challenges.js#L25)) ricava lo
 slug dal `location.pathname` corrente con la regex:
 
 ```js
