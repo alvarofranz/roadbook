@@ -1917,6 +1917,7 @@
        last paste (#455). A picked file keeps its name, so re-uploading one deliberately replaces it. */
     async function addIconFiles(files, pasted) {
         if (!rb) return toast('Load a roadbook first.');
+        if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {}; // a map, never a list (#523)
         let n = 0;
         for (const f of files) {
             const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name);

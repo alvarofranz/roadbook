@@ -628,7 +628,10 @@
             });
             return n;
         });
-        rb.icons = rb.icons || {};
+        // `icons` is a MAP. A file (or a server round trip through PHP, #523) can hand us an
+        // empty ARRAY instead — and named keys written onto an array vanish on JSON.stringify,
+        // taking every icon the author added with them. Normalise the shape once, here.
+        rb.icons = (rb.icons && !Array.isArray(rb.icons)) ? rb.icons : {};
         // The suite's bearings use a different reference (e.g. the start note's bogus
         // bearing_in points the trunk arrow backwards); the track is authoritative, so
         // re-derive bearings/distances/road-types from it — exactly as buildRoadbook does.
