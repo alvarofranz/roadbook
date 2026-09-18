@@ -855,3 +855,53 @@ describe('cron health is measured on the server\'s clock (#505)', () => {
         expect(src).toContain('cronHealth(r.cron, r.now)');
     });
 });
+
+describe('the editor never edits what the author wrote (#521)', () => {
+    const editor = read('public/editor/editor.js');
+    const canvas = read('public/assets/js/note-canvas.js');
+
+    it('an unresolved icon is reported, never written into the note or swapped in the data', () => {
+        expect(editor).toContain('async function reportUnresolvedIcons()');
+        expect(editor).toContain("toast(t('Some icons could not be found')");
+        // the pass that rewrote `n.text` and `ic.name` is gone
+        expect(editor).not.toContain('Note: add icon');
+        expect(editor).not.toContain('MISSING_ICON_FALLBACK');
+        expect(editor).not.toContain('flagUnresolvedIcons');
+    });
+
+    it('the vignette draws the placeholder instead, so only the picture changes', () => {
+        expect(canvas).toContain("im.addEventListener('error'");
+        expect(canvas).toContain('this.missingIcon');
+        expect(editor).toContain("missingIcon: '../assets/icons/W28_general_danger.svg'");
+    });
+
+    it('opening a roadbook leaves no checkpoint behind', () => {
+        // the automatic pass used to markDirty() during load, so the next visit offered to recover
+        // work that had already been saved
+        const fn = editor.match(/async function reportUnresolvedIcons\(\) \{([\s\S]*?)\n    \}/)[1];
+        expect(fn).not.toContain('markDirty');
+        expect(fn).not.toContain('renderNotes');
+    });
+
+    it('Del removes what is selected on the vignette, not the note holding it', () => {
+        expect(editor).toContain("editorOpen && canvas.sel && k === 'del'");
+        expect(editor).toContain('canvas.deleteSelected()');
+        expect(canvas).toContain('deleteSelected() {');
+        // both trash buttons go through the same method
+        expect(canvas.match(/\[data-a="del"\]'\)\.onclick = \(\) => this\.deleteSelected\(\);/g).length).toBe(2);
+    });
+
+    it('the vignette bar says what it acts on', () => {
+        expect(canvas).toContain("label('Icon tools')");
+        expect(canvas).toContain("label('Junction tools')");
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            expect(read(`public/assets/js/i18n.${lang}.js`), lang).toContain("'Icon tools'");
+        }
+    });
+
+    it('the note list keeps its scrollbar visible', () => {
+        const css = read('public/editor/index.html').match(/<style>([\s\S]*?)<\/style>/)[1];
+        expect(css).toContain('scrollbar-gutter: stable');
+        expect(css).toMatch(/#noteList::-webkit-scrollbar \{ width: 10px; \}/);
+    });
+});

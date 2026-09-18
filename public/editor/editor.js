@@ -173,6 +173,10 @@
             e.preventDefault();
             const i = selVertex; selVertex = -1; // the index goes stale once the route changes
             vertexAction(act, i);
+        } else if (editorOpen && canvas.sel && k === 'del') { // something is selected INSIDE the
+            // vignette: Del removes THAT — an icon or a junction vector — not the note holding it
+            // (#521). Deleting the note from under a selected icon is never what the key meant.
+            e.preventDefault(); canvas.deleteSelected();
         } else if (editorOpen && sel >= 0 && (k === 't' || k === 'del')) { // a note is open: T transforms it, Del deletes it
             e.preventDefault();
             if (k === 't') transformNote(sel); else deleteNoteConfirm(sel);
@@ -226,7 +230,7 @@
     }
     // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
     const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
-    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
+    const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), missingIcon: '../assets/icons/W28_general_danger.svg', resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     // Show note i on the canvas. One place asks whether it is the roadbook's end note, so the
     // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
     const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
@@ -791,7 +795,7 @@
         const loadedRb = rb;
         if (iconJobs.size) Promise.all(iconJobs.values()).then(() => {
             if (rb !== loadedRb) return; // a different roadbook was opened meanwhile
-            renderNotes(); flagUnresolvedIcons(); canvas.render();
+            renderNotes(); reportUnresolvedIcons(); canvas.render();
         });
 
         dirty = false; gaps = [];
@@ -807,7 +811,7 @@
         $('cfgProfile').value = rb.meta.profile === 'rally' ? 'rally' : 'basic'; // absent ⇒ basic
         $('cfgWpRadius').value = rb.meta.default_wp_radius != null ? rb.meta.default_wp_radius : ''; // absent ⇒ per-type defaults
         updatePhotos(); updateAudio(); updateSaveBtn();
-        refreshMap(false); renderNotes(); renderIcons(); flagUnresolvedIcons();
+        refreshMap(false); renderNotes(); renderIcons(); reportUnresolvedIcons();
         sel = 0;
         if (rb.notes.length) { showOnCanvas(0); renderEditor(); } else canvas.setNote(null);
         histReset();
@@ -1796,29 +1800,26 @@
     // author adds the real symbol. Existence is probed on disk (HEAD) — index.json is
     // only the picker and omits some real files, so it can't decide this. Idempotent:
     // the original name is gone once swapped, and the flag is appended only if absent.
-    const MISSING_ICON_FALLBACK = 'W28_general_danger.svg';
-    async function flagUnresolvedIcons() {
+    /* An icon name that resolves to nothing — a roadbook written elsewhere, a file renamed since —
+       is REPORTED, never repaired behind the author's back: the data stays exactly as they wrote
+       it, the vignette draws a placeholder where the icon sits, and this names the files to
+       re-add (#521). Nothing here marks the roadbook dirty either: an automatic pass on load must
+       not leave a checkpoint, or the next visit offers to recover work that was already saved. */
+    async function reportUnresolvedIcons() {
         if (!rb) return;
         await loadStd();
         const palette = new Set(Object.values(std.categories || {}).flat().map((x) => x.toLowerCase()));
         const lib = rb.icons || {};
         const known = (name) => /^data:/.test(name) || palette.has(name.toLowerCase()) || Object.keys(lib).some((k) => k.toLowerCase() === name.toLowerCase());
-        // probe only the uncertain names (deduped): not embedded and not already in the picker
         const candidates = new Set();
-        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => { const nm = ic.name || ''; if (nm && nm !== MISSING_ICON_FALLBACK && !known(nm)) candidates.add(nm); }));
-        const missing = new Set();
+        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => { const nm = ic.name || ''; if (nm && !known(nm)) candidates.add(nm); }));
+        const missing = [];
         await Promise.all([...candidates].map(async (nm) => {
-            try { const r = await fetch('../assets/icons/' + nm, { method: 'HEAD' }); if (!r.ok) missing.add(nm); } catch (e) { missing.add(nm); }
+            try { const r = await fetch('../assets/icons/' + nm, { method: 'HEAD' }); if (!r.ok) missing.push(nm); } catch (e) { missing.push(nm); }
         }));
-        if (!missing.size) return;
-        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => {
-            if (!missing.has(ic.name)) return;
-            const orig = ic.name;
-            ic.name = MISSING_ICON_FALLBACK;
-            const flag = t('Note: add icon') + ' ' + orig;
-            if (!(n.text || '').includes(flag)) n.text = n.text ? n.text + '\n' + flag : flag;
-        }));
-        markDirty(); renderNotes(); if (rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
+        if (!missing.length) return;
+        // one message, naming the files, so the author knows what to re-add — and nothing else
+        toast(t('Some icons could not be found') + ': ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' +' + (missing.length - 3) : ''), 6000);
     }
     // The standard palette's file names, lowercased — what tells a shipped icon from the user's
     // own upload. Used by the palette listing and by the export prune (#454).

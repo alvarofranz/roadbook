@@ -13,6 +13,7 @@ window.NoteCanvas = class NoteCanvas {
         this.onSelect = opts.onSelect || (() => {}); // notified whenever the selected element changes
         this.resolveIcon = opts.resolveIcon || ((ic) => ic.name);
         this.toolbarEl = opts.toolbarEl || null;
+        this.missingIcon = opts.missingIcon || '';   // drawn in place of a name that resolves to nothing (#521)
         this._onDrop = null;
         this.note = null; this.sel = null; // {type:'icon'|'junctions', i}
         this._build();
@@ -99,6 +100,10 @@ window.NoteCanvas = class NoteCanvas {
             const s = ic.size || 32;
             const g = svg('g', { class: 'vignette-box-dyn vignette-box-icon', 'data-i': i, transform: `rotate(${ic.angle || 0} ${cxi} ${cyi})` });
             const im = svg('image', { x: cxi - s / 2, y: cyi - s / 2, width: s, height: s, href: this.resolveIcon(ic), preserveAspectRatio: 'xMidYMid meet' });
+            // A name that resolves to nothing (a roadbook written elsewhere, a renamed file) draws
+            // a marker where it sits, so the spot is visible and clickable — the note's data is
+            // left exactly as its author wrote it (#521).
+            im.addEventListener('error', () => im.setAttribute('href', (this.missingIcon || '')), { once: true });
             if (ic.flip_x) im.setAttribute('transform', `translate(${2 * cxi} 0) scale(-1 1)`);
             g.appendChild(im);
             g.addEventListener('pointerdown', (e) => this._startDrag(e, (vx, vy) => { const m = this.toM(vx, vy); ic.pos = [r1(m[0]), r1(m[1])]; }, { type: 'icon', i }));
@@ -134,12 +139,24 @@ window.NoteCanvas = class NoteCanvas {
     }
     select(sel) { this.sel = sel; this.render(); this.onSelect(this.sel); }
 
+    // Remove whatever is selected on the vignette — the trash button and the Del key share it.
+    deleteSelected() {
+        if (!this.sel || !this.note) return;
+        const list = this.sel.type === 'icon' ? this.note.icons : this.note.junctions;
+        if (!list) return;
+        list.splice(this.sel.i, 1);
+        this.sel = null;
+        this._chg();
+    }
     _toolbar() {
         const t = this.toolbarEl;
         if (!this.sel) { t.innerHTML = ''; return; }
+        // Say what the bar acts on: these buttons resize, rotate and delete the SELECTED element,
+        // not the note around it, and that was not obvious from icons alone (#521).
+        const label = (text) => `<span class="vignette-toolbar-label">${RBesc(RBt(text))}</span>`;  // RBesc/RBt come from app.js + i18n.js, loaded before this file
         if (this.sel.type === 'icon') {
             const ic = this.note.icons[this.sel.i];
-            t.innerHTML = btn('fa-magnifying-glass-minus', 'sz-') + btn('fa-magnifying-glass-plus', 'sz+')
+            t.innerHTML = label('Icon tools') + btn('fa-magnifying-glass-minus', 'sz-') + btn('fa-magnifying-glass-plus', 'sz+')
                 + btn('fa-rotate-left', 'rot-') + btn('fa-rotate-right', 'rot+')
                 + btn('fa-left-right', 'flip', ic.flip_x) + btn('fa-trash-can', 'del', false, true);
             t.querySelector('[data-a="sz-"]').onclick = () => { ic.size = clampIconSize((ic.size || 32) - 4); this._chg(); };
@@ -147,15 +164,15 @@ window.NoteCanvas = class NoteCanvas {
             t.querySelector('[data-a="rot-"]').onclick = () => { ic.angle = (ic.angle || 0) - 15; this._chg(); };
             t.querySelector('[data-a="rot+"]').onclick = () => { ic.angle = (ic.angle || 0) + 15; this._chg(); };
             t.querySelector('[data-a="flip"]').onclick = () => { ic.flip_x = !ic.flip_x; this._chg(); };
-            t.querySelector('[data-a="del"]').onclick = () => { this.note.icons.splice(this.sel.i, 1); this.sel = null; this._chg(); };
+            t.querySelector('[data-a="del"]').onclick = () => this.deleteSelected();
         } else {
             const b = this.note.junctions[this.sel.i], rtLabel = RBt('Road type');
-            t.innerHTML = `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(RT_LABELS[k])}</option>`).join('')}</select>`
+            t.innerHTML = label('Junction tools') + `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(RT_LABELS[k])}</option>`).join('')}</select>`
                 + btn('fa-minus', 'th-') + btn('fa-plus', 'th+') + btn('fa-trash-can', 'del', false, true);
             t.querySelector('.vignette-box-rt').onchange = (e) => { b.road_type = +e.target.value; b.width = roadStyle(b.road_type).width; this._chg(); };
             t.querySelector('[data-a="th-"]').onclick = () => { b.width = Math.max(1, (b.width || 3) - 1); this._chg(); };
             t.querySelector('[data-a="th+"]').onclick = () => { b.width = Math.min(10, (b.width || 3) + 1); this._chg(); };
-            t.querySelector('[data-a="del"]').onclick = () => { this.note.junctions.splice(this.sel.i, 1); this.sel = null; this._chg(); };
+            t.querySelector('[data-a="del"]').onclick = () => this.deleteSelected();
         }
     }
     _chg() { this.render(); this.onChange(); this.onSelect(this.sel); }
