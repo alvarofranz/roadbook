@@ -6,9 +6,11 @@ Come tradurre/correggere le **label dell'interfaccia** di RDBK.app con l'editor 
 
 ## Come funziona l'i18n (in breve)
 - L'**inglese** è la lingua sorgente (testo inline nell'HTML + `public/assets/js/i18n.js`).
-- Le altre 4 lingue vivono ognuna nel suo file: `public/assets/js/i18n.{es,it,de,fr}.js`.
-- **Regola di parità (imposta dai test):** ogni chiave presente in una lingua deve esistere in
-  **tutte e quattro**. `ddev exec npm test` fallisce se manca una traduzione → il deploy si blocca.
+- Le altre 4 lingue vivono ognuna nel suo file: `public/assets/js/i18n.{es,it,de,fr}.js` — in totale 5 lingue.
+- **Regola di parità (imposta dai test):** ogni chiave inglese deve esistere in tutte e 4 le altre lingue.
+  `ddev exec npm test` fallisce se manca una traduzione → il deploy si blocca. Il test percorre anche
+  tutti gli `.html` (ogni `data-i18n` deve esistere in tutte le lingue) con regole su apostrofo
+  tipografico e `&amp;` decodificato.
 - **Le traduzioni NON vivono in un database.** Sono file statici committati: si modificano via
   editor, si esporta un *delta*, un dev lo committa. (Scelta di design "Option B": niente carico
   runtime dal server.)
@@ -53,7 +55,8 @@ Il delta è un blocco per lingua, es.:
    - `es/it/de/fr` → dentro `window.RBi18nLangs.<lang>` nel rispettivo `public/assets/js/i18n.<lang>.js`.
    - `en` → dentro l'oggetto **`T.en`** in `public/assets/js/i18n.js` (l'inglese vive lì, non in un
      file `i18n.<lang>.js`).
-   Aggiorna la chiave se esiste, aggiungila se è nuova. **Mantieni tutte e 4 le lingue tradotte in parità.**
+   Aggiorna la chiave se esiste, aggiungila se è nuova. **Mantieni tutte e 5 le lingue in parità**
+   (EN + 4 traduzioni).
 2. `ddev exec npm test` (deve restare verde: copre la parità i18n).
 3. Committa e rilascia con il normale flusso di deploy (`node source/stamp-version.mjs <versione>`
    → push su `main`), così i nuovi file arrivano ai client col cache-buster.

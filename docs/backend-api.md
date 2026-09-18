@@ -82,6 +82,8 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
 | `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
+| `activity_mine` | Timeline attività **proprie** dell'utente loggato, paginata + cercabile (#448) | richiesta |
+| `rb_trash_list` / `rb_restore` | Il proprio cestino + ripristino a draft (#238) | richiesta |
 | `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`/`de`/`fr`) | richiesta |
 | `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)) | richiesta |
 | `change_email` / `verify_email_change` | Cambio email con ri-verifica (`pending_email` + link) / conferma dal link | richiesta / nessuna |
@@ -90,8 +92,10 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 **Admin** (`auth.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
 `admin_verify`, `admin_block`, `admin_update`, `admin_create`, `admin_delete`, `admin_activity`,
 `admin_settings`/`admin_save_settings`, `admin_logs`, `admin_activity_log`, `admin_roadbooks`, `admin_unpublish`,
-`admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`,
-`admin_trash_list`/`admin_rb_trash`/`admin_rb_restore`/`admin_rb_purge` (cestino roadbook, #187) — gestione utenti,
+`admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`, `admin_user_locations` (utenti con
+posizione per la mappa, #499), `org_suggest`,
+`admin_trash_list`/`admin_rb_trash`/`admin_rb_restore`/`admin_rb_purge`/`admin_trash_purge_expired`
+(cestino roadbook, #187/#505) — gestione utenti,
 ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (vedi
 [user-management](user-management.md)).
 
@@ -109,6 +113,8 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414) | richiesta |
 | `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge / elenca (paginato) i partecipanti | richiesta |
 | `event_activate_by_code` / `participant_activate` | Attiva un partecipante tramite codice di attivazione / attivazione diretta da organizzatore | richiesta |
+| `event_participants_activate_pending` | Ammette in un colpo solo tutti i `pending` (#416) | richiesta |
+| `leave_participant_mode` | Esce dalla modalità partecipante (pulisce cookie + contesto) | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
 | `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti), filtrata per organizzazione — restituisce le email, quindi è riservata a chi gestisce eventi | organizzatore/admin |
 | `events_list` | Elenco pubblico degli eventi | nessuna |
@@ -333,8 +339,8 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
 - `rb_duplicate`: in **una singola transazione** copia file `.rdbk`, riga DB, intera galleria foto
   **e le note vocali** (file + righe) in un nuovo roadbook; un errore a metà fa rollback (niente
   copie parziali). La copia parte `draft`, con titolo "… (copy)" e slug proprio.
-- `rb_delete`: cancella **prima la riga, poi il file** (una DELETE fallita non deve perdere il
-  file); foto/audio spariscono in cascata via FK.
+- `rb_delete`: sposta nel cestino (`status='deleted'`, #187) invece di cancellare; il purge
+  (riga prima, poi file) lo fa il cron o `admin_rb_purge`.
 
 ### Endpoint pubblici (challenge / community)
 - `public_list`: join `roadbooks ⨝ users`, solo `status = 'public'` con slug, ultimi 60, con una
@@ -429,7 +435,7 @@ loro somma.
 | [019_events.sql](../migrations/019_events.sql) | tabelle `events` + `event_roadbooks` (entità evento + associazioni, #6) |
 | [020_organizer_role.sql](../migrations/020_organizer_role.sql) | `users.is_organizer` (ruolo organizzatore eventi, #121) |
 | [021_terms_consent.sql](../migrations/021_terms_consent.sql) | `users.terms_accepted_at` / `terms_version` (consenso ai Termini alla registrazione, #135) |
-| [022_event_participation.sql](../migrations/022_event_participation.sql) | `event_roadbooks.scoring_mode` + tabella `event_categories` (#6/#122) |
+| [022_event_participation.sql](../migrations/022_event_participation.sql) | `event_roadbooks.scoring_mode` + tabella `event_categories` (poi droppata in 033, #6/#122) |
 | [023_event_participants.sql](../migrations/023_event_participants.sql) | `users.organization`, `events.join_code`, tabelle `event_organizers` + `event_participants` (#123) |
 | [024_event_logo.sql](../migrations/024_event_logo.sql) | `events.logo` (logo evento, #151) |
 | [025_roadbook_locks.sql](../migrations/025_roadbook_locks.sql) | tabella `roadbook_locks` (soft lock di co-editing, TTL 10 min, #154) |
@@ -440,11 +446,11 @@ loro somma.
 | [030_roadbook_category.sql](../migrations/030_roadbook_category.sql) | `roadbooks.category` (la categoria passa dall'evento al roadbook, #248) |
 | [031_event_website_hq.sql](../migrations/031_event_website_hq.sql) | `events.organizer_website` + coordinate HQ (`hq_lat`/`hq_lon`, #249) |
 | [032_event_participant_status.sql](../migrations/032_event_participant_status.sql) | `event_participants.status` (`pending`/`active`, attivazione partecipanti #163) |
-| [033_activation_code.sql](../migrations/033_activation_code.sql) | Aggiunge `users.activation_code` — codice numerico per partecipanti che entrano senza account (#163) |
+| [033_activation_code.sql](../migrations/033_activation_code.sql) | Aggiunge `event_participants.activation_code` — codice alfanumerico personale per l'attivazione (#163) |
 | [033_drop_dead_schema.sql](../migrations/033_drop_dead_schema.sql) | Rimuove `event_categories` (sostituita da `roadbooks.category`) e `roadbooks.is_public` (sostituita da `status`) |
 | [034_event_open_join.sql](../migrations/034_event_open_join.sql) | `events.open_join` (evento a iscrizione aperta, senza codice, #351) |
 | [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `users.apple_sub` (UNIQUE) — Sign in with Apple, gemello di `google_sub` (#370) |
-| [036_event_registration.sql](../migrations/036_event_registration.sql) | `events.join_gate` (`closed`/`code`/`open`) + `events.require_activation` — gate e attivazione indipendenti, con backfill da `open_join`/`join_code` (#414) |
+| [036_event_registration.sql](../migrations/036_event_registration.sql) | `events.join_gate` (`closed`/`code`/`open`) + `events.require_activation` — gate e attivazione indipendenti, con backfill da `open_join`/`join_code` (#414). `open_join` resta come mirror in scrittura finché nulla lo legge. |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,

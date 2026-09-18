@@ -76,6 +76,8 @@ Lo schema `users` è esteso da diverse migrazioni (vedi anche [backend-api](back
 | [016_user_quota.sql](../migrations/016_user_quota.sql) | `quota_bytes` | `BIGINT` NULL | override della quota disco (NULL = default di sistema, `DEFAULT_QUOTA_BYTES` 50 MB) |
 | [020_organizer_role.sql](../migrations/020_organizer_role.sql) | `is_organizer` | `TINYINT(1)` def. 0 | ruolo organizzatore eventi (#121) |
 | [021_terms_consent.sql](../migrations/021_terms_consent.sql) | `terms_accepted_at` / `terms_version` | timestamp / stringa | consenso alle Condizioni d'uso registrato alla registrazione (#135) |
+| [028_google_auth.sql](../migrations/028_google_auth.sql) | `google_sub` (+ `password_hash` NULLABLE) | stringa NULL | Sign in with Google (#46) |
+| [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `apple_sub` | stringa NULL | Sign in with Apple (#370) |
 
 Colonne preesistenti rilevanti: `email_verified` (verifica email), `password_hash`
 (bcrypt via `password_hash`). I roadbook usano ora un enum `status` (draft/ready/public, #96)
@@ -183,6 +185,10 @@ pagina (badge, azioni per riga).
 Colonne tabella: **User** (nome + handle + badge) · **Email** · **Roadbooks** · **Disk**
 (`fmtSize`) · azioni.
 
+Aree admin separate (pagine proprie, non in `admin.js`): cestino roadbook (`trash/`, #187),
+mappa posizioni utenti (`users-map/`, #499), log (`logs/`), partecipanti eventi
+(`events/participants/`).
+
 ---
 
 ## 6. Pagina account: viste rilevanti
@@ -212,8 +218,8 @@ dal deploy automatico:
    una volta e in ordine, tramite il **pannello VPS** (regola schema-first: la colonna deve
    esistere in prod *prima* del codice che la legge, altrimenti login e pannello vanno in
    errore SQL). Dettagli e chiave in [DB.md](../DB.md). Le migrazioni arrivano ormai fino a
-   `027` (tra cui 015 status, 016 quota, 017 activity_log, 018 settings, 019 events, 020
-   organizer, 021 terms, 022–023 partecipazione, 025 lock, 026 reusable, 027 indici liste).
+   `036` (028 Google, 029 trash, 030 category, 031 website/HQ, 032 status, 033 activation code,
+   034 open join, 035 Apple, 036 registration gate) — tabella completa in [backend-api](backend-api.md) §schema.
 2. **`ADMIN_EMAILS` nel `.env` di produzione.** Va valorizzato con l'email del primo admin;
    il `.env` non è nel repo e non viene toccato dal deploy. Finché è vuoto, in produzione
    nessuno è admin e `/admin` resta inaccessibile.

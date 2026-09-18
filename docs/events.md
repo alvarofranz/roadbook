@@ -20,7 +20,9 @@ le pagine e le action.
 
 ## 1. Il modello dati
 
-Cinque tabelle (migrazioni 019, 022, 023 — dettaglio in [backend-api §8](backend-api.md)):
+Quattro tabelle vive (`events`, `event_roadbooks`, `event_organizers`, `event_participants`),
+evolute per alter successive — dettaglio in [backend-api §8](backend-api.md). Le categorie
+(`event_categories`) sono state droppate: vivono sul singolo roadbook (`roadbooks.category`, #248).
 
 | Tabella | Campi chiave | Ruolo |
 |---|---|---|
@@ -139,7 +141,9 @@ il join code. Le azioni:
 ### `/admin/events/participants/` — roster (`participants.js`)
 La lista partecipanti su pagina propria (#144): un evento può averne centinaia, quindi è
 **cercata e paginata lato server** (`event_participants_list`, `q` su username/nome completo).
-`event_participant_remove` rimuove un partecipante. La forma della riga è il contratto che
+Attivazione singola (`participant_activate`), per codice (`event_activate_by_code`, anche da QR),
+massiva (`event_participants_activate_pending`, #416); `event_participant_add` inserisce,
+`event_participant_remove` rimuove. La forma della riga è il contratto che
 **P2.4 (#124)** allargherà con i campi entry (categoria, team, veicolo, numero).
 
 ---
@@ -180,7 +184,7 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 | Gestione | `events_manage`, `event_manage_get`, `event_save`, `event_delete`, `event_logo_remove` |
 | Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode` |
 | Co-organizzatori | `user_search`, `event_org_add`, `event_org_remove` |
-| Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate` |
+| Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate`, `event_participants_activate_pending` (ammissione massiva, #416) |
 
 ---
 

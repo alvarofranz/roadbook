@@ -14,9 +14,9 @@ the event, and redirects to the event page in **participant mode**.
 ## 1. URL scheme and flow
 
 ```
-/go/<join_code>  ──▶  1. validate code
+/go/<join_code>  ──▶  1. validate code (+ gate open)
                        2. authenticated?  ──no──▶  /account/?next=/go/<code>
-                       3. already joined? ──no──▶  INSERT as pending
+                       3. already joined? ──no──▶  INSERT (status from activation setting)
                        4. set participant context + cookie
                        5. redirect →  /event/<slug>
 ```
@@ -24,13 +24,15 @@ the event, and redirects to the event page in **participant mode**.
 **Steps:**
 
 1. **Validate** — the `join_code` must match an existing `events` row with
-   `is_public = 1`. Unknown codes get a 404 with a minimal HTML error page
-   (`go_error()`), styled the same as the app shell.
+   `is_public = 1` **whose gate is not `closed`**. Unknown codes — and closed events,
+   which admit nobody even through a once-valid link — get a 404 with a minimal HTML
+   error page (`go_error()`), styled the same as the app shell.
 2. **Authentication** — unauthenticated users are redirected to `/account/` with
    `?next=/go/<code>` so they log in and come back.
-3. **Join** — if the user is not yet an `event_participant`, an `INSERT` creates
-   a **pending** row (with a generated `activation_code`, #163). If they already
-   exist the row is **upserted** (reset to pending). The activity is logged.
+3. **Join** — same rule as `event_join` (#414): the gate decides HOW you get in (the
+   `/go/` URL itself carries the code), `require_activation` decides the landing —
+   `pending` with a personal QR, or `active` at once. If they already exist the row
+   is **upserted** to the same outcome. The activity is logged.
 4. **Participant context** — `set_participant_context()` + `setcookie('rb_participant',
    '1', …)` switch the UI to **participant mode**: reduced nav (only event‑scoped
    tools), home redirects to the event page. The cookie is a UX flag the header reads
@@ -56,11 +58,11 @@ a pending participant already sees the reduced UI while waiting for activation.
 
 - **Server-side only**, no JS: the error page includes the standard `app.js` shell
   but does not depend on it for the flow.
-- **The activation code** (`gen_activation_code()`) is a random numeric string;
-  it is stored per-participant row but not yet used by a self‑service activation
-  flow (pending `P2.4`, #124).
+- **The activation code** (`gen_activation_code()`) is a random string stored
+  per-participant row; the organizer activates it from `/admin/events/participants/`
+  (typed or QR-scanned), and the pending user sees their own code on the event page.
 - **Join code is case-sensitive**: the regex `^[A-Za-z0-9_-]+$` allows mixed case;
   matching against the DB is exact.
 - **One click = one join**: the upsert means the same link can be clicked twice
-  without error — it resets the row to `pending` and generates a new activation
-  code each time.
+  without error — it recomputes the same outcome and generates a fresh activation
+  code each time the outcome is pending.

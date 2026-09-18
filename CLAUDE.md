@@ -18,7 +18,7 @@ DB/Convenzioni rapide below have counterparts there).
   version bump**: Android via GitHub Actions → Play, iOS via Xcode Cloud → TestFlight (a merge to
   `main` that bumps `version.json` emits all three; see **Releasing**). See **Native apps** below
   and `NATIVE.md`.
-- Back-end: small PHP 8.1 + MariaDB API under `public/api/` (+ logic in `app/`) for
+- Back-end: small PHP 8.4 + MariaDB API under `public/api/` (+ logic in `app/`) for
   accounts, per-user roadbook storage, photos and public roadbooks. Config via `.env`
   (phpdotenv). The front-end works fully without it; the API only adds accounts/sharing.
 - **Sign-in:** email/password, **Google Sign-In** (#46) or **Sign in with Apple** (#370 — App Store
@@ -256,7 +256,7 @@ DB/Convenzioni rapide below have counterparts there).
   drift is a bug: a change isn't done until the docs describing it read as the current reality.
 
 ## Run locally
-**Full stack (PHP 8.1 + MariaDB) on the VPS dev clone:** development happens on the box in a
+**Full stack (PHP 8.4 + MariaDB) on the VPS dev clone:** development happens on the box in a
 dev clone next to prod — `/home/rdbk/dev/rdbk` (dev DB `rdbk_dev`), served privately on
 `127.0.0.1:8806`, loopback-only: view it from the box itself with
 `dev-shot http://localhost:8806/ out.png` (headless Chromium) or `curl -s http://localhost:8806/`. Prod
@@ -409,8 +409,8 @@ asset without a stamp, so the rule holds even when the server-side stamp is miss
 
 **A semver release writes its own release note first.** `public/assets/js/changelog.js` is the
 single source of "What's new" — one entry per release (version · date · headline · what changed),
-newest first — rendered on the About page (`/about/#changelog`, next to the panel that states the
-platform, the release running and the release available) and linked from the App Info pop-up. Add
+newest first — rendered on the dedicated changelog page (`/changelog/`, linked from the App Info
+pop-up and teasered on About). Add
 the entry for the new `X.Y.Z` BEFORE stamping it: `tests/about-page.test.js` fails a build whose
 `version.json` is ahead of the list, and fails a note that isn't translated into all five
 languages. The strings are English source strings, translated through `RBt` like the rest of the

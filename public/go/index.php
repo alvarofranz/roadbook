@@ -10,10 +10,12 @@ function go_error(string $msg): never {
 $tag = $_GET['tag'] ?? '';
 if (!preg_match('/^[A-Za-z0-9_-]+$/', $tag)) go_error('Not found');
 
-$st = db()->prepare('SELECT id, slug, open_join FROM events WHERE join_code = ? AND is_public = 1');
+$st = db()->prepare('SELECT id, slug, join_gate, require_activation, open_join FROM events WHERE join_code = ? AND is_public = 1');
 $st->execute([$tag]);
 $event = $st->fetch();
 if (!$event) go_error('Event not found');
+// A closed gate admits nobody — not even through a once-valid link (#414).
+if (event_join_gate($event['join_gate'] ?? null) === 'closed') go_error('Event not found');
 
 $user = current_user();
 if (!$user) {
@@ -26,16 +28,11 @@ $st->execute([(int)$event['id'], (int)$user['id']]);
 $row = $st->fetch();
 
 if (!$row) {
-    if ((int)$event['open_join']) {
-        // open join: participant is active immediately, no activation code
-        db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'")
-            ->execute([(int)$event['id'], (int)$user['id']]);
-    } else {
-        $actCode = gen_activation_code();
-        db()->prepare("INSERT INTO event_participants (event_id, user_id, status, activation_code) VALUES (?, ?, 'pending', ?) ON DUPLICATE KEY UPDATE status = 'pending', activation_code = ?")
-            ->execute([(int)$event['id'], (int)$user['id'], $actCode, $actCode]);
-    }
-    log_activity((int)$user['id'], 'event_join', 'event #' . (int)$event['id']);
+    // Same rule as event_join (#414): the gate decides HOW you get in (the /go/ URL itself
+    // carries the code, so code and open gates both pass here), require_activation decides
+    // whether you land pending (personal QR) or active at once.
+    [$status, $actCode] = event_join_outcome($event);
+    event_join_insert((int)$event['id'], (int)$user['id'], $status, $actCode);
 }
 // Everyone entering via the /go/ link gets participant mode (pending or active): the
 // reduced surface removes irrelevant nav tools (#163). A pending participant waits on

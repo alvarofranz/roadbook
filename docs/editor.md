@@ -159,7 +159,7 @@ Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js:404](../public/editor/editor.js#L404))
 dentro campi testo e durante un recording.
 
 I mode tool sono `disabled` finché non c'è una rotta; `setRoadbook` li abilita.
-`Escape` torna a `pan`.
+`Escape` chiude il menu contestuale se aperto, altrimenti torna a Move.
 
 ### 3.3 Comportamento della mappa
 
@@ -167,8 +167,8 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
 [rbmap](rbmap.md). Specifico dell'Editor:
 
 - **Basemap & controllo in alto a destra.** Le viste base sono raster gratuite senza chiave:
-  **ESRI World Imagery** (satellite) e **CyclOSM** (terreno con isoipse + sterrate/sentieri),
-  con `glyphs` OpenFreeMap per il testo dei layer. Un controllo MapLibre in alto a destra
+  **ESRI World Imagery** (satellite) e **OSM standard** (topo), con `glyphs` OpenFreeMap per il
+  testo dei layer. Un controllo MapLibre in alto a destra
   (accanto ai tasti zoom) unisce il **toggle satellite/terreno** (`toggleMapStyle`, persistito
   in `localStorage`) e l'indicatore del **livello di zoom**.
 - **Default move points + pallini.** Le note sono pallini **blu** (`rb-wpts`), **sempre**

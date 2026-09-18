@@ -863,8 +863,8 @@
             <button class="rb-badge public" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Make private'))}" aria-label="${RBesc(RBt('Make private'))}"><i class="fa-solid fa-globe"></i> ${RBesc(RBt('Public'))}</button>
             <a class="btn btn-ghost" href="/challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
         </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
-        container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + RBesc(b.dataset.title || '') + '”', RBt('Make private')))) return;
+            container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
+                if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + RBesc(b.dataset.title || '') + '”', true))) return;
             const x = await RBApi('admin_unpublish', { id: +b.dataset.unpub });
             if (x.ok) { RBToast('Roadbook is now private.'); RBPublicRoadbooksList(container); } else RBToast(x.error || 'Could not change visibility.');
         });
