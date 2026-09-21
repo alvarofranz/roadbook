@@ -895,16 +895,26 @@
         }
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
     };
-    // Roadbook-wide default validation radius (metres); a typed note with no explicit wp_radius
-    // prefills from this, else from the type's catalog default. Absent ⇒ per-type defaults.
-    $('cfgWpRadius').onchange = (e) => {
+    // Roadbook-wide default detection radius (metres): what a note with no wp_radius of its own
+    // validates at. A note that HAS one keeps it — so changing the default alone would leave those
+    // notes where they were, silently. Hence the offer: apply the new value to every note, or to
+    // none. Nothing in between, and nothing without asking — rewriting the radius of notes the
+    // author tuned by hand is a data change, so it takes a Yes (#532).
+    $('cfgWpRadius').onchange = async (e) => {
         if (!rb) return;
         const v = parseInt(e.target.value, 10);
-        if (isFinite(v) && v > 0) {
-            rb.meta.default_wp_radius = v;
-            rb.notes.forEach((n) => { if (n.wp_radius == null) n.wp_radius = v; }); // fill every note that has no radius yet
-        } else delete rb.meta.default_wp_radius;
+        if (!(isFinite(v) && v > 0)) { // cleared: the notes fall back to their type's default
+            delete rb.meta.default_wp_radius;
+            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
+            return;
+        }
+        rb.meta.default_wp_radius = v;
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
+        if (await RBConfirm(t('Also replace all current notes in this roadbook to {v} m?').replace('{v}', v))) {
+            rb.notes.forEach((n) => { if (!RB.isComment(n)) n.wp_radius = v; }); // a comment row has no waypoint to validate
+            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
+            toast('Every note now validates at this radius.');
+        }
     };
     window.addEventListener('beforeunload', (e) => { if (rb && dirty && !exported) { saveDraft(); e.preventDefault(); e.returnValue = ''; } });
 
@@ -1684,18 +1694,13 @@
             markDirty(); renderEditor(); renderNotes();
         });
         // Detection radius (metres) — the geofence the Reader validates this waypoint with.
-        // Available for EVERY waypoint, typed or not: left empty the note inherits, and the hint
-        // under the field names both numbers, so "the global one" and "this note's" are never a
-        // guess. The chain is the runtime's (RB.detectionRadius): note → roadbook → type → system.
-        const rbDef = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : null;
-        const inherited = RB.detectionRadius({ wp_type: n.wp_type }, rb.meta); // the chain, asked of the runtime itself
-        const source = rbDef != null ? 'Roadbook default' : (RB.wpType(n.wp_type) ? 'Note type default' : 'System default');
-        const hint = n.wp_radius != null
-            ? `${esc(t('This note only'))} · ${esc(t(source))} <b>${inherited} m</b>`
-            : `${esc(t('Inherited'))} · ${esc(t(source))} <b>${inherited} m</b>`;
+        // Available for EVERY waypoint, typed or not. Left empty the note inherits, and the
+        // PLACEHOLDER is that inherited number: the field says what is in force either way,
+        // without a line of prose under it. The chain is the runtime's own (RB.detectionRadius):
+        // note → roadbook → type → system.
+        const inherited = RB.detectionRadius({ wp_type: n.wp_type }, rb.meta);
         $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Detection radius', 'help.radius')}</span>
-            <input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}">
-            <small class="prop-hint">${hint}</small></label>`;
+            <input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}"></label>`;
         $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); renderEditor(); };
     }
     // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).

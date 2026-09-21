@@ -999,6 +999,42 @@ describe('the note editor leads with the icons (#527 · #530)', () => {
     });
 });
 
+describe('changing the roadbook default offers to apply it to every note (#532)', () => {
+    const editor = read('public/editor/editor.js');
+    const handler = editor.match(/\$\('cfgWpRadius'\)\.onchange = async \(e\) => \{([\s\S]*?)\n {4}\};/)[1];
+
+    it('asks before rewriting radii the author set by hand', () => {
+        expect(handler).toContain("RBConfirm(t('Also replace all current notes in this roadbook to {v} m?')");
+        expect(handler).toContain("replace('{v}', v)");
+    });
+
+    it('never touches a note without a Yes', () => {
+        const apply = handler.slice(handler.indexOf('RBConfirm'));
+        expect(apply).toContain('n.wp_radius = v');
+        // the old silent fill wrote the value into every note with none, unasked
+        expect(handler, 'a silent fill is back').not.toContain('if (n.wp_radius == null) n.wp_radius = v');
+        expect(handler.indexOf('n.wp_radius = v')).toBeGreaterThan(handler.indexOf('RBConfirm'));
+    });
+
+    it('leaves comment rows alone — they have no waypoint to validate', () => {
+        expect(handler).toContain('if (!RB.isComment(n))');
+    });
+
+    it('clearing the field just drops the default', () => {
+        expect(handler).toContain("delete rb.meta.default_wp_radius");
+        expect(handler.indexOf('delete rb.meta.default_wp_radius')).toBeLessThan(handler.indexOf('RBConfirm'));
+    });
+
+    it('is translated everywhere', () => {
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            const dict = read(`public/assets/js/i18n.${lang}.js`);
+            expect(dict, lang).toContain("'Also replace all current notes in this roadbook to {v} m?':");
+            expect(dict, lang).toContain('{v}');           // the number survives the translation
+            expect(dict, lang).toContain("'Every note now validates at this radius.':");
+        }
+    });
+});
+
 describe('the note says which detection radius applies (#530)', () => {
     const editor = read('public/editor/editor.js');
     const html = read('public/editor/index.html');
@@ -1007,11 +1043,10 @@ describe('the note says which detection radius applies (#530)', () => {
         expect(editor).toContain('RB.detectionRadius({ wp_type: n.wp_type }, rb.meta)');
     });
 
-    it('names both numbers: this note\'s own and the one it would inherit', () => {
-        expect(editor).toContain("t('This note only')");
-        expect(editor).toContain("t('Inherited')");
-        for (const src of ['Roadbook default', 'Note type default', 'System default']) expect(editor, src).toContain(`'${src}'`);
+    it('shows the number in force as the placeholder, with no prose under the field', () => {
+        expect(editor).toContain('placeholder="${inherited}"');
         expect(editor).toContain("labelHelp('Detection radius', 'help.radius')");
+        expect(editor, 'a hint line is back under the field').not.toContain('prop-hint');
     });
 
     it('calls the roadbook-wide one by the same name', () => {
@@ -1021,7 +1056,7 @@ describe('the note says which detection radius applies (#530)', () => {
     it('is translated everywhere, and the help text states the real system default', () => {
         for (const lang of ['es', 'it', 'de', 'fr']) {
             const dict = read(`public/assets/js/i18n.${lang}.js`);
-            for (const key of ['Detection radius', 'This note only', 'Inherited', 'Roadbook default', 'Note type default', 'System default', 'Default detection radius (m)']) {
+            for (const key of ['Detection radius', 'Default detection radius (m)']) {
                 expect(dict, `${lang}: ${key}`).toContain(`'${key}':`);
             }
         }
