@@ -946,3 +946,32 @@ describe('a refused media delete says why (#525)', () => {
         expect(fn, 'still owner-only').not.toContain('r.user_id = ?');
     });
 });
+
+describe('the note editor leads with the icons (#527)', () => {
+    const html = read('public/editor/index.html');
+    const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+
+    it('one bar carries the icon actions and both ways to add an icon', () => {
+        const bar = html.match(/<div class="icon-tools">([\s\S]*?)<\/div>\s*<\/div>/)[1];
+        expect(bar).toContain('id="noteToolbar"');     // what NoteCanvas draws for the selection
+        expect(bar).toContain('id="pasteIconBtn"');
+        expect(bar).toContain('id="addIconBtn"');
+        expect(bar).toContain('data-i18n="Icon tools"');
+        // and the bar still says what it is when nothing is selected
+        expect(css).toContain('.icon-tools #noteToolbar:empty + .icon-tools-title { display: block; }');
+    });
+
+    it('the gallery comes before the note parameters', () => {
+        const zone = html.slice(html.indexOf('class="vig-icons"'), html.indexOf('id="commentForm"'));
+        expect(zone.indexOf('id="iconGrid"')).toBeGreaterThan(-1);
+        expect(zone.indexOf('id="iconGrid"'), 'the parameters still come first').toBeLessThan(zone.indexOf('id="roadSlot"'));
+    });
+
+    it('the palette is a two-row strip that scrolls sideways', () => {
+        expect(css).toContain('grid-auto-flow: column');
+        expect(css).toContain('grid-template-rows: repeat(2, auto)');
+        expect(css).toContain('overflow-x: auto');
+        expect(css).toContain('overflow-y: hidden');
+        expect(css, 'a leftover height cap keeps it a tall box').not.toMatch(/\.icon-grid \{[^}]*max-height/);
+    });
+});
