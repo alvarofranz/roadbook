@@ -1023,3 +1023,9 @@ Object.assign(window.RBi18nLangs.it, {
     'Icon tools': 'Strumenti dell’icona',
     'Junction tools': 'Strumenti dell’incrocio',
 });
+
+/* a refused media delete says why (#525) */
+Object.assign(window.RBi18nLangs.it, {
+    'Could not delete the photo.': 'Non è stato possibile eliminare la foto.',
+    'Could not delete the voice note.': 'Non è stato possibile eliminare la nota vocale.',
+});

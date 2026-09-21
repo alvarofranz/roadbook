@@ -1225,7 +1225,10 @@
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => {
             e.stopPropagation();
             if (!(await RBConfirmDanger(t('Delete this photo?')))) return; // never delete a stored photo silently (#209)
-            await RBApi('ph_delete', { id: +s.dataset.delp });
+            const busy = RBBusy(s);
+            const r = await RBApi('ph_delete', { id: +s.dataset.delp });
+            if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the photo.'); } // say why: silence left the photo on screen with no explanation (#525)
+            busy.ok();
             loadPhotos();
         });
         g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
@@ -1379,7 +1382,10 @@
         const p = lbList[lbIdx]; if (!p) return;
         if (!(await RBConfirmDanger(t('Delete this photo?')))) return;
         const keep = new Set(lbList.map((x) => +x.id)); keep.delete(+p.id); // stay within the current set (all, or a note's group)
-        await RBApi('ph_delete', { id: +p.id });
+        const busy = RBBusy('lbDelete');
+        const r = await RBApi('ph_delete', { id: +p.id });
+        if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the photo.'); } // a refused delete used to be silent, and the photo just stayed (#525)
+        busy.ok();
         await loadPhotos();
         lbList = notePhotos.filter((x) => keep.has(+x.id));
         if (!lbList.length) return closeLightbox();
@@ -1476,7 +1482,11 @@
         // delete a voice note straight from its note row
         $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
-            if (await RBConfirm(t('Delete this voice note?'), true)) { await RBApi('audio_delete', { id: +b.dataset.dela }); loadAudio(); }
+            if (!(await RBConfirm(t('Delete this voice note?'), true))) return;
+            const busy = RBBusy(b);
+            const r = await RBApi('audio_delete', { id: +b.dataset.dela });
+            if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the voice note.'); } // same rule as the photos (#525)
+            busy.ok(); loadAudio();
         });
         // transcribe a voice note → append the text to its note (#133, in-browser Whisper)
         $('noteList').querySelectorAll('[data-totext]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); transcribeInto(+b.dataset.totext, b.dataset.aurl, b); });

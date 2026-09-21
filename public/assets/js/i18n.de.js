@@ -883,3 +883,9 @@ Object.assign(window.RBi18nLangs.de, {
     'Icon tools': 'Symbol-Werkzeuge',
     'Junction tools': 'Kreuzungs-Werkzeuge',
 });
+
+/* a refused media delete says why (#525) */
+Object.assign(window.RBi18nLangs.de, {
+    'Could not delete the photo.': 'Das Foto konnte nicht gelöscht werden.',
+    'Could not delete the voice note.': 'Die Sprachnotiz konnte nicht gelöscht werden.',
+});
