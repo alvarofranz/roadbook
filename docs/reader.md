@@ -88,7 +88,7 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
   eventualmente la `cap_distance` in km ([reader.js:219](../public/reader/reader.js#L219)).
 - Sotto ogni riga c'è un contenitore `.nmap` nascosto, slot per la mappa per-nota (§6).
 - Dopo il render, gli handler vengono ricablati: `[data-reach]` e il tap sulla riga **attiva**
-  → `advanceNote` (la stessa azione del pulsante Convalida), `[data-map]` → `toggleNoteMap`, e
+  → `advanceNote` (validazione manuale, rifiutata a modo auto acceso), `[data-map]` → `toggleNoteMap`, e
   il tap su **qualsiasi altra** riga → `jumpToNote` (spostamento cursore, con conferma — §7).
 - **Rebuild completo vs aggiornamento in place**: `renderNotes` ricostruisce l'intera lista
   solo ai cambi *strutturali* (avvio, toggle Auto, cambio lingua). Avanzamento e validazione
@@ -109,7 +109,7 @@ vero è in `app.css`.
 | Stato | Classe | Quando | Aspetto |
 |-------|--------|--------|---------|
 | **Raggiunta** | `.done` | `reached.has(i)` — validata davvero | verde |
-| **Saltata** | `.skipped` | `i < activeIdx` ma non in `reached` (superata senza validare) | rosa |
+| **Saltata** | `.skipped` | `i < activeIdx` ma non in `reached` (superata senza validare) | **rossa** — un rosa pallido si leggeva come "fatta" (#529) |
 | **Attiva** | `.active` | `i === activeIdx` | bordo rosso |
 | **Imminente** | (nessuna) | nota futura | bianco |
 | **In avvicinamento** | `.near` (solo sulla riga attiva) | distanza GPS dalla nota attiva ≤ `MANUAL_RADIUS_M` (100 m) | azzurro tenue |
@@ -144,7 +144,7 @@ riga raccoglie tutti i readout, aggiornati a ogni fix in `onFix`
 | **Bussola + freccia** | `#odoBrg` / `#odoBrgArrow` | rilevamento alla prossima nota (`RB.geo.bearingDeg`), altrimenti `meter.heading`; freccia ruotata *relativa* al proprio heading (0° = su = dritto) |
 | **Ora** | `#odoClock` | orologio di sistema, aggiornato ogni secondo da un `setInterval` ([reader.js:120](../public/reader/reader.js#L120)) |
 | **GPS** | `#gpsDot` / `#gpsTxt` | `setGps`: pallino `ok`/`bad` e `±N m`; verde se `accuracy ≤ 25 m` ([reader.js:157](../public/reader/reader.js#L157), [reader.js:181](../public/reader/reader.js#L181)) |
-| **Batteria** | `#odoBatt` / `#odoBattIcon` | alimentata dal feed condiviso `RBStatusBar.watchBattery` (`startBattery`); icona per livello/carica; `N/A` se l'API manca |
+| **Velocità** | `#odoSpeed` | `speedKmh` del fix (`RBGpsMeter`), arrotondata, in km/h — il readout che il navigatore legge davvero mentre ci si muove (#529) |
 
 L'odometro avanza di `disp` (lo spostamento per-fix **già giudicato** da `RBGpsMeter` /
 `RB.odometerStep`: solo terreno realmente percorso) sia sul totale sia sul parziale. Un fix non
@@ -152,33 +152,22 @@ affidabile — `fix.trusted === false`, accuratezza oltre `FIX_ACC_MAX_M` — ag
 readout GPS ed esce subito da `onFix`: non è dove siamo, quindi non può muovere un contatore,
 una nota o un marker (#383).
 
-### La barra CAP in basso
-`.capbar` ([index.html:82-87](../public/reader/index.html#L82)) resta visibile **per tutta la
-navigazione** (una barra che va e viene è una barra che chi guida smette di guardare): mostra
-la rotta da tenere (il `cap` della nota *precedente* — un CAP è la rotta da mantenere *dopo* un
-waypoint), la velocità corrente, la **distanza viva alla nota attiva** e una freccia
-direzionale data-driven. Senza CAP in vigore legge `—°` e nasconde solo la freccia; entro il
-reach della nota attiva prende la classe `.arriving` (blu, come la riga). `refreshLive` la
-riallinea sia a ogni fix affidabile sia a ogni cambio di nota attiva, così la distanza non
-resta mai a descrivere la nota precedente.
-
 ### Il guscio applicativo (#429)
 In navigazione il Reader **possiede lo schermo**, e `#navScreen` racchiude già esattamente i figli
-giusti — barra odometro · lista note · barra CAP · riga d'azione. Quindi è lui il **guscio**:
+giusti — barra odometro · lista note · riga d'azione. Quindi è lui il **guscio**:
 
 ```
 body.rb-immersive #navScreen   position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden
 ├── .odometer-bar              position: static; flex: none
 ├── #noteList                  flex: 1; min-height: 0; overflow-y: auto     ← l'UNICO scroller
-├── .capbar                    riga di flusso
 └── .fabrow                    position: static; flex: none
 ```
 
-Prima le tre barre erano `position: fixed` e la loro posizione veniva **calcolata** contro
+Un tempo le barre erano `position: fixed` e la loro posizione veniva **calcolata** contro
 `window.innerHeight`. Su iOS quel viewport non sta fermo: si assesta dopo il load, cambia quando
 la WebView viene ridimensionata o si ruota il telefono, e si muove mentre la toolbar di Safari si
-richiude. Un valore preso nell'istante sbagliato non veniva più corretto, e il risultato era la
-barra CAP che **galleggiava in mezzo alla lista** con le righe delle note che passavano dietro la
+richiude. Un valore preso nell'istante sbagliato non veniva più corretto, e il risultato era una
+barra che **galleggiava in mezzo alla lista** con le righe delle note che passavano dietro la
 riga d'azione. Nel guscio non c'è niente da calcolare: le barre sono righe di flusso, non possono
 galleggiare, non possono essere coperte e non possono essere obsolete; il rubber-band di iOS
 avviene dentro la lista, dove deve stare. `min-height: 0` è ciò che permette al figlio flex di
@@ -191,11 +180,11 @@ Conseguenze da tenere a mente:
   della lista (`list.scrollTop`);
 - `#noteList` non ha più `padding-bottom` a fare da segnaposto per l'altezza delle barre;
 - niente di condiviso può galleggiarci sopra: chip di lingua e chip flottanti sono nascosti in
-  `body.rb-immersive`/`body.rb-fs` (il chip lingua stava sulla lettura di distanza della barra CAP
-  mentre si guidava), e il banner GPS-web pure — la partenza è già stata filtrata dalla sua modale.
+  `body.rb-immersive`/`body.rb-fs` (il chip lingua stava sui pulsanti d'azione mentre si guidava),
+  e il banner GPS-web pure — la partenza è già stata filtrata dalla sua modale.
 
 Resta una sola variabile CSS, `--bottom-stack`, pubblicata da `publishBottomStack()`: l'altezza
-delle due barre in basso, presa **da loro** (`offsetHeight`), non dal viewport. La leggono le uniche
+della riga d'azione, presa **da lei** (`offsetHeight`), non dal viewport. La leggono le uniche
 cose ancora fissate al bordo dal livello condiviso — l'avviso cookie (#401) e il **toast**, che
 altrimenti finisce dietro i pulsanti proprio quando è l'unico messaggio che spiega perché un tap
 non ha fatto nulla (#431). In anteprima le barre sono `display: none`, `offsetHeight` è 0 e la
@@ -317,12 +306,25 @@ Conseguenze del design:
   singolo fix valida **una sola** nota: un buco GPS lungo che scavalca più note ne valida la
   prima e lascia le altre "saltate" (in competizione è la scelta meno costosa: validarle dalla
   posizione attuale caricherebbe penalità di accuratezza enormi).
+- **Guarda una nota avanti** (`RB.autoReachedIdx`, #529): il segmento guidato viene testato sulla
+  nota attiva e, se quella è stata mancata, sulla **successiva navigabile**. Raggiungendo la
+  successiva è lei a essere validata e la mancata resta *saltata* — **rossa** sul roadbook — con
+  il prezzo che un salto ha già (`RB.skipPenalty` in competizione, tramite `autoValidate`). Senza
+  questo la corsa restava ferma per sempre su un waypoint in cui non si sarebbe più entrati.
 
-`auto` è commutabile a metà sessione col pulsante `#autoBtn`.
+`auto` è commutabile a metà sessione col pulsante `#autoBtn` — ed è l'**unica** autorità mentre è
+acceso: in auto la validazione manuale è rifiutata (vedi sotto).
 
 ### Manuale — tap
-Il tap sulla riga **attiva** (tutta la riga, non solo il pulsantino) e il pulsante Convalida
-fanno la stessa cosa: `advanceNote()`.
+Il tap sulla riga **attiva** (tutta la riga, non solo il pulsantino di spunta) chiama
+`advanceNote()`. Non esiste un pulsante "Convalida" in basso: la validazione sta **sulla nota**,
+dove guarda chi naviga (#529).
+
+- **Solo a modo auto spento.** Con `auto` acceso `advanceNote` rifiuta subito e spiega come
+  prendere il comando ("Auto validation is on — switch it off to validate notes by hand."): decide
+  il GPS, non il dito. Il guard sta in `advanceNote`, quindi copre in un colpo solo il tap sulla
+  riga, il pulsantino di spunta e il comando *next* del remoto. Il pulsantino di spunta viene
+  disegnato solo a modo manuale.
 
 - In **Trip mode** (`!competition`) `advanceNote` chiama `markReached`: marca verde, azzera il
   parziale, sincronizza il totale sulla `distance` della nota e avanza. Nessun punteggio, nessun
@@ -336,7 +338,7 @@ fanno la stessa cosa: `advanceNote()`.
   nulla a ogni pressione successiva, quindi chi aveva davvero mancato un waypoint ci rimaneva
   incastrato. Una nota non raggiunta è **saltata**, cosa che il punteggio già modella, quindi è
   esattamente quello che viene offerto: "Too far from note 4 · 5.00 km — Skip it and continue?
-  Penalty: 450 pts". Accettando, la nota **non** entra in `reached` (resta rosa), il cursore
+  Penalty: 450 pts". Accettando, la nota **non** entra in `reached` (resta rossa), il cursore
   avanza e `RB.skipPenalty` viene addebitata una volta. Mai una convalida finta da lontano, che
   falserebbe il punteggio di accuratezza.
 - Il tap su **un'altra** riga è `jumpToNote(i)`: spostamento esplicito del cursore, **con
@@ -355,10 +357,11 @@ penalità (dettaglio in [ranking-model.md](./ranking-model.md)), marca `reached`
 parziale e l'arancione, sincronizza il totale e avanza `activeIdx`. All'ultima nota mostra un
 toast "Tap Finish".
 
-Il pulsante centrale `#validateBtn`, il tap sulla riga attiva, il pulsantino "raggiunta" e il
-comando *next* del remoto passano tutti da `advanceNote()`: `validateHere(activeIdx)` in
-competition, `markReached(activeIdx)` in trip — un solo punto di ingresso, così nessuna via
-scavalca il gate di prossimità della competizione.
+Il tap sulla riga attiva, il pulsantino "raggiunta" e il comando *next* del remoto passano tutti
+da `advanceNote()`: `validateHere(activeIdx)` in competition, `markReached(activeIdx)` in trip —
+un solo punto di ingresso, così nessuna via scavalca né il gate di prossimità della competizione
+né il rifiuto del modo auto. La validazione automatica passa invece da `autoValidate(i, here)`,
+che addebita il salto quando la nota raggiunta non è quella attiva e poi chiama `validateAt`.
 
 ---
 
@@ -431,8 +434,6 @@ ne aveva una copia propria).
   rende il gate più fine di così, perché sotto quella soglia si chiederebbe al GPS una
   precisione che non ha. La convalida automatica resta comunque affidabile perché il test è
   sull'attraversamento del segmento, non sul singolo fix (§7).
-- **Indicatore batteria best-effort**: la Battery Status API non è esposta su tutti i browser
-  (es. Safari/iOS) → mostra `N/A`.
 - **Rifiutare la ripresa non cancella la sessione**: è un comportamento voluto (anti
   tap-accidentale), ma significa che una sessione vecchia può ripresentarsi finché non si
   avvia una nuova corsa o si esce esplicitamente.

@@ -1683,14 +1683,20 @@
             } else { delete n.wp_type; } // radius is independent of type → keep any set wp_radius
             markDirty(); renderEditor(); renderNotes();
         });
-        // Validation radius (metres) — available for EVERY waypoint, typed or not. Empty falls back
-        // (at runtime) to the roadbook default, then the type's default; the placeholder shows that
-        // effective fallback so the author sees what's in force.
-        const typeDef = RB.wpType(n.wp_type) ? RB.wpType(n.wp_type).radius : null;
-        const fallback = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : (typeDef != null ? typeDef : null);
-        const radPh = fallback != null ? String(fallback) : t('Default');
-        $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Radius m', 'help.radius')}</span><input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${esc(radPh)}"></label>`;
-        $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); };
+        // Detection radius (metres) — the geofence the Reader validates this waypoint with.
+        // Available for EVERY waypoint, typed or not: left empty the note inherits, and the hint
+        // under the field names both numbers, so "the global one" and "this note's" are never a
+        // guess. The chain is the runtime's (RB.detectionRadius): note → roadbook → type → system.
+        const rbDef = (rb.meta && rb.meta.default_wp_radius != null) ? rb.meta.default_wp_radius : null;
+        const inherited = RB.detectionRadius({ wp_type: n.wp_type }, rb.meta); // the chain, asked of the runtime itself
+        const source = rbDef != null ? 'Roadbook default' : (RB.wpType(n.wp_type) ? 'Note type default' : 'System default');
+        const hint = n.wp_radius != null
+            ? `${esc(t('This note only'))} · ${esc(t(source))} <b>${inherited} m</b>`
+            : `${esc(t('Inherited'))} · ${esc(t(source))} <b>${inherited} m</b>`;
+        $('wpRadiusSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Detection radius', 'help.radius')}</span>
+            <input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}">
+            <small class="prop-hint">${hint}</small></label>`;
+        $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); renderEditor(); };
     }
     // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).
     function toggleCapAt(i) {
@@ -1844,13 +1850,15 @@
         (rb?.notes || []).forEach((n) => (n.icons || []).forEach((ic) => { if (ic.cover && ic.name) coverAll.add(ic.name.toLowerCase()); }));
         const curCover = new Set(((editorOpen && rb?.notes[sel]?.icons) || []).filter((ic) => ic.cover).map((ic) => (ic.name || '').toLowerCase()));
         const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; });
+        // The strip is icons and nothing else: each tile carries its category, and the chips
+        // above are what name and filter the groups.
         let html = '';
-        if (yours.length) html += `<div class="icon-category" data-cat="__yours">${t('Yours (in this roadbook)')}</div>` + yours.map((n) => iconBtn(n, lib[n], true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
+        if (yours.length) html += yours.map((n) => iconBtn(n, lib[n], '__yours', true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
         html += Object.entries(std.categories || {}).map(([cat, files]) => {
             // #94: the Speed dropdown sets the limit (and renders the matching sign), so the S*
             // speed-limit signs are hidden from the palette.
             const shown = files.filter((f) => RB.speedLimitFromName(f) == null);
-            return shown.length ? `<div class="icon-category" data-cat="${esc(cat)}">${t(cat)}</div>` + shown.map((f) => iconBtn(f, '../assets/icons/' + f, false)).join('') : '';
+            return shown.map((f) => iconBtn(f, '../assets/icons/' + f, cat, false)).join('');
         }).join('');
         $('iconGrid').innerHTML = html || `<span class="muted small">${esc(t('No icons.'))}</span>`;
         $('iconGrid').querySelectorAll('button[data-add]').forEach((b) => {
@@ -1879,25 +1887,16 @@
         // no "All" chip: clicking the active category again clears the filter (shows all)
         $('iconCats').querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { iconCat = iconCat === b.dataset.cat ? '' : b.dataset.cat; renderIconCats(hasCustom); filterIcons(); });
     }
-    // live palette filter: active category chip AND the search box; hide emptied categories
+    // live palette filter: active category chip AND the search box
     $('iconSearch').oninput = filterIcons;
     function filterIcons() {
         const q = $('iconSearch').value.trim().toLowerCase();
-        let header = null, curCat = '', headerHits = false;
         [...$('iconGrid').children].forEach((el) => {
-            if (el.classList.contains('icon-category')) {
-                if (header) header.hidden = !headerHits;
-                header = el; curCat = el.dataset.cat || ''; headerHits = false;
-                return;
-            }
-            const hit = (!iconCat || curCat === iconCat) && (!q || (el.dataset.add || '').toLowerCase().includes(q));
-            el.hidden = !hit;
-            if (hit) headerHits = true;
+            el.hidden = (iconCat && el.dataset.cat !== iconCat) || (q && !(el.dataset.add || '').toLowerCase().includes(q));
         });
-        if (header) header.hidden = !headerHits;
     }
-    const iconBtn = (name, src, rmv, title) =>
-        `<button data-add="${esc(name)}" title="${esc(title || name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
+    const iconBtn = (name, src, cat, rmv, title) =>
+        `<button data-add="${esc(name)}" data-cat="${esc(cat)}" title="${esc(title || name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!rb) return toast('Load a roadbook first.');
         canvas.addIcon(mkIcon(name, [0, 0]));

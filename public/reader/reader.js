@@ -1,6 +1,6 @@
 'use strict';
-/* RDBK Reader — the co-pilot's navigator: active note centred, odometer, live
- * CAP, manual/auto validation, penalty engine and a signed result QR. A run in
+/* RDBK Reader — the co-pilot's navigator: active note centred, odometer, speed,
+ * manual/auto validation, penalty engine and a signed result QR. A run in
  * progress is checkpointed to localStorage on every fix/state change and offered
  * for resume on the next visit, so a call, a lock screen or an OS tab kill loses
  * nothing. GPS plumbing lives in RBGpsMeter; GPX logging in RBGpxRecorder. */
@@ -244,7 +244,6 @@
         $('finishBtn').hidden = !comp;
         publishBottomStack(); // the action row just changed height (Competition adds Finish)
         syncAutoBtn();
-        $('validateBtn').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${esc(t(comp ? 'Validate' : 'Note done'))}`;
         $('navGpx').hidden = !optGpx;
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
         if (evCtx) {
@@ -261,15 +260,8 @@
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
         clearInterval(clockTimer); // startNav can run again in the same page life — never stack clocks
         clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
-        startBattery();
     }
-    // battery charge in the indicator row — fed by the shared RBStatusBar battery watch
-    let clockTimer = null, battWired = false;
-    function startBattery() {
-        if (battWired) return; battWired = true; // the listeners live for the page — wire once
-        const ok = RBStatusBar.watchBattery(({ pct, icon }) => { $('odoBatt').textContent = pct + '%'; $('odoBattIcon').className = 'fa-solid ' + icon; });
-        if (!ok) $('odoBatt').textContent = 'N/A';
-    }
+    let clockTimer = null;
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
@@ -299,9 +291,8 @@
     }
 
     /* ---------- GPS (RBGpsMeter drives one onFix per position) ---------- */
-    // The odometer + CAP bars are static markup, touched on every GPS fix — cache the refs once.
-    const odoEls = { total: $('odoTotal'), partial: $('odoPartial'), brg: $('odoBrg'), arrow: $('odoBrgArrow'), gpsDot: $('gpsDot'), gpsTxt: $('gpsTxt') };
-    const capEls = { bar: $('capbar'), heading: $('capHeading'), speed: $('capSpeed'), dist: $('capDist'), arrow: $('capArrow') };
+    // The odometer bar is static markup, touched on every GPS fix — cache the refs once.
+    const odoEls = { total: $('odoTotal'), partial: $('odoPartial'), brg: $('odoBrg'), arrow: $('odoBrgArrow'), gpsDot: $('gpsDot'), gpsTxt: $('gpsTxt'), speed: $('odoSpeed') };
     // Every fix arrives judged (RBGpsMeter · RB.odometerStep): `disp` is ground actually covered
     // and `trusted` says whether this position may drive anything at all. An untrusted fix only
     // updates the accuracy readout — it is not where we are, so it must never move a counter, a
@@ -324,15 +315,20 @@
             // P_extra: armed on entering the 100 m radius; moving away again accumulates the overshoot
             if (dist <= C.MANUAL_RADIUS_M) armed = true;
             else if (armed) extraAccum += disp;
-            // Auto-validation on arrival: the gate is the driven SEGMENT (RB.noteReached), so a
-            // waypoint can't slip between two fixes. It can't cascade either — reach radii never
-            // overlap, so the next note's gate only opens once this one advances. The row-state
-            // update happens inside validateAt.
-            if (auto && RB.noteReached(an, fix.from, here, reachRadius(activeIdx))) validateAt(activeIdx, here);
+            // Auto-validation on arrival: the gate is the driven SEGMENT (RB.autoReachedIdx →
+            // RB.noteReached), so a waypoint can't slip between two fixes. It looks one note
+            // ahead as well: a note driven past is left SKIPPED — red on the roadbook — and the
+            // one actually reached is validated, instead of the run sitting forever on a
+            // waypoint it will never enter. The row-state update happens inside validateAt.
+            if (auto) {
+                const hit = RB.autoReachedIdx(notes, activeIdx, nextNav(activeIdx + 1), fix.from, here, reachRadius);
+                if (hit >= 0) autoValidate(hit, here);
+            }
         }
         // top odometer bar
         odoEls.total.textContent = (tripTotalM / 1000).toFixed(2);
         odoEls.partial.textContent = (tripPartialM / 1000).toFixed(2);
+        odoEls.speed.textContent = Math.round(speedKmh || 0) + ' km/h';
         // bearing readout (to the next note, else device heading) + a directional arrow
         // that points relative to where you're pointing: 0° = up = straight ahead.
         const brg = an ? RB.geo.bearingDeg(here, an) : meter.heading;
@@ -342,29 +338,20 @@
         refreshLive();
         saveSession();
     }
-    // Inside the shell the CAP bar and the action row are laid-out rows (#429), so nothing here
-    // has to position them. What still needs their height is what the SHARED layer pins to the
-    // viewport bottom over the top of them — the cookie notice (#401) and the toast — and the
-    // answer is simply how tall those two bars are. No `window.innerHeight`: that arithmetic is
-    // exactly what left the CAP bar floating mid-list on iOS, because the viewport it read moves
-    // after load, on resize and on rotation, while the value did not.
+    // Inside the shell the action row is a laid-out row (#429), so nothing here has to position
+    // it. What still needs its height is what the SHARED layer pins to the viewport bottom over
+    // the top of it — the cookie notice (#401) and the toast — and the answer is simply how tall
+    // that row is. No `window.innerHeight`: that arithmetic reads a viewport that moves after
+    // load, on resize and on rotation, while the value does not, and it left bars floating
+    // mid-list on iOS.
     function publishBottomStack() {
-        const fab = document.querySelector('.fabrow');
-        // offsetHeight is 0 for a hidden bar, so the preview (which hides both) clears the
+        // offsetHeight is 0 for a hidden row, so the preview (which hides it) clears the
         // variable on its own and the notice drops back to the floor.
-        const stack = (fab.offsetHeight || 0) + (capEls.bar.hidden ? 0 : capEls.bar.offsetHeight || 0);
+        const stack = document.querySelector('.fabrow').offsetHeight || 0;
         if (stack > 0) document.body.style.setProperty('--bottom-stack', stack + 'px');
         else document.body.style.removeProperty('--bottom-stack');
     }
-    window.addEventListener('resize', publishBottomStack); // the rows re-wrap, so their height changes
-    // Raising or dropping the CAP bar changes the stack's height, so re-publish on the flip — and
-    // only on the flip: updateCapBar runs on every GPS fix, and a layout read per fix is a reflow
-    // for nothing.
-    function showCapBar(up) {
-        if (up === !capEls.bar.hidden) return;
-        capEls.bar.hidden = !up;
-        publishBottomStack();
-    }
+    window.addEventListener('resize', publishBottomStack); // the row re-wraps, so its height changes
     function setGps(state, acc) { odoEls.gpsDot.className = 'gps-dot ' + (state === 'ok' ? 'ok' : 'bad'); odoEls.gpsTxt.textContent = acc != null ? '±' + acc + ' m' : t('GPS lost'); }
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
@@ -438,6 +425,7 @@
             if (preview) { if (showMap) toggleNoteMap(i); return; }
             // The whole active row is the "done" target — aiming at a 42 px button on a moving
             // vehicle is what made validation "scomoda" (#386) — and any other row asks first.
+            // With Auto on, advanceNote itself declines: the GPS validates, not the finger.
             if (i === activeIdx) advanceNote(); else jumpToNote(i);
         });
         // only rescroll when the active note actually changed (not on every redraw)
@@ -501,14 +489,12 @@
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
         if (inlineMapIdx >= 0) { const el = $('nmap' + inlineMapIdx); if (el) { el.hidden = true; el.innerHTML = ''; } inlineMapIdx = -1; }
     }
-    // Everything that depends on where we are RIGHT NOW: the active row's proximity state and the
-    // bottom CAP bar. Driven by every trusted fix, and again whenever the active note changes, so
+    // Everything that depends on where we are RIGHT NOW: the active row's proximity state and its
+    // distance to go. Driven by every trusted fix, and again whenever the active note changes, so
     // no readout is ever left describing the note before it (#387).
     function refreshLive() {
         const an = notes[activeIdx];
-        const dist = (an && lastHere) ? RB.geo.haversineM(lastHere, an) : null;
-        paintApproach(dist);
-        updateCapBar(dist);
+        paintApproach((an && lastHere) ? RB.geo.haversineM(lastHere, an) : null);
     }
     // Live proximity on the active row: the roadbook stays paper, but the note you are driving to
     // reacts as you close in — `near` inside the manual radius, `arriving` once inside the reach
@@ -521,26 +507,6 @@
         row.classList.toggle('near', !arriving && dist != null && dist <= C.MANUAL_RADIUS_M);
         const togo = row.querySelector('.togo');
         if (togo) togo.textContent = dist == null ? '' : fmtDist(dist);
-    }
-    // Bottom CAP bar: the heading to hold (the previous note's CAP — a CAP is the bearing to keep
-    // AFTER a waypoint), live speed, live distance to the active note, direction arrow. It stays up
-    // for the whole run: a bar that comes and goes is one the driver stops looking at, so with no
-    // CAP in force it reads —° and drops just the arrow.
-    function updateCapBar(dist) {
-        const an = notes[activeIdx];
-        if (!an || preview) { showCapBar(false); return; }
-        const prev = notes[prevNav(activeIdx - 1)];
-        const cap = prev && prev.cap != null ? Math.round(prev.cap) : null;
-        showCapBar(true);
-        capEls.heading.textContent = cap == null ? '—°' : cap + '°';
-        capEls.speed.textContent = meter && meter.speedKmh ? Math.round(meter.speedKmh) + ' km/h' : '--';
-        capEls.dist.textContent = dist == null ? '—' : fmtDist(dist);
-        capEls.arrow.hidden = cap == null;
-        if (cap != null) {
-            const rel = ((cap - (meter && meter.heading != null ? meter.heading : 0)) + 360) % 360;
-            capEls.arrow.style.setProperty('--cap-rotation', (rel - 45) + 'deg'); // data-driven arrow direction
-        }
-        capEls.bar.classList.toggle('arriving', dist != null && dist <= reachRadius(activeIdx));
     }
     // Trip mode's "note done": mark it green and move on. No scoring, no proximity gate — a
     // trip is followed by eye, and the driver saying they are there is the whole authority.
@@ -613,8 +579,21 @@
         activeIdx = nextNav(i + 1); updateNoteStates();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
-    // What "advance" means here: validate in competition, mark reached in trip. The Validate /
-    // Note done button, a tap on the active row and the remote's next command run this same action.
+    // Auto-advance's validation. When the note reached is not the active one, the ones driven
+    // past are left skipped — red on the roadbook — and in competition a skip costs exactly what
+    // the same skip costs when the driver asks for it by hand. The overshoot accumulated so far
+    // belonged to the notes being given up, so it is dropped rather than charged to this one.
+    function autoValidate(i, here) {
+        if (i !== activeIdx) {
+            if (competition) pen.skip += RB.skipPenalty(scoredSet, activeIdx, i);
+            extraAccum = 0; armed = false;
+        }
+        validateAt(i, here);
+    }
+    // What "advance" means here: validate in competition, mark reached in trip. A tap on the
+    // active row, its check button and the remote's next command run this same action — and all
+    // three are MANUAL validation, which belongs to manual mode: with Auto on the GPS is the only
+    // authority, so a tap says how to take over instead of quietly doing the GPS's job (#529).
     //
     // In competition the proximity gate can refuse — correctly: a scored validation cannot be
     // faked from a distance. But refusing was a dead end (#431): the cursor stayed put and the
@@ -624,6 +603,7 @@
     // which would corrupt the accuracy score.
     async function advanceNote() {
         if (activeIdx >= notes.length) return;
+        if (auto) return toast('Auto validation is on — switch it off to validate notes by hand.', 3500);
         if (!competition) return markReached(activeIdx);
         const i = activeIdx, far = farFrom(i);
         if (far == null) return validateAt(i, lastHere);
@@ -634,13 +614,13 @@
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
         activeIdx = nextNav(i + 1); tripPartialM = 0; updateNoteStates();
     }
-    $('validateBtn').onclick = advanceNote;
 
     /* External remote (#20): a Bluetooth page-turner PEDAL or a camera clicker pairs as a keyboard,
-     * so the two commands the on-screen buttons run are also reachable with your hands on the wheel.
+     * so the two commands the roadbook rows run are also reachable with your hands on the wheel.
      * RBRemote owns the key mapping and the guards (never while typing, never with a modal open);
      * the Reader only says what the commands MEAN:
-     *   next — advance, exactly the Validate / Note done button;
+     *   next — advance, exactly a tap on the active note (manual mode only, like every hand-made
+     *          validation);
      *   prev — step the active note back. Trip mode only: a validated note cannot be un-validated in
      *          competition, so there it does nothing rather than pretend otherwise.
      * The pedal belongs to the device, not to one trip, so the switch is remembered in localStorage

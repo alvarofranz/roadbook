@@ -474,7 +474,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    whole active row validates too, so a missed tap still does the right thing (#386) */
 .nrow .col-buttons .note-button.reach { height: 58px; font-size: 1.35rem; background: #2ecc71; color: #fff; border-color: #27ae60; }
 .nrow.done { background: #d6f5e0; }     /* light green: reached */
-.nrow.skipped { background: #ffe1ec; }  /* pink: passed over without being reached */
+.nrow.skipped { background: #ff9c9c; }  /* red: passed over without being reached */
 .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */
 /* live GPS proximity to the active note (Reader): closing in · inside the validation radius */
 .nrow.near { background: #eaf3ff; }

@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.0-70">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.1-71">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.0-70">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.1-71">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -60,29 +60,34 @@
         .wp-dd-opt.on { background: rgba(232, 176, 89, .14); }
         .wp-dd-opt .wp-dd-cap { font-weight: 800; min-width: 2.6rem; }
         .wp-dd-opt .wp-dd-nm { color: var(--muted); font-size: .82rem; }
-        /* Labelled property selects, one row above the icon search (Road / Danger / Speed / CAP type) */
-        .prop-field { display: flex; align-items: center; gap: .45rem; min-width: 0; }
-        .prop-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+        /* The note's own parameters, under the palette: label over control, in even columns so
+           the six of them read as one block instead of a ragged wrapping row. */
+        .note-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .5rem .6rem; margin: .5rem 0 .25rem; }
+        .note-params > span { min-width: 0; }
+        .prop-field { display: flex; flex-direction: column; align-items: stretch; gap: .2rem; min-width: 0; }
+        .prop-field > span:first-child { display: flex; align-items: center; gap: .25rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+        /* what a note with no radius of its own will actually use, and where that number comes from */
+        .prop-hint { font-size: .66rem; color: var(--muted); line-height: 1.2; }
+        .prop-hint b { color: var(--text); font-weight: 700; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); border: 1px solid var(--line); cursor: pointer; }
         .logo-preview:hover { border-color: var(--sand); }
-        /* The palette is a STRIP: two rows that scroll sideways, so the gallery costs a couple of
-           rows of height instead of a third of the screen and the note's own fields stay visible. */
-        .icon-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: 58px; gap: .5rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; padding-bottom: .4rem; scrollbar-width: thin; scrollbar-color: var(--muted) transparent; }
+        /* The palette is a STRIP: two rows of equal tiles that scroll sideways, so the gallery
+           costs two rows of height instead of a third of the screen and the note's own fields stay
+           visible. The category chips above name the groups — the strip itself is only icons. */
+        .icon-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 58px); grid-auto-columns: 58px; gap: .45rem; align-items: stretch; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; padding: 2px 0 .45rem; scrollbar-width: thin; scrollbar-color: var(--muted) transparent; }
         .icon-grid::-webkit-scrollbar { height: 9px; }
         .icon-grid::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
-        /* a section title stands upright between the groups, spanning both rows */
-        .icon-grid .icon-category { grid-row: 1 / -1; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; margin: 0; padding: 0 .1rem; }
-        /* the bar that owns every icon action: the selected icon's tools + the two add buttons */
-        .icon-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .4rem .5rem; margin-bottom: .5rem; }
-        .icon-tools .icon-tools-title { display: none; order: -1; flex-basis: 100%; text-align: center; color: var(--muted); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-        .icon-tools #noteToolbar:empty + .icon-tools-title { display: block; }  /* nothing selected: the bar still says what it is */
-        .icon-tools #noteToolbar { margin: 0; }
-        .icon-tools-add { display: flex; gap: .35rem; }
-        .icon-tools-add .btn { width: 34px; height: 34px; padding: 0; justify-content: center; margin: 0; }
-        /* icons live on a white tile so dark line-art symbols stay legible */
-        .icon-grid button { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; }
-        .icon-grid img { width: 100%; height: 44px; object-fit: contain; }
-        .icon-grid .icon-category { grid-column: 1 / -1; margin-top: .25rem; }
+        /* the selected icon's / junction's own tools — nothing selected, nothing on screen */
+        .icon-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .3rem .4rem; margin-bottom: .4rem; }
+        .icon-tools:empty { display: none; }
+        /* search + paste + upload: one slim row, so the palette starts right under it */
+        .icon-bar { display: flex; align-items: center; gap: .35rem; margin: 0 0 .35rem; }
+        .icon-bar .field { margin: 0; }
+        .icon-bar .btn { flex: none; width: 34px; height: 34px; padding: 0; justify-content: center; margin: 0; }
+        /* icons live on a white tile so dark line-art symbols stay legible; the tile fills the
+           strip's row, so every icon is the same size and none is cropped by its box */
+        .icon-grid button { position: relative; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 5px; cursor: pointer; }
+        .icon-grid img { width: 100%; height: 100%; object-fit: contain; }
         /* icon category filter chips — jump between groups without scrolling */
         .icon-cats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .1rem 0 .25rem; }
         .icon-cat-chip { background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: .25rem .65rem; font-size: .72rem; font-weight: 700; cursor: pointer; }
@@ -119,8 +124,7 @@
         .note-add-sponsor { margin-left: auto; padding: .15rem .5rem; font-size: .72rem; }
         /* comment-note dedicated form (no tulip / icons / geo params) */
         #commentForm { display: flex; flex-direction: column; gap: .6rem; padding: .2rem 0; }
-        #commentForm .prop-field { display: flex; flex-direction: column; gap: .25rem; }
-        #commentForm .prop-field > span { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        #commentForm .prop-field > span { font-size: .72rem; letter-spacing: .04em; }
         #commentForm #edCommentNum { max-width: 6rem; font-weight: 800; }
         #commentForm .comment-img-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
         #commentForm .comment-form-prev { cursor: pointer; }
@@ -130,7 +134,7 @@
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
         .note-edit-slot:empty { display: none; }
         .note-edit-slot { margin: .1rem 0 .5rem; }
-        .del-badge { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; line-height: 18px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-weight: 800; cursor: pointer; }
+        .del-badge { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; line-height: 16px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 84px; object-fit: cover; border-radius: 8px; cursor: pointer; } /* sized for the photo grid, not the icon grid */
         /* voice-note rows: nearest-note label · audio player · delete */
@@ -292,7 +296,7 @@
         }
         @media (max-width: 600px) {
             #edMap { height: 46vh; }
-            .icon-grid { grid-auto-columns: 50px; }
+            .icon-grid { grid-template-rows: repeat(2, 50px); grid-auto-columns: 50px; }
             .map-tools { max-height: calc(100% - 20px); overflow-y: auto; } /* touch: no hover tooltips, scrolling wins */
             .meta-grid { grid-template-columns: 1fr; }
             /* phones: the text takes the row; the tulip drops to its own line below it */
@@ -418,23 +422,21 @@
             <div id="noteEditZone" class="note-edit-zone" hidden>
                 <div class="vig-split" id="noteEditStd">
                     <div class="vig-canvas">
-                        <!-- One bar for everything that acts on icons: what NoteCanvas draws for the
-                             selected icon/junction, plus the two ways to bring a new one in. -->
-                        <div class="icon-tools">
-                            <div id="noteToolbar"></div>
-                            <span class="icon-tools-title" data-i18n="Icon tools">Icon tools</span>
-                            <div class="icon-tools-add">
-                                <button class="btn btn-ghost" id="pasteIconBtn" data-i18n-title="Paste icon" title="Paste icon" data-i18n-aria="Paste icon" aria-label="Paste icon"><i class="fa-solid fa-paste"></i></button>
-                                <button class="btn btn-ghost" id="addIconBtn" data-i18n-title="Upload icon" title="Upload icon" data-i18n-aria="Upload icon" aria-label="Upload icon"><i class="fa-solid fa-plus"></i></button>
-                            </div>
-                        </div>
+                        <!-- What NoteCanvas draws for the selected icon/junction: it names itself
+                             (Icon tools / Junction tools) and takes no space with nothing selected. -->
+                        <div id="noteToolbar" class="icon-tools"></div>
                     </div>
                     <div class="vig-icons">
                         <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <div class="ed-row"><span class="icon-category flush" data-i18n="Icons">Icons</span><input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off"></div>
+                        <!-- one slim row for every way to bring an icon in: search the palette, paste, upload -->
+                        <div class="icon-bar">
+                            <input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off">
+                            <button class="btn btn-ghost" id="pasteIconBtn" data-i18n-title="Paste icon" title="Paste icon" data-i18n-aria="Paste icon" aria-label="Paste icon"><i class="fa-solid fa-paste"></i></button>
+                            <button class="btn btn-ghost" id="addIconBtn" data-i18n-title="Upload icon" title="Upload icon" data-i18n-aria="Upload icon" aria-label="Upload icon"><i class="fa-solid fa-plus"></i></button>
+                        </div>
                         <div id="iconCats" class="icon-cats"></div>
                         <div id="iconGrid" class="icon-grid"></div>
-                        <div class="ed-row"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
+                        <div class="note-params"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
                     </div>
                 </div>
                 <!-- Specialized form for a comment note (no tulip / icons / geo params) -->
@@ -481,7 +483,7 @@
                 <div class="meta-grouphead" data-i18n="Notes & scoring">Notes &amp; scoring</div>
                 <div class="meta-grid">
                     <label class="meta-field"><span><span data-i18n="Roadbook type">Roadbook type</span><button class="help-tip" data-i18n-tip="help.profile" data-i18n-aria="help.profile" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
-                    <label class="meta-field"><span><span data-i18n="Default WP radius (m)">Default WP radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="50"></label>
+                    <label class="meta-field"><span><span data-i18n="Default detection radius (m)">Default detection radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="50"></label>
                 </div>
             </div>
             <div class="meta-group">
@@ -529,22 +531,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.0-70"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.0-70"></script>
-<script src="../assets/js/rbzip.js?v=1.9.0-70"></script>
-<script src="../assets/js/rbmap.js?v=1.9.0-70"></script>
-<script src="../assets/js/cover-map.js?v=1.9.0-70"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.0-70"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.0-70"></script>
-<script src="../assets/js/challenges.js?v=1.9.0-70"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.0-70"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.js?v=1.9.0-70"></script>
-<script src="../assets/js/app.js?v=1.9.0-70"></script>
-<script src="editor.js?v=1.9.0-70"></script>
+<script src="../assets/js/config.js?v=1.9.1-71"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.1-71"></script>
+<script src="../assets/js/rbzip.js?v=1.9.1-71"></script>
+<script src="../assets/js/rbmap.js?v=1.9.1-71"></script>
+<script src="../assets/js/cover-map.js?v=1.9.1-71"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.1-71"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.1-71"></script>
+<script src="../assets/js/challenges.js?v=1.9.1-71"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.1-71"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.js?v=1.9.1-71"></script>
+<script src="../assets/js/app.js?v=1.9.1-71"></script>
+<script src="editor.js?v=1.9.1-71"></script>
 </body>
 </html>

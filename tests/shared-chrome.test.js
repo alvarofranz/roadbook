@@ -79,26 +79,15 @@ describe('the Reader publishes its bottom stack', () => {
         expect(readerJs).toContain("setProperty('--bottom-stack'");
     });
 
-    it('publishes it from the bars\' own heights, not from the viewport', () => {
-        // `window.innerHeight` arithmetic is what left the CAP bar floating mid-list on iOS: the
-        // viewport it read moves after load, on resize and on rotation, the value did not (#429)
-        expect(readerJs).toContain('capEls.bar.offsetHeight');
+    it('publishes it from the action row\'s own height, not from the viewport', () => {
+        // `window.innerHeight` arithmetic left bars floating mid-list on iOS: the viewport it
+        // read moves after load, on resize and on rotation, the value did not (#429)
+        expect(readerJs).toContain(".fabrow').offsetHeight");
         expect(readerJs).not.toMatch(/window\.innerHeight\s*-/); // the offset-from-the-viewport pattern
-        expect(readerJs).not.toContain('--capbar-bottom'); // the CAP bar is a flow row in the shell
     });
 
     it('clears the variable when nothing is pinned, so the notice drops back down', () => {
         expect(readerJs).toContain("removeProperty('--bottom-stack')");
-    });
-
-    it('re-measures whenever the CAP bar is raised or dropped', () => {
-        // the CAP bar is the top of the stack while it is up, so its visibility must never be
-        // flipped without a re-measure — showCapBar is the one place allowed to touch it
-        const assignments = readerJs.match(/capEls\.bar\.hidden\s*=/g) || [];
-        expect(assignments).toHaveLength(1);
-        const showCapBar = readerJs.match(/function showCapBar\(up\) \{([\s\S]*?)\n {4}\}/)[1];
-        expect(showCapBar).toContain('capEls.bar.hidden = !up;');
-        expect(showCapBar).toContain('publishBottomStack();');
     });
 
     it('re-measures when the viewport changes', () => {
@@ -203,12 +192,10 @@ describe('the immersive Reader is an app shell, not pinned bars (#429)', () => {
         for (const sel of ['body.rb-immersive .odometer-bar', 'body.rb-immersive .fabrow']) {
             expect(declOf(readerRule(sel), 'position'), sel).toBe('static');
         }
-        // the CAP bar's base rule must not pin it either
-        expect(declOf(readerRule('.capbar'), 'position')).toBeNull();
     });
 
     it('nothing shared floats onto the tool while it owns the screen', () => {
-        // the language chip was sitting on the CAP bar's distance readout mid-drive
+        // the language chip was sitting on the action row mid-drive
         const hidden = appCss.match(/body\.rb-immersive \.app-chip-stack[^{]*\{([^}]*)\}/)[1];
         expect(declOf(hidden, 'display')).toBe('none');
         expect(appCss).toMatch(/body\.rb-immersive \.lang-mobile|body\.rb-fs \.lang-mobile/);

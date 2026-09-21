@@ -11,6 +11,15 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.1', date: '2026-09-21',
+        title: 'The roadbook is the interface',
+        items: [
+            'A note is validated on the note itself: the button at the bottom, the green bar that repeated the distance and the battery readout are gone, and the current speed takes their place.',
+            'With automatic validation on, the GPS decides: a note you drive past turns red and the waypoint you actually reach is validated, so a run is never stuck on a note it will never enter.',
+            'The note editor brings an icon in from one slim row, and each note says which detection radius applies and where that number comes from.',
+        ],
+    },
+    {
         version: '1.9.0', date: '2026-09-17',
         title: 'Everything since 1.8.2 reaches the apps, and they say what they carry',
         items: [
