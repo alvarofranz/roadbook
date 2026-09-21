@@ -922,3 +922,27 @@ describe('a map-shaped field is stored as an object (#523)', () => {
         expect(read('public/assets/js/roadbook-core.js')).toContain('rb.icons = (rb.icons && !Array.isArray(rb.icons)) ? rb.icons : {};');
     });
 });
+
+describe('a refused media delete says why (#525)', () => {
+    const editor = read('public/editor/editor.js');
+    const php = read('app/roadbooks.php');
+
+    it('every media delete reports its outcome on the button that was pressed', () => {
+        for (const call of ["RBApi('ph_delete'", "RBApi('audio_delete'"]) {
+            let at = -1;
+            while ((at = editor.indexOf(call, at + 1)) !== -1) {
+                const window_ = editor.slice(at - 260, at + 320);
+                expect(window_, `${call} throws its answer away`).toMatch(/if \(!r\.ok\)/);
+                expect(window_, `${call} gives no busy feedback`).toContain('RBBusy(');
+            }
+        }
+        expect(editor).toContain("toast(r.error || 'Could not delete the photo.')");
+        expect(editor).toContain("toast(r.error || 'Could not delete the voice note.')");
+    });
+
+    it('whoever may edit a roadbook may delete its media', () => {
+        const fn = php.match(/function rb_media_delete\([\s\S]*?\n\}/)[0];
+        expect(fn).toContain('rb_require_edit($user, (int)$row[\'roadbook_id\'])'); // owner OR event co-editor
+        expect(fn, 'still owner-only').not.toContain('r.user_id = ?');
+    });
+});

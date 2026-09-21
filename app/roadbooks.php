@@ -305,13 +305,16 @@ function rb_media_readable(?array $user, int $rbId): void {
     if ($user && ((int)$user['id'] === (int)$rb['user_id'] || event_co_edits_roadbook($user, $rbId))) return;
     fail('This roadbook is private.', 403);
 }
-// Owner-only media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY).
+/* Media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY). Whoever may
+   EDIT the roadbook may delete its media — an event's co-organizer adds photos through exactly
+   the same right (upload.php uses rb_require_edit), and could not remove them again (#525). */
 function rb_media_delete(array $user, int $id, string $table, string $dirKey): void {
     global $CFG;
-    $st = db()->prepare("SELECT m.filename, m.roadbook_id FROM $table m JOIN roadbooks r ON r.id = m.roadbook_id WHERE m.id = ? AND r.user_id = ?");
-    $st->execute([$id, $user['id']]);
+    $st = db()->prepare("SELECT m.filename, m.roadbook_id FROM $table m WHERE m.id = ?");
+    $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
+    rb_require_edit($user, (int)$row['roadbook_id']);   // owner or event co-editor, or it fails here
     @unlink($CFG[$dirKey] . '/' . $row['roadbook_id'] . '/' . $row['filename']);
     db()->prepare("DELETE FROM $table WHERE id = ?")->execute([$id]);
     json_out(['ok' => true]);
