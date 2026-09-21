@@ -168,3 +168,45 @@ describe('manualGate — may this note be validated by hand from here? (#385 · 
         expect(RB.manualGate(null, at(5000), 8)).toBeNull();
     });
 });
+
+describe('autoReachedIdx — which note auto-advance validates (#529)', () => {
+    const gate = RB.CONST.REACH_MIN_M;          // 18 m
+    const radiusOf = () => gate;
+    // three waypoints along the equator, 1 km apart
+    const notes = [{ lat: 0, lon: 0 }, { lat: 0, lon: deg(1000) }, { lat: 0, lon: deg(2000) }];
+    const at = (m) => ({ lat: 0, lon: deg(m) });
+
+    it('validates the active note when it is the one reached', () => {
+        expect(RB.autoReachedIdx(notes, 0, 1, null, at(10), radiusOf)).toBe(0);
+    });
+
+    it('validates the NEXT note when the active one was driven past', () => {
+        // the driver missed note 0 (passed 200 m wide of it) and is now on top of note 1: the run
+        // must move on and leave note 0 skipped, not sit on a waypoint it will never enter
+        expect(RB.autoReachedIdx(notes, 0, 1, at(900), at(1005), radiusOf)).toBe(1);
+    });
+
+    it('validates nothing while neither is reached', () => {
+        expect(RB.autoReachedIdx(notes, 0, 1, at(300), at(400), radiusOf)).toBe(-1);
+    });
+
+    it('prefers the active note when a segment crosses both radii', () => {
+        // a fix gap long enough to span two waypoints still validates them in roadbook order:
+        // the active one first, the next on the fix after it
+        expect(RB.autoReachedIdx(notes, 0, 1, at(-10), at(1010), radiusOf)).toBe(0);
+    });
+
+    it('takes the indices it is given, so comment rows are never the target', () => {
+        // the Reader hands it the nearest NAVIGATIONAL indices; a run at the last note has none
+        expect(RB.autoReachedIdx(notes, 2, 3, null, at(2000), radiusOf)).toBe(2);
+        expect(RB.autoReachedIdx(notes, 3, 4, null, at(2000), radiusOf)).toBe(-1);
+        expect(RB.autoReachedIdx(notes, -1, -1, null, at(0), radiusOf)).toBe(-1);
+    });
+
+    it('asks for each note\'s own radius', () => {
+        const asked = [];
+        const spy = (i) => { asked.push(i); return i === 1 ? 300 : gate; };
+        expect(RB.autoReachedIdx(notes, 0, 1, null, at(900), spy)).toBe(1); // 100 m out, inside note 1's 300 m
+        expect(asked).toEqual([0, 1]);
+    });
+});

@@ -247,7 +247,7 @@ Recorder e Tripmaster mentre una sessione GPS è attiva.
 | `show()` | crea la barra (una volta), la mostra e avvia il tick dell'orologio (1 s) |
 | `hide()` | nasconde la barra e ferma il tick |
 | `setGps(acc)` | aggiorna la cella GPS con l'accuratezza in metri dell'ultimo fix |
-| `watchBattery(onUpdate)` | sottoscrive il feed batteria: `onUpdate({ pct, charging, icon })` scatta alla sottoscrizione e a ogni cambio livello/carica; ritorna `false` dove la Battery API non c'è. Riusato dall'indicatore batteria dell'odometro del Reader |
+| `watchBattery(onUpdate)` | sottoscrive il feed batteria: `onUpdate({ pct, charging, icon })` scatta alla sottoscrizione e a ogni cambio livello/carica; ritorna `false` dove la Battery API non c'è. |
 
 La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.topbar`.
 

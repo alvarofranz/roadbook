@@ -9,11 +9,11 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.0-70">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.1-71">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.0-70">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.1-71">
     <style>
-        /* top bar: km (prog/part) AND the CAP · clock · GPS · battery indicators all on one row */
+        /* top bar: km (prog/part) AND the bearing · clock · GPS · speed indicators all on one row */
         .odometer-bar { position: sticky; top: env(safe-area-inset-top); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item.right { align-items: flex-end; }
@@ -25,18 +25,11 @@
         .odo-fs { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 1.05rem; line-height: 1; cursor: pointer; border-radius: 8px; }
         .odo-fs:hover { color: var(--sand); border-color: var(--sand); }
         .odo-logo { flex-shrink: 0; max-height: 40px; width: auto; object-fit: contain; }
-        /* CAP / clock / GPS / battery indicators, at the km value font size */
+        /* bearing / clock / GPS / speed indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
         /* bearing indicator: the shared .cap-arrow rotation (0° = up = straight ahead), accented */
         .odometer-bar .cap-arrow { color: var(--sand); }
         .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
-        /* bottom CAP bar: CAP to hold · speed · distance to the active note · direction arrow.
-           Up for the whole run — a bar that comes and goes is one the driver stops looking at.
-           A row in the app shell, not a pinned bar: see `body.rb-immersive #navScreen` below. */
-        .capbar { flex: none; display: flex; align-items: center; justify-content: space-around; gap: .5rem; background: #0a0d12; border-top: 2px solid var(--ok); padding: .55rem 1rem; color: var(--ok); font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
-        .capbar .cap-arrow { font-size: 1.4rem; --cap-rotation: -45deg; } /* the location-arrow glyph points NE, hence the -45° rest */
-        /* inside the active note's validation radius — the same blue the note row turns */
-        .capbar.arriving { border-top-color: #3aa6ff; color: #8ccdff; }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
         .mode-grid { margin-top: 1rem; grid-template-columns: 1fr 1fr; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
@@ -45,7 +38,7 @@
         @media (orientation: landscape) and (max-height: 540px) { .odometer-bar { top: 0; } } /* the topbar hide is the shared body.gps-tool rule */
         /* phones: the labelled fabrow buttons drop their decorative icon — the label carries the
            meaning and the freed width keeps all buttons on one overflow-free row (#250) */
-        @media (max-width: 480px) { #autoBtn > i, #validateBtn > i, #finishBtn > i { display: none; } }
+        @media (max-width: 480px) { #autoBtn > i, #finishBtn > i { display: none; } }
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
            (done/skipped/active + the live near/arriving) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; padding-bottom: 8.5rem; }
@@ -74,19 +67,19 @@
         #previewBar { display: none; position: sticky; top: env(safe-area-inset-top); z-index: 30; background: var(--bg); padding: .6rem 1.1rem 1rem; border-bottom: 1px solid var(--line); }
         #previewBar .tool-titlebar { margin: 0 0 .6rem; }
         body.rb-preview #previewBar { display: block; }
-        body.rb-preview .odometer-bar, body.rb-preview .capbar, body.rb-preview .fabrow { display: none; }
+        body.rb-preview .odometer-bar, body.rb-preview .fabrow { display: none; }
         body.rb-preview #noteList { padding-bottom: 2rem; }
 
         /* ---- the app shell (#429) ----
            While navigating, the Reader owns the screen, and #navScreen already wraps exactly the
-           right children: odometer bar · note list · CAP bar · action row. So it becomes the app
-           frame — a viewport-sized flex column whose ONLY scroller is the note list — instead of
-           three `position: fixed` bars pinned by arithmetic against `window.innerHeight`.
+           right children: odometer bar · note list · action row. So it becomes the app frame —
+           a viewport-sized flex column whose ONLY scroller is the note list — instead of bars
+           pinned by arithmetic against `window.innerHeight`.
 
            That arithmetic is what broke on iOS: the viewport it depends on settles after load,
            changes when the WebView resizes or rotates, and moves as Safari's toolbar collapses,
-           so a value captured at the wrong instant left the CAP bar floating mid-list with the
-           note rows running behind the action row. Here the bars are ordinary flow items: they
+           so a value captured at the wrong instant left a bar floating mid-list with the note
+           rows running behind the action row. Here the bars are ordinary flow items: they
            cannot float, cannot be overlapped and cannot go out of date, and iOS rubber-banding
            happens inside the list, where it belongs. The insets are handled once, here. */
         body.rb-immersive #navScreen {
@@ -148,21 +141,13 @@
         <span class="ind"><i class="fa-solid fa-arrow-up cap-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
         <span class="ind"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
-        <span class="ind"><i class="fa-solid fa-battery-half" id="odoBattIcon"></i> <span id="odoBatt">—</span></span>
+        <span class="ind"><i class="fa-solid fa-gauge-high"></i> <span id="odoSpeed">—</span></span>
         <div class="odometer-item right"><span class="field-label" data-i18n="part.">part.</span><span class="value" id="odoPartial">0.00</span></div>
     </div>
     <!-- 3-column note rows: distances | graphic | indications + coords -->
     <div id="noteList"></div>
-    <!-- bottom CAP bar (appears when the active note has a CAP) -->
-    <div class="capbar" id="capbar" hidden>
-        <span class="cap-heading" id="capHeading">—°</span>
-        <span class="cap-speed" id="capSpeed">--</span>
-        <span class="cap-dist" id="capDist">— km</span>
-        <i class="fa-solid fa-location-arrow cap-arrow" id="capArrow"></i>
-    </div>
     <nav class="fabrow">
         <button class="btn btn-ghost rb-switch on" id="autoBtn" role="switch" aria-checked="true" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> <span data-i18n="Auto">Auto</span> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
-        <button class="btn btn-primary" id="validateBtn" data-i18n="Validate"><i class="fa-solid fa-circle-check"></i> Validate</button>
         <button class="btn btn-ghost" id="pauseBtn" title="Pause" data-i18n-title="Pause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
         <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i> GPX</button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
@@ -226,24 +211,24 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.0-70"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.0-70"></script>
-<script src="../assets/js/rbzip.js?v=1.9.0-70"></script>
-<script src="../assets/js/rbmap.js?v=1.9.0-70"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.0-70"></script>
-<script src="../assets/js/status-bar.js?v=1.9.0-70"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.0-70"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.0-70"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.0-70"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.0-70"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.0-70"></script>
-<script src="../assets/js/challenges.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.0-70"></script>
-<script src="../assets/js/i18n.js?v=1.9.0-70"></script>
-<script src="../assets/js/app.js?v=1.9.0-70"></script>
-<script src="reader.js?v=1.9.0-70"></script>
+<script src="../assets/js/config.js?v=1.9.1-71"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.1-71"></script>
+<script src="../assets/js/rbzip.js?v=1.9.1-71"></script>
+<script src="../assets/js/rbmap.js?v=1.9.1-71"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.1-71"></script>
+<script src="../assets/js/status-bar.js?v=1.9.1-71"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.1-71"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.1-71"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.1-71"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.1-71"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.1-71"></script>
+<script src="../assets/js/challenges.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.1-71"></script>
+<script src="../assets/js/i18n.js?v=1.9.1-71"></script>
+<script src="../assets/js/app.js?v=1.9.1-71"></script>
+<script src="reader.js?v=1.9.1-71"></script>
 </body>
 </html>

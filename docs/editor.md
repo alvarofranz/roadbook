@@ -254,11 +254,17 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 
 `renderIcons` ([editor.js:874](../public/editor/editor.js#L874)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook
-(`rb.icons`). Chip di categoria (`renderIconCats`) + ricerca live (`filterIcons`,
-[editor.js:911](../public/editor/editor.js#L911)) filtrano insieme. Le icone si aggiungono col
-tap o col **drag&drop** sulla vignette; le custom si caricano (`#iconFile` → data-URI) e si
-cancellano con il badge × (bloccato se l'icona è in uso, `delCustomIcon`,
-[editor.js:933](../public/editor/editor.js#L933)).
+(`rb.icons`). La galleria è una **striscia di due righe che scorre in orizzontale**: solo icone,
+ogni tile della stessa misura, niente titoli di sezione dentro la striscia — la categoria viaggia
+sul `data-cat` del tile e sono i **chip** sopra (`renderIconCats`) a nominare e filtrare i gruppi,
+con un nome di una sola parola ciascuno (#530). Chip e ricerca live (`filterIcons`,
+[editor.js:911](../public/editor/editor.js#L911)) filtrano insieme. Sopra la striscia una sola
+riga snella raccoglie tutto ciò che fa entrare un'icona: ricerca · incolla · carica; i tool
+dell'elemento selezionato (`#noteToolbar`, disegnato da NoteCanvas) si nominano da soli
+("Icon tools" / "Junction tools") e a selezione vuota non occupano spazio. Le icone si aggiungono
+col tap o col **drag&drop** sulla vignette; le custom si caricano (`#iconFile` → data-URI) e si
+cancellano con il badge × **dentro** il tile — fuori veniva tagliato dall'overflow della striscia
+(`delCustomIcon`, [editor.js:933](../public/editor/editor.js#L933), bloccato se l'icona è in uso).
 
 ---
 
@@ -306,8 +312,11 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
   clonabile/riusabile da altri (#106). Ha senso solo quando lo stato è `public`.
 - **Profilo waypoint** — select `cfgProfile` → `meta.profile` (`basic`|`rally`): sceglie il
   vocabolario dei tipi di waypoint FIA offerti nell'editor di nota.
-- **Raggio di validazione di default** — campo `cfgWpRadius` → `meta.default_wp_radius`: il
-  raggio (m) usato dal Reader per le note senza `wp_radius` proprio.
+- **Raggio di rilevamento di default** — campo `cfgWpRadius` → `meta.default_wp_radius`: il
+  raggio (m) usato dal Reader per le note senza `wp_radius` proprio. Nell'editor di nota il campo
+  **Detection radius** mostra sotto di sé quale numero è in vigore e da dove arriva — *This note
+  only* quando la nota ne ha uno suo, altrimenti *Inherited · Roadbook default / Note type default
+  / System default* col valore (`RB.detectionRadius`, un'unica catena per runtime e UI, #530).
 - **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`.
 - **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
 - **Cancella roadbook (#81)** — una sezione *danger* (`#deleteSection`) col pulsante

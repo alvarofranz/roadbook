@@ -146,6 +146,19 @@
         const d = from ? nearestOnTrack([from, here], note).dist : haversineM(here, note);
         return d <= radiusM;
     }
+    /* Which note a driven segment validates while auto-advance is on (#529). The active note
+       comes first; when it was driven past — missed by a few metres, or its radius crossed while
+       the fix rate was too slow to notice — reaching the NEXT waypoint validates that one instead
+       and leaves the missed one skipped, so a run is never stranded on a note it will never reach.
+       Takes the indices the Reader considers navigational (comment notes are not) and a
+       radius-per-index function, and returns the index to validate, or -1 for neither. */
+    function autoReachedIdx(notes, activeIdx, nextIdx, from, here, radiusOf) {
+        for (const i of [activeIdx, nextIdx]) {
+            if (i < 0 || !notes[i]) continue;
+            if (noteReached(notes[i], from, here, radiusOf(i))) return i;
+        }
+        return -1;
+    }
     /* May note i be validated by hand from `here`? — the Reader's manual/competition gate (#385,
        #431). Manual tracking works with NO GPS at all, so no position means no objection. With a
        position, a scored validation must not be fakeable from a distance, but the phone's own
@@ -1223,7 +1236,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, autoReachedIdx, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,

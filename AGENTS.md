@@ -41,6 +41,13 @@ ddev exec node --check public/event/event.js   # syntax check di un singolo file
 
 ## Versioni e deploy
 
+- **MAI alzare il semver senza permesso ESPLICITO dell'utente — CHIEDI, ogni volta.** Un bump di
+  versione è una release su App Store e su Play: è una decisione che spetta solo all'utente, e
+  "manda in produzione" NON è quel permesso (autorizza il deploy, non il numero). Il default di
+  ogni modifica è quindi lo stamp del solo `build`
+  (`node source/stamp-version.mjs $(jq -r .version public/version.json)`), che pubblica web + PWA
+  e nient'altro. Se una modifica merita una release sugli store, dillo e chiedi il semver a parole
+  chiare — poi alza esattamente quello che l'utente indica.
 - `stamp-version.mjs` scrive `public/version.json` e aggiorna i `?v=` cache-buster. Il server DEVE eseguirlo dopo ogni checkout.
 - **Ogni PR che tocca `public/` porta il suo stamp, commitato nella PR.** Per una modifica ordinaria
   `node source/stamp-version.mjs $(jq -r .version public/version.json)` — stesso semver, `build`

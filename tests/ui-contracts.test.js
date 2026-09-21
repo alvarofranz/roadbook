@@ -947,18 +947,23 @@ describe('a refused media delete says why (#525)', () => {
     });
 });
 
-describe('the note editor leads with the icons (#527)', () => {
+describe('the note editor leads with the icons (#527 · #530)', () => {
     const html = read('public/editor/index.html');
     const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+    const editor = read('public/editor/editor.js');
 
-    it('one bar carries the icon actions and both ways to add an icon', () => {
-        const bar = html.match(/<div class="icon-tools">([\s\S]*?)<\/div>\s*<\/div>/)[1];
-        expect(bar).toContain('id="noteToolbar"');     // what NoteCanvas draws for the selection
+    it('one slim row carries the search and both ways to add an icon', () => {
+        const bar = html.match(/<div class="icon-bar">([\s\S]*?)<\/div>/)[1];
+        expect(bar).toContain('id="iconSearch"');
         expect(bar).toContain('id="pasteIconBtn"');
         expect(bar).toContain('id="addIconBtn"');
-        expect(bar).toContain('data-i18n="Icon tools"');
-        // and the bar still says what it is when nothing is selected
-        expect(css).toContain('.icon-tools #noteToolbar:empty + .icon-tools-title { display: block; }');
+    });
+
+    it('the selection\'s own tools name themselves and take no space when there is no selection', () => {
+        expect(html).toContain('<div id="noteToolbar" class="icon-tools"></div>');
+        expect(css).toContain('.icon-tools:empty { display: none; }');
+        expect(read('public/assets/js/note-canvas.js')).toContain("label('Icon tools')");
+        expect(html, 'a standing title is what the empty bar replaced').not.toContain('icon-tools-title');
     });
 
     it('the gallery comes before the note parameters', () => {
@@ -967,11 +972,62 @@ describe('the note editor leads with the icons (#527)', () => {
         expect(zone.indexOf('id="iconGrid"'), 'the parameters still come first').toBeLessThan(zone.indexOf('id="roadSlot"'));
     });
 
-    it('the palette is a two-row strip that scrolls sideways', () => {
+    it('the palette is a two-row strip of equal tiles that scrolls sideways', () => {
         expect(css).toContain('grid-auto-flow: column');
-        expect(css).toContain('grid-template-rows: repeat(2, auto)');
+        expect(css).toMatch(/\.icon-grid \{[^}]*grid-template-rows: repeat\(2, 58px\)/);
         expect(css).toContain('overflow-x: auto');
         expect(css).toContain('overflow-y: hidden');
         expect(css, 'a leftover height cap keeps it a tall box').not.toMatch(/\.icon-grid \{[^}]*max-height/);
+        // the tile fills its row, so no icon is cropped by a box taller than itself…
+        expect(css).toMatch(/\.icon-grid img \{[^}]*height: 100%/);
+        // …and the remove badge sits INSIDE the tile, where the strip's overflow cannot clip it
+        const badge = css.match(/\.del-badge \{([^}]*)\}/)[1];
+        expect(badge).not.toMatch(/top: -/);
+        expect(badge).not.toMatch(/right: -/);
+    });
+
+    it('the strip is icons only — no sideways labels; the chips name the groups', () => {
+        expect(editor).toContain('data-cat="${esc(cat)}"');       // the category rides on each tile
+        expect(editor).not.toContain('class="icon-category" data-cat'); // no in-strip headers
+        expect(css).not.toContain('writing-mode: vertical-rl');
+    });
+
+    it('every category chip is one word', () => {
+        const cats = Object.keys(JSON.parse(read('public/assets/icons/index.json')).categories);
+        expect(cats.length).toBeGreaterThan(3);
+        for (const c of cats) expect(c, c).toMatch(/^\S+$/);
+    });
+});
+
+describe('the note says which detection radius applies (#530)', () => {
+    const editor = read('public/editor/editor.js');
+    const html = read('public/editor/index.html');
+
+    it('asks the runtime for the inherited value instead of re-implementing the chain', () => {
+        expect(editor).toContain('RB.detectionRadius({ wp_type: n.wp_type }, rb.meta)');
+    });
+
+    it('names both numbers: this note\'s own and the one it would inherit', () => {
+        expect(editor).toContain("t('This note only')");
+        expect(editor).toContain("t('Inherited')");
+        for (const src of ['Roadbook default', 'Note type default', 'System default']) expect(editor, src).toContain(`'${src}'`);
+        expect(editor).toContain("labelHelp('Detection radius', 'help.radius')");
+    });
+
+    it('calls the roadbook-wide one by the same name', () => {
+        expect(html).toContain('data-i18n="Default detection radius (m)"');
+    });
+
+    it('is translated everywhere, and the help text states the real system default', () => {
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            const dict = read(`public/assets/js/i18n.${lang}.js`);
+            for (const key of ['Detection radius', 'This note only', 'Inherited', 'Roadbook default', 'Note type default', 'System default', 'Default detection radius (m)']) {
+                expect(dict, `${lang}: ${key}`).toContain(`'${key}':`);
+            }
+        }
+        // CONST.REACH_DEFAULT_M is 50 m — the help used to promise 30
+        const core = read('public/assets/js/roadbook-core.js');
+        expect(core).toContain('REACH_DEFAULT_M: 50');
+        expect(read('public/assets/js/i18n.js')).toContain('then the 50 m system default');
     });
 });

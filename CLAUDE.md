@@ -427,6 +427,14 @@ layer (browser, CDN edge, the host's static-file cache — which ignores `.htacc
 pins old JS for hours otherwise). Gitignored runtime files (`public/assets/fontawesome/`,
 `public/assets/js/config.js`, `.env`, `vendor/`) are not in git and persist across deploys.
 
+**NEVER raise the semver without the user's EXPLICIT permission — ASK, every time.** A version
+bump is a release on the App Store and on Play, it is the user's call alone, and "ship this to
+prod" is NOT that permission: it authorises the deploy, not the number. So the default for any
+change is the build-only stamp (`node source/stamp-version.mjs "$(jq -r .version public/version.json)"`),
+which ships the web + PWA and nothing else. When a change is worth a store release, say so and ask
+for the semver in so many words — then bump only the one the user names. 1.9.0 and 1.9.1 were
+authorised that way.
+
 **Versioning — one semver everywhere, an auto-growing build per surface.** The **version** is
 `MAJOR.MINOR.PATCH` (semver) and is the ONE human-facing number — identical on the web footer,
 the Android `versionName` and the iOS `MARKETING_VERSION`. You bump it deliberately. Alongside it
