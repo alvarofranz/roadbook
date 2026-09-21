@@ -314,9 +314,12 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
   vocabolario dei tipi di waypoint FIA offerti nell'editor di nota.
 - **Raggio di rilevamento di default** — campo `cfgWpRadius` → `meta.default_wp_radius`: il
   raggio (m) usato dal Reader per le note senza `wp_radius` proprio. Nell'editor di nota il campo
-  **Detection radius** mostra sotto di sé quale numero è in vigore e da dove arriva — *This note
-  only* quando la nota ne ha uno suo, altrimenti *Inherited · Roadbook default / Note type default
-  / System default* col valore (`RB.detectionRadius`, un'unica catena per runtime e UI, #530).
+  si chiama **Detection radius** e il suo **segnaposto è il numero in vigore** quando la nota non
+  ne ha uno suo (`RB.detectionRadius`, un'unica catena per runtime e UI: nota → roadbook → tipo →
+  sistema, #530). Cambiare il default **chiede** se applicarlo a tutte le note del roadbook
+  ("Also replace all current notes in this roadbook to {v} m?"): con Sì ogni nota-waypoint prende
+  quel raggio, con No nessuna nota viene toccata — e nessun raggio viene più riscritto in
+  silenzio (#532).
 - **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`.
 - **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
 - **Cancella roadbook (#81)** — una sezione *danger* (`#deleteSection`) col pulsante
