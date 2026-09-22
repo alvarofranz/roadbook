@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-93">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-94">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-93">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-94">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -35,9 +35,7 @@
         .odometer-bar .cap-arrow { color: var(--sand); }
         .odometer-bar .ind i { font-size: 1.05rem; color: var(--muted); }
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
-        .mode-grid { margin-top: 1rem; grid-template-columns: 1fr 1fr; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
-        .qr-stats { text-align: left; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
         @media (orientation: landscape) and (max-height: 540px) { .odometer-bar { top: 0; } } /* the topbar hide is the shared body.gps-tool rule */
         /* phones: the labelled fabrow buttons drop their decorative icon — the label carries the
@@ -163,10 +161,12 @@
     </nav>
 </div>
 
-<!-- usage mode -->
+<!-- before starting: the run options. The mode is never asked — a scored event roadbook runs in
+     competition, anything else as a trip (#617) -->
 <div id="modeModal" class="modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
-        <h2 id="modeTitle" data-i18n="How will you use it?">How will you use it?</h2>
+        <h2 id="modeTitle" data-i18n="Before you start">Before you start</h2>
+        <p class="notice" id="modeComp" hidden><i class="fa-solid fa-flag-checkered"></i> <span id="modeCompTxt"></span></p>
         <div class="opt-row">
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
@@ -176,13 +176,9 @@
             <p class="muted small" id="remoteLegend" hidden></p>
             <p class="muted small" data-i18n="A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.">A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.</p>
         </div>
-        <div class="mode-grid" id="modeGrid">
-            <button class="mode-btn" id="modeTrip"><i class="fa-solid fa-compass"></i><b data-i18n="Trip mode">Trip mode</b><small data-i18n="Follow the roadbook freely. No scoring.">Follow the roadbook freely. No scoring.</small></button>
-            <button class="mode-btn" id="modeComp"><i class="fa-solid fa-flag-checkered"></i><b data-i18n="Competition mode">Competition mode</b><small data-i18n="Validate every note and get your result QR.">Validate every note and get your result QR.</small></button>
-        </div>
-        <div id="modeLocked" class="opt-row" hidden>
-            <p class="muted small"><i class="fa-solid fa-lock"></i> <span id="modeLockedTxt"></span></p>
-            <button class="btn btn-primary" id="modeLockedStart"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Start">Start</span></button>
+        <div class="btnrow end">
+            <button class="btn btn-ghost" id="modeClose" type="button" data-i18n="Close">Close</button>
+            <button class="btn btn-primary" id="modeStart" type="button"><i class="fa-solid fa-play"></i> <span data-i18n="Start">Start</span></button>
         </div>
     </div>
 </div>
@@ -200,42 +196,46 @@
     </div>
 </div>
 
-<!-- final QR -->
-<div id="qrModal" class="modal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
-        <h2 id="qrTitle" data-i18n="Result">Result</h2>
-        <div id="qrImg" class="qr-box"></div>
-        <div id="qrStats" class="muted small qr-stats"></div>
-        <code id="qrMeta" class="qr-code-text"></code>
-        <div class="btnrow">
-            <button class="btn btn-ghost" id="qrClose" data-i18n="Close">Close</button>
-            <button class="btn btn-ghost" id="qrShare" data-i18n="Share"><i class="fa-solid fa-share-nodes"></i> Share</button>
-            <button class="btn btn-primary" id="qrDownload" data-i18n="Save QR"><i class="fa-solid fa-download"></i> Save QR</button>
+<!-- the run report (#618): what the run did, where it goes (#619) and, in competition, the signed result -->
+<div id="reportModal" class="modal" hidden>
+    <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+        <h2 id="reportTitle"></h2>
+        <div class="muted small" id="reportSub"></div>
+        <div id="reportStats"></div>
+        <div id="reportQr" hidden>
+            <div id="qrImg" class="qr-box"></div>
+            <code id="qrMeta" class="qr-code-text"></code>
+            <div class="btnrow">
+                <button class="btn btn-ghost" id="qrShare" type="button"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="Share">Share</span></button>
+                <button class="btn btn-ghost" id="qrDownload" type="button"><i class="fa-solid fa-download"></i> <span data-i18n="Save QR">Save QR</span></button>
+            </div>
         </div>
+        <div id="reportSave"></div>
     </div>
 </div>
 
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-93"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-93"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-93"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-93"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.2-93"></script>
-<script src="../assets/js/status-bar.js?v=1.9.2-93"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.2-93"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.2-93"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-93"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.2-93"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.2-93"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-93"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-93"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-93"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-93"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-93"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-93"></script>
-<script src="../assets/js/app.js?v=1.9.2-93"></script>
-<script src="reader.js?v=1.9.2-93"></script>
+<script src="../assets/js/config.js?v=1.9.2-94"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-94"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-94"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-94"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.2-94"></script>
+<script src="../assets/js/status-bar.js?v=1.9.2-94"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.2-94"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.2-94"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-94"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.2-94"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.2-94"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-94"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-94"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-94"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-94"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-94"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-94"></script>
+<script src="../assets/js/app.js?v=1.9.2-94"></script>
+<script src="../assets/js/run-report.js?v=1.9.2-94"></script>
+<script src="reader.js?v=1.9.2-94"></script>
 </body>
 </html>

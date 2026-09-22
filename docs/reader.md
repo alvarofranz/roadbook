@@ -2,8 +2,8 @@
 
 Il **Reader** è il navigatore — il copilota digitale. Apre un roadbook (file `.rdbk` o
 sfida pubblica) e lo trasforma in una tabella di note stile cartaceo guidata dal GPS:
-nota attiva centrata, odometro vivo, bussola CAP, validazione manuale o automatica e — in
-modalità Competition — un QR firmato col risultato. Una sessione in corso viene
+nota attiva centrata, odometro vivo, bussola CAP, validazione manuale o automatica e, alla fine,
+il **report della run** (#618) — con, in gara, penalità e QR firmato col risultato. Una sessione in corso viene
 *checkpointata* in `localStorage` a ogni fix, così una telefonata, un blocco schermo o la
 chiusura della scheda da parte del sistema non perdono nulla.
 
@@ -216,22 +216,31 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
   WebAudio (`beep()`, ~880 Hz, nessun file → CSP-safe). Il contesto audio viene sbloccato sul
   tap di avvio (un gesto utente) così può suonare anche su una convalida GPS automatica.
 
-Poi si sceglie la **modalità**:
+**La modalità non si sceglie** (#617): la gara esiste per la classifica di un evento, quindi
+`openModeModal` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel
+roadbook ha `scoring_mode ≠ free`, la run è in **competition** — `#modeStart` apre `#teamModal`
+per il **numero veicolo** (`team`, 1–999, solo cifre) e poi `startNav(true)`; il modal lo dice in
+`#modeComp`. Tutto il resto parte subito come **trip** (`startNav(false)`). Il punteggio è in
+[ranking-model.md](./ranking-model.md).
 
-- **Trip mode** (`#modeTrip`) — segue il roadbook liberamente, **nessun punteggio**; avvia
-  subito `startNav(false)`.
-- **Competition mode** (`#modeComp`) — apre prima `#teamModal` per il **numero veicolo**
-  (`team`, 1–999, sanificato a sole cifre), poi `startNav(true)`. Il punteggio e il QR finale
-  sono trattati in [ranking-model.md](./ranking-model.md).
+`auto` parte sempre `true` e si commuta durante la corsa con l'interruttore Auto nella barra di
+navigazione (`#autoBtn`).
 
-`auto` parte sempre `true` (non c'è un segmented control Automatic/Manual nel modal) e si
-commuta durante la corsa con l'interruttore Auto nella barra di navigazione (`#autoBtn`).
+### Fine della run e report (#618 · #619)
+**Finish** è nella barra d'azione in ogni run (prima dell'ultima nota chiede conferma: le note
+non raggiunte contano come saltate); validare l'ultima nota finisce la run da sola. `finishRun`
+chiude la zona di velocità aperta, ferma il GPS e costruisce il **report**: distanza, tempo,
+media, note raggiunte/totali e quali saltate, zone di limite di velocità rispettate/superate (col
+peggior eccesso) e, in gara, penalità + risultato firmato (`signedResult`). Le zone si seguono in
+**ogni** run (`passLimit`/`closeZone`, condivise da `markReached` e `validateAt`); in gara una zona
+del tratto a punteggio costa anche la sua penalità.
 
-### Modalità imposta dall'evento (#155)
-Quando il Reader è aperto con `?event=<slug>` (es. dalla pagina evento), `applyModeLock`
-carica l'evento (`event_get`) e **blocca** la scelta Trip/Competition sul `scoring_mode`
-dell'organizzatore: al posto di `#modeGrid` si mostra `#modeLocked` con l'unico avvio
-consentito (`#modeLockedStart`).
+Il report va **prima sul dispositivo** (`RBRun.enqueue`, `assets/js/run-report.js`), poi il
+checkpoint della sessione si cancella e parte l'upload (`run_save`): offline o senza login resta in
+coda e sale al prossimo `RBRun.flush` (all'avvio del Reader, all'evento `online`). Con la
+preferenza `ask` il report chiede *Keep private* / *Make public* con *Remember my choice*;
+altrimenti salva con la preferenza. Una run di gara di un roadbook di evento entra da sola nella
+classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
 
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio

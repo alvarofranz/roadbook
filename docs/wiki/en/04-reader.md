@@ -30,16 +30,10 @@ After loading, the start modal opens with these options:
 
 | Option | Description |
 |--------|-------------|
-| **Map per note** | Shows/hides the mini-map under each note |
 | **Record GPX** | Saves the GPS track of the navigation (crash-safe) |
 | **Sound on note** | Short beep when a note is validated |
 
-Then choose the **mode**:
-
-| Mode | When to use it | What it does |
-|------|----------------|--------------|
-| **Trip mode** | Free use, reconnaissances, outings without scoring | Follows the roadbook freely, no score |
-| **Competition** | Races, events with a leaderboard | Validates with penalties, generates signed QR for Ranking |
+There is no mode to choose: a roadbook opened from an event that **scores** it runs as a **competition** (your vehicle number is asked, penalties apply, the signed result goes to the event ranking); anything else runs as a **trip**. Every run ends with its **report** (notes reached, speed limits respected, time, distance), which you keep private or show on your public profile.
 
 ---
 

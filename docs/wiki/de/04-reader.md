@@ -30,16 +30,10 @@ Nach dem Laden öffnet sich das Start-Modal mit diesen Optionen:
 
 | Option | Beschreibung |
 |---------|-------------|
-| **Mappa per nota** | Zeigt/versteckt die Mini-Karte unter jeder Note |
 | **Registra GPX** | Speichert die GPS-Spur der Navigation (crash-sicher) |
 | **Suono su nota** | Kurzer Beep, wenn eine Note validiert wird |
 
-Dann wählst du den **Modus**:
-
-| Modus | Wann nutzen | Funktion |
-|----------|---------------|---------|
-| **Trip mode** | Freie Nutzung, Erkundungen, Ausfahrten ohne Punktestand | Folgt dem roadbook frei, kein Punktestand |
-| **Competition** | Rennen, Events mit Klassifizierung | Validiert mit Strafen, erzeugt signierten QR für Ranking |
+Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöffnet wird, die es **wertet**, wird als **Wettbewerb** gefahren (Fahrzeugnummer wird abgefragt, Strafpunkte gelten, das signierte Ergebnis geht in die Wertung); alles andere ist eine **freie Fahrt**. Jede Fahrt endet mit ihrem **Bericht** (erreichte Notizen, eingehaltene Limits, Zeit, Distanz), privat oder in deinem öffentlichen Profil.
 
 ---
 

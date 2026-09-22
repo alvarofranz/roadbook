@@ -30,16 +30,10 @@ Tras la carga se abre el modal de inicio con estas opciones:
 
 | Opción | Descripción |
 |---------|-------------|
-| **Mappa per nota** | Muestra/oculta la mini-mapa bajo cada nota |
 | **Registra GPX** | Guarda la trazada GPS de la navegación (crash-safe) |
 | **Suono su nota** | Breve beep cuando una nota se valida |
 
-Luego eliges la **modalidad**:
-
-| Modalidad | Cuándo usarla | Qué hace |
-|----------|---------------|---------|
-| **Trip mode** | Uso libre, reconocimientos, salidas sin puntuación | Sigue el roadbook libremente, ninguna puntuación |
-| **Competition** | Carreras, eventos con clasificación | Valida con penalidad, genera QR firmado para Ranking |
+No hay modo que elegir: un roadbook abierto desde un evento que lo **puntúa** se navega en **competición** (se pide el número de vehículo, se aplican penalizaciones y el resultado firmado va a la clasificación del evento); todo lo demás es un **recorrido libre**. Cada recorrido termina con su **informe** (notas alcanzadas, límites respetados, tiempo, distancia), que guardas en privado o muestras en tu perfil público.
 
 ---
 

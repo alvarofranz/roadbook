@@ -1,6 +1,7 @@
 'use strict';
 /* RDBK Reader — the co-pilot's navigator: active note centred, odometer, speed,
- * manual/auto validation, penalty engine and a signed result QR. A run in
+ * manual/auto validation and, at the end, the run report (#618): notes, speed limits, time —
+ * plus penalties and the signed result QR when the run is a competition. A run in
  * progress is checkpointed to localStorage on every fix/state change and offered
  * for resume on the next visit, so a call, a lock screen or an OS tab kill loses
  * nothing. GPS plumbing lives in RBGpsMeter; GPX logging in RBGpxRecorder. */
@@ -21,6 +22,8 @@
     let curLimit = null, maxSpdSeg = 0;
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
+    let zones = { count: 0, exceeded: 0, maxOver: 0 }; // speed-limit zones the run went through (#618)
+    let rbRef = null, runStartedAt = null;             // the server roadbook this run is of (none for a file) · when it began
     let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
     let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
@@ -85,7 +88,7 @@
             onPick: async (rb, modal) => {
                 modal.close();
                 const j = await RBApi('rb_get', { id: +rb.id });
-                if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.');
+                if (j.ok && j.roadbook) loadRb(j.roadbook, j.id); else toast(j.error || 'Could not load the roadbook.');
             },
         });
     };
@@ -114,11 +117,11 @@
         const loadFromUrl = () => {
             if (pub) {
                 if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
-                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load the roadbook.'));
+                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook, j.id); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load the roadbook.'));
             } else if (rbId > 0) {
-                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook, j.id); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             } else if (adminRbId > 0) {
-                RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+                RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook, j.id); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             }
         };
         // Worth asking about only when this visit has no target of its own, or when the saved run
@@ -146,12 +149,12 @@
     }
 
     let competition = false;
-    const eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event → mode is dictated (#155)
-    let eventMode = null; // 'trip' | 'competition' when the event locks the choice
-    function loadRb(r) {
+    const eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event: it decides the mode (#155 · #617)
+    // `id`: the server roadbook it is, so the run report can point at it — a local file has none
+    function loadRb(r, id) {
         r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
         if (!r.notes.length) return toast('Roadbook has no notes.');
-        rb = r; notes = r.notes;
+        rb = r; notes = r.notes; rbRef = id ? +id : null;
         showPreview();
     }
     // Preview an opened roadbook read-only, BEFORE choosing a mode — you might just want to look.
@@ -166,26 +169,27 @@
         renderNotes();
         window.scrollTo(0, 0);
     }
-    // Usage-mode modal. For a roadbook opened from an event (?event=<slug>) the organizer's mode is
-    // fetched from the public event and the Trip/Competition choice is locked to it (#155).
+    // Before starting: the run options only. The mode is never a question (#617): competition
+    // exists for an event's Ranking, so a roadbook opened from an event whose roadbook is SCORED runs
+    // in competition (vehicle number asked, result QR at the end); everything else runs as a trip.
+    let runComp = false;
     async function openModeModal() {
-        applyModeLock(null);
+        runComp = false;
+        $('modeComp').hidden = true;
         $('optRemote').checked = remoteEnabled(); syncRemoteRow(); // the device's remote preference, remembered across runs
-        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses → back to the load screen
+        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses → back to the preview
         if (!eventSlug) return;
-        try {
-            const j = await RBApi('event_get', { slug: eventSlug });
-            const rbId = +(new URLSearchParams(location.search).get('rb') || 0);
-            const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug || (rbId && x.id === rbId));
-            if (er) applyModeLock(er.scoring_mode && er.scoring_mode !== 'free' ? 'competition' : 'trip');
-        } catch (e) { /* no event mode → keep the free choice */ }
+        $('modeStart').disabled = true; // until the event says whether this roadbook is scored
+        const j = await RBApi('event_get', { slug: eventSlug });
+        const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug);
+        runComp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');
+        if (runComp) {
+            $('modeCompTxt').textContent = t('Scored in the event') + ' “' + j.event.title + '”: ' + t('you will be asked your vehicle number, and the result goes to the event ranking.');
+            $('modeComp').hidden = false;
+        }
+        $('modeStart').disabled = false;
     }
-    function applyModeLock(mode) {
-        eventMode = mode;
-        $('modeGrid').hidden = !!mode;
-        $('modeLocked').hidden = !mode;
-        if (mode) $('modeLockedTxt').textContent = t('Mode set by the event:') + ' ' + t(mode === 'competition' ? 'Competition mode' : 'Trip mode');
-    }
+    $('modeClose').onclick = () => closeModal('modeModal');
     // "Map access from player" is a roadbook-level setting (default allowed when absent): it decides
     // whether the Reader has a map at all — the action-bar toggle and the preview's tap-to-map (#569).
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
@@ -206,20 +210,15 @@
             o.start(t0); o.stop(t0 + 0.2);
         } catch (e) { /* audio unavailable */ }
     }
-    const startTrip = async () => {
-        if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning before navigation
-        readModeOpts(); closeModal('modeModal'); startNav(false); if (optGpx) RBGpxRecorder.begin();
-    };
-    const startComp = async () => {
-        if (!(await RBWebGpsConfirm(true))) return; // stronger warning: a scored run depends on GPS
-        readModeOpts(); closeModal('modeModal'); $('teamInput').value = '1';
+    $('modeStart').onclick = async () => {
+        if (!(await RBWebGpsConfirm(runComp))) return; // one-time browser warning (stronger for a scored run)
+        readModeOpts(); closeModal('modeModal');
+        if (!runComp) { startNav(false); if (optGpx) RBGpxRecorder.begin(); return; }
+        $('teamInput').value = '1';
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
     };
-    $('navigateBtn').onclick = openModeModal; // preview → choose a mode → navigate
-    $('modeTrip').onclick = startTrip;
-    $('modeComp').onclick = startComp;
-    $('modeLockedStart').onclick = () => (eventMode === 'competition' ? startComp() : startTrip());
+    $('navigateBtn').onclick = openModeModal; // preview → run options → navigate
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startNav(true); if (optGpx) RBGpxRecorder.begin(); };
     $('teamCancel').onclick = () => { closeModal('teamModal'); openModal('modeModal'); };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
@@ -232,8 +231,8 @@
         // Immersive navigation: the Reader owns the screen (its own action row carries the exit
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
         document.body.classList.add('rb-immersive');
-        $('finishBtn').hidden = !comp;
-        publishBottomStack(); // the action row just changed height (Competition adds Finish)
+        if (runStartedAt == null) runStartedAt = Date.now(); // a resumed run keeps its own start
+        publishBottomStack();
         syncAutoBtn();
         $('navGpx').hidden = !optGpx;
         $('mapBtn').hidden = !mapAllowed(); syncMapBtn();
@@ -258,7 +257,7 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { openedAs, competition, team, auto, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, competition, team, auto, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -275,6 +274,7 @@
         rb = savedRb; notes = rb.notes;
         team = s.team; auto = s.auto; optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
+        zones = s.zones; rbRef = s.rbRef; runStartedAt = s.runStartedAt;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
         endedAt = s.endedAt ? new Date(s.endedAt) : null;
@@ -527,9 +527,26 @@
     // Trip mode's "note done": mark it green and move on. No scoring, no proximity gate — a
     // trip is followed by eye, and the driver saying they are there is the whole authority.
     function markReached(i) {
+        passLimit(notes[i], false);
         reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; updateNoteStates();
+        if (activeIdx >= notes.length) finishRun(true);
+    }
+    // Speed-limit zones, followed in EVERY run (#618): a note carrying a limit closes the zone the
+    // run was in — counted, and judged against the fastest speed driven in it — and opens the next.
+    // In competition a scored zone also costs its speed penalty.
+    function closeZone(scored) {
+        if (!(curLimit > 0)) return;
+        zones.count++;
+        if (maxSpdSeg > curLimit) { zones.exceeded++; zones.maxOver = Math.max(zones.maxOver, Math.round(maxSpdSeg - curLimit)); }
+        if (competition && scored) pen.speed += RB.speedPenalty(maxSpdSeg, curLimit);
+    }
+    function passLimit(n, scored) {
+        const lim = RB.speedLimitOfNote(n);
+        if (lim == null) return;
+        closeZone(scored);
+        curLimit = lim === 0 ? null : lim; maxSpdSeg = 0;
     }
     // Scored sections (rally special stages) live in the core — RB.scoredNoteSet: only notes
     // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
@@ -588,12 +605,11 @@
             pen.acc += p.acc; pen.cap += p.cap; pen.extra += extraAccum;
         }
         extraAccum = 0; armed = false;
-        const lim = RB.speedLimitOfNote(n);
-        if (lim != null) { if (scored) pen.speed += RB.speedPenalty(maxSpdSeg, curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
+        passLimit(n, scored);
         reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; updateNoteStates();
-        if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
+        if (activeIdx >= notes.length) finishRun(true);
     }
     // Auto-advance's validation. When the note reached is not the active one, the ones driven
     // past are left skipped — red on the roadbook — and in competition a skip costs exactly what
@@ -629,6 +645,7 @@
         if (!(await RBConfirm(msg))) return;
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
         activeIdx = i + 1; tripPartialM = 0; updateNoteStates();
+        if (activeIdx >= notes.length) finishRun(true);
     }
 
     /* External remote (#20): a Bluetooth page-turner PEDAL or a camera clicker pairs as a keyboard,
@@ -687,21 +704,26 @@
         if (paused) { meter.stop(); setGps('bad'); $('gpsTxt').textContent = t('Paused'); } else meter.resume();
         updatePauseBtn();
     };
-    // End navigation: leave the run and return to the load screen. The note progress
-    // (reached/skipped) is discarded — warn before doing it.
+    // Leave the run WITHOUT a report: the progress on the notes is discarded — asked first. Finish
+    // is the way to end a run and keep its report.
     $('endBtn').onclick = async () => {
-        if (await RBConfirmDanger(t('End navigation? Your progress on the notes will be lost.'))) {
-            if (meter) meter.stop();      // release the GPS explicitly, not via the unload path (#430)
-            clearSession(); window.RB_BUSY = false; location.href = '../'; // unblock the version auto-refresh before leaving
-        }
+        if (await RBConfirmDanger(t('Leave the run without a report? Your progress on the notes will be lost.'))) leaveRun('../');
     };
+    function leaveRun(to) {
+        if (meter) meter.stop();      // release the GPS explicitly, not via the unload path (#430)
+        clearSession(); window.RB_BUSY = false; location.href = to; // unblock the version auto-refresh before leaving
+    }
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
-    /* ---------- finish → signed META + QR ---------- */
-    $('finishBtn').onclick = finish;
-    async function finish() {
-        // the open segment's speed penalty stays local so Finish is idempotent (re-tap, or resume + re-finish)
-        const penSpeed = pen.speed + RB.speedPenalty(maxSpdSeg, curLimit);
+    /* ---------- finish → the run report (#618) ---------- */
+    // Finish before the last note asks first: the notes not reached count as skipped.
+    $('finishBtn').onclick = async () => {
+        if (activeIdx < notes.length && !(await RBConfirm(t('Finish the run now? The notes you have not reached count as skipped.')))) return;
+        finishRun(activeIdx >= notes.length);
+    };
+    // The signed result a competition run hands to the event ranking (QR + upload).
+    async function signedResult() {
+        const penSpeed = pen.speed; // every zone was closed by finishRun
         const km = Math.round(tripTotalM / 1000 * 10);
         const durH = startedAt && endedAt ? (endedAt - startedAt) / 3600000 : 0;
         const avg = durH > 0 ? Math.round((tripTotalM / 1000 / durH) * 10) : 0;
@@ -711,14 +733,75 @@
             cap: Math.min(9999, Math.round(pen.cap)), speed: Math.min(9999, penSpeed), km: Math.min(99999, km), avg: Math.min(999, avg),
             rb: rbSlug || '',
         });
-        lastPayload = await RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
-        lastQrUrl = RBQr.dataURL(lastPayload); // PNG: the name, the declared type and the bytes must agree (#392)
-        $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
-        $('qrMeta').textContent = lastPayload;
-        $('qrStats').innerHTML = `${esc(t('Vehicle'))} <b>${team}</b> · ${km / 10} km<br>${esc(t('Accuracy'))} ${Math.round(pen.acc)} · ${esc(t('Skips'))} ${pen.skip} · ${esc(t('Extra'))} ${Math.round(pen.extra)} · CAP ${Math.round(pen.cap)} · ${esc(t('Speed'))} ${penSpeed} ${esc(t('pts'))}`;
-        openModal('qrModal', () => $('qrClose').click());
+        return RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
     }
-    $('qrClose').onclick = () => closeModal('qrModal');
+    let finished = false;
+    async function finishRun(completed) {
+        if (finished) return;
+        finished = true;
+        closeZone(true); curLimit = null; // the open zone ends with the run
+        if (meter) meter.stop();
+        const now = Date.now();
+        const report = {
+            title: (rb.meta && rb.meta.title) || 'Roadbook', roadbook_id: rbRef, event_slug: eventSlug,
+            mode: competition ? 'competition' : 'trip', team: competition ? team : null, completed: completed ? 1 : 0,
+            started_at: runStartedAt, ended_at: now, duration_s: Math.round((now - (runStartedAt || now)) / 1000),
+            distance_m: Math.round(tripTotalM), notes_total: notes.length, notes_reached: reached.size,
+            skipped: notes.map((n, i) => (reached.has(i) ? null : n.num)).filter((x) => x != null),
+            speed_zones: zones.count, speed_exceeded: zones.exceeded, max_over_kmh: zones.maxOver,
+            penalties: competition ? { acc: Math.round(pen.acc), cap: Math.round(pen.cap), skip: pen.skip, extra: Math.round(pen.extra), speed: pen.speed } : null,
+        };
+        if (competition) report.result_meta = lastPayload = await signedResult();
+        // the report is safe on the device before anything else happens — the run is over, the
+        // checkpoint can go (#460: cleared only once the work has reached a safe place)
+        const cfg = await RBConfig();
+        const askFirst = !!(cfg.user && (cfg.user.runs_visibility || 'ask') === 'ask');
+        const key = RBRun.enqueue(report, !askFirst);
+        clearSession(); window.RB_BUSY = false;
+        showReport(report, key, cfg.user, askFirst);
+    }
+    function showReport(report, key, user, askFirst) {
+        $('reportTitle').textContent = t(report.completed ? 'Roadbook completed' : 'Run finished');
+        $('reportSub').textContent = report.title + ' · ' + RBFmtDate(new Date(report.ended_at).toISOString().slice(0, 10)) + (report.team ? ' · ' + t('Vehicle') + ' ' + report.team : '');
+        $('reportStats').innerHTML = RBRun.statsHTML(report) + RBRun.detailsHTML(report);
+        $('reportQr').hidden = !report.result_meta;
+        if (report.result_meta) {
+            lastQrUrl = RBQr.dataURL(report.result_meta); // PNG: the name, the declared type and the bytes must agree (#392)
+            $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
+            $('qrMeta').textContent = report.result_meta;
+        }
+        openModal('reportModal', () => {}); // an explicit outcome below, never a dismiss
+        const box = $('reportSave');
+        const done = (saved) => {
+            const where = saved && saved.is_public ? t('Saved to your profile — public.') : t('Saved to your profile — private.');
+            box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-check"></i> <span>${esc(saved ? where : t('Saved on this device — it uploads to your profile as soon as you are online.'))}</span></p>
+                <div class="btnrow end">${user ? `<a class="btn btn-ghost" href="/u/${encodeURIComponent(user.username)}"><i class="fa-solid fa-circle-user"></i> ${esc(t('My profile'))}</a>` : ''}
+                <button class="btn btn-primary" data-close type="button">${esc(t('Close'))}</button></div>`;
+            box.querySelector('[data-close]').onclick = () => leaveRun('./');
+        };
+        const upload = async () => { const res = await RBRun.flush(); done(res[key] || null); };
+        if (!user) {
+            // signed out: the report waits on this device and goes to the profile after sign-in
+            box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-info"></i> <span>${esc(t('Sign in to keep this report on your profile — it waits on this device until you do.'))}</span></p>
+                <div class="btnrow end"><a class="btn btn-ghost" href="${RBLoginUrl()}">${esc(t('Sign in'))}</a><button class="btn btn-primary" data-close type="button">${esc(t('Close'))}</button></div>`;
+            box.querySelector('[data-close]').onclick = () => leaveRun('./');
+            return;
+        }
+        if (!askFirst) { box.innerHTML = `<p class="muted small">${esc(t('Saving…'))}</p>`; upload(); return; }
+        // the runner decides where it goes, once or for good (#619) — both answers save it
+        box.innerHTML = `<p>${esc(t('Show this run on your public profile?'))}</p>
+            <label class="checkbox-row"><input type="checkbox" id="reportRemember"> <span>${esc(t('Remember my choice'))}</span></label>
+            <p class="muted small">${esc(t('You can change it any time in your profile settings.'))}</p>
+            <div class="btnrow end">
+                <button class="btn btn-ghost" data-vis="private" type="button"><i class="fa-solid fa-lock"></i> ${esc(t('Keep private'))}</button>
+                <button class="btn btn-primary" data-vis="public" type="button"><i class="fa-solid fa-globe"></i> ${esc(t('Make public'))}</button>
+            </div>`;
+        box.querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => {
+            RBRun.update(key, { ready: true, visibility: b.dataset.vis, remember: box.querySelector('#reportRemember').checked });
+            box.innerHTML = `<p class="muted small">${esc(t('Saving…'))}</p>`;
+            upload();
+        });
+    }
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => {
         try {
@@ -729,6 +812,8 @@
             toast('Sharing not supported here — use Save QR.');
         } catch (e) { /* user cancelled */ }
     };
+    // reports that finished offline or signed out go up as soon as the Reader can reach the server
+    cfgReady.then(() => { if (meUser) RBRun.flush(); });
 
     /* ---------- utils ---------- */
     // An action-bar button that is ON swaps ghost for primary: stacked, .btn-ghost (declared later
