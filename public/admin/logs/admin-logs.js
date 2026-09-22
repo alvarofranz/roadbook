@@ -9,7 +9,7 @@
     /* Cron health, at a glance (#505). The log itself is a wall of text; what an admin needs to
        know is whether the runner ran AT ALL — every minute it writes a `[YYYY-MM-DD HH:MM:SS]`
        line, so the newest one answers it. Without the `* * * * *` entry on the host nothing ever
-       purges, and until now the only way to notice was to read the log and do the arithmetic. */
+       purges — this panel says so instead of leaving it to reading the log. */
     /* `serverNow` is the server's own clock, which is also the clock the log's timestamps were
        written with: both are parsed the same naive way, so the age is exact whatever timezone the
        admin is browsing from. (Measuring against the BROWSER's clock reported a cron that had run

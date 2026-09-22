@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-98">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-99">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-98">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-99">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -174,9 +174,9 @@
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: var(--on-sand); }
         /* collapsible "more tools" menu (Navigate + Add note) flying out to the right of the bar */
-        .map-tools-menu { position: absolute; top: 14px; left: 60px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 8; min-width: 220px; }
+        .map-tools-menu { position: absolute; top: 14px; left: 60px; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; z-index: 8; min-width: min(220px, calc(100% - 70px)); max-width: calc(100% - 70px); }
         /* labelled tool rows (icon + name + key chip): readable without hover, so touch sees them too (#458) */
-        .map-tool-row { display: flex; align-items: center; gap: .6rem; width: 100%; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 600; padding: .5rem .6rem; text-align: left; white-space: nowrap; }
+        .map-tool-row { display: flex; align-items: center; gap: .6rem; width: 100%; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 600; padding: .5rem .6rem; text-align: left; overflow-wrap: anywhere; }
         .map-tool-row:hover { background: var(--card-2); }
         .map-tool-row.on { background: var(--sand); color: var(--on-sand); }
         .map-tool-row.on .map-ctx-key { color: var(--on-sand); }
@@ -342,7 +342,7 @@
             </div>
             <div id="myRbSection" hidden>
                 <div class="icon-category" data-i18n="Your roadbooks">Your roadbooks</div>
-                <div id="myRbList" class="rb-grid"></div>
+                <div id="myRbList"></div>
             </div>
             <!-- roadbooks you can edit through your events (#123): someone else's, with the event named -->
             <div id="coeditSection" hidden>
@@ -353,10 +353,10 @@
         <div id="recBar" class="record-bar" hidden>
             <div class="rec-status"><span class="rec-dot"></span> <span id="recStats" class="muted small">Recording…</span></div>
             <div class="rec-btns">
-                <button class="btn btn-ghost" id="recPause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
-                <button class="btn btn-ghost" id="recPhoto" hidden aria-label="WP photo" data-i18n-aria="WP photo"><i class="fa-solid fa-camera"></i></button>
-                <button class="btn btn-ghost" id="recWaypoint" data-i18n="Note"><i class="fa-solid fa-location-dot"></i> Note</button>
-                <button class="btn btn-primary" id="recStop" data-i18n="Finish"><i class="fa-solid fa-flag-checkered"></i> Finish</button>
+                <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span data-i18n="Pause">Pause</span></button>
+                <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="Photo">Photo</span></button>
+                <button class="btn btn-ghost" id="recWaypoint"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Note">Note</span></button>
+                <button class="btn btn-primary" id="recStop"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
             </div>
             <div id="recPending" class="rec-pending" hidden></div>
         </div>
@@ -365,7 +365,7 @@
         <input id="ctxPhotoFile" type="file" accept="image/*" multiple hidden>
         <!-- the GPX editor: the map + its vertical tool bar (modes left, actions below) -->
         <div id="mapEditor" class="map-editor" hidden>
-            <div class="map-tools" role="toolbar" aria-label="GPX editing tools">
+            <div class="map-tools" role="toolbar" aria-label="GPX editing tools" data-i18n-aria="GPX editing tools">
                 <button class="map-tool" id="mapMenuToggle" aria-label="More tools"><i class="fa-solid fa-bars"></i></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
@@ -413,7 +413,7 @@
                     <button class="btn btn-primary" id="exportBtn" title="Export" data-i18n-title="Export" aria-label="Export" data-i18n-aria="Export"><i class="fa-solid fa-file-export"></i></button>
                     <button class="btn btn-primary" id="rawJsonBtn" title="Raw JSON" data-i18n-title="Raw JSON" aria-label="Raw JSON" data-i18n-aria="Raw JSON"><i class="fa-solid fa-code"></i></button>
                     <button class="btn btn-primary" id="saveAccount" title="Save" data-i18n-title="Save" aria-label="Save" data-i18n-aria="Save"><i class="fa-solid fa-floppy-disk"></i></button>
-                    <button class="btn btn-ghost" id="saveAsAccount" title="Save as" data-i18n-title="Save as" aria-label="Save as" data-i18n-aria="Save as"><i class="fa-solid fa-clone"></i></button>
+                    <button class="btn btn-ghost" id="saveAsAccount" title="Save as" data-i18n-title="Save as" aria-label="Save as" data-i18n-aria="Save as"><i class="fa-solid fa-file-circle-plus"></i></button>
                     <button class="btn btn-ghost" id="closeEditor" title="Close" data-i18n-title="Close" aria-label="Close" data-i18n-aria="Close"><i class="fa-solid fa-xmark"></i> <span data-i18n="Close">Close</span></button>
                 </div>
                 <div class="rb-actions-right">
@@ -426,7 +426,7 @@
             </div>
             <!-- ZONE 1: the notes list (its own scroll area) -->
             <div class="note-list-zone">
-                <div class="icon-category">Notes <span class="muted small notecount" id="noteCount"></span></div>
+                <div class="icon-category"><span data-i18n="Notes">Notes</span> <span class="muted small notecount" id="noteCount"></span></div>
                 <div id="noteList" class="note-list"></div>
             </div>
             <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
@@ -492,7 +492,7 @@
                 <div class="meta-grouphead" data-i18n="Visibility & map">Visibility &amp; map</div>
                 <div class="meta-grid">
                     <div class="meta-field full" id="visField"><span><span data-i18n="Visibility">Visibility</span><button class="help-tip" data-i18n-tip="help.visibility" data-i18n-aria="help.visibility" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span>
-                        <div class="segmented" role="group" aria-label="Visibility">
+                        <div class="segmented" role="group" aria-label="Visibility" data-i18n-aria="Visibility">
                             <button class="segment on" id="visDraft" data-i18n="Draft" aria-pressed="true"><i class="fa-solid fa-pencil"></i> Draft</button>
                             <button class="segment" id="visReady" data-i18n="Ready" aria-pressed="false"><i class="fa-solid fa-circle-check"></i> Ready</button>
                             <button class="segment" id="visPublic" data-i18n="Public" aria-pressed="false"><i class="fa-solid fa-globe"></i> Public</button>
@@ -513,8 +513,7 @@
             <div class="meta-modified"><span data-i18n="Last modified">Last modified</span>: <span id="rbModified">—</span></div>
         </div>
         <!-- Photos and the destructive action are part of the same form, so they are cards like the
-             rest of it (#438) — they used to be bare rows, and the empty-photos sentence was a cell
-             of the 58 px icon grid, which wrapped it one word per line. -->
+             rest of it (#438). -->
         <div class="config-bottom">
             <div class="meta-card" id="photosSection" hidden>
                 <div class="meta-grouphead"><span data-i18n="Photos">Photos</span><button class="btn btn-ghost btn-sm" id="addPhotoBtn"><i class="fa-solid fa-camera"></i> <span data-i18n="Add photos">Add photos</span></button></div>
@@ -533,22 +532,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-98"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-98"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-98"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-98"></script>
-<script src="../assets/js/cover-map.js?v=1.9.2-98"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-98"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.2-98"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-98"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.2-98"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.2-98"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-98"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-98"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-98"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-98"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-98"></script>
-<script src="../assets/js/app.js?v=1.9.2-98"></script>
-<script src="editor.js?v=1.9.2-98"></script>
+<script src="../assets/js/config.js?v=1.9.2-99"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-99"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-99"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-99"></script>
+<script src="../assets/js/cover-map.js?v=1.9.2-99"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-99"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.2-99"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-99"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.2-99"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.2-99"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-99"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-99"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-99"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-99"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-99"></script>
+<script src="../assets/js/app.js?v=1.9.2-99"></script>
+<script src="editor.js?v=1.9.2-99"></script>
 </body>
 </html>

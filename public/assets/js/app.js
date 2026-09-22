@@ -89,7 +89,7 @@
     window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     /* The site's own links (About · Install · the spec · Privacy · Terms · Contact) — ONE list.
        The footer carries them on desktop; the Profile page repeats them on mobile, where the
-       footer is hidden, and used to keep its own hand-written copy that drifted (#496).
+       footer is hidden — from this same list, so the two never drift (#496).
        `data-i18n` on every label, so a language switch reaches them (#495). */
     const SITE_LINKS = [
         { path: 'about/',    icon: 'fa-circle-info',    label: 'About' },
@@ -418,7 +418,7 @@
         },
     };
     // One tap installs where the browser can do it; everywhere else the chip opens the per-device
-    // guide instead of doing nothing (it used to dead-end outside Chromium and iOS).
+    // guide instead of doing nothing.
     async function onInstall() {
         if (RBInstallPrompt.available()) return void await RBInstallPrompt.fire();
         location.href = ROOT + 'install/';
@@ -702,9 +702,9 @@
         + overlays
         + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div>`
         + (href ? '</a>' : '</div>');
-    /* A thumbnail whose file is gone (a deleted photo, a failed upload) used to leave the card's
-       alt text sprawled across a grey box. One capture-phase listener — `error` does not bubble —
-       swaps in the very placeholder the card uses when it has no image at all. */
+    /* A thumbnail whose file is gone (a deleted photo, a failed upload) shows the card's own
+       placeholder, never its alt text on a grey box: one capture-phase listener (`error` does not
+       bubble) swaps it in. */
     document.addEventListener('error', (e) => {
         const img = e.target;
         if (!(img instanceof HTMLImageElement) || !img.classList.contains('thumb')) return;
@@ -782,17 +782,6 @@
             };
         }
     };
-    // A just-captured photo: full preview + OK / "Convert into waypoint" (Recorder + the
-    // Editor's route recording). onWaypoint fires only when the user converts.
-    window.RBPhotoPreview = (url, onWaypoint) => {
-        const d = RBModal(`<img src="${RBesc(url)}" alt="" class="photo-preview">
-            <div class="btnrow center">
-                <button class="btn btn-ghost" id="ptOk">OK</button>
-                <button class="btn btn-primary" id="ptWpt"><i class="fa-solid fa-location-dot"></i> ${RBesc(RBt('Convert into note'))}</button>
-            </div>`, 'slim center');
-        d.q('#ptOk').onclick = d.close;
-        d.q('#ptWpt').onclick = () => { onWaypoint(); d.close(); };
-    };
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
@@ -823,7 +812,7 @@
             ${rb.status === 'public' && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}" title="${RBesc(RBt('Edit'))}" aria-label="${RBesc(RBt('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <a class="btn btn-ghost" href="../editor/?rb=${rb.id}&export=1" title="${RBesc(RBt('Export'))}" aria-label="${RBesc(RBt('Export'))}"><i class="fa-solid fa-file-export"></i></a>
-            <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Save as'))}" aria-label="${RBesc(RBt('Save as'))}"><i class="fa-solid fa-clone"></i></button>
+            <button class="btn btn-ghost" data-dup="${rb.id}" title="${RBesc(RBt('Duplicate'))}" aria-label="${RBesc(RBt('Duplicate'))}"><i class="fa-solid fa-clone"></i></button>
             <button class="btn btn-ghost" data-del="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Delete'))}" aria-label="${RBesc(RBt('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`;
         const wireRows = () => {
@@ -833,7 +822,7 @@
                 if (x.ok) { busy.ok(); RBToast('Roadbook duplicated.'); RBRoadbookList(container, onChange); if (onChange) onChange(); } else { busy.reset(); RBToast(x.error || 'Could not duplicate.'); }
             });
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?', 'Delete')) {
+                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?')) {
                     const busy = RBBusy(b);
                     const x = await RBApi('rb_delete', { id: +b.dataset.del });
                     if (x.ok) { busy.ok(); RBRoadbookList(container, onChange); if (onChange) onChange(); }
@@ -891,8 +880,7 @@
     };
     // A button that reports its own async work (#459): disabled with a spinner while it runs, then
     // — on success — the SAME button green with a check for 3 s, then back to exactly how it was.
-    // Saving used to say so only in a toast, which is easy to miss, so a user could not tell a
-    // stored roadbook from a failed save; the button that was pressed is where the answer belongs.
+    // The button that was pressed is where the answer belongs — a toast alone is easy to miss.
     //
     // Only the icon is swapped when there is one, so a labelled button keeps its text and width
     // and nothing jumps. `ok()` reports success; `reset()` just puts the button back — a failure
@@ -935,7 +923,7 @@
     // older WebViews, or when the write is refused, `navigator.clipboard` can be undefined — and
     // an unguarded `navigator.clipboard.writeText(...)` then throws where a caller cannot catch
     // it, so the copy silently never happens and not even the failure toast shows (#423). Hence
-    // one helper, with the selection-based fallback every caller used to have to write itself.
+    // one helper, with the selection-based fallback built in.
     window.RBCopy = async (text, okMsg) => {
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
@@ -989,6 +977,12 @@
         method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(Object.assign({ action }, body || {})),
     }).then((r) => r.json()).then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
+    // The same call, sent so it survives the page going away (pagehide): the shared API host and
+    // auth headers, so it works inside the app too — sendBeacon can carry neither (#651).
+    window.RBApiKeepalive = (action, body) => fetch(API_ROOT + 'api/index.php', {
+        method: 'POST', keepalive: true, credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(Object.assign({ action }, body || {})),
+    }).catch(() => {});
     // Config with an offline fallback (#188/#189). `config` is what tells the app who is signed in
     // (account menu, the Recorder's capture buttons…). When the server is unreachable — flaky/no
     // data, common on an iPad in the field — a bare RBApi('config') returns no user and the app
@@ -1076,19 +1070,18 @@
     window.RBUpload = async (fields, file, name) => rbPostUpload(fields, 'photo', await RBImg.toBlob(file), name || 'photo.jpg');
     // The filename extension follows the blob's MIME (MediaRecorder output differs by browser)
     // so the server stores it under a type it can serve back.
-    window.RBUploadAudio = async (fields, blob, name) => {
-        const ext = ({ 'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(blob.type || '').split(';')[0]] || 'webm';
-        return rbPostUpload(fields, 'audio', blob, name || ('audio.' + ext));
-    };
+    // The file extension for a media blob, by MIME (photos keep their type; the voice-note container
+    // varies by browser) — one table for the upload and the Recorder's local .rdbk bundle (#657).
+    window.RBMediaExt = (mime, kind) => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/avif': 'avif', 'image/webp': 'webp', 'image/heic': 'heic',
+        'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(mime || '').split(';')[0]] || (kind === 'audio' ? 'webm' : 'jpg');
+    window.RBUploadAudio = async (fields, blob, name) => rbPostUpload(fields, 'audio', blob, name || ('audio.' + RBMediaExt(blob.type, 'audio')));
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
-    // msg and okLabel run through RBt: plain English keys translate, already-
-    // translated or composed strings fall through unchanged.
-    // A confirmation asks a question, so its buttons answer it: **No / Yes**, always. They used to
-    // be "Cancel" next to a named action ("Recover", "Delete"…), and *Cancel* is the wrong word for
-    // the negative half of a question — it reads as "cancel what I was doing" rather than "no"
-    // (#435). Whatever is specific to the decision belongs in `msg`, which is where a delete
-    // confirm already has to name what it is deleting.
+    // msg runs through RBt: a plain English key translates, a composed string falls through.
+    // A confirmation asks a question, so its buttons answer it: **No / Yes**, always — *Cancel* is
+    // the wrong word for the negative half of a question (#435). Whatever is specific to the
+    // decision belongs in `msg`, which is where a delete confirm has to name what it deletes.
+    // `danger` only styles the Yes as destructive.
     window.RBConfirm = (msg, danger) => new Promise((resolve) => {
         const ok = danger
             ? `<button class="btn btn-danger" data-yes><i class="fa-solid fa-triangle-exclamation"></i> ${RBt('Yes')}</button>`
@@ -1304,7 +1297,7 @@
             </div>`).join('');
             listEl.querySelectorAll('[data-discard]').forEach((b) => b.onclick = async () => {
                 const it = items[+b.closest('[data-i]').dataset.i];
-                if (!(await RBConfirmDanger(RBt('Discard') + ' “' + RBt(PENDING_LABEL[it.tool]) + ' · ' + RBesc(pendingDetail(it)) + '”?', 'Discard'))) return;
+                if (!(await RBConfirmDanger(RBt('Discard') + ' “' + RBt(PENDING_LABEL[it.tool]) + ' · ' + RBesc(pendingDetail(it)) + '”?'))) return;
                 it.keys.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
                 RBToast('Discarded.'); draw(); refreshPendingPill();
             });

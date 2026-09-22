@@ -464,7 +464,7 @@
     }
     /* A bearing needs two points that are actually apart: `bearingDeg(p, p)` is 0 (atan2(0,0)), so
        a DUPLICATE vertex next to a note — drawing over an existing point, a GPS pair with no
-       movement, a rejoin — used to hand that note a bearing of 0°. The tulip's exit angle is
+       movement, a rejoin — would hand that note a bearing of 0°. The tulip's exit angle is
        `bearing_out − bearing_in`, so one bogus value swings the arrow anywhere: a note whose route
        goes straight on was drawn as a sharp right (#452). Hence: walk outwards to the first vertex
        far enough away to carry a direction. The threshold is deliberately small — this fixes

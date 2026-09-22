@@ -46,6 +46,11 @@
         try { localStorage.setItem(SESSION_KEY, JSON.stringify({ recording: true, fileName: RBGpxRecorder.fileName, recordedM, elapsedAcc: elapsed(), paused, wpts, photos, draftId })); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+    // A finished recording that has not landed anywhere yet: everything the finish options need
+    // (points, notes, photo pins, the draft), so a crash with them on screen reopens them (#647).
+    function saveFinishing(pts, name) {
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify({ finishing: true, pts, name, recordedM, wpts, photos: photos.filter((p) => !p.local), draftId })); } catch (e) {}
+    }
 
     RBGpxRecorder.init({
         toast,
@@ -80,10 +85,14 @@
         }
 
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+        // finished but never landed (a crash with the finish options on screen): reopen them
+        if (session && session.finishing && session.pts) {
+            wpts = session.wpts || []; photos = session.photos || []; draftId = session.draftId || 0; recordedM = session.recordedM || 0;
+            finishModal(session.pts, session.name); return;
+        }
         if (session && session.recording) {
             if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>')) {
                 RBGpxRecorder.resume(session.fileName);
-                try { localStorage.removeItem('rb_trip_gpx'); } catch (e) {} // GPX data already loaded via resume; drop the redundant checkpoint
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
                 track = []; wpts = session.wpts || []; photos = (session.photos || []).filter((p) => !p.local); draftId = session.draftId || 0;
                 updateRecUi(); // photo/audio buttons follow sign-in, not the draft (#147 F2)
@@ -91,10 +100,10 @@
                 return;
             }
             clearSession();
-            try { localStorage.removeItem('rb_trip_gpx'); } catch (e) {} // clear the orphaned GPX data too — one simple prompt (#260)
+            RBGpxRecorder.clearCheckpoint(); // the orphaned GPX data goes with it — one simple prompt (#260)
         }
         await RBGpxRecorder.offerRecovery(); // orphaned GPX (no session) → offer rescue
-    }).catch(() => {});
+    }).catch(() => toast('Could not load.')); // a failed startup says so instead of skipping its prompts in silence (#659)
 
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
@@ -186,8 +195,16 @@
         // until the finish options land it somewhere, this is the only copy of the recording, so
         // the net stays on and a kill mid-modal is still recoverable (#460).
         const r = RBGpxRecorder.end();
-        clearSession(); // the in-progress recording is over; what remains is a finished track
-        if (!r.pts || r.pts.length < 2) { RBGpxRecorder.clearCheckpoint(); return toast(t('Route too short to save.')); }
+        if (!r.pts || r.pts.length < 2) {
+            // nothing to build a roadbook from — but notes and photos may have been captured: never
+            // drop them in silence (#647); No goes back to recording
+            const lost = wpts.length + photos.length;
+            if (lost && !(await RBConfirmDanger(t('Route too short to save.') + '<br>' + t('Discard it with its notes and photos?') + ` (${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')})`))) {
+                RBGpxRecorder.resume(r.name); startMeter(); return;
+            }
+            clearSession(); RBGpxRecorder.clearCheckpoint(); return toast(t('Route too short to save.'));
+        }
+        saveFinishing(r.pts, r.name); // the checkpoint holds it until the finish options land it (#460 · #647)
         finishModal(r.pts, r.name);
     };
 
@@ -237,7 +254,7 @@ function updateRecUi() {
     }
     let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 5, wptFinish = null;
     const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
-    const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('WP audio') : String(n); };
+    const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('Voice note') : String(n); };
 
     async function startWptAudio() {
         if (wptRecActive) return; // already recording (or in the release countdown)
@@ -368,17 +385,10 @@ function updateRecUi() {
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
         // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
         // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
-        if (lat != null) { dropWaypoint(lat, lon, ''); toast(t('Note')); }
+        if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note added.'); }
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
-    // File extension for a queued media blob, by MIME (photos keep their original type; voice-note
-    // container varies by browser). Falls back sensibly so the bundle always has a usable name.
-    function mediaExt(mime, kind) {
-        const m = (mime || '').split(';')[0];
-        return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/avif': 'avif', 'image/webp': 'webp', 'image/heic': 'heic',
-            'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[m] || (kind === 'audio' ? 'webm' : 'jpg');
-    }
     // Build a self-contained .rdbk (roadbook.json + bundled photos/audio + media.json geotags) from
     // the current recording and the locally-queued media, and download it — the signed-out save path
     // (#147 F3), same container format as the Editor's export (#162). Returns the number of media
@@ -393,7 +403,7 @@ function updateRecUi() {
         for (const it of await RBMediaQueue.items()) {
             if (!it.blob) continue;
             const dir = it.kind === 'audio' ? 'audio' : 'photos';
-            const file = dir + '/' + it.kind + '-' + (++n) + '.' + mediaExt(it.blob.type, it.kind);
+            const file = dir + '/' + it.kind + '-' + (++n) + '.' + RBMediaExt(it.blob.type, it.kind);
             files[file] = new Uint8Array(await it.blob.arrayBuffer());
             const f = it.fields || {};
             (it.kind === 'audio' ? media.audio : media.photos).push({ file, lat: f.lat != null ? f.lat : null, lon: f.lon != null ? f.lon : null });
@@ -447,7 +457,7 @@ function updateRecUi() {
         const km = (recordedM / 1000).toFixed(2);
         const nm = name || recName();
         const signedIn = !!meUser;
-        const summary = `${pts.length} ${t('points')} · ${km} km · ${wpts.length} wpt · ${photos.length} 📷`;
+        const summary = `${pts.length} ${t('points')} · ${km} km · ${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')}`;
         let landed = !!savedId; // has the recording reached somewhere safe?
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${summary}</p>
@@ -455,7 +465,7 @@ function updateRecUi() {
                 <button class="btn btn-primary" id="rfSave"><i class="fa-solid fa-cloud-arrow-up"></i> ${t('Save to account')}</button>
                 ${signedIn ? '' : `<button class="btn btn-ghost" id="rfRdbk"><i class="fa-solid fa-file-zipper"></i> ${t('Export .rdbk')}</button>`}
                 <button class="btn btn-ghost" id="rfDl"><i class="fa-solid fa-file-arrow-down"></i> ${t('Export GPX')}</button>
-                <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Open in the editor')}</button>
+                <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-pen-ruler"></i> ${t('Open in the editor')}</button>
             </div>
             <p class="muted small" id="rfStatus"${savedId ? '' : ' hidden'}>${savedId ? savedLine(savedId) : ''}</p>
             <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('Save to your account, or export a self-contained .rdbk with your photos and voice notes.')}</p>
@@ -465,13 +475,13 @@ function updateRecUi() {
         function renderExit() {
             const b = d.q('#rfClose');
             b.className = 'btn ' + (landed ? 'btn-ghost' : 'btn-danger');
-            b.innerHTML = landed ? t('Close') : '<i class="fa-solid fa-trash"></i> ' + t('Discard');
+            b.innerHTML = landed ? t('Close') : '<i class="fa-solid fa-trash-can"></i> ' + t('Discard');
         }
         // A destination was reached: the crash checkpoint has done its job, and the exit is no
         // longer destructive.
-        const land = () => { landed = true; RBGpxRecorder.clearCheckpoint(); renderExit(); };
+        const land = () => { landed = true; RBGpxRecorder.clearCheckpoint(); clearSession(); renderExit(); };
         renderExit();
-        if (savedId) RBGpxRecorder.clearCheckpoint();
+        if (savedId) { RBGpxRecorder.clearCheckpoint(); clearSession(); }
 
         d.q('#rfSave').onclick = async () => {
             const btn = d.q('#rfSave');
@@ -520,7 +530,7 @@ function updateRecUi() {
         };
         d.q('#rfClose').onclick = async () => {
             if (!landed && !(await RBConfirmDanger(t('Discard this recording?') + '<br>' + summary))) return;
-            RBGpxRecorder.clearCheckpoint();
+            RBGpxRecorder.clearCheckpoint(); clearSession();
             d.close();
         };
     }

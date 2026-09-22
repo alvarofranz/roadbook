@@ -25,8 +25,9 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden`
   solo l'app registra a schermo bloccato/in background). Entrambi sono governati da
   `updateRecUi()` una volta noto l'utente.
 - **`recRunning`** — dashboard live: quattro readout (tempo trascorso, velocità,
-  numero waypoint, km registrati), la fila di pulsanti azione (Pause · Waypoint ·
-  WP audio · WP Foto), la mappa live e il pulsante *Finish*. Su smartphone (≤430px)
+  numero note, km registrati), la fila di pulsanti azione (Pause · Note · Voice note ·
+  Photo — che va a capo sotto i 400 px), la mappa live e il pulsante *Finish* (primario, non
+  distruttivo; stesse etichette della barra di registrazione dell'Editor, #655). Su smartphone (≤430px)
   la spaziatura verticale è compatta (padding ridotto, gap unico della `.dash`,
   margini ridondanti azzerati) così la mappa guadagna schermo.
 
@@ -302,17 +303,17 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
   di scegliere/creare il file `.gpx` di destinazione del log live; vedere il documento di
   `gpx-recorder.js` per il dettaglio del comportamento e dei fallback dove l'API non è
   disponibile.
-- `RBGpxRecorder.finish()` ([recorder.js:114](../public/recorder/recorder.js#L114)) chiude
-  il logging, scatena `onChange(false)` (ritorno a idle) e **restituisce la traccia completa**
-  (`r.pts`, `r.name`). Se la traccia ha meno di 2 punti, si avvisa *"Route too short to save."*
-  e non si salva nulla.
+- `RBGpxRecorder.end()` chiude il logging, scatena `onChange(false)` e **restituisce la traccia
+  completa** (`r.pts`, `r.name`) tenendo il checkpoint. Se la traccia ha meno di 2 punti non c'è
+  roadbook da costruire: se però sono state catturate note o foto, lo si dice e si chiede di
+  scartarle **nominandole** — *No* torna a registrare (`RBGpxRecorder.resume`, #647).
 
 ---
 
 ## 8. Termine: salva sul server / esporta .rdbk, GPX o apri nell'Editor
 
 A *Finish* confermato si apre `finishModal(pts, name)` con il riepilogo
-(punti · km · waypoint · foto) e **tre** azioni. L'azione **primaria dipende dal login**:
+(punti · km · note · foto) e **tre** azioni. L'azione **primaria dipende dal login**:
 
 - **Save to server** *(loggato, primaria, #143)*: in un tap costruisce il roadbook dalla
   traccia + waypoint (`RB.buildRoadbook`) e lo scrive **dentro il draft già esistente**
@@ -344,13 +345,10 @@ modale condiviso di Reader/Tripmaster:
   nell'Editor, o lo stash prima del login) l'uscita diventa un normale **Close** e il checkpoint
   anti-crash si spegne.
 
-Prima l'ultimo pulsante era un *Close* collegato al semplice dismiss: un tap buttava via traccia,
-waypoint, foto e note vocali in silenzio.
-
-`clearSession()` viene chiamata subito dopo lo stop — la registrazione *in corso* è finita — ma il
-**checkpoint GPX resta acceso**: `RBGpxRecorder.end()` lo tiene apposta, e a spegnerlo è solo un
-esito. Prima si usava `finish()`, che lo puliva all'istante dello stop: la rete di sicurezza si
-spegneva proprio mentre il modale con l'unica copia era ancora a schermo.
+Allo stop la sessione diventa un checkpoint **`finishing`** (`saveFinishing`: punti, note, pin
+delle foto, `draftId`, km): un crash con il modale a schermo lo riapre al prossimo avvio con
+tutto dentro (#647). Sessione e checkpoint GPX si spengono **solo** a un esito (`land()`) o a un
+Discard confermato.
 
 ---
 

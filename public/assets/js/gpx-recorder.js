@@ -43,9 +43,7 @@ window.RBGpxRecorder = (() => {
     // End the log, KEEPING the crash checkpoint: it is cleared only when the points reach a safe
     // destination (download / convert / the caller's own store), so a stray dismissal can never
     // lose a recording — until then a reload offers recovery (#217). A caller that takes the
-    // points owns that promise: it calls `clearCheckpoint()` at the destination, never before
-    // (the Recorder used to clear it the moment it stopped, which switched the net off while its
-    // finish options — the only remaining copy — were still on screen, #460).
+    // points owns that promise: it calls `clearCheckpoint()` at the destination, never before (#460).
     function end() {
         on = false; onChange(false);
         return { pts: pts.slice(), name: fileName };
@@ -53,7 +51,7 @@ window.RBGpxRecorder = (() => {
     // End the log and offer the standard finished-track modal. The stop itself asks first:
     // it kills the live watch and a recording can't seamlessly restart (#217).
     async function stop() {
-        if (!(await RBConfirm(RBt('Stop recording?'), RBt('Stop')))) return;
+        if (!(await RBConfirm(RBt('Stop recording?')))) return;
         const r = end();
         if (r.pts.length >= 2) { finishedModal(r.pts, r.name); }
         else { toast('Track too short.'); clearCheckpoint(); }
@@ -64,14 +62,16 @@ window.RBGpxRecorder = (() => {
         let saved; try { saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || 'null'); } catch (e) {}
         pts = (saved && saved.pts) || []; lastT = 0; on = true; onChange(true);
     }
-    // offer to rescue an orphaned checkpoint (crash/closed tab with no session to resume)
+    // Offer to rescue an orphaned checkpoint (crash/closed tab with no session to resume). A No is
+    // remembered on the checkpoint and never asked again — it is not deleted (#436); a Yes hands the
+    // points to the finished-track modal, whose destinations clear it (#460 · #686). A new
+    // recording's checkpoint replaces a declined one.
     async function offerRecovery() {
         let saved; try { saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || 'null'); } catch (e) {}
-        if (!saved || !saved.pts || saved.pts.length < 2) return;
+        if (!saved || !saved.pts || saved.pts.length < 2 || saved.declined) return;
         const t = RBt;
-        const yes = await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')');
-        try { localStorage.removeItem(CHECKPOINT_KEY); } catch (e) {}
-        if (yes) finishedModal(saved.pts, saved.name || defaultName());
+        if (await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')')) return finishedModal(saved.pts, saved.name || defaultName());
+        try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(Object.assign(saved, { declined: true }))); } catch (e) {}
     }
     // opts.sampleRate: false hides the interval field (the Editor samples by
     // distance itself) · opts.onStart replaces the default begin()

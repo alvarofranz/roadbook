@@ -718,7 +718,7 @@ describe('the UI says "note"; only the data keeps wp_* (#494)', () => {
 
     it('the controls that drop one say Note', () => {
         expect(read('public/recorder/index.html')).toContain('<span data-i18n="Note">Note</span>');
-        expect(read('public/editor/index.html')).toContain('id="recWaypoint" data-i18n="Note"');
+        expect(read('public/editor/index.html')).toContain('id="recWaypoint"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Note">Note</span>');
         for (const page of ['public/recorder/index.html', 'public/tripmaster/index.html']) {
             expect(read(page), page).toContain('<div class="key" data-i18n="Notes">Notes</div>');
         }
