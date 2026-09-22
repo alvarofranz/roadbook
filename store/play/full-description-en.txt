@@ -1,0 +1,19 @@
+RDBK turns your phone into a rally-style roadbook navigator and GPS trip computer for any adventure — 4x4, motorcycle, bike, hiking or running.
+
+Follow a digital roadbook note by note — distances, headings (CAP), road types, FIA danger grading and clear pictograms — with automatic GPS advancement and an optional per-note map. Record your own GPS tracks that keep logging even with the screen locked, or just run a full trip computer when all you need is odometer, speed and heading.
+
+Everything works offline. No ads, no tracking, no profiling. Free and open.
+
+WHAT'S INSIDE
+• Reader — the co-pilot's navigator: a paper-style roadbook table, live odometer, current heading (CAP), automatic or manual note validation, approach warnings, and a competition mode with a signed result.
+• Tripmaster — a GPS trip computer with total and partial odometer, speed with alert bands, heading, stopwatch and crash-safe GPX recording. No roadbook required.
+• Recorder — record a GPX track live with accuracy-aware sampling, pause/resume and geotagged photos. Signed in, it saves the route as a roadbook you can edit later.
+
+WHY RDBK
+• Background GPS — recording survives a locked screen and the app in the background, so your track has no gaps.
+• Works offline — built for places with no signal.
+• Open .rdbk format — self-contained, shareable roadbook files. Create them for free on the web at rdbk.app and carry them in your pocket.
+• Public roadbooks — browse and navigate routes shared by the community.
+• Private and free — only an essential login session; your preferences and offline data stay on your device.
+
+Plan it at rdbk.app, then let RDBK guide you down the trail, the track and the open road.

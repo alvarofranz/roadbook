@@ -1,0 +1,1 @@
+roadbook,rallye,4x4,tout-terrain,gpx,navigation,odomètre,moto,enduro,randonnée,gps

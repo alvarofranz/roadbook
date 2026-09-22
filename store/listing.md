@@ -1,11 +1,26 @@
 # Store listing copy
 
-Copy-paste per locale. English is the default/primary listing; the others match the
-app's in-app languages (ES · IT · DE · FR).
+The readable source of the listing, per locale. English is the default/primary listing; the
+others match the app's in-app languages (ES · IT · DE · FR).
 
-**Field limits** — Play title ≤30 · Play short desc ≤80 · full desc ≤4000 · App Store
-name ≤30 · App Store subtitle ≤30 · App Store keywords ≤100 (comma-separated) ·
-App Store promo text ≤170.
+> **Do not paste from this file.** Every field also exists as a plain-text file holding
+> *nothing but the text that goes in that field* — `store/play/` for Google Play,
+> `store/appstore/` for the App Store. Paste those. A listing was rejected under Play's
+> **metadata policy** because this file's labels and limits ("Título (≤30): …") ended up in
+> the full description, which then described nothing (#549). `tests/store-listing.test.js`
+> now fails any field over its limit, and any description carrying a label, a limit or a
+> file name.
+
+| Field | Google Play | Apple App Store |
+|-------|-------------|-----------------|
+| App name | `store/play/title-<lang>.txt` (≤30) | `store/appstore/name-<lang>.txt` (≤30) |
+| Subtitle | — | `store/appstore/subtitle-<lang>.txt` (≤30) |
+| Short description | `store/play/short-description-<lang>.txt` (≤80) | — |
+| Full description | `store/play/full-description-<lang>.txt` (≤4000) | `store/appstore/description-<lang>.txt` (≤4000) |
+| Keywords | — | `store/appstore/keywords-<lang>.txt` (≤100, comma-separated) |
+| Promo text | — | `store/appstore/promo-text-<lang>.txt` (≤170) |
+
+Edit the copy here **and** in the matching file — the tests check that the two agree.
 
 ---
 
