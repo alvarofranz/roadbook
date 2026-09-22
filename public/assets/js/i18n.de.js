@@ -1086,12 +1086,12 @@ Object.assign(window.RBi18nLangs.de, {
     "Add points": "Punkte hinzufügen",
     "Map modes": "Kartenmodi",
     "Draw": "Zeichnen",
-    "Drag on the map to draw your route.": "Ziehe auf der Karte, um deine Route zu zeichnen.",
-    "Route extended.": "Route verlängert.",
+    
+    
     "Move: drag points, notes and photos — M": "Verschieben: Punkte, Notizen und Fotos ziehen — M",
     "Add notes: tap the route — N": "Notizen hinzufügen: auf die Route tippen — N",
-    "Add points: tap the route to insert one, or past an end to extend it — P": "Punkte hinzufügen: auf die Route tippen, um einen einzufügen, oder hinter ein Ende, um sie zu verlängern — P",
-    "Draw: drag on the map to sketch the route — D": "Zeichnen: auf der Karte ziehen, um die Route zu skizzieren — D",
+    
+    
 });
 
 /* editor map context menu and freehand drawing (#692 · #693) */
@@ -1100,9 +1100,9 @@ Object.assign(window.RBi18nLangs.de, {
     "Coordinates copied.": "Koordinaten kopiert.",
     "This spot": "Diese Stelle",
     "Delete the nearest point": "Nächsten Punkt löschen",
-    "Start the stroke at an end of the route — or draw from the route back onto it to replace that stretch.": "Beginne den Strich an einem Ende der Route – oder zeichne von der Route zurück auf sie, um diesen Abschnitt zu ersetzen.",
-    "Replace this stretch of the route? These notes are in it and will be deleted:": "Diesen Abschnitt der Route ersetzen? Diese Notizen liegen darin und werden gelöscht:",
-    "Stretch replaced.": "Abschnitt ersetzt.",
+    
+    
+    
 });
 
 /* remove the background of a custom icon (#694) */
@@ -1115,7 +1115,7 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* editor landing: Draw is freehand (#692) */
 Object.assign(window.RBi18nLangs.de, {
-    "Sketch a route by dragging on the map": "Skizziere eine Route, indem du auf der Karte ziehst",
+    
 });
 
 /* editor review: toolbar, export, confirms, read-only, messages (#695–#701) */
@@ -1161,4 +1161,12 @@ Object.assign(window.RBi18nLangs.de, {
     "Move “{title}” to the trash? You can restore it later.": "„{title}“ in den Papierkorb verschieben? Du kannst es später wiederherstellen.",
     "Delete “{title}” forever? This cannot be undone.": "„{title}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",
     "Moderate public roadbooks": "Öffentliche Roadbooks moderieren",
+});
+
+/* editor Draw adds points with taps (#712) */
+Object.assign(window.RBi18nLangs.de, {
+    "Tap the map to draw your route.": "Tippe auf die Karte, um deine Route zu zeichnen.",
+    "Tap the map to add the route point by point": "Tippe auf die Karte, um die Route Punkt für Punkt anzulegen",
+    "Add points: tap the route to insert one — P": "Punkte hinzufügen: auf die Route tippen, um einen einzufügen — P",
+    "Draw: tap to add new points from the nearest end — D": "Zeichnen: tippen, um neue Punkte am nächsten Ende anzufügen — D",
 });

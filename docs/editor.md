@@ -79,33 +79,23 @@ si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate
 
 `setMapTool(tool)` imposta `mapTool`, azzera lo stato di cut/draw, aggiorna la barra
 (`paintModes`) e il cursore. `modeAvailable(tool)` decide cosa si può attivare: Move, Aggiungi
-note e Cut agiscono su una rotta; Aggiungi punti e Disegna possono anche **crearne una**.
+note, Aggiungi punti e Cut agiscono sulla rotta esistente; Disegna può anche **crearne una**.
+In nessun modo il trascinamento viene tolto alla mappa: si trascina sempre per spostarla (#712).
 
 | Modo | Tasto | `mapTool` | Comportamento |
 |------|-------|-----------|---------------|
 | **Move** (default) | `M` | `points` | `setVertexEditor` + `setWaypointEditor` → trascina qualunque punto, **traccia o nota**; metriche ricalcolate al rilascio |
 | **Aggiungi note** | `N` | `note` | tap sulla rotta → nota lì (`addNoteAtExact`), e si **resta** nel modo, così se ne mettono in fila |
-| **Aggiungi punti** | `P` | `point` | `pointTap`: un tap **sulla rotta** (entro ~22 px) inserisce il punto nel segmento sotto (`addPointAtExact`); un tap **lontano** dalla rotta la estende dall'estremità aperta più vicina (`extendRoute`) |
-| **Disegna** | `D` | `draw` | a mano libera: si preme e si trascina (il pan della mappa è disattivato); vedi sotto |
+| **Aggiungi punti** | `P` | `point` | un tap inserisce il punto nella traccia esistente, nel segmento più vicino (`addPointAtExact`) |
+| **Disegna** | `D` | `draw` | ogni tap aggiunge un punto **nuovo**: `extendRoute` lo unisce all'estremità aperta più vicina (vedi sotto) |
 | **Cut** | `C` | `cut` | tap due punti → taglia |
 
-**Disegna (#692).** Il tratto si vede come linea tratteggiata sabbia sotto il dito
-(`RBMap.setSketch`); al rilascio `RB.normalizeStroke(stroke, strokeTolerance())` lo trasforma in un
-pezzo pulito: via il tremolio sotto la tolleranza, curve arrotondate (due passate di Chaikin),
-poi Douglas-Peucker tiene solo i punti che servono alla forma — un tratto dritto diventa un
-segmento dritto, una curva resta una curva con densità uniforme. La tolleranza è ~4 pixel allo
-zoom corrente: precisione pari a quello che l'autore vede. Dove va il pezzo lo decidono le sue due
-estremità (entro ~30 px sullo schermo, `joinStroke`):
-- un'estremità su un'**estremità aperta** della rotta (inizio, fine, un bordo di un taglio) e
-  l'altra lontana dalla rotta → la rotta si **estende** da lì; un pezzo che arriva al bordo
-  opposto di un taglio lo **chiude**;
-- **entrambe** sulla rotta → il pezzo **sostituisce il tratto** tra i due punti toccati
-  (`replaceStretch`), agganciandosi esattamente lì; le note dentro quel tratto se ne vanno con lui,
-  **chiedendo prima e nominandole**;
-- altrimenti non è una modifica della rotta: nulla cambia e un messaggio spiega come disegnare.
-
-Con nulla caricato, un tratto (o due tap di Aggiungi punti) costruisce un roadbook da zero
-(`startRoute` → `RB.buildRoadbook`); un roadbook senza rotta apre direttamente in Disegna.
+**Disegna (#712).** Ogni tap calcola la candidata più vicina tra estremità finale, estremità
+iniziale e i due bordi di ogni taglio aperto, e vi aggiunge il punto; toccare il bordo opposto di
+un taglio lo **chiude** invece di estenderlo. Con nulla caricato, i primi due tap costruiscono un
+roadbook da zero (`startRoute` → `RB.buildRoadbook`); un roadbook senza rotta apre direttamente in
+Disegna. Si entra in Disegna dalla landing, dalla barra dei modi o col tasto `D` — così un taglio
+lasciato aperto si riempie senza ricaricare.
 
 **Foglio shortcut** (#458): l'ultima voce del menu ☰ (`fa-keyboard`) elenca tutti i tasti per
 contesto (modi · vertice · nota · ovunque), incluse le due righe che non stanno scritte da
@@ -165,7 +155,7 @@ corrispondono alla polilinea definitiva.
 Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js:404](../public/editor/editor.js#L404)), disabilitate
 dentro campi testo e durante un recording.
 
-Move, Aggiungi note e Cut restano `disabled` finché non c'è una rotta (`paintModes`).
+Move, Aggiungi note, Aggiungi punti e Cut restano `disabled` finché non c'è una rotta (`paintModes`).
 `Escape` chiude il menu contestuale se aperto, altrimenti torna a Move.
 
 ### 3.3 Comportamento della mappa

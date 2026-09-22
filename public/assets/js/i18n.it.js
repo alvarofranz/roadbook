@@ -1226,12 +1226,12 @@ Object.assign(window.RBi18nLangs.it, {
     "Add points": "Aggiungi punti",
     "Map modes": "Modalità della mappa",
     "Draw": "Disegna",
-    "Drag on the map to draw your route.": "Trascina sulla mappa per disegnare il percorso.",
-    "Route extended.": "Percorso esteso.",
+    
+    
     "Move: drag points, notes and photos — M": "Sposta: trascina punti, note e foto — M",
     "Add notes: tap the route — N": "Aggiungi note: tocca il percorso — N",
-    "Add points: tap the route to insert one, or past an end to extend it — P": "Aggiungi punti: tocca il percorso per inserirne uno, o oltre un’estremità per estenderlo — P",
-    "Draw: drag on the map to sketch the route — D": "Disegna: trascina sulla mappa per tracciare il percorso — D",
+    
+    
 });
 
 /* editor map context menu and freehand drawing (#692 · #693) */
@@ -1240,9 +1240,9 @@ Object.assign(window.RBi18nLangs.it, {
     "Coordinates copied.": "Coordinate copiate.",
     "This spot": "Questo punto della mappa",
     "Delete the nearest point": "Elimina il punto più vicino",
-    "Start the stroke at an end of the route — or draw from the route back onto it to replace that stretch.": "Inizia il tratto a un’estremità del percorso, oppure disegna dal percorso di nuovo sul percorso per sostituire quel tratto.",
-    "Replace this stretch of the route? These notes are in it and will be deleted:": "Sostituire questo tratto del percorso? Queste note ne fanno parte e verranno eliminate:",
-    "Stretch replaced.": "Tratto sostituito.",
+    
+    
+    
 });
 
 /* remove the background of a custom icon (#694) */
@@ -1255,7 +1255,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* editor landing: Draw is freehand (#692) */
 Object.assign(window.RBi18nLangs.it, {
-    "Sketch a route by dragging on the map": "Traccia un percorso trascinando sulla mappa",
+    
 });
 
 /* editor review: toolbar, export, confirms, read-only, messages (#695–#701) */
@@ -1301,4 +1301,12 @@ Object.assign(window.RBi18nLangs.it, {
     "Move “{title}” to the trash? You can restore it later.": "Spostare «{title}» nel cestino? Potrai ripristinarlo più tardi.",
     "Delete “{title}” forever? This cannot be undone.": "Eliminare «{title}» per sempre? Non si può annullare.",
     "Moderate public roadbooks": "Modera i roadbook pubblici",
+});
+
+/* editor Draw adds points with taps (#712) */
+Object.assign(window.RBi18nLangs.it, {
+    "Tap the map to draw your route.": "Tocca la mappa per disegnare il percorso.",
+    "Tap the map to add the route point by point": "Tocca la mappa per aggiungere il percorso punto per punto",
+    "Add points: tap the route to insert one — P": "Aggiungi punti: tocca il percorso per inserirne uno — P",
+    "Draw: tap to add new points from the nearest end — D": "Disegna: tocca per aggiungere nuovi punti dall’estremità più vicina — D",
 });

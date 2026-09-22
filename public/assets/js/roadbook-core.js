@@ -892,38 +892,6 @@
         }
         return removed;
     }
-    /* A freehand stroke → a clean route piece (#692). A finger or a mouse traces a wobbly, uneven
-     * line: jitter below `toleranceM` is dropped, the corners are rounded with two passes of
-     * Chaikin smoothing (a drawn bend reads as a bend, not a zig-zag), and Douglas-Peucker then
-     * keeps only the points the shape needs, so a straight stroke becomes a straight segment and a
-     * curve keeps an even density of points. Both ends stay exactly where the stroke began and
-     * ended, since they are what joins the piece to the route. `toleranceM` is the size of a few
-     * screen pixels at the current zoom: the result is as precise as what the author could see. */
-    function normalizeStroke(pts, toleranceM) {
-        const tol = Math.max(0.5, toleranceM || 5);
-        const clean = [];
-        for (const p of pts || []) {
-            if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
-            if (!clean.length || haversineM(clean[clean.length - 1], p) >= tol / 3) clean.push({ lat: p.lat, lon: p.lon });
-        }
-        if (pts && pts.length && clean.length) { // the stroke ends exactly where the finger lifted
-            const end = pts[pts.length - 1];
-            if (clean[clean.length - 1] !== end && haversineM(clean[clean.length - 1], end) > 0) clean[clean.length - 1] = { lat: end.lat, lon: end.lon };
-        }
-        if (clean.length < 3) return clean.map((p) => ({ lat: round6(p.lat), lon: round6(p.lon) }));
-        let line = clean;
-        for (let pass = 0; pass < 2; pass++) {
-            const next = [line[0]];
-            for (let i = 0; i < line.length - 1; i++) {
-                const a = line[i], b = line[i + 1];
-                next.push({ lat: a.lat * 0.75 + b.lat * 0.25, lon: a.lon * 0.75 + b.lon * 0.25 },
-                    { lat: a.lat * 0.25 + b.lat * 0.75, lon: a.lon * 0.25 + b.lon * 0.75 });
-            }
-            next.push(line[line.length - 1]);
-            line = next;
-        }
-        return simplifyTrack(line, tol).map((p) => ({ lat: round6(p.lat), lon: round6(p.lon) }));
-    }
     // Closest position ON the track polyline (not just a vertex): the segment
     // index `i` (between points i and i+1), the fraction `t` along it, the
     // projected point and its distance in metres.
@@ -1415,7 +1383,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, normalizeStroke, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

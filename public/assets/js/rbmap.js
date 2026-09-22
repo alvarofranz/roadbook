@@ -196,9 +196,6 @@ window.RBMap = class RBMap {
         // rest after a style swap (see toggleBaseStyle).
         m.addSource('rb-guide', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-guide', type: 'line', source: 'rb-guide', paint: { 'line-color': '#e8b059', 'line-width': 4 } });
-        // The freehand stroke being drawn (editor Draw mode, #692): a dashed sand line under the finger.
-        m.addSource('rb-sketch', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-sketch', type: 'line', source: 'rb-sketch', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#e8b059', 'line-width': 4, 'line-dasharray': [1.5, 1] } });
         // Track vertices (move-points tool) — topmost so they stay grabbable; empty until armed.
         m.addSource('rb-verts', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-verts', type: 'circle', source: 'rb-verts', minzoom: 13, paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#ff5a45', 'circle-stroke-width': 2 } }); // non-note track points: only at high zoom (hidden below ~13 to avoid clutter)
@@ -299,11 +296,6 @@ window.RBMap = class RBMap {
             type: 'FeatureCollection',
             features: (photos || []).filter((p) => p.lat != null).map((p) => ({ type: 'Feature', properties: { d: JSON.stringify(p) }, geometry: { type: 'Point', coordinates: [p.lon, p.lat] } })),
         });
-    }
-    // The freehand stroke in progress (null clears it).
-    setSketch(pts) {
-        if (!this.map || !this.ready) return;
-        this.map.getSource('rb-sketch').setData(pts && pts.length > 1 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: pts.map((p) => [p.lon, p.lat]) } } : this._empty());
     }
     // Green overlay for an in-progress "adjust" sub-track (keeps the base track visible).
     setOverlay(pts) {

@@ -15,7 +15,7 @@ Abre **Editor** (`/editor/`). La landing (`#loadFrom`) ofrece 4 tarjetas + 2 fue
 | Fuente | Cómo hacerlo | Qué obtienes |
 |----------|-----------|--------------|
 | **GPX** | Tap "GPX" → elige archivo `.gpx` (opcional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook con trazada + waypoint |
-| **Dibujar en el mapa** | Tap "Dibujar en el mapa" | Mapa en modo **Dibujar**: pulsa y arrastra sobre el mapa para trazar la ruta — el primer trazo crea el roadbook desde cero |
+| **Dibujar en el mapa** | Tap "Dibujar en el mapa" | Mapa en modo **Dibujar**: toca el mapa para añadir la ruta punto a punto — los dos primeros taps crean el roadbook desde cero |
 | **.rdbk** | Tap ".rdbk" → elige archivo ZIP/JSON | Importa roadbook completo (media en `pendingMedia`, ver abajo) |
 | **Roadbook público** | Tap "Roadbook público" → picker de challenge | **Fork** de un roadbook `public` + `reusable` → nuevo roadbook privado tuyo |
 
@@ -43,18 +43,11 @@ El mapa es el corazón. Tiene dos barras:
 |------|-------|---------|
 | **Mover** (por defecto) | `M` | Arrastra **cualquier punto**: punto de trazada, nota o foto. La línea sigue. Métricas recalculadas al soltar |
 | **Añadir notas** | `N` | Tap sobre la ruta → coloca una nota ahí. El modo sigue activo, así puedes colocar varias seguidas |
-| **Añadir puntos** | `P` | Tap **sobre** la ruta → inserta un punto en ese tramo. Tap **lejos** de la ruta → la extiende desde su extremo abierto más cercano (salida, llegada o borde de un corte abierto). Sin nada cargado, dos taps empiezan una ruta nueva |
-| **Dibujar** | `D` | A mano alzada: pulsa y arrastra sobre el mapa. Al soltar, el trazo se limpia en una línea suave y profesional (sin temblores, curvas redondeadas, rectas rectas) |
+| **Añadir puntos** | `P` | Tap sobre la ruta existente → inserta un punto en ese tramo. Necesita una ruta |
+| **Dibujar** | `D` | Cada tap añade un punto **nuevo** y extiende la ruta desde su extremo abierto más cercano (salida, llegada o borde de un corte abierto); tocar el borde opuesto de un corte lo cierra. Sin nada cargado, los dos primeros taps crean el roadbook |
 | **Cortar** | `C` | Menú ☰ → Cortar (aparece en la barra de modos solo mientras está activo). Tap 2 puntos → corta (deja hueco = *gap*) |
 
-Tocar de nuevo el modo activo vuelve a **Mover**; `Esc` también.
-
-#### Adónde va un trazo dibujado
-
-- **Un extremo empieza en un extremo abierto** de la ruta (salida, llegada, borde de un corte abierto) → la ruta se extiende desde ahí; llegar al borde opuesto de un corte lo cierra
-- **Ambos extremos tocan la ruta** → el trazo sustituye el tramo de ruta entre esos dos puntos. Si hay notas dentro de ese tramo, el Editor pregunta antes y las nombra
-- **En otro caso** → no cambia nada y una pista explica cómo dibujar
-- **Nada cargado** → el primer trazo crea el roadbook
+Tocar de nuevo el modo activo vuelve a **Mover**; `Esc` también. Arrastrar siempre desplaza el mapa, en todos los modos.
 
 ### Menú ☰
 
@@ -98,7 +91,7 @@ Las mismas letras valen en el menú del clic derecho y sobre un punto de trazada
 
 Un corte interno deja un **hueco real** (no un segmento). Almacenado como par de **puntos** `{a,b}` (no índices) → sobrevive a desplazamientos de índice.
 
-- **Rellena**: dibuja encima o extiende con Añadir puntos (llegar al borde opuesto cierra el gap)
+- **Rellena**: toca con Dibujar desde un borde del corte (tocar el borde opuesto cierra el gap)
 - **Cierra en recta**: al export/save → `confirmOpenCuts` pide confirmación → cierra como línea recta
 - `resolveGaps()` los resuelve en índices bajo demanda
 
