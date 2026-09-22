@@ -159,7 +159,7 @@
         $('codeBox').hidden = !showCode;
         if (!showCode) return;
         $('joinCodeOut').textContent = ev.join_code;
-        const url = RBEventLink(ev.join_code);
+        const url = RB.eventLink(ev.join_code);
         $('evLinkUrl').textContent = url; $('evLinkUrl').href = url;
         try { RBQr.draw($('evQrCode'), url); } catch (e) { $('evQrCode').hidden = true; }
     }
