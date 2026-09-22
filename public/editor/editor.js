@@ -1361,7 +1361,7 @@
     $('deleteRb').onclick = async () => {
         if (!(currentRbId > 0)) return;
         const title = (rb && rb.meta && rb.meta.title) || 'Untitled';
-        if (!(await RBConfirmDanger(t('Delete roadbook') + ' “' + esc(title) + '”?'))) return;
+        if (!(await RBConfirmTrash(title))) return;
         const r = await RBApi('rb_delete', { id: currentRbId });
         if (r.ok) { clearDraft(); location.href = '../myroadbooks/'; }
         else toast(r.error || 'Could not delete.');

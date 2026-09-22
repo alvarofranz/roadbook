@@ -143,13 +143,15 @@ function admin_users(array $user, array $d = []): void {
         'mustchange' => (int)$r['must_change_password'],
         'blocked'    => (int)$r['blocked'],
         'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete
+        'system'     => $r['username'] === GRAVEYARD_USERNAME ? 1 : 0, // the deleted-user account: no actions (#702)
         'roadbooks'  => $rbCount[(int)$r['id']] ?? 0,
         'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),
         'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
         'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
         'created_at' => $r['created_at'],
     ], $rows);
-    json_out(['ok' => true, 'me' => (int)$user['id'], 'users' => $users]);
+    // me_super: whether the caller may act on other admins (admin_target) — the UI hides what the server would refuse
+    json_out(['ok' => true, 'me' => (int)$user['id'], 'me_super' => is_locked_admin((string)$user['email']) ? 1 : 0, 'users' => $users]);
 }
 
 // Admin: every user with a default map location, for the locations map (#499).
@@ -308,8 +310,6 @@ function admin_trash_list(array $user): void {
     json_out(['ok' => true, 'trash_days' => TRASH_DAYS, 'roadbooks' => $list]);
 }
 
-// Restore a trashed roadbook → it comes back as a private DRAFT (its prior published state is
-// not remembered, and restoring must never silently re-publish). Owner unchanged.
 // Admin: move ANY live roadbook to the trash (#237) — the moderation counterpart of the
 // owner's rb_delete, and the only way to trash a graveyard-owned roadbook (its "owner" can
 // never log in). Same lifecycle as every trashed roadbook: restore or 30-day purge.
@@ -323,14 +323,25 @@ function admin_rb_trash(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 
+// Restore a trashed roadbook → it comes back as a private DRAFT (its prior published state is
+// not remembered, and restoring must never silently re-publish). With `user_id` it is handed to
+// that user in the same step (#703): a restore that half-succeeds would leave a draft owned by
+// the deleted-user account, out of everyone's reach.
 function admin_rb_restore(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
+    $to = (int)($d['user_id'] ?? 0);
     $st = db()->prepare('SELECT status FROM roadbooks WHERE id = ?'); $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
     if ($row['status'] !== 'deleted') fail('That roadbook is not in the trash.');
+    if ($to > 0) {
+        $tu = db()->prepare('SELECT username FROM users WHERE id = ?'); $tu->execute([$to]);
+        $target = $tu->fetch();
+        if (!$target || $target['username'] === GRAVEYARD_USERNAME) fail('Target user not found.', 404);
+    }
     db()->prepare("UPDATE roadbooks SET status = 'draft' WHERE id = ?")->execute([$id]);
-    log_activity((int)$user['id'], 'admin_rb_restore', 'roadbook #' . $id);
+    if ($to > 0) move_roadbook_owner($id, $to);
+    log_activity((int)$user['id'], 'admin_rb_restore', 'roadbook #' . $id . ($to > 0 ? ' → user #' . $to : ''));
     json_out(['ok' => true, 'id' => $id]);
 }
 
@@ -349,22 +360,33 @@ function admin_rb_purge(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $id]);
 }
 
-// Bulk-delete everything past retention (#505): same row-first + file purge as admin_rb_purge,
-// in bounded batches so one click cannot time out. Returns what went plus what is left (the
-// caller offers another round while remaining > 0). Never touches roadbooks inside retention.
+// One batch of the trash past retention, hard-deleted — row first (it cascades to the photo and
+// audio rows), then the files. Shared by the cron and the admin's "empty expired" button. A
+// trashed row is never updated again (see admin_move_roadbook), so `updated_at` is when it was
+// trashed. Returns how many went and the first ids, for the audit trail.
+function purge_expired_trash(int $limit): array {
+    $rows = db()->query("SELECT id, user_id, filename FROM roadbooks
+        WHERE status = 'deleted' AND updated_at < (NOW() - INTERVAL " . TRASH_DAYS . " DAY) LIMIT " . max(1, $limit))->fetchAll();
+    $ids = [];
+    foreach ($rows as $r) {
+        db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([(int)$r['id']]);
+        purge_roadbook_files((int)$r['id'], (int)$r['user_id'], (string)$r['filename']);
+        $ids[] = (int)$r['id'];
+    }
+    return ['deleted' => count($ids), 'ids' => array_slice($ids, 0, 30)]; // the audit detail caps at 255 chars
+}
+
+// Bulk-delete everything past retention (#505), in bounded batches so one click cannot time out.
+// Returns what went plus what is left (the caller offers another round while remaining > 0).
+// Never touches roadbooks inside retention.
 function admin_trash_purge_expired(array $user): void {
     $deleted = 0;
     $ids = [];
     for ($round = 0; $round < 5; $round++) {
-        $rows = db()->query("SELECT id, user_id, filename FROM roadbooks
-            WHERE status = 'deleted' AND updated_at < (NOW() - INTERVAL " . TRASH_DAYS . " DAY) LIMIT 200")->fetchAll();
-        if (!$rows) break;
-        foreach ($rows as $r) {
-            db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([(int)$r['id']]);
-            purge_roadbook_files((int)$r['id'], (int)$r['user_id'], (string)$r['filename']);
-            $deleted++;
-            if (count($ids) < 30) $ids[] = (int)$r['id']; // audit trail (detail caps at 255 chars)
-        }
+        $batch = purge_expired_trash(200);
+        if (!$batch['deleted']) break;
+        $deleted += $batch['deleted'];
+        $ids = array_slice(array_merge($ids, $batch['ids']), 0, 30);
     }
     $left = (int)db()->query("SELECT COUNT(*) FROM roadbooks
         WHERE status = 'deleted' AND updated_at < (NOW() - INTERVAL " . TRASH_DAYS . " DAY)")->fetchColumn();
@@ -372,25 +394,40 @@ function admin_trash_purge_expired(array $user): void {
     json_out(['ok' => true, 'deleted' => $deleted, 'remaining' => $left]);
 }
 
-// Admin: reassign a roadbook to another user. The .rdbk file is the only owner-scoped file
-// (it lives under storage/<user_id>/) so it's moved between the two dirs; photos and audio are
-// keyed by roadbook id, so they stay put, and the disk quota is recomputed per user (#126).
+// Admin: reassign a live roadbook to another user.
+// A trashed roadbook is refused (#703): moving it would bump `updated_at` and silently restart its
+// retention clock — restore it to the new owner instead (admin_rb_restore with user_id).
 function admin_move_roadbook(array $user, array $d): void {
-    global $CFG;
     $id = (int)($d['id'] ?? 0);
     $to = (int)($d['user_id'] ?? 0);
     if ($id <= 0 || $to <= 0) fail('Bad request.');
-    $st = db()->prepare('SELECT user_id, filename FROM roadbooks WHERE id = ?');
+    $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
+    if ($row['status'] === 'deleted') fail('That roadbook is in the trash — restore it to a user instead.');
     $from = (int)$row['user_id'];
     if ($to === $from) { json_out(['ok' => true, 'id' => $id]); return; }
-    $tu = db()->prepare('SELECT id FROM users WHERE id = ?'); $tu->execute([$to]);
-    if (!$tu->fetch()) fail('Target user not found.', 404);
-    // The row is the source of truth: reassign the owner FIRST, then move the file — if the
-    // rename fails the row already points at the new owner and the file is recoverable by
-    // hand, never a row whose owner's dir no longer holds the file.
+    $tu = db()->prepare('SELECT username FROM users WHERE id = ?'); $tu->execute([$to]);
+    $target = $tu->fetch();
+    if (!$target || $target['username'] === GRAVEYARD_USERNAME) fail('Target user not found.', 404);
+    move_roadbook_owner($id, $to);
+    log_activity((int)$user['id'], 'admin_move_roadbook', 'roadbook #' . $id . ' user #' . $from . ' → #' . $to);
+    json_out(['ok' => true, 'id' => $id]);
+}
+// Hand a roadbook to another owner. The .rdbk file is the only owner-scoped file (it lives under
+// storage/<user_id>/), so it moves between the two dirs; photos and audio are keyed by roadbook
+// id and stay put, and the disk quota is recomputed per user (#126). The row is the source of
+// truth: the owner changes FIRST, then the file moves — if the rename fails the row already points
+// at the new owner and the file is recoverable by hand, never a row whose owner's dir no longer
+// holds the file.
+function move_roadbook_owner(int $id, int $to): void {
+    global $CFG;
+    $st = db()->prepare('SELECT user_id, filename FROM roadbooks WHERE id = ?');
+    $st->execute([$id]);
+    $row = $st->fetch();
+    $from = (int)$row['user_id'];
+    if ($from === $to) return;
     db()->prepare('UPDATE roadbooks SET user_id = ? WHERE id = ?')->execute([$to, $id]);
     $fn = (string)$row['filename'];
     if ($fn !== '' && $fn !== 'pending') { // a draft recording with no real file yet has nothing to move
@@ -401,16 +438,28 @@ function admin_move_roadbook(array $user, array $d): void {
             @rename($src, $dstDir . '/' . $fn);
         }
     }
-    log_activity((int)$user['id'], 'admin_move_roadbook', 'roadbook #' . $id . ' user #' . $from . ' → #' . $to);
-    json_out(['ok' => true, 'id' => $id]);
+}
+
+// Who an admin action may touch (#702). The deleted-user system account holds the roadbooks of
+// deleted users and never signs in, so nothing changes it — renamed, it would even break every
+// later user deletion. Another admin, and above all a configured superuser (.env), is changed only
+// by a superuser: otherwise any admin could reset the superuser's password, move its email out of
+// ADMIN_EMAILS, or block, delete and demote the other admins.
+function admin_target(array $user, int $id): array {
+    $st = db()->prepare('SELECT id, email, username, is_admin FROM users WHERE id = ?');
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    if ($row['username'] === GRAVEYARD_USERNAME) fail("The deleted-user system account can't be changed.");
+    $self = (int)$row['id'] === (int)$user['id'];
+    if (!$self && is_admin($row) && !is_locked_admin((string)$user['email'])) fail('Only a configured superuser can change another admin.', 403);
+    return $row;
 }
 
 // Force-activate an account (e.g. the user never clicked the verification email).
 function admin_verify(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT id FROM users WHERE id = ?');
-    $st->execute([$id]);
-    if (!$st->fetch()) fail('Not found.', 404);
+    admin_target($user, $id);
     db()->prepare('UPDATE users SET email_verified = 1, verify_token = NULL, verify_expires = NULL WHERE id = ?')->execute([$id]);
     log_activity((int)$user['id'], 'admin_verify', 'user #' . $id);
     json_out(['ok' => true]);
@@ -421,10 +470,7 @@ function admin_block(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $blocked = !empty($d['blocked']) ? 1 : 0;
     if ($id === (int)$user['id']) fail("You can't block yourself.");
-    $st = db()->prepare('SELECT email FROM users WHERE id = ?');
-    $st->execute([$id]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    $row = admin_target($user, $id);
     if ($blocked && is_locked_admin($row['email'])) fail("Can't block a configured superuser.");
     db()->prepare('UPDATE users SET blocked = ? WHERE id = ?')->execute([$blocked, $id]);
     log_activity((int)$user['id'], $blocked ? 'admin_block' : 'admin_unblock', 'user #' . $id);
@@ -432,24 +478,28 @@ function admin_block(array $user, array $d): void {
 }
 
 // Edit a user's identity; an optional new password forces a change at their next login.
+// Everything is validated BEFORE anything is written: a refused password must not leave the
+// identity half-saved (#702).
 function admin_update_user(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     if ($id <= 0) fail('Bad request.');
+    admin_target($user, $id);
     $first = trim((string)($d['first_name'] ?? ''));
     $last  = trim((string)($d['last_name'] ?? ''));
     $username = trim((string)($d['username'] ?? ''));
     $email = strtolower(trim((string)($d['email'] ?? '')));
+    $pw = (string)($d['password'] ?? '');
     if ($first === '' || $last === '') fail('First and last name are required.');
     if (!preg_match('/^[a-zA-Z0-9_.-]{3,40}$/', $username)) fail('Username must be 3–40 chars (letters, numbers, _ . -).');
+    if (strcasecmp($username, GRAVEYARD_USERNAME) === 0) fail('That username or email is already in use.'); // reserved for the system account
     if (!valid_email($email)) fail('Please enter a valid email.');
+    if ($pw !== '' && strlen($pw) < 8) fail('Password must be at least 8 characters.');
     $st = db()->prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND id <> ?');
     $st->execute([$username, $email, $id]);
     if ($st->fetch()) fail('That username or email is already in use.');
     db()->prepare('UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ? WHERE id = ?')
         ->execute([$first, $last, $username, $email, $id]);
-    $pw = (string)($d['password'] ?? '');
     if ($pw !== '') {
-        if (strlen($pw) < 8) fail('Password must be at least 8 characters.');
         db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $id]);
     }
     // Disk-quota override (#99): empty → NULL (use the default), a value → bytes the client computed
@@ -476,10 +526,7 @@ function admin_update_user(array $user, array $d): void {
 // or is_admin (with the self/superuser guards).
 function admin_set_role(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $st = db()->prepare('SELECT email FROM users WHERE id = ?');
-    $st->execute([$id]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    $row = admin_target($user, $id);
     if (array_key_exists('is_organizer', $d)) {
         $on = !empty($d['is_organizer']);
         db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([$on ? 1 : 0, $id]);
@@ -517,12 +564,8 @@ function admin_create_user(array $user, array $d): void {
 function admin_delete_user(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     if ($id === (int)$user['id']) fail('Use your profile to delete your own account.');
-    $st = db()->prepare('SELECT email, username FROM users WHERE id = ?');
-    $st->execute([$id]);
-    $row = $st->fetch();
-    if (!$row) fail('Not found.', 404);
+    $row = admin_target($user, $id);
     if (is_locked_admin($row['email'])) fail("Can't delete a configured superuser.");
-    if ($row['username'] === GRAVEYARD_USERNAME) fail("Can't delete the deleted-user system account.");
     reassign_roadbooks_to_graveyard($id, (string)$row['username']); // the roadbooks live on (#234)
     $rbIds = user_roadbook_ids($id); // whatever is left (nothing) — collected BEFORE the cascade
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]); // photos/api_tokens/activity_log rows go via cascade
@@ -548,7 +591,7 @@ function admin_activity(array $user, array $d): void {
         $like = '%' . $q . '%';
         $args[] = $like; $args[] = $like;
     }
-    $rc = db()->prepare('SELECT COUNT(*) FROM roadbooks WHERE user_id = ?');
+    $rc = db()->prepare("SELECT COUNT(*) FROM roadbooks WHERE user_id = ? AND status <> 'deleted'"); // same count as the user list (#705)
     $rc->execute([$id]);
     $tc = db()->prepare("SELECT COUNT(*) FROM activity_log WHERE $where");
     $tc->execute($args);

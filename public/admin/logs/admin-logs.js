@@ -25,7 +25,7 @@
     }
     async function loadCron() {
         const r = await RBApi('admin_logs');
-        if (!r.ok) return;
+        if (!r.ok) { $('logCron').textContent = t(r.error === 'Network error.' ? 'You are offline — reconnect to load this page.' : (r.error || 'Could not load.')); return; } // said, not silent (#705)
         $('logCron').textContent = r.cron || t('No cron log yet.');
         const h = cronHealth(r.cron, r.now);
         const el = $('cronHealth');

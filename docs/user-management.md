@@ -45,6 +45,16 @@ salvavita del proprietario: restano admin anche se "rimossi" dal pannello, e **n
 essere declassati, bloccati o eliminati** (controllo `locked` nelle azioni admin). Questo
 evita di restare chiusi fuori dal proprio sito.
 
+**Chi può toccare chi (#702).** Ogni azione che modifica un utente passa da `admin_target()`:
+- l'account di sistema **`deleted-user`** non si modifica mai (rinominato romperebbe ogni
+  eliminazione successiva);
+- **un altro admin** — e a maggior ragione un superuser `.env` — lo modifica solo un
+  **superuser**: altrimenti qualunque admin potrebbe resettare la password del superuser,
+  spostarne l'email fuori da `ADMIN_EMAILS`, o bloccare/eliminare/declassare gli altri admin.
+
+`admin_users` restituisce `system` per riga e `me_super` per chi chiama, così la UI nasconde
+esattamente ciò che il server rifiuterebbe.
+
 Il gate delle API admin è `require_admin()` (app/auth.php): richiede sessione valida **e**
 admin effettivo, altrimenti `403`.
 
@@ -104,17 +114,18 @@ Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel r
 | `admin_create` | `admin_create_user()` | crea un nuovo account (verificato subito, con `must_change_password`) |
 | `admin_delete` | `admin_delete_user()` | elimina utente + file personali; i roadbook passano a `deleted-user` (#234); rifiuta su superuser `.env`, su se stessi e sull'account di sistema |
 | `admin_activity` | `admin_activity()` | timeline attività dell'utente (#86, IP anonimizzati) |
-| `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126) |
+| `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126; rifiuta un roadbook nel cestino, #703) |
 | `admin_roadbooks` / `admin_unpublish` | — | moderazione dei roadbook pubblici |
 | `admin_settings` / `admin_save_settings` / `admin_logs` / `admin_activity_log` | — | banner del sito + log operativi (#103/#86) |
-| `admin_trash_list` / `admin_rb_trash` / `admin_rb_restore` / `admin_rb_purge` | — | cestino roadbook: elenca, cestina, ripristina, elimina permanentemente (#187) |
+| `admin_trash_list` / `admin_rb_trash` / `admin_rb_restore` / `admin_rb_purge` | — | cestino roadbook: elenca, cestina, ripristina (con `user_id` lo consegna a quell'utente nello stesso passo, #703), elimina permanentemente (#187) |
 
 Dettagli rilevanti:
 
-- **`admin_update_user`** ([app/admin.php](../app/admin.php)): valida username/email (unici,
-  formato), aggiorna l'identità, e **se** è fornita una password (≥8 char) imposta il nuovo
-  hash con `must_change_password = 1`. La password è quindi *temporanea*: serve solo per il
-  primo accesso.
+- **`admin_update_user`** ([app/admin.php](../app/admin.php)): valida **tutto prima di
+  scrivere** (username/email unici e nel formato, username riservato, password ≥8 char) — un
+  errore non lascia l'identità salvata a metà (#702); poi aggiorna l'identità e, **se** è
+  fornita una password, imposta il nuovo hash con `must_change_password = 1`. La password è
+  quindi *temporanea*: serve solo per il primo accesso.
 - **`admin_block`**: imposta `blocked`. Non puoi bloccare te stesso né un superuser `.env`.
 - **Eliminazione dati.** Le funzioni di cleanup file (`purge_user_files`, `user_roadbook_ids`,
   `user_disk_bytes`, `dir_size`, `rrmdir`) vivono in admin.php. L'ordine è: si raccolgono
@@ -174,10 +185,13 @@ pagina (badge, azioni per riga).
   amministratori".
 - **`load()`**: `admin_users` → render della tabella; ogni riga ha i pulsanti contestuali
   cablati a `data-*` (`data-role`, `data-verify`, `data-block`, `data-edit`, `data-del`).
-- **`rowHtml(u)`**: badge `admin` / `blocked` / `must change password` / `unverified`;
-  pulsanti **Activate** (solo se non verificato), **Edit**, **Make/Remove admin**,
-  **Block/Unblock**, **Delete**. Il superuser `.env` mostra il badge `superuser` e nasconde
-  le azioni distruttive; le azioni su se stessi sono nascoste.
+- **`rowHtml(u)`**: badge in un solo stile nell'area del nome — *System account* · *Superuser*
+  / *Admin* · *Organizer* · *Blocked* · *Must change password* · *Unverified*; pulsanti
+  **Activate** (solo se non verificato), **Edit**, **Activity**, **Roadbooks**,
+  **Block/Unblock**, **Delete** — solo quelli che il server accetta da chi guarda (#702):
+  nessuno sull'account di sistema, e su un altro admin solo per un superuser. Il ruolo
+  organizer si imposta nel dialogo Edit, una volta sola (#707). Sotto i 640 px ogni utente è
+  una card (#706).
 - **`editUser(u)`**: apre un `RBModal` (classe `narrow`) con i campi identità + una password
   temporanea opzionale; usa le classi condivise `.field` / `.field-label` / `.hint`. Al salva
   chiama `admin_update`.

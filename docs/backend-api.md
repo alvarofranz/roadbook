@@ -83,7 +83,7 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
 | `activity_mine` | Timeline attività **proprie** dell'utente loggato, paginata + cercabile (#448) | richiesta |
-| `rb_trash_list` / `rb_restore` | Il proprio cestino + ripristino a draft (#238) | richiesta |
+| `rb_trash_list` / `rb_restore` / `rb_purge` | Il proprio cestino, ripristino a draft (#238), eliminazione definitiva immediata dal cestino (#704) | richiesta |
 | `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`/`de`/`fr`) | richiesta |
 | `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)) | richiesta |
 | `change_email` / `verify_email_change` | Cambio email con ri-verifica (`pending_email` + link) / conferma dal link | richiesta / nessuna |
@@ -304,8 +304,11 @@ vecchio flag binario `is_public`. La migrazione 029 (#187) aggiunge lo stato **`
   pagina admin **`/admin/trash/`** lo elenca, può ripristinarlo (`admin_rb_restore` → torna
   `draft`) o eliminarlo subito (`admin_rb_purge`, riga+file). Il cron lo purga dopo 30gg
   (`cron/purge-trashed-roadbooks.php`, slot 2 del round-robin; `updated_at` = quando è stato
-  cestinato). Il cestino è visibile anche al **proprietario** (#238): `rb_trash_list` +
-  `rb_restore` (→ draft) in *My roadbooks*; un admin può inoltre cestinare **qualsiasi**
+  cestinato; cron e pulsante admin usano la stessa `purge_expired_trash()`, #703). Il cestino
+  è visibile anche al **proprietario** (#238): `rb_trash_list` + `rb_restore` (→ draft) in
+  *My roadbooks*, e `rb_purge` per eliminare subito e per sempre un proprio roadbook già nel
+  cestino (#704) — le due pagine disegnano la stessa riga e fanno le stesse domande
+  (`RBTrashRowHTML` / `RBConfirmTrash` / `RBConfirmPurge`); un admin può inoltre cestinare **qualsiasi**
   roadbook con `admin_rb_trash` (#237 — moderazione, e unico modo di cestinare quelli del
   graveyard). La cancellazione **account/utente** elimina subito profilo e file personali
   (avatar incluso); i roadbook passano all'account di sistema **`deleted-user`** (#234 —
