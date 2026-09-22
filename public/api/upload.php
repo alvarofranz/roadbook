@@ -64,9 +64,11 @@ if ($type === 'event_logo') {
     if (!is_dir($CFG['event_logos_dir'])) mkdir($CFG['event_logos_dir'], 0755, true);
     $dest = $CFG['event_logos_dir'] . '/' . (int)$e['id'] . '.avif';
     if (!process_to_avif($tmp, $dest, 512, false, 55)) fail('Could not process the image.');
-    $url = '/event-logos/' . (int)$e['id'] . '.avif';
+    // the file keeps its name, so the stored URL carries the upload time: every page then shows
+    // the new logo at once and caches it normally, instead of busting the cache on each render (#588)
+    $url = '/event-logos/' . (int)$e['id'] . '.avif?v=' . time();
     db()->prepare('UPDATE events SET logo = ? WHERE id = ?')->execute([$url, (int)$e['id']]);
-    json_out(['ok' => true, 'logo' => $url . '?v=' . time()]);
+    json_out(['ok' => true, 'logo' => $url]);
 }
 
 if ($type === 'photo') {

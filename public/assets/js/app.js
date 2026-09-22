@@ -534,7 +534,7 @@
     window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
     // Set SEO meta at runtime for the public dynamic pages (challenge, event): title + description
     // + canonical, keeping the og:/twitter: mirrors in sync. Creates any missing tag; skips nulls.
-    window.RBSetMeta = ({ title, description, canonical }) => {
+    window.RBSetMeta = ({ title, description, canonical, robots }) => {
         const meta = (key, kind) => {
             let el = document.head.querySelector(`meta[${kind}="${key}"]`);
             if (!el) { el = document.createElement('meta'); el.setAttribute(kind, key); document.head.appendChild(el); }
@@ -545,6 +545,7 @@
             meta('og:title', 'property').setAttribute('content', title);
             meta('twitter:title', 'name').setAttribute('content', title);
         }
+        if (robots != null) meta('robots', 'name').setAttribute('content', robots);
         if (description != null) {
             meta('description', 'name').setAttribute('content', description);
             meta('og:description', 'property').setAttribute('content', description);
@@ -993,6 +994,12 @@
         return { ok: false, offline: true, user };
     };
     window.RBIsParticipant = isParticipant;
+    // Drop the client-side participant flag (the server context is cleared by the API call that
+    // ends it: leave_participant_mode, event_leave). One place, so every exit clears the same.
+    window.RBLeaveParticipantMode = () => {
+        document.cookie = 'rb_participant=; max-age=0; path=/';
+        try { localStorage.removeItem('rb_participant'); } catch (e) {}
+    };
     // The native bridge (RBNative) loads async after app.js — wait for it briefly so a tap
     // that lands right after startup still reaches the native capability. Resolves with
     // RBNative, or null when it never arrives (or outside the app). (#250)
@@ -1141,8 +1148,7 @@
         on('AppInfo', () => { closeMenu(); showAppInfo(); });
         on('Leave', async () => {
             await RBApi('leave_participant_mode');
-            document.cookie = 'rb_participant=; max-age=0; path=/';
-            try { localStorage.removeItem('rb_participant'); } catch (e) {}
+            RBLeaveParticipantMode();
             location.href = ROOT;
         });
     }

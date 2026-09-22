@@ -542,7 +542,7 @@ function events_public_list(): void {
         WHERE e.is_public = 1
         GROUP BY e.id ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
     json_out(['ok' => true, 'events' => array_map(fn($r) => [
-        'slug' => $r['slug'], 'title' => $r['title'], 'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'],
+        'slug' => $r['slug'], 'title' => $r['title'], 'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'], 'ended' => event_ended($r),
         'logo' => $r['logo'], 'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'],
     ], $rows)]);
 }
