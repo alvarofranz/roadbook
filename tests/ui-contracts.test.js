@@ -983,8 +983,10 @@ describe('changing the roadbook default offers to apply it to every note (#532)'
     const handler = editor.match(/\$\('cfgWpRadius'\)\.onchange = async \(e\) => \{([\s\S]*?)\n {4}\};/)[1];
 
     it('asks before rewriting radii the author set by hand', () => {
-        expect(handler).toContain("RBConfirm(t('Also replace all current notes in this roadbook to {v} m?')");
+        expect(handler).toContain("RBConfirm(t('Set every note’s radius to {v} m? {n} notes have their own.')");
         expect(handler).toContain("replace('{v}', v)");
+        // asked only when some note would actually change (#701)
+        expect(handler).toContain('const differing = rb.notes.filter((n) => n.wp_radius != null && n.wp_radius !== v).length;');
     });
 
     it('never touches a note without a Yes', () => {
@@ -1003,7 +1005,7 @@ describe('changing the roadbook default offers to apply it to every note (#532)'
     it('is translated everywhere', () => {
         for (const lang of ['es', 'it', 'de', 'fr']) {
             const dict = read(`public/assets/js/i18n.${lang}.js`);
-            expect(dict, lang).toContain("'Also replace all current notes in this roadbook to {v} m?':");
+            expect(dict, lang).toContain('"Set every note’s radius to {v} m? {n} notes have their own.":');
             expect(dict, lang).toContain('{v}');           // the number survives the translation
             expect(dict, lang).toContain("'Every note now validates at this radius.':");
         }

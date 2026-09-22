@@ -86,7 +86,7 @@ describe('the editor edits a note, or the material around it (#542)', () => {
 
     it('a picture is downscaled by its own type, and a file it cannot read says so', () => {
         expect(editorJs).toContain('RBImg.toDataURL(f, kind.imageMax)');
-        expect(editorJs).toContain("toast('Could not read that image.')");
+        expect(editorJs).toContain("toast('Could not read the image.')"); // one message per meaning (#700)
     });
 
     it('the rows show the material where it will be read', () => {
