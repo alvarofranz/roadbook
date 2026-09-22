@@ -70,7 +70,7 @@ Then choose the **mode**:
 1. **Odometer bar** (sticky at top): title, total, partial, CAP compass, time, GPS status, battery
 2. **Note table**: each note on a row with distance, tulip vignette, text, CAP, road type
 3. **Note states**: ✅ Reached (green) · ⏭ Skipped (pink) · ▶ Active (red border) · white (future). The active note also turns **blue as you close in on it**, and shows the metres still to run
-4. **Columns**: Distances + number | Vignette | Directions | Buttons (map, reached)
+4. **Columns**: Distances + number | Vignette | Directions — the whole active row is what you tap to validate
 
 ---
 
@@ -116,7 +116,7 @@ It's a "compass" aid to navigate between two notes without getting lost.
 
 ## 6. Interactive map per note
 
-Optional: tap the map button of a row to open a mini-map under the note.
+Optional (only when the roadbook allows the map): the map button in the bottom bar opens a mini-map under the active note; tap it again to close it.
 
 - Centered on the note at zoom ~13
 - Shows the whole track + pins for context

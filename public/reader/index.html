@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-85">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-86">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-85">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-86">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -148,10 +148,11 @@
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind end"><i class="fa-solid fa-gauge-high"></i> <span id="odoSpeed">—</span></span>
     </div>
-    <!-- 3-column note rows: distances | graphic | indications + coords -->
+    <!-- 3-column note rows: distances | graphic | indications + coords (no buttons column, #569) -->
     <div id="noteList"></div>
     <nav class="fabrow">
         <button class="btn btn-ghost rb-switch on" id="autoBtn" role="switch" aria-checked="true" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> <span data-i18n="Auto">Auto</span> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
+        <button class="btn btn-ghost" id="mapBtn" hidden aria-pressed="false" title="Note map" data-i18n-title="Note map" aria-label="Note map" data-i18n-aria="Note map"><i class="fa-solid fa-map-location-dot"></i></button>
         <button class="btn btn-ghost" id="pauseBtn" title="Pause" data-i18n-title="Pause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
         <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i> GPX</button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
@@ -164,7 +165,6 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
         <h2 id="modeTitle" data-i18n="How will you use it?">How will you use it?</h2>
         <div class="opt-row">
-            <label class="checkbox-row" id="optMapRow"><input type="checkbox" id="optMap" checked> <span data-i18n="Show map button per note">Show map button per note</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
             <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
             <!-- External remote (#20): a Bluetooth pedal / clicker pairs as a keyboard, so advancing
@@ -215,24 +215,24 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-85"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-85"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-85"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-85"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.2-85"></script>
-<script src="../assets/js/status-bar.js?v=1.9.2-85"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.2-85"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.2-85"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-85"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.2-85"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.2-85"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-85"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-85"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-85"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-85"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-85"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-85"></script>
-<script src="../assets/js/app.js?v=1.9.2-85"></script>
-<script src="reader.js?v=1.9.2-85"></script>
+<script src="../assets/js/config.js?v=1.9.2-86"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-86"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-86"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-86"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.2-86"></script>
+<script src="../assets/js/status-bar.js?v=1.9.2-86"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.2-86"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.2-86"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-86"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.2-86"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.2-86"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-86"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-86"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-86"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-86"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-86"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-86"></script>
+<script src="../assets/js/app.js?v=1.9.2-86"></script>
+<script src="reader.js?v=1.9.2-86"></script>
 </body>
 </html>

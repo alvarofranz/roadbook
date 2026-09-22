@@ -70,7 +70,7 @@ Dann wählst du den **Modus**:
 1. **Odometer-Leiste** (sticky oben): Titel, Gesamt, Teil, CAP-Kompass, Uhrzeit, GPS-Status, Akku
 2. **Notiz-Tabelle**: jede Note in einer Zeile mit Distanz, Tulpen-Vignette, Text, CAP, Straßentyp
 3. **Notiz-Zustände**: ✅ Raggiunta (erreicht, grün) · ⏭ Saltata (übersprungen, rosa) · ▶ Attiva (aktiv, roter Rand) · weiß (zukünftig). Die aktive Note wird zudem **blau, während du dich näherst**, und zeigt die verbleibenden Meter
-4. **Spalten**: Distanzen + Nummer | Vignette | Indicazioni | Buttons (Karte, erreicht)
+4. **Spalten**: Distanzen + Nummer | Vignette | Hinweise — zum Validieren tippt man die ganze aktive Zeile an
 
 ---
 
@@ -116,7 +116,7 @@ Es ist eine „Kompass"-Hilfe, um zwischen zwei Notizen zu navigieren, ohne sich
 
 ## 6. Interaktive Karte pro Note
 
-Optional: Tap auf den Karten-Button einer Zeile öffnet eine Mini-Karte unter der Note.
+Optional (nur wenn das Roadbook die Karte erlaubt): der Karten-Button in der unteren Leiste öffnet eine Mini-Karte unter der aktiven Note; ein weiterer Tap schließt sie.
 
 - Zentriert auf die Note bei Zoom ~13
 - Zeigt die gesamte Spur + Pin für Kontext
