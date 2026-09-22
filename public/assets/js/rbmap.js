@@ -161,7 +161,7 @@ window.RBMap = class RBMap {
     // Re-apply the last known position once the map can actually draw it.
     _replayPosition() { const p = this._lastPos; if (p) this.setPosition(p.lat, p.lon, p.follow, p.heading); }
     // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
-    setHeadingUp(on) { this._headingUp = !!on; if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); }
+    setHeadingUp(on) { this._headingUp = !!on; this._replayPosition(); if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); } // the replay re-anchors the chevron
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
     _terrain() {
@@ -226,18 +226,20 @@ window.RBMap = class RBMap {
         // a plain dot when the course is unknown (e.g. the Editor); a chevron otherwise
         this.map.getSource('rb-pos').setData(hasHeading ? this._empty()
             : { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] } });
+        // Course-up (#565): the chevron is YOU going forward, so it is pinned straight up on the
+        // screen and the map turns under it — while the map is still easing to a new course the
+        // two can never disagree. North-locked, it is anchored to map space and shows the course.
+        const courseUp = follow && hasHeading && this._headingUp;
         if (hasHeading) {
             if (!this._posArrow) {
                 const el = document.createElement('div');
                 el.className = 'rb-pos-arrow';
-                // rotationAlignment 'map' anchors the chevron to map space, so it reads as
-                // "up" under heading-up and points to the true course when north is locked.
-                this._posArrow = new maplibregl.Marker({ element: el, rotationAlignment: 'map' }).setLngLat([lon, lat]).addTo(this.map);
+                this._posArrow = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(this.map);
             }
-            this._posArrow.setLngLat([lon, lat]).setRotation(heading);
+            this._posArrow.setLngLat([lon, lat]).setRotationAlignment(courseUp ? 'viewport' : 'map').setRotation(courseUp ? 0 : heading);
         } else if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; }
         const view = { center: [lon, lat], duration: 400 };
-        if (follow && hasHeading && this._headingUp) view.bearing = heading;
+        if (courseUp) view.bearing = heading;
         if (follow) this.map.easeTo(view);
     }
     // `gapIdx` (editor): track indexes whose following segment is an OPEN cut —

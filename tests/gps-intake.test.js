@@ -245,23 +245,39 @@ describe('autoReachedIdx — the next note waits until the active one is behind 
     });
 });
 
-describe('courseFrom — the direction a course-up map turns to (#536)', () => {
+describe('courseFrom — the direction a course-up map turns to (#536 · #565)', () => {
     const at = (m, dir) => (dir === 'north' ? { lat: deg(m), lon: 0 } : { lat: 0, lon: deg(m) });
+    const fast = RB.CONST.COURSE_DEVICE_KMH, slow = fast - 1;
 
-    it('trusts the device when it reports a heading', () => {
-        expect(RB.courseFrom(null, at(0), at(100), 100, 42)).toBe(42);
-        expect(RB.courseFrom(90, at(0), at(100), 100, 0), 'due north is a heading, not "missing"').toBe(0);
+    it('trusts the device course at speed', () => {
+        expect(RB.courseFrom(null, [at(0), at(100)], fast, 42)).toBe(42);
+        expect(RB.courseFrom(90, [at(0), at(100)], 40, 0), 'due north is a heading, not "missing"').toBe(0);
     });
 
-    it('derives the course from the segment just driven when it does not', () => {
-        expect(RB.courseFrom(null, at(0), at(100), 100, null)).toBeCloseTo(90, 0);   // east
-        expect(RB.courseFrom(null, at(0), at(100, 'north'), 100, undefined)).toBeCloseTo(0, 0);
-        expect(RB.courseFrom(null, at(100), at(0), 100, NaN)).toBeCloseTo(270, 0);   // west
+    it('below that speed, the ground covered wins over a jumpy device course', () => {
+        // riding east at bike speed while the phone reports a wild 200°
+        expect(RB.courseFrom(null, [at(0), at(8), at(16)], slow, 200)).toBeCloseTo(90, 0);
     });
 
-    it('keeps the last course when nothing moved — jitter must not spin the map', () => {
-        expect(RB.courseFrom(123, at(0), at(2), 0, null)).toBe(123);  // the gate called it noise
-        expect(RB.courseFrom(123, null, at(2), 8, null)).toBe(123);   // no segment (junk/teleport)
-        expect(RB.courseFrom(null, null, null, 0, null)).toBeNull();  // nothing known yet
+    it('measures over the window, not the last step alone', () => {
+        // a sideways wobble on the last 5 m step does not turn the map: 15 m back is still ahead
+        const trail = [at(0), at(10), { lat: deg(3), lon: deg(15) }];
+        expect(RB.courseFrom(null, trail, slow, null)).toBeLessThan(105);
+        expect(RB.courseFrom(null, [at(0), at(100, 'north')], slow, undefined)).toBeCloseTo(0, 0);
+        expect(RB.courseFrom(null, [at(100), at(0)], slow, NaN)).toBeCloseTo(270, 0); // west
+    });
+
+    it('keeps the last course until the window has ground in it — jitter must not spin the map', () => {
+        expect(RB.courseFrom(123, [at(0), at(6)], slow, null)).toBe(123); // 6 m is not enough to judge
+        expect(RB.courseFrom(123, [at(2)], slow, null)).toBe(123);        // a fresh trail (first fix / jump)
+        expect(RB.courseFrom(null, [], 0, null)).toBeNull();              // nothing known yet
+    });
+
+    it('courseTrail keeps only what the window can still need', () => {
+        let trail = [];
+        for (let m = 0; m <= 60; m += 5) trail = RB.courseTrail(trail, at(m));
+        expect(trail[trail.length - 1]).toEqual(at(60));
+        expect(trail[0]).toEqual(at(45)); // the newest point at least 15 m back, and everything after it
+        expect(RB.courseFrom(null, trail, 0, null)).toBeCloseTo(90, 0);
     });
 });

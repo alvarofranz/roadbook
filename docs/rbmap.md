@@ -130,8 +130,9 @@ GPS ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
 Metodi correlati:
 - **`setPosition(lat, lon, follow[, heading])`** — il marker "sei qui"; `follow=true`
   ricentra con `easeTo`. Con un `heading` (rotta in gradi) il puntino diventa un chevron
-  direzionale (`.rb-pos-arrow`, `rotationAlignment:'map'`) e — se l'heading-up è attivo —
-  la mappa ruota in modo che la marcia sia in alto. Senza `heading` resta il puntino tondo
+  direzionale (`.rb-pos-arrow`) e — se l'heading-up è attivo — la mappa ruota in modo che la
+  marcia sia in alto, col chevron fisso dritto in alto sullo schermo (`rotationAlignment:
+  'viewport'`, #565); a nord bloccato il chevron è ancorato alla mappa e mostra la rotta. Senza `heading` resta il puntino tondo
   (es. l'Editor) ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
 - **`setHeadingUp(on)`** + opzione costruttore **`{headingToggle:true}`** — bottone di
   controllo che alterna heading-up ↔ nord bloccato (off → torna a nord). Usato dal Recorder.

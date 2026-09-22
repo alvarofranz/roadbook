@@ -277,10 +277,13 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   o dopo uno scambio di stile, così un fix arrivato mentre la mappa caricava non va perso
 - **Il pulsante heading-up** (`headingToggle: true`) è tra i controlli della mappa: chi preferisce
   il nord bloccato lo ottiene con un tap
-- **La rotta** viene dal dispositivo quando la dichiara, altrimenti è il bearing del segmento
-  appena percorso (`RB.courseFrom`): la maggior parte dei browser non dà un `heading`, e una
-  mappa course-up senza rotta è solo una mappa col nord in alto. Solo uno step accettato come
-  movimento reale può girarla, quindi il rumore GPS non la fa ruotare
+- **La rotta** è la direzione in cui ti stai davvero muovendo (`RB.courseFrom`, #565): il
+  bearing del terreno percorso negli ultimi `COURSE_WINDOW_M` (15 m, la scia `RB.courseTrail`
+  che `RBGpsMeter` allunga solo con step accettati come movimento reale). La rotta per-fix del
+  telefono (Doppler) vale solo da `COURSE_DEVICE_KMH` (12 km/h) in su: sotto, in bici o a piedi,
+  salta di decine di gradi tra un fix e l'altro. Senza abbastanza terreno resta l'ultima rotta,
+  quindi il rumore GPS non fa ruotare la mappa. In course-up il **chevron è fisso in alto**
+  (tu che vai avanti, `rotationAlignment:'viewport'`) e la mappa gira sotto di lui
 - **Guida al waypoint** (#485): `setGuide(from, to)` disegna la linea dalla posizione live al
   waypoint più una freccia fisica da 1 cm sulla posizione, ruotata sul bearing. La freccia è
   ancorata allo **spazio mappa** (`rotationAlignment: 'map'`), quindi con la mappa girata sulla

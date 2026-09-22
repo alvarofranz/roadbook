@@ -181,15 +181,30 @@
         if (next && notePassed(active, from, here, coveredM) && noteReached(next, from, here, radiusOf(nextIdx))) return nextIdx;
         return -1;
     }
-    /* The course to steer by (#536): the device's own heading when it reports one, else the
-       bearing of the segment just driven. Most browsers — and any phone standing still — report
-       no heading at all, and a course-up map with no course is just a north-up map. Only a step
-       the odometer gate accepted as real movement may turn it, so jitter never spins the map;
-       with nothing to go on, the last known course stands. */
-    function courseFrom(prev, from, here, disp, deviceHeading) {
-        if (deviceHeading != null && isFinite(deviceHeading)) return deviceHeading;
-        if (from && here && disp > 0) return bearingDeg(from, here);
+    /* The course to steer by (#536 · #565): the direction you are actually travelling, which is
+       what a course-up map must put at the top so the road ahead on screen is the road ahead
+       through the windscreen. The per-fix course a phone reports (Doppler) is excellent at speed
+       and noise below it — on a bike or on foot it jumps by tens of degrees between fixes — so it
+       is trusted only from COURSE_DEVICE_KMH up. Below that the course is the bearing of the
+       ground actually covered over the last COURSE_WINDOW_M (`trail`: the recent positions the
+       odometer gate accepted as movement, oldest first, ending at the current one), which is
+       steady at any speed and needs no heading from the device at all. With neither, the last
+       known course stands — jitter never spins the map. */
+    function courseFrom(prev, trail, speedKmh, deviceHeading) {
+        if (deviceHeading != null && isFinite(deviceHeading) && speedKmh >= CONST.COURSE_DEVICE_KMH) return deviceHeading;
+        const here = trail && trail[trail.length - 1];
+        for (let i = (trail ? trail.length : 0) - 2; i >= 0; i--) {
+            if (haversineM(trail[i], here) >= CONST.COURSE_WINDOW_M) return bearingDeg(trail[i], here);
+        }
         return prev;
+    }
+    /* The movement trail courseFrom reads: `here` appended, then only what the window can still
+       need kept (the newest point more than COURSE_WINDOW_M back, and everything after it). */
+    function courseTrail(trail, here) {
+        const next = (trail || []).concat([{ lat: here.lat, lon: here.lon }]);
+        let keep = 0;
+        for (let i = next.length - 2; i >= 0; i--) if (haversineM(next[i], here) >= CONST.COURSE_WINDOW_M) { keep = i; break; }
+        return next.slice(keep);
     }
     /* May note i be validated by hand from `here`? — the Reader's manual/competition gate (#385,
        #431). Manual tracking works with NO GPS at all, so no position means no objection. With a
@@ -227,6 +242,7 @@
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 50, REACH_MIN_M: 18,
+        COURSE_WINDOW_M: 15, COURSE_DEVICE_KMH: 12, // course-up: ground covered over the last 15 m, the device's own course only from 12 km/h
         FIX_ACC_MAX_M: 35, MAX_SPEED_MS: 70, // a fix worse than this is junk; a step faster than this never happened (252 km/h)
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
@@ -1308,7 +1324,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,

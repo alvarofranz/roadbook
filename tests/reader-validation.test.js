@@ -112,7 +112,15 @@ describe("the note map is YOUR map: centred on you, turned your way (#536)", () 
         expect(guide).toContain('RB.geo.bearingDeg(from, to) - 90');
     });
 
-    it('asks the core for the course, so a phone with no heading still has one', () => {
-        expect(read('public/assets/js/gps-meter.js')).toContain('RB.courseFrom(this.heading, from, here, step.disp, c.heading)');
+    it('asks the core for the course, measured along the ground actually covered (#565)', () => {
+        const meter = read('public/assets/js/gps-meter.js');
+        expect(meter).toContain("if (step.verdict === 'ok') this._trail = RB.courseTrail(this._trail, here);");
+        expect(meter).toContain('RB.courseFrom(this.heading, this._trail, this.speedKmh, c.heading)');
+    });
+
+    it('course-up pins the chevron straight up and turns the map under it (#565)', () => {
+        const pos = rbmap.match(/setPosition\(lat, lon, follow, heading\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(pos).toContain("setRotationAlignment(courseUp ? 'viewport' : 'map').setRotation(courseUp ? 0 : heading)");
+        expect(pos).toContain('if (courseUp) view.bearing = heading;');
     });
 });
