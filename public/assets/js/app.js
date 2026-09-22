@@ -756,6 +756,20 @@
     });
     window.RBCopyLinkOverlay = (slug) => `<button type="button" class="card-btn card-copy" data-copy="${RBesc(slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>`;
 
+    /* The trash, one way everywhere (#704): the user's own trash (My roadbooks) and the admin's
+       trash draw the same row, state the same retention, and ask the same questions. */
+    window.RBTrashNote = (days) => RBt('A deleted roadbook stays in the trash {n} days, then it is gone for good.').replace('{n}', days);
+    window.RBTrashRowHTML = (rb, showOwner) => `<div class="roadbook-row">
+            <div class="meta"><b>${RBesc(rb.title || RBt('Untitled'))}</b><small>${showOwner ? '@' + RBesc(rb.username) + ' · ' : ''}${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-hourglass-half"></i> ${rb.days_left} ${RBesc(RBt('days left'))}</small></div>
+            <div class="btnrow end">
+                <button class="btn btn-ghost" data-restore="${rb.id}"><i class="fa-solid fa-rotate-left"></i> ${RBesc(RBt('Restore'))}</button>
+                <button class="btn btn-ghost" data-purge="${rb.id}"><i class="fa-solid fa-trash-can icon-danger"></i> ${RBesc(RBt('Delete forever'))}</button>
+            </div>
+        </div>`;
+    // "Delete" on a live roadbook moves it to the trash — the question says so, and names it
+    window.RBConfirmTrash = (title) => RBConfirmDanger(RBt('Move “{title}” to the trash? You can restore it later.').replace('{title}', RBesc(title || RBt('Untitled'))));
+    window.RBConfirmPurge = (title) => RBConfirmDanger(RBt('Delete “{title}” forever? This cannot be undone.').replace('{title}', RBesc(title || RBt('Untitled'))));
+
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).
@@ -815,8 +829,8 @@
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
     // Relative links work from any one-level-deep tool page (/editor/, /myroadbooks/).
-    // Publication-status labels for the My-roadbooks status control (draft/ready/public).
-    const RB_STATUS_LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
+    // Publication-status labels (draft/ready/public) — My roadbooks and the admin's per-user list (#707).
+    window.RBStatusLabel = { draft: 'Draft', ready: 'Ready', public: 'Public' };
     window.RBRoadbookList = async (container, onChange) => { // onChange: fires after a delete/duplicate, so the page can refresh siblings (e.g. the trash, #238)
         if (!container) return 0;
         const r = await RBApi('rb_list');
@@ -835,7 +849,7 @@
         const rowsEl = container.querySelector('.rb-grid'), pagerEl = container.querySelector('.pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${RBFmtDate(rb.updated_at)}${rb.total_bytes ? ` · <i class="fa-solid fa-database"></i> ${RBFmtSize(rb.total_bytes)}` : ''}</small></div>
-            <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RB_STATUS_LABEL[s]))}</option>`).join('')}</select>
+            <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RBStatusLabel[s]))}</option>`).join('')}</select>
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-compass"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             ${rb.status === 'public' && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
@@ -851,7 +865,7 @@
                 if (x.ok) { busy.ok(); RBToast('Roadbook duplicated.'); RBRoadbookList(container, onChange); if (onChange) onChange(); } else { busy.reset(); RBToast(x.error || 'Could not duplicate.'); }
             });
             rowsEl.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-                if (await RBConfirmDanger(RBt('Delete roadbook') + ' “' + RBesc(b.dataset.title || '') + '”?')) {
+                if (await RBConfirmTrash(b.dataset.title)) {
                     const busy = RBBusy(b);
                     const x = await RBApi('rb_delete', { id: +b.dataset.del });
                     if (x.ok) { busy.ok(); RBRoadbookList(container, onChange); if (onChange) onChange(); }
@@ -1157,7 +1171,7 @@
     function manageLinks(user, participant) {
         if (participant || !user) return [];
         if (user.is_admin) return [
-            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Public roadbooks',       group: 0 },
+            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Moderate public roadbooks', group: 0 },
             { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
             { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
             { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },

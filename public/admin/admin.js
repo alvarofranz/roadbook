@@ -6,30 +6,40 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false, orgTimer = null;
+    let me = 0, meSuper = false, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false, orgTimer = null;
+    let everyone = null; // the unfiltered user list, fetched once for the pickers (the table may be filtered)
+    async function allPickable() {
+        if (!everyone) {
+            const r = await api('admin_users');
+            if (!r.ok) { toast(r.error || 'Could not load.'); return null; }
+            everyone = r.users || [];
+        }
+        return everyone.filter((u) => !u.system); // never the deleted-user system account
+    }
 
+    // One row per user: who they are (badges, one style), their disk use, and only the actions the
+    // server accepts from this admin (#702) — nothing on the system account, and another admin is
+    // changed only by a superuser. The organizer role lives in the Edit dialog, once (#707).
     function rowHtml(u) {
         const isMe = u.id === me;
-        const badges = (u.is_admin ? `<span class="u-badge u-admin">${esc(t('Admin'))}</span> ` : '')
-            + (u.is_organizer ? `<span class="u-badge u-organizer">${esc(t('organizer'))}</span> ` : '')
-            + (u.blocked ? `<span class="u-badge u-blocked">${esc(t('blocked'))}</span> ` : '')
-            + (u.mustchange ? `<span class="u-badge u-unverified">${esc(t('must change password'))}</span> ` : '')
-            + (u.verified ? '' : `<span class="u-badge u-unverified">${esc(t('unverified'))}</span>`);
-        // quick event-organizer toggle (the admin role is set in the Edit dialog). An admin already
-        // runs every event, so the toggle only shows for non-admin users.
-        const role = u.locked
-            ? `<span class="u-badge u-admin" title="${esc(t('Configured in .env'))}">${esc(t('Superuser'))}</span>`
-            : (u.is_admin ? '' : `<button class="btn btn-ghost" data-org="${u.id}" data-make="${u.is_organizer ? 0 : 1}">${esc(t(u.is_organizer ? 'Remove event organizer' : 'Make event organizer'))}</button>`);
-        const activate = u.verified ? '' : `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>`;
-        const edit = `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>`;
+        const badge = (cls, label, tip) => `<span class="u-badge ${cls}"${tip ? ` title="${esc(t(tip))}"` : ''}>${esc(t(label))}</span> `;
+        const badges = (u.system ? badge('u-unverified', 'System account', 'Keeps the roadbooks of deleted users. It never signs in.') : '')
+            + (u.locked ? badge('u-admin', 'Superuser', 'Configured in .env') : (u.is_admin ? badge('u-admin', 'Admin') : ''))
+            + (u.is_organizer ? badge('u-organizer', 'Organizer') : '')
+            + (u.blocked ? badge('u-blocked', 'Blocked') : '')
+            + (u.mustchange ? badge('u-unverified', 'Must change password') : '')
+            + (u.verified || u.system ? '' : badge('u-unverified', 'Unverified'));
+        const canManage = !u.system && (isMe || !u.is_admin || meSuper);
+        const activate = canManage && !u.verified ? `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>` : '';
+        const edit = canManage ? `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>` : '';
         const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
-        const block = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
-        const del = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-del="${u.id}" data-name="${esc(u.username)}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete'))}</button>`;
+        const block = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
+        const del = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-del="${u.id}" data-name="${esc(u.username)}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete'))}</button>`;
         const roadbooks = `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>`;
         return `<tr>
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
             <td class="num">${fmtSize(u.bytes)}<div class="u-quota">/ ${fmtSize(u.quota)}</div></td>
-            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${role}${block}${del}</div></td>
+            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${block}${del}</div></td>
         </tr>`;
     }
 
@@ -104,19 +114,19 @@
     // .rdbk export (media-less, like the Editor without "Include photos & audio").
     // Pagination + search (#244).
     function viewRoadbooks(u) {
-        const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
-        let rbMap = null, previewId = 0;
+        let rbMap = null, previewId = 0, changed = false; // a change refreshes the user list's count on close (#705)
+        const finish = () => { if (rbMap) { rbMap.destroy(); rbMap = null; } if (changed) load(); };
         const m = RBModal(`<h2>${esc(t('Roadbooks'))} \u00b7 @${esc(u.username)}</h2>
             <div class="rb-split">
             <div class="rb-split-list">
-            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="rbsSearch" placeholder="${esc(t('Search roadbooks\u2026'))}" autocomplete="off" spellcheck="false" aria-label="${esc(t('Search roadbooks\u2026'))}"></div>
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="rbsSearch" placeholder="${esc(t('Search roadbooks\u2026'))}" autocomplete="off" spellcheck="false" aria-label="${esc(t('Search roadbooks\u2026'))}"></div>
             <div id="rbsBody" class="muted small">${esc(t('Loading\u2026'))}</div>
             <div id="rbsPager" class="pager"></div>
             </div>
             <div class="rb-map-pane"><div id="rbsMap"><p class="muted small">${esc(t('Select a roadbook to preview it on the map.'))}</p></div><p id="rbsMapTitle" class="muted small"></p></div>
             </div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list-map', () => { if (rbMap) { rbMap.destroy(); rbMap = null; } });
-        m.q('[data-cancel]').onclick = m.close;
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list-map', finish);
+        m.q('[data-cancel]').onclick = () => { m.close(); finish(); };
         let rbPage = 1, rbQuery = '';
         const render = () => api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
             const body = m.q('#rbsBody');
@@ -124,7 +134,7 @@
             if (!r.roadbooks.length) { body.textContent = t('No roadbooks yet.'); return; }
             body.innerHTML = `<table class="act-table"><tbody>${r.roadbooks.map((rb) => `<tr data-row="${rb.id}">
                 <td><button class="btn btn-ghost" data-view="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('View on map'))}"><b>${esc(rb.title)}</b></button><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
-                <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
+                <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(RBStatusLabel[s]))}</option>`).join('')}</select></td>
                 <td><button class="btn btn-ghost" data-mv="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move'))}" aria-label="${esc(t('Move'))}"><i class="fa-solid fa-right-left"></i></button></td>
                 <td><button class="btn btn-ghost" data-trash="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move to trash'))}" aria-label="${esc(t('Move to trash'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>
                 <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('Open in Reader'))}" aria-label="${esc(t('Open in Reader'))}"><i class="fa-solid fa-compass"></i></a></td>
@@ -135,16 +145,16 @@
                 sel.disabled = true;
                 const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
                 sel.disabled = false;
-                if (!x.ok) toast(x.error || 'Could not save.');
+                if (!x.ok) toast(x.error || 'Could not save.'); else changed = true;
                 render();
             });
             body.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => movePicker(b.dataset.mv, b.dataset.title));
             body.querySelectorAll('[data-trash]').forEach((b) => b.onclick = async () => {
-                if (!(await RBConfirmDanger(t('Move to trash') + ' "' + esc(b.dataset.title || '') + '"?'))) return;
+                if (!(await RBConfirmTrash(b.dataset.title))) return;
                 const busy = RBBusy(b); // the re-render below is the success feedback
                 const x = await api('admin_rb_trash', { id: +b.dataset.trash });
                 busy.reset();
-                if (!x.ok) toast(x.error || 'Could not delete.');
+                if (!x.ok) toast(x.error || 'Could not delete.'); else changed = true;
                 render();
             });
             body.querySelectorAll('[data-rbexp]').forEach((b) => b.onclick = async () => {
@@ -189,10 +199,12 @@
         };
         m.q('#rbsSearch').oninput = (e) => { rbQuery = e.target.value; rbPage = 1; render(); };
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
-        const movePicker = (rbId, rbTitle) => {
+        const movePicker = async (rbId, rbTitle) => {
+            const users = await allPickable(); // everyone, not just the users the table is filtered to (#705)
+            if (!users) return;
             RBRowPicker({
                 title: 'Move', icon: 'fa-right-left', card: 'narrow', lead: rbTitle,
-                items: allUsers.filter((au) => au.id !== u.id),
+                items: users.filter((au) => au.id !== u.id),
                 fields: ['username', 'name', 'email'], limit: 50, empty: 'No users yet.',
                 rowHTML: (au, i) => `<button class="mv-opt" data-pick="${i}"><b>@${esc(au.username)}</b> <span class="muted small">${esc(au.email)}</span></button>`,
                 onPick: async (au, modal) => {
@@ -200,6 +212,7 @@
                     modal.close();
                     const x = await api('admin_move_roadbook', { id: +rbId, user_id: +au.id });
                     toast(x.ok ? t('Roadbook moved.') : (x.error || 'Could not move.'));
+                    if (x.ok) changed = true;
                     render();
                 },
             });
@@ -211,14 +224,6 @@
     // mutating action re-fetches via load(); the current search + page are preserved.
     function wireRows() {
         const body = $('usersBody');
-        body.querySelectorAll('[data-org]').forEach((b) => b.onclick = async () => {
-            const u = byId[+b.dataset.org];
-            if (+b.dataset.make === 0 && !(await RBConfirmDanger(t('Remove event organizer') + ' @' + ((u && u.username) || '') + '?'))) return;
-            const busy = RBBusy(b);
-            const x = await api('admin_set_role', { id: +b.dataset.org, is_organizer: +b.dataset.make });
-            busy.reset();
-            x.ok ? load() : toast(x.error || 'Could not save.');
-        });
         body.querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {
             const busy = RBBusy(b);
             const x = await api('admin_verify', { id: +b.dataset.verify });
@@ -272,10 +277,10 @@
         if (org) params.organization = org;
         const r = await api('admin_users', params);
         if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
-        me = r.me;
-        allUsers = r.users || [];
+        me = r.me; meSuper = !!r.me_super;
+        allUsers = r.users || []; everyone = null; // the next picker re-reads the full list
         byId = {}; allUsers.forEach((u) => byId[u.id] = u);
-        $('adminMsg').hidden = true; $('usersBox').hidden = false;
+        $('adminMsg').hidden = true; $('usersBox').hidden = false; $('usersHeadActions').hidden = false;
         render();
     }
 

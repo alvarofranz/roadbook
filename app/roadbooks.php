@@ -442,3 +442,18 @@ function rb_restore(array $user, array $d): void {
     log_activity((int)$user['id'], 'rb_restore', 'roadbook #' . $id);
     json_out(['ok' => true, 'id' => $id]);
 }
+
+// Delete one of your own trashed roadbooks forever, now (#704) — nobody has to wait out the
+// retention, or ask an admin, to have their own data gone. Only from the trash, like the admin's
+// purge, so a live roadbook can never be hard-deleted by mistake; row first, then the files.
+function rb_purge(array $user, array $d): void {
+    $id = (int)($d['id'] ?? 0);
+    $st = db()->prepare("SELECT filename FROM roadbooks WHERE id = ? AND user_id = ? AND status = 'deleted'");
+    $st->execute([$id, (int)$user['id']]);
+    $row = $st->fetch();
+    if (!$row) fail('Not found.', 404);
+    db()->prepare('DELETE FROM roadbooks WHERE id = ?')->execute([$id]);
+    purge_roadbook_files($id, (int)$user['id'], (string)$row['filename']);
+    log_activity((int)$user['id'], 'rb_purge', 'roadbook #' . $id);
+    json_out(['ok' => true, 'id' => $id]);
+}
