@@ -121,7 +121,8 @@ Optionnelle (seulement si le roadbook autorise la carte) : le bouton carte de la
 - Centrée sur la note à un zoom ~13
 - Affiche toute la trace + épingle pour le contexte
 - Pastille GPS bleue en temps réel
-- Tap sur la carte ouverte la referme
+- En haut à gauche : numéro de la note et distance restante
+- Quand la note est validée, la carte passe à la suivante, toujours ouverte
 
 > La carte par note est utile pour confirmer la position sur le terrain quand le texte de la note est ambigu.
 

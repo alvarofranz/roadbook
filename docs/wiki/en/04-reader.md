@@ -121,7 +121,8 @@ Optional (only when the roadbook allows the map): the map button in the bottom b
 - Centered on the note at zoom ~13
 - Shows the whole track + pins for context
 - Blue GPS dot in real time
-- Tap the open map to close it
+- The top-left corner shows the note number and the distance still to go
+- When the note is validated the map moves on to the next note, still open
 
 > The map per note is useful to confirm the position on the ground when the note text is ambiguous.
 

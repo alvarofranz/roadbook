@@ -121,7 +121,8 @@ Opcional (solo si el roadbook permite el mapa): el botón de mapa de la barra in
 - Centrado en la nota a zoom ~13
 - Muestra toda la trazada + pin para contexto
 - Punto azul GPS en tiempo real
-- Tap en el mapa abierto lo cierra
+- Arriba a la izquierda: número de la nota y distancia que falta
+- Al validar la nota el mapa pasa a la siguiente, sin cerrarse
 
 > El mapa por nota es útil para confirmar la posición en el terreno cuando el texto de la nota es ambiguo.
 

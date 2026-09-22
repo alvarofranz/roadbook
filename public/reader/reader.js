@@ -438,6 +438,8 @@
                 const togo = row.querySelector('.togo'); if (togo) togo.textContent = '';
             }
         });
+        // an open map belongs to the active note: it moves on with it, still open (#571)
+        if (inlineMapIdx >= 0 && !preview && inlineMapIdx !== activeIdx) moveNoteMap(activeIdx);
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         refreshLive();
         saveSession();
@@ -453,6 +455,9 @@
     // direction of travel is UP — left and right on the map are then left and right through the
     // windscreen, and the guidance arrow (drawn in map space) points at the waypoint relative to
     // the way you are facing. The heading-up control locks north for whoever prefers it.
+    //
+    // Its top-left corner carries the note's number and the distance still to run to it (#571),
+    // live from the GPS like the row's own, so it reads without looking away from the map.
     const NOTE_MAP_ZOOM = 16;
     function toggleNoteMap(i) {
         if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
@@ -461,7 +466,7 @@
         const el = $('nmap' + i); if (!el) return;
         syncMapBtn(true);
         const n = notes[i];
-        el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
+        el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div><div class="nmap-togo" id="nmapTogo" aria-live="polite"></div>';
         el.hidden = false; inlineMapIdx = i;
         const centre = lastHere || { lat: +n.lat, lon: +n.lon };
         const heading = meter && meter.heading != null ? meter.heading : 0;
@@ -469,6 +474,26 @@
         inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
         inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
         if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, true, meter && meter.heading); inlineMap.setGuide(lastHere, n); }
+        paintMapTogo();
+    }
+    // Hand the open map on to note i without closing it (#571): the same GL map (tiles, zoom,
+    // layer, heading-up choice all kept) is re-parented under the new row and re-aimed at that
+    // note's waypoint. Past the last note there is nothing to aim at, so it closes.
+    function moveNoteMap(i) {
+        const from = $('nmap' + inlineMapIdx), to = $('nmap' + i), n = notes[i];
+        if (!inlineMap || !from || !to || !n) { closeInlineMap(); return; }
+        while (from.firstChild) to.appendChild(from.firstChild);
+        from.hidden = true; to.hidden = false; inlineMapIdx = i;
+        if (inlineMap.map) inlineMap.map.resize();
+        inlineMap.showRoadbook({ track: [], notes: [n] }, true);
+        inlineMap.select(n, true);
+        if (lastHere) inlineMap.setGuide(lastHere, n);
+        paintMapTogo();
+    }
+    function paintMapTogo() {
+        const badge = $('nmapTogo'), n = notes[inlineMapIdx];
+        if (!badge || !n) return;
+        badge.innerHTML = `<span class="num">${n.num}</span>${lastHere ? ' ' + fmtDist(RB.geo.haversineM(lastHere, n)) : ''}`;
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
@@ -485,6 +510,7 @@
     function refreshLive() {
         const an = notes[activeIdx];
         paintApproach((an && lastHere) ? RB.geo.haversineM(lastHere, an) : null);
+        paintMapTogo();
     }
     // Live proximity on the active row: the roadbook stays paper, but the note you are driving to
     // reacts as you close in — `near` inside the manual radius, `arriving` once inside the reach
