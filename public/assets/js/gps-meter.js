@@ -28,6 +28,7 @@ window.RBGpsMeter = class RBGpsMeter {
         this._onAlert = (typeof onAlert === 'function') ? onAlert : (kind) => this._defaultAlert(kind);
         this.pos = null; this.accuracy = null; this.speedKmh = 0; this.heading = null; this.watchId = null;
         this._anchor = null; // last trusted position + fix time — the odometer's reference
+        this._trail = [];    // recent positions accepted as movement — what the course is measured along (RB.courseTrail)
         this._lastSpeedPos = null; this._lastSpeedT = null; this._wakeLock = null;
         this._native = false; this._running = false; this._wasRunning = false;
         this._warned = {}; // one-shot alert latches, per meter lifetime (no nagging on pause cycles)
@@ -164,9 +165,12 @@ window.RBGpsMeter = class RBGpsMeter {
                 if (dt > 0) this.speedKmh = RB.geo.haversineM(this._lastSpeedPos, here) / dt * 3.6;
             }
             this._lastSpeedPos = here; this._lastSpeedT = tnow;
-            // Course: the device's own when it has one, else the bearing of the segment we just
-            // drove — the rule lives in the core, where it is unit-tested (#536).
-            this.heading = RB.courseFrom(this.heading, from, here, step.disp, c.heading);
+            // Course: the ground actually covered over the last metres, or the device's own at
+            // speed — the rule lives in the core, where it is unit-tested (#536 · #565). Only a
+            // step the gate accepted as real movement extends the trail; a jump restarts it.
+            if (step.verdict === 'ok') this._trail = RB.courseTrail(this._trail, here);
+            else if (step.verdict !== 'noise') this._trail = [here]; // first fix / teleport: the path starts again here
+            this.heading = RB.courseFrom(this.heading, this._trail, this.speedKmh, c.heading);
         }
         this._onFix({ here, coords: c, disp: step.disp, from: from && { lat: from.lat, lon: from.lon }, trusted, speedKmh: this.speedKmh, heading: this.heading, tnow });
     }
