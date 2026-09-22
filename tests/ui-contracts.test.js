@@ -674,8 +674,8 @@ describe('async actions report on their own button (#491)', () => {
         ['public/account/account.js', "'registerForm'"],
         ['public/account/account.js', "'delForm'"],
         ['public/account/account.js', "'pfSave'"],
-        ['public/event/event.js', "'#evJoinOpenBtn'"],
-        ['public/event/event.js', "'#evJoinBtn'"],
+        ['public/event/event.js', "async function join(btn, extra)"],
+        ['public/event/event.js', "[data-leave]"],
     ];
     for (const [file, marker] of cases) {
         it(`${file} reports around ${marker}`, () => {

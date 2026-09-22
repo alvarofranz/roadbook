@@ -7,7 +7,7 @@
 
     function render() {
         $('ppList').innerHTML = events.length ? events.map((e) => `<div class="roadbook-row">
-            <div class="meta"><b>${esc(e.title)}${e.ended ? ` <span class="u-badge u-blocked">${esc(t('Expired'))}</span>` : ''}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · <i class="fa-solid fa-user icon-accent"></i> @${esc(e.organizer)} · ${e.participants} ${esc(t('participants'))}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''}</small></div>
+            <div class="meta"><b>${esc(e.title)}${e.ended ? ` <span class="u-badge u-blocked">${esc(t('Ended'))}</span>` : ''}</b><small>${esc(t(e.is_public ? 'Public' : 'Draft'))} · <i class="fa-solid fa-user icon-accent"></i> @${esc(e.organizer)} · ${e.participants} ${esc(t('participants'))}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''}</small></div>
             <a class="btn btn-ghost" href="../events/participants/?id=${e.id}" title="${esc(t('Participants'))}" aria-label="${esc(t('Participants'))}"><i class="fa-solid fa-users"></i> ${e.participants}</a>
         </div>`).join('') : `<p class="muted small">${esc(t('No events yet.'))}</p>`;
     }

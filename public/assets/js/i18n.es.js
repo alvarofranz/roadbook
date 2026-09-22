@@ -161,7 +161,7 @@
             'Recording…': 'Grabando…', 'Paused ·': 'Pausado ·', 'Adjust: get on the trail…': 'Ajuste: súbete a la ruta…', 'Adjust · will rejoin': 'Ajuste · reconectará', 'Adjust · recording': 'Ajuste · grabando',
             'Saved · public at': 'Guardado · público en', 'Auto': 'Auto', 'Skips': 'Saltos', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'parc.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto: las notas se validan por GPS al llegar. Off: toca para marcar cada nota como hecha.',
-            'Add participant': 'Añadir participante', 'Pending only': 'Solo pendientes', 'Grants': 'Permisos', 'Basic user': 'Usuario básico', 'Set join code': 'Establecer código', 'Browse events': 'Ver eventos', 'This roadbook is not in competition mode.': 'Este roadbook no está en modo competición.', 'Roadbook not found or no edit rights.': 'Roadbook no encontrado o sin permisos de edición.', 'You must be a participant or organizer of this event to access the ranking.': 'Debes ser participante u organizador de este evento para acceder a la clasificación.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'La clasificación requiere un evento y un roadbook — ábrela desde la página del evento para clasificar los resultados de un roadbook concreto.', 'Live classification for this event. Open the ranking for a specific competition roadbook to scan result QRs.': 'Clasificación en directo de este evento. Abre la clasificación de un roadbook de competición concreto para escanear los QR de resultados.',
+            'Add participant': 'Añadir participante', 'Pending only': 'Solo pendientes', 'Grants': 'Permisos', 'Basic user': 'Usuario básico', 'Set join code': 'Establecer código', 'Browse events': 'Ver eventos', 'This roadbook is not in competition mode.': 'Este roadbook no está en modo competición.', 'Roadbook not found or no edit rights.': 'Roadbook no encontrado o sin permisos de edición.', 'You must be a participant or organizer of this event to access the ranking.': 'Debes ser participante u organizador de este evento para acceder a la clasificación.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'La clasificación requiere un evento y un roadbook — ábrela desde la página del evento para clasificar los resultados de un roadbook concreto.', 
             'Add result': 'Añadir resultado', 'Add': 'Añadir', 'Target average speed': 'Velocidad media objetivo', "(used for regularity if the QR doesn't carry it)": '(se usa para la regularidad si el QR no la incluye)',
             '…or paste the code (META) here': '…o pega aquí el código (META)', 'Added vehicle': 'Vehículo añadido', 'Invalid signature': 'Firma no válida', 'Could not open the camera': 'No se pudo abrir la cámara', 'Remove vehicle': 'Eliminar vehículo',
             'Reset the partial trip?': '¿Poner a cero el parcial?', 'Colour for the band {band}': 'Color para la banda {band}', 'Show password': 'Mostrar contraseña', 'Hide password': 'Ocultar contraseña', 'photo': 'foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
@@ -724,7 +724,7 @@
             'Permanently deleted.': 'Eliminado definitivamente.',
             'Delete expired': 'Eliminar caducados', 'roadbooks past retention will be permanently deleted. Continue?': 'los roadbooks fuera de retención se eliminarán definitivamente. ¿Continuar?', 'remaining — run again.': 'restantes — ejecutar de nuevo.',
             'This cannot be undone.': 'No se puede deshacer.',
-            'Expired': 'Caducado',
+            
             'Organizers only.': 'Solo organizadores.',
             'Please complete the challenge.': 'Completa la verificación.',
             'Challenge failed. Please try again.': 'La verificación ha fallado. Inténtalo de nuevo.',
@@ -734,7 +734,7 @@
             'Ranking': 'Clasificación',
             'Open ranking': 'Abrir clasificación',
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Puntuaciones de este evento. El organizador recoge los códigos QR de resultado tras cada recorrido y los añade aquí.',
-            'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Clasificación en vivo de este evento. Escanea el código QR de resultado de cada vehículo tras su recorrido.',
+            
             'native.better.gps': 'Para mejor precisión GPS y grabación en segundo plano, usa la app nativa de iOS o Android.',
             'native.better.event': 'Vas a rodar este evento? Instala la app de RDBK en el móvil: GPS que sigue funcionando con la pantalla bloqueada, tus roadbooks disponibles sin conexión y enlaces de evento que se abren directamente en la app.', 'Get the app': 'Descargar la app',
             'native.better.gps.recorder': 'Para grabación GPS en segundo plano y mejor precisión, usa la app nativa de iOS o Android.',
@@ -1049,4 +1049,23 @@ Object.assign(window.RBi18nLangs.es, {
     "This event link is not valid. Ask the organizer for a new one.": "Este enlace de evento no es válido. Pide uno nuevo al organizador.",
     "Registration for this event is closed.": "Las inscripciones de este evento están cerradas.",
     "Activated:": "Activado:",
+});
+
+/* events: the public event page — leave, manage, unlisted, ended (#582 · #585 · #573 · #587 · #589) */
+Object.assign(window.RBi18nLangs.es, {
+    "Ended": "Terminado",
+    "Manage event": "Gestionar evento",
+    
+    "You lose access to the roadbooks reserved to participants.": "Perderás el acceso a los roadbooks reservados a los participantes.",
+    "Joining again will need a new activation by the organizer.": "Para volver a unirte necesitarás una nueva activación del organizador.",
+    "Joined — show your QR to the organizer to be activated.": "Te has unido: enseña tu QR al organizador para que te active.",
+    "You left the event.": "Has salido del evento.",
+    "Could not leave.": "No se ha podido salir.",
+    "Unlisted: this event is not in the public gallery — only people with its link can see it.": "No listado: este evento no aparece en la galería pública; solo lo ve quien tiene su enlace.",
+    "Each competition roadbook has its own classification: open it to scan the result QRs and see the standings.": "Cada roadbook de competición tiene su propia clasificación: ábrela para escanear los QR de resultado y ver la tabla.",
+});
+
+/* events: leaving asks first (#582) */
+Object.assign(window.RBi18nLangs.es, {
+    "Leave this event?": "¿Salir de este evento?",
 });

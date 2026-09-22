@@ -159,7 +159,7 @@
             'Recording…': 'Enregistrement…', 'Paused ·': 'En pause ·', 'Adjust: get on the trail…': 'Ajuster : rejoindre le parcours…', 'Adjust · will rejoin': 'Ajuster · va rejoindre', 'Adjust · recording': 'Ajuster · enregistrement',
             'Saved · public at': 'Enregistré · public sur', 'Auto': 'Auto', 'Skips': 'Sauts', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'part.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto : les notes sont validées par GPS à l\'arrivée. Off : tapez pour marquer chaque note comme faite.',
-            'Add participant': 'Ajouter un participant', 'Pending only': 'En attente uniquement', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'This roadbook is not in competition mode.': 'Ce roadbook n\'est pas en mode compétition.', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'You must be a participant or organizer of this event to access the ranking.': 'Vous devez être participant ou organisateur de cet événement pour accéder au classement.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 'Live classification for this event. Open the ranking for a specific competition roadbook to scan result QRs.': 'Classement en direct de cet événement. Ouvrez le classement d\'un roadbook de compétition précis pour scanner les QR de résultats.',
+            'Add participant': 'Ajouter un participant', 'Pending only': 'En attente uniquement', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'This roadbook is not in competition mode.': 'Ce roadbook n\'est pas en mode compétition.', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'You must be a participant or organizer of this event to access the ranking.': 'Vous devez être participant ou organisateur de cet événement pour accéder au classement.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 
             'Add result': 'Ajouter un résultat', 'Add': 'Ajouter', 'Target average speed': 'Vitesse moyenne cible', "(used for regularity if the QR doesn't carry it)": '(utilisée pour la régularité si le QR ne l\'inclut pas)',
             '…or paste the code (META) here': '…ou collez le code (META) ici', 'Added vehicle': 'Véhicule ajouté', 'Invalid signature': 'Signature invalide', 'Could not open the camera': 'Impossible d\'ouvrir la caméra', 'Remove vehicle': 'Supprimer le véhicule',
             'Reset the partial trip?': 'Remettre à zéro le partiel ?', 'Colour for the band {band}': 'Couleur pour la plage {band}', 'Show password': 'Afficher le mot de passe', 'Hide password': 'Masquer le mot de passe', 'photo': 'photo', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
@@ -685,7 +685,7 @@
             'Permanently deleted.': 'Supprimé définitivement.',
             'Delete expired': 'Supprimer les expirés', 'roadbooks past retention will be permanently deleted. Continue?': 'les roadbooks hors rétention seront définitivement supprimés. Continuer ?', 'remaining — run again.': 'restants — relancer.',
             'This cannot be undone.': 'Impossible d\'annuler.',
-            'Expired': 'Expiré',
+            
             'Organizers only.': 'Organisateurs uniquement.',
             'Please complete the challenge.': 'Veuillez compléter la vérification.',
             'Challenge failed. Please try again.': 'Échec de la vérification. Veuillez réessayer.',
@@ -695,7 +695,7 @@
             'Ranking': 'Classement',
             'Open ranking': 'Ouvrir le classement',
             'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores pour cet événement. L\'organisateur collecte les QR codes de résultat après chaque parcours et les ajoute ici.',
-            'Live classification for this event. Scan the result QR from each vehicle after their run.': 'Classement en direct pour cet événement. Scannez le QR de résultat de chaque véhicule après son parcours.',
+            
             'native.better.gps': 'Pour une meilleure précision GPS et un enregistrement en arrière-plan, utilisez l\'application native iOS ou Android.',
             'native.better.event': 'Vous roulez cet événement ? Installez l\'app RDBK sur votre téléphone : un GPS qui continue écran verrouillé, vos roadbooks disponibles hors ligne et des liens d\'événement qui ouvrent directement dans l\'app.', 'Get the app': 'Télécharger l\'app',
             'native.better.gps.recorder': 'Pour l\'enregistrement GPS en arrière-plan et une meilleure précision, utilisez l\'application native iOS ou Android.',
@@ -908,4 +908,23 @@ Object.assign(window.RBi18nLangs.fr, {
     "This event link is not valid. Ask the organizer for a new one.": "Ce lien d’événement n’est pas valide. Demandez-en un nouveau à l’organisateur.",
     "Registration for this event is closed.": "Les inscriptions à cet événement sont fermées.",
     "Activated:": "Activé :",
+});
+
+/* events: the public event page — leave, manage, unlisted, ended (#582 · #585 · #573 · #587 · #589) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Ended": "Terminé",
+    "Manage event": "Gérer l’événement",
+    
+    "You lose access to the roadbooks reserved to participants.": "Vous perdrez l’accès aux roadbooks réservés aux participants.",
+    "Joining again will need a new activation by the organizer.": "Pour revenir, il faudra une nouvelle activation par l’organisateur.",
+    "Joined — show your QR to the organizer to be activated.": "Inscrit : montrez votre QR à l’organisateur pour être activé.",
+    "You left the event.": "Vous avez quitté l’événement.",
+    "Could not leave.": "Impossible de quitter.",
+    "Unlisted: this event is not in the public gallery — only people with its link can see it.": "Non répertorié : cet événement n’est pas dans la galerie publique — seules les personnes ayant son lien peuvent le voir.",
+    "Each competition roadbook has its own classification: open it to scan the result QRs and see the standings.": "Chaque roadbook de compétition a son propre classement : ouvrez-le pour scanner les QR de résultat et voir le classement.",
+});
+
+/* events: leaving asks first (#582) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Leave this event?": "Quitter cet événement ?",
 });

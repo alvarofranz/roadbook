@@ -90,9 +90,13 @@ anonima) che serve l'evento **listato o no** — il link è l'accesso (#573) —
   (partecipante o organizzatore) — le rotte "pronte" consegnate solo agli iscritti (#25). Le bozze
   non compaiono mai.
 
-Per un utente loggato compare il **form di adesione con codice** (`event_join`) o il pulsante
-**Leave** (`event_leave`); aderire/abbandonare **rifà la fetch**, così la lista dei roadbook segue
-l'accesso appena acquisito/perso. Da un roadbook della lista si va al Reader / alla pagina
+Per un utente loggato compare l'adesione secondo il gate (**Join** a un click se aperto, il form
+con codice se `code`; nulla se chiuso o terminato), e per chi è dentro lo stato con **Leave event**
+(`event_leave`, confermato, #582) — anche accanto al QR di attivazione del partecipante pending.
+Aderire/abbandonare **rifà la fetch**, così la lista dei roadbook segue l'accesso appena
+acquisito/perso; mappa HQ e listener della galleria si creano una volta sola e il cambio lingua
+ridisegna tutta la vista (#584/#586). Agli organizzatori la pagina offre **Manage event** e dice
+quando l'evento non è listato (#585/#573); un evento terminato porta il badge *Ended* (#587). Da un roadbook della lista si va al Reader / alla pagina
 `/challenge/<slug>`.
 
 Questa è anche la pagina su cui **atterra il QR dell'evento** (`/go/<code>` unisce e redirige

@@ -97,7 +97,7 @@
         $('logoRow').hidden = false;
         const img = $('evLogoImg');
         img.hidden = !ev.logo;
-        if (ev.logo) img.src = (window.RBMediaSrc ? RBMediaSrc(ev.logo) : ev.logo) + '?v=' + Date.now(); // bust caches after a re-upload
+        if (ev.logo) img.src = RBMediaSrc(ev.logo); // the stored URL carries its upload version (#588)
         $('evLogoRemove').hidden = !ev.logo;
     }
     $('evLogoUpload').onclick = () => $('evLogoFile').click();
@@ -350,7 +350,7 @@
             toast('Map error: ' + ((e && e.error && e.error.message) || 'failed to load tiles'));
         });
         hqMap.map.on('click', (e) => setHqPin(e.lngLat.lat, e.lngLat.lng));
-        if (hasCoords) { setHqPin(ev.hq_lat, ev.hq_lon); hqMap.map.on('idle', function() { this.jumpTo({ center: this.getCenter() }); }); }
+        if (hasCoords) setHqPin(ev.hq_lat, ev.hq_lon);
         else if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => hqMap.map.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 10 }),
