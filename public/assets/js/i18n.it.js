@@ -84,7 +84,7 @@
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Naviga con odometro, rotta, mappa dal vivo e la barra di direzione CAP.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odometro GPS preciso senza roadbook — distanza parziale e totale.',
             'feat.7.t': 'Misurati in un roadbook', 'feat.7.d': 'Organizza un rally su un unico roadbook: confronta la prova di ogni team — precisione, CAP, velocità e regolarità — in una classifica finale, dai QR dei risultati firmati.',
-            'events.t': 'Eventi', 'events.d': 'Organizza eventi attorno ai tuoi roadbook — invita i team, corri il rally e pubblica i risultati.', 'Coming soon': 'In arrivo', 'route map': 'mappa del percorso',
+            'events.t': 'Eventi', 'events.d': 'Organizza eventi attorno ai tuoi roadbook — invita i team, corri il rally e pubblica i risultati.', 'route map': 'mappa del percorso',
             'install.kicker': 'Multipiattaforma', 'install.title': 'Installala su qualsiasi dispositivo', 'install.text': 'Tutte le funzionalità di RDBK.app sono disponibili anche come web app installabile (PWA) gratuita — su PC Windows e Mac, Android e iOS. Nessuno store: aggiungila alla schermata Home e usala come un’app nativa, anche offline.',
             'gallery.kicker': 'Galleria', 'gallery.title': 'Roadbook pubblici', 'gallery.loading': 'Caricamento…', 'gallery.empty': 'Ancora nessun roadbook pubblico.',
             // Aiuti dei campi dell'editor (issue #89)
@@ -172,7 +172,7 @@
             'Jump to note': 'Salta alla nota', 'The notes in between will be left unvalidated.': 'Le note intermedie resteranno non convalidate.', 'Penalty:': 'Penalità:', 'A validated note cannot be changed in competition mode.': 'In modalità competizione una nota convalidata non può essere cambiata.',
             'Camera stopped.': 'Fotocamera fermata.', 'Removed': 'Rimossi',
             "Could not generate the PDF.": "Impossibile generare il PDF.",
-            "OK": "OK",
+            
             "View": "Visualizza",
             "Menu": "Menu",
             "Language": "Lingua",
@@ -744,7 +744,7 @@
             'web.gps.title': 'Il GPS del browser può essere inaffidabile sui telefoni',
             'web.gps.comp.title': 'Questa prova è valutata sulla precisione del GPS',
             'web.gps.comp.warn': 'Su un browser del telefono, la deriva GPS può causare penalità false che non dipendono dal roadbook. Per una prova di gara corretta, usa l\'app nativa RDBK.',
-            'Use the web app anyway': 'Usa comunque la web',
+            
         };
 
         // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
@@ -752,8 +752,8 @@
             'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Primi passi', 'wiki.nav.recorder': 'Registrare una traccia',
             'wiki.nav.editor': 'Creare / modificare un roadbook', 'wiki.nav.reader': 'Navigare con il Reader', 'wiki.nav.tripmaster': 'Usare il Tripmaster',
             'wiki.nav.events': 'Gestione Eventi',
-            'wiki.title.welcome': 'Primi passi', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
-            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Gestione Eventi',
+            'wiki.title.welcome': 'Primi passi', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Roadbook Editor',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Gestione Eventi',
             'wiki.cta.title': 'Guida passo passo', 'wiki.cta.desc': 'Consulta la guida passo passo per realizzare i tuoi roadbook', 'wiki.cta.link': 'Vai alla wiki →',
             'App Info': 'Info app', 'Version': 'Versione', 'Environment': 'Ambiente', 'Update': 'Aggiorna',
             'Platform': 'Piattaforma', 'Running': 'In esecuzione', 'Available': 'Disponibile', 'Latest web content': 'Ultimo contenuto web',
@@ -1193,7 +1193,7 @@ Object.assign(window.RBi18nLangs.it, {
     "photos": "foto",
     "Discard it with its notes and photos?": "Scartarla con le sue note e foto?",
     "Sign in to edit this roadbook.": "Accedi per modificare questo roadbook.",
-    "OK": "OK",
+    
 });
 
 /* admin consistency (#663–#668) */
@@ -1202,4 +1202,20 @@ Object.assign(window.RBi18nLangs.it, {
     "Site banner": "Banner del sito",
     "The translation editor is still loading — try again in a moment.": "L’editor delle traduzioni si sta ancora caricando: riprova tra un attimo.",
     "Could not export.": "Impossibile esportare.",
+});
+
+/* web-GPS warning asks a question (#669) */
+Object.assign(window.RBi18nLangs.it, {
+    "Continue in the browser anyway?": "Continuare comunque nel browser?",
+});
+
+/* store links, one list (#674) */
+Object.assign(window.RBi18nLangs.it, {
+    "Android — Google Play": "Android — Google Play",
+    "Native apps": "App native",
+});
+
+/* chrome strings (#676) */
+Object.assign(window.RBi18nLangs.it, {
+    "All rights reserved.": "Tutti i diritti riservati.",
 });

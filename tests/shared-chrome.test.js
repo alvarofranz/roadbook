@@ -195,10 +195,9 @@ describe('the immersive Reader is an app shell, not pinned bars (#429)', () => {
     });
 
     it('nothing shared floats onto the tool while it owns the screen', () => {
-        // the language chip was sitting on the action row mid-drive
+        // a floating chip was sitting on the action row mid-drive
         const hidden = appCss.match(/body\.rb-immersive \.app-chip-stack[^{]*\{([^}]*)\}/)[1];
         expect(declOf(hidden, 'display')).toBe('none');
-        expect(appCss).toMatch(/body\.rb-immersive \.lang-mobile|body\.rb-fs \.lang-mobile/);
         expect(declOf(readerRule('body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint'), 'display')).toBe('none');
     });
 
@@ -236,13 +235,41 @@ describe('the GPS watch does not outlive the page (#430)', () => {
 describe('floating chips and the tab bar (#609 · #615)', () => {
     const css = fs.readFileSync('public/assets/css/app.css', 'utf8');
     const app = fs.readFileSync('public/assets/js/app.js', 'utf8');
-    it('the language selector sits at the foot of the chip stack, never on its own fixed spot', () => {
-        expect(app).toContain('chipStack().appendChild(ml);');
+    it('the chips share one stack; the language is chosen on the Profile page only (#670)', () => {
         expect(app).toContain('chipStack().prepend(installBtn);');
         expect(app).toContain('chipStack().prepend(pill);');
-        expect(css).toContain('.lang-mobile { display: none; position: relative; }');
+        expect(app).not.toContain('lang-mobile');
+        expect(css).not.toContain('.lang-mobile');
     });
     it('button tabs lose the browser button box', () => {
         expect(css).toMatch(/\.app-tabbar \.tabbar-link \{[^}]*background: none; border: 0;/);
+    });
+});
+
+describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #674 · #677)', () => {
+    const app = fs.readFileSync('public/assets/js/app.js', 'utf8');
+    it('the web-GPS warning asks No / Yes, and No answers the await', () => {
+        const fn = app.match(/window\.RBWebGpsConfirm = [\s\S]*?\n    \};/)[0];
+        expect(fn).toContain("d.q('[data-no]').onclick = () => { d.close(); resolve(false); };");
+        expect(fn).not.toContain("RBt('Cancel')");
+    });
+    it('every platform band is drawn from one list, and the stores come from RBStore', () => {
+        expect(app).toContain('{ href: () => RBStore.ios,');
+        expect(app).toContain('{ href: () => RBStore.android,');
+        for (const page of ['public/index.html', 'public/about/index.html', 'public/install/index.html']) {
+            const html = fs.readFileSync(page, 'utf8');
+            expect(html, page).toContain('data-platforms');
+            expect(html, page).not.toContain('apps.apple.com');
+        }
+    });
+    it('the install page can show its toast', () => {
+        expect(fs.readFileSync('public/install/index.html', 'utf8')).toContain('<div id="toast" class="toast" hidden></div>');
+    });
+    it('the guide reaches the server from the app and has no language picker of its own', () => {
+        const js = fs.readFileSync('public/wiki/wiki.js', 'utf8'), html = fs.readFileSync('public/wiki/index.html', 'utf8');
+        expect(js).toContain("fetch(RB_API_ROOT + 'wiki/md.php");
+        expect(js.trimStart()).toMatch(/^'use strict';[\s\S]*?\(function \(\) \{/);
+        expect(html).not.toContain('class="lang"');
+        expect(html).not.toContain('maplibre');
     });
 });

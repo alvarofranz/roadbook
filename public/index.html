@@ -5,7 +5,7 @@
     <!-- Native app: flag the document so the launcher shows instead of the marketing home
          (CSS toggles `.web-only`/`.app-only`). Set before paint to avoid a flash; inert in a browser.
          External (not inline) so the CSP can forbid inline scripts — see public/.htaccess. -->
-    <script src="assets/js/native-detect.js?v=1.9.2-100"></script>
+    <script src="assets/js/native-detect.js?v=1.9.2-101"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
     <title data-i18n="seo.home.title">RDBK.app — digital roadbooks for your adventures</title>
@@ -33,8 +33,8 @@
     <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96x96.png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=1.9.2-100">
-    <link rel="stylesheet" href="assets/css/app.css?v=1.9.2-100">
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=1.9.2-101">
+    <link rel="stylesheet" href="assets/css/app.css?v=1.9.2-101">
 </head>
 <body>
 <header class="topbar"></header>
@@ -79,11 +79,7 @@
                 <div class="kicker" data-i18n="install.kicker">Cross-platform</div>
                 <h2 data-i18n="install.title">Install it on any device</h2>
                 <p class="lead install-lead" data-i18n="install.text">Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.</p>
-                <div class="platforms">
-                    <a class="plat-link" href="/install/" title="PC Win / Mac / Linux — install guide" aria-label="PC Win / Mac / Linux — install guide" data-i18n-title="PC Win / Mac / Linux — install guide" data-i18n-aria="PC Win / Mac / Linux — install guide"><i class="fa-brands fa-windows"></i> PC Win / Mac / Linux</a>
-                    <a class="plat-link" href="https://apps.apple.com/app/rdbk/id6787167327" target="_blank" rel="noopener" title="iOS / iPhone / iPad — App Store" aria-label="iOS / iPhone / iPad — App Store" data-i18n-title="iOS / iPhone / iPad — App Store" data-i18n-aria="iOS / iPhone / iPad — App Store"><i class="fa-brands fa-app-store"></i> iOS / iPhone / iPad</a>
-                    <span class="soon" data-i18n-title="Coming soon"><i class="fa-brands fa-android"></i> Android</span>
-                </div>
+                <div class="platforms" data-platforms></div>
                 <p class="install-note" data-i18n="web.gps.warn">In a browser, GPS is less reliable on phones — especially Android (and sometimes iOS): it is less accurate, can drift, and stops when the screen locks or you leave the page. Use the native RDBK app for anything that depends on it.</p>
             </div>
         </div>
@@ -148,13 +144,13 @@
 
 </main>
 
-<script src="assets/js/i18n.es.js?v=1.9.2-100"></script>
-<script src="assets/js/i18n.it.js?v=1.9.2-100"></script>
-<script src="assets/js/i18n.de.js?v=1.9.2-100"></script>
-<script src="assets/js/i18n.fr.js?v=1.9.2-100"></script>
-<script src="assets/js/i18n.js?v=1.9.2-100"></script>
-<script src="assets/js/roadbook-core.js?v=1.9.2-100"></script>
-<script src="assets/js/challenges.js?v=1.9.2-100"></script>
-<script src="assets/js/app.js?v=1.9.2-100"></script>
-<script src="assets/js/home.js?v=1.9.2-100"></script></body>
+<script src="assets/js/i18n.es.js?v=1.9.2-101"></script>
+<script src="assets/js/i18n.it.js?v=1.9.2-101"></script>
+<script src="assets/js/i18n.de.js?v=1.9.2-101"></script>
+<script src="assets/js/i18n.fr.js?v=1.9.2-101"></script>
+<script src="assets/js/i18n.js?v=1.9.2-101"></script>
+<script src="assets/js/roadbook-core.js?v=1.9.2-101"></script>
+<script src="assets/js/challenges.js?v=1.9.2-101"></script>
+<script src="assets/js/app.js?v=1.9.2-101"></script>
+<script src="assets/js/home.js?v=1.9.2-101"></script></body>
 </html>

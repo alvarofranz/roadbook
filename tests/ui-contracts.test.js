@@ -319,7 +319,7 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
         // "1.8.2" in the app and "1.8.2" on the web can be sixteen builds apart: the semver does
         // not move between store releases, so the BUNDLED build is the number that explains a
         // missing feature.
-        expect(fn).toContain("row('Web content in this app', relText(bundled))");
+        expect(fn).toContain("row('Web content in this app', RBReleaseText(bundled))");
         expect(fn).toContain('const behind = isNativeApp() && live && bundled && live.build > bundled.build');
         expect(fn).toContain('This app was built with older web content');
         const about = read('public/about/about.js');
@@ -703,7 +703,7 @@ describe('the app keeps its tab-bar chrome at every width (#484)', () => {
     });
 
     it('every piece of tab-bar chrome carries its .native counterpart', () => {
-        for (const selector of ['.app-tabbar', '.lang-mobile', '.app-chip-stack', '.fabrow']) {
+        for (const selector of ['.app-tabbar', '.app-chip-stack', '.fabrow']) {
             expect(app, `${selector} has no .native rule`).toContain(`.native ${selector}`);
         }
     });

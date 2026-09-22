@@ -96,13 +96,23 @@
         // desktop entry point to the install guide; on mobile the floating Install chip leads
         // there, and inside the app the footer is hidden anyway (#333)
         { path: 'install/',  icon: 'fa-circle-down',    label: 'Install' },
-        { path: 'standard/', icon: 'fa-book',           label: 'The .rdbk standard' },
+        { path: 'standard/', icon: 'fa-file-code',      label: 'The .rdbk standard' },
         { path: 'privacy/',  icon: 'fa-shield-halved',  label: 'Privacy' },
         { path: 'terms/',    icon: 'fa-file-contract',  label: 'Terms of Use' },
         { path: 'contact/',  icon: 'fa-envelope',       label: 'Contact' },
     ];
     window.RBSiteLinksHTML = () => SITE_LINKS.map((l) =>
         `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`).join('\n');
+    /* Where to get RDBK on each platform — ONE list, drawn into every `[data-platforms]` band (home,
+       About, the install guide): the computer install guide and the two stores, from RBStore (#674).
+       `data-platforms="stores"` draws the stores alone. */
+    const PLATFORM_LINKS = [
+        { href: () => ROOT + 'install/', icon: 'fa-brands fa-windows',   label: 'PC Win / Mac / Linux', tip: 'PC Win / Mac / Linux — install guide' },
+        { href: () => RBStore.ios,       icon: 'fa-brands fa-app-store', label: 'iOS / iPhone / iPad',  tip: 'iOS / iPhone / iPad — App Store', store: true },
+        { href: () => RBStore.android,   icon: 'fa-brands fa-google-play', label: 'Android',            tip: 'Android — Google Play', store: true },
+    ];
+    window.RBPlatformLinksHTML = (storesOnly) => PLATFORM_LINKS.filter((l) => !storesOnly || l.store).map((l) =>
+        `<a class="plat-link" href="${RBesc(l.href())}"${l.store ? ' target="_blank" rel="noopener"' : ''} title="${RBesc(RBt(l.tip))}" aria-label="${RBesc(RBt(l.tip))}" data-i18n-title="${RBesc(l.tip)}" data-i18n-aria="${RBesc(l.tip)}"><i class="${l.icon}"></i> ${RBesc(l.label)}</a>`).join('');
 
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
@@ -136,7 +146,7 @@
                 <b>RDBK.app</b>
                 ${RBSiteLinksHTML()}
                 <span class="lang"></span>
-                <span class="small">© ${new Date().getFullYear()} RDBK.app. All rights reserved.</span>
+                <span class="small">© ${new Date().getFullYear()} RDBK.app. <span data-i18n="All rights reserved.">${RBt('All rights reserved.')}</span></span>
                 <span class="small" id="appVersion"></span>
             </div>
         </div>`;
@@ -144,6 +154,7 @@
         // The Profile page repeats the site links where the footer is hidden — same list, filled here.
         const accLinks = document.getElementById('accSiteLinks');
         if (accLinks) accLinks.innerHTML = RBSiteLinksHTML();
+        document.querySelectorAll('[data-platforms]').forEach((el) => { el.innerHTML = RBPlatformLinksHTML(el.dataset.platforms === 'stores'); });
 
         // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
         // every mobile-width view — web, installed PWA and the native app — and hides it on desktop
@@ -165,14 +176,6 @@
             }
             return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
-        // Floating language selector for mobile (visible above the tab bar when the footer is hidden).
-        // It lives at the foot of the floating chip stack, so the Install / unsaved-work chips stack
-        // above it instead of landing on top of it (#609).
-        if (!document.querySelector('.lang-mobile')) {
-            const ml = document.createElement('div');
-            ml.className = 'lang lang-mobile';
-            chipStack().appendChild(ml);
-        }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
     // Safety net: if anything raced, ensure the header is filled once the DOM is ready.
@@ -213,11 +216,13 @@
     window.RBPlatformName = () => isNativeApp()
         ? (RBDevice() === 'ios' ? RBt('iOS app') : RBt('Android app'))
         : (isStandalone() ? RBt('Web app (installed)') : RBt('Web app'));
+    // A release in words, the same everywhere it is shown (footer · About · App Info): "v1.9.2 · build 100"
+    window.RBReleaseText = (rel) => rel ? 'v' + rel.version + ' · build ' + rel.build : '—';
     window.RBRunningRelease = async () => {
         if (isNativeApp()) {
             try {
                 const info = await Capacitor.Plugins.App.getInfo();
-                return { version: info.version, build: info.build || 0, text: info.version + (info.build ? ' (' + info.build + ')' : '') };
+                return { version: info.version, build: info.build || 0 };
             } catch (e) { return null; }
         }
         // On the web the running release is the stamp this very document was served with — every
@@ -225,7 +230,7 @@
         // still serving yesterday's assets says so instead of claiming to be up to date.
         const stamped = document.querySelector('link[rel="stylesheet"][href*="app.css?v="]');
         const m = /(\d+\.\d+\.\d+)-(\d+)/.exec(stamped ? stamped.getAttribute('href') : (appVer || ''));
-        return m ? { version: m[1], build: +m[2], text: 'v' + m[1] + ' · build ' + m[2] } : null;
+        return m ? { version: m[1], build: +m[2] } : null;
     };
     async function checkVersion() {
         // Never reload in the middle of an active session (e.g. a competition run in the Reader):
@@ -235,7 +240,7 @@
         const live = await RBLiveVersion();
         if (!live) return;                                // offline: retried on the next tick, keeps the last shown version
         const rel = live.version + '-' + live.build;      // unique per release (version stays, build always grows)
-        const el = document.getElementById('appVersion'); if (el) el.textContent = 'v' + live.version + ' · build: ' + live.build;
+        const el = document.getElementById('appVersion'); if (el) el.textContent = RBReleaseText(live);
         if (isNativeApp()) return;                        // app: just show the live version; never hot-refresh
         if (appVer == null) { appVer = rel; return; }     // first read: set the reference
         if (rel !== appVer && !refreshing) {
@@ -262,7 +267,7 @@
         // semvers alone made a five-day-old app read as up to date (#515).
         const [running, bundled, live] = await Promise.all([RBRunningRelease(), RBLiveVersion(ROOT), RBLiveVersion()]);
         const parts = [];
-        if (running) parts.push(RBt('Installed') + ' ' + running.text);
+        if (running) parts.push(RBt('Installed') + ' ' + RBReleaseText(running));
         if (bundled) parts.push(RBt('web content') + ' ' + bundled.build);
         if (live) parts.push(RBt('latest') + ' ' + live.version + ' · ' + live.build);
         el.textContent = parts.join('  ·  ');
@@ -280,7 +285,6 @@
         // Production is the one host that serves real users; every other copy (DDEV, a dev clone,
         // localhost) is a development one — the URL row right above says WHICH.
         const env = RBt(siteUrl === PROD_ROOT.replace(/\/+$/, '') ? 'Production' : 'Development');
-        const relText = (rel) => rel ? 'v' + rel.version + ' · build ' + rel.build : '—';
         const [running, live, bundled] = await Promise.all([
             RBRunningRelease(), RBLiveVersion(), isNativeApp() ? RBLiveVersion(ROOT) : null,
         ]);
@@ -297,9 +301,9 @@
             <h2><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</h2>
             <table class="app-info-table">
                 ${row('Platform', RBPlatformName())}
-                ${row('Running', running ? running.text : '—')}
-                ${isNativeApp() ? row('Web content in this app', relText(bundled)) : ''}
-                ${row(isNativeApp() ? 'Latest web content' : 'Available', relText(live))}
+                ${row('Running', RBReleaseText(running))}
+                ${isNativeApp() ? row('Web content in this app', RBReleaseText(bundled)) : ''}
+                ${row(isNativeApp() ? 'Latest web content' : 'Available', RBReleaseText(live))}
                 ${row('URL', siteUrl)}
                 ${row('Environment', env)}
             </table>
@@ -307,7 +311,7 @@
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${webUpdate ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
-                <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-list-check"></i> ${RBt('What’s new')}</a>
+                <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('What’s new')}</a>
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
             <div class="muted small app-info-foot"><a href="https://rdbk.app" target="_blank" rel="noopener">rdbk.app</a> · © ${new Date().getFullYear()} RDBK.app</div>
@@ -422,7 +426,7 @@
         installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> ${RBt('Install')}`;
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
-        chipStack().prepend(installBtn); // above the language selector
+        chipStack().prepend(installBtn);
         return installBtn;
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
@@ -1249,13 +1253,13 @@
                 if (!existing) {
                     const bl = document.createElement('a');
                     bl.className = 'nav-link ev-back-link';
-                    bl.href = '/event/' + participant.event_slug;
+                    bl.href = ROOT + 'event/' + encodeURIComponent(participant.event_slug);
                     bl.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + RBesc(participant.event_title);
                     n.insertBefore(bl, n.firstChild);
                 }
                 const p = location.pathname.replace(/\/+$/, '') || '/';
                 const root = new URL(ROOT, location.href).pathname.replace(/\/+$/, '') || '/';
-                if (p === root) location.href = '/event/' + participant.event_slug;
+                if (p === root) location.href = ROOT + 'event/' + encodeURIComponent(participant.event_slug);
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
@@ -1337,7 +1341,7 @@
             pill.id = 'pendingPill'; pill.className = 'pending-pill';
             pill.setAttribute('aria-label', RBt('Unsaved work'));
             pill.onclick = openPendingModal;
-            chipStack().prepend(pill); // above the language selector (#609)
+            chipStack().prepend(pill);
         }
         pill.hidden = false;
         pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;
@@ -1410,9 +1414,11 @@
             const d = RBModal(`<h2><i class="fa-solid fa-triangle-exclamation icon-danger"></i> ${RBt(comp ? 'web.gps.comp.title' : 'web.gps.title')}</h2>
                 <p class="modal-text">${RBt(comp ? 'web.gps.comp.warn' : 'web.gps.warn')}</p>
                 <p class="muted small"><i class="fa-solid fa-mobile-screen-button"></i> ${RBt('web.gps.alt')}</p>
-                <div class="btnrow end"><button class="btn btn-ghost" data-x>${RBt('Cancel')}</button><button class="btn btn-primary" data-go>${RBt('Use the web app anyway')}</button></div>`, 'narrow', () => resolve(false));
-            d.q('[data-x]').onclick = () => d.close();
-            d.q('[data-go]').onclick = () => { try { localStorage.setItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav'), '1'); } catch (e) {} d.close(); resolve(true); };
+                <p class="modal-text"><b>${RBt('Continue in the browser anyway?')}</b></p>
+                <div class="btnrow end"><button class="btn btn-ghost" data-no>${RBt('No')}</button><button class="btn btn-primary" data-yes>${RBt('Yes')}</button></div>`, 'narrow', () => resolve(false));
+            // a question answers No / Yes (#435), and No answers too — an await must never hang (#669)
+            d.q('[data-no]').onclick = () => { d.close(); resolve(false); };
+            d.q('[data-yes]').onclick = () => { try { localStorage.setItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav'), '1'); } catch (e) {} d.close(); resolve(true); };
         });
     };
 })();

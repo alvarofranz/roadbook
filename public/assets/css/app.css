@@ -130,12 +130,6 @@ body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
-/* Floating lang for mobile, at the foot of the .app-chip-stack (above the tab bar) when the footer
-   is hidden. The dropdown opens upward so it fits below the top of the screen. */
-.lang-mobile { display: none; position: relative; }
-.lang-mobile .lang-menu { bottom: calc(100% + 6px); top: auto; right: 0; }
-@media (max-width: 1024px) { .lang-mobile { display: inline-flex; } }
-.native .lang-mobile { display: inline-flex; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -185,11 +179,9 @@ section.block { padding: 2.4rem 0; }
 @media (max-width: 1024px) { .wiki-cta a { flex-direction: row; text-align: left; padding: 1rem 1.2rem; } .wiki-cta a p { max-width: none; } .wiki-cta a i { flex-shrink: 0; } }
 /* cross-platform band: each platform sits in a soft pill */
 .platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem; margin-top: 1.4rem; color: var(--text); font-weight: 700; }
-.platforms span { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; }
 .platforms i { color: var(--sand); }
 .platforms a.plat-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; font-weight: 700; color: var(--text); transition: border-color .2s, color .2s; }
 .platforms a.plat-link:hover { border-color: var(--sand); color: var(--sand-2); }
-.platforms .soon { opacity: .55; filter: grayscale(1); cursor: default; }
 .install-note { max-width: 62ch; margin: 1rem auto 0; color: var(--muted); font-size: .85rem; }
 
 /* features grid (home): 6 cards → 3 balanced columns (2 rows on desktop) */
@@ -211,8 +203,7 @@ section.block { padding: 2.4rem 0; }
 /* nothing floats during focused field use (Reader navigating / fullscreen): the tool owns the
    screen, and with the tab bar hidden these chips land straight on its own bars — the language
    chip was sitting on the CAP bar's distance readout while driving (#429) */
-body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack,
-body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
+body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
@@ -366,11 +357,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .rb-switch .rb-switch-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s ease, background .15s ease; }
 .rb-switch.on .rb-switch-track { background: var(--sand); }
 .rb-switch.on .rb-switch-knob { transform: translateX(14px); background: var(--on-sand); }
-/* a feature card for an upcoming capability: dimmed, dashed, with a "Coming soon" pill */
-.flow .step.soon { border-style: dashed; opacity: .85; }
-.flow .step.soon:hover { transform: none; border-color: var(--line); }   /* not a live tool — no clickable lift */
-.flow .step.soon i { color: var(--muted); background: rgba(255, 255, 255, .05); border-color: var(--line); }
-.soon-badge { display: inline-block; vertical-align: middle; margin-left: .4rem; background: var(--card-2); border: 1px solid var(--line); color: var(--sand); border-radius: 999px; padding: .05rem .5rem; font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 /* one-time cookie / storage notice (#95) — honest essential-only notice, not a consent wall.
    It rides on top of whatever the page pins to the viewport bottom, never over it (#401): a page
    that stacks its own bars there publishes their height as `--bottom-stack` (the Reader measures

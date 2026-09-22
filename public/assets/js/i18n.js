@@ -16,7 +16,7 @@
             'feat.4.t': 'Roadbook Reader', 'feat.4.d': 'Navigate with odometer, bearing, a live map and the CAP direction bar.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'A precise GPS odometer with no roadbook — partial and total distance.',
             'feat.7.t': 'Event classification', 'feat.7.d': 'Run a rally on one roadbook: compare every team’s run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.',
-            'events.t': 'Events', 'events.d': 'Organize events around your own roadbooks — invite teams, run the rally and publish the results.', 'Coming soon': 'Coming soon', 'route map': 'route map',
+            'events.t': 'Events', 'events.d': 'Organize events around your own roadbooks — invite teams, run the rally and publish the results.', 'route map': 'route map',
             'install.kicker': 'Cross-platform', 'install.title': 'Install it on any device', 'install.text': 'Every feature of RDBK.app is also available as a free, installable web app (PWA) — on Windows and Mac computers, Android and iOS. No app store needed: add it to your home screen and use it like a native app, even offline.',
             'gallery.kicker': 'Gallery', 'gallery.title': 'Public Roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.',
             // Editor field help tooltips (issue #89)
@@ -153,7 +153,7 @@
             'web.gps.title': 'Browser GPS can be unreliable on phones',
             'web.gps.comp.title': 'This run is scored on GPS accuracy',
             'web.gps.comp.warn': 'On a phone browser, GPS drift can cause false penalties that are not the roadbook\'s fault. For a fair competition run, use the native RDBK app.',
-            'Use the web app anyway': 'Use the web app anyway',
+            
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
@@ -293,8 +293,8 @@
         'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Getting started', 'wiki.nav.recorder': 'Record a track',
         'wiki.nav.editor': 'Create / edit a roadbook', 'wiki.nav.reader': 'Navigate with the Reader', 'wiki.nav.tripmaster': 'Use the Tripmaster',
         'wiki.nav.events': 'Event management',
-        'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
-        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Event management',
+        'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Roadbook Editor',
+        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Event management',
         'wiki.cta.title': 'Step-by-step guide', 'wiki.cta.desc': 'Follow the step-by-step guide to build your roadbooks', 'wiki.cta.link': 'Go to the wiki →',
         'App Info': 'App Info', 'Version': 'Version', 'Environment': 'Environment', 'Update': 'Update',
         'Platform': 'Platform', 'Running': 'Running', 'Available': 'Available', 'Latest web content': 'Latest web content',
