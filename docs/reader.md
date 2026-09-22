@@ -38,7 +38,7 @@ locali e roadbook propri per `?rb=` non sono soggetti al gate.
 `loadRb` normalizza lo schema con
 `RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
 roadbook senza note, legge il flag roadbook-level `map_access` (`mapAllowed`,
-[reader.js:92](../public/reader/reader.js#L92)) per mostrare/nascondere l'opzione mappa, e
+[reader.js:92](../public/reader/reader.js#L92)) che decide se il Reader ha una mappa (§6), e
 apre il **modal di modalità** (§5).
 
 ### Altri ingressi (oltre al picker manuale)
@@ -70,7 +70,7 @@ registra un consumer che apre un `.rdbk` aperto direttamente dall'OS
 ## 2. La tabella note stile cartaceo
 
 Il cuore della vista è `#noteList`, ricostruito interamente da `renderNotes`
-([reader.js:212](../public/reader/reader.js#L212)). Ogni nota è una riga `.nrow` a **4
+([reader.js:212](../public/reader/reader.js#L212)). Ogni nota è una riga `.nrow` a **3
 colonne** (la griglia bianca "carta" è definita in `app.css`; il Reader sovrascrive solo
 dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 
@@ -79,21 +79,22 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 | 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota, con accanto il **badge del tipo di waypoint** FIA (`RB.wpBadgeSVG(n.wp_type, 22)`) |
 | 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc)`; linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
 | 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale (con qualificatore FIA Average/Calculated/Turning in `.note-cap`) · riga **limite di velocità** opzionale (`.note-speed`) · coordinate `lat, lon` |
-| 4 — Pulsanti | `.col-buttons` | pulsante "raggiunta" (solo manuale, nota attiva) · pulsante mappa (se attivo) |
 
 - La risoluzione icone passa per `iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/')`
   ([reader.js:206](../public/reader/reader.js#L206)): inline `data:` → `rb.icons` → palette
   standard.
 - La riga CAP (`.note-cap`) appare solo se la nota ha un `cap`, mostrando `CAP n°` ed
   eventualmente la `cap_distance` in km ([reader.js:219](../public/reader/reader.js#L219)).
+- Non c'è una colonna pulsanti (#569): la sua larghezza va al testo. La riga attiva intera è il
+  bersaglio della validazione manuale e la mappa è un solo pulsante nella barra d'azione (§6).
 - Sotto ogni riga c'è un contenitore `.nmap` nascosto, slot per la mappa per-nota (§6).
-- Dopo il render, gli handler vengono ricablati: `[data-reach]` e il tap sulla riga **attiva**
-  → `advanceNote` (validazione manuale, rifiutata a modo auto acceso), `[data-map]` → `toggleNoteMap`, e
+- Dopo il render, gli handler vengono ricablati: il tap sulla riga **attiva**
+  → `advanceNote` (validazione manuale, rifiutata a modo auto acceso), e
   il tap su **qualsiasi altra** riga → `jumpToNote` (spostamento cursore, con conferma — §7).
 - **Rebuild completo vs aggiornamento in place**: `renderNotes` ricostruisce l'intera lista
   solo ai cambi *strutturali* (avvio, toggle Auto, cambio lingua). Avanzamento e validazione
   aggiornano invece solo lo **stato** delle righe con `updateNoteStates` (classi
-  done/skipped/active e il pulsante "raggiunta" che segue la riga attiva), senza ridisegnare
+  done/skipped/active), senza ridisegnare
   ogni vignetta — così anche la mini-mappa per-nota aperta sopravvive all'avanzamento.
 - **Auto-scroll**: la vista si ricentra sulla nota attiva *solo quando l'indice attivo
   cambia davvero* (`lastScrollIdx`), non a ogni ridisegno.
@@ -208,7 +209,6 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 
 `loadRb` apre `#modeModal` con le opzioni di sessione, lette da `readModeOpts`:
 
-- **Mostra pulsante mappa per nota** (`#optMap`) — solo se `mapAllowed()`; controlla `showMap`.
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
   start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
 - **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
@@ -250,7 +250,9 @@ Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio 
 
 ## 6. La mappa interattiva per-nota
 
-Opzionale (`showMap`), una mappa per volta. `toggleNoteMap`
+Solo se il roadbook la permette (`mapAllowed()`, `meta.map_access`), una mappa per volta. La
+apre e la chiude **un solo pulsante nella barra d'azione** (`#mapBtn`, #569), per la nota
+attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga. `toggleNoteMap`
 ([reader.js:239](../public/reader/reader.js#L239)) apre un `RBMap` nello slot `.nmap` sotto la
 riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
 `NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
@@ -333,7 +335,7 @@ Conseguenze del design:
 acceso: in auto la validazione manuale è rifiutata (vedi sotto).
 
 ### Manuale — tap
-Il tap sulla riga **attiva** (tutta la riga, non solo il pulsantino di spunta) chiama
+Il tap sulla riga **attiva** (tutta la riga) chiama
 `advanceNote()`. Non esiste un pulsante "Convalida" in basso: la validazione sta **sulla nota**,
 dove guarda chi naviga (#529).
 

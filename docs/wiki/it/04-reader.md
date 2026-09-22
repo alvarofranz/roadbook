@@ -70,7 +70,7 @@ Poi scegli la **modalità**:
 1. **Barra odometro** (sticky in alto): titolo, totale, parziale, bussola CAP, ora, stato GPS, batteria
 2. **Tabella note**: ogni nota su una riga con distanza, vignetta tulip, testo, CAP, tipo strada
 3. **Stati nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (bordo rosso) · bianco (futura). La nota attiva diventa inoltre **azzurra man mano che ti avvicini**, e mostra i metri che mancano
-4. **Colonne**: Distanze + numero | Vignetta | Indicazioni | Pulsanti (mappa, raggiunta)
+4. **Colonne**: Distanze + numero | Vignetta | Indicazioni — per validare si tocca tutta la riga attiva
 
 ---
 
@@ -116,7 +116,7 @@ Quando la nota precedente ha un CAP, appare una barra in basso con:
 
 ## 6. Mappa interattiva per nota
 
-Opzionale: tap sul pulsante mappa di una riga apre una mini-mappa sotto la nota.
+Opzionale (solo se il roadbook permette la mappa): il pulsante mappa nella barra in basso apre una mini-mappa sotto la nota attiva; un altro tap la chiude.
 
 - Centro sulla nota a zoom ~13
 - Mostra l'intera traccia + pin per contesto

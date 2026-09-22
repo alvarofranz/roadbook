@@ -70,7 +70,7 @@ Luego eliges la **modalidad**:
 1. **Barra odómetro** (sticky arriba): título, total, parcial, brújula CAP, hora, estado GPS, batería
 2. **Tabla de notas**: cada nota en una fila con distancia, viñeta tulip, texto, CAP, tipo de carretera
 3. **Estados de nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (borde rojo) · blanco (futura). La nota activa además se pone **azul a medida que te acercas**, y muestra los metros que faltan
-4. **Columnas**: Distancias + número | Viñeta | Indicaciones | Botones (mapa, raggiunta)
+4. **Columnas**: Distancias + número | Viñeta | Indicaciones — para validar se toca toda la fila activa
 
 ---
 
@@ -116,7 +116,7 @@ Es una ayuda "a brújula" para navegar entre dos notas sin perderse.
 
 ## 6. Mapa interactivo por nota
 
-Opcional: tap en el botón de mapa de una fila abre una mini-mapa bajo la nota.
+Opcional (solo si el roadbook permite el mapa): el botón de mapa de la barra inferior abre un mini-mapa bajo la nota activa; otro tap lo cierra.
 
 - Centrado en la nota a zoom ~13
 - Muestra toda la trazada + pin para contexto

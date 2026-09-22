@@ -48,15 +48,15 @@
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
         // the material a note carries, drawn around its row exactly as the Reader draws it (#542)
-        const blockRows = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => `<div class="nrow readonly block block-${RB.blockType(b).id}">
+        const blockRows = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => `<div class="nrow block block-${RB.blockType(b).id}">
             <div class="col-distance"></div>
             <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
             <div class="col-text${b.image ? '' : ' col-text-wide'}"><div class="text">${esc(b.text || '')}</div></div>
         </div>`).join('');
-        // same white "paper" rows as the Reader (read-only: no buttons/state)
-        $('chNotes').innerHTML = rb.notes.map((n) => {
+        // same white "paper" rows as the Reader (no state colouring)
+        $('chNotes').innerHTML = rb.notes.map((n, i) => {
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
-            return `${blockRows(n, 'before')}<div class="nrow readonly">
+            return `${blockRows(n, 'before')}<div class="nrow">
                 <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>

@@ -22,7 +22,6 @@
     let armed = false, extraAccum = 0; // P_extra: overshoot-and-return
     let pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 };
     let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
-    let showMap = true; // per-note map button
     let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map
@@ -153,9 +152,6 @@
         r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
         if (!r.notes.length) return toast('Roadbook has no notes.');
         rb = r; notes = r.notes;
-        // "Map access from player" is a roadbook-level setting (default allowed when absent)
-        $('optMap').checked = mapAllowed();
-        $('optMapRow').hidden = !mapAllowed();
         showPreview();
     }
     // Preview an opened roadbook read-only, BEFORE choosing a mode — you might just want to look.
@@ -165,7 +161,6 @@
         preview = true;
         document.body.classList.remove('rb-immersive');
         document.body.classList.add('rb-preview');
-        showMap = mapAllowed();
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         $('previewTitle').textContent = (rb.meta && rb.meta.title) || t('Roadbook');
         renderNotes();
@@ -191,11 +186,13 @@
         $('modeLocked').hidden = !mode;
         if (mode) $('modeLockedTxt').textContent = t('Mode set by the event:') + ' ' + t(mode === 'competition' ? 'Competition mode' : 'Trip mode');
     }
+    // "Map access from player" is a roadbook-level setting (default allowed when absent): it decides
+    // whether the Reader has a map at all — the action-bar toggle and the preview's tap-to-map (#569).
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     let optGpx = false, sound = true, audioCtx = null;
     function readModeOpts() {
         // Advancement starts on Automatic (GPS); the nav-screen Auto switch toggles it during the run.
-        auto = true; showMap = $('optMap').checked && mapAllowed(); optGpx = $('optGpx').checked; sound = $('optSound').checked;
+        auto = true; optGpx = $('optGpx').checked; sound = $('optSound').checked;
     }
     // Short beep when a note is reached (WebAudio — no asset, CSP-safe). The context is created
     // on the start tap (a user gesture) so it can later sound on a GPS auto-validation.
@@ -239,6 +236,7 @@
         publishBottomStack(); // the action row just changed height (Competition adds Finish)
         syncAutoBtn();
         $('navGpx').hidden = !optGpx;
+        $('mapBtn').hidden = !mapAllowed(); syncMapBtn();
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
         if (evCtx) {
             var bar = document.querySelector('.odo-ev-bar') || document.createElement('div');
@@ -260,7 +258,7 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { openedAs, competition, team, auto, showMap, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, competition, team, auto, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -275,7 +273,7 @@
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
-        team = s.team; auto = s.auto; showMap = s.showMap && mapAllowed(); optGpx = s.gpxOption; sound = s.sound !== false;
+        team = s.team; auto = s.auto; optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
@@ -355,7 +353,8 @@
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
-    // Paper-style 4-column rows: total/partial+number | vignette | comments | buttons.
+    // Paper-style 3-column rows: total/partial+number | vignette | comments. No buttons column
+    // (#569): the whole active row is the note-done target and the map is the action bar's toggle.
     // Row states: reached = green · skipped (passed over, never reached) = pink · active = red
     // border · upcoming = white. The active row additionally takes the LIVE GPS proximity state
     // (near → arriving, painted by paintApproach); `tight` marks the distance cell of a note whose
@@ -390,7 +389,6 @@
             <div class="col-distance"></div>
             <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
             <div class="col-text${wide}"><div class="text">${esc(b.text || '')}</div></div>
-            <div class="col-buttons"></div>
         </div>`;
     }).join('');
     function renderNotes() {
@@ -405,21 +403,16 @@
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
-            const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
             return `${blockRowsHTML(n, 'before')}<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${tight}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
-                <div class="col-buttons">${reach}${mapb}</div>
             </div>${blockRowsHTML(n, 'after')}<div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');
-        $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); advanceNote(); });
-        $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
             const i = +c.dataset.i;
-            if (preview) { if (showMap) toggleNoteMap(i); return; }
-            // The whole active row is the "done" target — aiming at a 42 px button on a moving
+            if (preview) { if (mapAllowed()) toggleNoteMap(i); return; }
+            // The whole active row is the "done" target — aiming at a small button on a moving
             // vehicle is what made validation "scomoda" (#386) — and any other row asks first.
             // With Auto on, advanceNote itself declines: the GPS validates, not the finger.
             if (i === activeIdx) advanceNote(); else jumpToNote(i);
@@ -429,8 +422,8 @@
         refreshLive();
         saveSession();
     }
-    // Advancing/validating only changes row STATE: update the classes and the reach button
-    // in place instead of re-rendering every vignette. renderNotes() stays for structural
+    // Advancing/validating only changes row STATE: update the classes in place instead of
+    // re-rendering every vignette. renderNotes() stays for structural
     // changes (start, auto on/off, language switch) — and the open per-note map survives.
     function updateNoteStates() {
         const list = $('noteList');
@@ -445,17 +438,6 @@
                 const togo = row.querySelector('.togo'); if (togo) togo.textContent = '';
             }
         });
-        list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
-        if (!auto && notes[activeIdx]) {
-            const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
-            if (cell) {
-                const b = document.createElement('button');
-                b.className = 'note-button reach'; b.dataset.reach = ''; b.title = t('Note reached');
-                b.innerHTML = '<i class="fa-solid fa-check"></i>';
-                b.onclick = (e) => { e.stopPropagation(); advanceNote(); };
-                cell.prepend(b);
-            }
-        }
         if (activeIdx !== lastScrollIdx) { lastScrollIdx = activeIdx; scrollActiveIntoView(); }
         refreshLive();
         saveSession();
@@ -477,6 +459,7 @@
         closeInlineMap();
         if (!window.maplibregl) return toast('Map not configured.');
         const el = $('nmap' + i); if (!el) return;
+        syncMapBtn(true);
         const n = notes[i];
         el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
         el.hidden = false; inlineMapIdx = i;
@@ -490,7 +473,12 @@
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
         if (inlineMapIdx >= 0) { const el = $('nmap' + inlineMapIdx); if (el) { el.hidden = true; el.innerHTML = ''; } inlineMapIdx = -1; }
+        syncMapBtn(false);
     }
+    // The action bar's one map button (#569): it opens the ACTIVE note's map and closes whatever
+    // map is open, and it is lit while one is.
+    function syncMapBtn(open) { const b = $('mapBtn'); litBtn(b, !!open); b.setAttribute('aria-pressed', String(!!open)); }
+    $('mapBtn').onclick = () => { if (inlineMapIdx >= 0) closeInlineMap(); else if (notes[activeIdx]) toggleNoteMap(activeIdx); };
     // Everything that depends on where we are RIGHT NOW: the active row's proximity state and its
     // distance to go. Driven by every trusted fix, and again whenever the active note changes, so
     // no readout is ever left describing the note before it (#387).
@@ -593,8 +581,8 @@
         validateAt(i, here);
     }
     // What "advance" means here: validate in competition, mark reached in trip. A tap on the
-    // active row, its check button and the remote's next command run this same action — and all
-    // three are MANUAL validation, which belongs to manual mode: with Auto on the GPS is the only
+    // active row and the remote's next command run this same action — and both are MANUAL
+    // validation, which belongs to manual mode: with Auto on the GPS is the only
     // authority, so a tap says how to take over instead of quietly doing the GPS's job (#529).
     //
     // In competition the proximity gate can refuse — correctly: a scored validation cannot be
@@ -665,7 +653,7 @@
         const lbl = t(paused ? 'Resume' : 'Pause');
         $('pauseBtn').innerHTML = `<i class="fa-solid fa-${paused ? 'play' : 'pause'}"></i> ${esc(lbl)} RB`; // "RB" makes clear it pauses the roadbook run, not the GPX recording
         $('pauseBtn').title = lbl; $('pauseBtn').setAttribute('aria-label', lbl);
-        $('pauseBtn').classList.toggle('btn-primary', paused);
+        litBtn($('pauseBtn'), paused);
     }
     $('pauseBtn').onclick = () => {
         if (!meter) return;
@@ -717,5 +705,8 @@
     };
 
     /* ---------- utils ---------- */
+    // An action-bar button that is ON swaps ghost for primary: stacked, .btn-ghost (declared later
+    // in app.css) would win and the lit state would never show.
+    function litBtn(b, on) { b.classList.toggle('btn-primary', on); b.classList.toggle('btn-ghost', !on); }
     const pad = (n, w) => String(n).padStart(w, '0'); // display padding (bearing, clock); META codecs live in the core
 })();

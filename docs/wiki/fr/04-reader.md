@@ -70,7 +70,7 @@ Puis choisissez le **mode** :
 1. **Barre odomètre** (collante en haut) : titre, total, partiel, boussole CAP, heure, état GPS, batterie
 2. **Tableau des notes** : chaque note sur une ligne avec distance, vignette tulipe, texte, CAP, type de route
 3. **États de note** : ✅ Atteinte (vert) · ⏭ Sautée (rose) · ▶ Active (bord rouge) · blanc (à venir). La note active devient en plus **bleue à mesure que vous approchez**, et affiche les mètres restants
-4. **Colonnes** : Distances + numéro | Vignette | Indications | Boutons (carte, atteinte)
+4. **Colonnes** : Distances + numéro | Vignette | Indications — pour valider, on touche toute la ligne active
 
 ---
 
@@ -116,7 +116,7 @@ C'est une aide « à la boussole » pour naviguer entre deux notes sans se perdr
 
 ## 6. Carte interactive par note
 
-Optionnelle : tap sur le bouton carte d'une ligne ouvre une mini-carte sous la note.
+Optionnelle (seulement si le roadbook autorise la carte) : le bouton carte de la barre du bas ouvre une mini-carte sous la note active ; un autre tap la referme.
 
 - Centrée sur la note à un zoom ~13
 - Affiche toute la trace + épingle pour le contexte

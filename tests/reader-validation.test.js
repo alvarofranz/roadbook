@@ -18,22 +18,28 @@ describe('validation lives on the note (#529)', () => {
         expect(js).not.toContain('validateBtn');
     });
 
-    it('the active row and its check button are what validate', () => {
+    it('the whole active row is what validates — no buttons column (#569)', () => {
         expect(js).toContain('if (i === activeIdx) advanceNote(); else jumpToNote(i);');
-        expect(js).toContain('b.onclick = (e) => { e.stopPropagation(); advanceNote(); }');
+        expect(js).not.toContain('col-buttons');
+        expect(js).not.toContain('data-reach');
+        expect(appCss).not.toContain('col-buttons');
+    });
+
+    it('the map is one action-bar toggle, only where the roadbook allows it (#569)', () => {
+        expect(html).toContain('id="mapBtn" hidden');
+        expect(html).not.toContain('optMap');
+        expect(js).toContain("$('mapBtn').hidden = !mapAllowed();");
+        expect(js).toContain("$('mapBtn').onclick = () => { if (inlineMapIdx >= 0) closeInlineMap(); else if (notes[activeIdx]) toggleNoteMap(activeIdx); };");
+        expect(js).not.toContain('data-map');
+        for (const lang of LANGS) expect(read(`public/assets/js/i18n.${lang}.js`), lang).toContain("'Note map':");
     });
 
     it('refuses every manual validation while Auto is on', () => {
-        // the guard sits in advanceNote itself, so the row tap, the check button and the
-        // remote's next command are all covered by one rule
+        // the guard sits in advanceNote itself, so the row tap and the remote's next command
+        // are both covered by one rule
         const body = js.match(/async function advanceNote\(\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(body).toMatch(/if \(auto\) return toast\(/);
         expect(body.indexOf('if (auto)')).toBeLessThan(body.indexOf('markReached'));
-    });
-
-    it('offers the check button only in manual mode', () => {
-        expect(js).toContain("!preview && !auto && i === activeIdx");   // rendered row
-        expect(js).toContain('if (!auto && notes[activeIdx]');          // state update in place
     });
 
     it('says how to take over, in every language', () => {
