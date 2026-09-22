@@ -461,7 +461,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    (distance | vignette | comments). No buttons column: the whole row is the Reader's tap
    target and its map is one toggle in the action bar (#569), so the width goes to the text.
    The colour-coded state classes are set by the Reader only. */
-.nrow { display: grid; grid-template-columns: 104px clamp(124px, 26vw, 178px) 1fr; border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
+.nrow { display: grid; grid-template-columns: max(104px, calc(var(--dist-ch, 5) * 1.65ch + 1.2rem)) clamp(124px, 26vw, 178px) 1fr; /* the distance column: as wide as the list's longest total (#730) */ border-bottom: 1px solid #c9c9c9; min-height: 132px; background: #fff; color: #14110b; }
 .nrow > div { padding: .45rem .5rem; border-right: 1px solid #d7d7d7; min-width: 0; }
 .nrow .col-text { border-right: 0; }
 .nrow .col-distance { display: flex; flex-direction: column; gap: .1rem; }
@@ -481,7 +481,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* phones: give the tulip more room (it's the thing you read while driving) */
 @media (max-width: 600px) {
     /* the distance column fits a total and a partial at the Reader's size (#569) */
-    .nrow { grid-template-columns: 92px minmax(140px, 40vw) 1fr; }
+    .nrow { grid-template-columns: max(92px, calc(var(--dist-ch, 5) * 1.65ch + 1rem)) minmax(140px, 40vw) 1fr; }
     .nrow > div { padding-left: .4rem; padding-right: .4rem; }
     .nrow .col-vignette svg { max-height: 170px; }
 }

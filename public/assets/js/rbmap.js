@@ -53,10 +53,11 @@ window.RBMap = class RBMap {
         try {
             this.map = new maplibregl.Map(Object.assign({
                 container: containerId, style: STYLE_SATELLITE,
-                // Cap at the deepest zoom our base tiles cover (topo 20 / satellite 19). Without this the
-                // map defaults to maxZoom 22 and zooming past the available tiles destabilises the camera,
-                // snapping it back to the initial zoom (#112).
-                center: [-3.6, 37.178], zoom: 12, maxZoom: 20, attributionControl: true,
+                // Cap the zoom (the tiles stop at 19, topo at 17 and is overzoomed past it). Without this
+                // the map defaults to maxZoom 22 and zooming past the tiles destabilises the camera,
+                // snapping it back to the initial zoom (#112). The attribution is the compact ⓘ, so a long
+                // credit (OpenTopoMap) never covers a small map.
+                center: [-3.6, 37.178], zoom: 12, maxZoom: 20, attributionControl: { compact: true },
                 // Embedded maps live inside scrolling pages, so by default they DON'T hijack the scroll:
                 // one finger / plain wheel scrolls the page, two fingers / ⌘+wheel move the map. A caller
                 // whose map IS the work surface (the Editor) opts out with cooperativeGestures:false.

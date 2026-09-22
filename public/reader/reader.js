@@ -363,6 +363,7 @@
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         // the shared paper rows (NoteCanvas.rowsHTML, #635) + the run's state classes + the map slot
+        $('noteList').style.setProperty('--dist-ch', RB.distanceChars(rb.notes)); // the distance column fits the longest (#730)
         $('noteList').innerHTML = NoteCanvas.rowsHTML(rb, {
             rowClass: (i) => (preview ? '' : [reached.has(i) ? 'done' : (i < activeIdx ? 'skipped' : ''), i === activeIdx ? 'active' : ''].filter(Boolean).join(' ')),
             after: (i) => `<div class="nmap" id="nmap${i}" hidden></div>`,

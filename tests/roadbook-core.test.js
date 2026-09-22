@@ -1229,3 +1229,11 @@ describe('folding older files into one slot per type (#547)', () => {
         expect(texts[0]).toContain('Two');
     });
 });
+
+describe('RB.distanceChars (#730)', () => {
+    it('is the length of the longest total as km.dd, never under 4', () => {
+        expect(RB.distanceChars([{ distance: 0 }, { distance: 9870 }])).toBe(4);
+        expect(RB.distanceChars([{ distance: 1200 }, { distance: 123450 }])).toBe(6);
+        expect(RB.distanceChars([])).toBe(4);
+    });
+});
