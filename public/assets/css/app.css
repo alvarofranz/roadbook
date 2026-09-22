@@ -176,11 +176,22 @@ section.block { padding: 2.4rem 0; }
 .store-badge > i { font-size: 1.75rem; width: 1.1em; text-align: center; }
 .store-badge small { display: block; font-size: .64rem; line-height: 1.1; letter-spacing: .02em; }
 .store-badge b { display: block; font-size: 1.18rem; line-height: 1.1; font-weight: 600; letter-spacing: -.01em; }
-.get-app { display: flex; flex-direction: column; align-items: center; gap: .9rem; margin-top: 1.4rem; }
+.get-app { display: flex; flex-direction: column; align-items: flex-start; gap: .9rem; margin-top: 1.1rem; } /* About: the badges, then the web app for computers */
 .get-app-web { display: inline-flex; align-items: center; gap: .5rem; color: var(--sand-2); font-weight: 700; font-size: .92rem; }
-.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1rem; margin-top: 1.6rem; }
-.install-band { text-align: center; max-width: 860px; }
-.install-band .store-badges { justify-content: center; }
+/* the hero's store badges (#725): the full width of the hero, two big badges side by side */
+.hero-stores { margin-top: 2rem; }
+.hero-stores .store-badges { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.hero-stores .store-badge { justify-content: center; min-height: 68px; padding: .6rem 1.2rem; border-radius: 14px; }
+.hero-stores .store-badge > i { font-size: 2.2rem; }
+.hero-stores .store-badge b { font-size: 1.45rem; }
+.hero-stores .store-badge small { font-size: .72rem; }
+/* how it works: four numbered steps on one even row, a 2×2 grid on a phone */
+.workflow { list-style: none; counter-reset: wf; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 2.4rem 0 0; padding: 0; }
+.workflow li { counter-increment: wf; }
+.workflow .wf-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: .7rem; height: 100%; padding: 1.3rem .8rem 1.1rem; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.workflow .wf-step::before { content: counter(wf); position: absolute; top: .7rem; left: .8rem; color: var(--muted); font-size: .78rem; font-weight: 800; }
+.workflow .wf-step span { font-size: .92rem; font-weight: 700; }
+.workflow a.wf-step:hover { border-color: var(--sand); }
 /* the step-by-step guide: one wide card under the features */
 .guide-band { display: flex; align-items: center; gap: 1rem; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(232,176,89,.12), rgba(232,176,89,.05)); border: 1px solid rgba(232,176,89,.3); border-radius: var(--radius); color: var(--text); text-decoration: none; transition: border-color .15s, transform .12s; }
 .guide-band:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
@@ -399,7 +410,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    scrolling past it is the right behaviour. */
 .webgps-banner { display: flex; align-items: center; gap: .7rem; background: #4a3210; border-bottom: 1px solid var(--line); color: var(--text); padding: calc(.7rem + env(safe-area-inset-top)) 1rem .7rem; font-size: .86rem; }
 .webgps-banner i { color: var(--sand); flex-shrink: 0; }
-.webgps-banner .webgps-text { flex: 1; }
+.webgps-banner .webgps-text { flex: 1; font-size: .88rem; }
+.webgps-banner .webgps-text a { color: var(--sand-2); font-weight: 700; white-space: nowrap; }
 .webgps-banner .webgps-x { background: none; border: 0; color: var(--muted); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: .1rem .3rem; }
 .webgps-banner .webgps-x:hover { color: var(--text); }
 .native .webgps-banner { display: none; }
@@ -519,27 +531,19 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .hero-mock { width: 100%; max-width: 276px; height: auto; border-radius: 28px; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); justify-self: end; }
 /* full-width "how it works" strip: one centred row of 4 icon-chip steps + arrows on
    desktop/tablet, a clean 2×2 grid on phones (arrows dropped once it wraps) */
-.workflow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 1rem 1.6rem; margin-top: 2.6rem; }
-.workflow .wf-step { display: flex; flex-direction: column; align-items: center; gap: .55rem; text-align: center; width: 8.5rem; }
 .workflow .wf-step i { transition: background .12s ease, border-color .12s ease; }
-.workflow .wf-step span { font-size: .86rem; font-weight: 700; }
 /* workflow steps link to their feature page — subtle lift + chip highlight on hover */
 .workflow a.wf-step { color: inherit; text-decoration: none; transition: transform .12s ease; }
 .workflow a.wf-step:hover { transform: translateY(-3px); }
 .workflow a.wf-step:hover i { background: rgba(232, 176, 89, .22); border-color: var(--sand); }
 .workflow a.wf-step:hover span { color: var(--sand); }
-.workflow .wf-arrow { height: 3.4rem; display: inline-flex; align-items: center; }
-.workflow .wf-arrow svg { display: block; }
 @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
     .hero-copy { text-align: center; }
-    .hero-cta, .hero-cta .store-badges { justify-content: center; }
     .hero-copy p.lead { margin-left: auto; margin-right: auto; }
     .hero-mock { max-width: 204px; margin: .4rem auto 0; justify-self: center; }
 }
 @media (max-width: 560px) {
-    .workflow { gap: 1.8rem 2.4rem; }
-    .workflow .wf-arrow { display: none; }   /* clean 2×2 icon grid on phones — no stray arrows */
 }
 .foot-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; }
 .foot-links a { color: var(--sand-2); }
@@ -721,6 +725,11 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
    the row below, stretching to fill it so none of them is orphaned on a line of its own. The
    block sits AFTER the base rules on purpose — same specificity, so the last one wins (#476). */
 @media (max-width: 640px) {
+    .workflow { grid-template-columns: 1fr 1fr; gap: .7rem; }
+    .hero-stores .store-badges { gap: .6rem; }
+    .hero-stores .store-badge { min-height: 58px; padding: .5rem .6rem; }
+    .hero-stores .store-badge b { font-size: 1.1rem; }
+    .hero-stores .store-badge > i { font-size: 1.7rem; }
     .roadbook-row .meta { min-width: 100%; }
     .roadbook-row .meta small { white-space: normal; }
     /* the status pill carries a word, so it takes its own line; the icon buttons then share the
