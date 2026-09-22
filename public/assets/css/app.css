@@ -2,7 +2,6 @@
    Dark rally/desert theme. Mobile-first. */
 :root {
     --bg: #0e1116;
-    --bg-soft: #151a22;
     --card: #1a212c;
     --card-2: #212a37;
     --line: rgba(255, 255, 255, .08);
@@ -21,8 +20,8 @@
     color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-/* The `hidden` attribute must ALWAYS beat classes that set display (.center-screen,
-   .modal…). Without this, screens/modals would not hide. */
+/* The `hidden` attribute must ALWAYS beat classes that set display (.modal, .btnrow…).
+   Without this, screens/modals would not hide. */
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
@@ -222,7 +221,6 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
    `html:not(.native)` guard the odometer bar uses. */
 @media (min-width: 1025px) { html:not(.native) .tabbar-dropup { display: none; } }
 /* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */
-.mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
 .mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }
 .mv-opt:hover { border-color: var(--sand); }
 /* "unsaved work" pill: sits in the bar (always visible, not behind the mobile menu) and only
@@ -233,6 +231,17 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .pending-list { display: flex; flex-direction: column; gap: .5rem; }
 .pending-list .roadbook-row > i { color: var(--sand); flex-shrink: 0; }
 /* footer */
+/* The picture boxes shared by several pages (#678): a round user avatar (72 px; .avatar-sm 46 px,
+   a page may size it up), an event logo tile, and the white card a QR code is drawn on. */
+.avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); flex: none; }
+.avatar.avatar-sm { width: 46px; height: 46px; }
+.event-logo { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); flex: none; }
+.qr-canvas { background: #fff; border-radius: 8px; padding: 6px; }
+/* A content page: one centred reading column inside .wrap (which keeps the side gutter), with room
+   below for the mobile tab bar. About · changelog · install · APK · event · public roadbook ·
+   profile · account · My roadbooks — one rule, not one per page (#678). */
+.page-col { max-width: 880px; padding-top: 1.2rem; padding-bottom: 5rem; }
+.page-col .lead { max-width: 62ch; }
 .foot { border-top: 1px solid var(--line); margin-top: 2rem; padding: 2rem 0; color: var(--muted); font-size: .9rem; }
 .foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
 .foot a { color: var(--sand-2); }
@@ -241,11 +250,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* GPS tool pages (Reader · Recorder · Tripmaster): short landscape gives the dashboard the whole screen */
 @media (orientation: landscape) and (max-height: 540px) { body.gps-tool header.topbar { display: none; } }
 
-/* ---------- centred single-card screen (Reader load screen) ---------- */
-.center-screen { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 2rem 1rem; }
-.center-card { max-width: 480px; }
-.center-card .big { font-size: 3rem; color: var(--sand); }
-.center-card h1 { margin: .6rem 0 .3rem; }
 /* tool-page title + its "How it works" link, side by side (centred in the idle card, left-aligned on the editor landing) */
 /* One page-header pattern for every section: the title on the left, the "Info" link at the
    top-right of the same row. No big decorative icon, no centring — identical across sections. */
@@ -257,6 +261,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
+.panel .head-row h2 { margin: 0; }
+.panel + .panel { margin-top: 1rem; } /* a page of stacked panels (event editor, participants desk, ranking) */
 /* A heading with its own actions on the same row: title left, actions right, wrapping when the
    screen is too narrow — the "a destra" layout. ONE pattern for every page (#482 · #642). */
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
@@ -832,10 +838,6 @@ button.rb-badge:hover { background: var(--card); }
 .progress-bar { height: 100%; width: var(--progress, 0%); background: var(--sand); transition: width .2s ease; }
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: 9px; }
-/* the admin toggle: a small floating chip; the edit bar appears when it's active */
-.i18ne-toggle { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-.i18ne-toggle.active { color: var(--on-sand); background: var(--sand); border-color: var(--sand); }
-.i18ne-toggle.has-pending::after { content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--track); border: 2px solid var(--card); }
 .i18ne-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .4rem .7rem; box-shadow: var(--shadow); }
 .i18ne-badge { display: inline-flex; align-items: center; gap: .35rem; color: var(--sand); font-weight: 700; font-size: .85rem; }
 .i18ne-hint { color: var(--muted); font-size: .78rem; }

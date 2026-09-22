@@ -1343,6 +1343,6 @@
         eventLink,
     };
     // The browser uses the global; Node (the test runner) imports the same object.
-    if (typeof window !== 'undefined') { window.RB = RB; window.RBEventLink = eventLink; }
+    if (typeof window !== 'undefined') window.RB = RB;
     if (typeof module !== 'undefined' && module.exports) module.exports = RB;
 })();

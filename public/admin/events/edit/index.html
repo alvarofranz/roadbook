@@ -10,12 +10,9 @@
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.2-101">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.2-101">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.2-102">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.2-102">
     <style>
-        .ev-section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
-        .ev-section h2 { font-size: 1.1rem; margin: .2rem 0 .8rem; }
-        .ev-section .head-row h2 { margin: 0; }
         /* associated roadbooks: title · participation mode · edit · remove, one grid for header and rows */
         .ev-rb-row { display: grid; grid-template-columns: minmax(0, 1fr) 15rem 2.8rem 2.8rem; gap: .5rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
         .ev-rb-row:last-child { border-bottom: 0; }
@@ -26,7 +23,6 @@
         .ev-dates .field { margin: 0; }
         .ev-dates .field-label { display: block; margin: 0 0 .3rem; }
         .ev-logo-row { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin: .6rem 0; }
-        .ev-logo-thumb { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); }
         /* HQ block: map left, hint + coordinates to its right; stacks on narrow screens */
         .ev-hq-grid { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin: .4rem 0; }
         .ev-hq-map { flex: 2 1 320px; min-width: 0; height: 300px; }   /* frame in app.css */
@@ -38,7 +34,6 @@
         .ev-join-code { font-family: ui-monospace, monospace; font-size: 1.25rem; letter-spacing: .15em; }
         .ev-code-in { max-width: 12rem; font-family: ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; margin: 0; }
         .ev-link-url { font-family: ui-monospace, monospace; font-size: .95rem; overflow-wrap: anywhere; }
-        .ev-qr-canvas { background: #fff; border-radius: 8px; padding: 4px; }
         .ev-code-box { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
         .ev-code-box h3 { font-size: 1rem; margin: 0 0 .3rem; }
         .ev-add-row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: .5rem; }
@@ -68,7 +63,7 @@
 
     <div id="evBody" hidden>
         <!-- 1 · the event itself -->
-        <section class="ev-section">
+        <section class="panel">
             <label class="field-label" for="evTitleIn" data-i18n="Title">Title</label>
             <input id="evTitleIn" class="field" autocomplete="off">
             <div class="ev-dates">
@@ -78,7 +73,7 @@
             <label class="checkbox-row"><input type="checkbox" id="evPublic"> <span data-i18n="Listed in the public event gallery">Listed in the public event gallery</span></label>
             <p class="muted small" data-i18n="Unlisted events stay reachable by their link — share it with who you want.">Unlisted events stay reachable by their link — share it with who you want.</p>
             <div class="ev-logo-row" id="logoRow" hidden>
-                <img id="evLogoImg" class="ev-logo-thumb" alt="" hidden>
+                <img id="evLogoImg" class="event-logo" alt="" hidden>
                 <button class="btn btn-ghost" id="evLogoUpload" type="button"><i class="fa-solid fa-image"></i> <span data-i18n="Upload logo">Upload logo</span></button>
                 <button class="btn btn-ghost" id="evLogoRemove" type="button" hidden><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Remove logo">Remove logo</span></button>
                 <input id="evLogoFile" type="file" accept="image/*" hidden>
@@ -99,7 +94,7 @@
         </section>
 
         <!-- 2 · registration: settings saved with Save; the code tools act on the SAVED code -->
-        <section class="ev-section" id="regSection">
+        <section class="panel" id="regSection">
             <div class="head-row">
                 <h2 data-i18n="Registration">Registration</h2>
                 <a class="btn btn-ghost" id="ppPageLink" hidden><i class="fa-solid fa-users"></i> <span data-i18n="Participants">Participants</span> <span id="ppCount"></span></a>
@@ -115,7 +110,7 @@
                     <a class="meta ev-link-url" id="evLinkUrl" href="" target="_blank" rel="noopener"></a>
                     <button class="btn btn-ghost" id="evLinkCopy" type="button"><i class="fa-solid fa-copy"></i> <span data-i18n="Copy">Copy</span></button>
                 </div>
-                <canvas id="evQrCode" class="ev-qr-canvas" width="140" height="140"></canvas>
+                <canvas id="evQrCode" class="qr-canvas" width="140" height="140"></canvas>
                 <div class="ev-line">
                     <span class="meta"><span data-i18n="Join code">Join code</span>: <span class="ev-join-code" id="joinCodeOut"></span></span>
                     <button class="btn btn-ghost" id="joinRotate" type="button"><i class="fa-solid fa-rotate"></i> <span data-i18n="New join code">New join code</span></button>
@@ -128,14 +123,14 @@
         </section>
 
         <!-- 3 · who manages this event with you (#598) -->
-        <section class="ev-section" id="orgSection" hidden>
+        <section class="panel" id="orgSection" hidden>
             <h2 data-i18n="Organizers">Organizers</h2>
             <div id="orgList"></div>
             <div class="btnrow start" id="orgAddRow"><button class="btn btn-ghost" id="orgAddBtn" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add organizer">Add organizer</span></button></div>
         </section>
 
         <!-- 4 · the roadbooks it gathers, each with its participation mode -->
-        <section class="ev-section" id="rbSection" hidden>
+        <section class="panel" id="rbSection" hidden>
             <h2 data-i18n="Roadbooks">Roadbooks</h2>
             <div id="rbList"></div>
             <div class="btnrow start"><button class="btn btn-ghost" id="rbAdd" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add roadbook">Add roadbook</span></button></div>
@@ -151,17 +146,17 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../../../assets/js/qrcode.min.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/rb-qr.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/config.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/rbmap.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/i18n.js?v=1.9.2-101"></script>
-<script src="../../../assets/js/app.js?v=1.9.2-101"></script>
-<script src="event-edit.js?v=1.9.2-101"></script>
+<script src="../../../assets/js/qrcode.min.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/rb-qr.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/config.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/rbmap.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/i18n.js?v=1.9.2-102"></script>
+<script src="../../../assets/js/app.js?v=1.9.2-102"></script>
+<script src="event-edit.js?v=1.9.2-102"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@
             'help.danger': 'FIA danger grading, shown as ! / !! / !!! in the vignette — the higher the grade, the more caution the spot demands.',
             'help.speed': 'A declarative speed limit (km/h) in force from this note; “End of limit” lifts it. Setting a limit also marks the note a controlled zone.',
             'help.capType': 'Qualifies the note’s CAP heading (FIA): Exit, Average, Calculated or Turning. Enabled once the note carries a CAP.',
-            'help.image': 'An optional image for this comment row. It is embedded in the roadbook and shown in the Reader and PDF.',
+            
             'help.wpType': 'The FIA waypoint type. It sets the map icon and, in a rally roadbook, how the waypoint is validated and scored.',
             'help.cap': 'Whether this note carries a CAP: the heading to hold AFTER it, computed toward the next note together with the straight-line distance. Turning it off clears the CAP type too.',
             'help.radius': 'Validation radius in metres — the geofence for automatic pass detection. Left empty it falls back to the roadbook default, then the type default (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m), then the 50 m system default. The placeholder shows the fallback in force.',
@@ -118,11 +118,11 @@
             'Join this event as a participant.': 'Join this event as a participant.',
             'Sign in to join this event.': 'Sign in to join this event.',
             'Could not join.': 'Could not join.',
-            'Open join (no code required)': 'Open join (no code required)',
+            
             'Registration': 'Registration', 'Closed — nobody can join': 'Closed — nobody can join', 'Invite code only': 'Invite code only', 'Open — anyone can join': 'Open — anyone can join',
             'Require organizer activation (personal QR)': 'Require organizer activation (personal QR)',
             
-            'Switch to Invite code': 'Switch to Invite code',
+            
             'participants are waiting for activation. Switching will admit all of them. Continue?': 'participants are waiting for activation. Switching will admit all of them. Continue?', 'Admit all': 'Admit all',
             'participants are already active. Keep them active, or send them back to pending for the QR code?': 'participants are already active. Keep them active, or send them back to pending for the QR code?', 'Keep active': 'Keep active', 'Require QR code': 'Require QR code',
             'Activate all': 'Activate all', 'participants are waiting for activation. Admit all of them?': 'participants are waiting for activation. Admit all of them?', 'participants activated.': 'participants activated.',
@@ -140,8 +140,8 @@
             'View on map': 'View on map', 'Open in Reader': 'Open in Reader', 'Select a roadbook to preview it on the map.': 'Select a roadbook to preview it on the map.', 'No route yet.': 'No route yet.',
             'Waiting for QR code…': 'Waiting for QR code…', 'Scanning…': 'Scanning…',
             'Could not access camera.': 'Could not access camera.',
-            'Open ranking': 'Open ranking',
-            'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Scores for this event. The event organizer collects result QR codes after each run and adds them here.',
+            
+            
             
             'Ranking': 'Ranking',
             'native.better.gps': 'For better GPS accuracy and background recording, use the native iOS or Android app.',
