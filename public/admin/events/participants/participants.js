@@ -6,6 +6,8 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     const id = +(new URLSearchParams(location.search).get('id') || 0);
+    // who an activation admitted, as the desk reads it back: username (full name)
+    const whoLabel = (p) => p ? p.username + (p.name ? ' (' + p.name + ')' : '') : '';
     let q = '', page = 1, status = 'pending', searchTimer = null, refreshTimer = null, eventTitle = '', pendingTotal = 0;
 
     function renderActivateAll() {
@@ -88,9 +90,9 @@
         if (!code) return;
         if (!/^[A-Z2-9]{6}$/.test(code)) { toast('Invalid activation code.'); return; }
         const busy = RBBusy(e.currentTarget);
-        const x = await api('event_activate_by_code', { code });
+        const x = await api('event_activate_by_code', { event_id: id, code });
         busy.reset();
-        if (x.ok) { $('ppActivateIn').value = ''; toast('Participant activated.'); load(); }
+        if (x.ok) { $('ppActivateIn').value = ''; toast(t('Activated:') + ' ' + whoLabel(x.participant), 4000); load(); }
         else toast(x.error || 'Could not activate.');
     };
     $('ppActivateIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ppActivate').click(); });
@@ -149,7 +151,7 @@
                 if (!r.ok || !r.users) return;
                 modal.q('#ppAddResults').innerHTML = r.users.length
                     ? r.users.map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}" data-pun="${esc(u.username)}">
-                        <b>${esc(u.username)}</b> <span class="muted small">${esc((u.first_name + ' ' + u.last_name).trim())} · ${esc(u.email)}</span></span></div>`).join('')
+                        <b>${esc(u.username)}</b> <span class="muted small">${esc((u.first_name + ' ' + u.last_name).trim())}${u.organization ? ' · ' + esc(u.organization) : ''}</span></span></div>`).join('')
                     : `<p class="muted small">${esc(t('Nothing matches that search.'))}</p>`;
                 modal.el.querySelectorAll('[data-pu]').forEach((el) => el.onclick = async () => {
                     const busy = RBBusy(el);

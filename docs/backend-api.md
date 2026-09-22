@@ -103,20 +103,20 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
-| `events_manage` | Elenca gli eventi che l'utente può gestire (propri + co-organizzati; tutti per admin) | richiesta |
+| `events_manage` | Elenca gli eventi che l'utente può gestire (propri + co-organizzati; tutti per admin), con `is_owner` per riga (solo il proprietario/admin può cancellare, #600) | richiesta |
 | `event_manage_get` | Dati completi di un evento per la pagina di gestione | richiesta |
-| `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**); lo **slug pubblico segue il titolo** — rigenerato dal titolo a ogni salvataggio, quindi un rename aggiorna `/event/<slug>` (#194) | richiesta/organizer |
+| `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**); lo **slug pubblico segue il titolo finché l'evento non è listato** (#194) e da lì resta fisso, così un rename non rompe i link già condivisi (#578) | richiesta/organizer |
 | `event_delete` | Elimina un evento | richiesta |
 | `event_rb_add`/`event_rb_remove`/`event_rb_mode` | Associa/dissocia un roadbook all'evento; imposta la sua `scoring_mode` | richiesta |
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
-| `event_join_code` | Genera/rigenera il codice di adesione dell'evento | richiesta |
-| `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414) | richiesta |
-| `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge / elenca (paginato) i partecipanti | richiesta |
-| `event_activate_by_code` / `participant_activate` | Attiva un partecipante tramite codice di attivazione / attivazione diretta da organizzatore | richiesta |
+| `event_join_code` | Genera/rigenera il codice di adesione dell'evento; un codice scelto a mano è 4–16 caratteri `A–Z 0–9`, perché diventa il link `/go/<code>` (#576) | richiesta |
+| `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414). **Idempotente** (#574): chi è già dentro riceve il suo stato attuale senza modifiche. Niente nuove adesioni a evento terminato (#587). Un evento non listato si raggiunge col suo link come uno listato (#573) | richiesta |
+| `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge (attivo, l'unico modo di iscrivere qualcuno) / elenca (paginato, con i `counts` per stato) i partecipanti | richiesta |
+| `event_activate_by_code` / `participant_activate` | Attiva un partecipante **pending di quell'evento** (`event_id` obbligatorio) tramite codice / dal roster; non iscrive mai nessuno (#577) e risponde con chi è stato attivato (#604) | richiesta |
 | `event_participants_activate_pending` | Ammette in un colpo solo tutti i `pending` (#416) | richiesta |
 | `leave_participant_mode` | Esce dalla modalità partecipante (pulisce cookie + contesto) | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
-| `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti), filtrata per organizzazione — restituisce le email, quindi è riservata a chi gestisce eventi | organizzatore/admin |
+| `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti): almeno 2 caratteri, `%`/`_` letterali, username/nome/organizzazione in parziale, email **solo esatta**; **non restituisce mai le email** (#575) | organizzatore/admin |
 | `events_list` | Elenco pubblico degli eventi | nessuna |
 | `event_get` | Vista pubblica di un evento via slug | nessuna |
 
