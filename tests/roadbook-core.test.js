@@ -1195,3 +1195,37 @@ describe('the icon library is a map, never a list (#523)', () => {
         expect(rb.icons).toEqual({ 'mine.png': 'data:image/png;base64,BBBB' });
     });
 });
+
+describe('folding older files into one slot per type (#547)', () => {
+    const track = Array.from({ length: 10 }, (_, i) => ({ lat: 0, lon: i * 0.0009 }));
+    const nav = (idx, num) => ({ idx, num, lat: 0, lon: idx * 0.0009, text: 'Note ' + num, road_type_out: 2 });
+
+    it('a second advert goes to the next note whose slot is free — nothing is lost', () => {
+        const rb = RB.importRoadbook({
+            meta: {}, icons: {}, track,
+            notes: [
+                nav(0, 1),
+                { note_kind: 'comment', text: 'First sponsor', image: 'data:1' },
+                { note_kind: 'comment', text: 'Second sponsor', image: 'data:2' },
+                nav(5, 2),
+                nav(9, 3),
+            ],
+        });
+        expect(rb.notes.length).toBe(3);
+        expect(RB.noteBlocks(rb.notes[0]).map((b) => b.image)).toEqual(['data:1']);
+        expect(RB.noteBlocks(rb.notes[1]).map((b) => b.image)).toEqual(['data:2']); // the free slot next door
+        expect(RB.noteBlocks(rb.notes[1])[0].at).toBe('before');
+    });
+
+    it('with every slot taken the words join the ones already there, instead of vanishing', () => {
+        const rb = RB.importRoadbook({
+            meta: {}, icons: {}, track,
+            notes: [nav(0, 1), { note_kind: 'comment', text: 'One' }, { note_kind: 'comment', text: 'Two' }],
+        });
+        expect(rb.notes.length).toBe(1);
+        const texts = RB.noteBlocks(rb.notes[0]).map((b) => b.text);
+        expect(texts.length).toBe(1);
+        expect(texts[0]).toContain('One');
+        expect(texts[0]).toContain('Two');
+    });
+});

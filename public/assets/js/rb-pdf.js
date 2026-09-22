@@ -136,7 +136,7 @@
         const total = (rb.meta && rb.meta.total_distance) || (notes[N - 1] && notes[N - 1].distance) || 0;
         const title = (rb.meta && rb.meta.title) || 'Roadbook';
         // cover page + content pages
-        const sheetRows = N + notes.reduce((sum, n) => sum + RB.noteBlocks(n).length, 0); // notes + their material
+        const sheetRows = N + notes.reduce((sum, n) => sum + RB.noteBlocks(n).filter((b) => b.image || b.text).length, 0); // notes + their material
         const contentPages = sheetRows <= ROWS_FIRST ? 1 : 1 + Math.ceil((sheetRows - ROWS_FIRST) / ROWS_REST);
         const totalPages = 1 + contentPages;
 
@@ -230,9 +230,9 @@
         // The printed sequence: each note, with the material it carries on the side it sits on.
         const sheet = [];
         notes.forEach((n, i) => {
-            RB.noteBlocks(n, 'before').forEach((b) => sheet.push({ block: b }));
+            RB.noteBlocks(n, 'before').forEach((b) => { if (b.image || b.text) sheet.push({ block: b }); });
             sheet.push({ note: n, tulip: tulips[i], close: notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 });
-            RB.noteBlocks(n, 'after').forEach((b) => sheet.push({ block: b }));
+            RB.noteBlocks(n, 'after').forEach((b) => { if (b.image || b.text) sheet.push({ block: b }); });
         });
         let i = 0, page = 0;
         while (i < sheet.length) {

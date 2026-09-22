@@ -611,28 +611,48 @@
        (`note_kind: "comment" | "photo" | "ad"`). It is the same material, so it folds onto the
        note it sat beside: after that note, or before the first one when it opened the roadbook.
        A row that had a place on the route was a note wearing a kind — it becomes a note again and
-       keeps its picture as a block. Runs on import, so nothing downstream ever meets a row that
-       is not a note. */
+       keeps its picture as a block. A note holds ONE block of each type, so a second advert (two
+       sponsor rows in a row) goes to the nearest note whose slot of that type is free, and only
+       when there is nowhere at all do its words join the ones already there. Runs on import, so
+       nothing downstream ever meets a row that is not a note. */
     function foldInfoRows(rb) {
         const rows = rb.notes || [];
         if (!rows.some((n) => n && n.note_kind && n.note_kind !== 'note')) return rb;
-        const attach = (host, n, at) => {
+        const out = [], waiting = [];
+        const blockFrom = (n, at) => {
             const block = { type: n.note_kind === 'photo' ? 'photo' : (n.image ? 'ad' : 'text'), at };
             if (n.image) block.image = n.image;
-            if (n.text && host !== n) block.text = n.text; // a row of its own carried its own words
-            (host.blocks = host.blocks || []).push(block);
+            if (n.text) block.text = n.text;
+            return block;
         };
-        const out = [], lead = [];
+        const slotFree = (host, type) => !(host.blocks || []).some((b) => b.type === type);
+        const put = (host, block, at) => { block.at = at; (host.blocks = host.blocks || []).push(block); };
         for (const n of rows) {
             if (!n.note_kind || n.note_kind === 'note') { out.push(n); continue; }
             if (n.idx != null && n.lat != null) { // a note that had been switched to a kind
-                attach(n, n, 'after');
+                const block = blockFrom(n, 'after');
+                delete block.text; // its words are the note's own text, not a caption of them
                 delete n.note_kind; delete n.image;
                 out.push(n);
-            } else if (out.length) attach(out[out.length - 1], n, 'after');
-            else lead.push(n); // nothing to hang it on yet — it belongs before the first note
+                if (block.image) put(n, block, 'after');
+            } else waiting.push({ block: blockFrom(n, 'after'), host: out.length - 1 }); // -1 = it opened the roadbook
         }
-        if (lead.length && out.length) lead.forEach((n) => attach(out[0], n, 'before'));
+        for (const item of waiting) {
+            const type = item.block.type;
+            const from = Math.max(0, item.host);
+            let placed = false;
+            for (let i = from; i < out.length && !placed; i++) {
+                if (slotFree(out[i], type)) { put(out[i], item.block, i === item.host ? 'after' : 'before'); placed = true; }
+            }
+            for (let i = from - 1; i >= 0 && !placed; i--) {
+                if (slotFree(out[i], type)) { put(out[i], item.block, 'after'); placed = true; }
+            }
+            if (!placed && out.length) { // every slot taken: keep the words with the ones already there
+                const host = out[Math.max(0, item.host)];
+                const b = (host.blocks || []).find((x) => x.type === type);
+                if (b && item.block.text) b.text = [b.text, item.block.text].filter(Boolean).join('\n');
+            }
+        }
         rb.notes = out;
         return rb;
     }

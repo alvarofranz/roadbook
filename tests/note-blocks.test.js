@@ -45,13 +45,36 @@ describe('the editor edits a note, or the material around it (#542)', () => {
         for (const hard of ["'photo'", "'ad'", "'text'"]) expect(tabs, `hard-codes ${hard}`).not.toContain(hard);
     });
 
-    it('each piece of material says which side of the note it sits on', () => {
+    it('the tab IS the control: one slot per type, no "Add" step (#547)', () => {
         const panel = editorJs.match(/function renderBlockPanel\(n\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(panel).toContain("['before', 'after'].map");
-        expect(panel).toContain("t(at === 'before' ? 'Before the note' : 'After the note')");
+        expect(panel).toContain("t(v === 'before' ? 'Before the note' : 'After the note')");
         expect(panel).toContain('type="radio"');
-        expect(panel).toContain('blockAdd');                    // add another one
-        expect(panel).toContain('data-del');                    // …or remove this one
+        expect(panel).toContain('blockPickBtn');                 // the picker itself, straight away
+        expect(panel, 'an Add step is back').not.toContain('blockAdd');
+        // Delete only once there is something to delete
+        expect(panel).toContain("${b ? `<button");
+        expect(editorJs).toContain('const blockOf = (n, id) => RB.noteBlocks(n).find');
+    });
+
+    it('a slot holds a block only while it holds something', () => {
+        const prune = editorJs.match(/function pruneBlocks\(n\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(prune).toContain('n.blocks.filter((b) => b.image || b.text)');
+        expect(prune).toContain('delete n.blocks');
+        // and nothing empty is ever drawn, on any surface
+        for (const p of ['public/editor/editor.js', 'public/reader/reader.js', 'public/challenge/challenge.js']) {
+            expect(read(p), p).toContain('filter((b) => b.image || b.text)');
+        }
+        expect(read('public/assets/js/rb-pdf.js')).toContain('if (b.image || b.text) sheet.push');
+    });
+
+    it("the picker's file input lives where a re-render cannot destroy it (#547)", () => {
+        // it used to sit inside #blockPanel, which replaces its own innerHTML — so the input the
+        // click handler opened had already been thrown away, and Photo and Ad did nothing at all
+        const panelTag = editorHtml.match(/<div id="blockPanel"[^>]*>([\s\S]*?)<\/div>/)[1];
+        expect(panelTag.trim()).toBe('');
+        expect(editorHtml).toContain('<input id="edBlockImg" type="file" accept="image/*" hidden>');
+        expect(editorJs).toContain("const input = $('edBlockImg');");
     });
 
     it('deleting material asks first, naming it', () => {
@@ -61,8 +84,9 @@ describe('the editor edits a note, or the material around it (#542)', () => {
         expect(del).toContain('b.text');                        // the message names what goes
     });
 
-    it('a picture is downscaled by its own type', () => {
+    it('a picture is downscaled by its own type, and a file it cannot read says so', () => {
         expect(editorJs).toContain('RBImg.toDataURL(f, kind.imageMax)');
+        expect(editorJs).toContain("toast('Could not read that image.')");
     });
 
     it('the rows show the material where it will be read', () => {

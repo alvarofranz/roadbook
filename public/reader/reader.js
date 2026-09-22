@@ -382,7 +382,7 @@
     // The material a note carries (#542): a photo or an advert fills the diagram box beside its
     // caption; a text block runs across the whole description area. Never a waypoint — no
     // number, no state colour, nothing to validate.
-    const blockRowsHTML = (n, at) => RB.noteBlocks(n, at).map((b) => {
+    const blockRowsHTML = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
         const kind = RB.blockType(b);
         const wide = !b.image ? ' col-text-wide' : '';
         return `<div class="nrow block block-${kind.id}">
