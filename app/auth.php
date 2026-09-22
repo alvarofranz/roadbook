@@ -407,13 +407,12 @@ function der_value(int $tag, string $body): string {
 function der_integer(string $bytes): string { return der_value(0x02, (ord($bytes[0]) & 0x80) ? "\x00" . $bytes : $bytes); }
 
 // The shared tail of both social sign-ins: they verify their provider's token upstream and arrive
-// here with a trusted identity (sub + email, and a name when the provider gave one). Two phases, so
-// the user always sees WHICH account is about to be used:
-//   PROBE   — report the email and whether that account exists, touching nothing;
-//   CONFIRM — sign in (linking the provider to an existing account matched by verified email), or
-//             create a passwordless account, which requires accepting the Terms exactly like
-//             classic registration.
-// Issues a session + a Bearer token (the app path), same as login_user.
+// here with a trusted identity (sub + email, and a name when the provider gave one). One call (#519):
+// picking the account in the provider's chooser is the user's decision. It signs in — linking the
+// provider to an existing account matched by verified email — or creates a passwordless account,
+// which records the Terms acceptance (`accept_terms`, sent because the Terms sit beside the buttons)
+// exactly like classic registration. Issues a session + a Bearer token (the app path), same as
+// login_user.
 function social_auth(string $provider, array $identity, array $d): void {
     $column = ['google' => 'google_sub', 'apple' => 'apple_sub'][$provider];  // whitelisted: it goes into SQL
     $sub = $identity['sub'];
@@ -426,12 +425,6 @@ function social_auth(string $provider, array $identity, array $d): void {
         $st = db()->prepare('SELECT id, blocked FROM users WHERE email = ?'); $st->execute([$email]);
         $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (provider-verified) email
     }
-
-    /* The web signs in on ONE call (#519): the provider's chooser is the user's decision, so the
-       client sends `confirm` straight away. An INSTALLED app still runs the JS bundled in its
-       binary, which asks the old two-phase way and can only change through a store release — so
-       this answer stays until those builds are gone. */
-    if (empty($d['confirm'])) { json_out(['ok' => false, 'probe' => true, 'email' => $email, 'exists' => (bool)$u]); return; }
 
     if ($u) {
         if ($linkEmail) db()->prepare("UPDATE users SET $column = ?, email_verified = 1 WHERE id = ?")->execute([$sub, $u['id']]);

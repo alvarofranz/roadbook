@@ -27,8 +27,7 @@ DB/Convenzioni rapide below have counterparts there).
   `google_sub`/`apple_sub`, or to an account with the same verified email, or creates a passwordless
   account — **in one call**: picking the account in Google's chooser or Apple's sheet IS the
   decision, so there is no second confirmation to click, and the Terms sit beside the buttons
-  (pressing one accepts them). The server still answers the older two-phase `probe` call because
-  installed app binaries bundle their own JS and only change through a store release.
+  (pressing one accepts them).
   `google_auth` verifies with Google's tokeninfo; `apple_auth` verifies the RS256 JWT itself against
   Apple's JWKS. The web renders each provider's own button (GIS overlay · Apple JS popup); the app
   uses the OS sheets (`RBNative.googleSignIn`/`appleSignIn`, `@capgo/capacitor-social-login` — the
@@ -165,8 +164,8 @@ DB/Convenzioni rapide below have counterparts there).
     **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
     **`rb-media-queue.js`** (`RBMediaQueue`): offline-first buffering of geotagged photos +
-    voice notes (blobs in IndexedDB) with deferred upload + retry (Recorder; Editor recording
-    next).
+    voice notes (blobs in IndexedDB) with deferred upload + retry (Recorder + the Editor's
+    Adjust on the trail).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.head-row` (a heading with its
     actions on the same row — title left, actions right, stacking on a phone), `.toolbar` (a
@@ -608,7 +607,7 @@ Operational notes:
   draft exists after sign-in) · `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in). Signed-out
   captures stay local and are bundled into a self-contained `.rdbk` (RBZip). Pure `createQueue`
-  core (module.exports) is unit-tested; used by the Recorder (Editor recording next).
+  core (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
 - `changelog.js` (`RBChangelog`) — the release notes, one entry per release, newest first;
   rendered by `about/about.js` and linked from App Info. See **Releasing**.
 - `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/

@@ -938,7 +938,7 @@ Object.assign(window.RBi18nLangs.fr, {
     "Type at least 2 characters to search.": "Tapez au moins 2 caractères pour rechercher.",
     "Participants cannot see a draft — set it to Ready or Public in the Editor.": "Les participants ne voient pas un brouillon — passez-le à Prêt ou Public dans l’éditeur.",
     "A join code needs the Invite code registration.": "Un code d’accès nécessite l’inscription par code d’invitation.",
-    "To stop new registrations, set Registration to Closed.": "Pour arrêter les nouvelles inscriptions, réglez Inscription sur Fermée.",
+    
     "Its participants and roadbook links are removed with it; the roadbooks themselves are kept.": "Ses participants et liens de roadbooks sont supprimés avec lui ; les roadbooks eux-mêmes sont conservés.",
 });
 

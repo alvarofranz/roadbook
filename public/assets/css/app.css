@@ -165,8 +165,6 @@ section.block { padding: 2.4rem 0; }
 .section-head h2 { font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -.01em; margin: .2rem 0; }
 .section-head .kicker { color: var(--sand); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; }
 /* install / cross-platform band */
-#install .section-head { text-align: center; }
-#install .install-lead { max-width: 70ch; margin: .6rem auto 0; }
 .install-note { max-width: 62ch; margin: 1rem auto 0; color: var(--muted); font-size: .85rem; }
 
 /* Where to get RDBK (#720): official-style store badges, then the web app for computers */
@@ -749,14 +747,8 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
     .roadbook-row .rb-status { flex: 1 1 100%; }
     .roadbook-row .btn { flex: 1 1 auto; }
 }
-/* public badge — green globe; the admin moderation control in the public roadbooks list */
-.rb-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--line); }
-.rb-badge.public { color: var(--ok); border-color: var(--ok); }
-/* the admin badge doubles as the click-to-unpublish control */
-button.rb-badge { background: none; font: inherit; cursor: pointer; transition: background .12s, color .12s; }
-button.rb-badge:hover { background: var(--card); }
 /* My-roadbooks publication status: a compact draft → ready → public pill-select. Colour
-   tracks the state: draft muted, ready neutral, public green (matching the .rb-badge pill). */
+   tracks the state: draft muted, ready neutral, public green. */
 .rb-status { flex-shrink: 0; font: inherit; font-size: .72rem; font-weight: 700; padding: .25rem 1.5rem .25rem .6rem; border-radius: 999px; border: 1px solid var(--line); background-color: var(--card-2); color: var(--muted); cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%2393a0b4' d='M3 4.5 6 7.5 9 4.5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .5rem center; background-size: .7rem; }
 .rb-status-ready { color: var(--text); border-color: var(--muted); }
 .rb-status-public { color: var(--ok); border-color: var(--ok); }
@@ -797,7 +789,6 @@ button.rb-badge:hover { background: var(--card); }
 /* the one chevron pager, everywhere a list pages (public listings, admin, saved roadbooks) */
 .pager { display: flex; align-items: center; justify-content: center; gap: .9rem; margin-top: .8rem; }
 .pager .btn { margin: 0; width: auto; }
-.link-delete { background: none; border: 0; color: var(--track); cursor: pointer; }
 .map-placeholder { padding: 1rem; color: var(--muted); }
 /* Admin console pages: one shared content column */
 .admin-wrap { max-width: 1000px; margin: 1.2rem auto; }

@@ -10,7 +10,6 @@
     const username = new URLSearchParams(location.search).get('name') || (parts[0] === 'u' && parts[1] ? decodeURIComponent(parts[1]) : '');
     let data = null;
 
-    const km = (m) => ((m || 0) / 1000).toFixed(1) + ' km';
     const tile = (icon, value, label) => `<div class="stat"><i class="fa-solid ${icon}"></i><b>${value}</b><span>${esc(t(label))}</span></div>`;
 
     function render() {
@@ -25,7 +24,7 @@
         RBSetMeta({ title: '@' + u.username + ' · RDBK.app', description: u.bio || undefined, canonical: location.origin + '/u/' + encodeURIComponent(u.username) });
         $('pfStats').innerHTML = `<div class="stat-grid">
             ${tile('fa-flag-checkered', s.completed, 'Roadbooks completed')}
-            ${tile('fa-route', km(s.distance_m), 'Distance')}
+            ${tile('fa-route', RBKm(s.distance_m, 1), 'Distance')}
             ${tile('fa-stopwatch', RBRun.fmtDuration(s.duration_s), 'Time')}
             ${tile('fa-list-ol', s.runs, 'Runs')}
         </div>`;
@@ -77,7 +76,7 @@
     }
     async function removeRun(id) {
         const r = data.runs.find((x) => x.id === id);
-        if (!(await RBConfirmDanger(t('Delete this run?') + '<br><b>' + esc(r.title) + '</b> · ' + esc(RBFmtDate(String(r.ended_at).slice(0, 10))) + ' · ' + km(r.distance_m)))) return;
+        if (!(await RBConfirmDanger(t('Delete this run?') + '<br><b>' + esc(r.title) + '</b> · ' + esc(RBFmtDate(String(r.ended_at).slice(0, 10))) + ' · ' + RBKm(r.distance_m, 1)))) return;
         const x = await RBApi('run_delete', { id });
         if (x.ok) load(); else toast(x.error || 'Could not delete.');
     }

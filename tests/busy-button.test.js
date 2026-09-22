@@ -112,8 +112,11 @@ describe('the recovery prompt is not a failure report', () => {
     it('is still asked only once, and still keeps the work when declined (#436)', () => {
         expect(editor).toContain('!draft.declined');
         expect(editor).toContain('declineDraft()');
-        const decline = editor.match(/const declineDraft = \(\) => \{([\s\S]*?)\n {4}\};/)[1];
-        expect(decline).toContain("d.declined = true");
-        expect(decline).not.toContain('removeItem'); // declining must never destroy the draft
+        expect(editor).toContain('const declineDraft = () => RBCheckpoint.decline(DRAFT_KEY);');
+        // the shared decline marks the checkpoint and never destroys it
+        const app = read('public/assets/js/app.js');
+        const decline = app.match(/decline\(key\) \{([^\n]*)\}/)[1];
+        expect(decline).toContain('declined: true');
+        expect(decline).not.toContain('removeItem');
     });
 });

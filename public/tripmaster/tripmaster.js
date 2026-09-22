@@ -29,7 +29,7 @@
         if (session && !session.declined && (session.totalM > 0 || session.waypoints > 0 || session.timerOn || session.timerAcc > 0 || session.gpxRecording)) {
             // A declined resume is MARKED, never deleted (#436 · #644): asking twice is nagging,
             // overwriting it is data loss. It stays as it is until this trip has data of its own.
-            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>Tripmaster</b> · ' + (session.totalM / 1000).toFixed(2) + ' km')) {
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>Tripmaster</b> · ' + RBKm(session.totalM))) {
                 totalM = session.totalM; partialM = session.partialM; maxKmh = session.maxKmh; waypoints = session.waypoints;
                 timerAcc = session.timerAcc; timerOn = session.timerOn; timerStart = session.timerStart;
                 $('tmNotes').textContent = waypoints;
@@ -37,7 +37,7 @@
                 if (session.gpxRecording) RBGpxRecorder.resume(session.gpxFileName);
             } else {
                 keepDeclined = true;
-                try { localStorage.setItem(SESSION_KEY, JSON.stringify(Object.assign(session, { declined: true }))); } catch (e) {}
+                RBCheckpoint.decline(SESSION_KEY);
                 await RBGpxRecorder.offerRecovery(); // a declined trip that was recording still gets its GPX back
             }
         } else {

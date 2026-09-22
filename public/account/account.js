@@ -158,7 +158,7 @@
         if (me) return;                                                     // already signed in — ignore stray GIS re-callbacks (#308)
         if (!identity || !identity.credential) return;
         busySocial(key);
-        const r = await api(PROVIDERS[key].action, Object.assign({}, identity, { confirm: true, accept_terms: true }));
+        const r = await api(PROVIDERS[key].action, Object.assign({}, identity, { accept_terms: true }));
         if (r.ok) {
             me = r.user;
             // Stop Google's GIS library from auto re-firing the callback (One Tap / button

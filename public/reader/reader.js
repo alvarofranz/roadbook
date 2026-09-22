@@ -115,7 +115,7 @@
         // overwrites it, an explicit exit clears it), so nothing is destroyed by declining (#436).
         if (session && !session.declined && (!openedAs || session.openedAs === openedAs)) {
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
-            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + (session.totalM / 1000).toFixed(2) + ' km')) { resumeSession(session, savedRb); return; }
+            if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + RBKm(session.totalM))) { resumeSession(session, savedRb); return; }
             declineSession();
             loadFromUrl(); // declined → still navigate the roadbook the user explicitly opened
             return;
@@ -247,12 +247,7 @@
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
     // A declined resume is marked, not deleted: asking twice is nagging, deleting is data loss.
     // The flag lives only on this checkpoint — the next run writes a fresh one without it.
-    function declineSession() {
-        try {
-            const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-            if (s) { s.declined = true; localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
-        } catch (e) {}
-    }
+    const declineSession = () => RBCheckpoint.decline(SESSION_KEY);
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
         rb = savedRb; notes = rb.notes;
@@ -343,13 +338,12 @@
     // (near → arriving, painted by paintApproach); `tight` marks the distance cell of a note whose
     // successor is under 50 m away — a property of the roadbook, not of where the driver is.
     // live distances read in metres up close and in km further out — the co-pilot's own units
-    const fmtDist = (m) => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
+    const fmtDist = (m) => m >= 1000 ? RBKm(m) : Math.round(m) + ' m';
     let lastScrollIdx = -1;
     // Keep the just-completed note on screen when advancing (#177): anchor the PREVIOUS row at the
     // top of the list, so the note you have just used stays visible with the active note right
     // under it. Inside the shell the list is the scroller and the odometer bar is a sibling ABOVE
-    // it (#429), so this is arithmetic in the list's own coordinates — no page scroll, and no
-    // allowance for a bar that no longer overlaps anything.
+    // it (#429), so this is arithmetic in the list's own coordinates — no page scroll.
     function scrollActiveIntoView() {
         const list = $('noteList');
         const act = list.querySelector('.nrow.active');
@@ -587,11 +581,9 @@
     // authority, so a tap says how to take over instead of quietly doing the GPS's job (#529).
     //
     // In competition the proximity gate can refuse — correctly: a scored validation cannot be
-    // faked from a distance. But refusing was a dead end (#431): the cursor stayed put and the
-    // button did nothing on every further press, so a driver who had genuinely missed a waypoint
-    // was stuck on it. A note you did not reach is *skipped*, which the scoring already models,
-    // so that is what gets offered — named, priced, and never a fake validation from far away,
-    // which would corrupt the accuracy score.
+    // faked from a distance. A note you did not reach is *skipped*, which the scoring already
+    // models, so that is what gets offered (#431) — named, priced, and never a fake validation from
+    // far away, which would corrupt the accuracy score — and the driver is never stuck on it.
     async function advanceNote() {
         if (activeIdx >= notes.length) return;
         if (auto) return toast('Auto validation is on — switch it off to validate notes by hand.', 3500);

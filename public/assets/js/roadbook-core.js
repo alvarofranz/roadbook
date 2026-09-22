@@ -1155,12 +1155,12 @@
     /* ---------------- competition scoring (the Reader accrues → META → the Ranking scores) ---------------- */
     // Scored sections (rally special stages): only notes between a stage-start marker and the
     // next stage-end marker (both inclusive) are penalised; liaison/transfer notes outside them
-    // are not. A marker is the FIA waypoint type (ss_start/ss_end — DSS/ASS) or the legacy
+    // are not. A marker is the FIA waypoint type (ss_start/ss_end — DSS/ASS) or the
     // start/finish icon. Returns null when the roadbook has no start marker — all notes scored.
     const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
     function scoredNoteSet(notes) {
         // A stage opens on the FIA selective-section start (wp_type 'ss_start' = DSS) or the
-        // legacy start icon, and closes on 'ss_end' (ASS) or the legacy finish icon (#215).
+        // start icon, and closes on 'ss_end' (ASS) or the finish icon (#215).
         const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
         const opens = (n) => n.wp_type === 'ss_start' || has(n, START_ICON);
         const closes = (n) => n.wp_type === 'ss_end' || has(n, FINISH_ICON);

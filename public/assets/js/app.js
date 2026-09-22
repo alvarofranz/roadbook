@@ -552,7 +552,21 @@
     };
     // HTML-escape for safe interpolation into innerHTML.
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
-    window.RBSummary = (distanceM, noteCount) => (distanceM / 1000).toFixed(1) + ' km · ' + noteCount + ' ' + RBt('notes');
+    // Metres → "12.34 km", the one distance format (#732); `digits` for the precision the place needs.
+    window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
+    window.RBSummary = (distanceM, noteCount) => RBKm(distanceM, 1) + ' · ' + noteCount + ' ' + RBt('notes');
+    // The publication-status select (draft → ready → public), for My roadbooks and the admin's
+    // per-user list alike; `dataAttr` names the attribute its row handler reads.
+    window.RBStatusSelectHTML = (rb, dataAttr) => `<select class="rb-status rb-status-${rb.status}" ${dataAttr}="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RBStatusLabel[s]))}</option>`).join('')}</select>`;
+    /* A crash checkpoint in localStorage (the Editor draft, a Reader / Tripmaster run, a GPX log) —
+       one way to read, write, clear and decline them. A declined checkpoint is MARKED, never
+       deleted (#436): asking twice is nagging, deleting is data loss; the next checkpoint written
+       replaces it. */
+    window.RBCheckpoint = {
+        read(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } },
+        write(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} },
+        decline(key) { const v = this.read(key); if (v) this.write(key, Object.assign(v, { declined: true })); },
+    };
     // Set SEO meta at runtime for the public dynamic pages (challenge, event): title + description
     // + canonical, keeping the og:/twitter: mirrors in sync. Creates any missing tag; skips nulls.
     window.RBSetMeta = ({ title, description, canonical, robots }) => {
@@ -839,7 +853,7 @@
         const rowsEl = container.querySelector('.rb-grid'), pagerEl = container.querySelector('.pager');
         const rowHtml = (rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)} · <i class="fa-solid fa-clock-rotate-left"></i> ${RBFmtDate(rb.updated_at)}${rb.total_bytes ? ` · <i class="fa-solid fa-database"></i> ${RBFmtSize(rb.total_bytes)}` : ''}</small></div>
-            <select class="rb-status rb-status-${rb.status}" data-status="${rb.id}" aria-label="${RBesc(RBt('Status'))}" title="${RBesc(RBt('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${RBesc(RBt(RBStatusLabel[s]))}</option>`).join('')}</select>
+            ${RBStatusSelectHTML(rb, 'data-status')}
             <a class="btn btn-ghost" href="../reader/?rb=${rb.id}" title="${RBesc(RBt('Read'))}" aria-label="${RBesc(RBt('Read'))}"><i class="fa-solid fa-compass"></i></a>
             <a class="btn btn-ghost" href="../challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
             ${rb.status === 'public' && rb.slug ? `<button class="btn btn-ghost" data-copy="${RBesc(rb.slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>` : ''}
@@ -1301,7 +1315,6 @@
     const PENDING_LABEL = { editor: 'Unsaved draft', recorder: 'Recording in progress', tripmaster: 'Tripmaster run', reader: 'Run in progress' };
     const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-compass' };
     const curTool = (location.pathname.slice(new URL(ROOT, location.href).pathname.length).replace(/^\/+/, '').split('/')[0]) || '';
-    const km = (m) => (m / 1000).toFixed(2) + ' km';
     // The work left in OTHER tools (the current tool already prompts to resume its own work).
     function listPending() {
         if (!window.RB || !RB.pendingWork) return [];
@@ -1311,8 +1324,8 @@
     }
     function pendingDetail(it) {
         if (it.kind === 'draft') return (it.title || RBt('Untitled')) + ' · ' + it.noteCount + ' ' + RBt('notes');
-        if (it.kind === 'navigation') return (it.title || RBt('Roadbook')) + ' · ' + it.noteIdx + '/' + it.noteTotal + ' ' + RBt('notes') + ' · ' + km(it.distanceM);
-        return km(it.distanceM); // recording · run
+        if (it.kind === 'navigation') return (it.title || RBt('Roadbook')) + ' · ' + it.noteIdx + '/' + it.noteTotal + ' ' + RBt('notes') + ' · ' + RBKm(it.distanceM);
+        return RBKm(it.distanceM); // recording · run
     }
     function openPendingModal() {
         const d = RBModal(`<h2><i class="fa-solid fa-floppy-disk icon-accent"></i> ${RBt('Unsaved work')}</h2>

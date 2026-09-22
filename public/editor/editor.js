@@ -213,12 +213,7 @@
     // A declined recovery is marked, not deleted (#436): the work stays recoverable until the next
     // checkpoint replaces it, but the offer is not repeated. `saveDraft` writes a fresh object, so
     // any later edit naturally clears the flag along with the stale draft.
-    const declineDraft = () => {
-        try {
-            const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-            if (d) { d.declined = true; localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
-        } catch (e) {}
-    };
+    const declineDraft = () => RBCheckpoint.decline(DRAFT_KEY);
     // Nothing becomes dirty while someone else holds the lock (#698): there is nothing to save,
     // and nothing for Close to offer to save.
     const markDirty = () => { if (readOnly()) return; dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
@@ -229,7 +224,7 @@
         ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0 && rbIsOwner); // delete only exists once it's saved, and only for the owner
     }
-    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 64, flip_x: false }); // inserted at 2× the old 32px default — easier to see, then resize as needed
+    const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 64, flip_x: false }); // a new icon lands at a size you can see, then resize as needed
     // The declarative speed_limit drives the vignette symbol: keep exactly one S-icon matching the
     // value (S99_end for a lifted limit, 0), or none. 130 km has no palette icon, so none is added.
     const SPEED_ICON = { 0: 'S99_end.svg', 10: 'S01_10km.svg', 20: 'S02_20km.svg', 30: 'S03_30km.svg', 40: 'S04_40km.svg', 50: 'S05_50km.svg', 60: 'S06_60km.svg', 70: 'S07_70km.svg', 80: 'S08_80km.svg', 90: 'S09_90km.svg', 100: 'S10_100km.svg', 110: 'S11_110km.svg', 120: 'S12_120km.svg' };
@@ -1012,9 +1007,9 @@
         updateRecStats(c.accuracy);
     }
     function updateRecStats(acc) {
-        let m = 0; for (let i = 1; i < recTrack.length; i++) m += RB.geo.haversineM(recTrack[i - 1], recTrack[i]);
+        const m = recTrack.length ? RB.cumulativeM(recTrack)[recTrack.length - 1] : 0;
         const head = recPaused ? t('Paused ·') : (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording')));
-        $('recStats').textContent = `${head} ${recTrack.length} ${t('points')} · ${(m / 1000).toFixed(2)} km · ${recWpts.length} ${t('notes')} · ${recPhotos.length} ${t('photos')}${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
+        $('recStats').textContent = `${head} ${recTrack.length} ${t('points')} · ${RBKm(m)} · ${recWpts.length} ${t('notes')} · ${recPhotos.length} ${t('photos')}${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
     }
     // drop a waypoint (shared by the button and "convert photo → waypoint")
     function dropWaypoint(lat, lon, text) {
@@ -1096,7 +1091,7 @@
     document.querySelectorAll('[data-vehicle]').forEach((b) => b.onclick = () => {
         const v = b.dataset.vehicle;
         if (vehicles.includes(v) && vehicles.length === 1) return toast('A roadbook suits at least one vehicle.');
-        vehicles = vehicles.includes(v) ? vehicles.filter((x) => x !== v) : ['car', 'moto', 'bike'].filter((x) => x === v || vehicles.includes(x));
+        vehicles = vehicles.includes(v) ? vehicles.filter((x) => x !== v) : RB.VEHICLES.filter((x) => x === v || vehicles.includes(x)); // always in the catalog's order
         paintVehicles(); markDirty();
     });
     paintVehicles();
@@ -1558,7 +1553,7 @@
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
             const navCount = rb.notes.length;
-            nc.textContent = navCount ? `· ${navCount} · ${(totalM / 1000).toFixed(1)} km` : '';
+            nc.textContent = navCount ? `· ${navCount} · ${RBKm(totalM, 1)}` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
@@ -1783,7 +1778,7 @@
         const capHeading = n.cap != null ? n.cap : (nextNote ? RB.geo.bearingDeg(n, nextNote) : null);
         const capMetres = n.cap != null ? n.cap_distance : (nextNote ? RB.geo.haversineM(n, nextNote) : null);
         const capLabel = capHeading == null ? t('On')
-            : Math.round(capHeading) + '°' + (capMetres != null ? ' · ' + (capMetres / 1000).toFixed(2) + ' km' : '');
+            : Math.round(capHeading) + '°' + (capMetres != null ? ' · ' + RBKm(capMetres) : '');
         $('capSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Compass (CAP)', 'help.cap')}</span>
             <select id="edCap" class="field"${last ? ' disabled title="' + esc(t('The last note has no note to head toward.')) + '"' : ''}>
                 <option value=""${n.cap == null ? ' selected' : ''}>${esc(t('Off'))}</option>
@@ -2415,7 +2410,7 @@
         const draftFits = draft && draft.rb && draft.rb.notes && !draft.declined && (!explicitTarget || (id > 0 && draft.currentRbId === id));
         if (draftFits && !loadStarted) {
             // Named for what it IS — edits that were never stored — with the moment they were made,
-            // so it cannot be read as "your save failed", which is how the old wording landed (#459).
+            // so it cannot be read as "your save failed" (#459).
             const when = draft.at ? new Date(draft.at).toLocaleString(window.RBi18n ? RBi18n.current() : undefined) : '';
             const what = '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes') + (when ? ' · ' + esc(when) : '');
             if (await RBConfirm(t('You left unsaved changes here. Continue from them?') + what)) {

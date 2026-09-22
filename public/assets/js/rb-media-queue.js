@@ -3,7 +3,7 @@
  * photos and voice notes. A capture is enqueued to IndexedDB (blobs survive a
  * reload or an OS kill) and uploaded to the server when possible, with retry, so a
  * network drop mid-recording never silently loses a photo or a voice note. Used by
- * the Recorder and the Editor's "Record route".
+ * the Recorder and the Editor's "Adjust on the trail".
  *
  * The IndexedDB layer is a thin adapter; the queue orchestration (FIFO order,
  * retry, reconciliation) is a pure `createQueue` factory so it is unit-testable with
