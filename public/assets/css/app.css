@@ -289,7 +289,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* ---------- dashboard readouts (Tripmaster / Reader) ---------- */
 .dash { display: grid; gap: .8rem; padding-top: 1rem; }
 .readout { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.1rem 1.2rem; text-align: center; }
-.readout .field-label { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
+.readout .readout-caption { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
 .readout .num { font-size: clamp(2.6rem, 13vw, 4.2rem); font-weight: 800; color: var(--sand); font-variant-numeric: tabular-nums; line-height: 1.02; }
 .readout .unit { color: var(--muted); font-weight: 700; font-size: 1rem; }
 .readout.primary .num { color: #fff; }

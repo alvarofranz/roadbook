@@ -12,9 +12,12 @@
     let totalM = 0, partialM = 0, maxKmh = 0, waypoints = 0;
     let timerOn = false, timerStart = 0, timerAcc = 0; // wall-clock: keeps counting while the app is dead
     let meter = null;
+    let keepDeclined = false; // a declined checkpoint is not overwritten until this trip has data
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
+        if (keepDeclined && !(totalM > 0 || waypoints > 0 || timerOn || timerAcc > 0 || RBGpxRecorder.recording)) return;
+        keepDeclined = false;
         const s = { totalM, partialM, maxKmh, waypoints, timerAcc, timerOn, timerStart, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName };
         try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
     }
@@ -23,15 +26,19 @@
     /* ---------- startup: resume → GPX crash recovery → fresh ---------- */
     (async function () {
         let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
-        if (session && (session.totalM > 0 || session.waypoints > 0 || session.timerOn || session.timerAcc > 0 || session.gpxRecording)) {
-            // Declining does NOT delete the session — a mis-tap must never destroy a
-            // trip; it is replaced as soon as this one moves or cleared on exit.
+        if (session && !session.declined && (session.totalM > 0 || session.waypoints > 0 || session.timerOn || session.timerAcc > 0 || session.gpxRecording)) {
+            // A declined resume is MARKED, never deleted (#436 · #644): asking twice is nagging,
+            // overwriting it is data loss. It stays as it is until this trip has data of its own.
             if (await RBConfirm(t('Resume the run in progress?') + '<br><b>Tripmaster</b> · ' + (session.totalM / 1000).toFixed(2) + ' km')) {
                 totalM = session.totalM; partialM = session.partialM; maxKmh = session.maxKmh; waypoints = session.waypoints;
                 timerAcc = session.timerAcc; timerOn = session.timerOn; timerStart = session.timerStart;
                 $('tmNotes').textContent = waypoints;
                 renderTimerButton();
                 if (session.gpxRecording) RBGpxRecorder.resume(session.gpxFileName);
+            } else {
+                keepDeclined = true;
+                try { localStorage.setItem(SESSION_KEY, JSON.stringify(Object.assign(session, { declined: true }))); } catch (e) {}
+                await RBGpxRecorder.offerRecovery(); // a declined trip that was recording still gets its GPX back
             }
         } else {
             await RBGpxRecorder.offerRecovery();

@@ -320,7 +320,7 @@
             
             'Vehicle number': 'Número de vehículo', 'Identify your team for the ranking.': 'Identifica tu equipo para la clasificación.',
             'Yes': 'Sí', 'No': 'No',
-            'End navigation': 'Terminar navegación',
+            
             'Cancel': 'Cancelar', 'Start': 'Empezar', 'Close': 'Cerrar', 'Share': 'Compartir', 'Save QR': 'Guardar QR',
             'Clock': 'Reloj', 'Timer': 'Cronómetro',
             'Overall ranking': 'Clasificación general', 'Clear': 'Limpiar', 'No results yet. Scan or paste a QR.': 'Aún no hay resultados. Escanea o pega un QR.',
@@ -368,10 +368,10 @@
             'No roadbooks yet. Create one in the Editor.': 'Aún no tienes roadbooks. Crea uno en el Editor.', 'Photo updated.': 'Foto actualizada.', 'Profile saved.': 'Perfil guardado.', 'Upload failed.': 'Error al subir.', 'Network error.': 'Error de red.',
             'Roadbook not found.': 'Roadbook no encontrado.', 'This roadbook does not exist or is private.': 'Este roadbook no existe o es privado.',
             'notes': 'notas',
-            'Total': 'Total', 'Partial': 'Parcial', 'Reset': 'Reiniciar', 'Hold to reset.': 'Mantén pulsado para poner a cero.', 'Pause': 'Pausa', 'Press to set Alert': 'Toca para fijar la alerta', 'mark note': 'marca nota', 'Max km/h': 'Máx km/h',
+            'Total': 'Total', 'Partial': 'Parcial', 'Reset': 'Reiniciar', 'Hold to reset.': 'Mantén pulsado para poner a cero.', 'Pause': 'Pausa', 'Press to set Alert': 'Toca para fijar la alerta', 'Max km/h': 'Máx km/h',
             'Record GPX': 'Grabar GPX', 'Stop recording': 'Detener grabación', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
             'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook', 'Save to account': 'Guardar en tu cuenta', 'Saving…': 'Guardando…', 'Exported': 'Exportado', 'Sign in to save this recording to your account.': 'Inicia sesión para guardar esta grabación en tu cuenta.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Guarda en tu cuenta, o exporta un .rdbk autónomo con tus fotos y notas de voz.', 'Open in the editor': 'Abrir en el editor', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Al guardar se conservan tus fotos y notas de voz; el GPX es un archivo local sin ellas.',
-            'End & close': 'Terminar y cerrar', 'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
+            'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
             'Sample every (seconds)': 'Cada cuántos segundos', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Sugerido: 3s coche/rally · 5s bici · 10s a pie', 'File name': 'Nombre del archivo', 'Saved to your Pictures folder': 'Guardado en tu carpeta Imágenes', 'Saved to your Downloads folder': 'Guardado en tu carpeta Descargas', 'Saved to your device': 'Guardado en tu dispositivo', 'Could not save the file.': 'No se pudo guardar el archivo.', 'Latitude': 'Latitud', 'Longitude': 'Longitud', 'Installed': 'Instalada', 'latest': 'última', 'Profile': 'Perfil', 'Language': 'Idioma', 'Administration': 'Administración', 'Sections': 'Secciones', 'Public roadbooks': 'Roadbooks públicos', 'Classify results': 'Clasificar resultados', 'Set up an event with its roadbooks, participants and rankings.': 'Crea un evento con sus roadbooks, participantes y clasificaciones.', 'Create and edit roadbooks': 'Crea y edita roadbooks', 'Live GPS: Tripmaster or Reader': 'GPS en vivo: Tripmaster o Reader', 'Browse events, participate and see rankings': 'Explora eventos, participa y mira las clasificaciones', 'Your account and saved roadbooks': 'Tu cuenta y tus roadbooks guardados', 'Open from a file or your roadbooks, or pick a public one below.': 'Abre desde un archivo o tus roadbooks, o elige uno público abajo.', 'seo.navigate.title': 'Navegar — RDBK.app', 'seo.navigate.desc': 'Modos de GPS en vivo: el ordenador de viaje Tripmaster y el Roadbook Reader.', 'Stop recording?': '¿Detener la grabación?', 'Discard this recording?': '¿Descartar esta grabación?', 'You are offline — reconnect to see your roadbooks.': 'Estás sin conexión — reconéctate para ver tus roadbooks.', 'Track too short.': 'Traza demasiado corta.',
                        'Auto-saved while recording, recovered if the app closes.': 'Se guarda solo al grabar; se recupera si la app se cierra.',
             'Recover unsaved GPX recording?': '¿Recuperar la grabación GPX sin guardar?', 'Recover': 'Recuperar',
@@ -934,7 +934,7 @@ Object.assign(window.RBi18nLangs.es, {
     'Edit any label on the site in every language. Edits preview live and accumulate in your browser. When done, use Export to get a delta to commit.': 'Edita cualquier texto del sitio en todos los idiomas. Los cambios se previsualizan en vivo y se acumulan en tu navegador. Al terminar, usa Exportar para obtener un delta que commitear.',
     'Enable translation editor': 'Activar el editor de traducciones',
     '(used for regularity if the QR doesn’t carry it)': '(se usa para la regularidad si el QR no lo trae)',
-    'End & close': 'Terminar y cerrar',
+    
     'Roadbook Reader': 'Roadbook Reader',
     'Tripmaster': 'Tripmaster',
 });
@@ -1174,4 +1174,10 @@ Object.assign(window.RBi18nLangs.es, {
 Object.assign(window.RBi18nLangs.es, {
     "Open from My roadbooks": "Abrir desde Mis roadbooks",
     "Drive with live GPS: follow a roadbook, or just the trip computer.": "Conduce con GPS en directo: sigue un roadbook o usa solo el trip computer.",
+});
+
+/* Tripmaster + Reader: one way to end a session, one Note label (#645 · #646) */
+Object.assign(window.RBi18nLangs.es, {
+    "End": "Terminar",
+    "Mark note": "Marcar nota",
 });
