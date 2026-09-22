@@ -832,6 +832,11 @@ button.rb-badge:hover { background: var(--card); }
 .progress { height: 8px; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem; }
 .progress-bar { height: 100%; width: var(--progress, 0%); background: var(--sand); transition: width .2s ease; }
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */
+/* Site settings → find a label (#709): each result is a row that opens it in the editor */
+.trans-results { margin-top: .6rem; }
+.trans-hit { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.trans-hit:hover { border-color: var(--sand); }
+.trans-hit .meta small { white-space: normal; overflow-wrap: anywhere; } /* a long key wraps inside its row, never widens the page */
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: 9px; }
 .i18ne-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .4rem .7rem; box-shadow: var(--shadow); }
 .i18ne-badge { display: inline-flex; align-items: center; gap: .35rem; color: var(--sand); font-weight: 700; font-size: .85rem; }

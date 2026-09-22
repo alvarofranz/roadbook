@@ -1333,3 +1333,10 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "The native app keeps recording in the background, with the screen locked, and is more accurate.": "L’app nativa continua a registrare in background, a schermo bloccato, ed è più precisa.",
 });
+
+/* find a label in the translation editor (#709) */
+Object.assign(window.RBi18nLangs.it, {
+    "Find a label": "Cerca un testo",
+    "Search by key or text, in any language…": "Cerca per chiave o per testo, in qualsiasi lingua…",
+    "No label matches.": "Nessun testo corrisponde.",
+});

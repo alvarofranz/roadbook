@@ -275,3 +275,15 @@ describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #
         expect(html).not.toContain('maplibre');
     });
 });
+
+describe('find a label in the translation editor (#709)', () => {
+    it('the editor searches every key by key or text and opens the hit in the same editor', () => {
+        const edit = fs.readFileSync('public/assets/js/i18n-edit.js', 'utf8');
+        expect(edit).toContain('window.RBI18nFind = (query, limit = 40) =>');
+        expect(edit).toContain("LANGS.some((l) => String(valueOf(l, k)).toLowerCase().includes(q))");
+        expect(edit).toContain('window.RBI18nEditKeys = (keys, title) => openEditor(keys, title);');
+        const cfg = fs.readFileSync('public/admin/config/config.js', 'utf8');
+        expect(cfg).toContain('RBI18nFind(q)');
+        expect(cfg).toContain('RBI18nEditKeys([hits[+b.dataset.hit].key]');
+    });
+});
