@@ -717,13 +717,21 @@
     /* The copy-link control that floats over a public roadbook's card. It lived only on the
        Roadbooks gallery; wherever a public roadbook is shown, the same control shows (#493).
        The card is a link, so the click handler that reads `data-copy` must stop it. */
+    // The copy control floats over a card link: ONE delegated listener copies the Reader link and
+    // keeps the card from navigating, for every gallery on every page (#636).
+    document.addEventListener('click', (e) => {
+        const b = e.target.closest && e.target.closest('.card-copy');
+        if (!b) return;
+        e.preventDefault(); e.stopPropagation();
+        RBCopy(RBReaderLink(b.dataset.copy));
+    });
     window.RBCopyLinkOverlay = (slug) => `<button type="button" class="card-btn card-copy" data-copy="${RBesc(slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>`;
 
     // Gate an admin/management page behind sign-in (and optionally the admin role): resolves the
     // signed-in user, or writes the standard message into msgEl and returns null. `account` is
     // the relative path to the sign-in page (page depths differ).
     window.RBRequireUser = async (msgEl, { admin = false } = {}) => {
-        const cfg = await RBApi('config').catch(() => ({}));
+        const cfg = await RBConfig(); // offline, a signed-in user is still signed in (#630)
         // Detach the element from i18n before writing the gate message: msgEl starts as the
         // "Loading…" placeholder (data-i18n), and a later apply() pass — e.g. when the account's
         // saved language is applied after config — would revert our message back to "Loading…",

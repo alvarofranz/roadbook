@@ -1,79 +1,65 @@
 'use strict';
-/* Public challenge page: photo gallery + the roadbook's notes in the canonical
- * layout + owner. Navigate (Reader) and Fork (Editor). Slug from /challenge/<slug>. */
+/* Public roadbook page: /challenge/<slug>. The roadbook's notes in the same paper rows as the
+ * Reader (NoteCanvas.rowsHTML, #635), its route map, the owner (linked to their public profile),
+ * Navigate (Reader), PDF export and, for the owner, Edit. Reading requires a signed-in account (#146). */
 (async function () {
     const $ = (id) => document.getElementById(id);
-    const t = RBt, esc = RBesc; // shared helpers (i18n.js / app.js)
+    const t = RBt, esc = RBesc;
+    const params = new URLSearchParams(location.search);
     const parts = location.pathname.replace(/\/+$/, '').split('/');
-    const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
+    const slug = params.get('s') || parts[parts.length - 1];
+    const evParam = params.get('event'); // opened from an event: the Reader gets the context (#155)
     if (!slug || slug === 'challenge') { $('chLoading').textContent = t('Roadbook not found.'); return; }
 
-    // #146: reading a public roadbook requires a signed-in account.
-    const cfg = await RBApi('config').catch(() => null);
-    if (!cfg || !cfg.user) { $('chLoading').textContent = t('Sign in to read this roadbook.'); RBNeedAuth('Sign in to read public roadbooks.'); return; }
-    RBChallenges.loadPublic(slug).then((j) => {
-        const rb = RB.importRoadbook(j.roadbook), o = j.owner || {}; // canonical schema, like the Reader's
-        $('chLoading').hidden = true; $('chContent').hidden = false;
-        const title = (rb.meta && rb.meta.title) || t('Roadbook');
-        $('chTitle').textContent = title;
-        if (cfg.participant) {
-            var evBar = document.createElement('div'); evBar.className = 'ch-ev-bar';
-            evBar.innerHTML = '<a href="/event/' + esc(cfg.participant.event_slug) + '" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ' + esc(cfg.participant.event_title) + '</a>';
-            $('chContent').insertBefore(evBar, $('chContent').firstChild);
-        }
-        RBSetMeta({ title: title + ' · RDBK.app', description: (rb.meta && rb.meta.description) || undefined, canonical: location.origin + '/challenge/' + encodeURIComponent(slug) });
-        // the owner is who they are on their public profile (#620): @username, linked
-        $('chOwner').innerHTML = `<a href="${RBProfileLink(o.username)}">@${esc(o.username || '')}</a>`;
-        $('chMeta').textContent = '@' + (o.username || '') + ' · ' + RBSummary((rb.meta && rb.meta.total_distance) || 0, rb.notes.length) + (j.status === 'public' ? '' : ' · 🔒 ' + t(j.status === 'ready' ? 'Ready' : 'Draft'));
-        if (o.avatar) $('chAvatar').src = RBMediaSrc(o.avatar); else $('chAvatar').remove();
-        $('chDesc').textContent = (rb.meta && rb.meta.description) || '';
-        // roadbook-declared credit (author / organization / date) + event logo
-        const m = rb.meta || {};
-        const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · ');
-        if (credit) $('chMeta').textContent += ' · ' + credit;
-        if (m.logo) { const img = document.createElement('img'); img.src = m.logo; img.alt = ''; img.className = 'ch-logo'; $('chTitle').closest('.ch-head').appendChild(img); }
-        const evParam = new URLSearchParams(location.search).get('event'); // carry the event context so the Reader locks the mode (#155)
-        $('chNav').href = '/reader/' + encodeURIComponent(slug) + (evParam ? '?event=' + encodeURIComponent(evParam) : '');
-        // Owner: Edit (opens their own roadbook). Non-owner: no Fork — a public roadbook can be
-        // read on the site / navigated / exported to PDF, but not forked or downloaded.
-        if (j.is_owner) { const f = $('chFork'); f.hidden = false; f.href = '/editor/?rb=' + j.id; f.setAttribute('data-i18n', 'Edit'); f.innerHTML = '<i class="fa-solid fa-pen"></i> ' + esc(t('Edit')); }
-        // Export PDF (client-side, jsPDF) — available to everyone, the only "take it with you" path.
-        $('chPdf').onclick = async () => {
-            $('chPdf').disabled = true;
-            try { await RBPdf.generate(rb, { iconBasePath: '/assets/icons/' }); }
-            catch (e) { if (window.RBToast) RBToast('Could not export the PDF.'); }
-            finally { $('chPdf').disabled = false; }
-        };
+    // RBConfig, not a bare config call: offline, a signed-in reader is still signed in (#630)
+    const cfg = await RBConfig();
+    if (!cfg.user) { $('chLoading').textContent = t('Sign in to read this roadbook.'); RBNeedAuth('Sign in to read public roadbooks.'); return; }
+    let j;
+    try { j = await RBChallenges.loadPublic(slug); }
+    catch (e) { $('chLoading').textContent = t(e.message === 'Network error.' ? 'You are offline — reconnect to load this page.' : 'This roadbook does not exist or is private.'); return; }
 
-        // Photos and audio are editor-only working material — not shown here (#316).
-        const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
-        const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
-        // the material a note carries, drawn around its row exactly as the Reader draws it (#542)
-        const blockRows = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => `<div class="nrow block block-${RB.blockType(b).id}">
-            <div class="col-distance"></div>
-            <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
-            <div class="col-text${b.image ? '' : ' col-text-wide'}"><div class="text">${esc(b.text || '')}</div></div>
-        </div>`).join('');
-        // same white "paper" rows as the Reader (no state colouring)
-        $('chNotes').innerHTML = rb.notes.map((n, i) => {
-            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}</div>` : '';
-            return `${blockRows(n, 'before')}<div class="nrow">
-                <div class="col-distance"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="num">${n.num}</div></div>
-                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i))}</div>
-                <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
-            </div>${blockRows(n, 'after')}`;
-        }).join('');
+    const rb = RB.importRoadbook(j.roadbook), o = j.owner || {}, m = rb.meta || {}; // canonical schema, like the Reader's
+    $('chLoading').hidden = true; $('chContent').hidden = false;
+    const title = m.title || t('Roadbook');
+    $('chTitle').textContent = title;
+    RBSetMeta({ title: title + ' · RDBK.app', description: m.description || undefined, canonical: location.origin + '/challenge/' + encodeURIComponent(slug) });
+    // the way back to the event this page was opened from — only that event (#640)
+    if (evParam && cfg.participant && cfg.participant.event_slug === evParam) {
+        $('chEvent').hidden = false;
+        $('chEvent').innerHTML = `<a href="/event/${encodeURIComponent(evParam)}" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ${esc(cfg.participant.event_title)}</a>`;
+    }
+    // the owner is who they are on their public profile (#620): @username, linked
+    $('chOwner').innerHTML = `<a href="${RBProfileLink(o.username)}">@${esc(o.username || '')}</a>`;
+    if (o.avatar) $('chAvatar').src = RBMediaSrc(o.avatar); else $('chAvatar').remove();
+    // a roadbook that is not public says so with the same badge as the event page (#640)
+    if (j.status !== 'public') $('chStatus').innerHTML = `<span class="u-badge"><i class="fa-solid fa-lock"></i> ${esc(t(j.status === 'ready' ? 'Ready' : 'In preparation'))}</span>`;
+    const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · '); // roadbook-declared credit
+    $('chMeta').textContent = RBSummary(m.total_distance || 0, rb.notes.length) + (credit ? ' · ' + credit : '');
+    if (m.logo) { $('chLogo').src = m.logo; $('chLogo').hidden = false; }
+    $('chDesc').textContent = m.description || '';
+    $('chNav').href = '/reader/' + encodeURIComponent(slug) + (evParam ? '?event=' + encodeURIComponent(evParam) : '');
+    // Owner: Edit. Non-owner: a public roadbook can be read here, navigated and exported to PDF,
+    // but not forked or downloaded.
+    if (j.is_owner) { $('chEdit').hidden = false; $('chEdit').href = '/editor/?rb=' + j.id; }
+    $('chPdf').onclick = async (e) => {
+        const busy = RBBusy(e.currentTarget);
+        try { await RBPdf.generate(rb, { iconBasePath: '/assets/icons/' }); busy.ok(); }
+        catch (err) { busy.reset(); RBToast('Could not export the PDF.'); }
+    };
 
-        // A map of the route + note markers on top — unless the roadbook hides the map
-        // (map_access:false, e.g. a competition that keeps the route secret). Tapping a
-        // marker scrolls to its note row.
-        const mapAllowed = !rb.meta || rb.meta.map_access !== false;
-        if (mapAllowed && rb.track && rb.track.length >= 2) {
-            $('chMap').hidden = false;
-            const map = new RBMap('chMap', { style: RBMap.STYLE_TOPO });
-            map.showRoadbook(rb);
-            map.onWaypoint((i) => { const row = $('chNotes').children[i]; if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-            setTimeout(() => map.map && map.map.resize(), 60); // the container was just unhidden
-        }
-    }).catch(() => { $('chLoading').textContent = t('This roadbook does not exist or is private.'); });
+    // Photos and audio are editor-only working material — not shown here (#316).
+    const renderRows = () => { $('chNotes').innerHTML = NoteCanvas.rowsHTML(rb, { iconBase: '/assets/icons/' }); };
+    renderRows();
+    window.addEventListener('rb-lang', renderRows);
+
+    // The route + note markers — unless the roadbook hides the map (map_access:false, e.g. a
+    // competition that keeps the route secret). A marker scrolls to ITS note row: rows are found
+    // by data-i, never by position, since the material blocks sit between them (#634).
+    if (m.map_access !== false && rb.track && rb.track.length >= 2) {
+        $('chMap').hidden = false;
+        const map = new RBMap('chMap', { style: RBMap.STYLE_TOPO });
+        map.showRoadbook(rb);
+        map.onWaypoint((i) => { const row = $('chNotes').querySelector(`.nrow[data-i="${i}"]`); if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+        setTimeout(() => map.map && map.map.resize(), 60); // the container was just unhidden
+    }
 })();

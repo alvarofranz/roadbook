@@ -50,41 +50,25 @@
     $('pickRb').onclick = () => $('rbFile').click();
     RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast('Could not load the roadbook.'); } };
-    // Public roadbook gallery, inline on the load screen (below the "Open from" card). Each card
-    // links to /reader/<slug> — the same deep link the Navigate button uses — so opening one just
-    // navigates here with the slug, where the startup below loads it (sign-in gate included).
-    (function publicGallery() {
-        const grid = $('readerGallery'); if (!grid) return;
-        RBChallenges.listPublic().then((rbs) => {
-            if (rbs === null) { grid.innerHTML = `<p class="gallery-empty">${t('Could not load.')}</p>`; return; }
-            if (!rbs.length) { grid.innerHTML = `<p class="gallery-empty">${t('No public roadbooks yet.')}</p>`; return; }
-            grid.innerHTML = rbs.map((r) => RBGalleryCard({
-                href: RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug),
-                thumb: r.thumb, title: r.title,
-                meta: '@' + esc(r.username) + ' · ' + RBSummary(r.total_distance, r.note_count),
-                overlays: RBCopyLinkOverlay(r.slug), // same control as the Roadbooks gallery (#493)
-            })).join('');
-            grid.addEventListener('click', (e) => {
-                const b = e.target.closest('.card-copy');
-                if (!b) return;
-                e.preventDefault(); e.stopPropagation();
-                RBCopy(RBReaderLink(b.dataset.copy));
-            });
-        });
-    })();
-    // "Load one of your RBs": shown only when signed in; a picker of the user's saved roadbooks.
+    // The public roadbook gallery on the load screen — the same one as /roadbooks/ (#636). A card
+    // links to /reader/<slug> — the deep link the Navigate button uses — so opening one navigates
+    // here with the slug, where the startup below loads it (sign-in gate included).
+    RBChallenges.gallery({ grid: $('readerGallery'), pager: $('readerPager'), search: $('readerSearch'), href: (r) => RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug) });
+    $('previewBack').onclick = () => { location.href = RBChallenges.ROOT + 'reader/'; }; // back to the load screen (#638)
+    // "Open from My roadbooks": shown only when signed in; a picker of the user's saved roadbooks.
     // #146: the same config load also tells us whether public roadbooks may be opened at all.
+    // RBConfig: offline, a signed-in user is still signed in (#630).
     let evCtx = null;
-    const cfgReady = RBApi('config').then((c) => { meUser = !!(c && c.user); if (meUser) $('pickMine').hidden = false; evCtx = (c && c.participant) || null; }).catch(() => {});
+    const cfgReady = RBConfig().then((c) => { meUser = !!c.user; if (meUser) $('pickMine').hidden = false; evCtx = c.participant || null; });
     $('pickMine').onclick = async () => {
         const busy = RBBusy('pickMine');
         const r = await RBApi('rb_list');
         busy.reset();
         if (!r.ok) return toast(navigator.onLine === false ? 'You are offline — reconnect to see your roadbooks.' : (r.error || 'Could not load.'));
         RBRowPicker({
-            title: 'Your roadbooks', icon: 'fa-book', items: r.roadbooks || [], fields: ['title'],
+            title: 'My roadbooks', icon: 'fa-folder-open', items: r.roadbooks || [], fields: ['title'],
             empty: 'No roadbooks yet. Create one in the Editor.',
-            rowHTML: (rb, i) => `<button type="button" class="challenge-row" data-pick="${i}"><span class="grow"><b>${esc(rb.title)}</b></span><small class="muted">${RBSummary(rb.total_distance, rb.note_count)}</small></button>`,
+            rowHTML: (rb, i) => RBChallenges.pickerRow(rb, i, false), // the same rows as every roadbook picker (#639)
             onPick: async (rb, modal) => {
                 modal.close();
                 const j = await RBApi('rb_get', { id: +rb.id });
@@ -352,17 +336,14 @@
     const reachRadius = (i) => RB.reachRadius(notes[i], notes[i + 1], rb && rb.meta);
 
     /* ---------- navigation: notes ---------- */
-    const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
     // Paper-style 3-column rows: total/partial+number | vignette | comments. No buttons column
     // (#569): the whole active row is the note-done target and the map is the action bar's toggle.
     // Row states: reached = green · skipped (passed over, never reached) = pink · active = red
     // border · upcoming = white. The active row additionally takes the LIVE GPS proximity state
     // (near → arriving, painted by paintApproach); `tight` marks the distance cell of a note whose
     // successor is under 50 m away — a property of the roadbook, not of where the driver is.
-    const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
     // live distances read in metres up close and in km further out — the co-pilot's own units
     const fmtDist = (m) => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
-    const CAP_TYPE_LABEL = { average: 'Average', calculated: 'Calculated', turning: 'Turning' }; // exit = the plain CAP, no qualifier
     let lastScrollIdx = -1;
     // Keep the just-completed note on screen when advancing (#177): anchor the PREVIOUS row at the
     // top of the list, so the note you have just used stays visible with the active note right
@@ -379,37 +360,14 @@
         const top = list.scrollTop + anchor.getBoundingClientRect().top - list.getBoundingClientRect().top;
         list.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
     }
-    // The material a note carries (#542): a photo or an advert fills the diagram box beside its
-    // caption; a text block runs across the whole description area. Never a waypoint — no
-    // number, no state colour, nothing to validate.
-    const blockRowsHTML = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
-        const kind = RB.blockType(b);
-        const wide = !b.image ? ' col-text-wide' : '';
-        return `<div class="nrow block block-${kind.id}">
-            <div class="col-distance"></div>
-            <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
-            <div class="col-text${wide}"><div class="text">${esc(b.text || '')}</div></div>
-        </div>`;
-    }).join('');
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
-        $('noteList').innerHTML = notes.map((n, i) => {
-            const cls = ['nrow'];
-            if (!preview) { // no state colouring in the preview
-                if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
-                if (i === activeIdx) cls.push('active');
-            }
-            const tight = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
-            const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
-            const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
-            const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            return `${blockRowsHTML(n, 'before')}<div class="${cls.join(' ')}" data-i="${i}">
-                <div class="col-distance${tight}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
-                <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
-                <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
-            </div>${blockRowsHTML(n, 'after')}<div class="nmap" id="nmap${i}" hidden></div>`;
-        }).join('');
-        $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
+        // the shared paper rows (NoteCanvas.rowsHTML, #635) + the run's state classes + the map slot
+        $('noteList').innerHTML = NoteCanvas.rowsHTML(rb, {
+            rowClass: (i) => (preview ? '' : [reached.has(i) ? 'done' : (i < activeIdx ? 'skipped' : ''), i === activeIdx ? 'active' : ''].filter(Boolean).join(' ')),
+            after: (i) => `<div class="nmap" id="nmap${i}" hidden></div>`,
+        });
+        $('noteList').querySelectorAll('.nrow[data-i]').forEach((c) => c.onclick = () => {
             const i = +c.dataset.i;
             if (preview) { if (mapAllowed()) toggleNoteMap(i); return; }
             // The whole active row is the "done" target — aiming at a small button on a moving
@@ -428,7 +386,7 @@
     function updateNoteStates() {
         const list = $('noteList');
         if (!list.firstChild) { renderNotes(); return; } // list not built yet
-        list.querySelectorAll('.nrow').forEach((row) => {
+        list.querySelectorAll('.nrow[data-i]').forEach((row) => {
             const i = +row.dataset.i;
             row.classList.toggle('done', reached.has(i));
             row.classList.toggle('skipped', !reached.has(i) && i < activeIdx);

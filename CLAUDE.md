@@ -741,9 +741,8 @@ The `roadbook.json` schema:
 - **"A destra" / right placement = top-right, on the title's row.** When the user asks to put
   something "a destra" (to the right) — a header CTA, a claim/banner link, an action — they mean
   the **top-right of that section, on the SAME row as the heading** (title left, action right),
-  **not** below it. Lay it out with a flex row (`justify-content: space-between`,
-  `align-items: flex-start`); if the container is a `flex-direction: column` block (e.g.
-  `.rbp-head`), override it to `row` or the action stacks under the title.
+  **not** below it. Use the shared `.head-row` (or `.tool-titlebar` for a tool page) — never a
+  page-local heading wrapper (#482 · #642).
 - **Icon consistency — one canonical FontAwesome icon per tool, everywhere.** A tool must use
   the SAME icon across the home workflow step, its Features card, its `/features/<tool>/` page
   and the native launcher — never a different glyph for the same tool. Canonical set: **Roadbook
