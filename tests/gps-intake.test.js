@@ -210,3 +210,24 @@ describe('autoReachedIdx — which note auto-advance validates (#529)', () => {
         expect(asked).toEqual([0, 1]);
     });
 });
+
+describe('courseFrom — the direction a course-up map turns to (#536)', () => {
+    const at = (m, dir) => (dir === 'north' ? { lat: deg(m), lon: 0 } : { lat: 0, lon: deg(m) });
+
+    it('trusts the device when it reports a heading', () => {
+        expect(RB.courseFrom(null, at(0), at(100), 100, 42)).toBe(42);
+        expect(RB.courseFrom(90, at(0), at(100), 100, 0), 'due north is a heading, not "missing"').toBe(0);
+    });
+
+    it('derives the course from the segment just driven when it does not', () => {
+        expect(RB.courseFrom(null, at(0), at(100), 100, null)).toBeCloseTo(90, 0);   // east
+        expect(RB.courseFrom(null, at(0), at(100, 'north'), 100, undefined)).toBeCloseTo(0, 0);
+        expect(RB.courseFrom(null, at(100), at(0), 100, NaN)).toBeCloseTo(270, 0);   // west
+    });
+
+    it('keeps the last course when nothing moved — jitter must not spin the map', () => {
+        expect(RB.courseFrom(123, at(0), at(2), 0, null)).toBe(123);  // the gate called it noise
+        expect(RB.courseFrom(123, null, at(2), 8, null)).toBe(123);   // no segment (junk/teleport)
+        expect(RB.courseFrom(null, null, null, 0, null)).toBeNull();  // nothing known yet
+    });
+});

@@ -164,7 +164,9 @@ window.RBGpsMeter = class RBGpsMeter {
                 if (dt > 0) this.speedKmh = RB.geo.haversineM(this._lastSpeedPos, here) / dt * 3.6;
             }
             this._lastSpeedPos = here; this._lastSpeedT = tnow;
-            if (c.heading != null && isFinite(c.heading)) this.heading = c.heading;
+            // Course: the device's own when it has one, else the bearing of the segment we just
+            // drove — the rule lives in the core, where it is unit-tested (#536).
+            this.heading = RB.courseFrom(this.heading, from, here, step.disp, c.heading);
         }
         this._onFix({ here, coords: c, disp: step.disp, from: from && { lat: from.lat, lon: from.lon }, trusted, speedKmh: this.speedKmh, heading: this.heading, tnow });
     }

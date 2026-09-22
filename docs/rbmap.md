@@ -47,7 +47,11 @@ La mappa diventa utilizzabile solo all'evento `load`. Fino ad allora `this.ready
 - I metodi che richiedono i layer (`setPosition`, `setLiveTrack`, `setPhotos`,
   `setOverlay`, `select`, `_paintVerts`) richiedono **sia** `this.map` **sia**
   `this.ready` e altrimenti escono senza fare nulla.
-- Al load la mappa fa `resize()` e ripristina l'ultima selezione.
+- Al load la mappa fa `resize()` e **ripristina quello che le era già stato detto**: ultima
+  selezione, ultima posizione (`_lastPos` → `_replayPosition`) e ultima guida. Senza il replay
+  della posizione una mappa course-up che aveva ricevuto il suo unico fix mentre caricava si
+  apriva col nord in alto e senza chevron (#536); lo stesso ripristino avviene dopo uno scambio
+  di stile base.
 
 ### I listener registrati una sola volta
 I listener legati ai **layer** (click/hover su waypoint, foto, vertici) e il drag dei
@@ -207,7 +211,7 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 | Consumatore | Uso |
 |-------------|-----|
 | **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setVertexEditor`/`setWaypointEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile proprio via `RBMap.STYLE_*`. |
-| **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true}` per avere il toggle gratis, `showRoadbook` + `select`, `setPosition` per il "sei qui", `destroy` alla chiusura. |
+| **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true, geolocate:true, headingToggle:true}`, `showRoadbook` + `select`, `setPosition(..., follow=true, heading)` a ogni fix — **tu al centro, la mappa girata sulla tua rotta** (#536) — `setGuide` per la freccia alla nota, `destroy` alla chiusura. |
 
 ---
 
