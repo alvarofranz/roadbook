@@ -142,7 +142,7 @@
     // Pagination + search (#244).
     function viewRoadbooks(u) {
         const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
-        let rbMap = null, rbMapTitle = null, previewId = 0;
+        let rbMap = null, previewId = 0;
         const m = RBModal(`<h2>${esc(t('Roadbooks'))} \u00b7 @${esc(u.username)}</h2>
             <div class="rb-split">
             <div class="rb-split-list">
@@ -224,6 +224,7 @@
             if (rbMap.map) setTimeout(() => rbMap.map.resize(), 50); // the dialog just laid out: force the GL canvas to its box
             if (mapTitle) mapTitle.textContent = `${title || ''} · ${RBSummary(rb.total_distance || 0, (rb.notes || []).length)}`;
         };
+        m.q('#rbsSearch').oninput = (e) => { rbQuery = e.target.value; rbPage = 1; render(); };
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
             RBRowPicker({
