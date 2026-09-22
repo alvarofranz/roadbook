@@ -178,6 +178,16 @@
         }
         return -1;
     }
+    /* The course to steer by (#536): the device's own heading when it reports one, else the
+       bearing of the segment just driven. Most browsers — and any phone standing still — report
+       no heading at all, and a course-up map with no course is just a north-up map. Only a step
+       the odometer gate accepted as real movement may turn it, so jitter never spins the map;
+       with nothing to go on, the last known course stands. */
+    function courseFrom(prev, from, here, disp, deviceHeading) {
+        if (deviceHeading != null && isFinite(deviceHeading)) return deviceHeading;
+        if (from && here && disp > 0) return bearingDeg(from, here);
+        return prev;
+    }
     /* May note i be validated by hand from `here`? — the Reader's manual/competition gate (#385,
        #431). Manual tracking works with NO GPS at all, so no position means no objection. With a
        position, a scored validation must not be fakeable from a distance, but the phone's own
@@ -1256,7 +1266,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, autoReachedIdx, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, autoReachedIdx, courseFrom, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,

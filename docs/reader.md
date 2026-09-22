@@ -268,13 +268,23 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   (mirino) in alto a destra, che l'utente può cliccare per centrare sulla propria posizione
 - **`onFix()`** memorizza in `lastHere`/`lastAcc` l'ultima posizione **affidabile** (è da
   quella che si misura ogni distanza del Reader) e chiama
-  `inlineMap.setPosition(lat, lon, false, heading)`, così il pallino blu segue il movimento in
-  tempo reale senza saltare su un fix spazzatura
-- **All'apertura** di una nuova mappa, se `lastHere` è disponibile chiama subito
-  `setPosition` (la posizione viene comunque reinviata dal prossimo fix)
+  `inlineMap.setPosition(lat, lon, true, heading)`: il `follow` tiene **te al centro** e ruota
+  la mappa sulla tua direzione di marcia, quindi destra e sinistra sulla mappa sono destra e
+  sinistra dal parabrezza (#536). Un fix spazzatura non entra: `onFix` esce prima
+- **All'apertura** la mappa nasce già girata sulla rotta corrente (`bearing`) e centrata su
+  `lastHere`; `RBMap` **ricorda l'ultima posizione** (`_lastPos`) e la riapplica appena è pronta
+  o dopo uno scambio di stile, così un fix arrivato mentre la mappa caricava non va perso
+- **Il pulsante heading-up** (`headingToggle: true`) è tra i controlli della mappa: chi preferisce
+  il nord bloccato lo ottiene con un tap
+- **La rotta** viene dal dispositivo quando la dichiara, altrimenti è il bearing del segmento
+  appena percorso (`RB.courseFrom`): la maggior parte dei browser non dà un `heading`, e una
+  mappa course-up senza rotta è solo una mappa col nord in alto. Solo uno step accettato come
+  movimento reale può girarla, quindi il rumore GPS non la fa ruotare
 - **Guida al waypoint** (#485): `setGuide(from, to)` disegna la linea dalla posizione live al
-  waypoint più una freccia fisica da 1 cm sulla posizione, ruotata sul bearing — la riga segue
-  ogni fix senza ricentrare; sotto i 5 m linea e freccia spariscono (sei arrivato).
+  waypoint più una freccia fisica da 1 cm sulla posizione, ruotata sul bearing. La freccia è
+  ancorata allo **spazio mappa** (`rotationAlignment: 'map'`), quindi con la mappa girata sulla
+  tua rotta punta alla nota **rispetto a dove sei rivolto**: dritta in alto = dritto davanti.
+  Sotto i 5 m linea e freccia spariscono (sei arrivato).
 - Quando non c'è una navigazione attiva (modalità preview), `lastHere` è null e la mappa
   mostra solo il pulsante GeolocateControl — l'utente può comunque cliccare il mirino per
   attivare la geolocalizzazione del browser

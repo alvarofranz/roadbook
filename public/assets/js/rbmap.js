@@ -132,7 +132,7 @@ window.RBMap = class RBMap {
         m.on('touchstart', 'rb-photos', photoDown);
         m.on('mousemove', photoMove); m.on('touchmove', photoMove);
         m.on('mouseup', photoUp); m.on('touchend', photoUp);
-        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
+        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastPos) this._replayPosition(); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
     }
     // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom
     // source/layer on setStyle, so everything is rebuilt and the caller repaints
@@ -152,11 +152,14 @@ window.RBMap = class RBMap {
         this.setBaseStyle(STYLES[next], () => {
             if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
             if (this._lastSel) this.select(this._lastSel, true);
+            if (this._lastPos) this._replayPosition();
             if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
         });
     }
     // Tear down the GL context (Reader closes the inline note map this way).
-    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; this._lastPos = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    // Re-apply the last known position once the map can actually draw it.
+    _replayPosition() { const p = this._lastPos; if (p) this.setPosition(p.lat, p.lon, p.follow, p.heading); }
     // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
     setHeadingUp(on) { this._headingUp = !!on; if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); }
     _empty() { return { type: 'FeatureCollection', features: [] }; }
@@ -214,6 +217,10 @@ window.RBMap = class RBMap {
     // degrees) the dot becomes a chevron pointing that way and — unless north is locked
     // via the heading toggle — the map rotates so the direction of travel is up.
     setPosition(lat, lon, follow, heading) {
+        // Remembered like the selection and the guide: a map that is still loading (or is
+        // swapping base style) would otherwise drop the fix, and a course-up map that missed
+        // the only fix it had opens north-up with no chevron on it (#536).
+        this._lastPos = { lat, lon, follow, heading };
         if (!this.map || !this.ready) return;
         const hasHeading = heading != null && isFinite(heading);
         // a plain dot when the course is unknown (e.g. the Editor); a chevron otherwise

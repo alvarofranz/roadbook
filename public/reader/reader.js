@@ -304,7 +304,7 @@
         if (!trusted) return;
         lastHere = here; lastAcc = coords.accuracy;
         if (inlineMap && inlineMap.ready) {
-            inlineMap.setPosition(here.lat, here.lon, false, meter.heading);
+            inlineMap.setPosition(here.lat, here.lon, true, meter.heading); // follow: you stay in the middle, the map turns with you
             if (inlineMapIdx >= 0 && notes[inlineMapIdx]) inlineMap.setGuide(here, notes[inlineMapIdx]); // the line + arrow follow the live fix
         }
         tripTotalM += disp; tripPartialM += disp;
@@ -470,6 +470,11 @@
     // question is "where am I relative to THIS waypoint". Without a fix the note itself is the
     // only position we know, so it becomes the centre. The full route stays on the roadbook's
     // own page and in the Editor.
+    //
+    // It is YOUR map (#536): centred on you, following every trusted fix, and turned so your
+    // direction of travel is UP — left and right on the map are then left and right through the
+    // windscreen, and the guidance arrow (drawn in map space) points at the waypoint relative to
+    // the way you are facing. The heading-up control locks north for whoever prefers it.
     const NOTE_MAP_ZOOM = 16;
     function toggleNoteMap(i) {
         if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
@@ -480,10 +485,11 @@
         el.innerHTML = '<div id="nmapMap" class="rb-inline-map"></div>';
         el.hidden = false; inlineMapIdx = i;
         const centre = lastHere || { lat: +n.lat, lon: +n.lon };
-        inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], layerToggle: true, geolocate: true });
+        const heading = meter && meter.heading != null ? meter.heading : 0;
+        inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], bearing: lastHere ? heading : 0, layerToggle: true, geolocate: true, headingToggle: true });
         inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
         inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
-        if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, false, meter && meter.heading); inlineMap.setGuide(lastHere, n); }
+        if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, true, meter && meter.heading); inlineMap.setGuide(lastHere, n); }
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }

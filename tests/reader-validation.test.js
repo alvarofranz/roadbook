@@ -81,3 +81,38 @@ describe('the navigation bars repeat nothing (#529)', () => {
         expect(js).toContain("odoEls.speed.textContent = Math.round(speedKmh || 0) + ' km/h'");
     });
 });
+
+describe("the note map is YOUR map: centred on you, turned your way (#536)", () => {
+    const rbmap = read('public/assets/js/rbmap.js');
+
+    it('follows every trusted fix instead of freezing where it opened', () => {
+        expect(js).toContain('inlineMap.setPosition(here.lat, here.lon, true, meter.heading)');
+        expect(js).not.toContain('inlineMap.setPosition(here.lat, here.lon, false');
+    });
+
+    it('opens on your position, already turned to your course', () => {
+        const open = js.match(/function toggleNoteMap\(i\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(open).toContain('bearing: lastHere ? heading : 0');
+        expect(open).toContain('headingToggle: true');                       // north can still be locked
+        expect(open).toContain('inlineMap.setPosition(lastHere.lat, lastHere.lon, true,');
+        expect(open).toContain('inlineMap.setGuide(lastHere, n)');
+    });
+
+    it('a fix that lands before the map can draw is not lost', () => {
+        // a course-up map that missed the only fix it had would open north-up with no chevron
+        expect(rbmap).toContain('this._lastPos = { lat, lon, follow, heading };');
+        expect(rbmap).toContain('_replayPosition()');
+        expect(rbmap.match(/if \(this\._lastPos\) this\._replayPosition\(\);/g).length).toBe(2); // load + style swap
+        expect(rbmap).toContain('this._lastPos = null;'); // and dropped with the map
+    });
+
+    it('the guidance arrow is anchored to the map, so it reads against your own heading', () => {
+        const guide = rbmap.match(/setGuide\(from, to\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(guide).toContain("rotationAlignment: 'map'");
+        expect(guide).toContain('RB.geo.bearingDeg(from, to) - 90');
+    });
+
+    it('asks the core for the course, so a phone with no heading still has one', () => {
+        expect(read('public/assets/js/gps-meter.js')).toContain('RB.courseFrom(this.heading, from, here, step.disp, c.heading)');
+    });
+});
