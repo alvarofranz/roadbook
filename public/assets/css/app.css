@@ -504,12 +504,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    explains why a tap did nothing lands behind the buttons (#431): `--bottom-stack` is published
    by pages that stack their own bars there (the Reader), 90px is the standing default elsewhere. */
 .toast { position: fixed; left: 50%; bottom: max(90px, calc(var(--bottom-stack, 0px) + .8rem)); transform: translateX(-50%); z-index: 70; background: #242a36; color: #fff; padding: .7rem 1rem; border-radius: 12px; max-width: 90%; box-shadow: var(--shadow); font-size: .9rem; text-align: center; }
-.mode-grid { display: grid; gap: .7rem; margin-top: .8rem; }
-.mode-btn { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; color: var(--text); cursor: pointer; transition: border-color .15s; }
-.mode-btn:hover { border-color: var(--sand); }
-.mode-btn i { color: var(--sand); font-size: 1.5rem; margin-bottom: .2rem; }
-.mode-btn b { font-size: 1.05rem; }
-.mode-btn small { color: var(--muted); }
 
 /* brand + two-column hero + mockup */
 .brand-logo { width: 30px; height: 30px; object-fit: contain; vertical-align: middle; }

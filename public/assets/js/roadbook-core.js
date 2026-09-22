@@ -843,6 +843,87 @@
         const keep = simplifyKeepMask(trkpts, toleranceM, keepIdx);
         return keep ? trkpts.filter((_, i) => keep[i]) : (trkpts || []).slice();
     }
+    /* Background removal for a custom icon (#694) — in the browser, no server, no model. A symbol
+     * photographed or copied from a document sits on a flat backdrop (white paper, a coloured
+     * slide) that would cover the tulip. `iconBackground` reads the image border: when one colour
+     * dominates it (and the border is not already transparent) that colour is the background.
+     * `removeIconBackground` then floods it from the edges — only pixels connected to the border
+     * go, so a white detail INSIDE the symbol survives — and softens the rim: a pixel within
+     * `tolerance` of the backdrop becomes fully transparent, one up to `feather` further fades in
+     * proportion. Both work on raw RGBA (canvas ImageData.data) so they run in tests too. */
+    function iconBackground(data, width, height) {
+        const edge = [];
+        for (let x = 0; x < width; x++) edge.push(x, (height - 1) * width + x);
+        for (let y = 1; y < height - 1; y++) edge.push(y * width, y * width + width - 1);
+        const bins = new Map();
+        let transparent = 0;
+        for (const i of edge) {
+            const o = i * 4;
+            if (data[o + 3] < 16) { transparent++; continue; }
+            const key = (data[o] >> 4) << 8 | (data[o + 1] >> 4) << 4 | (data[o + 2] >> 4);
+            const bin = bins.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+            bin.n++; bin.r += data[o]; bin.g += data[o + 1]; bin.b += data[o + 2];
+            bins.set(key, bin);
+        }
+        if (transparent > edge.length * 0.5) return null; // already cut out
+        let top = null;
+        bins.forEach((bin) => { if (!top || bin.n > top.n) top = bin; });
+        if (!top || top.n < edge.length * 0.4) return null; // no single backdrop colour: a photo, not a symbol on paper
+        return { r: Math.round(top.r / top.n), g: Math.round(top.g / top.n), b: Math.round(top.b / top.n) };
+    }
+    function removeIconBackground(data, width, height, bg, opts) {
+        const tolerance = (opts && opts.tolerance) || 42, feather = (opts && opts.feather) || 36;
+        const dist = (o) => Math.hypot(data[o] - bg.r, data[o + 1] - bg.g, data[o + 2] - bg.b);
+        const seen = new Uint8Array(width * height), queue = [];
+        const visit = (i) => { if (!seen[i]) { seen[i] = 1; queue.push(i); } };
+        for (let x = 0; x < width; x++) { visit(x); visit((height - 1) * width + x); }
+        for (let y = 0; y < height; y++) { visit(y * width); visit(y * width + width - 1); }
+        let removed = 0;
+        while (queue.length) {
+            const i = queue.pop(), o = i * 4, d = dist(o);
+            if (d > tolerance + feather) continue;            // the symbol itself: the flood stops here
+            if (d <= tolerance) { data[o + 3] = 0; removed++; } // backdrop
+            else { data[o + 3] = Math.round(data[o + 3] * (d - tolerance) / feather); continue; } // soft rim, not spread further
+            const x = i % width, y = (i - x) / width;
+            if (x > 0) visit(i - 1);
+            if (x < width - 1) visit(i + 1);
+            if (y > 0) visit(i - width);
+            if (y < height - 1) visit(i + width);
+        }
+        return removed;
+    }
+    /* A freehand stroke → a clean route piece (#692). A finger or a mouse traces a wobbly, uneven
+     * line: jitter below `toleranceM` is dropped, the corners are rounded with two passes of
+     * Chaikin smoothing (a drawn bend reads as a bend, not a zig-zag), and Douglas-Peucker then
+     * keeps only the points the shape needs, so a straight stroke becomes a straight segment and a
+     * curve keeps an even density of points. Both ends stay exactly where the stroke began and
+     * ended, since they are what joins the piece to the route. `toleranceM` is the size of a few
+     * screen pixels at the current zoom: the result is as precise as what the author could see. */
+    function normalizeStroke(pts, toleranceM) {
+        const tol = Math.max(0.5, toleranceM || 5);
+        const clean = [];
+        for (const p of pts || []) {
+            if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
+            if (!clean.length || haversineM(clean[clean.length - 1], p) >= tol / 3) clean.push({ lat: p.lat, lon: p.lon });
+        }
+        if (pts && pts.length && clean.length) { // the stroke ends exactly where the finger lifted
+            const end = pts[pts.length - 1];
+            if (clean[clean.length - 1] !== end && haversineM(clean[clean.length - 1], end) > 0) clean[clean.length - 1] = { lat: end.lat, lon: end.lon };
+        }
+        if (clean.length < 3) return clean.map((p) => ({ lat: round6(p.lat), lon: round6(p.lon) }));
+        let line = clean;
+        for (let pass = 0; pass < 2; pass++) {
+            const next = [line[0]];
+            for (let i = 0; i < line.length - 1; i++) {
+                const a = line[i], b = line[i + 1];
+                next.push({ lat: a.lat * 0.75 + b.lat * 0.25, lon: a.lon * 0.75 + b.lon * 0.25 },
+                    { lat: a.lat * 0.25 + b.lat * 0.75, lon: a.lon * 0.25 + b.lon * 0.75 });
+            }
+            next.push(line[line.length - 1]);
+            line = next;
+        }
+        return simplifyTrack(line, tol).map((p) => ({ lat: round6(p.lat), lon: round6(p.lon) }));
+    }
     // Closest position ON the track polyline (not just a vertex): the segment
     // index `i` (between points i and i+1), the fraction `t` along it, the
     // projected point and its distance in metres.
@@ -1334,7 +1415,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, normalizeStroke, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

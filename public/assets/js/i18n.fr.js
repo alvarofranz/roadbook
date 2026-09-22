@@ -113,7 +113,7 @@
             'Open an existing roadbook': 'Ouvrir un roadbook existant',
             'Finish': 'Terminer', 'Save': 'Enregistrer',
             'Public': 'Public', 'Visibility': 'Visibilité', 'Draft': 'Brouillon', 'Ready': 'Prêt', 'Status': 'Statut', 'Status updated.': 'Statut mis à jour.',
-            'Open in Google Maps': 'Ouvrir dans Google Maps', 'Open in Google Earth': 'Ouvrir dans Google Earth', 'Coords Lat/Lng:': 'Coord. Lat/Lng :', 'View photo': 'Voir la photo',
+            'Open in Google Maps': 'Ouvrir dans Google Maps', 'Open in Google Earth': 'Ouvrir dans Google Earth', 'View photo': 'Voir la photo',
             'Record a Roadbook with geotagged notes, photos and voice memos.': 'Enregistrez un Roadbook avec des notes, photos et notes vocales géoréférencées.', 'Start recording': 'Démarrer l\'enregistrement',
             'Voice note language': 'Langue des notes vocales', 'Automatic (device)': 'Automatique (appareil)',
             'Default map location': 'Position par défaut de la carte',
@@ -129,7 +129,7 @@
             'Title': 'Titre', 'Description': 'Description', 'Shown on the public roadbook page': 'Affiché sur la page publique du roadbook',
             'Photos': 'Photos', 'Add photos': 'Ajouter des photos', 'Notes': 'Notes', 'Back': 'Retour', 'Delete': 'Supprimer',
             'Cut': 'Couper',
-            'Paste icon': 'Coller une icône', 'Icon added — tap it to place.': 'Icône ajoutée — touchez-la pour la placer.', 'Icons added — tap them to place.': 'Icônes ajoutées — touchez-les pour les placer.', 'Now press Ctrl+V to paste the image.': 'Appuyez maintenant sur Ctrl+V pour coller l\'image.', 'Draw route': 'Dessiner le tracé',
+            'Paste icon': 'Coller une icône', 'Icon added — tap it to place.': 'Icône ajoutée — touchez-la pour la placer.', 'Icons added — tap them to place.': 'Icônes ajoutées — touchez-les pour les placer.', 'Now press Ctrl+V to paste the image.': 'Appuyez maintenant sur Ctrl+V pour coller l\'image.', 
             'Icons': 'Icônes', 'Upload icon': 'Importer une icône', 'All': 'Toutes', 'Yours': 'Les vôtres',
             'Simplify': 'Simplifier', 'Apply': 'Appliquer',
             'Route reversed — review the vignettes.': 'Itinéraire inversé — vérifiez les vignettes.',
@@ -138,7 +138,7 @@
             'Terrain': 'Terrain', 'Info': 'Info', 'References': 'Références',
             'Road': 'Route', 'Danger': 'Danger', 'CAP type': 'Type CAP', 'Exit': 'Sortie', 'Average': 'Moyen', 'Calculated': 'Calculé', 'Turning': 'Virage', 'End of limit': 'Fin de limitation', 'END': 'FIN',
             'Default': 'Défaut', 'Motorway': 'Autoroute', 'Asphalt': 'Asphalte', 'Track': 'Piste', 'Off-piste': 'Hors-piste',
-            'Draw on the map': 'Dessiner sur la carte', 'Sketch a route tapping the map': 'Esquissez un itinéraire en tapant la carte',
+            'Draw on the map': 'Dessiner sur la carte', 
             'Export GPX': 'Exporter GPX',
             'Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.': 'Non connecté : les photos et notes vocales sont gardées sur cet appareil et enregistrées dans un .rdbk local à la fin. Connectez-vous pour les enregistrer sur votre compte.',
             'Export': 'Exporter', '.rdbk file': 'Fichier .rdbk', 'Include photos & audio in the .rdbk': 'Inclure photos et audio dans le .rdbk', 'Photos & audio': 'Photos et audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Ce roadbook contient des photos ou des notes vocales. Elles restent masquées jusqu’à ce que tu l’enregistres dans ton profil.', 'Track line': 'Trace', 'Waypoints (notes)': 'Waypoints (notes)', 'Garmin icons': 'Icônes Garmin', 'OSMAnd icons': 'Icônes OSMAnd', 'Pick at least one GPX type.': 'Choisissez au moins un type GPX.', 'Delete me to export the edited tulip': 'Supprimez-moi pour exporter le tulip modifié',
@@ -248,17 +248,17 @@
             'Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).': 'Les champs inconnus DOIVENT être préservés lors d\'un aller-retour et ignorés s\'ils ne sont pas compris (compatibilité ascendante).',
             'Full minimal example': 'Exemple minimal complet', 'Open a .rdbk in the Reader': 'Ouvrir un .rdbk dans le lecteur',
             'Navigate': 'Naviguer', 'More tools': 'Plus d\'outils',
-            'Add note (tap the route) — A': 'Ajouter une note (touchez le tracé) — A',
+            
             'Cut (tap two points)': 'Couper (tapez deux points)',
             'Add note': 'Ajouter une note', 'Shortcuts': 'Raccourcis',
             'Adjust on the trail': 'Ajuster sur le terrain',
             'Turn this point into a note': 'Transformer ce point en note', 'Turn this note into a track point': 'Transformer cette note en point de trace', 'Add track point here': 'Ajouter un point de trace ici',
             'Keyboard shortcuts': 'Raccourcis clavier', 'Modes': 'Modes', 'Track point': 'Point de trace', 'Note': 'Note', 'Anywhere': 'Partout', 'Back to Move': 'Retour à Déplacer', 'Undo': 'Annuler', 'Redo': 'Rétablir',
             'Right-click opens the menu — long-press on touch.': 'Le clic droit ouvre le menu — appui long sur tactile.',
-            'Move (drag points) — M': 'Déplacer (glisser les points) — M', 'Draw route — D': 'Dessiner l’itinéraire — D', 'Cut (tap two points) — C': 'Couper (tapez deux points) — C',
+            'Cut (tap two points) — C': 'Couper (tapez deux points) — C',
             'Add a GPX track': 'Ajouter une trace GPX', 'Reverse direction': 'Inverser le sens', 'Simplify (remove GPS noise)': 'Simplifier (supprimer le bruit GPS)',
             'Undo (Ctrl+Z)': 'Annuler (Ctrl+Z)', 'Redo (Ctrl+Y)': 'Rétablir (Ctrl+Y)',
-            'Drawn route': 'Itinéraire dessiné', 'Tap the map to draw your route.': 'Tapez la carte pour dessiner votre itinéraire.',
+            'Drawn route': 'Itinéraire dessiné', 
             'This roadbook has no route yet. Draw it on the map?': 'Ce roadbook n\'a pas encore d\'itinéraire. Le dessiner sur la carte ?',
             'Now tap the other end of the cut.': 'Maintenant tapez l\'autre extrémité de la coupure.',
             'Nothing to cut.': 'Rien à couper.', 'Nothing would remain.': 'Il ne resterait rien.',
@@ -1077,4 +1077,42 @@ Object.assign(window.RBi18nLangs.fr, {
 /* chrome strings (#676) */
 Object.assign(window.RBi18nLangs.fr, {
     "All rights reserved.": "Tous droits réservés.",
+});
+
+/* editor map modes M · N · P · D (#692) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Add notes": "Ajouter des notes",
+    "Add points": "Ajouter des points",
+    "Map modes": "Modes de la carte",
+    "Draw": "Dessiner",
+    "Drag on the map to draw your route.": "Faites glisser sur la carte pour dessiner votre itinéraire.",
+    "Route extended.": "Itinéraire prolongé.",
+    "Move: drag points, notes and photos — M": "Déplacer : faites glisser points, notes et photos — M",
+    "Add notes: tap the route — N": "Ajouter des notes : touchez l’itinéraire — N",
+    "Add points: tap the route to insert one, or past an end to extend it — P": "Ajouter des points : touchez l’itinéraire pour en insérer un, ou au-delà d’une extrémité pour le prolonger — P",
+    "Draw: drag on the map to sketch the route — D": "Dessiner : faites glisser sur la carte pour tracer l’itinéraire — D",
+});
+
+/* editor map context menu and freehand drawing (#692 · #693) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Copy coordinates": "Copier les coordonnées",
+    "Coordinates copied.": "Coordonnées copiées.",
+    "This spot": "Cet endroit",
+    "Delete the nearest point": "Supprimer le point le plus proche",
+    "Start the stroke at an end of the route — or draw from the route back onto it to replace that stretch.": "Commencez le tracé à une extrémité de l’itinéraire, ou dessinez depuis l’itinéraire jusqu’à lui pour remplacer ce tronçon.",
+    "Replace this stretch of the route? These notes are in it and will be deleted:": "Remplacer ce tronçon de l’itinéraire ? Ces notes s’y trouvent et seront supprimées :",
+    "Stretch replaced.": "Tronçon remplacé.",
+});
+
+/* remove the background of a custom icon (#694) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Remove the background?": "Supprimer l’arrière-plan ?",
+    "The icon sits on a plain background that would cover the vignette.": "L’icône a un fond uni qui masquerait la vignette.",
+    "Original": "Original",
+    "Without background": "Sans arrière-plan",
+});
+
+/* editor landing: Draw is freehand (#692) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Sketch a route by dragging on the map": "Tracez un itinéraire en faisant glisser sur la carte",
 });

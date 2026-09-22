@@ -10,12 +10,12 @@ Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur 
 
 Öffne den **Editor** (`/editor/`). Die Landing-Seite (`#loadFrom`) bietet 4 Karten + 2 versteckte Quellen:
 
-> 📸 *Screenshot: Editor-Startbildschirm mit den 4 Quell-Karten (GPX, Draw on the map, .rdbk, Roadbook pubblico)*
+> 📸 *Screenshot: Editor-Startbildschirm mit den 4 Quell-Karten (GPX, Auf der Karte zeichnen, .rdbk, Roadbook pubblico)*
 
 | Quelle | Vorgehen | Ergebnis |
 |----------|-----------|--------------|
 | **GPX** | Tap „GPX" → `.gpx`-Datei wählen (optional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook mit Spur + Waypoint |
-| **Draw on the map** | Tap „Draw on the map" | Karte im *draw*-Modus: die ersten 2 Taps erstellen das roadbook von Null |
+| **Auf der Karte zeichnen** | Tap „Auf der Karte zeichnen" | Karte im **Zeichnen**-Modus: auf der Karte drücken und ziehen, um die Route zu skizzieren — der erste Strich erstellt das roadbook von Null |
 | **.rdbk** | Tap „.rdbk" → ZIP/JSON-Datei wählen | Importiert vollständiges roadbook (Medien in `pendingMedia`, siehe unten) |
 | **Roadbook pubblico** | Tap „Roadbook pubblico" → challenge-Picker | **Fork** eines `public` + `reusable` roadbook → neues privates roadbook von dir |
 
@@ -30,28 +30,67 @@ Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur 
 
 ## Map-Ansicht — die Werkzeugleiste
 
-Die Karte ist das Herzstück. Vertikale Leiste `.map-tools` (nur ☰ · Undo · Redo sichtbar; **Move ist Standard**, kein Button).
+Die Karte ist das Herzstück. Darauf liegen zwei Leisten:
 
-> 📸 *Screenshot: Editor-Karte mit vertikaler Werkzeugleiste und geladener Spur*
+- **Oben links**: ☰ (Menü) · Undo · Redo
+- **Unten links**: die vertikale **Modusleiste** (auf dem Handy verläuft sie waagerecht am unteren Rand). Jeder Button zeigt sein Icon und seine Taste; der aktive Modus ist hervorgehoben und zeigt zusätzlich seinen Namen
 
-### Mode-Tool (exklusiv)
+> 📸 *Screenshot: Editor-Karte mit der Leiste oben links, der Modusleiste unten links und geladener Spur*
 
-| Tool | Aktivierung | Funktion |
-|------|-------------|---------|
-| **Move** (Standard) | `Esc` oder Ende von cut/draw | Zieht **jeden beliebigen Punkt** (Spur ODER Note). Die Linie folgt. Metriken werden beim Loslassen neu berechnet |
-| **Draw** | Von Landing „Draw on the map" | Tap verlängert ab dem nächstgelegenen offenen Ende. Tap auf offenen Schnitt-Rand → schließt ihn |
-| **Cut** | Menü ☰ → Cut / Taste `C` | 2 Punkte tippen → schneiden (lässt Lücke = *gap*). Einziges Mode-Tool mit Button in der Leiste |
+### Modi (exklusiv, Leiste unten links)
 
-### One-shot (Menü ☰)
+| Modus | Taste | Funktion |
+|------|-------|---------|
+| **Verschieben** (Standard) | `M` | Zieht **jeden beliebigen Punkt**: Spurpunkt, Note oder Foto. Die Linie folgt. Metriken werden beim Loslassen neu berechnet |
+| **Notizen hinzufügen** | `N` | Tap auf die Route → setzt dort eine Note. Der Modus bleibt aktiv, so kannst du mehrere nacheinander setzen |
+| **Punkte hinzufügen** | `P` | Tap **auf** die Route → fügt einen Punkt in diesen Abschnitt ein. Tap **abseits** der Route → verlängert sie ab ihrem nächstgelegenen offenen Ende (Start, Ziel oder Rand eines offenen Schnitts). Ist nichts geladen, beginnen zwei Taps eine neue Route |
+| **Zeichnen** | `D` | Freihand: auf der Karte drücken und ziehen. Beim Loslassen wird der Strich zu einer glatten, professionellen Linie bereinigt (Zittern entfernt, Kurven gerundet, Geraden gerade) |
+| **Schneiden** | `C` | Menü ☰ → Schneiden (erscheint nur während er aktiv ist in der Modusleiste). 2 Punkte tippen → schneiden (lässt Lücke = *gap*) |
+
+Erneutes Tippen auf den aktiven Modus kehrt zu **Verschieben** zurück; ebenso `Esc`.
+
+#### Wohin ein gezeichneter Strich geht
+
+- **Ein Ende beginnt an einem offenen Ende** der Route (Start, Ziel, Rand eines offenen Schnitts) → die Route wird von dort verlängert; erreicht er den gegenüberliegenden Rand eines Schnitts, wird dieser geschlossen
+- **Beide Enden berühren die Route** → der Strich ersetzt das Routenstück zwischen diesen beiden Stellen. Liegen Notizen in diesem Stück, fragt der Editor vorher und nennt sie
+- **Sonst** → nichts ändert sich und ein Hinweis erklärt, wie man zeichnet
+- **Nichts geladen** → der erste Strich erstellt das roadbook
+
+### Menü ☰
 
 | Tool | Funktion |
 |------|----------|
+| **Schneiden** | Aktiviert den Schneiden-Modus (Taste `C`, siehe oben) |
 | **Add GPX** | Intelligentes Verbinden: wenn beide Enden die Route berühren (≤200m) → ersetzt das innere Stück; sonst wird an das nächste Ende angehängt (auto-orientiert) |
 | **Simplify** | Douglas-Peucker (Toleranz 0,5–50m, Standard 2m). **Berechnet Metriken komplett neu** → Gesamt kann nur sinken. Notizen bleiben auf ihren Eckpunkten (Anker erhalten) |
 | **Adjust** | Live-Neuaufnahme eines Abschnitts (geteilter gps-meter). Ersetzt das Segment zwischen `adjP1` und `adjP2` und hängt Notizen neu an |
-| **Undo / Redo** | Debounced-Snapshot 400ms, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) |
+| **Tastenkürzel** | Listet alle Tastenkürzel auf |
+
+**Undo / Redo** (Leiste oben links): Debounced-Snapshot 400ms, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z)
 
 > **Reverse** (Routenumkehr) liegt in **Settings** (Config-Ansicht), nicht hier.
+
+### Rechtsklick-Menü (langes Drücken auf Touch)
+
+Eine dunkle Karte im Stil der App. Oben steht, was getroffen wurde — eine Note (mit ihrer Nummer), ein Spurpunkt oder „diese Stelle" — samt Koordinaten und einem Button, der sie mit einem Klick kopiert. Darunter die Befehle in Gruppen (Bearbeiten · Fotos · in Google Maps / Google Earth öffnen), jeder mit seiner Taste. Die Pfeiltasten bewegen sich durch die Befehle; `Esc` oder ein Klick daneben schließt es.
+
+### Tastenkürzel
+
+| Taste | Aktion |
+|-------|--------|
+| `M` · `N` · `P` · `D` · `C` | Modus: Verschieben · Notizen hinzufügen · Punkte hinzufügen · Zeichnen · Schneiden |
+| `Esc` | Zurück zu Verschieben |
+| Ctrl/Cmd+Z · Ctrl+Y (Shift+Z) | Undo · Redo |
+
+Dieselben Buchstaben gelten im Rechtsklick-Menü und auf einem ausgewählten Spurpunkt:
+
+| Taste | Aktion |
+|-------|--------|
+| `N` | In eine Note umwandeln / Note hinzufügen |
+| `P` | Spurpunkt hinzufügen |
+| `I` | Zwischenpunkt |
+| `T` | Note in einen Spurpunkt umwandeln |
+| `Del` | Löschen |
 
 ---
 
@@ -59,7 +98,7 @@ Die Karte ist das Herzstück. Vertikale Leiste `.map-tools` (nur ☰ · Undo · 
 
 Ein innerer Schnitt hinterlässt eine **echte Lücke** (kein Segment). Gespeichert als Paar von **Punkten** `{a,b}` (nicht Indizes) → übersteht Index-Verschiebungen.
 
-- **Füllen**: darüber zeichnen (Draw schließt den gap durch Tippen auf den gegenüberliegenden Rand)
+- **Füllen**: darüber zeichnen oder mit Punkte hinzufügen verlängern (das Erreichen des gegenüberliegenden Rands schließt den gap)
 - **Gerade schließen**: beim Export/Save → `confirmOpenCuts` fragt nach → schließt als gerade Linie
 - `resolveGaps()` löst sie bei Bedarf in Indizes auf
 
@@ -81,7 +120,7 @@ Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt
 | **CAP** | Zeilen-Toggle → berechnet `bearingDeg` + `haversineM` zur nächsten Note | Letzte Note: kein CAP |
 | **Icone / Vignette** | `NoteCanvas` auf `#noteCanvas` | Standard-Palette + eingebettete Custom-Icons (siehe § unten) |
 
-### Ziehen auf der Karte (Tool Move)
+### Ziehen auf der Karte (Tool Verschieben)
 Note wird vom blauen Marker gezogen → verschiebt den **Spur-Eckpunkt** darunter → Linie folgt. Note bewegt sich wie ein Spur-Punkt.
 
 ### Umordnen / Löschen
@@ -97,7 +136,7 @@ Pfeile ↑/↓ (ändert `sel` ±1), `Del` → `delNote` (Minimum 2 Notizen). **Z
 
 > 📸 *Screenshot: Icon-Palette mit Kategorien und Live-Suche*
 
-Kategorie-Chips + Live-Suche (`filterIcons`). Tap oder **Drag&Drop** auf Vignette zum Hinzufügen. Custom: `#iconFile` → data-URI. ×-Badge zum Löschen (gesperrt, wenn in Verwendung).
+Kategorie-Chips + Live-Suche (`filterIcons`). Tap oder **Drag&Drop** auf Vignette zum Hinzufügen. Custom: hochladen (`#iconFile`) oder einfügen → data-URI. Liegt das Icon auf einem einfarbigen Hintergrund (z. B. Foto eines weißen Blatts), fragt der Editor **„Hintergrund entfernen?"** (Nein / Ja) und zeigt Original und Ergebnis nebeneinander — das läuft komplett im Browser, und die Icon-Bibliothek des roadbook behält nur die gewählte Version. ×-Badge zum Löschen (gesperrt, wenn in Verwendung).
 
 > Beim Import .rdbk Roadbook Suite: Icons 1:1 umbenannt (Tabelle in `editor.md` §9.5), Y-Flip + zentriert + ×1,5 (×3 Start/Ziel). Icons ohne Datei → Fallback `W28_general_danger.svg` + Hinweis im Text *„Nota: aggiungere icona <nome>"* (Hinweis: Icon <Name> hinzufügen).
 
@@ -138,7 +177,7 @@ Zweite Ansicht (`showView('config')`), Tab `#viewConfig`:
 ### Lightbox
 Tap auf Pin / Miniatur → Vollbild-Betrachter (deckt nur die Karte ab, **nicht** das Notiz-Panel → du bearbeitest weiter). Pfeile ‹/›, `←`/`→`, `Esc`. Aktionen:
 - **Waypoint** → erstellt Waypoint auf der Foto-Position
-- **Move on map** → *posiziona*-Modus → nächster Tap aktualisiert Koordinaten via `ph_move`
+- **Auf Karte verschieben** → *posiziona*-Modus → nächster Tap aktualisiert Koordinaten via `ph_move`
 - **Delete** → `ph_delete` (mit Bestätigung) + Lightbox + Pin aktualisieren
 
 ---

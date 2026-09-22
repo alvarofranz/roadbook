@@ -10,12 +10,12 @@ El **Editor** es el centro de creación: aquí transformas una trazada en bruto 
 
 Abre **Editor** (`/editor/`). La landing (`#loadFrom`) ofrece 4 tarjetas + 2 fuentes ocultas:
 
-> 📸 *Screenshot: pantalla inicial del Editor con las 4 tarjetas de fuente (GPX, Draw on the map, .rdbk, Roadbook público)*
+> 📸 *Screenshot: pantalla inicial del Editor con las 4 tarjetas de fuente (GPX, Dibujar en el mapa, .rdbk, Roadbook público)*
 
 | Fuente | Cómo hacerlo | Qué obtienes |
 |----------|-----------|--------------|
 | **GPX** | Tap "GPX" → elige archivo `.gpx` (opcional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook con trazada + waypoint |
-| **Draw on the map** | Tap "Draw on the map" | Mapa en modo *draw*: los primeros 2 taps crean el roadbook desde cero |
+| **Dibujar en el mapa** | Tap "Dibujar en el mapa" | Mapa en modo **Dibujar**: pulsa y arrastra sobre el mapa para trazar la ruta — el primer trazo crea el roadbook desde cero |
 | **.rdbk** | Tap ".rdbk" → elige archivo ZIP/JSON | Importa roadbook completo (media en `pendingMedia`, ver abajo) |
 | **Roadbook público** | Tap "Roadbook público" → picker de challenge | **Fork** de un roadbook `public` + `reusable` → nuevo roadbook privado tuyo |
 
@@ -30,28 +30,67 @@ Abre **Editor** (`/editor/`). La landing (`#loadFrom`) ofrece 4 tarjetas + 2 fue
 
 ## Vista Map — La barra de herramientas
 
-El mapa es el corazón. Barra vertical `.map-tools` (solo ☰ · Undo · Redo visibles; **Move es por defecto**, ningún botón).
+El mapa es el corazón. Tiene dos barras:
 
-> 📸 *Screenshot: mapa del Editor con barra de herramientas vertical y trazada cargada*
+- **Arriba a la izquierda**: ☰ (menú) · Undo · Redo
+- **Abajo a la izquierda**: la **barra de modos** vertical (en el móvil va en horizontal a lo largo del borde inferior). Cada botón muestra su icono y su tecla; el modo activo se resalta y muestra también su nombre
 
-### Mode tool (exclusivos)
+> 📸 *Screenshot: mapa del Editor con la barra arriba a la izquierda, la barra de modos abajo a la izquierda y trazada cargada*
 
-| Herramienta | Activación | Qué hace |
-|------|-------------|---------|
-| **Move** (por defecto) | `Esc` o fin de cut/draw | Arrastra **cualquier punto** (trazada O nota). La línea sigue. Métricas recalculadas al soltar |
-| **Draw** | Desde landing "Draw on the map" | Tap extiende desde el extremo abierto más cercano. Tap borde de corte abierto → lo cierra |
-| **Cut** | Menú ☰ → Cut / tecla `C` | Tap 2 puntos → corta (deja hueco = *gap*). Único mode tool con botón en barra |
+### Modos (exclusivos, barra abajo a la izquierda)
 
-### One-shot (menú ☰)
+| Modo | Tecla | Qué hace |
+|------|-------|---------|
+| **Mover** (por defecto) | `M` | Arrastra **cualquier punto**: punto de trazada, nota o foto. La línea sigue. Métricas recalculadas al soltar |
+| **Añadir notas** | `N` | Tap sobre la ruta → coloca una nota ahí. El modo sigue activo, así puedes colocar varias seguidas |
+| **Añadir puntos** | `P` | Tap **sobre** la ruta → inserta un punto en ese tramo. Tap **lejos** de la ruta → la extiende desde su extremo abierto más cercano (salida, llegada o borde de un corte abierto). Sin nada cargado, dos taps empiezan una ruta nueva |
+| **Dibujar** | `D` | A mano alzada: pulsa y arrastra sobre el mapa. Al soltar, el trazo se limpia en una línea suave y profesional (sin temblores, curvas redondeadas, rectas rectas) |
+| **Cortar** | `C` | Menú ☰ → Cortar (aparece en la barra de modos solo mientras está activo). Tap 2 puntos → corta (deja hueco = *gap*) |
+
+Tocar de nuevo el modo activo vuelve a **Mover**; `Esc` también.
+
+#### Adónde va un trazo dibujado
+
+- **Un extremo empieza en un extremo abierto** de la ruta (salida, llegada, borde de un corte abierto) → la ruta se extiende desde ahí; llegar al borde opuesto de un corte lo cierra
+- **Ambos extremos tocan la ruta** → el trazo sustituye el tramo de ruta entre esos dos puntos. Si hay notas dentro de ese tramo, el Editor pregunta antes y las nombra
+- **En otro caso** → no cambia nada y una pista explica cómo dibujar
+- **Nada cargado** → el primer trazo crea el roadbook
+
+### Menú ☰
 
 | Herramienta | Función |
 |------|----------|
+| **Cortar** | Activa el modo Cortar (tecla `C`, ver arriba) |
 | **Add GPX** | Unión inteligente: si ambos extremos tocan la ruta (≤200m) → sustituye tramo interno; si no, une al extremo más cercano (auto-orienta) |
 | **Simplify** | Douglas-Peucker (tolerancia 0,5–50m, por defecto 2m). **Recalcula métricas desde cero** → el total solo puede disminuir. Las notas permanecen en sus vértices (anchors preservados) |
 | **Adjust** | Re-grabación live de un tramo (gps-meter compartido). Sustituye el segmento entre `adjP1` y `adjP2` y re-engancha las notas |
-| **Undo / Redo** | Snapshot debounced 400ms, máx 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) |
+| **Atajos** | Lista todos los atajos de teclado |
+
+**Undo / Redo** (barra arriba a la izquierda): Snapshot debounced 400ms, máx 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z)
 
 > **Reverse** (inversión del recorrido) está en **Settings** (vista Config), no aquí.
+
+### Menú del clic derecho (pulsación larga en táctil)
+
+Una tarjeta oscura con el estilo de la app. Arriba dice qué se ha tocado — una nota (con su número), un punto de trazada o "este lugar" — y sus coordenadas, con un botón para copiarlas en un clic. Debajo, los comandos en grupos (edición · fotos · abrir en Google Maps / Google Earth), cada uno con su tecla. Las flechas recorren los comandos; `Esc` o un clic fuera lo cierra.
+
+### Atajos de teclado
+
+| Tecla | Acción |
+|-------|--------|
+| `M` · `N` · `P` · `D` · `C` | Modo: Mover · Añadir notas · Añadir puntos · Dibujar · Cortar |
+| `Esc` | Vuelve a Mover |
+| Ctrl/Cmd+Z · Ctrl+Y (Shift+Z) | Undo · Redo |
+
+Las mismas letras valen en el menú del clic derecho y sobre un punto de trazada seleccionado:
+
+| Tecla | Acción |
+|-------|--------|
+| `N` | Convertir en / añadir una nota |
+| `P` | Añadir un punto de trazada |
+| `I` | Punto intermedio |
+| `T` | Convertir una nota en punto de trazada |
+| `Del` | Eliminar |
 
 ---
 
@@ -59,7 +98,7 @@ El mapa es el corazón. Barra vertical `.map-tools` (solo ☰ · Undo · Redo vi
 
 Un corte interno deja un **hueco real** (no un segmento). Almacenado como par de **puntos** `{a,b}` (no índices) → sobrevive a desplazamientos de índice.
 
-- **Rellena**: dibuja encima (Draw cierra el gap tocando el borde opuesto)
+- **Rellena**: dibuja encima o extiende con Añadir puntos (llegar al borde opuesto cierra el gap)
 - **Cierra en recta**: al export/save → `confirmOpenCuts` pide confirmación → cierra como línea recta
 - `resolveGaps()` los resuelve en índices bajo demanda
 
@@ -81,7 +120,7 @@ Columna derecha: filas `.note-mini`. Tap fila → **el editor inline se desplaza
 | **CAP** | Toggle fila → calcula `bearingDeg` + `haversineM` hacia la nota siguiente | Última nota: nada de CAP |
 | **Iconos / Viñeta** | `NoteCanvas` en `#noteCanvas` | Paleta estándar + custom embebidos (ver § abajo) |
 
-### Drag en el mapa (herramienta Move)
+### Drag en el mapa (herramienta Mover)
 La nota se arrastra desde el marcador azul → mueve **vértice de trazada** de debajo → la línea lo sigue. La nota se mueve como un punto de trazada.
 
 ### Reordenar / Eliminar
@@ -97,7 +136,7 @@ Flechas ↑/↓ (cambia `sel` ±1), `Del` → `delNote` (mínimo 2 notas). **No 
 
 > 📸 *Screenshot: paleta de iconos con categorías y búsqueda live*
 
-Chips de categorías + búsqueda live (`filterIcons`). Tap o **drag&drop** sobre la viñeta para añadir. Custom: `#iconFile` → data-URI. Badge × para eliminar (bloqueado si está en uso).
+Chips de categorías + búsqueda live (`filterIcons`). Tap o **drag&drop** sobre la viñeta para añadir. Custom: subida (`#iconFile`) o pegar → data-URI. Si el icono está sobre un fondo liso (p. ej. la foto de un papel blanco), el Editor pregunta **"¿Quitar el fondo?"** (No / Sí), mostrando el original y el resultado lado a lado — se hace íntegramente en el navegador, y la biblioteca de iconos del roadbook guarda solo la versión elegida. Badge × para eliminar (bloqueado si está en uso).
 
 > Al importar .rdbk de Roadbook Suite: iconos renombrados 1:1 (tabla en `editor.md` §9.5), flip Y + recentrados + ×1.5 (×3 salida/llegada). Iconos sin archivo → fallback `W28_general_danger.svg` + nota en el texto *"Nota: agregar icono <nombre>"*.
 
@@ -138,7 +177,7 @@ Segunda vista (`showView('config')`), tab `#viewConfig`:
 ### Lightbox
 Tap pin / miniatura → visor a pantalla completa (cubre solo el mapa, **no** el panel de notas → sigues editando). Flechas ‹/›, `←`/`→`, `Esc`. Acciones:
 - **Waypoint** → crea waypoint en la posición de la foto
-- **Move on map** → modo *posiciona* → el próximo tap actualiza coord vía `ph_move`
+- **Mover en el mapa** → modo *posiciona* → el próximo tap actualiza coord vía `ph_move`
 - **Delete** → `ph_delete` (con confirmación) + actualiza lightbox + pin
 
 ---

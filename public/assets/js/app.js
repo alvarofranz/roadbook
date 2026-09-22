@@ -458,7 +458,8 @@
        Shrinks photos in the browser BEFORE upload so they never hit PHP's
        post_max_size and uploads stay tiny. Used by avatar + gallery + logo. */
     window.RBImg = {
-        _canvas(file, max) {
+        // an image file drawn onto a canvas no larger than `max` px on its longest side
+        canvas(file, max) {
             return new Promise((res, rej) => {
                 const img = new Image();
                 img.onload = () => {
@@ -475,11 +476,11 @@
         // → a small JPEG Blob (for upload). Falls back to the original file if anything fails.
         async toBlob(file, max = 900, q = 0.82) {
             if (!file || !/^image\//.test(file.type)) return file;
-            try { const c = await this._canvas(file, max); return await new Promise((r) => c.toBlob((b) => r(b || file), 'image/jpeg', q)); }
+            try { const c = await this.canvas(file, max); return await new Promise((r) => c.toBlob((b) => r(b || file), 'image/jpeg', q)); }
             catch (e) { return file; }
         },
         // → a PNG data: URI (for embedding, e.g. the event logo — keeps transparency)
-        async toDataURL(file, max = 256) { const c = await this._canvas(file, max); return c.toDataURL('image/png'); },
+        async toDataURL(file, max = 256) { const c = await this.canvas(file, max); return c.toDataURL('image/png'); },
         // → {lat, lon} from a JPEG's EXIF GPS, or null. Only JPEG exposes readable EXIF
         // here; PNG/HEIC return null (the caller then asks the user to place it on the map).
         async gps(file) {

@@ -10,12 +10,12 @@ L'**Editor** est le centre de création : ici vous transformez une trace brute (
 
 Ouvrez **Editor** (`/editor/`). La page d'accueil (`#loadFrom`) propose 4 cartes + 2 sources cachées :
 
-> 📸 *Capture : écran initial de l'Editor avec les 4 cartes de source (GPX, Draw on the map, .rdbk, Roadbook public)*
+> 📸 *Capture : écran initial de l'Editor avec les 4 cartes de source (GPX, Dessiner sur la carte, .rdbk, Roadbook public)*
 
 | Source | Comment faire | Ce que vous obtenez |
 |----------|-----------|--------------|
 | **GPX** | Touchez « GPX » → choisissez un fichier `.gpx` (optionnel `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook avec trace + waypoints |
-| **Draw on the map** | Touchez « Draw on the map » | Carte en mode *draw* : les 2 premiers taps créent le roadbook à partir de zéro |
+| **Dessiner sur la carte** | Touchez « Dessiner sur la carte » | Carte en mode **Dessiner** : appuyez et faites glisser sur la carte pour esquisser le parcours — le premier trait crée le roadbook à partir de zéro |
 | **.rdbk** | Touchez « .rdbk » → choisissez un fichier ZIP/JSON | Importe un roadbook complet (médias dans `pendingMedia`, voir ci-dessous) |
 | **Roadbook public** | Touchez « Roadbook public » → sélecteur de challenge | **Fork** d'un roadbook `public` + `reusable` → nouveau roadbook privé vous appartenant |
 
@@ -30,28 +30,67 @@ Ouvrez **Editor** (`/editor/`). La page d'accueil (`#loadFrom`) propose 4 cartes
 
 ## Vue Carte — La barre d'outils
 
-La carte est le cœur. Barre verticale `.map-tools` (seuls ☰ · Undo · Redo visibles ; **Move** est par défaut, aucun bouton).
+La carte est le cœur. Deux barres y sont posées :
 
-> 📸 *Capture : carte de l'Editor avec la barre d'outils verticale et la trace chargée*
+- **En haut à gauche** : ☰ (menu) · Undo · Redo
+- **En bas à gauche** : la **barre des modes** verticale (sur téléphone, elle court à l'horizontale le long du bord inférieur). Chaque bouton affiche son icône et sa touche ; le mode actif est mis en évidence et affiche aussi son nom
 
-### Outils de mode (exclusifs)
+> 📸 *Capture : carte de l'Editor avec la barre en haut à gauche, la barre des modes en bas à gauche et la trace chargée*
 
-| Outil | Activation | Ce qu'il fait |
-|------|-------------|---------|
-| **Move** (défaut) | `Esc` ou fin de cut/draw | Faites glisser **n'importe quel point** (trace OU note). La ligne suit. Métriques recalculées au relâchement |
-| **Draw** | Depuis l'accueil « Draw on the map » | Le tap étend depuis l'extrémité ouverte la plus proche. Tap sur un bord de coupe ouvert → le ferme |
-| **Cut** | Menu ☰ → Cut / touche `C` | Tap 2 points → coupe (laisse un trou = *gap*). Unique outil de mode avec bouton dans la barre |
+### Modes (exclusifs, barre en bas à gauche)
 
-### One-shot (menu ☰)
+| Mode | Touche | Ce qu'il fait |
+|------|--------|---------|
+| **Déplacer** (défaut) | `M` | Faites glisser **n'importe quel point** : point de trace, note ou photo. La ligne suit. Métriques recalculées au relâchement |
+| **Ajouter des notes** | `N` | Tap sur la route → pose une note à cet endroit. Le mode reste actif, vous pouvez donc en poser plusieurs à la suite |
+| **Ajouter des points** | `P` | Tap **sur** la route → insère un point dans ce tronçon. Tap **à l'écart** de la route → la prolonge depuis son extrémité ouverte la plus proche (départ, arrivée ou bord d'une coupe ouverte). Sans rien de chargé, deux taps commencent une nouvelle route |
+| **Dessiner** | `D` | À main levée : appuyez et faites glisser sur la carte. Au relâchement, le trait est nettoyé en une ligne lisse et professionnelle (tremblements supprimés, virages arrondis, lignes droites bien droites) |
+| **Couper** | `C` | Menu ☰ → Couper (n'apparaît dans la barre des modes que lorsqu'il est actif). Tap 2 points → coupe (laisse un trou = *gap*) |
+
+Toucher à nouveau le mode actif ramène à **Déplacer** ; `Esc` aussi.
+
+#### Où va un trait dessiné
+
+- **Une extrémité part d'une extrémité ouverte** de la route (départ, arrivée, bord d'une coupe ouverte) → la route est prolongée depuis là ; atteindre le bord opposé d'une coupe la ferme
+- **Les deux extrémités touchent la route** → le trait remplace le tronçon de route entre ces deux endroits. Si des notes se trouvent dans ce tronçon, l'Editor demande d'abord et les nomme
+- **Sinon** → rien ne change et une indication explique comment dessiner
+- **Rien de chargé** → le premier trait crée le roadbook
+
+### Menu ☰
 
 | Outil | Fonction |
 |------|----------|
+| **Couper** | Active le mode Couper (touche `C`, voir ci-dessus) |
 | **Add GPX** | Jonction intelligente : si les deux extrémités touchent la route (≤200m) → remplace le tronçon interne ; sinon unit à l'extrémité la plus proche (auto-orientation) |
 | **Simplify** | Douglas-Peucker (tolérance 0,5–50m, défaut 2m). **Recalcule les métriques à partir de zéro** → le total ne peut que diminuer. Les notes restent sur leurs sommets (ancrages préservés) |
 | **Adjust** | Ré-enregistrement en direct d'un tronçon (gps-meter partagé). Remplace le segment entre `adjP1` et `adjP2` et ré-accroche les notes |
-| **Undo / Redo** | Snapshot debounced 400ms, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) |
+| **Raccourcis** | Liste tous les raccourcis clavier |
+
+**Undo / Redo** (barre en haut à gauche) : Snapshot debounced 400ms, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z)
 
 > **Reverse** (inversion du parcours) se trouve dans **Settings** (vue Config), pas ici.
+
+### Menu du clic droit (appui long sur écran tactile)
+
+Une carte sombre au style de l'app. En haut, elle indique ce qui a été touché — une note (avec son numéro), un point de trace ou « cet endroit » — et ses coordonnées, avec un bouton pour les copier en un clic. En dessous, les commandes par groupes (édition · photos · ouvrir dans Google Maps / Google Earth), chacune avec sa touche. Les flèches parcourent les commandes ; `Esc` ou un clic à l'extérieur la ferme.
+
+### Raccourcis clavier
+
+| Touche | Action |
+|--------|--------|
+| `M` · `N` · `P` · `D` · `C` | Mode : Déplacer · Ajouter des notes · Ajouter des points · Dessiner · Couper |
+| `Esc` | Retour à Déplacer |
+| Ctrl/Cmd+Z · Ctrl+Y (Shift+Z) | Undo · Redo |
+
+Les mêmes lettres valent dans le menu du clic droit et sur un point de trace sélectionné :
+
+| Touche | Action |
+|--------|--------|
+| `N` | Transformer en / ajouter une note |
+| `P` | Ajouter un point de trace |
+| `I` | Point intermédiaire |
+| `T` | Transformer une note en point de trace |
+| `Del` | Supprimer |
 
 ---
 
@@ -59,7 +98,7 @@ La carte est le cœur. Barre verticale `.map-tools` (seuls ☰ · Undo · Redo v
 
 Une coupe interne laisse un **trou réel** (pas un segment). Mémorisé comme une paire de **points** `{a,b}` (pas des indices) → survit au décalage d'index.
 
-- **Remplir** : dessinez par-dessus (Draw ferme le gap en touchant le bord opposé)
+- **Remplir** : dessinez par-dessus ou prolongez avec Ajouter des points (atteindre le bord opposé ferme le gap)
 - **Fermer à plat** : à l'export/save → `confirmOpenCuts` demande confirmation → ferme en ligne droite
 - `resolveGaps()` les résout en indices à la demande
 
@@ -81,7 +120,7 @@ Colonne de droite : lignes `.note-mini`. Tap sur une ligne → **l'éditeur en l
 | **CAP** | Toggle de ligne → calcule `bearingDeg` + `haversineM` vers la note suivante | Dernière note : pas de CAP |
 | **Icônes / Vignettes** | `NoteCanvas` sur `#noteCanvas` | Palette standard + custom embarquées (voir § ci-dessous) |
 
-### Glisser sur la carte (outil Move)
+### Glisser sur la carte (outil Déplacer)
 La note se fait glisser depuis le marqueur bleu → déplace **le sommet de trace** dessous → la ligne le suit. La note bouge comme un point de trace.
 
 ### Réordonner / Supprimer
@@ -97,7 +136,7 @@ Flèches ↑/↓ (change `sel` ±1), `Del` → `delNote` (minimum 2 notes). **Ne
 
 > 📸 *Capture : palette d'icônes avec catégories et recherche en direct*
 
-Puces de catégories + recherche en direct (`filterIcons`). Tap ou **glisser-déposer** sur la vignette pour ajouter. Custom : `#iconFile` → data-URI. Badge × pour supprimer (bloqué si utilisé).
+Puces de catégories + recherche en direct (`filterIcons`). Tap ou **glisser-déposer** sur la vignette pour ajouter. Custom : import (`#iconFile`) ou coller → data-URI. Si l'icône repose sur un fond uni (par ex. la photo d'une feuille blanche), l'Editor demande **« Supprimer le fond ? »** (Non / Oui), en montrant l'original et le résultat côte à côte — tout se fait dans le navigateur, et la bibliothèque d'icônes du roadbook ne garde que la version choisie. Badge × pour supprimer (bloqué si utilisé).
 
 > À l'import .rdbk Roadbook Suite : icônes renommées 1:1 (tableau dans `editor.md` §9.5), flip Y + recentrées + ×1.5 (×3 départ/arrivée). Icônes sans fichier → repli `W28_general_danger.svg` + note dans le texte *« Note : ajouter l'icône <nom> »*.
 
@@ -138,7 +177,7 @@ Deuxième vue (`showView('config')`), onglet `#viewConfig` :
 ### Lightbox
 Tap sur épingle / miniature → visionneuse plein écran (ne couvre que la carte, **pas** le panneau de notes → vous continuez à éditer). Flèches ‹/›, `←`/`→`, `Esc`. Actions :
 - **Waypoint** → crée un waypoint sur la position de la photo
-- **Move on map** → mode *positionner* → le prochain tap met à jour les coordonnées via `ph_move`
+- **Déplacer sur la carte** → mode *positionner* → le prochain tap met à jour les coordonnées via `ph_move`
 - **Delete** → `ph_delete` (avec confirmation) + met à jour le lightbox + épingle
 
 ---
