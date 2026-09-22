@@ -57,8 +57,10 @@
        screen: cards with the copy-link control, search, pager, a failed load told apart from an
        empty one (#218), and a re-render on a language switch. `href(r)` is where a card goes;
        `overlays(r)` adds page-specific card controls. Returns { remove(id) } for those controls. */
-    function gallery({ grid, pager, search, href, overlays = () => '', per = 12 }) {
-        let all = [], q = '';
+    // `vehicles` (optional): a group of [data-vehicle] toggles — the gallery then keeps the roadbooks
+    // that suit any of the pressed ones (#713), together with the search.
+    function gallery({ grid, pager, search, vehicles, href, overlays = () => '', per = 12 }) {
+        let all = [], q = '', picked = [];
         const t = RBt, esc = RBesc;
         const card = (r) => RBGalleryCard({
             href: href(r), thumb: r.thumb, title: r.title,
@@ -67,11 +69,17 @@
         });
         const list = RBPagedList({
             pager, per, source: () => all,
-            filter: (items) => RB.filterByText(items, q, ['title', 'username']),
-            draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('Nothing matches that search.'))}</p>`; },
+            filter: (items) => RB.filterByVehicles(RB.filterByText(items, q, ['title', 'username']), picked),
+            draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t(picked.length && !q ? 'No public roadbooks for this vehicle yet.' : 'Nothing matches that search.'))}</p>`; },
         });
-        const say = (msg) => { grid.innerHTML = `<p class="gallery-empty">${esc(t(msg))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; };
+        const say = (msg) => { grid.innerHTML = `<p class="gallery-empty">${esc(t(msg))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; if (vehicles) vehicles.hidden = true; };
         if (search) search.oninput = () => { q = search.value; list.reset(); };
+        if (vehicles) vehicles.querySelectorAll('[data-vehicle]').forEach((b) => b.onclick = () => {
+            const on = b.getAttribute('aria-pressed') !== 'true';
+            b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('on', on);
+            picked = [...vehicles.querySelectorAll('[data-vehicle][aria-pressed="true"]')].map((x) => x.dataset.vehicle);
+            list.reset();
+        });
         window.addEventListener('rb-lang', () => { if (all.length) list.render(); });
         listPublic().then((rbs) => {
             if (rbs === null) return say('Could not load roadbooks.');

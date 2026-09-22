@@ -1169,3 +1169,13 @@ Object.assign(window.RBi18nLangs.fr, {
     "Add points: tap the route to insert one — P": "Ajouter des points : touchez l’itinéraire pour en insérer un — P",
     "Draw: tap to add new points from the nearest end — D": "Dessiner : touchez pour ajouter de nouveaux points depuis l’extrémité la plus proche — D",
 });
+
+/* roadbook vehicles: car · moto · bike (#713) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Suitable for": "Adapté à",
+    "Car": "Voiture",
+    "Motorbike": "Moto",
+    "Bicycle": "Vélo",
+    "A roadbook suits at least one vehicle.": "Un roadbook convient à au moins un véhicule.",
+    "No public roadbooks for this vehicle yet.": "Pas encore de roadbooks publics pour ce véhicule.",
+});

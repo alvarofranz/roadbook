@@ -8,7 +8,7 @@
     RBConfig().then((cfg) => {
         const isAdmin = !!(cfg.user && cfg.user.is_admin);
         const gallery = RBChallenges.gallery({
-            grid: $('rbGrid'), pager: $('rbPager'), search: $('rbSearch'),
+            grid: $('rbGrid'), pager: $('rbPager'), search: $('rbSearch'), vehicles: $('rbVehicles'),
             href: (r) => `/challenge/${encodeURIComponent(r.slug)}`,
             overlays: (r) => (isAdmin ? `<button type="button" class="card-btn card-unpub" data-unpub="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Make private'))}" aria-label="${esc(t('Make private'))}"><i class="fa-solid fa-globe"></i></button>` : ''),
         });

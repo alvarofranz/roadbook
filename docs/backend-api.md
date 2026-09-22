@@ -133,13 +133,13 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `rb_get` | Carica un roadbook che puoi editare (proprietario **o** co-editor di evento); restituisce `status`/`reusable`/`is_owner`/`owner` e, se richiesto (`lock`), acquisisce il soft lock | richiesta |
 | `rb_lock_refresh`/`rb_lock_release`/`rb_lock_force` | Heartbeat / rilascio / presa forzata del soft lock (#154) | richiesta |
 | `rb_draft` | Crea una bozza vuota (intitolata col nome, #148) per agganciarvi foto/audio in registrazione | richiesta |
-| `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable`; solo il proprietario ne cambia pubblicazione; rifiuta 409 se un altro tiene il lock) | richiesta |
+| `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable` + `vehicles` car/moto/bike, #713; solo il proprietario ne cambia pubblicazione e veicoli — un client che non invia `vehicles` lascia quelli salvati; rifiuta 409 se un altro tiene il lock) | richiesta |
 | `rb_status` | Cambia solo lo `status` di pubblicazione (proprietario) | richiesta |
 | `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria **+ audio**), in **una transazione**; la copia parte `draft` | richiesta |
 | `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino admin | richiesta |
 | `ph_list` / `ph_delete` / `ph_move` | Elenca (pubblico, proprio o co-editato) / elimina / sposta il geotag di una foto | opzionale / richiesta / richiesta |
 | `audio_list` / `audio_delete` | Elenca / elimina una nota vocale | opzionale / richiesta |
-| `public_list` | Galleria pubblica: ultimi 60 `status='public'` (con `reusable=1` filtra i clonabili, #106) | nessuna |
+| `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) (con `reusable=1` filtra i clonabili, #106) | nessuna |
 | `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include foto + `cover` + dati autore | opzionale |
 
 `current_user()` — il payload restituito da `config` e da `login` — include anche le preferenze
