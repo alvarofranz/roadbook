@@ -1251,3 +1251,11 @@ Object.assign(window.RBi18nLangs.fr, {
     "Resources": "Ressources",
     "Legal": "Mentions légales",
 });
+
+/* activity dialog (#731) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Showing": "Affichage",
+    "Another user…": "Un autre utilisateur…",
+    "Search the activity…": "Rechercher dans l’activité…",
+    "Whose activity?": "L’activité de qui ?",
+});
