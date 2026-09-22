@@ -238,10 +238,27 @@ describe('comment notes (note_kind: comment)', () => {
         ],
     });
 
-    it('isComment recognises only note_kind "comment"', () => {
-        expect(RB.isComment({ note_kind: 'comment' })).toBe(true);
-        expect(RB.isComment({ num: 1 })).toBe(false);
-        expect(RB.isComment(null)).toBeFalsy();
+    it('every note_kind but "note" is an information row', () => {
+        // the rule is the field's shape, not a list: a kind from a later version is information
+        // too, which is the safe thing for a reader that does not know it yet (#534)
+        for (const kind of ['comment', 'photo', 'ad', 'whatever-comes-next']) {
+            expect(RB.isInfoNote({ note_kind: kind }), kind).toBe(true);
+        }
+        expect(RB.isInfoNote({ num: 1 })).toBe(false);
+        expect(RB.isInfoNote({ note_kind: 'note', num: 1 })).toBe(false);
+        expect(RB.isInfoNote(null)).toBeFalsy();
+    });
+
+    it('resolves the kind a row is presented as', () => {
+        expect(RB.noteKind({ note_kind: 'photo' }).id).toBe('photo');
+        expect(RB.noteKind({ num: 1 }).id).toBe('note');
+        expect(RB.noteKind(null).id).toBe('note');
+        expect(RB.noteKind({ note_kind: 'comment' }).id, 'legacy sponsor row').toBe('ad');
+        expect(RB.noteKind({ note_kind: 'whatever-comes-next' }).id, 'unknown kind').toBe('ad');
+        // the catalog is what the UI builds itself from — each kind names and draws itself
+        expect(RB.NOTE_KINDS.map((k) => k.id)).toEqual(['note', 'photo', 'ad']);
+        for (const k of RB.NOTE_KINDS) { expect(k.name, k.id).toBeTruthy(); expect(k.icon, k.id).toMatch(/^fa-/); }
+        for (const k of RB.NOTE_KINDS.filter((x) => x.image)) expect(k.imageMax, k.id).toBeGreaterThan(0);
     });
 
     it('recomputeMetrics renumbers only navigational notes, leaves the comment in place & untouched', () => {
@@ -269,7 +286,7 @@ describe('comment notes (note_kind: comment)', () => {
         const removed = RB.deleteNote(rb, 1);
         expect(removed).toBe(-1); // no track vertex belongs to a comment
         expect(rb.notes.length).toBe(2);
-        expect(rb.notes.every((n) => !RB.isComment(n))).toBe(true);
+        expect(rb.notes.every((n) => !RB.isInfoNote(n))).toBe(true);
         expect(rb.meta.note_count).toBe(2);
         expect(rb.track.length).toBe(3); // the track is untouched
     });
@@ -279,9 +296,9 @@ describe('comment notes (note_kind: comment)', () => {
         RB.recomputeMetrics(rb);
         const total = rb.meta.total_distance;
         expect(() => RB.reverseRoadbook(rb)).not.toThrow();
-        expect(rb.notes.some((n) => RB.isComment(n))).toBe(true);
+        expect(rb.notes.some((n) => RB.isInfoNote(n))).toBe(true);
         expect(rb.meta.note_count).toBe(2);
-        const nav = rb.notes.filter((n) => !RB.isComment(n));
+        const nav = rb.notes.filter((n) => !RB.isInfoNote(n));
         expect(nav[0].distance).toBe(0);
         expect(nav[nav.length - 1].distance).toBe(total);
     });

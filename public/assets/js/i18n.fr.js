@@ -1,6 +1,6 @@
 /* RDBK.app i18n — FR translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).fr = {
-            'Add comment': 'Ajouter un commentaire', '(comment caption)': '(texte du commentaire)', 'comment': 'commentaire', 'Comment note added.': 'Note de commentaire ajoutée.', 'Image': 'Image', 'Text': 'Texte',
+            'Image': 'Image', 'Text': 'Texte',
             'Signing you in…': 'Connexion en cours…',
             'Sign in to read this roadbook.': 'Connectez-vous pour lire ce roadbook.', 'Sign in to read public roadbooks.': 'Connectez-vous pour lire les roadbooks publics.',
             'seo.home.title': 'RDBK.app — roadbooks numériques pour vos aventures', 'seo.home.desc': 'Créez, naviguez, validez et classez des roadbooks pour toute aventure. PWA gratuite et le format ouvert .rdbk.',
@@ -110,7 +110,6 @@
             'Open an existing roadbook': 'Ouvrir un roadbook existant',
             'Finish': 'Terminer', 'Save': 'Enregistrer',
             'Ready and visible in the event gallery': 'Prêt et visible dans la galerie d\'événements', 'Public': 'Public', 'Visibility': 'Visibilité', 'Draft': 'Brouillon', 'Ready': 'Prêt', 'Status': 'Statut', 'Status updated.': 'Statut mis à jour.',
-            'Move to the row above': 'Aller à la ligne du dessus', 'Move to the row below': 'Aller à la ligne du dessous',
             'Open in Google Maps': 'Ouvrir dans Google Maps', 'Open in Google Earth': 'Ouvrir dans Google Earth', 'Coords Lat/Lng:': 'Coord. Lat/Lng :', 'View photo': 'Voir la photo',
             'Record a Roadbook with geotagged notes, photos and voice memos.': 'Enregistrez un Roadbook avec des notes, photos et notes vocales géoréférencées.', 'Start recording': 'Démarrer l\'enregistrement',
             'Voice note language': 'Langue des notes vocales', 'Automatic (device)': 'Automatique (appareil)',
@@ -337,7 +336,7 @@
             'Recover unsaved GPX recording?': 'Récupérer l\'enregistrement GPX non sauvegardé ?', 'Recover': 'Récupérer',
             'Resume the run in progress?': 'Reprendre le parcours en cours ?', 'Resume': 'Reprendre',
             'Unsaved work': 'Travail non sauvegardé', 'Work left in progress in other tools. Resume it, or discard it.': 'Travail laissé en cours dans d\'autres outils. Reprenez-le ou abandonnez-le.', 'Discarded.': 'Abandonné.', 'Untitled': 'Sans titre',
-            'Unsaved draft': 'Brouillon non sauvegardé', 'Recording in progress': 'Enregistrement en cours', 'Tripmaster run': 'Parcours Tripmaster', 'Run in progress': 'Parcours en cours', 'Also replace all current notes in this roadbook to {v} m?': 'Remplacer aussi toutes les notes actuelles de ce roadbook par {v} m ?', 'Every note now validates at this radius.': 'Toutes les notes se valident désormais avec ce rayon.', 'Detection radius': 'Rayon de détection', 'Roadbook type': 'Type de roadbook', 'Basic (adventure)': 'Basique (aventure)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Rayon de détection par défaut (m)', 
+            'Unsaved draft': 'Brouillon non sauvegardé', 'Recording in progress': 'Enregistrement en cours', 'Tripmaster run': 'Parcours Tripmaster', 'Run in progress': 'Parcours en cours', 'Also replace all current notes in this roadbook to {v} m?': 'Remplacer aussi toutes les notes actuelles de ce roadbook par {v} m ?', 'Every note now validates at this radius.': 'Toutes les notes se valident désormais avec ce rayon.', 'Note': 'Note', 'Photo': 'Photo', 'Ad': 'Publicité', '(caption)': '(légende)', 'This row has no place on the route.': 'Cette ligne n’a pas de point sur l’itinéraire.', 'Detection radius': 'Rayon de détection', 'Roadbook type': 'Type de roadbook', 'Basic (adventure)': 'Basique (aventure)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Rayon de détection par défaut (m)', 
             'Selective section start': 'Début section sélective', 'Selective section end': 'Fin section sélective',
             'Navigation WP': 'WP de navigation', 'Masked WP': 'WP masqué', 'Eclipse WP': 'WP éclipse', 'Control WP': 'WP de contrôle', 'Security WP': 'WP de sécurité', 'Precise WP': 'WP précis', 'Visible WP': 'WP visible',
             'Difficult-overtaking zone start': 'Début zone de dépassement difficile', 'Difficult-overtaking zone end': 'Fin zone de dépassement difficile',
@@ -782,10 +781,10 @@ Object.assign(window.RBi18nLangs.fr, {
 /* the .rdbk standard page (/standard/) */
 Object.assign(window.RBi18nLangs.fr, {
     'Number of navigational notes (comment notes are not counted).': 'Nombre de notes de navigation (les notes de commentaire ne sont pas comptées).',
-    'notes.note_kind': 'Optionnel. Avec la valeur <code>"comment"</code>, la note est une <b>note de commentaire</b> non navigationnelle (par exemple un logo de sponsor). Elle ne porte ni <code>lat</code>/<code>lon</code>/<code>idx</code>/<code>num</code> ni géodonnées, garde une position fixe dans la liste et s’affiche dans le Reader, le PDF et la vue publique, mais la carte, le score, la validation GPS et l’export GPX/KMZ l’ignorent. Absent = note de navigation normale.',
+    'notes.note_kind': 'Optionnel. Indique ce que la ligne EST. Absent (ou <code>"note"</code>) = une note de navigation normale. Toute autre valeur est une <b>ligne d’information</b> : elle garde sa place dans la liste et s’affiche dans le Reader, le PDF et la vue publique, mais n’est jamais numérotée, placée sur la carte, notée, validée par GPS ni exportée comme waypoint GPX/KMZ. Cette version définit <code>"photo"</code> (une image avec légende) et <code>"ad"</code> (le logo d’un annonceur avec légende) ; <code>"comment"</code> est l’ancien nom d’une publicité. Une ligne d’information convertie depuis une note PEUT conserver les champs waypoint de cette note : un lecteur DOIT les ignorer.',
     'notes.image': 'Optionnel (notes de commentaire). Une image intégrée sous forme d’URI <code>data:</code>, dessinée dans le cadre de la note.',
-    'notes.comment.intro': 'Une <b>note de commentaire</b> (<code>note_kind: "comment"</code>) est sans coordonnées : elle ne contient que son texte et une <code>image</code> intégrée optionnelle :',
-    'conformance.comment': 'Un lecteur conforme DOIT afficher les notes portant <code>note_kind: "comment"</code> dans la liste du roadbook, mais NE DOIT PAS les numéroter, les placer sur la carte, les noter ni les exporter comme waypoints GPX/KMZ.',
+    'notes.info.intro': 'Une <b>ligne d’information</b> porte sa légende dans <code>text</code> et son image comme <code>image</code> intégrée :',
+    'conformance.info': 'Un lecteur conforme DOIT afficher comme ligne d’information toute note dont <code>note_kind</code> est présent et différent de <code>"note"</code> : elle apparaît dans la liste du roadbook, mais ne doit jamais être numérotée, placée sur la carte, notée ni exportée comme waypoint GPX/KMZ.',
 });
 
 /* labels that had never been translated anywhere (#480) */

@@ -37,7 +37,26 @@
     /* ---------------- road types ---------------- */
     // width: stroke width in vignette reference units — indicative of the road
     // type (motorway widest, off-piste thinnest).
-    const isComment = (n) => n && n.note_kind === 'comment';
+    /* ---------------- note kinds (#534) ----------------
+       What a row in the roadbook IS. `note` is the navigational one and the default, stored
+       ABSENT so ordinary files stay clean; every other kind is an information row — it keeps its
+       place in the sequence but is not a waypoint, so numbering, scoring, GPS validation and the
+       GPX export all skip it. That rule is the field's shape, not a list of exceptions: any
+       note_kind other than 'note' is information, so a reader that meets a kind from a later
+       version still does the safe thing with it. `image` marks the kinds built around a picture
+       (the editor offers an image picker instead of the tulip tools, downscaled to `imageMax`).
+       Legacy files call the advert row 'comment' — the one place that name survives is the
+       lookup below, which resolves it to `ad`. */
+    const NOTE_KINDS = [
+        { id: 'note',  name: 'Note',  icon: 'fa-location-dot' },
+        { id: 'photo', name: 'Photo', icon: 'fa-image',         image: true, imageMax: 1024 },
+        { id: 'ad',    name: 'Ad',    icon: 'fa-rectangle-ad',  image: true, imageMax: 512 },
+    ];
+    const NOTE_KIND_BY_ID = Object.fromEntries(NOTE_KINDS.map((k) => [k.id, k]));
+    const isInfoNote = (n) => !!(n && n.note_kind && n.note_kind !== 'note');
+    // The kind a note is presented as: its own, `ad` for an information row this version does not
+    // know (and for the legacy 'comment'), `note` for everything else.
+    const noteKind = (n) => (n && NOTE_KIND_BY_ID[n.note_kind]) || (isInfoNote(n) ? NOTE_KIND_BY_ID.ad : NOTE_KIND_BY_ID.note);
     const ROAD_TYPES = [
         { id: 0, color: '#9aa4b2', width: 5, dashed: false }, // default
         { id: 1, color: '#3b82f6', width: 9, dashed: false }, // motorway
@@ -121,8 +140,8 @@
        race that note is the finish arch (#447). One rule, so the Editor, the Reader, the public
        page and the PDF all agree about which note that is. */
     function isEndNote(notes, i) {
-        if (!notes || !notes[i] || isComment(notes[i])) return false;
-        for (let k = notes.length - 1; k >= 0; k--) if (!isComment(notes[k])) return k === i;
+        if (!notes || !notes[i] || isInfoNote(notes[i])) return false;
+        for (let k = notes.length - 1; k >= 0; k--) if (!isInfoNote(notes[k])) return k === i;
         return false;
     }
     /* Is note i the roadbook's START — the first one you navigate from? Symmetrical to isEndNote:
@@ -130,8 +149,8 @@
        incoming road: nothing comes before the start, so a line from the bottom edge points from
        nowhere — just the validation dot at the centre (#472). */
     function isFirstNote(notes, i) {
-        if (!notes || !notes[i] || isComment(notes[i])) return false;
-        for (let k = 0; k < notes.length; k++) if (!isComment(notes[k])) return k === i;
+        if (!notes || !notes[i] || isInfoNote(notes[i])) return false;
+        for (let k = 0; k < notes.length; k++) if (!isInfoNote(notes[k])) return k === i;
         return false;
     }
     /* Has the active note been reached? — the Reader's auto-validation gate (#384). Testing the
@@ -454,7 +473,7 @@
         if (!rb || !Array.isArray(rb.track) || rb.track.length < 2) return rb;
         (rb.notes || []).forEach((n) => {
             const i = n.idx;
-            if (isComment(n) || i == null || !rb.track[i]) return;
+            if (isInfoNote(n) || i == null || !rb.track[i]) return;
             const badIn = degenerateSide(rb.track, i, -1), badOut = degenerateSide(rb.track, i, 1);
             if (!badIn && !badOut) return;
             const b = deriveBearings(rb.track, i);
@@ -673,7 +692,7 @@
     function normalizeRoadTypes(rb) {
         let prev = null;
         rb.notes.forEach((n) => {
-            if (isComment(n)) return;
+            if (isInfoNote(n)) return;
             n.road_type_in = prev ? prev.road_type_out : n.road_type_out;
             prev = n;
         });
@@ -682,9 +701,10 @@
     // Recomputes num, clamped idx, lat/lon, distance/partial_distance and bearings from the track.
     function recomputeMetrics(rb) {
         const cum = cumulativeM(rb.track);
-        // Extract comment notes — they have no idx/geo fields to recompute
-        const commentNotes = [], normalNotes = [];
-        rb.notes.forEach((n) => { (isComment(n) ? commentNotes : normalNotes).push(n); });
+        // Set the information rows aside — they are not waypoints, so there is nothing to
+        // recompute on them (a row converted from a note keeps its own fields untouched).
+        const infoNotes = [], normalNotes = [];
+        rb.notes.forEach((n) => { (isInfoNote(n) ? infoNotes : normalNotes).push(n); });
         normalNotes.sort((a, b) => a.idx - b.idx);
         normalNotes.forEach((n, i) => {
             const idx = Math.max(0, Math.min(rb.track.length - 1, n.idx | 0));
@@ -696,20 +716,20 @@
             const { bIn, bOut } = deriveBearings(rb.track, idx);
             n.bearing_in = round3(bIn); n.bearing_out = round3(bOut);
         });
-        // Re-interleave comment notes at their original positions, then renumber normal notes
+        // Re-interleave the information rows at their original positions, then renumber the notes
         const merged = []; let ci = 0, ni = 0;
-        for (const n of rb.notes) merged.push(isComment(n) ? commentNotes[ci++] : normalNotes[ni++]);
+        for (const n of rb.notes) merged.push(isInfoNote(n) ? infoNotes[ci++] : normalNotes[ni++]);
         rb.notes = merged;
         let num = 0;
-        rb.notes.forEach((n) => { if (!isComment(n)) { num++; n.num = num; } });
+        rb.notes.forEach((n) => { if (!isInfoNote(n)) { num++; n.num = num; } });
         normalizeRoadTypes(rb);
         rb.meta.total_distance = Math.round(cum[cum.length - 1] || 0);
-        rb.meta.note_count = num; // navigational notes only — comment notes don't count
+        rb.meta.note_count = num; // navigational notes only — information rows don't count
         return rb;
     }
     // Recompute the red CAP (heading + straight-line distance in metres to the next note) where active.
     function recomputeCaps(rb) {
-        const normal = rb.notes.filter((n) => !isComment(n));
+        const normal = rb.notes.filter((n) => !isInfoNote(n));
         for (let i = 0; i < normal.length; i++) {
             const n = normal[i], nx = normal[i + 1];
             if (n.cap != null && nx) { n.cap = Math.round(bearingDeg(n, nx)); n.cap_distance = Math.round(haversineM(n, nx)); }
@@ -796,7 +816,7 @@
         rb.track.reverse();
         const last = rb.track.length - 1;
         rb.track.forEach((p) => { delete p.t; });
-        rb.notes.forEach((n) => { if (!isComment(n)) { n.idx = last - n.idx; n.road_type_out = n.road_type_in; } });
+        rb.notes.forEach((n) => { if (!isInfoNote(n)) { n.idx = last - n.idx; n.road_type_out = n.road_type_in; } });
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
@@ -920,7 +940,7 @@
         };
         const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
-            if (isComment(n)) return '';
+            if (isInfoNote(n)) return '';
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
             if (n.wp_type) { const w = wpType(n.wp_type); ext.push(`<openrally:wptType>${x(w ? w.cap : n.wp_type)}</openrally:wptType>`); }
             if (Array.isArray(n.openrally) && n.openrally.length) {
@@ -1025,10 +1045,10 @@
         const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
         const opens = (n) => n.wp_type === 'ss_start' || has(n, START_ICON);
         const closes = (n) => n.wp_type === 'ss_end' || has(n, FINISH_ICON);
-        if (!notes.some((n) => !isComment(n) && opens(n))) return null;
+        if (!notes.some((n) => !isInfoNote(n) && opens(n))) return null;
         const set = new Set();
         let inStage = false;
-        notes.forEach((n, i) => { if (isComment(n)) return; if (opens(n)) inStage = true; if (inStage) set.add(i); if (closes(n)) inStage = false; });
+        notes.forEach((n, i) => { if (isInfoNote(n)) return; if (opens(n)) inStage = true; if (inStage) set.add(i); if (closes(n)) inStage = false; });
         return set;
     }
     const isScoredIdx = (scoredSet, i) => scoredSet === null || scoredSet.has(i);
@@ -1037,7 +1057,7 @@
     // point. Both zero without a GPS fix — a manual run has nothing to measure against.
     function validationPenalties(notes, i, here) {
         if (!here) return { acc: 0, cap: 0 };
-        if (isComment(notes[i])) return { acc: 0, cap: 0 };
+        if (isInfoNote(notes[i])) return { acc: 0, cap: 0 };
         const n = notes[i], prev = notes[i - 1];
         const acc = i > 0 ? haversineM(here, n) : 0;
         const cap = (prev && prev.cap != null && prev.cap_distance != null)
@@ -1169,13 +1189,13 @@
     // vertex was kept / nothing was deleted. (The Editor's "Transform" keeps the point instead.)
     function deleteNote(rb, i) {
         if (!rb || i < 0 || i >= rb.notes.length) return -1;
-        if (isComment(rb.notes[i])) { rb.notes.splice(i, 1); recomputeMetrics(rb); return -1; }
+        if (isInfoNote(rb.notes[i])) { rb.notes.splice(i, 1); recomputeMetrics(rb); return -1; }
         const idx = rb.notes[i].idx;
         rb.notes.splice(i, 1);
         let removed = -1;
         if (rb.track.length > 2) {
             rb.track.splice(idx, 1);
-            rb.notes.forEach((n) => { if (!isComment(n) && n.idx > idx) n.idx -= 1; });
+            rb.notes.forEach((n) => { if (!isInfoNote(n) && n.idx > idx) n.idx -= 1; });
             removed = idx;
         }
         recomputeMetrics(rb); recomputeCaps(rb);
@@ -1243,7 +1263,7 @@
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        roadbookForExport, isComment, isEndNote, isFirstNote,
+        roadbookForExport, NOTE_KINDS, noteKind, isInfoNote, isEndNote, isFirstNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
         cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,

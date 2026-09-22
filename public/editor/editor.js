@@ -236,7 +236,6 @@
     const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
     $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
-    $('addSponsorBtn').onclick = () => addComment();
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
@@ -339,11 +338,11 @@
     }
     // A note's confirm label, e.g. "#3 — Sharp left". The text comes from the loaded
     // .rdbk (user/untrusted) and the confirm message is rendered as HTML, so escape it.
-    const noteLabel = (n) => RB.isComment(n) ? (t('comment') + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
+    const noteLabel = (n) => RB.isInfoNote(n) ? (t(RB.noteKind(n).name) + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
-        if (!RB.isComment(rb.notes[ni]) && rb.notes.filter((n) => !RB.isComment(n)).length <= 2) return toast('At least 2 notes must remain.');
+        if (!RB.isInfoNote(rb.notes[ni]) && rb.notes.filter((n) => !RB.isInfoNote(n)).length <= 2) return toast('At least 2 notes must remain.');
         const label = noteLabel(rb.notes[ni]);
         if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?'))) return;
         delNote(ni);
@@ -911,7 +910,7 @@
         rb.meta.default_wp_radius = v;
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
         if (await RBConfirm(t('Also replace all current notes in this roadbook to {v} m?').replace('{v}', v))) {
-            rb.notes.forEach((n) => { if (!RB.isComment(n)) n.wp_radius = v; }); // a comment row has no waypoint to validate
+            rb.notes.forEach((n) => { if (!RB.isInfoNote(n)) n.wp_radius = v; }); // an information row has no waypoint to validate
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
             toast('Every note now validates at this radius.');
         }
@@ -1437,52 +1436,42 @@
         };
         const photosByNote = byNearestNote(notePhotos);
         const audioByNote = byNearestNote(noteAudio);
+        // ONE row, whatever the note is (#534): the left cell says what it is — its number, or
+        // its kind's icon — and carries Delete; then what it SHOWS (a tulip, or its picture) and
+        // its text. An information row has no number, no distance and no geo-meta, so those cells
+        // simply aren't built for it.
         $('noteList').innerHTML = rb.notes.map((n, i) => {
-            // Comment/sponsor rows carry no number, distance, tulip or geo-meta — just an optional
-            // logo and its caption. They keep the reorder/delete controls so they can be positioned.
-            if (RB.isComment(n)) return `<div class="note-mini comment${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                <span class="note-number comment-badge" aria-hidden="true"><i class="fa-solid fa-comment"></i></span>
-                <span class="note-km comment-km"></span>
-                <span class="comment-logo">${n.image ? `<img src="${esc(n.image)}" alt="" class="comment-thumb">` : ''}</span>
+            const kind = RB.noteKind(n), info = RB.isInfoNote(n);
+            const del = `<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button>`;
+            const left = info
+                ? `<span class="note-number"><i class="fa-solid ${kind.icon}" aria-hidden="true"></i>${del}</span>`
+                : `<span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}${del}</span>`;
+            const middle = info
+                ? `<span class="note-image">${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</span>`
+                : `<span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
+                <span class="note-tulip" id="tulipSlot${i}"></span>`;
+            const extras = info ? '' : `<div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}`;
+            return `<div class="note-mini kind-${kind.id}${info ? ' info' : ''}${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
+                ${left}${middle}
                 <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(comment caption)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
-                </div>
-                <div class="note-actions">
-                    <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
-                    <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
-                    <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
-                </div>
-            </div><div class="note-edit-slot" id="editSlot${i}"></div>`;
-            return `<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}</span>
-                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
-                <span class="note-tulip" id="tulipSlot${i}"></span>
-                <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
-                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
-                </div>
-                <div class="note-actions">
-                    <button type="button" class="note-nav" data-up="${i}" aria-label="${esc(t('Move to the row above'))}" title="${esc(t('Move to the row above'))}"${i === 0 ? ' disabled' : ''}>↑</button>
-                    <button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}">X</button>
-                    <button type="button" class="note-nav" data-down="${i}" aria-label="${esc(t('Move to the row below'))}" title="${esc(t('Move to the row below'))}"${i === rb.notes.length - 1 ? ' disabled' : ''}>↓</button>
+                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t(info ? '(caption)' : '(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
+                    ${extras}
                 </div>
             </div><div class="note-edit-slot" id="editSlot${i}"></div>`;
         }).join('');
-        // road-type accent colour is data-driven → set the CSS variable per row (comment rows skip it)
+        // road-type accent colour is data-driven → set the CSS variable per row (information rows skip it)
         const rows = $('noteList').querySelectorAll('.note-mini');
-        rows.forEach((el, i) => { if (!RB.isComment(rb.notes[i])) el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color); });
+        rows.forEach((el, i) => { if (!RB.isInfoNote(rb.notes[i])) el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color); });
         rows.forEach((el) => el.onclick = (e) => {
             const capBtn = e.target.closest('[data-cap]');
             if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
             // A click inside the live tulip canvas (icon select/drag, junction, its toolbar) must NOT
             // toggle the row shut — the canvas is hosted inside the open row, so its clicks bubble here.
             if (e.target.closest('#canvasWrap')) return;
-            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-nav') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
+            if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
         });
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = (e) => { e.stopPropagation(); deleteNoteConfirm(+b.dataset.del); });
-        $('noteList').querySelectorAll('[data-up]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.up - 1); });
-        $('noteList').querySelectorAll('[data-down]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); select(+b.dataset.down + 1); });
         // tap the 📷 under the km to view the note's photo(s)
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
@@ -1508,7 +1497,7 @@
         const nc = $('noteCount');
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
-            const navCount = rb.notes.filter((n) => !RB.isComment(n)).length; // comment notes aren't counted
+            const navCount = rb.notes.filter((n) => !RB.isInfoNote(n)).length; // information rows aren't counted
             nc.textContent = navCount ? `· ${navCount} · KM: ${(totalM / 1000).toFixed(1)}` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
@@ -1520,7 +1509,7 @@
     }
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
-        if (RB.isComment(n)) return ''; // sponsor rows have no CAP/coords meta
+        if (RB.isInfoNote(n)) return ''; // sponsor rows have no CAP/coords meta
         const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
             : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : esc(t('CAP disabled'))}</button>`;
         return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
@@ -1531,7 +1520,7 @@
     function placeTulips() {
         $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
-            if (!Number.isInteger(i) || !rb.notes[i] || RB.isComment(rb.notes[i])) return; // comment rows have no tulip
+            if (!Number.isInteger(i) || !rb.notes[i] || RB.isInfoNote(rb.notes[i])) return; // information rows have no tulip
             if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
             slot.innerHTML = tulipSVG(rb.notes[i], i);
         });
@@ -1543,8 +1532,8 @@
     function openEditZoneAt(i) {
         const slot = $('editSlot' + i), tulip = $('tulipSlot' + i);
         if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
-        // A comment row has no tulip slot and no live canvas — park the canvas and keep it hidden.
-        if (RB.isComment(rb.notes[i])) { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; $('noteEditZone').hidden = false; return; }
+        // An information row has no tulip slot and no live canvas — park the canvas and keep it hidden.
+        if (RB.isInfoNote(rb.notes[i])) { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; $('noteEditZone').hidden = false; return; }
         if (tulip && $('canvasWrap').parentNode !== tulip) { tulip.innerHTML = ''; tulip.appendChild($('canvasWrap')); } // drop the static preview, host the live canvas
         $('canvasWrap').hidden = false;
         $('noteEditZone').hidden = false;
@@ -1562,7 +1551,7 @@
         if (!rb || i < 0 || i >= rb.notes.length) return;
         sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
         openEditZoneAt(i); renderEditor();
-        if (!RB.isComment(rb.notes[i])) showOnCanvas(i); // comment notes have no tulip canvas
+        if (!RB.isInfoNote(rb.notes[i])) showOnCanvas(i); // information rows have no tulip canvas
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
@@ -1580,54 +1569,83 @@
         } else $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    /* ---------- what a note IS: the kinds (#534) ----------
+       The tabs are built FROM RB.NOTE_KINDS, so adding a kind to the catalog adds its tab, its
+       row icon and its editor here with no further wiring. Switching kind never throws anything
+       away: a note converted to Photo or Ad keeps its position, its icons and its parameters
+       untouched — they are simply not what an information row shows — so switching back brings
+       the waypoint out exactly as it was. A row that never had a place on the route (an older
+       comment row) cannot become a navigation note, so that tab says so instead of pretending. */
+    function renderKindTabs(n) {
+        const cur = RB.noteKind(n).id;
+        const placed = n.idx != null && n.lat != null; // has a point on the route to go back to
+        $('kindTabs').innerHTML = RB.NOTE_KINDS.map((k) => {
+            const off = k.id === 'note' && !placed;
+            return `<button type="button" class="kind-tab${k.id === cur ? ' on' : ''}" role="tab" aria-selected="${k.id === cur}" data-kind="${k.id}"${off ? ` disabled title="${esc(t('This row has no place on the route.'))}"` : ''}><i class="fa-solid ${k.icon}"></i> ${esc(t(k.name))}</button>`;
+        }).join('');
+        $('kindTabs').querySelectorAll('[data-kind]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); setNoteKind(sel, b.dataset.kind); });
+    }
+    function setNoteKind(i, id) {
+        const n = rb.notes[i];
+        if (!n || RB.noteKind(n).id === id) return;
+        if (id === 'note') delete n.note_kind; else n.note_kind = id; // `note` is the default → stored absent
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        markDirty();
+        sel = rb.notes.indexOf(n); // recomputeMetrics can re-interleave the rows
+        renderNotes(); openEditZoneAt(sel); renderEditor();
+        if (!RB.isInfoNote(n)) showOnCanvas(sel); else { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; }
+        refreshMap(false);
+    }
+    // The image kinds' form: the picture, and where the row sits in the roadbook.
+    function renderInfoForm(n) {
+        const kind = RB.noteKind(n);
+        // Position: move the row along the roadbook by typing a new 1-based place.
+        const pos = $('edInfoPos');
+        pos.max = rb.notes.length;
+        pos.value = rb.notes.indexOf(n) + 1;
+        pos.onchange = () => {
+            const from = rb.notes.indexOf(n);
+            let to = Math.round(parseInt(pos.value, 10)) - 1;
+            if (isNaN(to)) { pos.value = from + 1; return; }
+            to = Math.max(0, Math.min(rb.notes.length - 1, to));
+            if (to === from) { pos.value = from + 1; return; }
+            rb.notes.splice(from, 1);
+            rb.notes.splice(to, 0, n);
+            RB.recomputeMetrics(rb);
+            sel = to;
+            markDirty(); renderEditor(); renderNotes();
+        };
+        // A styled button drives the hidden input, and the thumbnail itself doubles as "change
+        // image" — the same pattern as the roadbook logo (#440). With an image chosen the Add
+        // button steps aside for the preview + remove pair.
+        const prev = $('edInfoPrev'), clr = $('edInfoClr'), add = $('edInfoBtn');
+        if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; add.hidden = true; }
+        else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; add.hidden = false; }
+        add.onclick = () => $('edInfoImg').click();
+        prev.onclick = () => $('edInfoImg').click();
+        $('edInfoImg').value = '';
+        $('edInfoImg').onchange = async (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            n.image = await RBImg.toDataURL(f, kind.imageMax); // a photo keeps its detail, a logo stays small
+            markDirty(); renderEditor(); renderNotes();
+        };
+        clr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
+    }
+
     function renderEditor() {
         const n = rb.notes[sel];
-        // A comment note gets a dedicated form (no tulip / icons / geo params, no kind selector) —
-        // the standard vignette+properties editor is hidden entirely and we return early.
-        if (RB.isComment(n)) {
+        renderKindTabs(n);
+        // An image kind (Photo · Ad) edits its picture and its place; the tulip tools, the icon
+        // palette and the geo parameters belong to a waypoint, so they are hidden entirely.
+        if (RB.isInfoNote(n)) {
             $('noteEditStd').hidden = true;
-            $('commentForm').hidden = false;
-            // The "position" field lets the user move the comment note along the roadbook by
-            // typing a new 1-based list position (comment notes carry no num of their own).
-            const num = $('edCommentNum');
-            num.max = rb.notes.length;
-            num.value = rb.notes.indexOf(n) + 1;
-            num.onchange = () => {
-                const from = rb.notes.indexOf(n);
-                let to = Math.round(parseInt(num.value, 10)) - 1;
-                if (isNaN(to)) { num.value = from + 1; return; }
-                to = Math.max(0, Math.min(rb.notes.length - 1, to));
-                if (to === from) { num.value = from + 1; return; }
-                rb.notes.splice(from, 1);
-                rb.notes.splice(to, 0, n);
-                RB.recomputeMetrics(rb);
-                sel = to;
-                markDirty(); renderEditor(); renderNotes();
-            };
-            const txt = $('edCommentText');
-            txt.value = n.text || '';
-            txt.oninput = () => { n.text = txt.value; markDirty(); const ta = $('noteList').querySelector('.note-title[data-i="' + sel + '"]'); if (ta && ta !== txt) ta.value = txt.value; };
-            // Image: a styled button drives the hidden input, and the thumbnail itself doubles as
-            // "change image" — the same pattern as the roadbook logo (#440). With an image chosen
-            // the Add button steps aside for the preview + remove pair.
-            const prev = $('edCommentPrev'), clr = $('edCommentClr'), add = $('edCommentBtn');
-            if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; add.hidden = true; }
-            else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; add.hidden = false; }
-            add.onclick = () => $('edCommentImg').click();
-            prev.onclick = () => $('edCommentImg').click();
-            $('edCommentImg').value = '';
-            $('edCommentImg').onchange = async (e) => {
-                const f = e.target.files[0];
-                if (!f) return;
-                n.image = await RBImg.toDataURL(f, 512); // downscale so the .rdbk stays small
-                markDirty(); renderEditor(); renderNotes();
-            };
-            clr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
+            $('infoForm').hidden = false;
+            renderInfoForm(n);
             return;
         }
-        // Normal note: show the standard editor, hide the comment form.
         $('noteEditStd').hidden = false;
-        $('commentForm').hidden = true;
+        $('infoForm').hidden = true;
 
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
@@ -1775,18 +1793,6 @@
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
         toast('Note added.');
-    }
-    // "Add comment": a coordinate-less comment note (image + text). It sits after the
-    // currently-selected note (or at the end), carries no track point, num, or geodata, and is
-    // skipped by scoring/GPS/GPX export. See docs/rdbk-format.md §6 (note_kind: "comment").
-    function addComment() {
-        if (!rb) return toast('Load a roadbook first.');
-        const at = editorOpen && sel >= 0 ? sel + 1 : rb.notes.length;
-        rb.notes.splice(at, 0, { note_kind: 'comment', text: '', image: null });
-        RB.recomputeMetrics(rb);
-        sel = at; editorOpen = true;
-        renderNotes(); openEditZoneAt(at); markDirty();
-        toast('Comment note added.');
     }
     // "Add point here": just a track point at the exact clicked point, no note.
     function addPointAtExact(pt) {
@@ -2031,7 +2037,7 @@
     // icons on the waypoints. The filename carries synthetic suffixes for the content.
     function exportCustomGpx(o) {
         const pts = o.track ? rb.track : [];
-        const wpts = o.wpt ? rb.notes.filter((n) => !RB.isComment(n)).map((n) => { // sponsor notes carry no coords → never exported as waypoints
+        const wpts = o.wpt ? rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => { // sponsor notes carry no coords → never exported as waypoints
             const w = { lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }; // name = note text (examples), number as fallback
             if (o.grm || o.osm) {
                 const a = n.appwpt || {};               // imported icon re-emitted verbatim where present…
@@ -2064,7 +2070,7 @@
     // KMZ export: KML 2.2 inside a ZIP (doc.kml). Track + waypoints, no icon mapping.
     async function exportKmz() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        const wpts = rb.notes.filter((n) => !RB.isComment(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
+        const wpts = rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
         const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_KMZ';
         const kml = RB.kmlDocument(base, rb.track, wpts);
         RBDownload(await RBZip.write({ 'doc.kml': kml }), base + '.kmz');
@@ -2124,7 +2130,7 @@
             return out.join('\n');
         };
         const gpxText = () => {
-            const wpts = rb.notes.filter((n) => !RB.isComment(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
+            const wpts = rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
             return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
         };
         const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>
