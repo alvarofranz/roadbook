@@ -1438,7 +1438,7 @@
         const audioByNote = byNearestNote(noteAudio);
         // The material a note carries, drawn on the side it sits on, so the author reads the
         // roadbook the way it will be read. A tap opens that note's editor, where it is edited.
-        const blockRowsHTML = (n, at, i) => RB.noteBlocks(n, at).map((b) => {
+        const blockRowsHTML = (n, at, i) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
             const kind = RB.blockType(b);
             return `<div class="note-block block-${kind.id}" data-block="${i}" data-b="${n.blocks.indexOf(b)}" data-tab="${kind.id}">
                 ${b.image ? `<img src="${esc(b.image)}" alt="">` : ''}
@@ -1585,68 +1585,94 @@
             e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
         });
     }
-    // One card per block of the open tab's type: which side of the note it sits on, its picture
-    // or its words, and Delete. Plus the button that adds another one.
+    // The open tab IS the control: the note's one photo, one advert or one text, with the side
+    // it sits on. There is nothing to "add" first — you pick an image or you type. A slot holds
+    // a block only while it holds something, so an empty one is never kept, saved or drawn.
+    const blockOf = (n, id) => RB.noteBlocks(n).find((b) => RB.blockType(b).id === id) || null;
     function renderBlockPanel(n) {
         const kind = RB.NOTE_BLOCKS.find((k) => k.id === blockTab);
-        const mine = RB.noteBlocks(n).filter((b) => RB.blockType(b).id === kind.id);
-        const side = (b, i) => ['before', 'after'].map((at) =>
-            `<label><input type="radio" name="blockAt${i}" value="${at}" ${(b.at === 'before' ? 'before' : 'after') === at ? 'checked' : ''}> ${esc(t(at === 'before' ? 'Before the note' : 'After the note'))}</label>`).join('');
-        $('blockPanel').innerHTML = (mine.length ? '' : `<p class="block-empty">${esc(t('Nothing here yet.'))}</p>`)
-            + mine.map((b, i) => `<div class="block-card" data-card="${i}">
-                <div class="block-head">
-                    <span class="block-side">${side(b, i)}</span>
-                    <button type="button" class="btn btn-ghost block-del" data-del="${i}"><i class="fa-solid fa-trash-can icon-danger"></i> <span>${esc(t('Delete'))}</span></button>
-                </div>
-                ${kind.image ? `<div class="block-img-row">
-                    ${b.image ? `<img class="block-prev" data-pick="${i}" src="${esc(b.image)}" alt="" title="${esc(t('Change image'))}">` : ''}
-                    <button type="button" class="btn btn-ghost" data-pick="${i}"><i class="fa-solid fa-image"></i> <span>${esc(t(b.image ? 'Change image' : 'Add image'))}</span></button>
-                </div>
-                <input class="field" data-caption="${i}" value="${esc(b.text || '')}" placeholder="${esc(t('(caption)'))}">`
-                : `<textarea class="field" data-text="${i}" placeholder="${esc(t('(text)'))}">${esc(b.text || '')}</textarea>`}
-            </div>`).join('')
-            + `<div class="btnrow start"><button type="button" class="btn btn-primary" id="blockAdd"><i class="fa-solid fa-plus"></i> ${esc(t('Add'))} ${esc(t(kind.name))}</button></div>`;
+        const b = blockOf(n, kind.id);
+        const at = b ? (b.at === 'before' ? 'before' : 'after') : 'after';
+        const side = ['before', 'after'].map((v) =>
+            `<label><input type="radio" name="blockAt" value="${v}"${v === at ? ' checked' : ''}> ${esc(t(v === 'before' ? 'Before the note' : 'After the note'))}</label>`).join('');
+        $('blockPanel').innerHTML = `<div class="block-card">
+            <div class="block-head">
+                <span class="block-side">${side}</span>
+                ${b ? `<button type="button" class="btn btn-ghost block-del" id="blockDel"><i class="fa-solid fa-trash-can icon-danger"></i> <span>${esc(t('Delete'))}</span></button>` : ''}
+            </div>
+            ${kind.image ? `<div class="block-img-row">
+                ${b && b.image ? `<img class="block-prev" id="blockPick" src="${esc(b.image)}" alt="" title="${esc(t('Change image'))}">` : ''}
+                <button type="button" class="btn btn-ghost" id="blockPickBtn"><i class="fa-solid fa-image"></i> <span>${esc(t(b && b.image ? 'Change image' : 'Add image'))}</span></button>
+            </div>
+            <input class="field" id="blockCaption" value="${esc((b && b.text) || '')}" placeholder="${esc(t('(caption)'))}">`
+            : `<textarea class="field" id="blockText" placeholder="${esc(t('(text)'))}">${esc((b && b.text) || '')}</textarea>`}
+        </div>`;
 
         const panel = $('blockPanel');
-        panel.querySelectorAll('[name^="blockAt"]').forEach((r) => r.onchange = (e) => {
-            mine[+e.target.name.replace('blockAt', '')].at = e.target.value; markDirty(); renderNotes();
+        panel.querySelectorAll('[name="blockAt"]').forEach((r) => r.onchange = () => {
+            const cur = blockOf(n, kind.id);
+            if (cur) { cur.at = r.value; markDirty(); renderNotes(); } // with nothing in the slot there is nothing to place yet
         });
-        panel.querySelectorAll('[data-caption]').forEach((f) => f.oninput = () => setBlockText(mine[+f.dataset.caption], f.value));
-        panel.querySelectorAll('[data-text]').forEach((f) => f.oninput = () => setBlockText(mine[+f.dataset.text], f.value));
-        panel.querySelectorAll('[data-pick]').forEach((b) => b.onclick = () => pickBlockImage(mine[+b.dataset.pick], kind));
-        panel.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => deleteBlock(n, mine[+b.dataset.del], kind));
-        $('blockAdd').onclick = () => {
-            (n.blocks = n.blocks || []).push({ type: kind.id, at: 'after' });
-            markDirty(); renderEditor(); renderNotes();
-        };
+        const words = $('blockCaption') || $('blockText');
+        if (words) words.oninput = () => setBlockText(n, kind, words.value);
+        [$('blockPick'), $('blockPickBtn')].forEach((el) => { if (el) el.onclick = () => pickBlockImage(n, kind); });
+        if ($('blockDel')) $('blockDel').onclick = () => deleteBlock(n, b, kind);
     }
-    // A block's words update the model and patch its row in place. Rebuilding the list would
-    // move the editor — which lives inside it — and moving a focused textarea drops the caret,
-    // so the author would type one character per keystroke into nothing.
-    function setBlockText(b, value) {
-        if (!b) return;
+    // The slot's block, created the moment there is something to put in it. `at` comes from the
+    // radios, which are answered before anything exists.
+    function slotBlock(n, kind) {
+        let b = blockOf(n, kind.id);
+        if (!b) {
+            const picked = $('blockPanel').querySelector('[name="blockAt"]:checked');
+            b = { type: kind.id, at: picked ? picked.value : 'after' };
+            (n.blocks = n.blocks || []).push(b);
+        }
+        return b;
+    }
+    // A slot with neither picture nor words is not material — drop it, so nothing empty is saved.
+    function pruneBlocks(n) {
+        if (!n.blocks) return;
+        n.blocks = n.blocks.filter((b) => b.image || b.text);
+        if (!n.blocks.length) delete n.blocks;
+    }
+    // Words update the model and patch the row in place. Rebuilding the list would move the
+    // editor — which lives inside it — and moving a focused field drops the caret, so the author
+    // would type one character per keystroke into nothing.
+    function setBlockText(n, kind, value) {
+        const had = !!blockOf(n, kind.id);
+        const b = slotBlock(n, kind);
         if (value) b.text = value; else delete b.text;
         markDirty();
-        const n = rb.notes[sel];
+        pruneBlocks(n);
+        const still = !!blockOf(n, kind.id);
+        // the row appears with the first character and goes with the last one; in between it is
+        // patched in place so the caret stays where the author left it
+        if (had !== still || (still && !b.image && !had)) { renderNotes(); renderEditor(); return; }
         const row = $('noteList').querySelector(`.note-block[data-block="${sel}"][data-b="${(n.blocks || []).indexOf(b)}"] .block-text`);
         if (row) row.textContent = value;
+        else renderNotes();
     }
-    function pickBlockImage(b, kind) {
+    function pickBlockImage(n, kind) {
         const input = $('edBlockImg');
         input.value = '';
         input.onchange = async (e) => {
             const f = e.target.files[0];
             if (!f) return;
-            b.image = await RBImg.toDataURL(f, kind.imageMax); // a photo keeps its detail, a logo stays small
+            let data;
+            try { data = await RBImg.toDataURL(f, kind.imageMax); } // a photo keeps its detail, a logo stays small
+            catch (err) { return toast('Could not read that image.'); } // a file the browser cannot decode says so
+            const b = slotBlock(n, kind);
+            b.image = data;
             markDirty(); renderEditor(); renderNotes();
         };
         input.click();
     }
     async function deleteBlock(n, b, kind) {
+        if (!b) return;
         const what = t(kind.name) + (b.text ? ' — ' + b.text : '');
         if (!(await RBConfirm(t('Delete this from note {n}?').replace('{n}', n.num) + '<br><b>' + esc(what) + '</b>', true))) return;
         n.blocks = (n.blocks || []).filter((x) => x !== b);
-        if (!n.blocks.length) delete n.blocks;
+        pruneBlocks(n);
         markDirty(); renderEditor(); renderNotes();
     }
 

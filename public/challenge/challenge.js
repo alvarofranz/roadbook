@@ -48,7 +48,7 @@
         const iconSrc = (ic) => RB.iconSrc(ic, rb, '/assets/icons/');
         const fkm = (m) => ((m ?? 0) / 1000).toFixed(2);
         // the material a note carries, drawn around its row exactly as the Reader draws it (#542)
-        const blockRows = (n, at) => RB.noteBlocks(n, at).map((b) => `<div class="nrow readonly block block-${RB.blockType(b).id}">
+        const blockRows = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => `<div class="nrow readonly block block-${RB.blockType(b).id}">
             <div class="col-distance"></div>
             <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
             <div class="col-text${b.image ? '' : ' col-text-wide'}"><div class="text">${esc(b.text || '')}</div></div>
