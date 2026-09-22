@@ -103,15 +103,13 @@
     ];
     window.RBSiteLinksHTML = () => SITE_LINKS.map((l) =>
         `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`).join('\n');
-    /* Where to get RDBK on each platform — ONE list, drawn into every `[data-platforms]` band (home,
-       About): the computer install guide and the two stores, from RBStore (#674). */
-    const PLATFORM_LINKS = [
-        { href: () => ROOT + 'install/', icon: 'fa-brands fa-windows',   label: 'PC Win / Mac / Linux', tip: 'PC Win / Mac / Linux — install guide' },
-        { href: () => RBStore.ios,       icon: 'fa-brands fa-app-store', label: 'iOS / iPhone / iPad',  tip: 'iOS / iPhone / iPad — App Store', store: true },
-        { href: () => RBStore.android,   icon: 'fa-brands fa-google-play', label: 'Android',            tip: 'Android — Google Play', store: true },
-    ];
-    window.RBPlatformLinksHTML = () => PLATFORM_LINKS.map((l) =>
-        `<a class="plat-link" href="${RBesc(l.href())}"${l.store ? ' target="_blank" rel="noopener"' : ''} title="${RBesc(RBt(l.tip))}" aria-label="${RBesc(RBt(l.tip))}" data-i18n-title="${RBesc(l.tip)}" data-i18n-aria="${RBesc(l.tip)}"><i class="${l.icon}"></i> ${RBesc(l.label)}</a>`).join('');
+    /* Where to get RDBK (#674 · #720): the two stores as official-style badges (from RBStore), and —
+       with `computer` — the web app for Windows · Mac · Linux. Drawn into every `[data-get-app]`
+       (home hero and install section, About); "stores" draws the badges alone. */
+    window.RBGetAppHTML = (computer) => `<div class="store-badges">
+            <a class="store-badge" href="${RBesc(RBStore.ios)}" target="_blank" rel="noopener" aria-label="${RBesc(RBt('Download on the App Store'))}"><i class="fa-brands fa-apple"></i><span><small>${RBesc(RBt('Download on the'))}</small><b>App Store</b></span></a>
+            <a class="store-badge" href="${RBesc(RBStore.android)}" target="_blank" rel="noopener" aria-label="${RBesc(RBt('Get it on Google Play'))}"><i class="fa-brands fa-google-play"></i><span><small>${RBesc(RBt('Get it on'))}</small><b>Google Play</b></span></a>
+        </div>` + (computer ? `<a class="get-app-web" href="${ROOT}install/"><i class="fa-solid fa-desktop"></i> <span>${RBesc(RBt('Windows · Mac · Linux: install the web app'))}</span></a>` : '');
 
     function renderChrome() {
         const rootPath = new URL(ROOT, location.href).pathname;
@@ -153,7 +151,7 @@
         // The Profile page repeats the site links where the footer is hidden — same list, filled here.
         const accLinks = document.getElementById('accSiteLinks');
         if (accLinks) accLinks.innerHTML = RBSiteLinksHTML();
-        document.querySelectorAll('[data-platforms]').forEach((el) => { el.innerHTML = RBPlatformLinksHTML(); });
+        document.querySelectorAll('[data-get-app]').forEach((el) => { el.innerHTML = RBGetAppHTML(el.dataset.getApp !== 'stores'); });
 
         // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
         // every mobile-width view — web, installed PWA and the native app — and hides it on desktop
@@ -256,22 +254,6 @@
     checkVersion();
     setInterval(checkVersion, 60000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
-
-    // App-only: on the home launcher show the INSTALLED build (via Capacitor) + the LATEST live
-    // version, so a tester sees what they're running and whether a newer build is out (#198). The
-    // app never hot-updates its code (that ships through TestFlight/Play), so this is how you tell.
-    if (isNativeApp()) document.addEventListener('DOMContentLoaded', async () => {
-        const el = document.getElementById('appVer'); if (!el) return;
-        // The binary, the web content it carries and the web content that is live: comparing the
-        // semvers alone made a five-day-old app read as up to date (#515).
-        const [running, bundled, live] = await Promise.all([RBRunningRelease(), RBLiveVersion(ROOT), RBLiveVersion()]);
-        const parts = [];
-        if (running) parts.push(RBt('Installed') + ' ' + RBReleaseText(running));
-        if (bundled) parts.push(RBt('web content') + ' ' + bundled.build);
-        if (live) parts.push(RBt('latest') + ' ' + live.version + ' · ' + live.build);
-        el.textContent = parts.join('  ·  ');
-        el.hidden = !parts.length;
-    });
 
     /* ---------------- App info pop-up (account menus, #335, #474, #478) ----------------
        Refreshed every time it opens (never the stale footer text): Running is what this
@@ -444,12 +426,9 @@
             return r.outcome === 'accepted';
         },
     };
-    // One tap installs where the browser can do it; everywhere else the chip opens the per-device
-    // guide instead of doing nothing.
-    async function onInstall() {
-        if (RBInstallPrompt.available()) return void await RBInstallPrompt.fire();
-        location.href = ROOT + 'install/';
-    }
+    // The chip always opens the install guide (#720): it leads with the native apps on a phone, and
+    // on a computer it offers the browser's one-tap install itself.
+    function onInstall() { location.href = ROOT + 'install/'; }
     // iOS Safari never fires beforeinstallprompt: offer the button when not installed (never in the app).
     if (isIOS() && !isStandalone() && !isNativeApp()) document.addEventListener('DOMContentLoaded', showInstall);
 

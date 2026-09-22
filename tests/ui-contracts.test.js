@@ -290,8 +290,6 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
         expect(fn).toContain('This app was built with older web content');
         const about = read('public/about/about.js');
         expect(about).toContain("fact('Web content in this app', rel(bundled))");
-        // the launcher line compares builds too, not just semvers
-        expect(app).toContain("parts.push(RBt('web content') + ' ' + bundled.build)");
     });
 
     it('links what changed and the official site', () => {
@@ -718,9 +716,9 @@ describe('an open menu follows a language switch (#495)', () => {
         expect(app).toContain("label: 'The .rdbk standard'");
     });
 
-    it('the launcher tiles name themselves through i18n', () => {
+    it('the app home tiles name themselves through i18n (#720)', () => {
         const home = read('public/index.html');
-        expect(home).toContain('<span class="launch-name" data-i18n="Recorder">Recorder</span>');
+        expect(home).toContain('<b data-i18n="Record a route">Record a route</b>');
         expect(home).toContain('<span class="launch-name" data-i18n="Editor">Editor</span>');
         expect(home).toContain('data-i18n-aria="RDBK sections"');
     });

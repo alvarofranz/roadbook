@@ -62,10 +62,9 @@ describe('install guide', () => {
         }
     });
 
-    it('the Install chip leads somewhere on every browser (it used to dead-end)', () => {
-        // Prompt where the browser supports it, the guide everywhere else — never a no-op.
-        expect(appJs).toContain('if (RBInstallPrompt.available()) return void await RBInstallPrompt.fire();');
-        expect(appJs).toContain("location.href = ROOT + 'install/'");
+    it('the Install chip always opens the guide (#720) — which offers the one-tap prompt itself', () => {
+        expect(appJs).toContain("function onInstall() { location.href = ROOT + 'install/'; }");
+        expect(read('public/install/install.js')).toContain('RBInstallPrompt.fire()');
         expect(appJs).not.toContain('showIosModal');          // the modal the guide replaced is gone
     });
 

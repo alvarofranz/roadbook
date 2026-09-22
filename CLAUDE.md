@@ -643,10 +643,13 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   the app**, so the PWA is byte-for-byte unchanged in a browser.
 - **Background GPS** (the reason to go native): `RBGpsMeter` uses RBNative's foreground-service
   watch in the app, the Web Geolocation watch otherwise.
-- **One contextual home:** `index.html` shows the marketing landing on the web and the
-  field-tool launcher in the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second
-  page. The launcher is the app's opening screen (one tile per section, explained); there is no
-  "home" button back to it — navigation is the bottom tab bar.
+- **One contextual home:** `index.html` shows the marketing landing on the web and an app home in
+  the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second page. The web landing
+  leads with the official-style store badges (`RBGetAppHTML`, from `RBStore`) and "Start in the
+  browser"; the app home is an app's opening screen (#720): a greeting, the one big action
+  (Record a route), quick tiles (Navigate · Editor · Events), the user's last roadbooks with
+  Navigate / Edit, and the public ones as a carousel. There is no "home" button back to it —
+  navigation is the bottom tab bar. The Install chip exists only on the web and opens `/install/`.
 - **Navigation — one section catalog, two presentations (`SECTION`/`WEB_NAV`/`APP_TABS` in
   `app.js`).** Sections: **Recorder · Editor · Navigate · Events · Profile** (bottom bar) plus
   **Roadbooks** (web top nav only). *Desktop web* renders the top bar (the Recorder is a

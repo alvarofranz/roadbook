@@ -18,7 +18,7 @@
             'feat.7.t': 'Event classification', 'feat.7.d': 'Run a rally on one roadbook: compare every team’s run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.',
             'events.t': 'Events', 'events.d': 'Organize events around your own roadbooks — invite teams, run the rally and publish the results.', 'route map': 'route map',
             'install.lead': 'RDBK is a native app on iPhone, iPad and Android, and an installable web app on computers. Installed, it opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.', 'install.kicker': 'Cross-platform', 'install.title': 'Install it on any device', 'install.text': 'RDBK.app runs everywhere: native apps for iPhone, iPad and Android — with GPS that keeps recording when the screen locks — and a free installable web app for Windows, Mac and Linux that works offline too.',
-            'gallery.kicker': 'Gallery', 'gallery.title': 'Public Roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.',
+            'gallery.kicker': 'Gallery', 'gallery.title': 'Public roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.',
             // Editor field help tooltips (issue #89)
             'help.road': 'The road surface you continue on from this note (default, asphalt, track, off-piste); it stays in force until a later note changes it.',
             'help.danger': 'FIA danger grading, shown as ! / !! / !!! in the vignette — the higher the grade, the more caution the spot demands.',

@@ -10,9 +10,20 @@ Come la **home** mostra i roadbook pubblici e come ogni roadbook ottiene la sua 
 
 ---
 
+## 0. Le due home (#720)
+
+- **Web** (`.web-only`): hero con i badge ufficiali **App Store** / **Google Play** (`RBGetAppHTML`,
+  da `RBStore`, dentro ogni `[data-get-app]`) e *Start in the browser*; il flusso in quattro passi;
+  la banda *Install it on any device* (badge + web app per computer + nota GPS); le funzioni; la
+  banda della guida; la galleria. Il chip **Install** esiste solo sul web e apre `/install/`.
+- **App** (`.app-only`): una home da app — saluto `@utente`, la grande azione *Record a route*, tre
+  accessi rapidi (Navigate · Editor · Events), gli ultimi 4 roadbook dell'utente con *Navigate* /
+  modifica (`rb_list`), o l'invito ad accedere; poi i pubblici come carosello orizzontale.
+  Nessun pie' di versione: App Info (menu del profilo) mostra binario, contenuto web e live.
+
 ## 1. La galleria della home (`home.js`)
 
-La sezione "Public Roadbooks" della home è un **teaser**: i 6 roadbook pubblici più recenti.
+La sezione "Public roadbooks" della home è un **teaser**: i 6 roadbook pubblici più recenti.
 La lista completa con ricerca + paginazione vive in `/roadbooks` ([challenges](challenges.md)).
 
 Flusso ([home.js:65](../public/assets/js/home.js#L65)):
