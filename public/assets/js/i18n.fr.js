@@ -159,7 +159,7 @@
             'Recording…': 'Enregistrement…', 'Paused ·': 'En pause ·', 'Adjust: get on the trail…': 'Ajuster : rejoindre le parcours…', 'Adjust · will rejoin': 'Ajuster · va rejoindre', 'Adjust · recording': 'Ajuster · enregistrement',
             'Saved · public at': 'Enregistré · public sur', 'Auto': 'Auto', 'Skips': 'Sauts', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'part.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto : les notes sont validées par GPS à l\'arrivée. Off : tapez pour marquer chaque note comme faite.',
-            'Add participant': 'Ajouter un participant', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'This roadbook is not in competition mode.': 'Ce roadbook n\'est pas en mode compétition.', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'You must be a participant or organizer of this event to access the ranking.': 'Vous devez être participant ou organisateur de cet événement pour accéder au classement.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 
+            'Add participant': 'Ajouter un participant', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 
             'Add result': 'Ajouter un résultat', 'Add': 'Ajouter', 'Target average speed': 'Vitesse moyenne cible', "(used for regularity if the QR doesn't carry it)": '(utilisée pour la régularité si le QR ne l\'inclut pas)',
             '…or paste the code (META) here': '…ou collez le code (META) ici', 'Added vehicle': 'Véhicule ajouté', 'Invalid signature': 'Signature invalide', 'Could not open the camera': 'Impossible d\'ouvrir la caméra', 'Remove vehicle': 'Supprimer le véhicule',
             'Reset the partial trip?': 'Remettre à zéro le partiel ?', 'Colour for the band {band}': 'Couleur pour la plage {band}', 'Show password': 'Afficher le mot de passe', 'Hide password': 'Masquer le mot de passe', 'photo': 'photo', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
@@ -984,4 +984,15 @@ Object.assign(window.RBi18nLangs.fr, {
     "worst": "pire",
     "Penalties": "Pénalités",
     "Every note reached and every limit respected.": "Toutes les notes atteintes et toutes les limites respectées.",
+});
+
+/* the shared event ranking (#590 · #607 · #608 · #624–#628) and the tools' Help link (#643) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Help": "Aide",
+    "Sign in to see this event’s ranking.": "Connectez-vous pour voir le classement de cet événement.",
+    "Only this event’s organizers and active participants can see its ranking.": "Seuls les organisateurs et les participants actifs de cet événement voient son classement.",
+    "This roadbook is not a scored roadbook of this event.": "Ce roadbook n’est pas noté dans cet événement.",
+    "This result is for a different roadbook.": "Ce résultat concerne un autre roadbook.",
+    "This result is already in the ranking.": "Ce résultat est déjà dans le classement.",
+    "already has a result. Replace it with this one?": "a déjà un résultat. Le remplacer par celui-ci ?",
 });

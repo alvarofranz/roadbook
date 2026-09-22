@@ -1,145 +1,132 @@
 'use strict';
-/* RDBK Ranking — collects results (QR via camera or pasted), computes accuracy,
- * CAP, speed and regularity, and a final score (lower = better). Only available
- * within an event, for a specific roadbook in competition mode. */
+/* RDBK Ranking — the classification of ONE scored roadbook inside an event, opened as
+ * /ranking/?event=<slug>&rb=<slug> from the event page. It lives on the server (event_results,
+ * #590): every organizer device sees and edits the same list, and the event's active participants
+ * read it. A competition run of a signed-in participant enters it by itself; results brought to
+ * the desk as a QR are scanned or pasted here. Accuracy, CAP, speed and regularity are computed
+ * from each signed result (RB.rankEntry) into a final score — lower is better. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
     const params = new URLSearchParams(location.search);
-    const eventSlug = params.get('event');
-    const rbSlug = params.get('rb');
-    const storageKey = 'rb_ranking' + (eventSlug && rbSlug ? '_' + eventSlug + '_' + rbSlug : '');
-    let entries = load();
+    const scope = { event: params.get('event'), rb: params.get('rb') };
+    let results = [], isOrg = false, rows = [];
     let stream = null, scanning = false;
-    let authed = false, isOrg = false;
 
-    /* ---------- guard: require event + roadbook scope ---------- */
-    if (!eventSlug || !rbSlug) {
-        $('noEvent').hidden = false;
-        return;
-    }
+    if (!scope.event || !scope.rb) { $('noEvent').hidden = false; return; }
 
-    /* ---------- auth: must be participant or organizer of the event ---------- */
-    // The gate, with a reason: a failed call is not the same as "you are not a participant" —
-    // offline, the ranking is simply unreachable and saying so beats accusing the user (#493).
-    function gate(reason) {
-        if (reason) $('authGateMsg').textContent = t(reason);
-        $('authGate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true;
+    // Why the classification is not shown — the reason that fits, never "sign in" to someone who is
+    // signed in (#625), and never an empty page (#626).
+    function gate(reason, signIn) {
+        $('gateMsg').textContent = t(reason);
+        $('gateSignIn').hidden = !signIn;
+        if (signIn) $('gateSignInLink').href = RBLoginUrl();
+        $('gate').hidden = false; $('rankTools').hidden = true; $('rankResults').hidden = true;
     }
-    async function checkAuth() {
+    const REFUSALS = {
+        'Not allowed.': 'Only this event’s organizers and active participants can see its ranking.',
+        'Not found.': 'This roadbook is not a scored roadbook of this event.',
+    };
+    async function load() {
         const cfg = await RBConfig();
-        if (!cfg.user) { gate(); return; }
-        const r = await RBApi('event_get', { slug: eventSlug }).catch(() => ({}));
-        if (!r.ok) { gate(navigator.onLine === false ? 'You are offline — reconnect to load this event.' : null); return; }
-        const ev = r.event;
-        isOrg = ev.org_read || cfg.user.is_admin || cfg.user.is_organizer || cfg.user.manages_events;
-        if (!ev.active_participant && !isOrg) { gate(); return; }
-        const rbInEvent = (r.roadbooks || []).find((x) => x.slug === rbSlug);
-        if (!rbInEvent) { gate(); return; }
-        if (!rbInEvent.scoring_mode || rbInEvent.scoring_mode === 'free') { RBToast(RBt('This roadbook is not in competition mode.')); $('authGate').hidden = true; $('rankTools').hidden = true; $('rankResults').hidden = true; return; }
-        authed = true;
-        $('authGate').hidden = true;
+        if (!cfg.user) return gate('Sign in to see this event’s ranking.', true);
+        const r = await RBApi('ranking_list', scope);
+        if (!r.ok) return gate(r.error === 'Network error.' ? 'You are offline — reconnect to load this event.' : (REFUSALS[r.error] || r.error));
+        results = r.results; isOrg = r.is_org;
         $('evHeader').hidden = false;
-        $('evHeader').innerHTML = '<p class="muted small"><i class="fa-solid fa-flag-checkered"></i> ' + esc(ev.title) + ' · <i class="fa-solid fa-book"></i> ' + esc(rbInEvent.title || rbSlug) + '</p>';
-        initTools();
-    }
-
-    $('authSignIn').onclick = () => { location.href = '../account/?next=' + encodeURIComponent(location.pathname + location.search); };
-    checkAuth();
-
-    /* ---------- tools (only after auth) ---------- */
-    function initTools() {
-        $('rankTools').hidden = false;
-        $('rankResults').hidden = false;
-        $('addManual').onclick = () => addMeta($('manualMeta').value.trim());
-        $('manualMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') addMeta($('manualMeta').value.trim()); });
-        $('targetAvg').addEventListener('input', render);
-        $('scanBtn').onclick = scan;
-        $('clearAll').onclick = clearAll;
-        $('exportCsv').onclick = exportCsv;
+        $('evHeader').innerHTML = `<a href="/event/${encodeURIComponent(r.event.slug)}"><i class="fa-solid fa-calendar-check"></i> ${esc(r.event.title)}</a> · <i class="fa-solid fa-book"></i> ${esc(r.roadbook.title)}`;
+        $('gate').hidden = true; $('rankResults').hidden = false;
+        $('rankTools').hidden = !isOrg; $('orgTools').hidden = !isOrg; // participants read, organizers edit (#608)
         render();
-        if (!isOrg) { // the per-row delete column is not rendered at all for a participant
-            $('clearAll').hidden = true;
-            $('exportCsv').hidden = true;
-        }
     }
+    load();
+    window.addEventListener('rb-lang', () => { if (results.length || isOrg) render(); });
 
+    /* ---------- adding a result (organizers) ---------- */
     async function addMeta(str) {
         if (!str) return;
         const { meta, valid } = await RB.verifyMeta(str, (window.RB_CONFIG || {}).signKey);
         const m = RB.parseMeta(meta);
-        if (!m.team || !/^\d+$/.test(m.team)) { msg('Code not recognized.', true); return; }
+        if (!m.team || !/^\d+$/.test(m.team)) return msg(t('Code not recognized.'), true);
         // The QR carries only a fixed-width slug prefix (RB.metaRbPrefix), so compare like against like.
-        if (m.rb && m.rb !== RB.metaRbPrefix(rbSlug)) { msg('This result is for a different roadbook (' + esc(m.rb) + ').', true); return; }
-        entries.push({ raw: str, m, valid, ts: Date.now() + '.' + Math.floor(Math.random() * 1e6) });
-        save(); render();
+        if (m.rb && m.rb !== RB.metaRbPrefix(scope.rb)) return msg(t('This result is for a different roadbook.'), true);
+        const team = String(parseInt(m.team, 10));
+        const body = Object.assign({}, scope, { meta: str, team, valid: valid === false ? 0 : 1 });
+        let x = await RBApi('ranking_add', body);
+        if (x.ok && x.duplicate) return msg(t('This result is already in the ranking.') + ' · ' + t('Vehicle') + ' ' + team, false);
+        // another result for a vehicle already listed replaces it only when asked (#607)
+        if (x.ok && x.conflict) {
+            if (!(await RBConfirm(t('Vehicle') + ' ' + team + ' ' + t('already has a result. Replace it with this one?')))) return;
+            x = await RBApi('ranking_add', Object.assign(body, { replace: 1 }));
+        }
+        if (!x.ok) return msg(x.error || t('Could not save.'), true);
         $('manualMeta').value = '';
-        const added = t('Added vehicle') + ' ' + parseInt(m.team, 10);
-        msg(valid === false ? '⚠ ' + t('Invalid signature') + ' · ' + added : (valid === true ? '✓ ' : '') + added, valid === false);
+        const added = t('Added vehicle') + ' ' + team;
+        msg(valid === false ? t('Invalid signature') + ' · ' + added : added, valid === false);
+        load();
     }
+    $('addManual').onclick = () => addMeta($('manualMeta').value.trim());
+    $('manualMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') addMeta($('manualMeta').value.trim()); });
 
-    async function scan() {
+    $('scanBtn').onclick = async () => {
         if (scanning) return stopScan();
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             const v = $('video'); v.hidden = false; v.srcObject = stream; await v.play();
-            scanning = true; $('scanBtn').innerHTML = '<i class="fa-solid fa-stop"></i> ' + RBt('Stop');
+            scanning = true; $('scanBtn').innerHTML = `<i class="fa-solid fa-stop"></i> ${esc(t('Stop'))}`;
             loopScan();
         } catch (e) { msg(t('Could not open the camera') + ': ' + e.message, true); }
-    }
+    };
     async function loopScan() {
         if (!scanning) return;
         const track = stream && stream.getVideoTracks()[0];
-        if (!track || track.readyState === 'ended') { stopScan(); msg('Camera stopped.', true); return; }
+        if (!track || track.readyState === 'ended') { stopScan(); return msg(t('Camera stopped.'), true); }
         try {
             const raw = await RBQrScan.detect($('video'));
-            if (raw) {
-                await addMeta(raw.trim());
-                stopScan();
-                return;
-            }
-        } catch (e) {}
+            if (raw) { stopScan(); return addMeta(raw.trim()); }
+        } catch (e) { /* no frame yet */ }
         requestAnimationFrame(loopScan);
     }
     function stopScan() {
         scanning = false;
-        if (stream) stream.getTracks().forEach((t) => t.stop());
-        stream = null; $('video').hidden = true; $('scanBtn').innerHTML = '<i class="fa-solid fa-camera"></i> ' + RBt('Scan QR');
+        if (stream) stream.getTracks().forEach((tr) => tr.stop());
+        stream = null; $('video').hidden = true;
+        $('scanBtn').innerHTML = `<i class="fa-solid fa-camera"></i> ${esc(t('Scan QR'))}`;
     }
 
-    let lastRows = [];
+    /* ---------- the classification ---------- */
     function render() {
         const avgTarget = parseFloat($('targetAvg').value) || 0;
-        const rows = entries.map((e) => Object.assign(RB.rankEntry(e.m, avgTarget), { valid: e.valid, ts: e.ts })).sort((a, b) => a.finalScore - b.finalScore);
-        lastRows = rows;
+        rows = results.map((r) => Object.assign(RB.rankEntry(RB.parseMeta(RB.metaOf(r.meta)), avgTarget), { id: r.id, valid: r.valid, fromRun: r.from_run }))
+            .sort((a, b) => a.finalScore - b.finalScore);
         $('empty').hidden = !!rows.length;
         if (!rows.length) { $('table').innerHTML = ''; return; }
+        const bad = `<i class="fa-solid fa-triangle-exclamation icon-danger" title="${esc(t('Invalid signature'))}" aria-label="${esc(t('Invalid signature'))}"></i> `;
         $('table').innerHTML =
-            '<thead><tr><th scope="col">' + RBt('Rank') + '</th><th scope="col">' + RBt('Vehicle') + '</th><th scope="col">km</th><th scope="col">' + RBt('Accuracy') + '</th><th scope="col">CAP</th><th scope="col">' + RBt('Speed') + '</th><th scope="col">' + RBt('Regularity') + '</th><th scope="col">' + RBt('Final') + '</th>' + (isOrg ? '<th scope="col"></th>' : '') + '</tr></thead>'
-            + '<tbody>' + rows.map((r, i) =>
-                '<tr class="' + (i === 0 ? 'top' : '') + '"><td>' + (i + 1) + '</td><td>' + (r.valid === false ? '<span title="' + t('Invalid signature') + '" aria-label="' + t('Invalid signature') + '" class="icon-danger">⚠</span> ' : '') + r.team + '</td><td>' + r.km.toFixed(1) + '</td>'
-                + '<td>' + r.accuracy + '</td><td>' + r.cap + '</td><td>' + r.speed + '</td><td>' + r.reg + '</td><td class="final-score">' + r.finalScore + '</td>'
-                + (isOrg ? '<td><button class="link-delete" data-del="' + r.ts + '" title="' + t('Remove') + '" aria-label="' + t('Remove') + '">✕</button></td>' : '') + '</tr>').join('')
+            `<thead><tr><th scope="col">${esc(t('Rank'))}</th><th scope="col">${esc(t('Vehicle'))}</th><th scope="col">km</th><th scope="col">${esc(t('Accuracy'))}</th><th scope="col">CAP</th><th scope="col">${esc(t('Speed'))}</th><th scope="col">${esc(t('Regularity'))}</th><th scope="col">${esc(t('Final'))}</th>${isOrg ? '<th scope="col"></th>' : ''}</tr></thead>`
+            + '<tbody>' + rows.map((r, i) => `<tr class="${i === 0 ? 'top' : ''}"><td>${i + 1}</td><td>${r.valid === 0 ? bad : ''}${esc(r.team)}</td><td>${r.km.toFixed(1)}</td>`
+                + `<td>${r.accuracy}</td><td>${r.cap}</td><td>${r.speed}</td><td>${r.reg}</td><td class="final-score">${r.finalScore}</td>`
+                + (isOrg ? `<td><button class="btn btn-ghost btn-sm" data-del="${r.id}" data-team="${esc(r.team)}" type="button" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>` : '') + '</tr>').join('')
             + '</tbody>';
         $('table').querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (await RBConfirmDanger(t('Remove vehicle') + ' ' + RBesc(entries.find((e) => String(e.ts) === b.dataset.del)?.m.team) + '?', 'Remove')) {
-                entries = entries.filter((e) => String(e.ts) !== b.dataset.del); save(); render();
-            }
+            if (!(await RBConfirmDanger(t('Remove vehicle') + ' ' + esc(b.dataset.team) + '?'))) return;
+            const x = await RBApi('ranking_remove', Object.assign({}, scope, { id: +b.dataset.del }));
+            if (x.ok) load(); else RBToast(x.error || 'Could not remove.');
         });
     }
-
-    async function clearAll() {
-        if (!entries.length) return;
-        if (await RBConfirmDanger(t('Clear all results?') + ' (' + entries.length + ')', t('Clear'))) { entries = []; save(); render(); }
-    }
-    function exportCsv() {
-        if (!lastRows.length) return;
+    $('targetAvg').addEventListener('input', render);
+    $('clearAll').onclick = async () => {
+        if (!results.length) return;
+        if (!(await RBConfirmDanger(t('Clear all results?') + ' (' + results.length + ')'))) return;
+        const x = await RBApi('ranking_clear', scope);
+        if (x.ok) load(); else RBToast(x.error || 'Could not remove.');
+    };
+    $('exportCsv').onclick = () => {
+        if (!rows.length) return;
         const head = ['rank', 'vehicle', 'km', 'accuracy', 'cap', 'speed', 'regularity', 'final', 'valid'];
-        const lines = lastRows.map((r, i) => [i + 1, r.team, r.km.toFixed(1), r.accuracy, r.cap, r.speed, r.reg, r.finalScore, r.valid === false ? 'no' : 'yes'].join(','));
-        RBDownload(new Blob([head.join(',') + '\n' + lines.join('\n')], { type: 'text/csv' }), 'rdbk-ranking.csv');
-    }
+        const lines = rows.map((r, i) => [i + 1, r.team, r.km.toFixed(1), r.accuracy, r.cap, r.speed, r.reg, r.finalScore, r.valid === 0 ? 'no' : 'yes'].join(','));
+        RBDownload(new Blob([head.join(',') + '\n' + lines.join('\n')], { type: 'text/csv' }), 'rdbk-ranking-' + scope.rb + '.csv');
+    };
 
-    function load() { try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (e) { return []; } }
-    function save() { localStorage.setItem(storageKey, JSON.stringify(entries)); }
-    function msg(text, err) { const el = $('msg'); el.textContent = RBt(text); el.classList.toggle('err', !!err); el.classList.toggle('ok', !err); }
+    function msg(text, err) { const el = $('msg'); el.textContent = text; el.classList.toggle('err', !!err); el.classList.toggle('ok', !err); }
 })();
