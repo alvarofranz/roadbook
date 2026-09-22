@@ -451,6 +451,7 @@ loro somma.
 | [034_event_open_join.sql](../migrations/034_event_open_join.sql) | `events.open_join` (evento a iscrizione aperta, senza codice, #351) |
 | [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `users.apple_sub` (UNIQUE) — Sign in with Apple, gemello di `google_sub` (#370) |
 | [036_event_registration.sql](../migrations/036_event_registration.sql) | `events.join_gate` (`closed`/`code`/`open`) + `events.require_activation` — gate e attivazione indipendenti, con backfill da `open_join`/`join_code` (#414). `open_join` resta come mirror in scrittura finché nulla lo legge. |
+| [037_runs_results_profiles.sql](../migrations/037_runs_results_profiles.sql) | `roadbook_runs` (il report di ogni run: note, zone di velocità, tempi, penalità, risultato firmato, `is_public` per il profilo), `event_results` (la classifica condivisa di un roadbook di evento, unica per payload firmato), `users.runs_visibility` (`ask`/`public`/`private`), `api_tokens.participant_event_id` (modalità partecipante per l'app, #580) — #617–#620 · #590. |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,
