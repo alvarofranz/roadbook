@@ -7,6 +7,8 @@
     const fmtSize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 
     async function load() {
+        if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
+        $('adminMsg').hidden = true; $('apkBody').hidden = false;
         const card = $('apkCard');
         let rel = null;
         try {

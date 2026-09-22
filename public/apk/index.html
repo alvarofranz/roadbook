@@ -7,7 +7,7 @@
     <title data-i18n="seo.apk.title">Android APK — RDBK.app</title>
     <meta name="description" data-i18n-content="seo.apk.desc" content="Install RDBK on Android without the Play Store: download the signed APK of the latest release.">
     <link rel="canonical" href="https://rdbk.app/apk/">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="noindex">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="RDBK.app">
     <meta property="og:title" content="Android APK — RDBK.app">
@@ -37,6 +37,8 @@
 <header class="topbar"></header>
 
 <main class="wrap apk-page">
+    <div class="muted" id="adminMsg" data-i18n="Loading…">Loading…</div>
+    <div id="apkBody" hidden>
     <h1 data-i18n="seo.apk.title">Android APK — RDBK.app</h1>
     <p class="lead" data-i18n="apk.lead">Install RDBK without the Play Store: download the signed APK of the latest release and sideload it. Same build as the Play alpha, verified by SHA-256.</p>
     <div class="apk-card" id="apkCard"><p class="muted" data-i18n="Loading…">Loading…</p></div>
@@ -45,6 +47,7 @@
         <li data-i18n="apk.step2">Open it and allow Install unknown apps when asked.</li>
         <li data-i18n="apk.step3">Verify the SHA-256 matches, then open RDBK and sign in.</li>
     </ol>
+    </div>
 </main>
 
 <script src="../assets/js/i18n.es.js?v=1.9.1-75"></script>
