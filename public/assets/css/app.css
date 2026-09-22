@@ -167,21 +167,28 @@ section.block { padding: 2.4rem 0; }
 /* install / cross-platform band */
 #install .section-head { text-align: center; }
 #install .install-lead { max-width: 70ch; margin: .6rem auto 0; }
-#install .install-grid { display: grid; gap: 1.5rem; align-items: center; }
-@media (min-width: 1025px) { #install .install-grid { grid-template-columns: 1fr 2fr; } }
-.wiki-cta a { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .3rem; background: linear-gradient(135deg, rgba(232,176,89,.12), rgba(232,176,89,.06)); border: 1px solid rgba(232,176,89,.3); border-radius: 16px; padding: 1.6rem 1.2rem; text-decoration: none; transition: border-color .15s ease, transform .12s ease; }
-.wiki-cta a:hover { border-color: var(--sand); transform: translateY(-2px); }
-.wiki-cta a i { font-size: 1.8rem; color: var(--sand); }
-.wiki-cta a h3 { margin: .4rem 0 0; font-size: 1.1rem; font-weight: 800; color: var(--sand-2); }
-.wiki-cta a p { margin: 0; font-size: .86rem; color: var(--muted); line-height: 1.5; max-width: 26ch; }
-.wiki-cta .cta-link { font-weight: 700; font-size: .9rem; color: var(--sand); margin-top: .3rem; }
-@media (max-width: 1024px) { .wiki-cta a { flex-direction: row; text-align: left; padding: 1rem 1.2rem; } .wiki-cta a p { max-width: none; } .wiki-cta a i { flex-shrink: 0; } }
-/* cross-platform band: each platform sits in a soft pill */
-.platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem; margin-top: 1.4rem; color: var(--text); font-weight: 700; }
-.platforms i { color: var(--sand); }
-.platforms a.plat-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; font-weight: 700; color: var(--text); transition: border-color .2s, color .2s; }
-.platforms a.plat-link:hover { border-color: var(--sand); color: var(--sand-2); }
 .install-note { max-width: 62ch; margin: 1rem auto 0; color: var(--muted); font-size: .85rem; }
+
+/* Where to get RDBK (#720): official-style store badges, then the web app for computers */
+.store-badges { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+.store-badge { display: inline-flex; align-items: center; gap: .6rem; min-width: 172px; padding: .45rem 1.1rem .45rem .85rem; background: #000; color: #fff; border: 1px solid #8a8a8a; border-radius: 11px; text-decoration: none; transition: border-color .15s, transform .1s; }
+.store-badge:hover { border-color: #fff; text-decoration: none; transform: translateY(-1px); }
+.store-badge > i { font-size: 1.75rem; width: 1.1em; text-align: center; }
+.store-badge small { display: block; font-size: .64rem; line-height: 1.1; letter-spacing: .02em; }
+.store-badge b { display: block; font-size: 1.18rem; line-height: 1.1; font-weight: 600; letter-spacing: -.01em; }
+.get-app { display: flex; flex-direction: column; align-items: center; gap: .9rem; margin-top: 1.4rem; }
+.get-app-web { display: inline-flex; align-items: center; gap: .5rem; color: var(--sand-2); font-weight: 700; font-size: .92rem; }
+.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1rem; margin-top: 1.6rem; }
+.install-band { text-align: center; max-width: 860px; }
+.install-band .store-badges { justify-content: center; }
+/* the step-by-step guide: one wide card under the features */
+.guide-band { display: flex; align-items: center; gap: 1rem; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(232,176,89,.12), rgba(232,176,89,.05)); border: 1px solid rgba(232,176,89,.3); border-radius: var(--radius); color: var(--text); text-decoration: none; transition: border-color .15s, transform .12s; }
+.guide-band:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+.guide-band > i { font-size: 2rem; color: var(--sand); flex-shrink: 0; }
+.guide-band b { display: block; font-size: 1.1rem; color: var(--sand-2); }
+.guide-band small { display: block; color: var(--muted); }
+.guide-band .cta-link { flex-shrink: 0; font-weight: 700; color: var(--sand); }
+@media (max-width: 560px) { .guide-band { flex-wrap: wrap; } .guide-band .cta-link { width: 100%; } }
 
 /* features grid (home): 6 cards → 3 balanced columns (2 rows on desktop) */
 .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
@@ -526,6 +533,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
     .hero-copy { text-align: center; }
+    .hero-cta, .hero-cta .store-badges { justify-content: center; }
     .hero-copy p.lead { margin-left: auto; margin-right: auto; }
     .hero-mock { max-width: 204px; margin: .4rem auto 0; justify-self: center; }
 }
@@ -553,13 +561,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
    so hide it below the tab-bar breakpoint too. The About/Privacy/Terms links live on the Profile
    page there (the account page's footer links), so they stay reachable. */
 @media (max-width: 1024px) { .foot { display: none; } }
-/* app version readout on the home launcher (installed build + latest live), #198 */
-.app-ver { text-align: center; margin: 0; font-variant-numeric: tabular-nums; }
 
-/* App-only footer: version bar pinned to the bottom of the home screen, with safe-area spacing
-   so it never sits under the iOS home indicator. Subtle top line to separate it from the gallery. */
-.app-foot { margin-top: 1rem; padding: .9rem 0; border-top: 1px solid var(--line); background: var(--bg); }
-.native .app-foot { padding-bottom: calc(.9rem + env(safe-area-inset-bottom)); }
 /* native (viewport-fit=cover): the app has no top bar, so the sticky tool bars (Reader/Tripmaster)
    pin just below the iOS status bar / notch. */
 /* the sticky tool bars (Reader odometer · Tripmaster status) pin to the top by default — correct
@@ -573,8 +575,30 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
 .launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
 
-/* App home header: logo + title above the launcher grid */
-.app-head { display: flex; align-items: center; justify-content: center; gap: .6rem; margin-bottom: 1.4rem; }
+/* The app home (#720): an app's opening screen — who you are, the one big action (record), quick
+   ways in, your own roadbooks, then the public ones as a sideways carousel. */
+.app-head { display: flex; align-items: center; gap: .7rem; margin-bottom: 1.1rem; }
+.app-hello { margin: .1rem 0 0; }
+.app-primary, .app-signin { display: flex; align-items: center; gap: .9rem; padding: 1.1rem 1.2rem; border-radius: var(--radius); text-decoration: none; }
+.app-primary { background: linear-gradient(135deg, var(--sand), var(--sand-2)); color: var(--on-sand); }
+.app-primary > i:first-child { font-size: 2rem; }
+.app-primary b, .app-signin b { display: block; font-size: 1.1rem; }
+.app-primary small { display: block; opacity: .8; }
+.app-signin { margin-top: 1rem; background: var(--card); border: 1px solid var(--line); color: var(--text); }
+.app-signin > i:first-child { font-size: 1.6rem; color: var(--sand); }
+.app-signin small { display: block; color: var(--muted); }
+.app-primary:hover, .app-signin:hover { text-decoration: none; }
+.app-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .7rem; }
+.app-quick .launch-tile { padding: 1rem .4rem; }
+.app-quick .launch-tile i { font-size: 1.5rem; }
+.app-quick .launch-tile .launch-name { font-size: .9rem; margin-top: .15rem; }
+.app-section { margin-top: 1.4rem; }
+.app-section h3 { margin: 0; font-size: 1.05rem; }
+.native #gallery .gallery { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: .8rem; padding-bottom: .4rem; }
+.native #gallery .gallery > * { flex: 0 0 78%; scroll-snap-align: start; }
+.native #gallery .section-head .kicker { display: none; }
+.native #gallery { padding-top: .4rem; }
+.native .install-btn { display: none !important; } /* the app IS the app: never an Install chip (#198 · #720) */
 .app-logo { width: 40px; height: 40px; }
 .app-title { font-size: 1.5rem; font-weight: 900; color: var(--sand); letter-spacing: .04em; margin: 0; }
 @media (max-width: 860px) {

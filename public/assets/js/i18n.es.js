@@ -372,7 +372,7 @@
             'Record GPX': 'Grabar GPX', 'Stop recording': 'Detener grabación', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
             'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook', 'Save to account': 'Guardar en tu cuenta', 'Saving…': 'Guardando…', 'Exported': 'Exportado', 'Sign in to save this recording to your account.': 'Inicia sesión para guardar esta grabación en tu cuenta.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Guarda en tu cuenta, o exporta un .rdbk autónomo con tus fotos y notas de voz.', 'Open in the editor': 'Abrir en el editor', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Al guardar se conservan tus fotos y notas de voz; el GPX es un archivo local sin ellas.',
             'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
-            'Sample every (seconds)': 'Cada cuántos segundos', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Sugerido: 3s coche/rally · 5s bici · 10s a pie', 'File name': 'Nombre del archivo', 'Saved to your Pictures folder': 'Guardado en tu carpeta Imágenes', 'Saved to your Downloads folder': 'Guardado en tu carpeta Descargas', 'Saved to your device': 'Guardado en tu dispositivo', 'Could not save the file.': 'No se pudo guardar el archivo.', 'Latitude': 'Latitud', 'Longitude': 'Longitud', 'Installed': 'Instalada', 'latest': 'última', 'Profile': 'Perfil', 'Language': 'Idioma', 'Sections': 'Secciones', 'Public roadbooks': 'Roadbooks públicos', 'Set up an event with its roadbooks, participants and rankings.': 'Crea un evento con sus roadbooks, participantes y clasificaciones.', 'Create and edit roadbooks': 'Crea y edita roadbooks', 'Live GPS: Tripmaster or Reader': 'GPS en vivo: Tripmaster o Reader', 'Browse events, participate and see rankings': 'Explora eventos, participa y mira las clasificaciones', 'Your account and saved roadbooks': 'Tu cuenta y tus roadbooks guardados', 'Open from a file or your roadbooks, or pick a public one below.': 'Abre desde un archivo o tus roadbooks, o elige uno público abajo.', 'seo.navigate.title': 'Navegar — RDBK.app', 'seo.navigate.desc': 'Modos de GPS en vivo: el ordenador de viaje Tripmaster y el Roadbook Reader.', 'Stop recording?': '¿Detener la grabación?', 'Discard this recording?': '¿Descartar esta grabación?', 'You are offline — reconnect to see your roadbooks.': 'Estás sin conexión — reconéctate para ver tus roadbooks.', 'Track too short.': 'Traza demasiado corta.',
+            'Sample every (seconds)': 'Cada cuántos segundos', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Sugerido: 3s coche/rally · 5s bici · 10s a pie', 'File name': 'Nombre del archivo', 'Saved to your Pictures folder': 'Guardado en tu carpeta Imágenes', 'Saved to your Downloads folder': 'Guardado en tu carpeta Descargas', 'Saved to your device': 'Guardado en tu dispositivo', 'Could not save the file.': 'No se pudo guardar el archivo.', 'Latitude': 'Latitud', 'Longitude': 'Longitud', 'Installed': 'Instalada', 'latest': 'última', 'Profile': 'Perfil', 'Language': 'Idioma', 'Sections': 'Secciones', 'Public roadbooks': 'Roadbooks públicos', 'Set up an event with its roadbooks, participants and rankings.': 'Crea un evento con sus roadbooks, participantes y clasificaciones.', 'Open from a file or your roadbooks, or pick a public one below.': 'Abre desde un archivo o tus roadbooks, o elige uno público abajo.', 'seo.navigate.title': 'Navegar — RDBK.app', 'seo.navigate.desc': 'Modos de GPS en vivo: el ordenador de viaje Tripmaster y el Roadbook Reader.', 'Stop recording?': '¿Detener la grabación?', 'Discard this recording?': '¿Descartar esta grabación?', 'You are offline — reconnect to see your roadbooks.': 'Estás sin conexión — reconéctate para ver tus roadbooks.', 'Track too short.': 'Traza demasiado corta.',
                        'Auto-saved while recording, recovered if the app closes.': 'Se guarda solo al grabar; se recupera si la app se cierra.',
             'Recover unsaved GPX recording?': '¿Recuperar la grabación GPX sin guardar?', 'Recover': 'Recuperar',
             'Resume the run in progress?': '¿Reanudar el recorrido en curso?', 'Resume': 'Reanudar',
@@ -962,8 +962,8 @@ Object.assign(window.RBi18nLangs.es, {
     'Editor': 'Editor',
     'RDBK sections': 'Secciones de RDBK',
     'Navigate modes': 'Modos de navegación',
-    'PC Win / Mac / Linux — install guide': 'PC Win / Mac / Linux — guía de instalación',
-    'iOS / iPhone / iPad — App Store': 'iOS / iPhone / iPad — App Store',
+    
+    
     'The .rdbk standard': 'El estándar .rdbk',
     'Scan QR': 'Escanear QR',
     'Notes & scoring': 'Notas y puntuación',
@@ -1211,7 +1211,7 @@ Object.assign(window.RBi18nLangs.es, {
 
 /* store links, one list (#674) */
 Object.assign(window.RBi18nLangs.es, {
-    "Android — Google Play": "Android — Google Play",
+    
     
 });
 
@@ -1364,4 +1364,18 @@ Object.assign(window.RBi18nLangs.es, {
     "Speed — tap to set the alert": "Velocidad: toca para fijar la alerta",
     "Pause the timer": "Pausar el cronómetro",
     "Start the timer": "Iniciar el cronómetro",
+});
+
+/* website and app home redesign (#720) */
+Object.assign(window.RBi18nLangs.es, {
+    "Start in the browser": "Empieza en el navegador",
+    "Record a route": "Grabar una ruta",
+    "GPS track, notes, photos and voice memos": "Traza GPS, notas, fotos y notas de voz",
+    "See all": "Ver todos",
+    "Keep your roadbooks and runs, and join events": "Guarda tus roadbooks y recorridos, y únete a eventos",
+    "Hi": "Hola",
+    "Download on the": "Descárgalo en",
+    "Get it on": "Disponible en",
+    "Windows · Mac · Linux: install the web app": "Windows · Mac · Linux: instala la web app",
+    "No roadbooks yet — record a route or draw one in the Editor.": "Aún no tienes roadbooks: graba una ruta o dibuja una en el Editor.",
 });
