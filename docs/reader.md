@@ -133,8 +133,11 @@ Distinzioni chiave:
 ## 4. La barra odometro in alto
 
 `.odometer-bar` ([index.html:70-78](../public/reader/index.html#L70)) è una barra *sticky*
-(sotto l'header; in landscape basso l'header sparisce e la barra sale a `top:0`). Su una sola
-riga raccoglie tutti i readout, aggiornati a ogni fix in `onFix`
+(sotto l'header; in landscape basso l'header sparisce e la barra sale a `top:0`). È una griglia
+disegnata come una riga nota (#567): nella colonna **sinistra** prog. con part. subito sotto —
+come ogni nota mostra totale sopra parziale, così il parziale live si legge allineato a quello
+delle note — e a destra bussola · ora sulla prima riga, GPS · velocità sulla seconda. I readout
+si aggiornano a ogni fix in `onFix`
 ([reader.js:155](../public/reader/reader.js#L155)):
 
 | Elemento | ID | Sorgente |
