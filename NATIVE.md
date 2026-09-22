@@ -258,6 +258,14 @@ npm run sync && npx cap open ios   # Xcode → pick a simulator or your iPhone �
 
 For a **real GPS test you need a physical phone** (simulators fake location).
 
+### Direct APK download, no Play Store (#540)
+
+Every Android release build also signs an APK and attaches it (`rdbk-<version>.apk` +
+`.sha256`) to a GitHub Release (`android-<version>`), so users can sideload without the
+Play Store. The public page `/apk/` resolves the latest release via the GitHub API and
+renders version, size, date, SHA-256 and the download button — plus the 3 sideload steps.
+No release yet (or API unreachable) → a fallback card linking the releases list.
+
 ### The screen-lock test (the whole reason we did this)
 1. Open **Recorder** (or the Reader with GPX logging on) and start recording.
 2. Grant location permission → "Allow while using" then **"Change to Always"** if asked.

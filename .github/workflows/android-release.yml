@@ -51,6 +51,8 @@ jobs:
     needs: gate
     if: needs.gate.outputs.build == '1'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # APK attached to a GitHub Release (#540)
     steps:
       - uses: actions/checkout@v4
 
@@ -145,3 +147,26 @@ jobs:
           mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           track: alpha
           status: completed
+
+      # Direct-download APK (#540): same signed binary as the AAB above, attached to a
+      # GitHub Release so rdbk.app/apk can offer installs outside the Play Store.
+      - name: Build the signed APK
+        run: |
+          chmod +x android/gradlew
+          (cd android && ./gradlew --no-daemon assembleRelease \
+            -PrdbkVersionCode=${{ steps.ver.outputs.code }} \
+            -PrdbkVersionName=${{ steps.ver.outputs.name }})
+          OUT="rdbk-${{ needs.gate.outputs.version }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$OUT"
+          sha256sum "$OUT" > "$OUT.sha256"
+
+      - name: Attach the APK to a GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="android-${{ needs.gate.outputs.version }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Android ${{ needs.gate.outputs.version }} (direct APK)" \
+              --notes "Signed APK of RDBK ${{ needs.gate.outputs.version }} for sideloading outside the Play Store (same build as the alpha track). Verify the SHA-256 next to it, or install from https://rdbk.app/apk/."
+          fi
+          gh release upload "$TAG" "rdbk-${{ needs.gate.outputs.version }}.apk" "rdbk-${{ needs.gate.outputs.version }}.apk.sha256" --clobber
