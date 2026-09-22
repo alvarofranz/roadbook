@@ -794,8 +794,8 @@ describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
 
     it('the ranking tells offline apart from "not a participant"', () => {
         const ranking = read('public/ranking/ranking.js');
-        expect(ranking).toContain('function gate(reason)');
-        expect(ranking).toContain("navigator.onLine === false ? 'You are offline — reconnect to load this event.'");
+        expect(ranking).toContain('function gate(reason, signIn)');
+        expect(ranking).toContain("r.error === 'Network error.' ? 'You are offline — reconnect to load this event.'");
     });
 });
 

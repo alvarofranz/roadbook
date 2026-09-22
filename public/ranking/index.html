@@ -9,8 +9,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-94">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-94">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-95">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-95">
     <style>
         table.rank { width: 100%; border-collapse: collapse; font-size: .9rem; }
         table.rank th, table.rank td { padding: .55rem .5rem; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
@@ -23,6 +23,7 @@
         #manualMeta { flex: 1; min-width: 200px; width: auto; padding: .6rem; }
         .config-row { margin-top: .8rem; align-items: center; }
         #msg { margin-top: .5rem; }
+        #evHeader { margin: .2rem 0 .8rem; }
         .rank-results { margin-top: 1rem; }
     </style>
 </head>
@@ -31,35 +32,41 @@
 
 <main class="wrap tool-page">
     <div class="tool-titlebar">
-        <h1>Ranking</h1>
-        <a class="tool-help" href="../features/ranking/"><i class="fa-solid fa-circle-info"></i> Help</a>
+        <h1 data-i18n="Ranking">Ranking</h1>
+        <a class="tool-help" href="../features/ranking/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="Help">Help</span></a>
     </div>
     <div class="panel" id="noEvent" hidden>
         <p class="muted small"><i class="fa-solid fa-ranking-star icon-accent"></i> <span data-i18n="Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.">Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.</span></p>
-        <a class="btn btn-primary" href="../events/" data-i18n="Browse events"><i class="fa-solid fa-calendar-check"></i> <span data-i18n="Browse events">Browse events</span></a>
+        <a class="btn btn-primary" href="../events/"><i class="fa-solid fa-calendar-check"></i> <span data-i18n="Browse events">Browse events</span></a>
     </div>
-    <div class="panel" id="authGate" hidden>
-        <p class="muted small"><i class="fa-solid fa-lock icon-accent"></i> <span id="authGateMsg" data-i18n="You must be a participant or organizer of this event to access the ranking.">You must be a participant or organizer of this event to access the ranking.</span></p>
-        <div class="btnrow"><button class="btn btn-primary" id="authSignIn"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="Sign in">Sign in</span></button></div>
+    <!-- why the classification is not shown, in words that fit the case (#625 · #626) -->
+    <div class="panel" id="gate" hidden>
+        <p class="muted small"><i class="fa-solid fa-lock icon-accent"></i> <span id="gateMsg"></span></p>
+        <div class="btnrow start" id="gateSignIn" hidden><a class="btn btn-primary" id="gateSignInLink"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="Sign in">Sign in</span></a></div>
     </div>
-    <div class="panel" id="evHeader" hidden></div>
+    <p class="muted small" id="evHeader" hidden></p>
     <section class="panel" id="rankTools" hidden>
         <h2 data-i18n="Add result">Add result</h2>
         <div class="action-row">
-            <button class="btn btn-primary" id="scanBtn"><i class="fa-solid fa-camera"></i> <span data-i18n="Scan QR">Scan QR</span></button>
-            <input id="manualMeta" type="text" placeholder="…or paste the code (META) here" data-i18n-ph="…or paste the code (META) here" aria-label="…or paste the code (META) here">
-            <button class="btn btn-ghost" id="addManual"><i class="fa-solid fa-plus"></i> <span data-i18n="Add">Add</span></button>
+            <button class="btn btn-primary" id="scanBtn" type="button"><i class="fa-solid fa-camera"></i> <span data-i18n="Scan QR">Scan QR</span></button>
+            <input id="manualMeta" class="field" type="text" placeholder="…or paste the code (META) here" data-i18n-ph="…or paste the code (META) here" aria-label="…or paste the code (META) here" data-i18n-aria="…or paste the code (META) here">
+            <button class="btn btn-ghost" id="addManual" type="button"><i class="fa-solid fa-plus"></i> <span data-i18n="Add">Add</span></button>
         </div>
         <video id="video" hidden playsinline></video>
+        <div id="msg" class="muted small msg"></div>
+    </section>
+
+    <section class="panel rank-results" id="rankResults" hidden>
+        <div class="head-row"><h2 data-i18n="Overall ranking">Overall ranking</h2>
+            <div class="btn-group" id="orgTools" hidden>
+                <button class="btn btn-ghost" id="exportCsv" type="button"><i class="fa-solid fa-file-csv"></i> CSV</button>
+                <button class="btn btn-ghost" id="clearAll" type="button"><i class="fa-solid fa-trash-can icon-danger"></i> <span data-i18n="Clear">Clear</span></button>
+            </div>
+        </div>
         <div class="config-row action-row">
             <label class="muted small"><span data-i18n="Target average speed">Target average speed</span> <input id="targetAvg" type="number" value="30" min="1"> km/h</label>
             <span class="muted small" data-i18n="(used for regularity if the QR doesn’t carry it)">(used for regularity if the QR doesn’t carry it)</span>
         </div>
-        <div id="msg" class="muted small msg"></div>
-    </section>
-
-    <section class="panel rank-results" id="rankResults">
-        <div class="head-row"><h2 data-i18n="Overall ranking">Overall ranking</h2><div class="btn-group"><button class="btn btn-ghost" id="exportCsv"><i class="fa-solid fa-file-csv"></i> CSV</button><button class="btn btn-ghost" id="clearAll" data-i18n="Clear"><i class="fa-solid fa-trash-can"></i> Clear</button></div></div>
         <div class="table-scroll"><table class="rank" id="table"></table></div>
         <p class="muted small" id="empty" data-i18n="No results yet. Scan or paste a QR.">No results yet. Scan or paste a QR.</p>
     </section>
@@ -67,15 +74,15 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/config.js?v=1.9.2-94"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-94"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-94"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-94"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-94"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-94"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-94"></script>
-<script src="../assets/js/app.js?v=1.9.2-94"></script>
-<script src="../assets/js/qr-scan.js?v=1.9.2-94"></script>
-<script src="ranking.js?v=1.9.2-94"></script>
+<script src="../assets/js/config.js?v=1.9.2-95"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-95"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-95"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-95"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-95"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-95"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-95"></script>
+<script src="../assets/js/app.js?v=1.9.2-95"></script>
+<script src="../assets/js/qr-scan.js?v=1.9.2-95"></script>
+<script src="ranking.js?v=1.9.2-95"></script>
 </body>
 </html>

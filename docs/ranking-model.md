@@ -13,19 +13,22 @@ classifica. Documento di riferimento per il modello dati e la logica di calcolo.
 Il ranking non misura nulla da sé: **consuma il risultato firmato** prodotto dal Reader.
 
 ```
-Reader (Competition) ──finish()──▶ stringa META (55 char) + firma HMAC
-        │                                   │
-        │  penalità (core)                  ▼
-        │  (acc/cap/skip/extra/speed)   QR code  ──scan / incolla──▶ Ranking
-        ▼                                                              │
-   nota validata ←─ GPS / tap manuale                      RB.rankEntry() → classifica
+Reader (Competition) ──finishRun()──▶ stringa META (55 char) + firma HMAC
+        │                                   │            │
+        │  penalità (core)                  ▼            └─ run_save ─▶ event_results (server)
+        │  (acc/cap/skip/extra/speed)   QR code  ──scan / incolla (organizzatore)──▶ event_results
+        ▼                                                                             │
+   nota validata ←─ GPS / tap manuale                              Ranking: RB.rankEntry() → classifica
 ```
 
 - **Reader** ([reader.js](../public/reader/reader.js)) accumula le penalità durante la guida e,
-  al `Finish`, le impacchetta in una stringa a larghezza fissa, la firma e ne fa un QR.
-- **Ranking** ([ranking.js](../public/ranking/ranking.js)) raccoglie quei QR (fotocamera o
-  incolla), verifica la firma, ricostruisce i campi e calcola le colonne + il punteggio finale
-  con `RB.rankEntry(meta, avgTarget)`.
+  alla fine della run, le impacchetta in una stringa a larghezza fissa, la firma e ne fa un QR;
+  il report della run (`run_save`) porta con sé quel risultato, che per un roadbook di evento con
+  punteggio entra **da solo** nella classifica (#590).
+- **Ranking** ([ranking.js](../public/ranking/ranking.js)) legge la classifica condivisa del
+  server (`ranking_list`) e, per gli organizzatori, aggiunge i QR portati al banco (fotocamera o
+  incolla → `ranking_add`, firma verificata dal client); ricostruisce i campi (`RB.metaOf` +
+  `parseMeta`) e calcola le colonne + il punteggio finale con `RB.rankEntry(meta, avgTarget)`.
 - Il ponte tra i due è il **payload META** e le **formule di punteggio**, definiti una volta
   sola nel core ([roadbook-core.js](../public/assets/js/roadbook-core.js)): `buildMeta`/`parseMeta`,
   `signMeta`/`verifyMeta`, le penalità (`validationPenalties`/`skipPenalty`/`speedPenalty`) e
@@ -168,8 +171,8 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 - Essendo la chiave nel client, la firma protegge da **manomissioni casuali/accidentali**,
   non da un falsario determinato. È comunque molto meglio di un QR in chiaro non verificabile.
 - In ranking, un risultato con firma non valida **viene comunque aggiunto** ma marcato con
-  un'icona di avviso ⚠ ([ranking.js:27](../public/ranking/ranking.js#L27),
-  [ranking.js:95](../public/ranking/ranking.js#L95)); la validità finisce anche nel CSV.
+  l'icona di avviso (`fa-triangle-exclamation`); la validità (`event_results.valid`) finisce anche
+  nel CSV.
 
 ---
 
@@ -178,9 +181,12 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 - **Input**: scansione QR via fotocamera ambiente (`RBQrScan` — `BarcodeDetector` nativo, con
   fallback a `jsQR` sui browser WebKit che non lo implementano, incl. iOS/iPadOS) o incolla
   manuale del testo del codice.
-- **Persistenza**: `localStorage` chiave `rb_ranking` (+ `_<event>_<rb>` quando classifiche un roadbook di un evento; sopravvive al refresh; è locale al
-  dispositivo del giudice — nessun salvataggio server).
-- **Gestione righe**: cancellazione per riga (con conferma) e "Clear all".
+- **Persistenza**: sul **server**, tabella `event_results` (#590) — una sola classifica per
+  roadbook di evento, la stessa su ogni dispositivo degli organizzatori; i partecipanti attivi la
+  leggono (`ranking_list`), gli organizzatori la modificano (#608). Lo stesso payload firmato non
+  entra due volte (`UNIQUE`), e un altro risultato per un veicolo già in lista lo sostituisce solo
+  dopo conferma (`replace=1`, #607).
+- **Gestione righe** (organizzatori): cancellazione per riga (con conferma) e "Clear all".
 - **Export CSV**: `rank, vehicle, km, accuracy, cap, speed, regularity, final, valid`.
 
 ---

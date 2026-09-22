@@ -1212,12 +1212,18 @@
     async function signMeta(meta, key) {
         try { return meta + '-' + (await hmacHex(meta, key || '')).slice(0, 10); } catch (e) { return meta; }
     }
-    async function verifyMeta(payload, key) {
+    // The meta of a signed result payload, without its signature (the whole text when unsigned).
+    // The signature is 10 hex chars (never a '-'), so the last '-' is always the separator; the meta
+    // is never trimmed — the rb field's trailing padding is part of the signed string.
+    function metaOf(payload) {
         const s = String(payload).trim(); // tolerate stray whitespace around the whole QR text
-        const i = s.lastIndexOf('-'); // the signature is 10 hex chars (never a '-'), so the last '-' is always the separator
-        if (i < 0) return { meta: s, valid: false }; // no signature → not a valid result
-        const meta = s.slice(0, i), sig = s.slice(i + 1); // never trim the meta: the rb field's trailing padding is part of the signed string
-        try { return { meta, valid: (await hmacHex(meta, key || '')).slice(0, 10) === sig }; }
+        const i = s.lastIndexOf('-');
+        return i < 0 ? s : s.slice(0, i);
+    }
+    async function verifyMeta(payload, key) {
+        const s = String(payload).trim(), meta = metaOf(s);
+        if (meta === s) return { meta, valid: false }; // no signature → not a valid result
+        try { return { meta, valid: (await hmacHex(meta, key || '')).slice(0, 10) === s.slice(meta.length + 1) }; }
         catch (e) { return { meta, valid: false }; }
     }
 
@@ -1329,7 +1335,7 @@
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
-        buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, iconSrc,
+        buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
