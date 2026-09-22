@@ -33,7 +33,7 @@
                 totalM = session.totalM; partialM = session.partialM; maxKmh = session.maxKmh; waypoints = session.waypoints;
                 timerAcc = session.timerAcc; timerOn = session.timerOn; timerStart = session.timerStart;
                 $('tmNotes').textContent = waypoints;
-                renderTimerButton();
+                renderTimer();
                 if (session.gpxRecording) RBGpxRecorder.resume(session.gpxFileName);
             } else {
                 keepDeclined = true;
@@ -51,9 +51,7 @@
         RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
         RBStatusBar.show(); // shared bar: clock · battery · satellite/GPS
         meter = new RBGpsMeter(onFix, () => toast('No geolocation'));
-        setInterval(() => {
-            const now = new Date();
-            $('tmClock').textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+        setInterval(() => { // the stopwatch (the clock is the status bar's)
             const ms = timerAcc + (timerOn ? Date.now() - timerStart : 0), s = Math.floor(ms / 1000);
             $('tmTimer').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         }, 500);
@@ -76,7 +74,7 @@
         return band == null ? '' : SA_COLORS[saColors[band]] || '';
     }
     // The dashboard is static markup, redrawn on every GPS fix — cache the refs once.
-    const tmEls = { total: $('tmTotal'), partial: $('tmPartial'), speed: $('tmSpeed'), main: $('tmMain'), max: $('tmMax'), cap: $('tmCap'), capArrow: $('tmCapArrow') };
+    const tmEls = { total: $('tmTotal'), partial: $('tmPartial'), speed: $('tmSpeed'), main: $('tmMain'), max: $('tmMax'), cap: $('tmCap'), capArrow: $('tmCapArrow'), speedKey: $('tmSpeedKey') };
     function render() {
         const speedKmh = meter ? meter.speedKmh : 0;
         const band = speedBandColor(speedKmh);
@@ -87,6 +85,7 @@
         tmEls.speed.classList.toggle('over', !!saLimit && speedKmh >= saLimit); // non-colour over-limit cue
         tmEls.main.style.setProperty('--tm-band', band || 'transparent'); // tint the central column with the alert colour
         tmEls.max.textContent = Math.round(maxKmh);
+        tmEls.speedKey.textContent = saLimit ? t('Alert') + ' ' + saLimit : t('Speed'); // the speed tile says what tapping it set
         const hdg = meter && meter.heading != null ? Math.round(meter.heading) : null;
         tmEls.cap.textContent = hdg == null ? '—' : hdg;
         // directional needle: 0° = up = North, rotates to the travel heading; parked until a heading exists
@@ -101,16 +100,17 @@
     $('tmTotPlus10').onclick = () => { totalM += 10; render(); };
     $('tmTotMinus10').onclick = () => { totalM = Math.max(0, totalM - 10); render(); };
     $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoints; partialM = 0; render(); };
-    // stopwatch: the button is Start/Pause; a reset button appears once it holds any time
-    function renderTimerButton() {
-        $('tmTimerBtn').innerHTML = timerOn ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-stopwatch"></i>';
-        const lbl = t(timerOn ? 'Pause' : 'Timer');
+    // stopwatch (#721): its tile is the Start/Pause control; the reset appears once it holds any time
+    function renderTimer() {
+        $('tmTimerIcon').className = 'fa-solid ' + (timerOn ? 'fa-pause' : 'fa-stopwatch');
+        const lbl = t(timerOn ? 'Pause the timer' : 'Start the timer');
         $('tmTimerBtn').setAttribute('aria-label', lbl); $('tmTimerBtn').setAttribute('title', lbl);
-        $('tmTimerBtn').classList.toggle('btn-primary', timerOn);
+        $('tmTimerBtn').closest('.tm-timer').classList.toggle('running', timerOn);
         $('tmTimerReset').hidden = !timerOn && timerAcc === 0;
     }
-    $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimerButton(); saveSession(); };
-    $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimerButton(); saveSession(); };
+    renderTimer();
+    $('tmTimerBtn').onclick = () => { timerOn = !timerOn; if (timerOn) timerStart = Date.now(); else timerAcc += Date.now() - timerStart; renderTimer(); saveSession(); };
+    $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimer(); saveSession(); };
     $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
 
     RBFullscreen($('tmFs')); // shared: hides header + footer, uses the Fullscreen API (app.js)

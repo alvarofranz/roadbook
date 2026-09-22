@@ -9,14 +9,12 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-111">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-111">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-112">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-112">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; background: var(--tm-band, transparent); transition: background .35s ease; } /* --tm-band = the speed-alert tint, data-driven */
         /* "How it works" link centred at the foot of the dashboard */
         .tm-help { display: flex; width: fit-content; margin: 1.2rem auto 0; }
-        /* Fullscreen toggle, row 2 col 2 (next to End) */
-        .tm-controls #tmFs { grid-column: 2; grid-row: 2; }
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         /* odometer rows: value + Reset + ±10 m correctors stacked, all in one line */
         .readout-row { display: flex; align-items: center; gap: .6rem; text-align: left; }
@@ -37,17 +35,35 @@
            parked (invisible but keeping its space) until a heading exists */
         .cap-needle { margin-left: .35rem; font-size: .8em; color: var(--sand); }
         .cap-needle.idle { visibility: hidden; }
-        /* action buttons on a 3-col grid: row 1 = timer · record · mark note (col 3 spans both
-           rows); row 2 = End · Fullscreen — each fills its column, aligned with the row above */
-        .tm-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-top: .8rem; }
-        .tm-controls .tm-timerbtns { grid-column: 1; grid-row: 1; }
-        .tm-controls #tmRecBtn { grid-column: 2; grid-row: 1; }
-        .tm-controls .tm-marknote { grid-column: 3; grid-row: 1 / span 2; }
-        .tm-controls #tmExit { grid-column: 1; grid-row: 2; }
+        /* the readouts: speed · CAP · max on one row, timer · notes sharing the next, no gap */
+        .tm-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem; }
+        .tm-tiles > * { grid-column: span 2; }
+        .tm-tiles > .tm-timer, .tm-tiles > .tm-timer + .mini { grid-column: span 3; }
+        .tm-timer { position: relative; padding: 0; }
+        .mini-tap { width: 100%; height: 100%; padding: inherit; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: .7rem .4rem; border-radius: inherit; }
+        .tm-timer:hover { border-color: var(--sand); }
+        .tm-timer.running .value { color: var(--sand); }
+        .tm-timer-reset { position: absolute; top: .3rem; right: .3rem; padding: .2rem .4rem; }
+        /* the actions: Mark note is the big one (it also resets the partial), then record · fullscreen · end */
+        .tm-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
+        .tm-controls .tm-marknote { grid-column: 1 / -1; min-height: 64px; font-size: 1rem; }
         .tm-controls .btn { width: 100%; flex-direction: column; gap: .25rem; padding: .6rem .3rem; font-size: .8rem; justify-content: center; }
         .tm-controls .btn i { font-size: 1.2rem; }
-        .tm-timerbtns { display: flex; gap: .4rem; }
-        .tm-timerbtns .btn { flex: 1; min-width: 0; }
+        /* desktop and tablet (#721): a dashboard that uses the width — readouts on the left, the
+           actions in a column on the right, Mark note the tallest */
+        @media (min-width: 900px) {
+            .trip-main { max-width: 1080px; padding: 1.4rem 1.6rem 1.6rem; }
+            .trip-main .dash { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); grid-template-areas: "odo ctl" "tiles ctl"; gap: 1rem 1.4rem; align-items: start; }
+            .tm-odo { grid-area: odo; }
+            .tm-tiles { grid-area: tiles; }
+            .tm-controls { grid-area: ctl; grid-template-columns: 1fr; margin-top: 0; }
+            .tm-controls .tm-marknote { min-height: 150px; font-size: 1.15rem; }
+            .tm-controls .tm-marknote i { font-size: 2rem; }
+            .tm-controls .btn { flex-direction: row; justify-content: flex-start; padding: .8rem 1rem; font-size: .9rem; gap: .6rem; }
+            .tm-controls .tm-marknote { flex-direction: column; justify-content: center; }
+            .tm-odo .num, .tm-odo .num2 { font-size: 3rem; }
+            .trip-main .mini .value { font-size: 1.9rem; }
+        }
         /* black button background so the controls stand out over the alert-coloured column */
         .trip-main .btn-ghost, .trip-main .btn-danger { background: #000; }
         .trip-main .btn-ghost:hover { background: #111; }
@@ -71,7 +87,7 @@
             .tm-odo .readout-row { flex-wrap: wrap; }
             .tm-odo .corr { order: 2; flex-direction: row; width: 100%; justify-content: center; gap: .5rem; }
             .tm-odo #tmReset { padding: .4rem .55rem; }
-            .trip-main .row3 { gap: .5rem; }
+            .tm-tiles { gap: .5rem; }
             .trip-main .mini { padding: .5rem .4rem; }
             .trip-main .mini .value { font-size: 1.3rem; }
             .tm-controls { margin-top: .1rem; gap: .5rem; }
@@ -104,26 +120,24 @@
                 </div>
             </div>
         </div>
-        <div class="row3">
-            <button class="mini mini-button" id="tmSpeedAlert" data-i18n-aria="Speed alert" aria-label="Speed alert"><div class="value"><span id="tmSpeed">0</span> <span class="spd-unit">km/h</span></div><div class="key" data-i18n="Press to set Alert">Press to set Alert</div></button>
+        <!-- the readouts a driver uses; the clock lives in the status bar, once (#721) -->
+        <div class="tm-tiles">
+            <button class="mini mini-button" id="tmSpeedAlert" type="button" aria-label="Speed — tap to set the alert" data-i18n-aria="Speed — tap to set the alert"><div class="value"><span id="tmSpeed">0</span> <span class="spd-unit">km/h</span></div><div class="key"><i class="fa-solid fa-bell"></i> <span id="tmSpeedKey" data-i18n="Speed">Speed</span></div></button>
             <div class="mini"><div class="value"><span id="tmCap">—</span><i class="fa-solid fa-arrow-up cap-arrow cap-needle" id="tmCapArrow"></i></div><div class="key">CAP °</div></div>
-            <div class="mini"><div class="value" id="tmClock">--:--</div><div class="key" data-i18n="Clock">Clock</div></div>
-        </div>
-        <div class="row3">
-            <div class="mini"><div class="value" id="tmTimer">0:00</div><div class="key" data-i18n="Timer">Timer</div></div>
             <div class="mini"><div class="value" id="tmMax">0</div><div class="key" data-i18n="Max km/h">Max km/h</div></div>
+            <!-- the stopwatch IS its tile: tap to start / pause; its reset appears once it holds time -->
+            <div class="mini tm-timer">
+                <button class="mini-tap" id="tmTimerBtn" type="button"><div class="value" id="tmTimer">0:00</div><div class="key"><i class="fa-solid fa-stopwatch" id="tmTimerIcon"></i> <span id="tmTimerKey" data-i18n="Timer">Timer</span></div></button>
+                <button class="btn btn-ghost btn-sm tm-timer-reset" id="tmTimerReset" type="button" hidden aria-label="Reset timer" data-i18n-aria="Reset timer" title="Reset timer" data-i18n-title="Reset timer"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
             <div class="mini"><div class="value" id="tmNotes">0</div><div class="key" data-i18n="Notes">Notes</div></div>
         </div>
         <div class="tm-controls">
-            <div class="tm-timerbtns">
-                <button class="btn btn-ghost" id="tmTimerBtn" aria-label="Timer" data-i18n-aria="Timer" title="Timer" data-i18n-title="Timer"><i class="fa-solid fa-stopwatch"></i></button>
-                <button class="btn btn-ghost" id="tmTimerReset" hidden aria-label="Reset timer" data-i18n-aria="Reset timer" title="Reset timer" data-i18n-title="Reset timer"><i class="fa-solid fa-rotate-left"></i></button>
-            </div>
-            <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
-            <button class="btn btn-ghost tm-marknote" id="tmNoteBtn"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Mark note">Mark note</span></button>
+            <button class="btn btn-primary tm-marknote" id="tmNoteBtn" type="button"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Mark note">Mark note</span></button>
+            <button class="btn btn-ghost" id="tmRecBtn" type="button"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
+            <button class="btn btn-ghost" id="tmFs" type="button"><i class="fa-solid fa-expand"></i> <span data-i18n="Fullscreen">Fullscreen</span></button>
             <!-- ending a session looks the same in every GPS tool: fa-right-from-bracket, "End" (#645) -->
-            <button class="btn btn-ghost" id="tmExit"><i class="fa-solid fa-right-from-bracket icon-danger"></i> <span data-i18n="End">End</span></button>
-            <button class="btn btn-ghost" id="tmFs" title="Fullscreen" data-i18n-title="Fullscreen" aria-label="Fullscreen" data-i18n-aria="Fullscreen"><i class="fa-solid fa-expand"></i> <span data-i18n="Fullscreen">Fullscreen</span></button>
+            <button class="btn btn-ghost" id="tmExit" type="button"><i class="fa-solid fa-right-from-bracket icon-danger"></i> <span data-i18n="End">End</span></button>
         </div>
     </div>
     <a class="tool-help tm-help" href="../features/tripmaster/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="Help">Help</span></a>
@@ -131,16 +145,16 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=1.9.2-111"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.2-111"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.2-111"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-111"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-111"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-111"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-111"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-111"></script>
-<script src="../assets/js/app.js?v=1.9.2-111"></script>
-<script src="../assets/js/status-bar.js?v=1.9.2-111"></script>
-<script src="tripmaster.js?v=1.9.2-111"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-112"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.2-112"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.2-112"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-112"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-112"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-112"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-112"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-112"></script>
+<script src="../assets/js/app.js?v=1.9.2-112"></script>
+<script src="../assets/js/status-bar.js?v=1.9.2-112"></script>
+<script src="tripmaster.js?v=1.9.2-112"></script>
 </body>
 </html>

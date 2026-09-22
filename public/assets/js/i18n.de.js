@@ -330,7 +330,7 @@
             'No roadbooks yet. Create one in the Editor.': 'Noch keine Roadbooks. Eines im Editor erstellen.', 'Photo updated.': 'Foto aktualisiert.', 'Profile saved.': 'Profil gespeichert.', 'Upload failed.': 'Upload fehlgeschlagen.', 'Network error.': 'Netzwerkfehler.',
             'Roadbook not found.': 'Roadbook nicht gefunden.', 'This roadbook does not exist or is private.': 'Dieses Roadbook existiert nicht oder ist privat.',
             'notes': 'Noten',
-            'Total': 'Gesamt', 'Partial': 'Teilweise', 'Reset': 'Zurücksetzen', 'Hold to reset.': 'Gedrückt halten zum Zurücksetzen.', 'Pause': 'Pause', 'Press to set Alert': 'Drücken um Alarm zu setzen', 'Max km/h': 'Max km/h',
+            'Total': 'Gesamt', 'Partial': 'Teilweise', 'Reset': 'Zurücksetzen', 'Hold to reset.': 'Gedrückt halten zum Zurücksetzen.', 'Pause': 'Pause', 'Max km/h': 'Max km/h',
             'Record GPX': 'GPX aufzeichnen', 'Stop recording': 'Aufnahme stoppen', 'Speed alert': 'Geschwindigkeitsalarm', 'Speed to watch (km/h · 0 = off)': 'Zu überwachende Geschwindigkeit (km/h · 0 = aus)', 'Colours': 'Farben',
             'green': 'grün', 'orange': 'orange', 'red': 'rot', 'Recorded track': 'Aufgezeichneter Track', 'points': 'Punkte', 'Download GPX': 'GPX herunterladen', 'Convert into roadbook': 'In Roadbook umwandeln', 'Save to account': 'Im Konto speichern', 'Saving…': 'Speichern…', 'Exported': 'Exportiert', 'Sign in to save this recording to your account.': 'Melde dich an, um diese Aufnahme in deinem Konto zu speichern.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Im Konto speichern oder ein eigenständiges .rdbk mit Fotos und Sprachnotizen exportieren.', 'Open in the editor': 'Im Editor öffnen', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Beim Speichern bleiben Fotos und Sprachnotizen erhalten; das GPX ist eine lokale Datei ohne sie.',
             'End the trip and reset everything?': 'Fahrt beenden und alles zurücksetzen?', 'Trip reset.': 'Fahrt zurückgesetzt.', 'Recording GPX track.': 'GPX-Track wird aufgezeichnet.', 'Could not load the recorded trip.': 'Aufgezeichnete Fahrt konnte nicht geladen werden.',
@@ -1216,4 +1216,12 @@ Object.assign(window.RBi18nLangs.de, {
     "No email addresses found.": "Keine E-Mail-Adressen gefunden.",
     "Import at most 500 people at a time.": "Importiere höchstens 500 Personen auf einmal.",
     "Could not import.": "Import fehlgeschlagen.",
+});
+
+/* Tripmaster review (#721) */
+Object.assign(window.RBi18nLangs.de, {
+    "Alert": "Alarm",
+    "Speed — tap to set the alert": "Geschwindigkeit – tippen, um den Alarm einzustellen",
+    "Pause the timer": "Stoppuhr anhalten",
+    "Start the timer": "Stoppuhr starten",
 });
