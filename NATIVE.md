@@ -135,6 +135,19 @@ Background Modes via **Signing & Capabilities → Background Modes → Location 
   <string name="capacitor_background_geolocation_notification_channel_name">RDBK tracking</string>
   ```
 
+#### R8 on the release build (#545)
+The release build is **shrunk and obfuscated** (`minifyEnabled true`): Play measures it as *DEX
+code optimization* and flags an app that ships plain class names — ours was at 2%. R8 follows
+real call graphs, so the one thing it cannot see is **reflection**, which is exactly how
+Capacitor loads plugins (it reads `capacitor.plugins.json` at runtime and instantiates each class
+by name). `android/app/proguard-rules.pro` therefore keeps the Capacitor runtime, every
+`@CapacitorPlugin` / `Plugin` subclass and `@PluginMethod`, the Cordova bridge, every
+`@JavascriptInterface` method and our own `app.rdbk` classes (named in the manifest). **A new
+native plugin that is resolved by name needs its keep rule here** — without one the bridge finds
+nothing and that plugin's calls fail only in the release build.
+The workflow uploads `mapping.txt` next to the AAB, so Android vitals de-obfuscates crash
+traces. Resource shrinking stays off: it is not what the metric measures and it can strip assets.
+
 ### Backend — token auth (one-time)
 The native apps sign in with a Bearer token instead of the cross-origin session cookie. The
 code is in `app/auth.php` + `public/api`; to make it live you must:

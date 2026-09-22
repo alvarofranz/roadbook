@@ -140,5 +140,8 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: app.rdbk
           releaseFiles: android/app/build/outputs/bundle/release/*.aab
+          # R8 renames everything in the release DEX (#545), so Play needs the mapping to show
+          # readable stack traces in Android vitals — without it every crash is gibberish.
+          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           track: alpha
           status: completed

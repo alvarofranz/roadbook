@@ -40,7 +40,11 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            // R8 shrinks and OBFUSCATES the release DEX. Play measures that ("DEX code
+            // optimization"): an app built without it ships ~2% obfuscated code and is flagged,
+            // with publishing consequences. The only thing R8 cannot see is reflection, which is
+            // exactly how Capacitor loads its plugins — proguard-rules.pro keeps that surface.
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (keystorePropsFile.exists()) { signingConfig signingConfigs.release }
         }
