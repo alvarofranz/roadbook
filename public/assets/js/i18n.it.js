@@ -342,7 +342,7 @@
             'Saved to your profile.': 'Salvato nel tuo profilo.', 'Could not save.': 'Impossibile salvare.', 'Saved as a new roadbook.': 'Salvato come nuovo roadbook.',
             'On the trail — recording your variant.': 'Sul percorso — registrando la tua variante.', 'Trail adjusted · metrics recomputed.': 'Percorso regolato · metriche ricalcolate.',
             'Walk onto the trail (≤10 m) to start adjusting.': 'Cammina sul percorso (≤10 m) per iniziare a regolare.',
-            'Sign in to attach photos.': 'Accedi per allegare foto.', 'Sign in to save this roadbook to your profile.': 'Accedi per salvare questo roadbook nel tuo profilo.',
+            'Sign in to save this roadbook to your profile.': 'Accedi per salvare questo roadbook nel tuo profilo.',
             'There is already a note here.': 'C’è già una nota qui.', 'At least 2 notes must remain.': 'Devono restare almeno 2 note.',
             'Add note here': 'Aggiungi nota qui', 'Delete this point': 'Cancella questo punto', 'This point is a note — delete the point and its note?': 'Questo punto è una nota — cancellare il punto e la sua nota?', 'Point deleted.': 'Punto cancellato.', 'At least 2 points must remain.': 'Devono restare almeno 2 punti.', 'Add point here': 'Aggiungi punto qui', 'Add intermediate point': 'Aggiungi punto intermedio', 'Add point on line': 'Aggiungi punto su linea', 'Transform': 'Trasforma', 'Delete point': 'Cancella punto', 'Delete note': 'Cancella nota', 'Waypoint turned into a track point.': 'Waypoint convertito in punto traccia.', 'Point added.': 'Punto aggiunto.', 'No point follows this one.': 'Non c\'è un punto successivo.', 'Raw JSON': 'JSON grezzo', 'View GPX': 'Vedi GPX', 'View JSON': 'Vedi JSON', 'Find in text (Enter)…': 'Cerca nel testo (Invio)…', 'Not found.': 'Non trovato.', 'Copy': 'Copia', 'Copied.': 'Copiato.',
             'Danger zone': 'Zona pericolosa', 'Deleting a roadbook moves it to the trash, with its photos and voice notes.': 'Eliminare un roadbook lo sposta nel cestino, con le sue foto e note vocali.',
@@ -697,8 +697,8 @@
             'Saved a local .rdbk with your photos and voice notes. Remove them from this device now?': 'Salvato un .rdbk locale con le tue foto e note vocali. Rimuoverle ora da questo dispositivo?',
             'Microphone unavailable.': 'Microfono non disponibile.',            'fp.recorder.t9t': 'Nota vocale: tieni premuto per registrare',
             'fp.recorder.t9d': 'Tieni premuto il pulsante della nota vocale per registrare una nota vocale sul posto; al rilascio un breve conto alla rovescia sul pulsante continua a registrare e poi salva da solo. Salva il clip audio (si riascolta sulla nota nell’Editor); su desktop trascrive anche dal vivo — sul telefono il microfono è esclusivo, quindi per il testo dettato usa il microfono del pulsante Nota.',
-            'WP audio': 'Audio WP',
-            'WP photo': 'Foto WP',
+            
+            
             'Heading up': 'Direzione in alto',
             'Enter your club, check if it already exists in the list': 'Inserisci il tuo club, controlla se esiste già nell\'elenco',
             'Building your data export…': 'Preparazione dell\'esportazione dei tuoi dati…',
@@ -967,9 +967,9 @@ Object.assign(window.RBi18nLangs.it, {
     'The .rdbk standard': 'Lo standard .rdbk',
     'Scan QR': 'Scansiona QR',
     'Notes & scoring': 'Note e punteggio',
-    'Convert into note': 'Converti in nota',
+    
     'Note added.': 'Nota aggiunta.',
-    'Note dropped': 'Nota inserita',
+    
     'Notes added from the GPX': 'Note aggiunte dal GPX',
     'Note icons': 'Icone delle note',
     'Note type': 'Tipo di nota',
@@ -1180,4 +1180,18 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "End": "Termina",
     "Mark note": "Segna nota",
+});
+
+/* Editor + Recorder: one capture flow, one set of labels (#647–#662 · #686) */
+Object.assign(window.RBi18nLangs.it, {
+    "GPX editing tools": "Strumenti di modifica GPX",
+    "Duplicate": "Duplica",
+    "Could not unlock.": "Impossibile sbloccare.",
+    "Nothing to export.": "Niente da esportare.",
+    "Voice note": "Nota vocale",
+    "Photo": "Foto",
+    "photos": "foto",
+    "Discard it with its notes and photos?": "Scartarla con le sue note e foto?",
+    "Sign in to edit this roadbook.": "Accedi per modificare questo roadbook.",
+    "OK": "OK",
 });

@@ -304,7 +304,7 @@
             'Saved to your profile.': 'In deinem Profil gespeichert.', 'Could not save.': 'Konnte nicht speichern.', 'Saved as a new roadbook.': 'Als neues Roadbook gespeichert.',
             'On the trail — recording your variant.': 'Auf der Strecke — deine Variante wird aufgezeichnet.', 'Trail adjusted · metrics recomputed.': 'Strecke angepasst · Metriken neu berechnet.',
             'Walk onto the trail (≤10 m) to start adjusting.': 'Auf die Strecke gehen (≤10 m) um mit dem Anpassen zu beginnen.',
-            'Sign in to attach photos.': 'Anmelden um Fotos anzuhängen.', 'Sign in to save this roadbook to your profile.': 'Anmelden um dieses Roadbook im Profil zu speichern.',
+            'Sign in to save this roadbook to your profile.': 'Anmelden um dieses Roadbook im Profil zu speichern.',
             'There is already a note here.': 'Hier gibt es bereits eine Note.', 'At least 2 notes must remain.': 'Mindestens 2 Noten müssen verbleiben.',
             'Add note here': 'Note hier hinzufügen', 'Delete this point': 'Diesen Punkt löschen', 'This point is a note — delete the point and its note?': 'Dieser Punkt ist eine Note — Punkt und Note löschen?', 'Point deleted.': 'Punkt gelöscht.', 'At least 2 points must remain.': 'Mindestens 2 Punkte müssen verbleiben.', 'Add point here': 'Punkt hier hinzufügen', 'Add intermediate point': 'Zwischenpunkt hinzufügen', 'Add point on line': 'Punkt auf Linie hinzufügen', 'Transform': 'Umwandeln', 'Delete point': 'Punkt löschen', 'Delete note': 'Note löschen', 'Waypoint turned into a track point.': 'Wegpunkt in Trackpunkt umgewandelt.', 'Point added.': 'Punkt hinzugefügt.', 'No point follows this one.': 'Kein Punkt folgt diesem.', 'Raw JSON': 'Rohes JSON', 'View GPX': 'GPX anzeigen', 'View JSON': 'JSON anzeigen', 'Find in text (Enter)…': 'Im Text suchen (Enter)…', 'Not found.': 'Nicht gefunden.', 'Copy': 'Kopieren', 'Copied.': 'Kopiert.',
             'Danger zone': 'Gefahrenzone', 'Deleting a roadbook moves it to the trash, with its photos and voice notes.': 'Ein gelöschtes Roadbook wandert in den Papierkorb, mit seinen Fotos und Sprachnotizen.',
@@ -659,8 +659,8 @@
             'Saved a local .rdbk with your photos and voice notes. Remove them from this device now?': 'Eine lokale .rdbk mit deinen Fotos und Sprachnotizen wurde gespeichert. Jetzt von diesem Gerät entfernen?',
             'Microphone unavailable.': 'Mikrofon nicht verfügbar.',            'fp.recorder.t9t': 'Sprachnote: gedrückt halten zum Aufnehmen',
             'fp.recorder.t9d': 'Halte die Sprachnoten-Taste gedrückt, um eine Sprachnotiz an Ort und Stelle aufzunehmen; beim Loslassen läuft ein kurzer Countdown auf der Taste weiter und speichert dann automatisch. Der Audioclip wird gespeichert (in der Note im Editor abspielbar); am Desktop wird zusätzlich live transkribiert — am Handy ist das Mikrofon exklusiv, nutze für diktierten Text daher das Mikrofon der Noten-Taste.',
-            'WP audio': 'WP-Audio',
-            'WP photo': 'WP-Foto',
+            
+            
             'Heading up': 'In Fahrtrichtung',
             'Enter your club, check if it already exists in the list': 'Gib deinen Club ein und prüfe, ob er schon in der Liste steht',
             'Building your data export…': 'Dein Datenexport wird erstellt…',
@@ -827,9 +827,9 @@ Object.assign(window.RBi18nLangs.de, {
     'The .rdbk standard': 'Der .rdbk-Standard',
     'Scan QR': 'QR scannen',
     'Notes & scoring': 'Noten und Wertung',
-    'Convert into note': 'In Note umwandeln',
+    
     'Note added.': 'Note hinzugefügt.',
-    'Note dropped': 'Note gesetzt',
+    
     'Notes added from the GPX': 'Noten aus dem GPX übernommen',
     'Note icons': 'Notensymbole',
     'Note type': 'Notentyp',
@@ -1040,4 +1040,18 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "End": "Beenden",
     "Mark note": "Notiz markieren",
+});
+
+/* Editor + Recorder: one capture flow, one set of labels (#647–#662 · #686) */
+Object.assign(window.RBi18nLangs.de, {
+    "GPX editing tools": "GPX-Bearbeitungswerkzeuge",
+    "Duplicate": "Duplizieren",
+    "Could not unlock.": "Entsperren nicht möglich.",
+    "Nothing to export.": "Nichts zu exportieren.",
+    "Voice note": "Sprachnotiz",
+    "Photo": "Foto",
+    "photos": "Fotos",
+    "Discard it with its notes and photos?": "Mit ihren Notizen und Fotos verwerfen?",
+    "Sign in to edit this roadbook.": "Melde dich an, um dieses Roadbook zu bearbeiten.",
+    "OK": "OK",
 });

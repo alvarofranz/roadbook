@@ -250,7 +250,7 @@
         const body = $('usersBody');
         body.querySelectorAll('[data-org]').forEach((b) => b.onclick = async () => {
             const u = byId[+b.dataset.org];
-            if (+b.dataset.make === 0 && !(await RBConfirmDanger(t('Remove event organizer') + ' @' + ((u && u.username) || '') + '?', t('Remove')))) return;
+            if (+b.dataset.make === 0 && !(await RBConfirmDanger(t('Remove event organizer') + ' @' + ((u && u.username) || '') + '?'))) return;
             const busy = RBBusy(b);
             const x = await api('admin_set_role', { id: +b.dataset.org, is_organizer: +b.dataset.make });
             busy.reset();
@@ -264,7 +264,7 @@
         });
         body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
             const u = byId[+b.dataset.block];
-            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + ((u && u.username) || '') + '?', t('Block')))) return;
+            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + ((u && u.username) || '') + '?'))) return;
             const busy = RBBusy(b);
             const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
             busy.reset();

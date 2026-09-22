@@ -101,18 +101,18 @@
         } else if (vf) {                            // a plain track point
             const ti = parseInt(vf.properties.i, 10);
             openCtxMenu(lngLat, [
-                { id: 'note', icon: 'fa-map-pin', label: 'Turn this point into a note', key: 'W', run: () => vertexAction('note', ti) },
+                { id: 'note', icon: 'fa-location-dot', label: 'Turn this point into a note', key: 'W', run: () => vertexAction('note', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'I', run: () => vertexAction('mid', ti) },
                 { id: 'line', icon: 'fa-plus', label: 'Add track point here', key: 'L', run: () => vertexAction('line', ti) },
                 ...photo(rb.track[ti]),
-                { id: 'del', icon: 'fa-trash', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
+                { id: 'del', icon: 'fa-trash-can', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
                 maps, earth, coords], rb.track[ti]);
         } else {                                    // empty ground (route ops act on the nearest point)
             openCtxMenu(lngLat, [
                 ...(rb ? [
-                    { id: 'note', icon: 'fa-map-pin', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
+                    { id: 'note', icon: 'fa-location-dot', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
                     { id: 'pt', icon: 'fa-circle-plus', label: 'Add track point here', key: 'L', run: () => addPointAtExact(here) },
-                    { id: 'del', icon: 'fa-circle-minus', label: 'Delete this point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
+                    { id: 'del', icon: 'fa-trash-can', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
                 ] : []),
                 ...photo(here),
                 maps, earth, coords], here);
@@ -341,7 +341,7 @@
     const noteLabel = (n) => '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
-        // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
+        // The 2-note minimum applies to the notes only; the material around them (#542) never counts.
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
         const label = noteLabel(rb.notes[ni]);
         if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?'))) return;
@@ -687,7 +687,7 @@
                 byTime = Math.abs(pT0 - anchorT) <= Math.abs(pT1 - anchorT) ? trkpts : trkpts.slice().reverse(); // the piece end nearest that anchor connects first
             }
         }
-        if (joinAtStart === undefined) { // no usable times → nearest-end geometry (original behaviour)
+        if (joinAtStart === undefined) { // no usable times → join at the geometrically nearest end
             joinAtStart = Math.min(D(rb.track[0], pieceStart), D(rb.track[0], pieceEnd))
                 < Math.min(D(rb.track[rb.track.length - 1], pieceStart), D(rb.track[rb.track.length - 1], pieceEnd));
         }
@@ -733,7 +733,7 @@
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
     $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); };
     $('gpxFile').onchange = async (e) => {
-        const files = Array.from(e.target.files);
+        const files = Array.from(e.target.files); e.target.value = ''; // picking the same file again must fire again (#659)
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
         const w = files.find((f) => /\.wpt$/i.test(f.name));
         try {
@@ -757,7 +757,7 @@
         } catch (err) { toast('Error: ' + err.message); }
     };
     $('jsonFile').onchange = async (e) => {
-        const f = e.target.files[0]; if (!f) return;
+        const f = e.target.files[0]; e.target.value = ''; if (!f) return;
         try {
             const b = await RBZip.readBundle(f); const j = b.roadbook;
             if (!j.track || !j.notes) throw new Error('Not a roadbook');
@@ -765,7 +765,7 @@
             if (pendingMedia.length) { // the bundle carries photos/audio → they only appear once re-uploaded on save (#162)
                 const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos & audio'))}</h3>
                     <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>
-                    <div class="btnrow end"><button class="btn btn-primary" data-ok>OK</button></div>`, 'narrow');
+                    <div class="btnrow end"><button class="btn btn-primary" data-ok>${esc(t('OK'))}</button></div>`, 'narrow');
                 d.q('[data-ok]').onclick = d.close;
             }
         }
@@ -935,7 +935,7 @@
     // only "Adjust on the trail" (live re-record of a segment of the loaded roadbook).
     $('recPause').onclick = () => {
         recPaused = !recPaused;
-        $('recPause').innerHTML = recPaused ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+        $('recPause').innerHTML = recPaused ? `<i class="fa-solid fa-play"></i> ${esc(t('Resume'))}` : `<i class="fa-solid fa-pause"></i> ${esc(t('Pause'))}`;
         recLast = recPaused ? recLast : null; // restart the distance gate cleanly on resume
         updateRecStats();
     };
@@ -949,7 +949,7 @@
         if (!navigator.geolocation) return toast('No geolocation on this device.');
         recTrack = []; recWpts = []; recPhotos = []; recLast = null; recHere = null; recPaused = false;
         adjP1 = -1; adjP2 = -1;
-        $('recPause').innerHTML = '<i class="fa-solid fa-pause"></i>';
+        $('recPause').innerHTML = `<i class="fa-solid fa-pause"></i> ${esc(t('Pause'))}`;
         showEditing(); $('rbPanel').hidden = true; $('recBar').hidden = false;
         showView('map'); if (map) { refreshMap(false); map.setOverlay([]); }
         draftId = currentRbId; $('recPhoto').hidden = !draftId; // photos attach to the roadbook being adjusted (saved ones only)
@@ -980,7 +980,7 @@
     function updateRecStats(acc) {
         let m = 0; for (let i = 1; i < recTrack.length; i++) m += RB.geo.haversineM(recTrack[i - 1], recTrack[i]);
         const head = recPaused ? t('Paused ·') : (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording')));
-        $('recStats').textContent = `${head} ${recTrack.length} pts · ${(m / 1000).toFixed(2)} km · ${recWpts.length} wpt · ${recPhotos.length} 📷${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
+        $('recStats').textContent = `${head} ${recTrack.length} ${t('points')} · ${(m / 1000).toFixed(2)} km · ${recWpts.length} ${t('notes')} · ${recPhotos.length} ${t('photos')}${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
     }
     // drop a waypoint (shared by the button and "convert photo → waypoint")
     function dropWaypoint(lat, lon, text) {
@@ -995,9 +995,8 @@
         const note = dropWaypoint(recHere.lat, recHere.lon, '');
         RBWaypointPrompt(note.num, (text) => { note.text = text; updateRecStats(); });
     };
-    // photo: camera → upload → shows the photo with OK / Convert into waypoint
+    // photo: camera → upload, and the note is dropped with it — the same capture as the Recorder (#649)
     $('recPhoto').onclick = () => {
-        if (!meUser) return RBNeedAuth('Sign in to attach photos.');
         if (!draftId) return toast('Save to your profile first.');
         $('recPhotoFile').click();
     };
@@ -1011,9 +1010,10 @@
         recPhotos.push({ token, url: localUrl, lat, lon, local: true, pending: true }); if (map) map.setPhotos(recPhotos);
         updateRecStats();
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
-        RBPhotoPreview(localUrl, () => { if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note dropped'); } });
+        if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note added.'); }
     };
-    $('recStop').onclick = () => {
+    $('recStop').onclick = async () => {
+        if (!(await RBConfirm(t('Finish the recording?')))) return; // the same question as the Recorder (#655)
         if (recWatch != null) { navigator.geolocation.clearWatch(recWatch); recWatch = null; }
         if (recWake) { try { recWake.release(); } catch (e) {} recWake = null; }
         recPaused = false; $('recBar').hidden = true;
@@ -1054,7 +1054,7 @@
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
     let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
-    let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note 📷 indicator)
+    let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note IMG pill)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
     let pendingMedia = []; // media bundled in an imported .rdbk v2, uploaded to the gallery on the first save (#162)
     $('visDraft').onclick = () => { setStatus('draft'); markDirty(); };
@@ -1082,13 +1082,12 @@
         if (!(await RBConfirmDanger(t('Force unlock? The other editor may lose unsaved changes.')))) return;
         const x = await RBApi('rb_lock_force', { id: currentRbId });
         if (x.ok) location.reload(); // reload picks up their last saved state — and the lock is now ours
-        else toast(x.error || 'Could not save.');
+        else toast(x.error || 'Could not unlock.');
     };
     setInterval(() => { if (currentRbId > 0 && rbLock.mine && rb) RBApi('rb_lock_refresh', { id: currentRbId }); }, 240000);
     window.addEventListener('pagehide', () => {
-        if (currentRbId > 0 && rbLock.mine && navigator.sendBeacon) {
-            navigator.sendBeacon('../api/index.php', new Blob([JSON.stringify({ action: 'rb_lock_release', id: currentRbId })], { type: 'application/json' }));
-        }
+        // through the shared API host + auth, so the app releases its lock too (#651)
+        if (currentRbId > 0 && rbLock.mine) RBApiKeepalive('rb_lock_release', { id: currentRbId });
     });
 
     // The visibility segments and the delete section only exist for the OWNER: a co-editor's
@@ -1122,6 +1121,7 @@
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft();
             if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
+            RBMediaQueue.flush(); // photos/voice notes queued by the Recorder now have a roadbook to join (#648)
             updatePhotos(); updateAudio(); updateSaveBtn();
             // pin the identity to the URL so a reload (or version auto-refresh) keeps editing the same roadbook
             try { history.replaceState(null, '', location.pathname + '?rb=' + currentRbId); } catch (e) {}
@@ -1233,7 +1233,9 @@
         g.innerHTML = notePhotos.map((p) => `<div class="photo-thumb"><img src="${esc(p.url)}" alt="" data-lb="${p.id}" loading="lazy"><button type="button" data-delp="${p.id}" class="del-badge" aria-label="${esc(t('Remove'))}">×</button></div>`).join('');
         g.querySelectorAll('[data-delp]').forEach((s) => s.onclick = async (e) => {
             e.stopPropagation();
-            if (!(await RBConfirmDanger(t('Delete this photo?')))) return; // never delete a stored photo silently (#209)
+            const ph = notePhotos.find((p) => p.id === +s.dataset.delp);
+            // never delete a stored photo silently (#209), and show which one (#652)
+            if (!(await RBConfirmDanger(t('Delete this photo?') + (ph ? `<br><img class="confirm-thumb" src="${esc(ph.url)}" alt="">` : '')))) return;
             const busy = RBBusy(s);
             const r = await RBApi('ph_delete', { id: +s.dataset.delp });
             if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the photo.'); } // say why: silence left the photo on screen with no explanation (#525)
@@ -1243,7 +1245,7 @@
         g.querySelectorAll('[data-lb]').forEach((im) => im.onclick = () => openLightbox(+im.dataset.lb));
         // every photo is a pin on the map; tapping a pin (or a thumbnail) opens the lightbox
         if (map) map.setPhotos(notePhotos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
-        if (rb) renderNotes(); // refresh the per-note 📷 indicators
+        if (rb) renderNotes(); // refresh the per-note IMG pills
     }
     /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
     // WebKit (Safari, every iOS/iPadOS browser) can't run the Whisper WASM model — say so upfront
@@ -1264,7 +1266,7 @@
         if (!window.RBTranscribe || !rb || !rb.notes[i]) return;
         if (RBIsIOS()) return toast(t(TRANSCRIBE_LABEL));
         const prog = RBTranscribe.ready() ? null : progressModal();
-        btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>';
+        const busy = RBBusy(btn); // the shared spinner/tick (#657)
         try {
             const lang = (meUser && meUser.voice_lang) || navigator.language; // force a language — tiny auto-detect is unreliable
             const text = await RBTranscribe.run(url, { lang, onProgress: (p) => prog && prog.set(p.pct) });
@@ -1274,11 +1276,13 @@
             n.text = (n.text && n.text.trim() ? n.text.trim() + '\n' : '') + text;
             markDirty();
             const ta = $('noteList').querySelector('.note-title[data-i="' + i + '"]'); if (ta) ta.value = n.text;
+            busy.ok();
             toast(t('Transcription added.'));
         } catch (e) {
             if (prog) prog.close();
+            busy.reset();
             toast(t('Transcription failed. Please try again.'));
-        } finally { btn.disabled = false; btn.innerHTML = orig; }
+        }
     }
     // First-use progress while the (one-time) transcription model downloads.
     function progressModal() {
@@ -1389,11 +1393,11 @@
     $('lbMove').onclick = () => { const p = lbList[lbIdx]; if (p) startMovePhoto(p); };
     $('lbDelete').onclick = async () => {
         const p = lbList[lbIdx]; if (!p) return;
-        if (!(await RBConfirmDanger(t('Delete this photo?')))) return;
+        if (!(await RBConfirmDanger(t('Delete this photo?') + `<br><img class="confirm-thumb" src="${esc(p.url)}" alt="">`))) return; // show which one (#652)
         const keep = new Set(lbList.map((x) => +x.id)); keep.delete(+p.id); // stay within the current set (all, or a note's group)
         const busy = RBBusy('lbDelete');
         const r = await RBApi('ph_delete', { id: +p.id });
-        if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the photo.'); } // a refused delete used to be silent, and the photo just stayed (#525)
+        if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the photo.'); } // a refused delete says why (#525)
         busy.ok();
         await loadPhotos();
         lbList = notePhotos.filter((x) => keep.has(+x.id));
@@ -1421,7 +1425,7 @@
         const keepListScroll = $('noteList') ? $('noteList').scrollTop : 0;
         const keepWinScroll = window.scrollY;
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
-        // geotagged media belongs to its nearest note (within 80 m): photos → a 📷 under the
+        // geotagged media belongs to its nearest note (within 80 m): photos → an IMG pill under the
         // km, voice notes → an inline player on that row
         const byNearestNote = (items) => {
             const buckets = {};
@@ -1455,10 +1459,10 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
             </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
-        // road-type accent colour is data-driven → set the CSS variable per row (information rows skip it)
+        // road-type accent colour is data-driven → set the CSS variable per row (material blocks skip it)
         const rows = $('noteList').querySelectorAll('.note-mini');
         rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         rows.forEach((el) => el.onclick = (e) => {
@@ -1471,7 +1475,7 @@
         $('noteList').querySelectorAll('.note-block').forEach((el) => el.onclick = (e) => {
             e.stopPropagation(); select(+el.dataset.block, el.dataset.tab);
         });
-        // tap the 📷 under the km to view the note's photo(s)
+        // tap the IMG pill under the km to view the note's photo(s)
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
             const ph = photosByNote[+b.dataset.photo] || [];
@@ -1480,7 +1484,7 @@
         // delete a voice note straight from its note row
         $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {
             e.stopPropagation();
-            if (!(await RBConfirm(t('Delete this voice note?'), true))) return;
+            if (!(await RBConfirmDanger(t('Delete this voice note?') + '<br><b>' + esc(t('Note')) + ' ' + esc(b.dataset.note) + '</b>'))) return; // name it (#652)
             const busy = RBBusy(b);
             const r = await RBApi('audio_delete', { id: +b.dataset.dela });
             if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the voice note.'); } // same rule as the photos (#525)
@@ -1497,7 +1501,7 @@
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
             const navCount = rb.notes.length;
-            nc.textContent = navCount ? `· ${navCount} · KM: ${(totalM / 1000).toFixed(1)}` : '';
+            nc.textContent = navCount ? `· ${navCount} · ${(totalM / 1000).toFixed(1)} km` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
         placeTulips();
@@ -1691,9 +1695,8 @@
 
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
-        // The note's segment/CAP attributes all live in the icon-search row: Road (the road type
-        // followed = road_type_out), Danger, the declarative Speed limit and the CAP-type qualifier.
-        // The Red CAP toggle itself is in the note row.
+        // The note's segment/CAP attributes all live in the Note tab: Road (the road type followed =
+        // road_type_out), Danger, the declarative Speed limit, the CAP toggle and its qualifier.
         $('roadSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Road', 'help.road')}</span><select id="edRout" class="field">${opts(n.road_type_out)}</select></label>`;
         $('dangerSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Danger', 'help.danger')}</span><select id="edDanger" class="field">${dangerOpts}</select></label>`;
         $('edRout').onchange = (e) => {
@@ -1790,7 +1793,7 @@
         markDirty(); renderNotes();
         if (i === sel) renderEditor(); // the CAP type control follows it in or out of play
     }
-    // The minimum-notes guard and the confirm prompt live in the row's click handler.
+    // The minimum-notes guard and the confirm prompt live in deleteNoteConfirm.
     // Deleting a waypoint removes the note AND its own track vertex (the route reconnects between
     // its neighbours) — a wpt occupies its point, so it disappears with the wpt (#65). To keep the
     // point as a plain track vertex instead, use "Transform". RB.deleteNote does the splice + idx
@@ -1979,7 +1982,7 @@
         // from its note too, so the vignette reverts to the editable one and export emits that.
         const hitNotes = rb.notes.filter((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
         if (hitNotes.length) {
-            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '” ' + t('and remove it from its notes?'), t('Delete')))) return;
+            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '” ' + t('and remove it from its notes?')))) return;
             rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
             delete rb.icons[name];
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
@@ -1987,7 +1990,7 @@
             return;
         }
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
-        if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '”?', t('Delete')))) return;
+        if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '”?'))) return;
         delete rb.icons[name]; renderIcons();
     }
     /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note.
@@ -2000,9 +2003,11 @@
         if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {}; // a map, never a list (#523)
         let n = 0;
         for (const f of files) {
-            const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name);
-            rb.icons[name] = await fileToDataURL(f);
-            n++;
+            // downscaled to a 256 px PNG like every embedded image (#657): an icon is drawn at most
+            // 120 px, so a full-size photo would only bloat every .rdbk
+            const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name).replace(/\.[^.]+$/, '') + '.png';
+            try { rb.icons[name] = await RBImg.toDataURL(f, 256); n++; }
+            catch (e) { toast('Could not read the image.'); }
         }
         if (!n) return;
         markDirty(); await renderIcons();
@@ -2030,7 +2035,6 @@
         }
     };
     const safeName = (n) => n.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileToDataURL = (f) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
 
     // refresh everything after a whole-route operation
     function routeChanged(toastMsg) {
@@ -2138,10 +2142,10 @@
     // One Export button → a popup: .rdbk / PDF buttons, and GPX as a single button whose
     // typologies (track · track+WPT · OpenRally) are picked with checkboxes.
     function openExportModal() {
-        if (!rb) return toast('Nothing to save.');
+        if (!rb) return toast('Nothing to export.');
         const m = RBModal(`<h2>${esc(t('Export'))}</h2>
             <div class="btn-group col">
-                <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-floppy-disk"></i> ${esc(t('.rdbk file'))}</button>
+                <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-file-zipper"></i> ${esc(t('.rdbk file'))}</button>
                 <button class="btn btn-primary" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
             </div>
             ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
@@ -2151,7 +2155,7 @@
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
             <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>
             <label class="checkbox-row"><input type="checkbox" data-g="openrally"> ${esc(t('OpenRally'))}</label>
-            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-route"></i> ${esc(t('Export GPX'))}</button></div>
+            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-file-arrow-down"></i> ${esc(t('Export GPX'))}</button></div>
             <h3>${esc(t('KMZ'))}</h3>
             <div class="btnrow end"><button class="btn btn-primary" data-x="kmz"><i class="fa-solid fa-map"></i> ${esc(t('Export KMZ'))}</button></div>`, 'narrow scroll');
         const cb = (g) => m.q(`[data-g="${g}"]`);
@@ -2171,8 +2175,8 @@
     }
     $('exportBtn').onclick = openExportModal;
     $('rawJsonBtn').onclick = openRawJson;
-    // Raw editor (#28): the whole roadbook as pretty JSON — inspect/copy, validate and apply back.
-    // The embedded icons (base64 blobs) show as placeholders and are preserved on save.
+    // Raw view (#28): the whole roadbook as pretty JSON (or its GPX) — read-only, to inspect, find
+    // and copy. The embedded icons (base64 blobs) show as placeholders.
     function openRawJson() {
         if (!rb) return toast('Load a roadbook first.');
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
@@ -2198,9 +2202,11 @@
             <textarea id="rawJson" class="raw-edit" spellcheck="false" readonly></textarea>
             <p id="rawMsg" class="small"></p>
             <div class="btnrow end">
+                <button class="btn btn-ghost" data-x="close">${esc(t('Close'))}</button>
                 <button class="btn btn-ghost" data-x="gpx">${esc(t('View GPX'))}</button>
                 <button class="btn btn-primary" data-x="copy"><i class="fa-solid fa-copy"></i> ${esc(t('Copy'))}</button>
             </div>`, 'wide');
+        m.q('[data-x="close"]').onclick = m.close;
         const ta = m.q('#rawJson'), msg = m.q('#rawMsg'), gpxBtn = m.q('[data-x="gpx"]');
         let gpxMode = false;
         ta.value = jsonText();
@@ -2226,8 +2232,7 @@
             ta.scrollTop = 0; msg.textContent = '';
         };
         m.q('[data-x="copy"]').onclick = async () => {
-            RBCopy(ta.value, 'Copied.');
-            setMsg(t('Copied.'), true);
+            RBCopy(ta.value, 'Copied.'); // RBCopy reports the outcome itself — success or failure
         };
     }
     // embed EVERY used icon (self-contained .rdbk) and prune the unused ones. The standard
@@ -2259,9 +2264,11 @@
 
     /* ---------- offline-first media queue (#147) — photos captured during "Adjust on the trail"
         are buffered in IndexedDB with retry, so a network drop mid-trail never loses a shot.
-        The Editor always has a draftId when the camera is active, so no lazy-draft resolver
-        is needed; the OnDone reconciles the optimistic local pin to the server URL. */
+        Media the Recorder queued without a roadbook (signed out, or before its draft existed) is
+        attached to the roadbook this page saves (#648): until there is one, it stays queued. The
+        onDone reconciles the optimistic local pin to the server URL. */
     RBMediaQueue.init({
+        resolveRoadbook: () => currentRbId || null,
         onChange: (n) => {
             const el = $('recPending'); if (!el) return;
             el.hidden = !n;
@@ -2282,7 +2289,7 @@
     /* ---------- startup: trip handoff → draft → recording → challenge/?rb ---------- */
     renderIcons();
     (async function startup() {
-        const account = RBApi('config').then((cfg) => {
+        const account = RBConfig().then((cfg) => { // offline, a signed-in user is still signed in (#630)
             meUser = cfg.user || null;
             updateSaveBtn();
             if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
@@ -2336,11 +2343,12 @@
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
         if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load the roadbook.'); } return; }
         await account;
+        if (id && !meUser) { RBNeedAuth('Sign in to edit this roadbook.'); return; } // never an empty screen (#650)
         if (id && meUser) {
             const r = await RBApi('rb_get', { id, lock: 1 }); // editing intent: take the soft lock (#154)
             if (r.ok && r.roadbook) {
                 // A roadbook saved with no route yet would open on an empty map: warn, and on
-                // Continue load it straight into draw mode (Cancel falls through to the list).
+                // Yes load it straight into draw mode (No falls through to the list, #650).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?')) {
                     currentRbId = id; setStatus(r.status); reusable = !!r.reusable; setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
@@ -2350,14 +2358,14 @@
                 return;
             }
         }
-        if (!id && !rb && meUser) {
+        if (!rb && meUser) {
             const n = await RBRoadbookList($('myRbList')); $('myRbSection').hidden = !n; // landing → list the user's saved roadbooks
             // …plus the roadbooks you can edit through your events (#123), each named after its event
             const ce = await RBApi('rb_coedit_list');
             const coedit = (ce.ok && ce.roadbooks) || [];
             $('coeditSection').hidden = !coedit.length;
             $('coeditList').innerHTML = coedit.map((r) => `<div class="roadbook-row">
-                <div class="meta"><b>${esc(r.title)}</b><small>@${esc(r.owner)} · <i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(r.event_title)}</small></div>
+                <div class="meta"><b>${esc(r.title)}</b><small>@${esc(r.owner)} · <i class="fa-solid fa-calendar-check icon-accent"></i> ${esc(r.event_title)}</small></div>
                 <a class="btn btn-ghost" href="?rb=${r.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             </div>`).join('');
             centerOnDefault(); // empty start (e.g. "Draw on the map"): centre on the user's saved default location

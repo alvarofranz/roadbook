@@ -1,6 +1,6 @@
 'use strict';
-/* Admin · Site settings page (#103): edit the home-page message banner + view operational
- * logs (recent activity + cron log; deploys link out to GitHub Actions). Gated to admins. */
+/* Admin · Site settings page (#103): the site banner and the in-context translation editor
+ * switch. Gated to admins; the operational logs have their own page (admin/logs). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;

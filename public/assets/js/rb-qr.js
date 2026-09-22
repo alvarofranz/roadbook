@@ -7,8 +7,8 @@
  * both check that the name, the declared type and the bytes agree. So the matrix is painted
  * onto a canvas here and PNG is the only image format that ever leaves this module.
  *
- * It is also the one place a QR is rendered: the signed run result and the event activation
- * code used to carry their own copy of the same drawing loop.
+ * It is also the one place a QR is rendered — the signed run result and the event activation
+ * code share this drawing loop.
  *
  * The vendor global (`qrcode`) is read at call time, not at load, so this module can be
  * imported into the unit tests with a stub in place. */

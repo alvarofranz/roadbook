@@ -227,9 +227,8 @@ body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
 .tabbar-dropup a:hover, .tabbar-dropup button:hover { background: var(--card-2); text-decoration: none; }
 .tabbar-dropup .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
 /* Hidden above the breakpoint ON THE WEB ONLY: the app shows its tab bar at every width, so on
-   an iPad in landscape (≥1025 px) this rule used to hide the profile menu while its button stayed
-   right there — tapping it did nothing (#484). Same `html:not(.native)` guard the odometer bar
-   uses; every other piece of tab-bar chrome already had its .native counterpart. */
+   an iPad in landscape (≥1025 px) the profile menu must stay reachable (#484). Same
+   `html:not(.native)` guard the odometer bar uses. */
 @media (min-width: 1025px) { html:not(.native) .tabbar-dropup { display: none; } }
 /* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */
 .mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
@@ -268,8 +267,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
 /* A heading with its own actions on the same row: title left, actions right, wrapping when the
-   screen is too narrow — the "a destra" layout. ONE pattern: it used to be .section-bar, three
-   different .ev-head-row bodies, .sec-head and a .card-head that was never styled at all (#482). */
+   screen is too narrow — the "a destra" layout. ONE pattern for every page (#482 · #642). */
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
 .head-row h1, .head-row h2 { margin: 0; flex: 1; min-width: 12rem; }
 .head-row .btn, .head-row .btnrow, .head-row .btn-group { margin: 0; }
@@ -470,9 +468,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-text .note-speed .lim { display: inline-flex; align-items: center; justify-content: center; min-width: 1.9rem; height: 1.9rem; padding: 0 .25rem; border: 3px solid #c0392b; border-radius: 50%; font-weight: 800; font-size: .8rem; font-variant-numeric: tabular-nums; }
 .nrow .col-text .note-speed .lim.lifted { border-color: #777; color: #777; }
 .nrow .col-text .coords { color: #666; font-size: .68rem; font-variant-numeric: tabular-nums; margin-top: .2rem; }
-/* comment note (note_kind: "comment"): no distance, no navigation, no pointer — the same row in
-   the Reader and on the public roadbook page, which used to paint it in two slightly different
-   shades of paper (#482). */
 /* the material a note carries (#542): a photo, an advert, a block of text. Never a waypoint to
    drive to — no number, no state colour, nothing to validate. */
 .nrow.block { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
@@ -788,6 +783,17 @@ button.rb-badge:hover { background: var(--card); }
 /* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
 .thumb-route rect { fill: var(--card-2); }
 .thumb-route polyline { fill: none; stroke: var(--sand); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+/* the shared waypoint quick-note (RBWaypointPrompt): text field + dictation mic, which pulses while listening (#661) */
+.wf-row { display: flex; gap: .5rem; align-items: center; }
+.wf-row .field { flex: 1; min-width: 0; }
+#wfMic.on { color: var(--track); animation: recpulse 1.2s infinite; }
+/* a deletion confirm shows the photo it deletes (#652) */
+.confirm-thumb { display: block; max-width: 100%; max-height: 160px; margin: .5rem auto 0; border-radius: 10px; object-fit: cover; }
+/* two fields side by side (account profile, admin user dialogs) — one column on a phone (#661) */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+@media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+/* a scrollable result list inside a picker dialog (event roadbooks/organizers, add participant) */
+.ev-pick-list { max-height: 45vh; overflow: auto; margin-top: .5rem; }
 /* run report tiles + details (RBRun: the Reader's end-of-run report and the public profile, #618 · #620) */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: .5rem; margin: .8rem 0; }
 .stat { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
@@ -816,7 +822,6 @@ button.rb-badge:hover { background: var(--card); }
 .msg.ok { color: var(--ok); }
 .msg.err { color: var(--track); }
 /* full-width photo preview inside a modal (Editor · Recorder) */
-.photo-preview { width: 100%; max-height: 48vh; object-fit: cover; border-radius: 12px; }
 /* recording pulse (mic / capture buttons) */
 @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
 /* direction arrow driven by --cap-rotation (Reader bearing/CAP · Tripmaster needle) */
