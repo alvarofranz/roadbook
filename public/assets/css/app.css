@@ -2,7 +2,6 @@
    Dark rally/desert theme. Mobile-first. */
 :root {
     --bg: #0e1116;
-    --bg-soft: #151a22;
     --card: #1a212c;
     --card-2: #212a37;
     --line: rgba(255, 255, 255, .08);
@@ -21,8 +20,8 @@
     color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-/* The `hidden` attribute must ALWAYS beat classes that set display (.center-screen,
-   .modal…). Without this, screens/modals would not hide. */
+/* The `hidden` attribute must ALWAYS beat classes that set display (.modal, .btnrow…).
+   Without this, screens/modals would not hide. */
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
@@ -130,12 +129,6 @@ body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
-/* Floating lang for mobile, at the foot of the .app-chip-stack (above the tab bar) when the footer
-   is hidden. The dropdown opens upward so it fits below the top of the screen. */
-.lang-mobile { display: none; position: relative; }
-.lang-mobile .lang-menu { bottom: calc(100% + 6px); top: auto; right: 0; }
-@media (max-width: 1024px) { .lang-mobile { display: inline-flex; } }
-.native .lang-mobile { display: inline-flex; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -185,11 +178,9 @@ section.block { padding: 2.4rem 0; }
 @media (max-width: 1024px) { .wiki-cta a { flex-direction: row; text-align: left; padding: 1rem 1.2rem; } .wiki-cta a p { max-width: none; } .wiki-cta a i { flex-shrink: 0; } }
 /* cross-platform band: each platform sits in a soft pill */
 .platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem; margin-top: 1.4rem; color: var(--text); font-weight: 700; }
-.platforms span { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; }
 .platforms i { color: var(--sand); }
 .platforms a.plat-link { display: inline-flex; align-items: center; gap: .5rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .5rem 1rem; font-size: .92rem; font-weight: 700; color: var(--text); transition: border-color .2s, color .2s; }
 .platforms a.plat-link:hover { border-color: var(--sand); color: var(--sand-2); }
-.platforms .soon { opacity: .55; filter: grayscale(1); cursor: default; }
 .install-note { max-width: 62ch; margin: 1rem auto 0; color: var(--muted); font-size: .85rem; }
 
 /* features grid (home): 6 cards → 3 balanced columns (2 rows on desktop) */
@@ -211,8 +202,7 @@ section.block { padding: 2.4rem 0; }
 /* nothing floats during focused field use (Reader navigating / fullscreen): the tool owns the
    screen, and with the tab bar hidden these chips land straight on its own bars — the language
    chip was sitting on the CAP bar's distance readout while driving (#429) */
-body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack,
-body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
+body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
@@ -231,7 +221,6 @@ body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
    `html:not(.native)` guard the odometer bar uses. */
 @media (min-width: 1025px) { html:not(.native) .tabbar-dropup { display: none; } }
 /* admin user-picker list (reassign a roadbook / restore-to-user from the trash) */
-.mv-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; margin: .5rem 0; }
 .mv-opt { text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .4rem .6rem; color: var(--text); font: inherit; cursor: pointer; }
 .mv-opt:hover { border-color: var(--sand); }
 /* "unsaved work" pill: sits in the bar (always visible, not behind the mobile menu) and only
@@ -242,6 +231,17 @@ body.rb-immersive .lang-mobile, body.rb-fs .lang-mobile { display: none; }
 .pending-list { display: flex; flex-direction: column; gap: .5rem; }
 .pending-list .roadbook-row > i { color: var(--sand); flex-shrink: 0; }
 /* footer */
+/* The picture boxes shared by several pages (#678): a round user avatar (72 px; .avatar-sm 46 px,
+   a page may size it up), an event logo tile, and the white card a QR code is drawn on. */
+.avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); flex: none; }
+.avatar.avatar-sm { width: 46px; height: 46px; }
+.event-logo { width: 84px; height: 84px; border-radius: 14px; object-fit: cover; background: var(--card-2); border: 1px solid var(--line); flex: none; }
+.qr-canvas { background: #fff; border-radius: 8px; padding: 6px; }
+/* A content page: one centred reading column inside .wrap (which keeps the side gutter), with room
+   below for the mobile tab bar. About · changelog · install · APK · event · public roadbook ·
+   profile · account · My roadbooks — one rule, not one per page (#678). */
+.page-col { max-width: 880px; padding-top: 1.2rem; padding-bottom: 5rem; }
+.page-col .lead { max-width: 62ch; }
 .foot { border-top: 1px solid var(--line); margin-top: 2rem; padding: 2rem 0; color: var(--muted); font-size: .9rem; }
 .foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
 .foot a { color: var(--sand-2); }
@@ -250,11 +250,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* GPS tool pages (Reader · Recorder · Tripmaster): short landscape gives the dashboard the whole screen */
 @media (orientation: landscape) and (max-height: 540px) { body.gps-tool header.topbar { display: none; } }
 
-/* ---------- centred single-card screen (Reader load screen) ---------- */
-.center-screen { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 2rem 1rem; }
-.center-card { max-width: 480px; }
-.center-card .big { font-size: 3rem; color: var(--sand); }
-.center-card h1 { margin: .6rem 0 .3rem; }
 /* tool-page title + its "How it works" link, side by side (centred in the idle card, left-aligned on the editor landing) */
 /* One page-header pattern for every section: the title on the left, the "Info" link at the
    top-right of the same row. No big decorative icon, no centring — identical across sections. */
@@ -266,6 +261,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .tool-page { padding: 1.2rem 1.1rem 3rem; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
+.panel .head-row h2 { margin: 0; }
+.panel + .panel { margin-top: 1rem; } /* a page of stacked panels (event editor, participants desk, ranking) */
 /* A heading with its own actions on the same row: title left, actions right, wrapping when the
    screen is too narrow — the "a destra" layout. ONE pattern for every page (#482 · #642). */
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
@@ -366,11 +363,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .rb-switch .rb-switch-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s ease, background .15s ease; }
 .rb-switch.on .rb-switch-track { background: var(--sand); }
 .rb-switch.on .rb-switch-knob { transform: translateX(14px); background: var(--on-sand); }
-/* a feature card for an upcoming capability: dimmed, dashed, with a "Coming soon" pill */
-.flow .step.soon { border-style: dashed; opacity: .85; }
-.flow .step.soon:hover { transform: none; border-color: var(--line); }   /* not a live tool — no clickable lift */
-.flow .step.soon i { color: var(--muted); background: rgba(255, 255, 255, .05); border-color: var(--line); }
-.soon-badge { display: inline-block; vertical-align: middle; margin-left: .4rem; background: var(--card-2); border: 1px solid var(--line); color: var(--sand); border-radius: 999px; padding: .05rem .5rem; font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 /* one-time cookie / storage notice (#95) — honest essential-only notice, not a consent wall.
    It rides on top of whatever the page pins to the viewport bottom, never over it (#401): a page
    that stacks its own bars there publishes their height as `--bottom-stack` (the Reader measures
@@ -846,10 +838,6 @@ button.rb-badge:hover { background: var(--card); }
 .progress-bar { height: 100%; width: var(--progress, 0%); background: var(--sand); transition: width .2s ease; }
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: 9px; }
-/* the admin toggle: a small floating chip; the edit bar appears when it's active */
-.i18ne-toggle { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-.i18ne-toggle.active { color: var(--on-sand); background: var(--sand); border-color: var(--sand); }
-.i18ne-toggle.has-pending::after { content: ""; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--track); border: 2px solid var(--card); }
 .i18ne-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .4rem .7rem; box-shadow: var(--shadow); }
 .i18ne-badge { display: inline-flex; align-items: center; gap: .35rem; color: var(--sand); font-weight: 700; font-size: .85rem; }
 .i18ne-hint { color: var(--muted); font-size: .78rem; }

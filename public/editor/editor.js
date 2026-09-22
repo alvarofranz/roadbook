@@ -765,8 +765,8 @@
             if (pendingMedia.length) { // the bundle carries photos/audio → they only appear once re-uploaded on save (#162)
                 const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos & audio'))}</h3>
                     <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>
-                    <div class="btnrow end"><button class="btn btn-primary" data-ok>${esc(t('OK'))}</button></div>`, 'narrow');
-                d.q('[data-ok]').onclick = d.close;
+                    <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
+                d.q('.modal-close').onclick = d.close;
             }
         }
         catch (err) { toast('Error: ' + err.message); }

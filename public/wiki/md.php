@@ -1,4 +1,6 @@
 <?php
+// The guide's Markdown, public content: the app fetches it cross-origin from its WebView origin.
+header('Access-Control-Allow-Origin: *');
 $page = preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['page'] ?? '');
 if (!$page) { http_response_code(400); exit; }
 $lang = preg_replace('/[^a-z]/', '', $_GET['lang'] ?? '');

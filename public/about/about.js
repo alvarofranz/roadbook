@@ -19,7 +19,7 @@
         // day it was built, so name that build too and let the two be compared (#515).
         $('appFacts').innerHTML =
             fact('Platform', RBPlatformName())
-            + fact('Running', running ? running.text : '—')
+            + fact('Running', RBReleaseText(running))
             + (native ? fact('Web content in this app', rel(bundled)) : '')
             + fact(native ? 'Latest web content' : 'Available', rel(live));
         const info = $('appInfoOpen');

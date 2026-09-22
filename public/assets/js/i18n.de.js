@@ -84,7 +84,7 @@
             'feat.4.t': 'Roadbook-Reader', 'feat.4.d': 'Navigiere mit Kilometerzähler, Kurs, Live-Karte und dem KAP-Richtungsbalken.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Präziser GPS-Kilometerzähler ohne Roadbook — Teil- und Gesamtdistanz.',
             'feat.7.t': 'Veranstaltungsklassement', 'feat.7.d': 'Organisiere ein Rally auf einem Roadbook: Vergleiche jede Teamfahrt — Genauigkeit, KAP, Geschwindigkeit und Regelmäßigkeit — in einem Abschlussklassement aus signierten Ergebnis-QRs.',
-            'events.t': 'Veranstaltungen', 'events.d': 'Organisiere Veranstaltungen rund um deine Roadbooks — lade Teams ein, starte das Rally und veröffentliche die Ergebnisse.', 'Coming soon': 'Demnächst', 'route map': 'Routenkarte',
+            'events.t': 'Veranstaltungen', 'events.d': 'Organisiere Veranstaltungen rund um deine Roadbooks — lade Teams ein, starte das Rally und veröffentliche die Ergebnisse.', 'route map': 'Routenkarte',
             'install.kicker': 'Plattformübergreifend', 'install.title': 'Auf jedem Gerät installieren', 'install.text': 'Alle Funktionen von RDBK.app sind auch als kostenlose, installierbare Web-App (PWA) verfügbar — auf Windows, Mac, Android und iOS. Kein App-Store nötig: Füge sie zum Startbildschirm hinzu und nutze sie wie eine native App, auch offline.',
             'gallery.kicker': 'Galerie', 'gallery.title': 'Öffentliche Roadbooks', 'gallery.loading': 'Lädt…', 'gallery.empty': 'Noch keine öffentlichen Roadbooks.',
             // Hilfetexte der Editor-Felder (issue #89)
@@ -93,7 +93,7 @@
             'help.speed': 'Eine deklarative Geschwindigkeitsbegrenzung (km/h) ab dieser Note; „Ende der Begrenzung" hebt sie auf. Eine Begrenzung markiert die Note zugleich als Kontrollzone.',
             'help.capType': 'Qualifiziert die CAP-Richtung der Note (FIA): Ausfahrt, Mittel, Berechnet oder Kurve. Aktiv, sobald die Note ein CAP hat.',
             'Position': 'Position',
-            'help.image': 'Ein optionales Bild für diese Kommentarzeile. Es wird ins Roadbook eingebettet und im Reader und PDF angezeigt.',
+            
             'help.wpType': 'Der FIA-Waypoint-Typ. Legt das Kartensymbol fest und – in einem Rally-Roadbook – wie der Waypoint validiert und gewertet wird.',
             'help.radius': 'Validierungsradius in Metern – der Geofence für die automatische Durchfahrtserkennung. Leer greift er auf den Roadbook-Standard, dann den Typ-Standard (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) und schließlich die 50 m des System-Standards zurück. Der Platzhalter zeigt, welcher Wert gilt.',
             'help.visibility': 'Entwurf hält das Roadbook privat, während du daran arbeitest. Fertig markiert es als abgeschlossen, bleibt aber privat. Öffentlich listet es auf der Seite, sodass jeder es lesen oder als PDF exportieren kann – nur du kannst die .rdbk herunterladen.',
@@ -107,8 +107,8 @@
             'Copy link': 'Link kopieren', 'Link copied': 'Link kopiert', 
             'Make private': 'Privat machen', 'Roadbook is now private.': 'Roadbook ist jetzt privat.', 'Could not change visibility.': 'Sichtbarkeit konnte nicht geändert werden.',
             'Storage': 'Speicher', 'Storage quota (MB)': 'Speicherkontingent (MB)', 'Storage limit reached — free up space or ask an admin for more.': 'Speicherlimit erreicht — schaffe Platz oder bitte einen Admin um mehr.', 'Blank uses the default. Raise it for a trusted user.': 'Leer nutzt den Standard. Erhöhe ihn für einen vertrauenswürdigen Nutzer.', 'Activity': 'Aktivität', 'Could not load.': 'Konnte nicht geladen werden.', 'No activity yet.': 'Noch keine Aktivität.', 'roadbooks': 'Roadbooks', 'Site settings': 'Website-Einstellungen', 'Shown as a banner under the header on every page.': 'Wird als Banner unter dem Kopf auf jeder Seite angezeigt.', 'Show the message': 'Nachricht anzeigen', 'Message': 'Nachricht', 'Level': 'Stufe', 'Warning': 'Warnung', 'Show until (optional)': 'Anzeigen bis (optional)', 'Logs': 'Logs', 'Trash': 'Papierkorb', 'A deleted roadbook stays here 30 days, then it is gone for good.': 'Ein gelöschtes Roadbook bleibt hier 30 Tage, danach ist es endgültig weg.', 'days left': 'Tage verbleibend', 'Restore': 'Wiederherstellen', 'Restored as a draft.': 'Als Entwurf wiederhergestellt.', 'Could not restore.': 'Konnte nicht wiederhergestellt werden.', 'Move to trash': 'In den Papierkorb', 'Pick the user who gets this roadbook back (as a draft).': 'Wähle den Benutzer, der dieses Roadbook (als Entwurf) zurückbekommt.', 'Roadbook trash': 'Roadbook-Papierkorb', 'Cron log': 'Cron-Log', 'No cron log yet.': 'Noch kein Cron-Log.', 'Dismiss': 'Schließen', 'Saved.': 'Gespeichert.', 'Deploy logs live in GitHub Actions.': 'Deploy-Logs liegen in GitHub Actions.', 'Events': 'Veranstaltungen', 'Browse the events organised by the community.': 'Stöbere in den von der Community organisierten Veranstaltungen.', 'Organise your event on RDBK.app': 'Organisiere dein Event auf RDBK.app', 'You have the organiser role': 'Du hast die Organisatorrolle', 'Organise an event': 'Ein Event organisieren', 'Search events…': 'Veranstaltungen suchen…', 'No events yet.': 'Noch keine Veranstaltungen.', 'New event': 'Neue Veranstaltung', 'Edit event': 'Veranstaltung bearbeiten', 'Delete event': 'Veranstaltung löschen', 'Start date': 'Startdatum', 'End date': 'Enddatum', 'Make this roadbook private?': 'Dieses Roadbook privat machen?',
-            'Event': 'Veranstaltung', 'Back to events': 'Zurück zu den Veranstaltungen', 'Add organizer': 'Organisator hinzufügen', 'owner': 'Inhaber', 'Remove organizer': 'Organisator entfernen', 'Participants': 'Teilnehmer', 'participants': 'Teilnehmer', 'Remove participant': 'Teilnehmer entfernen', 'No participants yet.': 'Noch keine Teilnehmer.', 'Add roadbook': 'Roadbook hinzufügen', 'Remove from event': 'Aus der Veranstaltung entfernen', 'No roadbooks attached yet.': 'Noch keine Roadbooks zugeordnet.', 'Pick one of your roadbooks to attach to this event.': 'Wähle eines deiner Roadbooks, um es dieser Veranstaltung zuzuordnen.', 'Join code': 'Beitrittscode', 'New join code': 'Neuer Code', 'Joining with a code is disabled.': 'Der Beitritt per Code ist deaktiviert.', 'Generate a new join code? The current one stops working.': 'Neuen Code erzeugen? Der aktuelle funktioniert dann nicht mehr.', 'Could not copy.': 'Konnte nicht kopiert werden.', 'Sign in to join this event with the organizer\'s code.': 'Melde dich an, um mit dem Code des Veranstalters an dieser Veranstaltung teilzunehmen.', 'You are participating in this event.': 'Du nimmst an dieser Veranstaltung teil.', 'Leave event': 'Veranstaltung verlassen', 'Have a join code from the organizer?': 'Hast du einen Beitrittscode vom Veranstalter?', 'Join': 'Teilnehmen', 'Wrong join code.': 'Falscher Beitrittscode.', 'You can only attach your own roadbooks.': 'Du kannst nur deine eigenen Roadbooks zuordnen.', 'No user with that username.': 'Kein Benutzer mit diesem Benutzernamen.', 'The event owner cannot be removed.': 'Der Inhaber der Veranstaltung kann nicht entfernt werden.', 'Enter the join code.': 'Gib den Beitrittscode ein.', 'Could not add.': 'Konnte nicht hinzugefügt werden.', 'Could not remove.': 'Konnte nicht entfernt werden.', 'Not allowed.': 'Nicht erlaubt.', 'Participation mode': 'Teilnahmemodus', 'organizer': 'Organisator', 'Make event organizer': 'Zum Event-Organisator machen', 'Remove event organizer': 'Event-Organisator entfernen', 'Full access to users, settings and every event.': 'Voller Zugriff auf Benutzer, Einstellungen und jede Veranstaltung.',
-            'Navigate a roadbook': 'Roadbook navigieren', 'Build a roadbook': 'Roadbook erstellen', 'GPS trip computer': 'GPS-Reisecomputer', 'Score events': 'Veranstaltungen bewerten',
+            'Event': 'Veranstaltung', 'Back to events': 'Zurück zu den Veranstaltungen', 'Add organizer': 'Organisator hinzufügen', 'owner': 'Inhaber', 'Remove organizer': 'Organisator entfernen', 'Participants': 'Teilnehmer', 'participants': 'Teilnehmer', 'Remove participant': 'Teilnehmer entfernen', 'No participants yet.': 'Noch keine Teilnehmer.', 'Add roadbook': 'Roadbook hinzufügen', 'Remove from event': 'Aus der Veranstaltung entfernen', 'No roadbooks attached yet.': 'Noch keine Roadbooks zugeordnet.', 'Pick one of your roadbooks to attach to this event.': 'Wähle eines deiner Roadbooks, um es dieser Veranstaltung zuzuordnen.', 'Join code': 'Beitrittscode', 'New join code': 'Neuer Code', 'Generate a new join code? The current one stops working.': 'Neuen Code erzeugen? Der aktuelle funktioniert dann nicht mehr.', 'Could not copy.': 'Konnte nicht kopiert werden.', 'Sign in to join this event with the organizer\'s code.': 'Melde dich an, um mit dem Code des Veranstalters an dieser Veranstaltung teilzunehmen.', 'You are participating in this event.': 'Du nimmst an dieser Veranstaltung teil.', 'Leave event': 'Veranstaltung verlassen', 'Have a join code from the organizer?': 'Hast du einen Beitrittscode vom Veranstalter?', 'Join': 'Teilnehmen', 'Wrong join code.': 'Falscher Beitrittscode.', 'You can only attach your own roadbooks.': 'Du kannst nur deine eigenen Roadbooks zuordnen.', 'No user with that username.': 'Kein Benutzer mit diesem Benutzernamen.', 'The event owner cannot be removed.': 'Der Inhaber der Veranstaltung kann nicht entfernt werden.', 'Enter the join code.': 'Gib den Beitrittscode ein.', 'Could not add.': 'Konnte nicht hinzugefügt werden.', 'Could not remove.': 'Konnte nicht entfernt werden.', 'Not allowed.': 'Nicht erlaubt.', 'Participation mode': 'Teilnahmemodus', 'organizer': 'Organisator', 'Make event organizer': 'Zum Event-Organisator machen', 'Remove event organizer': 'Event-Organisator entfernen', 'Full access to users, settings and every event.': 'Voller Zugriff auf Benutzer, Einstellungen und jede Veranstaltung.',
+            'Navigate a roadbook': 'Roadbook navigieren', 'Build a roadbook': 'Roadbook erstellen', 'GPS trip computer': 'GPS-Reisecomputer', 
             'Start new Roadbook from:': 'Neues Roadbook starten aus:', 'Start from a public RB': 'Öffentliches RB verwenden', 'Import a GPS track': 'GPS-Track importieren',
             'Open an existing roadbook': 'Vorhandenes Roadbook öffnen',
             'Finish': 'Fertig', 'Save': 'Speichern',
@@ -161,17 +161,17 @@
             'Saved · public at': 'Gespeichert · öffentlich unter', 'Auto': 'Auto', 'Skips': 'Übersprünge', 'Extra': 'Extra', 'pts': 'Pkt', 'prog.': 'Prog.', 'part.': 'Teil.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto: Noten werden per GPS validiert wenn du sie erreichst. Aus: Antippen um jede Note als erledigt zu markieren.',
             'Add participant': 'Teilnehmer hinzufügen', 'Grants': 'Berechtigungen', 'Basic user': 'Standardnutzer', 'Set join code': 'Beitrittscode festlegen', 'Browse events': 'Events durchsuchen', 'Roadbook not found or no edit rights.': 'Roadbook nicht gefunden oder keine Bearbeitungsrechte.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Die Rangliste erfordert ein Event und ein Roadbook — öffne sie über die Event-Seite, um die Ergebnisse eines bestimmten Roadbooks zu werten.', 
-            'Add result': 'Ergebnis hinzufügen', 'Add': 'Hinzufügen', 'Target average speed': 'Ziel-Durchschnittsgeschwindigkeit', "(used for regularity if the QR doesn't carry it)": '(für Regelmäßigkeit wenn der QR sie nicht enthält)',
+            'Add result': 'Ergebnis hinzufügen', 'Add': 'Hinzufügen', 'Target average speed': 'Ziel-Durchschnittsgeschwindigkeit', 
             '…or paste the code (META) here': '…oder Code (META) hier einfügen', 'Added vehicle': 'Fahrzeug hinzugefügt', 'Invalid signature': 'Ungültige Signatur', 'Could not open the camera': 'Kamera konnte nicht geöffnet werden', 'Remove vehicle': 'Fahrzeug entfernen',
             'Reset the partial trip?': 'Teildistanz zurücksetzen?', 'Colour for the band {band}': 'Farbe für Band {band}', 'Show password': 'Passwort anzeigen', 'Hide password': 'Passwort verbergen', 'photo': 'Foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
             'Smaller': 'Kleiner', 'Bigger': 'Größer', 'Rotate left': 'Links drehen', 'Rotate right': 'Rechts drehen', 'Flip': 'Spiegeln', 'Thinner': 'Dünner', 'Thicker': 'Dicker', 'Road type': 'Straßentyp', 'Reset timer': 'Timer zurücksetzen',
-            'Add image': 'Bild hinzufügen', 'Change image': 'Bild ändern', 'Remove image': 'Bild entfernen',
+            'Add image': 'Bild hinzufügen', 'Change image': 'Bild ändern', 
             'Add junction': 'Kreuzung hinzufügen', 'Remove logo': 'Logo entfernen', 'GPS lost': 'GPS verloren', 'Too far from note': 'Zu weit von Note entfernt', 'Could not load the roadbook.': 'Roadbook konnte nicht geladen werden.',
             'Skip it and continue?': 'Überspringen und weiter?', 
             'Jump to note': 'Zu Note springen', 'The notes in between will be left unvalidated.': 'Die Noten dazwischen bleiben unbestätigt.', 'Penalty:': 'Strafe:', 'A validated note cannot be changed in competition mode.': 'Im Wettbewerbsmodus kann eine bestätigte Note nicht geändert werden.',
             'Camera stopped.': 'Kamera gestoppt.', 'Removed': 'Entfernt',
             'Could not generate the PDF.': 'PDF konnte nicht erstellt werden.',
-            'OK': 'OK', 'Menu': 'Menü', 'Language': 'Sprache',
+            'Menu': 'Menü', 'Language': 'Sprache',
             'Replace the trail between points {a} and {b} with your {n}-point variant?': 'Den Pfad zwischen Punkten {a} und {b} durch deine {n}-Punkt-Variante ersetzen?',
             'Replace everything after point {a} with your new {n}-point ending?': 'Alles nach Punkt {a} durch dein neues {n}-Punkt-Ende ersetzen?',
             'title.h1': 'Der <span class="accent">.rdbk</span>-Standard',
@@ -191,7 +191,7 @@
             'Field': 'Feld', 'Type': 'Typ', 'Meaning': 'Bedeutung',
             'Human-readable roadbook title.': 'Für Menschen lesbarer Roadbook-Titel.',
             'meta.total_distance': 'Gesamtlänge der Route in Metern (aus <code>track</code> abgeleitet).',
-            'Number of notes.': 'Anzahl der Noten.',
+            
             'Optional. Free text shown on the public roadbook page.': 'Optional. Freitext auf der öffentlichen Roadbook-Seite.',
             'Optional. Name of the roadbook author.': 'Optional. Name des Roadbook-Autors.',
             'Optional. Organizing club / event organizer.': 'Optional. Organisierender Club / Veranstalter.',
@@ -203,7 +203,7 @@
             'notes.wp_type': 'Optional. FIA-Wegpunkt-Typ: masked / control / security / navigation / precise / visible / eclipse sowie Start/Ziel- und Kontrollmarkierungen. In einer .rdbk-Datei wird der Wert als OpenRally-Standardcode (WPM, WPN, WPE, …) gespeichert, den ein Reader beim Import auf diese Typen zurückführt.',
             'notes.wp_radius': 'Optional. Validierungsradius der Note (Meter). Fehlt er, wird auf <code>meta.default_wp_radius</code> zurückgegriffen.',
             'track.intro': 'Ein geordnetes Array von Punkten das die Route beschreibt. Jeder Punkt kann ein optionales <code>ele</code> tragen — Höhe in ganzen Metern.',
-            'The heart of a roadbook: an ordered list of waypoints, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.': 'Das Herzstück eines Roadbooks: eine geordnete Liste von Wegpunkten, jeder mit einer Anweisung, einem Kurs und Symbolen.',
+            
             '1-based note number (display order).': 'Notennummer ab 1 (Anzeigereihenfolge).',
             'notes.idx': 'Index in <code>track</code> wo sich diese Note befindet.',
             'Note position (decimal degrees).': 'Notenposition (Dezimalgrad).',
@@ -258,7 +258,7 @@
             'Right-click opens the menu — long-press on touch.': 'Rechtsklick öffnet das Menü — langes Drücken auf Touch.',
             'Move (drag points) — M': 'Verschieben (Punkte ziehen) — M', 'Draw route — D': 'Route zeichnen — D', 'Cut (tap two points) — C': 'Schneiden (zwei Punkte antippen) — C',
             'Add a GPX track': 'GPX-Track hinzufügen', 'Reverse direction': 'Richtung umkehren', 'Simplify (remove GPS noise)': 'Vereinfachen (GPS-Rauschen entfernen)',
-            'Satellite / terrain map': 'Satelliten-/Geländekarte', 'Undo (Ctrl+Z)': 'Rückgängig (Strg+Z)', 'Redo (Ctrl+Y)': 'Wiederholen (Strg+Y)',
+            'Undo (Ctrl+Z)': 'Rückgängig (Strg+Z)', 'Redo (Ctrl+Y)': 'Wiederholen (Strg+Y)',
             'Drawn route': 'Gezeichnete Route', 'Tap the map to draw your route.': 'Karte antippen um deine Route zu zeichnen.',
             'This roadbook has no route yet. Draw it on the map?': 'Dieses Roadbook hat noch keine Route. Auf der Karte zeichnen?',
             'Now tap the other end of the cut.': 'Jetzt das andere Ende des Schnitts antippen.',
@@ -272,9 +272,9 @@
             'Replace': 'Ersetzen', 'Track joined to the route.': 'Track mit Route verbunden.',
             'The GPX has no usable track or waypoints.': 'Das GPX hat keinen nutzbaren Track und keine Wegpunkte.',
             'No waypoints within 10 m of the route.': 'Keine Wegpunkte innerhalb von 10 m der Route.', 'skipped, too far': 'übersprungen, zu weit',
-            'Load a roadbook and navigate it with GPS.': 'Lade ein Roadbook und navigiere mit GPS.',
+            
             'Load .rdbk file': '.rdbk-Datei laden',
-            'Load from public roadbooks': 'Öffentliches Roadbook laden', 'No roadbooks yet.': 'Noch keine Roadbooks.',
+            'No roadbooks yet.': 'Noch keine Roadbooks.',
             'Browse the roadbooks shared by the community.': 'Roadbooks der Community durchsuchen.', 'See all public roadbooks': 'Alle öffentlichen Roadbooks anzeigen', 'No public roadbooks yet.': 'Noch keine öffentlichen Roadbooks.', 'Could not load roadbooks.': 'Roadbooks konnten nicht geladen werden.', 'Could not export the PDF.': 'PDF konnte nicht exportiert werden.',
             'Learn more →': 'Mehr erfahren →',
             'Privacy': 'Datenschutz', 'RDBK uses only essential cookies (to keep you signed in) and local storage for your preferences and offline data — no ads, no tracking, no profiling.': 'RDBK verwendet nur wesentliche Cookies und lokalen Speicher für Einstellungen — keine Werbung, kein Tracking.',
@@ -306,7 +306,7 @@
             'Walk onto the trail (≤10 m) to start adjusting.': 'Auf die Strecke gehen (≤10 m) um mit dem Anpassen zu beginnen.',
             'Sign in to save this roadbook to your profile.': 'Anmelden um dieses Roadbook im Profil zu speichern.',
             'There is already a note here.': 'Hier gibt es bereits eine Note.', 'At least 2 notes must remain.': 'Mindestens 2 Noten müssen verbleiben.',
-            'Add note here': 'Note hier hinzufügen', 'Delete this point': 'Diesen Punkt löschen', 'This point is a note — delete the point and its note?': 'Dieser Punkt ist eine Note — Punkt und Note löschen?', 'Point deleted.': 'Punkt gelöscht.', 'At least 2 points must remain.': 'Mindestens 2 Punkte müssen verbleiben.', 'Add point here': 'Punkt hier hinzufügen', 'Add intermediate point': 'Zwischenpunkt hinzufügen', 'Add point on line': 'Punkt auf Linie hinzufügen', 'Transform': 'Umwandeln', 'Delete point': 'Punkt löschen', 'Delete note': 'Note löschen', 'Waypoint turned into a track point.': 'Wegpunkt in Trackpunkt umgewandelt.', 'Point added.': 'Punkt hinzugefügt.', 'No point follows this one.': 'Kein Punkt folgt diesem.', 'Raw JSON': 'Rohes JSON', 'View GPX': 'GPX anzeigen', 'View JSON': 'JSON anzeigen', 'Find in text (Enter)…': 'Im Text suchen (Enter)…', 'Not found.': 'Nicht gefunden.', 'Copy': 'Kopieren', 'Copied.': 'Kopiert.',
+            'Add note here': 'Note hier hinzufügen', 'This point is a note — delete the point and its note?': 'Dieser Punkt ist eine Note — Punkt und Note löschen?', 'Point deleted.': 'Punkt gelöscht.', 'At least 2 points must remain.': 'Mindestens 2 Punkte müssen verbleiben.', 'Add point here': 'Punkt hier hinzufügen', 'Add intermediate point': 'Zwischenpunkt hinzufügen', 'Add point on line': 'Punkt auf Linie hinzufügen', 'Transform': 'Umwandeln', 'Delete point': 'Punkt löschen', 'Delete note': 'Note löschen', 'Waypoint turned into a track point.': 'Wegpunkt in Trackpunkt umgewandelt.', 'Point added.': 'Punkt hinzugefügt.', 'No point follows this one.': 'Kein Punkt folgt diesem.', 'Raw JSON': 'Rohes JSON', 'View GPX': 'GPX anzeigen', 'View JSON': 'JSON anzeigen', 'Find in text (Enter)…': 'Im Text suchen (Enter)…', 'Not found.': 'Nicht gefunden.', 'Copy': 'Kopieren', 'Copied.': 'Kopiert.',
             'Danger zone': 'Gefahrenzone', 'Deleting a roadbook moves it to the trash, with its photos and voice notes.': 'Ein gelöschtes Roadbook wandert in den Papierkorb, mit seinen Fotos und Sprachnotizen.',
             'Delete roadbook': 'Roadbook löschen',
             'Admin': 'Admin', 'User management': 'Benutzerverwaltung', 'User': 'Benutzer', 'Disk': 'Festplatte', 'Roadbooks': 'Roadbooks', 'unverified': 'nicht verifiziert', 'you': 'du', 'Admins only.': 'Nur Admins.', 'Sign in to continue.': 'Anmelden um fortzufahren.', 'Configured in .env': 'In .env konfiguriert', 'Could not delete.': 'Konnte nicht löschen.', 'Delete this user and all their data?': 'Diesen Benutzer und alle seine Daten löschen?', 'Change password': 'Passwort ändern', 'Current password': 'Aktuelles Passwort', 'Set a password': 'Passwort festlegen', 'You signed up with Google or Apple — set a password to also sign in with email and password.': 'Du hast dich mit Google oder Apple registriert — lege ein Passwort fest, um dich auch mit E-Mail und Passwort anzumelden.', 'Delete account': 'Konto löschen', 'This permanently deletes your account. Your roadbooks are moved to the trash under a generic “deleted user” profile (your username prefixed to their titles) and permanently deleted after 30 days.': 'Dies löscht dein Konto dauerhaft. Deine Roadbooks wandern in den Papierkorb eines generischen “deleted user”-Profils (mit deinem Benutzernamen vor dem Titel) und werden nach 30 Tagen endgültig gelöscht.', 'Delete your account permanently? This cannot be undone.': 'Konto dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.', 'Password updated.': 'Passwort aktualisiert.', 'With roadbooks': 'Mit Roadbooks', 'Event organizers': 'Veranstalter von Events',
@@ -334,12 +334,12 @@
             'Record GPX': 'GPX aufzeichnen', 'Stop recording': 'Aufnahme stoppen', 'Speed alert': 'Geschwindigkeitsalarm', 'Speed to watch (km/h · 0 = off)': 'Zu überwachende Geschwindigkeit (km/h · 0 = aus)', 'Colours': 'Farben',
             'green': 'grün', 'orange': 'orange', 'red': 'rot', 'Recorded track': 'Aufgezeichneter Track', 'points': 'Punkte', 'Download GPX': 'GPX herunterladen', 'Convert into roadbook': 'In Roadbook umwandeln', 'Save to account': 'Im Konto speichern', 'Saving…': 'Speichern…', 'Exported': 'Exportiert', 'Sign in to save this recording to your account.': 'Melde dich an, um diese Aufnahme in deinem Konto zu speichern.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Im Konto speichern oder ein eigenständiges .rdbk mit Fotos und Sprachnotizen exportieren.', 'Open in the editor': 'Im Editor öffnen', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Beim Speichern bleiben Fotos und Sprachnotizen erhalten; das GPX ist eine lokale Datei ohne sie.',
             'End the trip and reset everything?': 'Fahrt beenden und alles zurücksetzen?', 'Trip reset.': 'Fahrt zurückgesetzt.', 'Recording GPX track.': 'GPX-Track wird aufgezeichnet.', 'Could not load the recorded trip.': 'Aufgezeichnete Fahrt konnte nicht geladen werden.',
-            'Sample every (seconds)': 'Intervall (Sekunden)', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Empfohlen: 3s Auto/Rallye · 5s Fahrrad · 10s zu Fuß', 'File name': 'Dateiname', 'Saved to your Pictures folder': 'Im Ordner „Bilder" gespeichert', 'Saved to your Downloads folder': 'Im Ordner „Download" gespeichert', 'Saved to your device': 'Auf dem Gerät gespeichert', 'Could not save the file.': 'Die Datei konnte nicht gespeichert werden.', 'Latitude': 'Breitengrad', 'Longitude': 'Längengrad', 'Installed': 'Installiert', 'latest': 'neueste', 'Profile': 'Profil', 'Language': 'Sprache', 'Administration': 'Verwaltung', 'Sections': 'Bereiche', 'Public roadbooks': 'Öffentliche Roadbooks', 'Classify results': 'Ergebnisse auswerten', 'Set up an event with its roadbooks, participants and rankings.': 'Richte ein Event mit Roadbooks, Teilnehmern und Ranglisten ein.', 'Create and edit roadbooks': 'Roadbooks erstellen und bearbeiten', 'Live GPS: Tripmaster or Reader': 'Live-GPS: Tripmaster oder Reader', 'Browse events, participate and see rankings': 'Events durchsuchen, teilnehmen und Ranglisten sehen', 'Your account and saved roadbooks': 'Dein Konto und gespeicherte Roadbooks', 'Open from a file or your roadbooks, or pick a public one below.': 'Aus einer Datei oder deinen Roadbooks öffnen, oder unten ein öffentliches wählen.', 'seo.navigate.title': 'Navigieren — RDBK.app', 'seo.navigate.desc': 'Live-GPS-Modi: der Tripmaster-Reisecomputer und der Roadbook Reader.', 'Stop recording?': 'Aufzeichnung beenden?', 'Discard this recording?': 'Diese Aufzeichnung verwerfen?', 'You are offline — reconnect to see your roadbooks.': 'Du bist offline — verbinde dich erneut, um deine Roadbooks zu sehen.', 'Track too short.': 'Track zu kurz.',
+            'Sample every (seconds)': 'Intervall (Sekunden)', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Empfohlen: 3s Auto/Rallye · 5s Fahrrad · 10s zu Fuß', 'File name': 'Dateiname', 'Saved to your Pictures folder': 'Im Ordner „Bilder" gespeichert', 'Saved to your Downloads folder': 'Im Ordner „Download" gespeichert', 'Saved to your device': 'Auf dem Gerät gespeichert', 'Could not save the file.': 'Die Datei konnte nicht gespeichert werden.', 'Latitude': 'Breitengrad', 'Longitude': 'Längengrad', 'Installed': 'Installiert', 'latest': 'neueste', 'Profile': 'Profil', 'Language': 'Sprache', 'Sections': 'Bereiche', 'Public roadbooks': 'Öffentliche Roadbooks', 'Set up an event with its roadbooks, participants and rankings.': 'Richte ein Event mit Roadbooks, Teilnehmern und Ranglisten ein.', 'Create and edit roadbooks': 'Roadbooks erstellen und bearbeiten', 'Live GPS: Tripmaster or Reader': 'Live-GPS: Tripmaster oder Reader', 'Browse events, participate and see rankings': 'Events durchsuchen, teilnehmen und Ranglisten sehen', 'Your account and saved roadbooks': 'Dein Konto und gespeicherte Roadbooks', 'Open from a file or your roadbooks, or pick a public one below.': 'Aus einer Datei oder deinen Roadbooks öffnen, oder unten ein öffentliches wählen.', 'seo.navigate.title': 'Navigieren — RDBK.app', 'seo.navigate.desc': 'Live-GPS-Modi: der Tripmaster-Reisecomputer und der Roadbook Reader.', 'Stop recording?': 'Aufzeichnung beenden?', 'Discard this recording?': 'Diese Aufzeichnung verwerfen?', 'You are offline — reconnect to see your roadbooks.': 'Du bist offline — verbinde dich erneut, um deine Roadbooks zu sehen.', 'Track too short.': 'Track zu kurz.',
                        'Auto-saved while recording, recovered if the app closes.': 'Wird während der Aufnahme automatisch gespeichert; wiederhergestellt wenn die App geschlossen wird.',
             'Recover unsaved GPX recording?': 'Nicht gespeicherte GPX-Aufnahme wiederherstellen?', 'Recover': 'Wiederherstellen',
             'Resume the run in progress?': 'Laufende Fahrt fortsetzen?', 'Resume': 'Fortsetzen',
             'Unsaved work': 'Nicht gespeicherte Arbeit', 'Work left in progress in other tools. Resume it, or discard it.': 'Arbeit in anderen Tools in Bearbeitung. Fortsetzen oder verwerfen.', 'Discarded.': 'Verworfen.', 'Untitled': 'Ohne Titel',
-            'Unsaved draft': 'Nicht gespeicherter Entwurf', 'Recording in progress': 'Aufnahme läuft', 'Tripmaster run': 'Tripmaster-Fahrt', 'Run in progress': 'Fahrt läuft', 'Also replace all current notes in this roadbook to {v} m?': 'Auch alle Noten dieses Roadbooks auf {v} m setzen?', 'Every note now validates at this radius.': 'Jede Note validiert jetzt mit diesem Radius.', 'Note': 'Note', 'Photo': 'Foto', 'Ad': 'Werbung', '(caption)': '(Bildunterschrift)', 'Text': 'Text', 'Icon': 'Icon', 'Big text': 'Großer Text', 'Before the note': 'Vor der Note', 'After the note': 'Nach der Note', 'Nothing here yet.': 'Hier ist noch nichts.', 'Add': 'Hinzufügen', '(text)': '(Text)', 'Delete this from note {n}?': 'Dies von Note {n} löschen?', 'Compass (CAP)': 'Kompass (CAP)', 'On': 'Ein', 'Off': 'Aus', 'The last note has no note to head toward.': 'Die letzte Note hat keine Note, auf die sie zusteuern könnte.', 'solid, thin stroke': 'durchgezogen, dünner Strich', 'Bike lane': 'Radweg', 'help.cap': 'Ob diese Note einen CAP trägt: den Kurs, der NACH ihr zu halten ist, berechnet zur nächsten Note samt Luftlinie. Ausschalten löscht auch den CAP-Typ.', 'Detection radius': 'Erkennungsradius', 'Roadbook type': 'Roadbook-Typ', 'Basic (adventure)': 'Basis (Abenteuer)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Standard-Erkennungsradius (m)', 
+            'Unsaved draft': 'Nicht gespeicherter Entwurf', 'Recording in progress': 'Aufnahme läuft', 'Tripmaster run': 'Tripmaster-Fahrt', 'Run in progress': 'Fahrt läuft', 'Also replace all current notes in this roadbook to {v} m?': 'Auch alle Noten dieses Roadbooks auf {v} m setzen?', 'Every note now validates at this radius.': 'Jede Note validiert jetzt mit diesem Radius.', 'Note': 'Note', 'Photo': 'Foto', 'Ad': 'Werbung', '(caption)': '(Bildunterschrift)', 'Text': 'Text', 'Icon': 'Icon', 'Big text': 'Großer Text', 'Before the note': 'Vor der Note', 'After the note': 'Nach der Note', 'Add': 'Hinzufügen', '(text)': '(Text)', 'Delete this from note {n}?': 'Dies von Note {n} löschen?', 'Compass (CAP)': 'Kompass (CAP)', 'On': 'Ein', 'Off': 'Aus', 'The last note has no note to head toward.': 'Die letzte Note hat keine Note, auf die sie zusteuern könnte.', 'solid, thin stroke': 'durchgezogen, dünner Strich', 'Bike lane': 'Radweg', 'help.cap': 'Ob diese Note einen CAP trägt: den Kurs, der NACH ihr zu halten ist, berechnet zur nächsten Note samt Luftlinie. Ausschalten löscht auch den CAP-Typ.', 'Detection radius': 'Erkennungsradius', 'Roadbook type': 'Roadbook-Typ', 'Basic (adventure)': 'Basis (Abenteuer)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Standard-Erkennungsradius (m)', 
             'Selective section start': 'Wertungsabschnitt Start', 'Selective section end': 'Wertungsabschnitt Ende',
             'Navigation WP': 'Navigation WP', 'Masked WP': 'Maskierter WP', 'Eclipse WP': 'Eclipse WP', 'Control WP': 'Kontroll-WP', 'Security WP': 'Sicherheits-WP', 'Precise WP': 'Präzisions-WP', 'Visible WP': 'Sichtbarer WP',
             'Difficult-overtaking zone start': 'Überholverbotszone Beginn', 'Difficult-overtaking zone end': 'Überholverbotszone Ende',
@@ -362,7 +362,7 @@
             
             'Adjust cancelled — you never got on the trail.': 'Anpassung abgebrochen — du warst nie auf der Strecke.',
             'Sharing not supported here — use Save QR.': 'Teilen hier nicht unterstützt — QR speichern verwenden.',
-            'Install': 'Installieren', 'My profile': 'Mein Profil', 'Got it': 'Verstanden', 'I accept': 'Ich akzeptiere', 'How it works': 'Wie es funktioniert',
+            'Install': 'Installieren', 'My profile': 'Mein Profil', 'I accept': 'Ich akzeptiere', 'How it works': 'Wie es funktioniert',
             /* install guide (#333) */ 'seo.install.title': 'RDBK.app installieren — auf jedem Gerät', 'seo.install.desc': 'Installiere RDBK.app auf Handy, Tablet oder Computer — offline nutzbar, öffnet .rdbk-Dateien und zeichnet bei gesperrtem Bildschirm weiter auf.', 'Install RDBK.app': 'RDBK.app installieren', 'Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.': 'Installiert öffnet sich RDBK vom Startbildschirm, funktioniert offline und öffnet .rdbk-Dateien direkt. Wähle unten dein Gerät — das aktuelle ist hervorgehoben.', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Schon installiert? Öffne RDBK über den Startbildschirm oder die App-Liste — diese Seite brauchst du nur einmal.', 'Your device': 'Dein Gerät', 'Using another device?': 'Anderes Gerät?', 'Install now': 'Jetzt installieren', 'Open <b>rdbk.app</b> in Chrome.': 'Öffne <b>rdbk.app</b> in Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Tippe oben rechts auf das <b>⋮</b>-Menü.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Wähle <b>App installieren</b> (oder <b>Zum Startbildschirm hinzufügen</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Öffne <b>rdbk.app</b> in Safari (es muss Safari sein).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Öffne <b>rdbk.app</b> in Chrome oder Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Klicke auf das <b>Installieren</b>-Symbol <i class="fa-solid fa-circle-down icon-accent"></i> in der Adressleiste (oder ⋮-Menü → <b>Installieren</b>).', 'Confirm — RDBK then opens in its own window.': 'Bestätige — RDBK öffnet sich danach in einem eigenen Fenster.', 'RDBK is installed — open it from your home screen.': 'RDBK ist installiert — öffne sie über den Startbildschirm.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Datenschutzerklärung',
@@ -421,7 +421,7 @@
             'Code not recognized.': 'Code nicht erkannt.',
             'Could not read the image.': 'Bild konnte nicht gelesen werden.',
             'In use; remove it from the notes first.': 'In Verwendung; zuerst aus den Noten entfernen.',
-            'Icon(s) uploaded — tap them to place.': 'Icon(s) hochgeladen — antippen zum Platzieren.',
+            
             // Feature pages (/features/<tool>/) — tool descriptions + Tips & tricks
             'fp.tool.recorder': 'Roadbook Recorder',
             'fp.tool.editor': 'Roadbook Editor',
@@ -597,7 +597,7 @@
             'fp.tripmaster.t5t': 'Stoppuhr + Noten',
             'fp.tripmaster.t5d': 'Nutze die laufende Stoppuhr und den schnellen Notezähler für das Wesentliche, wenn es kein Roadbook gibt.',
             'fp.ranking.lead': 'Führe ein Rally auf einem einzigen Roadbook durch und vergleiche die Fahrt jedes Teams. Verwandle die signierten Ergebnis-QRs in Genauigkeits-, CAP-, Geschwindigkeits- und Regelmäßigkeitsranglisten, kombiniert zu einem Abschlussklassement, mit CSV-Export — alles verifiziert und auf deinem Gerät gehalten.',
-            'fp.ranking.open': 'Öffnen',
+            
             'fp.ranking.f1t': 'Ergebnis-QRs scannen oder einfügen',
             'fp.ranking.f1d': 'Jeder Ergebnis-QR wird per HMAC-Signatur verifiziert, bevor er zählt, sodass ein manipuliertes oder gefälschtes Ergebnis abgelehnt wird.',
             'fp.ranking.f2t': 'Vier Ranglisten + Endwertung',
@@ -623,11 +623,11 @@
             'Organizer': 'Veranstalter',
             'Can create and manage their own events.': 'Kann eigene Veranstaltungen erstellen und verwalten.',
             'In preparation': 'In Vorbereitung', 'Active participants only': 'Nur aktive Teilnehmer',
-'Open join (no code required)': 'Offene Teilnahme (kein Code erforderlich)',
+
 'Registration': 'Anmeldung', 'Closed — nobody can join': 'Geschlossen – niemand kann beitreten', 'Invite code only': 'Nur mit Einladungscode', 'Open — anyone can join': 'Offen – jeder kann beitreten',
 'Require organizer activation (personal QR)': 'Aktivierung durch Veranstalter erforderlich (persönlicher QR)',
 
-'Switch to Invite code': 'Zu Einladung wechseln',
+
 'participants are waiting for activation. Switching will admit all of them. Continue?': 'Teilnehmer warten auf Aktivierung. Beim Wechsel werden alle zugelassen. Fortfahren?', 'Admit all': 'Alle zulassen',
 'participants are already active. Keep them active, or send them back to pending for the QR code?': 'Teilnehmer sind bereits aktiv. Aktiv lassen oder für den QR zurück auf ausstehend setzen?', 'Keep active': 'Aktiv lassen', 'Require QR code': 'QR verlangen',
 'Activate all': 'Alle aktivieren', 'participants are waiting for activation. Admit all of them?': 'Teilnehmer warten auf Aktivierung. Alle zulassen?', 'participants activated.': 'Teilnehmer aktiviert.',
@@ -655,7 +655,7 @@
             'awaiting upload': 'warten auf Upload',
             'kept on this device': 'auf diesem Gerät gespeichert',
             'Export .rdbk': '.rdbk exportieren',
-            'The .rdbk keeps your photos and voice notes in one file; GPX has the track only.': 'Die .rdbk behält Fotos und Sprachnotizen in einer Datei; die GPX enthält nur den Track.',
+            
             'Saved a local .rdbk with your photos and voice notes. Remove them from this device now?': 'Eine lokale .rdbk mit deinen Fotos und Sprachnotizen wurde gespeichert. Jetzt von diesem Gerät entfernen?',
             'Microphone unavailable.': 'Mikrofon nicht verfügbar.',            'fp.recorder.t9t': 'Sprachnote: gedrückt halten zum Aufnehmen',
             'fp.recorder.t9d': 'Halte die Sprachnoten-Taste gedrückt, um eine Sprachnotiz an Ort und Stelle aufzunehmen; beim Loslassen läuft ein kurzer Countdown auf der Taste weiter und speichert dann automatisch. Der Audioclip wird gespeichert (in der Note im Editor abspielbar); am Desktop wird zusätzlich live transkribiert — am Handy ist das Mikrofon exklusiv, nutze für diktierten Text daher das Mikrofon der Noten-Taste.',
@@ -666,7 +666,7 @@
             'Building your data export…': 'Dein Datenexport wird erstellt…',
             'Could not load your roadbooks.': 'Deine Roadbooks konnten nicht geladen werden.',
             'Download all your data as a ZIP before deleting?': 'Alle deine Daten vor dem Löschen als ZIP herunterladen?',
-            'Download data': 'Daten herunterladen',
+            
             'None': 'Keiner',
             'No track in the GPX — built a route through the waypoints; redraw or refine it as needed.': 'Keine Spur im GPX — eine Route durch die Wegpunkte wurde erstellt; bei Bedarf neu zeichnen oder verfeinern.',
             'Some photos failed.': 'Einige Fotos sind fehlgeschlagen.',
@@ -693,8 +693,8 @@
             'Apple sign-in failed. Please try again.': 'Apple-Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
             'Account': 'Konto',
             'Ranking': 'Rangliste',
-            'Open ranking': 'Rangliste öffnen',
-            'Scores for this event. The event organizer collects result QR codes after each run and adds them here.': 'Wertungen für diese Veranstaltung. Der Organisator sammelt die Ergebnis-QR-Codes nach jeder Fahrt und fügt sie hier hinzu.',
+            
+            
             
             'native.better.gps': 'Für bessere GPS-Genauigkeit und Hintergrundaufzeichnung, nutze die native iOS- oder Android-App.',
             'native.better.event': 'Fährst du dieses Event? Installiere die RDBK-App auf dem Handy: GPS, das bei gesperrtem Bildschirm weiterläuft, deine Roadbooks offline verfügbar und Event-Links, die direkt in der App öffnen.', 'Get the app': 'App herunterladen',
@@ -706,7 +706,7 @@
             'web.gps.title': 'Browser-GPS kann auf Telefonen unzuverlässig sein',
             'web.gps.comp.title': 'Diese Fahrt wird nach GPS-Genauigkeit bewertet',
             'web.gps.comp.warn': 'In einem Handy-Browser kann GPS-Drift zu falschen Strafen führen, die nicht am Roadbook liegen. Für eine faire Wettbewerbsrunde nutze die native RDBK-App.',
-            'Use the web app anyway': 'Web trotzdem nutzen',
+            
         };
 
         // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
@@ -714,8 +714,8 @@
             'wiki.nav.home': 'Start', 'wiki.nav.welcome': 'Erste Schritte', 'wiki.nav.recorder': 'Eine Strecke aufnehmen',
             'wiki.nav.editor': 'Roadbook erstellen / bearbeiten', 'wiki.nav.reader': 'Mit dem Reader navigieren', 'wiki.nav.tripmaster': 'Tripmaster verwenden',
             'wiki.nav.events': 'Event-Verwaltung',
-            'wiki.title.welcome': 'Erste Schritte', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Editor',
-            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Roadbook Player', 'wiki.title.events': 'Event-Verwaltung',
+            'wiki.title.welcome': 'Erste Schritte', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Roadbook Editor',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Event-Verwaltung',
             'wiki.cta.title': 'Schritt-für-Schritt-Anleitung', 'wiki.cta.desc': 'Folge der Anleitung, um deine Roadbooks zu erstellen', 'wiki.cta.link': 'Zur Wiki →',
             'App Info': 'App-Info', 'Version': 'Version', 'Environment': 'Umgebung', 'Update': 'Aktualisieren',
             'Platform': 'Plattform', 'Running': 'Laufend', 'Available': 'Verfügbar', 'Latest web content': 'Neueste Web-Inhalte',
@@ -1053,7 +1053,7 @@ Object.assign(window.RBi18nLangs.de, {
     "photos": "Fotos",
     "Discard it with its notes and photos?": "Mit ihren Notizen und Fotos verwerfen?",
     "Sign in to edit this roadbook.": "Melde dich an, um dieses Roadbook zu bearbeiten.",
-    "OK": "OK",
+    
 });
 
 /* admin consistency (#663–#668) */
@@ -1062,4 +1062,20 @@ Object.assign(window.RBi18nLangs.de, {
     "Site banner": "Website-Banner",
     "The translation editor is still loading — try again in a moment.": "Der Übersetzungseditor lädt noch – versuch es gleich noch einmal.",
     "Could not export.": "Export nicht möglich.",
+});
+
+/* web-GPS warning asks a question (#669) */
+Object.assign(window.RBi18nLangs.de, {
+    "Continue in the browser anyway?": "Trotzdem im Browser fortfahren?",
+});
+
+/* store links, one list (#674) */
+Object.assign(window.RBi18nLangs.de, {
+    "Android — Google Play": "Android — Google Play",
+    "Native apps": "Native Apps",
+});
+
+/* chrome strings (#676) */
+Object.assign(window.RBi18nLangs.de, {
+    "All rights reserved.": "Alle Rechte vorbehalten.",
 });
