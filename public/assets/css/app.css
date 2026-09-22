@@ -260,9 +260,22 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
    profile · account · My roadbooks — one rule, not one per page (#678). */
 .page-col { max-width: 880px; padding-top: 1.2rem; padding-bottom: 5rem; }
 .page-col .lead { max-width: 62ch; }
-.foot { border-top: 1px solid var(--line); margin-top: 2rem; padding: 2rem 0; color: var(--muted); font-size: .9rem; }
-.foot .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
-.foot a { color: var(--sand-2); }
+/* the web footer (#729): brand + claim + store badges, three link columns, a bottom line */
+.foot { border-top: 1px solid var(--line); margin-top: 3rem; padding: 2.6rem 0 1.4rem; color: var(--muted); font-size: .9rem; background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent); }
+.foot-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 2rem; }
+.foot-brand .brand { color: var(--text); font-size: 1.1rem; }
+.foot-brand p { margin: .7rem 0 1rem; max-width: 34ch; line-height: 1.5; }
+.foot-brand .store-badge { min-width: 150px; padding: .35rem .8rem .35rem .65rem; }
+.foot-brand .store-badge b { font-size: 1rem; }
+.foot-brand .store-badge > i { font-size: 1.4rem; }
+.foot-col { display: flex; flex-direction: column; gap: .55rem; }
+.foot-col h4 { margin: 0 0 .3rem; color: var(--text); font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; }
+.foot-col a { color: var(--muted); display: inline-flex; align-items: center; gap: .5rem; }
+.foot-col a i { width: 1.1em; text-align: center; color: var(--sand); opacity: .8; }
+.foot-col a:hover { color: var(--sand-2); text-decoration: none; }
+.foot-bottom { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.4rem; margin-top: 2.2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: .8rem; }
+.foot-bottom .lang { position: relative; }
+.foot-bottom .lang-menu { top: auto; bottom: calc(100% + 6px); } /* at the page's foot the language menu opens upward */
 /* shared fullscreen mode (Tripmaster, Reader): hide the site chrome for a distraction-free view */
 body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* GPS tool pages (Reader · Recorder · Tripmaster): short landscape gives the dashboard the whole screen */
@@ -545,8 +558,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 }
 @media (max-width: 560px) {
 }
-.foot-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; }
-.foot-links a { color: var(--sand-2); }
 #appVersion { opacity: .6; }
 
 /* utils */

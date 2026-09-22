@@ -712,7 +712,7 @@ describe('an open menu follows a language switch (#495)', () => {
         const footer = app.match(/footer\.innerHTML = `([\s\S]*?)`;/);
         expect(footer, 'footer markup not found').toBeTruthy();
         expect(footer[1]).not.toContain('The .rdbk standard</a>');
-        expect(footer[1]).toContain('${RBSiteLinksHTML()}');    // the shared list, every label translated (#496)
+        expect(footer[1]).toContain("SITE_LINKS.filter((l) => l.group === g).map(siteLink)"); // the shared list, every label translated (#496 · #729)
         expect(app).toContain("label: 'The .rdbk standard'");
     });
 
@@ -776,7 +776,8 @@ describe('site chrome comes from one list; the error pages stand alone (#496)', 
     it('the footer and the Profile page render the SAME site links', () => {
         expect(app).toContain('const SITE_LINKS = [');
         expect(app).toContain('window.RBSiteLinksHTML = ');
-        expect(app).toContain('${RBSiteLinksHTML()}');                 // the footer
+        expect(app).toContain("SITE_LINKS.filter((l) => l.group === g).map(siteLink)"); // the footer, by group (#729)
+        expect(app).toContain('window.RBSiteLinksHTML = () => SITE_LINKS.map(siteLink)');
         expect(app).toContain("document.getElementById('accSiteLinks')"); // the Profile page
         // the Profile page no longer keeps a hand-written copy that can drift
         const account = read('public/account/index.html');
