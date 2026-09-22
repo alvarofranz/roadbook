@@ -9,65 +9,73 @@
     <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.2-90">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.2-90">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.2-91">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.2-91">
     <style>
-        .pp-search { margin: .8rem 0; }
+        .pp-desk { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
+        .pp-desk h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
         /* the activation code is typed, read back and compared by eye: big, spaced, upper-case */
-        .ev-act-code { width: 10rem; font-size: 1.4rem; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
-        /* QR scanner dialog (built in participants.js) */
-        .pp-scanner p { margin: 0 0 .5rem; }
-        .pp-scanner .pp-scan-video { display: block; width: 100%; max-width: 360px; border-radius: 8px; background: #000; }
-        .pp-scanner #ppScanStatus { margin: .5rem 0 0; }
-        .pp-search .btn { width: auto; margin: 0 0 0 auto; }
-        .pp-add-search { margin: 0 0 .8rem; }
-        /* the palette has no --accent (it is --sand), so this rule used to paint nothing at all and
-           the toggle looked identical on and off (#422) — same tokens as any other active chip */
-        #ppPendingFilter.active { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
+        .ev-act-code { flex: 1; min-width: 0; max-width: 12rem; font-size: 1.3rem; font-weight: 800; letter-spacing: .25em; text-transform: uppercase; font-family: ui-monospace, monospace; margin: 0; }
+        .ev-act-code::placeholder { letter-spacing: .05em; font-size: .95rem; font-weight: 600; text-transform: none; }
+        .pp-scanner .pp-scan-video { display: block; width: 100%; max-width: 360px; border-radius: 8px; background: #000; margin: .5rem 0; }
+        .pp-roster-tools { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .8rem 0; }
+        .pp-roster-tools .rb-toolbar { flex: 1 1 14rem; margin: 0; }
+        #ppList { margin-top: .8rem; }
     </style>
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="wrap admin-wrap">
-    <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
-    <h1 id="ppHeading"><span data-i18n="Participants">Participants</span> <span class="muted" id="ppHeadCount"></span></h1>
+    <p><a id="backLink" href="../"><i class="fa-solid fa-arrow-left"></i> <span id="backLabel" data-i18n="Back to events">Back to events</span></a></p>
+    <div class="head-row">
+        <h1><span data-i18n="Participants">Participants</span> <span class="muted" id="ppHeadCount"></span></h1>
+        <a class="btn btn-ghost" id="ppEditLink" hidden><i class="fa-solid fa-pen"></i> <span data-i18n="Edit event">Edit event</span></a>
+    </div>
     <div class="muted small" id="ppEventTitle"></div>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
 
     <div id="ppBody" hidden>
-        <div class="toolbar pp-search">
-            <input id="ppActivateIn" class="field ev-act-code" data-i18n-ph="Activation code" placeholder="Activation code" autocomplete="off" maxlength="6">
-            <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
-            <button class="btn btn-ghost" id="ppScanQr" type="button" title="Scan QR" data-i18n-title="Scan QR" aria-label="Scan QR" data-i18n-aria="Scan QR"><i class="fa-solid fa-camera"></i></button>
+        <!-- the registration desk: the code a participant shows, typed or scanned (#604) -->
+        <section class="pp-desk" id="ppDesk">
+            <h2 data-i18n="Activate a participant">Activate a participant</h2>
+            <div class="toolbar">
+                <input id="ppActivateIn" class="field ev-act-code" placeholder="Activation code" data-i18n-ph="Activation code" autocomplete="off" maxlength="6" aria-label="Activation code" data-i18n-aria="Activation code">
+                <button class="btn btn-primary" id="ppActivate" type="button"><i class="fa-solid fa-check"></i> <span data-i18n="Activate">Activate</span></button>
+                <button class="btn btn-ghost" id="ppScanQr" type="button"><i class="fa-solid fa-camera"></i> <span data-i18n="Scan QR">Scan QR</span></button>
+            </div>
+        </section>
+
+        <!-- the roster: search + filter (#603), then its actions -->
+        <div class="pp-roster-tools">
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input id="ppSearchIn" class="rb-search" type="search" placeholder="Search participants…" data-i18n-ph="Search participants…" aria-label="Search participants…" data-i18n-aria="Search participants…" autocomplete="off"></div>
+            <div class="segmented" role="group" aria-label="Participants" data-i18n-aria="Participants" id="ppFilter">
+                <button class="segment" data-status="" type="button"><span data-i18n="All">All</span> <span data-count="all"></span></button>
+                <button class="segment" data-status="pending" type="button"><span data-i18n="Pending">Pending</span> <span data-count="pending"></span></button>
+                <button class="segment" data-status="active" type="button"><span data-i18n="Active">Active</span> <span data-count="active"></span></button>
+            </div>
         </div>
-        <hr>
-        <div class="toolbar pp-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="ppSearchIn" class="field" type="search" data-i18n-ph="Search participants…" placeholder="Search participants…" autocomplete="off">
-            <button class="btn btn-ghost" id="ppPendingFilter" type="button"><i class="fa-solid fa-hourglass-half"></i> <span data-i18n="Pending only">Pending only</span></button>
-            <button class="btn btn-ghost" id="ppActivateAll" type="button" hidden><i class="fa-solid fa-check-double"></i> <span data-i18n="Activate all">Activate all</span></button>
-            <button class="btn btn-primary" id="ppAdd" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add participant">Add participant</span></button>
+        <div class="btnrow start">
+            <button class="btn btn-ghost" id="ppActivateAll" type="button" hidden><i class="fa-solid fa-check-double"></i> <span id="ppActivateAllLabel"></span></button>
+            <button class="btn btn-ghost" id="ppAdd" type="button"><i class="fa-solid fa-user-plus"></i> <span data-i18n="Add participant">Add participant</span></button>
+            <button class="btn btn-ghost" id="ppExport" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
         </div>
         <div id="ppList"></div>
         <div class="pager" id="ppPager"></div>
-        <div class="btnrow end spaced">
-            <button class="btn btn-ghost" id="ppExportBottom" type="button"><i class="fa-solid fa-file-csv"></i> <span data-i18n="Export CSV">Export CSV</span></button>
-        </div>
     </div>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../../../assets/js/config.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/i18n.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/app.js?v=1.9.2-90"></script>
-<script src="../../../assets/js/qr-scan.js?v=1.9.2-90"></script>
-<script src="participants.js?v=1.9.2-90"></script>
+<script src="../../../assets/js/config.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/i18n.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/app.js?v=1.9.2-91"></script>
+<script src="../../../assets/js/qr-scan.js?v=1.9.2-91"></script>
+<script src="participants.js?v=1.9.2-91"></script>
 </body>
 </html>

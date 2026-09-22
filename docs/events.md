@@ -144,11 +144,20 @@ proprietario · Save, #597). `event_manage_get()` fornisce tutto. Due tipi di mo
 
 ### `/admin/events/participants/` — roster (`participants.js`)
 La lista partecipanti su pagina propria (#144): un evento può averne centinaia, quindi è
-**cercata e paginata lato server** (`event_participants_list`, `q` su username/nome completo).
-Attivazione singola (`participant_activate`), per codice (`event_activate_by_code`, anche da QR),
-massiva (`event_participants_activate_pending`, #416); `event_participant_add` inserisce,
-`event_participant_remove` rimuove. La forma della riga è il contratto che
-**P2.4 (#124)** allargherà con i campi entry (categoria, team, veicolo, numero).
+**cercata e paginata lato server** (`event_participants_list`, `q` su username/nome completo, con i
+`counts` per stato). È l'unica pagina di gestione dei partecipanti: la vecchia
+"Participant management" duplicava la lista eventi ed è stata rimossa (#602).
+- **Banco di attivazione** in cima: il codice mostrato dal partecipante, digitato o scansionato
+  (QR), attivato **per questo evento** (`event_activate_by_code` con `event_id`); la conferma dice
+  **chi** è stato ammesso, così il banco verifica la persona (#604).
+- **Roster** filtrato *All · Pending · Active* con i conteggi (#603): si apre su *Pending* quando
+  qualcuno aspetta, altrimenti su *All*, e il messaggio vuoto nomina il filtro. Azioni: attivazione
+  singola (`participant_activate`), **Activate all** (`event_participants_activate_pending`, #416),
+  **Add participant** (`user_search` con `event_id`: chi è già dentro è marcato e non aggiungibile,
+  #605) e **Export CSV** (`username, first_name, last_name, email, status, joined`, #606).
+- Nella **lista eventi** (`/admin/events/`) il Delete compare solo al proprietario/admin
+  (`is_owner`, #600) e la conferma — condivisa con l'editor, `RBEventDelete` — dice cosa se ne va:
+  partecipanti e collegamenti ai roadbook, non i roadbook (#601).
 
 ---
 

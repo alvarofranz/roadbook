@@ -344,10 +344,14 @@ function user_search(array $user, array $d): void {
     if (mb_strlen($org) >= 2) { $where .= ' AND organization LIKE ?'; $args[] = like_term($org); }
     $st = db()->prepare("SELECT COUNT(*) FROM users $where"); $st->execute($args);
     $total = (int)$st->fetchColumn();
-    $st = db()->prepare("SELECT id, username, first_name, last_name, organization FROM users $where ORDER BY username LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
+    // with an event the searcher manages, each hit says whether it is already a participant (#605)
+    $eventId = (int)($d['event_id'] ?? 0);
+    if ($eventId) require_event_manage($user, $eventId);
+    $status = $eventId ? ', (SELECT ep.status FROM event_participants ep WHERE ep.event_id = ' . $eventId . ' AND ep.user_id = users.id) AS participant_status' : '';
+    $st = db()->prepare("SELECT id, username, first_name, last_name, organization$status FROM users $where ORDER BY username LIMIT $perPage OFFSET " . ($page - 1) * $perPage);
     $st->execute($args);
     json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage,
-        'users' => array_map(fn($r) => ['id' => (int)$r['id'], 'username' => $r['username'], 'first_name' => $r['first_name'], 'last_name' => $r['last_name'], 'organization' => $r['organization']], $st->fetchAll())]);
+        'users' => array_map(fn($r) => ['id' => (int)$r['id'], 'username' => $r['username'], 'first_name' => $r['first_name'], 'last_name' => $r['last_name'], 'organization' => $r['organization'], 'participant_status' => $r['participant_status'] ?? null], $st->fetchAll())]);
 }
 
 // Only the owner (or an admin) edits the organizer list; co-organizers manage content, not access.
