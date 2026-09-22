@@ -47,8 +47,7 @@ L'avvio è in `start()` ([tripmaster.js:42](../public/tripmaster/tripmaster.js#L
   è in corso ([tripmaster.js:43](../public/tripmaster/tripmaster.js#L43));
 - mostra la **status bar** condivisa `RBStatusBar` (orologio · batteria · satellite/GPS);
 - istanzia `RBGpsMeter` con `onFix` come callback;
-- avvia un `setInterval` a 500 ms che aggiorna l'orologio di sistema (`tmClock`) e il display
-  del cronometro (`tmTimer`).
+- avvia un `setInterval` a 500 ms che aggiorna il display del cronometro (`tmTimer`).
 
 Ad ogni fix, `onFix(fix)` ([tripmaster.js:54](../public/tripmaster/tripmaster.js#L54)):
 
@@ -70,8 +69,13 @@ mostrata da `start()` e mantenuta dal Tripmaster aggiornandone solo lo stato GPS
 `RBStatusBar.setGps(accuratezza)` ad ogni fix. La barra ospita orologio, **batteria** e
 indicatore **satellite/GPS**; la sua logica è documentata altrove.
 
-L'orologio centrale del cruscotto (`tmClock`) è invece locale: è aggiornato dall'intervallo a
-500 ms in `start()` ([tripmaster.js:48](../public/tripmaster/tripmaster.js#L48)).
+L'orologio è **solo** quello della status bar: il cruscotto non ne ha un secondo (#721).
+
+**Layout (#721).** Le letture sono un griglia di schede: *velocità* (con campanella: toccarla
+imposta l'allarme, e la scheda mostra "Alert N" quando è attivo) · *CAP* · *max km/h*, poi
+*cronometro* · *note* sulla riga sotto. Le azioni: **Mark note** grande e primario (conta la nota e
+azzera il parziale), poi *Record GPX* · *Fullscreen* · *End*. Da 900 px il cruscotto è a due
+colonne — odometri e schede a sinistra, azioni in colonna a destra con Mark note la più alta.
 
 > In landscape su schermi bassi (`max-height: 540px`) l'`header.topbar` viene nascosto via CSS
 > ([index.html:55](../public/tripmaster/index.html#L55)) per lasciare spazio al cruscotto.
@@ -171,7 +175,7 @@ nell'intervallo a 500 ms ([tripmaster.js:49](../public/tripmaster/tripmaster.js#
 
 | Pulsante | Azione | Riga |
 |----------|--------|------|
-| `tmTimerBtn` | Start/Pause: alterna `timerOn`, accumula in `timerAcc` alla pausa | [tripmaster.js:104](../public/tripmaster/tripmaster.js#L104) |
+| `tmTimerBtn` | la scheda stessa del cronometro (#721): Start/Pause, alterna `timerOn`, accumula in `timerAcc` alla pausa | `renderTimer()` |
 | `tmTimerReset` | Azzera: `timerOn = false`, `timerAcc = 0` | [tripmaster.js:105](../public/tripmaster/tripmaster.js#L105) |
 
 `renderTimerButton()` ([tripmaster.js:97](../public/tripmaster/tripmaster.js#L97)) scambia

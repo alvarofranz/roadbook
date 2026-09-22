@@ -368,7 +368,7 @@
             'No roadbooks yet. Create one in the Editor.': 'Ancora nessun roadbook. Creane uno nell’Editor.', 'Photo updated.': 'Foto aggiornata.', 'Profile saved.': 'Profilo salvato.', 'Upload failed.': 'Caricamento fallito.', 'Network error.': 'Errore di rete.',
             'Roadbook not found.': 'Roadbook non trovato.', 'This roadbook does not exist or is private.': 'Questo roadbook non esiste o è privato.',
             'notes': 'note',
-            'Total': 'Totale', 'Partial': 'Parziale', 'Reset': 'Azzera', 'Hold to reset.': 'Tieni premuto per azzerare.', 'Pause': 'Pausa', 'Press to set Alert': 'Tocca per impostare l’allerta', 'Max km/h': 'Max km/h',
+            'Total': 'Totale', 'Partial': 'Parziale', 'Reset': 'Azzera', 'Hold to reset.': 'Tieni premuto per azzerare.', 'Pause': 'Pausa', 'Max km/h': 'Max km/h',
             'Record GPX': 'Registra GPX', 'Stop recording': 'Ferma registrazione', 'Speed alert': 'Allerta velocità', 'Speed to watch (km/h · 0 = off)': 'Velocità da controllare (km/h · 0 = off)', 'Colours': 'Colori',
             'green': 'verde', 'orange': 'arancione', 'red': 'rosso', 'Recorded track': 'Traccia registrata', 'points': 'punti', 'Download GPX': 'Scarica GPX', 'Convert into roadbook': 'Converti in roadbook', 'Save to account': 'Salva nel tuo account', 'Saving…': 'Salvataggio…', 'Exported': 'Esportato', 'Sign in to save this recording to your account.': 'Accedi per salvare questa registrazione nel tuo account.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Salva nel tuo account o esporta un .rdbk autonomo con foto e note vocali.', 'Open in the editor': 'Apri nell’editor', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Salvando mantieni foto e note vocali; il GPX è un file locale senza di esse.',
             'End the trip and reset everything?': 'Terminare il viaggio e azzerare tutto?', 'Trip reset.': 'Viaggio azzerato.', 'Recording GPX track.': 'Registrazione traccia GPX.', 'Could not load the recorded trip.': 'Impossibile caricare il trip registrato.',
@@ -1356,4 +1356,12 @@ Object.assign(window.RBi18nLangs.it, {
     "No email addresses found.": "Nessun indirizzo email trovato.",
     "Import at most 500 people at a time.": "Importa al massimo 500 persone alla volta.",
     "Could not import.": "Impossibile importare.",
+});
+
+/* Tripmaster review (#721) */
+Object.assign(window.RBi18nLangs.it, {
+    "Alert": "Allarme",
+    "Speed — tap to set the alert": "Velocità: tocca per impostare l’allarme",
+    "Pause the timer": "Metti in pausa il cronometro",
+    "Start the timer": "Avvia il cronometro",
 });
