@@ -165,7 +165,7 @@ function event_manage_get(array $user, array $d): void {
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
         'join_gate' => event_join_gate($e['join_gate'] ?? null), 'require_activation' => (int)($e['require_activation'] ?? 1),
-        'join_code' => $e['join_code'], 'open_join' => (int)$e['open_join'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
+        'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
@@ -225,15 +225,8 @@ function event_save(array $user, array $d): void {
     $hqLat = isset($d['hq_lat']) && is_numeric($d['hq_lat']) ? (float)$d['hq_lat'] : null;
     $hqLon = isset($d['hq_lon']) && is_numeric($d['hq_lon']) ? (float)$d['hq_lon'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
-    if (array_key_exists('join_gate', $d)) {
-        $gate = event_join_gate($d['join_gate']);
-        $needActivation = !empty($d['require_activation']) ? 1 : 0;
-    } else {
-        // stale client speaking the legacy open_join flag: preserve its exact semantics
-        $legacyOpen = !empty($d['open_join']) ? 1 : 0;
-        $gate = $legacyOpen ? 'open' : 'code';
-        $needActivation = $legacyOpen ? 0 : 1;
-    }
+    $gate = event_join_gate($d['join_gate'] ?? null);
+    $needActivation = !empty($d['require_activation']) ? 1 : 0;
     // rights + slug first, then save — no transaction needed for a single UPDATE/INSERT.
     // The slug follows the title while the event is being prepared (#194), and is frozen once the
     // event is listed: from then on its URL is out there, and a rename must not break it (#578).
@@ -243,8 +236,8 @@ function event_save(array $user, array $d): void {
     }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
     if ($id > 0) {
-        $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, join_gate = ?, require_activation = ?, open_join = ?, slug = ?';
-        $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $gate === 'open' ? 1 : 0, $slug];
+        $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, join_gate = ?, require_activation = ?, slug = ?';
+        $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $slug];
         // only the code gate uses a join code — any other gate clears it so it is not usable
         if ($gate !== 'code') $sql .= ', join_code = NULL';
         $sql .= ' WHERE id = ?';
@@ -261,8 +254,8 @@ function event_save(array $user, array $d): void {
             if ($n) log_activity((int)$user['id'], 'event_reset_active', 'event #' . $id . ' reset ' . $n);
         }
     } else {
-        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, join_gate, require_activation, open_join) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $gate === 'open' ? 1 : 0]);
+        db()->prepare('INSERT INTO events (organizer_id, slug, title, description, organizer_website, hq_lat, hq_lon, starts_on, ends_on, is_public, join_gate, require_activation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $slug, $title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation]);
         $id = (int)db()->lastInsertId();
         // the owner is also listed among the event's organizers
         db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
@@ -379,8 +372,6 @@ function event_org_remove(array $user, array $d): void {
 function event_join_code(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     if (event_join_gate($e['join_gate'] ?? null) !== 'code') fail('A join code needs the Invite code registration.');
-    // installed app binaries still carry the old "Disable joining" button: refuse, never rotate by accident
-    if (!empty($d['clear'])) fail('To stop new registrations, set Registration to Closed.');
     $code = trim((string)($d['code'] ?? ''));
     if ($code !== '') {
         $code = strtoupper($code);
@@ -588,7 +579,7 @@ function events_public_list(): void {
 
 function event_public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_gate, e.require_activation, e.open_join, e.join_code, e.logo, u.username AS organizer
+    $st = db()->prepare('SELECT e.id, e.organizer_id, e.slug, e.title, e.description, e.organizer_website, e.hq_lat, e.hq_lon, e.starts_on, e.ends_on, e.is_public, e.join_gate, e.require_activation, e.join_code, e.logo, u.username AS organizer
         FROM events e JOIN users u ON u.id = e.organizer_id WHERE e.slug = ?');
     $st->execute([$slug]);
     $e = $st->fetch();
@@ -636,7 +627,7 @@ function event_public_get(array $d): void {
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'logo' => $e['logo'], 'organizer' => $e['organizer'],
         'is_public' => (int)$e['is_public'], 'ended' => event_ended($e),
         'can_join' => event_registration_refusal($e) === null, 'join_gate' => event_join_gate($e['join_gate'] ?? null),
-        'require_activation' => (int)($e['require_activation'] ?? 1), 'open_join' => (int)($e['open_join'] ?? 0), 'joined' => $joined, 'participant_status' => $participantStatus,
+        'require_activation' => (int)$e['require_activation'], 'joined' => $joined, 'participant_status' => $participantStatus,
         'activation_code' => $activationCode,
         'org_read' => $orgRead, 'active_participant' => $activeParticipant,
     ], 'roadbooks' => $roadbooks]);

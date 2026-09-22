@@ -27,8 +27,6 @@
             icon: 'fa-brands fa-apple',
             title: 'iPhone · iPad',
             store: { href: () => RBStore.ios, icon: 'fa-brands fa-app-store', label: 'Download on the App Store' },
-            // The last three keys are the ones the old iOS install modal used — same wording, same
-            // translations, now inside the guide that replaced it.
             steps: [
                 'Open <b>rdbk.app</b> in Safari (it has to be Safari).',
                 'Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.',

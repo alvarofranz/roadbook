@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-118">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-119">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-118">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-119">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -146,7 +146,6 @@
         .block-card .block-prev { max-width: 220px; max-height: 120px; width: auto; height: auto; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
         .block-card .block-prev:hover { border-color: var(--sand); }
         .block-card textarea.field { width: 100%; min-height: 4.5rem; resize: vertical; }
-        .block-empty { color: var(--muted); font-size: .82rem; }
         /* the editor expands inline, right under the tapped row (like the Reader's per-note map) */
         .note-edit-slot:empty { display: none; }
         .note-edit-slot { margin: .1rem 0 .5rem; }
@@ -245,7 +244,7 @@
         /* the notes column owns a fixed width: whatever is inside it (the icon strip, a wide
            block of text) scrolls or wraps INSIDE its own box, never by widening the column */
         #noteList { overflow-x: hidden; }
-        #noteList, .note-mini, .note-edit-zone, .note-edit-slot, .vig-split, .vig-icons, .vig-canvas { min-width: 0; max-width: 100%; }
+        #noteList, .note-mini, .note-edit-zone, .note-edit-slot { min-width: 0; max-width: 100%; }
         /* A row lays itself out by the width of the NOTES COLUMN, not the window (#695): the split
            layout gives the column 2/5 of a tablet, and one line of number · distance · tulip · text
            left the text a letter wide. Narrow, the number and distance form a left rail and the
@@ -267,7 +266,6 @@
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
         .note-edit-zone .vignette-toolbar { max-width: none; }
         /* canvas above, icon palette below — keeps both usable in the narrow column */
-        .vig-split { display: flex; flex-direction: column; gap: .2rem; }
         .load-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
         .load-card { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; cursor: pointer; color: var(--text); text-align: left; transition: border-color .15s, transform .1s; }
         .load-card:hover { border-color: var(--sand); transform: translateY(-1px); }
@@ -594,22 +592,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-118"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-118"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-118"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-118"></script>
-<script src="../assets/js/cover-map.js?v=1.9.2-118"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-118"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.2-118"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-118"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.2-118"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.2-118"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-118"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-118"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-118"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-118"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-118"></script>
-<script src="../assets/js/app.js?v=1.9.2-118"></script>
-<script src="editor.js?v=1.9.2-118"></script>
+<script src="../assets/js/config.js?v=1.9.2-119"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-119"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-119"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-119"></script>
+<script src="../assets/js/cover-map.js?v=1.9.2-119"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-119"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.2-119"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-119"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.2-119"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.2-119"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-119"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-119"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-119"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-119"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-119"></script>
+<script src="../assets/js/app.js?v=1.9.2-119"></script>
+<script src="editor.js?v=1.9.2-119"></script>
 </body>
 </html>

@@ -64,9 +64,8 @@ window.RBGpsMeter = class RBGpsMeter {
             this._native = !!(native && native.geo);
             if (this._native) {
                 RBNative.geo.start((c) => this._fix(c, Date.now()), err);
-                // preflight once per meter lifetime (not every resume — no nagging on pause cycles).
-                // The bridge may predate it (old binaries have no readiness): guard, don't crash.
-                if (!this._preflightDone && RBNative.geo && typeof RBNative.geo.readiness === 'function') {
+                // preflight once per meter lifetime (not every resume — no nagging on pause cycles)
+                if (!this._preflightDone) {
                     this._preflightDone = true;
                     RBNative.geo.readiness().then((r) => {
                         if (!this._running || !r) return;

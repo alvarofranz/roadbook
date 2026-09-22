@@ -131,7 +131,7 @@ describe('social sign-in goes straight in (#519)', () => {
     const account = read('public/account/account.js');
 
     it('one call carries the confirmation and the Terms', () => {
-        expect(account).toContain("Object.assign({}, identity, { confirm: true, accept_terms: true })");
+        expect(account).toContain("Object.assign({}, identity, { accept_terms: true })");
         expect(account.match(/api\(PROVIDERS\[key\]\.action/g).length).toBe(1); // no probe round trip
     });
 
@@ -164,7 +164,6 @@ describe('social sign-in goes straight in (#519)', () => {
         const { sent, state } = await runHandler({ ok: true, user: { id: 7, username: 'x' } });
         expect(sent.length, 'more than one round trip').toBe(1);
         expect(sent[0].action).toBe('google_auth');
-        expect(sent[0].payload.confirm).toBe(true);
         expect(sent[0].payload.accept_terms).toBe(true);
         expect(state.finished).toEqual({ id: 7, username: 'x' });
         expect(state.restored, 'the button was put back instead of signing in').toBeNull();
@@ -197,9 +196,9 @@ describe('social sign-in goes straight in (#519)', () => {
         expect(account).toContain("restoreSocial(key); msg(r.error || PROVIDERS[key].failed, false);");
     });
 
-    it('the server still answers the old two-phase call for installed app binaries', () => {
+    it('the server has one call and no two-phase path (#732)', () => {
         const auth = read('app/auth.php');
-        expect(auth).toContain("'probe' => true");
-        expect(auth).toContain('INSTALLED app still runs the JS bundled in its');
+        expect(auth).not.toContain("'probe' => true");
+        expect(auth).not.toContain("$d['confirm']");
     });
 });

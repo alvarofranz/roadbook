@@ -16,14 +16,13 @@
         const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
         return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
     };
-    const km = (m) => ((m || 0) / 1000).toFixed(1);
     const avgKmh = (run) => run.duration_s > 0 ? ((run.distance_m / 1000) / (run.duration_s / 3600)).toFixed(1) : '—';
     const tile = (icon, value, label, cls = '') => `<div class="stat${cls ? ' ' + cls : ''}"><i class="fa-solid ${icon}"></i><b>${value}</b><span>${esc(t(label))}</span></div>`;
 
     function statsHTML(run) {
         const limits = run.speed_zones ? `${run.speed_zones - run.speed_exceeded}/${run.speed_zones}` : '—';
         return `<div class="stat-grid">
-            ${tile('fa-route', km(run.distance_m) + ' km', 'Distance')}
+            ${tile('fa-route', RBKm(run.distance_m, 1), 'Distance')}
             ${tile('fa-stopwatch', fmtDuration(run.duration_s), 'Time')}
             ${tile('fa-gauge-high', avgKmh(run) + ' km/h', 'Average speed')}
             ${tile('fa-flag-checkered', `${run.notes_reached}/${run.notes_total}`, 'Notes reached', run.notes_reached < run.notes_total ? 'warn' : 'ok')}

@@ -27,7 +27,8 @@ describe('the form vs the immediate actions', () => {
 describe('registration', () => {
     it('closing registration is the Closed gate — the Disable-joining button is gone (#593)', () => {
         expect(html).not.toContain('joinClear');
-        expect(php).toContain("fail('To stop new registrations, set Registration to Closed.')");
+        expect(php).not.toContain("$d['clear']"); // no shim for the removed button (#732)
+        expect(php).not.toContain('open_join');
     });
     it('an invite-code registration always has a code, generated on save (#593)', () => {
         expect(php).toContain('if ($st->fetchColumn() === null) event_generate_join_code($id);');

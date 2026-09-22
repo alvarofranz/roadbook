@@ -89,7 +89,7 @@ describe('a finished recording survives a crash until it lands (#647 · #686)', 
     it('declining the GPX recovery keeps the recording, and Yes does not drop it early', () => {
         const offer = gpx.match(/async function offerRecovery\(\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(offer).not.toContain('removeItem');
-        expect(offer).toContain('declined: true');
+        expect(offer).toContain('RBCheckpoint.decline(CHECKPOINT_KEY);'); // marked, never deleted (#436)
         expect(offer).toContain('saved.declined) return;');
     });
 });

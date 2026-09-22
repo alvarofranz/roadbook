@@ -194,8 +194,8 @@ function rb_save(array $user, array $d): void {
     $nc = count($rb['notes']);
     $status = rb_clean_status($d['status'] ?? null);
     $reusable = !empty($d['reusable']) ? 1 : 0; // #106: may others copy this public roadbook?
-    // #713: car · moto · bike. Only when the client sends it: an app binary built before it (its JS is
-    // bundled) saves without the field, and must not reset the owner's choice to the default.
+    // #713: car · moto · bike. A save that doesn't choose them — the Recorder's draft saves — keeps
+    // the saved choice; a brand-new roadbook starts as car.
     $vehicles = array_key_exists('vehicles', $d) ? rb_clean_vehicles($d['vehicles']) : null;
     $id = (int)($d['id'] ?? 0);
 

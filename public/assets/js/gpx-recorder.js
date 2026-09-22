@@ -71,7 +71,7 @@ window.RBGpxRecorder = (() => {
         if (!saved || !saved.pts || saved.pts.length < 2 || saved.declined) return;
         const t = RBt;
         if (await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')')) return finishedModal(saved.pts, saved.name || defaultName());
-        try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(Object.assign(saved, { declined: true }))); } catch (e) {}
+        RBCheckpoint.decline(CHECKPOINT_KEY);
     }
     // opts.sampleRate: false hides the interval field (the Editor samples by
     // distance itself) · opts.onStart replaces the default begin()

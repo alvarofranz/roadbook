@@ -497,42 +497,25 @@ function admin_update_user(array $user, array $d): void {
     $st = db()->prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND id <> ?');
     $st->execute([$username, $email, $id]);
     if ($st->fetch()) fail('That username or email is already in use.');
-    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ? WHERE id = ?')
-        ->execute([$first, $last, $username, $email, $id]);
+    // the rest of the form: the quota override (#99 — empty → NULL, the default; else bytes the client
+    // computed from MB), the organizer grant (#121) and the club (#183, whitespace collapsed, empty → NULL)
+    $q = $d['quota_bytes'] ?? '';
+    $quota = ($q === null || $q === '') ? null : max(0, (int)$q);
+    $org = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($d['organization'] ?? ''))), 0, 120);
+    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ?, organization = ?, quota_bytes = ?, is_organizer = ? WHERE id = ?')
+        ->execute([$first, $last, $username, $email, $org !== '' ? $org : null, $quota, !empty($d['is_organizer']) ? 1 : 0, $id]);
     if ($pw !== '') {
         db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $id]);
-    }
-    // Disk-quota override (#99): empty → NULL (use the default), a value → bytes the client computed
-    // from MB. Only touched when the form actually sent the field, so an older client can't reset it.
-    if (array_key_exists('quota_bytes', $d)) {
-        $q = $d['quota_bytes'];
-        $quotaVal = ($q === null || $q === '') ? null : max(0, (int)$q);
-        db()->prepare('UPDATE users SET quota_bytes = ? WHERE id = ?')->execute([$quotaVal, $id]);
-    }
-    // Organizer grant (#121): only when the form sent the field, so an older client can't clear it.
-    if (array_key_exists('is_organizer', $d)) {
-        db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([!empty($d['is_organizer']) ? 1 : 0, $id]);
-    }
-    // Organization (free-text club, #183): only when sent; trim + collapse whitespace, empty → NULL.
-    if (array_key_exists('organization', $d)) {
-        $org = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$d['organization'])), 0, 120);
-        db()->prepare('UPDATE users SET organization = ? WHERE id = ?')->execute([$org !== '' ? $org : null, $id]);
     }
     log_activity((int)$user['id'], 'admin_edit_user', 'user #' . $id);
     json_out(['ok' => true]);
 }
 
-// Toggle a user's role: the payload carries either is_organizer (event-organizer grant, #121)
-// or is_admin (with the self/superuser guards).
+// Grant or revoke the admin role (the self and superuser guards); the organizer role is part of
+// the user edit (admin_update_user).
 function admin_set_role(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $row = admin_target($user, $id);
-    if (array_key_exists('is_organizer', $d)) {
-        $on = !empty($d['is_organizer']);
-        db()->prepare('UPDATE users SET is_organizer = ? WHERE id = ?')->execute([$on ? 1 : 0, $id]);
-        log_activity((int)$user['id'], $on ? 'organizer_grant' : 'organizer_revoke', 'user #' . $id);
-        json_out(['ok' => true]);
-    }
     $makeAdmin = !empty($d['is_admin']);
     if ($id === (int)$user['id']) fail("You can't change your own role.");
     if (!$makeAdmin && is_locked_admin($row['email'])) fail('That account is a configured superuser (set in .env).');

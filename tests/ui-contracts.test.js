@@ -235,8 +235,9 @@ describe('GPS readiness alerts (#443-446)', () => {
         expect(meter).toContain("this._onAlert('notifications')");
     });
 
-    it('old binaries without the bridge do not crash, and dismissing snoozes the battery nag', () => {
-        expect(meter).toContain("typeof RBNative.geo.readiness === 'function'");
+    it('the readiness preflight runs once per meter, and dismissing snoozes the battery nag', () => {
+        expect(meter).toContain('if (!this._preflightDone) {');
+        expect(meter).not.toContain("typeof RBNative.geo.readiness"); // the bridge ships in the same binary (#732)
         expect(meter).toContain("this.snoozed('battery')");
         expect(meter).toContain("self.snooze('battery', 30)");
     });

@@ -454,10 +454,10 @@ function updateRecUi() {
     // silence (#460). Once anything HAS landed, there is nothing left to lose and the same exit
     // becomes an ordinary Close.
     function finishModal(pts, name, savedId) {
-        const km = (recordedM / 1000).toFixed(2);
+        const km = RBKm(recordedM);
         const nm = name || recName();
         const signedIn = !!meUser;
-        const summary = `${pts.length} ${t('points')} · ${km} km · ${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')}`;
+        const summary = `${pts.length} ${t('points')} · ${km} · ${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')}`;
         let landed = !!savedId; // has the recording reached somewhere safe?
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${summary}</p>

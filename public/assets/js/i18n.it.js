@@ -1079,7 +1079,7 @@ Object.assign(window.RBi18nLangs.it, {
     "Type at least 2 characters to search.": "Scrivi almeno 2 caratteri per cercare.",
     "Participants cannot see a draft — set it to Ready or Public in the Editor.": "I partecipanti non vedono una bozza: impostala su Pronto o Pubblico nell’Editor.",
     "A join code needs the Invite code registration.": "Un codice di accesso richiede l’iscrizione con codice d’invito.",
-    "To stop new registrations, set Registration to Closed.": "Per bloccare nuove iscrizioni, imposta Iscrizioni su Chiuse.",
+    
     "Its participants and roadbook links are removed with it; the roadbooks themselves are kept.": "I suoi partecipanti e i collegamenti ai roadbook vengono rimossi con lui; i roadbook restano.",
 });
 

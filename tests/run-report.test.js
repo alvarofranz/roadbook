@@ -49,6 +49,7 @@ describe('RBRun', () => {
         calls = [];
         window.RBt = (k) => k;
         window.RBesc = (s) => String(s);
+        window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
         window.RBApi = async (action, body) => { calls.push(body); return body.title === 'offline' ? { ok: false, error: 'Network error.' } : { ok: true, id: calls.length, is_public: body.visibility === 'public' ? 1 : 0 }; };
         eval(read('public/assets/js/run-report.js'));
     });
