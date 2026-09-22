@@ -22,15 +22,22 @@ describe('the apk page exists and loads its module (#540)', () => {
         expect(page).toContain('https://rdbk.app/apk/');
     });
 
-    it('the module resolves the APK from the GitHub releases API', () => {
+    it('the module resolves the rolling test build and stable releases', () => {
         const js = read('public/apk/apk.js');
-        expect(js).toContain('api.github.com/repos/alvarofranz/roadbook/releases/latest');
+        expect(js).toContain('api.github.com/repos/alvarofranz/roadbook/releases?per_page=');
+        expect(js).toContain('apk-latest');
         expect(js).toMatch(/\.apk\$/);
         expect(js).toContain('sha256');
     });
 
-    it('sitemap lists the page', () => {
-        expect(read('public/sitemap.xml')).toContain('https://rdbk.app/apk/');
+    it('the page is admin-gated and stays out of the sitemap', () => {
+        const page = read('public/apk/index.html');
+        expect(page).toContain('noindex');
+        expect(page).toContain('id="adminMsg"');
+        expect(page).toContain('id="apkBody"');
+        const js = read('public/apk/apk.js');
+        expect(js).toContain("RBRequireUser($('adminMsg'), { admin: true })");
+        expect(read('public/sitemap.xml')).not.toContain('https://rdbk.app/apk/');
     });
 });
 
@@ -38,7 +45,7 @@ describe('apk copy is translated (#540)', () => {
     const langs = dictionaries();
     for (const lang of LANGS) {
         it(`${lang} translates the apk strings`, () => {
-            for (const k of ['seo.apk.title', 'seo.apk.desc', 'apk.lead', 'apk.download', 'apk.noRelease', 'apk.step1', 'apk.step2', 'apk.step3']) {
+            for (const k of ['seo.apk.title', 'seo.apk.desc', 'apk.lead', 'apk.download', 'apk.noRelease', 'apk.testBuild', 'apk.step1', 'apk.step2', 'apk.step3']) {
                 expect(langs[lang][k], `${lang} ${k}`).toBeTruthy();
             }
         });

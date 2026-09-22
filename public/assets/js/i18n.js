@@ -41,7 +41,7 @@
             'seo.changelog.title': 'What’s new — RDBK.app', 'seo.changelog.desc': 'Every RDBK.app release and what changed in it, newest first.', 'Full changelog': 'Full changelog',
             'seo.apk.title': 'Android APK — RDBK.app', 'seo.apk.desc': 'Install RDBK on Android without the Play Store: download the signed APK of the latest release.',
             'apk.lead': 'Install RDBK without the Play Store: download the signed APK of the latest release and sideload it. Same build as the Play alpha, verified by SHA-256.',
-            'apk.download': 'Download APK', 'apk.noRelease': 'No direct APK published yet — check back after the next release, or install from the Play Store.',
+            'apk.download': 'Download APK', 'apk.noRelease': 'No direct APK published yet — check back after the next release, or install from the Play Store.', 'apk.testBuild': 'Test build — uninstall the store version first.',
             'apk.step1': 'Download the APK above on your Android phone.', 'apk.step2': 'Open it and allow Install unknown apps when asked.', 'apk.step3': 'Verify the SHA-256 matches, then open RDBK and sign in.',
             'seo.privacy.title': 'Privacy Policy — RDBK.app', 'seo.privacy.desc': 'How RDBK.app handles your data — accounts, roadbooks and photos — on our free digital roadbook tools.',
             'seo.terms.title': 'Terms of Use — RDBK.app', 'seo.terms.desc': 'The terms for using RDBK.app, the free digital roadbook suite and the open .rdbk format.',
