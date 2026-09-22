@@ -117,6 +117,10 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `leave_participant_mode` | Esce dalla modalità partecipante (pulisce cookie + contesto) | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
 | `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti): almeno 2 caratteri, `%`/`_` letterali, username/nome/organizzazione in parziale, email **solo esatta**; **non restituisce mai le email** (#575) | organizzatore/admin |
+| `run_save` / `run_update` / `run_delete` | Il report di una run del Reader (note, zone di velocità, tempi, penalità, risultato firmato): visibilità scelta sul report o dalla preferenza (`remember` la salva); una run di competizione di un roadbook di evento entra nella sua classifica. Solo il proprietario cambia/cancella (#618/#619) | richiesta |
+| `runs_settings` | La scelta fissa per i nuovi report: `ask` / `public` / `private` (#619) | richiesta |
+| `ranking_list` / `ranking_add` / `ranking_remove` / `ranking_clear` | La classifica condivisa di un roadbook di evento con punteggio (`event_results`): organizzatori modificano, partecipanti attivi leggono; lo stesso payload firmato non entra due volte, un altro risultato per lo stesso veicolo sostituisce solo con `replace=1` (#590/#607/#608) | richiesta |
+| `profile_get` | Profilo pubblico `/u/<username>`: bio, organizzazione, roadbook pubblici, run pubbliche con i totali (il proprietario vede anche le private); mai nome reale né email (#620) | nessuna (GET) |
 | `events_list` | Elenco pubblico degli eventi | nessuna |
 | `event_get` | Vista pubblica di un evento via slug | nessuna |
 

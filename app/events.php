@@ -448,8 +448,13 @@ function event_join(array $user, array $d): void {
     }
     $e = $st->fetch();
     if (!$e) fail('Not found.', 404);
-    // slug lets the native App-Links deep link (#268) open the event page after a join-by-code
-    $answer = fn(array $r) => json_out(['ok' => true, 'status' => $r[0], 'activation_code' => $r[1], 'slug' => $e['slug']]);
+    // The answer carries the slug so the app's deep link (#268) can open the event page. A join by
+    // code alone — no page, no slug — IS that link: it switches on participant mode there, as /go/
+    // does on the web (#580).
+    $answer = function (array $r) use ($e, $slug): void {
+        if ($slug === '') set_participant_context((int)$e['id']);
+        json_out(['ok' => true, 'status' => $r[0], 'activation_code' => $r[1], 'slug' => $e['slug']]);
+    };
     // already in: nothing to check and nothing to change — the same answer every time (#574)
     $st = db()->prepare('SELECT status, activation_code FROM event_participants WHERE event_id = ? AND user_id = ?');
     $st->execute([(int)$e['id'], (int)$user['id']]);
