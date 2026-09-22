@@ -320,46 +320,70 @@
     /* ---------------- Activity log modal (#448): the same timeline for everyone, filtered by
        user type — plain users see only their own rows (activity_mine), admins may also pick
        any user (admin_activity). Opened from the account menus as "My activity". */
-    window.RBActivityLog = async function () {
-        const cfg = await window.RBConfig().catch(() => ({}));
-        const me = (cfg && cfg.user) || null;
+    // The activity log — ONE viewer (#665): your own from the account menu, or, for an admin, any
+    // user's (a search in the dialog, or opened straight on one with { user } from the user list).
+    // Search, pager, dates in the UI language, the admin's stats line and a CSV export.
+    window.RBActivityLog = async function (opts) {
+        const cfg = await window.RBConfig();
+        const me = cfg.user || null;
         if (!me) { window.RBNeedAuth(); return; }
         const isAdmin = !!me.is_admin;
-        let targetId = null, actPage = 1, actQuery = '';
-        const m = RBModal(`<h2><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('My activity')}</h2>
-            ${isAdmin ? `<div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input class="field" id="myActUser" placeholder="${RBt('Search users…')}" autocomplete="off"><button class="btn btn-ghost" id="myActMe">${RBt('Me')}</button></div><div id="myActPick"></div>` : ''}
-            <div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="myActSearch" placeholder="${RBt('Search…')}" autocomplete="off" spellcheck="false"></div>
-            <div id="myActBody" class="muted small">${RBt('Loading…')}</div>
+        let target = (opts && opts.user) || null, actPage = 1, actQuery = '';
+        const title = () => target ? `${RBesc(RBt('Activity'))} · @${RBesc(target.username)}` : RBesc(RBt('My activity'));
+        const m = RBModal(`<h2><i class="fa-solid fa-clock-rotate-left"></i> <span id="myActTitle">${title()}</span></h2>
+            ${isAdmin ? `<div class="toolbar"><i class="fa-solid fa-user"></i><input class="field" id="myActUser" placeholder="${RBesc(RBt('Search users…'))}" aria-label="${RBesc(RBt('Search users…'))}" autocomplete="off"><button class="btn btn-ghost" id="myActMe" type="button">${RBesc(RBt('Me'))}</button></div><div id="myActPick"></div>` : ''}
+            <div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field grow" id="myActSearch" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false">
+                <button class="btn btn-ghost" id="myActCsv" type="button"><i class="fa-solid fa-file-csv"></i> CSV</button></div>
+            <div id="myActBody" class="muted small">${RBesc(RBt('Loading…'))}</div>
             <div class="pager" id="myActPager"></div>
-            <div class="btnrow end"><button class="btn btn-ghost modal-close">${RBt('Close')}</button></div>`, 'wide');
+            <div class="btnrow end"><button class="btn btn-ghost modal-close" type="button">${RBesc(RBt('Close'))}</button></div>`, 'wide');
         m.q('.modal-close').onclick = m.close;
+        const fetchPage = (page, perPage) => (isAdmin && target)
+            ? RBApi('admin_activity', { id: target.id, page, per_page: perPage, q: actQuery })
+            : RBApi('activity_mine', { page, per_page: perPage, q: actQuery });
         const loadAct = () => {
-            const call = (isAdmin && targetId) ? RBApi('admin_activity', { id: targetId, page: actPage, q: actQuery }) : RBApi('activity_mine', { page: actPage, q: actQuery });
-            call.then((r) => {
+            m.q('#myActTitle').innerHTML = title();
+            fetchPage(actPage, 20).then((r) => {
                 const body = m.q('#myActBody');
-                if (!r.ok) { body.textContent = r.error || RBt('Could not load.'); return; }
-                body.innerHTML = (r.events || []).length
-                    ? `<table class="act-table"><tbody>${r.events.map((e) => `<tr><td class="small">${RBesc(e.created_at)}</td><td>${RBesc((e.action || '').replace(/_/g, ' '))}</td><td class="muted small">${RBesc(e.detail || '')}</td></tr>`).join('')}</tbody></table>`
-                    : `<p class="muted small">${RBesc(RBt('No activity yet.'))}</p>`;
+                if (!r.ok) { body.textContent = RBt(r.error || 'Could not load.'); return; }
+                const stats = r.stats ? `<p class="hint">${r.stats.roadbooks} ${RBesc(RBt('roadbooks'))} · ${RBFmtSize(r.stats.bytes)}</p>` : '';
+                body.innerHTML = stats + ((r.events || []).length
+                    ? `<table class="act-table"><tbody>${r.events.map((e) => `<tr><td class="small">${RBesc(RBFmtDateTime(e.created_at))}</td><td>${RBesc((e.action || '').replace(/_/g, ' '))}</td><td class="muted small">${RBesc(e.detail || '')}</td>${e.ip != null ? `<td class="muted small">${RBesc(e.ip || '')}</td>` : ''}</tr>`).join('')}</tbody></table>`
+                    : `<p class="muted small">${RBesc(RBt('No activity yet.'))}</p>`);
                 const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 20)));
                 RBPager(m.q('#myActPager'), actPage, pages, (p) => { actPage = p; loadAct(); });
-            }).catch(() => { m.q('#myActBody').textContent = RBt('Could not load.'); });
+            });
         };
         m.q('#myActSearch').oninput = () => { actQuery = m.q('#myActSearch').value; actPage = 1; loadAct(); };
+        // the whole (filtered) log as CSV, fetched 100 at a time; an empty log says so
+        m.q('#myActCsv').onclick = async (e) => {
+            const busy = RBBusy(e.currentTarget), rows = [];
+            for (let p = 1; ; p++) {
+                const r = await fetchPage(p, 100);
+                if (!r.ok) { busy.reset(); return RBToast(r.error || 'Could not load.'); }
+                rows.push(...r.events);
+                if (p * r.per_page >= r.total) break;
+            }
+            if (!rows.length) { busy.reset(); return RBToast('No activity yet.'); }
+            busy.ok();
+            const cell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+            const csv = '\uFEFF' + ['created_at,action,detail,ip'].concat(rows.map((ev) => [ev.created_at, ev.action, ev.detail, ev.ip].map(cell).join(','))).join('\n');
+            RBDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'activity_' + (target ? target.username : me.username) + '.csv');
+        };
         if (isAdmin) {
             let pickTimer = null;
             const pickBox = m.q('#myActPick');
-            m.q('#myActMe').onclick = () => { targetId = null; pickBox.innerHTML = ''; actPage = 1; loadAct(); };
+            m.q('#myActMe').onclick = () => { target = null; pickBox.innerHTML = ''; actPage = 1; loadAct(); };
             m.q('#myActUser').oninput = () => {
                 clearTimeout(pickTimer);
                 pickTimer = setTimeout(() => {
                     const q = m.q('#myActUser').value.trim();
-                    if (!q) { pickBox.innerHTML = ''; return; }
+                    if (q.length < 2) { pickBox.innerHTML = ''; return; }
                     RBApi('user_search', { q }).then((r) => {
                         if (!r.ok || !r.users) return;
-                        pickBox.innerHTML = r.users.slice(0, 8).map((u) => `<div class="ev-line"><span class="meta clickable" data-pu="${u.id}"><b>${RBesc(u.username)}</b> <span class="muted small">${RBesc(((u.first_name || '') + ' ' + (u.last_name || '')).trim())}</span></span></div>`).join('')
+                        pickBox.innerHTML = r.users.slice(0, 8).map((u, i) => `<div class="ev-line"><button type="button" class="btn btn-ghost" data-pu="${i}"><b>${RBesc(u.username)}</b> <span class="muted small">${RBesc(((u.first_name || '') + ' ' + (u.last_name || '')).trim())}</span></button></div>`).join('')
                             || `<p class="muted small">${RBesc(RBt('Nothing matches that search.'))}</p>`;
-                        pickBox.querySelectorAll('[data-pu]').forEach((el) => el.onclick = () => { targetId = +el.dataset.pu; pickBox.innerHTML = ''; actPage = 1; loadAct(); });
+                        pickBox.querySelectorAll('[data-pu]').forEach((el) => el.onclick = () => { target = r.users[+el.dataset.pu]; pickBox.innerHTML = ''; actPage = 1; loadAct(); });
                     });
                 }, 300);
             };
@@ -856,15 +880,15 @@
     window.RBPublicRoadbooksList = async (container) => {
         if (!container) return 0;
         const r = await RBApi('admin_roadbooks');
-        if (!r.ok) { container.innerHTML = ''; return 0; }
+        if (!r.ok) { container.innerHTML = `<p class="muted small"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt(r.error || 'Could not load.'))}</p>`; return 0; } // failed ≠ empty (#667)
         const list = r.roadbooks || [];
         container.innerHTML = list.length ? list.map((rb) => `<div class="roadbook-row">
             <div class="meta"><b>${RBesc(rb.title)}</b><small>@${RBesc(rb.username)} · ${RBSummary(rb.total_distance, rb.note_count)}</small></div>
-            <button class="rb-badge public" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}" title="${RBesc(RBt('Make private'))}" aria-label="${RBesc(RBt('Make private'))}"><i class="fa-solid fa-globe"></i> ${RBesc(RBt('Public'))}</button>
             <a class="btn btn-ghost" href="/challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
+            <button class="btn btn-ghost" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}"><i class="fa-solid fa-lock"></i> ${RBesc(RBt('Make private'))}</button>
         </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
         container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirm(RBt('Make this roadbook private?') + ' “' + RBesc(b.dataset.title || '') + '”', true))) return;
+            if (!(await RBConfirmDanger(RBt('Make this roadbook private?') + '<br><b>' + RBesc(b.dataset.title || '') + '</b>'))) return;
             const x = await RBApi('admin_unpublish', { id: +b.dataset.unpub });
             if (x.ok) { RBToast('Roadbook is now private.'); RBPublicRoadbooksList(container); } else RBToast(x.error || 'Could not change visibility.');
         });
@@ -1128,7 +1152,7 @@
     function manageLinks(user, participant) {
         if (participant || !user) return [];
         if (user.is_admin) return [
-            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Public Roadbooks',       group: 0 },
+            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Public roadbooks',       group: 0 },
             { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
             { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
             { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },

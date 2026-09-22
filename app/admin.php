@@ -504,9 +504,11 @@ function admin_create_user(array $user, array $d): void {
     $username = trim((string)($d['username'] ?? ''));
     $email = strtolower(trim((string)($d['email'] ?? '')));
     $pass  = (string)($d['password'] ?? '');
+    // the club, collapsed like the profile field so the same one stays grouped (#116 · #663)
+    $organization = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($d['organization'] ?? ''))), 0, 120);
     validate_new_account($first, $last, $username, $email, $pass);
-    db()->prepare('INSERT INTO users (first_name, last_name, username, email, password_hash, email_verified, must_change_password) VALUES (?,?,?,?,?,1,1)')
-        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+    db()->prepare('INSERT INTO users (first_name, last_name, username, email, organization, password_hash, email_verified, must_change_password) VALUES (?,?,?,?,?,?,1,1)')
+        ->execute([$first, $last, $username, $email, $organization !== '' ? $organization : null, password_hash($pass, PASSWORD_DEFAULT)]);
     $id = (int)db()->lastInsertId();
     log_activity((int)$user['id'], 'admin_create_user', 'user #' . $id . ' (@' . $username . ')');
     json_out(['ok' => true, 'id' => $id]);
