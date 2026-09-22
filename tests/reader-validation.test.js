@@ -45,7 +45,7 @@ describe('validation lives on the note (#529)', () => {
 
 describe('auto-advance never strands the run (#529)', () => {
     it('asks the core which note the driven segment validates, looking one ahead', () => {
-        expect(js).toContain('RB.autoReachedIdx(notes, activeIdx, activeIdx + 1, fix.from, here, reachRadius)');
+        expect(js).toContain('RB.autoReachedIdx(notes, activeIdx, activeIdx + 1, fix.from, here, reachRadius, tripPartialM)');
         expect(js).not.toContain('RB.noteReached(an,'); // the single-note gate is no longer the whole rule
     });
 
