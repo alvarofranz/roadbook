@@ -119,28 +119,28 @@ avviene sulla pagina dedicata `edit/?id=<id>` (mai in popup); `?id=0` crea un nu
 primo salvataggio.
 
 ### `/admin/events/edit/` — modifica evento (`event-edit.js`)
-La pagina completa di un evento. `event_manage_get()` fornisce tutto: parametri, categorie,
-organizzatori, roadbook associati (con proprietario + `scoring_mode`) e il totale partecipanti +
-il join code. Le azioni:
-- **Parametri** — `event_save` (titolo, descrizione, sito dell'organizzatore, coordinate HQ,
-  date, visibilità). Le categorie non si gestiscono qui: vivono sul singolo roadbook
-  (`roadbooks.category`, #248).
-- **Roadbook** — `event_rb_add` (solo un roadbook **di cui sei proprietario**; un admin può
-  associarne di altrui, #140), `event_rb_remove` (dissocia, non tocca il roadbook), `event_rb_mode`
-  (imposta `scoring_mode`).
-- **Organizzatori** — `user_search` (ricerca per username/nome, filtrabile per organizzazione;
-  riservata a organizzatori/admin perché restituisce le email),
-  `event_org_add`/`event_org_remove` (**solo il proprietario/admin**; il proprietario non è
-  rimovibile).
-- **Join code** — `event_join_code` genera/rigenera (o azzera) il codice condiviso con i
-  partecipanti. Il codice serve solo con gate `code`; gli altri gate lo azzerano al salvataggio.
-- **Registration** — gate (`closed`/`code`/`open`) + `require_activation` (#414): `event_save`
-  li persiste; togliendo l'attivazione con pendenti in attesa, `admit_pending=1` li ammette
-  nella stessa transazione (previa conferma, #415); aggiungendola, `reset_active=1` rimanda
-  gli attivi in pending con nuovi codici. `event_participants_activate_pending` ammette tutti
-  i pendenti in un colpo solo (#416).
-- **Logo** — upload via `RBUpload({ type: 'event_logo', event })` (AVIF 512px, vedi
-  [backend-api §6](backend-api.md)); `event_logo_remove` lo toglie.
+La pagina completa di un evento, con in testa il suo nome e le azioni (View · Delete per il
+proprietario · Save, #597). `event_manage_get()` fornisce tutto. Due tipi di modifica, mai mescolati:
+- **Il form** — parametri (titolo, date, *Listed in the public event gallery*, descrizione, sito,
+  coordinate HQ) e impostazioni di **Registration** (gate + `require_activation`) — si salva solo
+  con **Save**, con le conferme del #415 (`admit_pending` / `reset_active`). Si riempie dal server
+  al primo caricamento e dopo un salvataggio; uscire con modifiche non salvate chiede prima (#591).
+  Un evento nuovo parte dai default documentati: *Invite code* + attivazione (#595).
+- **Le azioni immediate** — organizzatori, roadbook, `scoring_mode`, codice, logo — agiscono subito
+  e rinfrescano solo la loro sezione: non sovrascrivono né salvano di nascosto il form (#591/#592).
+  - **Roadbook** — `event_rb_add` (solo un roadbook **di cui sei proprietario**; un admin può
+    associarne di altrui, #140), `event_rb_remove`, `event_rb_mode`. Ogni riga mostra lo stato reale
+    (Draft · Ready · Public) e avvisa che una bozza è invisibile ai partecipanti (#596).
+  - **Organizers** (#598) — `user_search` (2+ caratteri, niente email) + `event_org_add` /
+    `event_org_remove`, **solo proprietario/admin**; il proprietario non è rimovibile.
+  - **Codice** — con registrazione *Invite code* salvata l'evento **ha sempre un codice** (generato
+    al salvataggio): la card mostra link partecipanti + QR + codice, con *New join code* (confermato)
+    e un codice scelto a mano. Chiudere le iscrizioni è il gate *Closed* — non esiste più un
+    "Disable joining" che lasciava il gate su codice senza codice (#593).
+  - **Logo** — `RBUpload({ type: 'event_logo', event })` (AVIF 512px); l'URL salvato porta la sua
+    versione (`?v=`), così nessuna pagina deve forzare la cache (#588). `event_logo_remove` lo toglie.
+- La **mappa HQ** si crea una volta per pagina (#594) e senza coordinate parte dalla posizione di
+  default dell'organizzatore, altrimenti dall'Europa (#599).
 
 ### `/admin/events/participants/` — roster (`participants.js`)
 La lista partecipanti su pagina propria (#144): un evento può averne centinaia, quindi è

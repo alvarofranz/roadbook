@@ -666,7 +666,7 @@ describe('async actions report on their own button (#491)', () => {
         ['public/admin/admin.js', "'#cuSave'"],
         ['public/admin/events/edit/event-edit.js', "'evSave'"],
         ['public/admin/events/edit/event-edit.js', "'joinRotate').onclick"],
-        ['public/admin/events/edit/event-edit.js', "'joinClear').onclick"],
+        ['public/admin/events/edit/event-edit.js', "async function setCode(btn, payload)"],
         ['public/admin/events/edit/event-edit.js', "'joinSetBtn').onclick"],
         ['public/admin/events/participants/participants.js', "'ppActivateAll'"],
         ['public/admin/events/participants/participants.js', "'ppActivate'"],

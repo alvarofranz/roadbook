@@ -242,13 +242,11 @@ function event_save(array $user, array $d): void {
         $slug = (int)$cur['is_public'] ? $cur['slug'] : unique_slug('events', $title, 'event', $id);
     }
     else { if (!is_admin($user) && !is_organizer($user)) fail('Organizers only.', 403); $slug = unique_slug('events', $title, 'event', 0); }
-    // only the code gate uses a join code — any other gate clears it so it is not usable
-    if ($gate !== 'code') $clearJoin = 1;
-    else $clearJoin = !empty($d['clear_join_code']) ? 1 : 0;
     if ($id > 0) {
         $sql = 'UPDATE events SET title = ?, description = ?, organizer_website = ?, hq_lat = ?, hq_lon = ?, starts_on = ?, ends_on = ?, is_public = ?, join_gate = ?, require_activation = ?, open_join = ?, slug = ?';
         $args = [$title, $desc, $website, $hqLat, $hqLon, $starts, $ends, $isPublic, $gate, $needActivation, $gate === 'open' ? 1 : 0, $slug];
-        if ($clearJoin) { $sql .= ', join_code = NULL'; }
+        // only the code gate uses a join code — any other gate clears it so it is not usable
+        if ($gate !== 'code') $sql .= ', join_code = NULL';
         $sql .= ' WHERE id = ?';
         $args[] = $id;
         db()->prepare($sql)->execute($args);
@@ -268,6 +266,11 @@ function event_save(array $user, array $d): void {
         $id = (int)db()->lastInsertId();
         // the owner is also listed among the event's organizers
         db()->prepare('INSERT IGNORE INTO event_organizers (event_id, user_id) VALUES (?,?)')->execute([$id, (int)$user['id']]);
+    }
+    // an invite-code registration always HAS a code: choosing it is enough, no second step (#593)
+    if ($gate === 'code') {
+        $st = db()->prepare('SELECT join_code FROM events WHERE id = ?'); $st->execute([$id]);
+        if ($st->fetchColumn() === null) event_generate_join_code($id);
     }
     log_activity((int)$user['id'], 'event_save', 'event #' . $id);
     json_out(['ok' => true, 'id' => $id, 'slug' => $slug]);
@@ -367,13 +370,13 @@ function event_org_remove(array $user, array $d): void {
 }
 
 /* ---- participants + join code (#123) ---- */
-// Rotate (or clear) the join code the organizer shares with participants.
+// Set or rotate the join code the organizer shares with participants. Closing registration is
+// the gate's job (closed), not a missing code (#593).
 function event_join_code(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
-    if (!empty($d['clear'])) {
-        db()->prepare('UPDATE events SET join_code = NULL WHERE id = ?')->execute([(int)$e['id']]);
-        json_out(['ok' => true, 'join_code' => null]);
-    }
+    if (event_join_gate($e['join_gate'] ?? null) !== 'code') fail('A join code needs the Invite code registration.');
+    // installed app binaries still carry the old "Disable joining" button: refuse, never rotate by accident
+    if (!empty($d['clear'])) fail('To stop new registrations, set Registration to Closed.');
     $code = trim((string)($d['code'] ?? ''));
     if ($code !== '') {
         $code = strtoupper($code);
@@ -384,11 +387,15 @@ function event_join_code(array $user, array $d): void {
             json_out(['ok' => true, 'join_code' => $code]);
         } catch (\Throwable $x) { fail('Code already in use.', 409); }
     }
+    json_out(['ok' => true, 'join_code' => event_generate_join_code((int)$e['id'])]);
+}
+// Give an event a fresh random join code and return it.
+function event_generate_join_code(int $eventId): string {
     for ($try = 0; $try < 5; $try++) { // regenerate until unique (the column is UNIQUE; collisions are ~impossible)
         $code = strtoupper(bin2hex(random_bytes(4)));
         try {
-            db()->prepare('UPDATE events SET join_code = ? WHERE id = ?')->execute([$code, (int)$e['id']]);
-            json_out(['ok' => true, 'join_code' => $code]);
+            db()->prepare('UPDATE events SET join_code = ? WHERE id = ?')->execute([$code, $eventId]);
+            return $code;
         } catch (\Throwable $x) { /* duplicate code — roll again */ }
     }
     fail('Could not generate a join code.', 500); // 5 straight failures = the DB is unhappy, not a collision

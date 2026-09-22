@@ -993,6 +993,18 @@
         let user = null; try { user = JSON.parse(localStorage.getItem(RB_CFG_USER) || 'null'); } catch (e) {}
         return { ok: false, offline: true, user };
     };
+    // Delete an event, from its management list or its edit page (#601): the confirm names the event
+    // and says what goes with it — every participant and the roadbook links — and that the roadbooks
+    // themselves stay. Resolves true once it is gone.
+    window.RBEventDelete = async (ev) => {
+        const msg = RBt('Delete event') + '<br><b>' + RBesc(ev.title) + '</b><br>'
+            + RBt('Its participants and roadbook links are removed with it; the roadbooks themselves are kept.')
+            + (ev.participants ? ' (' + ev.participants + ' ' + RBt('participants') + ')' : '');
+        if (!(await RBConfirmDanger(msg))) return false;
+        const x = await RBApi('event_delete', { id: ev.id });
+        if (!x.ok) { RBToast(x.error || 'Could not delete.'); return false; }
+        return true;
+    };
     window.RBIsParticipant = isParticipant;
     // Drop the client-side participant flag (the server context is cleared by the API call that
     // ends it: leave_participant_mode, event_leave). One place, so every exit clears the same.
