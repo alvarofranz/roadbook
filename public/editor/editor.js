@@ -260,7 +260,8 @@
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         if (photoPlacing) { placePhotoHere(here); return; } // setting the position of a photo with no EXIF GPS
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
-        if (mapTool === 'point') pointTap(here);
+        if (mapTool === 'point') addPointAtExact(here);
+        else if (mapTool === 'draw') extendRoute(here);
         else if (mapTool === 'cut') cutPoint(here);
         else if (mapTool === 'note') addNoteAtExact(here); // stays in note mode, so notes can be dropped in a row
     });
@@ -435,8 +436,8 @@
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
     // Every mode's button: the rail (bottom-left) and Cut's row in the ☰ panel (#692).
     const MODE_BUTTONS = ['modeMove', 'modeNote', 'modePoint', 'modeDraw', 'modeCut', 'toolCut'];
-    // Move, Add notes and Cut act on a route; Add points and Draw can also start one.
-    const modeAvailable = (tool) => !readOnly() && (tool === 'point' || tool === 'draw' || !!(rb && rb.track.length >= 2));
+    // Move, Add notes, Add points and Cut act on an existing route; Draw also starts one.
+    const modeAvailable = (tool) => !readOnly() && (tool === 'draw' || !!(rb && rb.track.length >= 2));
     function paintModes() {
         MODE_BUTTONS.forEach((id) => {
             const b = $(id), tool = b.dataset.tool;
@@ -449,7 +450,6 @@
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // Move shows a per-handle grab cursor
-        if (map.map) tool === 'draw' ? map.map.dragPan.disable() : map.map.dragPan.enable(); // a one-finger drag draws, it must not pan
         if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); map.setPhotoEditor(onPhotoDrag, onPhotoCommit); } // Move: drag trk · wpt · photo
         else if ((tool === 'point' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) while adding to the route (#52)
         else { map.setVertexEditor(null); map.setWaypointEditor(null); map.setPhotoEditor(null); }
@@ -479,8 +479,8 @@
     function applyToolTips() {
         const tips = {
             modeMove: 'Move: drag points, notes and photos — M', modeNote: 'Add notes: tap the route — N',
-            modePoint: 'Add points: tap the route to insert one, or past an end to extend it — P',
-            modeDraw: 'Draw: drag on the map to sketch the route — D', modeCut: 'Cut (tap two points) — C', toolCut: 'Cut (tap two points) — C',
+            modePoint: 'Add points: tap the route to insert one — P',
+            modeDraw: 'Draw: tap to add new points from the nearest end — D', modeCut: 'Cut (tap two points) — C', toolCut: 'Cut (tap two points) — C',
             toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools', toolShortcuts: 'Keyboard shortcuts',
@@ -533,17 +533,17 @@
     // Escape → back to the default Move tool; never mid-adjust — the drag editors must not
     // touch a track that is being live re-recorded (#220)
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && recWatch == null) setMapTool('points'); });
-    // Extending the route (Add points away from the route, #692): the tapped point joins the
-    // nearest OPEN end — the finish, the start, or either edge of an open cut (tapping on the
-    // opposite edge closes the cut). With nothing loaded, the first two taps create a fresh
-    // roadbook (start/end notes ride the growing track).
+    // Draw (#712): every tap adds a new point, joining the nearest OPEN end — the finish, the
+    // start, or either edge of an open cut (tapping on the opposite edge closes the cut). With
+    // nothing loaded, the first two taps create a fresh roadbook (start/end notes ride the
+    // growing track). A drag still pans the map, as in every mode.
     const nearOnScreen = (q, p, px = 16) => {
         if (!map.map) return RB.geo.haversineM(q, p) < px * 1.25;
         const A = map.map.project([q.lon, q.lat]), B = map.map.project([p.lon, p.lat]);
         return Math.hypot(A.x - B.x, A.y - B.y) < px;
     };
-    // A brand-new route from its first points (two taps of Add points, or one Draw stroke). A
-    // loaded routeless roadbook keeps its identity, title and metadata; the mode stays armed.
+    // A brand-new route from its first two Draw taps. A loaded routeless roadbook keeps its
+    // identity, title and metadata; Draw stays armed.
     function startRoute(trkpts, mode) {
         const meta = rb && rb.meta;
         if (!rb) resetIdentity();
@@ -552,20 +552,11 @@
         setRoadbook(drawn);
         markDirty(); setMapTool(mode);
     }
-    // Add points (#692): a tap ON the route inserts a point into the segment under it; a tap away
-    // from it extends the route from its nearest open end.
-    function pointTap(p) {
-        if (rb && rb.track.length >= 2) {
-            const hit = RB.nearestOnTrack(rb.track, p);
-            if (hit && nearOnScreen(hit, p, 22) && !new Set(gapIdxs()).has(hit.i)) return addPointAtExact(p);
-        }
-        extendRoute(p);
-    }
     function extendRoute(p) {
         const pt = { lat: RB.round6(p.lat), lon: RB.round6(p.lon) };
         if (!rb || rb.track.length < 2) {     // seed the first segment of a brand-new or routeless roadbook
             drawSeed.push(pt); map.setPin(drawSeed[0]);
-            if (drawSeed.length === 2) startRoute(drawSeed, 'point');
+            if (drawSeed.length === 2) startRoute(drawSeed, 'draw');
             return;
         }
         const D = RB.geo.haversineM, last = rb.track.length - 1;
@@ -596,107 +587,6 @@
         candidates.sort((x, y) => x.d - y.d)[0].apply();
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes(); markDirty();
-    }
-    /* ---------- Draw (#692): freehand, press and drag ---------- */
-    // The finger or mouse traces a stroke (a dashed line under it); on release RB.normalizeStroke
-    // turns it into a clean piece — jitter gone, bends rounded, straight runs straight — which
-    // then joins the route at its nearest open end (or fills an open cut, or starts the route).
-    let stroke = null;
-    // Precision matches what the author can see: ~4 screen pixels at the current zoom.
-    function strokeTolerance() {
-        const c = map.map.getCenter(), a = map.map.project(c);
-        const b = map.map.unproject([a.x + 4, a.y]);
-        return RB.geo.haversineM({ lat: c.lat, lon: c.lng }, { lat: b.lat, lon: b.lng });
-    }
-    function strokeStart(e) {
-        if (mapTool !== 'draw' || !map.ready || recWatch != null || photoPlacing) return;
-        const oe = e.originalEvent;
-        if ((oe.touches && oe.touches.length > 1) || (oe.button != null && oe.button !== 0)) return; // pinch / right-click: not a stroke
-        stroke = [{ lat: e.lngLat.lat, lon: e.lngLat.lng }];
-    }
-    function strokeMove(e) {
-        if (!stroke) return;
-        const p = { lat: e.lngLat.lat, lon: e.lngLat.lng };
-        if (nearOnScreen(stroke[stroke.length - 1], p, 3)) return; // one sample per ~3 px of movement
-        stroke.push(p); map.setSketch(stroke);
-    }
-    function strokeEnd() {
-        if (!stroke) return;
-        const pts = stroke.length > 1 ? RB.normalizeStroke(stroke, strokeTolerance()) : [];
-        stroke = null; map.setSketch(null);
-        if (pts.length < 2) return toast('Drag on the map to draw your route.');
-        if (!rb || rb.track.length < 2) return startRoute(pts, 'draw');
-        joinStroke(pts);
-    }
-    if (map.map) {
-        map.map.on('mousedown', strokeStart); map.map.on('touchstart', strokeStart);
-        map.map.on('mousemove', strokeMove); map.map.on('touchmove', strokeMove);
-        map.map.on('mouseup', strokeEnd); map.map.on('touchend', strokeEnd);
-        window.addEventListener('mouseup', strokeEnd); // released outside the map
-    }
-    // Where a drawn piece goes (#692), decided by what its two ends touch on screen (~30 px):
-    //  · one end at an open end of the route (start, finish, an edge of an open cut) and the other
-    //    away from the route → the route is extended from there (a piece reaching the opposite
-    //    edge of a cut closes it);
-    //  · both ends on the route → the stretch between them is replaced by the piece;
-    //  · anything else is not a route edit — nothing changes, and the hint says how to draw.
-    const STROKE_SNAP_PX = 30;
-    async function joinStroke(pts) {
-        const track = rb.track, last = track.length - 1;
-        const onRoute = (p) => { const hit = RB.nearestOnTrack(track, p); return hit && nearOnScreen(hit, p, STROKE_SNAP_PX) ? hit : null; };
-        const hitA = onRoute(pts[0]), hitB = onRoute(pts[pts.length - 1]);
-        const ends = [{ kind: 'end', at: track[last] }, { kind: 'start', at: track[0] }];
-        resolveGaps().forEach(({ i, g }) => { ends.push({ kind: 'gapA', i, g, at: track[i] }, { kind: 'gapB', i, g, at: track[i + 1] }); });
-        const openEndAt = (p) => ends.find((end) => nearOnScreen(end.at, p, STROKE_SNAP_PX));
-        const fromA = openEndAt(pts[0]), fromB = openEndAt(pts[pts.length - 1]);
-        if (fromA && !hitB) return extendWith(fromA, pts);
-        if (fromB && !hitA) return extendWith(fromB, pts.slice().reverse());
-        if (hitA && hitB && Math.abs((hitA.i + hitA.t) - (hitB.i + hitB.t)) > 0.05) return replaceStretch(pts, hitA, hitB);
-        toast('Start the stroke at an end of the route — or draw from the route back onto it to replace that stretch.');
-    }
-    // piece[0] sits at `end`; the rest of it becomes the new route beyond that end.
-    function extendWith(end, piece) {
-        const track = rb.track, last = track.length - 1;
-        if (end.kind === 'end') {
-            const endNote = rb.notes[rb.notes.length - 1], rides = endNote && endNote.idx === last;
-            track.push(...piece);
-            if (rides) endNote.idx = track.length - 1; // the finish note rides the new tip
-        } else if (end.kind === 'start') {
-            const startNote = rb.notes[0], rides = startNote && startNote.idx === 0;
-            track.unshift(...piece.slice().reverse());
-            rb.notes.forEach((n) => { n.idx += piece.length; });
-            if (rides) startNote.idx = 0; // the start note rides the new tip
-        } else {
-            const fromEdgeA = end.kind === 'gapA', i = end.i, g = end.g;
-            const opposite = fromEdgeA ? track[i + 1] : track[i];
-            const closes = nearOnScreen(opposite, piece[piece.length - 1], STROKE_SNAP_PX);
-            const inserted = fromEdgeA ? piece : piece.slice().reverse(); // in route order, between i and i+1
-            track.splice(i + 1, 0, ...inserted);
-            rb.notes.forEach((n) => { if (n.idx > i) n.idx += inserted.length; });
-            if (closes) { gaps.splice(gaps.indexOf(g), 1); toast('Cut closed.'); }
-            else if (fromEdgeA) g.a = inserted[inserted.length - 1];
-            else g.b = inserted[0];
-        }
-        strokeApplied('Route extended.');
-    }
-    // Both ends on the route: the piece replaces the stretch between the two spots it touches,
-    // meeting the route exactly there. Notes inside that stretch go with it — asked first, by name.
-    async function replaceStretch(pts, hitA, hitB) {
-        let piece = pts, a = hitA, b = hitB;
-        if (a.i + a.t > b.i + b.t) { piece = pts.slice().reverse(); a = hitB; b = hitA; } // along the route's direction
-        const lost = rb.notes.filter((n) => n.idx > a.i && n.idx <= b.i);
-        if (lost.length && !(await RBConfirmDanger(t('Replace this stretch of the route? These notes are in it and will be deleted:') + ' ' + lost.map(noteLabel).join(', ')))) return;
-        const middle = [{ lat: a.lat, lon: a.lon }, ...piece.slice(1, -1), { lat: b.lat, lon: b.lon }];
-        const shift = a.i + 1 + middle.length - (b.i + 1); // how far the rest of the route moves
-        rb.track.splice(a.i + 1, b.i - a.i, ...middle);
-        rb.notes = rb.notes.filter((n) => !lost.includes(n));
-        rb.notes.forEach((n) => { if (n.idx > b.i) n.idx += shift; });
-        strokeApplied('Stretch replaced.');
-    }
-    function strokeApplied(msg) {
-        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        routeChanged(msg);
-        setMapTool('draw'); // keep drawing: the vertex dots now include the new piece
     }
     // Track index exactly at the tapped position: when the tap lands between two
     // points, the nearest segment is split there with a new point — you cut and
@@ -857,7 +747,7 @@
         };
     };
     $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording(); };
-    $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Drag on the map to draw your route.'); };
+    $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
     // The opening screen is interactive immediately, while startup() is still running its async
@@ -952,7 +842,7 @@
         const routeless = rb.track.length < 2;
         setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to Move
         showView('map'); // tap a note to open its editor inline below the row
-        if (routeless) { centerOnDefault(); toast('Drag on the map to draw your route.'); } // no route to fit → start at the user's default location
+        if (routeless) { centerOnDefault(); toast('Tap the map to draw your route.'); } // no route to fit → start at the user's default location
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */

@@ -15,7 +15,7 @@ Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur 
 | Quelle | Vorgehen | Ergebnis |
 |----------|-----------|--------------|
 | **GPX** | Tap „GPX" → `.gpx`-Datei wählen (optional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook mit Spur + Waypoint |
-| **Auf der Karte zeichnen** | Tap „Auf der Karte zeichnen" | Karte im **Zeichnen**-Modus: auf der Karte drücken und ziehen, um die Route zu skizzieren — der erste Strich erstellt das roadbook von Null |
+| **Auf der Karte zeichnen** | Tap „Auf der Karte zeichnen" | Karte im **Zeichnen**-Modus: auf die Karte tippen, um die Route Punkt für Punkt anzulegen — die ersten zwei Taps erstellen das roadbook von Null |
 | **.rdbk** | Tap „.rdbk" → ZIP/JSON-Datei wählen | Importiert vollständiges roadbook (Medien in `pendingMedia`, siehe unten) |
 | **Roadbook pubblico** | Tap „Roadbook pubblico" → challenge-Picker | **Fork** eines `public` + `reusable` roadbook → neues privates roadbook von dir |
 
@@ -43,18 +43,11 @@ Die Karte ist das Herzstück. Darauf liegen zwei Leisten:
 |------|-------|---------|
 | **Verschieben** (Standard) | `M` | Zieht **jeden beliebigen Punkt**: Spurpunkt, Note oder Foto. Die Linie folgt. Metriken werden beim Loslassen neu berechnet |
 | **Notizen hinzufügen** | `N` | Tap auf die Route → setzt dort eine Note. Der Modus bleibt aktiv, so kannst du mehrere nacheinander setzen |
-| **Punkte hinzufügen** | `P` | Tap **auf** die Route → fügt einen Punkt in diesen Abschnitt ein. Tap **abseits** der Route → verlängert sie ab ihrem nächstgelegenen offenen Ende (Start, Ziel oder Rand eines offenen Schnitts). Ist nichts geladen, beginnen zwei Taps eine neue Route |
-| **Zeichnen** | `D` | Freihand: auf der Karte drücken und ziehen. Beim Loslassen wird der Strich zu einer glatten, professionellen Linie bereinigt (Zittern entfernt, Kurven gerundet, Geraden gerade) |
+| **Punkte hinzufügen** | `P` | Tap auf die bestehende Route → fügt einen Punkt in diesen Abschnitt ein. Braucht eine Route |
+| **Zeichnen** | `D` | Jeder Tap fügt einen **neuen** Punkt hinzu und verlängert die Route ab ihrem nächstgelegenen offenen Ende (Start, Ziel oder Rand eines offenen Schnitts); ein Tap auf den gegenüberliegenden Rand eines Schnitts schließt ihn. Ist nichts geladen, erstellen die ersten zwei Taps das roadbook |
 | **Schneiden** | `C` | Menü ☰ → Schneiden (erscheint nur während er aktiv ist in der Modusleiste). 2 Punkte tippen → schneiden (lässt Lücke = *gap*) |
 
-Erneutes Tippen auf den aktiven Modus kehrt zu **Verschieben** zurück; ebenso `Esc`.
-
-#### Wohin ein gezeichneter Strich geht
-
-- **Ein Ende beginnt an einem offenen Ende** der Route (Start, Ziel, Rand eines offenen Schnitts) → die Route wird von dort verlängert; erreicht er den gegenüberliegenden Rand eines Schnitts, wird dieser geschlossen
-- **Beide Enden berühren die Route** → der Strich ersetzt das Routenstück zwischen diesen beiden Stellen. Liegen Notizen in diesem Stück, fragt der Editor vorher und nennt sie
-- **Sonst** → nichts ändert sich und ein Hinweis erklärt, wie man zeichnet
-- **Nichts geladen** → der erste Strich erstellt das roadbook
+Erneutes Tippen auf den aktiven Modus kehrt zu **Verschieben** zurück; ebenso `Esc`. Ziehen verschiebt immer die Karte, in jedem Modus.
 
 ### Menü ☰
 
@@ -98,7 +91,7 @@ Dieselben Buchstaben gelten im Rechtsklick-Menü und auf einem ausgewählten Spu
 
 Ein innerer Schnitt hinterlässt eine **echte Lücke** (kein Segment). Gespeichert als Paar von **Punkten** `{a,b}` (nicht Indizes) → übersteht Index-Verschiebungen.
 
-- **Füllen**: darüber zeichnen oder mit Punkte hinzufügen verlängern (das Erreichen des gegenüberliegenden Rands schließt den gap)
+- **Füllen**: mit Zeichnen von einem Rand des Schnitts aus tippen (ein Tap auf den gegenüberliegenden Rand schließt den gap)
 - **Gerade schließen**: beim Export/Save → `confirmOpenCuts` fragt nach → schließt als gerade Linie
 - `resolveGaps()` löst sie bei Bedarf in Indizes auf
 

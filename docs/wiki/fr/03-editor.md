@@ -15,7 +15,7 @@ Ouvrez **Editor** (`/editor/`). La page d'accueil (`#loadFrom`) propose 4 cartes
 | Source | Comment faire | Ce que vous obtenez |
 |----------|-----------|--------------|
 | **GPX** | Touchez « GPX » → choisissez un fichier `.gpx` (optionnel `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook avec trace + waypoints |
-| **Dessiner sur la carte** | Touchez « Dessiner sur la carte » | Carte en mode **Dessiner** : appuyez et faites glisser sur la carte pour esquisser le parcours — le premier trait crée le roadbook à partir de zéro |
+| **Dessiner sur la carte** | Touchez « Dessiner sur la carte » | Carte en mode **Dessiner** : touchez la carte pour ajouter le parcours point par point — les deux premiers taps créent le roadbook à partir de zéro |
 | **.rdbk** | Touchez « .rdbk » → choisissez un fichier ZIP/JSON | Importe un roadbook complet (médias dans `pendingMedia`, voir ci-dessous) |
 | **Roadbook public** | Touchez « Roadbook public » → sélecteur de challenge | **Fork** d'un roadbook `public` + `reusable` → nouveau roadbook privé vous appartenant |
 
@@ -43,18 +43,11 @@ La carte est le cœur. Deux barres y sont posées :
 |------|--------|---------|
 | **Déplacer** (défaut) | `M` | Faites glisser **n'importe quel point** : point de trace, note ou photo. La ligne suit. Métriques recalculées au relâchement |
 | **Ajouter des notes** | `N` | Tap sur la route → pose une note à cet endroit. Le mode reste actif, vous pouvez donc en poser plusieurs à la suite |
-| **Ajouter des points** | `P` | Tap **sur** la route → insère un point dans ce tronçon. Tap **à l'écart** de la route → la prolonge depuis son extrémité ouverte la plus proche (départ, arrivée ou bord d'une coupe ouverte). Sans rien de chargé, deux taps commencent une nouvelle route |
-| **Dessiner** | `D` | À main levée : appuyez et faites glisser sur la carte. Au relâchement, le trait est nettoyé en une ligne lisse et professionnelle (tremblements supprimés, virages arrondis, lignes droites bien droites) |
+| **Ajouter des points** | `P` | Tap sur la route existante → insère un point dans ce tronçon. Nécessite une route |
+| **Dessiner** | `D` | Chaque tap ajoute un **nouveau** point et prolonge la route depuis son extrémité ouverte la plus proche (départ, arrivée ou bord d'une coupe ouverte) ; toucher le bord opposé d'une coupe la ferme. Sans rien de chargé, les deux premiers taps créent le roadbook |
 | **Couper** | `C` | Menu ☰ → Couper (n'apparaît dans la barre des modes que lorsqu'il est actif). Tap 2 points → coupe (laisse un trou = *gap*) |
 
-Toucher à nouveau le mode actif ramène à **Déplacer** ; `Esc` aussi.
-
-#### Où va un trait dessiné
-
-- **Une extrémité part d'une extrémité ouverte** de la route (départ, arrivée, bord d'une coupe ouverte) → la route est prolongée depuis là ; atteindre le bord opposé d'une coupe la ferme
-- **Les deux extrémités touchent la route** → le trait remplace le tronçon de route entre ces deux endroits. Si des notes se trouvent dans ce tronçon, l'Editor demande d'abord et les nomme
-- **Sinon** → rien ne change et une indication explique comment dessiner
-- **Rien de chargé** → le premier trait crée le roadbook
+Toucher à nouveau le mode actif ramène à **Déplacer** ; `Esc` aussi. Faire glisser déplace toujours la carte, dans tous les modes.
 
 ### Menu ☰
 
@@ -98,7 +91,7 @@ Les mêmes lettres valent dans le menu du clic droit et sur un point de trace s�
 
 Une coupe interne laisse un **trou réel** (pas un segment). Mémorisé comme une paire de **points** `{a,b}` (pas des indices) → survit au décalage d'index.
 
-- **Remplir** : dessinez par-dessus ou prolongez avec Ajouter des points (atteindre le bord opposé ferme le gap)
+- **Remplir** : touchez avec Dessiner depuis un bord de la coupe (toucher le bord opposé ferme le gap)
 - **Fermer à plat** : à l'export/save → `confirmOpenCuts` demande confirmation → ferme en ligne droite
 - `resolveGaps()` les résout en indices à la demande
 

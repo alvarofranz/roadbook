@@ -15,7 +15,7 @@ Apri **Editor** (`/editor/`). La landing (`#loadFrom`) offre 4 carte + 2 sorgent
 | Sorgente | Come fare | Cosa ottieni |
 |----------|-----------|--------------|
 | **GPX** | Tap "GPX" → scegli file `.gpx` (opzionale `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook con traccia + waypoint |
-| **Disegna sulla mappa** | Tap "Disegna sulla mappa" | Mappa in modalità **Disegna**: premi e trascina sulla mappa per tracciare il percorso — il primo tratto crea il roadbook da zero |
+| **Disegna sulla mappa** | Tap "Disegna sulla mappa" | Mappa in modalità **Disegna**: tocca la mappa per aggiungere il percorso punto per punto — i primi due tap creano il roadbook da zero |
 | **.rdbk** | Tap ".rdbk" → scegli file ZIP/JSON | Importa roadbook completo (media in `pendingMedia`, vedi sotto) |
 | **Roadbook pubblico** | Tap "Roadbook pubblico" → picker challenge | **Fork** di un roadbook `public` + `reusable` → nuovo roadbook privato tuo |
 
@@ -43,18 +43,11 @@ La mappa è il cuore. Ci sono due barre:
 |------|-------|---------|
 | **Sposta** (default) | `M` | Trascina **qualsiasi punto**: punto traccia, nota o foto. La linea segue. Metriche ricalcolate al rilascio |
 | **Aggiungi note** | `N` | Tap sulla rotta → mette una nota lì. La modalità resta attiva, così puoi metterne diverse di fila |
-| **Aggiungi punti** | `P` | Tap **sulla** rotta → inserisce un punto in quel tratto. Tap **lontano** dalla rotta → la estende dall'estremità aperta più vicina (partenza, arrivo o bordo di un taglio aperto). Senza nulla caricato, due tap iniziano una rotta nuova |
-| **Disegna** | `D` | A mano libera: premi e trascina sulla mappa. Al rilascio il tratto viene pulito in una linea morbida e professionale (niente tremolii, curve arrotondate, rettilinei dritti) |
+| **Aggiungi punti** | `P` | Tap sulla rotta esistente → inserisce un punto in quel tratto. Serve una rotta |
+| **Disegna** | `D` | Ogni tap aggiunge un punto **nuovo** ed estende la rotta dall'estremità aperta più vicina (partenza, arrivo o bordo di un taglio aperto); toccare il bordo opposto di un taglio lo chiude. Senza nulla caricato, i primi due tap creano il roadbook |
 | **Taglia** | `C` | Menu ☰ → Taglia (compare nella barra modalità solo mentre è attivo). Tap 2 punti → taglia (lascia buco = *gap*) |
 
-Toccare di nuovo la modalità attiva torna a **Sposta**; anche `Esc`.
-
-#### Dove va un tratto disegnato
-
-- **Un capo parte da un'estremità aperta** della rotta (partenza, arrivo, bordo di un taglio aperto) → la rotta viene estesa da lì; raggiungere il bordo opposto di un taglio lo chiude
-- **Entrambi i capi toccano la rotta** → il tratto sostituisce il pezzo di rotta tra quei due punti. Se dentro ci sono note, l'Editor chiede prima e le nomina
-- **Altrimenti** → non cambia nulla e un suggerimento spiega come disegnare
-- **Nulla caricato** → il primo tratto crea il roadbook
+Toccare di nuovo la modalità attiva torna a **Sposta**; anche `Esc`. Trascinare sposta sempre la mappa, in ogni modalità.
 
 ### Menu ☰
 
@@ -98,7 +91,7 @@ Le stesse lettere valgono nel menu del tasto destro e su un punto traccia selezi
 
 Un taglio interno lascia un **buco reale** (non un segmento). Memorizzato come coppia di **punti** `{a,b}` (non indici) → sopravvive a shift di indice.
 
-- **Riempi**: disegna sopra o estendi con Aggiungi punti (raggiungere il bordo opposto chiude il gap)
+- **Riempi**: tocca con Disegna da un bordo del taglio (toccare il bordo opposto chiude il gap)
 - **Chiudi dritto**: all'export/save → `confirmOpenCuts` chiede conferma → chiude come linea retta
 - `resolveGaps()` li risolve in indici on demand
 

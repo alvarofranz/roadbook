@@ -491,10 +491,9 @@ Operational notes:
   drag a note on the map to
   reposition. **The GPX is edited ON the map.** The four everyday modes have their own
   rail bottom-left, one letter each, the active one lit and named (#692): *M move (drag any
-  track point, note or photo) · N add notes · P add points (tap on the route inserts one,
-  tap past an end extends it) · D draw (freehand stroke, normalized by
-  `RB.normalizeStroke`; it extends an open end, or replaces the stretch between the two
-  spots it touches)*; the ☰ panel holds *cut (C — tap any two spots — the track is split
+  track point, note or photo) · N add notes · P add points (a tap inserts one into the
+  existing track) · D draw (each tap adds a new point from the nearest open end; a drag
+  always pans the map, #712)*; the ☰ panel holds *cut (C — tap any two spots — the track is split
   exactly there, inserting points as needed; trims at the ends, and in the middle it leaves
   a real OPEN cut, dashed on the map, that you fill by drawing or that closes straight on
   export/save after a confirm)* plus

@@ -15,7 +15,7 @@ Open **Editor** (`/editor/`). The landing (`#loadFrom`) offers 4 cards + 2 hidde
 | Source | How to do it | What you get |
 |--------|--------------|--------------|
 | **GPX** | Tap "GPX" → choose `.gpx` file (optional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook with track + waypoint |
-| **Draw on the map** | Tap "Draw on the map" | Map in **Draw** mode: press and drag on the map to sketch the route — the first stroke creates the roadbook from scratch |
+| **Draw on the map** | Tap "Draw on the map" | Map in **Draw** mode: tap the map to add the route point by point — the first two taps create the roadbook from scratch |
 | **.rdbk** | Tap ".rdbk" → choose ZIP/JSON file | Imports a complete roadbook (media in `pendingMedia`, see below) |
 | **Public roadbook** | Tap "Public roadbook" → challenge picker | **Fork** of a `public` + `reusable` roadbook → new private roadbook of yours |
 
@@ -43,18 +43,11 @@ The map is the heart. Two bars sit on it:
 |------|-----|--------------|
 | **Move** (default) | `M` | Drag **any point**: track point, note or photo. The line follows. Metrics recalculated on release |
 | **Add notes** | `N` | Tap the route → drops a note there. The mode stays on, so you can drop several in a row |
-| **Add points** | `P` | Tap **on** the route → inserts a point into that segment. Tap **away** from the route → extends it from its nearest open end (start, finish or edge of an open cut). With nothing loaded, two taps start a new route |
-| **Draw** | `D` | Freehand: press and drag on the map. On release the stroke is cleaned into a smooth, professional line (jitter removed, bends rounded, straight runs straight) |
+| **Add points** | `P` | Tap the existing route → inserts a point into that segment. Needs a route |
+| **Draw** | `D` | Each tap adds a **new** point, extending the route from its nearest open end (start, finish or edge of an open cut); tapping the opposite edge of a cut closes it. With nothing loaded, the first two taps create the roadbook |
 | **Cut** | `C` | Menu ☰ → Cut (it appears in the mode bar only while active). Tap 2 points → cut (leaves a hole = *gap*) |
 
-Tapping the active mode again returns to **Move**; so does `Esc`.
-
-#### Where a drawn stroke goes
-
-- **One end starts at an open end** of the route (start, finish, edge of an open cut) → the route is extended from there; reaching the opposite edge of a cut closes it
-- **Both ends touch the route** → the stroke replaces the stretch of route between those two spots. If notes sit inside that stretch, the Editor asks first and names them
-- **Otherwise** → nothing changes and a hint explains how to draw
-- **Nothing loaded** → the first stroke creates the roadbook
+Tapping the active mode again returns to **Move**; so does `Esc`. Dragging always pans the map, in every mode.
 
 ### Menu ☰
 
@@ -98,7 +91,7 @@ The same letters work in the right-click menu and on a selected track point:
 
 An internal cut leaves a **real hole** (not a segment). Stored as a pair of **points** `{a,b}` (not indices) → survives index shifting.
 
-- **Fill**: draw over it or extend with Add points (reaching the opposite edge closes the gap)
+- **Fill**: tap with Draw from one edge of the cut (tapping the opposite edge closes the gap)
 - **Close straight**: at export/save → `confirmOpenCuts` asks for confirmation → closes as a straight line
 - `resolveGaps()` resolves them into indices on demand
 
