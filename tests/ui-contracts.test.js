@@ -1111,3 +1111,41 @@ describe('admin user roadbooks preview on a map inside the same popup (#552)', (
         }
     });
 });
+
+describe('the CAP is a setting, not reading matter (#560)', () => {
+    const editor = read('public/editor/editor.js');
+    const html = read('public/editor/index.html');
+
+    it('the row shows where the note is, and nothing else', () => {
+        const meta = editor.match(/const noteMetaHTML = \(n\) => ([\s\S]*?);\n/)[1];
+        expect(meta).toContain('note-coords');
+        expect(meta, 'the CAP chip is back in the row').not.toContain('note-cap');
+        expect(editor).not.toContain('data-cap=');
+        expect(html, 'the chip style outlived the chip').not.toContain('.note-cap {');
+    });
+
+    it('the Note tab carries the compass, beside the CAP type it qualifies', () => {
+        expect(html).toContain('id="capSlot"');
+        expect(html.indexOf('id="capSlot"')).toBeLessThan(html.indexOf('id="capTypeSlot"'));
+        expect(editor).toContain("labelHelp('Compass (CAP)', 'help.cap')");
+        expect(editor).toContain("$('edCap').onchange = (e) => setCapAt(sel, e.target.value === 'on');");
+    });
+
+    it('turning it on heads for the next note; turning it off clears the qualifier too', () => {
+        const fn = editor.match(/function setCapAt\(i, on\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(fn).toContain('RB.geo.bearingDeg(n, nx)');
+        expect(fn).toContain('RB.geo.haversineM(n, nx)');
+        expect(fn).toContain('delete n.cap_type');
+        expect(fn).toContain('if (on && !nx) return');   // the last note has nothing to head toward
+    });
+
+    it('names the surfaces from one catalog, Bike lane included (#561)', () => {
+        expect(editor).toContain('const RT = RB.ROAD_TYPES.map((r) => r.name);');
+        expect(read('public/assets/js/note-canvas.js')).toContain('const rtLabelOf = (k) =>');
+        expect(read('public/assets/js/note-canvas.js'), 'a second list of names is back').not.toContain('RT_LABELS');
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            const dict = read(`public/assets/js/i18n.${lang}.js`);
+            for (const key of ['Bike lane', 'Compass (CAP)', 'Off', 'help.cap']) expect(dict, `${lang}: ${key}`).toContain(`'${key}':`);
+        }
+    });
+});

@@ -184,10 +184,14 @@ describe('speedBand (Tripmaster alert bands)', () => {
 });
 
 describe('direct coverage for transitively-tested exports', () => {
-    it('ROAD_TYPES: five surfaces, off-piste (4) is the dashed one', () => {
-        expect(RB.ROAD_TYPES).toHaveLength(5);
-        RB.ROAD_TYPES.forEach((rt, i) => { expect(rt.id).toBe(i); expect(rt.color).toMatch(/^#/); });
-        expect(RB.ROAD_TYPES[4].dashed).toBe(true);
+    it('ROAD_TYPES: the surfaces the format knows, each naming and drawing itself (#561)', () => {
+        expect(RB.ROAD_TYPES.map((rt) => rt.name)).toEqual(['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste', 'Bike lane']);
+        RB.ROAD_TYPES.forEach((rt, i) => {
+            expect(rt.id).toBe(i);                    // the id IS the index: it is what the file stores
+            expect(rt.color).toMatch(/^#/);
+            expect(rt.width).toBeGreaterThan(0);
+        });
+        expect(RB.ROAD_TYPES[4].dashed, 'off-piste is the dashed one').toBe(true);
         expect(RB.ROAD_TYPES.filter((rt) => rt.dashed)).toHaveLength(1);
     });
     it('nearestIdx returns the closest track point', () => {

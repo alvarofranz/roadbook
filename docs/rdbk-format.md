@@ -124,8 +124,8 @@ la traccia GPS.
 | `cap_distance`     | integer \| null | Distanza in linea retta per cui tenere quel rilevamento (metri).                   |
 | `bearing_in`       | number          | Rilevamento della traccia in arrivo alla nota (gradi).                             |
 | `bearing_out`      | number          | Rilevamento della traccia in uscita dalla nota (gradi).                            |
-| `road_type_in`     | 0–4             | Superficie in arrivo — vedi [§8 Tipi di strada](#8-tipi-di-strada).                |
-| `road_type_out`    | 0–4             | Superficie in uscita.                                                              |
+| `road_type_in`     | 0–5             | Superficie in arrivo — vedi [§8 Tipi di strada](#8-tipi-di-strada).                |
+| `road_type_out`    | 0–5             | Superficie in uscita.                                                              |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
 | `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). **Nel file (`.rdbk` e JSON sul server) il valore è scritto come codice OpenRally standard** — `WPM`, `WPN`, `WPE`, `WPS`, `WPC`, `WPP`, `WPV`, più i marcatori `DSS`/`ASS`/`DZ`/`FZ`/`DN`/`FN`/`DT`/`FT`/`CP`/`PC`/`STOP`. All'import un reader lo normalizza (insieme ai vecchi ID interni) negli ID `RB.WP_TYPES` via `wpTypeByCap`/`importRoadbook`, e `roadbookForExport` fa la conversione inversa in scrittura. Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
 | `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (50 m); il Reader lo usa come geofence per il rilevamento automatico. |
@@ -235,7 +235,10 @@ legge dalle icone:
 ## 8. Tipi di strada
 
 `road_type_in` / `road_type_out` (e il `road_type` dei vettori di incrocio) usano un
-identificatore 0–4 ([roadbook-core.js:39](../public/assets/js/roadbook-core.js#L39)):
+identificatore 0–5 ([roadbook-core.js:59](../public/assets/js/roadbook-core.js#L59)) — un
+vocabolario **nostro**, non uno standard FIA o OpenRally. Il nome di ogni tipo vive sul catalogo
+`RB.ROAD_TYPES` insieme a colore e spessore, così editor e barra del tulip li chiamano dallo
+stesso posto (#561):
 
 | id  | Tipo                  | Resa                                       |
 |-----|-----------------------|--------------------------------------------|
@@ -244,6 +247,7 @@ identificatore 0–4 ([roadbook-core.js:39](../public/assets/js/roadbook-core.js
 | `2` | Asfalto               | continuo, tratto largo                     |
 | `3` | Pista / sterrato      | continuo, tratto medio (default fuoristrada) |
 | `4` | Off-piste             | **tratteggiato**, tratto più sottile       |
+| `5` | Bike lane (ciclabile) | continuo, tratto sottile (verde acqua)     |
 
 La vignetta di una nota è un *tulip*: la strada da cui si arriva entra sempre dal bordo
 inferiore al centro del box (disegnata secondo `road_type_in`), la strada su cui si esce va

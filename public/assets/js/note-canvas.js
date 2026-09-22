@@ -167,7 +167,7 @@ window.NoteCanvas = class NoteCanvas {
             t.querySelector('[data-a="del"]').onclick = () => this.deleteSelected();
         } else {
             const b = this.note.junctions[this.sel.i], rtLabel = RBt('Road type');
-            t.innerHTML = label('Junction tools') + `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(RT_LABELS[k])}</option>`).join('')}</select>`
+            t.innerHTML = label('Junction tools') + `<select class="vignette-box-rt" title="${rtLabel}" aria-label="${rtLabel}">${RB.ROAD_TYPES.map((r, k) => `<option value="${k}" ${k === b.road_type ? 'selected' : ''}>${RBt(rtLabelOf(k))}</option>`).join('')}</select>`
                 + btn('fa-minus', 'th-') + btn('fa-plus', 'th+') + btn('fa-trash-can', 'del', false, true);
             t.querySelector('.vignette-box-rt').onchange = (e) => { b.road_type = +e.target.value; b.width = roadStyle(b.road_type).width; this._chg(); };
             t.querySelector('[data-a="th-"]').onclick = () => { b.width = Math.max(1, (b.width || 3) - 1); this._chg(); };
@@ -273,7 +273,7 @@ function trunkSegments(note, isEnd, isFirst) {
     return segs;
 }
 function svg(tag, attrs) { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-const RT_LABELS = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste']; // road-type names, by RB.ROAD_TYPES index
+const rtLabelOf = (k) => (RB.ROAD_TYPES[k] || RB.ROAD_TYPES[3]).name; // the names live on the catalog (#561)
 const BTN_LABELS = { 'sz-': 'Smaller', 'sz+': 'Bigger', 'rot-': 'Rotate left', 'rot+': 'Rotate right', flip: 'Flip', del: 'Delete', 'th-': 'Thinner', 'th+': 'Thicker' };
 function btn(icon, action, active, danger) {
     const label = window.RBt ? RBt(BTN_LABELS[action] || action) : (BTN_LABELS[action] || action);

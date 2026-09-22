@@ -12,7 +12,7 @@
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     // A field label followed by an inline ⓘ help tooltip (#89). `tipKey` is an i18n key.
     const labelHelp = (label, tipKey) => `${t(label)}<button type="button" class="help-tip" data-tip="${esc(t(tipKey))}" aria-label="${esc(t(tipKey))}"><i class="fa-solid fa-circle-info"></i></button>`;
-    const RT = ['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste'];
+    const RT = RB.ROAD_TYPES.map((r) => r.name); // the road-type names live on the catalog (#561)
     // base map style: satellite photo, terrain (detailed off-road tracks + contours), or OSM.
     // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
     const MAP_STYLES = [RBMap.STYLE_SATELLITE, RBMap.STYLE_TOPO, RBMap.STYLE_OSM];
@@ -1454,7 +1454,7 @@
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
-                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
+                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n)}</div>
                     ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
             </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
@@ -1462,8 +1462,6 @@
         const rows = $('noteList').querySelectorAll('.note-mini');
         rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         rows.forEach((el) => el.onclick = (e) => {
-            const capBtn = e.target.closest('[data-cap]');
-            if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
             // A click inside the live tulip canvas (icon select/drag, junction, its toolbar) must NOT
             // toggle the row shut — the canvas is hosted inside the open row, so its clicks bubble here.
             if (e.target.closest('#canvasWrap')) return;
@@ -1509,12 +1507,11 @@
         window.scrollTo({ top: keepWinScroll });
     }
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
-    const noteMetaHTML = (n, i) => {
-        const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
-            : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : esc(t('CAP disabled'))}</button>`;
-        return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
-    };
-    function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i], i); }
+    // The row shows where the note IS. Whether it carries a CAP is a setting, and it lives with
+    // the other settings in the Note tab (#560) — a chip saying "CAP disabled" on every row was
+    // reading matter in the one place meant for the note's own words.
+    const noteMetaHTML = (n) => `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
+    function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i]); }
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
     const tulipSVG = (n, i) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
     function placeTulips() {
@@ -1716,6 +1713,23 @@
             syncSpeedZone(n);  // a speed limit also tags the note as a controlled zone (DZ / FZ)
             markDirty(); showOnCanvas(sel); canvas.render(); renderEditor(); renderNotes();
         };
+        // Compass: does this note carry a heading to hold after it? On computes the bearing and
+        // the straight-line distance to the next note; off clears both, and the qualifier with
+        // them. The last note has nothing to head toward, so it says so (#560).
+        const last = sel >= rb.notes.length - 1;
+        const nextNote = rb.notes[sel + 1];
+        // The "on" option shows the heading it holds — or, while off, the one it would take, so
+        // the choice is never blind.
+        const capHeading = n.cap != null ? n.cap : (nextNote ? RB.geo.bearingDeg(n, nextNote) : null);
+        const capMetres = n.cap != null ? n.cap_distance : (nextNote ? RB.geo.haversineM(n, nextNote) : null);
+        const capLabel = capHeading == null ? t('On')
+            : Math.round(capHeading) + '°' + (capMetres != null ? ' · ' + (capMetres / 1000).toFixed(2) + ' km' : '');
+        $('capSlot').innerHTML = `<label class="prop-field"><span>${labelHelp('Compass (CAP)', 'help.cap')}</span>
+            <select id="edCap" class="field"${last ? ' disabled title="' + esc(t('The last note has no note to head toward.')) + '"' : ''}>
+                <option value=""${n.cap == null ? ' selected' : ''}>${esc(t('Off'))}</option>
+                <option value="on"${n.cap != null ? ' selected' : ''}>${esc(capLabel)}</option>
+            </select></label>`;
+        $('edCap').onchange = (e) => setCapAt(sel, e.target.value === 'on');
         // CAP type qualifies an existing CAP (FIA: exit/average/calculated/turning); exit is the
         // implicit default, stored absent. Disabled until the note carries a CAP.
         const capTypeOpts = [['', 'Exit'], ['average', 'Average'], ['calculated', 'Calculated'], ['turning', 'Turning']]
@@ -1766,14 +1780,15 @@
             <input id="edWpRadius" class="field" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}"></label>`;
         $('edWpRadius').onchange = (e) => { const v = parseInt(e.target.value, 10); if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius; markDirty(); renderEditor(); };
     }
-    // Toggle a note's Red CAP from its row (CAP heading/distance to the next note).
-    function toggleCapAt(i) {
+    // Set (or clear) a note's CAP: the heading to hold after it, with the straight-line distance
+    // to the next note. Clearing it drops the qualifier too — a CAP type with no CAP means nothing.
+    function setCapAt(i, on) {
         const n = rb.notes[i], nx = rb.notes[i + 1];
-        if (!nx) return; // the last note has no following note to head toward
-        if (n.cap == null) { n.cap = Math.round(RB.geo.bearingDeg(n, nx)); n.cap_distance = Math.round(RB.geo.haversineM(n, nx)); }
-        else { n.cap = null; n.cap_distance = null; delete n.cap_type; } // no CAP → its type qualifier is meaningless
-        markDirty(); refreshRowMeta(i);
-        if (i === sel) renderEditor(); // keep the CAP-type control's enabled state in sync
+        if (on && !nx) return; // the last note has no following note to head toward
+        if (on) { n.cap = Math.round(RB.geo.bearingDeg(n, nx)); n.cap_distance = Math.round(RB.geo.haversineM(n, nx)); }
+        else { n.cap = null; n.cap_distance = null; delete n.cap_type; }
+        markDirty(); renderNotes();
+        if (i === sel) renderEditor(); // the CAP type control follows it in or out of play
     }
     // The minimum-notes guard and the confirm prompt live in the row's click handler.
     // Deleting a waypoint removes the note AND its own track vertex (the route reconnects between
