@@ -1077,6 +1077,14 @@ describe('admin user roadbooks preview on a map inside the same popup (#552)', (
         expect(admin).toContain('id="rbsMap"');
         expect(html).toContain('.rb-split');
         expect(html).toContain('#rbsMap');
+        // .modal-card.wide is 520px and would crush the grid: the map variant
+        // must out-specify it, and stack below desktop widths
+        expect(html).toContain('.modal-card.wide.rb-list-map');
+        expect(html).toContain('@media (max-width: 1024px)');
+    });
+
+    it('the list search actually filters', () => {
+        expect(admin).toContain("m.q('#rbsSearch').oninput");
     });
 
     it('opening a roadbook previews it in the popup via admin_rb_get + RBMap', () => {
