@@ -87,22 +87,22 @@
 
     // HTML-escape, defined up here because the chrome below builds markup as soon as this file runs.
     window.RBesc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    /* The site's own links (About · Install · the spec · Privacy · Terms · Contact) — ONE list.
-       The footer carries them on desktop; the Profile page repeats them on mobile, where the
-       footer is hidden — from this same list, so the two never drift (#496).
-       `data-i18n` on every label, so a language switch reaches them (#495). */
+    /* The site's own links — ONE list, in two groups. The footer shows them by group on desktop;
+       the Profile page repeats them all on mobile, where the footer is hidden — from this same
+       list, so the two never drift (#496). `data-i18n` on every label, so a language switch
+       reaches them (#495). */
     const SITE_LINKS = [
-        { path: 'about/',    icon: 'fa-circle-info',    label: 'About' },
-        // desktop entry point to the install guide; on mobile the floating Install chip leads
-        // there, and inside the app the footer is hidden anyway (#333)
-        { path: 'install/',  icon: 'fa-circle-down',    label: 'Install' },
-        { path: 'standard/', icon: 'fa-file-code',      label: 'The .rdbk standard' },
-        { path: 'privacy/',  icon: 'fa-shield-halved',  label: 'Privacy' },
-        { path: 'terms/',    icon: 'fa-file-contract',  label: 'Terms of Use' },
-        { path: 'contact/',  icon: 'fa-envelope',       label: 'Contact' },
+        { group: 'Resources', path: 'wiki/',      icon: 'fa-circle-question', label: 'Guide' },
+        { group: 'Resources', path: 'install/',   icon: 'fa-circle-down',     label: 'Install' },
+        { group: 'Resources', path: 'standard/',  icon: 'fa-file-code',       label: 'The .rdbk standard' },
+        { group: 'Resources', path: 'changelog/', icon: 'fa-clock-rotate-left', label: 'What’s new' },
+        { group: 'Resources', path: 'about/',     icon: 'fa-circle-info',     label: 'About' },
+        { group: 'Legal',     path: 'privacy/',   icon: 'fa-shield-halved',   label: 'Privacy' },
+        { group: 'Legal',     path: 'terms/',     icon: 'fa-file-contract',   label: 'Terms of Use' },
+        { group: 'Legal',     path: 'contact/',   icon: 'fa-envelope',        label: 'Contact' },
     ];
-    window.RBSiteLinksHTML = () => SITE_LINKS.map((l) =>
-        `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`).join('\n');
+    const siteLink = (l) => `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`;
+    window.RBSiteLinksHTML = () => SITE_LINKS.map(siteLink).join('\n');
     /* Where to get RDBK (#674 · #720): the two stores as official-style badges (from RBStore), and —
        with `computer` — the web app for Windows · Mac · Linux. Drawn into every `[data-get-app]`
        (home hero and install section, About); "stores" draws the badges alone. */
@@ -138,14 +138,22 @@
 
         let footer = document.querySelector('footer.foot');
         if (!footer) { footer = document.createElement('footer'); footer.className = 'foot'; document.body.appendChild(footer); }
-        footer.innerHTML = `<div class="wrap">
-            <div class="muted foot-links">
-                <b>RDBK.app</b>
-                ${RBSiteLinksHTML()}
-                <span class="lang"></span>
-                <span class="small">© ${new Date().getFullYear()} RDBK.app. <span data-i18n="All rights reserved.">${RBt('All rights reserved.')}</span></span>
-                <span class="small" id="appVersion"></span>
+        // The footer (#729): the brand with its claim and the store badges, the links in three columns
+        // (the product's sections, then the site's own), and a bottom line with ©, version and language.
+        const column = (title, links) => `<nav class="foot-col" aria-label="${RBesc(RBt(title))}"><h4 data-i18n="${title}">${RBesc(RBt(title))}</h4>${links}</nav>`;
+        footer.innerHTML = `<div class="wrap foot-grid">
+            <div class="foot-brand">
+                <a class="brand" href="${ROOT}"><img class="brand-logo" src="${ROOT}assets/logo.png" alt=""> RDBK.app</a>
+                <p data-i18n="foot.claim">${RBt('foot.claim')}</p>
+                <div data-get-app="stores"></div>
             </div>
+            ${column('Product', WEB_NAV.map((k) => siteLink(SECTION[k])).join(''))}
+            ${['Resources', 'Legal'].map((g) => column(g, SITE_LINKS.filter((l) => l.group === g).map(siteLink).join(''))).join('')}
+        </div>
+        <div class="wrap foot-bottom">
+            <span class="lang"></span>
+            <span>© ${new Date().getFullYear()} RDBK.app · <span data-i18n="All rights reserved.">${RBt('All rights reserved.')}</span></span>
+            <span id="appVersion"></span>
         </div>`;
 
         // The Profile page repeats the site links where the footer is hidden — same list, filled here.

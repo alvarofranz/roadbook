@@ -1243,3 +1243,11 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Workflow": "Comment ça marche",
 });
+
+/* web footer (#729) */
+Object.assign(window.RBi18nLangs.fr, {
+    "foot.claim": "Des roadbooks numériques pour toutes les aventures — gratuits, avec le format ouvert .rdbk.",
+    "Product": "Produit",
+    "Resources": "Ressources",
+    "Legal": "Mentions légales",
+});
