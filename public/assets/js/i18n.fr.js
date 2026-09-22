@@ -85,7 +85,7 @@
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odomètre GPS précis sans roadbook — distance partielle et totale.',
             'feat.7.t': 'Classement d\'événement', 'feat.7.d': 'Organisez un rally sur un roadbook : comparez chaque passage d\'équipe — précision, CAP, vitesse et régularité — en un classement final depuis les QR de résultat signés.',
             'events.t': 'Événements', 'events.d': 'Organisez des événements autour de vos roadbooks — invitez des équipes, lancez le rally et publiez les résultats.', 'route map': 'carte du parcours',
-            'install.kicker': 'Multiplateforme', 'install.title': 'Installez-le sur n\'importe quel appareil', 'install.text': 'Toutes les fonctionnalités de RDBK.app sont disponibles comme application web installable gratuite (PWA) — sur Windows, Mac, Android et iOS. Sans boutique d\'applications : ajoutez-la à votre écran d\'accueil et utilisez-la comme une app native, même hors ligne.',
+            'install.kicker': 'Multiplateforme', 'install.title': 'Installez-le sur n\'importe quel appareil', 'install.text': 'RDBK.app fonctionne partout : des applications natives pour iPhone, iPad et Android — avec un GPS qui continue d’enregistrer écran verrouillé — et une application web gratuite et installable pour Windows, Mac et Linux, qui marche aussi hors ligne.',
             'gallery.kicker': 'Galerie', 'gallery.title': 'Roadbooks publics', 'gallery.loading': 'Chargement…', 'gallery.empty': 'Pas encore de roadbooks publics.',
             // Aides des champs de l’éditeur (issue #89)
             'help.road': 'La surface sur laquelle vous continuez depuis cette note (par défaut, asphalte, piste, hors-piste) ; elle reste en vigueur jusqu’à ce qu’une note ultérieure la change.',
@@ -362,7 +362,7 @@
             'Adjust cancelled — you never got on the trail.': 'Ajustement annulé — vous n\'avez jamais rejoint le parcours.',
             'Sharing not supported here — use Save QR.': 'Le partage n\'est pas disponible ici — utilisez Sauvegarder QR.',
             'Install': 'Installer', 'My profile': 'Mon profil', 'I accept': 'J’accepte', 'How it works': 'Comment ça marche',
-            /* install guide (#333) */ 'seo.install.title': 'Installer RDBK.app — sur n’importe quel appareil', 'seo.install.desc': 'Installez RDBK.app sur votre téléphone, tablette ou ordinateur — fonctionne hors ligne, ouvre les fichiers .rdbk et continue d’enregistrer écran verrouillé.', 'Install RDBK.app': 'Installer RDBK.app', 'Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.': 'Installée, RDBK s’ouvre depuis votre écran d’accueil, fonctionne hors ligne et ouvre les fichiers .rdbk directement. Choisissez votre appareil ci-dessous — celui que vous utilisez est mis en avant.', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Déjà installée ? Ouvrez RDBK depuis votre écran d’accueil ou la liste des applications — cette page ne sert qu’une fois.', 'Your device': 'Votre appareil', 'Using another device?': 'Vous utilisez un autre appareil ?', 'Install now': 'Installer maintenant', 'Open <b>rdbk.app</b> in Chrome.': 'Ouvrez <b>rdbk.app</b> dans Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Touchez le menu <b>⋮</b>, en haut à droite.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Choisissez <b>Installer l’application</b> (ou <b>Ajouter à l’écran d’accueil</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Ouvrez <b>rdbk.app</b> dans Safari (ce doit être Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Ouvrez <b>rdbk.app</b> dans Chrome ou Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Cliquez sur l’icône <b>installer</b> <i class="fa-solid fa-circle-down icon-accent"></i> dans la barre d’adresse (ou menu ⋮ → <b>Installer</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirmez — RDBK s’ouvre ensuite dans sa propre fenêtre.', 'RDBK is installed — open it from your home screen.': 'RDBK est installée — ouvrez-la depuis votre écran d’accueil.',
+            /* install guide (#333) */ 'seo.install.title': 'Installer RDBK.app — sur n’importe quel appareil', 'seo.install.desc': 'Installez RDBK.app sur votre téléphone, tablette ou ordinateur — fonctionne hors ligne, ouvre les fichiers .rdbk et continue d’enregistrer écran verrouillé.', 'Install RDBK.app': 'Installer RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Déjà installée ? Ouvrez RDBK depuis votre écran d’accueil ou la liste des applications — cette page ne sert qu’une fois.', 'Your device': 'Votre appareil', 'Using another device?': 'Vous utilisez un autre appareil ?', 'Install now': 'Installer maintenant', 'Open <b>rdbk.app</b> in Chrome.': 'Ouvrez <b>rdbk.app</b> dans Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Touchez le menu <b>⋮</b>, en haut à droite.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Choisissez <b>Installer l’application</b> (ou <b>Ajouter à l’écran d’accueil</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Ouvrez <b>rdbk.app</b> dans Safari (ce doit être Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Ouvrez <b>rdbk.app</b> dans Chrome ou Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Cliquez sur l’icône <b>installer</b> <i class="fa-solid fa-circle-down icon-accent"></i> dans la barre d’adresse (ou menu ⋮ → <b>Installer</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirmez — RDBK s’ouvre ensuite dans sa propre fenêtre.', 'RDBK is installed — open it from your home screen.': 'RDBK est installée — ouvrez-la depuis votre écran d’accueil.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Politique de confidentialité',
             'priv.updated': "Dernière mise à jour : 22 septembre 2026",
@@ -701,7 +701,7 @@
             'native.better.gps.reader': 'Pour une navigation GPS ininterrompue et un suivi en arrière-plan, utilisez l\'application native iOS ou Android.',
             'native.better.gps.tripmaster': 'Pour un odomètre GPS continu et un enregistrement en arrière-plan, utilisez l\'application native iOS ou Android.',
             'web.gps.warn': 'Dans un navigateur, le GPS est moins fiable sur les téléphones — surtout Android (et parfois iOS) : moins précis, il peut dériver et s\'arrête lorsque l\'écran se verrouille ou que vous quittez la page. Utilisez l\'application native RDBK pour tout ce qui en dépend.',
-            'web.gps.alt': 'L\'application native RDBK continue de fonctionner en arrière-plan et est plus précise. Disponible sur iOS (App Store) et Android.',
+            'web.gps.alt': 'L’application native RDBK continue de fonctionner en arrière-plan et est plus précise. Disponible sur l’App Store et Google Play.',
             'web.gps.title': 'Le GPS du navigateur peut être peu fiable sur les téléphones',
             'web.gps.comp.title': 'Cette course est évaluée sur la précision du GPS',
             'web.gps.comp.warn': 'Sur un navigateur de téléphone, la dérive GPS peut entraîner des pénalités fausses qui ne sont pas dues au roadbook. Pour une course de compétition juste, utilisez l\'application native RDBK.',
@@ -1071,7 +1071,7 @@ Object.assign(window.RBi18nLangs.fr, {
 /* store links, one list (#674) */
 Object.assign(window.RBi18nLangs.fr, {
     "Android — Google Play": "Android — Google Play",
-    "Native apps": "Applications natives",
+    
 });
 
 /* chrome strings (#676) */
@@ -1178,4 +1178,17 @@ Object.assign(window.RBi18nLangs.fr, {
     "Bicycle": "Vélo",
     "A roadbook suits at least one vehicle.": "Un roadbook convient à au moins un véhicule.",
     "No public roadbooks for this vehicle yet.": "Pas encore de roadbooks publics pour ce véhicule.",
+});
+
+/* install guide: native apps first (#539 · #541) */
+Object.assign(window.RBi18nLangs.fr, {
+    "install.lead": "RDBK est une application native sur iPhone, iPad et Android, et une application web installable sur ordinateur. Installée, elle s’ouvre depuis l’écran d’accueil, fonctionne hors ligne et ouvre directement les fichiers .rdbk. Choisissez votre appareil ci-dessous — nous mettons en évidence celui que vous utilisez.",
+    "Get it on Google Play": "Disponible sur Google Play",
+    "Download on the App Store": "Télécharger dans l’App Store",
+    "Or install the web app": "Ou installez l’application web",
+});
+
+/* install guide card (#539) */
+Object.assign(window.RBi18nLangs.fr, {
+    "The native app keeps recording in the background, with the screen locked, and is more accurate.": "L’application native continue d’enregistrer en arrière-plan, écran verrouillé, et elle est plus précise.",
 });

@@ -15,6 +15,7 @@
             key: 'android',
             icon: 'fa-brands fa-android',
             title: 'Android',
+            store: { href: () => RBStore.android, icon: 'fa-brands fa-google-play', label: 'Get it on Google Play' },
             steps: [
                 'Open <b>rdbk.app</b> in Chrome.',
                 'Tap the <b>⋮</b> menu, top right.',
@@ -25,6 +26,7 @@
             key: 'ios',
             icon: 'fa-brands fa-apple',
             title: 'iPhone · iPad',
+            store: { href: () => RBStore.ios, icon: 'fa-brands fa-app-store', label: 'Download on the App Store' },
             // The last three keys are the ones the old iOS install modal used — same wording, same
             // translations, now inside the guide that replaced it.
             steps: [
@@ -46,12 +48,17 @@
         },
     ];
 
+    // One card per platform (#539 · #541): on a phone the native app comes first — its store button,
+    // with what it adds — and the web app is the alternative underneath; a computer gets the web app.
     const card = (platform, detected) => `
         <section class="install-card${detected ? ' detected' : ''}" data-platform="${platform.key}">
             <h2><i class="${platform.icon}"></i> ${RBesc(platform.title)}${detected ? `<span class="install-badge">${t('Your device')}</span>` : ''}</h2>
+            ${platform.store ? `<p class="muted">${t('The native app keeps recording in the background, with the screen locked, and is more accurate.')}</p>
+            <div class="btnrow"><a class="btn btn-primary" href="${RBesc(platform.store.href())}" target="_blank" rel="noopener"><i class="${platform.store.icon}"></i> ${t(platform.store.label)}</a></div>
+            <h3 class="install-alt">${t('Or install the web app')}</h3>` : ''}
             <ol class="modal-list">${platform.steps.map((step) => `<li>${t(step)}</li>`).join('')}</ol>
             <div class="btnrow" data-prompt hidden>
-                <button class="btn btn-primary" data-install><i class="fa-solid fa-circle-down"></i> ${t('Install now')}</button>
+                <button class="btn ${platform.store ? 'btn-ghost' : 'btn-primary'}" data-install><i class="fa-solid fa-circle-down"></i> ${t('Install now')}</button>
             </div>
         </section>`;
 
