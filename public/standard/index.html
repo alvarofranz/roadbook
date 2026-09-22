@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-81">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-81">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-82">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-82">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -131,8 +131,8 @@
         <tr><td><code>cap_type</code></td><td>string, optional</td><td data-i18n="Optional. Qualifies the CAP: exit (default), average, calculated or turning.">Optional. Qualifies the CAP: exit (default), average, calculated or turning.</td></tr>
         <tr><td><code>bearing_in</code></td><td>number</td><td data-i18n="Track bearing arriving at the note (degrees).">Track bearing arriving at the note (degrees).</td></tr>
         <tr><td><code>bearing_out</code></td><td>number</td><td data-i18n="Track bearing leaving the note (degrees).">Track bearing leaving the note (degrees).</td></tr>
-        <tr><td><code>road_type_in</code></td><td>0–4</td><td data-i18n-html="notes.road_type_in">Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
-        <tr><td><code>road_type_out</code></td><td>0–4</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
+        <tr><td><code>road_type_in</code></td><td>0–5</td><td data-i18n-html="notes.road_type_in">Surface arriving — see <a href="#roadtypes">road types</a>.</td></tr>
+        <tr><td><code>road_type_out</code></td><td>0–5</td><td data-i18n="Surface leaving.">Surface leaving.</td></tr>
         <tr><td><code>speed_limit</code></td><td>integer, optional</td><td data-i18n="Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.">Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.</td></tr>
         <tr><td><code>danger</code></td><td>1–3, optional</td><td data-i18n-html="notes.danger">FIA-style danger grading. Renders as <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> in red inside the diagram box (never in the text column). Absent or 0 = no danger.</td></tr>
         <tr><td><code>wp_type</code></td><td>string, optional</td><td data-i18n="notes.wp_type">Optional. FIA waypoint type: the seven types masked / control / security / navigation / precise / visible / eclipse, plus the start/finish, selective-section, zone and control markers. In a stored .rdbk file the value is written as its OpenRally standard code (WPM, WPN, WPE, WPS, WPC, WPP, WPV, DSS, ASS, DZ, FZ, DN, FN, DT, FT, CP, PC, STOP), which a reader maps back to these types on import. Rendered as a coloured acronym badge by the note number and mapped to a Garmin/OSMAnd symbol on GPX export.</td></tr>
@@ -195,6 +195,7 @@
         <tr><td><code>2</code></td><td data-i18n="Asphalt">Asphalt</td><td data-i18n="solid, wide stroke">solid, wide stroke</td></tr>
         <tr><td><code>3</code></td><td data-i18n="Track / piste">Track / piste</td><td data-i18n="solid, medium stroke (default off-road)">solid, medium stroke (default off-road)</td></tr>
         <tr><td><code>4</code></td><td data-i18n="Off-piste">Off-piste</td><td data-i18n="dashed, thinnest stroke">dashed, thinnest stroke</td></tr>
+        <tr><td><code>5</code></td><td data-i18n="Bike lane">Bike lane</td><td data-i18n="solid, thin stroke">solid, thin stroke</td></tr>
     </table>
     <p data-i18n-html="roadtypes.tulip">A note's vignette is a tulip: the road you arrive from always enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre to an arrow at the top (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Stroke width is indicative of the road type.</p>
 
@@ -209,7 +210,7 @@
         <tr><td><code>pivot</code></td><td>[x, y]</td><td data-i18n="Vector start (reference units, +y up).">Vector start (reference units, +y up).</td></tr>
         <tr><td><code>tip</code></td><td>[x, y]</td><td data-i18n="Vector tip / arrow head.">Vector tip / arrow head.</td></tr>
         <tr><td><code>width</code></td><td>number</td><td data-i18n="Stroke thickness.">Stroke thickness.</td></tr>
-        <tr><td><code>road_type</code></td><td>0–4</td><td data-i18n="Road type → vector color.">Road type → vector color.</td></tr>
+        <tr><td><code>road_type</code></td><td>0–5</td><td data-i18n="Road type → vector color.">Road type → vector color.</td></tr>
     </table>
 
     <h2 id="result" data-i18n="Result token (optional, for events)">Result token (optional, for events)</h2>
@@ -271,12 +272,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.2-81"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-81"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-81"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-81"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-81"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-81"></script>
-<script src="../assets/js/app.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-82"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-82"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-82"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-82"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-82"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-82"></script>
+<script src="../assets/js/app.js?v=1.9.2-82"></script>
 </body>
 </html>

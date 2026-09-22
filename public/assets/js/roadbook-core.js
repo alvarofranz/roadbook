@@ -56,12 +56,16 @@
     const noteBlocks = (n, at) => ((n && Array.isArray(n.blocks)) ? n.blocks : [])
         .filter((b) => b && (!at || (b.at === 'before' ? 'before' : 'after') === at));
 
+    // The .rdbk format's own vocabulary of surfaces — not a FIA or OpenRally standard. Each entry
+    // carries its NAME as well as its stroke, so the editor and the vignette toolbar name them
+    // from one place; a type a reader does not know falls back to the track style.
     const ROAD_TYPES = [
-        { id: 0, color: '#9aa4b2', width: 5, dashed: false }, // default
-        { id: 1, color: '#3b82f6', width: 9, dashed: false }, // motorway
-        { id: 2, color: '#22c55e', width: 7, dashed: false }, // asphalt
-        { id: 3, color: '#ff5a45', width: 5, dashed: false }, // track
-        { id: 4, color: '#ff5a45', width: 4, dashed: true },  // off-piste
+        { id: 0, name: 'Default',   color: '#9aa4b2', width: 5, dashed: false },
+        { id: 1, name: 'Motorway',  color: '#3b82f6', width: 9, dashed: false },
+        { id: 2, name: 'Asphalt',   color: '#22c55e', width: 7, dashed: false },
+        { id: 3, name: 'Track',     color: '#ff5a45', width: 5, dashed: false },
+        { id: 4, name: 'Off-piste', color: '#ff5a45', width: 4, dashed: true },
+        { id: 5, name: 'Bike lane', color: '#2dd4bf', width: 4, dashed: false }, // #561
     ];
 
     /* A roadbook's publication lifecycle (#96): draft (in progress, private) → ready
