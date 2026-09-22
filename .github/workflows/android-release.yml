@@ -147,6 +147,11 @@ jobs:
           mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           track: alpha
           status: completed
+          # Play's API cannot SUBMIT an edit for review while the app has a review of its own
+          # pending (#558) — it refuses the whole upload. Committing the edit without submitting
+          # it lands the build on the track; the Console sends it for review, which is where a
+          # pending policy item has to be answered anyway.
+          changesNotSentForReview: true
 
       # Direct-download APK (#540): same signed binary as the AAB above, attached to a
       # GitHub Release so rdbk.app/apk can offer installs outside the Play Store.

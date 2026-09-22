@@ -135,6 +135,12 @@ Background Modes via **Signing & Capabilities → Background Modes → Location 
   <string name="capacitor_background_geolocation_notification_channel_name">RDBK tracking</string>
   ```
 
+#### The Play upload is committed, not submitted (#558)
+The workflow uploads with `changesNotSentForReview: true`: Play's API refuses to *submit* an edit
+for review while the app has a review of its own pending, and that refusal fails the entire
+upload. The build lands on the closed-testing track and **you send it for review from the
+Console** — the same place a pending policy item is answered.
+
 #### R8 on the release build (#545)
 The release build is **shrunk and obfuscated** (`minifyEnabled true`): Play measures it as *DEX
 code optimization* and flags an app that ships plain class names — ours was at 2%. R8 follows
