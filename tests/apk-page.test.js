@@ -22,12 +22,12 @@ describe('the apk page exists and loads its module (#540)', () => {
         expect(page).toContain('https://rdbk.app/apk/');
     });
 
-    it('the module resolves the rolling test build and stable releases', () => {
+    it('the module resolves builds through the server proxy, never GitHub directly', () => {
         const js = read('public/apk/apk.js');
-        expect(js).toContain('api.github.com/repos/alvarofranz/roadbook/releases?per_page=');
-        expect(js).toContain('apk-latest');
-        expect(js).toMatch(/\.apk\$/);
-        expect(js).toContain('sha256');
+        expect(js).toContain("api('admin_apk_latest'");
+        expect(js).not.toContain('api.github.com');
+        expect(js).toContain('j.rolling');
+        expect(js).toContain('j.stable');
     });
 
     it('the page is admin-gated and stays out of the sitemap', () => {

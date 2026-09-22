@@ -163,6 +163,48 @@ function admin_user_locations(array $user): void {
     ], $st->fetchAll())]);
 }
 
+// Admin: latest APK builds for the /apk/ page (#540). Proxied server-side so the page
+// needs no CSP exception for api.github.com and no client hits the rate limit. Returns the
+// rolling test build (apk-latest prerelease) plus the newest stable release carrying an APK.
+function admin_apk_latest(array $user): void {
+    $ctx = stream_context_create(['http' => [
+        'method' => 'GET', 'timeout' => 8, 'ignore_errors' => true,
+        'header' => "User-Agent: RDBK-app\r\nAccept: application/vnd.github+json",
+    ]]);
+    $raw = @file_get_contents('https://api.github.com/repos/alvarofranz/roadbook/releases?per_page=20', false, $ctx);
+    $releases = $raw ? json_decode($raw, true) : null;
+    if (!is_array($releases)) fail('Could not reach the release list.');
+    $pick = function ($rel) {
+        foreach ((array)($rel['assets'] ?? []) as $a) {
+            if (isset($a['name']) && preg_match('/\.apk$/i', (string)$a['name'])) return $a;
+        }
+        return null;
+    };
+    $slim = function ($rel, $apk) use ($ctx) {
+        $sha = '';
+        foreach ((array)($rel['assets'] ?? []) as $a) {
+            if (isset($a['name']) && preg_match('/\.sha256$/i', (string)$a['name']) && !empty($a['browser_download_url'])) {
+                $t = @file_get_contents($a['browser_download_url'], false, $ctx);
+                if (is_string($t) && preg_match('/^[0-9a-f]{64}/i', trim($t), $m)) $sha = strtolower($m[0]);
+                break;
+            }
+        }
+        return ['tag' => (string)($rel['tag_name'] ?? ''), 'prerelease' => !empty($rel['prerelease']),
+            'published' => (string)($rel['published_at'] ?? ''), 'name' => $apk['name'],
+            'url' => $apk['browser_download_url'], 'size' => (int)($apk['size'] ?? 0), 'sha256' => $sha];
+    };
+    $rolling = null; $stable = null;
+    foreach ($releases as $rel) {
+        if (!is_array($rel)) continue;
+        $apk = $pick($rel);
+        if (!$apk) continue;
+        if (($rel['tag_name'] ?? '') === 'apk-latest' && !$rolling) $rolling = $slim($rel, $apk);
+        elseif (empty($rel['prerelease']) && empty($rel['draft']) && !$stable) $stable = $slim($rel, $apk);
+        if ($rolling && $stable) break;
+    }
+    json_out(['ok' => true, 'rolling' => $rolling, 'stable' => $stable]);
+}
+
 // Moderation: every public roadbook with its owner, so an admin can review the public site.
 function admin_public_roadbooks(array $user): void {
     $rows = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.updated_at, u.username
