@@ -121,7 +121,8 @@ Opzionale (solo se il roadbook permette la mappa): il pulsante mappa nella barra
 - Centro sulla nota a zoom ~13
 - Mostra l'intera traccia + pin per contesto
 - Pallino blu GPS in tempo reale
-- Tap sulla mappa aperta la richiude
+- In alto a sinistra: numero della nota e distanza ancora da percorrere
+- Quando la nota viene validata la mappa passa alla nota successiva, sempre aperta
 
 > La mappa per nota è utile per confermare la posizione sul terreno quando il testo della nota è ambiguo.
 

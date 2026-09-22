@@ -121,7 +121,8 @@ Optional (nur wenn das Roadbook die Karte erlaubt): der Karten-Button in der unt
 - Zentriert auf die Note bei Zoom ~13
 - Zeigt die gesamte Spur + Pin für Kontext
 - Blauer GPS-Punkt in Echtzeit
-- Tap auf die geöffnete Karte schließt sie wieder
+- Oben links: Nummer der Note und verbleibende Distanz
+- Wird die Note validiert, wechselt die Karte geöffnet zur nächsten Note
 
 > Die Karte pro Note ist nützlich, um die Position im Gelände zu bestätigen, wenn der Notiz-Text mehrdeutig ist.
 

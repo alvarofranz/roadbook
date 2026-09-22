@@ -25,6 +25,19 @@ describe('validation lives on the note (#529)', () => {
         expect(appCss).not.toContain('col-buttons');
     });
 
+    it('the open map carries the distance to go and follows the active note (#571)', () => {
+        const states = js.match(/function updateNoteStates\(\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(states).toContain('if (inlineMapIdx >= 0 && !preview && inlineMapIdx !== activeIdx) moveNoteMap(activeIdx);');
+        const move = js.match(/function moveNoteMap\(i\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(move).toContain('while (from.firstChild) to.appendChild(from.firstChild);'); // the same GL map, re-parented
+        expect(move).toContain('closeInlineMap()');                                         // nothing past the last note
+        expect(move).toContain('inlineMap.setGuide(lastHere, n)');
+        const live = js.match(/function refreshLive\(\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(live).toContain('paintMapTogo();');
+        expect(js).toContain('fmtDist(RB.geo.haversineM(lastHere, n))');
+        expect(html).toContain('.nmap-togo {');
+    });
+
     it('the map is one action-bar toggle, only where the roadbook allows it (#569)', () => {
         expect(html).toContain('id="mapBtn" hidden');
         expect(html).not.toContain('optMap');

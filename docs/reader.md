@@ -252,7 +252,12 @@ Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio 
 
 Solo se il roadbook la permette (`mapAllowed()`, `meta.map_access`), una mappa per volta. La
 apre e la chiude **un solo pulsante nella barra d'azione** (`#mapBtn`, #569), per la nota
-attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga. `toggleNoteMap`
+attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga. La mappa
+**appartiene alla nota attiva** (#571): quando la nota cambia (validazione auto o manuale, salto)
+`updateNoteStates` chiama `moveNoteMap`, che ri-aggancia **la stessa** mappa GL sotto la nuova riga
+(zoom, layer e heading-up restano) e la ri-punta sul suo waypoint; dopo l'ultima nota si chiude.
+Nell'angolo in alto a sinistra `.nmap-togo` mostra numero della nota e distanza ancora da
+percorrere (`paintMapTogo`, aggiornato da `refreshLive` a ogni fix). `toggleNoteMap`
 ([reader.js:239](../public/reader/reader.js#L239)) apre un `RBMap` nello slot `.nmap` sotto la
 riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
 `NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
