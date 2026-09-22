@@ -147,6 +147,22 @@
         refreshBar();
     }
     window.RBI18nSetEdit = (v) => { setOn(v); };
+    // Find labels without visiting their page (#709): every key any language knows, matched by the
+    // key itself or by its text in any language (pending edits included); opened in the same editor.
+    window.RBI18nFind = (query, limit = 40) => {
+        const q = String(query || '').trim().toLowerCase();
+        if (q.length < 2) return [];
+        const keys = new Set();
+        LANGS.forEach((l) => Object.keys(langs[l] || {}).forEach((k) => keys.add(k)));
+        LANGS.forEach((l) => Object.keys(delta[l]).forEach((k) => keys.add(k)));
+        const hits = [];
+        for (const k of keys) {
+            if (k.toLowerCase().includes(q) || LANGS.some((l) => String(valueOf(l, k)).toLowerCase().includes(q))) hits.push(k);
+            if (hits.length >= limit) break;
+        }
+        return hits.map((k) => ({ key: k, text: valueOf(RBi18n.current(), k) || valueOf('en', k) }));
+    };
+    window.RBI18nEditKeys = (keys, title) => openEditor(keys, title);
 
     // Right-click a translatable element (edit mode only) → edit just its key(s).
     document.addEventListener('contextmenu', (e) => {
