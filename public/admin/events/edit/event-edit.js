@@ -306,7 +306,7 @@
         if (!(await confirmCodeGate())) return;
         var code = $('joinCodeIn').value.trim().toUpperCase();
         if (!code) return;
-        if (code.length < 4 || code.length > 16) { toast('Join code must be 4–16 characters.'); return; }
+        if (!/^[A-Z0-9]{4,16}$/.test(code)) { toast('A join code is 4–16 letters (A–Z) or digits.'); return; } // it becomes the /go/ link (#576)
         const busy = RBBusy(e.currentTarget);
         const x = await api('event_join_code', { event_id: id, code: code });
         busy.reset();

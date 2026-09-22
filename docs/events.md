@@ -26,7 +26,7 @@ evolute per alter successive — dettaglio in [backend-api §8](backend-api.md).
 
 | Tabella | Campi chiave | Ruolo |
 |---|---|---|
-| `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_gate` (`closed`/`code`/`open`), `require_activation` (0/1), `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. La registrazione è governata da due impostazioni indipendenti (#414): il gate (COME si entra) e `require_activation` (se l'organizzatore deve attivarti con il QR personale). |
+| `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_gate` (`closed`/`code`/`open`), `require_activation` (0/1), `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. `is_public` decide **solo se l'evento è listato** nella galleria: un evento non listato si raggiunge comunque col suo link — pagina, `/go/`, adesione, attivazione (#573). La registrazione è governata da due impostazioni indipendenti (#414): il gate (COME si entra) e `require_activation` (se l'organizzatore deve attivarti con il QR personale). |
 | `event_roadbooks` | `event_id`, `roadbook_id`, `sort`, **`scoring_mode`** | I roadbook associati all'evento, ordinati, ognuno con la propria modalità di punteggio. |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
 | `event_participants` | `event_id`, `user_id`, `status`, `activation_code`, `created_at` | Chi ha aderito: `pending` finché l'organizzatore non lo attiva (QR personale), poi `active` (#163). |
@@ -83,7 +83,7 @@ di roadbook, e linka a `/event/<slug>`.
 
 ### `/event/<slug>` — pagina di presentazione (`event.js`)
 La vetrina di un evento. Chiama `RBApi('event_get', { slug })` → `event_public_get()` (GET,
-anonima) che serve un evento **solo se `is_public`**, con:
+anonima) che serve l'evento **listato o no** — il link è l'accesso (#573) — con:
 - i dati dell'evento (titolo, date, organizzatore, descrizione, logo, categorie);
 - lo **stato di adesione** del visitatore loggato (`joined`) e `can_join` (esiste un join code);
 - i **roadbook**: quelli `public` per tutti, **più** i `ready` se il visitatore è **membro**
@@ -213,10 +213,14 @@ dell'evento.
 
 ### Flusso
 
-1. Il partecipante apre `/go/<code>`.
+1. Il partecipante apre `/go/<code>`. Un link che non porta a nulla (codice sconosciuto,
+   registrazione chiusa, evento terminato) atterra su `/events/?link=invalid|closed|ended`, che lo
+   spiega nella lingua del visitatore (#579).
 2. Se non autenticato → redirect a `/account/?next=/go/<code>`.
-3. Se autenticato e non ancora iscritto → viene creato come **pending** (in attesa
-   di attivazione) e reindirizzato a `/event/<slug>`.
+3. Se autenticato e non ancora iscritto → viene iscritto (`event_enrol`: **pending** se l'evento
+   richiede l'attivazione, altrimenti attivo) e reindirizzato a `/event/<slug>`. L'iscrizione è
+   **idempotente** (#574): chi è già dentro non viene mai toccato — né dal web né dall'app, che
+   trasforma ogni apertura del QR in un `event_join`.
 4. Se autenticato e già **active** → viene impostato il contesto partecipante
    (cookie `rb_participant=1` + sessione lato server) e reindirizzato a
    `/event/<slug>`.
@@ -243,9 +247,15 @@ Quando il cookie `rb_participant=1` è attivo:
 - **`scoring_mode` è metadato**, non ancora un motore: `free`/`roadbook_suite` classificano
   l'associazione ma il punteggio effettivo resta sul Reader Competition + Ranking; `fia` è
   riservato/disabilitato.
-- **Nessuna finestra temporale applicata**: `starts_on`/`ends_on` sono informativi; la consegna
-  `ready` non è ancora limitata alle date dell'evento (parte di P4, #25).
+- **Finestra temporale parziale**: `ends_on` chiude le nuove adesioni (#587), ma la consegna
+  `ready` ai partecipanti già dentro non è limitata alle date dell'evento (parte di P4, #25).
 - **Join code = accesso in lettura ai `ready`**, non un login: chi ha il codice e un account
   aderisce e vede le rotte pronte; la protezione contro la redistribuzione è ancora parziale (P4).
 - **Il proprietario non è rimovibile** dagli organizzatori; per cambiare proprietà non c'è
   un'azione dedicata (solo un admin può intervenire).
+- **Lo slug si congela quando l'evento è listato** (#578): mentre è in preparazione segue il
+  titolo, dopo resta fisso perché il suo URL circola.
+- **Evento terminato** (`ends_on` passato, #587): niente nuove adesioni (API, `/go/`, pagina); i
+  partecipanti esistenti mantengono l'accesso.
+- **`user_search` non espone le email** (#575): 2+ caratteri, niente wildcard dell'utente, email
+  solo per corrispondenza esatta.

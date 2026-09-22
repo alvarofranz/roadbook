@@ -19,6 +19,17 @@
         draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t('No events yet.'))}</p>`; },
     });
 
+    // Where a /go/ event link that leads nowhere lands (#579): say why, in the visitor's language.
+    const LINK_NOTICE = {
+        invalid: 'This event link is not valid. Ask the organizer for a new one.',
+        closed: 'Registration for this event is closed.',
+        ended: 'This event has ended.',
+    };
+    const linkWhy = LINK_NOTICE[new URLSearchParams(location.search).get('link')];
+    const showLinkNotice = () => { if (!linkWhy) return; $('evLinkNoticeText').textContent = t(linkWhy); $('evLinkNotice').hidden = false; };
+    showLinkNotice();
+    window.addEventListener('rb-lang', showLinkNotice);
+
     if (search) search.oninput = () => { q = search.value; list.reset(); };
     window.addEventListener('rb-lang', () => { if (all.length) list.render(); });
 

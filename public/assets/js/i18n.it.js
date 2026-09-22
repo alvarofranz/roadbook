@@ -675,7 +675,7 @@
             'Switch to full mode': 'Passa alla modalità completa',
             'Show this QR to the event organizer to activate your participation.': 'Mostra questo QR all\'organizzatore per attivare la tua partecipazione.',
             'Activation code': 'Codice di attivazione', 'Invalid activation code.': 'Codice di attivazione non valido.',
-            'Participant activated.': 'Partecipante attivato.', 'Could not activate.': 'Impossibile attivare.',
+            'Could not activate.': 'Impossibile attivare.',
             'Could not activate.': 'Impossibile attivare.', 'Link for participants': 'Link per i partecipanti', 'Manage participants': 'Gestione partecipanti',
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Condividi questo link con i partecipanti per accedere a una vista semplificata che mostra solo questo evento e i suoi roadbook:',
             'Participant management': 'Gestione partecipanti', 'Select an event to manage its participants.': 'Seleziona un evento per gestirne i partecipanti.',
@@ -1036,4 +1036,17 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     'Could not delete the photo.': 'Non è stato possibile eliminare la foto.',
     'Could not delete the voice note.': 'Non è stato possibile eliminare la nota vocale.',
+});
+
+/* events: registration + desk activation messages (#573 · #576 · #579 · #587 · #604) */
+Object.assign(window.RBi18nLangs.it, {
+    "A join code is 4–16 letters (A–Z) or digits.": "Un codice di accesso ha da 4 a 16 lettere (A–Z) o cifre.",
+    "This event has ended.": "Questo evento è terminato.",
+    "Registration is closed.": "Le iscrizioni sono chiuse.",
+    "Not a pending participant of this event.": "Non è un partecipante in attesa di questo evento.",
+    "No such user.": "Utente inesistente.",
+    "Code not found or already activated.": "Codice non trovato o già attivato.",
+    "This event link is not valid. Ask the organizer for a new one.": "Questo link all’evento non è valido. Chiedine uno nuovo all’organizzatore.",
+    "Registration for this event is closed.": "Le iscrizioni a questo evento sono chiuse.",
+    "Activated:": "Attivato:",
 });

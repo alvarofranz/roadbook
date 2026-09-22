@@ -1,21 +1,24 @@
 <?php
+/* /go/<join code> — the participant link printed as the event QR (#163). Signs in first, enrols
+ * (idempotently, #574), switches on participant mode and lands on the event page. A link that
+ * leads nowhere — unknown code, closed registration, finished event — lands on the Events page,
+ * which explains it in the visitor's language (#579): no second HTML template to keep in sync. */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
 
-function go_error(string $msg): never {
-    http_response_code(404);
-    ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e1116"><title>Not found · RDBK.app</title><link rel="icon" href="/assets/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=2026.07.10-2"><link rel="stylesheet" href="/assets/css/app.css?v=2026.07.10-2"></head><body><header class="topbar"></header><main class="wrap" style="max-width:600px;padding:2rem 1.1rem 5rem"><div class="muted" style="text-align:center;margin-top:4rem"><i class="fa-solid fa-ban" style="font-size:3rem;opacity:.3;margin-bottom:1rem"></i><p><?=htmlspecialchars($msg)?></p><a href="/" class="btn btn-primary" style="margin-top:1.5rem">Home</a></div></main><script src="/assets/js/i18n.es.js?v=2026.07.10-2"></script><script src="/assets/js/i18n.it.js?v=2026.07.10-2"></script><script src="/assets/js/i18n.de.js?v=2026.07.10-2"></script><script src="/assets/js/i18n.fr.js?v=2026.07.10-2"></script><script src="/assets/js/i18n.js?v=2026.07.10-2"></script><script src="/assets/js/app.js?v=2026.07.10-2"></script></body></html><?php
+function go_away(string $why): never {
+    header('Location: /events/?link=' . $why);
     exit;
 }
 
-$tag = $_GET['tag'] ?? '';
-if (!preg_match('/^[A-Za-z0-9_-]+$/', $tag)) go_error('Not found');
+// new codes are A–Z 0–9 (#576); - and _ stay readable so links printed before that keep working
+$tag = strtoupper((string)($_GET['tag'] ?? ''));
+if (!preg_match('/^[A-Z0-9_-]{1,32}$/', $tag)) go_away('invalid');
 
-$st = db()->prepare('SELECT id, slug, join_gate, require_activation, open_join FROM events WHERE join_code = ? AND is_public = 1');
+// Listed or not, the link reaches the event (#573).
+$st = db()->prepare('SELECT id, slug, join_gate, require_activation, ends_on FROM events WHERE join_code = ?');
 $st->execute([$tag]);
 $event = $st->fetch();
-if (!$event) go_error('Event not found');
-// A closed gate admits nobody — not even through a once-valid link (#414).
-if (event_join_gate($event['join_gate'] ?? null) === 'closed') go_error('Event not found');
+if (!$event) go_away('invalid');
 
 $user = current_user();
 if (!$user) {
@@ -23,16 +26,13 @@ if (!$user) {
     exit;
 }
 
-$st = db()->prepare('SELECT status FROM event_participants WHERE event_id = ? AND user_id = ?');
+$st = db()->prepare('SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ?');
 $st->execute([(int)$event['id'], (int)$user['id']]);
-$row = $st->fetch();
-
-if (!$row) {
-    // Same rule as event_join (#414): the gate decides HOW you get in (the /go/ URL itself
-    // carries the code, so code and open gates both pass here), require_activation decides
-    // whether you land pending (personal QR) or active at once.
-    [$status, $actCode] = event_join_outcome($event);
-    event_join_insert((int)$event['id'], (int)$user['id'], $status, $actCode);
+if (!$st->fetch()) {
+    // a newcomer passes the same checks as event_join; someone already in just goes through
+    $refusal = event_registration_refusal($event);
+    if ($refusal) go_away(event_join_gate($event['join_gate'] ?? null) === 'closed' ? 'closed' : 'ended');
+    event_enrol($event, (int)$user['id']);
 }
 // Everyone entering via the /go/ link gets participant mode (pending or active): the
 // reduced surface removes irrelevant nav tools (#163). A pending participant waits on
