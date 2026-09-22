@@ -16,11 +16,11 @@
     function closeModal(id) { $(id).hidden = true; if (modalTrap) { modalTrap(); modalTrap = null; } }
 
     let rb = null, notes = [], activeIdx = 0, team = '0';
-    // Comment notes (note_kind 'comment') are coordinate-less and non-navigational: the active
-    // cursor must always skip over them, else onFix reads a note with no lat/lon and auto-advance
-    // stalls forever on a NaN distance. nextNav/prevNav resolve the nearest real note each way.
-    const nextNav = (i) => { while (i < notes.length && RB.isComment(notes[i])) i++; return i; };
-    const prevNav = (i) => { while (i >= 0 && notes[i] && RB.isComment(notes[i])) i--; return i; };
+    // Information rows (Photo · Ad — RB.isInfoNote) are not waypoints: the active cursor must
+    // always skip over them, else onFix reads a row with no waypoint to reach and auto-advance
+    // stalls forever. nextNav/prevNav resolve the nearest real note each way.
+    const nextNav = (i) => { while (i < notes.length && RB.isInfoNote(notes[i])) i++; return i; };
+    const prevNav = (i) => { while (i >= 0 && notes[i] && RB.isInfoNote(notes[i])) i--; return i; };
     let reached = new Set(); // indices actually validated — a passed-over note that is not in here was skipped
     let tripTotalM = 0, tripPartialM = 0;
     let curLimit = null, maxSpdSeg = 0;
@@ -236,7 +236,7 @@
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
-        activeIdx = nextNav(activeIdx); // never sit the cursor on a leading/edge comment note
+        activeIdx = nextNav(activeIdx); // never sit the cursor on a leading/edge information row
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         // Immersive navigation: the Reader owns the screen (its own action row carries the exit
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
@@ -388,24 +388,24 @@
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
-            const comment = n.note_kind === 'comment';
+            const info = RB.isInfoNote(n);
             const cls = ['nrow'];
-            if (comment) cls.push('comment');
-            if (!preview && !comment) { // no state colouring in the preview, nor on non-navigational comment rows
+            if (info) cls.push('info', 'kind-' + RB.noteKind(n).id);
+            if (!preview && !info) { // no state colouring in the preview, nor on an information row
                 if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
                 if (i === activeIdx) cls.push('active');
             }
-            const tight = !comment && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
+            const tight = !info && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!comment && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
-            const mapb = (!comment && showMap) ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
-            const textClass = comment && !n.image ? ' col-text-wide' : '';
-            if (comment) {
+            const reach = (!info && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const mapb = (!info && showMap) ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            const textClass = info && !n.image ? ' col-text-wide' : '';
+            if (info) {
                 return `<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance"></div>
-                <div class="col-vignette${comment && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
+                <div class="col-vignette${info && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
                 <div class="col-buttons"></div>
             </div><div class="nmap" id="nmap${i}" hidden></div>`;
@@ -420,7 +420,7 @@
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); advanceNote(); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
-            if (c.classList.contains('comment')) return;
+            if (c.classList.contains('info')) return;
             const i = +c.dataset.i;
             if (preview) { if (showMap) toggleNoteMap(i); return; }
             // The whole active row is the "done" target — aiming at a 42 px button on a moving
@@ -450,7 +450,7 @@
             }
         });
         list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
-        if (!auto && notes[activeIdx] && notes[activeIdx].note_kind !== 'comment') {
+        if (!auto && notes[activeIdx] && !RB.isInfoNote(notes[activeIdx])) {
             const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
             if (cell) {
                 const b = document.createElement('button');

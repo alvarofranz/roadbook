@@ -207,6 +207,20 @@ della lista i due pezzi vengono "parcheggiati" in `#rbPanel` (`parkEditor`,
 [editor.js:776](../public/editor/editor.js#L776)) — altrimenti `innerHTML` distruggerebbe gli
 elementi spostati.
 
+**Che cosa una nota È: le tre tab (#534).** Con una nota aperta, in testa all'editor ci sono
+le tab dei **tipi**, costruite da `RB.NOTE_KINDS` (`renderKindTabs`): **Note** (quella di
+navigazione, il default, scritta *assente* nel file), **Photo** (una fotografia con didascalia)
+e **Ad** (il logo di un inserzionista con didascalia). Aggiungere un tipo al catalogo del core
+aggiunge da solo la sua tab, la sua icona nella riga e il suo editor qui: non c'è altro da
+cablare. `setNoteKind` **non butta via niente** — una nota convertita in Photo/Ad conserva
+posizione, icone e parametri, che tornano identici rimettendola su *Note* — e una riga senza un
+punto sul percorso (una vecchia riga `comment`) ha la tab *Note* disabilitata, con il perché nel
+tooltip. Per un tipo a immagine l'editor mostra **solo** la sua form (immagine + posizione): i
+tool dell'icona, la palette e i parametri geografici appartengono a un waypoint. La riga stessa
+porta a sinistra il suo numero (o l'icona del tipo) **con il cestino sotto**; non ci sono
+frecce di navigazione né un pulsante "Add comment" — un'informazione si crea convertendo la
+nota che sta nel punto giusto.
+
 Campi editabili di una nota:
 
 - **Testo** — `textarea` editata in place nella riga; aggiorna solo il modello senza rebuild

@@ -128,11 +128,11 @@ la traccia GPS.
 | `road_type_out`    | 0–4             | Superficie in uscita.                                                              |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
 | `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). **Nel file (`.rdbk` e JSON sul server) il valore è scritto come codice OpenRally standard** — `WPM`, `WPN`, `WPE`, `WPS`, `WPC`, `WPP`, `WPV`, più i marcatori `DSS`/`ASS`/`DZ`/`FZ`/`DN`/`FN`/`DT`/`FT`/`CP`/`PC`/`STOP`. All'import un reader lo normalizza (insieme ai vecchi ID interni) negli ID `RB.WP_TYPES` via `wpTypeByCap`/`importRoadbook`, e `roadbookForExport` fa la conversione inversa in scrittura. Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
-| `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (30 m); il Reader lo usa come geofence per il rilevamento automatico. |
+| `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (50 m); il Reader lo usa come geofence per il rilevamento automatico. |
 | `icons`            | array           | Simboli posizionati — vedi [§7 Simboli](#7-simboli).                                |
 | `junctions`        | array \| null   | Vettori di incrocio — vedi [§9 Vettori di incrocio](#9-vettori-di-incrocio).       |
-| `note_kind`        | string, opzionale | `"comment"` per una **nota commento** (una riga informativa con testo e/o immagine, es. il logo di uno sponsor): resta nella sequenza del roadbook ma **non è un waypoint di navigazione**. Assente = nota di navigazione normale. |
-| `image`            | string, opzionale | Solo per `note_kind: "comment"`: immagine **incorporata** come data URI, mostrata al posto del diagramma tulip. |
+| `note_kind`        | string, opzionale | Che cosa la riga **è** (`RB.NOTE_KINDS`). Assente (o `"note"`) = nota di navigazione normale. **Qualsiasi altro valore è una riga informativa**: resta nella sequenza ma non è un waypoint. Questa versione definisce `"photo"` (un'immagine con didascalia) e `"ad"` (logo di un inserzionista con didascalia); `"comment"` è il vecchio nome di un `ad` e viene risolto così da `RB.noteKind`. |
+| `image`            | string, opzionale | Immagine **incorporata** come data URI, mostrata al posto del diagramma tulip: la foto di una riga `photo`, il logo di una riga `ad`. |
 
 ```jsonc
 {
@@ -159,23 +159,28 @@ la traccia GPS.
 > ([roadbook-core.js:204](../public/assets/js/roadbook-core.js#L204)). Si autora solo
 > `road_type_out`.
 
- > **Nota commento (`note_kind: "comment"`, #284).** Una nota puramente informativa — un
-> testo con un'immagine opzionale (es. il logo di uno sponsor). **Non ha coordinate**
-> (`lat`/`lon`/`idx` assenti), quindi non compare sulla mappa, non è rilevata dal GPS, non
-> viene mai "raggiunta" e non entra nel punteggio; non si applicano neppure `distance`,
-> `cap`, i `bearing_*`, i `road_type_*` né i simboli tulip. Nell'editor si aggiunge con il
-> pulsante **"Add comment"** (non c'è un selettore di tipo) e si sposta lungo il roadbook
-> cambiandone la **posizione** nella lista, dove resta ancorata tra due note attraverso i
-> rinumeri; non porta un `num`. Nel diagramma mostra l'`image` incorporata (data URI); se
-> l'immagine manca o non carica, il testo occupa sia la colonna del testo sia quella del
-> diagramma. Un reader conforme la rende nella lista (Reader), nell'export PDF e nella
-> pagina pubblica, e la **salta** nell'export GPX (non è un waypoint georeferenziato).
+ > **Righe informative (`note_kind`, #284 · #534).** Una riga che non è un waypoint: la sua
+> didascalia in `text` e la sua immagine incorporata in `image`. Oggi sono due — **`photo`**
+> (una fotografia con didascalia) e **`ad`** (il logo di un inserzionista) — e la regola vale
+> per qualsiasi valore futuro: *`note_kind` presente e diverso da `"note"` ⇒ riga
+> informativa*, così un reader fa la cosa giusta anche con un tipo che non conosce. Una riga
+> informativa non compare sulla mappa, non è rilevata dal GPS, non viene mai "raggiunta", non
+> entra nel punteggio e non viene numerata; `distance`, `cap`, i `bearing_*`, i `road_type_*`
+> e i simboli tulip non la riguardano. Nell'editor **ogni nota ha le sue tre tab** (Note ·
+> Photo · Ad): convertire una nota in `photo`/`ad` **non butta via niente** — il waypoint
+> (`idx`, `lat`/`lon`, icone, parametri) resta nel file e torna identico tornando su *Note*,
+> e un reader DEVE ignorare quei campi finché la riga è informativa. Una riga senza un punto
+> sul percorso (una vecchia riga `comment`) non può diventare una nota di navigazione e si
+> sposta cambiandone la **posizione** nella lista. Nel diagramma mostra l'`image`; se
+> l'immagine manca, il testo occupa sia la colonna del testo sia quella del diagramma. Un
+> reader conforme la rende nella lista (Reader), nell'export PDF e nella pagina pubblica, e
+> la **salta** nell'export GPX.
 
 ```jsonc
 {
-  "note_kind": "comment",
+  "note_kind": "ad",
   "text": "Con il supporto di ACME Racing",
-  "image": "data:image/png;base64,…"     // logo sponsor incorporato, come i simboli
+  "image": "data:image/png;base64,…"     // logo inserzionista incorporato, come i simboli
 }
 ```
 

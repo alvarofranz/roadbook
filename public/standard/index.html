@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.1-72">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.1-72">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.1-73">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.1-73">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -139,8 +139,8 @@
         <tr><td><code>wp_radius</code></td><td>integer, optional</td><td data-i18n="notes.wp_radius">Optional. Per-note validation radius (metres). When absent, falls back to <code>meta.default_wp_radius</code> then the type default.</td></tr>
         <tr><td><code>icons</code></td><td>array</td><td data-i18n-html="notes.icons">Positioned symbols — see <a href="#icons">symbols</a>.</td></tr>
         <tr><td><code>junctions</code></td><td>array | null</td><td data-i18n-html="notes.junctions">Junction vectors — see <a href="#junctions">junctions</a>.</td></tr>
-        <tr><td><code>note_kind</code></td><td>string, optional</td><td data-i18n-html="notes.note_kind">Optional. When set to <code>"comment"</code>, the note is a non-navigational <b>comment note</b> (e.g. a sponsor logo). It carries no <code>lat</code>/<code>lon</code>/<code>idx</code>/<code>num</code> and no geodata, keeps a fixed position in the list, and is shown in the Reader, PDF and challenge view but skipped by the map, scoring, GPS validation and GPX/KMZ export. Absent = a normal navigational note.</td></tr>
-        <tr><td><code>image</code></td><td>string, optional</td><td data-i18n-html="notes.image">Optional (comment notes). An embedded image as a <code>data:</code> URI, rendered in the note's diagram box.</td></tr>
+        <tr><td><code>note_kind</code></td><td>string, optional</td><td data-i18n-html="notes.note_kind">Optional. Names what the row IS. Absent (or <code>"note"</code>) = a normal navigational note. Any other value is an <b>information row</b>: it keeps its place in the list and is shown in the Reader, PDF and public view, but is never numbered, placed on the map, scored, GPS-validated or emitted as a GPX/KMZ waypoint. This version defines <code>"photo"</code> (a picture with a caption) and <code>"ad"</code> (an advertiser’s logo with a caption); <code>"comment"</code> is the older name of an ad. An information row converted from a note MAY keep that note’s waypoint fields — a reader MUST ignore them.</td></tr>
+        <tr><td><code>image</code></td><td>string, optional</td><td data-i18n-html="notes.image"><code>data:</code> URI, rendered in the note's diagram box.</td></tr>
     </table>
     <pre><code>{
   "num": 12, "idx": 184,
@@ -159,9 +159,9 @@
     { "pivot": [0, 0], "tip": [45, 25], "width": 3, "road_type": 3 }
   ]
 }</code></pre>
-    <p data-i18n-html="notes.comment.intro">A <b>comment note</b> (<code>note_kind: "comment"</code>) is coordinate-less — it holds only its text and an optional embedded <code>image</code>:</p>
+    <p data-i18n-html="notes.info.intro">An <b>information row</b> holds its caption in <code>text</code> and its picture as an embedded <code>image</code>:</p>
     <pre><code>{
-  "note_kind": "comment",
+  "note_kind": "ad",
   "text": "Presented by ACME Rally Gear",
   "image": "data:image/png;base64,iVBORw0KGgo…"
 }</code></pre>
@@ -232,7 +232,7 @@
         <li data-i18n-html="conformance.reader">A conforming <b>reader</b> MUST read <code>roadbook.json</code> from the container, render <code>track</code> and <code>notes</code> in order and resolve symbols from <code>icons</code> first.</li>
         <li data-i18n-html="conformance.writer">A conforming <b>writer</b> MUST embed every symbol referenced by any note into <code>icons</code>, so <code>roadbook.json</code> is self-contained.</li>
         <li data-i18n="Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).">Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).</li>
-        <li data-i18n-html="conformance.comment">A conforming reader MUST render notes with <code>note_kind: "comment"</code> in the roadbook list but MUST NOT number them, place them on the map, score them or emit them as GPX/KMZ waypoints.</li>
+        <li data-i18n-html="conformance.info">A conforming reader MUST render a note whose <code>note_kind</code> is present and is not <code>"note"</code> as an information row: shown in the roadbook list, but never numbered, placed on the map, scored or emitted as a GPX/KMZ waypoint.</li>
     </ul>
 
     <h2 id="example" data-i18n="Full minimal example">Full minimal example</h2>
@@ -267,12 +267,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.1-72"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.1-72"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.1-72"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.1-72"></script>
-<script src="../assets/js/i18n.js?v=1.9.1-72"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.1-72"></script>
-<script src="../assets/js/app.js?v=1.9.1-72"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.1-73"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.1-73"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.1-73"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.1-73"></script>
+<script src="../assets/js/i18n.js?v=1.9.1-73"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.1-73"></script>
+<script src="../assets/js/app.js?v=1.9.1-73"></script>
 </body>
 </html>

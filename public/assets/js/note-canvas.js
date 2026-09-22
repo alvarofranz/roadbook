@@ -198,9 +198,9 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd, isFirst) {
     const cover = (note.icons || []).find((ic) => ic.cover);
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<image x="0" y="0" width="${W}" height="${H}" href="${RBesc(resolveIcon(cover))}" preserveAspectRatio="xMidYMid meet"/></svg>`;
-    // Comment note: show the embedded image full-box, or an empty vignette (text spans
-    // both columns in the reader/challenge).
-    if (note.note_kind === 'comment') {
+    // An information row (Photo · Ad): show its embedded image full-box, or an empty vignette
+    // (the text then spans both columns in the reader/challenge).
+    if (RB.isInfoNote(note)) {
         if (note.image) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><image x="0" y="0" width="${W}" height="${H}" href="${RBesc(note.image)}" preserveAspectRatio="xMidYMid meet"/></svg>`;
         return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"></svg>`;
     }
