@@ -9,12 +9,10 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-114">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-114">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-115">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-115">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; background: var(--tm-band, transparent); transition: background .35s ease; } /* --tm-band = the speed-alert tint, data-driven */
-        /* "How it works" link centred at the foot of the dashboard */
-        .tm-help { display: flex; width: fit-content; margin: 1.2rem auto 0; }
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         /* odometer rows: value + Reset + ±10 m correctors stacked, all in one line */
         .readout-row { display: flex; align-items: center; gap: .6rem; text-align: left; }
@@ -92,7 +90,6 @@
             .trip-main .mini .value { font-size: 1.3rem; }
             .tm-controls { margin-top: .1rem; gap: .5rem; }
             .tm-controls .btn { padding: .5rem .3rem; }
-            .tm-help { margin: .7rem auto 0; }
         }
     </style>
 </head>
@@ -140,21 +137,20 @@
             <button class="btn btn-ghost" id="tmExit" type="button"><i class="fa-solid fa-right-from-bracket icon-danger"></i> <span data-i18n="End">End</span></button>
         </div>
     </div>
-    <a class="tool-help tm-help" href="../features/tripmaster/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="Help">Help</span></a>
 </main>
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=1.9.2-114"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.2-114"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.2-114"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-114"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-114"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-114"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-114"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-114"></script>
-<script src="../assets/js/app.js?v=1.9.2-114"></script>
-<script src="../assets/js/status-bar.js?v=1.9.2-114"></script>
-<script src="tripmaster.js?v=1.9.2-114"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-115"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.2-115"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.2-115"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-115"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-115"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-115"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-115"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-115"></script>
+<script src="../assets/js/app.js?v=1.9.2-115"></script>
+<script src="../assets/js/status-bar.js?v=1.9.2-115"></script>
+<script src="tripmaster.js?v=1.9.2-115"></script>
 </body>
 </html>
