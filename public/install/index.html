@@ -19,11 +19,11 @@
     <meta name="twitter:title" content="Install RDBK.app — on any device">
     <meta name="twitter:description" content="Install RDBK.app on your phone, tablet or computer — it works offline, opens .rdbk files and keeps recording with the screen locked.">
     <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
-    <link rel="icon" href="../assets/icon.svg?v=1.9.2-108" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=1.9.2-108">
+    <link rel="icon" href="../assets/icon.svg?v=1.9.2-109" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=1.9.2-109">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-108">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-108">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-109">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-109">
     <style>
         .install-page h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .4rem; }
         .install-page .lead { margin: 0 0 1.6rem; }
@@ -37,7 +37,7 @@
         .install-others { margin-top: 1.8rem; }
         .install-others > summary { cursor: pointer; color: var(--sand-2); font-weight: 600; padding: .4rem 0; }
         .install-note { margin: 1.6rem 0 0; }
-        .install-stores { justify-content: flex-start; margin-top: .6rem; }
+        .install-alt { margin: 1.1rem 0 .3rem; font-size: .95rem; color: var(--muted); }
     </style>
 </head>
 <body>
@@ -45,14 +45,7 @@
 
 <main class="wrap page-col install-page">
     <h1 data-i18n="Install RDBK.app">Install RDBK.app</h1>
-    <p class="muted lead" data-i18n="Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.">Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.</p>
-
-    <!-- The native apps first: on a phone they are the better choice (background GPS, #674) -->
-    <section class="install-card">
-        <h2><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="Native apps">Native apps</span></h2>
-        <p class="muted" data-i18n="web.gps.alt">The native RDBK app keeps working in the background and is more accurate. Available on iOS (App Store) and Android.</p>
-        <div class="platforms install-stores" data-platforms="stores"></div>
-    </section>
+    <p class="muted lead" data-i18n="install.lead">RDBK is a native app on iPhone, iPad and Android, and an installable web app on computers. Installed, it opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.</p>
 
     <!-- One card per platform; install.js opens the detected one and moves it to the top. -->
     <div id="installCards"></div>
@@ -62,12 +55,12 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/i18n.es.js?v=1.9.2-108"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-108"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-108"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-108"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-108"></script>
-<script src="../assets/js/app.js?v=1.9.2-108"></script>
-<script src="install.js?v=1.9.2-108"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-109"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-109"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-109"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-109"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-109"></script>
+<script src="../assets/js/app.js?v=1.9.2-109"></script>
+<script src="install.js?v=1.9.2-109"></script>
 </body>
 </html>

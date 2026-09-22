@@ -85,7 +85,7 @@
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odómetro GPS preciso sin roadbook — distancia parcial y total.',
             'feat.7.t': 'Clasificación del evento', 'feat.7.d': 'Organiza un rally sobre un mismo roadbook: compara la vuelta de cada equipo — precisión, CAP, velocidad y regularidad — en una clasificación final, a partir de los QR de resultado firmados.',
             'events.t': 'Eventos', 'events.d': 'Organiza eventos en torno a tus propios roadbooks — invita equipos, corre el rally y publica los resultados.', 'route map': 'mapa de ruta',
-            'install.kicker': 'Multiplataforma', 'install.title': 'Instálala en cualquier dispositivo', 'install.text': 'Todas las funciones de RDBK.app están también disponibles como web app instalable (PWA) gratuita — en PC Windows y Mac, Android e iOS. Sin tienda de apps: añádela a la pantalla de inicio y úsala como una app nativa, incluso sin conexión.',
+            'install.kicker': 'Multiplataforma', 'install.title': 'Instálala en cualquier dispositivo', 'install.text': 'RDBK.app funciona en todas partes: apps nativas para iPhone, iPad y Android —con un GPS que sigue grabando con la pantalla bloqueada— y una web app instalable y gratuita para Windows, Mac y Linux que también funciona sin conexión.',
             'gallery.kicker': 'Galería', 'gallery.title': 'Roadbooks públicos', 'gallery.loading': 'Cargando…', 'gallery.empty': 'Aún no hay roadbooks públicos.',
             // Ayudas de los campos del editor (issue #89)
             'help.road': 'La superficie por la que continúas desde esta nota (predeterminada, asfalto, pista, campo a través); se mantiene hasta que una nota posterior la cambie.',
@@ -401,7 +401,7 @@
             'Adjust cancelled — you never got on the trail.': 'Ajuste cancelado — nunca llegaste a la ruta.',
             'Sharing not supported here — use Save QR.': 'Compartir no está disponible aquí — usa Guardar QR.',
             'Install': 'Instalar', 'My profile': 'Mi perfil', 'I accept': 'Acepto', 'How it works': 'Cómo funciona',
-            /* install guide (#333) */ 'seo.install.title': 'Instala RDBK.app — en cualquier dispositivo', 'seo.install.desc': 'Instala RDBK.app en tu móvil, tablet u ordenador — funciona sin conexión, abre ficheros .rdbk y sigue grabando con la pantalla bloqueada.', 'Install RDBK.app': 'Instala RDBK.app', 'Installed, RDBK opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.': 'Instalada, RDBK se abre desde tu pantalla de inicio, funciona sin conexión y abre ficheros .rdbk directamente. Elige tu dispositivo abajo — resaltamos el que estás usando.', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': '¿Ya la tienes instalada? Abre RDBK desde tu pantalla de inicio o la lista de apps — esta página solo hace falta una vez.', 'Your device': 'Tu dispositivo', 'Using another device?': '¿Usas otro dispositivo?', 'Install now': 'Instalar ahora', 'Open <b>rdbk.app</b> in Chrome.': 'Abre <b>rdbk.app</b> en Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Toca el menú <b>⋮</b>, arriba a la derecha.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Elige <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Abre <b>rdbk.app</b> en Safari (tiene que ser Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Abre <b>rdbk.app</b> en Chrome o Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Pulsa el icono de <b>instalar</b> <i class="fa-solid fa-circle-down icon-accent"></i> en la barra de direcciones (o el menú ⋮ → <b>Instalar</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirma — RDBK se abrirá en su propia ventana.', 'RDBK is installed — open it from your home screen.': 'RDBK está instalada — ábrela desde tu pantalla de inicio.',
+            /* install guide (#333) */ 'seo.install.title': 'Instala RDBK.app — en cualquier dispositivo', 'seo.install.desc': 'Instala RDBK.app en tu móvil, tablet u ordenador — funciona sin conexión, abre ficheros .rdbk y sigue grabando con la pantalla bloqueada.', 'Install RDBK.app': 'Instala RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': '¿Ya la tienes instalada? Abre RDBK desde tu pantalla de inicio o la lista de apps — esta página solo hace falta una vez.', 'Your device': 'Tu dispositivo', 'Using another device?': '¿Usas otro dispositivo?', 'Install now': 'Instalar ahora', 'Open <b>rdbk.app</b> in Chrome.': 'Abre <b>rdbk.app</b> en Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Toca el menú <b>⋮</b>, arriba a la derecha.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Elige <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Abre <b>rdbk.app</b> en Safari (tiene que ser Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Abre <b>rdbk.app</b> en Chrome o Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Pulsa el icono de <b>instalar</b> <i class="fa-solid fa-circle-down icon-accent"></i> en la barra de direcciones (o el menú ⋮ → <b>Instalar</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirma — RDBK se abrirá en su propia ventana.', 'RDBK is installed — open it from your home screen.': 'RDBK está instalada — ábrela desde tu pantalla de inicio.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Política de privacidad',
             'priv.updated': "Última actualización: 22 de septiembre de 2026",
@@ -740,7 +740,7 @@
             'native.better.gps.reader': 'Para navegación GPS ininterrumpida y seguimiento en segundo plano, usa la app nativa de iOS o Android.',
             'native.better.gps.tripmaster': 'Para odómetro GPS continuo y grabación en segundo plano, usa la app nativa de iOS o Android.',
             'web.gps.warn': 'En un navegador, el GPS es menos fiable en teléfonos — especialmente Android (y a veces iOS): es menos preciso, puede desviarse y se detiene al bloquearse la pantalla o al salir de la página. Usa la app nativa de RDBK para todo lo que dependa de él.',
-            'web.gps.alt': 'La app nativa de RDBK sigue funcionando en segundo plano y es más precisa. Disponible en iOS (App Store) y Android.',
+            'web.gps.alt': 'La app nativa de RDBK sigue funcionando en segundo plano y es más precisa. Disponible en App Store y Google Play.',
             'web.gps.title': 'El GPS del navegador puede ser poco fiable en teléfonos',
             'web.gps.comp.title': 'Esta prueba se puntúa por la precisión del GPS',
             'web.gps.comp.warn': 'En un navegador de teléfono, la deriva del GPS puede causar penalizaciones falsas que no son culpa del roadbook. Para una prueba de competición justa, usa la app nativa de RDBK.',
@@ -1212,7 +1212,7 @@ Object.assign(window.RBi18nLangs.es, {
 /* store links, one list (#674) */
 Object.assign(window.RBi18nLangs.es, {
     "Android — Google Play": "Android — Google Play",
-    "Native apps": "Apps nativas",
+    
 });
 
 /* chrome strings (#676) */
@@ -1319,4 +1319,17 @@ Object.assign(window.RBi18nLangs.es, {
     "Bicycle": "Bici",
     "A roadbook suits at least one vehicle.": "Un roadbook es apto al menos para un vehículo.",
     "No public roadbooks for this vehicle yet.": "Aún no hay roadbooks públicos para este vehículo.",
+});
+
+/* install guide: native apps first (#539 · #541) */
+Object.assign(window.RBi18nLangs.es, {
+    "install.lead": "RDBK es una app nativa en iPhone, iPad y Android, y una web app instalable en ordenadores. Una vez instalada, se abre desde tu pantalla de inicio, funciona sin conexión y abre los archivos .rdbk directamente. Elige tu dispositivo abajo: marcamos el que estás usando.",
+    "Get it on Google Play": "Disponible en Google Play",
+    "Download on the App Store": "Descargar en App Store",
+    "Or install the web app": "O instala la web app",
+});
+
+/* install guide card (#539) */
+Object.assign(window.RBi18nLangs.es, {
+    "The native app keeps recording in the background, with the screen locked, and is more accurate.": "La app nativa sigue grabando en segundo plano, con la pantalla bloqueada, y es más precisa.",
 });

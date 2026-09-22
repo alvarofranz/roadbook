@@ -104,14 +104,13 @@
     window.RBSiteLinksHTML = () => SITE_LINKS.map((l) =>
         `<a href="${ROOT}${l.path}"><i class="fa-solid ${l.icon}"></i> <span data-i18n="${RBesc(l.label)}">${RBesc(RBt(l.label))}</span></a>`).join('\n');
     /* Where to get RDBK on each platform — ONE list, drawn into every `[data-platforms]` band (home,
-       About, the install guide): the computer install guide and the two stores, from RBStore (#674).
-       `data-platforms="stores"` draws the stores alone. */
+       About): the computer install guide and the two stores, from RBStore (#674). */
     const PLATFORM_LINKS = [
         { href: () => ROOT + 'install/', icon: 'fa-brands fa-windows',   label: 'PC Win / Mac / Linux', tip: 'PC Win / Mac / Linux — install guide' },
         { href: () => RBStore.ios,       icon: 'fa-brands fa-app-store', label: 'iOS / iPhone / iPad',  tip: 'iOS / iPhone / iPad — App Store', store: true },
         { href: () => RBStore.android,   icon: 'fa-brands fa-google-play', label: 'Android',            tip: 'Android — Google Play', store: true },
     ];
-    window.RBPlatformLinksHTML = (storesOnly) => PLATFORM_LINKS.filter((l) => !storesOnly || l.store).map((l) =>
+    window.RBPlatformLinksHTML = () => PLATFORM_LINKS.map((l) =>
         `<a class="plat-link" href="${RBesc(l.href())}"${l.store ? ' target="_blank" rel="noopener"' : ''} title="${RBesc(RBt(l.tip))}" aria-label="${RBesc(RBt(l.tip))}" data-i18n-title="${RBesc(l.tip)}" data-i18n-aria="${RBesc(l.tip)}"><i class="${l.icon}"></i> ${RBesc(l.label)}</a>`).join('');
 
     function renderChrome() {
@@ -154,7 +153,7 @@
         // The Profile page repeats the site links where the footer is hidden — same list, filled here.
         const accLinks = document.getElementById('accSiteLinks');
         if (accLinks) accLinks.innerHTML = RBSiteLinksHTML();
-        document.querySelectorAll('[data-platforms]').forEach((el) => { el.innerHTML = RBPlatformLinksHTML(el.dataset.platforms === 'stores'); });
+        document.querySelectorAll('[data-platforms]').forEach((el) => { el.innerHTML = RBPlatformLinksHTML(); });
 
         // Fixed icon-only bottom tab bar (Instagram-style). Always in the DOM; CSS shows it on
         // every mobile-width view — web, installed PWA and the native app — and hides it on desktop

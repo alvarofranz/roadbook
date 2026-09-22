@@ -256,11 +256,13 @@ describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #
     it('every platform band is drawn from one list, and the stores come from RBStore', () => {
         expect(app).toContain('{ href: () => RBStore.ios,');
         expect(app).toContain('{ href: () => RBStore.android,');
-        for (const page of ['public/index.html', 'public/about/index.html', 'public/install/index.html']) {
+        for (const page of ['public/index.html', 'public/about/index.html']) {
             const html = fs.readFileSync(page, 'utf8');
             expect(html, page).toContain('data-platforms');
             expect(html, page).not.toContain('apps.apple.com');
         }
+        // the install guide leads each phone card with its store, from the same RBStore (#539)
+        expect(fs.readFileSync('public/install/install.js', 'utf8')).toMatch(/store: \{ href: \(\) => RBStore\.android[\s\S]*?store: \{ href: \(\) => RBStore\.ios/);
     });
     it('the install page can show its toast', () => {
         expect(fs.readFileSync('public/install/index.html', 'utf8')).toContain('<div id="toast" class="toast" hidden></div>');
