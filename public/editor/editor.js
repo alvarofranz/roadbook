@@ -30,6 +30,7 @@
     let ctxMenu = null;       // the open context popup + its key→action map
     let selVertex = -1;       // the tap-selected track vertex (Move mode); the target of the N/I/P/Del shortcuts
     function uploadPhotoHere(p) {
+        if (readOnly()) return toast('Read-only while someone else is editing.');
         if (!(currentRbId > 0)) return toast('Save to your profile first.');
         ctxPhotoPoint = p; $('ctxPhotoFile').click();
     }
@@ -102,18 +103,20 @@
         ctxMenu = { el, keys, release, pastePoint: pastePt || null };
         requestAnimationFrame(() => { if (ctxMenu && ctxMenu.el === el && items[0]) items[0].focus({ preventScroll: true }); }); // after the map has handled the press
     }
+    // Google Earth alongside Maps (#69): one window that recentres + 3D/Street View and historical
+    // imagery — handy for spotting tracks hidden under foliage (leaf-off views).
+    const outsideLinks = (lat, lon) => [
+        { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` },
+        { id: 'earth', icon: 'fa-earth-americas', label: 'Open in Google Earth', href: `https://earth.google.com/web/search/${lat},${lon}` },
+    ];
     // The map context menu — right-click on desktop, long-press on touch (#83). Its command set
     // depends on what's under the point: a note, a plain track point, or empty ground.
     function openMapMenu(lngLat, point) {
         if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: lngLat.lat, lon: lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
-        // Google Earth alongside Maps (#69): one window that recentres + 3D/Street View and historical
-        // imagery — handy for spotting tracks hidden under foliage (leaf-off views).
-        const outside = [
-            { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` },
-            { id: 'earth', icon: 'fa-earth-americas', label: 'Open in Google Earth', href: `https://earth.google.com/web/search/${lat},${lon}` },
-        ];
+        if (readOnly()) return openCtxMenu(lngLat, { title: 'This spot', point: here }, [outsideLinks(lat, lon)], null); // read-only: look, never edit
+        const outside = outsideLinks(lat, lon);
         const photo = (p) => [
             { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
             { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
@@ -172,7 +175,7 @@
     //  · otherwise the letters are the modes: M Move · N add Notes · P add Points · D Draw · C Cut.
     const MODE_KEYS = { m: 'points', n: 'note', p: 'point', d: 'draw', c: 'cut' };
     window.addEventListener('keydown', (e) => {
-        if (recWatch != null || e.target.matches('input, textarea, select')) return;
+        if (recWatch != null || readOnly() || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
             if (ctxMenu && ctxMenu.pastePoint && (e.key === 'v' || e.key === 'V')) { pastePoint = ctxMenu.pastePoint; closeCtxMenu(); }
             return; // leave undo/redo and the browser's own paste alone
@@ -198,6 +201,8 @@
             e.preventDefault(); setMapTool(MODE_KEYS[k]);
         }
     });
+    let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
+    const readOnly = () => !rbLock.mine;
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
@@ -214,7 +219,9 @@
             if (d) { d.declined = true; localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }
         } catch (e) {}
     };
-    const markDirty = () => { dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
+    // Nothing becomes dirty while someone else holds the lock (#698): there is nothing to save,
+    // and nothing for Close to offer to save.
+    const markDirty = () => { if (readOnly()) return; dirty = true; exported = false; updateSaveBtn(); clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000); histPush(); };
     // Floppy save button: clickable only when there's something to save (a new roadbook, or
     // pending edits) — disabled once it's saved to the profile with no further changes.
     function updateSaveBtn() {
@@ -341,7 +348,7 @@
     async function transformNote(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-        if (!(await RBConfirmDanger(t('Turn this note into a plain track point? Its text and symbols will be removed.')))) return;
+        if (!(await RBConfirmDanger(t('Turn this note into a plain track point? Its text and symbols will be removed.') + ' ' + noteLabel(rb.notes[ni])))) return;
         rb.notes.splice(ni, 1);
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         routeChanged('Waypoint turned into a track point.');
@@ -429,7 +436,7 @@
     // Every mode's button: the rail (bottom-left) and Cut's row in the ☰ panel (#692).
     const MODE_BUTTONS = ['modeMove', 'modeNote', 'modePoint', 'modeDraw', 'modeCut', 'toolCut'];
     // Move, Add notes and Cut act on a route; Add points and Draw can also start one.
-    const modeAvailable = (tool) => tool === 'point' || tool === 'draw' || !!(rb && rb.track.length >= 2);
+    const modeAvailable = (tool) => !readOnly() && (tool === 'point' || tool === 'draw' || !!(rb && rb.track.length >= 2));
     function paintModes() {
         MODE_BUTTONS.forEach((id) => {
             const b = $(id), tool = b.dataset.tool;
@@ -497,14 +504,17 @@
         });
     }
     // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle + live zoom level.
-    const MAP_STYLE_LABELS = ['Satellite', 'Topo', 'OSM'];
+    // The control is one 29 px map button, so the current style shows as a short code (like the
+    // zoom's "z12"); its full, translated name is the tooltip (#700).
+    const MAP_STYLE_LABELS = ['SAT', 'TOPO', 'OSM'];
     if (map.map) map.map.addControl({
         onAdd(m) {
             const c = document.createElement('div');
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group rb-mapctl';
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'rb-mapctl-layers';
-            b.title = t('Satellite / terrain / OSM map'); b.setAttribute('aria-label', b.title);
+            const name = () => { b.title = t('Map: satellite · topographic · OpenStreetMap'); b.setAttribute('aria-label', b.title); };
+            name(); window.addEventListener('rb-lang', name);
             b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i> ';
             const label = document.createElement('span');
             label.className = 'rb-map-style-label';
@@ -748,7 +758,7 @@
             if (p.trkpts && p.trkpts.length >= 2) await addGpxTrack(p.trkpts);
             else if (p.wpts && p.wpts.length) addWaypointsFromGpx(p.wpts);
             else toast('The GPX has no usable track or waypoints.');
-        } catch (err) { toast('Error: ' + err.message); }
+        } catch (err) { toast('Could not read this GPX file.'); }
     };
     // Merge a waypoint-only GPX onto the current route (#131). When both the waypoint and the
     // route carry timestamps (same recording), place it at the track point nearest IN TIME — the
@@ -879,7 +889,7 @@
             if ((!trkpts || trkpts.length < 2) && p.wpts && p.wpts.length >= 2) { trkpts = p.wpts.map((wp) => ({ lat: wp.lat, lon: wp.lon })); fromWpts = true; }
             setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts, wpts: p.wpts }));
             if (fromWpts) toast('No track in the GPX — built a route through the waypoints; redraw or refine it as needed.');
-        } catch (err) { toast('Error: ' + err.message); }
+        } catch (err) { toast('Could not read this GPX file.'); }
     };
     $('jsonFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -894,7 +904,7 @@
                 d.q('.modal-close').onclick = d.close;
             }
         }
-        catch (err) { toast('Error: ' + err.message); }
+        catch (err) { toast('This file is not a roadbook.'); }
     };
     // Toggle between the opening screen (ways to start a new roadbook) and the
     // editing surface (the map + tool bar). The map is built up front but stays
@@ -971,12 +981,12 @@
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
     function redo() { if (!histFuture.length) return; const snap = histFuture.pop(); histPast.push(snap); histApply(snap); }
-    function updateHistBtns() { $('undoBtn').disabled = histPast.length < 2; $('redoBtn').disabled = !histFuture.length; }
+    function updateHistBtns() { $('undoBtn').disabled = readOnly() || histPast.length < 2; $('redoBtn').disabled = readOnly() || !histFuture.length; }
     $('undoBtn').onclick = undo;
     $('redoBtn').onclick = redo;
     window.addEventListener('keydown', (e) => {
         // leave native text-field undo alone; never undo mid-recording
-        if (!(e.ctrlKey || e.metaKey) || !rb || recWatch != null || e.target.matches('input, textarea, select')) return;
+        if (!(e.ctrlKey || e.metaKey) || !rb || recWatch != null || readOnly() || e.target.matches('input, textarea, select')) return;
         const key = e.key.toLowerCase();
         if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
         else if (key === 'y' || (key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
@@ -987,7 +997,11 @@
     $('rbOrg').oninput = (e) => { if (rb) { rb.meta.organization = e.target.value; markDirty(); } };
     $('rbLogoBtn').onclick = () => $('rbLogoFile').click();
     $('rbLogoPrev').onclick = () => $('rbLogoFile').click(); // the shown logo doubles as the "change logo" button
-    $('rbLogoClr').onclick = () => { if (rb) { delete rb.meta.logo; setLogoPreview(null); markDirty(); } };
+    $('rbLogoClr').onclick = async () => {
+        if (!rb || !rb.meta.logo) return;
+        if (!(await RBConfirmDanger(`<img class="confirm-thumb" src="${esc(rb.meta.logo)}" alt="">` + esc(t('Remove the logo?'))))) return;
+        delete rb.meta.logo; setLogoPreview(null); markDirty();
+    };
     $('rbLogoFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = '';
         if (!f || !rb) return;
@@ -1009,14 +1023,17 @@
     $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
     $('cfgReusable').onchange = (e) => { reusable = e.target.checked; markDirty(); }; // #106: only meaningful when the roadbook is Public
     // Roadbook profile scopes the WP-type vocabulary. Basic is the default → stored absent
-    // (clean files); only 'rally' is persisted. Switching to Basic clears any rally-only types.
-    $('cfgProfile').onchange = (e) => {
+    // (clean files); only 'rally' is persisted. Switching to Basic clears the rally-only types —
+    // so it asks first, naming the notes that lose theirs (#697); No puts the select back.
+    $('cfgProfile').onchange = async (e) => {
         if (!rb) return;
-        if (e.target.value === 'rally') rb.meta.profile = 'rally'; else delete rb.meta.profile;
-        if (e.target.value !== 'rally') { // drop types no longer offered
+        if (e.target.value !== 'rally') {
             const core = new Set(RB.wpTypesForProfile('basic').map((w) => w.id));
-            rb.notes.forEach((n) => { if (n.wp_type && !core.has(n.wp_type)) delete n.wp_type; }); // keep wp_radius (independent of type)
-        }
+            const losing = rb.notes.filter((n) => n.wp_type && !core.has(n.wp_type));
+            if (losing.length && !(await RBConfirmDanger(t('Switch to Basic? These notes lose their rally waypoint type:') + ' ' + losing.map(noteLabel).join(', ')))) { e.target.value = 'rally'; return; }
+            losing.forEach((n) => { delete n.wp_type; }); // keep wp_radius (independent of type)
+            delete rb.meta.profile;
+        } else rb.meta.profile = 'rally';
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
     };
     // Roadbook-wide default detection radius (metres): what a note with no wp_radius of its own
@@ -1034,7 +1051,9 @@
         }
         rb.meta.default_wp_radius = v;
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
-        if (await RBConfirm(t('Also replace all current notes in this roadbook to {v} m?').replace('{v}', v))) {
+        // asked only when some note would actually change (#701)
+        const differing = rb.notes.filter((n) => n.wp_radius != null && n.wp_radius !== v).length;
+        if (differing && await RBConfirm(t('Set every note’s radius to {v} m? {n} notes have their own.').replace('{v}', v).replace('{n}', differing))) {
             rb.notes.forEach((n) => { n.wp_radius = v; });
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
             toast('Every note now validates at this radius.');
@@ -1081,7 +1100,7 @@
         toast('Walk onto the trail (≤10 m) to start adjusting.');
         updateRecStats();
         try { if ('wakeLock' in navigator) recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
-        recWatch = navigator.geolocation.watchPosition(onRecFix, (e) => toast('GPS: ' + e.message), { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+        recWatch = navigator.geolocation.watchPosition(onRecFix, () => toast('GPS unavailable — check the location permission.'), { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
     }
     // nearest track vertex + its distance (RB.nearestIdx does the search; one extra haversine for the gate)
     function nearestTrackIdx(p) {
@@ -1178,7 +1197,6 @@
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
-    let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note IMG pill)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
     let pendingMedia = []; // media bundled in an imported .rdbk v2, uploaded to the gallery on the first save (#162)
@@ -1201,7 +1219,14 @@
         rbLock = lock && lock.mine === false ? lock : { mine: true };
         $('lockBanner').hidden = rbLock.mine;
         if (!rbLock.mine) $('lockBannerText').textContent = '@' + rbLock.by + ' ' + t('is editing this roadbook — read-only.');
-        updateSaveBtn();
+        // read-only for real (#698): the edit surfaces go inert (CSS), the map drops to pan with no
+        // modes, and the copy / settings / undo controls that would write are off. Export, Close
+        // and Force unlock stay.
+        document.body.classList.toggle('rb-readonly', readOnly());
+        ['saveAsAccount', 'openConfig', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => { $(id).disabled = readOnly(); });
+        document.querySelectorAll('#noteList textarea, #rbTitle').forEach((field) => { field.readOnly = readOnly(); });
+        if (readOnly()) setMapTool('pan'); else paintModes();
+        updateSaveBtn(); updateHistBtns();
     }
     $('lockForce').onclick = async () => {
         if (!(await RBConfirmDanger(t('Force unlock? The other editor may lose unsaved changes.')))) return;
@@ -1253,7 +1278,7 @@
         }
         return r;
     }
-    // Every gate both saves (Save · Save as) share: signed in, something to save, the route's open
+    // Every gate both saves (Save · Save a copy) share: signed in, something to save, the route's open
     // cuts acknowledged, and the consistency findings seen (#339).
     async function readyToSave() {
         if (!meUser) { RBNeedAuth('Sign in to save this roadbook to your profile.'); return false; }
@@ -1278,11 +1303,11 @@
         try {
             const blob = await RBCoverMap.capture(rb.track);
             if (!blob) { // no track, or no map tile loaded (offline/CORS): keep the previous cover
-                if (rb.track && rb.track.length >= 2) toast('Cover not updated: map tiles unavailable');
+                if (rb.track && rb.track.length >= 2) toast('Saved — the cover image could not be updated (map tiles unavailable).');
                 return;
             }
             const up = await RBUpload({ type: 'cover', roadbook: String(currentRbId) }, new File([blob], 'cover.png', { type: 'image/png' }));
-            if (!up || !up.ok) toast('Cover not updated: ' + ((up && up.error) || 'upload failed'));
+            if (!up || !up.ok) toast('Saved — the cover image could not be updated.');
         } catch (e) { /* a cover is non-essential — never let it break a save */ }
     }
     $('saveAccount').onclick = () => saveRoadbook('saveAccount');
@@ -1293,10 +1318,10 @@
         if (rb && dirty) {
             const choice = await new Promise((resolve) => {
                 const d = RBModal(`<h3>${t('Unsaved changes')}</h3>
-                    <p class="muted">${t('Save your changes before closing?')}</p>
+                    <p class="muted">“${esc(rb.meta.title || t('Roadbook'))}” — ${t('Save your changes before closing?')}</p>
                     <div class="btnrow center wrap">
                         <button class="btn btn-ghost" id="ccCancel">${t('Keep editing')}</button>
-                        <button class="btn btn-ghost" id="ccDiscard">${t('Close without saving')}</button>
+                        <button class="btn btn-danger" id="ccDiscard"><i class="fa-solid fa-trash-can"></i> ${t('Discard changes')}</button>
                         <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
                     </div>`, 'slim center', () => resolve('cancel'));
                 d.q('#ccSave').onclick = () => { resolve('save'); d.close(); };
@@ -1310,7 +1335,7 @@
         location.href = location.pathname.replace(/[^/]*$/, ''); // close → the editor landing (roadbook list), stripping any ?rb / /<slug>
     }
     $('closeEditor').onclick = leaveEditor;
-    // "Save as": store the current content as a NEW roadbook (the original is left
+    // "Save a copy": store the current content as a NEW roadbook (the original is left
     // untouched). The copy starts private and gets a "… (copy)" title; the editor
     // then keeps editing the copy. Photos stay with the original (they live server-side).
     $('saveAsAccount').onclick = async () => {
@@ -1428,7 +1453,7 @@
     $('photoFile').onchange = async (e) => { const files = [...e.target.files]; e.target.value = ''; addPhotos(files); };
     // paste an image from the clipboard (Ctrl/Cmd+V) → upload it like any photo (EXIF or place on map)
     document.addEventListener('paste', async (e) => {
-        if (!rb) return;
+        if (!rb || readOnly()) return;
         const files = [...(e.clipboardData?.items || [])].filter((it) => /^image\//.test(it.type)).map((it) => it.getAsFile()).filter(Boolean);
         if (!files.length) return; // plain text/other paste → leave it to the browser
         e.preventDefault();
@@ -1454,6 +1479,7 @@
         await loadPhotos(); toast(failed ? 'Some photos failed.' : 'Photos uploaded.');
     };
     async function addPhotos(files) {
+        if (readOnly()) return toast('Read-only while someone else is editing.');
         if (!(currentRbId > 0)) return toast('Save to your profile first.');
         let failed = 0;
         for (const f of files) {
@@ -1579,10 +1605,10 @@
         // Delete; then the distances, the tulip and the text.
         $('noteList').innerHTML = rb.notes.map((n, i) => `${blockRowsHTML(n, 'before', i)}<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button></span>
-                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
+                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}"><i class="fa-solid fa-camera"></i></button>` : ''}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
+                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('Add note text…'))}" autocomplete="off"${readOnly() ? ' readonly' : ''}>${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n)}</div>
                     ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
@@ -1790,7 +1816,7 @@
             if (!f) return;
             let data;
             try { data = await RBImg.toDataURL(f, kind.imageMax); } // a photo keeps its detail, a logo stays small
-            catch (err) { return toast('Could not read that image.'); } // a file the browser cannot decode says so
+            catch (err) { return toast('Could not read the image.'); } // a file the browser cannot decode says so
             const b = slotBlock(n, kind);
             b.image = data;
             markDirty(); renderEditor(); renderNotes();
@@ -1997,7 +2023,7 @@
         const isNote = rb.notes.some((n) => n.idx === k);
         if (isNote) {
             if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
-            if (!(await RBConfirmDanger(t('This point is a note — delete the point and its note?')))) return;
+            if (!(await RBConfirmDanger(t('This point is a note — delete the point and its note?') + ' ' + noteLabel(rb.notes.find((n) => n.idx === k))))) return;
         }
         if (rb.track.length <= 2) return toast('At least 2 points must remain.');
         rb.track.splice(k, 1);
@@ -2290,42 +2316,47 @@
         const kml = RB.kmlDocument(base, rb.track, wpts);
         RBDownload(await RBZip.write({ 'doc.kml': kml }), base + '.kmz');
     }
-    // One Export button → a popup: .rdbk / PDF buttons, and GPX as a single button whose
-    // typologies (track · track+WPT · OpenRally) are picked with checkboxes.
+    // Export (#699): one list, one row per format, each named and described — the choice is the
+    // format, so no format outranks another. GPX carries its options right under it; the source
+    // view (JSON / GPX, to inspect and copy) is the last row. Close is the way out.
     function openExportModal() {
         if (!rb) return toast('Nothing to export.');
-        const m = RBModal(`<h2>${esc(t('Export'))}</h2>
-            <div class="btn-group col">
-                <button class="btn btn-primary" data-x="rdbk"><i class="fa-solid fa-file-zipper"></i> ${esc(t('.rdbk file'))}</button>
-                <button class="btn btn-primary" data-x="pdf"><i class="fa-solid fa-file-pdf"></i> ${esc(t('PDF'))}</button>
+        const row = (x, icon, title, desc) => `<button class="load-card row" data-x="${x}"><i class="fa-solid ${icon}"></i><span><b>${esc(t(title))}</b><small>${esc(t(desc))}</small></span></button>`;
+        const m = RBModal(`<h2><i class="fa-solid fa-file-export icon-accent"></i> ${esc(t('Export'))}</h2>
+            <div class="load-opts stack">
+                ${row('rdbk', 'fa-file-zipper', '.rdbk file', 'The whole roadbook, to open again or share')}
+                ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row export-opts"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
+                ${row('pdf', 'fa-file-pdf', 'PDF', 'To print or read on paper')}
+                ${row('gpx', 'fa-route', 'GPX', 'For a GPS device or another app')}
+                <div class="export-opts">
+                    <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track line'))}</label>
+                    <label class="checkbox-row"><input type="checkbox" data-g="wpt" checked> ${esc(t('Waypoints (notes)'))}</label>
+                    <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
+                    <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>
+                </div>
+                ${row('openrally', 'fa-flag-checkered', 'OpenRally', 'The rally GPX format')}
+                ${row('kmz', 'fa-earth-americas', 'KMZ', 'To view in Google Earth')}
+                ${row('source', 'fa-code', 'View source', 'The roadbook as JSON or GPX, to inspect and copy')}
             </div>
-            ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
-            <h3>${esc(t('GPX'))}</h3>
-            <label class="checkbox-row"><input type="checkbox" data-g="track" checked> ${esc(t('Track line'))}</label>
-            <label class="checkbox-row"><input type="checkbox" data-g="wpt" checked> ${esc(t('Waypoints (notes)'))}</label>
-            <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="grm"> ${esc(t('Garmin icons'))}</label>
-            <label class="checkbox-row gpx-sub"><input type="checkbox" data-g="osm"> ${esc(t('OSMAnd icons'))}</label>
-            <label class="checkbox-row"><input type="checkbox" data-g="openrally"> ${esc(t('OpenRally'))}</label>
-            <div class="btnrow end"><button class="btn btn-primary" data-x="gpx"><i class="fa-solid fa-file-arrow-down"></i> ${esc(t('Export GPX'))}</button></div>
-            <h3>${esc(t('KMZ'))}</h3>
-            <div class="btnrow end"><button class="btn btn-primary" data-x="kmz"><i class="fa-solid fa-map"></i> ${esc(t('Export KMZ'))}</button></div>`, 'narrow scroll');
+            <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow scroll');
         const cb = (g) => m.q(`[data-g="${g}"]`);
         const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
         cb('wpt').onchange = syncIcons; syncIcons();
-        m.q('[data-x="rdbk"]').onclick = async () => { const mm = m.q('[data-media]'); m.close(); if (await confirmOpenCuts()) await exportRdbk(!!(mm && mm.checked)); };
-        m.q('[data-x="pdf"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportPdf(); };
+        m.q('.modal-close').onclick = m.close;
+        const run = (x, fn) => { m.q(`[data-x="${x}"]`).onclick = async () => { const opts = { media: !!(m.q('[data-media]') && m.q('[data-media]').checked), track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked }; m.close(); if (x === 'source' || await confirmOpenCuts()) await fn(opts); }; };
+        run('rdbk', (o) => exportRdbk(o.media));
+        run('pdf', () => exportPdf());
         m.q('[data-x="gpx"]').onclick = async () => {
-            const o = { track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked, or: cb('openrally').checked };
-            if (!o.track && !o.wpt && !o.or) return toast('Pick at least one GPX type.');
+            const o = { track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked };
+            if (!o.track && !o.wpt) return toast('Pick the track line, the waypoints or both.');
             m.close();
-            if (!(await confirmOpenCuts())) return;
-            if (o.track || o.wpt) exportCustomGpx(o);
-            if (o.or) await exportOpenRally();
+            if (await confirmOpenCuts()) exportCustomGpx(o);
         };
-        m.q('[data-x="kmz"]').onclick = async () => { m.close(); if (await confirmOpenCuts()) await exportKmz(); };
+        run('openrally', () => exportOpenRally());
+        run('kmz', () => exportKmz());
+        run('source', () => openRawJson());
     }
     $('exportBtn').onclick = openExportModal;
-    $('rawJsonBtn').onclick = openRawJson;
     // Raw view (#28): the whole roadbook as pretty JSON (or its GPX) — read-only, to inspect, find
     // and copy. The embedded icons (base64 blobs) show as placeholders.
     function openRawJson() {
@@ -2348,7 +2379,7 @@
             const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
             return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
         };
-        const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>
+        const m = RBModal(`<h2><i class="fa-solid fa-code icon-accent"></i> ${esc(t('View source'))}</h2>
             <div class="ed-row"><input type="search" id="rawSearch" class="field grow" placeholder="${esc(t('Find in text (Enter)…'))}" spellcheck="false" autocomplete="off"></div>
             <textarea id="rawJson" class="raw-edit" spellcheck="false" readonly></textarea>
             <p id="rawMsg" class="small"></p>

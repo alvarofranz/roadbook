@@ -9,15 +9,15 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-103">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-104">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-103">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-104">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
         .lock-banner { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; background: rgba(232, 176, 89, .12); border: 1px solid var(--sand); color: var(--sand); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .6rem; font-size: .85rem; }
         .lock-banner .btn { width: auto; margin-left: auto; }
-        .ed-row.between { justify-content: space-between; }
+        .config-head { margin-top: .8rem; }
         #loadFrom .icon-category { margin-top: 0; }
         .icon-category.flush { margin: 0; }
         .notecount { text-transform: none; letter-spacing: 0; }
@@ -52,14 +52,11 @@
         .note-mini .note-tulip > svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
         /* the icon search sits on its own row above the icons; it grows to fill the width */
         #iconSearch { min-width: 0; }
-        #roadSlot, #dangerSlot, #speedSlot, #capTypeSlot, #wpTypeSlot, #wpRadiusSlot { flex-shrink: 0; }
-        #roadSlot select, #dangerSlot select, #speedSlot select, #capTypeSlot select { width: auto; min-width: 3.4rem; padding: .3rem .4rem; }
-        #wpRadiusSlot input { width: 4.2rem; padding: .3rem .4rem; }
         /* the waypoint-type badge (RB.wpBadgeSVG) shown in a note row, next to the number */
         .note-mini .wp-badge { margin-top: .15rem; }
         /* WP-type custom dropdown — each option shows its colour badge (a <select> can't) */
         .wp-dd-wrap { position: relative; }
-        .wp-dd-btn { display: inline-flex; align-items: center; gap: .4rem; width: auto; min-width: 7rem; padding: .3rem .5rem; cursor: pointer; text-align: left; }
+        .wp-dd-btn { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; text-align: left; }
                 .wp-dd-chev { margin-left: auto; padding-left: .3rem; color: var(--muted); }
         .wp-dd-none { color: var(--muted); }
         .wp-dd-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; width: 250px; max-height: 300px; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: .3rem; }
@@ -72,8 +69,10 @@
            the six of them read as one block instead of a ragged wrapping row. */
         .note-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .5rem .6rem; margin: .5rem 0 .25rem; }
         .note-params > span { min-width: 0; }
+        /* every control in the block the same height and the full width of its cell (#696) */
+        .note-params .field { width: 100%; min-height: 2.2rem; padding: .3rem .45rem; font-size: .92rem; }
         .prop-field { display: flex; flex-direction: column; align-items: stretch; gap: .2rem; min-width: 0; }
-        .prop-field > span:first-child { display: flex; align-items: center; gap: .25rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+        .prop-field > span:first-child, .meta-field > span:first-child { display: flex; align-items: center; gap: .25rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
         .logo-preview { width: 46px; height: 46px; object-fit: contain; border-radius: 8px; background: var(--card-2); border: 1px solid var(--line); cursor: pointer; }
         .logo-preview:hover { border-color: var(--sand); }
         /* The palette is a STRIP: two rows of equal tiles that scroll sideways, so the gallery
@@ -101,8 +100,9 @@
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
         /* the left cell: the note's number; Delete sits in the row's top-left corner, clear of it */
         .note-mini { position: relative; }
-        .note-mini .note-number { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem; padding-top: 1rem; font-weight: 800; color: var(--sand); }
-        .note-mini .note-del { position: absolute; top: .2rem; left: .25rem; display: inline-flex; background: none; border: 0; padding: .1rem .25rem; font: inherit; font-size: .78rem; line-height: 1; cursor: pointer; opacity: .75; }
+        .note-mini .note-number { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem; padding-top: 1.9rem; font-weight: 800; color: var(--sand); }
+        .note-mini .note-del { position: absolute; top: .15rem; left: .15rem; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: none; border: 0; border-radius: 8px; padding: 0; font: inherit; font-size: .8rem; line-height: 1; cursor: pointer; opacity: .75; } /* a real tap target (#701) */
+        .note-mini .note-del:hover { background: var(--card-2); }
         .note-mini .note-del:hover { opacity: 1; }
         /* the text cell: the note's own text (fills the row height), with CAP + coordinates below it */
         .note-mini .note-textcell { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: .25rem; }
@@ -113,7 +113,7 @@
         .note-mini .note-km { flex-shrink: 0; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 3.4rem; }
         .note-mini .note-km b { display: block; font-size: .82rem; font-weight: 800; color: var(--text); }
         /* a photo was taken near this note → tap the "IMG" pill (under the km) to view it */
-        .note-mini .note-km .note-photo { display: inline-block; margin-top: .25rem; padding: .05rem .35rem; background: none; border: 1px solid #3a8dff; border-radius: 6px; color: #3a8dff; font: inherit; font-size: .62rem; font-weight: 800; letter-spacing: .04em; line-height: 1.4; cursor: pointer; }
+        .note-mini .note-km .note-photo { display: inline-block; margin-top: .25rem; padding: .05rem .35rem; background: none; border: 1px solid #3a8dff; border-radius: 6px; color: #3a8dff; font: inherit; font-size: .72rem; line-height: 1.4; cursor: pointer; }
         /* the material attached to a note, shown above or below its row: a photo to look at, an
            advert logo as a contained mark, a text block across the full width and big enough to
            read at arm's length */
@@ -246,6 +246,24 @@
            block of text) scrolls or wraps INSIDE its own box, never by widening the column */
         #noteList { overflow-x: hidden; }
         #noteList, .note-mini, .note-edit-zone, .note-edit-slot, .vig-split, .vig-icons, .vig-canvas { min-width: 0; max-width: 100%; }
+        /* A row lays itself out by the width of the NOTES COLUMN, not the window (#695): the split
+           layout gives the column 2/5 of a tablet, and one line of number · distance · tulip · text
+           left the text a letter wide. Narrow, the number and distance form a left rail and the
+           text sits over the tulip. */
+        .note-list-zone { container: notes / inline-size; }
+        @container notes (max-width: 560px) {
+            .note-mini { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .6rem; row-gap: .45rem; align-items: start; }
+            .note-mini .note-number { grid-column: 1; grid-row: 1; }
+            .note-mini .note-km { grid-column: 1; grid-row: 2; min-width: 0; text-align: center; }
+            .note-mini .note-textcell { grid-column: 2; grid-row: 1; }
+            .note-mini .note-tulip { grid-column: 2; grid-row: 2; width: 100%; max-width: 220px; }
+        }
+        /* read-only while someone else edits (#698): the edit surfaces take no input — the list
+           still scrolls and a row still opens, to read */
+        body.rb-readonly #noteEditZone, body.rb-readonly .note-del, body.rb-readonly .del-badge, body.rb-readonly .audio-totext,
+        body.rb-readonly #rbLogoBtn, body.rb-readonly #rbLogoClr, body.rb-readonly #rbLogoPrev { pointer-events: none; opacity: .5; }
+        /* the Editor owns the screen while a roadbook is open: no floating chip on its controls */
+        body:has(#mapEditor:not([hidden])) .app-chip-stack { display: none; }
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
         .note-edit-zone .vignette-toolbar { max-width: none; }
         /* canvas above, icon palette below — keeps both usable in the narrow column */
@@ -262,13 +280,21 @@
         .rec-btns .btn { flex: 1; justify-content: center; padding: .6rem .4rem; }
         .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--track); animation: recpulse 1.2s infinite; flex-shrink: 0; }
         .rb-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-top: .9rem; }
-        .rb-actions .btn-group { flex-wrap: wrap; } /* phones: action buttons wrap instead of overflowing off-screen */
+        .ed-toolbar { display: flex; align-items: center; gap: .45rem; width: 100%; }
+        .ed-toolbar .btn { gap: .45rem; }
+        #rbPanel { container: panel / inline-size; }
+        @container panel (max-width: 520px) { .ed-toolbar .btn-label { display: none; } } /* narrow: icons only, named by their tooltips */
+        /* the export dialog and the landing share one card; in a dialog it is a full-width row */
+        .load-opts.stack { grid-template-columns: 1fr; }
+        .load-card.row { flex-direction: row; align-items: center; gap: .8rem; width: 100%; padding: .7rem .9rem; }
+        .load-card.row i { margin: 0; width: 1.4em; text-align: center; flex-shrink: 0; }
+        .load-card.row > span { display: flex; flex-direction: column; min-width: 0; }
+        .export-opts { display: grid; gap: .1rem; margin: -.2rem 0 .2rem 2.9rem; }
         .rb-actions-right { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 260px; }
         /* labelled field cards (roadbook details + note properties) */
         .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
         .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
         .meta-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
-        .meta-field > span:first-child { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
         .meta-field.full { grid-column: 1 / -1; }
         /* a field laid out as label + control on one line (e.g. Description) */
         .meta-field.inline { flex-direction: row; align-items: center; gap: .7rem; }
@@ -306,7 +332,7 @@
             main.tool-page { max-width: 1680px; } /* the split layout earns the full width */
             /* the split grid is for editing only — on the landing screen #viewMap stays the
                centred 1100px column (otherwise the start cards hug the left of a 1680px row) */
-            #viewMap:has(#mapEditor:not([hidden])) { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; margin: 0 -1.1rem; }
+            #viewMap:has(#mapEditor:not([hidden])) { max-width: none; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1.2rem; align-items: start; margin-left: -1.1rem; } /* the map runs to the left edge; the notes keep the right gutter */
             .map-box { border-radius: 0; }
             #landing, #recBar { grid-column: 1 / -1; }
             .map-editor { position: sticky; top: 66px; }
@@ -336,10 +362,6 @@
             .mode-rail { flex-direction: row; bottom: 30px; max-width: calc(100% - 20px); } /* a short map: the modes run along the bottom */
             .map-ctx { min-width: 0; }
             .meta-grid { grid-template-columns: 1fr; }
-            /* phones: the text takes the row; the tulip drops to its own line below it */
-            .note-mini { flex-wrap: wrap; }
-            .note-mini .note-tulip { order: 9; flex-basis: 100%; width: auto; }
-            .note-mini .note-tulip > svg { max-width: 160px; }
         }
     </style>
 </head>
@@ -363,7 +385,7 @@
                     <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
                     <button class="load-card" id="drawRoute"><i class="fa-solid fa-pen"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route by dragging on the map">Sketch a route by dragging on the map</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
-                    <button class="load-card" id="pickChallenge"><i class="fa-solid fa-book-open"></i><b data-i18n="Start from a public RB">Start from a public RB</b><small data-i18n="Public roadbooks">Public roadbooks</small></button>
+                    <button class="load-card" id="pickChallenge"><i class="fa-solid fa-book-open"></i><b data-i18n="Copy a public roadbook">Copy a public roadbook</b><small data-i18n="Start from one shared by others">Start from one shared by others</small></button>
                 </div>
             </div>
             <div id="myRbSection" hidden>
@@ -377,7 +399,7 @@
             </div>
         </div>
         <div id="recBar" class="record-bar" hidden>
-            <div class="rec-status"><span class="rec-dot"></span> <span id="recStats" class="muted small">Recording…</span></div>
+            <div class="rec-status"><span class="rec-dot"></span> <span id="recStats" class="muted small" data-i18n="Recording…">Recording…</span></div>
             <div class="rec-btns">
                 <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span data-i18n="Pause">Pause</span></button>
                 <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="Photo">Photo</span></button>
@@ -438,19 +460,21 @@
                 <button class="btn btn-ghost" id="lockForce" type="button"><i class="fa-solid fa-unlock"></i> <span data-i18n="Force unlock">Force unlock</span></button>
             </div>
             <div class="rb-actions">
-                <div class="btn-group">
-                    <button class="btn btn-ghost" id="openConfig" title="Settings" data-i18n-title="Settings" aria-label="Settings" data-i18n-aria="Settings"><i class="fa-solid fa-sliders"></i></button>
-                    <button class="btn btn-primary" id="exportBtn" title="Export" data-i18n-title="Export" aria-label="Export" data-i18n-aria="Export"><i class="fa-solid fa-file-export"></i></button>
-                    <button class="btn btn-primary" id="rawJsonBtn" title="Raw JSON" data-i18n-title="Raw JSON" aria-label="Raw JSON" data-i18n-aria="Raw JSON"><i class="fa-solid fa-code"></i></button>
-                    <button class="btn btn-primary" id="saveAccount" title="Save" data-i18n-title="Save" aria-label="Save" data-i18n-aria="Save"><i class="fa-solid fa-floppy-disk"></i></button>
-                    <button class="btn btn-ghost" id="saveAsAccount" title="Save as" data-i18n-title="Save as" aria-label="Save as" data-i18n-aria="Save as"><i class="fa-solid fa-file-circle-plus"></i></button>
-                    <button class="btn btn-ghost" id="closeEditor" title="Close" data-i18n-title="Close" aria-label="Close" data-i18n-aria="Close"><i class="fa-solid fa-xmark"></i> <span data-i18n="Close">Close</span></button>
+                <!-- one primary action, Save; the rest are labelled ghosts whose labels fold away when the
+                     column is narrow, keeping their names as tooltips and for screen readers (#699) -->
+                <div class="ed-toolbar">
+                    <button class="btn btn-ghost" id="openConfig" title="Roadbook settings" data-i18n-title="Roadbook settings" aria-label="Roadbook settings" data-i18n-aria="Roadbook settings"><i class="fa-solid fa-sliders"></i><span class="btn-label" data-i18n="Settings">Settings</span></button>
+                    <button class="btn btn-ghost" id="exportBtn" title="Export" data-i18n-title="Export" aria-label="Export" data-i18n-aria="Export"><i class="fa-solid fa-file-export"></i><span class="btn-label" data-i18n="Export">Export</span></button>
+                    <button class="btn btn-ghost" id="saveAsAccount" title="Save a copy" data-i18n-title="Save a copy" aria-label="Save a copy" data-i18n-aria="Save a copy"><i class="fa-solid fa-copy"></i><span class="btn-label" data-i18n="Save a copy">Save a copy</span></button>
+                    <span class="grow"></span>
+                    <button class="btn btn-primary" id="saveAccount" title="Save" data-i18n-title="Save" aria-label="Save" data-i18n-aria="Save"><i class="fa-solid fa-floppy-disk"></i><span class="btn-label" data-i18n="Save">Save</span></button>
+                    <button class="btn btn-ghost" id="closeEditor" title="Close" data-i18n-title="Close" aria-label="Close" data-i18n-aria="Close"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="rb-actions-right">
                     <input type="text" id="rbTitle" class="field grow" placeholder="Roadbook title" data-i18n-ph="Roadbook title">
                     <img id="rbLogoPrev" alt="" class="logo-preview" title="Change logo" data-i18n-title="Change logo" hidden>
                     <button class="btn btn-ghost" id="rbLogoBtn" title="Upload logo" data-i18n-title="Upload logo" aria-label="Upload logo" data-i18n-aria="Upload logo"><i class="fa-solid fa-image"></i></button>
-                    <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-ghost" id="rbLogoClr" hidden title="Remove logo" data-i18n-title="Remove logo" aria-label="Remove logo" data-i18n-aria="Remove logo"><i class="fa-solid fa-trash-can icon-danger"></i></button>
                     <input id="rbLogoFile" type="file" accept="image/*" hidden>
                 </div>
             </div>
@@ -495,11 +519,11 @@
         </div><!-- /#rbPanel -->
     </section>
 
-    <!-- VIEW B: whole-roadbook configuration (details, logo, photos, player map access) -->
+    <!-- VIEW B: the roadbook settings (details, logo, photos, player map access) -->
     <section id="viewConfig" hidden>
-        <div class="ed-row between">
-            <button class="btn btn-ghost" id="backToMap" data-i18n="Back"><i class="fa-solid fa-arrow-left"></i> Back</button>
-            <div class="icon-category flush" data-i18n="Roadbook configuration">Roadbook configuration</div>
+        <button class="btn btn-ghost btn-sm" id="backToMap"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to the map">Back to the map</span></button>
+        <div class="head-row config-head">
+            <h2><i class="fa-solid fa-sliders icon-accent"></i> <span data-i18n="Roadbook settings">Roadbook settings</span></h2>
             <button class="btn btn-primary" id="cfgSave"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
         </div>
         <div class="meta-card">
@@ -562,22 +586,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-103"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-103"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-103"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-103"></script>
-<script src="../assets/js/cover-map.js?v=1.9.2-103"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-103"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.2-103"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-103"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.2-103"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.2-103"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-103"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-103"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-103"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-103"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-103"></script>
-<script src="../assets/js/app.js?v=1.9.2-103"></script>
-<script src="editor.js?v=1.9.2-103"></script>
+<script src="../assets/js/config.js?v=1.9.2-104"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-104"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-104"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-104"></script>
+<script src="../assets/js/cover-map.js?v=1.9.2-104"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-104"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.2-104"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-104"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.2-104"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.2-104"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-104"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-104"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-104"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-104"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-104"></script>
+<script src="../assets/js/app.js?v=1.9.2-104"></script>
+<script src="editor.js?v=1.9.2-104"></script>
 </body>
 </html>
