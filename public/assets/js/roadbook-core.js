@@ -1333,6 +1333,11 @@
         const fs = fields || [];
         return (list || []).filter((item) => fs.some((f) => String(item && item[f] != null ? item[f] : '').toLowerCase().includes(q)));
     }
+    // How many characters the longest total distance takes as "km.dd" (#730): a note list sizes its
+    // distance column from it, so a 123.45 km roadbook lines up instead of sticking out.
+    function distanceChars(notes) {
+        return Math.max(4, ...(notes || []).map((n) => ((n.distance ?? 0) / 1000).toFixed(2).length));
+    }
     // The email addresses in a pasted list or a CSV (#153) — any column, any order, header or not
     // (the participants export works as it is): each found once, lower-cased, in reading order.
     function parseEmailList(text) {
@@ -1404,7 +1409,7 @@
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
-        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, deleteNote, pendingWork,
+        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, distanceChars, deleteNote, pendingWork,
         cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
     };

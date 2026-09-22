@@ -48,7 +48,10 @@
     };
 
     // Photos and audio are editor-only working material — not shown here (#316).
-    const renderRows = () => { $('chNotes').innerHTML = NoteCanvas.rowsHTML(rb, { iconBase: '/assets/icons/' }); };
+    const renderRows = () => {
+        $('chNotes').style.setProperty('--dist-ch', RB.distanceChars(rb.notes)); // the distance column fits the longest (#730)
+        $('chNotes').innerHTML = NoteCanvas.rowsHTML(rb, { iconBase: '/assets/icons/' });
+    };
     renderRows();
     window.addEventListener('rb-lang', renderRows);
 

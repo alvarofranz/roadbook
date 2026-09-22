@@ -1508,6 +1508,7 @@
         // A note's row, with the material it carries drawn on the side it sits on (#542): the
         // author reads the roadbook the way it will be read. The left cell holds the number and
         // Delete; then the distances, the tulip and the text.
+        $('noteList').style.setProperty('--dist-ch', RB.distanceChars(rb.notes)); // the distance column fits the longest (#730)
         $('noteList').innerHTML = rb.notes.map((n, i) => `${blockRowsHTML(n, 'before', i)}<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button></span>
                 <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}"><i class="fa-solid fa-camera"></i></button>` : ''}</span>
