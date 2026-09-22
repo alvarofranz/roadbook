@@ -5,18 +5,19 @@
  * (satellite ↔ topo ↔ OSM), and lets you select waypoints and highlight the
  * active one. */
 (function () {
-// The three base styles the built-in layer toggle cycles through:
-// satellite (ESRI World Imagery), topo (OpenStreetMap standard), OSM (OpenFreeMap standard).
+// The three base styles the built-in layer toggle cycles through — three different maps (#538):
+// satellite (ESRI World Imagery), topo (OpenTopoMap: contour lines and hill shading, the off-road
+// view) and OSM (the OpenStreetMap standard street map).
 // Override via RB_CONFIG.styleSatellite / styleTopo / styleOsm for licensed
 // providers. A style can be a URL string OR a spec object; MapLibre accepts both,
 // so the identity-based check still holds.
 const RASTER_TOPO = {
     version: 8,
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-    sources: { cyclosm: { type: 'raster', tileSize: 256, maxzoom: 19,
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        attribution: '© OpenStreetMap' } },
-    layers: [{ id: 'cyclosm', type: 'raster', source: 'cyclosm' }],
+    sources: { topo: { type: 'raster', tileSize: 256, maxzoom: 17,
+        tiles: ['https://a.tile.opentopomap.org/{z}/{x}/{y}.png', 'https://b.tile.opentopomap.org/{z}/{x}/{y}.png', 'https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],
+        attribution: '© OpenStreetMap · SRTM · © OpenTopoMap (CC-BY-SA)' } },
+    layers: [{ id: 'topo', type: 'raster', source: 'topo' }],
 };
 const RASTER_SATELLITE = {
     version: 8,
