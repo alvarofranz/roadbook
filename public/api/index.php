@@ -68,6 +68,7 @@ try {
         case 'event_leave':     event_leave(require_user(), $d); break;
         case 'event_participant_remove': event_participant_remove(require_user(), $d); break;
         case 'event_participant_add': event_participant_add(require_user(), $d); break;
+        case 'event_participants_import': event_participants_import(require_user(), $d); break;
         case 'event_activate_by_code': event_activate_by_code(require_user(), $d); break;
         case 'participant_activate': participant_activate(require_user(), $d); break;
         case 'event_participants_activate_pending': event_participants_activate_pending(require_user(), $d); break;

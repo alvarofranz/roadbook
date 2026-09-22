@@ -491,6 +491,29 @@ function event_participant_add(array $user, array $d): void {
     db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active', activation_code = NULL")->execute([(int)$e['id'], $uid]);
     json_out(['ok' => true]);
 }
+// Bulk enrolment from a list (#153): the organizer brings emails (a CSV, a paste); every one that
+// belongs to an account is enrolled straight in as active, like event_participant_add. Emails with
+// no account are reported back, never turned into accounts — those people register first (the
+// Terms are accepted at registration, #135), then a re-import picks them up. Idempotent.
+function event_participants_import(array $user, array $d): void {
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    $emails = array_values(array_unique(array_filter(array_map(fn($x) => strtolower(trim((string)$x)), (array)($d['emails'] ?? [])), 'valid_email')));
+    if (!$emails) fail('No email addresses found.');
+    if (count($emails) > 500) fail('Import at most 500 people at a time.');
+    $find = db()->prepare('SELECT id, blocked FROM users WHERE email = ?');
+    $was = db()->prepare('SELECT status FROM event_participants WHERE event_id = ? AND user_id = ?');
+    $add = db()->prepare("INSERT INTO event_participants (event_id, user_id, status) VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active', activation_code = NULL");
+    $enrolled = 0; $already = 0; $missing = [];
+    foreach ($emails as $email) {
+        $find->execute([$email]); $u = $find->fetch();
+        if (!$u || (int)$u['blocked']) { $missing[] = $email; continue; }
+        $was->execute([(int)$e['id'], (int)$u['id']]);
+        if ($was->fetchColumn() === 'active') { $already++; continue; }
+        $add->execute([(int)$e['id'], (int)$u['id']]); $enrolled++;
+    }
+    log_activity((int)$user['id'], 'event_participants_import', 'event #' . $e['id'] . ': ' . $enrolled . ' enrolled, ' . $already . ' already, ' . count($missing) . ' without account');
+    json_out(['ok' => true, 'enrolled' => $enrolled, 'already' => $already, 'not_found' => $missing]);
+}
 // Turn one pending participant of this event active (#577) — never enrols anyone. Returns who,
 // so the desk can check the person in front of it is the one admitted (#604).
 function event_activate_participant(int $eventId, int $userId): array {

@@ -1340,3 +1340,20 @@ Object.assign(window.RBi18nLangs.it, {
     "Search by key or text, in any language…": "Cerca per chiave o per testo, in qualsiasi lingua…",
     "No label matches.": "Nessun testo corrisponde.",
 });
+
+/* import a participants list (#153) */
+Object.assign(window.RBi18nLangs.it, {
+    "Import list": "Importa elenco",
+    "A CSV or a pasted list: every email that belongs to an RDBK account is enrolled as active. People without an account are listed — invite them to register, then import again.": "Un CSV o un elenco incollato: ogni email che appartiene a un account RDBK viene iscritta come attiva. Le persone senza account vengono elencate: invitale a registrarsi, poi importa di nuovo.",
+    "Choose a CSV file": "Scegli un file CSV",
+    "…or paste the emails here": "…o incolla qui le email",
+    "email addresses found": "indirizzi email trovati",
+    "Enrol": "Iscrivi",
+    "enrolled": "iscritti",
+    "were already participants": "erano già partecipanti",
+    "without an RDBK account": "senza account RDBK",
+    "Copy these emails": "Copia queste email",
+    "No email addresses found.": "Nessun indirizzo email trovato.",
+    "Import at most 500 people at a time.": "Importa al massimo 500 persone alla volta.",
+    "Could not import.": "Impossibile importare.",
+});

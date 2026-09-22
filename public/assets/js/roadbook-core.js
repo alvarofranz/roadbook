@@ -1333,6 +1333,16 @@
         const fs = fields || [];
         return (list || []).filter((item) => fs.some((f) => String(item && item[f] != null ? item[f] : '').toLowerCase().includes(q)));
     }
+    // The email addresses in a pasted list or a CSV (#153) — any column, any order, header or not
+    // (the participants export works as it is): each found once, lower-cased, in reading order.
+    function parseEmailList(text) {
+        const seen = new Set(), out = [];
+        for (const m of String(text || '').matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) {
+            const e = m[0].toLowerCase();
+            if (!seen.has(e)) { seen.add(e); out.push(e); }
+        }
+        return out;
+    }
     // Keep the roadbooks that suit ANY of the picked vehicles (#713) — the gallery filter. Nothing
     // picked keeps everything; a roadbook lists its vehicles as ['car', 'moto', 'bike'] (any subset).
     const VEHICLES = ['car', 'moto', 'bike'];
@@ -1394,7 +1404,7 @@
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
-        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, deleteNote, pendingWork,
+        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, deleteNote, pendingWork,
         cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
     };

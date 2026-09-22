@@ -154,6 +154,46 @@
         inp.focus();
     };
 
+    /* ---------- import a list (#153) ---------- */
+    // A CSV (the export works as it is) or a paste: every email that belongs to an account is enrolled
+    // as active; the rest are listed so the organizer can invite those people to register.
+    $('ppImport').onclick = () => {
+        const modal = RBModal(`<h2><i class="fa-solid fa-file-import icon-accent"></i> ${esc(t('Import list'))}</h2>
+            <p class="muted small">${esc(t('A CSV or a pasted list: every email that belongs to an RDBK account is enrolled as active. People without an account are listed — invite them to register, then import again.'))}</p>
+            <div class="btnrow"><button class="btn btn-ghost" data-file type="button"><i class="fa-solid fa-file-csv"></i> ${esc(t('Choose a CSV file'))}</button><input type="file" accept=".csv,.txt,text/csv,text/plain" hidden data-input></div>
+            <textarea class="field" rows="6" data-text placeholder="${esc(t('…or paste the emails here'))}"></textarea>
+            <p class="muted small" data-count></p>
+            <div data-report></div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel type="button">${esc(t('Close'))}</button><button class="btn btn-primary" data-go type="button" disabled><i class="fa-solid fa-user-plus"></i> ${esc(t('Enrol'))}</button></div>`, 'wide');
+        const text = modal.q('[data-text]'), count = modal.q('[data-count]'), go = modal.q('[data-go]');
+        let emails = [];
+        const scan = () => {
+            emails = RB.parseEmailList(text.value);
+            count.textContent = emails.length ? emails.length + ' ' + t('email addresses found') : '';
+            go.disabled = !emails.length;
+        };
+        text.oninput = scan;
+        modal.q('[data-file]').onclick = () => modal.q('[data-input]').click();
+        modal.q('[data-input]').onchange = async (e) => { const f = e.target.files[0]; if (f) { text.value = await f.text(); scan(); } };
+        modal.q('[data-cancel]').onclick = modal.close;
+        go.onclick = async () => {
+            const busy = RBBusy(go);
+            const x = await api('event_participants_import', { event_id: id, emails });
+            if (!x.ok) { busy.reset(); return toast(x.error || 'Could not import.'); }
+            busy.ok();
+            modal.q('[data-report]').innerHTML = `<ul class="modal-list">
+                    <li><i class="fa-solid fa-circle-check icon-ok"></i> ${x.enrolled} ${esc(t('enrolled'))}</li>
+                    <li><i class="fa-solid fa-user-check icon-accent"></i> ${x.already} ${esc(t('were already participants'))}</li>
+                    <li><i class="fa-solid fa-user-xmark icon-danger"></i> ${x.not_found.length} ${esc(t('without an RDBK account'))}</li>
+                </ul>${x.not_found.length ? `<textarea class="field" rows="3" readonly>${esc(x.not_found.join('\n'))}</textarea>
+                <div class="btnrow"><button class="btn btn-ghost btn-sm" data-copy type="button"><i class="fa-regular fa-copy"></i> ${esc(t('Copy these emails'))}</button></div>` : ''}`;
+            const copy = modal.q('[data-copy]');
+            if (copy) copy.onclick = () => RBCopy(x.not_found.join('\n'), 'Copied.');
+            status = ''; page = 1; load();
+        };
+        text.focus();
+    };
+
     /* ---------- CSV export (#606) ---------- */
     // The whole roster — or the current search — collected 100 at a time, quoted RFC-4180 style.
     $('ppExport').onclick = async (e) => {
