@@ -182,7 +182,7 @@ il pulsante reset solo quando c'è tempo da azzerare (`!timerOn && timerAcc === 
 
 ## 8. Contatore waypoint
 
-Il pulsante "mark note" (`tmNoteBtn`) incrementa `waypoints`, aggiorna il display e
+Il pulsante "Mark note" (`tmNoteBtn`) incrementa `waypoints`, aggiorna il display e
 **azzera il parziale** ([tripmaster.js:95](../public/tripmaster/tripmaster.js#L95)):
 
 ```js
@@ -233,11 +233,12 @@ La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`)
   In tutti i casi chiama poi `start()`.
 
 > **Rifiutare la ripresa NON cancella la sessione**
-> ([tripmaster.js:27](../public/tripmaster/tripmaster.js#L27)): un tocco sbagliato non deve mai
-> distruggere una gita. La sessione viene **sovrascritta** appena il mezzo si muove, oppure
-> cancellata esplicitamente all'uscita.
+> (#436 · #644): viene **marcata** `declined` e non si chiede più; resta intatta finché questa
+> gita non ha dati propri (km, note, cronometro, GPX) — `saveSession` non la tocca prima — oppure
+> finché la si cancella esplicitamente all'uscita. Una sessione rifiutata che stava registrando
+> offre comunque il recupero del GPX.
 
-- **Uscita**: "End the trip" (`tmExit`) chiede conferma, poi `clearSession()` e ricarica la
+- **Uscita**: **End** (`tmExit`, `fa-right-from-bracket` come nel Reader, #645) chiede conferma, poi `clearSession()` e ricarica la
   pagina ([tripmaster.js:106](../public/tripmaster/tripmaster.js#L106)).
 
 ---
@@ -245,7 +246,7 @@ La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`)
 ## 11. Limiti e quirk
 
 - **Il parziale può essere azzerato da due gesti diversi** con comportamento incoerente:
-  l'hold-to-reset è protetto a 5 s, ma "mark note" (§8) lo azzera istantaneamente al primo tap.
+  l'hold-to-reset è protetto a 5 s, ma "Mark note" (§8) lo azzera istantaneamente al primo tap.
   È intenzionale, ma chi non lo sa può perdere il parziale credendo di aver solo contato un
   waypoint.
 - **Rifiutare la ripresa lascia la sessione vecchia su disco** finché non ci si muove: se si

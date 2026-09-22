@@ -22,7 +22,7 @@ function htmlPages(dir) {
     }
     return out;
 }
-// `data-i18n="End &amp; close"` reaches RBt as `End & close`: the browser decodes the attribute.
+// `data-i18n="A &amp; B"` reaches RBt as `A & B`: the browser decodes the attribute.
 const decodeEntities = (s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
 // The per-language files attach window.RBi18nLangs.<lang>; eval them in the happy-dom window.

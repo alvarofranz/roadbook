@@ -9,13 +9,13 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-97">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-97">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-98">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-98">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; background: var(--tm-band, transparent); transition: background .35s ease; } /* --tm-band = the speed-alert tint, data-driven */
         /* "How it works" link centred at the foot of the dashboard */
         .tm-help { display: flex; width: fit-content; margin: 1.2rem auto 0; }
-        /* Fullscreen toggle, row 2 col 2 (next to End & close) */
+        /* Fullscreen toggle, row 2 col 2 (next to End) */
         .tm-controls #tmFs { grid-column: 2; grid-row: 2; }
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
         /* odometer rows: value + Reset + ±10 m correctors stacked, all in one line */
@@ -38,7 +38,7 @@
         .cap-needle { margin-left: .35rem; font-size: .8em; color: var(--sand); }
         .cap-needle.idle { visibility: hidden; }
         /* action buttons on a 3-col grid: row 1 = timer · record · mark note (col 3 spans both
-           rows); row 2 = End & close · Fullscreen — each fills its column, aligned with the row above */
+           rows); row 2 = End · Fullscreen — each fills its column, aligned with the row above */
         .tm-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-top: .8rem; }
         .tm-controls .tm-timerbtns { grid-column: 1; grid-row: 1; }
         .tm-controls #tmRecBtn { grid-column: 2; grid-row: 1; }
@@ -58,7 +58,7 @@
         .hold-btn { position: relative; overflow: hidden; }
         .hold-fill { position: absolute; inset: 0; width: 0; background: rgba(255, 90, 69, .4); }
         .hold-btn.holding .hold-fill { width: 100%; transition: width 5s linear; }
-        .hold-field-label { position: relative; z-index: 1; }
+        .hold-icon { position: relative; z-index: 1; }
         /* phones: compact the dashboard so the whole run view fits on screen without scrolling (#250) */
         @media (max-width: 480px) {
             .trip-main { padding: .5rem .7rem 1rem; }
@@ -88,16 +88,17 @@
     <div class="dash">
         <div class="tm-odo">
             <div class="readout primary">
-                <div class="field-label" data-i18n="Total">Total</div>
+                <div class="readout-caption" data-i18n="Total">Total</div>
+                <!-- the ±10 m correctors sit on the right of both readouts (#646) -->
                 <div class="readout-row">
-                    <div class="corr"><button class="btn btn-ghost" id="tmTotPlus10">+10 m</button><button class="btn btn-ghost" id="tmTotMinus10">−10 m</button></div>
                     <div class="readout-val"><span class="num" id="tmTotal">0.00</span> <span class="unit">km</span></div>
+                    <div class="corr"><button class="btn btn-ghost" id="tmTotPlus10">+10 m</button><button class="btn btn-ghost" id="tmTotMinus10">−10 m</button></div>
                 </div>
             </div>
             <div class="readout">
-                <div class="field-label" data-i18n="Partial">Partial</div>
+                <div class="readout-caption" data-i18n="Partial">Partial</div>
                 <div class="readout-row">
-                    <button class="btn btn-ghost hold-btn" id="tmReset" aria-label="Reset" data-i18n-aria="Reset" title="Reset" data-i18n-title="Reset"><span class="hold-fill"></span><span class="hold-field-label"><i class="fa-solid fa-rotate-left"></i></span></button>
+                    <button class="btn btn-ghost hold-btn" id="tmReset" aria-label="Reset" data-i18n-aria="Reset" title="Reset" data-i18n-title="Reset"><span class="hold-fill"></span><span class="hold-icon"><i class="fa-solid fa-rotate-left"></i></span></button>
                     <div class="readout-val"><span class="num2" id="tmPartial">0.00</span> <span class="unit">km</span></div>
                     <div class="corr"><button class="btn btn-ghost" id="tmPlus10">+10 m</button><button class="btn btn-ghost" id="tmMinus10">−10 m</button></div>
                 </div>
@@ -119,8 +120,9 @@
                 <button class="btn btn-ghost" id="tmTimerReset" hidden aria-label="Reset timer" data-i18n-aria="Reset timer" title="Reset timer" data-i18n-title="Reset timer"><i class="fa-solid fa-rotate-left"></i></button>
             </div>
             <button class="btn btn-ghost" id="tmRecBtn"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
-            <button class="btn btn-ghost tm-marknote" id="tmNoteBtn"><i class="fa-solid fa-flag"></i> <span data-i18n="mark note">mark note</span></button>
-            <button class="btn btn-danger" id="tmExit"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="End &amp; close">End &amp; close</span></button>
+            <button class="btn btn-ghost tm-marknote" id="tmNoteBtn"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Mark note">Mark note</span></button>
+            <!-- ending a session looks the same in every GPS tool: fa-right-from-bracket, "End" (#645) -->
+            <button class="btn btn-ghost" id="tmExit"><i class="fa-solid fa-right-from-bracket icon-danger"></i> <span data-i18n="End">End</span></button>
             <button class="btn btn-ghost" id="tmFs" title="Fullscreen" data-i18n-title="Fullscreen" aria-label="Fullscreen" data-i18n-aria="Fullscreen"><i class="fa-solid fa-expand"></i> <span data-i18n="Fullscreen">Fullscreen</span></button>
         </div>
     </div>
@@ -129,16 +131,16 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="../assets/js/roadbook-core.js?v=1.9.2-97"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.2-97"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.2-97"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-97"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-97"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-97"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-97"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-97"></script>
-<script src="../assets/js/app.js?v=1.9.2-97"></script>
-<script src="../assets/js/status-bar.js?v=1.9.2-97"></script>
-<script src="tripmaster.js?v=1.9.2-97"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-98"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.2-98"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.2-98"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-98"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-98"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-98"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-98"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-98"></script>
+<script src="../assets/js/app.js?v=1.9.2-98"></script>
+<script src="../assets/js/status-bar.js?v=1.9.2-98"></script>
+<script src="tripmaster.js?v=1.9.2-98"></script>
 </body>
 </html>
