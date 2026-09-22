@@ -634,10 +634,10 @@ describe('modal confirm order + dismiss paths (#490)', () => {
         }
     });
 
-    it('the QR scanner stops the camera on every dismiss path, and Cancel is wired', () => {
+    it('the QR scanner stops the camera on every dismiss path, and Close is wired', () => {
         expect(parts).toContain('() => stopStream()'); // onDismiss: backdrop + Escape
-        expect(parts).toContain('modal.close = function() { stopStream(); origClose(); };'); // buttons
-        expect(parts).toContain("modal.q('.modal-close').onclick = () => modal.close();");
+        expect(parts).toContain('const close = () => { stopStream(); modal.close(); };'); // buttons + a successful scan
+        expect(parts).toContain("modal.q('.modal-close').onclick = close;");
         expect(parts).toContain('document.body.contains(modal.el)'); // the scan loop ends too
     });
 
@@ -668,7 +668,7 @@ describe('async actions report on their own button (#491)', () => {
         ['public/admin/events/edit/event-edit.js', "'joinRotate').onclick"],
         ['public/admin/events/edit/event-edit.js', "async function setCode(btn, payload)"],
         ['public/admin/events/edit/event-edit.js', "'joinSetBtn').onclick"],
-        ['public/admin/events/participants/participants.js', "'ppActivateAll'"],
+        ['public/admin/events/participants/participants.js', "$('ppActivateAll').onclick"],
         ['public/admin/events/participants/participants.js', "'ppActivate'"],
         ['public/account/account.js', "'loginForm'"],
         ['public/account/account.js', "'registerForm'"],

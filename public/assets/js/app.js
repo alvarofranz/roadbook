@@ -1119,7 +1119,6 @@
         if (user.is_admin) return [
             { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Public Roadbooks',       group: 0 },
             { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
-            { href: 'admin/participants/', icon: 'fa-users',          label: 'Participant management', group: 1 },
             { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
             { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },
             { href: 'admin/trash/',        icon: 'fa-trash-can',      label: 'Roadbook trash',         group: 2 },
@@ -1127,7 +1126,6 @@
         ];
         if (user.is_organizer || user.manages_events) return [
             { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 0 },
-            { href: 'admin/participants/', icon: 'fa-users',          label: 'Participant management', group: 0 },
         ];
         return [];
     }

@@ -159,7 +159,7 @@
             'Recording…': 'Enregistrement…', 'Paused ·': 'En pause ·', 'Adjust: get on the trail…': 'Ajuster : rejoindre le parcours…', 'Adjust · will rejoin': 'Ajuster · va rejoindre', 'Adjust · recording': 'Ajuster · enregistrement',
             'Saved · public at': 'Enregistré · public sur', 'Auto': 'Auto', 'Skips': 'Sauts', 'Extra': 'Extra', 'pts': 'pts', 'prog.': 'prog.', 'part.': 'part.', 'GPS…': 'GPS…',
             'Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done.': 'Auto : les notes sont validées par GPS à l\'arrivée. Off : tapez pour marquer chaque note comme faite.',
-            'Add participant': 'Ajouter un participant', 'Pending only': 'En attente uniquement', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'This roadbook is not in competition mode.': 'Ce roadbook n\'est pas en mode compétition.', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'You must be a participant or organizer of this event to access the ranking.': 'Vous devez être participant ou organisateur de cet événement pour accéder au classement.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 
+            'Add participant': 'Ajouter un participant', 'Grants': 'Autorisations', 'Basic user': 'Utilisateur de base', 'Set join code': 'Définir le code', 'Browse events': 'Parcourir les événements', 'This roadbook is not in competition mode.': 'Ce roadbook n\'est pas en mode compétition.', 'Roadbook not found or no edit rights.': 'Roadbook introuvable ou sans droits de modification.', 'You must be a participant or organizer of this event to access the ranking.': 'Vous devez être participant ou organisateur de cet événement pour accéder au classement.', 'Ranking requires an event and a roadbook — open it from the event page to classify results for a specific roadbook.': 'Le classement nécessite un événement et un roadbook — ouvrez-le depuis la page de l\'événement pour classer les résultats d\'un roadbook précis.', 
             'Add result': 'Ajouter un résultat', 'Add': 'Ajouter', 'Target average speed': 'Vitesse moyenne cible', "(used for regularity if the QR doesn't carry it)": '(utilisée pour la régularité si le QR ne l\'inclut pas)',
             '…or paste the code (META) here': '…ou collez le code (META) ici', 'Added vehicle': 'Véhicule ajouté', 'Invalid signature': 'Signature invalide', 'Could not open the camera': 'Impossible d\'ouvrir la caméra', 'Remove vehicle': 'Supprimer le véhicule',
             'Reset the partial trip?': 'Remettre à zéro le partiel ?', 'Colour for the band {band}': 'Couleur pour la plage {band}', 'Show password': 'Afficher le mot de passe', 'Hide password': 'Masquer le mot de passe', 'photo': 'photo', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
@@ -639,10 +639,9 @@
             'Could not activate.': 'Impossible d\'activer.',
             'Could not activate.': 'Impossible d\'activer.', 'Link for participants': 'Lien pour les participants', 
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Partagez ce lien avec les participants pour qu\'ils accèdent à une vue simplifiée montrant uniquement cet événement et ses roadbooks :',
-            'Participant management': 'Gestion des participants', 'Select an event to manage its participants.': 'Sélectionnez un événement pour gérer ses participants.',
+            
             'added.': 'ajouté.',
-            'Point the camera at the participant\'s QR code.': 'Pointez la caméra vers le code QR du participant.',
-            'Waiting for QR code…': 'En attente du code QR…', 'Scanning…': 'Numérisation…',
+                        'Waiting for QR code…': 'En attente du code QR…', 'Scanning…': 'Numérisation…',
             'Could not access camera.': 'Impossible d\'accéder à la caméra.',
             'Recording… release to finish': 'Enregistrement… relâche pour terminer',
             'Hold to record a voice note; keeps recording 5s after you let go.': 'Maintiens appuyé pour enregistrer une note vocale ; continue 5 s après le relâchement.',
@@ -941,4 +940,16 @@ Object.assign(window.RBi18nLangs.fr, {
     "A join code needs the Invite code registration.": "Un code d’accès nécessite l’inscription par code d’invitation.",
     "To stop new registrations, set Registration to Closed.": "Pour arrêter les nouvelles inscriptions, réglez Inscription sur Fermée.",
     "Its participants and roadbook links are removed with it; the roadbooks themselves are kept.": "Ses participants et liens de roadbooks sont supprimés avec lui ; les roadbooks eux-mêmes sont conservés.",
+});
+
+/* events: management list + participants desk and roster (#600–#606) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Activate a participant": "Activer un participant",
+    "Pending": "En attente",
+    "Active": "Actifs",
+    "Nobody is waiting for activation.": "Personne n’attend d’activation.",
+    "No active participants yet.": "Pas encore de participants actifs.",
+    "Listed": "Répertorié",
+    "Unlisted": "Non répertorié",
+    "Point the camera at the participant’s QR code.": "Pointez la caméra vers le QR code du participant.",
 });
