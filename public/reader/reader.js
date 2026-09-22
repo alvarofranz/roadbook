@@ -775,7 +775,7 @@
         const done = (saved) => {
             const where = saved && saved.is_public ? t('Saved to your profile — public.') : t('Saved to your profile — private.');
             box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-check"></i> <span>${esc(saved ? where : t('Saved on this device — it uploads to your profile as soon as you are online.'))}</span></p>
-                <div class="btnrow end">${user ? `<a class="btn btn-ghost" href="/u/${encodeURIComponent(user.username)}"><i class="fa-solid fa-circle-user"></i> ${esc(t('My profile'))}</a>` : ''}
+                <div class="btnrow end">${user ? `<a class="btn btn-ghost" href="${RBProfileLink(user.username)}"><i class="fa-solid fa-circle-user"></i> ${esc(t('My profile'))}</a>` : ''}
                 <button class="btn btn-primary" data-close type="button">${esc(t('Close'))}</button></div>`;
             box.querySelector('[data-close]').onclick = () => leaveRun('./');
         };

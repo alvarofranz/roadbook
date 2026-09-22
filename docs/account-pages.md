@@ -53,16 +53,28 @@ c'è una sessione e cambia forma di conseguenza:
 
 | Voce | Icona | Destinazione | Quando |
 |------|-------|--------------|--------|
-| **My profile** | `fa-user` | `account/` | sempre |
-| **My roadbooks** | `fa-book` | `myroadbooks/` | sempre |
+| **My profile** | `fa-circle-user` | il profilo pubblico `u/<username>` (`RBProfileLink`; `u/?name=` nell'app) | sempre |
+| **Account settings** | `fa-gear` | `account/` | sempre |
+| **My roadbooks** | `fa-folder-open` | `myroadbooks/` | sempre (non in participant mode) |
+| **Public roadbooks** | `fa-book-open` | `roadbooks/` — l'unico accesso su mobile e nell'app (#671) | sempre (non in participant mode) |
+| **Guide** | `fa-circle-question` | `wiki/` | sempre |
 | **Public Roadbooks** | `fa-globe` | `admin/roadbooks/` | solo admin |
 | **User management** | `fa-users-gear` | `admin/` | solo admin |
 | **Site settings** | `fa-sliders` | `admin/config/` | solo admin |
 | **Event management** | `fa-flag-checkered` | `admin/events/` | admin, **oppure** organizer / co-organizzatore (`is_organizer`/`manages_events`) |
-| **Sign out** | `fa-right-from-bracket` | `RBApi('logout')` poi `location.reload()` | sempre |
+| **Sign out** | `fa-right-from-bracket` | `RBSignOut()` (lo stesso del bottone nella pagina account) | sempre |
 
-Quindi profilo e lista roadbook sono **due pagine distinte** raggiungibili da questo menu; le
-voci admin/eventi appaiono solo per chi ne ha i permessi.
+Quindi profilo pubblico, impostazioni e lista roadbook sono **pagine distinte** raggiungibili da
+questo menu; le voci admin/eventi appaiono solo per chi ne ha i permessi.
+
+### Il profilo pubblico (`/u/<username>`, #620)
+[u/index.html](../public/u/index.html) + [profile-page.js](../public/assets/js/profile-page.js)
+(lo script sta in `/assets/js/`: qualunque file dentro `/u/` potrebbe essere scambiato per uno
+username). `profile_get` fornisce avatar, bio, organizzazione, i totali delle run **pubbliche**, le
+run raggruppate per roadbook (con quante volte è stato completato) e i roadbook pubblici; mai nome
+reale né email. Il proprietario vede anche le run private (col lucchetto) e per ognuna *Make
+public/private* (`run_update`) ed elimina (`run_delete`, confermato). Tile e dettagli di ogni run
+sono lo stesso `RBRun.statsHTML/detailsHTML` del report del Reader.
 
 ---
 
@@ -104,7 +116,7 @@ Popola l'intestazione e i campi:
 |----------|--------------|
 | Nome visualizzato (`accName`) | `first_name + last_name`, fallback su `username` |
 | Handle (`accHandle`) | `@username · email` |
-| Avatar (`accAvatar`) | `user.avatar` con `?v=Date.now()` per **bustare la cache** HTTP/CDN dopo un re-upload ([account.js:213](../public/account/account.js#L213)); fallback `../assets/icon.svg` |
+| Avatar (`accAvatar`) | `user.avatar`, il cui URL salvato porta la versione dell'upload (`?v=`), così un re-upload si vede subito e poi resta in cache; fallback `../assets/icon.svg` |
 | Nome / cognome (`pfFirst` / `pfLast`) | `user.first_name` / `user.last_name`, `maxlength="80"` |
 | Bio (`pfBio`) | `user.bio`, textarea `maxlength="500"` |
 | Organizzazione (`pfOrg`) | `user.organization` (testo libero — filtra la ricerca organizzatori negli eventi, #123) |
@@ -143,7 +155,10 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
 - **Delete account** — chiede conferma con `RBConfirmDanger` (che nomina l'azione
   irreversibile), poi `RBApi('account_delete', { password })` e, se ok, torna alla home
   ([account.js:159](../public/account/account.js#L159)).
-- **Sign out** — `RBApi('logout')` poi reload ([account.js:214](../public/account/account.js#L214)).
+- **Sign out** — `RBSignOut()`, condiviso col menu account.
+- **Run reports** (#619) — la scelta fissa per i nuovi report: *Ask me each time* / *Always
+  public* / *Always private* (`runs_settings`); il report nel Reader la chiede quando è `ask`.
+- **View my public profile** — il link a `/u/<username>` nella testata.
 - In fondo, un bottone **My roadbooks** verso `../myroadbooks/`
   ([index.html:197](../public/account/index.html#L197)).
 

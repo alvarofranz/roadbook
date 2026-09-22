@@ -18,7 +18,7 @@
         if (!hqMap.map) return;
         const place = () => {
             users.forEach((u) => {
-                const m = new maplibregl.Marker({ color: '#3a8dff' }).setLngLat([u.lon, u.lat]).addTo(hqMap.map);
+                const m = new maplibregl.Marker({ color: RBCssVar('--info') }).setLngLat([u.lon, u.lat]).addTo(hqMap.map);
                 const pop = new maplibregl.Popup({ offset: 18, closeButton: false });
                 pop.setHTML(`<div class="uloc-pop"><b>@${esc(u.username)}</b>${u.name ? `<br><span>${esc(u.name)}</span>` : ''}<br><a href="../?user=${u.id}">${esc(t('View user'))}</a></div>`);
                 m.setPopup(pop);
