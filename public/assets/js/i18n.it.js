@@ -333,7 +333,7 @@
             'Reset password': 'Reimposta password', 'Your email': 'La tua email', 'Send reset link': 'Invia link', 'Back to sign in': 'Torna ad accedere',
             'Set a new password': 'Imposta una nuova password', 'Update password': 'Aggiorna password',
             'Sign out': 'Esci', 'New roadbook': 'Nuovo roadbook', 'My roadbooks': 'I miei roadbook', 'My activity': 'Le mie attività', 'Me': 'Io',
-            'User locations': 'Posizioni utenti', 'Back to users': 'Torna agli utenti', 'No locations yet.': 'Ancora nessuna posizione.', 'View user': 'Vedi utente',
+            'User locations': 'Posizioni utenti', 'Back to users': 'Torna agli utenti', 'No locations yet.': 'Ancora nessuna posizione.', 'View user': 'Vedi utente', 'View on map': 'Vedi sulla mappa', 'Open in Reader': 'Apri nel Reader', 'Select a roadbook to preview it on the map.': 'Seleziona un roadbook per vederlo sulla mappa.', 'No route yet.': 'Ancora nessun percorso.',
             'Save as': 'Salva come', 'Roadbook duplicated.': 'Roadbook duplicato.', 'Could not duplicate.': 'Impossibile duplicare.',
             'Change photo': 'Cambia foto', 'Save profile': 'Salva profilo', 'Loading…': 'Caricamento…', 'Fork': 'Fork', 'Edit': 'Modifica',
             // toasts

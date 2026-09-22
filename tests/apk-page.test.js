@@ -22,11 +22,10 @@ describe('the apk page exists and loads its module (#540)', () => {
         expect(page).toContain('https://rdbk.app/apk/');
     });
 
-    it('the module resolves the rolling test build and stable releases', () => {
+    it('the module resolves the rolling test build and stable releases server-side', () => {
         const js = read('public/apk/apk.js');
-        expect(js).toContain('api.github.com/repos/alvarofranz/roadbook/releases?per_page=');
+        expect(js).toContain("api('admin_apk_latest'");
         expect(js).toContain('apk-latest');
-        expect(js).toMatch(/\.apk\$/);
         expect(js).toContain('sha256');
     });
 

@@ -296,7 +296,7 @@
             'Reset password': 'Passwort zurücksetzen', 'Your email': 'Deine E-Mail', 'Send reset link': 'Reset-Link senden', 'Back to sign in': 'Zurück zur Anmeldung',
             'Set a new password': 'Neues Passwort setzen', 'Update password': 'Passwort aktualisieren',
             'Sign out': 'Abmelden', 'New roadbook': 'Neues Roadbook', 'My roadbooks': 'Meine Roadbooks', 'My activity': 'Meine Aktivitäten', 'Me': 'Ich',
-            'User locations': 'Nutzerstandorte', 'Back to users': 'Zurück zu Nutzern', 'No locations yet.': 'Noch keine Standorte.', 'View user': 'Nutzer ansehen',
+            'User locations': 'Nutzerstandorte', 'Back to users': 'Zurück zu Nutzern', 'No locations yet.': 'Noch keine Standorte.', 'View user': 'Nutzer ansehen', 'View on map': 'Auf der Karte ansehen', 'Open in Reader': 'Im Reader öffnen', 'Select a roadbook to preview it on the map.': 'Wähle ein Roadbook, um es auf der Karte zu sehen.', 'No route yet.': 'Noch keine Route.',
             'Save as': 'Speichern unter', 'Roadbook duplicated.': 'Roadbook dupliziert.', 'Could not duplicate.': 'Konnte nicht duplizieren.',
             'Change photo': 'Foto ändern', 'Save profile': 'Profil speichern', 'Loading…': 'Lädt…', 'Fork': 'Fork', 'Edit': 'Bearbeiten',
             'Load a roadbook first.': 'Zuerst ein Roadbook laden.', 'Nothing to save.': 'Nichts zu speichern.',

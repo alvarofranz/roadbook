@@ -142,25 +142,33 @@
     // Pagination + search (#244).
     function viewRoadbooks(u) {
         const LABEL = { draft: 'Draft', ready: 'Ready', public: 'Public' };
+        let rbMap = null, rbMapTitle = null, previewId = 0;
         const m = RBModal(`<h2>${esc(t('Roadbooks'))} \u00b7 @${esc(u.username)}</h2>
-            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="rbsSearch" placeholder="${esc(t('Search roadbooks\u2026'))}" autocomplete="off" spellcheck="false"></div>
+            <div class="rb-split">
+            <div class="rb-split-list">
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="rbsSearch" placeholder="${esc(t('Search roadbooks\u2026'))}" autocomplete="off" spellcheck="false" aria-label="${esc(t('Search roadbooks\u2026'))}"></div>
             <div id="rbsBody" class="muted small">${esc(t('Loading\u2026'))}</div>
             <div id="rbsPager" class="pager"></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list');
+            </div>
+            <div class="rb-map-pane"><div id="rbsMap"><p class="muted small">${esc(t('Select a roadbook to preview it on the map.'))}</p></div><p id="rbsMapTitle" class="muted small"></p></div>
+            </div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list-map', () => { if (rbMap) { rbMap.destroy(); rbMap = null; } });
         m.q('[data-cancel]').onclick = m.close;
         let rbPage = 1, rbQuery = '';
         const render = () => api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
             const body = m.q('#rbsBody');
             if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
             if (!r.roadbooks.length) { body.textContent = t('No roadbooks yet.'); return; }
-            body.innerHTML = `<table class="act-table"><tbody>${r.roadbooks.map((rb) => `<tr>
-                <td><b>${esc(rb.title)}</b><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
+            body.innerHTML = `<table class="act-table"><tbody>${r.roadbooks.map((rb) => `<tr data-row="${rb.id}">
+                <td><button class="btn btn-ghost" data-view="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('View on map'))}"><b>${esc(rb.title)}</b></button><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
                 <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
                 <td><button class="btn btn-ghost" data-mv="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move'))}" aria-label="${esc(t('Move'))}"><i class="fa-solid fa-right-left"></i></button></td>
                 <td><button class="btn btn-ghost" data-trash="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move to trash'))}" aria-label="${esc(t('Move to trash'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>
-                <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('View'))}" aria-label="${esc(t('View'))}"><i class="fa-solid fa-eye"></i></a></td>
+                <td><button class="btn btn-ghost" data-view="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('View on map'))}" aria-label="${esc(t('View on map'))}"><i class="fa-solid fa-eye"></i></button></td>
+                <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('Open in Reader'))}" aria-label="${esc(t('Open in Reader'))}"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></td>
                 <td><button class="btn btn-ghost" data-rbexp="${rb.id}" title="${esc(t('Export'))}" aria-label="${esc(t('Export'))}"><i class="fa-solid fa-download"></i></button></td>
             </tr>`).join('')}</tbody></table>`;
+            body.querySelectorAll('[data-view]').forEach((b) => b.onclick = (e) => { e.preventDefault(); preview(+b.dataset.view, b.dataset.title || ''); });
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
                 sel.disabled = true;
                 const x = await api('admin_set_status', { id: +sel.dataset.st, status: sel.value });
@@ -191,6 +199,31 @@
             const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 25)));
             RBPager(m.q('#rbsPager'), rbPage, pages, (p) => { rbPage = p; render(); });
         });
+        // In-popup route preview (#552): the roadbook opens on the map beside the
+        // list, inside the same dialog — no new tab. Rows stay mounted so paging,
+        // search and the admin actions keep working.
+        const preview = async (id, title) => {
+            const body = m.q('#rbsBody');
+            body.querySelectorAll('tr').forEach((tr) => tr.classList.toggle('rb-row-sel', +tr.dataset.row === id));
+            const mapBox = m.q('#rbsMap'), mapTitle = m.q('#rbsMapTitle');
+            if (mapTitle) mapTitle.textContent = title || '';
+            if (!window.maplibregl || !window.RBMap) { if (mapBox) mapBox.innerHTML = `<p class="muted small">${esc(t('Map not configured.'))}</p>`; return; }
+            const my = ++previewId;
+            if (mapBox && !rbMap) {
+                mapBox.innerHTML = '';
+                rbMap = new RBMap(mapBox.id, { style: RBMap.STYLE_TOPO, layerToggle: true, geolocate: false });
+            }
+            if (mapTitle) mapTitle.textContent = `${t('Loading…')} ${title || ''}`.trim();
+            let j = null;
+            try { j = await api('admin_rb_get', { id }); } catch (e) { j = null; }
+            if (my !== previewId) return; // a newer preview won the race
+            if (!j || !j.ok || !j.roadbook) { if (mapTitle) mapTitle.textContent = (j && j.error) || t('Could not load.'); return; }
+            const rb = j.roadbook;
+            if (!rb.track || !rb.track.length) { if (mapTitle) mapTitle.textContent = `${title || ''} — ${t('No route yet.')}`.trim(); return; }
+            rbMap.showRoadbook(rb);
+            if (rbMap.map) setTimeout(() => rbMap.map.resize(), 50); // the dialog just laid out: force the GL canvas to its box
+            if (mapTitle) mapTitle.textContent = `${title || ''} · ${RBSummary(rb.total_distance || 0, (rb.notes || []).length)}`;
+        };
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = (rbId, rbTitle) => {
             RBRowPicker({
