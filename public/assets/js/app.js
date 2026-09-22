@@ -1391,7 +1391,8 @@
         if (seen) return;
         const el = document.createElement('div');
         el.className = 'webgps-banner'; el.setAttribute('role', 'note');
-        el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span class="webgps-text">${RBt(msg || 'web.gps.warn')}</span>`;
+        // one short line and the way out (#727): the apps, from the install guide
+        el.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span class="webgps-text">${RBt(msg || 'web.gps.warn')} <a href="${ROOT}install/">${RBt('Get the app')}</a></span>`;
         const close = document.createElement('button');
         close.type = 'button'; close.className = 'webgps-x'; close.setAttribute('aria-label', RBt('Close'));
         close.textContent = '×'; close.onclick = () => { try { sessionStorage.setItem(GPS_WARN_KEY, '1'); } catch (e) {} el.remove(); };

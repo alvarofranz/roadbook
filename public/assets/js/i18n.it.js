@@ -85,7 +85,7 @@
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odometro GPS preciso senza roadbook — distanza parziale e totale.',
             'feat.7.t': 'Misurati in un roadbook', 'feat.7.d': 'Organizza un rally su un unico roadbook: confronta la prova di ogni team — precisione, CAP, velocità e regolarità — in una classifica finale, dai QR dei risultati firmati.',
             'events.t': 'Eventi', 'events.d': 'Organizza eventi attorno ai tuoi roadbook — invita i team, corri il rally e pubblica i risultati.', 'route map': 'mappa del percorso',
-            'install.kicker': 'Multipiattaforma', 'install.title': 'Installala su qualsiasi dispositivo', 'install.text': 'RDBK.app funziona ovunque: app native per iPhone, iPad e Android — con un GPS che continua a registrare a schermo bloccato — e una web app installabile e gratuita per Windows, Mac e Linux che funziona anche offline.',
+            'install.title': 'Installala su qualsiasi dispositivo', 
             'gallery.kicker': 'Galleria', 'gallery.title': 'Roadbook pubblici', 'gallery.loading': 'Caricamento…', 'gallery.empty': 'Ancora nessun roadbook pubblico.',
             // Aiuti dei campi dell'editor (issue #89)
             'help.road': 'La superficie su cui prosegui da questa nota (predefinita, asfalto, sterrato, fuoripista); resta valida finché una nota successiva non la cambia.',
@@ -739,7 +739,7 @@
             'native.better.gps.recorder': 'Per la registrazione GPS in background e una migliore precisione, usa l\'app nativa iOS o Android.',
             'native.better.gps.reader': 'Per una navigazione GPS ininterrotta e tracciamento in background, usa l\'app nativa iOS o Android.',
             'native.better.gps.tripmaster': 'Per un odometro GPS continuo e registrazione in background, usa l\'app nativa iOS o Android.',
-            'web.gps.warn': 'In un browser il GPS è meno affidabile sui telefoni — soprattutto Android (e a volte iOS): è meno preciso, può derivare e si ferma quando lo schermo si blocca o si esce dalla pagina. Usa l\'app nativa RDBK per qualsiasi attività che ne dipenda.',
+            'web.gps.warn': 'Il GPS del browser non è affidabile sui telefoni: naviga con l’app RDBK.',
             'web.gps.alt': 'L’app nativa di RDBK continua a funzionare in background ed è più precisa. Disponibile su App Store e Google Play.',
             'web.gps.title': 'Il GPS del browser può essere inaffidabile sui telefoni',
             'web.gps.comp.title': 'Questa prova è valutata sulla precisione del GPS',
@@ -1368,7 +1368,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* website and app home redesign (#720) */
 Object.assign(window.RBi18nLangs.it, {
-    "Start in the browser": "Inizia nel browser",
+    
     "Record a route": "Registra un percorso",
     "GPS track, notes, photos and voice memos": "Traccia GPS, note, foto e memo vocali",
     "See all": "Vedi tutti",
@@ -1378,4 +1378,9 @@ Object.assign(window.RBi18nLangs.it, {
     "Get it on": "Disponibile su",
     "Windows · Mac · Linux: install the web app": "Windows · Mac · Linux: installa la web app",
     "No roadbooks yet — record a route or draw one in the Editor.": "Ancora nessun roadbook: registra un percorso o disegnane uno nell’Editor.",
+});
+
+/* home workflow strip (#725) */
+Object.assign(window.RBi18nLangs.it, {
+    "Workflow": "Come funziona",
 });
