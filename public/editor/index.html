@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.1-80">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-81">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.1-80">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-81">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -91,9 +91,11 @@
         .icon-cat-chip.on { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
         .note-mini { display: flex; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--rt, #ff5a45); border-radius: 10px; padding: .35rem .5rem .35rem .7rem; cursor: pointer; }
         .note-mini.sel { border-color: var(--sand); box-shadow: 0 0 0 2px var(--sand) inset; }
-        /* the left cell: what the row IS (its number, or its kind's icon) with Delete under it */
-        .note-mini .note-number { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem; font-weight: 800; color: var(--sand); }
-        .note-mini .note-del { display: inline-flex; background: none; border: 0; padding: .1rem .3rem; font: inherit; font-size: .8rem; font-weight: 800; line-height: 1; cursor: pointer; }
+        /* the left cell: the note's number; Delete sits in the row's top-left corner, clear of it */
+        .note-mini { position: relative; }
+        .note-mini .note-number { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem; padding-top: 1rem; font-weight: 800; color: var(--sand); }
+        .note-mini .note-del { position: absolute; top: .2rem; left: .25rem; display: inline-flex; background: none; border: 0; padding: .1rem .25rem; font: inherit; font-size: .78rem; line-height: 1; cursor: pointer; opacity: .75; }
+        .note-mini .note-del:hover { opacity: 1; }
         /* the text cell: the note's own text (fills the row height), with CAP + coordinates below it */
         .note-mini .note-textcell { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: .25rem; }
         .note-mini .note-title { flex: 1; width: 100%; min-width: 0; min-height: 2.2rem; margin: 0; padding: .3rem .5rem; resize: none; }
@@ -118,14 +120,19 @@
         .note-block.block-text { display: block; }
         .note-block.block-text .block-text { font-size: 1.05rem; line-height: 1.45; white-space: pre-wrap; text-align: center; font-style: italic; }
         /* the editor tabs: the note itself, or the material around it */
-        .kind-tabs { display: flex; gap: .35rem; margin: 0 0 .5rem; }
+        .kind-tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .5rem; }
+        /* a tab's pane: the zone around it is the box, so the pane draws none of its own */
+        .tab-pane { padding-top: .5rem; }
         .kind-tab { display: inline-flex; align-items: center; gap: .35rem; background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 10px; padding: .3rem .7rem; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
         .kind-tab.on { background: var(--sand); border-color: var(--sand); color: var(--on-sand); }
         .kind-tab:disabled { opacity: .4; cursor: not-allowed; }
+        /* how many icons / how much material this tab already holds */
+        .kind-tab .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 .25rem; background: rgba(255, 255, 255, .12); border-radius: 999px; font-size: .68rem; font-weight: 800; }
+        .kind-tab.on .tab-count { background: rgba(0, 0, 0, .18); }
         .note-list-zone > .icon-category { display: flex; align-items: center; gap: .4rem; }
-        /* the panel a material tab opens: every block of that type on this note, one card each */
-        #blockPanel { display: flex; flex-direction: column; gap: .6rem; padding: .2rem 0; }
-        .block-card { display: flex; flex-direction: column; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; }
+        /* the panel a material tab opens: the control itself — no box inside the box */
+        #blockPanel { display: flex; flex-direction: column; gap: .6rem; }
+        .block-card { display: flex; flex-direction: column; gap: .5rem; }
         .block-card .block-head { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
         .block-side { display: flex; align-items: center; gap: .7rem; font-size: .78rem; font-weight: 700; color: var(--muted); }
         .block-side label { display: inline-flex; align-items: center; gap: .3rem; cursor: pointer; }
@@ -428,33 +435,31 @@
             </div>
             <!-- ZONE 2: the selected note's editor — expands inline under the tapped row -->
             <div id="noteEditZone" class="note-edit-zone" hidden>
-                <!-- the note itself, or the material around it: one tab per RB.NOTE_BLOCKS entry -->
+                <!-- one tab per pane: the note's settings, its icons, and the material around it -->
                 <div class="kind-tabs" id="kindTabs" role="tablist"></div>
-                <div class="vig-split" id="noteEditStd">
-                    <div class="vig-canvas">
-                        <!-- What NoteCanvas draws for the selected icon/junction: it names itself
-                             (Icon tools / Junction tools) and takes no space with nothing selected. -->
-                        <div id="noteToolbar" class="icon-tools"></div>
-                    </div>
-                    <div class="vig-icons">
-                        <input id="iconFile" type="file" accept="image/*" multiple hidden>
-                        <!-- one slim row for every way to bring an icon in: search the palette, paste, upload -->
-                        <div class="icon-bar">
-                            <input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off">
-                            <button class="btn btn-ghost" id="pasteIconBtn" data-i18n-title="Paste icon" title="Paste icon" data-i18n-aria="Paste icon" aria-label="Paste icon"><i class="fa-solid fa-paste"></i></button>
-                            <button class="btn btn-ghost" id="addIconBtn" data-i18n-title="Upload icon" title="Upload icon" data-i18n-aria="Upload icon" aria-label="Upload icon"><i class="fa-solid fa-plus"></i></button>
-                        </div>
-                        <div id="iconCats" class="icon-cats"></div>
-                        <div id="iconGrid" class="icon-grid"></div>
-                        <div class="note-params"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
-                    </div>
+                <!-- PANE: what the note IS — road, danger, speed, CAP, waypoint type, radius -->
+                <div class="tab-pane" id="notePane">
+                    <div class="note-params"><span id="roadSlot"></span><span id="dangerSlot"></span><span id="speedSlot"></span><span id="capTypeSlot"></span><span id="wpTypeSlot"></span><span id="wpRadiusSlot"></span></div>
                 </div>
-                <!-- The material attached to this note: every photo/advert/text of the selected
-                     type, each with the side it sits on. Built by the editor from RB.NOTE_BLOCKS. -->
-                <!-- the picker's input lives OUTSIDE the panel: the panel rewrites its own
-                     innerHTML, which would destroy the very input the click handler opens -->
+                <!-- PANE: the icons on its tulip — the selected element's tools, the search, the palette -->
+                <div class="tab-pane" id="iconPane" hidden>
+                    <!-- What NoteCanvas draws for the selected icon/junction: it names itself
+                         (Icon tools / Junction tools) and takes no space with nothing selected. -->
+                    <div id="noteToolbar" class="icon-tools"></div>
+                    <input id="iconFile" type="file" accept="image/*" multiple hidden>
+                    <!-- one slim row for every way to bring an icon in: search the palette, paste, upload -->
+                    <div class="icon-bar">
+                        <input id="iconSearch" class="field grow" type="search" placeholder="Search icons…" data-i18n-ph="Search icons…" data-i18n-aria="Search icons…" aria-label="Search icons…" autocomplete="off">
+                        <button class="btn btn-ghost" id="pasteIconBtn" data-i18n-title="Paste icon" title="Paste icon" data-i18n-aria="Paste icon" aria-label="Paste icon"><i class="fa-solid fa-paste"></i></button>
+                        <button class="btn btn-ghost" id="addIconBtn" data-i18n-title="Upload icon" title="Upload icon" data-i18n-aria="Upload icon" aria-label="Upload icon"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="iconCats" class="icon-cats"></div>
+                    <div id="iconGrid" class="icon-grid"></div>
+                </div>
+                <!-- PANE: the material around the note — the picker's input lives OUTSIDE it, because
+                     the pane rewrites its own innerHTML and would destroy the input it opens -->
                 <input id="edBlockImg" type="file" accept="image/*" hidden>
-                <div id="blockPanel" hidden></div>
+                <div class="tab-pane" id="blockPanel" hidden></div>
             </div>
             <!-- the tulip editor canvas: JS parks it here and moves it INTO the selected note's row (between distance and text) -->
             <div id="canvasWrap" hidden>
@@ -532,22 +537,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.1-80"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.1-80"></script>
-<script src="../assets/js/rbzip.js?v=1.9.1-80"></script>
-<script src="../assets/js/rbmap.js?v=1.9.1-80"></script>
-<script src="../assets/js/cover-map.js?v=1.9.1-80"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.1-80"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.1-80"></script>
-<script src="../assets/js/challenges.js?v=1.9.1-80"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.1-80"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.1-80"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.1-80"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.1-80"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.1-80"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.1-80"></script>
-<script src="../assets/js/i18n.js?v=1.9.1-80"></script>
-<script src="../assets/js/app.js?v=1.9.1-80"></script>
-<script src="editor.js?v=1.9.1-80"></script>
+<script src="../assets/js/config.js?v=1.9.2-81"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-81"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-81"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-81"></script>
+<script src="../assets/js/cover-map.js?v=1.9.2-81"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-81"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.2-81"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-81"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.2-81"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-81"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-81"></script>
+<script src="../assets/js/app.js?v=1.9.2-81"></script>
+<script src="editor.js?v=1.9.2-81"></script>
 </body>
 </html>

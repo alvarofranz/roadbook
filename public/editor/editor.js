@@ -1574,13 +1574,17 @@
        placed BEFORE or AFTER it, none, one or several of each. The tab bar picks what you are
        editing: the note itself, or one type of material; the tabs, the cards and the row preview
        are all built from RB.NOTE_BLOCKS, so a fourth type is one entry in that catalog. */
-    let blockTab = '';  // '' = the note itself; otherwise a RB.NOTE_BLOCKS id
+    // The tabs, in the order the work happens: what the note IS (its parameters), the icons on
+    // its tulip, then the material around it. The first two are panes of the editor; the rest come
+    // from RB.NOTE_BLOCKS, each showing how many it already holds.
+    let blockTab = '';  // '' = the parameters · 'icon' = the palette · otherwise a RB.NOTE_BLOCKS id
     function renderBlockTabs(n) {
         const count = (id) => RB.noteBlocks(n).filter((b) => RB.blockType(b).id === id).length;
-        const tab = (id, icon, label, on, badge) =>
-            `<button type="button" class="kind-tab${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
-        $('kindTabs').innerHTML = tab('', 'fa-location-dot', t('Note'), !blockTab, 0)
-            + RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), blockTab === k.id, count(k.id))).join('');
+        const tab = (id, icon, label, badge) =>
+            `<button type="button" class="kind-tab${blockTab === id ? ' on' : ''}" role="tab" aria-selected="${blockTab === id}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
+        $('kindTabs').innerHTML = tab('', 'fa-location-dot', t('Note'), 0)
+            + tab('icon', 'fa-icons', t('Icon'), (n.icons || []).length)
+            + RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('');
         $('kindTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = (e) => {
             e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
         });
@@ -1679,16 +1683,14 @@
     function renderEditor() {
         const n = rb.notes[sel];
         renderBlockTabs(n);
-        // A material tab shows that material and nothing else: the tulip tools, the icon palette
-        // and the geo parameters belong to the note, which is one tab away.
-        if (blockTab) {
-            $('noteEditStd').hidden = true;
-            $('blockPanel').hidden = false;
-            renderBlockPanel(n);
-            return;
-        }
-        $('noteEditStd').hidden = false;
-        $('blockPanel').hidden = true;
+        // One pane at a time, so each tab shows its own job and nothing else. The tulip canvas is
+        // not in here: it lives in the note's row, in sight whichever tab is open.
+        const material = blockTab && blockTab !== 'icon';
+        $('notePane').hidden = !!blockTab;
+        $('iconPane').hidden = blockTab !== 'icon';
+        $('blockPanel').hidden = !material;
+        if (material) { renderBlockPanel(n); return; }
+        if (blockTab === 'icon') { renderIcons(); return; } // the palette lists this note's own icons too
 
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');

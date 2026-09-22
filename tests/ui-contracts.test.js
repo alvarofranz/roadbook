@@ -966,10 +966,18 @@ describe('the note editor leads with the icons (#527 · #530)', () => {
         expect(html, 'a standing title is what the empty bar replaced').not.toContain('icon-tools-title');
     });
 
-    it('the gallery comes before the note parameters', () => {
-        const zone = html.slice(html.indexOf('class="vig-icons"'), html.indexOf('id="commentForm"'));
-        expect(zone.indexOf('id="iconGrid"')).toBeGreaterThan(-1);
-        expect(zone.indexOf('id="iconGrid"'), 'the parameters still come first').toBeLessThan(zone.indexOf('id="roadSlot"'));
+    it('the icons and the parameters are panes of their own, in tab order (#556)', () => {
+        // they used to share one scroll of controls; now each tab shows its own job and nothing
+        // else, so the palette cannot push the note's parameters off the screen
+        expect(html).toContain('<div class="tab-pane" id="notePane">');
+        expect(html).toContain('<div class="tab-pane" id="iconPane" hidden>');
+        expect(html.indexOf('id="notePane"'), 'the note comes first').toBeLessThan(html.indexOf('id="iconPane"'));
+        const notePane = html.slice(html.indexOf('id="notePane"'), html.indexOf('id="iconPane"'));
+        expect(notePane).toContain('id="roadSlot"');
+        expect(notePane, 'the palette belongs to the icon tab').not.toContain('id="iconGrid"');
+        const iconPane = html.slice(html.indexOf('id="iconPane"'), html.indexOf('id="edBlockImg"'));
+        expect(iconPane).toContain('id="iconGrid"');
+        expect(iconPane).toContain('id="noteToolbar"');
     });
 
     it('the palette is a two-row strip of equal tiles that scrolls sideways', () => {
