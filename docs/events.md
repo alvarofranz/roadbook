@@ -155,6 +155,10 @@ La lista partecipanti su pagina propria (#144): un evento può averne centinaia,
   singola (`participant_activate`), **Activate all** (`event_participants_activate_pending`, #416),
   **Add participant** (`user_search` con `event_id`: chi è già dentro è marcato e non aggiungibile,
   #605) e **Export CSV** (`username, first_name, last_name, email, status, joined`, #606).
+  **Import list** (#153): un CSV (anche l'export stesso) o una lista incollata — `RB.parseEmailList`
+  trova le email in qualunque colonna; `event_participants_import` iscrive come **attivi** gli
+  account esistenti (idempotente) e restituisce chi non ha un account, senza mai crearne: quelle
+  persone si registrano (i Terms si accettano alla registrazione, #135) e un nuovo import le prende.
 - Nella **lista eventi** (`/admin/events/`) il Delete compare solo al proprietario/admin
   (`is_owner`, #600) e la conferma — condivisa con l'editor, `RBEventDelete` — dice cosa se ne va:
   partecipanti e collegamenti ai roadbook, non i roadbook (#601).

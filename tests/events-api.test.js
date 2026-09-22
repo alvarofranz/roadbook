@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
+import RBcore from '../public/assets/js/roadbook-core.js';
 
 /* The events API rules that decide who gets in and what they may see. There is no PHP harness
    in CI (#327), so these pin the rules in the source, the way the rest of the suite pins PHP. */
@@ -78,5 +79,20 @@ describe('codes, activation and slugs', () => {
     });
     it('the management list says who owns each event (#600)', () => {
         expect(fn('events_manage')).toContain("'is_owner' => is_admin($user) || (int)$r['organizer_id'] === (int)$user['id']");
+    });
+});
+
+describe('import a participants list (#153)', () => {
+    it('finds every email once, in any column, header or not', () => {
+        const csv = 'username,first_name,last_name,email,status\npilot,Paola,Pilot,Pilot@Test.local,active\n"x, y",A,B,orga@test.local,pending\nnot an email\norga@test.local';
+        expect(RBcore.parseEmailList(csv)).toEqual(['pilot@test.local', 'orga@test.local']);
+    });
+    it('enrols existing accounts as active, reports the rest, never creates accounts', () => {
+        const src = fs.readFileSync('app/events.php', 'utf8');
+        const body = src.match(/function event_participants_import\([^)]*\)[^{]*\{([\s\S]*?)\n\}/)[1];
+        expect(body).toContain('require_event_manage($user');
+        expect(body).toContain("VALUES (?, ?, 'active') ON DUPLICATE KEY UPDATE status = 'active'");
+        expect(body).toContain('$missing[] = $email;');
+        expect(body).not.toMatch(/INSERT INTO users/);
     });
 });

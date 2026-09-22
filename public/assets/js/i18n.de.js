@@ -1200,3 +1200,20 @@ Object.assign(window.RBi18nLangs.de, {
     "Search by key or text, in any language…": "Nach Schlüssel oder Text suchen, in jeder Sprache…",
     "No label matches.": "Kein Text passt.",
 });
+
+/* import a participants list (#153) */
+Object.assign(window.RBi18nLangs.de, {
+    "Import list": "Liste importieren",
+    "A CSV or a pasted list: every email that belongs to an RDBK account is enrolled as active. People without an account are listed — invite them to register, then import again.": "Eine CSV oder eine eingefügte Liste: Jede E-Mail, die zu einem RDBK-Konto gehört, wird als aktiv eingeschrieben. Personen ohne Konto werden aufgelistet – lade sie zur Registrierung ein und importiere dann erneut.",
+    "Choose a CSV file": "CSV-Datei wählen",
+    "…or paste the emails here": "…oder füge die E-Mails hier ein",
+    "email addresses found": "E-Mail-Adressen gefunden",
+    "Enrol": "Einschreiben",
+    "enrolled": "eingeschrieben",
+    "were already participants": "waren schon Teilnehmende",
+    "without an RDBK account": "ohne RDBK-Konto",
+    "Copy these emails": "Diese E-Mails kopieren",
+    "No email addresses found.": "Keine E-Mail-Adressen gefunden.",
+    "Import at most 500 people at a time.": "Importiere höchstens 500 Personen auf einmal.",
+    "Could not import.": "Import fehlgeschlagen.",
+});
