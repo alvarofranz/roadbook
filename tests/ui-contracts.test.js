@@ -606,10 +606,14 @@ describe('activity log modal, filtered by user type (#448)', () => {
     });
 
     it('plain users stay scoped to self while admins may pick any user', () => {
-        const fn = app.match(/window\.RBActivityLog = async function \(\) \{([\s\S]*?)\n    \};/)[1];
+        const fn = app.match(/window\.RBActivityLog = async function \(opts\) \{([\s\S]*?)\n    \};/)[1];
         expect(fn).toContain("RBApi('activity_mine'");
         expect(fn).toContain("RBApi('admin_activity'");
         expect(fn).toContain('user_search');
+        // ONE viewer (#665): the admin user list opens it on a user instead of its own copy
+        const admin = read('public/admin/admin.js');
+        expect(admin).toContain('RBActivityLog({ user: byId[+b.dataset.activity] })');
+        expect(admin).not.toContain('function viewActivity');
     });
 });
 

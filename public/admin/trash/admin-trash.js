@@ -19,7 +19,7 @@
         if (!list.length) { box.innerHTML = `<p class="muted">${esc(t('The trash is empty.'))}</p>`; return; }
         const expired = list.filter((rb) => (rb.days_left || 0) <= 0).length;
         box.innerHTML = `<p class="muted small">${esc(t('Deleted roadbooks are kept for a while, then permanently removed.'))}</p>`
-            + (expired > 0 ? `<div class="btnrow end"><button class="btn btn-danger" id="trashPurgeExpired"><i class="fa-solid fa-trash"></i> ${esc(t('Delete expired'))} (${expired})</button></div>` : '')
+            + (expired > 0 ? `<div class="btnrow end"><button class="btn btn-danger" id="trashPurgeExpired"><i class="fa-solid fa-trash-can"></i> ${esc(t('Delete expired'))} (${expired})</button></div>` : '')
             + '<div class="trash-rows">' + list.map(rowHtml).join('') + '</div>';
         if (expired > 0) $('trashPurgeExpired').onclick = async (e) => {
             if (!(await RBConfirmDanger(expired + ' ' + t('roadbooks past retention will be permanently deleted. Continue?')))) return;
@@ -46,7 +46,7 @@
             </div>
             <div class="btnrow end">
                 <button class="btn btn-ghost" data-restore="${rb.id}"><i class="fa-solid fa-rotate-left"></i> ${esc(t('Restore'))}</button>
-                <button class="btn btn-danger" data-purge="${rb.id}"><i class="fa-solid fa-trash"></i> ${esc(t('Delete now'))}</button>
+                <button class="btn btn-ghost" data-purge="${rb.id}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete now'))}</button>
             </div>
         </div>`;
     }
@@ -57,13 +57,17 @@
         // restores + reassigns in one flow (#234).
         if (rb.graveyard) return restoreToUser(rb);
         const r = await RBApi('admin_rb_restore', { id: rb.id });
-        if (!r.ok) return toast(r.error || 'Error');
+        if (!r.ok) return toast(r.error || 'Could not restore.');
         toast(t('Restored as a draft.')); load();
     }
 
     let allUsers = null; // lazy: fetched on the first graveyard restore
     async function restoreToUser(rb) {
-        if (!allUsers) { const u = await RBApi('admin_users'); allUsers = (u.ok && u.users) || []; }
+        if (!allUsers) {
+            const u = await RBApi('admin_users');
+            if (!u.ok) return toast(u.error || 'Could not load.'); // a failed load is not "No users yet" (#667)
+            allUsers = u.users || [];
+        }
         RBRowPicker({
             title: 'Restore', icon: 'fa-rotate-left', card: 'narrow',
             lead: 'Pick the user who gets this roadbook back (as a draft).',
@@ -74,7 +78,7 @@
                 if (!(await RBConfirm(t('Move this roadbook to') + ' @' + u.username + '?'))) return;
                 modal.close();
                 const r = await RBApi('admin_rb_restore', { id: rb.id });
-                if (!r.ok) { toast(r.error || 'Error'); load(); return; }
+                if (!r.ok) { toast(r.error || 'Could not restore.'); load(); return; }
                 const m = await RBApi('admin_move_roadbook', { id: rb.id, user_id: +u.id });
                 toast(m.ok ? t('Restored as a draft.') + ' \u2192 @' + u.username : (m.error || 'Could not move.'));
                 load();
@@ -85,9 +89,9 @@
     async function purge(rb) {
         const title = rb.title || t('Untitled');
         // deletion confirm names the object being removed (CLAUDE.md); this is irreversible
-        if (!(await RBConfirm(t('Permanently delete') + ' “' + esc(title) + '”? ' + t('This cannot be undone.'), true))) return;
+        if (!(await RBConfirmDanger(t('Permanently delete') + ' “' + esc(title) + '”? ' + t('This cannot be undone.')))) return;
         const r = await RBApi('admin_rb_purge', { id: rb.id });
-        if (!r.ok) return toast(r.error || 'Error');
+        if (!r.ok) return toast(r.error || 'Could not delete.');
         toast(t('Permanently deleted.')); load();
     }
 

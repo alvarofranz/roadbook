@@ -6,25 +6,25 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, allUsers = [], byId = {}, page = 1, query = '', orgFilter = '', fltRb = false, fltEv = false;
+    let me = 0, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false, orgTimer = null;
 
     function rowHtml(u) {
         const isMe = u.id === me;
-        const badges = (u.is_admin ? `<span class="u-badge u-admin">admin</span> ` : '')
+        const badges = (u.is_admin ? `<span class="u-badge u-admin">${esc(t('Admin'))}</span> ` : '')
             + (u.is_organizer ? `<span class="u-badge u-organizer">${esc(t('organizer'))}</span> ` : '')
             + (u.blocked ? `<span class="u-badge u-blocked">${esc(t('blocked'))}</span> ` : '')
             + (u.mustchange ? `<span class="u-badge u-unverified">${esc(t('must change password'))}</span> ` : '')
             + (u.verified ? '' : `<span class="u-badge u-unverified">${esc(t('unverified'))}</span>`);
-        // quick event-organizer toggle; the admin role moved into the Edit dialog. An admin
-        // already runs every event, so the toggle only shows for non-admin users.
+        // quick event-organizer toggle (the admin role is set in the Edit dialog). An admin already
+        // runs every event, so the toggle only shows for non-admin users.
         const role = u.locked
-            ? `<span class="u-badge u-admin" title="${esc(t('Configured in .env'))}">superuser</span>`
+            ? `<span class="u-badge u-admin" title="${esc(t('Configured in .env'))}">${esc(t('Superuser'))}</span>`
             : (u.is_admin ? '' : `<button class="btn btn-ghost" data-org="${u.id}" data-make="${u.is_organizer ? 0 : 1}">${esc(t(u.is_organizer ? 'Remove event organizer' : 'Make event organizer'))}</button>`);
         const activate = u.verified ? '' : `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>`;
         const edit = `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>`;
         const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
         const block = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
-        const del = (u.locked || isMe) ? '' : `<button class="btn btn-danger" data-del="${u.id}" data-name="${esc(u.username)}">${esc(t('Delete'))}</button>`;
+        const del = (u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-del="${u.id}" data-name="${esc(u.username)}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete'))}</button>`;
         const roadbooks = `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>`;
         return `<tr>
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
@@ -99,43 +99,6 @@
         };
     }
 
-    // Read-only inspection (#86): a user's stats + recent activity timeline (IPs are anonymised).
-    // Pagination + search + export CSV (#244).
-    function viewActivity(u) {
-        const m = RBModal(`<h2>${esc(t('Activity'))} · @${esc(u.username)}</h2>
-            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field" id="actSearch" placeholder="${esc(t('Search\u2026'))}" autocomplete="off" spellcheck="false">
-            <button class="btn btn-ghost" id="actExport" title="${esc(t('Export CSV'))}" aria-label="${esc(t('Export CSV'))}"><i class="fa-solid fa-download"></i></button></div>
-            <div id="actBody" class="muted small">${esc(t('Loading\u2026'))}</div>
-            <div id="actPager" class="pager"></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
-        m.q('[data-cancel]').onclick = m.close;
-        let actPage = 1, actQuery = '';
-        const loadAct = () => {
-            api('admin_activity', { id: u.id, page: actPage, q: actQuery }).then((r) => {
-                const body = m.q('#actBody');
-                if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
-                const stats = `<p class="hint">${r.stats.roadbooks} ${esc(t('roadbooks'))} \u00b7 ${fmtSize(r.stats.bytes)}</p>`;
-                const rows = r.events.length
-                    ? r.events.map((e) => `<tr><td class="small">${esc(e.created_at)}</td><td>${esc(e.action.replace(/_/g, ' '))}</td><td class="muted small">${esc(e.detail || '')}</td><td class="muted small">${esc(e.ip || '')}</td></tr>`).join('')
-                    : `<tr><td colspan="4" class="muted small">${esc(t('No activity yet.'))}</td></tr>`;
-                body.innerHTML = stats + `<table class="act-table"><tbody>${rows}</tbody></table>`;
-                const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 50)));
-                RBPager(m.q('#actPager'), actPage, pages, (p) => { actPage = p; loadAct(); });
-            });
-        };
-        m.q('#actSearch').oninput = () => { actQuery = m.q('#actSearch').value; actPage = 1; loadAct(); };
-        m.q('#actExport').onclick = () => {
-            api('admin_activity', { id: u.id, q: actQuery, page: 1, per_page: 10000 }).then((r) => {
-                if (!r.ok || !r.events.length) return;
-                const csv = '\uFEFF' + ['action,detail,ip,created_at'].concat(r.events.map((e) =>
-                    `"${e.action}","${(e.detail || '').replace(/"/g, '""')}","${e.ip || ''}","${e.created_at}"`
-                )).join('\n');
-                RBDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'activity_' + u.username + '.csv');
-            });
-        };
-        loadAct();
-    }
-
     // A user's roadbooks (any status) with an admin status control, owner reassignment (#126),
     // a per-row view in the Reader (admin-authenticated, works for draft/ready/public) and a
     // .rdbk export (media-less, like the Editor without "Include photos & audio").
@@ -164,9 +127,8 @@
                 <td><select class="rb-status rb-status-${rb.status}" data-st="${rb.id}" aria-label="${esc(t('Status'))}">${RB.ROADBOOK_STATUSES.map((s) => `<option value="${s}"${rb.status === s ? ' selected' : ''}>${esc(t(LABEL[s]))}</option>`).join('')}</select></td>
                 <td><button class="btn btn-ghost" data-mv="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move'))}" aria-label="${esc(t('Move'))}"><i class="fa-solid fa-right-left"></i></button></td>
                 <td><button class="btn btn-ghost" data-trash="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('Move to trash'))}" aria-label="${esc(t('Move to trash'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button></td>
-                <td><button class="btn btn-ghost" data-view="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('View on map'))}" aria-label="${esc(t('View on map'))}"><i class="fa-solid fa-eye"></i></button></td>
-                <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('Open in Reader'))}" aria-label="${esc(t('Open in Reader'))}"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></td>
-                <td><button class="btn btn-ghost" data-rbexp="${rb.id}" title="${esc(t('Export'))}" aria-label="${esc(t('Export'))}"><i class="fa-solid fa-download"></i></button></td>
+                <td><a class="btn btn-ghost" href="/reader/?admin_rb=${rb.id}" target="_blank" rel="noopener" title="${esc(t('Open in Reader'))}" aria-label="${esc(t('Open in Reader'))}"><i class="fa-solid fa-compass"></i></a></td>
+                <td><button class="btn btn-ghost" data-rbexp="${rb.id}" title="${esc(t('Export'))}" aria-label="${esc(t('Export'))}"><i class="fa-solid fa-file-export"></i></button></td>
             </tr>`).join('')}</tbody></table>`;
             body.querySelectorAll('[data-view]').forEach((b) => b.onclick = (e) => { e.preventDefault(); preview(+b.dataset.view, b.dataset.title || ''); });
             body.querySelectorAll('[data-st]').forEach((sel) => sel.onchange = async () => {
@@ -186,15 +148,16 @@
                 render();
             });
             body.querySelectorAll('[data-rbexp]').forEach((b) => b.onclick = async () => {
-                b.disabled = true; // no double clicks while the payload is fetched and zipped
+                const busy = RBBusy(b); // no double clicks while the payload is fetched and zipped
                 try {
                     const j = await api('admin_rb_get', { id: +b.dataset.rbexp });
-                    if (!j.ok || !j.roadbook) return toast(j.error || 'Could not export.');
+                    if (!j.ok || !j.roadbook) { busy.reset(); return toast(j.error || 'Could not export.'); }
                     const d = new Date(), p = RB.pad2;
                     const base = RB.slug((j.roadbook.meta && j.roadbook.meta.title) || j.title)
                         + '_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
                     await RBDownload(await RBZip.write({ 'roadbook.json': JSON.stringify(RB.roadbookForExport(j.roadbook)) }), base + '.rdbk');
-                } finally { b.disabled = false; }
+                    busy.ok();
+                } catch (e) { busy.reset(); toast('Could not export.'); }
             });
             const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 25)));
             RBPager(m.q('#rbsPager'), rbPage, pages, (p) => { rbPage = p; render(); });
@@ -271,7 +234,7 @@
             x.ok ? load() : toast(x.error || 'Could not save.');
         });
         body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
-        body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => viewActivity(byId[+b.dataset.activity]));
+        body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => RBActivityLog({ user: byId[+b.dataset.activity] })); // the one activity viewer (#665)
         body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')'))) return;
@@ -282,22 +245,24 @@
         });
     }
 
-    // Filter (by username/email/name) → quick toggles → paginate (25/page) → draw the visible rows + pager.
-    function render() {
-        let filtered = (window.RB && RB.filterByText)
-            ? RB.filterByText(allUsers, query, ['username', 'email', 'first_name', 'last_name', 'name'])
-            : allUsers;
-        if (fltRb) filtered = filtered.filter((u) => (u.roadbooks || 0) > 0);
-        if (fltEv) filtered = filtered.filter((u) => !!u.manages_events);
-        const pages = Math.max(1, Math.ceil(filtered.length / PER));
-        if (page > pages) page = pages;
-        const slice = filtered.slice((page - 1) * PER, page * PER);
-        $('usersBody').innerHTML = slice.length
-            ? slice.map(rowHtml).join('')
-            : `<tr><td colspan="3" class="muted">${esc(t('Nothing matches that search.'))}</td></tr>`;
-        wireRows();
-        RBPager($('usersPager'), page, pages, (p) => { page = p; render(); }, filtered.length ? `${filtered.length} ${esc(t('users'))}` : '');
-    }
+    // Filter (by username/email/name) → quick toggles → the shared paged list (#664).
+    const list = RBPagedList({
+        pager: $('usersPager'), per: PER, source: () => allUsers,
+        filter: (items) => {
+            let filtered = RB.filterByText(items, query, ['username', 'email', 'first_name', 'last_name', 'name']);
+            if (fltRb) filtered = filtered.filter((u) => (u.roadbooks || 0) > 0);
+            if (fltEv) filtered = filtered.filter((u) => !!u.manages_events);
+            return filtered;
+        },
+        draw: (slice) => {
+            $('usersBody').innerHTML = slice.length
+                ? slice.map(rowHtml).join('')
+                : `<tr><td colspan="3" class="muted">${esc(t('Nothing matches that search.'))}</td></tr>`;
+            wireRows();
+        },
+        label: (n) => (n ? `${n} ${esc(t('users'))}` : ''),
+    });
+    const render = () => list.render();
 
     async function load() {
         const eventId = +($('userEventFilter').value || 0);
@@ -321,7 +286,7 @@
         const events = ((r.ok && r.events) || []).slice().sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' }));
         sel.innerHTML = `<option value="">${esc(t('All events'))}</option>`
             + events.map((e) => `<option value="${e.id}">${esc(e.title)}</option>`).join('');
-        sel.onchange = () => { page = 1; load(); };
+        sel.onchange = () => { list.reset(); load(); };
     }
 
     // Create a user directly (#242). The account is born verified with a temporary
@@ -353,7 +318,7 @@
             const pass = m.q('#cuPass').value;
             if (!first || !last || !username || !email || !pass) { toast(t('All fields are required.')); return; }
             const busy = RBBusy(m.q('#cuSave'));
-            const x = await api('admin_create', { first_name: first, last_name: last, username, email, password: pass });
+            const x = await api('admin_create', { first_name: first, last_name: last, username, email, organization: m.q('#cuOrg').value.trim(), password: pass }); // the club typed is kept (#663)
             if (!x.ok) { busy.reset(); return toast(x.error || t('Could not create user.')); }
             busy.ok(); m.close();
             load();
@@ -363,12 +328,13 @@
 
     async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
-        $('userSearch').oninput = () => { query = $('userSearch').value; page = 1; render(); };
+        $('userSearch').oninput = () => { query = $('userSearch').value; list.reset(); };
         const syncToggle = (btn, on) => btn.classList.toggle('active', on);
-        $('userRbFilter').onclick = () => { fltRb = !fltRb; syncToggle($('userRbFilter'), fltRb); page = 1; render(); };
-        $('userEvFilter').onclick = () => { fltEv = !fltEv; syncToggle($('userEvFilter'), fltEv); page = 1; render(); };
+        $('userRbFilter').onclick = () => { fltRb = !fltRb; syncToggle($('userRbFilter'), fltRb); list.reset(); };
+        $('userEvFilter').onclick = () => { fltEv = !fltEv; syncToggle($('userEvFilter'), fltEv); list.reset(); };
         $('userCreate').onclick = createUser;
-        $('userOrgFilter').oninput = () => { orgFilter = $('userOrgFilter').value; page = 1; load(); };
+        // the organization filter asks the server: debounced, not a call per keystroke (#664)
+        $('userOrgFilter').oninput = () => { clearTimeout(orgTimer); orgTimer = setTimeout(() => { list.reset(); load(); }, 300); };
         loadEventFilter();
         load().then(() => {
             // deep link from the locations map (#499): open the user card directly
