@@ -30,16 +30,10 @@ Après le chargement s'ouvre le modal de démarrage avec ces options :
 
 | Option | Description |
 |---------|-------------|
-| **Carte par note** | Affiche/masque la mini-carte sous chaque note |
 | **Enregistrer GPX** | Sauvegarde la trace GPS de la navigation (crash-safe) |
 | **Son à la note** | Bip court quand une note est validée |
 
-Puis choisissez le **mode** :
-
-| Mode | Quand l'utiliser | Ce qu'il fait |
-|----------|---------------|---------|
-| **Trip mode** | Usage libre, reconnaissances, sorties sans score | Suit le roadbook librement, aucun score |
-| **Competition** | Courses, événements avec classement | Valide avec pénalité, génère un QR signé pour le Ranking |
+Il n’y a pas de mode à choisir : un roadbook ouvert depuis un événement qui le **note** se parcourt en **compétition** (numéro de véhicule demandé, pénalités appliquées, résultat signé envoyé au classement) ; tout le reste est un **parcours libre**. Chaque parcours se termine par son **rapport** (notes atteintes, limites respectées, temps, distance), à garder privé ou à afficher sur votre profil public.
 
 ---
 

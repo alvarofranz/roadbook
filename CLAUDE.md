@@ -522,8 +522,9 @@ Operational notes:
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
-  you might only want to look; the **"Navigate"** button is what opens the mode chooser. That
-  modal sets Trip vs Competition mode, the per-note map button and optional live GPX logging, then
+  you might only want to look; the **"Navigate"** button opens the start dialog (run options: GPX
+  logging, sound, remote). The mode is never asked (#617): a roadbook opened from an event that
+  scores it runs in competition (vehicle number asked), anything else as a trip. Then
   navigation starts (`body.rb-immersive`: the tool owns the screen — `#navScreen` becomes the app
   shell, a fixed flex column whose only scroller is the note list, #429). Advancement
   is automatic by default: the note validates the moment the **driven segment** between two GPS
@@ -533,8 +534,12 @@ Operational notes:
   (50 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
   the whole active row (and the Validate button, and the per-row check) marks it done — or
   hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
-  (`RBRemote`, switch in the mode chooser, #20). Tapping any OTHER row moves the run cursor and
+  (`RBRemote`, switch in the start dialog, #20). Tapping any OTHER row moves the run cursor and
   always asks first — it leaves notes unvalidated and in competition costs 450 pts each.
+  Every run ends with its **report** (#618 — notes reached/skipped, speed-limit zones, time;
+  `RBRun`, stored on the device first, then `run_save`), kept private or shown on the runner's
+  public profile `/u/<username>` (#619/#620); a competition run also enters the event's shared
+  ranking (`event_results`, #590).
   Competition validates with penalties + an HMAC-signed result QR (its 100 m proximity gate is
   widened by the fix's own accuracy); validating syncs the total odometer to the note's distance.
   Opens `.rdbk` from the OS on installed PWAs.
@@ -591,7 +596,7 @@ Operational notes:
   `commandFor(event)` (pure, unit-tested) · `attach({next, prev})` → detach. The page owns what
   the commands DO; the module owns the mapping and the guards (silent while typing or with a
   modal open, and Space/Enter left to a focused button so it never advances twice). Used by the
-  **Reader** (switch in the mode chooser, remembered per device); a Gamepad or BLE transport can
+  **Reader** (switch in the start dialog, remembered per device); a Gamepad or BLE transport can
   feed the same commands later.
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
   voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
