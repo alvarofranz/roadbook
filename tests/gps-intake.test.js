@@ -181,33 +181,67 @@ describe('autoReachedIdx — which note auto-advance validates (#529)', () => {
     });
 
     it('validates the NEXT note when the active one was driven past', () => {
-        // the driver missed note 0 (passed 200 m wide of it) and is now on top of note 1: the run
-        // must move on and leave note 0 skipped, not sit on a waypoint it will never enter
-        expect(RB.autoReachedIdx(notes, 0, 1, at(900), at(1005), radiusOf)).toBe(1);
+        // the driver missed note 0 (passed 200 m wide of it) and is now on top of note 1, moving
+        // away from note 0 with its leg driven: the run must move on and leave note 0 skipped,
+        // not sit on a waypoint it will never enter
+        expect(RB.autoReachedIdx(notes, 0, 1, at(900), at(1005), radiusOf, 1000)).toBe(1);
     });
 
     it('validates nothing while neither is reached', () => {
-        expect(RB.autoReachedIdx(notes, 0, 1, at(300), at(400), radiusOf)).toBe(-1);
+        expect(RB.autoReachedIdx(notes, 0, 1, at(300), at(400), radiusOf, 400)).toBe(-1);
     });
 
     it('prefers the active note when a segment crosses both radii', () => {
         // a fix gap long enough to span two waypoints still validates them in roadbook order:
         // the active one first, the next on the fix after it
-        expect(RB.autoReachedIdx(notes, 0, 1, at(-10), at(1010), radiusOf)).toBe(0);
+        expect(RB.autoReachedIdx(notes, 0, 1, at(-10), at(1010), radiusOf, 1000)).toBe(0);
     });
 
     it('takes the indices it is given, so comment rows are never the target', () => {
         // the Reader hands it the nearest NAVIGATIONAL indices; a run at the last note has none
-        expect(RB.autoReachedIdx(notes, 2, 3, null, at(2000), radiusOf)).toBe(2);
-        expect(RB.autoReachedIdx(notes, 3, 4, null, at(2000), radiusOf)).toBe(-1);
-        expect(RB.autoReachedIdx(notes, -1, -1, null, at(0), radiusOf)).toBe(-1);
+        expect(RB.autoReachedIdx(notes, 2, 3, null, at(2000), radiusOf, 0)).toBe(2);
+        expect(RB.autoReachedIdx(notes, 3, 4, null, at(2000), radiusOf, 0)).toBe(-1);
+        expect(RB.autoReachedIdx(notes, -1, -1, null, at(0), radiusOf, 0)).toBe(-1);
     });
 
     it('asks for each note\'s own radius', () => {
         const asked = [];
         const spy = (i) => { asked.push(i); return i === 1 ? 300 : gate; };
-        expect(RB.autoReachedIdx(notes, 0, 1, null, at(900), spy)).toBe(1); // 100 m out, inside note 1's 300 m
+        // moving away from note 0, 100 m short of note 1 — inside note 1's 300 m
+        expect(RB.autoReachedIdx(notes, 0, 1, at(800), at(900), spy, 900)).toBe(1);
         expect(asked).toEqual([0, 1]);
+    });
+});
+
+describe('autoReachedIdx — the next note waits until the active one is behind you (#563)', () => {
+    const radiusOf = () => RB.CONST.REACH_MIN_M;
+    // roadbook 222's shape: note 1 sits beside the approach to note 0, which you reach first and
+    // then turn back past note 1 — the leg to note 0 is 400 m
+    const notes = [{ lat: 0, lon: deg(400), partial_distance: 400 }, { lat: deg(10), lon: deg(300), partial_distance: 100 }];
+    const at = (m) => ({ lat: 0, lon: deg(m) });
+
+    it('ignores the next radius while you are still closing in on the active note', () => {
+        expect(RB.autoReachedIdx(notes, 0, 1, at(280), at(310), radiusOf, 310)).toBe(-1);
+    });
+
+    it('still validates the active note when you get there', () => {
+        expect(RB.autoReachedIdx(notes, 0, 1, at(380), at(398), radiusOf, 398)).toBe(0);
+    });
+
+    it('lets the next note take over once the active one is behind you', () => {
+        // drove past note 0 wide (never inside its gate), came back along the road past note 1
+        expect(RB.autoReachedIdx(notes, 0, 1, at(330), at(300), radiusOf, 470)).toBe(1);
+    });
+
+    it('does not count moving away before half the leg is driven', () => {
+        // a hairpin early in the leg: receding from note 0 but nowhere near it yet
+        expect(RB.autoReachedIdx(notes, 0, 1, at(330), at(300), radiusOf, 150)).toBe(-1);
+    });
+
+    it('notePassed needs a segment to judge by', () => {
+        expect(RB.notePassed(notes[0], null, at(300), 500)).toBe(false);
+        expect(RB.notePassed(notes[0], at(420), at(450), 450)).toBe(true);
+        expect(RB.notePassed(notes[0], at(450), at(420), 450)).toBe(false);
     });
 });
 

@@ -311,11 +311,12 @@
             else if (armed) extraAccum += disp;
             // Auto-validation on arrival: the gate is the driven SEGMENT (RB.autoReachedIdx →
             // RB.noteReached), so a waypoint can't slip between two fixes. It looks one note
-            // ahead as well: a note driven past is left SKIPPED — red on the roadbook — and the
-            // one actually reached is validated, instead of the run sitting forever on a
+            // ahead as well, but only once the active one is behind you (RB.notePassed, fed the
+            // partial odometer): a note driven past is left SKIPPED — red on the roadbook — and
+            // the one actually reached is validated, instead of the run sitting forever on a
             // waypoint it will never enter. The row-state update happens inside validateAt.
             if (auto) {
-                const hit = RB.autoReachedIdx(notes, activeIdx, activeIdx + 1, fix.from, here, reachRadius);
+                const hit = RB.autoReachedIdx(notes, activeIdx, activeIdx + 1, fix.from, here, reachRadius, tripPartialM);
                 if (hit >= 0) autoValidate(hit, here);
             }
         }

@@ -157,17 +157,28 @@
         const d = from ? nearestOnTrack([from, here], note).dist : haversineM(here, note);
         return d <= radiusM;
     }
+    /* Is the active note BEHIND you (#563)? Only then may the next waypoint take over from it.
+       Two things must both hold: this step moved AWAY from the note, and the leg to it is at least
+       half driven (coveredM = the partial odometer, the note's partial_distance = the leg). A
+       route often swings past the next waypoint on its way in to the active one — a detour, a
+       loop, a turn-back — and while you are still closing in, that neighbouring radius is not
+       where you are going. With no segment to judge by (`from` null) nothing is behind you. */
+    function notePassed(note, from, here, coveredM) {
+        if (!note || !from || !here || note.lat == null) return false;
+        const receding = haversineM(here, note) > haversineM(from, note);
+        return receding && coveredM >= (note.partial_distance || 0) / 2;
+    }
     /* Which note a driven segment validates while auto-advance is on (#529). The active note
-       comes first; when it was driven past — missed by a few metres, or its radius crossed while
-       the fix rate was too slow to notice — reaching the NEXT waypoint validates that one instead
-       and leaves the missed one skipped, so a run is never stranded on a note it will never reach.
-       Takes the indices the Reader considers navigational (comment notes are not) and a
-       radius-per-index function, and returns the index to validate, or -1 for neither. */
-    function autoReachedIdx(notes, activeIdx, nextIdx, from, here, radiusOf) {
-        for (const i of [activeIdx, nextIdx]) {
-            if (i < 0 || !notes[i]) continue;
-            if (noteReached(notes[i], from, here, radiusOf(i))) return i;
-        }
+       comes first; once it is behind you (notePassed) — missed by a few metres, or its radius
+       crossed while the fix rate was too slow to notice — reaching the NEXT waypoint validates
+       that one instead and leaves the missed one skipped, so a run is never stranded on a note it
+       will never reach. Takes the indices the Reader considers navigational (comment notes are
+       not), a radius-per-index function and the metres covered since the last validation, and
+       returns the index to validate, or -1 for neither. */
+    function autoReachedIdx(notes, activeIdx, nextIdx, from, here, radiusOf, coveredM) {
+        const active = activeIdx >= 0 ? notes[activeIdx] : null, next = nextIdx >= 0 ? notes[nextIdx] : null;
+        if (active && noteReached(active, from, here, radiusOf(activeIdx))) return activeIdx;
+        if (next && notePassed(active, from, here, coveredM) && noteReached(next, from, here, radiusOf(nextIdx))) return nextIdx;
         return -1;
     }
     /* The course to steer by (#536): the device's own heading when it reports one, else the
@@ -1297,7 +1308,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, autoReachedIdx, courseFrom, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
