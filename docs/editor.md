@@ -207,19 +207,21 @@ della lista i due pezzi vengono "parcheggiati" in `#rbPanel` (`parkEditor`,
 [editor.js:776](../public/editor/editor.js#L776)) — altrimenti `innerHTML` distruggerebbe gli
 elementi spostati.
 
-**Che cosa una nota È: le tre tab (#534).** Con una nota aperta, in testa all'editor ci sono
-le tab dei **tipi**, costruite da `RB.NOTE_KINDS` (`renderKindTabs`): **Note** (quella di
-navigazione, il default, scritta *assente* nel file), **Photo** (una fotografia con didascalia)
-e **Ad** (il logo di un inserzionista con didascalia). Aggiungere un tipo al catalogo del core
-aggiunge da solo la sua tab, la sua icona nella riga e il suo editor qui: non c'è altro da
-cablare. `setNoteKind` **non butta via niente** — una nota convertita in Photo/Ad conserva
-posizione, icone e parametri, che tornano identici rimettendola su *Note* — e una riga senza un
-punto sul percorso (una vecchia riga `comment`) ha la tab *Note* disabilitata, con il perché nel
-tooltip. Per un tipo a immagine l'editor mostra **solo** la sua form (immagine + posizione): i
-tool dell'icona, la palette e i parametri geografici appartengono a un waypoint. La riga stessa
-porta a sinistra il suo numero (o l'icona del tipo) **con il cestino sotto**; non ci sono
-frecce di navigazione né un pulsante "Add comment" — un'informazione si crea convertendo la
-nota che sta nel punto giusto.
+**La nota e il materiale attorno a lei: le tab (#542).** Ogni riga è una **nota**. Con una nota
+aperta, in testa all'editor ci sono le tab: **Note** (la nota stessa: tulip, icone, parametri) e
+una per ogni tipo di materiale in `RB.NOTE_BLOCKS` — **Photo**, **Ad**, **Text** — con il numero
+di elementi già presenti. Una tab di materiale apre il suo pannello (`renderBlockPanel`): una
+**card per elemento**, con i radio **Before the note / After the note**, il selettore d'immagine
+(o l'area di testo) e **Delete**, più il pulsante che ne aggiunge un altro. Nessuno, uno o più:
+una nota può avere due foto e un testo, o niente. Le card e le tab sono costruite dal catalogo
+del core, quindi un quarto tipo di materiale è **una voce lì e basta**.
+
+Il testo di un blocco si scrive **senza ricostruire la lista**: `setBlockText` aggiorna il
+modello e **ritocca la riga**, perché l'editor vive dentro la lista e spostarlo porterebbe via il
+cursore a ogni carattere. Le righe del materiale si disegnano sopra o sotto la riga della nota
+(`blockRowsHTML`), così l'autore legge il roadbook come lo leggerà il navigatore; toccarne una
+apre quella nota **sulla tab giusta**. La riga della nota porta a sinistra il numero **con il
+cestino sotto**: niente frecce, niente pulsante "Add comment", niente campo "Position".
 
 Campi editabili di una nota:
 

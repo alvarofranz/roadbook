@@ -202,14 +202,14 @@ describe('the roadbook\'s icon library is not a cache (#454)', () => {
     });
 });
 
-describe('information rows span the description area (#463)', () => {
+describe('a note\'s material spans the description area (#463)', () => {
     // .col-vignette-empty is display:none, which removes the cell from the grid — without an
     // explicit span the caption auto-placed into the narrow vignette column instead of the
     // description area (flex is inert in grid, so flex:1 never did anything there).
     const app = read('public/assets/css/app.css');
 
     it('pins the wide caption across the vacated columns', () => {
-        const rule = app.match(/\.nrow\.info \.col-text-wide \{([^}]*)\}/);
+        const rule = app.match(/\.nrow\.block \.col-text-wide \{([^}]*)\}/);
         expect(rule, 'app.css has no .col-text-wide rule').not.toBeNull();
         expect(rule[1]).toMatch(/grid-column\s*:\s*2\s*\/\s*-1/);
         expect(rule[1]).not.toMatch(/flex\s*:/);
@@ -219,7 +219,7 @@ describe('information rows span the description area (#463)', () => {
     // paint that row in its own slightly different shade of paper (#482).
     it('is one rule, not a copy per page', () => {
         for (const page of ['public/reader/index.html', 'public/challenge/index.html']) {
-            expect(read(page), page).not.toContain('.nrow.info');
+            expect(read(page), page).not.toContain('.nrow.block');
         }
     });
 });
@@ -1014,10 +1014,6 @@ describe('changing the roadbook default offers to apply it to every note (#532)'
         // the old silent fill wrote the value into every note with none, unasked
         expect(handler, 'a silent fill is back').not.toContain('if (n.wp_radius == null) n.wp_radius = v');
         expect(handler.indexOf('n.wp_radius = v')).toBeGreaterThan(handler.indexOf('RBConfirm'));
-    });
-
-    it('leaves comment rows alone — they have no waypoint to validate', () => {
-        expect(handler).toContain('if (!RB.isInfoNote(n))');
     });
 
     it('clearing the field just drops the default', () => {

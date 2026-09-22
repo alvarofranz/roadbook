@@ -131,8 +131,7 @@ la traccia GPS.
 | `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (50 m); il Reader lo usa come geofence per il rilevamento automatico. |
 | `icons`            | array           | Simboli posizionati — vedi [§7 Simboli](#7-simboli).                                |
 | `junctions`        | array \| null   | Vettori di incrocio — vedi [§9 Vettori di incrocio](#9-vettori-di-incrocio).       |
-| `note_kind`        | string, opzionale | Che cosa la riga **è** (`RB.NOTE_KINDS`). Assente (o `"note"`) = nota di navigazione normale. **Qualsiasi altro valore è una riga informativa**: resta nella sequenza ma non è un waypoint. Questa versione definisce `"photo"` (un'immagine con didascalia) e `"ad"` (logo di un inserzionista con didascalia); `"comment"` è il vecchio nome di un `ad` e viene risolto così da `RB.noteKind`. |
-| `image`            | string, opzionale | Immagine **incorporata** come data URI, mostrata al posto del diagramma tulip: la foto di una riga `photo`, il logo di una riga `ad`. |
+| `blocks`           | array, opzionale | Il **materiale** che la nota porta con sé (`RB.NOTE_BLOCKS`): una foto, una pubblicità, un blocco di testo — ciascuno **prima o dopo** la nota; nessuno, uno o più. Non sono mai waypoint: non vengono numerati, non compaiono sulla mappa, non entrano nel punteggio e non escono nell'export GPX/KMZ. Ogni blocco è `{ "type": "photo" \| "ad" \| "text", "at": "before" \| "after", "image"?: data URI, "text"?: string }`; un `type` sconosciuto viene reso come testo (`RB.blockType`). |
 
 ```jsonc
 {
@@ -159,28 +158,29 @@ la traccia GPS.
 > ([roadbook-core.js:204](../public/assets/js/roadbook-core.js#L204)). Si autora solo
 > `road_type_out`.
 
- > **Righe informative (`note_kind`, #284 · #534).** Una riga che non è un waypoint: la sua
-> didascalia in `text` e la sua immagine incorporata in `image`. Oggi sono due — **`photo`**
-> (una fotografia con didascalia) e **`ad`** (il logo di un inserzionista) — e la regola vale
-> per qualsiasi valore futuro: *`note_kind` presente e diverso da `"note"` ⇒ riga
-> informativa*, così un reader fa la cosa giusta anche con un tipo che non conosce. Una riga
-> informativa non compare sulla mappa, non è rilevata dal GPS, non viene mai "raggiunta", non
-> entra nel punteggio e non viene numerata; `distance`, `cap`, i `bearing_*`, i `road_type_*`
-> e i simboli tulip non la riguardano. Nell'editor **ogni nota ha le sue tre tab** (Note ·
-> Photo · Ad): convertire una nota in `photo`/`ad` **non butta via niente** — il waypoint
-> (`idx`, `lat`/`lon`, icone, parametri) resta nel file e torna identico tornando su *Note*,
-> e un reader DEVE ignorare quei campi finché la riga è informativa. Una riga senza un punto
-> sul percorso (una vecchia riga `comment`) non può diventare una nota di navigazione e si
-> sposta cambiandone la **posizione** nella lista. Nel diagramma mostra l'`image`; se
-> l'immagine manca, il testo occupa sia la colonna del testo sia quella del diagramma. Un
-> reader conforme la rende nella lista (Reader), nell'export PDF e nella pagina pubblica, e
-> la **salta** nell'export GPX.
+ > **Il materiale di una nota (`blocks`, #284 · #534 · #542).** Ogni riga di `notes[]` è una
+> **nota**. Quello che una nota può *anche* portare — una **foto**, una **pubblicità**, un
+> **blocco di testo** — sta in `blocks`, ciascuno con il lato su cui si trova (`at`: `before` /
+> `after`); nessuno, uno o più. Non essendo righe della sequenza, non possono disturbare
+> numerazione, punteggio, convalida GPS o export GPX: non c'è niente di loro tra i waypoint. Il
+> testo di un blocco `text` si legge a tutta larghezza (è pensato per essere letto in corsa), una
+> foto e una pubblicità mostrano la loro `image` incorporata con la didascalia accanto. Un `type`
+> che il reader non conosce viene reso come testo, quindi un tipo introdotto più avanti resta
+> leggibile. **File più vecchi** portavano lo stesso materiale come *righe* proprie
+> (`note_kind: "comment" | "photo" | "ad"`): `RB.importRoadbook` le **ripiega** sulla nota
+> accanto a cui stavano — dopo quella nota, o prima della prima se aprivano il roadbook — e una
+> riga che aveva un punto sul percorso torna a essere una nota con la sua immagine allegata.
+> Dopo l'import nessuna parte del codice incontra più una riga che non sia una nota.
 
 ```jsonc
 {
-  "note_kind": "ad",
-  "text": "Con il supporto di ACME Racing",
-  "image": "data:image/png;base64,…"     // logo inserzionista incorporato, come i simboli
+  "num": 13, "idx": 190,
+  "text": "Tieni la destra al bivio",
+  "blocks": [
+    { "type": "text", "at": "before", "text": "Guado profondo dopo il ponte — rallenta." },
+    { "type": "ad",   "at": "after",  "text": "Con il supporto di ACME Racing",
+      "image": "data:image/png;base64,…" }
+  ]
 }
 ```
 

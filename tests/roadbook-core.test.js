@@ -227,94 +227,87 @@ describe('reverseRoadbook', () => {
     });
 });
 
-describe('comment notes (note_kind: comment)', () => {
-    const withComment = () => ({
+describe('note blocks — the material around a note (#542)', () => {
+    const withBlocks = () => ({
         meta: {},
         track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
         notes: [
-            { idx: 0, road_type_out: 2 },
-            { note_kind: 'comment', text: 'Sponsor logo' },
-            { idx: 2, road_type_out: 2 },
+            { idx: 0, road_type_out: 2, blocks: [{ type: 'text', at: 'before', text: 'Read me first' }] },
+            { idx: 2, road_type_out: 2, blocks: [{ type: 'ad', at: 'after', image: 'data:x', text: 'ACME' }] },
         ],
     });
 
-    it('every note_kind but "note" is an information row', () => {
-        // the rule is the field's shape, not a list: a kind from a later version is information
-        // too, which is the safe thing for a reader that does not know it yet (#534)
-        for (const kind of ['comment', 'photo', 'ad', 'whatever-comes-next']) {
-            expect(RB.isInfoNote({ note_kind: kind }), kind).toBe(true);
-        }
-        expect(RB.isInfoNote({ num: 1 })).toBe(false);
-        expect(RB.isInfoNote({ note_kind: 'note', num: 1 })).toBe(false);
-        expect(RB.isInfoNote(null)).toBeFalsy();
+    it('the catalog is what every surface builds itself from', () => {
+        expect(RB.NOTE_BLOCKS.map((k) => k.id)).toEqual(['photo', 'ad', 'text']);
+        for (const k of RB.NOTE_BLOCKS) { expect(k.name, k.id).toBeTruthy(); expect(k.icon, k.id).toMatch(/^fa-/); }
+        for (const k of RB.NOTE_BLOCKS.filter((x) => x.image)) expect(k.imageMax, k.id).toBeGreaterThan(0);
     });
 
-    it('resolves the kind a row is presented as', () => {
-        expect(RB.noteKind({ note_kind: 'photo' }).id).toBe('photo');
-        expect(RB.noteKind({ num: 1 }).id).toBe('note');
-        expect(RB.noteKind(null).id).toBe('note');
-        expect(RB.noteKind({ note_kind: 'comment' }).id, 'legacy sponsor row').toBe('ad');
-        expect(RB.noteKind({ note_kind: 'whatever-comes-next' }).id, 'unknown kind').toBe('ad');
-        // the catalog is what the UI builds itself from — each kind names and draws itself
-        expect(RB.NOTE_KINDS.map((k) => k.id)).toEqual(['note', 'photo', 'ad']);
-        for (const k of RB.NOTE_KINDS) { expect(k.name, k.id).toBeTruthy(); expect(k.icon, k.id).toMatch(/^fa-/); }
-        for (const k of RB.NOTE_KINDS.filter((x) => x.image)) expect(k.imageMax, k.id).toBeGreaterThan(0);
+    it('material of a type this version does not know still reads as text', () => {
+        expect(RB.blockType({ type: 'photo' }).id).toBe('photo');
+        expect(RB.blockType({ type: 'whatever-comes-next' }).id).toBe('text');
+        expect(RB.blockType(null).id).toBe('text');
     });
 
-    it('recomputeMetrics renumbers only navigational notes, leaves the comment in place & untouched', () => {
-        const rb = withComment();
+    it('a note hands over its material, by side', () => {
+        const n = withBlocks().notes[0];
+        expect(RB.noteBlocks(n).length).toBe(1);
+        expect(RB.noteBlocks(n, 'before').length).toBe(1);
+        expect(RB.noteBlocks(n, 'after').length).toBe(0);
+        // no `at` means after — the side a block ends up on is never undefined
+        expect(RB.noteBlocks({ blocks: [{ type: 'text' }] }, 'after').length).toBe(1);
+        expect(RB.noteBlocks({}).length).toBe(0);
+        expect(RB.noteBlocks(null).length).toBe(0);
+    });
+
+    it('every row is a note: numbering and note_count count them all', () => {
+        const rb = withBlocks();
         RB.recomputeMetrics(rb);
-        expect(rb.notes.map((n) => n.note_kind || 'nav')).toEqual(['nav', 'comment', 'nav']);
-        expect(rb.notes[0].num).toBe(1);
-        expect(rb.notes[2].num).toBe(2); // numbering skips the comment
-        const c = rb.notes[1];
-        expect(c.text).toBe('Sponsor logo');
-        expect(c.idx).toBeUndefined(); // no geo/idx recompute for a coordinate-less note
-        expect(c.lat).toBeUndefined();
-        expect(c.num).toBeUndefined();
-    });
-
-    it('note_count counts navigational notes only (comment notes excluded)', () => {
-        const rb = withComment();
-        RB.recomputeMetrics(rb);
+        expect(rb.notes.map((n) => n.num)).toEqual([1, 2]);
         expect(rb.meta.note_count).toBe(2);
+        expect(rb.notes[0].blocks[0].text, 'the material is left alone').toBe('Read me first');
     });
 
-    it('deleteNote removes a comment and recomputes (note_count stays consistent)', () => {
-        const rb = withComment();
-        RB.recomputeMetrics(rb);
-        const removed = RB.deleteNote(rb, 1);
-        expect(removed).toBe(-1); // no track vertex belongs to a comment
-        expect(rb.notes.length).toBe(2);
-        expect(rb.notes.every((n) => !RB.isInfoNote(n))).toBe(true);
-        expect(rb.meta.note_count).toBe(2);
-        expect(rb.track.length).toBe(3); // the track is untouched
-    });
-
-    it('reverseRoadbook mirrors the navigational notes without touching the comment', () => {
-        const rb = withComment();
+    it('material travels with its note through a reverse', () => {
+        const rb = withBlocks();
         RB.recomputeMetrics(rb);
         const total = rb.meta.total_distance;
-        expect(() => RB.reverseRoadbook(rb)).not.toThrow();
-        expect(rb.notes.some((n) => RB.isInfoNote(n))).toBe(true);
+        RB.reverseRoadbook(rb);
         expect(rb.meta.note_count).toBe(2);
-        const nav = rb.notes.filter((n) => !RB.isInfoNote(n));
-        expect(nav[0].distance).toBe(0);
-        expect(nav[nav.length - 1].distance).toBe(total);
+        expect(rb.notes[0].distance).toBe(0);
+        expect(rb.notes[1].distance).toBe(total);
+        expect(rb.notes.flatMap((n) => RB.noteBlocks(n)).map((b) => b.type).sort()).toEqual(['ad', 'text']);
     });
 
-    it('scoredNoteSet excludes comment notes even inside a start→finish stage', () => {
-        const notes = [
-            { num: 1, wp_type: 'ss_start' },
-            { note_kind: 'comment', text: 'C' },
-            { num: 2 },
-            { num: 3, wp_type: 'ss_end' },
-        ];
-        const set = RB.scoredNoteSet(notes);
-        expect(set.has(0)).toBe(true);
-        expect(set.has(1)).toBe(false); // the comment is never scored
-        expect(set.has(2)).toBe(true);
-        expect(set.has(3)).toBe(true);
+    it('folds the information ROWS of older files onto the note they sat beside', () => {
+        const track = Array.from({ length: 10 }, (_, i) => ({ lat: 0, lon: i * 0.0009 }));
+        const rb = RB.importRoadbook({
+            meta: { title: 't' },
+            track,
+            notes: [
+                { note_kind: 'comment', text: 'Opening words' },
+                { idx: 0, num: 1, lat: 0, lon: 0, text: 'Note 1', road_type_out: 2 },
+                { note_kind: 'comment', text: 'ACME', image: 'data:image/png;base64,AA' },
+                { idx: 5, num: 2, lat: 0, lon: 0.0045, text: 'Note 2', road_type_out: 2, note_kind: 'photo', image: 'data:image/png;base64,BB' },
+            ],
+            icons: {},
+        });
+        expect(rb.notes.length, 'the rows are gone, the notes remain').toBe(2);
+        expect(rb.notes.some((n) => n.note_kind)).toBe(false);
+        // the caption that opened the roadbook now sits BEFORE the first note
+        expect(RB.noteBlocks(rb.notes[0], 'before')).toEqual([{ type: 'text', at: 'before', text: 'Opening words' }]);
+        // the sponsor logo hangs off the note it followed
+        expect(RB.noteBlocks(rb.notes[0], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:image/png;base64,AA', text: 'ACME' });
+        // a note that had been switched to a kind is a note again, with its picture attached
+        expect(rb.notes[1].text).toBe('Note 2');
+        expect(RB.noteBlocks(rb.notes[1], 'after')[0]).toMatchObject({ type: 'photo', image: 'data:image/png;base64,BB' });
+    });
+
+    it('leaves a roadbook that never had information rows exactly as it is', () => {
+        const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }];
+        const rb = RB.importRoadbook({ meta: {}, track, notes: [{ idx: 0, num: 1, road_type_out: 2 }, { idx: 1, num: 2, road_type_out: 2 }], icons: {} });
+        expect(rb.notes.length).toBe(2);
+        expect(rb.notes.some((n) => n.blocks)).toBe(false);
     });
 });
 
@@ -1037,17 +1030,13 @@ describe('isEndNote — which note is the roadbook\'s finish (#447)', () => {
         expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, false, true]);
     });
 
-    it('skips comment rows sitting after the finish', () => {
-        // a comment carries no coordinates and is never navigated to, so the note you actually
-        // finish on is the last NON-comment one — the tulip that must drop its exit arrow
-        const notes = [nav(1), nav(2), comment(3), comment(4)];
-        expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, true, false, false]);
+    it('is the last note, and nothing else is', () => {
+        const notes = [nav(1), nav(2), nav(3)];
+        expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, false, true]);
     });
 
-    it('never says yes about a comment row, or out of range', () => {
-        const notes = [comment(1)];
-        expect(RB.isEndNote(notes, 0)).toBe(false);
-        expect(RB.isEndNote(notes, 5)).toBe(false);
+    it('says no out of range', () => {
+        expect(RB.isEndNote([nav(1)], 5)).toBe(false);
         expect(RB.isEndNote([], 0)).toBe(false);
         expect(RB.isEndNote(null, 0)).toBe(false);
     });
@@ -1066,15 +1055,13 @@ describe('isFirstNote — which note the roadbook starts from (#472)', () => {
         expect(notes.map((n, i) => RB.isFirstNote(notes, i))).toEqual([true, false, false]);
     });
 
-    it('skips comment rows sitting before the start', () => {
-        const notes = [comment(0), comment(1), nav(2), nav(3)];
-        expect(notes.map((n, i) => RB.isFirstNote(notes, i))).toEqual([false, false, true, false]);
+    it('is the first note, and nothing else is', () => {
+        const notes = [nav(1), nav(2), nav(3)];
+        expect(notes.map((n, i) => RB.isFirstNote(notes, i))).toEqual([true, false, false]);
     });
 
-    it('never says yes about a comment row, or out of range', () => {
-        const notes = [comment(1)];
-        expect(RB.isFirstNote(notes, 0)).toBe(false);
-        expect(RB.isFirstNote(notes, 5)).toBe(false);
+    it('says no out of range', () => {
+        expect(RB.isFirstNote([nav(1)], 5)).toBe(false);
         expect(RB.isFirstNote([], 0)).toBe(false);
         expect(RB.isFirstNote(null, 0)).toBe(false);
     });
@@ -1167,10 +1154,7 @@ describe('repairDegenerateBearings — fix the broken ones, touch nothing else (
         expect(rb.notes[0]).toMatchObject({ bearing_in: 123, bearing_out: 456 });
     });
 
-    it('skips comment rows and survives a degenerate roadbook', () => {
-        const rb = { track, notes: [{ num: 1, idx: 2, note_kind: 'comment', bearing_out: 7 }] };
-        RB.repairDegenerateBearings(rb);
-        expect(rb.notes[0].bearing_out).toBe(7);
+    it('survives a degenerate roadbook', () => {
         expect(() => RB.repairDegenerateBearings({ track: [north(0)], notes: [{ idx: 0 }] })).not.toThrow();
         expect(() => RB.repairDegenerateBearings(null)).not.toThrow();
     });

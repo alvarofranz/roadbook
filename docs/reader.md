@@ -109,6 +109,7 @@ vero è in `app.css`.
 | Stato | Classe | Quando | Aspetto |
 |-------|--------|--------|---------|
 | **Raggiunta** | `.done` | `reached.has(i)` — validata davvero | verde |
+| **Materiale** | `.block` (`.block-photo` · `.block-ad` · `.block-text`) | una foto, una pubblicità o un testo che la nota porta con sé (`RB.noteBlocks`, #542): disegnata prima o dopo la riga della nota, senza numero né stato — non è un waypoint | carta, testo a tutta larghezza |
 | **Saltata** | `.skipped` | `i < activeIdx` ma non in `reached` (superata senza validare) | **rossa** — un rosa pallido si leggeva come "fatta" (#529) |
 | **Attiva** | `.active` | `i === activeIdx` | bordo rosso |
 | **Imminente** | (nessuna) | nota futura | bianco |

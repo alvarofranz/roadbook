@@ -338,11 +338,11 @@
     }
     // A note's confirm label, e.g. "#3 — Sharp left". The text comes from the loaded
     // .rdbk (user/untrusted) and the confirm message is rendered as HTML, so escape it.
-    const noteLabel = (n) => RB.isInfoNote(n) ? (t(RB.noteKind(n).name) + (n.text ? ' — ' + esc(n.text) : '')) : '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
+    const noteLabel = (n) => '#' + n.num + (n.text ? ' — ' + esc(n.text) : '');
     async function deleteNoteConfirm(ni) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         // The 2-note minimum applies to real (navigational) notes only — sponsor rows are free to remove.
-        if (!RB.isInfoNote(rb.notes[ni]) && rb.notes.filter((n) => !RB.isInfoNote(n)).length <= 2) return toast('At least 2 notes must remain.');
+        if (rb.notes.length <= 2) return toast('At least 2 notes must remain.');
         const label = noteLabel(rb.notes[ni]);
         if (!(await RBConfirmDanger(t('Delete note') + ' ' + label + '?'))) return;
         delNote(ni);
@@ -910,7 +910,7 @@
         rb.meta.default_wp_radius = v;
         markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
         if (await RBConfirm(t('Also replace all current notes in this roadbook to {v} m?').replace('{v}', v))) {
-            rb.notes.forEach((n) => { if (!RB.isInfoNote(n)) n.wp_radius = v; }); // an information row has no waypoint to validate
+            rb.notes.forEach((n) => { n.wp_radius = v; });
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) renderEditor();
             toast('Every note now validates at this radius.');
         }
@@ -1436,33 +1436,31 @@
         };
         const photosByNote = byNearestNote(notePhotos);
         const audioByNote = byNearestNote(noteAudio);
-        // ONE row, whatever the note is (#534): the left cell says what it is — its number, or
-        // its kind's icon — and carries Delete; then what it SHOWS (a tulip, or its picture) and
-        // its text. An information row has no number, no distance and no geo-meta, so those cells
-        // simply aren't built for it.
-        $('noteList').innerHTML = rb.notes.map((n, i) => {
-            const kind = RB.noteKind(n), info = RB.isInfoNote(n);
-            const del = `<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button>`;
-            const left = info
-                ? `<span class="note-number"><i class="fa-solid ${kind.icon}" aria-hidden="true"></i>${del}</span>`
-                : `<span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}${del}</span>`;
-            const middle = info
-                ? `<span class="note-image">${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</span>`
-                : `<span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
-                <span class="note-tulip" id="tulipSlot${i}"></span>`;
-            const extras = info ? '' : `<div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}`;
-            return `<div class="note-mini kind-${kind.id}${info ? ' info' : ''}${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
-                ${left}${middle}
-                <div class="note-textcell">
-                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t(info ? '(caption)' : '(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
-                    ${extras}
-                </div>
-            </div><div class="note-edit-slot" id="editSlot${i}"></div>`;
+        // The material a note carries, drawn on the side it sits on, so the author reads the
+        // roadbook the way it will be read. A tap opens that note's editor, where it is edited.
+        const blockRowsHTML = (n, at, i) => RB.noteBlocks(n, at).map((b) => {
+            const kind = RB.blockType(b);
+            return `<div class="note-block block-${kind.id}" data-block="${i}" data-b="${n.blocks.indexOf(b)}" data-tab="${kind.id}">
+                ${b.image ? `<img src="${esc(b.image)}" alt="">` : ''}
+                <div class="block-text">${esc(b.text || '')}</div>
+            </div>`;
         }).join('');
+        // A note's row, with the material it carries drawn on the side it sits on (#542): the
+        // author reads the roadbook the way it will be read. The left cell holds the number and
+        // Delete; then the distances, the tulip and the text.
+        $('noteList').innerHTML = rb.notes.map((n, i) => `${blockRowsHTML(n, 'before', i)}<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
+                <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button></span>
+                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}">IMG</button>` : ''}</span>
+                <span class="note-tulip" id="tulipSlot${i}"></span>
+                <div class="note-textcell">
+                    <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('(no text)'))}" autocomplete="off">${esc(n.text || '')}</textarea>
+                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n, i)}</div>
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
+                </div>
+            </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row (information rows skip it)
         const rows = $('noteList').querySelectorAll('.note-mini');
-        rows.forEach((el, i) => { if (!RB.isInfoNote(rb.notes[i])) el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color); });
+        rows.forEach((el, i) => el.style.setProperty('--rt', (RB.ROAD_TYPES[rb.notes[i].road_type_out] || RB.ROAD_TYPES[3]).color));
         rows.forEach((el) => el.onclick = (e) => {
             const capBtn = e.target.closest('[data-cap]');
             if (capBtn) { e.stopPropagation(); toggleCapAt(+capBtn.dataset.cap); return; }
@@ -1472,6 +1470,9 @@
             if (!e.target.closest('.note-title') && !e.target.closest('.note-del') && !e.target.closest('.note-audio')) toggleNote(+el.dataset.i);
         });
         $('noteList').querySelectorAll('.note-del').forEach((b) => b.onclick = (e) => { e.stopPropagation(); deleteNoteConfirm(+b.dataset.del); });
+        $('noteList').querySelectorAll('.note-block').forEach((el) => el.onclick = (e) => {
+            e.stopPropagation(); select(+el.dataset.block, el.dataset.tab);
+        });
         // tap the 📷 under the km to view the note's photo(s)
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
@@ -1497,7 +1498,7 @@
         const nc = $('noteCount');
         if (nc) {
             const totalM = (rb.meta && rb.meta.total_distance) || (rb.notes.length ? rb.notes[rb.notes.length - 1].distance : 0) || 0;
-            const navCount = rb.notes.filter((n) => !RB.isInfoNote(n)).length; // information rows aren't counted
+            const navCount = rb.notes.length;
             nc.textContent = navCount ? `· ${navCount} · KM: ${(totalM / 1000).toFixed(1)}` : '';
         }
         if (editorOpen && sel >= 0 && sel < rb.notes.length) openEditZoneAt(sel); // re-attach inline after a rebuild
@@ -1509,7 +1510,6 @@
     }
     // Below each note's text: the Red CAP on/off toggle on the left, coordinates on the right.
     const noteMetaHTML = (n, i) => {
-        if (RB.isInfoNote(n)) return ''; // sponsor rows have no CAP/coords meta
         const cap = i >= rb.notes.length - 1 ? '' // the last note has no CAP (no following note)
             : `<button type="button" class="note-cap${n.cap != null ? ' on' : ''}" data-cap="${i}" title="${esc(t('Red CAP'))}" aria-label="${esc(t('Red CAP'))}">${n.cap != null ? 'CAP ' + Math.round(n.cap) + '°' : esc(t('CAP disabled'))}</button>`;
         return cap + `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
@@ -1520,7 +1520,7 @@
     function placeTulips() {
         $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
-            if (!Number.isInteger(i) || !rb.notes[i] || RB.isInfoNote(rb.notes[i])) return; // information rows have no tulip
+            if (!Number.isInteger(i) || !rb.notes[i]) return;
             if (editorOpen && i === sel) return; // the open row keeps the interactive canvas
             slot.innerHTML = tulipSVG(rb.notes[i], i);
         });
@@ -1532,8 +1532,6 @@
     function openEditZoneAt(i) {
         const slot = $('editSlot' + i), tulip = $('tulipSlot' + i);
         if (slot && $('noteEditZone').parentNode !== slot) slot.appendChild($('noteEditZone'));
-        // An information row has no tulip slot and no live canvas — park the canvas and keep it hidden.
-        if (RB.isInfoNote(rb.notes[i])) { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; $('noteEditZone').hidden = false; return; }
         if (tulip && $('canvasWrap').parentNode !== tulip) { tulip.innerHTML = ''; tulip.appendChild($('canvasWrap')); } // drop the static preview, host the live canvas
         $('canvasWrap').hidden = false;
         $('noteEditZone').hidden = false;
@@ -1547,11 +1545,13 @@
         placeTulips(); // restore the static vignette in the row the canvas just left
         markSelectedRow();
     }
-    function select(i) {
+    // `tab` opens the editor straight on one material's panel (tapping a photo/advert/text row);
+    // selecting a note any other way starts on the note itself.
+    function select(i, tab) {
         if (!rb || i < 0 || i >= rb.notes.length) return;
-        sel = i; editorOpen = true; selVertex = -1; // a note is now the active selection
+        sel = i; editorOpen = true; selVertex = -1; blockTab = tab || ''; // a note is now the active selection
         openEditZoneAt(i); renderEditor();
-        if (!RB.isInfoNote(rb.notes[i])) showOnCanvas(i); // information rows have no tulip canvas
+        showOnCanvas(i);
         renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
@@ -1569,83 +1569,100 @@
         } else $('noteEditZone').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    /* ---------- what a note IS: the kinds (#534) ----------
-       The tabs are built FROM RB.NOTE_KINDS, so adding a kind to the catalog adds its tab, its
-       row icon and its editor here with no further wiring. Switching kind never throws anything
-       away: a note converted to Photo or Ad keeps its position, its icons and its parameters
-       untouched — they are simply not what an information row shows — so switching back brings
-       the waypoint out exactly as it was. A row that never had a place on the route (an older
-       comment row) cannot become a navigation note, so that tab says so instead of pretending. */
-    function renderKindTabs(n) {
-        const cur = RB.noteKind(n).id;
-        const placed = n.idx != null && n.lat != null; // has a point on the route to go back to
-        $('kindTabs').innerHTML = RB.NOTE_KINDS.map((k) => {
-            const off = k.id === 'note' && !placed;
-            return `<button type="button" class="kind-tab${k.id === cur ? ' on' : ''}" role="tab" aria-selected="${k.id === cur}" data-kind="${k.id}"${off ? ` disabled title="${esc(t('This row has no place on the route.'))}"` : ''}><i class="fa-solid ${k.icon}"></i> ${esc(t(k.name))}</button>`;
-        }).join('');
-        $('kindTabs').querySelectorAll('[data-kind]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); setNoteKind(sel, b.dataset.kind); });
+    /* ---------- a note and the material around it (#542) ----------
+       Every row is a NOTE. A note can also carry material — a photo, an advert, a block of text —
+       placed BEFORE or AFTER it, none, one or several of each. The tab bar picks what you are
+       editing: the note itself, or one type of material; the tabs, the cards and the row preview
+       are all built from RB.NOTE_BLOCKS, so a fourth type is one entry in that catalog. */
+    let blockTab = '';  // '' = the note itself; otherwise a RB.NOTE_BLOCKS id
+    function renderBlockTabs(n) {
+        const count = (id) => RB.noteBlocks(n).filter((b) => RB.blockType(b).id === id).length;
+        const tab = (id, icon, label, on, badge) =>
+            `<button type="button" class="kind-tab${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
+        $('kindTabs').innerHTML = tab('', 'fa-location-dot', t('Note'), !blockTab, 0)
+            + RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), blockTab === k.id, count(k.id))).join('');
+        $('kindTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = (e) => {
+            e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
+        });
     }
-    function setNoteKind(i, id) {
-        const n = rb.notes[i];
-        if (!n || RB.noteKind(n).id === id) return;
-        if (id === 'note') delete n.note_kind; else n.note_kind = id; // `note` is the default → stored absent
-        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        markDirty();
-        sel = rb.notes.indexOf(n); // recomputeMetrics can re-interleave the rows
-        renderNotes(); openEditZoneAt(sel); renderEditor();
-        if (!RB.isInfoNote(n)) showOnCanvas(sel); else { $('rbPanel').appendChild($('canvasWrap')); $('canvasWrap').hidden = true; }
-        refreshMap(false);
-    }
-    // The image kinds' form: the picture, and where the row sits in the roadbook.
-    function renderInfoForm(n) {
-        const kind = RB.noteKind(n);
-        // Position: move the row along the roadbook by typing a new 1-based place.
-        const pos = $('edInfoPos');
-        pos.max = rb.notes.length;
-        pos.value = rb.notes.indexOf(n) + 1;
-        pos.onchange = () => {
-            const from = rb.notes.indexOf(n);
-            let to = Math.round(parseInt(pos.value, 10)) - 1;
-            if (isNaN(to)) { pos.value = from + 1; return; }
-            to = Math.max(0, Math.min(rb.notes.length - 1, to));
-            if (to === from) { pos.value = from + 1; return; }
-            rb.notes.splice(from, 1);
-            rb.notes.splice(to, 0, n);
-            RB.recomputeMetrics(rb);
-            sel = to;
+    // One card per block of the open tab's type: which side of the note it sits on, its picture
+    // or its words, and Delete. Plus the button that adds another one.
+    function renderBlockPanel(n) {
+        const kind = RB.NOTE_BLOCKS.find((k) => k.id === blockTab);
+        const mine = RB.noteBlocks(n).filter((b) => RB.blockType(b).id === kind.id);
+        const side = (b, i) => ['before', 'after'].map((at) =>
+            `<label><input type="radio" name="blockAt${i}" value="${at}" ${(b.at === 'before' ? 'before' : 'after') === at ? 'checked' : ''}> ${esc(t(at === 'before' ? 'Before the note' : 'After the note'))}</label>`).join('');
+        $('blockPanel').innerHTML = (mine.length ? '' : `<p class="block-empty">${esc(t('Nothing here yet.'))}</p>`)
+            + mine.map((b, i) => `<div class="block-card" data-card="${i}">
+                <div class="block-head">
+                    <span class="block-side">${side(b, i)}</span>
+                    <button type="button" class="btn btn-ghost block-del" data-del="${i}"><i class="fa-solid fa-trash-can icon-danger"></i> <span>${esc(t('Delete'))}</span></button>
+                </div>
+                ${kind.image ? `<div class="block-img-row">
+                    ${b.image ? `<img class="block-prev" data-pick="${i}" src="${esc(b.image)}" alt="" title="${esc(t('Change image'))}">` : ''}
+                    <button type="button" class="btn btn-ghost" data-pick="${i}"><i class="fa-solid fa-image"></i> <span>${esc(t(b.image ? 'Change image' : 'Add image'))}</span></button>
+                </div>
+                <input class="field" data-caption="${i}" value="${esc(b.text || '')}" placeholder="${esc(t('(caption)'))}">`
+                : `<textarea class="field" data-text="${i}" placeholder="${esc(t('(text)'))}">${esc(b.text || '')}</textarea>`}
+            </div>`).join('')
+            + `<div class="btnrow start"><button type="button" class="btn btn-primary" id="blockAdd"><i class="fa-solid fa-plus"></i> ${esc(t('Add'))} ${esc(t(kind.name))}</button></div>`;
+
+        const panel = $('blockPanel');
+        panel.querySelectorAll('[name^="blockAt"]').forEach((r) => r.onchange = (e) => {
+            mine[+e.target.name.replace('blockAt', '')].at = e.target.value; markDirty(); renderNotes();
+        });
+        panel.querySelectorAll('[data-caption]').forEach((f) => f.oninput = () => setBlockText(mine[+f.dataset.caption], f.value));
+        panel.querySelectorAll('[data-text]').forEach((f) => f.oninput = () => setBlockText(mine[+f.dataset.text], f.value));
+        panel.querySelectorAll('[data-pick]').forEach((b) => b.onclick = () => pickBlockImage(mine[+b.dataset.pick], kind));
+        panel.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => deleteBlock(n, mine[+b.dataset.del], kind));
+        $('blockAdd').onclick = () => {
+            (n.blocks = n.blocks || []).push({ type: kind.id, at: 'after' });
             markDirty(); renderEditor(); renderNotes();
         };
-        // A styled button drives the hidden input, and the thumbnail itself doubles as "change
-        // image" — the same pattern as the roadbook logo (#440). With an image chosen the Add
-        // button steps aside for the preview + remove pair.
-        const prev = $('edInfoPrev'), clr = $('edInfoClr'), add = $('edInfoBtn');
-        if (n.image) { prev.src = n.image; prev.hidden = false; clr.hidden = false; add.hidden = true; }
-        else { prev.removeAttribute('src'); prev.hidden = true; clr.hidden = true; add.hidden = false; }
-        add.onclick = () => $('edInfoImg').click();
-        prev.onclick = () => $('edInfoImg').click();
-        $('edInfoImg').value = '';
-        $('edInfoImg').onchange = async (e) => {
+    }
+    // A block's words update the model and patch its row in place. Rebuilding the list would
+    // move the editor — which lives inside it — and moving a focused textarea drops the caret,
+    // so the author would type one character per keystroke into nothing.
+    function setBlockText(b, value) {
+        if (!b) return;
+        if (value) b.text = value; else delete b.text;
+        markDirty();
+        const n = rb.notes[sel];
+        const row = $('noteList').querySelector(`.note-block[data-block="${sel}"][data-b="${(n.blocks || []).indexOf(b)}"] .block-text`);
+        if (row) row.textContent = value;
+    }
+    function pickBlockImage(b, kind) {
+        const input = $('edBlockImg');
+        input.value = '';
+        input.onchange = async (e) => {
             const f = e.target.files[0];
             if (!f) return;
-            n.image = await RBImg.toDataURL(f, kind.imageMax); // a photo keeps its detail, a logo stays small
+            b.image = await RBImg.toDataURL(f, kind.imageMax); // a photo keeps its detail, a logo stays small
             markDirty(); renderEditor(); renderNotes();
         };
-        clr.onclick = () => { delete n.image; markDirty(); renderEditor(); renderNotes(); };
+        input.click();
+    }
+    async function deleteBlock(n, b, kind) {
+        const what = t(kind.name) + (b.text ? ' — ' + b.text : '');
+        if (!(await RBConfirm(t('Delete this from note {n}?').replace('{n}', n.num) + '<br><b>' + esc(what) + '</b>', true))) return;
+        n.blocks = (n.blocks || []).filter((x) => x !== b);
+        if (!n.blocks.length) delete n.blocks;
+        markDirty(); renderEditor(); renderNotes();
     }
 
     function renderEditor() {
         const n = rb.notes[sel];
-        renderKindTabs(n);
-        // An image kind (Photo · Ad) edits its picture and its place; the tulip tools, the icon
-        // palette and the geo parameters belong to a waypoint, so they are hidden entirely.
-        if (RB.isInfoNote(n)) {
+        renderBlockTabs(n);
+        // A material tab shows that material and nothing else: the tulip tools, the icon palette
+        // and the geo parameters belong to the note, which is one tab away.
+        if (blockTab) {
             $('noteEditStd').hidden = true;
-            $('infoForm').hidden = false;
-            renderInfoForm(n);
+            $('blockPanel').hidden = false;
+            renderBlockPanel(n);
             return;
         }
         $('noteEditStd').hidden = false;
-        $('infoForm').hidden = true;
+        $('blockPanel').hidden = true;
 
         const opts = (cur) => RT.map((l, k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t(l)}</option>`).join('');
         const dangerOpts = ['—', '!', '!!', '!!!'].map((l, k) => `<option value="${k}" ${k === (n.danger || 0) ? 'selected' : ''}>${l}</option>`).join('');
@@ -2037,7 +2054,7 @@
     // icons on the waypoints. The filename carries synthetic suffixes for the content.
     function exportCustomGpx(o) {
         const pts = o.track ? rb.track : [];
-        const wpts = o.wpt ? rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => { // sponsor notes carry no coords → never exported as waypoints
+        const wpts = o.wpt ? rb.notes.map((n) => {
             const w = { lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }; // name = note text (examples), number as fallback
             if (o.grm || o.osm) {
                 const a = n.appwpt || {};               // imported icon re-emitted verbatim where present…
@@ -2070,7 +2087,7 @@
     // KMZ export: KML 2.2 inside a ZIP (doc.kml). Track + waypoints, no icon mapping.
     async function exportKmz() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        const wpts = rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
+        const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: String(n.num).padStart(3, '0'), desc: (n.text || '').trim() || null }));
         const base = RB.slug(rb.meta?.title) + '_' + stamp() + '_KMZ';
         const kml = RB.kmlDocument(base, rb.track, wpts);
         RBDownload(await RBZip.write({ 'doc.kml': kml }), base + '.kmz');
@@ -2130,7 +2147,7 @@
             return out.join('\n');
         };
         const gpxText = () => {
-            const wpts = rb.notes.filter((n) => !RB.isInfoNote(n)).map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
+            const wpts = rb.notes.map((n) => ({ lat: n.lat, lon: n.lon, name: (n.text || '').trim() || String(n.num).padStart(3, '0') }));
             return prettyXml(RB.gpxDocument(RB.slug(rb.meta?.title), rb.track, wpts));
         };
         const m = RBModal(`<h2>${esc(t('Raw JSON'))}</h2>
