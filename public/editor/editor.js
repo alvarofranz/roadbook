@@ -1086,6 +1086,20 @@
     }
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
+    let vehicles = ['car']; // #713: which vehicles the route suits — server-side, set by the owner, never empty
+    function paintVehicles() {
+        document.querySelectorAll('[data-vehicle]').forEach((b) => {
+            const on = vehicles.includes(b.dataset.vehicle);
+            b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+    document.querySelectorAll('[data-vehicle]').forEach((b) => b.onclick = () => {
+        const v = b.dataset.vehicle;
+        if (vehicles.includes(v) && vehicles.length === 1) return toast('A roadbook suits at least one vehicle.');
+        vehicles = vehicles.includes(v) ? vehicles.filter((x) => x !== v) : ['car', 'moto', 'bike'].filter((x) => x === v || vehicles.includes(x));
+        paintVehicles(); markDirty();
+    });
+    paintVehicles();
     let rbIsOwner = true, rbOwner = ''; // co-editing an event roadbook (#123): visibility + delete stay with the owner
     let notePhotos = []; // the saved roadbook's geotagged photos (for the per-note IMG pill)
     let noteAudio = []; // the saved roadbook's voice notes (shown on their nearest note row)
@@ -1135,12 +1149,13 @@
     function setOwnership(isOwner, owner) {
         rbIsOwner = isOwner; rbOwner = owner || '';
         $('visField').hidden = !isOwner;
+        $('vehField').hidden = !isOwner; // the vehicles are the owner's to set, like the visibility
         $('visCoedit').hidden = isOwner;
         if (!isOwner) $('visCoeditNote').textContent = '@' + rbOwner + ' — ' + t('Only the owner can change the visibility.');
         updateSaveBtn();
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; vehicles = ['car']; paintVehicles(); pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     // Media bundled in an imported .rdbk v2 (#162): once the roadbook has a server id, upload each
     // photo/audio into its gallery with the geotag from the bundle's manifest, then clear the queue.
     async function flushImportedMedia() {
@@ -1157,7 +1172,7 @@
     }
     async function doSave() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
-        const r = await RBApi('rb_save', { id: currentRbId, status, reusable, roadbook: RB.roadbookForExport(rb) });
+        const r = await RBApi('rb_save', { id: currentRbId, status, reusable, vehicles, roadbook: RB.roadbookForExport(rb) });
         if (r.ok) {
             currentRbId = r.id; dirty = false; clearDraft();
             if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
@@ -2413,7 +2428,7 @@
             declineDraft();
         }
         // Fork a public challenge → load as a brand-new roadbook (saving creates a new one).
-        if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; setRoadbook(j.roadbook); } catch (e) { toast('Could not load the roadbook.'); } return; }
+        if (ch) { try { const j = await RBChallenges.loadPublic(ch); if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; vehicles = j.vehicles; paintVehicles(); setRoadbook(j.roadbook); } catch (e) { toast('Could not load the roadbook.'); } return; }
         await account;
         if (id && !meUser) { RBNeedAuth('Sign in to edit this roadbook.'); return; } // never an empty screen (#650)
         if (id && meUser) {
@@ -2423,7 +2438,7 @@
                 // Yes load it straight into draw mode (No falls through to the list, #650).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?')) {
-                    currentRbId = id; setStatus(r.status); reusable = !!r.reusable; setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
+                    currentRbId = id; setStatus(r.status); reusable = !!r.reusable; vehicles = r.vehicles; paintVehicles(); setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
             } else {
                 toast(t('Roadbook not found or no edit rights.')); // explicit target failed → show error, don't fall through to the list

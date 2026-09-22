@@ -1333,6 +1333,13 @@
         const fs = fields || [];
         return (list || []).filter((item) => fs.some((f) => String(item && item[f] != null ? item[f] : '').toLowerCase().includes(q)));
     }
+    // Keep the roadbooks that suit ANY of the picked vehicles (#713) — the gallery filter. Nothing
+    // picked keeps everything; a roadbook lists its vehicles as ['car', 'moto', 'bike'] (any subset).
+    const VEHICLES = ['car', 'moto', 'bike'];
+    function filterByVehicles(list, picked) {
+        if (!picked || !picked.length) return (list || []).slice();
+        return (list || []).filter((item) => (item.vehicles || []).some((v) => picked.includes(v)));
+    }
     // Filter a roadbook list (My roadbooks / Editor landing) by title.
     function filterRoadbooks(list, query) { return filterByText(list, query, ['title']); }
 
@@ -1387,7 +1394,7 @@
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
-        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, deleteNote, pendingWork,
+        nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, deleteNote, pendingWork,
         cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
         eventLink,
     };
