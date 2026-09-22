@@ -1062,3 +1062,36 @@ describe('the note says which detection radius applies (#530)', () => {
         expect(read('public/assets/js/i18n.js')).toContain('then the 50 m system default');
     });
 });
+
+describe('admin user roadbooks preview on a map inside the same popup (#552)', () => {
+    const admin = read('public/admin/admin.js');
+    const html = read('public/admin/index.html');
+
+    it('the page loads MapLibre + RBMap', () => {
+        expect(html).toContain('maplibre-gl@5.24.0/dist/maplibre-gl.js');
+        expect(html).toContain('assets/js/rbmap.js');
+    });
+
+    it('the dialog holds the list and the map side by side', () => {
+        expect(admin).toContain('rb-split');
+        expect(admin).toContain('id="rbsMap"');
+        expect(html).toContain('.rb-split');
+        expect(html).toContain('#rbsMap');
+    });
+
+    it('opening a roadbook previews it in the popup via admin_rb_get + RBMap', () => {
+        expect(admin).toContain('data-view');
+        expect(admin).toContain("api('admin_rb_get'");
+        expect(admin).toContain('showRoadbook');
+        expect(admin).toContain('rbMap.destroy()');
+    });
+
+    it('the new labels are translated everywhere', () => {
+        for (const lang of ['es', 'it', 'de', 'fr']) {
+            const dict = read(`public/assets/js/i18n.${lang}.js`);
+            for (const key of ['View on map', 'Open in Reader', 'Select a roadbook to preview it on the map.', 'No route yet.']) {
+                expect(dict, `${lang}: ${key}`).toContain(`'${key}':`);
+            }
+        }
+    });
+});

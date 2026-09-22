@@ -136,6 +136,7 @@
             'Grants': 'Grants', 'Admin': 'Admin', 'Organizer': 'Organizer', 'Basic user': 'Basic user', 'With roadbooks': 'With roadbooks', 'Event organizers': 'Event organizers', 'My activity': 'My activity', 'Me': 'Me',
             'Delete expired': 'Delete expired', 'roadbooks past retention will be permanently deleted. Continue?': 'roadbooks past retention will be permanently deleted. Continue?', 'remaining — run again.': 'remaining — run again.',
             'User locations': 'User locations', 'Back to users': 'Back to users', 'No locations yet.': 'No locations yet.', 'View user': 'View user',
+            'View on map': 'View on map', 'Open in Reader': 'Open in Reader', 'Select a roadbook to preview it on the map.': 'Select a roadbook to preview it on the map.', 'No route yet.': 'No route yet.',
             'Point the camera at the participant\'s QR code.': 'Point the camera at the participant\'s QR code.',
             'Waiting for QR code…': 'Waiting for QR code…', 'Scanning…': 'Scanning…',
             'Could not access camera.': 'Could not access camera.',
