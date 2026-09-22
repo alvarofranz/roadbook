@@ -232,3 +232,17 @@ describe('the GPS watch does not outlive the page (#430)', () => {
         expect(start.indexOf('BackgroundGeolocation.stop()')).toBeLessThan(start.indexOf('BackgroundGeolocation.start('));
     });
 });
+
+describe('floating chips and the tab bar (#609 · #615)', () => {
+    const css = fs.readFileSync('public/assets/css/app.css', 'utf8');
+    const app = fs.readFileSync('public/assets/js/app.js', 'utf8');
+    it('the language selector sits at the foot of the chip stack, never on its own fixed spot', () => {
+        expect(app).toContain('chipStack().appendChild(ml);');
+        expect(app).toContain('chipStack().prepend(installBtn);');
+        expect(app).toContain('chipStack().prepend(pill);');
+        expect(css).toContain('.lang-mobile { display: none; position: relative; }');
+    });
+    it('button tabs lose the browser button box', () => {
+        expect(css).toMatch(/\.app-tabbar \.tabbar-link \{[^}]*background: none; border: 0;/);
+    });
+});

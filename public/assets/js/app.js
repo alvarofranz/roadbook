@@ -166,10 +166,12 @@
             return `<a class="tabbar-link${k === appActive ? ' active' : ''}" href="${ROOT}${s.path}" aria-label="${s.label}" data-i18n-aria="${s.label}"><i class="fa-solid ${s.icon}"></i></a>`;
         }).join('');
         // Floating language selector for mobile (visible above the tab bar when the footer is hidden).
+        // It lives at the foot of the floating chip stack, so the Install / unsaved-work chips stack
+        // above it instead of landing on top of it (#609).
         if (!document.querySelector('.lang-mobile')) {
             const ml = document.createElement('div');
             ml.className = 'lang lang-mobile';
-            document.body.appendChild(ml);
+            chipStack().appendChild(ml);
         }
     }
     try { renderChrome(); } catch (e) { console.warn('chrome', e); }
@@ -396,7 +398,7 @@
         installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> ${RBt('Install')}`;
         installBtn.hidden = true;
         installBtn.onclick = onInstall;
-        chipStack().appendChild(installBtn);
+        chipStack().prepend(installBtn); // above the language selector
         return installBtn;
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
@@ -1294,7 +1296,7 @@
             pill.id = 'pendingPill'; pill.className = 'pending-pill';
             pill.setAttribute('aria-label', RBt('Unsaved work'));
             pill.onclick = openPendingModal;
-            chipStack().appendChild(pill);
+            chipStack().prepend(pill); // above the language selector (#609)
         }
         pill.hidden = false;
         pill.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${RBt('Unsaved work')} <span class="pending-count">${n}</span>`;

@@ -99,8 +99,10 @@ h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-
     justify-content: space-around; align-items: stretch;
     background: rgba(14, 17, 22, .96); backdrop-filter: blur(14px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+/* Back and Profile are <button>s among links: reset the browser's button box so every tab looks alike */
 .app-tabbar .tabbar-link { flex: 1; display: flex; align-items: center; justify-content: center;
     padding: .85rem 0; color: var(--muted); font-size: 1.6rem; text-decoration: none;
+    background: none; border: 0; border-radius: 0; font-family: inherit; cursor: pointer;
     transition: color .12s ease, transform .08s ease; }
 .app-tabbar .tabbar-link.active { color: var(--sand); }
 .app-tabbar .tabbar-link:active { transform: scale(.88); }
@@ -128,9 +130,9 @@ body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 .lang-opt { display: flex; align-items: center; gap: .55rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; font-size: .85rem; text-align: left; padding: .4rem .5rem; border-radius: 7px; cursor: pointer; }
 .lang-opt:hover { background: var(--card-2); }
 .lang-opt.active { color: var(--sand); }
-/* Fixed floating lang for mobile: appears above the tab bar when the footer is hidden.
-   The dropdown opens upward so it fits below the top of the screen. */
-.lang-mobile { display: none; position: fixed; right: .6rem; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .6rem); z-index: 55; }
+/* Floating lang for mobile, at the foot of the .app-chip-stack (above the tab bar) when the footer
+   is hidden. The dropdown opens upward so it fits below the top of the screen. */
+.lang-mobile { display: none; position: relative; }
 .lang-mobile .lang-menu { bottom: calc(100% + 6px); top: auto; right: 0; }
 @media (max-width: 1024px) { .lang-mobile { display: inline-flex; } }
 .native .lang-mobile { display: inline-flex; }
