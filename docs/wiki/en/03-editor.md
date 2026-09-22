@@ -15,7 +15,7 @@ Open **Editor** (`/editor/`). The landing (`#loadFrom`) offers 4 cards + 2 hidde
 | Source | How to do it | What you get |
 |--------|--------------|--------------|
 | **GPX** | Tap "GPX" → choose `.gpx` file (optional `.wpt`) | `RB.parseGPX` → `buildRoadbook` → roadbook with track + waypoint |
-| **Draw on the map** | Tap "Draw on the map" | Map in *draw* mode: the first 2 taps create the roadbook from scratch |
+| **Draw on the map** | Tap "Draw on the map" | Map in **Draw** mode: press and drag on the map to sketch the route — the first stroke creates the roadbook from scratch |
 | **.rdbk** | Tap ".rdbk" → choose ZIP/JSON file | Imports a complete roadbook (media in `pendingMedia`, see below) |
 | **Public roadbook** | Tap "Public roadbook" → challenge picker | **Fork** of a `public` + `reusable` roadbook → new private roadbook of yours |
 
@@ -30,28 +30,67 @@ Open **Editor** (`/editor/`). The landing (`#loadFrom`) offers 4 cards + 2 hidde
 
 ## Map View — The toolbar
 
-The map is the heart. Vertical `.map-tools` bar (only ☰ · Undo · Redo visible; **Move is default**, no button).
+The map is the heart. Two bars sit on it:
 
-> 📸 *Screenshot: Editor map with vertical toolbar and loaded track*
+- **Top-left**: ☰ (menu) · Undo · Redo
+- **Bottom-left**: the vertical **mode bar** (on a phone it runs horizontally along the bottom). Each button shows its icon and its key; the active mode is highlighted and also shows its name
 
-### Mode tools (exclusive)
+> 📸 *Screenshot: Editor map with the top-left bar, the bottom-left mode bar and a loaded track*
 
-| Tool | Activation | What it does |
-|------|------------|--------------|
-| **Move** (default) | `Esc` or end of cut/draw | Drag **any point** (track OR note). The line follows. Metrics recalculated on release |
-| **Draw** | From landing "Draw on the map" | Tap extends from the nearest open end. Tap an open cut edge → closes it |
-| **Cut** | Menu ☰ → Cut / key `C` | Tap 2 points → cut (leaves a hole = *gap*). The only mode tool with a button in the bar |
+### Modes (exclusive, bottom-left bar)
 
-### One-shot (menu ☰)
+| Mode | Key | What it does |
+|------|-----|--------------|
+| **Move** (default) | `M` | Drag **any point**: track point, note or photo. The line follows. Metrics recalculated on release |
+| **Add notes** | `N` | Tap the route → drops a note there. The mode stays on, so you can drop several in a row |
+| **Add points** | `P` | Tap **on** the route → inserts a point into that segment. Tap **away** from the route → extends it from its nearest open end (start, finish or edge of an open cut). With nothing loaded, two taps start a new route |
+| **Draw** | `D` | Freehand: press and drag on the map. On release the stroke is cleaned into a smooth, professional line (jitter removed, bends rounded, straight runs straight) |
+| **Cut** | `C` | Menu ☰ → Cut (it appears in the mode bar only while active). Tap 2 points → cut (leaves a hole = *gap*) |
+
+Tapping the active mode again returns to **Move**; so does `Esc`.
+
+#### Where a drawn stroke goes
+
+- **One end starts at an open end** of the route (start, finish, edge of an open cut) → the route is extended from there; reaching the opposite edge of a cut closes it
+- **Both ends touch the route** → the stroke replaces the stretch of route between those two spots. If notes sit inside that stretch, the Editor asks first and names them
+- **Otherwise** → nothing changes and a hint explains how to draw
+- **Nothing loaded** → the first stroke creates the roadbook
+
+### Menu ☰
 
 | Tool | Function |
 |------|----------|
+| **Cut** | Enters Cut mode (key `C`, see above) |
 | **Add GPX** | Smart join: if both ends touch the route (≤200m) → replaces the inner segment; otherwise joins to the nearest end (auto-orients) |
 | **Simplify** | Douglas-Peucker (tolerance 0.5–50m, default 2m). **Recalculates metrics from scratch** → total can only decrease. Notes stay on their vertices (anchors preserved) |
 | **Adjust** | Live re-record of a segment (shared gps-meter). Replaces the segment between `adjP1` and `adjP2` and re-attaches the notes |
-| **Undo / Redo** | Debounced 400ms snapshot, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) |
+| **Shortcuts** | Lists all keyboard shortcuts |
+
+**Undo / Redo** (top-left bar): Debounced 400ms snapshot, max 30. Ctrl/Cmd+Z / Ctrl+Y (Shift+Z)
 
 > **Reverse** (path reversal) is in **Settings** (Config view), not here.
+
+### Right-click menu (long-press on touch)
+
+A dark card in the app's style. At the top it says what was hit — a note (with its number), a track point or "this spot" — and its coordinates, with a one-click copy button. Below, the commands in groups (edit · photos · open in Google Maps / Google Earth), each with its key. Arrow keys move through the commands; `Esc` or a click outside closes it.
+
+### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| `M` · `N` · `P` · `D` · `C` | Mode: Move · Add notes · Add points · Draw · Cut |
+| `Esc` | Back to Move |
+| Ctrl/Cmd+Z · Ctrl+Y (Shift+Z) | Undo · Redo |
+
+The same letters work in the right-click menu and on a selected track point:
+
+| Key | Action |
+|-----|--------|
+| `N` | Turn into / add a note |
+| `P` | Add a track point |
+| `I` | Intermediate point |
+| `T` | Turn a note into a track point |
+| `Del` | Delete |
 
 ---
 
@@ -59,7 +98,7 @@ The map is the heart. Vertical `.map-tools` bar (only ☰ · Undo · Redo visibl
 
 An internal cut leaves a **real hole** (not a segment). Stored as a pair of **points** `{a,b}` (not indices) → survives index shifting.
 
-- **Fill**: draw over it (Draw closes the gap by touching the opposite edge)
+- **Fill**: draw over it or extend with Add points (reaching the opposite edge closes the gap)
 - **Close straight**: at export/save → `confirmOpenCuts` asks for confirmation → closes as a straight line
 - `resolveGaps()` resolves them into indices on demand
 
@@ -97,7 +136,7 @@ Note is dragged from the blue marker → moves the **track vertex** underneath �
 
 > 📸 *Screenshot: icon palette with categories and live search*
 
-Category chips + live search (`filterIcons`). Tap or **drag&drop** onto vignettes to add. Custom: `#iconFile` → data-URI. × badge to delete (blocked if in use).
+Category chips + live search (`filterIcons`). Tap or **drag&drop** onto vignettes to add. Custom: upload (`#iconFile`) or paste → data-URI. If the icon sits on a plain background (e.g. a photo of white paper), the Editor asks **"Remove the background?"** (No / Yes), showing the original and the result side by side — it runs entirely in the browser, and the roadbook's icon library keeps only the version you chose. × badge to delete (blocked if in use).
 
 > On .rdbk import from Roadbook Suite: icons renamed 1:1 (table in `editor.md` §9.5), flip Y + recentred + ×1.5 (×3 start/finish). Icons without a file → fallback `W28_general_danger.svg` + note in text *"Note: add icon <name>"*.
 

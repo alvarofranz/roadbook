@@ -28,7 +28,7 @@
     let ctxPhotoPoint = null; // the map point a context-menu photo upload is geotagged at
     let pastePoint = null;    // the point a context-menu "Paste photo" armed; the next Ctrl+V drops the image here
     let ctxMenu = null;       // the open context popup + its key→action map
-    let selVertex = -1;       // the tap-selected track vertex (Move-points tool); the target of the W/M/A/L/Del shortcuts
+    let selVertex = -1;       // the tap-selected track vertex (Move mode); the target of the N/I/P/Del shortcuts
     function uploadPhotoHere(p) {
         if (!(currentRbId > 0)) return toast('Save to your profile first.');
         ctxPhotoPoint = p; $('ctxPhotoFile').click();
@@ -50,28 +50,57 @@
             toast('Press Ctrl+V to paste the photo here');
         }
     }
-    function closeCtxMenu() { if (ctxMenu) { ctxMenu.popup.remove(); ctxMenu = null; } }
-    // Build a context popup from a list of items: { id, icon, label, key?, cls?, href?, run?, coords? }.
-    // pastePt arms Ctrl+V to drop a clipboard photo at that point while the menu is open.
-    function openCtxMenu(lngLat, items, pastePt) {
+    function closeCtxMenu() { if (ctxMenu) { ctxMenu.release(); ctxMenu.el.remove(); ctxMenu = null; } }
+    // The map context menu (#693): a themed card anchored at the pointer and kept inside the map.
+    // `head` is { title, point } — what was hit and where (the coordinates copy with one click);
+    // `groups` are lists of commands { id, icon, label, key?, danger?, href?, run? }, drawn with a
+    // separator between them. pastePt arms Ctrl+V to drop a clipboard photo at that point.
+    function openCtxMenu(lngLat, head, groups, pastePt) {
         closeCtxMenu();
-        const html = items.map((it) => {
-            if (it.coords) return `<span class="map-ctx-coords">${it.coords}</span>`;
-            const inner = `<i class="fa-solid ${it.icon}"></i> ${esc(t(it.label))}${it.key ? `<span class="map-ctx-key">${it.key}</span>` : ''}`;
+        const card = { es: 'NSEO', it: 'NSEO' }[document.documentElement.lang] || 'NSEW'; // N·S·E·W, but West → O in it/es (Ovest/Oeste)
+        const p = head.point;
+        const coordsText = `${p.lat >= 0 ? card[0] : card[1]} ${Math.abs(p.lat).toFixed(6)} · ${p.lon >= 0 ? card[2] : card[3]} ${Math.abs(p.lon).toFixed(6)}`;
+        const item = (it) => {
+            const inner = `<i class="fa-solid ${it.icon}"></i><span>${esc(t(it.label))}</span>`
+                + (it.href ? '<i class="fa-solid fa-arrow-up-right-from-square map-ctx-out"></i>' : '')
+                + (it.key ? `<kbd class="key-chip">${it.key}</kbd>` : '');
             return it.href
-                ? `<a class="map-ctx-link" href="${it.href}" target="_blank" rel="noopener">${inner}</a>`
-                : `<button type="button" class="map-ctx-link ${it.cls || ''}" data-k="${it.id}">${inner}</button>`;
-        }).join('');
-        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 8, maxWidth: 'none' }).setLngLat(lngLat).setHTML(html).addTo(map.map); // size to content so the coords line never wraps
-        const el = popup.getElement(), keys = {};
-        items.forEach((it) => {
+                ? `<a class="map-ctx-item" role="menuitem" href="${it.href}" target="_blank" rel="noopener">${inner}</a>`
+                : `<button type="button" class="map-ctx-item${it.danger ? ' danger' : ''}" role="menuitem" data-k="${it.id}">${inner}</button>`;
+        };
+        const el = document.createElement('div');
+        el.className = 'map-ctx'; el.setAttribute('role', 'menu');
+        el.innerHTML = `<div class="map-ctx-head"><div class="grow"><b>${esc(t(head.title))}</b><span class="map-ctx-coords">${coordsText}</span></div>`
+            + `<button type="button" class="map-ctx-copy" aria-label="${esc(t('Copy coordinates'))}" title="${esc(t('Copy coordinates'))}"><i class="fa-regular fa-copy"></i></button></div>`
+            + groups.filter((g) => g.length).map((g) => g.map(item).join('')).join('<div class="map-ctx-sep" role="separator"></div>');
+        const box = map.map.getContainer();
+        box.appendChild(el);
+        // at the pointer, flipped left/up when it would leave the map
+        const at = map.map.project(lngLat), w = el.offsetWidth, h = el.offsetHeight;
+        el.style.setProperty('--ctx-x', Math.max(8, Math.min(at.x + w + 8 > box.clientWidth ? at.x - w : at.x, box.clientWidth - w - 8)) + 'px');
+        el.style.setProperty('--ctx-y', Math.max(8, Math.min(at.y + h + 8 > box.clientHeight ? at.y - h : at.y, box.clientHeight - h - 8)) + 'px');
+        const keys = {};
+        groups.flat().forEach((it) => {
             if (!it.run) return;
-            const b = el.querySelector(`[data-k="${it.id}"]`);
-            if (b) b.onclick = () => { popup.remove(); it.run(); };
+            el.querySelector(`[data-k="${it.id}"]`).onclick = () => { closeCtxMenu(); it.run(); };
             if (it.key) keys[it.key.toLowerCase()] = it.run;
         });
-        popup.on('close', () => { if (ctxMenu && ctxMenu.popup === popup) ctxMenu = null; });
-        ctxMenu = { popup, keys, pastePoint: pastePt || null };
+        el.querySelectorAll('a.map-ctx-item').forEach((a) => { a.onclick = () => closeCtxMenu(); });
+        el.querySelector('.map-ctx-copy').onclick = () => { RBCopy(p.lat.toFixed(6) + ', ' + p.lon.toFixed(6), 'Coordinates copied.'); closeCtxMenu(); };
+        // arrow keys walk the commands; any press outside, a map move or a resize closes it
+        const items = [...el.querySelectorAll('.map-ctx-item')];
+        el.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+            e.preventDefault();
+            const i = items.indexOf(document.activeElement);
+            items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+        });
+        const outside = (e) => { if (!el.contains(e.target)) closeCtxMenu(); };
+        setTimeout(() => document.addEventListener('pointerdown', outside, true), 0); // not the press that opened it
+        map.map.on('movestart', closeCtxMenu); window.addEventListener('resize', closeCtxMenu);
+        const release = () => { document.removeEventListener('pointerdown', outside, true); map.map.off('movestart', closeCtxMenu); window.removeEventListener('resize', closeCtxMenu); };
+        ctxMenu = { el, keys, release, pastePoint: pastePt || null };
+        requestAnimationFrame(() => { if (ctxMenu && ctxMenu.el === el && items[0]) items[0].focus({ preventScroll: true }); }); // after the map has handled the press
     }
     // The map context menu — right-click on desktop, long-press on touch (#83). Its command set
     // depends on what's under the point: a note, a plain track point, or empty ground.
@@ -79,43 +108,38 @@
         if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: lngLat.lat, lon: lngLat.lng };
         const lat = here.lat.toFixed(6), lon = here.lon.toFixed(6);
-        const maps = { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` };
         // Google Earth alongside Maps (#69): one window that recentres + 3D/Street View and historical
         // imagery — handy for spotting tracks hidden under foliage (leaf-off views).
-        const earth = { id: 'earth', icon: 'fa-earth-americas', label: 'Open in Google Earth', href: `https://earth.google.com/web/search/${lat},${lon}` };
+        const outside = [
+            { id: 'maps', icon: 'fa-map-location-dot', label: 'Open in Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` },
+            { id: 'earth', icon: 'fa-earth-americas', label: 'Open in Google Earth', href: `https://earth.google.com/web/search/${lat},${lon}` },
+        ];
         const photo = (p) => [
             { id: 'photo', icon: 'fa-camera', label: 'Upload a photo here', run: () => uploadPhotoHere(p) },
             { id: 'paste', icon: 'fa-paste', label: 'Paste photo', key: 'Ctrl V', run: () => pastePhotoHere(p) },
         ];
-        const card = { es: 'NSEO', it: 'NSEO' }[document.documentElement.lang] || 'NSEW'; // N·S·E·W, but West → O in it/es (Ovest/Oeste)
-        const coords = { coords: `${t('Coords Lat/Lng:')} ${here.lat >= 0 ? card[0] : card[1]} ${Math.abs(here.lat).toFixed(6)} ${Math.abs(here.lon).toFixed(6)} ${here.lon >= 0 ? card[2] : card[3]}` };
         const wf = rb && map.map.queryRenderedFeatures(point, { layers: ['rb-wpts'] })[0];
         const vf = rb && !wf && map.map.queryRenderedFeatures(point, { layers: ['rb-verts'] })[0];
         if (wf) {                                   // a note (waypoint)
-            const ni = parseInt(wf.properties.i, 10);
-            openCtxMenu(lngLat, [
+            const ni = parseInt(wf.properties.i, 10), n = rb.notes[ni];
+            openCtxMenu(lngLat, { title: t('Note') + ' ' + n.num, point: n }, [[
                 { id: 'trk', icon: 'fa-link-slash', label: 'Turn this note into a track point', key: 'T', run: () => transformNote(ni) },
-                ...photo(rb.notes[ni]),
-                { id: 'del', icon: 'fa-trash', label: 'Delete note', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteNoteConfirm(ni) },
-                maps, earth, coords], rb.notes[ni]);
+                { id: 'del', icon: 'fa-trash-can', label: 'Delete note', key: 'Del', danger: true, run: () => deleteNoteConfirm(ni) },
+            ], photo(n), outside], n);
         } else if (vf) {                            // a plain track point
-            const ti = parseInt(vf.properties.i, 10);
-            openCtxMenu(lngLat, [
-                { id: 'note', icon: 'fa-location-dot', label: 'Turn this point into a note', key: 'W', run: () => vertexAction('note', ti) },
+            const ti = parseInt(vf.properties.i, 10), tp = rb.track[ti];
+            openCtxMenu(lngLat, { title: 'Track point', point: tp }, [[
+                { id: 'note', icon: 'fa-location-dot', label: 'Turn this point into a note', key: 'N', run: () => vertexAction('note', ti) },
                 { id: 'mid', icon: 'fa-arrows-left-right-to-line', label: 'Add intermediate point', key: 'I', run: () => vertexAction('mid', ti) },
-                { id: 'line', icon: 'fa-plus', label: 'Add track point here', key: 'L', run: () => vertexAction('line', ti) },
-                ...photo(rb.track[ti]),
-                { id: 'del', icon: 'fa-trash-can', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => vertexAction('del', ti) },
-                maps, earth, coords], rb.track[ti]);
+                { id: 'line', icon: 'fa-circle-plus', label: 'Add track point here', key: 'P', run: () => vertexAction('line', ti) },
+                { id: 'del', icon: 'fa-trash-can', label: 'Delete point', key: 'Del', danger: true, run: () => vertexAction('del', ti) },
+            ], photo(tp), outside], tp);
         } else {                                    // empty ground (route ops act on the nearest point)
-            openCtxMenu(lngLat, [
-                ...(rb ? [
-                    { id: 'note', icon: 'fa-location-dot', label: 'Add note here', key: 'W', run: () => addNoteAtExact(here) },
-                    { id: 'pt', icon: 'fa-circle-plus', label: 'Add track point here', key: 'L', run: () => addPointAtExact(here) },
-                    { id: 'del', icon: 'fa-trash-can', label: 'Delete point', key: 'Del', cls: 'map-ctx-delpt', run: () => deleteTrackPointNear(here) },
-                ] : []),
-                ...photo(here),
-                maps, earth, coords], here);
+            openCtxMenu(lngLat, { title: 'This spot', point: here }, [rb ? [
+                { id: 'note', icon: 'fa-location-dot', label: 'Add note here', key: 'N', run: () => addNoteAtExact(here) },
+                { id: 'pt', icon: 'fa-circle-plus', label: 'Add track point here', key: 'P', run: () => addPointAtExact(here) },
+                { id: 'del', icon: 'fa-trash-can', label: 'Delete the nearest point', key: 'Del', danger: true, run: () => deleteTrackPointNear(here) },
+            ] : [], photo(here), outside], here);
         }
     }
     if (map.map) {
@@ -133,59 +157,45 @@
         map.map.on('touchend', lpCancel);
         map.map.on('touchcancel', lpCancel);
     }
-    // Live mouse position on the map → the add/delete shortcuts can act there directly, without
-    // first opening the context menu (#35/#61).
+    // Live mouse position on the map: "Add track point here" from a selected vertex lands at the
+    // pointer rather than at a midpoint (#35/#61).
     let hoverPt = null;
     if (map.map) {
         map.map.on('mousemove', (e) => { hoverPt = { lat: e.lngLat.lat, lon: e.lngLat.lng }; });
         map.map.on('mouseout', () => { hoverPt = null; });
     }
-    // Editor shortcuts (#35, #458): the context menu's commands accelerate while it's open
-    // (Esc closes it); otherwise the keys act on the current selection (a tap-selected track
-    // vertex takes W/I/L/Del — I for the midpoint, since bare A always arms Add-note mode;
-    // an open note takes T/Del), D/C arm Draw/Cut, and any key left unclaimed — W/L always,
-    // Del with no selection — acts at the mouse position on the map, so W/L keep adding
-    // points even while a note is open (#141).
+    // Editor shortcuts (#35 · #458 · #692). One letter per thing, the same everywhere:
+    //  · an open context menu takes its own keys first (Esc closes it);
+    //  · a tap-selected track vertex takes N (make it a note) · I (intermediate point) · P (add a
+    //    point at the pointer) · Del;
+    //  · something selected inside the vignette takes Del; an open note takes T · Del;
+    //  · otherwise the letters are the modes: M Move · N add Notes · P add Points · D Draw · C Cut.
+    const MODE_KEYS = { m: 'points', n: 'note', p: 'point', d: 'draw', c: 'cut' };
     window.addEventListener('keydown', (e) => {
-        if (!rb || recWatch != null || e.target.matches('input, textarea, select')) return;
+        if (recWatch != null || e.target.matches('input, textarea, select')) return;
         if (e.ctrlKey || e.metaKey || e.altKey) { // Ctrl/Cmd+V over a context menu → paste the photo at its point (the native paste event uploads it)
             if (ctxMenu && ctxMenu.pastePoint && (e.key === 'v' || e.key === 'V')) { pastePoint = ctxMenu.pastePoint; closeCtxMenu(); }
             return; // leave undo/redo and the browser's own paste alone
         }
         const k = (e.key === 'Delete' || e.key === 'Backspace') ? 'del' : e.key.toLowerCase();
         if (k === 'escape') { if (ctxMenu) { e.preventDefault(); closeCtxMenu(); } return; }
-        if (!ctxMenu && k === 'm' && rb.track.length) { // M: back to Move, the default mode (#456)
-            e.preventDefault(); setMapTool('points'); return;
-        }
-        if (!ctxMenu && k === 'd' && rb.track.length) { // D: Draw route (#458)
-            e.preventDefault(); setMapTool('draw'); return;
-        }
-        if (!ctxMenu && k === 'c' && rb.track.length) { // C: Cut (#458)
-            e.preventDefault(); setMapTool('cut'); return;
-        }
         if (ctxMenu) { // menu open: its commands are the accelerators
             const run = ctxMenu.keys[k];
             if (!run) return;
             e.preventDefault(); closeCtxMenu(); run();
-        } else if (selVertex >= 0) { // a track vertex is selected
-            const act = { w: 'note', i: 'mid', l: 'line', del: 'del' }[k];
-            if (!act) return;
+        } else if (rb && selVertex >= 0 && ['n', 'i', 'p', 'del'].includes(k)) { // a track vertex is selected
             e.preventDefault();
             const i = selVertex; selVertex = -1; // the index goes stale once the route changes
-            vertexAction(act, i);
-        } else if (editorOpen && canvas.sel && k === 'del') { // something is selected INSIDE the
+            vertexAction({ n: 'note', i: 'mid', p: 'line', del: 'del' }[k], i);
+        } else if (rb && editorOpen && canvas.sel && k === 'del') { // something is selected INSIDE the
             // vignette: Del removes THAT — an icon or a junction vector — not the note holding it
             // (#521). Deleting the note from under a selected icon is never what the key meant.
             e.preventDefault(); canvas.deleteSelected();
-        } else if (editorOpen && sel >= 0 && (k === 't' || k === 'del')) { // a note is open: T transforms it, Del deletes it
+        } else if (rb && editorOpen && sel >= 0 && (k === 't' || k === 'del')) { // a note is open: T transforms it, Del deletes it
             e.preventDefault();
             if (k === 't') transformNote(sel); else deleteNoteConfirm(sel);
-        } else if (k === 'a' && rb.track.length) { // no selection: A arms the Add-note mode (#437)
-            e.preventDefault(); setMapTool('note');
-        } else if (hoverPt) { // act at the mouse position (no menu needed)
-            if (k === 'w') { e.preventDefault(); addNoteAtExact(hoverPt); }
-            else if (k === 'l') { e.preventDefault(); addPointAtExact(hoverPt); }
-            else if (k === 'del') { e.preventDefault(); deleteTrackPointNear(hoverPt); }
+        } else if (MODE_KEYS[k] && modeAvailable(MODE_KEYS[k])) {
+            e.preventDefault(); setMapTool(MODE_KEYS[k]);
         }
     });
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
@@ -243,7 +253,7 @@
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         if (photoPlacing) { placePhotoHere(here); return; } // setting the position of a photo with no EXIF GPS
         if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
-        if (mapTool === 'draw') drawPoint(here);
+        if (mapTool === 'point') pointTap(here);
         else if (mapTool === 'cut') cutPoint(here);
         else if (mapTool === 'note') addNoteAtExact(here); // stays in note mode, so notes can be dropped in a row
     });
@@ -298,7 +308,7 @@
     function onVertexSelect(i) {
         if (!rb || i < 0 || i >= rb.track.length) return;
         const tp = rb.track[i];
-        selVertex = i; // the W/M/A/L/Del shortcuts now target this point
+        selVertex = i; // the N/I/P/Del shortcuts now target this point
         map.setSelectedVertex(tp);
         // centre + rotate to the heading at this point, like selecting a note (arrival heading)
         const heading = RB.deriveBearings(rb.track, i).bIn;
@@ -413,44 +423,44 @@
             d.q('#ckFix').onclick = () => { resolve(false); d.close(); };
         });
     }
-    // mode tools (pan · add note · draw · move points · cut) are exclusive toggles; the rest are one-shot
+    // The map modes are exclusive; the ☰ panel's other tools are one-shot. 'pan' is the neutral
+    // state while nothing is loaded, a photo is being placed or the route is re-recorded.
     let mapTool = 'pan', cutFromIdx = -1, drawSeed = [];
-    // Modes with a button in the ☰ menu; Move ('points') is the default. Every mode shows
-    // its name + key in the panel, so touch users (no hover, no keyboard) can find them (#458).
-    const MODE_TOOLS = ['toolMove', 'toolNote', 'toolDraw', 'toolCut'];
-    /* What each map mode is called, with the key that reaches it (#458). */
-    const MODE_LABEL = { points: ['M', 'Move'], note: ['A', 'Add note'], draw: ['D', 'Draw route'], cut: ['C', 'Cut'], pan: ['', 'Navigate'] };
-    let modeLabelTimer = null;
-    function showModeLabel(tool) {
-        const el = $('mapModeLabel'), m = MODE_LABEL[tool];
-        if (!el) return;
-        if (!m) { el.hidden = true; return; }
-        el.innerHTML = (m[0] ? `<b>${m[0]}</b> — ` : '') + esc(t(m[1]));
-        el.hidden = false;
-        clearTimeout(modeLabelTimer);
-        modeLabelTimer = setTimeout(() => { el.hidden = true; }, 3000); // says its piece and gets out of the way
+    // Every mode's button: the rail (bottom-left) and Cut's row in the ☰ panel (#692).
+    const MODE_BUTTONS = ['modeMove', 'modeNote', 'modePoint', 'modeDraw', 'modeCut', 'toolCut'];
+    // Move, Add notes and Cut act on a route; Add points and Draw can also start one.
+    const modeAvailable = (tool) => tool === 'point' || tool === 'draw' || !!(rb && rb.track.length >= 2);
+    function paintModes() {
+        MODE_BUTTONS.forEach((id) => {
+            const b = $(id), tool = b.dataset.tool;
+            b.classList.toggle('on', tool === mapTool);
+            b.disabled = !modeAvailable(tool);
+        });
+        $('modeCut').hidden = mapTool !== 'cut'; // Cut joins the rail only while it is the active mode
     }
     function setMapTool(tool) {
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
-        MODE_TOOLS.forEach((id) => $(id).classList.toggle('on', $(id).dataset.tool === tool));
-        map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // points shows a per-handle grab cursor
+        map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // Move shows a per-handle grab cursor
+        if (map.map) tool === 'draw' ? map.map.dragPan.disable() : map.map.dragPan.enable(); // a one-finger drag draws, it must not pan
         if (tool === 'points' && rb) { map.setVertexEditor(rb.track, onVertexDrag, onVertexCommit, onVertexSelect); map.setWaypointEditor(onWptDrag, onWptCommit); map.setPhotoEditor(onPhotoDrag, onPhotoCommit); } // Move: drag trk · wpt · photo
-        else if (tool === 'draw' && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) so you see the points while drawing (#52)
+        else if ((tool === 'point' || tool === 'draw') && rb) { map.showVertices(rb.track); map.setWaypointEditor(null); map.setPhotoEditor(null); } // dots visible (read-only) while adding to the route (#52)
         else { map.setVertexEditor(null); map.setWaypointEditor(null); map.setPhotoEditor(null); }
-        $('mapMenuPanel').hidden = true; // picking any tool closes the "more tools" menu
-        showModeLabel(tool);
+        $('mapMenuPanel').hidden = true; // picking any tool closes the ☰ panel
+        paintModes();
     }
-    MODE_TOOLS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool));
+    // a rail button toggles: tapping the active mode again goes back to Move
+    MODE_BUTTONS.forEach((id) => $(id).onclick = () => setMapTool($(id).dataset.tool === mapTool && id !== 'toolCut' ? 'points' : $(id).dataset.tool));
+    paintModes();
     $('mapMenuToggle').onclick = () => { const p = $('mapMenuPanel'); p.hidden = !p.hidden; };
     // Shortcut sheet (#458): every key grouped by context, including the two lines written
     // nowhere else — right-click on desktop, long-press on touch, opens the context menu.
     function shortcutSheet() {
-        const row = (label, key) => `<div class="ev-line"><span class="meta">${esc(t(label))}</span><span class="map-ctx-key">${key}</span></div>`;
+        const row = (label, key) => `<div class="ev-line"><span class="meta">${esc(t(label))}</span><kbd class="key-chip">${key}</kbd></div>`;
         const sec = (h, rows) => `<h3>${esc(t(h))}</h3>` + rows.map(([l, k]) => row(l, k)).join('');
         const m = RBModal(`<h2><i class="fa-solid fa-keyboard"></i> ${esc(t('Keyboard shortcuts'))}</h2>`
-            + sec('Modes', [['Move', 'M'], ['Add note', 'A'], ['Draw route', 'D'], ['Cut', 'C'], ['Back to Move', 'Esc']])
-            + sec('Track point', [['Turn this point into a note', 'W'], ['Add intermediate point', 'I'], ['Add track point here', 'L'], ['Delete point', 'Del']])
+            + sec('Modes', [['Move', 'M'], ['Add notes', 'N'], ['Add points', 'P'], ['Draw', 'D'], ['Cut', 'C'], ['Back to Move', 'Esc']])
+            + sec('Track point', [['Turn this point into a note', 'N'], ['Add intermediate point', 'I'], ['Add track point here', 'P'], ['Delete point', 'Del']])
             + sec('Note', [['Turn this note into a track point', 'T'], ['Delete note', 'Del']])
             + sec('Anywhere', [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']])
             + `<p class="muted small">${esc(t('Right-click opens the menu — long-press on touch.'))}</p>`
@@ -461,7 +471,9 @@
     // translated hover tooltips (refreshed on language switch)
     function applyToolTips() {
         const tips = {
-            toolMove: 'Move (drag points) — M', toolNote: 'Add note (tap the route) — A', toolDraw: 'Draw route — D', toolCut: 'Cut (tap two points) — C',
+            modeMove: 'Move: drag points, notes and photos — M', modeNote: 'Add notes: tap the route — N',
+            modePoint: 'Add points: tap the route to insert one, or past an end to extend it — P',
+            modeDraw: 'Draw: drag on the map to sketch the route — D', modeCut: 'Cut (tap two points) — C', toolCut: 'Cut (tap two points) — C',
             toolAddGpx: 'Add a GPX track',
             toolSimplify: 'Simplify (remove GPS noise)', toolAdjust: 'Adjust on the trail (live GPS)',
             undoBtn: 'Undo (Ctrl+Z)', redoBtn: 'Redo (Ctrl+Y)', mapMenuToggle: 'More tools', toolShortcuts: 'Keyboard shortcuts',
@@ -511,27 +523,39 @@
     // Escape → back to the default Move tool; never mid-adjust — the drag editors must not
     // touch a track that is being live re-recorded (#220)
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && recWatch == null) setMapTool('points'); });
-    // Draw mode: every tap extends the route from the nearest OPEN end — the
-    // finish, the start, or either edge of an open cut (tapping on the opposite
-    // edge closes the cut). With nothing loaded, the first two taps create a
-    // fresh roadbook (start/end notes ride the growing track).
-    const nearOnScreen = (q, p) => {
-        if (!map.map) return RB.geo.haversineM(q, p) < 20;
+    // Extending the route (Add points away from the route, #692): the tapped point joins the
+    // nearest OPEN end — the finish, the start, or either edge of an open cut (tapping on the
+    // opposite edge closes the cut). With nothing loaded, the first two taps create a fresh
+    // roadbook (start/end notes ride the growing track).
+    const nearOnScreen = (q, p, px = 16) => {
+        if (!map.map) return RB.geo.haversineM(q, p) < px * 1.25;
         const A = map.map.project([q.lon, q.lat]), B = map.map.project([p.lon, p.lat]);
-        return Math.hypot(A.x - B.x, A.y - B.y) < 16;
+        return Math.hypot(A.x - B.x, A.y - B.y) < px;
     };
-    function drawPoint(p) {
+    // A brand-new route from its first points (two taps of Add points, or one Draw stroke). A
+    // loaded routeless roadbook keeps its identity, title and metadata; the mode stays armed.
+    function startRoute(trkpts, mode) {
+        const meta = rb && rb.meta;
+        if (!rb) resetIdentity();
+        const drawn = RB.buildRoadbook({ name: (meta && meta.title) || t('Drawn route'), trkpts });
+        if (meta) drawn.meta = { ...meta, ...drawn.meta };
+        setRoadbook(drawn);
+        markDirty(); setMapTool(mode);
+    }
+    // Add points (#692): a tap ON the route inserts a point into the segment under it; a tap away
+    // from it extends the route from its nearest open end.
+    function pointTap(p) {
+        if (rb && rb.track.length >= 2) {
+            const hit = RB.nearestOnTrack(rb.track, p);
+            if (hit && nearOnScreen(hit, p, 22) && !new Set(gapIdxs()).has(hit.i)) return addPointAtExact(p);
+        }
+        extendRoute(p);
+    }
+    function extendRoute(p) {
         const pt = { lat: RB.round6(p.lat), lon: RB.round6(p.lon) };
         if (!rb || rb.track.length < 2) {     // seed the first segment of a brand-new or routeless roadbook
             drawSeed.push(pt); map.setPin(drawSeed[0]);
-            if (drawSeed.length === 2) {
-                const meta = rb && rb.meta;       // a loaded routeless roadbook keeps its identity, title and metadata
-                if (!rb) resetIdentity();
-                const drawn = RB.buildRoadbook({ name: (meta && meta.title) || t('Drawn route'), trkpts: drawSeed });
-                if (meta) drawn.meta = { ...meta, ...drawn.meta };
-                setRoadbook(drawn);
-                markDirty(); setMapTool('draw'); // stay in draw mode to keep sketching
-            }
+            if (drawSeed.length === 2) startRoute(drawSeed, 'point');
             return;
         }
         const D = RB.geo.haversineM, last = rb.track.length - 1;
@@ -562,6 +586,107 @@
         candidates.sort((x, y) => x.d - y.d)[0].apply();
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes(); markDirty();
+    }
+    /* ---------- Draw (#692): freehand, press and drag ---------- */
+    // The finger or mouse traces a stroke (a dashed line under it); on release RB.normalizeStroke
+    // turns it into a clean piece — jitter gone, bends rounded, straight runs straight — which
+    // then joins the route at its nearest open end (or fills an open cut, or starts the route).
+    let stroke = null;
+    // Precision matches what the author can see: ~4 screen pixels at the current zoom.
+    function strokeTolerance() {
+        const c = map.map.getCenter(), a = map.map.project(c);
+        const b = map.map.unproject([a.x + 4, a.y]);
+        return RB.geo.haversineM({ lat: c.lat, lon: c.lng }, { lat: b.lat, lon: b.lng });
+    }
+    function strokeStart(e) {
+        if (mapTool !== 'draw' || !map.ready || recWatch != null || photoPlacing) return;
+        const oe = e.originalEvent;
+        if ((oe.touches && oe.touches.length > 1) || (oe.button != null && oe.button !== 0)) return; // pinch / right-click: not a stroke
+        stroke = [{ lat: e.lngLat.lat, lon: e.lngLat.lng }];
+    }
+    function strokeMove(e) {
+        if (!stroke) return;
+        const p = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+        if (nearOnScreen(stroke[stroke.length - 1], p, 3)) return; // one sample per ~3 px of movement
+        stroke.push(p); map.setSketch(stroke);
+    }
+    function strokeEnd() {
+        if (!stroke) return;
+        const pts = stroke.length > 1 ? RB.normalizeStroke(stroke, strokeTolerance()) : [];
+        stroke = null; map.setSketch(null);
+        if (pts.length < 2) return toast('Drag on the map to draw your route.');
+        if (!rb || rb.track.length < 2) return startRoute(pts, 'draw');
+        joinStroke(pts);
+    }
+    if (map.map) {
+        map.map.on('mousedown', strokeStart); map.map.on('touchstart', strokeStart);
+        map.map.on('mousemove', strokeMove); map.map.on('touchmove', strokeMove);
+        map.map.on('mouseup', strokeEnd); map.map.on('touchend', strokeEnd);
+        window.addEventListener('mouseup', strokeEnd); // released outside the map
+    }
+    // Where a drawn piece goes (#692), decided by what its two ends touch on screen (~30 px):
+    //  · one end at an open end of the route (start, finish, an edge of an open cut) and the other
+    //    away from the route → the route is extended from there (a piece reaching the opposite
+    //    edge of a cut closes it);
+    //  · both ends on the route → the stretch between them is replaced by the piece;
+    //  · anything else is not a route edit — nothing changes, and the hint says how to draw.
+    const STROKE_SNAP_PX = 30;
+    async function joinStroke(pts) {
+        const track = rb.track, last = track.length - 1;
+        const onRoute = (p) => { const hit = RB.nearestOnTrack(track, p); return hit && nearOnScreen(hit, p, STROKE_SNAP_PX) ? hit : null; };
+        const hitA = onRoute(pts[0]), hitB = onRoute(pts[pts.length - 1]);
+        const ends = [{ kind: 'end', at: track[last] }, { kind: 'start', at: track[0] }];
+        resolveGaps().forEach(({ i, g }) => { ends.push({ kind: 'gapA', i, g, at: track[i] }, { kind: 'gapB', i, g, at: track[i + 1] }); });
+        const openEndAt = (p) => ends.find((end) => nearOnScreen(end.at, p, STROKE_SNAP_PX));
+        const fromA = openEndAt(pts[0]), fromB = openEndAt(pts[pts.length - 1]);
+        if (fromA && !hitB) return extendWith(fromA, pts);
+        if (fromB && !hitA) return extendWith(fromB, pts.slice().reverse());
+        if (hitA && hitB && Math.abs((hitA.i + hitA.t) - (hitB.i + hitB.t)) > 0.05) return replaceStretch(pts, hitA, hitB);
+        toast('Start the stroke at an end of the route — or draw from the route back onto it to replace that stretch.');
+    }
+    // piece[0] sits at `end`; the rest of it becomes the new route beyond that end.
+    function extendWith(end, piece) {
+        const track = rb.track, last = track.length - 1;
+        if (end.kind === 'end') {
+            const endNote = rb.notes[rb.notes.length - 1], rides = endNote && endNote.idx === last;
+            track.push(...piece);
+            if (rides) endNote.idx = track.length - 1; // the finish note rides the new tip
+        } else if (end.kind === 'start') {
+            const startNote = rb.notes[0], rides = startNote && startNote.idx === 0;
+            track.unshift(...piece.slice().reverse());
+            rb.notes.forEach((n) => { n.idx += piece.length; });
+            if (rides) startNote.idx = 0; // the start note rides the new tip
+        } else {
+            const fromEdgeA = end.kind === 'gapA', i = end.i, g = end.g;
+            const opposite = fromEdgeA ? track[i + 1] : track[i];
+            const closes = nearOnScreen(opposite, piece[piece.length - 1], STROKE_SNAP_PX);
+            const inserted = fromEdgeA ? piece : piece.slice().reverse(); // in route order, between i and i+1
+            track.splice(i + 1, 0, ...inserted);
+            rb.notes.forEach((n) => { if (n.idx > i) n.idx += inserted.length; });
+            if (closes) { gaps.splice(gaps.indexOf(g), 1); toast('Cut closed.'); }
+            else if (fromEdgeA) g.a = inserted[inserted.length - 1];
+            else g.b = inserted[0];
+        }
+        strokeApplied('Route extended.');
+    }
+    // Both ends on the route: the piece replaces the stretch between the two spots it touches,
+    // meeting the route exactly there. Notes inside that stretch go with it — asked first, by name.
+    async function replaceStretch(pts, hitA, hitB) {
+        let piece = pts, a = hitA, b = hitB;
+        if (a.i + a.t > b.i + b.t) { piece = pts.slice().reverse(); a = hitB; b = hitA; } // along the route's direction
+        const lost = rb.notes.filter((n) => n.idx > a.i && n.idx <= b.i);
+        if (lost.length && !(await RBConfirmDanger(t('Replace this stretch of the route? These notes are in it and will be deleted:') + ' ' + lost.map(noteLabel).join(', ')))) return;
+        const middle = [{ lat: a.lat, lon: a.lon }, ...piece.slice(1, -1), { lat: b.lat, lon: b.lon }];
+        const shift = a.i + 1 + middle.length - (b.i + 1); // how far the rest of the route moves
+        rb.track.splice(a.i + 1, b.i - a.i, ...middle);
+        rb.notes = rb.notes.filter((n) => !lost.includes(n));
+        rb.notes.forEach((n) => { if (n.idx > b.i) n.idx += shift; });
+        strokeApplied('Stretch replaced.');
+    }
+    function strokeApplied(msg) {
+        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+        routeChanged(msg);
+        setMapTool('draw'); // keep drawing: the vertex dots now include the new piece
     }
     // Track index exactly at the tapped position: when the tap lands between two
     // points, the nearest segment is split there with a new point — you cut and
@@ -722,7 +847,7 @@
         };
     };
     $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording(); };
-    $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
+    $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Drag on the map to draw your route.'); };
 
     /* ---------- loading ---------- */
     // The opening screen is interactive immediately, while startup() is still running its async
@@ -801,7 +926,7 @@
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolMove', 'toolNote', 'toolDraw', 'toolCut', 'toolAddGpx', 'toolSimplify', 'toolAdjust', 'toolShortcuts'].forEach((id) => $(id).disabled = false); // route ops need a route
+        ['toolAddGpx', 'toolSimplify', 'toolAdjust', 'toolShortcuts'].forEach((id) => $(id).disabled = false); // route ops need a roadbook; the modes paint their own state
         $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
         $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
         setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
@@ -815,9 +940,9 @@
         if (rb.notes.length) { showOnCanvas(0); renderEditor(); } else canvas.setNote(null);
         histReset();
         const routeless = rb.track.length < 2;
-        setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to moving points
+        setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to Move
         showView('map'); // tap a note to open its editor inline below the row
-        if (routeless) { centerOnDefault(); toast('Tap the map to draw your route.'); } // no route to fit → start at the user's default location
+        if (routeless) { centerOnDefault(); toast('Drag on the map to draw your route.'); } // no route to fit → start at the user's default location
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -2006,13 +2131,39 @@
             // downscaled to a 256 px PNG like every embedded image (#657): an icon is drawn at most
             // 120 px, so a full-size photo would only bloat every .rdbk
             const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name).replace(/\.[^.]+$/, '') + '.png';
-            try { rb.icons[name] = await RBImg.toDataURL(f, 256); n++; }
+            try { rb.icons[name] = await iconDataURL(f); n++; }
             catch (e) { toast('Could not read the image.'); }
         }
         if (!n) return;
         markDirty(); await renderIcons();
         toast(n === 1 ? 'Icon added — tap it to place.' : 'Icons added — tap them to place.');
     }
+    // An uploaded or pasted icon on a flat backdrop (#694): offer to cut the backdrop out, showing
+    // the result first. The library keeps only the version the author chose.
+    async function iconDataURL(file) {
+        const c = await RBImg.canvas(file, 256), ctx = c.getContext('2d');
+        const original = c.toDataURL('image/png');
+        const img = ctx.getImageData(0, 0, c.width, c.height);
+        const bg = RB.iconBackground(img.data, c.width, c.height);
+        if (!bg) return original;
+        RB.removeIconBackground(img.data, c.width, c.height, bg);
+        ctx.putImageData(img, 0, 0);
+        const cleaned = c.toDataURL('image/png');
+        return (await askRemoveBackground(original, cleaned)) ? cleaned : original;
+    }
+    // A question, so No / Yes (#435) — with both versions side by side on a checkerboard, where
+    // transparency shows.
+    const askRemoveBackground = (original, cleaned) => new Promise((resolve) => {
+        const d = RBModal(`<h3><i class="fa-solid fa-wand-magic-sparkles icon-accent"></i> ${esc(t('Remove the background?'))}</h3>
+            <p class="muted">${esc(t('The icon sits on a plain background that would cover the vignette.'))}</p>
+            <div class="icon-compare">
+                <figure><img src="${original}" alt=""><figcaption>${esc(t('Original'))}</figcaption></figure>
+                <figure><img src="${cleaned}" alt=""><figcaption>${esc(t('Without background'))}</figcaption></figure>
+            </div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-no>${esc(t('No'))}</button><button class="btn btn-primary" data-yes>${esc(t('Yes'))}</button></div>`, 'narrow', () => resolve(false));
+        d.q('[data-no]').onclick = () => { d.close(); resolve(false); };
+        d.q('[data-yes]').onclick = () => { d.close(); resolve(true); };
+    });
     $('addIconBtn').onclick = () => $('iconFile').click();
     $('iconFile').onchange = async (e) => { await addIconFiles([...e.target.files], false); e.target.value = ''; };
     /* Paste an image straight into the gallery (#455). Two ways in, because neither works

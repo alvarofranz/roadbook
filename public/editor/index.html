@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-102">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-103">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-102">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-103">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -30,13 +30,22 @@
         .note-list-zone .note-list::-webkit-scrollbar-track, #noteList::-webkit-scrollbar-track { background: rgba(255, 255, 255, .04); border-radius: 6px; }
         .rec-btns .btn-danger { flex: 0 0 auto; }
         .map-box { padding: 0; overflow: hidden; border-radius: 14px; }
-        /* right-click map popup → Google Maps link for the clicked point */
-        /* every menu row (link or button) shares one rhythm: full width, even vertical padding */
-        .map-ctx-link { display: flex; width: 100%; align-items: center; gap: .5rem; padding: .3rem 0; font-weight: 700; color: #1a73e8; text-decoration: none; cursor: pointer; }
-        .map-ctx-link:hover { text-decoration: underline; }
-        button.map-ctx-link { background: none; border: 0; font: inherit; text-align: left; }
-        .map-ctx-coords { display: block; margin-top: .4rem; padding-top: .4rem; border-top: 1px solid #e6e6e6; color: #555; font-size: .72rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .map-ctx-delpt { color: var(--track); }
+        /* the map context menu (#693): a themed card at the pointer — what was hit and where on top
+           (coordinates copy in one click), then the commands in groups, each with its key */
+        .map-ctx { position: absolute; left: var(--ctx-x, 8px); top: var(--ctx-y, 8px); z-index: 20; width: max-content; min-width: 250px; max-width: calc(100% - 16px); background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: .3rem; }
+        .map-ctx-head { display: flex; align-items: center; gap: .5rem; padding: .35rem .5rem .5rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); }
+        .map-ctx-head b { display: block; font-size: .84rem; }
+        .map-ctx-coords { display: block; color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .map-ctx-copy { flex-shrink: 0; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+        .map-ctx-copy:hover { color: var(--sand); border-color: var(--sand); }
+        .map-ctx-item { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .45rem .55rem; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .86rem; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+        .map-ctx-item > i:first-child { width: 1.15em; text-align: center; color: var(--sand); flex-shrink: 0; }
+        .map-ctx-item:hover, .map-ctx-item:focus-visible { background: var(--card-2); outline: none; }
+        .map-ctx-item.danger, .map-ctx-item.danger > i:first-child { color: var(--track); }
+        .map-ctx-item .key-chip { margin-left: auto; }
+        .map-ctx-item > span { padding-right: 1rem; }
+        .map-ctx-out { margin-left: auto; color: var(--muted); font-size: .72rem; }
+        .map-ctx-sep { height: 1px; background: var(--line); margin: .25rem .35rem; }
         /* every row shows its vignette between distance and text; the open row hosts the live editor canvas */
         #canvasWrap { position: relative; width: 160px; max-width: 100%; margin: 0; }
         .note-mini .note-tulip { flex-shrink: 0; width: 160px; display: flex; align-items: center; justify-content: center; }
@@ -166,10 +175,27 @@
         .map-editor { position: relative; }
         /* no overflow clipping here — the hover tooltips render outside the bar */
         .map-tools { position: absolute; top: 10px; left: 10px; z-index: 6; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
-        /* the active map mode, announced for 3 s bottom-left: Move has no button, so without this
-           the default mode was the one thing you could not see (#456) */
-        .map-mode-label { position: absolute; left: 10px; bottom: 10px; z-index: 6; background: rgba(14, 17, 22, .9); border: 1px solid var(--line); border-radius: 10px; padding: .35rem .7rem; color: var(--text); font-size: .82rem; font-weight: 700; pointer-events: none; }
-        .map-mode-label b { color: var(--sand); }
+        /* the remove-background question (#694): before and after, on a checkerboard so transparency shows */
+        .icon-compare { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin: .4rem 0 1rem; }
+        .icon-compare figure { margin: 0; text-align: center; }
+        .icon-compare img { width: 100%; aspect-ratio: 1; object-fit: contain; border: 1px solid var(--line); border-radius: 10px; background: repeating-conic-gradient(#d9d9d9 0 25%, #fff 0 50%) 0 0 / 16px 16px; }
+        .icon-compare figcaption { margin-top: .35rem; color: var(--muted); font-size: .8rem; }
+        /* the map modes (#692): their own rail, bottom-left above the scale bar. Every button shows
+           its icon and key; the active one is lit and also shows its name, so the current mode is
+           always readable — by mouse, by key and on touch alike. */
+        .mode-rail { position: absolute; left: 10px; bottom: 34px; z-index: 6; display: flex; flex-direction: column; gap: 2px; background: rgba(14, 17, 22, .88); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+        .mode-btn { position: relative; display: flex; align-items: center; gap: .55rem; height: 40px; min-width: 40px; padding: 0 .55rem 0 .7rem; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: .86rem; font-weight: 700; }
+        .mode-btn > i { width: 1.1em; text-align: center; flex-shrink: 0; }
+        .mode-btn:hover:not(:disabled):not(.on) { background: var(--card-2); }
+        .mode-btn.on { background: var(--sand); color: var(--on-sand); }
+        .mode-btn:disabled { opacity: .35; cursor: default; }
+        .mode-name { display: none; white-space: nowrap; }
+        .mode-btn.on .mode-name { display: inline; }
+        .mode-btn .key-chip { margin-left: auto; }
+        /* a keyboard key, wherever a shortcut is shown: the mode rail, the ☰ panel, the context menu, the shortcut sheet */
+        .key-chip { display: inline-block; min-width: 1.5em; padding: .15rem .35rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: rgba(255, 255, 255, .05); color: var(--muted); font: 700 .7rem/1.1 ui-monospace, Menlo, Consolas, monospace; text-align: center; white-space: nowrap; }
+        .on > .key-chip { color: var(--on-sand); border-color: rgba(0, 0, 0, .28); background: rgba(0, 0, 0, .08); }
+        @media (hover: none) { .mode-btn .key-chip { display: none; } } /* touch: no keyboard to press */
         .map-tool { position: relative; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .9rem; }
         .map-tool:hover { background: var(--card-2); }
         .map-tool.on { background: var(--sand); color: var(--on-sand); }
@@ -179,9 +205,9 @@
         .map-tool-row { display: flex; align-items: center; gap: .6rem; width: 100%; border: 0; border-radius: 9px; background: transparent; color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 600; padding: .5rem .6rem; text-align: left; overflow-wrap: anywhere; }
         .map-tool-row:hover { background: var(--card-2); }
         .map-tool-row.on { background: var(--sand); color: var(--on-sand); }
-        .map-tool-row.on .map-ctx-key { color: var(--on-sand); }
         .map-tool-row:disabled { opacity: .35; cursor: default; }
         .map-tool-row > i { width: 1.2em; text-align: center; flex-shrink: 0; }
+        .map-tool-row .key-chip { margin-left: auto; }
         .map-tool:disabled { opacity: .35; cursor: default; }
         .map-tools-sep { height: 1px; flex-shrink: 0; background: var(--line); margin: 2px 4px; }
         /* top-right map control (next to the zoom buttons): satellite/terrain toggle + zoom level */
@@ -190,13 +216,11 @@
         .rb-mapctl-zoom { background: #fff; color: #333; font-size: .6rem; font-weight: 700; text-align: center; padding: 1px 2px 2px; font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
         /* export popup: indent the GPX waypoint-icon sub-options under "Waypoints" */
         .gpx-sub { margin-left: 1.5rem; }
-        /* map context menu: the keyboard-shortcut hint, pushed to the right of each command */
-        .map-ctx-key { margin-left: auto; padding-left: 1.5rem; color: #999; font-size: .82em; font-weight: 700; }
         /* raw JSON/GPX editor (#28) */
         .raw-edit { width: 100%; height: 55vh; min-height: 240px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .76rem; line-height: 1.4; white-space: pre; overflow: auto; background: var(--card-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: .6rem .7rem; }
         /* draggable marker shown while moving a photo on the map */
         .rb-photo-pin { padding: 0 7px; height: 26px; border-radius: 13px; background: #3a8dff; border: 2px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.55); color: #fff; font-weight: 800; font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: grab; }
-        .map-tool[data-tip]:hover:not(:disabled)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
+        .map-tool[data-tip]:hover:not(:disabled)::after, .mode-btn[data-tip]:hover:not(:disabled):not(.on)::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; font-weight: 600; padding: .3rem .55rem; border-radius: 8px; pointer-events: none; z-index: 7; }
         /* white vignette: shows EXACTLY what gets produced/printed (matches the Reader + PDF) */
         .vignette-box { position: relative; width: 100%; max-width: 170px; margin: .2rem 0 .4rem; aspect-ratio: 230/162; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: none; }
         .vignette-box-junctions { cursor: pointer; }
@@ -309,6 +333,8 @@
             #edMap { height: 46vh; }
             .icon-grid { grid-template-rows: repeat(2, 50px); grid-auto-columns: 50px; }
             .map-tools { max-height: calc(100% - 20px); overflow-y: auto; } /* touch: no hover tooltips, scrolling wins */
+            .mode-rail { flex-direction: row; bottom: 30px; max-width: calc(100% - 20px); } /* a short map: the modes run along the bottom */
+            .map-ctx { min-width: 0; }
             .meta-grid { grid-template-columns: 1fr; }
             /* phones: the text takes the row; the tulip drops to its own line below it */
             .note-mini { flex-wrap: wrap; }
@@ -335,7 +361,7 @@
                 <div class="icon-category" data-i18n="Start new Roadbook from:">Start new Roadbook from:</div>
                 <div class="load-opts">
                     <button class="load-card" id="loadGpx"><i class="fa-solid fa-route"></i><b>GPX</b><small data-i18n="Import a GPS track">Import a GPS track</small></button>
-                    <button class="load-card" id="drawRoute"><i class="fa-solid fa-pencil"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route tapping the map">Sketch a route tapping the map</small></button>
+                    <button class="load-card" id="drawRoute"><i class="fa-solid fa-pen"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Sketch a route by dragging on the map">Sketch a route by dragging on the map</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                     <button class="load-card" id="pickChallenge"><i class="fa-solid fa-book-open"></i><b data-i18n="Start from a public RB">Start from a public RB</b><small data-i18n="Public roadbooks">Public roadbooks</small></button>
                 </div>
@@ -371,13 +397,10 @@
                 <button class="map-tool" id="undoBtn" disabled aria-label="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
                 <button class="map-tool" id="redoBtn" disabled aria-label="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
             </div>
-            <!-- ☰ submenu (sibling of the toolbar so its overflow never clips it): every tool lives here.
-                 Move is the default map mode (no button); only the menu toggle + undo/redo stay on the bar (#61). -->
+            <!-- ☰ submenu (sibling of the toolbar so its overflow never clips it): Cut and the one-shot
+                 route operations. The everyday modes have their own rail, bottom-left (#692). -->
             <div class="map-tools-menu" id="mapMenuPanel" hidden>
-                <button class="map-tool-row" id="toolMove" data-tool="points"><i class="fa-solid fa-arrows-up-down-left-right"></i><span data-i18n="Move">Move</span><span class="map-ctx-key">M</span></button>
-                <button class="map-tool-row" id="toolNote" data-tool="note" disabled><i class="fa-solid fa-map-pin"></i><span data-i18n="Add note">Add note</span><span class="map-ctx-key">A</span></button>
-                <button class="map-tool-row" id="toolDraw" data-tool="draw" disabled><i class="fa-solid fa-pen"></i><span data-i18n="Draw route">Draw route</span><span class="map-ctx-key">D</span></button>
-                <button class="map-tool-row" id="toolCut" data-tool="cut" disabled><i class="fa-solid fa-scissors"></i><span data-i18n="Cut">Cut</span><span class="map-ctx-key">C</span></button>
+                <button class="map-tool-row" id="toolCut" data-tool="cut" disabled><i class="fa-solid fa-scissors"></i><span data-i18n="Cut">Cut</span><kbd class="key-chip">C</kbd></button>
                 <span class="map-tools-sep"></span>
                 <button class="map-tool-row" id="toolAddGpx"><i class="fa-solid fa-file-circle-plus"></i><span data-i18n="Add a GPX track">Add a GPX track</span></button>
                 <button class="map-tool-row" id="toolSimplify"><i class="fa-solid fa-broom"></i><span data-i18n="Simplify">Simplify</span></button>
@@ -386,8 +409,15 @@
                 <button class="map-tool-row" id="toolShortcuts"><i class="fa-solid fa-keyboard"></i><span data-i18n="Shortcuts">Shortcuts</span></button>
             </div>
             <div id="edMap" class="panel map-box"></div>
-            <!-- #456: which mode you just switched into, bottom-left over the map, gone after 3 s -->
-            <div id="mapModeLabel" class="map-mode-label" hidden></div>
+            <!-- the map modes (#692), always in sight bottom-left: the active one is lit and named.
+                 Cut lives in the ☰ panel and only joins the rail while it is the active mode. -->
+            <div class="mode-rail" role="toolbar" aria-label="Map modes" data-i18n-aria="Map modes">
+                <button class="mode-btn" type="button" id="modeMove" data-tool="points"><i class="fa-solid fa-arrows-up-down-left-right"></i><span class="mode-name" data-i18n="Move">Move</span><kbd class="key-chip">M</kbd></button>
+                <button class="mode-btn" type="button" id="modeNote" data-tool="note" disabled><i class="fa-solid fa-map-pin"></i><span class="mode-name" data-i18n="Add notes">Add notes</span><kbd class="key-chip">N</kbd></button>
+                <button class="mode-btn" type="button" id="modePoint" data-tool="point"><i class="fa-solid fa-circle-plus"></i><span class="mode-name" data-i18n="Add points">Add points</span><kbd class="key-chip">P</kbd></button>
+                <button class="mode-btn" type="button" id="modeDraw" data-tool="draw"><i class="fa-solid fa-pen"></i><span class="mode-name" data-i18n="Draw">Draw</span><kbd class="key-chip">D</kbd></button>
+                <button class="mode-btn" type="button" id="modeCut" data-tool="cut" hidden><i class="fa-solid fa-scissors"></i><span class="mode-name" data-i18n="Cut">Cut</span><kbd class="key-chip">C</kbd></button>
+            </div>
             <!-- photo viewer: overlays ONLY the map, so the notes panel stays editable -->
             <div id="lightbox" hidden>
                 <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
@@ -532,22 +562,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-102"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-102"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-102"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-102"></script>
-<script src="../assets/js/cover-map.js?v=1.9.2-102"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.2-102"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.2-102"></script>
-<script src="../assets/js/challenges.js?v=1.9.2-102"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.2-102"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.2-102"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-102"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-102"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-102"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-102"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-102"></script>
-<script src="../assets/js/app.js?v=1.9.2-102"></script>
-<script src="editor.js?v=1.9.2-102"></script>
+<script src="../assets/js/config.js?v=1.9.2-103"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-103"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-103"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-103"></script>
+<script src="../assets/js/cover-map.js?v=1.9.2-103"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.2-103"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.2-103"></script>
+<script src="../assets/js/challenges.js?v=1.9.2-103"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.2-103"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.2-103"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-103"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-103"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-103"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-103"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-103"></script>
+<script src="../assets/js/app.js?v=1.9.2-103"></script>
+<script src="editor.js?v=1.9.2-103"></script>
 </body>
 </html>

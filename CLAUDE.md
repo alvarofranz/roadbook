@@ -489,11 +489,14 @@ Operational notes:
   type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`wp_type`) + validation
   radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
   drag a note on the map to
-  reposition. **The GPX is edited ON the map** via a vertical tool bar (translated
-  hover tooltips, maximizable): mode tools *pan · add note · draw (tap to extend the
-  nearest open end) · cut (tap any two spots — the track is split exactly there,
-  inserting points as needed; trims at the ends, and in the middle it leaves a real
-  OPEN cut, dashed on the map, that you fill by drawing or that closes straight on
+  reposition. **The GPX is edited ON the map.** The four everyday modes have their own
+  rail bottom-left, one letter each, the active one lit and named (#692): *M move (drag any
+  track point, note or photo) · N add notes · P add points (tap on the route inserts one,
+  tap past an end extends it) · D draw (freehand stroke, normalized by
+  `RB.normalizeStroke`; it extends an open end, or replaces the stretch between the two
+  spots it touches)*; the ☰ panel holds *cut (C — tap any two spots — the track is split
+  exactly there, inserting points as needed; trims at the ends, and in the middle it leaves
+  a real OPEN cut, dashed on the map, that you fill by drawing or that closes straight on
   export/save after a confirm)* plus
   one-shot *add GPX (smart join: detour-replace if both ends touch the route,
   otherwise auto-oriented join to the nearest end) · reverse · simplify
@@ -503,7 +506,8 @@ Operational notes:
   author, organization, event logo (downscaled, embedded) and a photo gallery; uploaded or
   pasted **custom icons live in the roadbook's own library (`rb.icons`) and are offered to
   every note** — only unused *standard* art is pruned on export, since a custom icon has no
-  other copy (#454);
+  other copy (#454); one on a flat backdrop is offered a browser-side background removal
+  (`RB.iconBackground`/`removeIconBackground`, No / Yes with a before/after preview, #694);
   **Export `.rdbk`** (self-contained), **Export GPX** (track + notes as named
   waypoints) and **Save to profile** (public/private — saving pins `?rb=<id>` to the
   URL so re-saves update the same roadbook; importing fresh content starts a new
