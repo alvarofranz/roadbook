@@ -62,7 +62,7 @@ describe('the editor edits a note, or the material around it (#542)', () => {
         expect(prune).toContain('n.blocks.filter((b) => b.image || b.text)');
         expect(prune).toContain('delete n.blocks');
         // and nothing empty is ever drawn, on any surface
-        for (const p of ['public/editor/editor.js', 'public/reader/reader.js', 'public/challenge/challenge.js']) {
+        for (const p of ['public/editor/editor.js', 'public/assets/js/note-canvas.js']) { // the Reader and the public page share note-canvas's rows (#635)
             expect(read(p), p).toContain('filter((b) => b.image || b.text)');
         }
         expect(read('public/assets/js/rb-pdf.js')).toContain('if (b.image || b.text) sheet.push');
@@ -121,13 +121,13 @@ describe('the editor edits a note, or the material around it (#542)', () => {
 
 describe('every surface draws the material the same way (#542)', () => {
     it('the Reader and the public page put it around the note it belongs to', () => {
-        for (const js of [readerJs, read('public/challenge/challenge.js')]) {
-            expect(js).toContain("RB.noteBlocks(n, at)");
-            expect(js).toContain('nrow');
-            expect(js).toContain("RB.blockType(b)");
-        }
-        expect(readerJs).toContain("blockRowsHTML(n, 'before')");
-        expect(readerJs).toContain("blockRowsHTML(n, 'after')");
+        // one renderer for both (#635): NoteCanvas.rowsHTML draws the blocks around their note
+        const canvas = read('public/assets/js/note-canvas.js');
+        expect(canvas).toContain("RB.noteBlocks(n, at)");
+        expect(canvas).toContain("RB.blockType(b)");
+        expect(canvas).toContain("${blocks(n, 'before')}");
+        expect(canvas).toContain("${blocks(n, 'after')}");
+        for (const js of [readerJs, read('public/challenge/challenge.js')]) expect(js).toContain('NoteCanvas.rowsHTML(rb');
     });
 
     it('a text block is read across the full width, big', () => {

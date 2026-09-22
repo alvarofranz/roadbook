@@ -446,6 +446,11 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-distance .total { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 .nrow .col-distance .partial { font-size: .8rem; color: #555; font-variant-numeric: tabular-nums; }
 .nrow .col-distance .num { margin-top: auto; align-self: flex-start; background: #14110b; color: #fff; border-radius: 6px; padding: 0 .5rem; font-weight: 800; }
+/* the note number and its FIA waypoint-type badge side by side at the foot of the column (#635) */
+.nrow .col-distance .num-row { margin-top: auto; display: flex; align-items: center; gap: .4rem; }
+.nrow .col-distance .num-row .num { margin-top: 0; align-self: center; }
+/* the FIA waypoint-type badge (RB.wpBadgeSVG), wherever it is drawn */
+.wp-badge { display: block; flex-shrink: 0; }
 /* live distance still to run to the ACTIVE note — written by the Reader, empty on every other row */
 .nrow .col-distance .togo { font-weight: 800; color: #1b6bb5; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nrow .col-distance.tight { background: #dbe7f2; } /* the next note is under 50 m ahead: a tight pair */
@@ -779,8 +784,6 @@ button.rb-badge:hover { background: var(--card); }
 .doc a { color: var(--sand-2); }
 .doc .updated { color: var(--muted); font-size: .9rem; }
 /* Public listing pages (Roadbooks · Events): heading + boxed search toolbar */
-.rbp-head { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
-.rbp-head h1 { margin: 0; font-size: 1.8rem; }
 /* Admin event pages: one label/value/actions line */
 /* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
 .thumb-route rect { fill: var(--card-2); }

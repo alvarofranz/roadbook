@@ -20,13 +20,6 @@
     let hqMap = null;    // built once, on the first payload that has headquarters
 
     /* ---------- built once ---------- */
-    // The copy control floats over a card link: one listener for the gallery's whole life.
-    $('evRoadbooks').addEventListener('click', (e) => {
-        const b = e.target.closest('.card-copy');
-        if (!b) return;
-        e.preventDefault(); e.stopPropagation();
-        RBCopy(RBReaderLink(b.dataset.copy));
-    });
     function showHq(e) {
         const mapEl = $('evHqMap');
         const has = e.hq_lat != null && e.hq_lon != null && !RBIsParticipant();

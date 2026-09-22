@@ -239,7 +239,9 @@
             const base = baseOf(el, 'text', () => tn ? tn.textContent : el.textContent);
             const v = tr(lang, el.getAttribute('data-i18n'));
             const val = v != null ? (el.firstElementChild ? ' ' : '') + v : base;
-            if (tn) tn.textContent = val; else el.textContent = val;
+            // An element whose own text is empty but which holds elements (an icon + a <span> with
+            // its own key) is never flattened: textContent would delete the icon and the span (#624).
+            if (tn) tn.textContent = val; else if (!el.firstElementChild) el.textContent = val;
         });
         document.querySelectorAll('[data-i18n-html]').forEach((el) => {
             const base = baseOf(el, 'html', () => el.innerHTML);

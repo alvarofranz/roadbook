@@ -147,7 +147,7 @@ describe('the user never reads the word "challenge" (#426)', () => {
     it('the not-found copy on the public page says roadbook', () => {
         const ch = read('public/challenge/challenge.js');
         expect(ch).toContain("t('Roadbook not found.')");
-        expect(ch).toContain("t('This roadbook does not exist or is private.')");
+        expect(ch).toContain("'This roadbook does not exist or is private.'");
         expect(ch).not.toMatch(/t\('[^']*[Cc]hallenge[^']*'\)/);
     });
 });
@@ -644,7 +644,7 @@ describe('modal confirm order + dismiss paths (#490)', () => {
     it('the reader roadbook picker has an explicit Close row', () => {
         // the picker itself is the shared RBRowPicker now (#493) — it owns the Close row, so every
         // picker built on it keeps the explicit exit this contract was written for
-        expect(reader).toContain("title: 'Your roadbooks'");
+        expect(reader).toContain("title: 'My roadbooks'");
         expect(read('public/assets/js/app.js')).toContain('window.RBRowPicker = ');
         expect(read('public/assets/js/app.js')).toContain('<button class="btn btn-ghost modal-close">${RBesc(RBt(\'Close\'))}</button>');
     });
@@ -760,8 +760,8 @@ describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
     it('every pick-one dialog is the shared picker, with its search box', () => {
         expect(app).toContain('window.RBRowPicker = ');
         for (const [file, title] of [
-            ['public/reader/reader.js', "title: 'Your roadbooks'"],
-            ['public/assets/js/challenges.js', "title: 'Public Roadbooks'"],
+            ['public/reader/reader.js', "title: 'My roadbooks'"],
+            ['public/assets/js/challenges.js', "title: 'Public roadbooks'"],
             ['public/admin/trash/admin-trash.js', "title: 'Restore'"],
             ['public/admin/admin.js', "title: 'Move'"],
         ]) {
@@ -787,9 +787,10 @@ describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
 
     it('the copy-link control is one helper, on every public roadbook card', () => {
         expect(app).toContain('window.RBCopyLinkOverlay = ');
-        for (const file of ['public/roadbooks/roadbooks.js', 'public/reader/reader.js', 'public/event/event.js']) {
+        for (const file of ['public/assets/js/challenges.js', 'public/event/event.js']) { // the shared gallery (#636) + the event page
             expect(read(file), file).toContain('RBCopyLinkOverlay(');
         }
+        for (const file of ['public/roadbooks/roadbooks.js', 'public/reader/reader.js']) expect(read(file), file).toContain('RBChallenges.gallery(');
     });
 
     it('the ranking tells offline apart from "not a participant"', () => {

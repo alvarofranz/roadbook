@@ -31,7 +31,7 @@ describe('registration on the event page', () => {
 
 describe('re-rendering never duplicates what is built once', () => {
     it('the gallery listener and the HQ map are created once (#584)', () => {
-        expect(js.match(/\$\('evRoadbooks'\)\.addEventListener\('click'/g)).toHaveLength(1);
+        expect(js).not.toContain('.card-copy'); // the copy-link control has one global listener (#636)
         expect(js).toContain('if (!has || hqMap) return;');
     });
     it('a language switch re-renders the whole view (#586)', () => {
