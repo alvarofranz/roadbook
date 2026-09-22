@@ -54,9 +54,10 @@ $tmp = $_FILES['photo']['tmp_name'];
 if ($type === 'avatar') {
     $dest = $CFG['avatars_dir'] . '/' . $user['id'] . '.avif';
     if (!process_to_avif($tmp, $dest, 256, true, 50)) fail('Could not process the image.');
-    $url = '/avatars/' . $user['id'] . '.avif';
+    // versioned like the event logo (#588): a re-upload shows at once, then caches normally
+    $url = '/avatars/' . $user['id'] . '.avif?v=' . time();
     db()->prepare('UPDATE users SET avatar = ? WHERE id = ?')->execute([$url, $user['id']]);
-    json_out(['ok' => true, 'avatar' => $url . '?v=' . time()]);
+    json_out(['ok' => true, 'avatar' => $url]);
 }
 
 if ($type === 'event_logo') {

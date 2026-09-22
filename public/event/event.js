@@ -65,7 +65,7 @@
         // an unlisted event is shared by link, not advertised: keep it out of search engines (#573)
         RBSetMeta({ title: e.title + ' · RDBK.app', description: e.description || undefined, canonical: location.origin + '/event/' + encodeURIComponent(slug), robots: e.is_public ? 'index, follow' : 'noindex' });
         const range = RBDateRange(e.starts_on, e.ends_on);
-        $('evMeta').innerHTML = '@' + esc(e.organizer || '') + (range ? ' · ' + esc(range) : '')
+        $('evMeta').innerHTML = `<a href="${RBProfileLink(e.organizer)}">@${esc(e.organizer || '')}</a>` + (range ? ' · ' + esc(range) : '')
             + (e.ended ? ` <span class="u-badge u-blocked">${esc(t('Ended'))}</span>` : '');
         // organizers get the way back to managing it (#585), and are told when it is unlisted
         $('evManage').hidden = !e.org_read;

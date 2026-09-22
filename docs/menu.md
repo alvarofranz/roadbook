@@ -14,11 +14,13 @@
 | ├ Event list | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | └ Ranking | via Events | via Events | via Events | via Events | via Events | ⬜ (solo da evento) |
 | **Profile / Account** | ❌ (Sign in) | ✅ dropdown | ✅ dropdown | ✅ dropdown | ✅ tab bar | ✅ (ridotto) |
-| ├ My profile | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ├ My roadbooks | — | ✅ | ✅ | ✅ | (via web) | ❌ |
+| ├ My profile (`/u/<username>`) | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ├ Account settings | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ├ My roadbooks | — | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ├ Public roadbooks | — | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ├ Guide | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 | ├ Admin: Public Roadbooks | — | ❌ | ✅ | ❌ | ❌ | ❌ |
 | ├ Admin: Event management | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: Participant mgmt | — | ❌ | ✅ | ❌ | ❌ | ❌ |
 | ├ Admin: User management | — | ❌ | ✅ | ❌ | ❌ | ❌ |
 | ├ Admin: Site settings | — | ❌ | ✅ | ❌ | ❌ | ❌ |
 | ├ Admin: Roadbook trash | — | ❌ | ✅ | ❌ | ❌ | ❌ |

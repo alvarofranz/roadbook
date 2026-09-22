@@ -84,4 +84,9 @@ AddType audio/mpeg .mp3
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(challenge|reader|editor|event)/[A-Za-z0-9_-]+$ /$1/index.html [L]
     RewriteRule ^go/([A-Za-z0-9_-]+)$ /go/index.php?tag=$1 [L]
+    # public profiles (#620): usernames may contain a dot, so they get their own pattern
+    RewriteRule ^u/([A-Za-z0-9_.-]+)/$ /u/$1 [R=301,L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^u/[A-Za-z0-9_.-]+$ /u/index.html [L]
 </IfModule>

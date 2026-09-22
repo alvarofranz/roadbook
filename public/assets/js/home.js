@@ -26,7 +26,7 @@
         const sc = Math.min((W - 2 * pad) / sX, (H - 2 * pad) / sY);
         const oX = (W - sX * sc) / 2, oY = (H - sY * sc) / 2;
         const d = pts.map((p, i) => `${((X[i] - minX) * sc + oX).toFixed(1)},${((Y[i] - minY) * sc + oY).toFixed(1)}`).join(' ');
-        return `<svg class="thumb thumb-route" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(t('route map'))}"><rect width="${W}" height="${H}" fill="#10151c"/><polyline points="${d}" fill="none" stroke="#e8b059" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+        return `<svg class="thumb thumb-route" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(t('route map'))}"><rect width="${W}" height="${H}"/><polyline points="${d}"/></svg>`;
     }
 
     const render = () => {

@@ -22,7 +22,8 @@
             $('chContent').insertBefore(evBar, $('chContent').firstChild);
         }
         RBSetMeta({ title: title + ' · RDBK.app', description: (rb.meta && rb.meta.description) || undefined, canonical: location.origin + '/challenge/' + encodeURIComponent(slug) });
-        $('chOwner').textContent = o.name || ('@' + (o.username || ''));
+        // the owner is who they are on their public profile (#620): @username, linked
+        $('chOwner').innerHTML = `<a href="${RBProfileLink(o.username)}">@${esc(o.username || '')}</a>`;
         $('chMeta').textContent = '@' + (o.username || '') + ' · ' + RBSummary((rb.meta && rb.meta.total_distance) || 0, rb.notes.length) + (j.status === 'public' ? '' : ' · 🔒 ' + t(j.status === 'ready' ? 'Ready' : 'Draft'));
         if (o.avatar) $('chAvatar').src = RBMediaSrc(o.avatar); else $('chAvatar').remove();
         $('chDesc').textContent = (rb.meta && rb.meta.description) || '';

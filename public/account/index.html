@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-95">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.2-96">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-95">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.2-96">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -49,12 +49,7 @@
            About/Privacy/Terms links don't appear twice (#295) */
         @media (min-width: 1025px) { .acc-links { display: none; } }
         /* grants recap card (#310) */
-        .grants-list { display: flex; flex-direction: column; gap: .4rem; }
-        .grants-list .grant-row { display: flex; align-items: center; gap: .6rem; padding: .35rem 0; }
-        .grants-list .grant-row .grant-badge { display: inline-block; padding: .15rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-        .grant-badge.admin { background: #c62828; color: #fff; }
-        .grant-badge.organizer { background: #1565c0; color: #fff; }
-        .grant-badge.basic { background: var(--card-2); color: var(--muted); }
+        .grants-list { display: flex; flex-wrap: wrap; gap: .4rem; }
     </style>
 </head>
 <body>
@@ -151,6 +146,7 @@
                 <div class="muted" id="accHandle"></div>
             </div>
             <div class="profile-actions">
+                <a class="btn btn-ghost" id="accProfileLink"><i class="fa-solid fa-circle-user"></i> <span data-i18n="View my public profile">View my public profile</span></a>
                 <button class="btn btn-ghost" id="pfAvatarBtn" data-i18n="Change photo"><i class="fa-solid fa-camera"></i> Change photo</button>
                 <button class="btn btn-ghost" id="logoutBtn" data-i18n="Sign out"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
             </div>
@@ -173,6 +169,8 @@
                 <option value="en-US">English</option>
                 <option value="es-ES">Español</option>
                 <option value="it-IT">Italiano</option>
+                <option value="de-DE">Deutsch</option>
+                <option value="fr-FR">Français</option>
             </select>
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
         </div>
@@ -182,6 +180,17 @@
             <div id="grantsList" class="grants-list"></div>
         </div>
 
+        <!-- where a finished run's report goes (#619) -->
+        <div class="auth-card profile-form">
+            <h2 data-i18n="Run reports">Run reports</h2>
+            <p class="muted small" data-i18n="When you finish a roadbook in the Reader, its report can appear on your public profile.">When you finish a roadbook in the Reader, its report can appear on your public profile.</p>
+            <select id="pfRunsVis" class="field" aria-label="Run reports" data-i18n-aria="Run reports">
+                <option value="ask" data-i18n="Ask me each time">Ask me each time</option>
+                <option value="public" data-i18n="Always public">Always public</option>
+                <option value="private" data-i18n="Always private">Always private</option>
+            </select>
+            <button class="btn btn-primary" id="pfRunsSave" type="button" data-i18n="Save">Save</button>
+        </div>
         <div class="auth-card profile-form">
             <h2 data-i18n="Default map location">Default map location</h2>
             <p class="muted small" data-i18n="Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.">Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.</p>
@@ -247,16 +256,16 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.2-95"></script>
-<script src="../assets/js/rbmap.js?v=1.9.2-95"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.2-95"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.2-95"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.2-95"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.2-95"></script>
-<script src="../assets/js/i18n.js?v=1.9.2-95"></script>
-<script src="../assets/js/rbzip.js?v=1.9.2-95"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.2-95"></script>
-<script src="../assets/js/app.js?v=1.9.2-95"></script>
-<script src="account.js?v=1.9.2-95"></script>
+<script src="../assets/js/config.js?v=1.9.2-96"></script>
+<script src="../assets/js/rbmap.js?v=1.9.2-96"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.2-96"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.2-96"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.2-96"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.2-96"></script>
+<script src="../assets/js/i18n.js?v=1.9.2-96"></script>
+<script src="../assets/js/rbzip.js?v=1.9.2-96"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.2-96"></script>
+<script src="../assets/js/app.js?v=1.9.2-96"></script>
+<script src="account.js?v=1.9.2-96"></script>
 </body>
 </html>

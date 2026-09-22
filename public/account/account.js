@@ -233,7 +233,7 @@
 
     /* ---------- routes ---------- */
     async function init() {
-        const cfg = await api('config');
+        const cfg = await RBConfig(); // offline, a signed-in user still gets their account (#630)
         // Turnstile is a domain-locked Cloudflare widget: it can't run in the app's WebView
         // (origin localhost, not rdbk.app), so never load it there. The backend exempts the
         // trusted app origins from the challenge to match (see verify_turnstile).
@@ -261,7 +261,7 @@
         if (params.get('verifyemail')) {
             const r = await api('verify_email_change', { token: params.get('verifyemail') });
             history.replaceState(null, '', location.pathname);
-            const c = await api('config'); // email may have changed → re-read the user
+            const c = await RBConfig(); // email may have changed → re-read the user
             if (c.user) { showAccount(c.user); RBToast(r.message || r.error); } else { show('vLogin'); msg(r.message || r.error, !!r.ok); }
             return;
         }
@@ -292,7 +292,7 @@
         const busy = busySubmit('forceForm');
         const r = await api('change_password', { new: $('forcePass').value });
         busy.reset();
-        if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await api('config'); showAccount(c.user); } else msg(r.error, false);
+        if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await RBConfig(); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
         if ($('regPass').value !== $('regPass2').value) return msg("Passwords don't match.", false);
@@ -383,7 +383,7 @@
         locLat = lat; locLon = lon;
         if (lat == null) { if (locMarker) { locMarker.remove(); locMarker = null; } return renderLoc(); }
         if (!locMarker) {
-            locMarker = new maplibregl.Marker({ draggable: true, color: '#e8b059' }).setLngLat([lon, lat]).addTo(locMap.map);
+            locMarker = new maplibregl.Marker({ draggable: true, color: RBCssVar('--sand') }).setLngLat([lon, lat]).addTo(locMap.map);
             locMarker.on('dragend', () => { const p = locMarker.getLngLat(); setLoc(+p.lat.toFixed(7), +p.lng.toFixed(7)); });
         } else locMarker.setLngLat([lon, lat]);
         renderLoc();
@@ -401,7 +401,7 @@
                 RBToast(r.ok ? 'Location saved.' : r.error);
             };
             $('pfLocHere').onclick = () => {
-                if (!navigator.geolocation) return;
+                if (!navigator.geolocation) return RBToast('Could not get your location.');
                 navigator.geolocation.getCurrentPosition((p) => {
                     setLoc(+p.coords.latitude.toFixed(7), +p.coords.longitude.toFixed(7));
                     locMap.map.flyTo({ center: [locLon, locLat], zoom: 13 });
@@ -430,34 +430,43 @@
 
         $('accName').textContent = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.username;
         $('accHandle').textContent = '@' + user.username + ' · ' + user.email;
-        $('accAvatar').src = user.avatar ? RBMediaSrc(user.avatar) + '?v=' + Date.now() : '../assets/icon.svg'; // bust HTTP/CDN cache so a re-uploaded avatar shows fresh
-        $('logoutBtn').onclick = async () => { await api('logout'); location.reload(); };
+        $('accAvatar').src = user.avatar ? RBMediaSrc(user.avatar) : '../assets/icon.svg'; // the stored URL carries its upload version
+        $('accProfileLink').href = RBProfileLink(user.username);
+        $('logoutBtn').onclick = RBSignOut;
         $('pfFirst').value = user.first_name || '';
         $('pfLast').value = user.last_name || '';
         $('pfBio').value = user.bio || '';
         $('pfOrg').value = user.organization || '';
         RBOrgDatalist($('orgSuggest')); // suggest existing clubs so the same one isn't retyped differently (#116)
         $('pfVoiceLang').value = user.voice_lang || '';
-        // Grants recap (#310)
+        // Grants recap (#310) — the same role badges as the user admin list (#632)
         const grants = [];
-        if (user.is_admin) grants.push({ label: t('Admin'), cls: 'admin' });
-        if (user.is_organizer) grants.push({ label: t('Organizer'), cls: 'organizer' });
-        if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: 'basic' });
-        $('grantsList').innerHTML = grants.map((g) => `<div class="grant-row"><span class="grant-badge ${g.cls}">${esc(g.label)}</span></div>`).join('');
+        if (user.is_admin) grants.push({ label: t('Admin'), cls: 'u-admin' });
+        if (user.is_organizer) grants.push({ label: t('Organizer'), cls: 'u-organizer' });
+        if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: '' });
+        $('grantsList').innerHTML = grants.map((g) => `<span class="u-badge ${g.cls}">${esc(g.label)}</span>`).join('');
+        $('pfRunsVis').value = user.runs_visibility || 'ask';
+        $('pfRunsSave').onclick = async (e) => {
+            const busy = RBBusy(e.currentTarget);
+            const r = await api('runs_settings', { runs_visibility: $('pfRunsVis').value });
+            if (r.ok) busy.ok(); else busy.reset();
+            RBToast(r.ok ? 'Saved.' : r.error);
+        };
         initLocPicker(user.default_lat, user.default_lon);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;
-            msg('Uploading photo…', true);
+            RBToast('Uploading photo…');
             const r = await RBUpload({ type: 'avatar' }, f, 'avatar.jpg');
-            if (r.ok) { $('accAvatar').src = RBMediaSrc(r.avatar); msg('Photo updated.', true); } else msg(r.error, false);
+            if (r.ok) $('accAvatar').src = RBMediaSrc(r.avatar);
+            RBToast(r.ok ? 'Photo updated.' : r.error); // every profile save reports the same way (#631)
         };
         $('pfSave').onclick = async (e) => {
             const busy = RBBusy(e.currentTarget);
             const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value, voice_lang: $('pfVoiceLang').value });
             if (r.ok) { busy.ok(); $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; } // keep the header name in sync
             else busy.reset();
-            msg(r.ok ? 'Profile saved.' : r.error, !!r.ok);
+            RBToast(r.ok ? 'Profile saved.' : r.error);
         };
     }
 

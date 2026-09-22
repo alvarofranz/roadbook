@@ -1007,6 +1007,14 @@
         if (!x.ok) { RBToast(x.error || 'Could not delete.'); return false; }
         return true;
     };
+    // A palette colour for the few APIs that take a literal (map markers): read from the CSS
+    // tokens, so the colours live in app.css only.
+    window.RBCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    // Sign out, from the account menu or the account page — one way, so both clear the same state.
+    window.RBSignOut = async () => { await RBApi('logout'); location.reload(); };
+    // A user's public profile (#620). The app's bundled pages have no server rewrite for /u/<name>,
+    // so there the page takes the name as ?name= instead.
+    window.RBProfileLink = (username) => (isNativeApp() ? ROOT + 'u/?name=' : ROOT + 'u/') + encodeURIComponent(username || '');
     window.RBIsParticipant = isParticipant;
     // Drop the client-side participant flag (the server context is cleared by the API call that
     // ends it: leave_participant_mode, event_leave). One place, so every exit clears the same.
@@ -1143,9 +1151,11 @@
     /* The account menu is ONE list, rendered into the desktop dropdown and the tab-bar dropup
        alike; `p` prefixes the ids the wiring below looks for. */
     function accountMenuHTML(user, participant, p) {
-        return `<a href="${ROOT}account/">${menuLabel('fa-user', 'My profile')}</a>`
-            + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-book', 'My roadbooks')}</a>`)
-            + `<a href="${ROOT}wiki/">${menuLabel('fa-book-open', 'Wiki / Guida')}</a>`
+        return `<a href="${RBProfileLink(user.username)}">${menuLabel('fa-circle-user', 'My profile')}</a>`
+            + `<a href="${ROOT}account/">${menuLabel('fa-gear', 'Account settings')}</a>`
+            + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-folder-open', 'My roadbooks')}</a>`
+                + `<a href="${ROOT}roadbooks/">${menuLabel('fa-book-open', 'Public roadbooks')}</a>`) // the only way in on mobile and in the app (#671)
+            + `<a href="${ROOT}wiki/">${menuLabel('fa-circle-question', 'Guide')}</a>`
             + manageLinksHTML(manageLinks(user, participant))
             + `<button id="${p}Activity">${menuLabel('fa-clock-rotate-left', 'My activity')}</button>`
             + (participant ? `<hr class="menu-sep"><button id="${p}Leave">${menuLabel('fa-up-right-from-square', 'Switch to full mode')}</button>` : '')
@@ -1155,7 +1165,7 @@
     // …and one wiring for both: close the menu, then do the thing.
     function wireAccountMenu(root, p, closeMenu) {
         const on = (id, fn) => { const el = root.querySelector('#' + p + id); if (el) el.onclick = fn; };
-        on('Logout', async () => { await RBApi('logout'); location.reload(); });
+        on('Logout', RBSignOut);
         on('Activity', () => { closeMenu(); window.RBActivityLog(); });
         on('AppInfo', () => { closeMenu(); showAppInfo(); });
         on('Leave', async () => {

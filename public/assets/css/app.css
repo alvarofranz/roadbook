@@ -782,6 +782,9 @@ button.rb-badge:hover { background: var(--card); }
 .rbp-head { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
 .rbp-head h1 { margin: 0; font-size: 1.8rem; }
 /* Admin event pages: one label/value/actions line */
+/* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
+.thumb-route rect { fill: var(--card-2); }
+.thumb-route polyline { fill: none; stroke: var(--sand); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
 /* run report tiles + details (RBRun: the Reader's end-of-run report and the public profile, #618 · #620) */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: .5rem; margin: .8rem 0; }
 .stat { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; display: flex; flex-direction: column; gap: .1rem; min-width: 0; }

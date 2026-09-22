@@ -116,7 +116,7 @@ function update_profile(array $user, array $d): void {
     $organization = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($d['organization'] ?? ''))), 0, 120);
     // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
     $voice = (string)($d['voice_lang'] ?? '');
-    if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT'], true)) $voice = '';
+    if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT', 'de-DE', 'fr-FR'], true)) $voice = '';
     db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, organization = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $organization !== '' ? $organization : null, $voice, $user['id']]);
     json_out(['ok' => true]);
 }
