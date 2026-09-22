@@ -323,10 +323,14 @@
         const isAdmin = !!me.is_admin;
         let target = (opts && opts.user) || null, actPage = 1, actQuery = '';
         const title = () => target ? `${RBesc(RBt('Activity'))} · @${RBesc(target.username)}` : RBesc(RBt('My activity'));
-        const m = RBModal(`<h2><i class="fa-solid fa-clock-rotate-left"></i> <span id="myActTitle">${title()}</span></h2>
-            ${isAdmin ? `<div class="toolbar"><i class="fa-solid fa-user"></i><input class="field" id="myActUser" placeholder="${RBesc(RBt('Search users…'))}" aria-label="${RBesc(RBt('Search users…'))}" autocomplete="off"><button class="btn btn-ghost" id="myActMe" type="button">${RBesc(RBt('Me'))}</button></div><div id="myActPick"></div>` : ''}
-            <div class="toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field grow" id="myActSearch" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false">
-                <button class="btn btn-ghost" id="myActCsv" type="button"><i class="fa-solid fa-file-csv"></i> CSV</button></div>
+        // One search field for the log, the CSV beside the title, and — for an admin — whose log it
+        // is, changed through the shared user picker (#731): never a second search box glued on.
+        const m = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-clock-rotate-left icon-accent"></i> <span id="myActTitle">${title()}</span></h2>
+                <button class="btn btn-ghost btn-sm" id="myActCsv" type="button"><i class="fa-solid fa-file-csv"></i> CSV</button></div>
+            ${isAdmin ? `<div class="toolbar act-who"><span class="muted small">${RBesc(RBt('Showing'))}</span> <b id="myActWho"></b>
+                <button class="btn btn-ghost btn-sm" id="myActPickBtn" type="button"><i class="fa-solid fa-user"></i> ${RBesc(RBt('Another user…'))}</button>
+                <button class="btn btn-ghost btn-sm" id="myActMe" type="button" hidden>${RBesc(RBt('Me'))}</button></div>` : ''}
+            <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="myActSearch" placeholder="${RBesc(RBt('Search the activity…'))}" aria-label="${RBesc(RBt('Search the activity…'))}" autocomplete="off" spellcheck="false"></div>
             <div id="myActBody" class="muted small">${RBesc(RBt('Loading…'))}</div>
             <div class="pager" id="myActPager"></div>
             <div class="btnrow end"><button class="btn btn-ghost modal-close" type="button">${RBesc(RBt('Close'))}</button></div>`, 'wide');
@@ -336,6 +340,7 @@
             : RBApi('activity_mine', { page, per_page: perPage, q: actQuery });
         const loadAct = () => {
             m.q('#myActTitle').innerHTML = title();
+            if (isAdmin) { m.q('#myActWho').textContent = '@' + (target || me).username; m.q('#myActMe').hidden = !target; }
             fetchPage(actPage, 20).then((r) => {
                 const body = m.q('#myActBody');
                 if (!r.ok) { body.textContent = RBt(r.error || 'Could not load.'); return; }
@@ -364,21 +369,20 @@
             RBDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'activity_' + (target ? target.username : me.username) + '.csv');
         };
         if (isAdmin) {
-            let pickTimer = null;
-            const pickBox = m.q('#myActPick');
-            m.q('#myActMe').onclick = () => { target = null; pickBox.innerHTML = ''; actPage = 1; loadAct(); };
-            m.q('#myActUser').oninput = () => {
-                clearTimeout(pickTimer);
-                pickTimer = setTimeout(() => {
-                    const q = m.q('#myActUser').value.trim();
-                    if (q.length < 2) { pickBox.innerHTML = ''; return; }
-                    RBApi('user_search', { q }).then((r) => {
-                        if (!r.ok || !r.users) return;
-                        pickBox.innerHTML = r.users.slice(0, 8).map((u, i) => `<div class="ev-line"><button type="button" class="btn btn-ghost" data-pu="${i}"><b>${RBesc(u.username)}</b> <span class="muted small">${RBesc(((u.first_name || '') + ' ' + (u.last_name || '')).trim())}</span></button></div>`).join('')
-                            || `<p class="muted small">${RBesc(RBt('Nothing matches that search.'))}</p>`;
-                        pickBox.querySelectorAll('[data-pu]').forEach((el) => el.onclick = () => { target = r.users[+el.dataset.pu]; pickBox.innerHTML = ''; actPage = 1; loadAct(); });
-                    });
-                }, 300);
+            let everyone = null; // the user list, fetched on the first pick
+            m.q('#myActMe').onclick = () => { target = null; actPage = 1; loadAct(); };
+            m.q('#myActPickBtn').onclick = async () => {
+                if (!everyone) {
+                    const r = await RBApi('admin_users');
+                    if (!r.ok) return RBToast(r.error || 'Could not load.');
+                    everyone = r.users;
+                }
+                RBRowPicker({
+                    title: 'Activity', icon: 'fa-clock-rotate-left', card: 'narrow', lead: 'Whose activity?',
+                    items: everyone, fields: ['username', 'name', 'email'], limit: 50, empty: 'No users yet.',
+                    rowHTML: (u, i) => `<button class="mv-opt" data-pick="${i}"><b>@${RBesc(u.username)}</b> <span class="muted small">${RBesc(u.name || '')}</span></button>`,
+                    onPick: (u, picker) => { picker.close(); target = u.id === me.id ? null : u; actPage = 1; loadAct(); },
+                });
             };
         }
         loadAct();
@@ -688,7 +692,7 @@
         const searchable = items.length > 5;
         const modal = RBModal(`<h2><i class="fa-solid ${icon} icon-accent"></i> ${RBesc(RBt(title))}</h2>
             ${lead ? `<p class="muted small">${RBesc(RBt(lead))}</p>` : ''}
-            ${searchable ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false"></div>` : ''}
+            ${searchable ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false"></div>` : ''}
             <div class="challenge-list"></div>
             <div class="btnrow end spaced"><button class="btn btn-ghost modal-close">${RBesc(RBt('Close'))}</button></div>`, card);
         const list = modal.q('.challenge-list'), search = modal.q('.rb-search');
@@ -830,7 +834,7 @@
         // Search box only once the list is long enough to need it; the pager appears only past one page.
         container.innerHTML =
             ((r.used_bytes != null && r.quota_bytes) ? `<div class="rb-usage muted small"><i class="fa-solid fa-database"></i> ${RBesc(RBt('Storage'))}: ${RBFmtSize(r.used_bytes)} / ${RBFmtSize(r.quota_bytes)}</div>` : '') +
-            (all.length > 5 ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="field rb-search" placeholder="${RBesc(RBt('Search roadbooks…'))}" autocomplete="off" spellcheck="false"></div>` : '') +
+            (all.length > 5 ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" placeholder="${RBesc(RBt('Search roadbooks…'))}" autocomplete="off" spellcheck="false"></div>` : '') +
             `<div class="rb-grid"></div><div class="pager"></div>`;
         const rowsEl = container.querySelector('.rb-grid'), pagerEl = container.querySelector('.pager');
         const rowHtml = (rb) => `<div class="roadbook-row">

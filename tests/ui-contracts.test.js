@@ -573,7 +573,7 @@ describe('activity log modal, filtered by user type (#448)', () => {
         const fn = app.match(/window\.RBActivityLog = async function \(opts\) \{([\s\S]*?)\n    \};/)[1];
         expect(fn).toContain("RBApi('activity_mine'");
         expect(fn).toContain("RBApi('admin_activity'");
-        expect(fn).toContain('user_search');
+        expect(fn).toContain('RBRowPicker({'); // an admin picks whose log through the shared picker (#731)
         // ONE viewer (#665): the admin user list opens it on a user instead of its own copy
         const admin = read('public/admin/admin.js');
         expect(admin).toContain('RBActivityLog({ user: byId[+b.dataset.activity] })');
