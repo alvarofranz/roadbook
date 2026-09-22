@@ -241,6 +241,10 @@ dell'evento.
    (public + ready) e, se il roadbook ha `scoring_mode ≠ free`, il **link alla
    classifica**.
 
+Nell'**app nativa** il `/go/<code>` diventa un `event_join` col solo codice (niente slug): è quel
+join a accendere il participant mode, salvato sul **token Bearer** (`api_tokens.participant_event_id`)
+perché l'app non ha sessione PHP; `config` lo restituisce e `app.js` allinea il flag client (#580).
+
 ### Riduzione della superficie (participant mode)
 
 Quando il cookie `rb_participant=1` è attivo:

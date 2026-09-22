@@ -40,7 +40,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, blocked, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, blocked, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, runs_visibility, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     // A blocked account gets no access even with a still-valid session or Bearer token: treat it as
@@ -62,24 +62,33 @@ function current_user(): ?array {
 
 function require_user(): array { $u = current_user(); if (!$u) fail('Not signed in.', 401); return $u; }
 
-/* ---- participant context (#163) ---- */
+/* ---- participant context (#163) ----
+   Which event this visitor entered through its participant link. The web keeps it in the PHP
+   session; the native app has no session (Bearer token), so it is kept on the token (#580). */
 function participant_context(): ?array {
-    $uid = $_SESSION['uid'] ?? 0;
-    if (!$uid || empty($_SESSION['participant_event'])) return null;
+    $u = current_user();
+    if (!$u) return null;
+    $tok = empty($_SESSION['uid']) ? bearer_token() : null;
+    if ($tok) {
+        $st = db()->prepare('SELECT participant_event_id FROM api_tokens WHERE token_hash = ?'); $st->execute([token_hash($tok)]);
+        $eventId = (int)$st->fetchColumn();
+    } else $eventId = (int)($_SESSION['participant_event'] ?? 0);
+    if (!$eventId) return null;
     $st = db()->prepare('SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ?');
-    $st->execute([(int)$_SESSION['participant_event'], (int)$uid]);
+    $st->execute([$eventId, (int)$u['id']]);
     if (!$st->fetch()) return null;
     $e = db()->prepare('SELECT slug, title FROM events WHERE id = ?');
-    $e->execute([(int)$_SESSION['participant_event']]);
+    $e->execute([$eventId]);
     $row = $e->fetch();
-    return $row ? ['event_id' => (int)$_SESSION['participant_event'], 'event_slug' => $row['slug'], 'event_title' => $row['title']] : null;
+    return $row ? ['event_id' => $eventId, 'event_slug' => $row['slug'], 'event_title' => $row['title']] : null;
 }
-function set_participant_context(int $eventId): void {
-    $_SESSION['participant_event'] = $eventId;
+function set_participant_context(?int $eventId): void {
+    if (empty($_SESSION['uid']) && ($tok = bearer_token())) {
+        db()->prepare('UPDATE api_tokens SET participant_event_id = ? WHERE token_hash = ?')->execute([$eventId, token_hash($tok)]);
+    } elseif ($eventId) $_SESSION['participant_event'] = $eventId;
+    else unset($_SESSION['participant_event']);
 }
-function clear_participant_context(): void {
-    unset($_SESSION['participant_event']);
-}
+function clear_participant_context(): void { set_participant_context(null); }
 
 // A configured .env superuser (ADMIN_EMAILS): the bootstrap admins, who stay admin even if
 // "demoted" in the panel and can never be blocked or deleted — the failsafe for the owner.

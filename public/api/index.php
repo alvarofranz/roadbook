@@ -8,7 +8,7 @@ $action = (string)($d['action'] ?? '');
 
 // Only these read-only actions may use GET; everything that changes state needs POST
 // (blocks CSRF via top-level GET navigation with a Lax session cookie).
-$readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get'];
+$readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get', 'profile_get'];
 if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
 if ($method === 'POST') require_same_origin(); // state-changing requests must come from our own pages
 
@@ -74,6 +74,15 @@ try {
         case 'event_participants_list': event_participants_list(require_user(), $d); break;
         case 'event_logo_remove': event_logo_remove(require_user(), $d); break;
         case 'leave_participant_mode': clear_participant_context(); json_out(['ok' => true]); break;
+        // run reports (#618 · #619), the shared event ranking (#590)
+        case 'run_save':       run_save(require_user(), $d); break;
+        case 'run_update':     run_update(require_user(), $d); break;
+        case 'run_delete':     run_delete(require_user(), $d); break;
+        case 'runs_settings':  runs_settings(require_user(), $d); break;
+        case 'ranking_list':   ranking_list(require_user(), $d); break;
+        case 'ranking_add':    ranking_add(require_user(), $d); break;
+        case 'ranking_remove': ranking_remove(require_user(), $d); break;
+        case 'ranking_clear':  ranking_clear(require_user(), $d); break;
         case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
@@ -108,6 +117,7 @@ try {
         case 'public_get':  public_get($d); break;
         case 'events_list': events_public_list(); break;
         case 'event_get':   event_public_get($d); break;
+        case 'profile_get': profile_get($d); break;   // /u/<username> (#620)
         default:            fail('Unknown action.', 404);
     }
 } catch (Throwable $e) {

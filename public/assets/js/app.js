@@ -1170,6 +1170,12 @@
         const cfg = await RBConfig();
         const user = cfg.user || null;
         const participant = cfg.participant || null;
+        // The server is the authority on participant mode. The web also gets a cookie from /go/, but
+        // the app has neither that page nor a cookie — so the client flag follows the server (#580).
+        if (!cfg.offline) {
+            if (participant) { try { localStorage.setItem('rb_participant', '1'); } catch (e) {} }
+            else if (isParticipant()) RBLeaveParticipantMode();
+        }
         renderBanner(cfg.banner);
         // Admins get the in-context UI translation editor (#118) — a small script loaded only for
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
