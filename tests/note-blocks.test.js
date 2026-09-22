@@ -71,7 +71,7 @@ describe('the editor edits a note, or the material around it (#542)', () => {
     it("the picker's file input lives where a re-render cannot destroy it (#547)", () => {
         // it used to sit inside #blockPanel, which replaces its own innerHTML — so the input the
         // click handler opened had already been thrown away, and Photo and Ad did nothing at all
-        const panelTag = editorHtml.match(/<div id="blockPanel"[^>]*>([\s\S]*?)<\/div>/)[1];
+        const panelTag = editorHtml.match(/<div class="tab-pane" id="blockPanel"[^>]*>([\s\S]*?)<\/div>/)[1];
         expect(panelTag.trim()).toBe('');
         expect(editorHtml).toContain('<input id="edBlockImg" type="file" accept="image/*" hidden>');
         expect(editorJs).toContain("const input = $('edBlockImg');");
@@ -144,5 +144,65 @@ describe('every surface draws the material the same way (#542)', () => {
         expect(pdf).toContain("RB.noteBlocks(n, 'before')");
         expect(pdf).toContain("RB.noteBlocks(n, 'after')");
         expect(pdf).toContain('const sheetRows = N + notes.reduce');
+    });
+});
+
+describe('export and import keep the material, and the other formats unharmed (#556)', () => {
+    // Maurizio's question on #535: whatever we do to notes, OpenRally and Roadbook Suite
+    // round trips must keep working. Blocks hang off a note, so the sequence of WAYPOINTS —
+    // which is all those formats know about — is exactly the notes, in order.
+    const RB = require('../public/assets/js/roadbook-core.js');
+    const track = Array.from({ length: 12 }, (_, i) => ({ lat: 45 + i * 0.0001, lon: 9 + i * 0.0001 }));
+    const withMaterial = () => RB.importRoadbook({
+        meta: { title: 'Round trip' }, icons: {}, track,
+        notes: [
+            { idx: 0, num: 1, road_type_out: 2, text: 'Start', blocks: [{ type: 'text', at: 'before', text: 'Briefing at 8' }] },
+            { idx: 6, num: 2, road_type_out: 3, text: 'Fork', wp_type: 'masked', blocks: [{ type: 'ad', at: 'after', image: 'data:img', text: 'ACME' }] },
+            { idx: 11, num: 3, road_type_out: 2, text: 'Finish' },
+        ],
+    });
+
+    it('a .rdbk round trip keeps every block exactly as it was', () => {
+        const out = RB.roadbookForExport(withMaterial());
+        const back = RB.importRoadbook(JSON.parse(JSON.stringify(out)));
+        expect(back.notes.length).toBe(3);
+        expect(RB.noteBlocks(back.notes[0], 'before')[0]).toMatchObject({ type: 'text', text: 'Briefing at 8' });
+        expect(RB.noteBlocks(back.notes[1], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:img', text: 'ACME' });
+        expect(back.notes[1].wp_type, 'the FIA type survives the cap-code round trip').toBe('masked');
+    });
+
+    it('the OpenRally export emits every note as a waypoint — no row to skip any more', () => {
+        const rb = withMaterial();
+        const xml = RB.openRallyDocument(rb, { name: 'Round trip' });
+        expect((xml.match(/<wpt /g) || []).length).toBe(rb.notes.length);
+        expect(xml).toContain('openrally:wptType');
+        expect(xml, 'material is ours, not OpenRally\'s').not.toContain('Briefing at 8');
+    });
+
+    it('an OpenRally file still imports, and gains no phantom rows', () => {
+        const rb = withMaterial();
+        const { rb: back } = RB.parseOpenRally(RB.openRallyDocument(rb, { name: 'Round trip' }));
+        expect(back.notes.length).toBe(rb.notes.length);
+        expect(back.track.length).toBe(rb.track.length);
+        expect(back.notes.map((n) => n.num)).toEqual([1, 2, 3]);   // numbering is the notes, in order
+        expect(back.notes.some((n) => n.blocks), 'OpenRally carries no material').toBe(false);
+    });
+
+    it('a Roadbook Suite file still opens, and its sponsor rows become material', () => {
+        // the suite's own field names, plus the information ROW shape older RDBK files used
+        const suite = RB.importRoadbook({
+            meta: { titolo: 'Giro', km_totali: 1.2 },
+            track,
+            notes: [
+                { idx: 0, testo: 'Partenza', km_prog: 0, km_parz: 0, road_type_out: 2 },
+                { note_kind: 'comment', text: 'Con il supporto di ACME', image: 'data:logo' },
+                { idx: 11, testo: 'Arrivo', km_prog: 1.2, km_parz: 1.2, road_type_out: 2 },
+            ],
+            icons: {},
+        });
+        expect(suite.meta.title).toBe('Giro');
+        expect(suite.notes.length, 'the sponsor row is no longer a row').toBe(2);
+        expect(suite.notes.map((n) => n.text)).toEqual(['Partenza', 'Arrivo']);
+        expect(RB.noteBlocks(suite.notes[0], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:logo' });
     });
 });

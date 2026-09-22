@@ -11,6 +11,15 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.2', date: '2026-09-22',
+        title: 'The roadbook carries its own briefing',
+        items: [
+            'A note can carry a photo, an advert or a block of big text — before or after it — shown wherever the roadbook is read: the Reader, the PDF and the public page.',
+            'The note editor is one tab per job: the note’s settings, its icons, and each piece of material around it.',
+            'The map inside a note keeps you in the middle and turns with your course, so left and right on it match the windscreen.',
+        ],
+    },
+    {
         version: '1.9.1', date: '2026-09-21',
         title: 'The roadbook is the interface',
         items: [

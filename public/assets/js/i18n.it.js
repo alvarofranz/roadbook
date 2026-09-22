@@ -1,7 +1,6 @@
 /* RDBK.app i18n — IT translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).it = {
-            'Image': 'Immagine', 'Text': 'Testo',
-            'Signing you in…': 'Accesso in corso…',
+            'Image': 'Immagine', 'Signing you in…': 'Accesso in corso…',
             'Sign in to read this roadbook.': 'Accedi per leggere questo roadbook.', 'Sign in to read public roadbooks.': 'Accedi per leggere i roadbook pubblici.',
             'seo.home.title': 'RDBK.app — roadbook digitali per le tue avventure', 'seo.home.desc': 'Crea, naviga, valida e classifica roadbook per ogni avventura. PWA gratuita e il formato aperto .rdbk.',
             'seo.about.title': 'Chi siamo — RDBK.app', 'seo.about.desc': 'Le persone e la missione dietro RDBK.app — strumenti gratuiti per roadbook digitali e il formato aperto .rdbk per ogni avventura.',
@@ -379,7 +378,7 @@
             'Recover unsaved GPX recording?': 'Recuperare la registrazione GPX non salvata?', 'Recover': 'Recupera',
             'Resume the run in progress?': 'Riprendere il percorso in corso?', 'Resume': 'Riprendi',
             'Unsaved work': 'Lavoro non salvato', 'Work left in progress in other tools. Resume it, or discard it.': 'Lavoro lasciato a metà in altri strumenti. Riprendilo o scartalo.', 'Discarded.': 'Scartato.', 'Untitled': 'Senza titolo',
-            'Unsaved draft': 'Bozza non salvata', 'Recording in progress': 'Registrazione in corso', 'Tripmaster run': 'Percorso Tripmaster', 'Run in progress': 'Percorso in corso', 'Also replace all current notes in this roadbook to {v} m?': 'Sostituire anche tutte le note attuali di questo roadbook con {v} m?', 'Every note now validates at this radius.': 'Ora tutte le note si convalidano con questo raggio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Pubblicità', '(caption)': '(didascalia)', 'Text': 'Testo', 'Before the note': 'Prima della nota', 'After the note': 'Dopo la nota', 'Nothing here yet.': 'Qui non c’è ancora niente.', 'Add': 'Aggiungi', '(text)': '(testo)', 'Delete this from note {n}?': 'Eliminare questo dalla nota {n}?', 'Detection radius': 'Raggio di rilevamento', 'Roadbook type': 'Tipo di roadbook', 'Basic (adventure)': 'Base (avventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Raggio di rilevamento predefinito (m)', 
+            'Unsaved draft': 'Bozza non salvata', 'Recording in progress': 'Registrazione in corso', 'Tripmaster run': 'Percorso Tripmaster', 'Run in progress': 'Percorso in corso', 'Also replace all current notes in this roadbook to {v} m?': 'Sostituire anche tutte le note attuali di questo roadbook con {v} m?', 'Every note now validates at this radius.': 'Ora tutte le note si convalidano con questo raggio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Pubblicità', '(caption)': '(didascalia)', 'Text': 'Testo', 'Icon': 'Icona', 'Big text': 'Testo grande', 'Before the note': 'Prima della nota', 'After the note': 'Dopo la nota', 'Nothing here yet.': 'Qui non c’è ancora niente.', 'Add': 'Aggiungi', '(text)': '(testo)', 'Delete this from note {n}?': 'Eliminare questo dalla nota {n}?', 'Detection radius': 'Raggio di rilevamento', 'Roadbook type': 'Tipo di roadbook', 'Basic (adventure)': 'Base (avventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Raggio di rilevamento predefinito (m)', 
             'Selective section start': 'Inizio settore selettivo', 'Selective section end': 'Fine settore selettivo',
             'Navigation WP': 'WP di navigazione', 'Masked WP': 'WP nascosto', 'Eclipse WP': 'WP eclipse', 'Control WP': 'WP di controllo', 'Security WP': 'WP di sicurezza', 'Precise WP': 'WP preciso', 'Visible WP': 'WP visibile',
             'Difficult-overtaking zone start': 'Inizio zona sorpasso difficile', 'Difficult-overtaking zone end': 'Fine zona sorpasso difficile',
@@ -1008,6 +1007,10 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* release notes — v1.9.0 */
 Object.assign(window.RBi18nLangs.it, {
+    'The roadbook carries its own briefing': 'Il roadbook porta con sé il suo briefing',
+    'A note can carry a photo, an advert or a block of big text — before or after it — shown wherever the roadbook is read: the Reader, the PDF and the public page.': 'Una nota può portare una foto, una pubblicità o un blocco di testo grande —prima o dopo di lei— e si vede ovunque si legga il roadbook: il Reader, il PDF e la pagina pubblica.',
+    'The note editor is one tab per job: the note’s settings, its icons, and each piece of material around it.': 'L’editor di nota è una tab per ogni cosa: i parametri della nota, le sue icone e ogni elemento che le sta attorno.',
+    'The map inside a note keeps you in the middle and turns with your course, so left and right on it match the windscreen.': 'La mappa dentro una nota ti tiene al centro e ruota sulla tua rotta, così destra e sinistra corrispondono al parabrezza.',
     'The roadbook is the interface': 'Il roadbook è l’interfaccia',
     'A note is validated on the note itself: the button at the bottom, the green bar that repeated the distance and the battery readout are gone, and the current speed takes their place.': 'Una nota si convalida sulla nota stessa: spariscono il pulsante in basso, la barra verde che ripeteva la distanza e l’indicatore della batteria, al cui posto c’è la velocità attuale.',
     'With automatic validation on, the GPS decides: a note you drive past turns red and the waypoint you actually reach is validated, so a run is never stuck on a note it will never enter.': 'Con la convalida automatica attiva decide il GPS: la nota saltata diventa rossa e viene convalidato il waypoint che raggiungi davvero, così la corsa non resta mai bloccata su una nota in cui non entrerai più.',
