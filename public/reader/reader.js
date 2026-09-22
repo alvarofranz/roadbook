@@ -16,11 +16,6 @@
     function closeModal(id) { $(id).hidden = true; if (modalTrap) { modalTrap(); modalTrap = null; } }
 
     let rb = null, notes = [], activeIdx = 0, team = '0';
-    // Information rows (Photo · Ad — RB.isInfoNote) are not waypoints: the active cursor must
-    // always skip over them, else onFix reads a row with no waypoint to reach and auto-advance
-    // stalls forever. nextNav/prevNav resolve the nearest real note each way.
-    const nextNav = (i) => { while (i < notes.length && RB.isInfoNote(notes[i])) i++; return i; };
-    const prevNav = (i) => { while (i >= 0 && notes[i] && RB.isInfoNote(notes[i])) i--; return i; };
     let reached = new Set(); // indices actually validated — a passed-over note that is not in here was skipped
     let tripTotalM = 0, tripPartialM = 0;
     let curLimit = null, maxSpdSeg = 0;
@@ -236,7 +231,6 @@
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
         if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
         scoredSet = RB.scoredNoteSet(notes);
-        activeIdx = nextNav(activeIdx); // never sit the cursor on a leading/edge information row
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         // Immersive navigation: the Reader owns the screen (its own action row carries the exit
         // button), so the global bottom tab bar hides — no cramped triple bottom stack (#app-tabbar).
@@ -321,7 +315,7 @@
             // one actually reached is validated, instead of the run sitting forever on a
             // waypoint it will never enter. The row-state update happens inside validateAt.
             if (auto) {
-                const hit = RB.autoReachedIdx(notes, activeIdx, nextNav(activeIdx + 1), fix.from, here, reachRadius);
+                const hit = RB.autoReachedIdx(notes, activeIdx, activeIdx + 1, fix.from, here, reachRadius);
                 if (hit >= 0) autoValidate(hit, here);
             }
         }
@@ -356,7 +350,7 @@
     // The active note's reach gate: capped to half the smaller along-track gap to a neighbour
     // (partial_distance is the metres from the previous note) so reaches never overlap, then
     // floored above GPS noise. Dense rally notes get a tight gate; spread-out trails get the cap.
-    const reachRadius = (i) => RB.reachRadius(notes[i], notes[nextNav(i + 1)], rb && rb.meta);
+    const reachRadius = (i) => RB.reachRadius(notes[i], notes[i + 1], rb && rb.meta);
 
     /* ---------- navigation: notes ---------- */
     const iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/');
@@ -385,42 +379,43 @@
         const top = list.scrollTop + anchor.getBoundingClientRect().top - list.getBoundingClientRect().top;
         list.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
     }
+    // The material a note carries (#542): a photo or an advert fills the diagram box beside its
+    // caption; a text block runs across the whole description area. Never a waypoint — no
+    // number, no state colour, nothing to validate.
+    const blockRowsHTML = (n, at) => RB.noteBlocks(n, at).map((b) => {
+        const kind = RB.blockType(b);
+        const wide = !b.image ? ' col-text-wide' : '';
+        return `<div class="nrow block block-${kind.id}">
+            <div class="col-distance"></div>
+            <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
+            <div class="col-text${wide}"><div class="text">${esc(b.text || '')}</div></div>
+            <div class="col-buttons"></div>
+        </div>`;
+    }).join('');
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
         $('noteList').innerHTML = notes.map((n, i) => {
-            const info = RB.isInfoNote(n);
             const cls = ['nrow'];
-            if (info) cls.push('info', 'kind-' + RB.noteKind(n).id);
-            if (!preview && !info) { // no state colouring in the preview, nor on an information row
+            if (!preview) { // no state colouring in the preview
                 if (reached.has(i)) cls.push('done'); else if (i < activeIdx) cls.push('skipped');
                 if (i === activeIdx) cls.push('active');
             }
-            const tight = !info && notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
+            const tight = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
             const capQual = n.cap != null && CAP_TYPE_LABEL[n.cap_type] ? ' · ' + esc(t(CAP_TYPE_LABEL[n.cap_type])) : '';
             const cap = n.cap != null ? `<div class="note-cap">CAP ${Math.round(n.cap)}°${n.cap_distance != null ? ' · ' + fkm(n.cap_distance) + ' km' : ''}${capQual}</div>` : '';
             const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
-            const reach = (!info && !preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
-            const mapb = (!info && showMap) ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
-            const textClass = info && !n.image ? ' col-text-wide' : '';
-            if (info) {
-                return `<div class="${cls.join(' ')}" data-i="${i}">
-                <div class="col-distance"></div>
-                <div class="col-vignette${info && !n.image ? ' col-vignette-empty' : ''}">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
-                <div class="col-text${textClass}"><div class="text">${esc(n.text || '')}</div></div>
-                <div class="col-buttons"></div>
-            </div><div class="nmap" id="nmap${i}" hidden></div>`;
-            }
-            return `<div class="${cls.join(' ')}" data-i="${i}">
+            const reach = (!preview && !auto && i === activeIdx) ? `<button class="note-button reach" data-reach title="${t('Note reached')}"><i class="fa-solid fa-check"></i></button>` : '';
+            const mapb = showMap ? `<button class="note-button" data-map="${i}" title="${t('Open on map')}"><i class="fa-solid fa-map-location-dot"></i></button>` : '';
+            return `${blockRowsHTML(n, 'before')}<div class="${cls.join(' ')}" data-i="${i}">
                 <div class="col-distance${tight}"><div class="total">${fkm(n.distance)}</div><div class="partial">+${fkm(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
                 <div class="col-vignette">${NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
                 <div class="col-buttons">${reach}${mapb}</div>
-            </div><div class="nmap" id="nmap${i}" hidden></div>`;
+            </div>${blockRowsHTML(n, 'after')}<div class="nmap" id="nmap${i}" hidden></div>`;
         }).join('');
         $('noteList').querySelectorAll('[data-reach]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); advanceNote(); });
         $('noteList').querySelectorAll('[data-map]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); toggleNoteMap(+b.dataset.map); });
         $('noteList').querySelectorAll('.nrow').forEach((c) => c.onclick = () => {
-            if (c.classList.contains('info')) return;
             const i = +c.dataset.i;
             if (preview) { if (showMap) toggleNoteMap(i); return; }
             // The whole active row is the "done" target — aiming at a 42 px button on a moving
@@ -450,7 +445,7 @@
             }
         });
         list.querySelectorAll('[data-reach]').forEach((b) => b.remove()); // the button follows the active row
-        if (!auto && notes[activeIdx] && !RB.isInfoNote(notes[activeIdx])) {
+        if (!auto && notes[activeIdx]) {
             const cell = list.querySelector(`.nrow[data-i="${activeIdx}"] .col-buttons`);
             if (cell) {
                 const b = document.createElement('button');
@@ -519,7 +514,7 @@
     function markReached(i) {
         reached.add(i); tripPartialM = 0; beep();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
-        activeIdx = nextNav(i + 1); updateNoteStates();
+        activeIdx = i + 1; updateNoteStates();
     }
     // Scored sections (rally special stages) live in the core — RB.scoredNoteSet: only notes
     // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
@@ -582,7 +577,7 @@
         if (lim != null) { if (scored) pen.speed += RB.speedPenalty(maxSpdSeg, curLimit); curLimit = lim === 0 ? null : lim; maxSpdSeg = 0; }
         reached.add(i); tripPartialM = 0; beep();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
-        activeIdx = nextNav(i + 1); updateNoteStates();
+        activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) toast('Last note validated! Tap Finish.');
     }
     // Auto-advance's validation. When the note reached is not the active one, the ones driven
@@ -613,12 +608,12 @@
         if (!competition) return markReached(activeIdx);
         const i = activeIdx, far = farFrom(i);
         if (far == null) return validateAt(i, lastHere);
-        const n = notes[i], pts = RB.skipPenalty(scoredSet, i, nextNav(i + 1));
+        const n = notes[i], pts = RB.skipPenalty(scoredSet, i, i + 1);
         let msg = t('Too far from note') + ' ' + n.num + ' · ' + fmtDist(far) + '<br>' + t('Skip it and continue?');
         if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
         if (!(await RBConfirm(msg))) return;
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
-        activeIdx = nextNav(i + 1); tripPartialM = 0; updateNoteStates();
+        activeIdx = i + 1; tripPartialM = 0; updateNoteStates();
     }
 
     /* External remote (#20): a Bluetooth page-turner PEDAL or a camera clicker pairs as a keyboard,
@@ -636,7 +631,7 @@
     let detachRemote = null;
     function stepBackNote() {
         if (competition) return;
-        const back = prevNav(activeIdx - 1);
+        const back = activeIdx - 1;
         if (back >= 0) setActiveNote(back);
     }
     // Called whenever navigation (re)starts or the switch flips — start.Nav can run twice in one page

@@ -466,10 +466,14 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* comment note (note_kind: "comment"): no distance, no navigation, no pointer — the same row in
    the Reader and on the public roadbook page, which used to paint it in two slightly different
    shades of paper (#482). */
-/* an information row (Photo · Ad): its picture and caption, never a waypoint to drive to */
-.nrow.info { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
-.nrow.info .col-vignette-empty { display: none; }
-.nrow.info .col-text-wide { grid-column: 2 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
+/* the material a note carries (#542): a photo, an advert, a block of text. Never a waypoint to
+   drive to — no number, no state colour, nothing to validate. */
+.nrow.block { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
+.nrow.block .col-vignette-empty { display: none; }
+.nrow.block .block-img { width: 100%; height: 100%; max-height: 160px; object-fit: contain; display: block; }
+.nrow.block .col-text-wide { grid-column: 2 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
+/* a text block is meant to be read at arm's length: full width, big, as many lines as it needs */
+.nrow.block-text .col-text-wide .text { font-size: 1.15rem; line-height: 1.5; white-space: pre-wrap; }
 .nrow .col-buttons .note-button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid #bbb; background: #efefef; color: #333; cursor: pointer; font-size: 1rem; }
 /* the note-done button is what you aim for on a moving vehicle: taller than the rest, and the
    whole active row validates too, so a missed tap still does the right thing (#386) */

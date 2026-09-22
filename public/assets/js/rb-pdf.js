@@ -136,7 +136,8 @@
         const total = (rb.meta && rb.meta.total_distance) || (notes[N - 1] && notes[N - 1].distance) || 0;
         const title = (rb.meta && rb.meta.title) || 'Roadbook';
         // cover page + content pages
-        const contentPages = N <= ROWS_FIRST ? 1 : 1 + Math.ceil((N - ROWS_FIRST) / ROWS_REST);
+        const sheetRows = N + notes.reduce((sum, n) => sum + RB.noteBlocks(n).length, 0); // notes + their material
+        const contentPages = sheetRows <= ROWS_FIRST ? 1 : 1 + Math.ceil((sheetRows - ROWS_FIRST) / ROWS_REST);
         const totalPages = 1 + contentPages;
 
         function firstHeader(pageNum) {
@@ -168,32 +169,32 @@
             doc.text(RB.slug(title) + '.pdf', PW - RIGHT, fy, { align: 'right' });
         }
 
-        function drawRow(n, tulip, close, x, y, h) {
-            const info = RB.isInfoNote(n);
+        // A piece of the material a note carries (#542): a picture fills the diagram column
+        // beside its caption, a text block runs across the whole width.
+        function drawBlock(b, x, y, h) {
             const colDist = 26, colVig = 46, colText = CW - colDist - colVig, pad = 2;
-            if (info) {
-                doc.setDrawColor(20); doc.setLineWidth(0.3); doc.rect(x, y, CW, h);
-                if (n.image && tulip) {
-                    // An information row with a picture: it fills the vignette column
-                    doc.line(x + colDist, y, x + colDist, y + h);
-                    doc.line(x + colDist + colVig, y, x + colDist + colVig, y + h);
-                    const aw = colVig - 2 * pad, ah = h - 2 * pad, ar = 230 / 162;
-                    let iw = aw, ih = iw / ar; if (ih > ah) { ih = ah; iw = ih * ar; }
-                    doc.addImage(tulip, 'PNG', x + colDist + (colVig - iw) / 2, y + (h - ih) / 2, iw, ih);
-                    const tx = x + colDist + colVig, tcx = tx + colText / 2;
-                    doc.setTextColor(20); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
-                    const lines = doc.splitTextToSize(String(n.text || ''), colText - 2 * pad);
-                    const block = Math.min(lines.length, 4) * 4.4;
-                    doc.text(lines.slice(0, 4), tcx, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
-                } else {
-                    // An information row with no picture: the text spans the full row width
-                    doc.setTextColor(60); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
-                    const lines = doc.splitTextToSize(String(n.text || ''), CW - 2 * pad);
-                    const block = Math.min(lines.length, 4) * 4.4;
-                    doc.text(lines.slice(0, 4), x + CW / 2, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
-                }
+            doc.setDrawColor(20); doc.setLineWidth(0.3); doc.rect(x, y, CW, h);
+            if (b.image) {
+                doc.line(x + colDist, y, x + colDist, y + h);
+                doc.line(x + colDist + colVig, y, x + colDist + colVig, y + h);
+                const aw = colVig - 2 * pad, ah = h - 2 * pad, ar = 230 / 162;
+                let iw = aw, ih = iw / ar; if (ih > ah) { ih = ah; iw = ih * ar; }
+                try { doc.addImage(b.image, x + colDist + (colVig - iw) / 2, y + (h - ih) / 2, iw, ih); } catch (e) {} // an unreadable picture must not kill the export
+                const tx = x + colDist + colVig, tcx = tx + colText / 2;
+                doc.setTextColor(20); doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+                const lines = doc.splitTextToSize(String(b.text || ''), colText - 2 * pad);
+                const block = Math.min(lines.length, 4) * 4.4;
+                doc.text(lines.slice(0, 4), tcx, y + (h - 9) / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
                 return;
             }
+            doc.setTextColor(60); doc.setFont('helvetica', 'italic'); doc.setFontSize(11);
+            const lines = doc.splitTextToSize(String(b.text || ''), CW - 2 * pad);
+            const block = Math.min(lines.length, 5) * 4.8;
+            doc.text(lines.slice(0, 5), x + CW / 2, y + h / 2 - block / 2 + 4, { align: 'center', baseline: 'middle' });
+        }
+
+        function drawRow(n, tulip, close, x, y, h) {
+            const colDist = 26, colVig = 46, colText = CW - colDist - colVig, pad = 2;
             // close-to-next notes get the light-blue distance cell (mirrors the Reader)
             if (close) { doc.setFillColor(191, 227, 255); doc.rect(x, y, colDist, h, 'F'); }
             doc.setDrawColor(20); doc.setLineWidth(0.3);
@@ -226,16 +227,24 @@
         }
 
         drawCover(doc, rb, logo, when);
+        // The printed sequence: each note, with the material it carries on the side it sits on.
+        const sheet = [];
+        notes.forEach((n, i) => {
+            RB.noteBlocks(n, 'before').forEach((b) => sheet.push({ block: b }));
+            sheet.push({ note: n, tulip: tulips[i], close: notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 });
+            RB.noteBlocks(n, 'after').forEach((b) => sheet.push({ block: b }));
+        });
         let i = 0, page = 0;
-        while (i < N) {
+        while (i < sheet.length) {
             doc.addPage();
             const first = page === 0;
             first ? firstHeader(page + 1) : runHeader(page + 1);
             const rows = first ? ROWS_FIRST : ROWS_REST;
             const top = TOP + (first ? H1 : H2), rowH = (CB - top) / rows;
-            for (let r = 0; r < rows && i < N; r++, i++) {
-                const close = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50;
-                drawRow(notes[i], tulips[i], close, LEFT, top + r * rowH, rowH);
+            for (let r = 0; r < rows && i < sheet.length; r++, i++) {
+                const row = sheet[i];
+                if (row.block) drawBlock(row.block, LEFT, top + r * rowH, rowH);
+                else drawRow(row.note, row.tulip, row.close, LEFT, top + r * rowH, rowH);
             }
             drawFooter(page + 1);
             page++;
