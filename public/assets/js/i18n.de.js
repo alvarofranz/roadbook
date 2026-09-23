@@ -1306,3 +1306,13 @@ Object.assign(window.RBi18nLangs.de, {
     "Upcoming": "Demnächst",
     "Live": "Läuft",
 });
+
+/* 1.9.4 release note */
+Object.assign(window.RBi18nLangs.de, {
+    "Built for the ride": "Gemacht für unterwegs",
+    "The Recorder is one big Note button: a bell and a big check confirm each note, the map shows the distance since the last one, and Pause · End sit at the bottom.": "Der Recorder ist ein großer Noten-Button: Eine Glocke und ein großes Häkchen bestätigen jede Note, die Karte zeigt die Distanz seit der letzten, und Pause · Beenden sitzen unten.",
+    "The Reader rings the same bell on every validated note, and a long note never hides the next one.": "Der Reader läutet dieselbe Glocke bei jeder validierten Note, und eine lange Note verdeckt die nächste nicht mehr.",
+    "Roadbook and event cards share one clear design, with vehicles, distance, notes and dates at a glance.": "Roadbook- und Event-Karten teilen ein klares Design, mit Fahrzeugen, Distanz, Noten und Daten auf einen Blick.",
+    "In the app your session and any recording in progress survive the phone clearing its storage, and the status bar steps aside while you navigate.": "In der App überstehen deine Sitzung und jede laufende Aufnahme, wenn das Telefon seinen Speicher leert, und die Statusleiste tritt beim Navigieren zur Seite.",
+    "The Editor map is cleaner and darker, a failed sign-in always tells you why, and a car is now a 4x4.": "Die Editor-Karte ist aufgeräumter und dunkler, eine fehlgeschlagene Anmeldung sagt immer warum, und aus dem Auto ist ein 4x4 geworden.",
+});

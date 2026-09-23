@@ -244,8 +244,8 @@ Recorder e Tripmaster mentre una sessione GPS è attiva.
 
 | Metodo | Cosa fa |
 |--------|---------|
-| `show()` | crea la barra (una volta), la mostra e avvia il tick dell'orologio (1 s) |
-| `hide()` | nasconde la barra e ferma il tick |
+| `show()` | crea la barra (una volta), la mostra, avvia il tick dell'orologio (1 s) e mette `gps-live` sul `body` — nell'app la barra di stato di sistema si nasconde (#778) |
+| `hide()` | nasconde la barra, ferma il tick e toglie `gps-live` |
 | `setGps(acc)` | aggiorna la cella GPS con l'accuratezza in metri dell'ultimo fix |
 
 La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.topbar`.

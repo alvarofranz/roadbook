@@ -29,6 +29,18 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   browser it uses the standard Web Geolocation watch. Same data contract either way, so the
   Reader, Tripmaster and Recorder gained background GPS with no changes to their own code.
 - **`app.css`** — safe-area inset for the header under the notch (`.native` body class).
+- **Durable storage (#778)** — `native/src/durable.js` mirrors the keys that matter (the session
+  token, the signed-in user, participant mode, run reports waiting to upload, and every crash
+  checkpoint: Reader run, Recorder session, Tripmaster session, GPX track) from the WebView's
+  `localStorage` into native **Preferences** (UserDefaults · SharedPreferences), which the OS never
+  purges. Writes are debounced and flushed when the app goes to the background; a removal is sent
+  at once. At startup a sentinel key tells whether the WebView storage was wiped: if so the keys come
+  back and the page reloads once; if not, Preferences is realigned to `localStorage`, so nothing the
+  user discarded is ever resurrected. No permission involved.
+- **Status bar (#778)** — `@capacitor/status-bar`: light icons on the app's dark background, and the
+  bar is hidden while a tool owns the screen — the Reader navigating (`body.rb-immersive`) or a GPS
+  session with its own clock · battery · GPS bar (`body.gps-live`, set by `RBStatusBar`). One
+  `MutationObserver` on the body's classes in `native.js`; no page calls the bridge for it.
 - **Token auth** — `app/auth.php` issues a Bearer token on login (alongside the web session
   cookie) and `current_user()` accepts it; `RBApi`/`RBUpload` send & store it **only in the
   app**, so accounts, save-to-profile, challenges and photo upload work inside the app while
