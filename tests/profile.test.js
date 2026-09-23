@@ -31,9 +31,9 @@ describe('account settings', () => {
         expect(html).toMatch(/<select id="pfRunsVis"[\s\S]*value="ask"[\s\S]*value="public"[\s\S]*value="private"/);
         expect(js).toContain("api('runs_settings', { runs_visibility: $('pfRunsVis').value })");
     });
-    it('the voice-note language offers all five languages, on both sides (#629)', () => {
-        for (const v of ['en-US', 'es-ES', 'it-IT', 'de-DE', 'fr-FR']) expect(html).toContain(`value="${v}"`);
-        expect(read('app/auth.php')).toContain("['', 'en-US', 'es-ES', 'it-IT', 'de-DE', 'fr-FR']");
+    it('has no voice-note language: nothing dictates or transcribes any more (#773)', () => {
+        expect(html + js).not.toMatch(/pfVoiceLang|voice_lang/);
+        expect(read('app/auth.php')).not.toContain('voice_lang');
     });
     it('one sign-out, toasts for every save, palette colours (#631)', () => {
         expect(js).toContain("$('logoutBtn').onclick = RBSignOut;");

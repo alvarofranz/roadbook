@@ -154,7 +154,7 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
 
 - **`current_user()`** (app/auth.php) restituisce sempre `is_admin`, `is_organizer`,
   `email_verified` e `must_change_password` come interi, così il front-end può fare check di
-  verità affidabili; include anche le preferenze `ui_lang`, `voice_lang`, `organization` e la
+  verità affidabili; include anche le preferenze `ui_lang`, `organization` e la
   posizione di default `default_lat`/`default_lon` (numeri o `null`).
 - **`change_password()`** (app/auth.php): normalmente richiede la
   password attuale; se l'utente ha `must_change_password` attivo la imposta **senza** la

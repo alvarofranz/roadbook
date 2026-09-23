@@ -80,7 +80,7 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | — `social_auth` | Coda condivisa dei due social login: (1) accede all'account già collegato via `google_sub`/`apple_sub`, (2) lo collega a un account con email **verificata** corrispondente, o (3) crea un account *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Una sola chiamata (#519): la scelta dell'account nel chooser di Google / nel foglio di Apple è già la decisione dell'utente. | nessuna |
 | `logout` | Distrugge la sessione e revoca il Bearer token usato | sessione |
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
-| `profile` | Aggiorna nome/cognome/bio, **organizzazione** e la lingua delle note vocali (`voice_lang`) | richiesta |
+| `profile` | Aggiorna nome/cognome/bio e **organizzazione** | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
 | `activity_mine` | Timeline attività **proprie** dell'utente loggato, paginata + cercabile (#448) | richiesta |
 | `rb_trash_list` / `rb_restore` / `rb_purge` | Il proprio cestino, ripristino a draft (#238), eliminazione definitiva immediata dal cestino (#704) | richiesta |
@@ -143,7 +143,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include foto + `cover` + dati autore | opzionale |
 
 `current_user()` — il payload restituito da `config` e da `login` — include anche le preferenze
-utente: `ui_lang` (lingua UI scelta), `voice_lang` (lingua delle note vocali), la posizione mappa
+utente: `ui_lang` (lingua UI scelta), la posizione mappa
 di default `default_lat`/`default_lon` (numero o `null`, mai stringhe `DECIMAL`) e i flag di ruolo
 (`is_admin`, `is_organizer`), così il front-end li applica subito.
 
@@ -262,8 +262,7 @@ vecchio limite "niente cambio email da loggati".
   se manca o è fuori range, **azzera** entrambe a `NULL`. Serve a centrare la mappa quando non
   c'è ancora un fix GPS (apertura del Recorder, o disegno di una rotta da zero nell'Editor).
 - [`update_profile`](../app/auth.php) gestisce nome/cognome/bio, **`organization`** (testo libero,
-  usato per filtrare la ricerca organizzatori, #123) e la lingua delle note vocali **`voice_lang`**
-  (whitelist `''`/`en-US`/`es-ES`/`it-IT`; `''` = segue il dispositivo).
+  usato per filtrare la ricerca organizzatori, #123).
 
 ### Account reviewer pre-verificato
 La migrazione [007](../migrations/007_reviewer_account.sql) inserisce un utente

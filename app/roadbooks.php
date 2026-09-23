@@ -362,7 +362,7 @@ function ph_move(array $user, array $d): void {
     json_out(['ok' => true]);
 }
 
-/* ---- waypoint voice notes (recorded audio kept alongside the transcription) ---- */
+/* ---- voice notes: recorded audio clips, geotagged, per roadbook ---- */
 function audio_list(?array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
     rb_media_readable($user, $rbId);

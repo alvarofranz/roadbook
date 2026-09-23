@@ -118,7 +118,6 @@ Popola l'intestazione e i campi:
 | Nome / cognome (`pfFirst` / `pfLast`) | `user.first_name` / `user.last_name`, `maxlength="80"` |
 | Bio (`pfBio`) | `user.bio`, textarea `maxlength="500"` |
 | Organizzazione (`pfOrg`) | `user.organization` (testo libero — filtra la ricerca organizzatori negli eventi, #123) |
-| Lingua note vocali (`pfVoiceLang`) | `user.voice_lang` (vuoto = "Automatic (device)") |
 | Posizione di default (`pfLocMap`) | `user.default_lat` / `user.default_lon` (§3.3) |
 | Link Admin (`adminLink`) | visibile solo se `user.is_admin` |
 
@@ -131,10 +130,8 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
   l'immagine sale con `RBUpload({type:'avatar'}, f, 'avatar.jpg')` e, se ok, l'avatar viene
   aggiornato in pagina ([account.js:221](../public/account/account.js#L221)).
 - **Save profile** — `pfSave` invia `RBApi('profile', { first_name, last_name, bio,
-  organization, voice_lang })`. Salva quindi **nome, cognome, bio, organizzazione e lingua delle
-  note vocali** in un colpo solo, e ri-sincronizza il nome mostrato nell'intestazione. Lingua note
-  vocali = preferenza per-account usata da Recorder ed Editor per il riconoscimento vocale; con
-  valore vuoto ricade sulla lingua del dispositivo.
+  organization })`. Salva quindi **nome, cognome, bio e organizzazione** in un colpo solo, e
+  ri-sincronizza il nome mostrato nell'intestazione.
 - **Default map location** (`#defaultLocation`) — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
   `RBMap.STYLE_TOPO`, tile topografiche gratuite) e un pin trascinabile
   ([account.js:183](../public/account/account.js#L183)). Si imposta toccando la mappa,

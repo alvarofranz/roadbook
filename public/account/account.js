@@ -447,7 +447,6 @@
         $('pfBio').value = user.bio || '';
         $('pfOrg').value = user.organization || '';
         RBOrgDatalist($('orgSuggest')); // suggest existing clubs so the same one isn't retyped differently (#116)
-        $('pfVoiceLang').value = user.voice_lang || '';
         // Grants recap (#310) — the same role badges as the user admin list (#632)
         const grants = [];
         if (user.is_admin) grants.push({ label: t('Admin'), cls: 'u-admin' });
@@ -474,7 +473,7 @@
         };
         $('pfSave').onclick = async (e) => {
             const busy = RBBusy(e.currentTarget);
-            const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value, voice_lang: $('pfVoiceLang').value });
+            const r = await api('profile', { first_name: $('pfFirst').value, last_name: $('pfLast').value, bio: $('pfBio').value, organization: $('pfOrg').value });
             if (r.ok) { busy.ok(); $('accName').textContent = (($('pfFirst').value || '') + ' ' + ($('pfLast').value || '')).trim() || user.username; } // keep the header name in sync
             else busy.reset();
             RBToast(r.ok ? 'Profile saved.' : r.error);

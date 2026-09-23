@@ -397,7 +397,8 @@ parziale e l'arancione, sincronizza il totale e avanza `activeIdx`. All'ultima n
 toast "Tap Finish".
 
 Il tap sulla riga attiva, il pulsantino "raggiunta" e il comando *next* del remoto passano tutti
-da `advanceNote()`: `validateHere(activeIdx)` in competition, `markReached(activeIdx)` in trip —
+da `advanceNote()`: `validateAt(activeIdx)` in competition (lontano dalla nota chiede se saltarla),
+`markReached(activeIdx)` in trip —
 un solo punto di ingresso, così nessuna via scavalca né il gate di prossimità della competizione
 né il rifiuto del modo auto. La validazione automatica passa invece da `autoValidate(i, here)`,
 che addebita il salto quando la nota raggiunta non è quella attiva e poi chiama `validateAt`.
