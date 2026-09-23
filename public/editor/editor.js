@@ -1126,7 +1126,7 @@
         // modes, and the copy / settings / undo controls that would write are off. Export, Close
         // and Force unlock stay.
         document.body.classList.toggle('rb-readonly', readOnly());
-        ['saveAsAccount', 'openConfig', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => { $(id).disabled = readOnly(); });
+        ['openConfig', 'toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => { $(id).disabled = readOnly(); });
         document.querySelectorAll('#noteList textarea, #rbTitle').forEach((field) => { field.readOnly = readOnly(); });
         if (readOnly()) setMapTool('pan'); else paintModes();
         updateSaveBtn(); updateHistBtns();
@@ -1182,8 +1182,8 @@
         }
         return r;
     }
-    // Every gate both saves (Save · Save a copy) share: signed in, something to save, the route's open
-    // cuts acknowledged, and the consistency findings seen (#339).
+    // Every gate a save passes: signed in, something to save, the route's open cuts acknowledged,
+    // and the consistency findings seen (#339).
     async function readyToSave() {
         if (!meUser) { RBNeedAuth('Sign in to save this roadbook to your profile.'); return false; }
         if (!rb) { toast('Nothing to save.'); return false; }
@@ -1240,27 +1240,6 @@
         location.href = location.pathname.replace(/[^/]*$/, ''); // close → the editor landing (roadbook list), stripping any ?rb / /<slug>
     }
     $('closeEditor').onclick = leaveEditor;
-    // "Save a copy": store the current content as a NEW roadbook (the original is left
-    // untouched). The copy starts private and gets a "… (copy)" title; the editor
-    // then keeps editing the copy. Photos stay with the original (they live server-side).
-    $('saveAsAccount').onclick = async () => {
-        if (!(await readyToSave())) return;
-        // the copy identity holds only if the save SUCCEEDS — a failure (offline/quota/lock)
-        // must leave the editor on the original roadbook, not a detached "(copy)" (#220)
-        const prev = { title: rb.meta.title, id: currentRbId, status, reusable };
-        rb.meta.title = ((rb.meta.title || 'Untitled') + ' (copy)').slice(0, 200);
-        $('rbTitle').value = rb.meta.title;
-        currentRbId = 0; setStatus('draft'); // new identity, a fresh draft
-        const busy = RBBusy('saveAsAccount', { onEnd: updateSaveBtn });
-        const r = await doSave();
-        if (r.ok) busy.ok(); else busy.reset();
-        if (!r.ok) {
-            rb.meta.title = prev.title; $('rbTitle').value = prev.title || '';
-            currentRbId = prev.id; setStatus(prev.status); reusable = prev.reusable;
-            return toast(r.error || 'Could not save.');
-        }
-        toast('Saved as a new roadbook.');
-    };
     // Delete the saved roadbook (the button only shows once it exists on the server). Names it
     // in the confirm, then sends the user back to their list — the editor content is gone.
     $('deleteRb').onclick = async () => {
