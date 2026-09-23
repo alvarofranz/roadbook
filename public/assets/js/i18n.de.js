@@ -1498,7 +1498,7 @@ Object.assign(window.RBi18nLangs.de, {
 /* guided tours (#906) */
 Object.assign(window.RBi18nLangs.de, {
     "tour.next": "Weiter",
-    "Take a quick tour? Each tool shows you its main controls once, the first time you open it.": "Eine kurze Tour? Jedes Werkzeug zeigt dir seine wichtigsten Bedienelemente einmal, beim ersten Öffnen.",
+    "Take a quick tour? Each tool shows you its main controls once, the first time you open it.": "Ein kurzes Tutorial? Jedes Werkzeug zeigt dir einmal seine wichtigsten Bedienelemente – beim ersten Öffnen.",
     "Skip tutorial": "Tour überspringen",
     "The roadbook": "Das Roadbook",
     "The next note always sits on top; the blue box shows what is left along the track.": "Die nächste Notiz steht immer oben; das blaue Feld zeigt, was entlang des Tracks noch fehlt.",
