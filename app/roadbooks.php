@@ -28,9 +28,11 @@ function rb_vehicle_list(string $set): array { return explode(',', rb_clean_vehi
 
 function rb_list(array $user): void {
     global $CFG;
-    $st = db()->prepare("SELECT id, title, category, total_distance, note_count, status, slug, updated_at, filename FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
+    // every roadbook as the shared card (rb_card_fields — the app home draws them, #895), plus what
+    // My roadbooks lists: its category, status, last change and disk usage
+    $st = db()->prepare("SELECT " . RB_CARD_SQL . ", r.category, r.status, r.updated_at, r.filename FROM roadbooks r WHERE r.user_id = ? AND r.status <> 'deleted' ORDER BY r.updated_at DESC");
     $st->execute([$user['id']]);
-    $rbs = $st->fetchAll();
+    $rbs = array_map(fn($r) => rb_card_fields($r) + ['category' => $r['category'], 'status' => $r['status'], 'updated_at' => $r['updated_at'], 'filename' => $r['filename']], $st->fetchAll());
     // Per-roadbook disk usage: the .rdbk file + photos + audio (#246)
     foreach ($rbs as &$rb) {
         $rid = (int)$rb['id'];

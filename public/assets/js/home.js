@@ -27,15 +27,14 @@
         const mine = (r.ok && r.roadbooks) || [];
         const list = document.getElementById('appMineList');
         document.getElementById('appMine').hidden = false;
-        // the last few, each with the two things you do with your own roadbook: navigate it, edit it
-        list.innerHTML = mine.length ? mine.slice(0, 4).map((rb) => `<div class="roadbook-row">
-                <div class="meta"><b>${esc(rb.title)}</b><small>${RBSummary(rb.total_distance, rb.note_count)}</small></div>
-                <div class="btnrow end">
-                    <a class="btn btn-primary btn-sm" href="${ROOT}reader/?rb=${rb.id}" aria-label="${esc(t('Navigate'))}"><i class="fa-solid fa-compass"></i> ${esc(t('Navigate'))}</a>
-                    <a class="btn btn-ghost btn-sm" href="${ROOT}editor/?rb=${rb.id}" aria-label="${esc(t('Edit'))}" title="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
-                </div>
-            </div>`).join('')
+        // the last few as the ONE roadbook card every gallery draws (#895): a tap opens its page, where
+        // Navigate / Edit live; one still private says so on the card, a draft with no page opens the Editor
+        list.innerHTML = mine.length ? mine.slice(0, 6).map((rb) => RBRoadbookCard(rb, {
+                href: rb.slug ? `${ROOT}challenge/${encodeURIComponent(rb.slug)}` : `${ROOT}editor/?rb=${rb.id}`,
+                category: rb.status === 'public' ? '' : t(RBStatusLabel[rb.status]),
+            })).join('')
             : `<p class="muted small">${esc(t(r.ok ? 'No roadbooks yet — record a route or draw one in the Editor.' : 'Could not load.'))}</p>`;
+        RBFillRoutes(list);
     });
     RBChallenges.listPublic().then((rbs) => {
         if (rbs === null) { grid.innerHTML = `<p class="gallery-empty">${t('Could not load.')}</p>`; return; } // failed ≠ empty (#218)

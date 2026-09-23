@@ -1,17 +1,15 @@
 'use strict';
-/* Direct-APK page (#540 · #742): every Android build, newest first, resolved server-side
- * (admin_apk_builds) so the page needs no CSP exception and never hits the GitHub rate limit. The
- * rolling test build is rebuilt on every push to main (uninstall the store version first:
- * signatures differ); versioned signed APKs ride normal releases. Each says when it was built.
- * Admins only. */
+/* Direct-APK page (#540 · #742 · #894): every versioned Android release, newest first, named by
+ * its semver, resolved server-side (admin_apk_builds) so the page needs no CSP exception and never
+ * hits the GitHub rate limit. Each says when it was built. Admins only. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, api = RBApi;
 
     function card(build) {
-        const name = build.test ? t('apk.testBuild') : String(build.tag || '').replace(/^android-/, '');
+        const name = String(build.tag).replace(/^android-/, '');
         return `<section class="panel apk-build">
-            <div class="head-row"><h2>RDBK ${esc(name)} · Android${build.prerelease && !build.test ? ` <span class="u-badge">${esc(t('Pre-release'))}</span>` : ''}</h2>
+            <div class="head-row"><h2>RDBK ${esc(name)} · Android${build.prerelease ? ` <span class="u-badge">${esc(t('Pre-release'))}</span>` : ''}</h2>
                 <a class="btn btn-primary" href="${esc(build.url)}"><i class="fa-solid fa-download"></i> ${esc(t('apk.download'))}</a></div>
             <div class="apk-meta"><i class="fa-regular fa-clock"></i> ${esc(t('Built'))} ${esc(RBFmtDateTime(build.built_at))} · ${RBFmtSize(build.size || 0)}${build.sha256 ? `<br>SHA-256: <code>${esc(build.sha256)}</code>` : ''}</div>
         </section>`;

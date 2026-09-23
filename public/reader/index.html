@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.7-192">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.7-193">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-192">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-193">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -139,9 +139,10 @@
     <p class="muted" data-i18n="Open from a file or your roadbooks, or pick a public one below.">Open from a file or your roadbooks, or pick a public one below.</p>
     <p id="rdNativeHint" class="native-hint" data-i18n="native.better.gps.reader" hidden><i class="fa-solid fa-mobile-screen-button"></i> For uninterrupted GPS navigation and background tracking, use the native iOS or Android app.</p>
     <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
-    <div class="btnrow start mt-2">
-        <button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button>
-        <button class="btn btn-ghost" id="pickMine" hidden data-i18n="Open from My roadbooks"><i class="fa-solid fa-folder-open"></i> Open from My roadbooks</button>
+    <!-- the two ways in, side by side (#898) -->
+    <div class="btnrow split mt-2">
+        <button class="btn btn-primary" id="pickRb"><i class="fa-solid fa-file-arrow-up"></i> <span data-i18n=".rdbk file">.rdbk file</span></button>
+        <button class="btn btn-ghost" id="pickMine" hidden><i class="fa-solid fa-book"></i> <span data-i18n="My roadbooks">My roadbooks</span></button>
     </div>
     <section class="reader-gallery">
         <h2 data-i18n="Public roadbooks">Public roadbooks</h2>
@@ -266,26 +267,26 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.7-192"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.7-192"></script>
-<script src="../assets/js/rbzip.js?v=1.9.7-192"></script>
-<script src="../assets/js/rbmap.js?v=1.9.7-192"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.7-192"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.7-192"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.7-192"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.7-192"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.7-192"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.7-192"></script>
-<script src="../assets/js/challenges.js?v=1.9.7-192"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.7-192"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.7-192"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.7-192"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.7-192"></script>
-<script src="../assets/js/i18n.js?v=1.9.7-192"></script>
-<script src="../assets/js/app.js?v=1.9.7-192"></script>
-<script src="../assets/js/run-report.js?v=1.9.7-192"></script>
-<script src="../assets/js/cover-map.js?v=1.9.7-192"></script>
-<script src="../assets/js/run-card.js?v=1.9.7-192"></script>
-<script src="reader.js?v=1.9.7-192"></script>
+<script src="../assets/js/config.js?v=1.9.7-193"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.7-193"></script>
+<script src="../assets/js/rbzip.js?v=1.9.7-193"></script>
+<script src="../assets/js/rbmap.js?v=1.9.7-193"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.7-193"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.7-193"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.7-193"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.7-193"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.7-193"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.7-193"></script>
+<script src="../assets/js/challenges.js?v=1.9.7-193"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.7-193"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.7-193"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.7-193"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.7-193"></script>
+<script src="../assets/js/i18n.js?v=1.9.7-193"></script>
+<script src="../assets/js/app.js?v=1.9.7-193"></script>
+<script src="../assets/js/run-report.js?v=1.9.7-193"></script>
+<script src="../assets/js/cover-map.js?v=1.9.7-193"></script>
+<script src="../assets/js/run-card.js?v=1.9.7-193"></script>
+<script src="reader.js?v=1.9.7-193"></script>
 </body>
 </html>

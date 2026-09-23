@@ -7,7 +7,7 @@
             'seo.changelog.title': 'Novedades — RDBK.app', 'seo.changelog.desc': 'Cada versión de RDBK.app y qué cambió en ella, de la más reciente a la más antigua.', 'Full changelog': 'Registro de cambios completo',
             'seo.apk.title': 'APK Android — RDBK.app', 'seo.apk.desc': 'Instala RDBK en Android sin Play Store: descarga el APK firmado de la última versión.',
             'apk.lead': 'Instala RDBK sin Play Store: descarga el APK firmado de la última versión e instálalo manualmente. La misma compilación que el alfa de Play, verificada por SHA-256.',
-            'apk.download': 'Descargar APK', 'apk.noRelease': 'Aún no hay APK directo publicado — vuelve tras la próxima versión o instala desde Play Store.', 'apk.testBuild': 'Compilación de prueba — desinstala primero la versión de la tienda.',
+            'apk.download': 'Descargar APK', 'apk.noRelease': 'Aún no hay APK directo publicado — vuelve tras la próxima versión o instala desde Play Store.',
             'apk.step1': 'Descarga el APK de arriba en tu teléfono Android.', 'apk.step2': 'Ábrelo y permite Orígenes desconocidos cuando se solicite.', 'apk.step3': 'Verifica que el SHA-256 coincida, luego abre RDBK e inicia sesión.',
             'seo.privacy.title': 'Política de privacidad — RDBK.app', 'seo.privacy.desc': 'Cómo trata RDBK.app tus datos — cuentas, roadbooks y fotos — en nuestras herramientas gratuitas de roadbooks digitales.',
             'seo.terms.title': 'Condiciones de uso — RDBK.app', 'seo.terms.desc': 'Las condiciones para usar RDBK.app, la suite gratuita de roadbooks digitales y el formato abierto .rdbk.',
@@ -202,8 +202,6 @@
             'Track joined to the route.': 'Track unido a la ruta.',
             'The GPX has no usable track or waypoints.': 'El GPX no tiene una traza utilizable ni waypoints.',
             'No waypoints within 10 m of the route.': 'No hay waypoints a menos de 10 m de la ruta.', 'skipped, too far': 'omitidos, demasiado lejos',
-            
-            'Load .rdbk file': 'Cargar archivo .rdbk',
             'No roadbooks yet.': 'Aún no tienes roadbooks.',
             'Browse the roadbooks shared by the community.': 'Explora los roadbooks compartidos por la comunidad.', 'See all public roadbooks': 'Ver todos los roadbooks públicos', 'No public roadbooks yet.': 'Aún no hay roadbooks públicos.', 'Could not load roadbooks.': 'No se pudieron cargar los roadbooks.', 'Could not export the PDF.': 'No se pudo exportar el PDF.',
             'Learn more →': 'Más información →',
@@ -1059,7 +1057,7 @@ Object.assign(window.RBi18nLangs.es, {
 
 /* public pages: the Reader load screen and the Navigate hub (#639 · #641) */
 Object.assign(window.RBi18nLangs.es, {
-    "Open from My roadbooks": "Abrir desde Mis roadbooks",
+    
     "Drive with live GPS: follow a roadbook, or just the trip computer.": "Conduce con GPS en directo: sigue un roadbook o usa solo el trip computer.",
 });
 
@@ -1506,3 +1504,12 @@ Object.assign(window.RBi18nLangs.es, {
     "Leave": "Salir",
     "Recording to save": "Grabación por guardar",
 });
+
+/* Recorder landing (#896) */
+Object.assign(window.RBi18nLangs.es, {
+    "One big button drops a note right where you are.": "Un gran botón deja una nota justo donde estás.",
+    "Photos are pinned to the track as you ride.": "Las fotos se fijan en la traza mientras avanzas.",
+    "At the end it becomes a draft roadbook to finish in the Editor.": "Al final se convierte en un roadbook borrador para terminar en el Editor.",
+    "The GPS starts right away": "El GPS arranca al momento",
+});
+

@@ -47,7 +47,7 @@ describe('apk copy is translated (#540)', () => {
     const langs = dictionaries();
     for (const lang of LANGS) {
         it(`${lang} translates the apk strings`, () => {
-            for (const k of ['seo.apk.title', 'seo.apk.desc', 'apk.lead', 'apk.download', 'apk.noRelease', 'apk.testBuild', 'apk.step1', 'apk.step2', 'apk.step3']) {
+            for (const k of ['seo.apk.title', 'seo.apk.desc', 'apk.lead', 'apk.download', 'apk.noRelease', 'apk.step1', 'apk.step2', 'apk.step3']) {
                 expect(langs[lang][k], `${lang} ${k}`).toBeTruthy();
             }
         });

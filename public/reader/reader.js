@@ -68,7 +68,7 @@
     // here with the slug, where the startup below loads it (sign-in gate included).
     RBChallenges.gallery({ grid: $('readerGallery'), pager: $('readerPager'), search: $('readerSearch'), href: (r) => RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug) });
     $('previewBack').onclick = () => { location.href = RBChallenges.ROOT + 'reader/'; }; // back to the load screen (#638)
-    // "Open from My roadbooks": shown only when signed in; a picker of the user's saved roadbooks.
+    // "My roadbooks": shown only when signed in; a picker of the user's saved roadbooks.
     // RBConfig: offline, a signed-in user is still signed in (#630).
     let evCtx = null;
     const cfgReady = RBConfig().then((c) => { meUser = !!c.user; if (meUser) $('pickMine').hidden = false; evCtx = c.participant || null; });

@@ -651,8 +651,9 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .app-quick .launch-tile .launch-name { font-size: .9rem; margin-top: .15rem; }
 .app-section { margin-top: 1.4rem; }
 .app-section h3 { margin: 0; font-size: 1.05rem; }
-.native #gallery .gallery { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: .8rem; padding-bottom: .4rem; }
-.native #gallery .gallery > * { flex: 0 0 78%; scroll-snap-align: start; }
+/* the app home's two rows of cards — your roadbooks (#895) and the public ones — slide sideways */
+.native #gallery .gallery, .gallery.app-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: .8rem; padding-bottom: .4rem; }
+.native #gallery .gallery > *, .gallery.app-carousel > * { flex: 0 0 78%; scroll-snap-align: start; }
 .native #gallery .section-head .kicker { display: none; }
 .native #gallery { padding-top: .4rem; }
 .native .install-chip { display: none !important; } /* the app IS the app: never an Install chip (#198 · #720) */
@@ -724,6 +725,8 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .btnrow.end { justify-content: flex-end; }
 .btnrow.center { justify-content: center; }
 .btnrow.between { justify-content: space-between; }
+/* buttons sharing a row in equal parts, whatever their labels (the Reader's two ways in, #898) */
+.btnrow.split > .btn { flex: 1 1 0; min-width: 0; justify-content: center; }
 .btnrow.spaced { margin-top: 1rem; }
 .btnrow.wrap { flex-wrap: wrap; }
 .btn-group { display: flex; gap: .5rem; }

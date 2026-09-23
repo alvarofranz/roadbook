@@ -114,6 +114,6 @@ describe('one base-map toggle, RBMap’s own', () => {
 describe('the Editor start offers five ways, on one row (#808)', () => {
     it('adds Record a track, linking to the Recorder', () => {
         expect(html).toContain('<a class="load-card" href="../recorder/"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record a track">');
-        expect(html).toContain('.load-opts { grid-template-columns: repeat(5, 1fr); }');
+        expect(html).toContain('.load-opts:not(.stack) { grid-template-columns: repeat(5, minmax(0, 1fr)); }');
     });
 });

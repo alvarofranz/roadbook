@@ -7,7 +7,7 @@
             'seo.changelog.title': 'Neuigkeiten — RDBK.app', 'seo.changelog.desc': 'Jede RDBK.app-Version und was sich geändert hat, neueste zuerst.', 'Full changelog': 'Vollständiges Changelog',
             'seo.apk.title': 'Android-APK — RDBK.app', 'seo.apk.desc': 'RDBK auf Android ohne Play Store installieren: signiertes APK der neuesten Version laden.',
             'apk.lead': 'RDBK ohne Play Store installieren: signiertes APK der neuesten Version laden und manuell installieren. Gleicher Build wie die Play-Alpha, per SHA-256 geprüft.',
-            'apk.download': 'APK laden', 'apk.noRelease': 'Noch kein direktes APK veröffentlicht — nach dem nächsten Release wiederkommen oder aus dem Play Store installieren.', 'apk.testBuild': 'Test-Build — zuerst die Store-Version deinstallieren.',
+            'apk.download': 'APK laden', 'apk.noRelease': 'Noch kein direktes APK veröffentlicht — nach dem nächsten Release wiederkommen oder aus dem Play Store installieren.',
             'apk.step1': 'APK oben auf dein Android-Handy laden.', 'apk.step2': 'Öffnen und Unbekannte Quellen zulassen, wenn gefragt.', 'apk.step3': 'SHA-256 prüfen, dann RDBK öffnen und anmelden.',
             'seo.privacy.title': 'Datenschutzerklärung — RDBK.app', 'seo.privacy.desc': 'Wie RDBK.app mit deinen Daten umgeht — Konten, Roadbooks und Fotos — in unseren kostenlosen Werkzeugen für digitale Roadbooks.',
             'seo.terms.title': 'Nutzungsbedingungen — RDBK.app', 'seo.terms.desc': 'Die Bedingungen für die Nutzung von RDBK.app, der kostenlosen Suite für digitale Roadbooks und dem offenen .rdbk-Format.',
@@ -268,8 +268,6 @@
             'Track joined to the route.': 'Track mit Route verbunden.',
             'The GPX has no usable track or waypoints.': 'Das GPX hat keinen nutzbaren Track und keine Wegpunkte.',
             'No waypoints within 10 m of the route.': 'Keine Wegpunkte innerhalb von 10 m der Route.', 'skipped, too far': 'übersprungen, zu weit',
-            
-            'Load .rdbk file': '.rdbk-Datei laden',
             'No roadbooks yet.': 'Noch keine Roadbooks.',
             'Browse the roadbooks shared by the community.': 'Roadbooks der Community durchsuchen.', 'See all public roadbooks': 'Alle öffentlichen Roadbooks anzeigen', 'No public roadbooks yet.': 'Noch keine öffentlichen Roadbooks.', 'Could not load roadbooks.': 'Roadbooks konnten nicht geladen werden.', 'Could not export the PDF.': 'PDF konnte nicht exportiert werden.',
             'Learn more →': 'Mehr erfahren →',
@@ -1022,7 +1020,7 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* public pages: the Reader load screen and the Navigate hub (#639 · #641) */
 Object.assign(window.RBi18nLangs.de, {
-    "Open from My roadbooks": "Aus Meine Roadbooks öffnen",
+    
     "Drive with live GPS: follow a roadbook, or just the trip computer.": "Fahre mit Live-GPS: folge einem Roadbook oder nutze nur den Tripcomputer.",
 });
 
@@ -1469,3 +1467,12 @@ Object.assign(window.RBi18nLangs.de, {
     "Leave": "Verlassen",
     "Recording to save": "Aufzeichnung zu speichern",
 });
+
+/* Recorder landing (#896) */
+Object.assign(window.RBi18nLangs.de, {
+    "One big button drops a note right where you are.": "Ein großer Knopf setzt eine Notiz genau dort, wo du bist.",
+    "Photos are pinned to the track as you ride.": "Fotos werden unterwegs an den Track geheftet.",
+    "At the end it becomes a draft roadbook to finish in the Editor.": "Am Ende wird daraus ein Roadbook-Entwurf, den du im Editor fertigstellst.",
+    "The GPS starts right away": "Das GPS startet sofort",
+});
+
