@@ -37,6 +37,11 @@ describe('the roadbook page', () => {
         expect(page).toContain('<p class="comment-body">${esc(c.body)}</p>');
         expect(page).toContain("RBConfirmDanger(`${esc(t('Delete this comment by'))} <b>@${esc(c.username)}</b>?");
     });
+    it('has a Comments button beside the actions that scrolls down to them, with the count (#853)', () => {
+        expect(html).toContain('<a class="btn btn-ghost" id="chCommentsBtn" href="#chComments" hidden>');
+        expect(page).toContain("$('chComments').scrollIntoView({ behavior: 'smooth', block: 'start' })");
+        expect(page).toContain("$('chCommentCount').textContent = $('chCommentsBtnCount').textContent =");
+    });
     it('posts with a one-use Turnstile token', () => {
         expect(page).toContain("RBApi('comment_add', { slug, body: text, turnstile: turnstile.token() });");
         expect(page).toContain('turnstile.reset();');

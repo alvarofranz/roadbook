@@ -239,6 +239,7 @@ through an event) has none.
   - `comment_delete {id}` is open to the author, the roadbook's owner and an admin.
   - Each post and each deletion lands in `activity_log`.
 - **Client** (`challenge.js`):
+  - A **Comments** button beside Navigate · PDF · Edit (with the count) scrolls down to them (#853).
   - The list is followed by a form holding the Turnstile widget, rendered by the shared `RBTurnstile(el, siteKey)`
     in `app.js`, which is also used by the account forms. A token is good for one post, so the widget resets
     after each attempt.
