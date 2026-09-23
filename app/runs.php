@@ -12,10 +12,6 @@ function run_int($v, int $max = 2147483647): int { return max(0, min($max, (int)
 
 // Save the report of a finished run. Visibility: the choice made on the report, else the runner's
 // standing preference; "remember" makes the choice that preference (#619).
-// How many times a roadbook was completed, for its card (#868): every completed run counts, public
-// or private — a number names nobody. One SQL fragment, used by every listing that draws a card.
-const RB_COMPLETIONS_SQL = '(SELECT COUNT(*) FROM roadbook_runs ru WHERE ru.roadbook_id = r.id AND ru.completed = 1) AS completions';
-
 function run_save(array $user, array $d): void {
     $title = mb_substr(trim((string)($d['title'] ?? '')), 0, 200) ?: 'Roadbook';
     $mode = ($d['mode'] ?? '') === 'competition' ? 'competition' : 'trip';
@@ -110,8 +106,7 @@ function profile_get(array $d): void {
     if (!$u) fail('Not found.', 404);
     $me = current_user();
     $isMe = $me && (int)$me['id'] === (int)$u['id'];
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, " . RB_COMPLETIONS_SQL . ",
-            (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+    $rb = db()->prepare('SELECT ' . RB_CARD_SQL . "
         FROM roadbooks r WHERE r.user_id = ? AND r.status = 'public' ORDER BY r.updated_at DESC LIMIT 60");
     $rb->execute([(int)$u['id']]);
     $runs = db()->prepare('SELECT ru.*, r.slug AS rb_slug, r.status AS rb_status, e.slug AS ev_slug, e.title AS ev_title
@@ -124,8 +119,7 @@ function profile_get(array $d): void {
     $ranIds = array_values(array_unique(array_filter(array_map(fn($r) => $r['rb_status'] === 'public' ? (int)$r['roadbook_id'] : 0, $rows))));
     $ran = [];
     if ($ranIds) {
-        $cards = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, u.username, " . RB_COMPLETIONS_SQL . ",
-                (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+        $cards = db()->prepare('SELECT ' . RB_CARD_SQL . ", u.username
             FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id IN (" . implode(',', array_fill(0, count($ranIds), '?')) . ')');
         $cards->execute($ranIds);
         foreach ($cards->fetchAll() as $c) $ran['rb' . $c['id']] = rb_card_fields($c);
@@ -166,7 +160,7 @@ function roadbook_completions(array $me, array $d): void {
     if (!$rbId) fail('This roadbook does not exist or is private.', 404);
     $runs = db()->prepare('SELECT ru.id, ru.notes_reached, ru.notes_total, COALESCE(ru.ended_at, ru.created_at) AS ended_at, u.username, u.avatar
         FROM roadbook_runs ru JOIN users u ON u.id = ru.user_id
-        WHERE ru.roadbook_id = ? AND ru.completed = 1 AND ru.is_public = 1 ORDER BY ended_at DESC LIMIT 100');
+        WHERE ru.roadbook_id = ? AND ru.completed = 1 AND ru.is_public = 1 AND u.blocked = 0 ORDER BY ended_at DESC LIMIT 100');
     $runs->execute([$rbId]);
     $private = db()->prepare('SELECT COUNT(*) FROM roadbook_runs WHERE roadbook_id = ? AND completed = 1 AND is_public = 0');
     $private->execute([$rbId]);

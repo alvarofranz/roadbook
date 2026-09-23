@@ -22,7 +22,7 @@ front-end (RBApi)                public/api/                 app/
 RBApi('rb_save', body) ──POST──▶ index.php (router) ──────▶ roadbooks.php  ──▶ MariaDB + storage/users/
 RBUpload(...)          ──POST──▶ upload.php          ──────▶ images.php     ──▶ public/photos/ , public/avatars/
                                        │
-                                 bootstrap.php  (carica .env, apre la sessione, include db/mail/auth/roadbooks/admin/settings/events/runs)
+                                 bootstrap.php  (carica .env, apre la sessione, include db/mail/auth/roadbooks/admin/settings/events/runs/comments)
 ```
 
 - **Un unico front controller per le action JSON:** [`public/api/index.php`](../public/api/index.php)
@@ -63,8 +63,9 @@ switch ci sono i guard di metodo e di origine.
 
 ### Le action dell'API
 
-Le action sono definite in `app/auth.php` (account/admin), `app/roadbooks.php` (roadbook/foto/
-audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anonima · *opzionale*
+Le action sono definite in `app/auth.php` (account), `app/admin.php` + `app/settings.php` (admin),
+`app/roadbooks.php` (roadbook/foto/audio/pubblici), `app/events.php` (eventi), `app/runs.php` (run,
+profili, classifiche) e `app/comments.php` (commenti). Colonna **Auth**: *nessuna* = anonima · *opzionale*
 = `current_user()` (funziona da anonimo, eleva i permessi se loggato) · *richiesta* =
 `require_user()` (401 senza sessione né Bearer token) · *admin* = `require_admin()` ·
 *organizer* = ruolo organizer (o admin).
@@ -83,6 +84,7 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `logout` | Distrugge la sessione e revoca il Bearer token usato | sessione |
 | `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token (revoca tutti i token app dell'account) | nessuna |
 | `profile` | Aggiorna nome/cognome/bio e **organizzazione** | richiesta |
+| `org_suggest` | Le organizzazioni già inserite, per il campo del profilo e il filtro della ricerca organizzatori (#116) | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
 | `activity_mine` | Timeline attività **proprie** dell'utente loggato, paginata + cercabile (#448) | richiesta |
 | `rb_trash_list` / `rb_restore` / `rb_purge` | Il proprio cestino, ripristino a draft (#238), eliminazione definitiva immediata dal cestino (#704) | richiesta |
@@ -91,11 +93,13 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `change_email` / `verify_email_change` | Cambio email con ri-verifica (`pending_email` + link) / conferma dal link | richiesta / nessuna |
 | `account_delete` | Elimina il proprio account (vedi [user-management](user-management.md)) | richiesta |
 
-**Admin** (`auth.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
+**Admin** (`admin.php` · `settings.php` · `runs.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
 `admin_verify`, `admin_block`, `admin_update`, `admin_create`, `admin_delete`, `admin_activity`,
 `admin_settings`/`admin_save_settings`, `admin_logs`, `admin_activity_log`, `admin_unpublish`, `admin_apk_builds`,
-`admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`, `admin_user_locations` (utenti con
-posizione per la mappa, #499), `org_suggest`,
+`admin_user_roadbooks`, `admin_rb_get` (legge il payload di qualsiasi roadbook per aprirlo nel Reader),
+`admin_user_runs` (le run di un utente **con il `device`**, il solo punto che lo restituisce, #870),
+`admin_set_status`, `admin_move_roadbook`, `admin_user_locations` (utenti con
+posizione per la mappa, #499),
 `admin_trash_list`/`admin_rb_trash`/`admin_rb_restore`/`admin_rb_purge`/`admin_trash_purge_expired`
 (cestino roadbook, #187/#505) — gestione utenti,
 ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbook (vedi
@@ -118,13 +122,28 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_participants_activate_pending` | Ammette in un colpo solo tutti i `pending` (#416) | richiesta |
 | `leave_participant_mode` | Esce dalla modalità partecipante (pulisce cookie + contesto) | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
+| `event_participants_import` | Iscrive in blocco (attivi) gli account di una lista di email, al massimo 500; le email senza account tornano indietro, mai trasformate in account (#153) | richiesta |
 | `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti): almeno 2 caratteri, `%`/`_` letterali, username/nome/organizzazione in parziale, email **solo esatta**; **non restituisce mai le email** (#575) | organizzatore/admin |
-| `run_save` / `run_update` / `run_delete` | Il report di una run del Reader (note, zone di velocità, tempi, penalità, risultato firmato): visibilità scelta sul report o dalla preferenza (`remember` la salva); una run di competizione di un roadbook di evento entra nella sua classifica **non verificata** (`valid` NULL: la pagina Ranking ne controlla la firma come per un QR). Solo il proprietario cambia/cancella (#618/#619) | richiesta |
+| `event_get` | Vista pubblica di un evento via slug; i roadbook con la stessa card della galleria (`rb_card_fields`) | opzionale |
+| `events_list` | Elenco pubblico degli eventi | opzionale |
+
+**Run, profili, classifiche** (`runs.php`)
+
+| Action | Cosa fa | Auth |
+|--------|---------|:----:|
+| `run_save` / `run_update` / `run_delete` | Il report di una run del Reader (note, zone di velocità, tempi, penalità, risultato firmato, e il `device` — modello/OS grossolano, dato interno che torna solo ad `admin_user_runs`, #870): visibilità scelta sul report o dalla preferenza (`remember` la salva); una run di competizione di un roadbook di evento entra nella sua classifica **non verificata** (`valid` NULL: la pagina Ranking ne controlla la firma come per un QR). Solo il proprietario cambia/cancella (#618/#619) | richiesta |
 | `runs_settings` | La scelta fissa per i nuovi report: `ask` / `public` / `private` (#619) | richiesta |
 | `ranking_list` / `ranking_add` / `ranking_remove` / `ranking_clear` | La classifica condivisa di un roadbook di evento con punteggio (`event_results`): organizzatori modificano, partecipanti attivi leggono; lo stesso payload firmato non entra due volte, un altro risultato per lo stesso veicolo sostituisce solo con `replace=1` (#590/#607/#608) | richiesta |
-| `profile_get` | Profilo pubblico `/u/<username>`: bio, organizzazione, roadbook pubblici, run pubbliche con i totali (il proprietario vede anche le private); mai nome reale né email (#620) | nessuna (GET) |
-| `events_list` | Elenco pubblico degli eventi | nessuna |
-| `event_get` | Vista pubblica di un evento via slug | nessuna |
+| `profile_get` | Profilo pubblico `/u/<username>`: bio, organizzazione, roadbook pubblici, run pubbliche con i totali (il proprietario vede anche le private), e `run_roadbooks` (roadbook_key → card) per i roadbook pubblici che quelle run hanno percorso (#867); mai nome reale, email né `device` (#620) | opzionale (GET) |
+| `roadbook_completions` | Chi ha completato un roadbook pubblico (#869): le run pubbliche completate col loro runner (mai un utente bloccato) e il solo **numero** di quelle private, che non nominano mai nessuno | richiesta |
+
+**Commenti** (`comments.php`, #809) — solo sotto un roadbook `public`
+
+| Action | Cosa fa | Auth |
+|--------|---------|:----:|
+| `comments_list` | I commenti del roadbook, con `can_delete` per chi legge | richiesta |
+| `comment_add` | Nuovo commento (max 2000 caratteri): Turnstile + rate limit 10 ogni 10 min | richiesta |
+| `comment_delete` | Lo cancella l'autore, il proprietario del roadbook o un admin | richiesta |
 
 **Roadbook, foto, audio, pubblici** (`roadbooks.php`)
 
@@ -138,11 +157,16 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `rb_save` | Salva/aggiorna un roadbook (`status` draft/ready/public + `reusable` + `vehicles` car/moto/bike, #713; solo il proprietario ne cambia pubblicazione e veicoli — un client che non invia `vehicles` lascia quelli salvati; rifiuta 409 se un altro tiene il lock) | richiesta |
 | `rb_status` | Cambia solo lo `status` di pubblicazione (proprietario) | richiesta |
 | `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria **+ audio**), in **una transazione**; la copia parte `draft` | richiesta |
-| `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino admin | richiesta |
+| `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino (proprio, #238, o admin) | richiesta |
 | `ph_list` / `ph_delete` / `ph_move` | Elenca / elimina / sposta il geotag di una foto — tutte per chi può **editare** il roadbook (proprietario o co-editor di evento, `rb_require_edit`): la galleria non è mai pubblica (#316) | richiesta |
 | `audio_list` / `audio_delete` | Elenca / elimina una nota vocale — stesso gate | richiesta |
 | `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) (con `reusable=1` filtra i clonabili, #106) | nessuna |
-| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include la sola `cover` (mai galleria né audio, #316) + dati autore | opzionale |
+
+Ogni lista che disegna una card di roadbook (`public_list`, `profile_get`, `event_get`) seleziona le
+stesse colonne con **`RB_CARD_SQL`** e le modella con **`rb_card_fields`** (`roadbooks.php`): il
+`thumb` (la cover, altrimenti la prima foto) e `completions`, le run completate, pubbliche o
+private — un numero non nomina nessuno (#868).
+| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include la sola `cover` (mai galleria né audio, #316) + l'autore (`username` e `avatar`, mai il nome reale) | opzionale |
 
 `current_user()` — il payload restituito da `config` e da `login` — include anche le preferenze
 utente: `ui_lang` (lingua UI scelta), la posizione mappa
@@ -488,6 +512,7 @@ loro somma.
 | [039_drop_event_open_join.sql](../migrations/039_drop_event_open_join.sql) | drop di `events.open_join` (l'iscrizione è `join_gate` + `require_activation`, #732) |
 | [040_drop_voice_lang.sql](../migrations/040_drop_voice_lang.sql) | drop di `users.voice_lang` (dettatura e trascrizione non esistono più, #773) |
 | [041_roadbook_comments.sql](../migrations/041_roadbook_comments.sql) | tabella `roadbook_comments` (commenti pubblici sotto un roadbook pubblico, #809) |
+| [042_run_device.sql](../migrations/042_run_device.sql) | `roadbook_runs.device` (modello/OS del dispositivo della run, solo per gli admin, #870) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `roadbook_runs`, `roadbook_comments`, `api_tokens`, `activity_log`, `settings`, `events`,
@@ -565,11 +590,3 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   proprietario), e un roadbook `ready` associato è **consegnato** in lettura ai partecipanti
   attivi e agli organizzatori (#25) — mai la sua galleria né le note vocali.
 - **SendGrid hard-coded** come provider mail; nessun fallback SMTP.
-
-### Runs: the device and the completions (#868 · #869 · #870)
-- `run_save` stores `device`, a coarse model/OS string from `RBDeviceLabel()` ("App · iPhone · iOS 17.5").
-  It's internal: only `admin_user_runs {user_id}` returns it, whatever the run's visibility.
-- `rb_card_fields($row)` is the one card shape (`public_list`, `profile_get`, `event_get`), with
-  `completions` = the roadbook's completed runs, public or private, counted by `RB_COMPLETIONS_SQL`.
-- `roadbook_completions {slug}` returns the public completed runs of a public roadbook, plus a count of the private ones.
-- `profile_get` adds `run_roadbooks` (roadbook_key → card) for the public roadbooks its runs ran.

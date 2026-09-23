@@ -68,15 +68,12 @@ function user_manages_events(int $uid): bool {
     return (bool)$st->fetch();
 }
 
-// Event-granted rights on a roadbook attached to an event: the organizers (owner or listed
-// co-organizer) can EDIT it (#123); with $includeParticipants an ACTIVE participant may also
-// READ a non-public one (#25/#163 — pending participants wait for the organizer's activation).
-// One query, the participant clause added only for the read check.
-// Rights an EVENT gives a user over a roadbook attached to it. Takes the user row, not an id,
-// because an admin is one by row (`is_admin` also honours the locked-admin email list) — and an
-// admin has these rights: it is the first line of the table in docs/events.md §2. Leaving that
-// branch out is what let an admin open an event's management page (`event_can_manage`, which does
-// check) and then be refused by the roadbook gate, Edit button and all (#450).
+// Rights an EVENT gives a user over a roadbook attached to it: the organizers (owner or listed
+// co-organizer) can EDIT it (#123); with $includeParticipants an ACTIVE participant may also READ a
+// non-public one (#25/#163 — pending participants wait for the organizer's activation). One query,
+// the participant clause added only for the read check. Takes the user row, not an id, because an
+// admin is one by row (`is_admin` also honours the locked-admin email list) — and an admin has these
+// rights, the first line of the table in docs/events.md §2 (#450).
 function event_rights_on_roadbook(?array $user, int $roadbookId, bool $includeParticipants): bool {
     if (!$user) return false;
     $uid = (int)$user['id'];
@@ -628,8 +625,7 @@ function event_public_get(array $d): void {
     $statuses = "'public'";
     if ($joined || $orgRead) $statuses .= ",'ready'";
     if ($orgRead) $statuses .= ",'draft'";
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, r.vehicles, u.username, er.scoring_mode, " . RB_COMPLETIONS_SQL . ",
-            (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+    $rb = db()->prepare('SELECT ' . RB_CARD_SQL . ", r.category, r.status, u.username, er.scoring_mode
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status IN ($statuses) ORDER BY er.sort, er.roadbook_id");
     $rb->execute([$e['id']]);

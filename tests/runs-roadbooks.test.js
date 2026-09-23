@@ -26,12 +26,12 @@ describe('the run’s device (#870)', () => {
 
 describe('completions (#868 · #869)', () => {
     it('every card listing counts the completed runs, and the card shows the pill', () => {
-        expect(runs).toContain("const RB_COMPLETIONS_SQL = '(SELECT COUNT(*) FROM roadbook_runs ru WHERE ru.roadbook_id = r.id AND ru.completed = 1) AS completions';");
-        for (const f of ['app/roadbooks.php', 'app/events.php', 'app/runs.php']) expect(read(f)).toContain('RB_COMPLETIONS_SQL');
+        expect(read('app/roadbooks.php')).toContain('(SELECT COUNT(*) FROM roadbook_runs ru WHERE ru.roadbook_id = r.id AND ru.completed = 1) AS completions,');
+        for (const f of ['app/roadbooks.php', 'app/events.php', 'app/runs.php']) expect(read(f)).toContain("'SELECT ' . RB_CARD_SQL . ");
         expect(app).toContain("r.completions ? [['fa-flag-checkered', r.completions + '×', RBt('Times completed')]] : []");
     });
     it('the roadbook page lists the public completions and only counts the private ones', () => {
-        expect(runs).toContain('WHERE ru.roadbook_id = ? AND ru.completed = 1 AND ru.is_public = 1');
+        expect(runs).toContain('WHERE ru.roadbook_id = ? AND ru.completed = 1 AND ru.is_public = 1 AND u.blocked = 0');
         expect(read('public/challenge/challenge.js')).toContain("await RBApi('roadbook_completions', { slug });");
     });
 });
