@@ -73,8 +73,9 @@
         const own = data.is_me ? `<button class="btn btn-ghost btn-sm" data-vis="${r.is_public ? 0 : 1}" data-run="${r.id}" type="button"><i class="fa-solid fa-${r.is_public ? 'lock' : 'globe'}"></i> ${esc(t(r.is_public ? 'Make private' : 'Make public'))}</button>
             <button class="btn btn-ghost btn-sm" data-del="${r.id}" type="button" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : '';
         // the run's shareable image (#785), when it has one — the runner can share it again from here
-        const card = r.card ? `<div class="pf-run-card"><a href="${esc(r.card)}" target="_blank" rel="noopener"><img src="${esc(r.card)}" alt="" loading="lazy"></a>
-            ${data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(r.card)}" data-run-id="${r.id}" data-public="${r.is_public ? 1 : 0}" type="button"><i class="fa-solid fa-share-nodes"></i> ${esc(t('Share'))}</button>` : ''}</div>` : '';
+        const cardSrc = r.card ? RBMediaSrc(r.card) : '';
+        const card = cardSrc ? `<div class="pf-run-card"><a href="${esc(cardSrc)}" target="_blank" rel="noopener"><img src="${esc(cardSrc)}" alt="" loading="lazy"></a>
+            ${data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(cardSrc)}" data-run-id="${r.id}" data-public="${r.is_public ? 1 : 0}" type="button"><i class="fa-solid fa-share-nodes"></i> ${esc(t('Share'))}</button>` : ''}</div>` : '';
         return `<div class="pf-run" id="run-${r.id}">
             <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${own}</div>
             ${card}${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}

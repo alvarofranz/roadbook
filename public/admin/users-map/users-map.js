@@ -8,7 +8,7 @@
     (async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         const r = await api('admin_user_locations', {});
-        if (!r.ok) { $('adminMsg').textContent = r.error || t('Could not load.'); $('adminMsg').hidden = false; return; }
+        if (!r.ok) { $('adminMsg').textContent = t(r.error || 'Could not load.'); $('adminMsg').hidden = false; return; }
         const users = r.users || [];
         $('adminMsg').hidden = true; $('ulocBody').hidden = false;
         $('ulocCount').textContent = users.length ? `(${users.length})` : '';

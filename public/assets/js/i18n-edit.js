@@ -26,8 +26,9 @@
     const saveDelta = () => { try { localStorage.setItem(LS_DELTA, JSON.stringify(delta)); } catch (e) {} };
     const deltaCount = () => LANGS.reduce((n, l) => n + Object.keys(delta[l]).length, 0);
 
-    const isOn = () => localStorage.getItem(LS_ON) === '1';
-    const setOn = (v) => { if (v) localStorage.setItem(LS_ON, '1'); else localStorage.removeItem(LS_ON); render(); };
+    // guarded like the delta: blocked storage throws on access (#208)
+    const isOn = () => { try { return localStorage.getItem(LS_ON) === '1'; } catch (e) { return false; } };
+    const setOn = (v) => { try { if (v) localStorage.setItem(LS_ON, '1'); else localStorage.removeItem(LS_ON); } catch (e) {} render(); };
 
     // Re-apply the pending edits into the live dicts and re-render the page in the current language,
     // so edits are visible immediately and persist visually while navigating.

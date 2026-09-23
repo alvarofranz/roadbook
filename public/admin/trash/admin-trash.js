@@ -60,7 +60,7 @@
             fields: ['username', 'name', 'email'], limit: 50, empty: 'No users yet.',
             rowHTML: (u, i) => `<button class="mv-opt" data-pick="${i}"><b>@${esc(u.username)}</b> <span class="muted small">${esc(u.email)}</span></button>`,
             onPick: async (u, modal) => {
-                if (!(await RBConfirm(t('Move this roadbook to') + ' @' + u.username + '?'))) return;
+                if (!(await RBConfirm(t('Move this roadbook to') + ' @' + esc(u.username) + '?'))) return;
                 modal.close();
                 const r = await RBApi('admin_rb_restore', { id: rb.id, user_id: +u.id }); // restore + hand over, one server step
                 toast(r.ok ? t('Restored as a draft.') + ' → @' + u.username : (r.error || 'Could not restore.'));

@@ -26,7 +26,7 @@ card links to `/challenge/<slug>`.
 
 | Button | Action | Visible to |
 |--------|--------|------------|
-| Copy link | `RBCopy(RBReaderLink(slug))` | everyone |
+| Copy link | `RBCopy` of the public Reader link | everyone |
 | Make private | Calls `admin_unpublish` | **admins only** (moderation, #237) |
 
 ---

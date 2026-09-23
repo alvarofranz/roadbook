@@ -231,7 +231,7 @@ paginatore ridisegnano solo le righe, non la casella.
 | Stato | un **select** `draft` · `ready` · `public` (non più un badge Public/Private): il cambio chiama `rb_status` e ri-renderizza dalla verità del server |
 | Read | `<i fa-book-open>` → `../reader/?rb=<id>` — apre nel **Reader**, anche i roadbook **privati** del proprietario |
 | View | `<i fa-eye>` → `../challenge/<slug>` (anteprima pubblica) |
-| Copy link | `<i fa-link>` → copia il link Reader pubblico (`RBCopy`/`RBReaderLink`), **solo se `public`** |
+| Copy link | `<i fa-link>` → copia il link Reader pubblico (`RBCopy`), **solo se `public`** |
 | Edit | `<i fa-pen>` → `../editor/?rb=<id>` |
 | Export | `<i fa-file-export>` → `../editor/?rb=<id>&export=1` (apre l'Editor e fa partire subito il popup di export) |
 | Save as | `<i fa-clone>` → duplica lato server (`rb_duplicate`) |

@@ -46,7 +46,8 @@ describe('page structure', () => {
         expect(load).not.toContain('initHqMap');
     });
     it('roadbooks show their real status and warn about drafts (#596)', () => {
-        expect(js).toContain("const STATUS = { draft: 'Draft', ready: 'Ready', public: 'Public' };");
+        expect(js).toContain('const statusBadge = (s) => `<span class="u-badge">${esc(t(RBStatusLabel[s] || s))}</span>`;'); // the shared labels
+        expect(js).not.toContain('const STATUS =');
         expect(js).toContain("t('Participants cannot see a draft — set it to Ready or Public in the Editor.')");
     });
     it('a heading row with the event name and its actions, Delete for the owner (#597)', () => {

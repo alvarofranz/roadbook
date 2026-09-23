@@ -28,20 +28,16 @@
         };
         // label search (#709): results as rows; a row opens that label in the editor, and the
         // editor saves, previews and exports exactly as the in-page one does
-        let searchTimer = null;
-        $('transSearch').oninput = () => {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                const box = $('transResults'), q = $('transSearch').value;
-                if (!window.RBI18nFind) { box.innerHTML = `<p class="muted small">${esc(t('The translation editor is still loading — try again in a moment.'))}</p>`; return; }
-                const hits = RBI18nFind(q);
-                if (q.trim().length < 2) { box.innerHTML = ''; return; }
-                box.innerHTML = hits.length
-                    ? hits.map((h, i) => `<button type="button" class="roadbook-row trans-hit" data-hit="${i}"><div class="meta"><b>${esc(h.text)}</b><small>${esc(h.key)}</small></div><i class="fa-solid fa-pen icon-accent"></i></button>`).join('')
-                    : `<p class="muted small">${esc(t('No label matches.'))}</p>`;
-                box.querySelectorAll('[data-hit]').forEach((b) => b.onclick = () => RBI18nEditKeys([hits[+b.dataset.hit].key], hits[+b.dataset.hit].text));
-            }, 200);
-        };
+        $('transSearch').oninput = RBDebounce(() => {
+            const box = $('transResults'), q = $('transSearch').value;
+            if (!window.RBI18nFind) { box.innerHTML = `<p class="muted small">${esc(t('The translation editor is still loading — try again in a moment.'))}</p>`; return; }
+            const hits = RBI18nFind(q);
+            if (q.trim().length < 2) { box.innerHTML = ''; return; }
+            box.innerHTML = hits.length
+                ? hits.map((h, i) => `<button type="button" class="roadbook-row trans-hit" data-hit="${i}"><div class="meta"><b>${esc(h.text)}</b><small>${esc(h.key)}</small></div><i class="fa-solid fa-pen icon-accent"></i></button>`).join('')
+                : `<p class="muted small">${esc(t('No label matches.'))}</p>`;
+            box.querySelectorAll('[data-hit]').forEach((b) => b.onclick = () => RBI18nEditKeys([hits[+b.dataset.hit].key], hits[+b.dataset.hit].text));
+        }, 200);
         $('transEditOn').onclick = () => {
             if (!window.RBI18nSetEdit) return toast('The translation editor is still loading — try again in a moment.'); // never a dead button (#667)
             RBI18nSetEdit(true); toast(t('Translation editor is on. Navigate to any page and right-click a label to edit it.'));

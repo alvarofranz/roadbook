@@ -17,7 +17,7 @@
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'A precise GPS odometer with no roadbook — partial and total distance.',
             'feat.7.t': 'Event classification', 'feat.7.d': 'Run a rally on one roadbook: compare every team’s run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.',
             'events.t': 'Events', 'events.d': 'Organize events around your own roadbooks — invite teams, run the rally and publish the results.', 'route map': 'route map',
-            'foot.claim': 'Digital roadbooks for any adventure — free, with the open .rdbk format.', 'install.lead': 'RDBK is a native app on iPhone, iPad and Android, and an installable web app on computers. Installed, it opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.', 'install.title': 'Install it on any device', 
+            'foot.claim': 'Digital roadbooks for any adventure — free, with the open .rdbk format.', 'install.lead': 'RDBK is a native app on iPhone, iPad and Android, and an installable web app on computers. Installed, it opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.', 
             'gallery.kicker': 'Gallery', 'gallery.title': 'Public roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.',
             // Editor field help tooltips (issue #89)
             'help.road': 'The road surface you continue on from this note (default, asphalt, track, off-piste); it stays in force until a later note changes it.',
@@ -35,7 +35,7 @@
             'help.profile': 'Basic (adventure) offers a simple waypoint set; Rally (FIA) adds the full FIA waypoint types, which drive how runs are scored.',
             'help.defRadius': 'A validation radius applied only to notes where you have not set one. Left empty, each waypoint falls back to its type default (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m), then the 30 m system default.',
             'help.mapAccess': 'When on, the Reader may show the map. Turn it off to make readers navigate by the roadbook notes alone.',
-            'help.reusable': 'Off (default): others can read and navigate this public roadbook but can\'t copy it. On: they can also copy it into their own profile to edit — it appears in the Editor\'s public-roadbook search.',
+            'help.reusable': 'Off (default): others can read and navigate this public roadbook but can’t copy it. On: they can also copy it into their own profile to edit — it appears in the Editor’s public-roadbook search.',
             'help.route': 'Reverse flips the travel direction — the track, note order and all headings are recomputed.',
             'seo.home.title': 'RDBK.app — digital roadbooks for your adventures', 'seo.home.desc': 'Create, navigate, validate and rank roadbooks for any adventure. Free PWA and the open .rdbk format.',
             'seo.about.title': 'Who we are — RDBK.app', 'seo.about.desc': 'The people and mission behind RDBK.app — free digital roadbook tools and the open .rdbk format for every adventure.',
@@ -96,7 +96,7 @@
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.',
             'seo.feat_reader.title': 'Roadbook Reader — RDBK.app', 'seo.feat_reader.desc': 'Navigate any roadbook with GPS: odometer, bearing, live map, CAP direction bar and automatic waypoint validation.',
-            'Move': 'Move', 'Add note': 'Add note', 'Cut': 'Cut', 'Shortcuts': 'Shortcuts',
+            'Move': 'Move', 'Cut': 'Cut', 'Shortcuts': 'Shortcuts',
             'Add a GPX track': 'Add a GPX track', 'Simplify': 'Simplify', 'Adjust on the trail': 'Adjust on the trail',
             'Turn this point into a note': 'Turn this point into a note', 'Turn this note into a track point': 'Turn this note into a track point', 'Add track point here': 'Add track point here',
             'Keyboard shortcuts': 'Keyboard shortcuts', 'Modes': 'Modes', 'Track point': 'Track point', 'Note': 'Note', 'Anywhere': 'Anywhere', 'Back to Move': 'Back to Move', 'Undo': 'Undo', 'Redo': 'Redo',
@@ -123,13 +123,12 @@
             'Require organizer activation (personal QR)': 'Require organizer activation (personal QR)',
             
             
-            'participants are waiting for activation. Switching will admit all of them. Continue?': 'participants are waiting for activation. Switching will admit all of them. Continue?', 'Admit all': 'Admit all',
+            'participants are waiting for activation. Switching will admit all of them. Continue?': 'participants are waiting for activation. Switching will admit all of them. Continue?', 
             'participants are already active. Keep them active, or send them back to pending for the QR code?': 'participants are already active. Keep them active, or send them back to pending for the QR code?', 'Keep active': 'Keep active', 'Require QR code': 'Require QR code',
             'Activate all': 'Activate all', 'participants are waiting for activation. Admit all of them?': 'participants are waiting for activation. Admit all of them?', 'participants activated.': 'participants activated.',
             'Switch to full mode': 'Switch to full mode',
             'Show this QR to the event organizer to activate your participation.': 'Show this QR to the event organizer to activate your participation.',
             'Activation code': 'Activation code', 'Invalid activation code.': 'Invalid activation code.',
-            'Could not activate.': 'Could not activate.',
             'Could not activate.': 'Could not activate.', 'Link for participants': 'Link for participants', 
             'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:': 'Share this link with attendees so they access a simplified view showing only this event and its roadbooks:',
             
@@ -144,7 +143,6 @@
             
             
             'Ranking': 'Ranking',
-            'native.better.gps': 'For better GPS accuracy and background recording, use the native iOS or Android app.',
             'native.better.gps.recorder': 'For background GPS recording and better accuracy, use the native iOS or Android app.',
             'native.better.gps.reader': 'For uninterrupted GPS navigation and background tracking, use the native iOS or Android app.',
             'native.better.gps.tripmaster': 'For continuous GPS odometer and background recording, use the native iOS or Android app.',
@@ -153,7 +151,19 @@
             'web.gps.title': 'Browser GPS can be unreliable on phones',
             'web.gps.comp.title': 'This run is scored on GPS accuracy',
             'web.gps.comp.warn': 'On a phone browser, GPS drift can cause false penalties that are not the roadbook\'s fault. For a fair competition run, use the native RDBK app.',
-            
+            // the wiki (docs/wiki) navigation + page titles
+            'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Getting started', 'wiki.nav.recorder': 'Record a track',
+            'wiki.nav.editor': 'Create / edit a roadbook', 'wiki.nav.reader': 'Navigate with the Reader', 'wiki.nav.tripmaster': 'Use the Tripmaster',
+            'wiki.nav.events': 'Event management',
+            'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Roadbook Editor',
+            'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Event management',
+            'wiki.cta.title': 'Step-by-step guide', 'wiki.cta.desc': 'Follow the step-by-step guide to build your roadbooks', 'wiki.cta.link': 'Go to the wiki →',
+            // App Info · About
+            'App Info': 'App Info', 'Environment': 'Environment', 'Update': 'Update',
+            'Platform': 'Platform', 'Running': 'Running', 'Available': 'Available', 'Latest web content': 'Latest web content',
+            'iOS app': 'iOS app', 'Android app': 'Android app', 'Web app': 'Web app', 'Web app (installed)': 'Web app (installed)',
+            // the site banner’s level (admin Site settings): its own key, as the icon palette’s “Warning” is the danger-sign category
+            'banner.level.warning': 'Warning',
         },
     };
     // Merge additional languages loaded before this script (i18n.es.js / i18n.it.js / i18n.de.js / i18n.fr.js)
@@ -201,7 +211,7 @@
 
     // Turn an empty .lang container into the collapsible control + wire open/close + selection.
     function buildLangControl(el) {
-        const cur = applied || pickLang(); // the attribute still says "en" here — apply() runs next
+        const cur = current(); // the attribute still says "en" here — apply() runs next
         el.innerHTML =
             `<button type="button" class="lang-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${window.RBt ? RBt('Language') : 'Language'}"><span class="lang-flag">${flagOf(cur)}</span><span class="lang-chev">▾</span></button>`
             + '<div class="lang-menu" role="listbox" hidden>'
@@ -275,9 +285,12 @@
         window.dispatchEvent(new CustomEvent('rb-lang', { detail: lang }));
     }
 
+    // The language in force: the one apply() painted, or — before it runs, and when a blocked
+    // storage cannot remember a choice — the one it will paint. t() and current() both read it.
+    const current = () => applied || pickLang();
     window.RBi18n = {
-        t(key) { const v = tr(pickLang(), key); return v != null ? v : key; },
-        current() { return applied || pickLang(); }, // always agrees with t(), which resolves through pickLang()
+        t(key) { const v = tr(current(), key); return v != null ? v : key; },
+        current,
         set(lang) { if (T[lang]) apply(lang); }, // programmatic switch (e.g. a signed-in user's saved preference)
     };
     // Global shorthand used across every page (falls back to the key if i18n is missing).
@@ -286,18 +299,5 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.lang').forEach(buildLangControl);
         apply(pickLang());
-    });
-
-    // Wiki (docs/wiki) navigation + page titles — shared across the site via RBi18n.
-    Object.assign(T.en, {
-        'wiki.nav.home': 'Home', 'wiki.nav.welcome': 'Getting started', 'wiki.nav.recorder': 'Record a track',
-        'wiki.nav.editor': 'Create / edit a roadbook', 'wiki.nav.reader': 'Navigate with the Reader', 'wiki.nav.tripmaster': 'Use the Tripmaster',
-        'wiki.nav.events': 'Event management',
-        'wiki.title.welcome': 'Getting started', 'wiki.title.recorder': 'Roadbook Recorder', 'wiki.title.editor': 'Roadbook Editor',
-        'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Event management',
-        'wiki.cta.title': 'Step-by-step guide', 'wiki.cta.desc': 'Follow the step-by-step guide to build your roadbooks', 'wiki.cta.link': 'Go to the wiki →',
-        'App Info': 'App Info', 'Version': 'Version', 'Environment': 'Environment', 'Update': 'Update',
-        'Platform': 'Platform', 'Running': 'Running', 'Available': 'Available', 'Latest web content': 'Latest web content',
-        'iOS app': 'iOS app', 'Android app': 'Android app', 'Web app': 'Web app', 'Web app (installed)': 'Web app (installed)',
     });
 })();

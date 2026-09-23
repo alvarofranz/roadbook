@@ -244,7 +244,7 @@
         if (params.get('reset')) {
             show('vReset');
             onSubmit('resetForm', async () => {
-                if ($('resetPass').value !== $('resetPass2').value) return msg("Passwords don't match.", false);
+                if ($('resetPass').value !== $('resetPass2').value) return msg('Passwords don’t match.', false);
                 const r = await api('reset', { token: params.get('reset'), password: $('resetPass').value });
                 msg(r.message || r.error, !!r.ok); if (r.ok) { history.replaceState(null, '', location.pathname); show('vLogin'); }
             });
@@ -280,14 +280,14 @@
     });
     // Forced password change: no current password (the admin set a temporary one); then reload into the profile.
     onSubmit('forceForm', async () => {
-        if ($('forcePass').value !== $('forcePass2').value) return msg("Passwords don't match.", false);
+        if ($('forcePass').value !== $('forcePass2').value) return msg('Passwords don’t match.', false);
         const busy = busySubmit('forceForm');
         const r = await api('change_password', { new: $('forcePass').value });
         busy.reset();
         if (r.ok) { await storeCredential(me && me.email, $('forcePass').value); const c = await RBConfig(); showAccount(c.user); } else msg(r.error, false);
     });
     onSubmit('registerForm', async () => {
-        if ($('regPass').value !== $('regPass2').value) return msg("Passwords don't match.", false);
+        if ($('regPass').value !== $('regPass2').value) return msg('Passwords don’t match.', false);
         if (!$('regTerms').checked) return msg('You must accept the Terms of Use to register.', false);
         const busy = busySubmit('registerForm');
         const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsToken('register'), lang: RBi18n.current() });
@@ -302,7 +302,7 @@
     });
     // change password (signed in) + delete account — bound once; the forms live in #vAccount
     onSubmit('pwForm', async () => {
-        if ($('pwNew').value !== $('pwNew2').value) return RBToast("Passwords don't match.");
+        if ($('pwNew').value !== $('pwNew2').value) return RBToast('Passwords don’t match.');
         const busy = busySubmit('pwForm');
         const r = await api('change_password', { current: $('pwCurrent').value, new: $('pwNew').value });
         busy.reset();
@@ -315,7 +315,7 @@
     });
     // change email (signed in): re-verifies the new address — see change_email() server-side
     onSubmit('emailForm', async () => {
-        if ($('emNew').value.trim().toLowerCase() !== $('emNew2').value.trim().toLowerCase()) return RBToast("Emails don't match.");
+        if ($('emNew').value.trim().toLowerCase() !== $('emNew2').value.trim().toLowerCase()) return RBToast('Emails don’t match.');
         const busy = busySubmit('emailForm');
         const r = await api('change_email', { email: $('emNew').value, lang: RBi18n.current() });
         busy.reset();
@@ -338,13 +338,13 @@
             const ph = await api('ph_list', { roadbook: rbMeta.id });
             if (ph.ok && ph.photos) {
                 for (const p of ph.photos) {
-                    try { const res = await fetch(p.url); if (!res.ok) continue; const name = 'photos/' + p.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.photos.push({ file: name, lat: p.lat, lon: p.lon }); } catch (e) {}
+                    try { const res = await fetch(RBMediaSrc(p.url)); if (!res.ok) continue; const name = 'photos/' + p.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.photos.push({ file: name, lat: p.lat, lon: p.lon }); } catch (e) {}
                 }
             }
             const au = await api('audio_list', { roadbook: rbMeta.id });
             if (au.ok && au.audio) {
                 for (const a of au.audio) {
-                    try { const res = await fetch(a.url); if (!res.ok) continue; const name = 'audio/' + a.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.audio.push({ file: name, lat: a.lat, lon: a.lon }); } catch (e) {}
+                    try { const res = await fetch(RBMediaSrc(a.url)); if (!res.ok) continue; const name = 'audio/' + a.url.split('/').pop(); innerFiles[name] = new Uint8Array(await res.arrayBuffer()); media.audio.push({ file: name, lat: a.lat, lon: a.lon }); } catch (e) {}
                 }
             }
             if (media.photos.length || media.audio.length) innerFiles['media.json'] = JSON.stringify(media);

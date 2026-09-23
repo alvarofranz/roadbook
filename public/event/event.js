@@ -15,7 +15,7 @@
     const parts = location.pathname.split('/').filter(Boolean);
     const slug = new URLSearchParams(location.search).get('s') || parts[parts.length - 1];
     if (!slug || slug === 'event') { $('evLoading').textContent = t('Not found.'); return; }
-    const whoami = RBApi('config').catch(() => ({})); // fetched once; the join box awaits it
+    const whoami = RBConfig(); // fetched once; the join box awaits it
     let data = null;     // the last event_get payload, re-rendered on a language switch
     let hqMap = null;    // built once, on the first payload that has headquarters
 
@@ -26,7 +26,7 @@
         mapEl.hidden = !has;
         if (!has || hqMap) return;
         hqMap = new RBMap('evHqMap', { zoom: 13, center: [e.hq_lon, e.hq_lat], style: RBMap.STYLE_TOPO });
-        if (hqMap.map) new maplibregl.Marker({ color: '#dc3545' }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
+        if (hqMap.map) new maplibregl.Marker({ color: RBCssVar('--track') }).setLngLat([e.hq_lon, e.hq_lat]).addTo(hqMap.map);
     }
 
     /* ---------- render (repeatable) ---------- */
@@ -108,8 +108,8 @@
         const cfg = await whoami;
         box.hidden = false;
         if (!cfg.user) {
-            const prompt = e.join_gate === 'code' ? t('Sign in to join this event with the organizer\'s code.') : t('Sign in to join this event.');
-            box.innerHTML = `<span class="grow">${esc(prompt)}</span><a class="btn btn-primary" href="/account/?next=${encodeURIComponent(location.pathname)}">${esc(t('Sign in'))}</a>`;
+            const prompt = e.join_gate === 'code' ? t('Sign in to join this event with the organizer’s code.') : t('Sign in to join this event.');
+            box.innerHTML = `<span class="grow">${esc(prompt)}</span><a class="btn btn-primary" href="${RBLoginUrl()}">${esc(t('Sign in'))}</a>`;
             return;
         }
         if (e.join_gate === 'open') {

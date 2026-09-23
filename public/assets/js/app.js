@@ -123,7 +123,7 @@
         const webActive = activeKey(WEB_NAV);
         const navLinks = WEB_NAV.map((k) => {
             const s = SECTION[k];
-            return `<a class="nav-link nav-tool${k === webActive ? ' active' : ''}" href="${ROOT}${s.path}"><i class="fa-solid ${s.icon} nav-ico"></i><span class="nav-txt">${navLabel(k)}</span></a>`;
+            return `<a class="nav-link nav-tool${k === webActive ? ' active' : ''}" href="${ROOT}${s.path}"><i class="fa-solid ${s.icon} nav-ico"></i><span>${navLabel(k)}</span></a>`;
         }).join('');
         // Top bar — the desktop-web navigation only. Hidden on every mobile-width view (web · PWA ·
         // native), where the fixed bottom tab bar below takes over — so there is no hamburger and no
@@ -171,7 +171,6 @@
         bar.className = 'app-tabbar';
         bar.setAttribute('aria-label', RBt('Sections'));
         // labels are fixed, safe ASCII words; i18n.js localises the aria-label via data-i18n-aria.
-        // (renderChrome runs before RBesc is defined, so it must not be used here.)
         bar.innerHTML = APP_TABS.map((k) => {
             const s = SECTION[k];
             if (k === 'back') {
@@ -328,7 +327,7 @@
         // is, changed through the shared user picker (#731): never a second search box glued on.
         const m = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-clock-rotate-left icon-accent"></i> <span id="myActTitle">${title()}</span></h2>
                 <button class="btn btn-ghost btn-sm" id="myActCsv" type="button"><i class="fa-solid fa-file-csv"></i> CSV</button></div>
-            ${isAdmin ? `<div class="toolbar act-who"><span class="muted small">${RBesc(RBt('Showing'))}</span> <b id="myActWho"></b>
+            ${isAdmin ? `<div class="toolbar"><span class="muted small">${RBesc(RBt('Showing'))}</span> <b id="myActWho"></b>
                 <button class="btn btn-ghost btn-sm" id="myActPickBtn" type="button"><i class="fa-solid fa-user"></i> ${RBesc(RBt('Another user…'))}</button>
                 <button class="btn btn-ghost btn-sm" id="myActMe" type="button" hidden>${RBesc(RBt('Me'))}</button></div>` : ''}
             <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="myActSearch" placeholder="${RBesc(RBt('Search the activity…'))}" aria-label="${RBesc(RBt('Search the activity…'))}" autocomplete="off" spellcheck="false"></div>
@@ -339,10 +338,13 @@
         const fetchPage = (page, perPage) => (isAdmin && target)
             ? RBApi('admin_activity', { id: target.id, page, per_page: perPage, q: actQuery })
             : RBApi('activity_mine', { page, per_page: perPage, q: actQuery });
+        let actSeq = 0; // only the latest request paints: a slow answer to an older search is dropped
         const loadAct = () => {
+            const seq = ++actSeq;
             m.q('#myActTitle').innerHTML = title();
             if (isAdmin) { m.q('#myActWho').textContent = '@' + (target || me).username; m.q('#myActMe').hidden = !target; }
             fetchPage(actPage, 20).then((r) => {
+                if (seq !== actSeq) return;
                 const body = m.q('#myActBody');
                 if (!r.ok) { body.textContent = RBt(r.error || 'Could not load.'); return; }
                 const stats = r.stats ? `<p class="hint">${r.stats.roadbooks} ${RBesc(RBt('roadbooks'))} · ${RBFmtSize(r.stats.bytes)}</p>` : '';
@@ -353,7 +355,7 @@
                 RBPager(m.q('#myActPager'), actPage, pages, (p) => { actPage = p; loadAct(); });
             });
         };
-        m.q('#myActSearch').oninput = () => { actQuery = m.q('#myActSearch').value; actPage = 1; loadAct(); };
+        m.q('#myActSearch').oninput = RBDebounce(() => { actQuery = m.q('#myActSearch').value; actPage = 1; loadAct(); });
         // the whole (filtered) log as CSV, fetched 100 at a time; an empty log says so
         m.q('#myActCsv').onclick = async (e) => {
             const busy = RBBusy(e.currentTarget), rows = [];
@@ -365,9 +367,7 @@
             }
             if (!rows.length) { busy.reset(); return RBToast('No activity yet.'); }
             busy.ok();
-            const cell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-            const csv = '\uFEFF' + ['created_at,action,detail,ip'].concat(rows.map((ev) => [ev.created_at, ev.action, ev.detail, ev.ip].map(cell).join(','))).join('\n');
-            RBDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'activity_' + (target ? target.username : me.username) + '.csv');
+            RBDownload(RBCsv([['created_at', 'action', 'detail', 'ip'], ...rows.map((ev) => [ev.created_at, ev.action, ev.detail, ev.ip])]), 'activity_' + (target ? target.username : me.username) + '.csv');
         };
         if (isAdmin) {
             let everyone = null; // the user list, fetched on the first pick
@@ -556,8 +556,6 @@
         if (dismissable) m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
         return { el: m, q: (s) => m.querySelector(s), close };
     };
-    // HTML-escape for safe interpolation into innerHTML.
-    // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     // Metres → "12.34 km", the one distance format (#732); `digits` for the precision the place needs.
     window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
     // The ONE vehicle table (#713): each vehicle's icon + label, for the small icons on the cards
@@ -566,6 +564,7 @@
     window.RBVehicleSegmentsHTML = () => Object.entries(VEHICLE_ICON).map(([v, [icon, label]]) =>
         `<button class="segment" type="button" data-vehicle="${v}" aria-pressed="false"><i class="fa-solid ${icon}"></i> <span data-i18n="${label}">${RBesc(RBt(label))}</span></button>`).join('');
     window.RBVehicleIcons = (list) => (list || []).length ? `<span class="vehicle-icons">${list.map((v) => `<i class="fa-solid ${VEHICLE_ICON[v][0]}" title="${RBesc(RBt(VEHICLE_ICON[v][1]))}" aria-label="${RBesc(RBt(VEHICLE_ICON[v][1]))}"></i>`).join('')}</span>` : '';
+    // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     window.RBSummary = (distanceM, noteCount) => RBKm(distanceM, 1) + ' · ' + noteCount + ' ' + RBt('notes');
     // The publication-status select (draft → ready → public), for My roadbooks and the admin's
     // per-user list alike; `dataAttr` names the attribute its row handler reads.
@@ -605,10 +604,13 @@
             meta('og:url', 'property').setAttribute('content', canonical);
         }
     };
+    /* Rows (arrays of cells, the header first) → a CSV Blob, the one way every export writes one:
+       RFC-4180 quoting where a cell needs it, and a UTF-8 BOM so a spreadsheet opens accented
+       names and cities as they are instead of as mojibake. */
+    const csvCell = (v) => /[",\r\n]/.test(v = String(v ?? '')) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    window.RBCsv = (rows) => new Blob(['\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
     // Human-readable byte size, e.g. "12.3 MB" / "640 KB" (shared by the storage indicator + admin).
     window.RBFmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
-    // An ISO YYYY-MM-DD date in the ACTIVE UI language's format (event dates). The parts are
-    // used as-is — never parsed as UTC, so the day can't shift across timezones.
     /* A timestamp in the reader's language: the date as RBFmtDate writes it plus the clock.
        Takes what the API returns ("YYYY-MM-DD HH:MM:SS") or a Date. */
     window.RBFmtDateTime = (value) => {
@@ -617,6 +619,8 @@
         const lang = window.RBi18n ? RBi18n.current() : undefined;
         return d.toLocaleDateString(lang) + ' ' + d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
     };
+    // An ISO YYYY-MM-DD date in the ACTIVE UI language's format (event dates). The parts are
+    // used as-is — never parsed as UTC, so the day can’t shift across timezones.
     window.RBFmtDate = (iso) => {
         const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
         if (!m) return iso || '';
@@ -690,6 +694,16 @@
             : (label ? `<span class="muted small">${label}</span>` : '');
         el.querySelectorAll('[data-pg]').forEach((b) => b.onclick = () => { const p = +b.dataset.pg; if (p >= 1 && p <= pages) onGo(p); });
     };
+    /* A search box that asks the server wants its call to wait until the typing stops: `fn` runs
+       `ms` after the last call, with that call's arguments; `.cancel()` drops a pending run (a
+       dialog closed mid-typing). Pair it with a sequence guard in the fetch, so a slow answer to an
+       older query never paints over a newer one. */
+    window.RBDebounce = (fn, ms = 300) => {
+        let timer = null;
+        const run = (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+        run.cancel = () => clearTimeout(timer);
+        return run;
+    };
     /* One filtered, paged list: filter → clamp the cursor → slice → draw → pager. Four lists wrote
        the same four lines each (public roadbooks · events · My roadbooks · user management),
        including the same clamp for when a filter shrinks the list under the current page.
@@ -737,14 +751,12 @@
     };
     // An event's date range for a meta line: "start – end", the single date, or '' when undated.
     window.RBDateRange = (startIso, endIso) => startIso ? (endIso && endIso !== startIso ? RBFmtDate(startIso) + ' – ' + RBFmtDate(endIso) : RBFmtDate(startIso)) : '';
-    // One public gallery card (Roadbooks · Events · event page · home teaser): thumb (or an icon
-    // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
-    // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
     /* ONE card for every gallery (#770): the media on top — the photo or the route, darkened at the
        foot so what sits on it reads — carrying `badges` top-left, the `overlays` actions top-right
-       and the key `stats` ([icon, value, label] — icon may be null) at its foot; the title and a `meta` line below.
-       The image always covers the media box, photo and logo alike. RBRoadbookCard and
-       RBEventCard fill it the same way everywhere, so the cards read alike on every page. */
+       and the key `stats` ([icon, value, label] — icon may be null) at its foot; the title and a
+       `meta` line below, then `body`. `meta`/`overlays`/`badges`/`body`/`placeholder` are HTML the
+       caller already escaped. The image always covers the media box, photo and logo alike.
+       RBRoadbookCard and RBEventCard fill it the same way everywhere, so the cards read alike. */
     window.RBGalleryCard = ({ href, thumb, title, meta = '', icon = 'fa-map-location-dot', placeholder = '', overlays = '', badges = '', stats = [], body = '' }) =>
         (href ? `<a class="gallery-card" href="${RBesc(href)}">` : `<div class="gallery-card">`)
         + '<div class="card-media">'
@@ -771,7 +783,7 @@
         const today = new Date().toISOString().slice(0, 10);
         const state = e.ended ? ['ended', 'Ended'] : (e.starts_on && e.starts_on <= today ? ['live', 'Live'] : ['upcoming', 'Upcoming']);
         const day = e.starts_on ? new Date(e.starts_on + 'T12:00:00') : null;
-        const lang = document.documentElement.lang || undefined;
+        const lang = window.RBi18n ? RBi18n.current() : undefined; // the UI language, like RBFmtDate
         return RBGalleryCard({
             href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered',
             badges: (day ? `<span class="card-date"><b>${day.getDate()}</b><small>${RBesc(day.toLocaleDateString(lang, { month: 'short' }))}</small></span>` : ''),
@@ -800,17 +812,17 @@
         return `<svg class="thumb thumb-route" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${RBesc(RBt('route map'))}"><rect width="${W}" height="${H}"/><polyline points="${d}"/></svg>`;
     }
     window.RBFillRoutes = (container) => {
-        if (!container || !window.RBChallenges) return;
+        if (!container) return;
         container.querySelectorAll('.thumb-placeholder[data-route]').forEach((el) => {
             const slug = el.getAttribute('data-route'); if (!slug) return;
             if (routeShapes[slug] != null) { if (routeShapes[slug]) el.outerHTML = routeShapes[slug]; return; }
             routeShapes[slug] = ''; // in flight: never fetched twice
-            RBChallenges.loadPublic(slug).then((j) => {
-                const m = j.roadbook && j.roadbook.meta;
-                const svg = (m && m.map_access === false) ? '' : routeSvg(j.roadbook && j.roadbook.track);
+            RBApi('public_get', { slug }).then((j) => {
+                const m = j.ok && j.roadbook && j.roadbook.meta;
+                const svg = (!m || m.map_access === false) ? '' : routeSvg(j.roadbook.track);
                 routeShapes[slug] = svg;
                 if (svg) document.querySelectorAll(`.thumb-placeholder[data-route="${CSS.escape(slug)}"]`).forEach((cur) => { cur.outerHTML = svg; });
-            }).catch(() => {});
+            });
         });
     };
     /* A thumbnail whose file is gone (a deleted photo, a failed upload) shows the card's own
@@ -825,16 +837,14 @@
         img.replaceWith(placeholder);
     }, true);
 
-    /* The copy-link control that floats over a public roadbook's card. It lived only on the
-       Roadbooks gallery; wherever a public roadbook is shown, the same control shows (#493).
-       The card is a link, so the click handler that reads `data-copy` must stop it. */
-    // The copy control floats over a card link: ONE delegated listener copies the Reader link and
-    // keeps the card from navigating, for every gallery on every page (#636).
+    /* The copy-link control that floats over a public roadbook's card, wherever one is shown
+       (#493). The card is a link, so ONE delegated listener copies the Reader link and keeps the
+       card from navigating, for every gallery on every page (#636). */
     document.addEventListener('click', (e) => {
         const b = e.target.closest && e.target.closest('.card-copy');
         if (!b) return;
         e.preventDefault(); e.stopPropagation();
-        RBCopy(RBReaderLink(b.dataset.copy));
+        RBCopy(readerLink(b.dataset.copy));
     });
     window.RBCopyLinkOverlay = (slug) => `<button type="button" class="card-btn card-copy" data-copy="${RBesc(slug)}" title="${RBesc(RBt('Copy link'))}" aria-label="${RBesc(RBt('Copy link'))}"><i class="fa-solid fa-link"></i></button>`;
 
@@ -894,12 +904,13 @@
             },
         };
     })();
+    // Publication-status labels (draft/ready/public) — My roadbooks, the admin's per-user list (#707)
+    // and an event's roadbooks.
+    window.RBStatusLabel = { draft: 'Draft', ready: 'Ready', public: 'Public' };
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
     // Relative links work from any one-level-deep tool page (/editor/, /myroadbooks/).
-    // Publication-status labels (draft/ready/public) — My roadbooks and the admin's per-user list (#707).
-    window.RBStatusLabel = { draft: 'Draft', ready: 'Ready', public: 'Public' };
     window.RBRoadbookList = async (container, onChange) => { // onChange: fires after a delete/duplicate, so the page can refresh siblings (e.g. the trash, #238)
         if (!container) return 0;
         const r = await RBApi('rb_list');
@@ -941,7 +952,7 @@
                     else { busy.reset(); RBToast(x.error || 'Could not delete.'); }
                 }
             });
-            rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(RBReaderLink(b.dataset.copy)));
+            rowsEl.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => RBCopy(readerLink(b.dataset.copy)));
             rowsEl.querySelectorAll('[data-status]').forEach((sel) => sel.onchange = async () => {
                 sel.disabled = true;
                 const r = await RBApi('rb_status', { id: +sel.dataset.status, status: sel.value });
@@ -963,10 +974,11 @@
         list.render();
         return all.length;
     };
-    // Translated toast (every tool page ships an empty #toast element).
+    // Translated toast, on every page: the #toast element is created on the first call.
     let toastTimer = null;
     window.RBToast = (msg, ms) => {
-        const el = document.getElementById('toast'); if (!el) return;
+        let el = document.getElementById('toast');
+        if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
         el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); // announce to screen readers
         el.textContent = RBt(msg); el.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2500);
@@ -1041,13 +1053,11 @@
             return ok;
         } catch (e) { return false; }
     }
-    // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL. In the
-    // native app location.origin is the WebView-local host, so a copied link would be a dead
-    // localhost URL — always share the production domain instead.
     // An absolute link to a page of the site, the kind that is shared or printed: this origin on
-    // the web, the real domain inside the app (whose own origin is a WebView-local one).
+    // the web, the real domain inside the app (whose own origin is a WebView-local one, so a copied
+    // link would be a dead localhost URL).
     window.RBPublicLink = (path) => (isNativeApp() ? PROD_ROOT.replace(/\/+$/, '') : location.origin) + path;
-    window.RBReaderLink = (slug) => RBPublicLink('/reader/' + encodeURIComponent(slug));
+    const readerLink = (slug) => RBPublicLink('/reader/' + encodeURIComponent(slug)); // a public roadbook's shareable link
     // API auth: a Capacitor webview can't carry the cross-origin session cookie, so in the
     // native apps login returns a Bearer token we store and replay on every call. In the
     // browser this is completely inert — the httponly session cookie is used as before and
@@ -1171,9 +1181,8 @@
         document.body.appendChild(a); a.click(); a.remove();
         if (typeof data !== 'string') setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
-    // Upload one image (downscaled first) to upload.php. `fields` = extra form fields.
-    // POST a multipart upload to upload.php. Photos go through the image downscale; voice
-    // notes upload the recorded blob as-is.
+    // POST a multipart upload to upload.php (`fields` = extra form fields). Photos go through the
+    // image downscale; voice notes upload the recorded blob as-is.
     const rbPostUpload = async (fields, fieldName, blob, name) => {
         const fd = new FormData();
         for (const k in fields) fd.append(k, fields[k]);
@@ -1182,13 +1191,10 @@
         catch (e) { return { ok: false, error: 'Upload failed.' }; }
     };
     window.RBUpload = async (fields, file, name) => rbPostUpload(fields, 'photo', await RBImg.toBlob(file), name || 'photo.jpg');
-    // The filename extension follows the blob's MIME (MediaRecorder output differs by browser)
-    // so the server stores it under a type it can serve back.
-    // The file extension for a media blob, by MIME (photos keep their type; the voice-note container
-    // varies by browser) — one table for the upload and the Recorder's local .rdbk bundle (#657).
-    window.RBMediaExt = (mime, kind) => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/avif': 'avif', 'image/webp': 'webp', 'image/heic': 'heic',
-        'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(mime || '').split(';')[0]] || (kind === 'audio' ? 'webm' : 'jpg');
-    window.RBUploadAudio = async (fields, blob, name) => rbPostUpload(fields, 'audio', blob, name || ('audio.' + RBMediaExt(blob.type, 'audio')));
+    // A voice note's filename extension follows its MIME (the MediaRecorder container varies by
+    // browser), so the server stores it under a type it can serve back (#657).
+    const audioExt = (mime) => ({ 'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(mime || '').split(';')[0]] || 'webm';
+    window.RBUploadAudio = async (fields, blob, name) => rbPostUpload(fields, 'audio', blob, name || ('audio.' + audioExt(blob.type)));
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
     // msg runs through RBt: a plain English key translates, a composed string falls through.
@@ -1361,7 +1367,8 @@
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
         if (user && user.is_admin) { const s = document.createElement('script'); s.src = ROOT + 'assets/js/i18n-edit.js'; s.async = true; document.head.appendChild(s); }
         // A signed-in user's language preference follows them across devices: apply it on
-        // connect, and persist any later switch from the header selector.
+        // connect, and persist any later switch (the language control in the footer and at the
+        // bottom of the Profile page).
         if (user && window.RBi18n) {
             if (user.ui_lang && user.ui_lang !== RBi18n.current()) RBi18n.set(user.ui_lang);
             window.addEventListener('rb-lang', (e) => {
@@ -1375,7 +1382,7 @@
             if (!slot || slot.querySelector('.account-control')) return;
             const w = document.createElement('div'); w.className = 'account-control';
             if (!user) {
-                w.innerHTML = `<a class="nav-link account-login" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Sign in">${RBt('Sign in')}</span></a>`;
+                w.innerHTML = `<a class="nav-link" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Sign in">${RBt('Sign in')}</span></a>`;
             } else {
                 w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
                     <div class="account-menu" hidden>${accountMenuHTML(user, participant, 'acc')}</div>`;
@@ -1404,7 +1411,7 @@
             }
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
-        // Tab-bar profile dropup (mobile, #303 → #310): replace the prev page-based accManage card.
+        // Tab-bar profile dropup (mobile, #303 · #310): the same account menu as the desktop dropdown.
         const tabProfileBtn = document.getElementById('tabProfileBtn');
         if (tabProfileBtn) {
             let tabMenu = document.getElementById('tabProfileMenu');
@@ -1526,13 +1533,12 @@
        a persistent floating banner on the GPS tools, and a one-time gate before any
        recording or navigation starts. Never in the native app, where the watch is solid. */
     const GPS_WARN_KEY = 'rb_web_gps_warn_seen';
-    const IS_NATIVE = () => isNativeApp();
     // Show a dismissable (per-session) warning when running in a browser. A page calls it once;
     // it returns silently in the native app or once dismissed this session. It goes FIRST in the
     // body, in the flow, so it pushes the page down instead of covering the tool's own top bar
     // (#403) — the CSS carries no `position` for exactly that reason.
     window.RBWebGpsWarn = (msg) => {
-        if (IS_NATIVE()) return;
+        if (isNativeApp()) return;
         if (document.querySelector('.webgps-banner')) return;
         let seen = false; try { seen = sessionStorage.getItem(GPS_WARN_KEY) === '1'; } catch (e) {}
         if (seen) return;
@@ -1549,7 +1555,7 @@
     // One-time (per-browser, remembered) confirmation before a GPS-critical action starts in
     // the browser. Returns a Promise<boolean>. `comp` picks the stronger competition wording.
     window.RBWebGpsConfirm = (comp) => {
-        if (IS_NATIVE()) return Promise.resolve(true);
+        if (isNativeApp()) return Promise.resolve(true);
         try { if (localStorage.getItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav')) === '1') return Promise.resolve(true); } catch (e) {}
         return new Promise((resolve) => {
             const d = RBModal(`<h2><i class="fa-solid fa-triangle-exclamation icon-danger"></i> ${RBt(comp ? 'web.gps.comp.title' : 'web.gps.title')}</h2>

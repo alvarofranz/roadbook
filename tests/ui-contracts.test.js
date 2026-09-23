@@ -289,7 +289,8 @@ describe('app info pop-up states running vs available (#474, #478)', () => {
         expect(fn).toContain('const behind = isNativeApp() && live && bundled && live.build > bundled.build');
         expect(fn).toContain('This app was built with older web content');
         const about = read('public/about/about.js');
-        expect(about).toContain("fact('Web content in this app', rel(bundled))");
+        expect(about).toContain("fact('Web content in this app', RBReleaseText(bundled))");
+        expect(about).not.toContain('const rel ='); // the one release format, RBReleaseText
     });
 
     it('links what changed and the official site', () => {

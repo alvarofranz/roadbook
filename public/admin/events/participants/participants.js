@@ -11,7 +11,6 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi;
     const id = +(new URLSearchParams(location.search).get('id') || 0);
     let q = '', page = 1, status = null, eventTitle = '', counts = { pending: 0, active: 0 };
-    let searchTimer = null;
     // who an activation admitted, as the desk reads it back: username (full name)
     const whoLabel = (p) => p ? p.username + (p.name ? ' (' + p.name + ')' : '') : '';
     const fullName = (p) => ((p.first_name || '') + ' ' + (p.last_name || '')).trim();
@@ -36,7 +35,7 @@
     }
     async function load() {
         const r = await api('event_participants_list', { event_id: id, q, status: status || '', page });
-        if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
+        if (!r.ok) { $('adminMsg').textContent = t(r.error || 'Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
         counts = r.counts;
         // opening: the waiting list when someone is waiting, else everyone
         if (status === null) { status = counts.pending ? 'pending' : ''; if (status) return load(); }
@@ -64,10 +63,7 @@
         });
     }
     $('ppFilter').querySelectorAll('[data-status]').forEach((b) => b.onclick = () => { status = b.dataset.status; page = 1; load(); });
-    $('ppSearchIn').oninput = () => {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => { q = $('ppSearchIn').value.trim(); page = 1; load(); }, 300);
-    };
+    $('ppSearchIn').oninput = RBDebounce(() => { q = $('ppSearchIn').value.trim(); page = 1; load(); });
     window.addEventListener('rb-lang', () => { if (status !== null) load(); });
     // while people are waiting, the desk view keeps itself current (#311)
     setInterval(() => { if (!document.hidden && status === 'pending') load(); }, 10000);
@@ -122,12 +118,12 @@
     };
 
     /* ---------- add a participant (#605) ---------- */
-    let addSeq = 0, addTimer = null;
+    let addSeq = 0;
     $('ppAdd').onclick = () => {
         const modal = RBModal(`<h2>${esc(t('Add participant'))}</h2>
             <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input class="rb-search" id="ppAddSearch" placeholder="${esc(t('Search users…'))}" aria-label="${esc(t('Search users…'))}" autocomplete="off"></div>
             <div id="ppAddResults" class="ev-pick-list"><p class="muted small">${esc(t('Type at least 2 characters to search.'))}</p></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel type="button">${esc(t('Close'))}</button></div>`, 'wide', () => clearTimeout(addTimer));
+            <div class="btnrow end"><button class="btn btn-ghost" data-cancel type="button">${esc(t('Close'))}</button></div>`, 'wide', () => searchSoon.cancel());
         const results = modal.q('#ppAddResults');
         const search = async (term) => {
             const seq = ++addSeq;
@@ -149,7 +145,8 @@
             });
         };
         const inp = modal.q('#ppAddSearch');
-        inp.oninput = () => { clearTimeout(addTimer); addTimer = setTimeout(() => search(inp.value.trim()), 300); };
+        const searchSoon = RBDebounce(search);
+        inp.oninput = () => searchSoon(inp.value.trim());
         modal.q('[data-cancel]').onclick = modal.close;
         inp.focus();
     };
@@ -198,7 +195,6 @@
     // The whole roster — or the current search — collected 100 at a time, quoted RFC-4180 style.
     $('ppExport').onclick = async (e) => {
         const busy = RBBusy(e.currentTarget);
-        const cell = (v) => /[",\n]/.test(v = String(v ?? '')) ? '"' + v.replace(/"/g, '""') + '"' : v;
         const rows = [];
         for (let p = 1; ; p++) {
             const r = await api('event_participants_list', { event_id: id, q, page: p, per_page: 100 });
@@ -210,9 +206,8 @@
         busy.ok();
         // the email only reaches a site admin (the server leaves it out for organizers)
         const columns = ['username', 'first_name', 'last_name', ...('email' in rows[0] ? ['email'] : []), 'status', 'joined'];
-        const lines = [columns.join(','), ...rows.map((p) => columns.map((c) => cell(p[c])).join(','))];
         const name = (eventTitle || 'rdbk-participants').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim(); // named after the event
-        RBDownload(new Blob([lines.join('\n')], { type: 'text/csv' }), name + '.csv');
+        RBDownload(RBCsv([columns, ...rows.map((p) => columns.map((c) => p[c]))]), name + '.csv');
     };
 
     (async function init() {

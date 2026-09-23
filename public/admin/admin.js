@@ -6,7 +6,7 @@
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, meSuper = false, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false, orgTimer = null;
+    let me = 0, meSuper = false, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false;
     let everyone = null; // the unfiltered user list, fetched once for the pickers (the table may be filtered)
     async function allPickable() {
         if (!everyone) {
@@ -127,10 +127,11 @@
             </div>
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list-map', finish);
         m.q('[data-cancel]').onclick = () => { m.close(); finish(); };
-        let rbPage = 1, rbQuery = '';
-        const render = () => api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
+        let rbPage = 1, rbQuery = '', rbSeq = 0; // only the latest request paints: a slow answer to an older search is dropped
+        const render = () => { const seq = ++rbSeq; return api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
+            if (seq !== rbSeq) return;
             const body = m.q('#rbsBody');
-            if (!r.ok) { body.textContent = r.error || t('Could not load.'); return; }
+            if (!r.ok) { body.textContent = t(r.error || 'Could not load.'); return; }
             if (!r.roadbooks.length) { body.textContent = t('No roadbooks yet.'); return; }
             body.innerHTML = `<table class="act-table"><tbody>${r.roadbooks.map((rb) => `<tr data-row="${rb.id}">
                 <td><button class="btn btn-ghost" data-view="${rb.id}" data-title="${esc(rb.title)}" title="${esc(t('View on map'))}"><b>${esc(rb.title)}</b></button><div class="u-handle">${esc(RBSummary(rb.total_distance, rb.note_count))}</div></td>
@@ -171,7 +172,7 @@
             });
             const pages = Math.max(1, Math.ceil((r.total || 0) / (r.per_page || 25)));
             RBPager(m.q('#rbsPager'), rbPage, pages, (p) => { rbPage = p; render(); });
-        });
+        }); };
         // In-popup route preview (#552): the roadbook opens on the map beside the
         // list, inside the same dialog — no new tab. Rows stay mounted so paging,
         // search and the admin actions keep working.
@@ -197,7 +198,7 @@
             if (rbMap.map) setTimeout(() => rbMap.map.resize(), 50); // the dialog just laid out: force the GL canvas to its box
             if (mapTitle) mapTitle.textContent = `${title || ''} · ${RBSummary(rb.meta.total_distance || 0, rb.notes.length)}`; // the payload's distance lives in meta
         };
-        m.q('#rbsSearch').oninput = (e) => { rbQuery = e.target.value; rbPage = 1; render(); };
+        m.q('#rbsSearch').oninput = RBDebounce((e) => { rbQuery = e.target.value; rbPage = 1; render(); });
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
         const movePicker = async (rbId, rbTitle) => {
             const users = await allPickable(); // everyone, not just the users the table is filtered to (#705)
@@ -208,7 +209,7 @@
                 fields: ['username', 'name', 'email'], limit: 50, empty: 'No users yet.',
                 rowHTML: (au, i) => `<button class="mv-opt" data-pick="${i}"><b>@${esc(au.username)}</b> <span class="muted small">${esc(au.email)}</span></button>`,
                 onPick: async (au, modal) => {
-                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + au.username + '?'))) return;
+                    if (!(await RBConfirm(t('Move this roadbook to') + ' @' + esc(au.username) + '?'))) return;
                     modal.close();
                     const x = await api('admin_move_roadbook', { id: +rbId, user_id: +au.id });
                     toast(x.ok ? t('Roadbook moved.') : (x.error || 'Could not move.'));
@@ -232,7 +233,7 @@
         });
         body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
             const u = byId[+b.dataset.block];
-            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + ((u && u.username) || '') + '?'))) return;
+            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + esc((u && u.username) || '') + '?'))) return;
             const busy = RBBusy(b);
             const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
             busy.reset();
@@ -242,7 +243,7 @@
         body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => RBActivityLog({ user: byId[+b.dataset.activity] })); // the one activity viewer (#665)
         body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + b.dataset.name + ')'))) return;
+            if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + esc(b.dataset.name) + ')'))) return;
             const busy = RBBusy(b);
             const x = await api('admin_delete', { id: +b.dataset.del });
             busy.reset();
@@ -339,7 +340,7 @@
         $('userEvFilter').onclick = () => { fltEv = !fltEv; syncToggle($('userEvFilter'), fltEv); list.reset(); };
         $('userCreate').onclick = createUser;
         // the organization filter asks the server: debounced, not a call per keystroke (#664)
-        $('userOrgFilter').oninput = () => { clearTimeout(orgTimer); orgTimer = setTimeout(() => { list.reset(); load(); }, 300); };
+        $('userOrgFilter').oninput = RBDebounce(() => { list.reset(); load(); });
         loadEventFilter();
         load().then(() => {
             // deep link from the locations map (#499): open the user card directly
