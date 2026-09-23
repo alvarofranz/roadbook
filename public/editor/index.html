@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-129">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-130">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-129">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-130">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -240,8 +240,8 @@
         /* Add junction sits OUTSIDE the tulip, at its top-left — the free corner above the distances —
            tied to it by a short sand line. It travels with the live canvas, so it exists only in the
            note being edited */
-        .add-junction { position: absolute; right: calc(100% + 12px); top: 0; z-index: 4; width: 30px; height: 30px; font-size: .78rem; border-radius: 8px; border: 1px solid var(--sand); background: var(--card-2); color: var(--sand); cursor: pointer; }
-        .add-junction::after { content: ''; position: absolute; left: 100%; top: 50%; width: 13px; height: 1px; background: var(--sand); }
+        .add-junction { position: absolute; right: calc(100% + 10px); top: 14px; z-index: 4; width: 26px; height: 26px; font-size: .7rem; border-radius: 7px; border: 1px solid var(--sand); background: var(--card-2); color: var(--sand); cursor: pointer; }
+        .add-junction::after { content: ''; position: absolute; left: 100%; top: 50%; width: 11px; height: 1px; background: var(--sand); }
         .add-junction:hover { background: var(--sand); color: var(--on-sand); }
         .vignette-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
         .vignette-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
@@ -373,7 +373,7 @@
             .icon-grid { grid-template-rows: repeat(2, 50px); grid-auto-columns: 50px; }
             .map-tools { max-height: calc(100% - 20px); overflow-y: auto; } /* touch: no hover tooltips, scrolling wins */
             /* the phone row puts the distances left of the tulip: the button moves to its free right side */
-            .add-junction { right: auto; left: calc(100% + 12px); }
+            .add-junction { right: auto; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); } /* centred on the tulip's side */
             .add-junction::after { left: auto; right: 100%; }
             .mode-rail { flex-direction: row; max-width: calc(100% - 20px); } /* a short map: the modes run along the bottom, */
             .mode-rail.show-name .mode-btn.on .mode-name { left: 0; top: auto; bottom: calc(100% + 10px); transform: none; } /* named above the lit one */
@@ -617,22 +617,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.3-129"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.3-129"></script>
-<script src="../assets/js/rbzip.js?v=1.9.3-129"></script>
-<script src="../assets/js/rbmap.js?v=1.9.3-129"></script>
-<script src="../assets/js/cover-map.js?v=1.9.3-129"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.3-129"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.3-129"></script>
-<script src="../assets/js/challenges.js?v=1.9.3-129"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.3-129"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.3-129"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.3-129"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.3-129"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.3-129"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.3-129"></script>
-<script src="../assets/js/i18n.js?v=1.9.3-129"></script>
-<script src="../assets/js/app.js?v=1.9.3-129"></script>
-<script src="editor.js?v=1.9.3-129"></script>
+<script src="../assets/js/config.js?v=1.9.3-130"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.3-130"></script>
+<script src="../assets/js/rbzip.js?v=1.9.3-130"></script>
+<script src="../assets/js/rbmap.js?v=1.9.3-130"></script>
+<script src="../assets/js/cover-map.js?v=1.9.3-130"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.3-130"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.3-130"></script>
+<script src="../assets/js/challenges.js?v=1.9.3-130"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.3-130"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.3-130"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.3-130"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.3-130"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.3-130"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.3-130"></script>
+<script src="../assets/js/i18n.js?v=1.9.3-130"></script>
+<script src="../assets/js/app.js?v=1.9.3-130"></script>
+<script src="editor.js?v=1.9.3-130"></script>
 </body>
 </html>
