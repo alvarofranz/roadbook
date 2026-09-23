@@ -1420,3 +1420,15 @@ Object.assign(window.RBi18nLangs.de, {
     "A roadbook locked by someone else is truly read-only, and a public roadbook can only be copied when its owner allows it.": "Ein von jemand anderem gesperrtes Roadbook ist wirklich schreibgeschützt, und ein öffentliches Roadbook lässt sich nur kopieren, wenn sein Eigentümer es erlaubt.",
     "Safer accounts: a password reset signs out the app everywhere, and organizers no longer see the email of the people they add.": "Sicherere Konten: Ein Passwort-Reset meldet die App überall ab, und Veranstalter sehen die E-Mail der Personen, die sie hinzufügen, nicht mehr.",
 });
+
+/* a run with no speed-limit zones (#848) */
+Object.assign(window.RBi18nLangs.de, {
+    "Every note reached.": "Alle Notizen erreicht.",
+});
+
+/* sharing a run (#852) */
+Object.assign(window.RBi18nLangs.de, {
+    "Check out the roadbook I completed!": "Schau dir das Roadbook an, das ich geschafft habe!",
+    "Check out my run!": "Schau dir meine Fahrt an!",
+    "Sharing makes this run public. Share it?": "Teilen macht diese Fahrt öffentlich. Teilen?",
+});

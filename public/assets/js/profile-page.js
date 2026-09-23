@@ -58,7 +58,8 @@
         $('pfRuns').querySelectorAll('[data-share-card]').forEach((b) => b.onclick = async () => {
             // a public run shares its page, whose link preview is this card (#803)
             const link = b.dataset.public === '1' ? RBPublicLink('/run/' + b.dataset.runId) : '';
-            try { RBShareFile(await (await fetch(b.dataset.shareCard)).blob(), 'rdbk-run.avif', ['RDBK.app', link].filter(Boolean).join(' ')); }
+            const run = data.runs.find((r) => r.id === +b.dataset.runId);
+            try { RBShareFile(await (await fetch(b.dataset.shareCard)).blob(), 'rdbk-run.avif', RBRun.shareText(run, link)); }
             catch (e) { toast('Could not share.'); }
         });
     }

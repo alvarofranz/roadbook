@@ -25,7 +25,7 @@ describe('the card itself', () => {
 describe('the report shows, shares and attaches it', () => {
     it('renders it while the report is read and shares it through RBShareFile', () => {
         expect(reader).toContain('const cardP = makeCard(report, user);');
-        expect(reader).toContain("$('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(),");
+        expect(reader).toContain('RBShareFile(cardBlob, cardName(), RBRun.shareText(cardReport, cardLink));');
         expect(read('public/reader/index.html')).toContain('<div class="report-card" id="reportCard">');
     });
     it('uploads it to the run once the run is saved on the profile', () => {

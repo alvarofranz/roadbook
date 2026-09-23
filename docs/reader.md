@@ -258,7 +258,10 @@ un interruttore **Private / Public** nel report (#820): con la preferenza `publi
 scelto e la run si salva subito; con `ask` nulla è scelto (con *Remember my choice*) e **Done** resta
 disattivato finché non si sceglie, perché una run non scelta non lascerebbe mai il dispositivo.
 Una volta salvata, lo stesso interruttore la cambia (`run_update`), e Share manda la pagina `/run/<id>`
-solo finché è pubblica. Il report parte dalla card (con un segnaposto della sua misura mentre si
+solo finché è pubblica. Share prima di aver scelto chiede prima (#852): la card condivisa porta la pagina della run, quindi
+*"Condividere rende pubblico questo percorso"* — Sì sceglie Pubblico e poi condivide, No non cambia
+nulla. Il testo condiviso è `RBRun.shareText` (*"Guarda il roadbook che ho completato!"* + titolo +
+link), lo stesso del profilo. Una run senza zone con limite non dice nulla sui limiti (#848). Il report parte dalla card (con un segnaposto della sua misura mentre si
 disegna), Share subito sotto, poi l'interruttore, le cifre e il QR di gara. Una run di gara di un roadbook di evento entra da sola nella
 classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
 
