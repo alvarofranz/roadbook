@@ -12,7 +12,7 @@ beforeEach(() => { storage = memoryStorage(); prefs = memoryPrefs(); timers = ma
 
 describe('which keys are durable', () => {
     it('are the session, the signed-in user, the pending runs and every crash checkpoint', () => {
-        for (const k of ['rb_token', 'rb_cfg_user', 'rb_pending_runs', 'rb_session', 'rb_session_roadbook', 'rb_recorder_session', 'rb_recorder_pending_save', 'rb_tripmaster_session', 'rb_trip_gpx', 'rb_editor_draft']) expect(isDurable(k)).toBe(true);
+        for (const k of ['rb_token', 'rb_cfg_user', 'rb_pending_runs', 'rb_session', 'rb_session_roadbook', 'rb_recorder_session', 'rb_recorder_pending_save', 'rb_tripmaster_session', 'rb_trip_gpx', 'rb_editor_draft', 'rb_tour', 'rb_remote_map']) expect(isDurable(k)).toBe(true);
         expect(isDurable('rb_lang')).toBe(false);
         expect(DURABLE_KEYS).not.toContain(SENTINEL);
     });
