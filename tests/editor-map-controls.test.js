@@ -52,7 +52,7 @@ describe('the roadbook settings view (#752)', () => {
 
 describe('Add junction sits beside the tulip, not inside it', () => {
     it('hangs off the live canvas to its left, tied to it by a line', () => {
-        expect(html).toContain('.add-junction { position: absolute; right: calc(100% + 12px);');
+        expect(html).toContain('.add-junction { position: absolute; right: calc(100% + 12px); top: 0;');
         expect(html).toContain(".add-junction::after { content: ''; position: absolute; left: 100%;");
         expect(html).toMatch(/<div id="canvasWrap" hidden>[\s\S]{0,120}id="addJunction"/);
     });

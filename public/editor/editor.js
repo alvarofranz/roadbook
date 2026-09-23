@@ -1637,12 +1637,13 @@
     // from RB.NOTE_BLOCKS, each showing how many it already holds.
     let blockTab = '';  // '' = the parameters · 'icon' = the palette · otherwise a RB.NOTE_BLOCKS id
     function renderBlockTabs(n) {
-        const count = (id) => RB.noteBlocks(n).filter((b) => RB.blockType(b).id === id).length;
-        const tab = (id, icon, label, badge) =>
-            `<button type="button" class="kind-tab${blockTab === id ? ' on' : ''}" role="tab" aria-selected="${blockTab === id}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
-        // two framed groups on one row (#747): the note itself left, the material around it right
-        $('kindTabs').innerHTML = `<div class="kind-group">${tab('', 'fa-location-dot', t('Note'), 0) + tab('icon', 'fa-icons', t('Icon'), 0)}</div>`
-            + `<div class="kind-group">${RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('')}</div>`;
+        const used = (id) => RB.noteBlocks(n).some((b) => RB.blockType(b).id === id);
+        // a piece of material the note already carries is lit in sand (.has) — no counter
+        const tab = (id, icon, label, has) =>
+            `<button type="button" class="kind-tab${blockTab === id ? ' on' : ''}${has ? ' has' : ''}" role="tab" aria-selected="${blockTab === id}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}</button>`;
+        // two groups on one row (#747): the note itself left, the material around it right
+        $('kindTabs').innerHTML = `<div class="kind-group">${tab('', 'fa-location-dot', t('Note'), false) + tab('icon', 'fa-icons', t('Icon'), false)}</div>`
+            + `<div class="kind-group">${RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), used(k.id))).join('')}</div>`;
         $('kindTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = (e) => {
             e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
         });

@@ -57,8 +57,14 @@ describe('the Editor groups the note blocks (#747)', () => {
         expect(html).toContain('.kind-tabs { justify-content: space-between; }');
         expect(editor + html).not.toContain('kind-group-label');
     });
-    it('shows no icon counter on the Icon tab', () => {
-        expect(read('public/editor/editor.js')).toContain("tab('icon', 'fa-icons', t('Icon'), 0)");
+    it('shows no counters: material the note carries is lit in sand instead', () => {
+        const editor = read('public/editor/editor.js'), html = read('public/editor/index.html');
+        expect(editor + html).not.toContain('tab-count');
+        expect(editor).toContain("${has ? ' has' : ''}");
+        expect(html).toContain('.kind-tab.has:not(.on) { border-color: var(--sand); color: var(--sand); }');
+    });
+    it('draws no frame around the groups', () => {
+        expect(read('public/editor/index.html')).toContain('.kind-group { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }');
     });
     it('calls the big-text block a Heading', () => {
         expect(read('public/assets/js/roadbook-core.js')).toContain("{ id: 'text',  name: 'Heading', icon: 'fa-heading' }");
