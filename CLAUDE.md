@@ -534,13 +534,14 @@ Operational notes:
   coordinates) with no buttons on the row (#569), colour-coded by state (reached green · skipped
   pink · active red border · upcoming white) — and the ACTIVE row alone takes the live GPS
   proximity state (blue as you close in, with the distance still to run). Advancing puts the next
-  note exactly at the **top** of the list (#844). Distances are measured **along the route**, like
+  note exactly at the **top** of the list (#844). Distances are measured **along the GPX track**, like
   the roadbook's own partials: `RB.routeAhead` projects the fix onto the track around the active
   note, so partial driven + distance left = the note's partial, shown in km with two decimals, and
   every change of note re-anchors both odometers on the route (#846 · #847); only the validation
   radius stays a straight line. One **Note map** toggle in the action bar opens the MapLibre
   mini-map under the active note and follows it (only where the roadbook allows a map); its guide is
-  one yellow line along the road still to drive, no arrow (`RBMap.setGuide`, #849).
+  one short straight arrow of fixed size from your position pointing at the note — a direction,
+  never a line to it (`RBMap.setGuide`, #890).
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —

@@ -1233,7 +1233,7 @@ describe('RB.distanceChars (#730)', () => {
     });
 });
 
-describe('routeAhead: where the driver is along the route (#847 · #849)', () => {
+describe('routeAhead: where the driver is along the route (#847)', () => {
     // a straight east-west road with notes at its 2nd and 4th vertex, ~111 m between vertices
     const track = [0, 1, 2, 3, 4, 5].map((k) => ({ lat: 45, lon: 9 + k * 0.001414 }));
     const rb = RB.recomputeMetrics({ meta: {}, track, notes: [RB.bareNote({ track, notes: [] }, 1, 3), RB.bareNote({ track, notes: [] }, 3, 3)] });
@@ -1245,11 +1245,9 @@ describe('routeAhead: where the driver is along the route (#847 · #849)', () =>
         expect(Math.round(rb.notes[1].distance - a.atM)).toBe(Math.round((cum[3] - cum[2]) / 2));
         expect(a.offRouteM).toBeGreaterThan(4);
     });
-    it('draws the road still to drive, ending on the note, and nothing once past it', () => {
-        const a = RB.routeAhead(rb, cum, 1, { lat: 45, lon: 9 + 1.5 * 0.001414 });
-        expect(a.path[a.path.length - 1]).toEqual({ lat: track[3].lat, lon: track[3].lon });
-        expect(a.path).toHaveLength(3); // projected point · vertex 2 · vertex 3
-        expect(RB.routeAhead(rb, cum, 1, { lat: 45, lon: 9 + 3.5 * 0.001414 }).path).toEqual([]);
+    it('reads past the note once driven beyond it', () => {
+        const a = RB.routeAhead(rb, cum, 1, { lat: 45, lon: 9 + 3.5 * 0.001414 });
+        expect(a.atM).toBeGreaterThan(rb.notes[1].distance);
     });
     it('never snaps onto a stretch of the route outside the notes around it', () => {
         const a = RB.routeAhead(rb, cum, 0, { lat: 45, lon: 9 + 4.5 * 0.001414 }); // far past note 2
@@ -1266,7 +1264,6 @@ describe('routeAhead: where the driver is along the route (#847 · #849)', () =>
         expect(RB.routeAhead(srb, scum, 1, here).atM).toBeGreaterThan(srb.notes[1].distance); // geometry alone: the wrong pass
         const a = RB.routeAhead(srb, scum, 1, here, 160);                                    // the odometer says ~1.5 legs out
         expect(Math.round(a.atM)).toBe(Math.round(scum[1] + (scum[2] - scum[1]) / 2));
-        expect(a.path[a.path.length - 1]).toEqual({ lat: spur[4].lat, lon: spur[4].lon });
         // the neighbouring segments of the same pass never override the nearest point
         expect(RB.routeAhead(rb, cum, 1, { lat: 45.00005, lon: 9 + 2.1 * 0.001414 }, 0).atM).toBeGreaterThan(cum[2]);
     });

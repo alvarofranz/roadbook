@@ -912,9 +912,8 @@
     // between the note before i and the note after it — never onto a loop or a parallel stretch
     // elsewhere on the route. `atM` is metres from the start, the scale of every note's `distance`
     // (both come from cumulativeM), so `notes[i].distance − atM` is what is left to the note measured
-    // the way the roadbook measures its partials; a straight line to the waypoint undercuts every
-    // bend. `path` is the route itself from the projected point to the note (empty once past it):
-    // the line a map draws to guide the driver there (#849). `cum` = cumulativeM(rb.track).
+    // the way the roadbook measures its partials along the GPX track; a straight line to the waypoint
+    // undercuts every bend. `cum` = cumulativeM(rb.track).
     // Even that stretch can pass the same place twice — an out-and-back to a note at the end of a
     // spur, a figure of eight — where the nearest segment is a coin toss between the two passes.
     // `hintM` (the odometer: where the driver should be, metres from the start) settles it: a pass
@@ -943,10 +942,7 @@
                 if (c.dist <= tie && Math.abs(c.atM - best.atM) > 2 * tie && Math.abs(c.atM - hintM) < Math.abs(at.atM - hintM)) at = c;
             }
         }
-        const a = track[at.k], b = track[at.k + 1];
-        const onRoute = { lat: round6(a.lat + (b.lat - a.lat) * at.t), lon: round6(a.lon + (b.lon - a.lon) * at.t) };
-        const path = at.k < n.idx ? [onRoute, ...track.slice(at.k + 1, n.idx + 1).map((q) => ({ lat: q.lat, lon: q.lon }))] : [];
-        return { atM: at.atM, path, offRouteM: at.dist };
+        return { atM: at.atM, offRouteM: at.dist };
     }
     // What is left to note i (#847): along the route like the roadbook's own partials, so the partial
     // driven plus what is left add up to the note's partial — but never less than the straight line
