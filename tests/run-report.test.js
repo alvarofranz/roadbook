@@ -41,7 +41,7 @@ describe('the end of a run (#618)', () => {
     });
     it('a saved run flips visibility from the same switch, and an unpicked one cannot be left behind (#820 · #460)', () => {
         expect(reader).toContain("const x = await RBApi('run_update', { id: saved.id, is_public: v === 'public' ? 1 : 0 });");
-        expect(reader).toContain("$('reportDone').disabled = !choice;");
+        expect(reader).toContain("$('reportDone').disabled = !choice || busy;"); // and never mid-save: that sends it twice
     });
     it('the card is the hero, Share under it, with a placeholder at its size while it renders (#820)', () => {
         const html = fs.readFileSync('public/reader/index.html', 'utf8');

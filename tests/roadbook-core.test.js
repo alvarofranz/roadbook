@@ -1253,6 +1253,31 @@ describe('routeAhead: where the driver is along the route (#847 · #849)', () =>
         const a = RB.routeAhead(rb, cum, 0, { lat: 45, lon: 9 + 4.5 * 0.001414 }); // far past note 2
         expect(a.atM).toBeLessThanOrEqual(cum[3] + 1);                          // clamped to the window
     });
+    it('on an out-and-back, the odometer picks the pass the driver is on', () => {
+        // out east along lat 45 to a note at the spur's end, back west 3 m further north, then on north
+        const out = [0, 1, 2, 3, 4].map((k) => ({ lat: 45, lon: 9 + k * 0.001414 }));
+        const back = [3, 2, 1, 0].map((k) => ({ lat: 45.00003, lon: 9 + k * 0.001414 }));
+        const spur = out.concat(back, [{ lat: 45.002, lon: 9 }]);
+        const srb = RB.recomputeMetrics({ meta: {}, track: spur, notes: [RB.bareNote({ track: spur, notes: [] }, 0, 3), RB.bareNote({ track: spur, notes: [] }, 4, 3), RB.bareNote({ track: spur, notes: [] }, spur.length - 1, 3)] });
+        const scum = RB.cumulativeM(spur);
+        const here = { lat: 45.00002, lon: 9 + 1.5 * 0.001414 }; // driving out, the fix a touch nearer the way back
+        expect(RB.routeAhead(srb, scum, 1, here).atM).toBeGreaterThan(srb.notes[1].distance); // geometry alone: the wrong pass
+        const a = RB.routeAhead(srb, scum, 1, here, 160);                                    // the odometer says ~1.5 legs out
+        expect(Math.round(a.atM)).toBe(Math.round(scum[1] + (scum[2] - scum[1]) / 2));
+        expect(a.path[a.path.length - 1]).toEqual({ lat: spur[4].lat, lon: spur[4].lon });
+        // the neighbouring segments of the same pass never override the nearest point
+        expect(RB.routeAhead(rb, cum, 1, { lat: 45.00005, lon: 9 + 2.1 * 0.001414 }, 0).atM).toBeGreaterThan(cum[2]);
+    });
+    it('leftToNote: along the route, never under the straight line', () => {
+        const half = { lat: 45, lon: 9 + 2.5 * 0.001414 };
+        expect(Math.round(RB.leftToNote(rb, cum, 1, half))).toBe(Math.round(rb.notes[1].distance - (cum[2] + (cum[3] - cum[2]) / 2)));
+        // on the way to the start, 2 km short of it: the route has nothing nearer than its first point
+        const carPark = { lat: 45, lon: 9 - 0.026 };
+        expect(RB.leftToNote(rb, cum, 0, carPark)).toBeCloseTo(RB.geo.haversineM(carPark, rb.notes[0]), 3);
+        expect(RB.leftToNote(rb, cum, 0, carPark)).toBeGreaterThan(1900);
+        // no route: the straight line
+        expect(RB.leftToNote({ track: [], notes: rb.notes }, [0], 1, half)).toBeCloseTo(RB.geo.haversineM(half, rb.notes[1]), 3);
+    });
     it('has nothing to say without a route or a fix', () => {
         expect(RB.routeAhead({ track: [], notes: rb.notes }, [], 0, { lat: 45, lon: 9 })).toBeNull();
         expect(RB.routeAhead(rb, cum, 0, null)).toBeNull();

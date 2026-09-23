@@ -53,4 +53,24 @@ describe('RBGpsMeter', () => {
         expect(fixes[3].from).not.toBeNull();
         vi.useRealTimers();
     });
+    it('a GPS jump never becomes a speed: without a device speed the last real one stands', async () => {
+        const meter = await start();
+        fixAt(0, 2_000_000); fixAt(20, 2_004_000);        // 20 m in 4 s = 18 km/h
+        expect(Math.round(meter.speedKmh)).toBe(18);
+        fixAt(900, 2_005_000);                            // 880 m in a second: a teleport
+        expect(fixes[2].trusted).toBe(true);
+        expect(Math.round(fixes[2].speedKmh)).toBe(18);
+        vi.useRealTimers();
+    });
+    it('a wake lock granted after the meter stopped is released at once', async () => {
+        let grant, released = false;
+        Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request: () => new Promise((r) => { grant = r; }) } });
+        const meter = await start();
+        meter.stop();
+        grant({ release: () => { released = true; return Promise.resolve(); } });
+        await settle();
+        expect(released).toBe(true);
+        expect(meter._wakeLock).toBeNull();
+        delete navigator.wakeLock;
+    });
 });

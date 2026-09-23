@@ -360,9 +360,15 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   waypoint. Sotto i 5 m sparisce (sei arrivato).
 - **Distanze** (#846 · #847): ogni distanza si legge come la scrive il roadbook, in km con due
   decimali. Il "mancano" della riga attiva e della mappa è misurato **lungo il percorso**
-  (`RB.routeAhead`: il fix proiettato sulla traccia tra la nota precedente e la successiva), così
-  il parziale fatto + quello che manca = il parziale della nota. Il raggio di validazione resta
-  in linea retta, perché è quello che misura. A ogni cambio di nota (validata, saltata o scelta)
+  (`RB.leftToNote` su `RB.routeAhead`: il fix proiettato sulla traccia tra la nota precedente e la
+  successiva), così il parziale fatto + quello che manca = il parziale della nota — ma **mai meno
+  della linea retta** al waypoint: il percorso non può essere più corto, e chi non è sul tratto
+  attorno alla nota (verso la partenza, in una deviazione) leggerebbe il pezzo di traccia più vicino
+  (0.00 nel parcheggio prima della prima nota). Dove il tratto passa due volte nello stesso posto
+  (andata e ritorno verso una nota in fondo a un cul-de-sac, un otto) il punto più vicino è una
+  moneta lanciata tra i due passaggi: l'odometro totale fa da **indizio** (`hintM`) e sceglie il
+  passaggio dove il pilota dovrebbe essere. Il raggio di validazione resta in linea retta, perché è
+  quello che misura. A ogni cambio di nota (validata, saltata o scelta)
   gli odometri si **ri-ancorano** sul percorso (`reanchor`): il totale diventa la posizione reale
   lungo la traccia, il parziale la distanza dalla nota precedente. Una nota validata in anticipo
   lascia il parziale sotto zero (mostrato 0.00) finché non la passi.
@@ -481,7 +487,9 @@ roadbook — il checkpoint registra `openedAs` (lo slug, `?rb=` o `?admin_rb=`) 
 distinguere. Aprire un roadbook *diverso* è una scelta esplicita: interrogare l'utente sulla corsa
 precedente in quel momento è solo rumore. E un "No" viene **ricordato** (`declined` sul
 checkpoint), quindi si chiede una volta sola; i dati restano (la corsa successiva li sovrascrive,
-l'uscita esplicita li cancella), così declinare non distrugge niente.
+l'uscita esplicita li cancella), così declinare non distrugge niente. Il GPX che quella corsa
+registrava non è più di nessuno: dopo il "No" si offre subito il suo recupero
+(`RBGpxRecorder.offerRecovery`), prima che un nuovo log lo sovrascriva.
 
 `saveSession` ([reader.js:136](../public/reader/reader.js#L136)) serializza i contatori vivi
 (modalità, team, indice attivo, `reached`, odometri, penalità, limiti velocità, orologio

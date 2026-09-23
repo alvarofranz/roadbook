@@ -95,8 +95,10 @@ percorso, un fix spazzatura non è nemmeno una posizione).
 
 Si usa il valore del GPS (`coords.speed`, m/s → km/h) quando è valido. Se il dispositivo
 smette di riportarlo, si **deriva** dallo spostamento sul tempo trascorso
-(`haversineM / dt`, [gps-meter.js:45-49](../public/assets/js/gps-meter.js#L45)), così il
-tachimetro non resta "incollato" all'ultimo valore.
+(`haversineM / dt`), così il tachimetro non resta "incollato" all'ultimo valore — ma **mai da un
+`teleport`**: quel passo è un salto del GPS, e la sua "velocità" (centinaia di km/h) finirebbe nella
+zona di limite del Reader e nel massimo del Tripmaster. Dopo un salto resta l'ultima velocità vera
+fino al passo reale successivo.
 
 ### Ciclo di vita
 
@@ -147,6 +149,8 @@ in [app-shell.md § `RB*` helper](app-shell.md#rbconfirmmsg-oklabel-danger--prom
 lock vengono persi quando la tab passa in background: il listener `visibilitychange`
 (aggiunto da `resume()`, rimosso da `stop()`) lo **riacquisisce** al ritorno in primo piano, ma
 solo se il meter è ancora `_running` — così una coppia stop/resume non lascia listener orfani.
+La richiesta si risolve più tardi: se nel frattempo il meter è stato fermato, il lock ottenuto viene
+rilasciato subito, altrimenti lo schermo resterebbe acceso a corsa finita senza nessuno che lo liberi.
 
 ---
 

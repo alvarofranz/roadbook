@@ -10,7 +10,8 @@ describe('the Reader distances', () => {
         expect(js).not.toMatch(/Math\.round\(m\) \+ ' m'/);
     });
     it('measures what is left along the route, the straight line only for the radius', () => {
-        expect(js).toContain('return a ? Math.max(0, notes[i].distance - a.atM) : RB.geo.haversineM(here, notes[i]);');
+        expect(js).toContain('const toGoM = (i, here) => RB.leftToNote(rb, routeCum, i, here, tripTotalM);');
+        expect(js).toContain('RB.routeAhead(rb, routeCum, i, here, tripTotalM)'); // the odometer tells the passes of an out-and-back apart
         expect(js).toContain('paintApproach(live ? RB.geo.haversineM(lastHere, an) : null, live ? toGoM(activeIdx, lastHere) : null);');
     });
     it('re-anchors the odometers on the route whenever the cursor moves', () => {

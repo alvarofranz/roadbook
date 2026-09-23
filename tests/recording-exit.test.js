@@ -108,4 +108,8 @@ describe('a finished recording survives a crash until it lands (#647 · #686)', 
         expect(gpx).toContain('const decline = () => RBCheckpoint.decline(CHECKPOINT_KEY);');
         expect(offer).toContain('saved.declined) return;');
     });
+    it('a declined Reader run still offers back the GPX it was logging', () => {
+        const reader = fs.readFileSync('public/reader/reader.js', 'utf8');
+        expect(reader).toMatch(/declineSession\(\);\s*await RBGpxRecorder\.offerRecovery\(\);/);
+    });
 });

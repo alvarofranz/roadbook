@@ -130,6 +130,7 @@
             const what = esc((savedRb.meta && savedRb.meta.title) || 'Roadbook') + ' · ' + session.activeIdx + '/' + savedRb.notes.length + ' ' + t('notes');
             if (await RBConfirm(t('Resume the run in progress?') + '<br><b>' + what + '</b> · ' + RBKm(session.totalM))) { resumeSession(session, savedRb); return; }
             declineSession();
+            await RBGpxRecorder.offerRecovery(); // a declined run that was logging still gets its GPX back
             loadFromUrl(); // declined → still navigate the roadbook the user explicitly opened
             return;
         }
@@ -355,15 +356,11 @@
     // successor is under 50 m away — a property of the roadbook, not of where the driver is.
     // Every distance on the roadbook reads the way the roadbook writes it: km with two decimals (#846)
     const fmtKm = (m) => (m / 1000).toFixed(2);
-    // What is left to note i, measured ALONG the route like the roadbook's own partials (#847), so the
-    // partial driven plus what is left add up to the note's partial; a roadbook without a route
-    // has only the straight line to the waypoint.
+    // What is left to note i: along the route, never under the straight line (RB.leftToNote, #847).
+    // The odometer is the hint that tells apart two passes of a route that goes the same way twice.
     let routeCum = null;
-    const ahead = (i, here) => (routeCum && routeCum.length > 1 && here ? RB.routeAhead(rb, routeCum, i, here) : null);
-    function toGoM(i, here) {
-        const a = ahead(i, here);
-        return a ? Math.max(0, notes[i].distance - a.atM) : RB.geo.haversineM(here, notes[i]);
-    }
+    const ahead = (i, here) => (routeCum && routeCum.length > 1 && here ? RB.routeAhead(rb, routeCum, i, here, tripTotalM) : null);
+    const toGoM = (i, here) => RB.leftToNote(rb, routeCum, i, here, tripTotalM);
     // The note map's guide (#849): the route itself from where you are to the note, no arrow
     const guideTo = (i, here) => { const a = ahead(i, here); inlineMap.setGuide(here, notes[i], a ? a.path : null); };
     // Whenever the cursor lands on note j — the note before it validated, skipped or jumped past —
@@ -815,7 +812,9 @@
                 <p class="muted small report-vis-status">${status()}</p>
             </div>`;
             vis.querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => pick(b.dataset.vis));
-            $('reportDone').disabled = !choice; // an unpicked report would never leave the device (#460)
+            // an unpicked report would never leave the device (#460), and leaving mid-save would send it
+            // twice: the upload lands, but the page is gone before the queue can drop it
+            $('reportDone').disabled = !choice || busy;
         };
         // the card follows the run: uploaded once it is saved, and Share sends the run's page while it is public (#803)
         const followCard = async () => {
