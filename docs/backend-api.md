@@ -432,7 +432,7 @@ loro somma.
 | [006_api_tokens.sql](../migrations/006_api_tokens.sql) | tabella `api_tokens` (Bearer per le app native) |
 | [007_reviewer_account.sql](../migrations/007_reviewer_account.sql) | utente reviewer pre-verificato (upsert) |
 | [008_admin.sql](../migrations/008_admin.sql) · [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `users.is_admin`; `users.must_change_password` / `blocked` (vedi [user-management](user-management.md)) |
-| [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `users.voice_lang` (lingua speech-to-text delle note vocali) |
+| [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `users.voice_lang` (lingua speech-to-text delle note vocali; droppata dalla 040) |
 | [011_pending_email.sql](../migrations/011_pending_email.sql) | `users.pending_email` (cambio email in attesa di conferma) |
 | [012_roadbook_audio.sql](../migrations/012_roadbook_audio.sql) | tabella `roadbook_audio` (note vocali, FK + cascade, geotag) |
 | [013_default_location.sql](../migrations/013_default_location.sql) | `users.default_lat` / `default_lon` (posizione mappa di default) |
@@ -461,6 +461,9 @@ loro somma.
 | [035_apple_auth.sql](../migrations/035_apple_auth.sql) | `users.apple_sub` (UNIQUE) — Sign in with Apple, gemello di `google_sub` (#370) |
 | [036_event_registration.sql](../migrations/036_event_registration.sql) | `events.join_gate` (`closed`/`code`/`open`) + `events.require_activation` — gate e attivazione indipendenti, con backfill da `open_join`/`join_code` (#414). `open_join` resta come mirror in scrittura finché nulla lo legge. |
 | [037_runs_results_profiles.sql](../migrations/037_runs_results_profiles.sql) | `roadbook_runs` (il report di ogni run: note, zone di velocità, tempi, penalità, risultato firmato, `is_public` per il profilo), `event_results` (la classifica condivisa di un roadbook di evento, unica per payload firmato), `users.runs_visibility` (`ask`/`public`/`private`), `api_tokens.participant_event_id` (modalità partecipante per l'app, #580) — #617–#620 · #590. |
+| [038_roadbook_vehicles.sql](../migrations/038_roadbook_vehicles.sql) | `roadbooks.vehicles` SET `car`/`moto`/`bike` (per quali veicoli è adatto, filtro della galleria, #713) |
+| [039_drop_event_open_join.sql](../migrations/039_drop_event_open_join.sql) | drop di `events.open_join` (l'iscrizione è `join_gate` + `require_activation`, #732) |
+| [040_drop_voice_lang.sql](../migrations/040_drop_voice_lang.sql) | drop di `users.voice_lang` (dettatura e trascrizione non esistono più, #773) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,
