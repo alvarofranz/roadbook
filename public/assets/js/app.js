@@ -1364,9 +1364,11 @@
             root.querySelectorAll('.tour-dots i').forEach((d, k) => d.classList.toggle('on', k === i));
             root.querySelector('[data-skip]').textContent = RBt('Skip tutorial');
             nextBtn.textContent = RBt(i === live.length - 1 ? 'Done' : 'tour.next');
-            requestAnimationFrame(place);
         }
-        function end() { root.remove(); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place); touring = false; }
+        // the hole and the bubble follow their control on every frame while the tour is open: a page
+        // that settles its layout, scrolls, rotates or opens the keyboard never leaves them behind
+        const follow = () => { if (!root.isConnected) return; place(); requestAnimationFrame(follow); };
+        function end() { root.remove(); document.removeEventListener('keydown', onKey, true); touring = false; }
         function next() { if (++i >= live.length) end(); else show(); }
         function onKey(e) {
             if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(); }
@@ -1375,8 +1377,8 @@
         nextBtn.onclick = next;
         root.querySelector('[data-skip]').onclick = end;
         document.addEventListener('keydown', onKey, true);
-        window.addEventListener('resize', place);
         show();
+        requestAnimationFrame(follow);
         nextBtn.focus();
     };
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
