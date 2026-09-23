@@ -246,7 +246,7 @@ function register_user(array $d): void {
     $email = strtolower(trim((string)($d['email'] ?? '')));
     $pass  = (string)($d['password'] ?? '');
     validate_new_account($first, $last, $username, $email, $pass);
-    if ($pass !== (string)($d['password_confirm'] ?? '')) fail("Passwords don't match.");
+    if ($pass !== (string)($d['password_confirm'] ?? '')) fail('Passwords don’t match.');
     if (empty($d['accept_terms'])) fail('You must accept the Terms of Use to register.');
     verify_turnstile($d['turnstile'] ?? null);
 

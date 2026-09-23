@@ -52,7 +52,7 @@ describe('no broken battery readout (#768)', () => {
     it('shows the date where the device gives no battery level', () => {
         const bar = read('public/assets/js/status-bar.js');
         expect(bar).not.toContain("'N/A'");
-        expect(bar).toContain("toLocaleDateString(document.documentElement.lang || undefined, { day: 'numeric', month: 'short' })");
+        expect(bar).toContain("toLocaleDateString(RBi18n.current(), { day: 'numeric', month: 'short' })");
     });
 });
 

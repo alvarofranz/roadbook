@@ -32,7 +32,7 @@ RBUpload(...)          ──POST──▶ upload.php          ─────�
   il router JSON parla solo JSON.
 - Entrambi gli entry point caricano per prima cosa [`app/bootstrap.php`](../app/bootstrap.php),
   che costruisce `$CFG` dall'`.env`, apre la sessione e include `db.php`, `mail.php`, `auth.php`,
-  `roadbooks.php`, `admin.php`, `settings.php`, `events.php`, `runs.php`. Le due pagine che PHP
+  `roadbooks.php`, `admin.php`, `settings.php`, `events.php`, `runs.php`, `comments.php`. Le due pagine che PHP
   rende da sé (`/run/<id>`, `/go/<code>`) aggiungono `app/page.php`, la shell condivisa (icone,
   stili, script e cache-buster delle pagine timbrate).
 
@@ -197,7 +197,11 @@ false`). Tutte le query passano da prepared statement: non c'è concatenazione d
   risposta `429` include `retry_after` (secondi da attendere) oltre a `{ok:false,
   error:'Too many attempts. Please wait a moment.'}` — il form di login lo trasforma in un
   countdown.
-- `client_ip()` — legge `REMOTE_ADDR` ([bootstrap.php:77](../app/bootstrap.php#L77)).
+- `client_ip()` — l'IP del client, chiave di ogni rate limit, `remoteip` di Turnstile e (anonimizzato)
+  il log attività. Se `REMOTE_ADDR` è un proxy fidato (`TRUSTED_PROXIES` nel `.env`: IP/CIDR; di
+  default loopback + reti private), legge `X-Forwarded-For` **da destra**, saltando gli hop fidati:
+  il primo indirizzo non fidato è quello visto dal nostro proxy. Le voci più a sinistra le scrive il
+  client e non vengono mai credute. Dietro il proxy di Cloudflare vanno aggiunti i suoi range.
 
 ---
 

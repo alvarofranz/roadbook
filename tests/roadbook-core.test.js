@@ -591,6 +591,11 @@ describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
         expect(RB.pendingWork()).toEqual([]);
         expect(RB.pendingWork({ rb_editor_draft: null, rb_session: null })).toEqual([]);
     });
+    it('never offers a checkpoint the user declined (#436)', () => {
+        expect(RB.pendingWork({ rb_recorder_session: { recording: true, recordedM: 3210, declined: true } })).toEqual([]);
+        expect(RB.pendingWork({ rb_editor_draft: { ...draft.rb_editor_draft, declined: true } })).toEqual([]);
+        expect(RB.pendingWork({ ...rec, rb_editor_draft: { ...draft.rb_editor_draft, declined: true } })).toHaveLength(1);
+    });
     it('describes an unsaved editor draft (title + note count)', () => {
         const [d] = RB.pendingWork(draft);
         expect(d).toMatchObject({ tool: 'editor', url: 'editor/', kind: 'draft', title: 'My route', noteCount: 3, keys: ['rb_editor_draft'] });

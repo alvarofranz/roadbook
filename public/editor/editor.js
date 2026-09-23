@@ -1033,7 +1033,10 @@
         const localUrl = URL.createObjectURL(f);
         recPhotos.push({ token, url: localUrl, lat, lon, local: true, pending: true }); if (map) map.setPhotos(recPhotos);
         updateRecStats();
-        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
+        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token).catch(() => { // the device refused to keep it (private mode, full storage)
+            recPhotos = recPhotos.filter((p) => p.token !== token); if (map) map.setPhotos(recPhotos);
+            updateRecStats(); toast('Could not save.');
+        });
         if (lat != null) dropWaypoint(lat, lon);
     };
     $('recStop').onclick = async () => {
