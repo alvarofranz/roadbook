@@ -12,6 +12,7 @@
     --on-sand: #14100a;   /* ink/text that sits on a sand fill */
     --track: #ff5a45;     /* track red */
     --ok: #3ad29f;
+    --warn: #ff9f1c;      /* a fair, not yet good, reading (the GPS) */
     --info: #5aa9ff;
     --radius: 16px;
     --shadow: 0 10px 40px rgba(0, 0, 0, .45);
@@ -902,7 +903,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .status-bar .status-cell { display: flex; align-items: center; justify-content: center; gap: .3rem; min-width: 0; padding: .85rem .2rem; font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .status-bar .status-cell i { font-size: clamp(.95rem, 4vw, 1.25rem); color: var(--muted); }
 .status-bar .status-cell.ok i, .status-bar .status-cell.ok span { color: var(--ok); }
-.status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: #ff9f1c; }
+.status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: var(--warn); }
 .status-bar .status-cell.bad i, .status-bar .status-cell.bad span { color: var(--track); }
 
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */

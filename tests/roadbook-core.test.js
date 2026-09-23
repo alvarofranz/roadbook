@@ -1288,3 +1288,14 @@ describe('road types', () => {
         expect(RB.ROAD_TYPES.find((r) => r.id === 5).color).toBe('#532b78');
     });
 });
+
+describe('gpsHealth — the one GPS scale (#901)', () => {
+    it('reads good · fair · weak · none', () => {
+        expect(RB.gpsHealth(5)).toBe('good');
+        expect(RB.gpsHealth(RB.CONST.GPS_GOOD_M)).toBe('good');
+        expect(RB.gpsHealth(20)).toBe('fair');
+        expect(RB.gpsHealth(RB.CONST.FIX_ACC_MAX_M)).toBe('fair');
+        expect(RB.gpsHealth(80)).toBe('weak');
+        expect(RB.gpsHealth(null)).toBe('none');
+    });
+});

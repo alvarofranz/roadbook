@@ -41,7 +41,7 @@ window.RBStatusBar = (function () {
         setGps(acc) {
             const t = window.RBt || ((k) => k);
             if (acc == null) { gpsCls = 'bad'; gpsTxt = t('No GPS'); }
-            else { gpsCls = acc <= 15 ? 'ok' : acc <= 35 ? 'mid' : 'bad'; gpsTxt = '±' + Math.round(acc) + ' m'; }
+            else { gpsCls = { good: 'ok', fair: 'mid', weak: 'bad' }[RB.gpsHealth(acc)]; gpsTxt = '±' + Math.round(acc) + ' m'; }
             render();
         },
     };

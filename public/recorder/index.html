@@ -9,15 +9,27 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.7-193">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.7-194">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-193">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-194">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* the landing (#896): three short points, then one big, inviting Start */
         .rec-points { list-style: none; padding: 0; margin: 1rem 0 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
         .rec-points li { display: flex; gap: .75rem; align-items: flex-start; line-height: 1.4; }
         .rec-points i { color: var(--sand); width: 1.3rem; text-align: center; margin-top: .15rem; flex: none; }
+        .gps-health { display: flex; align-items: center; gap: .8rem; padding: .75rem .95rem; margin-bottom: .8rem; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+        .gps-health > i { font-size: 1.4rem; color: var(--muted); }
+        .gps-health b { display: block; }
+        .gps-health small { display: block; color: var(--muted); line-height: 1.35; }
+        .gps-health-acc { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .gps-health[data-health="good"] { border-color: var(--ok); } .gps-health[data-health="good"] > i, .gps-health[data-health="good"] .gps-health-acc { color: var(--ok); }
+        .gps-health[data-health="fair"] { border-color: var(--warn); } .gps-health[data-health="fair"] > i, .gps-health[data-health="fair"] .gps-health-acc { color: var(--warn); }
+        .gps-health[data-health="weak"], .gps-health[data-health="denied"] { border-color: var(--track); } .gps-health[data-health="weak"] > i, .gps-health[data-health="denied"] > i, .gps-health[data-health="weak"] .gps-health-acc { color: var(--track); }
+        .gps-health[data-health="none"] > i { animation: gps-search 1.4s ease-in-out infinite; }
+        @keyframes gps-search { 50% { opacity: .3; } }
+        @media (prefers-reduced-motion: reduce) { .gps-health[data-health="none"] > i { animation: none; } }
+        .rec-start:disabled { filter: grayscale(.6); opacity: .6; }
         .rec-start { width: 100%; min-height: 5.5rem; justify-content: center; gap: 1rem; border-radius: 20px; text-align: left; }
         .rec-start > i { font-size: 2.6rem; }
         .rec-start b { display: block; font-size: 1.35rem; }
@@ -85,7 +97,13 @@
             <li><i class="fa-solid fa-camera"></i> <span data-i18n="Photos are pinned to the track as you ride.">Photos are pinned to the track as you ride.</span></li>
             <li><i class="fa-solid fa-pen-ruler"></i> <span data-i18n="At the end it becomes a draft roadbook to finish in the Editor.">At the end it becomes a draft roadbook to finish in the Editor.</span></li>
         </ul>
-        <button class="btn btn-primary rec-start" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span><b data-i18n="Start recording">Start recording</b><small data-i18n="The GPS starts right away">The GPS starts right away</small></span></button>
+        <!-- the GPS before the start (#901): its health, live — Start opens only on a fix good enough to record -->
+        <div class="gps-health" id="recGps" data-health="none" role="status" aria-live="polite">
+            <i class="fa-solid fa-satellite-dish"></i>
+            <span class="grow"><b id="recGpsTitle"></b><small id="recGpsHint"></small></span>
+            <span class="gps-health-acc" id="recGpsAcc"></span>
+        </div>
+        <button class="btn btn-primary rec-start" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span><b data-i18n="Start recording">Start recording</b><small id="recStartHint"></small></span></button>
     </div>
 
     <!-- running (#768): the readouts, the capture row — one big Note, a 2×2 grid of the rest — and
@@ -125,19 +143,19 @@
 <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.7-193"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.7-193"></script>
-<script src="../assets/js/rbmap.js?v=1.9.7-193"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.7-193"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.7-193"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.7-193"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.7-193"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.7-193"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.7-193"></script>
-<script src="../assets/js/i18n.js?v=1.9.7-193"></script>
-<script src="../assets/js/app.js?v=1.9.7-193"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.7-193"></script>
-<script src="../assets/js/status-bar.js?v=1.9.7-193"></script>
-<script src="recorder.js?v=1.9.7-193"></script>
+<script src="../assets/js/config.js?v=1.9.7-194"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.7-194"></script>
+<script src="../assets/js/rbmap.js?v=1.9.7-194"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.7-194"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.7-194"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.7-194"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.7-194"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.7-194"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.7-194"></script>
+<script src="../assets/js/i18n.js?v=1.9.7-194"></script>
+<script src="../assets/js/app.js?v=1.9.7-194"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.7-194"></script>
+<script src="../assets/js/status-bar.js?v=1.9.7-194"></script>
+<script src="recorder.js?v=1.9.7-194"></script>
 </body>
 </html>

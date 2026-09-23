@@ -102,7 +102,7 @@ describe('a declined resume is marked, never deleted (#436)', () => {
 describe('Start waits for startup (a tap must not begin() over an unfinished recording)', () => {
     it('is disabled until the startup sequence has decided, and the queue starts after it', () => {
         expect(rec).toContain("$('recStart').disabled = true;\n    RBConfig().then(");
-        expect(rec).toContain(".finally(() => { initMediaQueue(); $('recStart').disabled = false; });");
+        expect(rec).toContain(".finally(() => { initMediaQueue(); startupDone = true; if (!RBGpxRecorder.recording && !finished) startPreview(); renderGpsHealth(); });");
         expect(rec).toContain('const initMediaQueue = () => RBMediaQueue.init({');
     });
 });
