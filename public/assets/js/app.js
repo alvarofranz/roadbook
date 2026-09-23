@@ -554,8 +554,11 @@
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     // Metres → "12.34 km", the one distance format (#732); `digits` for the precision the place needs.
     window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
-    // Which vehicles a roadbook (or an event's roadbooks) suits, as small labelled icons (#745)
-    const VEHICLE_ICON = { car: ['fa-car', 'Car'], moto: ['fa-motorcycle', 'Motorbike'], bike: ['fa-bicycle', 'Bicycle'] };
+    // The ONE vehicle table (#713): each vehicle's icon + label, for the small icons on the cards
+    // (#745) and the segmented toggles of the gallery filter and the Editor settings alike
+    const VEHICLE_ICON = { car: ['fa-truck-monster', 'Car'], moto: ['fa-motorcycle', 'Motorbike'], bike: ['fa-person-biking', 'Bicycle'] };
+    window.RBVehicleSegmentsHTML = () => Object.entries(VEHICLE_ICON).map(([v, [icon, label]]) =>
+        `<button class="segment" type="button" data-vehicle="${v}" aria-pressed="false"><i class="fa-solid ${icon}"></i> <span data-i18n="${label}">${RBesc(RBt(label))}</span></button>`).join('');
     window.RBVehicleIcons = (list) => (list || []).length ? `<span class="vehicle-icons">${list.map((v) => `<i class="fa-solid ${VEHICLE_ICON[v][0]}" title="${RBesc(RBt(VEHICLE_ICON[v][1]))}" aria-label="${RBesc(RBt(VEHICLE_ICON[v][1]))}"></i>`).join('')}</span>` : '';
     window.RBSummary = (distanceM, noteCount) => RBKm(distanceM, 1) + ' · ' + noteCount + ' ' + RBt('notes');
     // The publication-status select (draft → ready → public), for My roadbooks and the admin's
