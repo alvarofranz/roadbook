@@ -137,6 +137,16 @@
         const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
+    /* Where the Reader's note list scrolls when a new note becomes active (#177 · #759), in the list's
+       own coordinates. The active note always wins: its whole row shows, the note just used keeps
+       whatever room is left above it (all of it when both fit), and an active row taller than the
+       list is shown from its top. prevTop is null for the first note. */
+    function activeScrollTop({ prevTop, activeTop, activeBottom, viewHeight, margin = 8 }) {
+        let top = (prevTop == null ? activeTop : prevTop) - margin;          // ideal: the note just used, whole
+        if (activeBottom - top > viewHeight) top = activeBottom + margin - viewHeight; // …unless that pushes the active row off the bottom
+        if (top > activeTop - margin) top = activeTop - margin;              // an active row taller than the list: show its top
+        return Math.max(0, top);
+    }
     /* Is note i the roadbook's END — the last one you navigate to? Its tulip draws no exit road: past the finish there is nothing to follow, and in a race
        that note is the finish arch (#447). One rule, so the Editor, the Reader, the public page
        and the PDF all agree about which note that is. */
@@ -1401,7 +1411,7 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, activeScrollTop, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,

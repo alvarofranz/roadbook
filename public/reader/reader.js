@@ -340,19 +340,23 @@
     // live distances read in metres up close and in km further out — the co-pilot's own units
     const fmtDist = (m) => m >= 1000 ? RBKm(m) : Math.round(m) + ' m';
     let lastScrollIdx = -1;
-    // Keep the just-completed note on screen when advancing (#177): anchor the PREVIOUS row at the
-    // top of the list, so the note you have just used stays visible with the active note right
-    // under it. Inside the shell the list is the scroller and the odometer bar is a sibling ABOVE
-    // it (#429), so this is arithmetic in the list's own coordinates — no page scroll.
+    // Advancing scrolls the new active note fully into view, with as much of the note just used
+    // above it as still fits (RB.activeScrollTop, #177 · #759) — a long note never leaves the active
+    // one half hidden. Inside the shell the list is the scroller and the odometer bar is a sibling
+    // ABOVE it (#429), so this is arithmetic in the list's own coordinates — no page scroll.
     function scrollActiveIntoView() {
         const list = $('noteList');
         const act = list.querySelector('.nrow.active');
         if (!act) return;
         const rows = [...list.querySelectorAll('.nrow')];
         const at = rows.indexOf(act);
-        const anchor = at > 0 ? rows[at - 1] : act;
-        const top = list.scrollTop + anchor.getBoundingClientRect().top - list.getBoundingClientRect().top;
-        list.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
+        const origin = list.getBoundingClientRect().top - list.scrollTop;
+        const box = act.getBoundingClientRect();
+        list.scrollTo({ top: RB.activeScrollTop({
+            prevTop: at > 0 ? rows[at - 1].getBoundingClientRect().top - origin : null,
+            activeTop: box.top - origin, activeBottom: box.bottom - origin,
+            viewHeight: list.clientHeight,
+        }), behavior: 'smooth' });
     }
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first

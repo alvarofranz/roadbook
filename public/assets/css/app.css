@@ -484,7 +484,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
     .nrow .col-vignette svg { max-height: 170px; }
 }
 .nrow .col-text { display: flex; flex-direction: column; font-size: .92rem; }
-.nrow .col-text .text { flex: 1; word-break: break-word; }
+.nrow .col-text .text { flex: 1; overflow-wrap: break-word; hyphens: auto; } /* long words hyphenate in the page language, never cut at random (#759) */
 .nrow .col-text .note-cap { color: #c0392b; font-weight: 800; margin-top: .2rem; }
 .nrow .col-text .note-speed { margin-top: .25rem; }
 .nrow .col-text .note-speed .lim { display: inline-flex; align-items: center; justify-content: center; min-width: 1.9rem; height: 1.9rem; padding: 0 .25rem; border: 3px solid #c0392b; border-radius: 50%; font-weight: 800; font-size: .8rem; font-variant-numeric: tabular-nums; }

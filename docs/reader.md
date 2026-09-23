@@ -96,8 +96,13 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
   aggiornano invece solo lo **stato** delle righe con `updateNoteStates` (classi
   done/skipped/active), senza ridisegnare
   ogni vignetta — così anche la mini-mappa per-nota aperta sopravvive all'avanzamento.
-- **Auto-scroll**: la vista si ricentra sulla nota attiva *solo quando l'indice attivo
-  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno.
+- **Auto-scroll**: la vista si sposta sulla nota attiva *solo quando l'indice attivo
+  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno. Dove si ferma lo decide
+  `RB.activeScrollTop` (#177 · #759): la riga attiva si vede **sempre intera**; la nota appena usata
+  resta sopra con tutto lo spazio che avanza (intera se ci stanno entrambe); una riga attiva più alta
+  della lista si mostra dalla sua cima. Una nota lunga non lascia più l'attiva mezza nascosta.
+- Il testo delle note va a capo tra le parole e sillaba nella lingua della pagina
+  (`overflow-wrap: break-word; hyphens: auto`), mai tagliando una parola a caso.
 - Un cambio lingua a metà sessione (`rb-lang`) forza un re-render delle righe tradotte.
 
 ---
