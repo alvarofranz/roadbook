@@ -258,6 +258,12 @@ sistema nell'app, Web Share nel browser, download altrimenti) e **Save image**; 
 sul profilo, la card sale con lei (`RBUpload` `type=run_card`) e compare su quella run nel profilo.
 Anche lo **Share** del QR del risultato passa da `RBShareFile`.
 
+Una run **pubblica** ha la sua pagina condivisibile, **`/run/<id>`** (#803, `public/run/index.php`): resa dal server,
+perché i suoi meta Open Graph portino la card come **og:image** (i crawler delle anteprime non eseguono JS).
+Mostra la card e le cifre e porta al profilo (`/u/<user>#run-<id>`) e, se pubblico, al roadbook; una run
+privata o inesistente è un 404. Appena la run è salvata pubblica, *Share* nel report — e sul profilo —
+manda quel link insieme all'immagine.
+
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
 di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →

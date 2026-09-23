@@ -721,7 +721,9 @@
         const cardP = makeCard(report, user);
         const attachCard = async (saved) => {
             const blob = await cardP;
-            if (blob && saved && saved.id) RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
+            if (!blob || !saved || !saved.id) return;
+            await RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
+            if (saved.is_public) cardLink = RBPublicLink('/run/' + saved.id); // from now on Share sends the run's page, its preview being this card (#803)
         };
         const box = $('reportSave');
         const done = (saved) => {
@@ -756,16 +758,16 @@
         });
     }
     // The run card: rendered once per report, shown, shared and saved from the same Blob.
-    let cardBlob = null;
+    let cardBlob = null, cardLink = null;
     async function makeCard(report, user) {
-        cardBlob = null; $('reportCard').hidden = true;
+        cardBlob = null; cardLink = null; $('reportCard').hidden = true;
         try { cardBlob = await RBRunCard.render({ report, roadbook: rb, username: user && user.username }); }
         catch (e) { cardBlob = null; }
         if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCard').hidden = false; }
         return cardBlob;
     }
     const cardName = () => 'rdbk-' + RB.slug((rb.meta && rb.meta.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
-    $('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(), (rb.meta && rb.meta.title) || 'RDBK.app'); };
+    $('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(), [(rb.meta && rb.meta.title) || 'RDBK.app', cardLink].filter(Boolean).join(' ')); };
     $('cardSave').onclick = () => { if (cardBlob) RBDownload(cardBlob, cardName()); };
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => RBShareFile(await (await fetch(lastQrUrl)).blob(), 'RB_' + team + '.png', lastPayload);
