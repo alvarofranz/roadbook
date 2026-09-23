@@ -298,13 +298,13 @@
         if ($('regPass').value !== $('regPass2').value) return msg("Passwords don't match.", false);
         if (!$('regTerms').checked) return msg('You must accept the Terms of Use to register.', false);
         const busy = busySubmit('registerForm');
-        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsTokens.register });
+        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsTokens.register, lang: RBi18n.current() });
         busy.reset();
         msg(r.message || r.error, !!r.ok); if (r.ok) show('vLogin'); else resetTs('register');
     });
     onSubmit('forgotForm', async () => {
         const busy = busySubmit('forgotForm');
-        const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot });
+        const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot, lang: RBi18n.current() });
         busy.reset();
         msg(r.message || r.error, !!r.ok); resetTs('forgot');
     });
@@ -325,7 +325,7 @@
     onSubmit('emailForm', async () => {
         if ($('emNew').value.trim().toLowerCase() !== $('emNew2').value.trim().toLowerCase()) return RBToast("Emails don't match.");
         const busy = busySubmit('emailForm');
-        const r = await api('change_email', { email: $('emNew').value });
+        const r = await api('change_email', { email: $('emNew').value, lang: RBi18n.current() });
         busy.reset();
         RBToast(r.message || r.error);
         if (r.ok) { $('emNew').value = ''; $('emNew2').value = ''; }
@@ -453,6 +453,8 @@
             RBToast(r.ok ? 'Saved.' : r.error);
         };
         initLocPicker(user.default_lat, user.default_lon);
+        // "Choose on the map" from the first-sign-in prompt lands here (#749)
+        if (location.hash === '#defaultLocation') setTimeout(() => $('defaultLocation').scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;

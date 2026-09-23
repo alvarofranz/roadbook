@@ -1129,7 +1129,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* the shared event ranking (#590 · #607 · #608 · #624–#628) and the tools' Help link (#643) */
 Object.assign(window.RBi18nLangs.it, {
-    "Help": "Aiuto",
+    "Help": "Help",
     "Sign in to see this event’s ranking.": "Accedi per vedere la classifica di questo evento.",
     "Only this event’s organizers and active participants can see its ranking.": "Solo gli organizzatori e i partecipanti attivi di questo evento vedono la sua classifica.",
     "This roadbook is not a scored roadbook of this event.": "Questo roadbook non ha punteggio in questo evento.",
@@ -1145,7 +1145,7 @@ Object.assign(window.RBi18nLangs.it, {
     "priv.runs.2": "I report sono <b>privati a meno che tu non scelga diversamente</b>, sul report stesso o nelle impostazioni del profilo. Un report pubblico compare nella tua pagina profilo pubblica (<code>/u/tuo-username</code>) insieme a username, avatar, bio e organizzazione. Il tuo nome reale e la tua email non vi compaiono mai.",
     "priv.runs.3": "Puoi rendere di nuovo privato qualsiasi report o eliminarlo dal tuo profilo in qualunque momento; eliminare l’account li elimina tutti.",
     "Account settings": "Impostazioni account",
-    "Guide": "Guida",
+    
     "View my public profile": "Vedi il mio profilo pubblico",
     "Run reports": "Report dei percorsi",
     "When you finish a roadbook in the Reader, its report can appear on your public profile.": "Quando finisci un roadbook nel Reader, il suo report può comparire nel tuo profilo pubblico.",
@@ -1300,7 +1300,7 @@ Object.assign(window.RBi18nLangs.it, {
     "Delete forever": "Elimina per sempre",
     "Move “{title}” to the trash? You can restore it later.": "Spostare «{title}» nel cestino? Potrai ripristinarlo più tardi.",
     "Delete “{title}” forever? This cannot be undone.": "Eliminare «{title}» per sempre? Non si può annullare.",
-    "Moderate public roadbooks": "Modera i roadbook pubblici",
+    
 });
 
 /* editor Draw adds points with taps (#712) */
@@ -1325,7 +1325,7 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "install.lead": "RDBK è un’app nativa su iPhone, iPad e Android, e una web app installabile sui computer. Una volta installata, si apre dalla schermata home, funziona offline e apre direttamente i file .rdbk. Scegli il tuo dispositivo qui sotto: evidenziamo quello che stai usando.",
     "Get it on Google Play": "Disponibile su Google Play",
-    "Download on the App Store": "Scarica su App Store",
+    "Download on the App Store": "Scarica da App Store",
     "Or install the web app": "Oppure installa la web app",
 });
 
@@ -1374,7 +1374,7 @@ Object.assign(window.RBi18nLangs.it, {
     "See all": "Vedi tutti",
     "Keep your roadbooks and runs, and join events": "Conserva i tuoi roadbook e percorsi, e partecipa agli eventi",
     "Hi": "Ciao",
-    "Download on the": "Scarica su",
+    "Download on the": "Scarica da",
     "Get it on": "Disponibile su",
     "Windows · Mac · Linux: install the web app": "Windows · Mac · Linux: installa la web app",
     "No roadbooks yet — record a route or draw one in the Editor.": "Ancora nessun roadbook: registra un percorso o disegnane uno nell’Editor.",
@@ -1399,4 +1399,27 @@ Object.assign(window.RBi18nLangs.it, {
     "Another user…": "Un altro utente…",
     "Search the activity…": "Cerca nell’attività…",
     "Whose activity?": "L’attività di chi?",
+});
+
+/* 1.9.3 — the Editor's Extras group (#747) and the APK builds list (#742) */
+Object.assign(window.RBi18nLangs.it, {
+    "Extras": "Extra",
+    "Pre-release": "Pre-release",
+    "Built": "Compilato",
+});
+
+/* 1.9.3 release note */
+Object.assign(window.RBi18nLangs.it, {
+    "Polish from the road test": "Rifiniture dopo il test su strada",
+    "Map pins stay visible once the 3D terrain has loaded, and voice notes turn into text again.": "I pin sulla mappa restano visibili quando il rilievo 3D ha finito di caricare, e le note vocali tornano a diventare testo.",
+    "Events list what is coming first, soonest on top, and show which vehicles their roadbooks are for.": "Gli eventi mostrano prima quelli in arrivo, il più vicino in cima, e dicono per quali veicoli sono i loro roadbook.",
+    "Account emails are clear and readable in every mail app, in your language.": "Le email dell’account sono chiare e leggibili in ogni app di posta, nella tua lingua.",
+    "In the note editor the extras sit in their own group, and Help moves to the foot of the profile menu.": "Nell’editor delle note gli extra stanno in un gruppo a parte, e la voce Help passa in fondo al menu del profilo.",
+});
+
+/* first sign-in: ask for the default location (#749) */
+Object.assign(window.RBi18nLangs.it, {
+    "Where do you usually ride?": "Dove giri di solito?",
+    "Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.": "Imposta la tua posizione predefinita: il Recorder e l’Editor aprono la mappa lì finché il GPS non aggancia il segnale. Puoi cambiarla quando vuoi nelle impostazioni dell’account.",
+    "Choose on the map": "Scegli sulla mappa",
 });

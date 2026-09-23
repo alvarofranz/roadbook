@@ -165,10 +165,11 @@ function admin_user_locations(array $user): void {
     ], $st->fetchAll())]);
 }
 
-// Admin: latest APK builds for the /apk/ page (#540). Proxied server-side so the page
-// needs no CSP exception for api.github.com and no client hits the rate limit. Returns the
-// rolling test build (apk-latest prerelease) plus the newest stable release carrying an APK.
-function admin_apk_latest(array $user): void {
+// Every Android build with an APK, newest first (#742): the rolling test build (tag apk-latest,
+// rebuilt on every push to main) and the versioned releases, each with the moment its APK was
+// built (the asset's upload time), its size and — for the recent ones — its SHA-256. Resolved
+// server-side, so the page needs no CSP exception and never hits the GitHub rate limit.
+function admin_apk_builds(array $user): void {
     $ctx = stream_context_create(['http' => [
         'method' => 'GET', 'timeout' => 8, 'ignore_errors' => true,
         'header' => "User-Agent: RDBK-app\r\nAccept: application/vnd.github+json",
@@ -176,48 +177,33 @@ function admin_apk_latest(array $user): void {
     $raw = @file_get_contents('https://api.github.com/repos/alvarofranz/roadbook/releases?per_page=20', false, $ctx);
     $releases = $raw ? json_decode($raw, true) : null;
     if (!is_array($releases)) fail('Could not reach the release list.');
-    $pick = function ($rel) {
-        foreach ((array)($rel['assets'] ?? []) as $a) {
-            if (isset($a['name']) && preg_match('/\.apk$/i', (string)$a['name'])) return $a;
-        }
-        return null;
-    };
-    $slim = function ($rel, $apk) use ($ctx) {
-        $sha = '';
-        foreach ((array)($rel['assets'] ?? []) as $a) {
-            if (isset($a['name']) && preg_match('/\.sha256$/i', (string)$a['name']) && !empty($a['browser_download_url'])) {
-                $t = @file_get_contents($a['browser_download_url'], false, $ctx);
-                if (is_string($t) && preg_match('/^[0-9a-f]{64}/i', trim($t), $m)) $sha = strtolower($m[0]);
-                break;
-            }
-        }
-        return ['tag' => (string)($rel['tag_name'] ?? ''), 'prerelease' => !empty($rel['prerelease']),
-            'published' => (string)($rel['published_at'] ?? ''), 'name' => $apk['name'],
-            'url' => $apk['browser_download_url'], 'size' => (int)($apk['size'] ?? 0), 'sha256' => $sha];
-    };
-    $rolling = null; $stable = null;
+    $builds = [];
     foreach ($releases as $rel) {
-        if (!is_array($rel)) continue;
-        $apk = $pick($rel);
+        if (!is_array($rel) || !empty($rel['draft'])) continue;
+        $apk = null; $shaUrl = '';
+        foreach ((array)($rel['assets'] ?? []) as $a) {
+            $name = (string)($a['name'] ?? '');
+            if (!$apk && preg_match('/\.apk$/i', $name)) $apk = $a;
+            if (preg_match('/\.sha256$/i', $name)) $shaUrl = (string)($a['browser_download_url'] ?? '');
+        }
         if (!$apk) continue;
-        if (($rel['tag_name'] ?? '') === 'apk-latest' && !$rolling) $rolling = $slim($rel, $apk);
-        elseif (empty($rel['prerelease']) && empty($rel['draft']) && !$stable) $stable = $slim($rel, $apk);
-        if ($rolling && $stable) break;
+        $builds[] = ['tag' => (string)($rel['tag_name'] ?? ''), 'test' => ($rel['tag_name'] ?? '') === 'apk-latest',
+            'prerelease' => !empty($rel['prerelease']), 'built_at' => (string)($apk['updated_at'] ?? $rel['published_at'] ?? ''),
+            'url' => (string)$apk['browser_download_url'], 'size' => (int)($apk['size'] ?? 0), 'sha_url' => $shaUrl];
     }
-    json_out(['ok' => true, 'rolling' => $rolling, 'stable' => $stable]);
+    usort($builds, fn($x, $y) => strcmp($y['built_at'], $x['built_at']));
+    foreach ($builds as $i => &$b) { // the checksum of the recent ones (each is one more fetch)
+        $b['sha256'] = '';
+        if ($i < 5 && $b['sha_url'] !== '') {
+            $t = @file_get_contents($b['sha_url'], false, $ctx);
+            if (is_string($t) && preg_match('/^[0-9a-f]{64}/i', trim($t), $m)) $b['sha256'] = strtolower($m[0]);
+        }
+        unset($b['sha_url']);
+    }
+    unset($b);
+    json_out(['ok' => true, 'builds' => $builds]);
 }
 
-// Moderation: every public roadbook with its owner, so an admin can review the public site.
-function admin_public_roadbooks(array $user): void {
-    $rows = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.updated_at, u.username
-        FROM roadbooks r JOIN users u ON u.id = r.user_id
-        WHERE r.status = 'public' ORDER BY r.updated_at DESC")->fetchAll();
-    $list = array_map(fn($r) => [
-        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'username' => $r['username'],
-        'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'], 'updated_at' => $r['updated_at'],
-    ], $rows);
-    json_out(['ok' => true, 'roadbooks' => $list]);
-}
 
 // Moderation: pull any roadbook out of public (admin, regardless of owner). It drops back to
 // 'ready' (private but complete) — the content is untouched, only its public visibility.

@@ -91,7 +91,7 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 
 **Admin** (`auth.php` — tutte `require_admin()`): `admin_users`, `admin_set_role`,
 `admin_verify`, `admin_block`, `admin_update`, `admin_create`, `admin_delete`, `admin_activity`,
-`admin_settings`/`admin_save_settings`, `admin_logs`, `admin_activity_log`, `admin_roadbooks`, `admin_unpublish`,
+`admin_settings`/`admin_save_settings`, `admin_logs`, `admin_activity_log`, `admin_unpublish`, `admin_apk_builds`,
 `admin_user_roadbooks`, `admin_set_status`, `admin_move_roadbook`, `admin_user_locations` (utenti con
 posizione per la mappa, #499), `org_suggest`,
 `admin_trash_list`/`admin_rb_trash`/`admin_rb_restore`/`admin_rb_purge`/`admin_trash_purge_expired`
@@ -409,9 +409,12 @@ vocali non passano da qui: l'audio è conservato tal quale.
 
 [`send_mail`](../app/mail.php#L3) invia HTML tramite la **SendGrid v3 API** (cURL, Bearer
 key). Se la chiave non è configurata logga e ritorna `false` (in locale le mail semplicemente
-non partono, il resto funziona). [`mail_html`](../app/mail.php#L28) e
-[`mail_button`](../app/mail.php#L36) compongono il template brandizzato; il bottone fa
-`htmlspecialchars` sull'URL.
+non partono, il resto funziona). [`mail_account`](../app/mail.php) compone le tre mail
+dell'account (`verify` · `reset` · `change`) in **un solo template a tabelle con stili inline** —
+l'unico HTML che Gmail, Outlook, Apple Mail e Windows Mail rendono uguale (#748): card chiara col
+logo, bottone "bulletproof", link di riserva e footer. I testi stanno in `MAIL_TEXT`, nelle cinque
+lingue della UI: la mail parla la lingua in cui l'utente sta usando il sito (`lang` mandato dal
+client, poi `users.ui_lang`, fallback inglese); la registrazione salva quella lingua in `ui_lang`.
 
 ---
 
@@ -483,7 +486,7 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **CSP + header di sicurezza:** `public/.htaccess` invia una `Content-Security-Policy` che
   **vieta gli script inline** (il sito non ne ha — l'unico bootstrap è in
   `assets/js/native-detect.js`) e ammette solo gli origin realmente usati (MapLibre da unpkg,
-  transformers.js/Whisper da jsdelivr + Hugging Face, Google Sign-In, Sign in with Apple
+  transformers.js/Whisper da jsdelivr + Hugging Face (`huggingface.co` e la CDN `*.hf.co` su cui redirige il download del modello, #746), Google Sign-In, Sign in with Apple
   (`appleid.cdn-apple.com` per lo script, `appleid.apple.com` per connect/frame), Turnstile, i
   tile delle mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,
