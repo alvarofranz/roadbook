@@ -1,7 +1,7 @@
 /* RDBK.app i18n — FR translations. Loaded before i18n.js. */
 (window.RBi18nLangs = window.RBi18nLangs || {}).fr = {
             'Signing you in…': 'Connexion en cours…',
-            'Sign in to read this roadbook.': 'Connectez-vous pour lire ce roadbook.', 'Sign in to read public roadbooks.': 'Connectez-vous pour lire les roadbooks publics.',
+            
             'seo.home.title': 'RDBK.app — roadbooks numériques pour vos aventures', 'seo.home.desc': 'Créez, naviguez, validez et classez des roadbooks pour toute aventure. PWA gratuite et le format ouvert .rdbk.',
             'seo.about.title': 'Qui sommes-nous — RDBK.app', 'seo.about.desc': 'Les personnes et la mission derrière RDBK.app — des outils gratuits de roadbooks numériques et le format ouvert .rdbk pour chaque aventure.',
             'seo.changelog.title': 'Nouveautés — RDBK.app', 'seo.changelog.desc': 'Chaque version de RDBK.app et ce qui a changé, de la plus récente.', 'Full changelog': 'Journal complet',
@@ -1451,4 +1451,9 @@ Object.assign(window.RBi18nLangs.fr, {
     "The note map draws just the road still to drive, in one yellow line.": "La carte de la note trace seulement la route qu’il reste à faire, en une ligne jaune.",
     "Roadbooks show how many times they were completed and who did it, and the roadbook page has a Comments button and a cleaner header on the phone.": "Les roadbooks montrent combien de fois ils ont été terminés et par qui, et la page du roadbook a un bouton Commentaires et un en-tête plus net sur le téléphone.",
     "Sharing a finished run asks before making it public, and says it with a smile.": "Partager un parcours terminé demande avant de le rendre public, et le dit avec le sourire.",
+});
+
+/* public roadbooks are public (#884) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Sign in to comment": "Connecte-toi pour commenter",
 });

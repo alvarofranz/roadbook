@@ -40,7 +40,7 @@
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map
     let lastHere = null, lastAcc = null;     // last TRUSTED position + its accuracy — what every distance is measured from
     let lastPayload = '', lastQrUrl = '';
-    let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
+    let meUser = null; // signed in: the reports go up to the profile (a public roadbook opens for anyone, #884)
     let rbSlug = ''; // the server roadbook's slug (none for a file): the event lookup and the result QR's rb prefix
     // Which roadbook this visit is FOR, if any (the friendly slug, ?rb= or ?admin_rb=). The run
     // checkpoint records it, so a later visit can tell "resume this very run" from "you asked for
@@ -69,7 +69,6 @@
     RBChallenges.gallery({ grid: $('readerGallery'), pager: $('readerPager'), search: $('readerSearch'), href: (r) => RBChallenges.ROOT + 'reader/' + encodeURIComponent(r.slug) });
     $('previewBack').onclick = () => { location.href = RBChallenges.ROOT + 'reader/'; }; // back to the load screen (#638)
     // "Open from My roadbooks": shown only when signed in; a picker of the user's saved roadbooks.
-    // #146: the same config load also tells us whether public roadbooks may be opened at all.
     // RBConfig: offline, a signed-in user is still signed in (#630).
     let evCtx = null;
     const cfgReady = RBConfig().then((c) => { meUser = !!c.user; if (meUser) $('pickMine').hidden = false; evCtx = c.participant || null; });
@@ -98,7 +97,7 @@
     // Resume an interrupted run first; otherwise fall back to a challenge passed
     // in the URL, then to rescuing an orphaned GPX recording.
     (async function () {
-        await cfgReady; // #146: know sign-in state before deciding to open a public roadbook
+        await cfgReady;
         RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
         let session = RBCheckpoint.read(SESSION_KEY);
         let savedRb = null;
@@ -113,7 +112,6 @@
         const adminRbId = +(new URLSearchParams(location.search).get('admin_rb') || 0); // admins: open any user's roadbook (admin panel "View")
         const loadFromUrl = () => {
             if (pub) {
-                if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
                 RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook, j.id, j.slug); if (eventSlug) openStartDialog(); }).catch(() => toast('Could not load the roadbook.'));
             } else if (rbId > 0) {
                 RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook, j.id, j.slug); if (eventSlug) openStartDialog(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));

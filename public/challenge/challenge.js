@@ -2,7 +2,8 @@
 /* Public roadbook page: /challenge/<slug>. The roadbook's notes in the same paper rows as the
  * Reader (NoteCanvas.rowsHTML, #635), its route map, the owner (linked to their public profile),
  * Navigate (Reader), PDF export and, for the owner, Edit, and — on a public roadbook — its public
- * comments (#809). Reading requires a signed-in account (#146). */
+ * comments (#809). A public roadbook is public: anyone reads, exports and navigates it (#884); only
+ * commenting needs an account. */
 (async function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
@@ -14,7 +15,6 @@
 
     // RBConfig, not a bare config call: offline, a signed-in reader is still signed in (#630)
     const cfg = await RBConfig();
-    if (!cfg.user) { $('chLoading').textContent = t('Sign in to read this roadbook.'); RBNeedAuth('Sign in to read public roadbooks.'); return; }
     let j;
     try { j = await RBChallenges.loadPublic(slug); }
     catch (e) { $('chLoading').textContent = t(e.message === 'Network error.' ? 'You are offline — reconnect to load this page.' : 'This roadbook does not exist or is private.'); return; }
@@ -79,8 +79,13 @@
         const COMMENT_MAX = 2000;
         const list = $('chCommentList'), body = $('chCommentBody');
         let comments = [];
-        const turnstile = RBTurnstile($('chCommentTs'), cfg.turnstile);
-        if (cfg.user.avatar) $('chMeAvatar').src = RBMediaSrc(cfg.user.avatar);
+        // reading them needs nothing; writing one needs an account — signed out, the form is a sign-in link
+        const turnstile = cfg.user ? RBTurnstile($('chCommentTs'), cfg.turnstile) : null;
+        if (cfg.user) { if (cfg.user.avatar) $('chMeAvatar').src = RBMediaSrc(cfg.user.avatar); }
+        else {
+            $('chCommentForm').hidden = true;
+            $('chCommentSignIn').hidden = false; $('chCommentSignIn').href = RBLoginUrl();
+        }
         const commentHTML = (c) => {
             const profile = RBProfileLink(c.username);
             return `<article class="comment" data-id="${c.id}">

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0e1116">
     <title>Public roadbook · RDBK.app</title>
     <meta name="description" content="A public digital roadbook on RDBK.app — sign in to read it, navigate it with GPS or export a PDF.">
-    <meta name="robots" content="noindex">
+    <meta name="robots" content="index, follow">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="RDBK.app">
     <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
@@ -81,6 +81,7 @@
         <section class="ch-comments" id="chComments" hidden>
             <h2><i class="fa-solid fa-comments icon-accent"></i> <span data-i18n="Comments">Comments</span> <span class="muted" id="chCommentCount"></span></h2>
             <div class="comment-list" id="chCommentList"></div>
+            <a class="btn btn-ghost" id="chCommentSignIn" hidden><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="Sign in to comment">Sign in to comment</span></a>
             <form class="comment-form" id="chCommentForm">
                 <img id="chMeAvatar" class="avatar avatar-sm" src="/assets/icon.svg" alt="">
                 <div class="grow">
