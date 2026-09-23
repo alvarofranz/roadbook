@@ -26,7 +26,7 @@ Come la **home** mostra i roadbook pubblici e come ogni roadbook ottiene la sua 
 La sezione "Public roadbooks" della home è un **teaser**: i 6 roadbook pubblici più recenti.
 La lista completa con ricerca + paginazione vive in `/roadbooks` ([challenges](challenges.md)).
 
-Flusso ([home.js:65](../public/assets/js/home.js#L65)):
+Flusso ([home.js](../public/assets/js/home.js)):
 1. `RBChallenges.listPublic()` → `public_list` dell'API restituisce i roadbook pubblici
    (`WHERE status = 'public' AND slug IS NOT NULL`, ordinati per `updated_at`, max 60) con per
    ciascuno `slug · title · total_distance · note_count · username · thumb`.
@@ -62,14 +62,14 @@ seguito da `toBlob`:
 3. Scarica le tile che coprono il box (`crossOrigin = 'anonymous'`) e le disegna sul canvas; poi
    disegna la rotta (alone scuro sotto per contrasto + tratto rosso sopra), i pallini
    **start (verde) / finish (rosso)** e il credito "© OpenStreetMap, CyclOSM".
-4. `canvas.toBlob(...,'image/png')` → `Blob` ([cover-map.js:61](../public/assets/js/cover-map.js#L61)).
+4. `canvas.toBlob(...,'image/png')` → `Blob` ([cover-map.js](../public/assets/js/cover-map.js)).
    Ritorna `null` per traccia mancante/degenere (un solo punto) o se l'export fallisce.
 
 Le tile CyclOSM/ESRI rispondono con `Access-Control-Allow-Origin: *`, quindi il canvas **non si
 "taint-a"** e l'export funziona.
 
-**Innesco** ([editor.js:964](../public/editor/editor.js#L964)): dopo un `Save to profile`
-riuscito (`r.ok && currentRbId > 0`, [editor.js:960](../public/editor/editor.js#L960)),
+**Innesco** ([editor.js](../public/editor/editor.js)): dopo un `Save to profile`
+riuscito (`r.ok && currentRbId > 0`, [editor.js](../public/editor/editor.js)),
 `updateCover()` genera il PNG e lo carica con `RBUpload({ type: 'cover', roadbook })`. È
 **best-effort e non bloccante**: se la cattura o l'upload falliscono, il salvataggio non ne
 risente — la card userà semplicemente il fallback.
@@ -80,11 +80,11 @@ La cover **non** è uno storage a parte: è una **voce riservata della galleria 
 roadbook, identificata da **`sort = -1`** e con **nome file casuale** (#206: le mappe dei
 roadbook privati non devono essere enumerabili), rigenerata a ogni salvataggio.
 
-- **Upload** ([upload.php:73](../public/api/upload.php#L73), `type=cover`): verifica la
+- **Upload** ([upload.php](../public/api/upload.php), `type=cover`): verifica la
   proprietà del roadbook, ricomprime il PNG in AVIF (`process_to_avif`, max 1200px) su
   `photos/<id>/<random>.avif`, e fa l'**upsert** della sola riga `roadbook_photos` a
   `sort = -1` (il file della cover precedente viene eliminato).
-- **Miniatura** (`public_list`, [roadbooks.php:209](../app/roadbooks.php#L209)): la subquery del
+- **Miniatura** (`public_list`, [roadbooks.php](../app/roadbooks.php)): la subquery del
   `thumb` ordina `sort, id` → con `sort = -1` la cover è **sempre** la prima, quindi la
   miniatura. Senza cover ricade sulla prima foto reale.
 - **Esclusa dalla galleria**: `ph_list` (solo per chi edita il roadbook) filtra `sort >= 0`, così

@@ -1,163 +1,125 @@
 # Reader — Ein Roadbook mit GPS navigieren
 
-Der **Reader** ist der digitale Beifahrer: er lädt ein roadbook und verwandelt es in eine papierähnliche Notiz-Tabelle, die vom GPS geführt wird. Odometer, CAP-Kompass, automatische oder manuelle Validierung und — im Competition-Modus — ein signierter QR-Code mit dem Ergebnis.
+Der **Reader** ist der digitale Beifahrer: Er lädt ein Roadbook und macht daraus eine Notentabelle im Papierstil, gesteuert vom GPS. Kilometerzähler, die entlang der Route messen, automatische oder manuelle Validierung, ein Bericht am Ende der Fahrt und — im Wettbewerb einer Veranstaltung — ein signiertes Ergebnis für die Rangliste.
 
-> Funktioniert zu 100 % offline für Navigation und Validierung. Eine Verbindung wird nur benötigt für: Login, Laden eines roadbook aus dem Profil/der öffentlichen Galerie, Speichern von Ergebnissen.
+> Navigation und Validierung funktionieren zu 100 % offline. Eine Verbindung braucht es nur zum Anmelden, zum Laden eines Roadbooks aus dem Profil oder der öffentlichen Galerie und zum Speichern des Berichts.
 
 ---
 
 ## 1. Ein Roadbook laden
 
-Öffne den Reader (`/reader/`) — der Startbildschirm bietet 3 Eingänge:
+Öffne den Reader (`/reader/`). Der Startbildschirm bietet:
 
-| Eingang | Vorgehen | Was passiert |
-|----------|-----------|--------------|
-| **Carica file `.rdbk`** | Tap „Carica .rdbk" → Datei wählen | Importiert vollständiges roadbook (Spur + Notizen + Icons) |
-| **I tuoi roadbook** | Tap „I tuoi roadbook" (nur wenn angemeldet) | Picker der auf deinem Profil gespeicherten roadbook |
-| **Roadbook pubblici** | Tap „Roadbook pubblici" | Picker der öffentlichen challenge der Galerie |
+| Einstieg | Was passiert |
+|----------|--------------|
+| **.rdbk-Datei laden** | Importiert ein vollständiges Roadbook (Track + Noten + Symbole) |
+| **Aus Meine Roadbooks öffnen** | Wählt eines der in deinem Profil gespeicherten Roadbooks (angemeldet) |
+| **Öffentliche Galerie** | Die öffentlichen Roadbooks, direkt darunter: tippe eines an, um es zu öffnen |
 
-**Per URL** (automatisch):
-- `/reader/<slug>` → lädt öffentliches roadbook direkt
-- `?rb=<id>` → lädt ein deiner gespeicherten roadbook per ID
+**Über einen Link**: `/reader/<slug>` öffnet ein öffentliches Roadbook, `?rb=<id>` eines deiner eigenen.
 
-> Um ein öffentliches roadbook zu öffnen, musst du angemeldet sein.
+> Um ein öffentliches Roadbook zu öffnen, musst du angemeldet sein.
+
+Ein Roadbook öffnet sich zuerst als **schreibgeschützte Vorschau**: die Notenliste, ohne GPS. Vielleicht willst du es nur ansehen. Tippe auf **Navigieren**, um zu starten.
 
 ---
 
-## 2. Wähle den Navigationsmodus
+## 2. Eine Fahrt starten
 
-Nach dem Laden öffnet sich das Start-Modal mit diesen Optionen:
+**Navigieren** öffnet den Startdialog:
 
 | Option | Beschreibung |
-|---------|-------------|
-| **Registra GPX** | Speichert die GPS-Spur der Navigation (crash-sicher) |
-| **Suono su nota** | Kurzer Beep, wenn eine Note validiert wird |
+|--------|--------------|
+| **GPX-Track aufzeichnen** | Zeichnet den GPS-Track der Fahrt auf (absturzsicher) |
+| **Ton bei Note** | Eine Glocke bei jeder validierten Note, eine Fanfare bei der letzten. Sie spielt über deiner Musik, statt sie anzuhalten |
+| **Externe Fernbedienung** | Weiterschalten mit einem Bluetooth-Pedal oder -Klicker (siehe §4) |
 
-Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöffnet wird, die es **wertet**, wird als **Wettbewerb** gefahren (Fahrzeugnummer wird abgefragt, Strafpunkte gelten, das signierte Ergebnis geht in die Wertung); alles andere ist eine **freie Fahrt**. Jede Fahrt endet mit ihrem **Bericht** (erreichte Notizen, eingehaltene Limits, Zeit, Distanz), privat oder in deinem öffentlichen Profil.
+Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöffnet wird, die es **wertet**, läuft als **Wettbewerb** (deine Fahrzeugnummer wird abgefragt, Strafen gelten, das signierte Ergebnis geht in die Rangliste der Veranstaltung); alles andere läuft als **Tour**.
 
 ---
 
 ## 3. Der Navigationsbildschirm
 
-```
-┌─────────────────────────────────────────┐
-│ Titolo roadbook                          │
-│ Totale: 12.34 km  |  Parziale: 0.56 km  │
-│ Bussola: 045° ↗  |  GPS: ±3m 🟢         │
-├─────────────────────────────────────────┤
-│ #  │ Vignette │ Indicazioni   │ [Mappa] │
-│ 1  │  ┌───┐   │ Svolta a dx   │  [☗]   │
-│    │  │ ╱  │   │ CAP 045°     │         │
-│    │  └───┘   │ Asfalto       │         │
-│─── │───────── │────────────── │─────────│
-│ 2  │  ┌───┐   │ Dritto        │  [☗]   │
-│    │  │ ↑  │   │ Sterrato      │         │
-│    │  └───┘   │               │         │
-│    │   ✅     │ RAGGIUNTA     │         │
-├─────────────────────────────────────────┤
-│              [⏸ Pausa] [🏁 Fine]         │
-└─────────────────────────────────────────┘
-```
+Der Reader belegt den ganzen Bildschirm:
 
-### Elemente des Bildschirms
+1. **Kilometerzähler-Leiste** oben: Titel, Gesamt (*Prog.*) über Teilstrecke (*Teil.*), Kurs, Uhrzeit, GPS-Status und Geschwindigkeit
+2. **Notenliste**: eine Zeile pro Note, in drei Spalten — Gesamt- und Teildistanz mit der Notennummer (und ihrem Wegpunkttyp, falls vorhanden) · die Vignette · Text, CAP, Tempolimit und Koordinaten
+3. **Aktionsleiste** unten: Schalter **Auto** · **Karte zur Note** · **Pause** · GPX · **Fertig** · **Beenden**
 
-1. **Odometer-Leiste** (sticky oben): Titel, Gesamt, Teil, CAP-Kompass, Uhrzeit, GPS-Status, Akku
-2. **Notiz-Tabelle**: jede Note in einer Zeile mit Distanz, Tulpen-Vignette, Text, CAP, Straßentyp
-3. **Notiz-Zustände**: ✅ Raggiunta (erreicht, grün) · ⏭ Saltata (übersprungen, rosa) · ▶ Attiva (aktiv, roter Rand) · weiß (zukünftig). Die aktive Note wird zudem **blau, während du dich näherst**, und zeigt die verbleibenden Meter
-4. **Spalten**: Distanzen + Nummer | Vignette | Hinweise — zum Validieren tippt man die ganze aktive Zeile an
+Notenzustände: **erreicht** (grün) · **übersprungen** (rosa) · **aktiv** (roter Rand) · ausstehend (weiß). Beim Annähern an die aktive Note wird sie **blau** und zeigt die verbleibende Distanz, in km mit zwei Nachkommastellen.
+
+Wird eine Note validiert, rückt die nächste **ganz nach oben** in der Liste: Die Straße vor dir bekommt den ganzen Platz.
+
+### Distanzen entlang der Route
+Die verbleibende Distanz wird **entlang der Straße** gemessen, wie die Teilstrecken des Roadbooks selbst, nicht in Luftlinie: Gefahrene Teilstrecke plus verbleibende Distanz ergibt immer die Teilstrecke der Note. Bei jedem Notenwechsel werden beide Kilometerzähler auf der Route neu verankert, sodass die Teilstrecke genau an der Note 0.00 zeigt.
 
 ---
 
-## 4. Fortschritt: automatisch vs. manuell
+## 4. Fortschritt: automatisch oder manuell
 
 ### Automatisch (Standard)
-Sobald du in den **Validierungsradius** der aktiven Note fährst, wird die Note automatisch als erreicht markiert.
+Die aktive Note wird validiert, sobald du in ihren **Validierungsradius** fährst.
 
-- Der Radius ist adaptiv: hängt vom `wp_radius` der Note ab, mit einem Maximum, das Überlappungen vermeidet, und einem Minimum oberhalb des GPS-Rauschens (18 m)
-- Geprüft wird der **zwischen zwei GPS-Positionen gefahrene Weg**, nicht nur die Positionen selbst: bei Tempo bewegt sich das Telefon 25 m zwischen zwei Fixes, ein enger Wegpunkt läge sonst genau dazwischen und würde nie validieren
-- Eine Position, bei der sich das Telefon unsicher ist (schlechte Genauigkeit), wird ignoriert statt verwendet — sie validiert keine Note und zählt keine Kilometer
-- Ein/Aus schalten mit dem Schalter **Auto** in der Leiste
+- Der Radius kommt von der Note (`wp_radius`), dann vom Standard des Roadbooks, dann von ihrem Wegpunkttyp, sonst 30 m; er fällt nie unter 18 m, über dem GPS-Rauschen
+- Geprüft wird die **gefahrene Strecke zwischen zwei GPS-Fixes**, nicht nur die Fixes: Bei Tempo bewegt sich ein Handy 25 m zwischen zwei Positionen, und ein enger Wegpunkt würde sonst dazwischen durchrutschen
+- Eine Position, bei der sich das Handy nicht sicher ist (schlechte Genauigkeit), wird ignoriert: Sie kann weder eine Note validieren noch Distanz hinzufügen
 
 ### Manuell
-Tippe **irgendwo auf die Zeile der aktiven Note**, oder auf „Raggiunta", oder auf Validieren — alle drei tun dasselbe (die ganze Zeile ist das Ziel, damit du unterwegs keinen kleinen Button treffen musst).
+Schalte **Auto** aus: Dann markiert ein Tippen **irgendwo auf die Zeile der aktiven Note** sie als erledigt (das Ziel ist die ganze Zeile, kein kleiner Knopf, den man in Fahrt treffen muss). Mit Auto an validiert nur das GPS.
 
-- Im Trip: markiert grün und synchronisiert den Odometer
-- In Competition: validiert mit Punktestand (du musst innerhalb von 100 m zur Note sein, plus dem Spielraum, den die Genauigkeit deines GPS braucht)
-- Ein Tap auf eine **andere** Note setzt den Lauf dorthin und fragt vorher nach: die Noten dazwischen bleiben unbestätigt, und in Competition kostet jede übersprungene gewertete Note 450 Punkte
-- In Competition kann man nicht zu einer bereits validierten Note zurück
+- Im Wettbewerb verlangt eine manuelle Validierung, dass du höchstens 100 m von der Note entfernt bist, plus den Spielraum, den deine GPS-Genauigkeit braucht
+- Ein Tippen auf eine **andere** Note verlegt die Fahrt dorthin und fragt vorher: Die Noten dazwischen bleiben unvalidiert, und im Wettbewerb kostet jede übersprungene gewertete Note 450 Punkte
+- Im Wettbewerb kannst du nicht zu einer bereits validierten Note zurück
 
 ### Freihändig mit einer externen Fernbedienung
-Aktiviere **Externe Fernbedienung (Pedal / Clicker)** in der Modusauswahl, um ohne Bildschirmberührung weiterzuschalten.
+Hake im Startdialog **Externe Fernbedienung** an, um weiterzuschalten, ohne den Bildschirm zu berühren.
 
-- Ein Bluetooth-**Blätterpedal**, ein Kamera-Clicker oder eine Präsentations-Fernbedienung koppelt sich als Tastatur: nichts zu konfigurieren, funktioniert offline, im Browser wie in der App
-- **Weiter**: → · ↓ · Page ↓ · Space · Enter — **Zurück**: ← · ↑ · Page ↑ (nur im Trip-Modus; in Competition lässt sich eine validierte Note nicht zurücknehmen)
-- Ein Fußpedal lässt beide Hände am Lenkrad; ein Clicker am Lenker passt für Motorrad und Fahrrad
-- Die Einstellung bleibt auf dem Gerät gespeichert, und Tasten werden ignoriert, während du tippst oder ein Dialog offen ist
-
----
-
-## 5. CAP-Leiste (zwischen zwei Notizen)
-
-Wenn die vorige Note ein CAP hat, erscheint unten eine Leiste mit:
-- **Rotta da tenere** (Kurs zu haltend)
-- **Velocità corrente** (aktuelle Geschwindigkeit)
-- **Distanza alla destinazione** (Distanz zum Ziel)
-- **Freccia direzionale** (Richtungspfeil)
-
-Es ist eine „Kompass"-Hilfe, um zwischen zwei Notizen zu navigieren, ohne sich zu verlieren.
+- Ein Bluetooth-**Blätterpedal**, ein Kamera-Klicker oder ein Präsentations-Presenter koppelt sich als Tastatur: nichts einzurichten, funktioniert offline, im Browser und in der App
+- **Weiter**: → · ↓ · Bild ↓ · Leertaste · Enter — **Zurück**: ← · ↑ · Bild ↑ (nur auf Tour: Im Wettbewerb lässt sich eine validierte Note nicht rückgängig machen)
+- Die Einstellung wird auf dem Gerät gespeichert, und Tasten werden ignoriert, während du tippst oder ein Dialog offen ist
 
 ---
 
-## 6. Interaktive Karte pro Note
+## 5. Karte zur Note
 
-Optional (nur wenn das Roadbook die Karte erlaubt): der Karten-Button in der unteren Leiste öffnet eine Mini-Karte unter der aktiven Note; ein weiterer Tap schließt sie.
+Nur wenn das Roadbook eine Karte erlaubt: **Karte zur Note** in der Aktionsleiste öffnet eine Minikarte unter der aktiven Note; tippe erneut, um sie zu schließen.
 
-- Zentriert auf die Note bei Zoom ~13
-- Zeigt die gesamte Spur + Pin für Kontext
-- Blauer GPS-Punkt in Echtzeit
-- Oben links: Nummer der Note und verbleibende Distanz
-- Wird die Note validiert, wechselt die Karte geöffnet zur nächsten Note
-
-> Die Karte pro Note ist nützlich, um die Position im Gelände zu bestätigen, wenn der Notiz-Text mehrdeutig ist.
+- Sie zeigt den Track, deine Live-Position und in der Ecke die Notennummer mit der verbleibenden Distanz
+- **Eine gelbe Linie** führt dich: die noch zu fahrende Straße bis zur Note
+- Wird die Note validiert, folgt dir die Karte zur nächsten
 
 ---
 
-## 7. Zusatzfunktionen
+## 6. Pause, fertig, beenden
 
-| Funktion | Bedienung |
-|----------|-------------|
-| **Correzione odometro** | Nudge ±10 m bei Bedarf; Validieren einer Note synchronisiert das Gesamt mit der Distanz dieser Note |
-| **Pausa** | Stoppt GPS und Wake-Lock zum Akku-Sparen (Mittagspausen, Wartezeiten) |
-| **Sound on note** | Kurzer WebAudio-Beep, wenn eine Note validiert wird (auto oder manuell) |
-| **Registrazione GPX** | Crash-sicher: Checkpoint bei jedem Fix, Wiederherstellung, wenn die App schließt |
-| **Recupero sessione** | Wenn unterbrochen (Anruf, Absturz), wird exakt dort fortgesetzt, wo du warst |
-| **Cambio lingua** | Sprache mitten in der Sitzung ändern ohne Datenverlust |
+| Knopf | Was er tut |
+|-------|------------|
+| **Pause** | Stoppt das GPS und die Bildschirmsperre-Verhinderung, um Akku zu sparen (eine Mittagspause); die Kilometerzähler laufen in der Pause nicht weiter |
+| **Fertig** | Schließt die Fahrt ab und öffnet ihren Bericht. Vor der letzten Note fragt er vorher: Nicht erreichte Noten zählen als übersprungen |
+| **Beenden** (das Ausgangssymbol) | Verlässt die Fahrt ohne Bericht, nach einer Bestätigung |
 
 ---
 
-## 8. In Competition — QR-Ergebnis
+## 7. Der Fahrtbericht
 
-Im Competition-Modus wird am Ende der Navigation ein **HMAC-signierter QR-Code** (55 Zeichen) erzeugt, der enthält:
-- Vollständiges Ergebnis: Strafen, Zeiten, Geschwindigkeiten
-- Signiert gegen den Server (nicht fälschbar)
+Jede Fahrt endet mit ihrem **Bericht**: erreichte und übersprungene Noten, Tempolimit-Zonen, Zeit und Distanz. Oben steht deine Fahrtkarte, darunter **Teilen** und ein einziger Schalter, um die Fahrt **Privat** zu halten oder **Öffentlich** zu machen (sichtbar auf deinem Profil `/u/<username>`). Teilen, bevor du gewählt hast, fragt vorher, denn Teilen macht die Fahrt öffentlich.
 
-Den QR-Code an den Veranstalter für die Klassifizierung (Ranking) übergeben.
+Der Bericht wird zuerst auf dem Gerät gespeichert und hochgeladen, sobald eine Verbindung besteht.
 
----
-
-## 9. Wiederherstellung einer unterbrochenen Sitzung
-
-Beim Start prüft der Reader in dieser Reihenfolge:
-1. **Sessione in corso** in `localStorage` → schlägt Fortsetzung vor
-2. **Roadbook da URL** → lädt es direkt
-3. **GPX orfano** → schlägt Spur-Wiederherstellung vor
-4. **Niente** → startet sauber
-
-> Die Fortsetzung abzulehnen **löscht die Sitzung nicht**: sie wird nur überschrieben, wenn du eine neue Fahrt startest oder explizit beendest.
+### Im Wettbewerb — das signierte Ergebnis
+Eine Wettbewerbsfahrt erzeugt zusätzlich ein **HMAC-signiertes Ergebnis** (einen QR-Code zum Teilen oder Herunterladen) und geht in die gemeinsame Rangliste der Veranstaltung ein, wo die Organisatoren es prüfen.
 
 ---
 
-## 10. Nächster Schritt
+## 8. Eine unterbrochene Sitzung wiederherstellen
 
-Du hast die Navigation abgeschlossen? → [Tripmaster: GPS-Bordcomputer →](05-tripmaster.md)  
-Du möchtest ein roadbook erstellen? → [Editor: erstellen/bearbeiten →](03-editor.md)
+Die Fahrt sichert sich selbst auf dem Gerät. Wird sie unterbrochen (ein Anruf, ein Absturz, das Handy schließt die App), fragt der Reader beim nächsten Besuch **Laufende Fahrt fortsetzen?** und macht genau dort weiter, wo du warst. Ein laufender GPX-Mitschnitt wird genauso wiederhergestellt.
+
+> Ablehnen löscht nichts, und die Frage kommt für diese Fahrt nicht wieder. Sie wird nie gestellt, wenn der Link ein anderes Roadbook nennt.
+
+---
+
+## 9. Nächster Schritt
+
+Fertig mit dem Navigieren? → [Tripmaster: GPS-Bordcomputer →](05-tripmaster.md)
+Willst du ein Roadbook erstellen? → [Editor: erstellen/bearbeiten →](03-editor.md)

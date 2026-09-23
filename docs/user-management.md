@@ -101,7 +101,7 @@ e un flag `reusable` (#106) — vedi [backend-api](backend-api.md).
 
 ## 3. Azioni amministrative (back-end)
 
-Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel router.
+Tutte in [app/admin.php](../app/admin.php) (tranne `admin_user_runs`, in [app/runs.php](../app/runs.php)), tutte dietro `require_admin()` nel router.
 
 | Azione API | Funzione | Cosa fa |
 |---|---|---|
@@ -114,6 +114,7 @@ Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel r
 | `admin_delete` | `admin_delete_user()` | elimina utente + file personali; i roadbook passano a `deleted-user` (#234); rifiuta su superuser `.env`, su se stessi e sull'account di sistema |
 | `admin_activity` | `admin_activity()` | timeline attività dell'utente (#86, IP anonimizzati) |
 | `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126; rifiuta un roadbook nel cestino, #703) |
+| `admin_user_runs` | `admin_user_runs()` | le run dell'utente, pubbliche e private, con il **dispositivo** su cui sono state fatte (`roadbook_runs.device`, una stringa grezza modello/OS da `RBDeviceLabel()`: diagnostica visibile solo agli admin, #870) |
 | `admin_unpublish` | — | rende privato un roadbook pubblico — il controllo sta sulla galleria `/roadbooks/` stessa (#743) |
 | `admin_settings` / `admin_save_settings` / `admin_logs` / `admin_activity_log` | — | banner del sito + log operativi (#103/#86) |
 | `admin_trash_list` / `admin_rb_trash` / `admin_rb_restore` / `admin_rb_purge` | — | cestino roadbook: elenca, cestina, ripristina (con `user_id` lo consegna a quell'utente nello stesso passo, #703), elimina permanentemente (#187) |
@@ -161,11 +162,11 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
   attuale (l'admin gliene ha data una temporanea). In entrambi i casi il flag viene azzerato, e
   ogni altra app collegata all'account viene disconnessa: si revocano i suoi token tranne quello
   del dispositivo che fa il cambio. Il reset via email (`reset_password`) li revoca tutti.
-- **Cambio email con ri-verifica.** [`change_email()`](../app/auth.php#L239) valida il nuovo
+- **Cambio email con ri-verifica.** [`change_email()`](../app/auth.php) valida il nuovo
   indirizzo, ne controlla l'unicità (anche contro i `pending_email` altrui) e lo salva in
   **`pending_email`**, poi invia un link di conferma `/account/?verifyemail=<raw>` **al nuovo
   indirizzo** (token 24 h che riusa `verify_token`/`verify_expires`). L'email attuale resta
-  attiva finché la conferma non avviene. [`verify_email_change()`](../app/auth.php#L258) apre il
+  attiva finché la conferma non avviene. [`verify_email_change()`](../app/auth.php) apre il
   link (basato su token, senza sessione, come il reset), rifà il controllo di unicità e fa lo
   switch `email ← pending_email`. È self-service: lo username, invece, lo cambia solo un admin.
 - **`account_delete()`** ([app/auth.php](../app/auth.php)): verifica la password (non richiesta
@@ -189,7 +190,8 @@ pagina (badge, azioni per riga).
   cablati a `data-*` (`data-role`, `data-verify`, `data-block`, `data-edit`, `data-del`).
 - **`rowHtml(u)`**: badge in un solo stile nell'area del nome — *System account* · *Superuser*
   / *Admin* · *Organizer* · *Blocked* · *Must change password* · *Unverified*; pulsanti
-  **Activate** (solo se non verificato), **Edit**, **Activity**, **Roadbooks**,
+  **Activate** (solo se non verificato), **Edit**, **Activity**, **Roadbooks**, **Runs** (data,
+  roadbook, note, dispositivo — `admin_user_runs`),
   **Block/Unblock**, **Delete** — solo quelli che il server accetta da chi guarda (#702):
   nessuno sull'account di sistema, e su un altro admin solo per un superuser. Il ruolo
   organizer si imposta nel dialogo Edit, una volta sola (#707). Sotto i 640 px ogni utente è

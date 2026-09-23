@@ -97,13 +97,13 @@ implicito nel motore del Reader). Per come queste costanti diventano un punteggi
 ## 3. Matematica geografica (`RB.geo`)
 
 Tre funzioni pure su un modello sferico (raggio terrestre
-[`EARTH_RADIUS_M = 6371000`](../public/assets/js/roadbook-core.js#L8)):
+[`EARTH_RADIUS_M = 6371000`](../public/assets/js/roadbook-core.js)):
 
-- [`haversineM(a, b)`](../public/assets/js/roadbook-core.js#L15) — distanza in metri tra due
+- [`haversineM(a, b)`](../public/assets/js/roadbook-core.js) — distanza in metri tra due
   `{lat, lon}` con la formula dell'emisenoverso (haversine).
-- [`bearingDeg(a, b)`](../public/assets/js/roadbook-core.js#L22) — rilevamento bussola `a→b`
+- [`bearingDeg(a, b)`](../public/assets/js/roadbook-core.js) — rilevamento bussola `a→b`
   in gradi `[0,360)`.
-- [`destPoint(lat, lon, heading, distM)`](../public/assets/js/roadbook-core.js#L29) — punto di
+- [`destPoint(lat, lon, heading, distM)`](../public/assets/js/roadbook-core.js) — punto di
   destinazione partendo da `(lat,lon)` lungo `heading` per `distM` metri; ritorna `{lat, lon}`.
 
 Helper interni non esportati: `toRad`, `toDeg`, `normDeg`.
@@ -112,22 +112,22 @@ Helper interni non esportati: `toRad`, `toDeg`, `normDeg`.
 
 ## 4. Parsing di import (`parseGPX`, `parseWPT`)
 
-[`parseGPX(text)`](../public/assets/js/roadbook-core.js#L56) usa `DOMParser` e lancia se l'XML
+[`parseGPX(text)`](../public/assets/js/roadbook-core.js) usa `DOMParser` e lancia se l'XML
 è malformato. Estrae:
 - il `name` (da `trk > name` o `metadata > name`);
 - i `trkpts` (ognuno con `lat`, `lon`, `ele` se finito, `time`, `cmt`);
 - i `wpts`: i `<wpt>` veri e propri **oppure**, se non ce ne sono, ogni `<trkpt>` il cui `<cmt>`
   inizia per `wpt` (caso comune in alcuni esportatori).
 
-[`parseWPT(text)`](../public/assets/js/roadbook-core.js#L103) legge il formato Garmin `.wpt`:
+[`parseWPT(text)`](../public/assets/js/roadbook-core.js) legge il formato Garmin `.wpt`:
 righe che iniziano per `W`, prende le **ultime due** coppie decimali come `lat`/`lon` e applica
 il segno secondo le lettere di emisfero (`S` → lat negativa, `W` o `O` → lon negativa — `O` per
 "Ovest"/"Oeste").
 
 Due helper sul nome del waypoint:
-- [`numFromName(s)`](../public/assets/js/roadbook-core.js#L91) — primo gruppo di cifre del nome,
+- [`numFromName(s)`](../public/assets/js/roadbook-core.js) — primo gruppo di cifre del nome,
   come numero (o `null`).
-- [`wptText(w)`](../public/assets/js/roadbook-core.js#L97) — il **testo nota**: ritorna
+- [`wptText(w)`](../public/assets/js/roadbook-core.js) — il **testo nota**: ritorna
   `w.text` se presente, altrimenti il `name` **solo se è contenuto reale**; le etichette
   autogenerate (`wptN`, `start`, `end`, numeri puri) diventano stringa vuota.
 
@@ -205,19 +205,19 @@ per i file Suite, e il tagging del limite di velocità → `speed_limit`/`wp_typ
 
 Da eseguire dopo ogni modifica/splice perché le metriche derivate restino coerenti con la traccia.
 
-[`recomputeMetrics(rb)`](../public/assets/js/roadbook-core.js#L208):
+[`recomputeMetrics(rb)`](../public/assets/js/roadbook-core.js):
 - riordina le note per `idx`;
 - per ogni nota ricalcola `num`, clampa `idx` ai limiti della traccia, riallinea `lat`/`lon`,
   `distance`, `partial_distance` e i bearing **dalla traccia**;
 - richiama `normalizeRoadTypes`;
 - aggiorna `meta.total_distance` e `meta.note_count`.
 
-[`normalizeRoadTypes(rb)`](../public/assets/js/roadbook-core.js#L203) impone l'invariante:
+[`normalizeRoadTypes(rb)`](../public/assets/js/roadbook-core.js) impone l'invariante:
 **`road_type_in` è sempre il `road_type_out` della nota precedente** (la prima nota arriva sulla
 strada da cui parte). Solo `road_type_out` è autoriale per nota: la strada "continua" finché una
 nota non la cambia.
 
-[`recomputeCaps(rb)`](../public/assets/js/roadbook-core.js#L229) ricalcola il CAP rosso **solo
+[`recomputeCaps(rb)`](../public/assets/js/roadbook-core.js) ricalcola il CAP rosso **solo
 dove è già attivo** (`cap != null` ed esiste la nota successiva): `cap` = rilevamento verso la
 nota seguente, `cap_distance` = distanza in linea d'aria in metri. Non *crea* CAP dove non c'è.
 
@@ -230,11 +230,11 @@ Douglas-Peucker con tolleranza in **metri**, implementazione **iterativa** (stac
 di ricorsione) su una proiezione equirettangolare locale; ritorna la maschera dei vertici tenuti.
 Gli indici elencati in `keepIdx` (le ancore delle note) e i due estremi **sopravvivono sempre**.
 
-[`simplifyRoadbook(rb, toleranceM)`](../public/assets/js/roadbook-core.js#L285) — semplifica
+[`simplifyRoadbook(rb, toleranceM)`](../public/assets/js/roadbook-core.js) — semplifica
 `rb.track` con quella maschera proteggendo gli `idx` delle note, ri-mappa ogni nota
 **esattamente** sul proprio vertice (#216) e richiama `recomputeMetrics` + `recomputeCaps`.
 
-[`reverseRoadbook(rb)`](../public/assets/js/roadbook-core.js#L295) — inverte il senso di marcia:
+[`reverseRoadbook(rb)`](../public/assets/js/roadbook-core.js) — inverte il senso di marcia:
 ribalta la traccia, ri-mappa ogni `idx` (`last - idx`), scambia `road_type_out ← road_type_in`,
 poi ricalcola metriche e CAP (che `normalizeRoadTypes` rideriva `road_type_in`). Toglie gli
 orari (`t`): letti al contrario non descrivono più una registrazione.
@@ -250,7 +250,7 @@ estremità cavalca la nuova punta.
 nessuna icona): la forma da cui parte ogni strumento che aggiunge una nota; `recomputeMetrics`
 riempie il resto.
 
-[`nearestOnTrack(trkpts, pt)`](../public/assets/js/roadbook-core.js#L268) — posizione più vicina
+[`nearestOnTrack(trkpts, pt)`](../public/assets/js/roadbook-core.js) — posizione più vicina
 **sulla polilinea** (non solo su un vertice): ritorna il segmento `i`, la frazione `t` lungo di
 esso, il punto proiettato `lat`/`lon` e la distanza in metri. Usata dagli strumenti di editing.
 
@@ -261,7 +261,7 @@ dalla traccia). Se quel tratto passa due volte nello stesso posto, `hintM` (l'od
 passaggio giusto. `leftToNote(rb, cum, i, here, hintM)` — quanto manca alla nota: lungo il percorso,
 mai meno della linea retta. Usate dal Reader (§ Distanze in [reader.md](reader.md)).
 
-[`gpxDocument(name, pts, wpts)`](../public/assets/js/roadbook-core.js#L303) — serializza un GPX
+[`gpxDocument(name, pts, wpts)`](../public/assets/js/roadbook-core.js) — serializza un GPX
 1.1 (`creator="RDBK.app"`): una `<trk>` (i punti possono portare `ele` e `t` → `<time>` ISO) più
 eventuali `<wpt>` con nome. Tutto il testo è XML-escaped. Usato anche dal logger GPX del Reader.
 
@@ -284,15 +284,15 @@ Il "ponte" tra Reader e Ranking è una stringa META a **larghezza fissa di 55 ca
 49 caratteri sono numerici, seguiti dal campo `rb` (prefisso dello slug del roadbook, 6 caratteri,
 riempito con spazi — usato dal Ranking per rifiutare un QR di un altro roadbook; vedi
 `RB.metaRbPrefix`). I campi e l'ordine sono definiti da
-[`META_KEYS`](../public/assets/js/roadbook-core.js#L325) +
-[`CONST.META_WIDTHS`](../public/assets/js/roadbook-core.js#L52):
+[`META_KEYS`](../public/assets/js/roadbook-core.js) +
+[`CONST.META_WIDTHS`](../public/assets/js/roadbook-core.js):
 `team(3) date(6) start(6) end(6) accuracy(4) skip(4) extra(4) cap(4) speed(4) km(5) avg(3) rb(6)`
 (i primi 11 numerici; `rb` è testo — prefisso dello slug del roadbook).
 
-[`buildMeta(f)`](../public/assets/js/roadbook-core.js#L326) impacchetta i campi numerici:
+[`buildMeta(f)`](../public/assets/js/roadbook-core.js) impacchetta i campi numerici:
 **clampa i negativi a 0**, **satura a tutti-9** in overflow (così un `-` o un troncamento a
 sinistra non possono corrompere la stringa) e `padStart` a 0 per ripristinare gli zeri iniziali
-(date/start/end). [`parseMeta(str)`](../public/assets/js/roadbook-core.js#L338) fa l'inverso,
+(date/start/end). [`parseMeta(str)`](../public/assets/js/roadbook-core.js) fa l'inverso,
 ritagliando per larghezza.
 
 Per il significato preciso di ogni campo, la codifica di `km`/`avg` (decimi) e da dove vengono le
@@ -302,11 +302,11 @@ penalità, vedi [docs/ranking-model.md §2–3](ranking-model.md).
 
 ## 10. Firma del risultato (`signMeta`/`verifyMeta`)
 
-[`hmacHex(msg, key)`](../public/assets/js/roadbook-core.js#L348) calcola HMAC-SHA256 via
+[`hmacHex(msg, key)`](../public/assets/js/roadbook-core.js) calcola HMAC-SHA256 via
 `crypto.subtle` e lo restituisce esadecimale.
-[`signMeta(meta, key)`](../public/assets/js/roadbook-core.js#L354) appende `-` + i **primi 10 hex**
+[`signMeta(meta, key)`](../public/assets/js/roadbook-core.js) appende `-` + i **primi 10 hex**
 della firma (e in caso di errore ritorna il `meta` nudo).
-[`verifyMeta(payload, key)`](../public/assets/js/roadbook-core.js#L357) splitta sull'**ultimo** `-`,
+[`verifyMeta(payload, key)`](../public/assets/js/roadbook-core.js) splitta sull'**ultimo** `-`,
 riconfronta la firma e ritorna `{ meta, valid }`; un payload **senza** firma è `valid: false`.
 
 La chiave (`signKey`) vive nel client (`config.js`): la firma protegge da manomissioni
@@ -317,33 +317,33 @@ La chiave (`signKey`) vive nel client (`config.js`): la firma protegge da manomi
 
 ## 11. Risoluzione icone, costanti, helper
 
-[`iconSrc(ic, rb, basePath)`](../public/assets/js/roadbook-core.js#L368) risolve la sorgente di
+[`iconSrc(ic, rb, basePath)`](../public/assets/js/roadbook-core.js) risolve la sorgente di
 un'icona nell'ordine che realizza la **regola self-contained** del formato `.rdbk`:
 1. `data:` URI inline → restituito così com'è;
 2. la libreria embedded del roadbook (`rb.icons`, lookup **case-insensitive** sul solo basename);
 3. la palette standard sotto `basePath` (`assets/icons/`).
 
 Helper finali:
-- [`round3`](../public/assets/js/roadbook-core.js#L381) / [`round6`](../public/assets/js/roadbook-core.js#L382)
+- [`round3`](../public/assets/js/roadbook-core.js) / [`round6`](../public/assets/js/roadbook-core.js)
   — arrotondamento a 3 / 6 decimali (angoli / coordinate). Solo `round6` è esportata.
-- [`slug(s)`](../public/assets/js/roadbook-core.js#L385) — slug URL/filesystem-safe (minuscolo,
+- [`slug(s)`](../public/assets/js/roadbook-core.js) — slug URL/filesystem-safe (minuscolo,
   trattini singoli, ≤60 char; default `roadbook`).
-- [`pad2(n)`](../public/assets/js/roadbook-core.js#L387) — zero-padding a due cifre (nomi file
+- [`pad2(n)`](../public/assets/js/roadbook-core.js) — zero-padding a due cifre (nomi file
   con timestamp).
-- [`urlToDataURL(url)`](../public/assets/js/roadbook-core.js#L391) — fetch (same-origin) →
+- [`urlToDataURL(url)`](../public/assets/js/roadbook-core.js) — fetch (same-origin) →
   data: URI, `null` in caso di errore; serve a incorporare asset self-contained (icone nel
   `.rdbk` / nel PDF).
-- [`filterByText(list, query, fields)`](../public/assets/js/roadbook-core.js#L717) — filtro
+- [`filterByText(list, query, fields)`](../public/assets/js/roadbook-core.js) — filtro
   generico: tiene gli item dove **uno qualsiasi** dei `fields` contiene `query`
   (case-insensitive); `query` vuota ritorna una **copia** della lista; null-safe.
-  [`filterRoadbooks(list, query)`](../public/assets/js/roadbook-core.js#L724) ci si appoggia
+  [`filterRoadbooks(list, query)`](../public/assets/js/roadbook-core.js) ci si appoggia
   filtrando sul solo `title`. Usata dalla ricerca della lista condivisa `RBRoadbookList` e
   dalla ricerca utenti dell'admin (vedi `docs/app-shell.md`).
-- [`deleteNote(rb, i)`](../public/assets/js/roadbook-core.js#L701) — elimina la nota `i`
+- [`deleteNote(rb, i)`](../public/assets/js/roadbook-core.js) — elimina la nota `i`
   **e** il vertice di traccia su cui poggia, riconnettendo il percorso; le note successive
   scalano di un indice. Il vertice è mantenuto (rimozione della sola nota) se la traccia
   scenderebbe sotto i 2 punti. Ritorna l'indice del vertice rimosso, o `-1`.
-- [`pendingWork(snapshot)`](../public/assets/js/roadbook-core.js#L733) — scansione del
+- [`pendingWork(snapshot)`](../public/assets/js/roadbook-core.js) — scansione del
   **lavoro non salvato** tra i tool: prende lo snapshot già parsato delle chiavi
   `localStorage` di checkpoint e ritorna un descrittore per ciascun lavoro recuperabile
   (`{ tool, url, keys[], kind, title?, noteCount?, distanceM?, noteIdx?, noteTotal? }`),

@@ -1,163 +1,125 @@
 # Reader — Navigare un roadbook con GPS
 
-Il **Reader** è il copilota digitale: carica un roadbook e lo trasforma in una tabella di note stile cartaceo guidata dal GPS. Odometro, bussola CAP, validazione automatica o manuale e — in modalità Competition — un QR firmato col risultato.
+Il **Reader** è il copilota digitale: carica un roadbook e lo trasforma in una tabella di note stile cartaceo guidata dal GPS. Odometri misurati lungo il percorso, validazione automatica o manuale, un report a fine percorso e — nella competizione di un evento — un risultato firmato per la classifica.
 
-> Funziona offline al 100% per navigazione e validazione. Serve connessione solo per: login, caricare roadbook dal profilo/dalla galleria pubblica, salvare risultati.
+> Navigazione e validazione funzionano offline al 100%. La connessione serve solo per accedere, per caricare un roadbook dal profilo o dalla galleria pubblica e per salvare il report.
 
 ---
 
 ## 1. Caricare un roadbook
 
-Apri il Reader (`/reader/`) — la schermata iniziale offre 3 ingressi:
+Apri il Reader (`/reader/`). La schermata iniziale offre:
 
-| Ingresso | Come fare | Cosa succede |
-|----------|-----------|--------------|
-| **Carica file `.rdbk`** | Tap "Carica .rdbk" → scegli file | Importa roadbook completo (traccia + note + icone) |
-| **I tuoi roadbook** | Tap "I tuoi roadbook" (solo se loggato) | Picker dei roadbook salvati sul tuo profilo |
-| **Roadbook pubblici** | Tap "Roadbook pubblici" | Picker delle challenge pubbliche della galleria |
+| Ingresso | Cosa succede |
+|----------|--------------|
+| **Carica file .rdbk** | Importa un roadbook completo (traccia + note + icone) |
+| **Apri da I miei roadbook** | Scegli uno dei roadbook salvati sul tuo profilo (da loggato) |
+| **Galleria pubblica** | I roadbook pubblici, subito sotto: toccane uno per aprirlo |
 
-**Da URL** (automatico):
-- `/reader/<slug>` → carica roadbook pubblico direttamente
-- `?rb=<id>` → carica un tuo roadbook salvato per ID
+**Da un link**: `/reader/<slug>` apre un roadbook pubblico, `?rb=<id>` uno dei tuoi.
 
-> Per aprire un roadbook pubblico devi essere loggato.
+> Per aprire un roadbook pubblico devi aver fatto l'accesso.
+
+Un roadbook si apre prima in **anteprima di sola lettura**: la lista delle note, senza GPS. Magari vuoi solo guardarlo. Tocca **Naviga** per partire.
 
 ---
 
-## 2. Scegli la modalità di navigazione
+## 2. Avviare un percorso
 
-Dopo il caricamento si apre il modal di avvio con queste opzioni:
+**Naviga** apre il dialogo di avvio:
 
 | Opzione | Descrizione |
 |---------|-------------|
-| **Registra GPX** | Salva la traccia GPS della navigazione (crash-safe) |
-| **Suono su nota** | Breve beep quando una nota viene validata |
+| **Registra una traccia GPX** | Registra la traccia GPS del percorso (a prova di crash) |
+| **Suono su nota** | Un campanello a ogni nota validata, una fanfara sull'ultima. Suona sopra la tua musica invece di fermarla |
+| **Telecomando esterno** | Avanza con un pedale o un clicker Bluetooth (vedi §4) |
 
-Non c'è una modalità da scegliere: un roadbook aperto da un evento che gli dà **punteggio** si naviga in **gara** (ti chiede il numero del veicolo, si applicano le penalità, il risultato firmato va nella classifica dell'evento); tutto il resto è un **percorso libero**. Ogni navigazione finisce con il suo **report** (note raggiunte, limiti rispettati, tempo, distanza), da tenere privato o mostrare nel profilo pubblico.
+Non c'è una modalità da scegliere: un roadbook aperto da un evento che lo **punteggia** gira in **competizione** (ti viene chiesto il numero del veicolo, si applicano le penalità, il risultato firmato va nella classifica dell'evento); tutto il resto gira come **viaggio**.
 
 ---
 
 ## 3. La schermata di navigazione
 
-```
-┌─────────────────────────────────────────┐
-│ Titolo roadbook                          │
-│ Totale: 12.34 km  |  Parziale: 0.56 km  │
-│ Bussola: 045° ↗  |  GPS: ±3m 🟢         │
-├─────────────────────────────────────────┤
-│ #  │ Vignetta │ Indicazioni   │ [Mappa] │
-│ 1  │  ┌───┐   │ Svolta a dx   │  [☗]   │
-│    │  │ ╱  │   │ CAP 045°     │         │
-│    │  └───┘   │ Asfalto       │         │
-│─── │───────── │────────────── │─────────│
-│ 2  │  ┌───┐   │ Dritto        │  [☗]   │
-│    │  │ ↑  │   │ Sterrato      │         │
-│    │  └───┘   │               │         │
-│    │   ✅     │ RAGGIUNTA     │         │
-├─────────────────────────────────────────┤
-│              [⏸ Pausa] [🏁 Fine]         │
-└─────────────────────────────────────────┘
-```
+Il Reader occupa tutto lo schermo:
 
-### Elementi della schermata
+1. **Barra odometro** in alto: titolo, totale (*prog.*) sopra il parziale (*parz.*), direzione, ora, stato del GPS e velocità
+2. **Lista delle note**: una riga per nota, in tre colonne — distanza totale e parziale con il numero della nota (e il suo tipo di waypoint, se c'è) · la vignetta · il testo, il CAP, il limite di velocità e le coordinate
+3. **Barra delle azioni** in basso: interruttore **Auto** · **Mappa della nota** · **Pausa** · GPX · **Termina** · **Esci**
 
-1. **Barra odometro** (sticky in alto): titolo, totale, parziale, bussola CAP, ora, stato GPS, batteria
-2. **Tabella note**: ogni nota su una riga con distanza, vignetta tulip, testo, CAP, tipo strada
-3. **Stati nota**: ✅ Raggiunta (verde) · ⏭ Saltata (rosa) · ▶ Attiva (bordo rosso) · bianco (futura). La nota attiva diventa inoltre **azzurra man mano che ti avvicini**, e mostra i metri che mancano
-4. **Colonne**: Distanze + numero | Vignetta | Indicazioni — per validare si tocca tutta la riga attiva
+Stati delle note: **raggiunta** (verde) · **saltata** (rosa) · **attiva** (bordo rosso) · da fare (bianca). Avvicinandoti alla nota attiva diventa **blu** e mostra la distanza che manca, in km con due decimali.
+
+Quando una nota viene validata, la successiva sale **in cima alla lista**: la strada davanti ha tutto lo spazio.
+
+### Distanze lungo il percorso
+La distanza che manca si misura **lungo la strada**, come i parziali del roadbook stesso, non in linea d'aria: il parziale percorso più la distanza che manca è sempre uguale al parziale della nota. A ogni cambio di nota entrambi gli odometri si riallineano sul percorso, così il parziale segna 0.00 esattamente alla nota.
 
 ---
 
-## 4. Avanzamento: automatico vs manuale
+## 4. Avanzamento: automatico o manuale
 
 ### Automatico (default)
-Appena entri nel **raggio di validazione** della nota attiva, la nota viene segnata come raggiunta automaticamente.
+La nota attiva si valida appena entri nel suo **raggio di validazione**.
 
-- Il raggio è adattivo: dipende dal `wp_radius` della nota, con un massimo che evita sovrapposizioni e un minimo sopra il rumore GPS (18 m)
-- A essere verificato è il **percorso fatto fra due posizioni GPS**, non solo le posizioni: in velocità il telefono avanza 25 m fra una e l'altra, quindi un waypoint stretto starebbe proprio in mezzo e non si convaliderebbe mai
-- Una posizione di cui il telefono non è sicuro (accuratezza scarsa) viene ignorata invece che usata: non convalida una nota e non aggiunge chilometri all'odometro
-- Attiva/disattiva con l'interruttore **Auto** nella barra
+- Il raggio viene dalla nota (`wp_radius`), poi dal default del roadbook, poi dal tipo di waypoint, poi 30 m; non scende mai sotto i 18 m, sopra il rumore del GPS
+- Si controlla la **strada percorsa tra due fix GPS**, non solo i fix: in velocità un telefono si sposta di 25 m tra due posizioni, e un waypoint stretto altrimenti ci scivolerebbe in mezzo
+- Una posizione di cui il telefono non è sicuro (scarsa precisione) viene ignorata: non può né validare una nota né aggiungere distanza
 
 ### Manuale
-Tap **su qualsiasi punto della riga della nota attiva**, oppure sul pulsante "Raggiunta", oppure sul pulsante Convalida: fanno tutti la stessa cosa (il bersaglio è tutta la riga, così non devi centrare un pulsantino in movimento).
+Spegni **Auto**: allora un tocco **in qualsiasi punto della riga della nota attiva** la segna fatta (il bersaglio è tutta la riga, nessun pulsantino da centrare in movimento). Con Auto acceso valida solo il GPS.
 
-- In Trip: marca verde e sincronizza l'odometro
-- In Competition: valida con punteggio (devi essere entro 100 m dalla nota, più il margine richiesto dall'accuratezza del tuo GPS)
-- Il tap su **un'altra** nota sposta lì la corsa e chiede conferma prima: le note intermedie restano non convalidate e in Competition ogni nota valutata saltata costa 450 punti
-- In Competition non si può tornare a una nota già convalidata
+- In competizione una validazione manuale richiede di essere entro 100 m dalla nota, più il margine che serve alla precisione del GPS
+- Toccare **un'altra** nota sposta lì il percorso e chiede prima conferma: le note in mezzo restano non validate, e in competizione ogni nota a punteggio saltata costa 450 punti
+- In competizione non si torna su una nota già validata
 
 ### A mani libere con un telecomando esterno
-Spunta **Telecomando esterno (pedale / clicker)** nel selettore di modalità per avanzare senza toccare lo schermo.
+Spunta **Telecomando esterno** nel dialogo di avvio per avanzare senza toccare lo schermo.
 
-- Un **pedale Bluetooth** per voltare pagina, un clicker per fotocamera o un telecomando da presentazione si accoppiano come una tastiera: niente da configurare, funziona offline, nel browser e nell'app allo stesso modo
-- **Avanza**: → · ↓ · Page ↓ · Space · Enter — **Indietro**: ← · ↑ · Page ↑ (solo in modalità Trip; in Competition una nota convalidata non si può annullare)
-- Un pedale lascia entrambe le mani sul volante; un clicker al manubrio va bene per moto e bici
-- La preferenza resta salvata su quel dispositivo, e i tasti sono ignorati mentre scrivi o con una finestra aperta
-
----
-
-## 5. Barra CAP (tra due note)
-
-Quando la nota precedente ha un CAP, appare una barra in basso con:
-- **Rotta da tenere** (es. CAP 045°)
-- **Velocità corrente**
-- **Distanza alla destinazione**
-- **Freccia direzionale**
-
-È un ausilio "a bussola" per navigare tra due note senza perdersi.
+- Un **pedale voltapagina** Bluetooth, un clicker per foto o un telecomando per presentazioni si abbina come tastiera: niente da configurare, funziona offline, nel browser e nell'app
+- **Avanti**: → · ↓ · Pag ↓ · Spazio · Invio — **Indietro**: ← · ↑ · Pag ↑ (solo in viaggio: in competizione una nota validata non si annulla)
+- L'impostazione resta memorizzata sul dispositivo, e i tasti vengono ignorati mentre scrivi o con un dialogo aperto
 
 ---
 
-## 6. Mappa interattiva per nota
+## 5. Mappa della nota
 
-Opzionale (solo se il roadbook permette la mappa): il pulsante mappa nella barra in basso apre una mini-mappa sotto la nota attiva; un altro tap la chiude.
+Solo se il roadbook consente la mappa: **Mappa della nota** nella barra delle azioni apre una mini-mappa sotto la nota attiva; toccala di nuovo per chiuderla.
 
-- Centro sulla nota a zoom ~13
-- Mostra l'intera traccia + pin per contesto
-- Pallino blu GPS in tempo reale
-- In alto a sinistra: numero della nota e distanza ancora da percorrere
-- Quando la nota viene validata la mappa passa alla nota successiva, sempre aperta
-
-> La mappa per nota è utile per confermare la posizione sul terreno quando il testo della nota è ambiguo.
+- Mostra la traccia, la tua posizione live e, nell'angolo, il numero della nota con la distanza che manca
+- Ti guida **una linea gialla**: la strada ancora da fare fino alla nota
+- Quando la nota viene validata, la mappa ti segue sulla successiva
 
 ---
 
-## 7. Funzionalità aggiuntive
+## 6. Pausa, termina, esci
 
-| Funzione | Come usarla |
-|----------|-------------|
-| **Correzione odometro** | Nudge ±10 m quando serve; validare una nota sincronizza il totale alla distanza di quella nota |
-| **Pausa** | Ferma GPS e wake lock per risparmiare batteria (soste pranzo, attese) |
-| **Sound on note** | Beep WebAudio breve quando una nota viene validata (auto o manuale) |
-| **Registrazione GPX** | Crash-safe: checkpoint a ogni fix, recupero se l'app si chiude |
-| **Recupero sessione** | Se interrotta (telefonata, crash), riprende esattamente da dove eri |
-| **Cambio lingua** | Cambia lingua a metà sessione senza perdere dati |
+| Pulsante | Cosa fa |
+|----------|---------|
+| **Pausa** | Ferma il GPS e il blocco dello schermo acceso per risparmiare batteria (una sosta pranzo); gli odometri non avanzano in pausa |
+| **Termina** | Chiude il percorso e apre il report. Prima dell'ultima nota chiede conferma: le note non raggiunte contano come saltate |
+| **Esci** (l'icona di uscita) | Abbandona il percorso senza report, dopo una conferma |
 
 ---
 
-## 8. In Competition — QR risultato
+## 7. Il report del percorso
 
-In modalità Competition, alla fine della navigazione viene generato un **QR firmato HMAC** (55 caratteri) che contiene:
-- Risultato completo: penalità, tempi, velocità
-- Firmato contro il server (non falsificabile)
+Ogni percorso finisce con il suo **report**: note raggiunte e saltate, zone con limite di velocità, tempo e distanza. In testa c'è la card del percorso, sotto il pulsante **Condividi** e un solo interruttore per tenerlo **Privato** o renderlo **Pubblico** (visibile sul tuo profilo `/u/<username>`). Condividere prima di aver scelto chiede conferma, perché condividere rende pubblico il percorso.
 
-Consegnare il QR all'organizzatore per la classifica (Ranking).
+Il report si salva prima sul dispositivo e si carica appena c'è connessione.
 
----
-
-## 9. Recupero sessione interrotta
-
-All'avvio il Reader controlla in ordine:
-1. **Sessione in corso** in `localStorage` → propone ripresa
-2. **Roadbook da URL** → lo carica direttamente
-3. **GPX orfano** → propone recupero traccia
-4. **Niente** → parte pulito
-
-> Rifiutare la ripresa **non cancella la sessione**: viene sovrascritta solo quando inizi una nuova corsa o esci esplicitamente.
+### In competizione — il risultato firmato
+Un percorso in competizione produce anche un **risultato firmato HMAC** (un QR da condividere o scaricare) ed entra nella classifica condivisa dell'evento, dove gli organizzatori lo verificano.
 
 ---
 
-## 10. Prossimo passo
+## 8. Recupero di una sessione interrotta
 
-Hai completato la navigazione? → [Tripmaster: computer di bordo GPS →](05-tripmaster.md)  
+Il percorso si salva da solo sul dispositivo. Se viene interrotto (una chiamata, un crash, il telefono che chiude l'app), alla visita successiva il Reader chiede **Riprendere il percorso in corso?** e continua esattamente da dove eri. Una traccia GPX in registrazione si recupera allo stesso modo.
+
+> Rifiutare non cancella nulla, e la domanda non torna per quel percorso. Non viene mai posta quando il link indica un altro roadbook.
+
+---
+
+## 9. Prossimo passo
+
+Finito di navigare? → [Tripmaster: computer di bordo GPS →](05-tripmaster.md)
 Vuoi creare un roadbook? → [Editor: crea/modifica →](03-editor.md)

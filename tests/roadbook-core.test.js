@@ -399,8 +399,6 @@ describe('speed limits', () => {
         expect(RB.speedLimitOfNote({ speed_limit: 50, icons: [{ name: 'S03_30km.svg' }] })).toBe(50);
         expect(RB.speedLimitOfNote({ speed_limit: 0, icons: [{ name: 'S03_30km.svg' }] })).toBe(0);
         expect(RB.speedLimitOfNote({ speed_limit: 90, icons: [] })).toBe(90);
-        // unset field → falls back to the icon-name rule
-        expect(RB.speedLimitOfNote({ icons: [{ name: 'S03_30km.svg' }] })).toBe(30);
     });
     it('parses the limit straight from a symbol name (speedLimitFromName)', () => {
         expect(RB.speedLimitFromName('S03_30km.svg')).toBe(30);

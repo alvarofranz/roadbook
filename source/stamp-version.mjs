@@ -29,14 +29,13 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const versionFile = join(publicDir, 'version.json');
-// Any existing ?v=<token> cache-buster, whatever its format — so a release stamps them all to
-// the new release id even when older HTML still carries a previous scheme's token.
+// Any existing ?v=<token> cache-buster, whatever its format: each one becomes the new release id.
 const CACHE_BUST = /\?v=[\w.+-]+/g;
 
 // build: the ever-growing counter, read from the current version.json and incremented. It never
 // resets — not even when the semver bumps — so every release has a strictly larger build.
 let prevBuild = 0;
-try { prevBuild = JSON.parse(await readFile(versionFile, 'utf8')).build || 0; } catch { /* first run under this scheme */ }
+try { prevBuild = JSON.parse(await readFile(versionFile, 'utf8')).build || 0; } catch { /* no version.json yet */ }
 const build = prevBuild + 1;
 const release = releaseId({ version, build }); // the unique per-release token (cache-buster + refresh key)
 
@@ -63,9 +62,9 @@ if (unstamped.length) {
 }
 
 // Local maintenance hook: every 5th release, run the dead-code sweep — but only if the
-// git-ignored local dev script source/find-orphans.mjs is present. It's a no-op for anyone
-// without it (CI never runs this stamper; fresh clones don't have find-orphans.mjs). The
-// counter lives in a git-ignored file, so it never adds release noise.
+// git-ignored local dev script source/find-orphans.mjs is present. It's a no-op anywhere
+// else (the deploy server and fresh clones don't have it). The counter lives in a git-ignored
+// file, so it never adds release noise.
 try {
     const here = dirname(fileURLToPath(import.meta.url));
     const orphans = await import('./find-orphans.mjs');
@@ -74,4 +73,4 @@ try {
     n += 1; await writeFile(countFile, String(n) + '\n');
     if (n % 5 === 0) { console.log(`\n[find-orphans] release #${n}: running the every-5-releases dead-code sweep…`); orphans.reportOrphans(await orphans.findOrphans()); }
     else console.log(`[find-orphans] next dead-code sweep in ${5 - (n % 5)} release(s).`);
-} catch { /* find-orphans.mjs absent (CI / other devs) — skip */ }
+} catch { /* find-orphans.mjs absent — skip */ }

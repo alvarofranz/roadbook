@@ -16,7 +16,7 @@ copies links to the entire public listing.
 (`status = 'public'`) ordered by `updated_at`. Each item carries `slug`, `title`,
 `total_distance`, `note_count`, `username` and `thumb` (cover or first photo).
 
-`render()` (`roadbooks.js:33`) filters the list client-side with
+`render()` (`roadbooks.js`) filters the list client-side with
 `RB.filterByText(all, q, ['title', 'username'])`, paginates at **12 per page**
 (`PER`), and builds cards via `RBRoadbookCard` — the same shared card the home, the event
 page and the public profile use (#770), then fills the route shapes (`RBFillRoutes`). Each
@@ -35,14 +35,14 @@ card links to `/challenge/<slug>`.
 
 The search input (`#rbSearch`) appears unconditionally (unlike `RBRoadbookList`
 which hides it under 5 items). It filters **both `title` and `username`**
-(`roadbooks.js:34`) as the user types, re-rendering immediately. On language
+(`roadbooks.js`) as the user types, re-rendering immediately. On language
 switch (`rb-lang` event) the page re-renders labels.
 
 ---
 
 ## 3. Error vs empty
 
-The API distinguishes two empty states (`roadbooks.js:47-50`):
+The API distinguishes two empty states (`roadbooks.js`):
 
 | Condition | Message |
 |-----------|---------|

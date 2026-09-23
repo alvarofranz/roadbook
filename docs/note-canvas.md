@@ -27,11 +27,11 @@ Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che 
 navigatore nel Reader.
 
 > **Importabile da Node (per i test).** In coda al file
-> [note-canvas.js:256](../public/assets/js/note-canvas.js#L256), `if (typeof module !== 'undefined'
+> [note-canvas.js](../public/assets/js/note-canvas.js), `if (typeof module !== 'undefined'
 > && module.exports) module.exports = window.NoteCanvas;` — un **no-op nel browser** (dove `module`
 > non esiste, e resta solo il global `window.NoteCanvas`), ma nel runner Vitest esporta la classe
 > così com'è. È lo stesso schema di `roadbook-core.js`
-> ([roadbook-core.js:716](../public/assets/js/roadbook-core.js#L716)): nessuno step di build sul
+> ([roadbook-core.js](../public/assets/js/roadbook-core.js)): nessuno step di build sul
 > web, e `NoteCanvas.toSVG` diventa testabile in unità (vedi `tests/roadbook-core.test.js`, che
 > importa la classe e copre il render della vignetta).
 
@@ -42,7 +42,7 @@ navigatore nel Reader.
 Il modello di una vignetta usa coordinate **centrate** (origine al centro del box, +y in
 alto), mentre l'SVG ha lo `0,0` in alto a sinistra con y verso il basso. La classe tiene le
 due cose separate con un `viewBox="0 0 230 162"` e due conversioni
-([note-canvas.js:43](../public/assets/js/note-canvas.js#L43)):
+([note-canvas.js](../public/assets/js/note-canvas.js)):
 
 | Funzione | Direzione | Formula |
 |----------|-----------|---------|
@@ -52,12 +52,12 @@ due cose separate con un `viewBox="0 0 230 162"` e due conversioni
 
 `toV`/`toM` sono l'unica fonte di verità per "+y in alto": il segno meno sulla y inverte
 l'asse, il `115`/`81` è il centro (`230/2`, `162/2`). `evToV`
-([note-canvas.js:46](../public/assets/js/note-canvas.js#L46)) trasforma le coordinate
+([note-canvas.js](../public/assets/js/note-canvas.js)) trasforma le coordinate
 schermo del puntatore in coordinate viewBox passando per la matrice inversa dell'SVG, così
 il drag funziona a qualsiasi scala/zoom del contenitore.
 
 Lo stesso schema si ripete (privato) dentro `toSVG`
-([note-canvas.js:168](../public/assets/js/note-canvas.js#L168)) con `cx=W/2` (115), `cy=H/2`
+([note-canvas.js](../public/assets/js/note-canvas.js)) con `cx=W/2` (115), `cy=H/2`
 (81) e un `toV` locale: i due render restano allineati perché condividono la stessa convenzione.
 
 ---
@@ -65,7 +65,7 @@ Lo stesso schema si ripete (privato) dentro `toSVG`
 ## 3. Il tronco del tulip (`trunkSegments`)
 
 Il "tronco" è la strada disegnata sempre allo stesso modo, derivata dai campi della nota e
-non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js#L208)):
+non modificabile a mano ([note-canvas.js](../public/assets/js/note-canvas.js)):
 
 - la **provenienza** entra dritta dal bordo inferiore (`cx,154`) fino al centro (`cx,cy`),
   stilizzata da `road_type_in`;
@@ -83,9 +83,9 @@ non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js
 > disegnata come svolta secca (#452, vedi [roadbook-core.md](roadbook-core.md)).
 
 L'angolo di uscita è la **variazione di rotta** `(bearing_out − bearing_in)` normalizzata a
-`0..360` ([note-canvas.js:214](../public/assets/js/note-canvas.js#L214)); `θ=0` = dritto in
+`0..360` ([note-canvas.js](../public/assets/js/note-canvas.js)); `θ=0` = dritto in
 su, senso **orario** come una bussola. La punta è quindi
-`cx + sin(θ)·L`, `cy − cos(θ)·L` ([note-canvas.js:221](../public/assets/js/note-canvas.js#L221)),
+`cx + sin(θ)·L`, `cy − cos(θ)·L` ([note-canvas.js](../public/assets/js/note-canvas.js)),
 così il diagramma mostra già la direzione da prendere (dritto = prosegui, destra = svolta a
 destra…).
 
@@ -128,13 +128,13 @@ da `road_type_out` della nota (fallback 3) e la `width` da `roadStyle(road_type)
 `ROAD_STYLE` di note-canvas, non `RB.ROAD_TYPES`).
 
 Quando una giunzione è selezionata compaiono **due maniglie** di drag
-([note-canvas.js:77](../public/assets/js/note-canvas.js#L77)):
+([note-canvas.js](../public/assets/js/note-canvas.js)):
 - una sul **pivot**;
 - una appena **oltre la punta** (spostata di 11 px lungo la direzione del vettore) così il
   dito non copre il tick mentre si trascina; lo spostamento viene poi sottratto per
   riportare il valore reale in `tip`.
 
-La toolbar di una giunzione ([note-canvas.js:137](../public/assets/js/note-canvas.js#L137))
+La toolbar di una giunzione ([note-canvas.js](../public/assets/js/note-canvas.js))
 offre: un `<select>` per il **tipo di strada**, `−`/`+` per la **width** (clampata 1..10) e
 il cestino per eliminare.
 
@@ -144,32 +144,31 @@ il cestino per eliminare.
 
 Ogni icona è `{ name, pos:[x,y], angle, size, flip_x }`. Sono trascinabili e si renderizzano
 come `<image>` dentro un `<g>` ruotato attorno al loro centro
-([note-canvas.js:90](../public/assets/js/note-canvas.js#L90)):
+([note-canvas.js](../public/assets/js/note-canvas.js)):
 
 - **posizione** (`pos`): trascinando il gruppo si aggiorna `ic.pos` via `toM`
-  ([note-canvas.js:97](../public/assets/js/note-canvas.js#L97));
+  ([note-canvas.js](../public/assets/js/note-canvas.js));
 - **rotazione** (`angle`): `transform="rotate(angle cx cy)"` — orario, di passo 15° dai
   pulsanti;
 - **flip orizzontale** (`flip_x`): `translate(2·cx) scale(-1 1)` sull'`<image>`
-  ([note-canvas.js:95](../public/assets/js/note-canvas.js#L95));
+  ([note-canvas.js](../public/assets/js/note-canvas.js));
 - **dimensione** (`size`): box quadrato `size×size` centrato.
 
 ### Ridimensionamento
 Quando un'icona è selezionata si mostra un riquadro tratteggiato (ambra) e una **maniglia
-d'angolo** azzurra ([note-canvas.js:102](../public/assets/js/note-canvas.js#L102)).
+d'angolo** azzurra ([note-canvas.js](../public/assets/js/note-canvas.js)).
 Trascinandola la dimensione è `clampIconSize(round(hypot(dx,dy)·√2))` — ovvero la diagonale
 dal centro all'angolo, invariante rispetto alla rotazione. I pulsanti `−`/`+` in toolbar
-agiscono a passi di 4 ([note-canvas.js:131](../public/assets/js/note-canvas.js#L131)).
+agiscono a passi di 4 ([note-canvas.js](../public/assets/js/note-canvas.js)).
 `clampIconSize` limita la taglia a **10..120**
-([note-canvas.js:232](../public/assets/js/note-canvas.js#L232)).
+([note-canvas.js](../public/assets/js/note-canvas.js)).
 
 ### Aggiunta dalla palette
 Le icone arrivano in due modi:
-- **click-to-add** → `addIcon(ic)` ([note-canvas.js:150](../public/assets/js/note-canvas.js#L150));
+- **click-to-add** → `addIcon(ic)` ([note-canvas.js](../public/assets/js/note-canvas.js));
 - **drag & drop** dalla palette: il `dragover`/`drop` sul contenitore legge
   `text/plain`, converte la posizione del drop in coordinate modello e chiama il callback
-  registrato con `onDropIcon(cb)` ([note-canvas.js:35](../public/assets/js/note-canvas.js#L35),
-  [:56](../public/assets/js/note-canvas.js#L56)).
+  registrato con `onDropIcon(cb)` ([note-canvas.js](../public/assets/js/note-canvas.js)).
 
 > La **palette ricercabile** non vive in questo modulo: NoteCanvas riceve solo le icone già
 > scelte (via `addIcon`/drop). La UI di ricerca/elenco è nel chiamante (l'Editor).
@@ -178,11 +177,11 @@ Le icone arrivano in due modi:
 
 ## 6. Selezione, drag e callback
 
-- `setNote(note, isEnd, isFirst)` ([note-canvas.js:48](../public/assets/js/note-canvas.js#L48)) carica la
+- `setNote(note, isEnd, isFirst)` ([note-canvas.js](../public/assets/js/note-canvas.js)) carica la
   nota, normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
 - `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e ridisegna (con la
   toolbar dell'elemento selezionato); toccare lo sfondo deseleziona
-  ([note-canvas.js:32](../public/assets/js/note-canvas.js#L32)).
+  ([note-canvas.js](../public/assets/js/note-canvas.js)).
 - `_startDrag` installa i listener `pointermove`/`pointerup` su `window`. Il modello si
   aggiorna a ogni `pointermove` (posizione finale esatta), ma il rebuild dell'SVG è
   **accorpato a un render per frame** via `requestAnimationFrame` — un `render()` per
@@ -200,9 +199,9 @@ risolve, #521).
 
 NoteCanvas **non sa** dove stanno i file delle icone: riceve dal chiamante un resolver
 `resolveIcon(ic) → href`, con default banale `ic => ic.name`
-([note-canvas.js:14](../public/assets/js/note-canvas.js#L14)). In pratica l'Editor, il
+([note-canvas.js](../public/assets/js/note-canvas.js)). In pratica l'Editor, il
 Reader e la pagina challenge passano `RB.iconSrc`, che risolve in ordine
-([roadbook-core.js:368](../public/assets/js/roadbook-core.js#L368)):
+([roadbook-core.js](../public/assets/js/roadbook-core.js)):
 
 1. `data:` inline nel nome → usato così com'è;
 2. icona embeddata in `rb.icons[base]` (match esatto, poi case-insensitive);
@@ -216,11 +215,10 @@ resolver come secondo argomento.
 
 ## 8. La gradazione di pericolo `!` / `!!` / `!!!`
 
-`dangerMarks(note)` ([note-canvas.js:190](../public/assets/js/note-canvas.js#L190)) legge
+`dangerMarks(note)` ([note-canvas.js](../public/assets/js/note-canvas.js)) legge
 `note.danger` (1..3) e produce `!`, `!!` o `!!!` (clampato a 3). Viene disegnato in **rosso**
 nell'angolo in alto a sinistra **dentro il box del diagramma** (`x:8, y:40`), mai nella
-colonna di testo ([note-canvas.js:88](../public/assets/js/note-canvas.js#L88) per l'editor,
-[:184](../public/assets/js/note-canvas.js#L184) per `toSVG`).
+colonna di testo, sia nell'editor sia in `toSVG`.
 
 > In `toSVG` i marker di pericolo portano i propri attributi di presentazione inline
 > (`fill`, `font-family`, `font-weight`, `font-size`), così la stringa SVG è **autonoma** e

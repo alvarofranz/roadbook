@@ -93,7 +93,7 @@ Une boîte de dialogue affiche un bref récapitulatif (km · notes · photos) et
 | Bouton | Ce qui se passe |
 |---------|--------------|
 | **💾 Enregistrer** | Connecté : l'enregistrement est sauvegardé comme **brouillon** de roadbook (avec ses photos) et l'**Editor s'ouvre** aussitôt dessus. Non connecté : vous êtes dirigé vers la page de connexion et, une fois connecté, vous revenez et il est sauvegardé de la même façon, puis l'Editor s'ouvre |
-| **🗑 Abandonner** | Demande confirmation en nommant ce qui serait perdu (trace, notes, photos, notes vocales), puis abandonne l'enregistrement |
+| **🗑 Abandonner** | Demande confirmation en nommant ce qui serait perdu (trace, notes, photos), puis abandonne l'enregistrement |
 
 Il n'y a pas de boutons d'export ici : l'export (GPX, `.rdbk`, PDF…) se fait ensuite depuis l'Editor.
 

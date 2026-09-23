@@ -93,7 +93,7 @@ Ein Dialog zeigt eine kurze Zusammenfassung (km · Notizen · Fotos) und stellt 
 | Button | Was passiert |
 |---------|--------------|
 | **💾 Speichern** | Angemeldet: Die Aufzeichnung wird als roadbook-**draft** (mit ihren Fotos) gespeichert und der **Editor öffnet sich** sofort darauf. Abgemeldet: Du kommst zur Anmeldeseite und, sobald du angemeldet bist, kehrst du zurück und sie wird genauso gespeichert; dann öffnet sich der Editor |
-| **🗑 Verwerfen** | Fragt nach einer Bestätigung und nennt, was verloren ginge (Spur, Notizen, Fotos, Sprachnotizen), dann wird die Aufzeichnung verworfen |
+| **🗑 Verwerfen** | Fragt nach einer Bestätigung und nennt, was verloren ginge (Spur, Notizen, Fotos), dann wird die Aufzeichnung verworfen |
 
 Hier gibt es keine Export-Buttons: Exportieren (GPX, `.rdbk`, PDF…) erledigst du später im Editor.
 

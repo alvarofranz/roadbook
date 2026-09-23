@@ -10,8 +10,8 @@ The app works **offline** for recording, editing and navigation. A connection is
 
 | Tool | What it's for | When to use it |
 |------|---------------|----------------|
-| **Roadbook Recorder** | Records a live GPS track, which you can enrich with waypoint in the points you want to set as notes; you can also attach junction photos and handy voice notes to jot down how the tulip should be drawn or any other warnings | During the reconnaissance / field survey |
-| **Editor** | Create or edit a roadbook from a recording, a GPX or an openrally roadbook; optimize the track, review the voice notes and survey photos, complete the notes and tulip by drawing them; arrow and CAP management is automatic based on the underlying track. When done you can export it to RDBK, openrally and PDF if you prefer to print it | After recording (or from scratch) to prepare the final roadbook |
+| **Roadbook Recorder** | Records a live GPS track, which you can enrich with waypoint in the points you want to set as notes; you can also attach junction photos to remember how the tulip should be drawn or any other warnings | During the reconnaissance / field survey |
+| **Editor** | Create or edit a roadbook from a recording, a GPX or an openrally roadbook; optimize the track, review the survey photos, complete the notes and tulip by drawing them; arrow and CAP management is automatic based on the underlying track. When done you can export it to RDBK, openrally and PDF if you prefer to print it | After recording (or from scratch) to prepare the final roadbook |
 | **Roadbook Reader** | Enables navigation of digital roadbooks in tourist or competition mode, can automatically mark reached notes and additionally an (optional) map can be enabled showing each note's position relative to the vehicle | During the event / outing — it's the "co-pilot" |
 | **Tripmaster** | GPS on-board computer without a roadbook: total/partial odometer, speed, heading, stopwatch, waypoint counter, GPX recording | Free reconnaissances, tests, outings without a predefined roadbook |
 

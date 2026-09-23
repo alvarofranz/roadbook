@@ -14,7 +14,7 @@ files.
 
 - **Turned on from Site settings**: `/admin/config/` exposes the switch, which calls the
   module's `window.RBI18nSetEdit(true)`
-  ([config.js:28](../public/admin/config/config.js#L28)). Its state (`rb_i18n_edit` in
+  ([config.js](../public/admin/config/config.js)). Its state (`rb_i18n_edit` in
   `localStorage`) persists across navigation, so edit mode follows the admin onto every page.
 - `app.js` loads `i18n-edit.js` only for admins, and only pages carrying the full i18n stack
   (`RBt`, `RBModal`, `RBi18nLangs`, `RBi18n`) can render the editor.

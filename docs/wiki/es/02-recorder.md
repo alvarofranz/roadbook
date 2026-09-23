@@ -93,7 +93,7 @@ Un diálogo muestra un breve resumen (km · notas · fotos) y hace una sola preg
 | Botón | Qué sucede |
 |--------|--------------|
 | **💾 Guardar** | Con sesión iniciada: la grabación se guarda como **draft** de roadbook (con sus fotos) y el **Editor se abre** sobre él al instante. Sin sesión: te lleva a la página de inicio de sesión y, una vez dentro, vuelves y se guarda del mismo modo; luego se abre el Editor |
-| **🗑 Descartar** | Pide confirmación, nombrando lo que se perdería (trazada, notas, fotos, notas de voz), y luego descarta la grabación |
+| **🗑 Descartar** | Pide confirmación, nombrando lo que se perdería (trazada, notas, fotos), y luego descarta la grabación |
 
 Aquí no hay botones de exportación: exportar (GPX, `.rdbk`, PDF…) se hace después desde el Editor.
 

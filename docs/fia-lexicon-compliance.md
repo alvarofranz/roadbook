@@ -9,7 +9,7 @@ graphics shall be compliant with the FIA lexicon"*.
 > Fonte FIA: `fia-lexicon-cross-country-2026-251210.pdf` (le icone FIA sono fornite da
 > rallynavigator.com). Lato RDBK: la palette in [public/assets/icons/](../public/assets/icons/)
 > + `index.json`, il mapping di import in
-> [roadbook-core.js §SUITE_ICON_ALIASES](../public/assets/js/roadbook-core.js#L189) e il
+> [roadbook-core.js §SUITE_ICON_ALIASES](../public/assets/js/roadbook-core.js) e il
 > modello dati `.rdbk` (vedi [rdbk-format](rdbk-format.md)). Per la mappatura RB Suite→palette
 > vedi [editor.md §9.5](editor.md).
 

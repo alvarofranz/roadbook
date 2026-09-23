@@ -35,7 +35,9 @@ DB/Convenzioni rapide below have counterparts there).
   every OAuth client whose tokens the backend accepts as `aud` (web + Android + iOS — the client ids
   are public, in `native/src/native.js`); `APPLE_SERVICE_ID` (web Services ID, also drives the web
   button) + `APPLE_APP_ID` (iOS bundle id) are the accepted Apple audiences, each optional so a
-  surface's button only appears once it is configured.
+  surface's button only appears once it is configured. `TRUSTED_PROXIES` (IPs/CIDRs, default
+  loopback + private ranges) names the reverse proxies whose `X-Forwarded-For` `client_ip()` believes
+  — the key of every rate limit; behind Cloudflare's proxy, add its ranges.
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
   `roadbook_audio`, `roadbook_locks`, `roadbook_runs`, `roadbook_comments`, `api_tokens`,
   `activity_log`, `settings`, plus the events family (`events`, `event_roadbooks`,
@@ -141,9 +143,10 @@ DB/Convenzioni rapide below have counterparts there).
 - **Don't reinvent the wheel — use the shared primitives.** Cross-page helpers live in
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
-  - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss)`
+  - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss, opts)`
     (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
-    returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
+    `opts.dismissable: false` ignores the backdrop and Escape, for a modal holding the only copy of
+    the user's work; returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
     `RBToast(msg)` (translated toast; the `#toast` element is created on first use), `RBApi(action, body)` (JSON POST
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
@@ -157,7 +160,7 @@ DB/Convenzioni rapide below have counterparts there).
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`fanfare()`/`unlock()` (the "done" bell +
     big check — a Recorder note, a Reader validation, #768 — and the arrival fanfare; Web Audio in a
-    mixable session, so the music of another app keeps playing, #842), `RBDebounce(fn, ms)` (with `.cancel()`), `RBCsv(rows)` (a CSV Blob with a BOM, so Excel reads the accents — every export), `RBTurnstile(el, siteKey)` (the one Turnstile loader → `{token(), reset()}`), `RBBusy(el, {onEnd})` (the button that launched an async job
+    mixable session, so the music of another app keeps playing, #842), `RBDebounce(fn, ms)` (with `.cancel()`), `RBCsv(rows)` (a CSV Blob with a BOM, so Excel reads the accents — every export), `RBTurnstile(el, siteKey)` (the one Turnstile loader → `{token(), reset()}`), `RBDeviceLabel()` (a coarse surface · browser · model/OS string from the user agent, never an identifier — stored with every run as `roadbook_runs.device`, shown to admins only, #870), help tips (a `.help-tip` ⓘ with `data-tip` / `data-i18n-tip`: one shared bubble above it, inside the screen, #859 — no call needed), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
     plus the global chrome (desktop top bar + footer, the mobile bottom tab bar), version
     auto-refresh and the Install chip.
@@ -170,9 +173,8 @@ DB/Convenzioni rapide below have counterparts there).
     vignette, used by the Reader rows and the challenge page). **`rbmap.js`** (`RBMap`): MapLibre helper (Editor + Reader map).
     **`gps-meter.js`** (`RBGpsMeter`) + **`gpx-recorder.js`** (`RBGpxRecorder`): the shared
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
-    **`rb-media-queue.js`** (`RBMediaQueue`): offline-first buffering of geotagged photos +
-    voice notes (blobs in IndexedDB) with deferred upload + retry (Recorder + the Editor's
-    Adjust on the trail).
+    **`rb-media-queue.js`** (`RBMediaQueue`): offline-first buffering of geotagged photos (blobs
+    in IndexedDB) with deferred upload + retry (Recorder + the Editor's Adjust on the trail).
   - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.head-row` (a heading with its
     actions on the same row — title left, actions right, stacking on a phone), `.toolbar` (a
@@ -279,8 +281,8 @@ The dev clone on the box IS where the app is *served and exercised by hand*; the
 (`.ddev/config.yaml`, `https://rdbk.ddev.site`) is where the automated tests run** — see *Tests
 and lint* below.
 
-`public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally a MapTiler
-style URL for satellite imagery; the base map runs on free, no-key MapLibre tiles)
+`public/assets/js/config.js` (gitignored) holds the `signKey` (and optionally licensed map
+styles, `styleSatellite`/`styleTopo`/`styleOsm`; the base maps run on free, no-key tiles)
 (in the dev clone it is copied from prod, like `vendor/` and `fontawesome`). DB schema lives
 in `migrations/`; the clone runs on prod's PHP-FPM pool and its own `.env` (DB_NAME
 `rdbk_dev`, BASE_URL `http://localhost:8806`).
@@ -531,9 +533,14 @@ Operational notes:
   FIA waypoint-type badge (`wp_type`) · vignette via `NoteCanvas.toSVG` · text, CAP, speed limit,
   coordinates) with no buttons on the row (#569), colour-coded by state (reached green · skipped
   pink · active red border · upcoming white) — and the ACTIVE row alone takes the live GPS
-  proximity state (blue as you close in, with the metres still to run). One **Note map** toggle in
-  the action bar opens the MapLibre mini-map under the active note and follows it (only where the
-  roadbook allows a map).
+  proximity state (blue as you close in, with the distance still to run). Advancing puts the next
+  note exactly at the **top** of the list (#844). Distances are measured **along the route**, like
+  the roadbook's own partials: `RB.routeAhead` projects the fix onto the track around the active
+  note, so partial driven + distance left = the note's partial, shown in km with two decimals, and
+  every change of note re-anchors both odometers on the route (#846 · #847); only the validation
+  radius stays a straight line. One **Note map** toggle in the action bar opens the MapLibre
+  mini-map under the active note and follows it (only where the roadbook allows a map); its guide is
+  one yellow line along the road still to drive, no arrow (`RBMap.setGuide`, #849).
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
@@ -551,12 +558,15 @@ Operational notes:
   GPS validates) — or hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
   (`RBRemote`, switch in the start dialog, #20). Tapping any OTHER row moves the run cursor and
   always asks first — it leaves notes unvalidated and in competition costs 450 pts each.
+  With sound on, each validation rings `RBSuccess`; the last note plays the arrival fanfare (#843).
   Every run ends with its **report** (#618 — notes reached/skipped, speed-limit zones, time;
-  `RBRun`, stored on the device first, then `run_save`), kept private or shown on the runner's
-  public profile `/u/<username>` (#619/#620); a competition run also enters the event's shared
-  ranking (`event_results`, #590).
+  `RBRun`, stored on the device first, then `run_save`): the finish screen leads with the run card,
+  Share and a Private/Public switch (sharing before choosing asks to make the run public, #820 ·
+  #852), and a public run shows on the runner's profile `/u/<username>` (#619/#620); a competition run also enters the event's shared
+  ranking (`event_results`, #590). The run also stores the device it was made on
+  (`RBDeviceLabel`), which only admins see, in user management's Runs view (#870).
   Competition validates with penalties + an HMAC-signed result QR (its 100 m proximity gate is
-  widened by the fix's own accuracy); validating syncs the total odometer to the note's distance.
+  widened by the fix's own accuracy).
   Opens `.rdbk` from the OS on installed PWAs.
 - **Tripmaster** — a GPS trip computer with no roadbook: total/partial odometer with
   ±10 m corrections and hold-to-reset, speed with configurable alert bands, heading,
@@ -572,8 +582,14 @@ Operational notes:
   a non-owner can't fork or download the `.rdbk`). The home shows a last-6 teaser linking there.
   **Comments (#809):** signed-in users comment on a public roadbook on its `/challenge/<slug>`
   page (Turnstile-guarded, rate-limited); comments are never shown in navigation, and the author,
-  the roadbook's owner or an admin may delete one. Table `roadbook_comments`; API
+  the roadbook's owner or an admin may delete one. A **Comments** button beside Navigate · PDF ·
+  Edit, with the count, scrolls down to them (#853). Table `roadbook_comments`; API
   `comments_list` / `comment_add` / `comment_delete` (`app/comments.php`).
+  **Completed by (#869):** under the comments, the public completed runs (runner, notes, date, link
+  to `/run/<id>`) and only a count of the private ones (`roadbook_completions`). Every roadbook card
+  carries the same number as a *Times completed* pill (#868): `rb_card_fields($row)` is the one card
+  shape of `public_list` / `profile_get` / `event_get`, its `completions` counted by
+  `RB_COMPLETIONS_SQL` (`app/runs.php`).
 - **Events** — `/events/` lists public events and `/event/<slug>` is the event view
   (categories, organizers, linked roadbooks). Participants join as *pending* and are activated
   by the organizer (QR token or the admin panel); `/go/<code>` is the participant deep link
@@ -583,7 +599,9 @@ Operational notes:
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
   `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
-  (`simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`),
+  (`simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`), `routeAhead` (the live fix
+  projected onto the route around a note: the along-route position, the road left to the note and
+  how far off the route the fix is — the Reader's distances and its note-map guide),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
   the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
@@ -597,7 +615,7 @@ Operational notes:
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by both the Reader rows and the challenge page).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
-  pins, draggable edit marker, satellite↔topo layer toggle). Used by the **Editor**
+  pins, draggable edit marker, satellite → topo → OSM layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
 - `gps-meter.js` (`RBGpsMeter`) — the shared GPS dashboard loop (Reader + Tripmaster):
   position watch + wake lock, one *judged* `{here, trusted, disp, from, speedKmh, heading}` per
@@ -736,7 +754,9 @@ The `roadbook.json` schema:
     "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|…); on disk (.rdbk/server) written as its OpenRally cap code (WPM, WPN…), normalized to internal ids on import (wpTypeByCap/importRoadbook) and re-emitted by roadbookForExport; editor badge + GPX sym
     "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
-    "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..5 } ]
+    "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..5 } ],
+    "blocks"?: [ { "type": "photo"|"ad"|"text", "at": "before"|"after", "image"?: str /* data: URI */, "text"?: str } ]
+                                                              // RB.NOTE_BLOCKS: material shown before/after the note; never a waypoint (not numbered, mapped, scored or exported to GPX)
   } ],
   "icons": { "x.png": "data:image/png;base64,…" }             // EVERY used symbol, embedded
 }

@@ -9,7 +9,7 @@ endpoint del back-end.
 > soltanto gli account e la condivisione — login, salvataggio dei roadbook nel proprio
 > profilo, gallerie foto e la pubblicazione di challenge pubbliche.
 
-Stack: **PHP 8.4 + MariaDB**, configurazione via `.env` ([phpdotenv](../app/bootstrap.php#L6)).
+Stack: **PHP 8.4 + MariaDB**, configurazione via `.env` ([phpdotenv](../app/bootstrap.php)).
 Il codice di logica vive in `app/` (fuori dalla web root), i due endpoint HTTP in `public/api/`.
 
 ---
@@ -40,13 +40,13 @@ RBUpload(...)          ──POST──▶ upload.php          ─────�
 `RBApi(action, body)` (descritto in `CLAUDE.md`, definito in `app.js`) fa una POST JSON a
 `index.php` con `{ action, ...body }`. La risposta è sempre JSON: `{ ok: true, ... }` in caso
 di successo, `{ ok: false, error: "..." }` con codice HTTP appropriato in caso di errore
-([`fail()`](../app/bootstrap.php#L52)).
+([`fail()`](../app/bootstrap.php)).
 
 ---
 
 ## 2. Il router `index.php`
 
-Il dispatch è uno `switch ($action)` ([index.php:19](../public/api/index.php#L19)). Prima dello
+Il dispatch è uno `switch ($action)` ([index.php](../public/api/index.php)). Prima dello
 switch ci sono i guard di metodo e di origine.
 
 ### Regole di metodo e CSRF
@@ -181,7 +181,7 @@ L'upload immagini **non** è un'action di `index.php`: è il file separato `uplo
 ## 3. Configurazione, sessione e connessione DB
 
 ### `.env` → `$CFG` (bootstrap.php)
-[`bootstrap.php`](../app/bootstrap.php#L8) carica l'`.env` con phpdotenv (`safeLoad`, non fallisce
+[`bootstrap.php`](../app/bootstrap.php) carica l'`.env` con phpdotenv (`safeLoad`, non fallisce
 se manca) e costruisce l'array `$CFG`:
 
 | Chiave `$CFG` | Variabile `.env` | Uso |
@@ -199,19 +199,19 @@ di default per utente, sovrascrivibile per singolo utente da un admin (`users.qu
 
 ### Sessione (sliding, 60 giorni)
 Cookie `rdbksid` con `SESSION_LIFETIME = 60 giorni`, `Secure` + `HttpOnly` + `SameSite=Lax`
-([bootstrap.php:34](../app/bootstrap.php#L34)). È **scorrevole**: ad ogni richiesta con
+([bootstrap.php](../app/bootstrap.php)). È **scorrevole**: ad ogni richiesta con
 sessione attiva il cookie viene riemesso con scadenza rinnovata
-([bootstrap.php:40](../app/bootstrap.php#L40)) — così l'app installata resta loggata "come
+([bootstrap.php](../app/bootstrap.php)) — così l'app installata resta loggata "come
 nativa".
 
 ### Connessione PDO (db.php)
-[`db()`](../app/db.php#L2) restituisce un singleton PDO MySQL (`utf8mb4`) con eccezioni
+[`db()`](../app/db.php) restituisce un singleton PDO MySQL (`utf8mb4`) con eccezioni
 attive, fetch associativo di default e **prepared statement reali** (`EMULATE_PREPARES =
 false`). Tutte le query passano da prepared statement: non c'è concatenazione di SQL.
 
 ### Helper trasversali (bootstrap.php)
 - `json_out($data, $code)` / `json_in()` / `fail($msg, $code)` — I/O JSON
-  ([bootstrap.php:45](../app/bootstrap.php#L45)).
+  ([bootstrap.php](../app/bootstrap.php)).
 - `rate_limit($key, $max, $window)` — rate limit leggero: **APCu** come via veloce, con
   **fallback su file** (un contatore per chiave sotto la temp dir, con `flock`) quando
   l'estensione non è caricata, così il limite è **sempre applicato**
@@ -233,8 +233,8 @@ false`). Tutte le query passano da prepared statement: non c'è concatenazione d
 
 ### Token: random + hash con pepper
 I token (verifica email, reset, API) sono 32 byte casuali esadecimali
-([`new_token`](../app/auth.php#L7)). Nel DB si salva **solo** l'hash
-`sha256(token + '|' + app_secret)` ([`token_hash`](../app/auth.php#L8)): il valore in chiaro
+([`new_token`](../app/auth.php)). Nel DB si salva **solo** l'hash
+`sha256(token + '|' + app_secret)` ([`token_hash`](../app/auth.php)): il valore in chiaro
 esiste solo nella mail o sul dispositivo. Le password usano `password_hash`/`password_verify`
 (bcrypt di default).
 
@@ -248,7 +248,7 @@ controlla unicità di username/email, crea l'utente non verificato con un `verif
 il token (controllo scadenza) e setta `email_verified = 1`.
 
 ### Login e sessione
-[`login_user`](../app/auth.php#L181): accetta **email *oppure* username** nello stesso campo,
+[`login_user`](../app/auth.php): accetta **email *oppure* username** nello stesso campo,
 verifica la password, **rifiuta gli account non verificati** (`403`), poi
 `session_regenerate_id(true)` (anti session-fixation) e salva `$_SESSION['uid']`. A un Origin app
 (`is_app_origin`) restituisce anche un **Bearer token** ([`issue_api_token`](../app/auth.php)) —
@@ -256,9 +256,9 @@ vedi sotto; al web no, perché lo scarterebbe e resterebbe una credenziale orfan
 
 ### Bearer token per le app native
 Una webview Capacitor non porta il cookie di sessione cross-origin, quindi le app native si
-autenticano con un Bearer token (tabella `api_tokens`). [`current_user`](../app/auth.php#L27)
+autenticano con un Bearer token (tabella `api_tokens`). [`current_user`](../app/auth.php)
 prima prova la sessione, poi ricade su `Authorization: Bearer <token>`
-([`bearer_token`](../app/auth.php#L13), che legge anche `REDIRECT_HTTP_AUTHORIZATION` /
+([`bearer_token`](../app/auth.php), che legge anche `REDIRECT_HTTP_AUTHORIZATION` /
 `apache_request_headers`), aggiornando `last_used_at`. Il web non tocca mai questo percorso.
 `current_user()` è memoizzato per richiesta (la chiave è la credenziale che la richiesta porta, così
 un login o un logout nella stessa richiesta si vede subito): `require_user`, `participant_context` e
@@ -276,26 +276,26 @@ senza indice per utente: finiscono alla loro scadenza.
 > NULL. Non rimuovere quella regola.
 
 ### Reset password
-[`forgot_password`](../app/auth.php#L205): genera un `reset_token` valido 1 h e invia la mail,
+[`forgot_password`](../app/auth.php): genera un `reset_token` valido 1 h e invia la mail,
 ma **risponde sempre positivamente** per non rivelare se un'email è registrata
 ([auth.php](../app/auth.php)). [`reset_password`](../app/auth.php) (rate-limitato per IP) consuma il
 token, aggiorna l'hash e revoca tutti i token app dell'account.
 
 ### Cambio email (con ri-verifica del nuovo indirizzo)
-[`change_email`](../app/auth.php#L239) (da loggati): valida il nuovo indirizzo, ne controlla
+[`change_email`](../app/auth.php) (da loggati): valida il nuovo indirizzo, ne controlla
 l'unicità (anche contro i `pending_email` altrui), lo salva in **`pending_email`** e invia un
 link di conferma `/account/?verifyemail=<raw>` **al nuovo indirizzo** (token valido 24 h, che
 riusa `verify_token`/`verify_expires`, liberi su un account già verificato). **L'email attuale
-resta attiva finché la conferma non avviene.** [`verify_email_change`](../app/auth.php#L258)
+resta attiva finché la conferma non avviene.** [`verify_email_change`](../app/auth.php)
 apre il link (basato su token, senza sessione, come il reset): rifa il controllo di unicità e
 fa lo switch `email ← pending_email`, azzerando `pending_email` e i token. Questo chiude il
 vecchio limite "niente cambio email da loggati".
 
 ### Preferenze utente (lingua + posizione di default)
-- [`set_lang`](../app/auth.php#L78): salva la lingua UI preferita in **`ui_lang`** (whitelist
+- [`set_lang`](../app/auth.php): salva la lingua UI preferita in **`ui_lang`** (whitelist
    `en`/`es`/`it`/`de`/`fr`), così la scelta dal selettore di lingua dell'header segue l'utente tra
    dispositivi. Valore non nella whitelist → `400`.
-- [`save_location`](../app/auth.php#L88): salva la posizione mappa di default in
+- [`save_location`](../app/auth.php): salva la posizione mappa di default in
   **`default_lat`/`default_lon`**. Valida la coppia (numerica, `|lat| ≤ 90`, `|lon| ≤ 180`):
   se manca o è fuori range, **azzera** entrambe a `NULL`. Serve a centrare la mappa quando non
   c'è ancora un fix GPS (apertura del Recorder, o disegno di una rotta da zero nell'Editor).
@@ -310,7 +310,7 @@ fare solo ciò che può un qualsiasi utente loggato. L'upsert (`ON DUPLICATE KEY
 password se rieseguita.
 
 ### Cloudflare Turnstile
-[`verify_turnstile`](../app/auth.php#L125) protegge `register`/`login`/`forgot`. È un **no-op se
+[`verify_turnstile`](../app/auth.php) protegge `register`/`login`/`forgot`. È un **no-op se
 `turnstile_secret` è vuoto** (feature non ancora attivata): in locale e senza configurazione,
 i form passano senza challenge. Le **app native sono esenti**: il widget è domain-locked e non
 può girare nella WebView (origin `localhost`), quindi una richiesta con un Origin app
@@ -324,7 +324,7 @@ solo i rate limit. Il web lo richiede come sempre.
 
 **Modello ibrido:** i *metadati* stanno nella tabella `roadbooks`; il *JSON completo del
 roadbook* è un file su disco in `storage/users/<user_id>/<id>.rdbk`
-([`rb_dir`](../app/roadbooks.php#L6), `mkdir 0700`), fuori dalla web root e servito **solo**
+([`rb_dir`](../app/roadbooks.php), `mkdir 0700`), fuori dalla web root e servito **solo**
 attraverso questi endpoint autenticati. Lo storage lato server resta **JSON puro**: il
 contenitore ZIP `.rdbk` (con foto/audio) è solo l'artefatto di export/import client-side.
 
@@ -440,7 +440,7 @@ disco del proprietario del roadbook** (`rb_assert_quota`): superata, rispondono 
   `audio_list`/`audio_delete` (vedi §2).
 
 ### images.php — decodifica → AVIF
-[`process_to_avif`](../app/images.php#L6) (GD): decodifica qualsiasi immagine, **scarta gli
+[`process_to_avif`](../app/images.php) (GD): decodifica qualsiasi immagine, **scarta gli
 input oltre 50 MP** (guardia anti decompression-bomb), corregge l'orientamento da EXIF,
 opzionalmente ritaglia in quadrato, ridimensiona per stare entro `maxDim` e scrive un **AVIF
 compresso**. **L'originale non viene mai salvato** (il tmp di PHP è auto-rimosso). Le note
@@ -453,7 +453,7 @@ vocali non passano da qui: l'audio è conservato tal quale.
 
 ## 7. Email (mail.php)
 
-[`send_mail`](../app/mail.php#L3) invia HTML tramite la **SendGrid v3 API** (cURL, Bearer
+[`send_mail`](../app/mail.php) invia HTML tramite la **SendGrid v3 API** (cURL, Bearer
 key). Se la chiave non è configurata logga e ritorna `false` (in locale le mail semplicemente
 non partono, il resto funziona). [`mail_account`](../app/mail.php) compone le tre mail
 dell'account (`verify` · `reset` · `change`) in **un solo template a tabelle con stili inline** —
@@ -530,7 +530,7 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **CSRF:** difeso da `SameSite=Lax` + il vincolo POST-only sulle action di stato + il
   same-origin guard. Non c'è un token anti-CSRF esplicito: la difesa si regge su quei tre
   pilastri (e sull'header `Origin`, che però è facoltativo nel controllo —
-  [index.php:15](../public/api/index.php#L15) salta il guard se `Origin` è assente).
+  [index.php](../public/api/index.php) salta il guard se `Origin` è assente).
 - **Rate limiting:** **APCu** come via veloce, con **fallback su file** quando l'estensione
   non c'è, così register/login/forgot/reset/join restano limitati su ogni hosting
   ([bootstrap.php](../app/bootstrap.php)).

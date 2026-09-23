@@ -19,7 +19,7 @@ Il file è un'unica IIFE in [tripmaster.js](../public/tripmaster/tripmaster.js);
 ## 1. Lo stato della sessione
 
 Tutto lo stato vive in poche variabili modulo
-([tripmaster.js:12](../public/tripmaster/tripmaster.js#L12)):
+([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 | Variabile | Significato |
 |-----------|-------------|
@@ -41,15 +41,15 @@ Il Tripmaster non possiede un proprio loop di posizionamento: usa il dashboard G
 **`RBGpsMeter`** ([gps-meter.js](../public/assets/js/gps-meter.js)), che fornisce un oggetto
 pulito per ogni fix. Si veda il documento dedicato per il dettaglio del watch e del wake lock.
 
-L'avvio è in `start()` ([tripmaster.js:42](../public/tripmaster/tripmaster.js#L42)):
+L'avvio è in `start()` ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 - imposta `window.RB_BUSY = true` per **impedire l'auto-refresh** di versione mentre la gita
-  è in corso ([tripmaster.js:43](../public/tripmaster/tripmaster.js#L43));
+  è in corso ([tripmaster.js](../public/tripmaster/tripmaster.js));
 - mostra la **status bar** condivisa `RBStatusBar` (orologio · batteria · satellite/GPS);
 - istanzia `RBGpsMeter` con `onFix` come callback;
 - avvia un `setInterval` a 500 ms che aggiorna il display del cronometro (`tmTimer`).
 
-Ad ogni fix, `onFix(fix)` ([tripmaster.js:54](../public/tripmaster/tripmaster.js#L54)):
+Ad ogni fix, `onFix(fix)` ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 1. passa l'accuratezza alla status bar (`RBStatusBar.setGps`);
 2. somma lo spostamento `fix.disp` sia a `totalM` sia a `partialM`;
@@ -78,23 +78,23 @@ azzera il parziale), poi *Record GPX* · *Fullscreen* · *End*. Da 900 px il cru
 colonne — odometri e schede a sinistra, azioni in colonna a destra con Mark note la più alta.
 
 > In landscape su schermi bassi (`max-height: 540px`) l'`header.topbar` viene nascosto via CSS
-> ([index.html:55](../public/tripmaster/index.html#L55)) per lasciare spazio al cruscotto.
+> ([index.html](../public/tripmaster/index.html)) per lasciare spazio al cruscotto.
 
 ---
 
 ## 4. Odometro: totale, parziale e correzioni ±10 m
 
 Sono due odometri indipendenti, affiancati nel layout `.tm-odo`
-([index.html:63](../public/tripmaster/index.html#L63)). Entrambi hanno correttori manuali
+([index.html](../public/tripmaster/index.html)). Entrambi hanno correttori manuali
 `+10 m` / `−10 m`, perché in fuoristrada la deriva GPS va corretta a mano sul riferimento del
 roadbook cartaceo.
 
-| Pulsante | Azione | Riga |
-|----------|--------|------|
-| `tmPlus10` | `partialM += 10` | [tripmaster.js:90](../public/tripmaster/tripmaster.js#L90) |
-| `tmMinus10` | `partialM = max(0, partialM − 10)` | [tripmaster.js:91](../public/tripmaster/tripmaster.js#L91) |
-| `tmTotPlus10` | `totalM += 10` | [tripmaster.js:93](../public/tripmaster/tripmaster.js#L93) |
-| `tmTotMinus10` | `totalM = max(0, totalM − 10)` | [tripmaster.js:94](../public/tripmaster/tripmaster.js#L94) |
+| Pulsante | Azione |
+|----------|--------|
+| `tmPlus10` | `partialM += 10` |
+| `tmMinus10` | `partialM = max(0, partialM − 10)` |
+| `tmTotPlus10` | `totalM += 10` |
+| `tmTotMinus10` | `totalM = max(0, totalM − 10)` |
 
 - I correttori del **parziale agiscono solo sul parziale**; quelli del **totale solo sul
   totale**. I due odometri sono completamente separati.
@@ -103,18 +103,18 @@ roadbook cartaceo.
 ### Reset del parziale: hold-to-reset 5 s
 
 Il reset del parziale è protetto contro i tocchi accidentali
-([tripmaster.js:113](../public/tripmaster/tripmaster.js#L113)):
+([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 - **Pointer**: bisogna **tenere premuto 5 secondi** (`setTimeout` di 5000 ms; la barra
   `.hold-fill` si riempie via CSS). Un tap-and-release rapido (< 600 ms) non azzera nulla ma
   mostra il toast "Hold to reset." per spiegare il gesto
-  ([tripmaster.js:117](../public/tripmaster/tripmaster.js#L117)).
+  ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 - **Tastiera** (Enter/Space): l'hold non è raggiungibile senza puntatore, quindi si conferma
   via `RBConfirm`; il `click` sintetico successivo viene inghiottito per non far partire due
-  volte l'azione ([tripmaster.js:124-129](../public/tripmaster/tripmaster.js#L124)).
+  volte l'azione ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 Il reset effettivo (`doReset`) azzera **solo** `partialM`
-([tripmaster.js:112](../public/tripmaster/tripmaster.js#L112)).
+([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 > Nota: marcare un waypoint con `tmNoteBtn` azzera **anch'esso** il parziale (vedi §7) — ma
 > senza l'hold, perché è un'azione esplicita e desiderata ad ogni nuovo riferimento.
@@ -124,12 +124,12 @@ Il reset effettivo (`doReset`) azzera **solo** `partialM`
 ## 5. Velocità e bande di allerta
 
 La velocità corrente viene da `meter.speedKmh`; viene mostrata arrotondata in `tmSpeed`, e il
-massimo in `tmMax` ([tripmaster.js:76](../public/tripmaster/tripmaster.js#L76)).
+massimo in `tmMax` ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 L'utente può impostare una **velocità da sorvegliare** (`saLimit`, 0 = disattivata) e quattro
 colori di banda, persistiti in `localStorage` sotto la chiave `rb_speedalert`
-([tripmaster.js:65](../public/tripmaster/tripmaster.js#L65)). Il modale di configurazione è in
-`tmSpeedAlert` ([tripmaster.js:133](../public/tripmaster/tripmaster.js#L133)).
+([tripmaster.js](../public/tripmaster/tripmaster.js)). Il modale di configurazione è in
+`tmSpeedAlert` ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 Il colore della banda è scelto da `speedBandColor(v)`, che delega la fascia (0..3) al core
 `RB.speedBand(v, saLimit)` e la mappa sui colori scelti, attorno al limite `L = saLimit`:
@@ -154,7 +154,7 @@ Il colore risultante:
 ## 6. Heading (CAP)
 
 L'heading di marcia viene da `meter.heading` (gradi), mostrato arrotondato in `tmCap` con un
-ago direzionale `tmCapArrow` ([tripmaster.js:81](../public/tripmaster/tripmaster.js#L81)):
+ago direzionale `tmCapArrow` ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 - se l'heading non è disponibile, il valore è `—` e l'ago è nascosto;
 - l'ago ruota su `--cap-rotation`, con **0° = su = Nord**, e ruota fino all'heading di marcia.
@@ -164,22 +164,23 @@ ago direzionale `tmCapArrow` ([tripmaster.js:81](../public/tripmaster/tripmaster
 ## 7. Cronometro
 
 Il cronometro usa il **wall-clock**, così continua a contare anche se l'app viene messa in
-background o uccisa ([tripmaster.js:13](../public/tripmaster/tripmaster.js#L13)):
+background o uccisa ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 - `timerOn` = in marcia;
 - `timerStart` = `Date.now()` dell'ultimo avvio;
 - `timerAcc` = millisecondi accumulati nelle sessioni precedenti.
 
 Il tempo mostrato è `timerAcc + (timerOn ? Date.now() − timerStart : 0)`, formattato `m:ss`
-nell'intervallo a 500 ms ([tripmaster.js:49](../public/tripmaster/tripmaster.js#L49)).
+nell'intervallo a 500 ms ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
-| Pulsante | Azione | Riga |
-|----------|--------|------|
-| `tmTimerBtn` | la scheda stessa del cronometro (#721): Start/Pause, alterna `timerOn`, accumula in `timerAcc` alla pausa | `renderTimer()` |
-| `tmTimerReset` | Azzera: `timerOn = false`, `timerAcc = 0` | [tripmaster.js:105](../public/tripmaster/tripmaster.js#L105) |
+| Pulsante | Azione |
+|----------|--------|
+| `tmTimerBtn` | la scheda stessa del cronometro (#721): Start/Pause, alterna `timerOn`, accumula in `timerAcc` alla pausa |
+| `tmTimerReset` | Azzera: `timerOn = false`, `timerAcc = 0` |
 
-`renderTimerButton()` ([tripmaster.js:97](../public/tripmaster/tripmaster.js#L97)) scambia
-l'icona (cronometro ↔ pausa), evidenzia il pulsante con `.btn-primary` quando attivo e mostra
+`renderTimer()` ([tripmaster.js](../public/tripmaster/tripmaster.js)) scambia
+l'icona (cronometro ↔ pausa) con la sua etichetta accessibile (*Start the timer* / *Pause the
+timer*), marca la scheda `.tm-timer` con `.running` quando è attivo e mostra
 il pulsante reset solo quando c'è tempo da azzerare (`!timerOn && timerAcc === 0` lo nasconde).
 
 ---
@@ -187,7 +188,7 @@ il pulsante reset solo quando c'è tempo da azzerare (`!timerOn && timerAcc === 
 ## 8. Contatore waypoint
 
 Il pulsante "Mark note" (`tmNoteBtn`) incrementa `waypoints`, aggiorna il display e
-**azzera il parziale** ([tripmaster.js:95](../public/tripmaster/tripmaster.js#L95)):
+**azzera il parziale** ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 ```js
 $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoints; partialM = 0; render(); };
@@ -203,14 +204,14 @@ $('tmNoteBtn').onclick = () => { waypoints++; $('tmNotes').textContent = waypoin
 
 La registrazione è interamente delegata al modulo condiviso **`RBGpxRecorder`**
 ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)), inizializzato a
-[tripmaster.js:157](../public/tripmaster/tripmaster.js#L157). Il Tripmaster gli passa solo:
+[tripmaster.js](../public/tripmaster/tripmaster.js). Il Tripmaster gli passa solo:
 
 - `toast` per i messaggi;
 - un callback `onChange(recording)` che trasforma `tmRecBtn` in un inequivocabile pulsante
   rosso di **STOP** quando si registra, e salva la sessione.
 
 Il pulsante avvia il modale impostazioni (`RBGpxRecorder.settings()`) o ferma la registrazione
-(`RBGpxRecorder.stop()`) ([tripmaster.js:165](../public/tripmaster/tripmaster.js#L165)). I fix
+(`RBGpxRecorder.stop()`) ([tripmaster.js](../public/tripmaster/tripmaster.js)). I fix
 sono alimentati dentro `onFix` via `RBGpxRecorder.feed(...)`. Settings modal, checkpoint del
 file e recupero post-crash della traccia sono documentati nel doc di `RBGpxRecorder`.
 
@@ -220,12 +221,12 @@ file e recupero post-crash della traccia sono documentati nel doc di `RBGpxRecor
 
 La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`), letta e scritta con `RBCheckpoint`.
 
-- **Salvataggio**: `saveSession()` ([tripmaster.js:17](../public/tripmaster/tripmaster.js#L17))
+- **Salvataggio**: `saveSession()` ([tripmaster.js](../public/tripmaster/tripmaster.js))
   serializza tutto lo stato (odometri, max, waypoint, stato cronometro, stato registrazione GPX
   + nome file) ed è chiamato **ad ogni `render()`** (cioè ad ogni fix) e ad ogni cambio di
   cronometro/registrazione.
 
-- **All'avvio** ([tripmaster.js:24](../public/tripmaster/tripmaster.js#L24)) la IIFE iniziale
+- **All'avvio** ([tripmaster.js](../public/tripmaster/tripmaster.js)) la IIFE iniziale
   decide fra tre strade:
   1. **Riprendi**: se esiste una sessione con dati significativi (`totalM > 0`, waypoint,
      cronometro attivo/accumulato o registrazione GPX), chiede conferma via `RBConfirm` e, se
@@ -243,7 +244,7 @@ La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`)
 > offre comunque il recupero del GPX.
 
 - **Uscita**: **End** (`tmExit`, `fa-right-from-bracket` come nel Reader, #645) chiede conferma, poi `clearSession()` e ricarica la
-  pagina ([tripmaster.js:106](../public/tripmaster/tripmaster.js#L106)).
+  pagina ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 ---
 

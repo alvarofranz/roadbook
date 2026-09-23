@@ -93,7 +93,7 @@ Un dialogo mostra un breve riepilogo (km · note · foto) e pone una sola domand
 | Pulsante | Cosa succede |
 |---------|--------------|
 | **💾 Salva** | Se sei loggato: la registrazione viene salvata come **draft** di roadbook (con le sue foto) e si **apre subito l'Editor** su di esso. Se non sei loggato: vai alla pagina di accesso e, una volta entrato, torni e viene salvata allo stesso modo; poi si apre l'Editor |
-| **🗑 Scarta** | Chiede conferma, indicando cosa andrebbe perso (traccia, note, foto, note vocali), poi elimina la registrazione |
+| **🗑 Scarta** | Chiede conferma, indicando cosa andrebbe perso (traccia, note, foto), poi elimina la registrazione |
 
 Qui non ci sono pulsanti di esportazione: l'esportazione (GPX, `.rdbk`, PDF…) si fa dopo dall'Editor.
 

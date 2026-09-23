@@ -17,10 +17,10 @@ editing delle note.
 L'Editor produce **un unico roadbook in memoria** (`rb`) con la forma del formato `.rdbk`
 (`meta` · `track` · `notes` · `icons`) e lo edita finché non viene esportato o salvato.
 Invariante chiave del codice: **qualunque siano i pezzi di origine, la rotta è sempre UNA
-traccia continua** (commento di testa, [editor.js:7](../public/editor/editor.js#L7)).
+traccia continua** (commento di testa, [editor.js](../public/editor/editor.js)).
 
 La pagina ha due viste, commutate da `showView(v)`
-([editor.js:427](../public/editor/editor.js#L427)):
+([editor.js](../public/editor/editor.js)):
 
 | Vista        | Elemento      | Contenuto                                                        |
 |--------------|---------------|-----------------------------------------------------------------|
@@ -108,7 +108,7 @@ nessun'altra parte — tasto destro apre il menu su desktop, pressione lunga su 
 > nota → punto, **Del** cancella.
 
 **Posizionamento esatto.** `splitTrackAt(p)`
-([editor.js:201](../public/editor/editor.js#L201)) usa `RB.nearestOnTrack`: se il tap cade
+([editor.js](../public/editor/editor.js)) usa `RB.nearestOnTrack`: se il tap cade
 tra due vertici, il segmento viene spezzato lì inserendo un punto — quindi note e tagli
 possono stare **ovunque** sulla rotta, non solo sui vertici esistenti. Il connettore
 tratteggiato di un taglio aperto non viene mai spezzato (non è un segmento reale).
@@ -116,9 +116,9 @@ tratteggiato di un taglio aperto non viene mai spezzato (non è un segmento real
 **Tagli aperti (`gaps`).** Un cut interno lascia un vero buco. È memorizzato come la coppia
 di **punti** dei bordi (`{a, b}`), non come indici — così sopravvive agli shift di indice di
 qualunque altra operazione; `resolveGaps()`
-([editor.js:84](../public/editor/editor.js#L84)) li ri-risolve in indici on demand e pota
+([editor.js](../public/editor/editor.js)) li ri-risolve in indici on demand e pota
 quelli morti. Il buco si riempie disegnando, o si chiude come **linea retta** all'export/save
-dopo una conferma (`confirmOpenCuts`, [editor.js:103](../public/editor/editor.js#L103)).
+dopo una conferma (`confirmOpenCuts`, [editor.js](../public/editor/editor.js)).
 
 **Un taglio chiede prima di togliere note.** Le note dentro il tratto tagliato (in testa, in coda
 o nel mezzo) se ne vanno con lui, quindi `cutPoint` le elenca per numero e testo in un
@@ -135,7 +135,7 @@ o nel mezzo) se ne vanno con lui, quindi `cutPoint` le elenca per numero e testo
 
 *(L'inversione percorso è nei Settings, non più qui; il toggle satellite/terreno è un controllo della mappa in alto a destra — vedi §3.3.)*
 
-**add GPX** (`addGpxTrack`, [editor.js:265](../public/editor/editor.js#L265)): se **entrambe**
+**add GPX** (`addGpxTrack`, [editor.js](../public/editor/editor.js)): se **entrambe**
 le estremità del pezzo toccano la rotta (entro 200 m) offre la **sostituzione del tratto**
 intermedio (`spliceByIndex`); altrimenti unisce il pezzo all'estremità più vicina (nel tempo, se
 rotta e pezzo hanno orari che non si sovrappongono, #158; altrimenti nello spazio),
@@ -159,12 +159,12 @@ roadbook da gara: ottimizzare **prima** di rifinire i parziali, così i numeri s
 corrispondono alla polilinea definitiva.
 
 **Undo/redo.** Snapshot dell'intero `{rb, sel, gaps}` serializzato
-([editor.js:378](../public/editor/editor.js#L378)), max 30, push debounced a 400 ms. Applicare
+([editor.js](../public/editor/editor.js)), max 30, push debounced a 400 ms. Applicare
 uno snapshot (`histApply`) riempie i campi dei Settings con lo stesso `fillSettings()` di
 `setRoadbook`, e uno snapshot senza note (una rotta non ancora disegnata) chiude l'editor della
 nota invece di disegnarne una che non c'è. Ogni
-`markDirty()` ([editor.js:36](../public/editor/editor.js#L36)) schedula un push. Scorciatoie
-Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js:404](../public/editor/editor.js#L404)), disabilitate
+`markDirty()` ([editor.js](../public/editor/editor.js)) schedula un push. Scorciatoie
+Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js](../public/editor/editor.js)), disabilitate
 dentro campi testo e durante un recording.
 
 Move, Aggiungi note, Aggiungi punti e Cut restano `disabled` finché non c'è una rotta (`paintModes`).
@@ -195,10 +195,10 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
 - **Selezione nota = solo evidenziazione (#65).** Selezionare una nota — dalla riga lista
   **o** dal marker sulla mappa — la evidenzia (`map.select(note, true)`), apre il suo editor
   inline e porta la riga in vista, ma **non** ricentra, **non** zooma e **non** ruota la mappa
-  ([editor.js:1177](../public/editor/editor.js#L1177)): così editare (e **cancellare**) una nota
+  ([editor.js](../public/editor/editor.js)): così editare (e **cancellare**) una nota
   non fa più "saltare" la vista al punto successivo. L'unico movimento automatico residuo è il
   ritorno **a nord** alla chiusura dell'editor (`closeEditor`,
-  [editor.js:1166](../public/editor/editor.js#L1166)), se la mappa era ruotata.
+  [editor.js](../public/editor/editor.js)), se la mappa era ruotata.
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema
@@ -215,13 +215,13 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
 
 ## 4. Il modello di editing delle note
 
-La lista note (`renderNotes`, [editor.js:702](../public/editor/editor.js#L702)) è una colonna
+La lista note (`renderNotes`, [editor.js](../public/editor/editor.js)) è una colonna
 di righe `.note-mini`. Tappare una riga **espande l'editor inline subito sotto**: l'unico
 elemento `#noteEditZone` viene fisicamente **spostato** nello slot di quella riga, e la
 canvas-vignette (`#canvasWrap`) viene spostata DENTRO la cella tulip della riga
-(`openEditZoneAt`, [editor.js:777](../public/editor/editor.js#L777)). Prima di ogni rebuild
+(`openEditZoneAt`, [editor.js](../public/editor/editor.js)). Prima di ogni rebuild
 della lista i due pezzi vengono "parcheggiati" in `#rbPanel` (`parkEditor`,
-[editor.js:776](../public/editor/editor.js#L776)) — altrimenti `innerHTML` distruggerebbe gli
+[editor.js](../public/editor/editor.js)) — altrimenti `innerHTML` distruggerebbe gli
 elementi spostati.
 
 **La nota e il materiale attorno a lei: le tab (#542).** Ogni riga è una **nota**. Con una nota
@@ -243,17 +243,17 @@ cestino sotto**: niente frecce, niente pulsante "Add comment", niente campo "Pos
 Campi editabili di una nota:
 
 - **Testo** — `textarea` editata in place nella riga; aggiorna solo il modello senza rebuild
-  (mantiene il focus) ([editor.js:749](../public/editor/editor.js#L749)).
+  (mantiene il focus) ([editor.js](../public/editor/editor.js)).
 - **Road type** — select "Road" che imposta `road_type_out`; solo la strada che si **lascia**
   è autorizzata, l'arrivo deriva dal `road_out` della nota precedente
-  (`renderEditor` + `RB.normalizeRoadTypes`, [editor.js:830](../public/editor/editor.js#L830)).
+  (`renderEditor` + `RB.normalizeRoadTypes`, [editor.js](../public/editor/editor.js)).
 - **Danger** — select FIA `—`/`!`/`!!`/`!!!` → `n.danger` (cancellato se 0)
-  ([editor.js:837](../public/editor/editor.js#L837)).
-- **CAP** — toggle nella riga (`toggleCapAt`, [editor.js:840](../public/editor/editor.js#L840)):
+  ([editor.js](../public/editor/editor.js)).
+- **CAP** — toggle nella riga (`toggleCapAt`, [editor.js](../public/editor/editor.js)):
   attivandolo calcola heading (`bearingDeg`) e distanza (`haversineM`) verso la nota
   successiva. L'**ultima nota non ha CAP** (manca la nota seguente).
 - **Icone / vignette** — gestite da `NoteCanvas` su `#noteCanvas`
-  ([editor.js:46](../public/editor/editor.js#L46)); palette in §4.1.
+  ([editor.js](../public/editor/editor.js)); palette in §4.1.
 
 **Drag sulla mappa.** Nel tool **Move** (`points`, default a roadbook caricato) la nota si
 trascina direttamente dal suo marker blu (`onWptDrag`/`onWptCommit` armati via
@@ -262,8 +262,8 @@ la segue — la nota è mobile esattamente come un punto traccia (#61). Niente p
 pan-only né mini-mappa separata.
 
 Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
-([editor.js:848](../public/editor/editor.js#L848)); la guardia impone **almeno 2 note**
-([editor.js:737](../public/editor/editor.js#L737)). Poiché `select` non muove più la mappa
+([editor.js](../public/editor/editor.js)); la guardia impone **almeno 2 note**
+([editor.js](../public/editor/editor.js)). Poiché `select` non muove più la mappa
 (#65, §3.3), cancellare una nota e selezionare la successiva **non ricentra la vista**.
 
 ### 4.1 Palette icone
@@ -292,7 +292,7 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 > *dentro* il simbolo resta — con un bordo morbido (tolleranza piena, poi una fascia che sfuma).
 > Tutto nel browser, niente server né modello; la libreria tiene **solo** la versione scelta.
 
-`renderIcons` ([editor.js:874](../public/editor/editor.js#L874)) fonde la palette standard
+`renderIcons` ([editor.js](../public/editor/editor.js)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook
 (`rb.icons`), le **più recenti per prime** (#855). Un'icona caricata o incollata con una nota aperta
 entra **subito nella sua vignetta**, perché è per quello che la si aggiunge; e un tap sulla vignetta
@@ -300,19 +300,19 @@ della nota aperta apre il tab **Icona** (#856). La galleria è una **striscia di
 ogni tile della stessa misura, niente titoli di sezione dentro la striscia — la categoria viaggia
 sul `data-cat` del tile e sono i **chip** sopra (`renderIconCats`) a nominare e filtrare i gruppi,
 con un nome di una sola parola ciascuno (#530). Chip e ricerca live (`filterIcons`,
-[editor.js:911](../public/editor/editor.js#L911)) filtrano insieme. Sopra la striscia una sola
+[editor.js](../public/editor/editor.js)) filtrano insieme. Sopra la striscia una sola
 riga snella raccoglie tutto ciò che fa entrare un'icona: ricerca · incolla · carica; i tool
 dell'elemento selezionato (`#noteToolbar`, disegnato da NoteCanvas) si nominano da soli
 ("Icon tools" / "Junction tools") e a selezione vuota non occupano spazio. Le icone si aggiungono
 col tap o col **drag&drop** sulla vignette; le custom si caricano (`#iconFile` → data-URI) e si
 cancellano con il badge × **dentro** il tile — fuori veniva tagliato dall'overflow della striscia
-(`delCustomIcon`, [editor.js:933](../public/editor/editor.js#L933), bloccato se l'icona è in uso).
+(`delCustomIcon`, [editor.js](../public/editor/editor.js), bloccato se l'icona è in uso).
 
 ---
 
 ## 5. Record e "Adjust on the trail" (GPS live)
 
-La barra `#recBar` ([index.html:191](../public/editor/index.html#L191)) è il loop GPS dal vivo.
+La barra `#recBar` ([index.html](../public/editor/index.html)) è il loop GPS dal vivo.
 Il **recording di una rotta nuova** vive nel tool Recorder dedicato; nell'Editor la barra
 serve esclusivamente ad **"Adjust on the trail"** (re-record live di un tratto), avviata da
 `startRecording()`.
@@ -341,8 +341,8 @@ e su telefono torna una colonna sola. Prima erano righe nude appese sotto la car
 riga (#438); ora la griglia foto è sua (`.photo-grid`, colonne da 110px) e il messaggio è una
 frase a tutta larghezza. Titolo (`#rbTitle`), descrizione, autore,
 organizzazione sono legati con handler `oninput` che fanno `markDirty`
-([editor.js:411](../public/editor/editor.js#L411)). `stampMeta`
-([editor.js:426](../public/editor/editor.js#L426)) riempie l'autore di default e timbra
+([editor.js](../public/editor/editor.js)). `stampMeta`
+([editor.js](../public/editor/editor.js)) riempie l'autore di default e timbra
 `modified` (YYYY-MM-DD) ad ogni save/export.
 
 - **Logo evento** — caricato via `RBImg.toDataURL(f, 256)` ed embedded come data-URI in
@@ -382,21 +382,21 @@ Le foto sono **server-side, geotaggate, legate al roadbook** (tabella `roadbook_
 [backend-api.md](backend-api.md)). Richiedono un roadbook **salvato** (`currentRbId > 0`) o un
 draft, e il login.
 
-**Ogni foto ha coordinate (requisito).** `loadPhotos` ([editor.js:673](../public/editor/editor.js#L673))
+**Ogni foto ha coordinate (requisito).** `loadPhotos` ([editor.js](../public/editor/editor.js))
 mostra **tutte** le foto come **pin sulla mappa** (la mappa *è* la galleria) e come indicatore
 📷 per-nota (nota più vicina entro 80 m). L'upload (`addPhotos`,
-[editor.js:710](../public/editor/editor.js#L710)) raccoglie le coordinate in due modi:
+[editor.js](../public/editor/editor.js)) raccoglie le coordinate in due modi:
 
-1. **da EXIF** — `RBImg.gps(file)` ([app.js:192](../public/assets/js/app.js#L192)) legge il GPS
+1. **da EXIF** — `RBImg.gps(file)` ([app.js](../public/assets/js/app.js)) legge il GPS
    dall'EXIF del JPEG in vanilla JS (primi 256 KB). Se presente, upload immediato con quelle coord.
 2. **a mano sulla mappa** — se l'EXIF manca (PNG/HEIC o foto senza GPS) la foto va in coda e
-   `promptPlacePhoto` ([editor.js:722](../public/editor/editor.js#L722)) entra in modalità
+   `promptPlacePhoto` ([editor.js](../public/editor/editor.js)) entra in modalità
    *posiziona*: un tap su `edMap` ne fissa la posizione (cursore a mirino, un tap per foto in coda).
 
 Nessuna foto viene salvata senza coordinate.
 
 **Punti di upload:** il bottone *Add photos* nei Settings; nel **menu contestuale della
-mappa** (tasto destro, [editor.js:21](../public/editor/editor.js#L21)) la voce *Upload a photo
+mappa** (tasto destro, [editor.js](../public/editor/editor.js)) la voce *Upload a photo
 here*, che geotagga sul punto cliccato (nessun EXIF: la posizione è scelta); e **copia-incolla**
 (Ctrl/Cmd+V di un'immagine dagli appunti, listener `paste`) che segue il normale flusso
 EXIF/pin. Tutti convergono su `addPhotos`.
@@ -528,7 +528,7 @@ Il formato **KMZ** è un contenitore ZIP che contiene un singolo file `doc.kml` 
 L'export KMZ è un'alternativa leggera al GPX, supportata nativamente da Google Earth e da
 molti navigatori GPS.
 
-- **Funzione**: `exportKmz()` ([editor.js:1814](../public/editor/editor.js#L1814))
+- **Funzione**: `exportKmz()` ([editor.js](../public/editor/editor.js))
 - **Serializzatore**: `RB.kmlDocument(name, pts, wpts)` in `roadbook-core.js` — genera KML 2.2
 - **Come funziona**: build del KML (`LineString` per la traccia, `Point` per ogni nota),
   poi `RBZip.write({ 'doc.kml': kml })` produce il KMZ, infine `RBDownload(blob, name)` lo
@@ -563,7 +563,7 @@ molti navigatori GPS.
 > tabella è curata sulle icone "POI" (serie `I*`) — il resto del set RDBK (segnali, terreno…)
 > usa il generico, perché non ha un equivalente diretto in Garmin/OSMAnd.
 
-**Save to profile.** `doSave` ([editor.js:637](../public/editor/editor.js#L637)) timbra il
+**Save to profile.** `doSave` ([editor.js](../public/editor/editor.js)) timbra il
 meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo registra
 `currentRbId`, azzera `dirty`, pulisce il draft e **fissa `?rb=<id>` nell'URL** via
 `history.replaceState` — così un reload (o l'auto-refresh di versione) continua a editare lo
@@ -605,12 +605,12 @@ cose coerenti:
 
 ## 8. Avvio, draft e recovery
 
-`markDirty()` ([editor.js:36](../public/editor/editor.js#L36)) marca il lavoro come sporco e
+`markDirty()` ([editor.js](../public/editor/editor.js)) marca il lavoro come sporco e
 schedula un **checkpoint debounced (2 s)** dell'intero stato in `localStorage` (`DRAFT_KEY`,
-`saveDraft`/`clearDraft`, [editor.js:34](../public/editor/editor.js#L34)). Il draft viene
+`saveDraft`/`clearDraft`, [editor.js](../public/editor/editor.js)). Il draft viene
 **pulito** solo quando il lavoro è al sicuro (save su profilo o export). `beforeunload`
-([editor.js:435](../public/editor/editor.js#L435)) e `visibilitychange`
-([editor.js:474](../public/editor/editor.js#L474)) flushano il draft prima di un'eventuale
+([editor.js](../public/editor/editor.js)) e `visibilitychange`
+([editor.js](../public/editor/editor.js)) flushano il draft prima di un'eventuale
 chiusura/kill dell'OS — non subito dopo un export (`!exported`), che lo ha appena pulito. Il
 draft è l'intero stato di lavoro: il roadbook, i tagli aperti e anche le impostazioni lato
 server che un save riscrive (`status`, `reusable`, `vehicles`, `publicSlug`), così recuperarlo
@@ -627,7 +627,7 @@ e la domanda non torna più per quel draft — un "No" che l'app ignora è peggi
 (#436). Il draft resta recuperabile finché il checkpoint successivo lo sostituisce; qualunque
 modifica scrive un oggetto nuovo, senza il flag.
 
-La sequenza di startup ([editor.js:998](../public/editor/editor.js#L998)) ha una precedenza
+La sequenza di startup ([editor.js](../public/editor/editor.js)) ha una precedenza
 precisa:
 
 1. `RBApi('config')` per identificare l'utente (in parallelo).
@@ -644,11 +644,11 @@ precisa:
 
 Risolta la sorgente, due rifiniture finali della startup:
 
-- **`?export=1`** ([editor.js:1665](../public/editor/editor.js#L1665)) — è la query con cui il
+- **`?export=1`** ([editor.js](../public/editor/editor.js)) — è la query con cui il
   pulsante *Export* di *My roadbooks* apre l'Editor: a roadbook caricato fa partire subito la
   pop-up Export (`openExportModal`) e ripulisce il flag dall'URL (lasciando solo `?rb=<id>`),
   così un reload non la riapre.
-- **Posizione di default sulla mappa (#74)** ([editor.js:1661](../public/editor/editor.js#L1661))
+- **Posizione di default sulla mappa (#74)** ([editor.js](../public/editor/editor.js))
   — su un avvio "vuoto" (nessuna rotta caricata, es. *Draw on the map*), se l'utente loggato ha
   salvato una posizione di default nel profilo (`meUser.default_lat/default_lon`) la mappa ci
   centra (`jumpTo`, zoom 12) invece di partire sulla vista mondo.
@@ -665,18 +665,18 @@ poi al Ranking**.
 
 ### 9.1 Il percorso di import
 La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
-([editor.js:325](../public/editor/editor.js#L325)):
+([editor.js](../public/editor/editor.js)):
 
 1. `RBZip.readBundle(file)` — sniffa il magic `PK`: se è un ZIP estrae `roadbook.json` e
    raccoglie i media (`photos/`/`audio/`, geotaggati da `media.json`); un `.rdbk` JSON puro
    pre-container è letto come roadbook nudo, con media vuoti;
 2. validazione minima: devono esserci `track` **e** `notes`, altrimenti `throw 'Not a roadbook'`;
 3. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
-4. `setRoadbook(roadbook)` ([editor.js:336](../public/editor/editor.js#L336)); gli eventuali
+4. `setRoadbook(roadbook)` ([editor.js](../public/editor/editor.js)); gli eventuali
    media confluiscono in `pendingMedia` e un popup avvisa che saranno visibili solo dopo il
    salvataggio sul profilo (caricati al primo `doSave` da `flushImportedMedia`, §7).
 
-`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js#L205), che
+`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js), che
 porta il file allo schema canonico. Per un `.rdbk` **già canonico** non tocca nulla. Per un
 file **Roadbook Suite** (riconosciuto da un marcatore legacy: `titolo`, `testo`, `bivio`,
 `cap_hdr`, `km_prog`…) applica le conversioni specifiche:
@@ -702,10 +702,10 @@ campo:
 
 | Dato usato dal Ranking (via Reader) | A cosa serve | Importato dall'Editor? |
 |---|---|---|
-| `lat` / `lon` | penalità *accuracy* ed *extra* | ✅ preservati in import; in export agganciati alla traccia da [`recomputeMetrics`](../public/assets/js/roadbook-core.js#L208) |
-| `cap` / `cap_distance` | penalità *CAP* (proiezione `destPoint` dalla nota precedente) | ✅ preservati; [`recomputeCaps`](../public/assets/js/roadbook-core.js#L229) ricalcola **solo dove `cap != null`**, mantenendo il flag |
+| `lat` / `lon` | penalità *accuracy* ed *extra* | ✅ preservati in import; in export agganciati alla traccia da [`recomputeMetrics`](../public/assets/js/roadbook-core.js) |
+| `cap` / `cap_distance` | penalità *CAP* (proiezione `destPoint` dalla nota precedente) | ✅ preservati; [`recomputeCaps`](../public/assets/js/roadbook-core.js) ricalcola **solo dove `cap != null`**, mantenendo il flag |
 | `distance` / `partial_distance` | `km`, raggio di reach, sezione | ✅ ricalcolati dalla traccia importata (intatta) |
-| `icons` con `I02_partenza` / `I01_arrivo` | delimitano la **sezione a punteggio** (`scoredSet`) | ✅ array `icons` per-nota preservato; in export embeddato da [`embedUsed`](../public/editor/editor.js#L982) |
+| `icons` con `I02_partenza` / `I01_arrivo` | delimitano la **sezione a punteggio** (`scoredSet`) | ✅ array `icons` per-nota preservato; in export embeddato da [`embedUsed`](../public/editor/editor.js) |
 | `icons` con limiti `Sxx_*` | penalità *speed* (`speedLimitOfNote`) | ✅ stesso percorso delle icone |
 
 `danger` non è usato dal Ranking. La stringa META (team, tempi, penalità) **non** è nel
@@ -716,7 +716,7 @@ Ranking vengono importate e preservate.
 
 ### 9.3 Cosa cambia in export/save (e perché è coerente)
 A differenza dell'import, **export e Save ricalcolano** prima di scrivere
-([editor.js:964](../public/editor/editor.js#L964)): `recomputeMetrics` aggancia ogni nota al
+([editor.js](../public/editor/editor.js)): `recomputeMetrics` aggancia ogni nota al
 punto-traccia più vicino (`idx`) — `lat/lon`, `distance`, `partial_distance` e bearing
 derivano dalla traccia — e `recomputeCaps` riallinea heading/distanza-CAP alla geometria dove
 il CAP è attivo. Le note **stanno sulla traccia per definizione**, quindi questo non perde
@@ -733,7 +733,7 @@ una proprietà del contenuto del file, non una perdita in fase di import.
 I nomi-icona di Roadbook Suite spesso differiscono da quelli della palette standard. La
 traduzione avviene in due punti.
 
-**(a) Rinomine 1:1** — in [`importRoadbook`](../public/assets/js/roadbook-core.js#L190)
+**(a) Rinomine 1:1** — in [`importRoadbook`](../public/assets/js/roadbook-core.js)
 (quindi valgono sia Editor sia Reader):
 
 | Roadbook Suite | → Palette | Regola |
@@ -763,7 +763,7 @@ traduzione avviene in due punti.
 > regola dei limiti è ristretta a `S0x` (un solo zero), così non si toccano a vicenda. Tutti i
 > cartelli della Suite trovano un equivalente del set Vienna in palette (`W*`/`B*`/`C*`/`D*`).
 
-**(b) Icone senza file → fallback + nota** — in [`flagUnresolvedIcons`](../public/editor/editor.js#L880)
+**(b) Icone senza file → fallback + nota** — in [`flagUnresolvedIcons`](../public/editor/editor.js)
 (solo Editor, dopo `loadStd`): per ogni icona il cui **file non esiste** su disco si sostituisce
 il nome con un segnaposto (`W28_general_danger.svg`) e si **aggiunge al testo della nota**
 `Nota: aggiungere icona <nome originale>`, così l'autore sa cosa rimpiazzare. L'esistenza è
@@ -786,11 +786,11 @@ Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
   coerente — ma una nota appena creata e mostrata prima del recompute apparirebbe come `0`.
 - **L'autore di default può sovrascrivere il campo vuoto al login.** In startup, se l'utente
   arriva dopo il render, l'autore viene riempito solo se `meta.author` e il campo sono vuoti
-  ([editor.js:1002](../public/editor/editor.js#L1002)) — corretto, ma dipende dall'ordine di
+  ([editor.js](../public/editor/editor.js)) — corretto, ma dipende dall'ordine di
   risoluzione della promise `account`.
 - **`spliceByIndex` ri-aggancia tutte le note con `nearestIdx`.** Dopo un adjust/splice le
   note vengono riancorate al vertice più vicino sulla nuova traccia
-  ([editor.js:615](../public/editor/editor.js#L615)); se la variante passa vicino a una nota
+  ([editor.js](../public/editor/editor.js)); se la variante passa vicino a una nota
   "vecchia" lontana lungo la rotta, l'aggancio per distanza euclidea può spostarla in modo
   non intuitivo.
 - **I tagli aperti si chiudono in linea retta.** Per design, ma vale ricordarlo: dimenticare
