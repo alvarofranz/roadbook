@@ -21,6 +21,9 @@
         $('pfBio').textContent = u.bio || '';
         $('pfBio').hidden = !u.bio;
         $('pfEdit').hidden = !data.is_me;
+        // your own profile says whose they are (#777); anyone else's just calls them public
+        const rbTitle = data.is_me ? 'My public roadbooks' : 'Public roadbooks';
+        $('pfRbTitle').setAttribute('data-i18n', rbTitle); $('pfRbTitle').textContent = t(rbTitle);
         RBSetMeta({ title: '@' + u.username + ' · RDBK.app', description: u.bio || undefined, canonical: location.origin + '/u/' + encodeURIComponent(u.username) });
         $('pfStats').innerHTML = `<div class="stat-grid">
             ${tile('fa-flag-checkered', s.completed, 'Roadbooks completed')}

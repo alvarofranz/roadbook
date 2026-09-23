@@ -1316,3 +1316,8 @@ Object.assign(window.RBi18nLangs.de, {
     "In the app your session and any recording in progress survive the phone clearing its storage, and the status bar steps aside while you navigate.": "In der App überstehen deine Sitzung und jede laufende Aufnahme, wenn das Telefon seinen Speicher leert, und die Statusleiste tritt beim Navigieren zur Seite.",
     "The Editor map is cleaner and darker, a failed sign-in always tells you why, and a car is now a 4x4.": "Die Editor-Karte ist aufgeräumter und dunkler, eine fehlgeschlagene Anmeldung sagt immer warum, und aus dem Auto ist ein 4x4 geworden.",
 });
+
+/* your own public profile (#777) */
+Object.assign(window.RBi18nLangs.de, {
+    "My public roadbooks": "Meine öffentlichen Roadbooks",
+});

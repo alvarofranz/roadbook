@@ -1456,3 +1456,8 @@ Object.assign(window.RBi18nLangs.es, {
     "In the app your session and any recording in progress survive the phone clearing its storage, and the status bar steps aside while you navigate.": "En la app tu sesión y cualquier grabación en curso sobreviven a que el teléfono borre su almacenamiento, y la barra de estado se aparta mientras navegas.",
     "The Editor map is cleaner and darker, a failed sign-in always tells you why, and a car is now a 4x4.": "El mapa del Editor es más limpio y oscuro, un inicio de sesión fallido siempre dice por qué, y el coche ahora es un 4x4.",
 });
+
+/* your own public profile (#777) */
+Object.assign(window.RBi18nLangs.es, {
+    "My public roadbooks": "Mis roadbooks públicos",
+});
