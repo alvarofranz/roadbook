@@ -269,7 +269,7 @@ describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #
     });
     it('the Install chip only on the web, and it always opens the guide (#720)', () => {
         expect(app).toContain("function onInstall() { location.href = ROOT + 'install/'; }");
-        expect(app).toContain('function showInstall() { if (isStandalone() || isNativeApp() || installClosed() || /\/install\/?$/.test(location.pathname)) return;');
+        expect(app).toContain('function showInstall() { if (isStandalone() || isNativeApp() || installClosed() || /\\/install\\/?$/.test(location.pathname)) return;');
     });
     it('the install page can show its toast', () => {
         expect(fs.readFileSync('public/install/index.html', 'utf8')).toContain('<div id="toast" class="toast" hidden></div>');
