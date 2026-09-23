@@ -295,7 +295,8 @@ describe('find a label in the translation editor (#709)', () => {
 describe('nothing sits under the status bar (#787)', () => {
     const css = fs.readFileSync('public/assets/css/app.css', 'utf8');
     it('covers the top inset with one opaque strip above everything', () => {
-        expect(css).toMatch(/body::before \{ content: ''; position: fixed; top: 0; left: 0; right: 0; height: env\(safe-area-inset-top\); background: var\(--bg\); z-index: 1000; pointer-events: none; \}/);
+        expect(css).toMatch(/body::before \{ content: ''; position: fixed; top: 0; left: 0; right: 0; height: env\(safe-area-inset-top\); background: rgba\(14, 17, 22, \.86\); -webkit-backdrop-filter: saturate\(160%\) blur\(18px\);/);
+        expect(css).toContain('body:has(> .modal:not([hidden]))::before { background: rgba(8, 9, 14, .94); }');
     });
     it('pads every dialog by the safe areas and keeps its card within them', () => {
         expect(css).toMatch(/\.modal \{[^}]*padding: calc\(1rem \+ env\(safe-area-inset-top\)\)/);
