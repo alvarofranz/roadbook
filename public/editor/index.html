@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-153">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-154">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-153">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-154">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -288,6 +288,7 @@
         .load-card i { font-size: 1.3rem; color: var(--sand); margin-bottom: .15rem; }
         .load-card b { font-size: 1rem; }
         .load-card small { color: var(--muted); font-size: .76rem; }
+        a.load-card, a.load-card:hover { text-decoration: none; }
         .record-bar { display: flex; flex-direction: column; gap: .55rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .65rem .9rem; margin-bottom: .8rem; }
         .rec-status { display: flex; align-items: center; gap: .5rem; }
         .rec-btns { display: flex; gap: .45rem; }
@@ -337,7 +338,7 @@
             /* the screen is there: photos take the space, the destructive action sits beside them
                instead of under everything (#438) */
             .config-bottom { grid-template-columns: 2fr 1fr; }
-            .load-opts { grid-template-columns: repeat(4, 1fr); }
+            .load-opts { grid-template-columns: repeat(5, 1fr); } /* the five ways, on one row */
         }
         /* tablet portrait and up: RB-suite split — the map pinned on the
            left, the notes + inline editor column on the right.
@@ -404,6 +405,8 @@
                     <button class="load-card" id="drawRoute"><i class="fa-solid fa-pen"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Tap the map to add the route point by point">Tap the map to add the route point by point</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                     <button class="load-card" id="pickChallenge"><i class="fa-solid fa-book-open"></i><b data-i18n="Copy a public roadbook">Copy a public roadbook</b><small data-i18n="Start from one shared by others">Start from one shared by others</small></button>
+                    <!-- the fifth way (#808): out on the road, with the Recorder -->
+                    <a class="load-card" href="../recorder/"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record a track">Record a track</b><small data-i18n="Record while you add notes">Record while you add notes</small></a>
                 </div>
             </div>
             <div id="myRbSection" hidden>
@@ -614,21 +617,21 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.4-153"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.4-153"></script>
-<script src="../assets/js/rbzip.js?v=1.9.4-153"></script>
-<script src="../assets/js/rbmap.js?v=1.9.4-153"></script>
-<script src="../assets/js/cover-map.js?v=1.9.4-153"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.4-153"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.4-153"></script>
-<script src="../assets/js/challenges.js?v=1.9.4-153"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.4-153"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.4-153"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.4-153"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.4-153"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.4-153"></script>
-<script src="../assets/js/i18n.js?v=1.9.4-153"></script>
-<script src="../assets/js/app.js?v=1.9.4-153"></script>
-<script src="editor.js?v=1.9.4-153"></script>
+<script src="../assets/js/config.js?v=1.9.4-154"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.4-154"></script>
+<script src="../assets/js/rbzip.js?v=1.9.4-154"></script>
+<script src="../assets/js/rbmap.js?v=1.9.4-154"></script>
+<script src="../assets/js/cover-map.js?v=1.9.4-154"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.4-154"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.4-154"></script>
+<script src="../assets/js/challenges.js?v=1.9.4-154"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.4-154"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.4-154"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.4-154"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.4-154"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.4-154"></script>
+<script src="../assets/js/i18n.js?v=1.9.4-154"></script>
+<script src="../assets/js/app.js?v=1.9.4-154"></script>
+<script src="editor.js?v=1.9.4-154"></script>
 </body>
 </html>

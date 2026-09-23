@@ -85,3 +85,10 @@ describe('a map style switch paints everything back (#788)', () => {
         expect(editor).toContain('map.setBaseStyle(MAP_STYLES[mapStyleIdx]); // RBMap paints back');
     });
 });
+
+describe('the Editor start offers five ways, on one row (#808)', () => {
+    it('adds Record a track, linking to the Recorder', () => {
+        expect(html).toContain('<a class="load-card" href="../recorder/"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record a track">');
+        expect(html).toContain('.load-opts { grid-template-columns: repeat(5, 1fr); }');
+    });
+});
