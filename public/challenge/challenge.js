@@ -93,7 +93,7 @@
             </article>`;
         };
         const render = () => {
-            $('chCommentCount').textContent = comments.length ? `(${comments.length})` : '';
+            $('chCommentCount').textContent = $('chCommentsBtnCount').textContent = comments.length ? `(${comments.length})` : '';
             list.innerHTML = comments.length ? comments.map(commentHTML).join('') : `<p class="muted">${esc(t('No comments yet — be the first.'))}</p>`;
         };
         const counter = () => {
@@ -127,6 +127,9 @@
         comments = r.ok ? r.comments : [];
         render();
         $('chComments').hidden = false;
+        // the way down to them, next to Navigate · PDF · Edit (#853)
+        $('chCommentsBtn').hidden = false;
+        $('chCommentsBtn').onclick = (e) => { e.preventDefault(); $('chComments').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
         window.addEventListener('rb-lang', render);
     }
 })();

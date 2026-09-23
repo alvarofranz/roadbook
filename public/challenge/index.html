@@ -26,7 +26,7 @@
         .ch-desc { color: var(--text); line-height: 1.6; }
         .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-        .ch-comments { margin-top: 2rem; }
+        .ch-comments { margin-top: 2rem; scroll-margin-top: 5rem; } /* clear of the top bar when the Comments button scrolls here */
     </style>
 </head>
 <body>
@@ -51,6 +51,7 @@
             <a class="btn btn-primary" id="chNav"><i class="fa-solid fa-location-arrow"></i> <span data-i18n="Navigate">Navigate</span></a>
             <button class="btn btn-ghost" id="chPdf" type="button"><i class="fa-solid fa-file-pdf"></i> <span data-i18n="PDF">PDF</span></button>
             <a class="btn btn-ghost" id="chEdit" hidden><i class="fa-solid fa-pen"></i> <span data-i18n="Edit">Edit</span></a>
+            <a class="btn btn-ghost" id="chCommentsBtn" href="#chComments" hidden><i class="fa-solid fa-comments"></i> <span data-i18n="Comments">Comments</span> <span id="chCommentsBtnCount"></span></a>
         </div>
         <p id="chDesc" class="ch-desc"></p>
         <div id="chMap" class="ch-map" hidden></div>
