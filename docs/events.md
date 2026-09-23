@@ -80,7 +80,7 @@ Elenco degli eventi pubblici con **ricerca + paginazione client-side**. Chiama
 100) con il **conteggio dei soli roadbook pubblici** e i **veicoli** dei suoi roadbook. L'ordine
 (#745): prima gli eventi non ancora finiti, il più vicino in cima; in fondo quelli passati, il più
 recente prima (la data è `starts_on`, o la creazione se l'evento non ne ha). Ogni card è la card
-condivisa **`RBEventCard`** (#770): il logo intero, il foglietto di calendario del primo giorno, lo
+condivisa **`RBEventCard`** (#770): la sua immagine a tutto riquadro, il foglietto di calendario del primo giorno, lo
 stato (*Upcoming* · *Live* · *Ended*), numero di roadbook e veicoli, organizzatore e date; linka a
 `/event/<slug>`. Sulla pagina dell'evento i suoi roadbook sono `RBRoadbookCard` con la categoria
 come badge (l'API restituisce anche i loro `vehicles`).

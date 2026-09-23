@@ -387,18 +387,17 @@ vivono qui in **un solo posto** e sono riusati ovunque.
 
 #### Le card: `RBGalleryCard` · `RBRoadbookCard` · `RBEventCard` · `RBFillRoutes` (#770)
 **Un solo disegno** per ogni galleria. `RBGalleryCard({ href, thumb, title, meta, icon?, placeholder?,
-overlays?, badges?, stats?, body?, contain? })` costruisce l'anatomia: in alto il **media** (foto,
+overlays?, badges?, stats?, body? })` costruisce l'anatomia: in alto il **media** (foto,
 rotta o logo, scurito al piede da un gradiente perché ciò che ci sta sopra si legga) con i `badges`
 in alto a sinistra, le azioni `overlays` in alto a destra (`.card-actions`, es. `RBCopyLinkOverlay`)
 e le `stats` (`[icona|null, valore, etichetta]`) al piede, tutte come pillole scure traslucide;
-sotto, titolo (max 2 righe) e riga `meta`. `contain` adatta l'immagine invece di ritagliarla (il logo
-di un evento). HTML in `meta`/`overlays`/`body`/`placeholder`/`badges` già sanificato dal chiamante.
+sotto, titolo (max 2 righe) e riga `meta`. L'immagine copre sempre il riquadro, foto o logo che sia. HTML in `meta`/`overlays`/`body`/`placeholder`/`badges` già sanificato dal chiamante.
 
 Le pagine non la chiamano direttamente, ma tramite due builder:
 - **`RBRoadbookCard(r, { href, overlays?, body?, category? })`** — veicoli (`RBVehicleIcons`) e
   categoria dell'evento sul media, distanza e numero di note al piede, `@autore` sotto. Usata da home,
   galleria Roadbooks, pagina evento, profilo pubblico e dal carosello dell'app.
-- **`RBEventCard(e)`** — il logo intero, un foglietto di calendario con il primo giorno, lo stato
+- **`RBEventCard(e)`** — la sua immagine, un foglietto di calendario con il primo giorno, lo stato
   (*Upcoming* sabbia · *Live* verde · *Ended* spento), numero di roadbook e veicoli al piede,
   organizzatore e intervallo di date sotto.
 
