@@ -36,7 +36,11 @@
     if (j.status !== 'public') $('chStatus').innerHTML = `<span class="u-badge"><i class="fa-solid fa-lock"></i> ${esc(t(j.status === 'ready' ? 'Ready' : 'In preparation'))}</span>`;
     const credit = [m.author, m.organization, m.modified].filter(Boolean).join(' · '); // roadbook-declared credit
     $('chMeta').textContent = RBSummary(m.total_distance || 0, rb.notes.length) + (credit ? ' · ' + credit : '');
-    if (m.logo) { $('chLogo').src = m.logo; $('chLogo').hidden = false; }
+    if (m.logo) {
+        // a photo fills a banner, a logo (a transparent or square-ish mark) is shown whole
+        $('chLogo').onload = () => { const img = $('chLogo'); img.classList.toggle('photo', img.naturalWidth / img.naturalHeight > 1.3); };
+        $('chLogo').src = m.logo; $('chLogo').hidden = false;
+    }
     $('chDesc').textContent = m.description || '';
     $('chNav').href = '/reader/' + encodeURIComponent(slug) + (evParam ? '?event=' + encodeURIComponent(evParam) : '');
     // Owner: Edit. Non-owner: a public roadbook can be read here, navigated and exported to PDF,
