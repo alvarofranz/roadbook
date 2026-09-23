@@ -1480,3 +1480,13 @@ Object.assign(window.RBi18nLangs.it, {
     "And {n} private runs.": "E {n} percorsi privati.",
     "priv.runs.4": "Ogni report registra anche il tipo di dispositivo con cui è stato fatto (per esempio «App · iPhone · iOS 17.5»): modello e versione del sistema, mai un identificativo. Lo vedono solo gli amministratori, per risolvere i problemi.",
 });
+
+/* release notes 1.9.7 */
+Object.assign(window.RBi18nLangs.it, {
+    "Every metre counts": "Ogni metro conta",
+    "The distance to the next note is measured along the road, like the roadbook’s own partials, and the next note always sits at the top of the list.": "La distanza alla prossima nota si misura lungo la strada, come i parziali del roadbook, e la prossima nota sta sempre in cima alla lista.",
+    "The validation bell plays over your music instead of stopping it, and completing a roadbook ends with a fanfare.": "Il campanello di convalida suona sopra la tua musica invece di fermarla, e completare un roadbook finisce con una fanfara.",
+    "The note map draws just the road still to drive, in one yellow line.": "La mappa della nota disegna solo la strada ancora da fare, in una linea gialla.",
+    "Roadbooks show how many times they were completed and who did it, and the roadbook page has a Comments button and a cleaner header on the phone.": "I roadbook mostrano quante volte sono stati completati e da chi, e la pagina del roadbook ha un bottone Commenti e una testata più pulita sul telefono.",
+    "Sharing a finished run asks before making it public, and says it with a smile.": "Condividere un percorso finito chiede prima di renderlo pubblico, e lo dice con un sorriso.",
+});

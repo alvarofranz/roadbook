@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.7', date: '2026-09-23',
+        title: 'Every metre counts',
+        items: [
+            'The distance to the next note is measured along the road, like the roadbook’s own partials, and the next note always sits at the top of the list.',
+            'The validation bell plays over your music instead of stopping it, and completing a roadbook ends with a fanfare.',
+            'The note map draws just the road still to drive, in one yellow line.',
+            'Roadbooks show how many times they were completed and who did it, and the roadbook page has a Comments button and a cleaner header on the phone.',
+            'Sharing a finished run asks before making it public, and says it with a smile.',
+        ],
+    },
+    {
         version: '1.9.6', date: '2026-09-23',
         title: 'Talk about the route',
         items: [
