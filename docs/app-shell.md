@@ -449,9 +449,6 @@ paginazione è **client-side a 12 per pagina** e il pager (via `RBPager`, nel `.
 ricerca/cambio pagina, **senza ricostruire la barra di ricerca** (così il focus e il testo
 digitato non si perdono); duplica/elimina/cambio-stato ri-chiamano `RBRoadbookList` per intero.
 
-#### `RBPublicRoadbooksList(container) → Promise<number>`
-Come sopra ma per l'elenco **pubblico** (galleria community), reso in card via `RBGalleryCard`.
-
 ---
 
 ## 9. `home.js` — la galleria della home

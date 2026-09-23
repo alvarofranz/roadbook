@@ -563,18 +563,26 @@ function events_public_list(): void {
                 OR (r.status = 'draft' AND $managed)
                 THEN r.id END)";
     }
-    $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, e.logo, u.username AS organizer,
-            $countExpr AS roadbooks
+    $rows = db()->query("SELECT e.slug, e.title, e.starts_on, e.ends_on, e.logo, e.created_at, u.username AS organizer,
+            $countExpr AS roadbooks, GROUP_CONCAT(DISTINCT CASE WHEN r.status <> 'deleted' THEN r.vehicles END) AS vehicles
         FROM events e JOIN users u ON u.id = e.organizer_id
         LEFT JOIN event_roadbooks er ON er.event_id = e.id
         LEFT JOIN roadbooks r ON r.id = er.roadbook_id
         $epJoin
         WHERE e.is_public = 1
-        GROUP BY e.id ORDER BY COALESCE(e.starts_on, DATE(e.created_at)) DESC LIMIT 100")->fetchAll();
-    json_out(['ok' => true, 'events' => array_map(fn($r) => [
+        GROUP BY e.id LIMIT 200")->fetchAll();
+    $events = array_map(fn($r) => [
         'slug' => $r['slug'], 'title' => $r['title'], 'starts_on' => $r['starts_on'], 'ends_on' => $r['ends_on'], 'ended' => event_ended($r),
         'logo' => $r['logo'], 'organizer' => $r['organizer'], 'roadbooks' => (int)$r['roadbooks'],
-    ], $rows)]);
+        // the vehicles its roadbooks suit (#745): the union, in the catalog's order
+        'vehicles' => array_values(array_intersect(RB_VEHICLES, explode(',', (string)$r['vehicles']))),
+        'date' => $r['starts_on'] ?: substr((string)$r['created_at'], 0, 10),
+    ], $rows);
+    // By the event's date (#745): what is coming first, the soonest on top; the ended ones at the
+    // bottom, the most recent first.
+    usort($events, fn($a, $b) => $a['ended'] !== $b['ended'] ? ($a['ended'] ? 1 : -1)
+        : ($a['ended'] ? strcmp($b['date'], $a['date']) : strcmp($a['date'], $b['date'])));
+    json_out(['ok' => true, 'events' => array_map(function ($e) { unset($e['date']); return $e; }, $events)]);
 }
 
 function event_public_get(array $d): void {

@@ -1145,7 +1145,7 @@ Object.assign(window.RBi18nLangs.es, {
     "priv.runs.2": "Los informes son <b>privados salvo que decidas lo contrario</b>, en el propio informe o en los ajustes de tu perfil. Un informe público aparece en tu página de perfil público (<code>/u/tu-usuario</code>) junto con tu nombre de usuario, avatar, bio y organización. Tu nombre real y tu email nunca se muestran ahí.",
     "priv.runs.3": "Puedes volver a hacer privado cualquier informe o borrarlo desde tu perfil cuando quieras; borrar tu cuenta los borra todos.",
     "Account settings": "Ajustes de la cuenta",
-    "Guide": "Guía",
+    
     "View my public profile": "Ver mi perfil público",
     "Run reports": "Informes de recorrido",
     "When you finish a roadbook in the Reader, its report can appear on your public profile.": "Cuando terminas un roadbook en el Reader, su informe puede aparecer en tu perfil público.",
@@ -1300,7 +1300,7 @@ Object.assign(window.RBi18nLangs.es, {
     "Delete forever": "Borrar para siempre",
     "Move “{title}” to the trash? You can restore it later.": "¿Mover «{title}» a la papelera? Podrás restaurarlo más tarde.",
     "Delete “{title}” forever? This cannot be undone.": "¿Borrar «{title}» para siempre? No se puede deshacer.",
-    "Moderate public roadbooks": "Moderar roadbooks públicos",
+    
 });
 
 /* editor Draw adds points with taps (#712) */
@@ -1399,4 +1399,27 @@ Object.assign(window.RBi18nLangs.es, {
     "Another user…": "Otro usuario…",
     "Search the activity…": "Buscar en la actividad…",
     "Whose activity?": "¿La actividad de quién?",
+});
+
+/* 1.9.3 — the Editor's Extras group (#747) and the APK builds list (#742) */
+Object.assign(window.RBi18nLangs.es, {
+    "Extras": "Extras",
+    "Pre-release": "Prelanzamiento",
+    "Built": "Compilado",
+});
+
+/* 1.9.3 release note */
+Object.assign(window.RBi18nLangs.es, {
+    "Polish from the road test": "Pulido tras la prueba en carretera",
+    "Map pins stay visible once the 3D terrain has loaded, and voice notes turn into text again.": "Los pines del mapa siguen visibles cuando termina de cargar el relieve 3D, y las notas de voz vuelven a pasarse a texto.",
+    "Events list what is coming first, soonest on top, and show which vehicles their roadbooks are for.": "Los eventos muestran primero lo que está por venir, lo más próximo arriba, e indican para qué vehículos son sus roadbooks.",
+    "Account emails are clear and readable in every mail app, in your language.": "Los emails de la cuenta se ven claros y legibles en cualquier app de correo, en tu idioma.",
+    "In the note editor the extras sit in their own group, and Help moves to the foot of the profile menu.": "En el editor de notas los extras van en su propio grupo, y la Ayuda pasa al pie del menú de perfil.",
+});
+
+/* first sign-in: ask for the default location (#749) */
+Object.assign(window.RBi18nLangs.es, {
+    "Where do you usually ride?": "¿Por dónde sueles moverte?",
+    "Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.": "Indica tu ubicación predeterminada: el Recorder y el Editor abren el mapa ahí hasta que el GPS tenga señal. Puedes cambiarla cuando quieras en los ajustes de la cuenta.",
+    "Choose on the map": "Elegir en el mapa",
 });

@@ -233,15 +233,15 @@ function register_user(array $d): void {
     verify_turnstile($d['turnstile'] ?? null);
 
     $raw = new_token();
+    $lang = mail_lang($d['lang'] ?? ''); // the language they signed up in: the account keeps it, the email speaks it (#748)
     // Stamp the consent server-side: NOW() + the authoritative TERMS_VERSION (never the client's).
-    db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,verify_token,verify_expires,terms_accepted_at,terms_version) VALUES (?,?,?,?,?,?, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW(), ?)')
-        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT), token_hash($raw), TERMS_VERSION]);
+    db()->prepare('INSERT INTO users (first_name,last_name,username,email,password_hash,verify_token,verify_expires,terms_accepted_at,terms_version,ui_lang) VALUES (?,?,?,?,?,?, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW(), ?, ?)')
+        ->execute([$first, $last, $username, $email, password_hash($pass, PASSWORD_DEFAULT), token_hash($raw), TERMS_VERSION, $lang]);
     log_activity((int)db()->lastInsertId(), 'register');
 
     global $CFG;
     $link = $CFG['base_url'] . '/account/?verify=' . $raw;
-    send_mail($email, $first, 'Verify your RDBK.app account',
-        mail_html('Confirm your email', '<p>Hi ' . htmlspecialchars($first) . ', welcome to RDBK.app!</p><p>Confirm your email to activate your account:</p>' . mail_button($link, 'Verify my email') . '<p style="font-size:12px;color:#93a0b4">This link expires in 24 hours.</p>'));
+    send_mail($email, $first, mail_t($lang, 'verify.subject'), mail_account('verify', $lang, $link, $first));
 
     json_out(['ok' => true, 'message' => 'Account created. Check your email to verify it.']);
 }
@@ -475,15 +475,15 @@ function forgot_password(array $d): void {
     rate_limit('forgot_' . client_ip(), 8, 900);
     $email = strtolower(trim((string)($d['email'] ?? '')));
     verify_turnstile($d['turnstile'] ?? null);
-    $st = db()->prepare('SELECT id, first_name FROM users WHERE email = ?');
+    $st = db()->prepare('SELECT id, first_name, ui_lang FROM users WHERE email = ?');
     $st->execute([$email]);
     if ($u = $st->fetch()) {
+        $lang = mail_lang($d['lang'] ?? $u['ui_lang']);
         $raw = new_token();
         db()->prepare('UPDATE users SET reset_token = ?, reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?')->execute([token_hash($raw), $u['id']]);
         global $CFG;
         $link = $CFG['base_url'] . '/account/?reset=' . $raw;
-        send_mail($email, $u['first_name'], 'Reset your RDBK.app password',
-            mail_html('Reset your password', '<p>We received a request to reset your password.</p>' . mail_button($link, 'Set a new password') . "<p style=\"font-size:12px;color:#93a0b4\">Expires in 1 hour. If you didn't request it, ignore this email.</p>"));
+        send_mail($email, $u['first_name'], mail_t($lang, 'reset.subject'), mail_account('reset', $lang, $link));
     }
     // Always succeed — don't reveal whether an email exists.
     json_out(['ok' => true, 'message' => 'If that email is registered, a reset link is on its way.']);
@@ -519,8 +519,8 @@ function change_email(array $user, array $d): void {
         ->execute([$email, token_hash($raw), $user['id']]);
     global $CFG;
     $link = $CFG['base_url'] . '/account/?verifyemail=' . $raw;
-    send_mail($email, $user['first_name'], 'Confirm your new RDBK.app email',
-        mail_html('Confirm your new email', '<p>Confirm this address to use it for your RDBK.app account:</p>' . mail_button($link, 'Confirm new email') . '<p style="font-size:12px;color:#93a0b4">This link expires in 24 hours. Your current email stays active until you confirm.</p>'));
+    $lang = mail_lang($d['lang'] ?? $user['ui_lang']);
+    send_mail($email, $user['first_name'], mail_t($lang, 'change.subject'), mail_account('change', $lang, $link));
     json_out(['ok' => true, 'message' => 'Check your new inbox to confirm the change.']);
 }
 

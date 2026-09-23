@@ -1,6 +1,7 @@
 'use strict';
-/* Public Events page (#6): the list of public events with client-side search + pagination.
- * Cards link to the event presentation page (/event/<slug>). */
+/* Public Events page (#6): the public events with client-side search + pagination, in the order
+ * the server gives them — upcoming first, the soonest on top, the ended ones at the bottom (#745).
+ * Each card shows the vehicles its roadbooks suit. Cards link to the event page (/event/<slug>). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
@@ -12,6 +13,7 @@
     const card = (e) => RBGalleryCard({
         href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered',
         meta: `@${esc(e.organizer)}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''} · ${e.roadbooks} ${esc(t('roadbooks'))}`
+            + RBVehicleIcons(e.vehicles)
             + (e.ended ? ` <span class="u-badge u-blocked">${esc(t('Ended'))}</span>` : ''),
     });
 
@@ -35,14 +37,10 @@
     if (search) search.oninput = () => { q = search.value; list.reset(); };
     window.addEventListener('rb-lang', () => { if (all.length) list.render(); });
 
-    // The header claim: signed out it goes through the LOGIN first and lands on Event
-    // management (#233); a signed-in visitor without event rights gets the guide (learn /
-    // request the role); whoever already manages events (admin, organiser, co-organiser)
-    // gets the direct "Organise an event" shortcut into Event management.
-    // Route the "Create" CTA by rights (label stays a short one-word action): signed out → LOGIN
-    // first, then Event management (#233); an organiser (admin / organiser / co-organiser) → straight
-    // into Event management; a signed-in visitor without rights keeps the guide (learn / request it).
-    RBApi('config').then((c) => {
+    // Route the "Create" CTA by rights: signed out → LOGIN first, then Event management (#233); an
+    // organiser (admin / organiser / co-organiser) → straight into Event management; a signed-in
+    // visitor without rights keeps the guide (learn / request it).
+    RBConfig().then((c) => {
         const u = c && c.user, link = $('evOrganise');
         if (!link) return;
         if (!u) link.href = '../account/?next=' + encodeURIComponent('/admin/events/');
@@ -50,7 +48,8 @@
     }).catch(() => {});
 
     RBApi('events_list').then((r) => {
-        all = (r.ok && r.events) || [];
+        if (!r.ok) { grid.innerHTML = `<p class="gallery-empty">${esc(t(r.error === 'Network error.' ? 'You are offline — reconnect to load this page.' : 'Could not load.'))}</p>`; return; } // failed ≠ empty
+        all = r.events;
         list.render();
-    }).catch(() => { grid.innerHTML = `<p class="gallery-empty">${esc(t('Could not load.'))}</p>`; });
+    });
 })();

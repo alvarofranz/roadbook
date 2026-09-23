@@ -57,11 +57,10 @@ c'è una sessione e cambia forma di conseguenza:
 | **Account settings** | `fa-gear` | `account/` | sempre |
 | **My roadbooks** | `fa-folder-open` | `myroadbooks/` | sempre (non in participant mode) |
 | **Public roadbooks** | `fa-book-open` | `roadbooks/` — l'unico accesso su mobile e nell'app (#671) | sempre (non in participant mode) |
-| **Guide** | `fa-circle-question` | `wiki/` | sempre |
-| **Public Roadbooks** | `fa-globe` | `admin/roadbooks/` | solo admin |
 | **User management** | `fa-users-gear` | `admin/` | solo admin |
 | **Site settings** | `fa-sliders` | `admin/config/` | solo admin |
 | **Event management** | `fa-flag-checkered` | `admin/events/` | admin, **oppure** organizer / co-organizzatore (`is_organizer`/`manages_events`) |
+| **Help** | `fa-circle-question` | `wiki/` — in fondo, separato, subito prima di App Info (#743) | sempre |
 | **Sign out** | `fa-right-from-bracket` | `RBSignOut()` (lo stesso del bottone nella pagina account) | sempre |
 
 Quindi profilo pubblico, impostazioni e lista roadbook sono **pagine distinte** raggiungibili da
@@ -137,12 +136,16 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
   note vocali** in un colpo solo, e ri-sincronizza il nome mostrato nell'intestazione. Lingua note
   vocali = preferenza per-account usata da Recorder ed Editor per il riconoscimento vocale; con
   valore vuoto ricade sulla lingua del dispositivo.
-- **Default map location** — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
+- **Default map location** (`#defaultLocation`) — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
   `RBMap.STYLE_TOPO`, tile topografiche gratuite) e un pin trascinabile
   ([account.js:183](../public/account/account.js#L183)). Si imposta toccando la mappa,
   trascinando il pin, con **Use my location** (GPS via `navigator.geolocation`) o si svuota
   con **Clear**; le coordinate scelte si salvano col proprio bottone **Save location** via
   `RBApi('save_location', { default_lat, default_lon })`
+  Un account senza posizione se la vede chiedere **una volta** (#749, `askForLocation` in
+  `app.js`): *Use my location* la salva subito, *Choose on the map* porta qui
+  (`account/#defaultLocation`), *Not now* resta ricordato sul dispositivo. Mai sopra questa
+  pagina, un tool a schermo intero o un altro dialogo.
   ([account.js:189](../public/account/account.js#L189)). La posizione salvata centra l'Editor
   a partenza vuota (es. "Draw on the map", [editor.js:1662](../public/editor/editor.js#L1662))
   e il Recorder prima del primo fix GPS ([recorder.js:61](../public/recorder/recorder.js#L61)).

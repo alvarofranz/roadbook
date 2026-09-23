@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.3', date: '2026-09-23',
+        title: 'Polish from the road test',
+        items: [
+            'Map pins stay visible once the 3D terrain has loaded, and voice notes turn into text again.',
+            'Events list what is coming first, soonest on top, and show which vehicles their roadbooks are for.',
+            'Account emails are clear and readable in every mail app, in your language.',
+            'In the note editor the extras sit in their own group, and Help moves to the foot of the profile menu.',
+        ],
+    },
+    {
         version: '1.9.2', date: '2026-09-22',
         title: 'The roadbook carries its own briefing',
         items: [

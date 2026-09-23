@@ -92,7 +92,7 @@
        list, so the two never drift (#496). `data-i18n` on every label, so a language switch
        reaches them (#495). */
     const SITE_LINKS = [
-        { group: 'Resources', path: 'wiki/',      icon: 'fa-circle-question', label: 'Guide' },
+        { group: 'Resources', path: 'wiki/',      icon: 'fa-circle-question', label: 'Help' },
         { group: 'Resources', path: 'install/',   icon: 'fa-circle-down',     label: 'Install' },
         { group: 'Resources', path: 'standard/',  icon: 'fa-file-code',       label: 'The .rdbk standard' },
         { group: 'Resources', path: 'changelog/', icon: 'fa-clock-rotate-left', label: 'What’s new' },
@@ -554,6 +554,9 @@
     // Shared roadbook one-liner subtitle: "12.3 km · 45 notes" (translated unit word).
     // Metres → "12.34 km", the one distance format (#732); `digits` for the precision the place needs.
     window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
+    // Which vehicles a roadbook (or an event's roadbooks) suits, as small labelled icons (#745)
+    const VEHICLE_ICON = { car: ['fa-car', 'Car'], moto: ['fa-motorcycle', 'Motorbike'], bike: ['fa-bicycle', 'Bicycle'] };
+    window.RBVehicleIcons = (list) => (list || []).length ? `<span class="vehicle-icons">${list.map((v) => `<i class="fa-solid ${VEHICLE_ICON[v][0]}" title="${RBesc(RBt(VEHICLE_ICON[v][1]))}" aria-label="${RBesc(RBt(VEHICLE_ICON[v][1]))}"></i>`).join('')}</span>` : '';
     window.RBSummary = (distanceM, noteCount) => RBKm(distanceM, 1) + ' · ' + noteCount + ' ' + RBt('notes');
     // The publication-status select (draft → ready → public), for My roadbooks and the admin's
     // per-user list alike; `dataAttr` names the attribute its row handler reads.
@@ -898,25 +901,6 @@
         list.render();
         return all.length;
     };
-    // Admin-only: every public roadbook (any owner) as .roadbook-row cards, each with a
-    // force-private control (moderation). Reuses admin_roadbooks / admin_unpublish. Returns the count.
-    window.RBPublicRoadbooksList = async (container) => {
-        if (!container) return 0;
-        const r = await RBApi('admin_roadbooks');
-        if (!r.ok) { container.innerHTML = `<p class="muted small"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt(r.error || 'Could not load.'))}</p>`; return 0; } // failed ≠ empty (#667)
-        const list = r.roadbooks || [];
-        container.innerHTML = list.length ? list.map((rb) => `<div class="roadbook-row">
-            <div class="meta"><b>${RBesc(rb.title)}</b><small>@${RBesc(rb.username)} · ${RBSummary(rb.total_distance, rb.note_count)}</small></div>
-            <a class="btn btn-ghost" href="/challenge/${rb.slug || ''}" title="${RBesc(RBt('View'))}" aria-label="${RBesc(RBt('View'))}"><i class="fa-solid fa-eye"></i></a>
-            <button class="btn btn-ghost" data-unpub="${rb.id}" data-title="${RBesc(rb.title)}"><i class="fa-solid fa-lock"></i> ${RBesc(RBt('Make private'))}</button>
-        </div>`).join('') : `<p class="muted small">${RBesc(RBt('No public roadbooks yet.'))}</p>`;
-        container.querySelectorAll('[data-unpub]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(RBt('Make this roadbook private?') + '<br><b>' + RBesc(b.dataset.title || '') + '</b>'))) return;
-            const x = await RBApi('admin_unpublish', { id: +b.dataset.unpub });
-            if (x.ok) { RBToast('Roadbook is now private.'); RBPublicRoadbooksList(container); } else RBToast(x.error || 'Could not change visibility.');
-        });
-        return list.length;
-    };
     // Translated toast (every tool page ships an empty #toast element).
     let toastTimer = null;
     window.RBToast = (msg, ms) => {
@@ -1175,7 +1159,6 @@
     function manageLinks(user, participant) {
         if (participant || !user) return [];
         if (user.is_admin) return [
-            { href: 'admin/roadbooks/',    icon: 'fa-globe',          label: 'Moderate public roadbooks', group: 0 },
             { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
             { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
             { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },
@@ -1203,11 +1186,12 @@
             + `<a href="${ROOT}account/">${menuLabel('fa-gear', 'Account settings')}</a>`
             + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-folder-open', 'My roadbooks')}</a>`
                 + `<a href="${ROOT}roadbooks/">${menuLabel('fa-book-open', 'Public roadbooks')}</a>`) // the only way in on mobile and in the app (#671)
-            + `<a href="${ROOT}wiki/">${menuLabel('fa-circle-question', 'Guide')}</a>`
             + manageLinksHTML(manageLinks(user, participant))
             + `<button id="${p}Activity">${menuLabel('fa-clock-rotate-left', 'My activity')}</button>`
             + (participant ? `<hr class="menu-sep"><button id="${p}Leave">${menuLabel('fa-up-right-from-square', 'Switch to full mode')}</button>` : '')
-            + `<hr class="menu-sep"><button id="${p}AppInfo">${menuLabel('fa-circle-info', 'App Info')}</button>`
+            // Help sits at the foot, just before App Info (#743)
+            + `<hr class="menu-sep"><a href="${ROOT}wiki/">${menuLabel('fa-circle-question', 'Help')}</a>`
+            + `<button id="${p}AppInfo">${menuLabel('fa-circle-info', 'App Info')}</button>`
             + `<button id="${p}Logout">${menuLabel('fa-right-from-bracket', 'Sign out')}</button>`;
     }
     // …and one wiring for both: close the menu, then do the thing.
@@ -1223,6 +1207,39 @@
         });
     }
 
+    /* A new account is asked once where it rides (#749): the default location centres the Recorder
+       and the Editor before the first fix, and puts the rider on the users map. Asked on the first
+       page that has room for it — never over the account page (it has the picker), a tool that owns
+       the screen, or another dialog — and "Not now" is remembered on this device, so it does not
+       come back (#436). */
+    function askForLocation(user) {
+        const key = 'rb_location_asked_' + user.id;
+        try { if (user.default_lat != null || localStorage.getItem(key)) return; } catch (e) { return; }
+        setTimeout(() => {
+            if (/\/account\/?$/.test(location.pathname) || document.body.classList.contains('rb-immersive') || document.querySelector('.modal')) return;
+            const dialog = RBModal(`<h2><i class="fa-solid fa-location-dot icon-accent"></i> ${RBesc(RBt('Where do you usually ride?'))}</h2>
+                <p>${RBesc(RBt('Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.'))}</p>
+                <div class="btnrow end">
+                    <button class="btn btn-ghost" data-act="later" type="button">${RBesc(RBt('Not now'))}</button>
+                    <a class="btn btn-ghost" href="${ROOT}account/#defaultLocation"><i class="fa-solid fa-map-location-dot"></i> ${RBesc(RBt('Choose on the map'))}</a>
+                    <button class="btn btn-primary" data-act="here" type="button"><i class="fa-solid fa-location-crosshairs"></i> ${RBesc(RBt('Use my location'))}</button>
+                </div>`, 'narrow', () => remember());
+            const remember = () => { try { localStorage.setItem(key, '1'); } catch (e) {} };
+            dialog.q('[data-act="later"]').onclick = () => { remember(); dialog.close(); };
+            dialog.q('a').onclick = () => remember();
+            dialog.q('[data-act="here"]').onclick = (e) => {
+                if (!navigator.geolocation) return RBToast('Could not get your location.');
+                const busy = RBBusy(e.currentTarget);
+                navigator.geolocation.getCurrentPosition(async (p) => {
+                    const r = await RBApi('save_location', { default_lat: +p.coords.latitude.toFixed(7), default_lon: +p.coords.longitude.toFixed(7) });
+                    if (!r.ok) { busy.reset(); return RBToast(r.error); }
+                    user.default_lat = p.coords.latitude; user.default_lon = p.coords.longitude;
+                    remember(); dialog.close(); RBToast('Location saved.');
+                }, () => { busy.reset(); RBToast('Could not get your location.'); }, { enableHighAccuracy: true, timeout: 10000 });
+            };
+        }, 1200);
+    }
+
     /* ---------------- Account control in the header ---------------- */
     (async function accountControl() {
         const cfg = await RBConfig();
@@ -1235,6 +1252,7 @@
             else if (isParticipant()) RBLeaveParticipantMode();
         }
         renderBanner(cfg.banner);
+        if (user && !participant && !cfg.offline) askForLocation(user);
         // Admins get the in-context UI translation editor (#118) — a small script loaded only for
         // them; it stays dormant until they turn edit mode on. Never loaded for anyone else.
         if (user && user.is_admin) { const s = document.createElement('script'); s.src = ROOT + 'assets/js/i18n-edit.js'; s.async = true; document.head.appendChild(s); }

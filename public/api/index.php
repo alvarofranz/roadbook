@@ -84,7 +84,6 @@ try {
         case 'ranking_add':    ranking_add(require_user(), $d); break;
         case 'ranking_remove': ranking_remove(require_user(), $d); break;
         case 'ranking_clear':  ranking_clear(require_user(), $d); break;
-        case 'admin_roadbooks': admin_public_roadbooks(require_admin()); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
         case 'admin_rb_get':     admin_rb_get(require_admin(), $d); break;
@@ -95,7 +94,7 @@ try {
         case 'admin_rb_restore':  admin_rb_restore(require_admin(), $d); break;
         case 'admin_rb_purge':    admin_rb_purge(require_admin(), $d); break;
         case 'admin_trash_purge_expired': admin_trash_purge_expired(require_admin()); break;
-        case 'admin_apk_latest':  admin_apk_latest(require_admin()); break;
+        case 'admin_apk_builds':  admin_apk_builds(require_admin()); break;
         case 'rb_list':   rb_list(require_user()); break;
         case 'rb_coedit_list': rb_coedit_list(require_user()); break;
         case 'rb_lock_refresh': rb_lock_refresh(require_user(), $d); break;

@@ -115,7 +115,7 @@ Tutte in [app/admin.php](../app/admin.php), tutte dietro `require_admin()` nel r
 | `admin_delete` | `admin_delete_user()` | elimina utente + file personali; i roadbook passano a `deleted-user` (#234); rifiuta su superuser `.env`, su se stessi e sull'account di sistema |
 | `admin_activity` | `admin_activity()` | timeline attività dell'utente (#86, IP anonimizzati) |
 | `admin_user_roadbooks` / `admin_set_status` / `admin_move_roadbook` | — | vista per-utente dei roadbook, cambio stato, riassegnazione owner (#126; rifiuta un roadbook nel cestino, #703) |
-| `admin_roadbooks` / `admin_unpublish` | — | moderazione dei roadbook pubblici |
+| `admin_unpublish` | — | rende privato un roadbook pubblico — il controllo sta sulla galleria `/roadbooks/` stessa (#743) |
 | `admin_settings` / `admin_save_settings` / `admin_logs` / `admin_activity_log` | — | banner del sito + log operativi (#103/#86) |
 | `admin_trash_list` / `admin_rb_trash` / `admin_rb_restore` / `admin_rb_purge` | — | cestino roadbook: elenca, cestina, ripristina (con `user_id` lo consegna a quell'utente nello stesso passo, #703), elimina permanentemente (#187) |
 

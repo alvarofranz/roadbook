@@ -22,11 +22,14 @@ describe('the apk page exists and loads its module (#540)', () => {
         expect(page).toContain('https://rdbk.app/apk/');
     });
 
-    it('the module resolves the rolling test build and stable releases server-side', () => {
+    it('lists every build newest first, each with when it was built (#742)', () => {
         const js = read('public/apk/apk.js');
-        expect(js).toContain("api('admin_apk_latest'");
-        expect(js).toContain('apk-latest');
+        expect(js).toContain("api('admin_apk_builds'");
+        expect(js).toContain('RBFmtDateTime(build.built_at)');
         expect(js).toContain('sha256');
+        const php = read('app/admin.php');
+        expect(php).toContain("usort($builds, fn($x, $y) => strcmp($y['built_at'], $x['built_at']));");
+        expect(php).toContain("'built_at' => (string)($apk['updated_at']");
     });
 
     it('the page is admin-gated and stays out of the sitemap', () => {

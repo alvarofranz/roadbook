@@ -1635,9 +1635,9 @@
         const count = (id) => RB.noteBlocks(n).filter((b) => RB.blockType(b).id === id).length;
         const tab = (id, icon, label, badge) =>
             `<button type="button" class="kind-tab${blockTab === id ? ' on' : ''}" role="tab" aria-selected="${blockTab === id}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
-        $('kindTabs').innerHTML = tab('', 'fa-location-dot', t('Note'), 0)
-            + tab('icon', 'fa-icons', t('Icon'), (n.icons || []).length)
-            + RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('');
+        // two framed groups (#747): the note itself, then the EXTRAS added around it
+        $('kindTabs').innerHTML = `<div class="kind-group">${tab('', 'fa-location-dot', t('Note'), 0) + tab('icon', 'fa-icons', t('Icon'), (n.icons || []).length)}</div>`
+            + `<div class="kind-group extras"><span class="kind-group-label">${esc(t('Extras'))}</span>${RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('')}</div>`;
         $('kindTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = (e) => {
             e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
         });

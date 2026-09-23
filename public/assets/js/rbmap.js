@@ -173,6 +173,16 @@ window.RBMap = class RBMap {
             if (!m.getSource('rb-dem')) m.addSource('rb-dem', { type: 'raster-dem', tiles: ['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'], encoding: 'terrarium', tileSize: 256, maxzoom: 14 });
             m.setTerrain({ source: 'rb-dem', exaggeration: 1.3 });
             m.setMaxPitch(80);
+            // With terrain on, a DOM marker (a user's pin, a draggable location) takes its opacity from
+            // whether the relief covers it — judged before the elevation tiles exist, so on a real GPU
+            // it stayed hidden until the map was touched (#741). Once the relief has loaded and the map
+            // is idle, a move event makes every marker judge itself again.
+            let pending = false;
+            m.on('sourcedata', (e) => {
+                if (e.sourceId !== 'rb-dem' || !e.isSourceLoaded || pending) return;
+                pending = true;
+                m.once('idle', () => { pending = false; m.fire('move'); });
+            });
         } catch (e) { /* terrain unavailable offline */ }
     }
     _init() {

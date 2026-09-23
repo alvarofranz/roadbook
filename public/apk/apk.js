@@ -1,37 +1,33 @@
 'use strict';
-/* Direct-APK page (#540): test builds and releases resolved server-side (admin_apk_latest),
- * so the page needs no CSP exception and never hits the GitHub rate limit. A rolling DEBUG
- * build is published on every push to main (uninstall the store version first: signatures
- * differ); versioned signed APKs ride normal releases. Admins only. */
+/* Direct-APK page (#540 · #742): every Android build, newest first, resolved server-side
+ * (admin_apk_builds) so the page needs no CSP exception and never hits the GitHub rate limit. The
+ * rolling test build is rebuilt on every push to main (uninstall the store version first:
+ * signatures differ); versioned signed APKs ride normal releases. Each says when it was built.
+ * Admins only. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, api = RBApi;
-    const fmtSize = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 
-    function card(badge, build) {
-        const ver = build.tag === 'apk-latest' ? String(build.published || '').slice(0, 16).replace('T', ' ') : String(build.tag || '').replace(/^android-/, '');
-        return `<h2>RDBK ${esc(ver)} · Android${badge ? ` <span class="muted small">${esc(badge)}</span>` : ''}</h2>`
-            + `<div class="apk-meta">${fmtSize(build.size || 0)}${build.sha256 ? `<br>SHA-256: <code>${esc(build.sha256)}</code>` : ''}</div>`
-            + `<div class="btnrow"><a class="btn btn-primary" href="${esc(build.url)}"><i class="fa-solid fa-download"></i> ${esc(t('apk.download'))}</a></div>`;
+    function card(build) {
+        const name = build.test ? t('apk.testBuild') : String(build.tag || '').replace(/^android-/, '');
+        return `<section class="panel apk-build">
+            <div class="head-row"><h2>RDBK ${esc(name)} · Android${build.prerelease && !build.test ? ` <span class="u-badge">${esc(t('Pre-release'))}</span>` : ''}</h2>
+                <a class="btn btn-primary" href="${esc(build.url)}"><i class="fa-solid fa-download"></i> ${esc(t('apk.download'))}</a></div>
+            <div class="apk-meta"><i class="fa-regular fa-clock"></i> ${esc(t('Built'))} ${esc(RBFmtDateTime(build.built_at))} · ${RBFmtSize(build.size || 0)}${build.sha256 ? `<br>SHA-256: <code>${esc(build.sha256)}</code>` : ''}</div>
+        </section>`;
     }
 
     async function load() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('adminMsg').hidden = true; $('apkBody').hidden = false;
         const box = $('apkCard');
-        let j = null;
-        try { j = await api('admin_apk_latest', {}); } catch (e) { j = null; }
-        const cards = [];
-        if (j && j.ok) {
-            if (j.rolling) cards.push(card(t('apk.testBuild'), j.rolling));
-            if (j.stable) cards.push(card('', j.stable));
-        }
-        if (!cards.length) {
-            box.innerHTML = `<p class="muted">${esc(t('apk.noRelease'))}</p>`
+        const j = await api('admin_apk_builds', {});
+        if (!j.ok || !j.builds.length) {
+            box.innerHTML = `<p class="muted">${esc(t(j.ok ? 'apk.noRelease' : (j.error || 'Could not load.')))}</p>`
                 + `<div class="btnrow"><a class="btn btn-ghost" href="https://github.com/alvarofranz/roadbook/releases" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub releases</a></div>`;
             return;
         }
-        box.innerHTML = cards.join('<hr>');
+        box.innerHTML = j.builds.map(card).join('');
     }
 
     load();

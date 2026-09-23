@@ -48,9 +48,10 @@ describe('account settings', () => {
 });
 
 describe('the account menu', () => {
-    it('reaches public roadbooks and a translated guide (#671 · #672)', () => {
+    it('reaches public roadbooks, with Help at the foot next to App Info (#671 · #672 · #743)', () => {
         expect(app).toContain("menuLabel('fa-book-open', 'Public roadbooks')");
-        expect(app).toContain("menuLabel('fa-circle-question', 'Guide')");
+        expect(app).toMatch(/menu-sep"><a href="\$\{ROOT\}wiki\/">\$\{menuLabel\('fa-circle-question', 'Help'\)\}<\/a>`\s*\+ `<button id="\$\{p\}AppInfo">/);
+        expect(app).not.toContain('admin/roadbooks');
         expect(app).not.toContain('Wiki / Guida');
     });
 });
