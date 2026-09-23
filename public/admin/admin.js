@@ -195,7 +195,7 @@
             if (!rb.track || !rb.track.length) { if (mapTitle) mapTitle.textContent = `${title || ''} — ${t('No route yet.')}`.trim(); return; }
             rbMap.showRoadbook(rb);
             if (rbMap.map) setTimeout(() => rbMap.map.resize(), 50); // the dialog just laid out: force the GL canvas to its box
-            if (mapTitle) mapTitle.textContent = `${title || ''} · ${RBSummary(rb.total_distance || 0, (rb.notes || []).length)}`;
+            if (mapTitle) mapTitle.textContent = `${title || ''} · ${RBSummary(rb.meta.total_distance || 0, rb.notes.length)}`; // the payload's distance lives in meta
         };
         m.q('#rbsSearch').oninput = (e) => { rbQuery = e.target.value; rbPage = 1; render(); };
         // Reassign owner: a searchable user picker (the user base can be large) + confirm.
