@@ -1376,7 +1376,7 @@ Object.assign(window.RBi18nLangs.fr, {
 
 /* Recorder: notes and photos, the GPS-fix toast, the Editor feature line */
 Object.assign(window.RBi18nLangs.fr, {
-    "GPS could not get a fix. Move to an open area and restart the recording.": "Le GPS n’obtient pas de position. Placez-vous dans un endroit dégagé et relancez l’enregistrement.",
+    
     "Record a Roadbook with geotagged notes and photos.": "Enregistrez un Roadbook avec des notes et des photos géoréférencées.",
     "GPS track, notes and photos": "Trace GPS, notes et photos",
     "Record a Roadbook with notes, photos and geotags.": "Enregistrez un Roadbook avec notes, photos et géotags.",
@@ -1487,4 +1487,9 @@ Object.assign(window.RBi18nLangs.fr, {
     "Location is blocked": "La localisation est bloquée",
     "Allow location for RDBK in your device settings.": "Autorise la localisation pour RDBK dans les réglages de l’appareil.",
     "Waiting for a good GPS signal": "En attente d’un bon signal GPS",
+});
+
+/* a lost GPS signal mid-recording (#901) */
+Object.assign(window.RBi18nLangs.fr, {
+    "GPS signal lost — the recording carries on and picks up when it returns.": "Signal GPS perdu : l’enregistrement continue et reprend quand il revient.",
 });

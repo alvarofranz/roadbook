@@ -327,3 +327,7 @@ registrato), `weak` oltre, cioè un fix che la registrazione scarterebbe, e `non
 scala che legge la barra di stato. **Avvia** si sblocca solo a fine avvio e con un fix fresco (non più
 vecchio di 10 s) almeno `fair`, così una registrazione non parte mai alla cieca. Il watch passa alla
 registrazione quando parte (`stopPreview`) e torna dopo uno Scarta.
+
+Il blocco vale **solo per partire**. Durante la registrazione un segnale perso non la ferma mai: i fix
+cattivi vengono saltati (`recJunkFix`), un avviso dice che la registrazione continua, e la traccia
+riprende quando tornano i fix.
