@@ -250,7 +250,18 @@
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
         clearInterval(clockTimer); // startNav can run again in the same page life — never stack clocks
         clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
+        setTimeout(() => RBTour('reader', READER_TOUR), 700); // the first run, while still standing (#906)
     }
+    // The Reader's guided tour (#906): what the navigation screen's controls do, once
+    const READER_TOUR = [
+        { target: '#noteList', title: 'The roadbook', text: 'The next note always sits on top; the blue box shows what is left along the track.' },
+        { target: '.odometer-bar', title: 'Odometers', text: 'Total and partial: they line up with the roadbook at every note.' },
+        { target: '#autoBtn', title: 'Auto', text: 'On, the GPS validates each note as you reach it. Off, tap the note yourself.' },
+        { target: '#mapBtn', title: 'Note map', text: 'A map of where you are, with an arrow pointing at the next note.' },
+        { target: '#pauseBtn', title: 'Pause', text: 'Stops the clock and the odometers.' },
+        { target: '#finishBtn', title: 'Finish', text: 'Ends the run and shows your report.' },
+        { target: '#endBtn', title: 'Leave', text: 'Exits without a report.' },
+    ];
     let clockTimer = null;
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */

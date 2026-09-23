@@ -787,6 +787,19 @@
     function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
     // `restoredGaps`: the open cuts of a recovered draft, in place before the history starts, so
     // the first undo snapshot already holds them.
+    // The Editor's guided tour (#906): the map modes and the tools around them, once
+    const EDITOR_TOUR = [
+        { target: '#modeMove', title: 'Move · M', text: 'Drag any track point, note or photo.' },
+        { target: '#modeNote', title: 'Add notes · N', text: 'Tap the route to place a note.' },
+        { target: '#modePoint', title: 'Add points · P', text: 'Tap to add a point to the track.' },
+        { target: '#modeDraw', title: 'Draw · D', text: 'Each tap extends the route from its nearest end.' },
+        { target: '#mapMenuToggle', title: 'More tools', text: 'Cut, add a GPX, simplify, adjust on the trail.' },
+        { target: '#undoBtn', title: 'Undo', text: 'Every change can be undone (Ctrl+Z).' },
+        { target: '#noteList', title: 'Your notes', text: 'Tap one to design its vignette: road, icons, CAP, text.' },
+        { target: '#openConfig', title: 'Settings', text: 'Title, description, author, logo and photos.' },
+        { target: '#saveAccount', title: 'Save', text: 'Keep it on your profile, public or private.' },
+        { target: '#exportBtn', title: 'Export', text: 'A .rdbk, a GPX or a PDF.' },
+    ];
     function setRoadbook(r, restoredGaps) {
         rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
         // Pre-load AND refresh the used standard-palette icons as data URIs (#174): the palette
@@ -825,6 +838,7 @@
         const routeless = rb.track.length < 2;
         setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to Move
         showView('map'); // tap a note to open its editor inline below the row
+        setTimeout(() => RBTour('editor', EDITOR_TOUR), 700); // the first roadbook opened (#906)
         if (routeless) { centerOnDefault(); toast('Tap the map to draw your route.'); } // no route to fit → start at the user's default location
     }
 

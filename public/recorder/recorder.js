@@ -216,7 +216,17 @@
         // chosen date+time name so it never shows as "Recording…" (#148). Best-effort now; if it can't
         // be created (offline), captures still buffer and the draft is created on the first flush (#147 F2).
         if (meUser) ensureDraft();
+        setTimeout(() => RBTour('recorder', RECORDER_TOUR), 700); // the first recording, before moving off (#906)
     }
+    // The Recorder's guided tour (#906): what the recording screen's controls do, once
+    const RECORDER_TOUR = [
+        { target: '#recWpt', title: 'Note', text: 'One tap drops a note right where you are.' },
+        { target: '#recPhoto', title: 'Photo', text: 'Pinned to the track at your position.' },
+        { target: '#recUndo', title: 'Undo note', text: 'Removes the last note.' },
+        { target: '#recMap', title: 'Your track', text: 'The big number is the distance since the last note.' },
+        { target: '#recPause', title: 'Pause', text: 'Stops recording until you resume.' },
+        { target: '#recStop', title: 'End', text: 'Save it as a draft roadbook, or discard it.' },
+    ];
     // Get the draft container id, creating it once when signed-in and online. Returns null when it
     // can't be made yet (offline, or signed out) so queued captures simply wait (#147 F2), and when
     // this page holds no recording: a capture left in the queue from another one must not create an

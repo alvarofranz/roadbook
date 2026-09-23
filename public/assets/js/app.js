@@ -1309,6 +1309,76 @@
             : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
         return [surface, surface === 'App' ? '' : browser, os].filter(Boolean).join(' · ').slice(0, 80);
     };
+    /* Guided tours (#906): the first time a tool opens, its main controls are pointed at one by one —
+       the screen dimmed, a hole over the control, a bubble beside it saying what it does. Asked ONCE,
+       ever (No / Yes): a No means no tour anywhere, again. After a Yes each tool's tour runs once, and
+       every bubble carries "Skip tutorial" (Escape too), which ends it for good. A tour counts as seen
+       from its first step, so an interrupted one (a reload, a crash) never comes back. A step whose
+       control is not on screen is left out. steps: [{ target: CSS selector, title, text }] — short English
+       source strings: a title of a word or two and one line saying what the control does. */
+    const TOUR_OPTIN = 'rb_tour_optin', TOUR_SEEN = 'rb_tour_seen';
+    const tourGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const tourSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    let touring = false;
+    window.RBTour = async (id, steps) => {
+        const seen = (tourGet(TOUR_SEEN) || '').split(',').filter(Boolean);
+        if (touring || seen.includes(id) || tourGet(TOUR_OPTIN) === 'no') return;
+        const onScreen = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+        const live = steps.map((s) => ({ title: s.title, text: s.text, el: document.querySelector(s.target) })).filter((s) => onScreen(s.el));
+        if (!live.length) return;
+        touring = true;
+        if (tourGet(TOUR_OPTIN) !== 'yes') {
+            const yes = await RBConfirm(RBt('Take a quick tour? Each tool shows you its main controls once, the first time you open it.'));
+            tourSet(TOUR_OPTIN, yes ? 'yes' : 'no');
+            if (!yes) { touring = false; return; }
+        }
+        tourSet(TOUR_SEEN, [...new Set(seen.concat(id))].join(','));
+        const root = document.createElement('div');
+        root.className = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
+        root.innerHTML = '<div class="tour-hole"></div><div class="tour-bubble" aria-live="polite"><b class="tour-title"></b><p class="tour-text"></p>'
+            + '<div class="tour-foot"><span class="tour-dots">' + live.map(() => '<i></i>').join('') + '</span>'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-skip></button><button type="button" class="btn btn-primary btn-sm" data-next></button></div></div>';
+        document.body.appendChild(root);
+        const hole = root.querySelector('.tour-hole'), bubble = root.querySelector('.tour-bubble'), nextBtn = root.querySelector('[data-next]');
+        let i = 0;
+        const px = (el, name, v) => el.style.setProperty(name, Math.round(v) + 'px');
+        function place() {
+            if (!root.isConnected || !live[i]) return; // a repaint queued before the tour ended
+            const r = live[i].el.getBoundingClientRect(), pad = 6, gap = 12, edge = 10;
+            px(hole, '--tour-hx', r.left - pad); px(hole, '--tour-hy', r.top - pad);
+            px(hole, '--tour-hw', r.width + 2 * pad); px(hole, '--tour-hh', r.height + 2 * pad);
+            const b = bubble.getBoundingClientRect();
+            const below = r.bottom + pad + gap, above = r.top - pad - gap - b.height;
+            const fitsBelow = below + b.height <= innerHeight - edge;
+            const top = fitsBelow ? below : above >= edge ? above : Math.max(edge, innerHeight - b.height - edge);
+            const left = Math.min(Math.max(edge, r.left + r.width / 2 - b.width / 2), innerWidth - b.width - edge);
+            px(bubble, '--tour-x', left); px(bubble, '--tour-y', top);
+            // the bubble's pointer aims at the control, on the side it faces
+            bubble.dataset.side = fitsBelow ? 'below' : 'above';
+            px(bubble, '--tour-ax', Math.min(Math.max(18, r.left + r.width / 2 - left), b.width - 18));
+        }
+        function show() {
+            live[i].el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            root.querySelector('.tour-title').textContent = RBt(live[i].title);
+            root.querySelector('.tour-text').textContent = RBt(live[i].text);
+            root.querySelectorAll('.tour-dots i').forEach((d, k) => d.classList.toggle('on', k === i));
+            root.querySelector('[data-skip]').textContent = RBt('Skip tutorial');
+            nextBtn.textContent = RBt(i === live.length - 1 ? 'Done' : 'tour.next');
+            requestAnimationFrame(place);
+        }
+        function end() { root.remove(); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place); touring = false; }
+        function next() { if (++i >= live.length) end(); else show(); }
+        function onKey(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(); }
+            else if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); next(); }
+        }
+        nextBtn.onclick = next;
+        root.querySelector('[data-skip]').onclick = end;
+        document.addEventListener('keydown', onKey, true);
+        window.addEventListener('resize', place);
+        show();
+        nextBtn.focus();
+    };
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
     // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
     // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and
