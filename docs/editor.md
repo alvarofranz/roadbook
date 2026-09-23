@@ -608,8 +608,8 @@ La sequenza di startup ([editor.js:998](../public/editor/editor.js#L998)) ha una
 precisa:
 
 1. `RBApi('config')` per identificare l'utente (in parallelo).
-2. **`?trip=1`** — traccia passata da Recorder/Tripmaster via `sessionStorage` (con waypoint
-   e, se loggati, il draft con le foto già attaccate).
+2. **`?trip=1`** — traccia GPX registrata nel Reader o nel Tripmaster, passata via `sessionStorage`
+   (il Recorder invece salva la registrazione come draft e apre `?rb=<id>`, #791).
 3. **Draft non salvato** in `localStorage` — `RBConfirm` di recupero (rifiutare **non** lo
    cancella: viene sovrascritto al prossimo checkpoint).
 4. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.

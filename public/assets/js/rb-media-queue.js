@@ -71,15 +71,8 @@
             }
         }
 
-        // Empty the queue (e.g. after a signed-out user has saved a local .rdbk with the media, #147 F3).
-        async function clear() {
-            for (const it of await store.all()) await store.del(it.id);
-            await emitChange();
-        }
-
         return {
-            add, flush, clear,
-            items: function () { return store.all(); }, // queued records (blob + fields) for a local export
+            add, flush,
             init: function (cb) { cb = cb || {}; onDone = cb.onDone || null; onChange = cb.onChange || null; },
         };
     }
@@ -152,8 +145,6 @@
 
     window.RBMediaQueue = {
         add: (kind, blob, fields, name, token) => queue.add(kind, blob, fields, name, token),
-        items: () => queue.items(),
-        clear: () => queue.clear(),
         // Kick a drain now (e.g. right after a draft becomes available post sign-in), instead of
         // waiting for the retry timer or the next `online` event.
         flush: () => queue.flush(),

@@ -2317,21 +2317,13 @@
             updateSaveBtn();
             if (rb && !rb.meta.author && !$('rbAuthor').value) $('rbAuthor').value = userName(); // default author once we know the user
         });
-        // ?trip=1 → a track recorded in the Recorder/Tripmaster, handed over via
-        // sessionStorage (the Recorder also carries its waypoints and, when signed
-        // in, the draft roadbook that already holds the geotagged photos).
+        // ?trip=1 → a GPX track logged in the Reader or the Tripmaster, handed over via sessionStorage
+        // (the Recorder saves its recordings as a draft roadbook and opens that instead, #791).
         if (new URLSearchParams(location.search).get('trip')) {
             try {
                 const pts = JSON.parse(sessionStorage.getItem('rb_trip_track') || 'null');
-                const wpts = JSON.parse(sessionStorage.getItem('rb_trip_wpts') || '[]') || [];
-                const tripDraft = +(sessionStorage.getItem('rb_trip_draft') || 0);
-                const tripName = sessionStorage.getItem('rb_trip_name') || t('Recorded trip'); // name chosen in the Recorder (#54)
-                ['rb_trip_track', 'rb_trip_wpts', 'rb_trip_draft', 'rb_trip_name'].forEach((k) => sessionStorage.removeItem(k));
-                if (pts && pts.length >= 2) {
-                    setRoadbook(RB.buildRoadbook({ name: tripName, trkpts: pts, wpts }));
-                    if (tripDraft) { await account; if (meUser) { currentRbId = tripDraft; setStatus('draft'); updatePhotos(); updateAudio(); } } // adopt the draft that holds the photos AND the voice notes
-                    markDirty();
-                }
+                sessionStorage.removeItem('rb_trip_track');
+                if (pts && pts.length >= 2) { setRoadbook(RB.buildRoadbook({ name: t('Recorded trip'), trkpts: pts, wpts: [] })); markDirty(); }
             } catch (e) { toast('Could not load the recorded trip.'); }
             if (rb) return;
         }
