@@ -58,3 +58,18 @@ describe('RBShareFile', () => {
         expect(read('native/src/native.js')).toContain('async shareFile(blob, filename, text) {');
     });
 });
+
+describe('the run’s shareable page (#803)', () => {
+    const page = read('public/run/index.php');
+    it('is rendered on the server with the card as og:image, for public runs only', () => {
+        expect(page).toContain("WHERE ru.id = ? AND ru.is_public = 1 AND u.blocked = 0");
+        expect(page).toContain('<meta property="og:image" content="<?= $h($image) ?>">');
+        expect(page).toContain("$image = $card ? $base . $card : $base . '/assets/mockup.png';");
+        expect(page).toContain('if (!$run) http_response_code(404);');
+        expect(read('public/.htaccess')).toContain('RewriteRule ^run/([0-9]+)$ /run/index.php?id=$1 [L]');
+    });
+    it('is what Share sends once the run is public, from the report and the profile', () => {
+        expect(reader).toContain("if (saved.is_public) cardLink = RBPublicLink('/run/' + saved.id);");
+        expect(read('public/assets/js/profile-page.js')).toContain("RBPublicLink('/run/' + b.dataset.runId)");
+    });
+});

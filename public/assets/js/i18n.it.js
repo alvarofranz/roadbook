@@ -1478,3 +1478,10 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "Not signed in: the route and its photos wait on this device, and Save asks you to sign in.": "Non autenticato: il percorso e le sue foto aspettano su questo dispositivo, e Salva ti chiede di accedere.",
 });
+
+/* a run's shareable page (#803) */
+Object.assign(window.RBi18nLangs.it, {
+    "View the profile": "Vedi il profilo",
+    "Open the roadbook": "Apri il roadbook",
+    "This run is not public, or no longer exists.": "Questo percorso non è pubblico o non esiste più.",
+});
