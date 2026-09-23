@@ -1497,3 +1497,13 @@ Object.assign(window.RBi18nLangs.it, {
     "Who sees this run": "Chi vede questo percorso",
     "Choose who sees this run to save it to your profile.": "Scegli chi vede questo percorso per salvarlo nel tuo profilo.",
 });
+
+/* release notes 1.9.5 */
+Object.assign(window.RBi18nLangs.it, {
+    "Share the ride": "Condividi il percorso",
+    "Finishing a roadbook opens a new screen: your run card up front, Share right under it, and one switch to make the run private or public.": "Alla fine di un roadbook si apre una nuova schermata: la card del percorso in primo piano, Condividi subito sotto e un solo interruttore per renderlo privato o pubblico.",
+    "Links and QR codes to a roadbook or an event open straight in the app again, on iPhone and Android.": "I link e i QR di un roadbook o di un evento tornano ad aprirsi direttamente nell’app, su iPhone e su Android.",
+    "The PDF carries the QR to its digital copy on every page, with the same clean header throughout and the cover image as a soft backdrop to the route.": "Il PDF porta il QR alla sua versione digitale su ogni pagina, con la stessa intestazione pulita ovunque e l’immagine di copertina come sfondo leggero del percorso.",
+    "The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.": "Il menu è Roadbook · Editor · Recorder · Naviga · Eventi · Profilo ovunque, e l’Editor può avviare una registrazione direttamente dalla prima schermata.",
+    "Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.": "I campi data non si sovrappongono più alle etichette, e la gestione utenti mostra la distanza reale di ogni roadbook.",
+});

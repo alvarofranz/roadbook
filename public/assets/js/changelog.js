@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.5', date: '2026-09-23',
+        title: 'Share the ride',
+        items: [
+            'Finishing a roadbook opens a new screen: your run card up front, Share right under it, and one switch to make the run private or public.',
+            'Links and QR codes to a roadbook or an event open straight in the app again, on iPhone and Android.',
+            'The PDF carries the QR to its digital copy on every page, with the same clean header throughout and the cover image as a soft backdrop to the route.',
+            'The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.',
+            'Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.',
+        ],
+    },
+    {
         version: '1.9.4', date: '2026-09-23',
         title: 'Built for the ride',
         items: [
