@@ -1039,10 +1039,11 @@ describe('the note says which detection radius applies (#530)', () => {
                 expect(dict, `${lang}: ${key}`).toContain(`'${key}':`);
             }
         }
-        // CONST.REACH_DEFAULT_M is 50 m — the help used to promise 30
+        // the help names the system default the code applies: CONST.REACH_DEFAULT_M, 30 m (#753)
         const core = read('public/assets/js/roadbook-core.js');
-        expect(core).toContain('REACH_DEFAULT_M: 50');
-        expect(read('public/assets/js/i18n.js')).toContain('then the 50 m system default');
+        expect(core).toContain('REACH_DEFAULT_M: 30');
+        expect(read('public/assets/js/i18n.js')).toContain('then the 30 m system default');
+        for (const lang of ['es', 'it', 'de', 'fr']) expect(read(`public/assets/js/i18n.${lang}.js`), lang).not.toMatch(/50 m (del sistema|di sistema|des System|du système)/);
     });
 });
 

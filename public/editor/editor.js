@@ -21,7 +21,7 @@
     if (mapStyleIdx < 0) mapStyleIdx = 0;
     // The editor map IS the work surface (draw the route, drag notes, tap to add) — it needs
     // one-finger pan / free wheel-zoom, so it opts out of the shared cooperative-gestures default.
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyleIdx], geolocate: true, wpIconsToggle: true, cooperativeGestures: false });
+    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyleIdx], geolocate: true, wpIcons: true, compass: false, cooperativeGestures: false });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.
@@ -221,7 +221,7 @@
     // pending edits) — disabled once it's saved to the profile with no further changes.
     function updateSaveBtn() {
         const dis = !!(currentRbId && !dirty) || !rbLock.mine; // never save over someone else's lock (#154)
-        ['saveAccount', 'cfgSave'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
+        ['saveAccount', 'cfgSave', 'cfgSaveBottom'].forEach((id) => { const b = $(id); if (b) b.disabled = dis; });
         const dlt = $('deleteSection'); if (dlt) dlt.hidden = !(currentRbId > 0 && rbIsOwner); // delete only exists once it's saved, and only for the owner
     }
     const mkIcon = (name, pos) => ({ name, pos, angle: 0, size: 64, flip_x: false }); // a new icon lands at a size you can see, then resize as needed
@@ -458,15 +458,15 @@
     // Shortcut sheet (#458): every key grouped by context, including the two lines written
     // nowhere else — right-click on desktop, long-press on touch, opens the context menu.
     function shortcutSheet() {
-        const row = (label, key) => `<div class="ev-line"><span class="meta">${esc(t(label))}</span><kbd class="key-chip">${key}</kbd></div>`;
-        const sec = (h, rows) => `<h3>${esc(t(h))}</h3>` + rows.map(([l, k]) => row(l, k)).join('');
-        const m = RBModal(`<h2><i class="fa-solid fa-keyboard"></i> ${esc(t('Keyboard shortcuts'))}</h2>`
+        const row = (label, key) => `<div class="shortcut-row"><span>${esc(t(label))}</span><kbd class="key-chip">${key}</kbd></div>`;
+        const sec = (h, rows) => `<section><h3>${esc(t(h))}</h3>` + rows.map(([l, k]) => row(l, k)).join('') + '</section>';
+        const m = RBModal(`<h2><i class="fa-solid fa-keyboard icon-accent"></i> ${esc(t('Keyboard shortcuts'))}</h2><div class="shortcut-grid">`
             + sec('Modes', [['Move', 'M'], ['Add notes', 'N'], ['Add points', 'P'], ['Draw', 'D'], ['Cut', 'C'], ['Back to Move', 'Esc']])
             + sec('Track point', [['Turn this point into a note', 'N'], ['Add intermediate point', 'I'], ['Add track point here', 'P'], ['Delete point', 'Del']])
             + sec('Note', [['Turn this note into a track point', 'T'], ['Delete note', 'Del']])
-            + sec('Anywhere', [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']])
+            + sec('Anywhere', [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']]) + '</div>'
             + `<p class="muted small">${esc(t('Right-click opens the menu — long-press on touch.'))}</p>`
-            + `<div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
+            + `<div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'wide');
         m.q('.modal-close').onclick = m.close;
     }
     $('toolShortcuts').onclick = () => { $('mapMenuPanel').hidden = true; shortcutSheet(); };
@@ -498,12 +498,12 @@
             if (currentRbId > 0) loadPhotos();
         });
     }
-    // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle + live zoom level.
-    // The control is one 29 px map button, so the current style shows as a short code (like the
-    // zoom's "z12"); its full, translated name is the tooltip (#700).
+    // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle. The control is
+    // one 29 px map button, so the current style shows as a short code; its full, translated name
+    // is the tooltip (#700).
     const MAP_STYLE_LABELS = ['SAT', 'TOPO', 'OSM'];
     if (map.map) map.map.addControl({
-        onAdd(m) {
+        onAdd() {
             const c = document.createElement('div');
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group rb-mapctl';
             const b = document.createElement('button');
@@ -516,14 +516,10 @@
             label.textContent = MAP_STYLE_LABELS[mapStyleIdx];
             b.appendChild(label);
             b.onclick = () => { toggleMapStyle(); label.textContent = MAP_STYLE_LABELS[mapStyleIdx]; };
-            const z = document.createElement('div');
-            z.className = 'rb-mapctl-zoom'; z.setAttribute('aria-hidden', 'true');
-            this._upd = () => { z.textContent = 'z' + m.getZoom().toFixed(1); };
-            m.on('zoom', this._upd); this._upd(); this._m = m;
-            c.append(b, z);
+            c.append(b); this._c = c;
             return c;
         },
-        onRemove() { if (this._m && this._upd) this._m.off('zoom', this._upd); },
+        onRemove() { this._c.remove(); },
     }, 'top-right');
     // Escape → back to the default Move tool; never mid-adjust — the drag editors must not
     // touch a track that is being live re-recorded (#220)
@@ -903,7 +899,7 @@
         $('viewConfig').hidden = v !== 'config';
         if (v === 'map' && map && map.map) { setTimeout(() => map.map.resize(), 60); }
     }
-    $('backToMap').onclick = () => showView('map');
+    ['backToMap', 'backToMapBottom'].forEach((id) => { $(id).onclick = () => { showView('map'); window.scrollTo(0, 0); }; });
     $('openConfig').onclick = () => { if (!rb) return toast('Load a roadbook first.'); showView('config'); };
     $('cfgMapAccess').onchange = (e) => { if (rb) { rb.meta.map_access = e.target.checked; markDirty(); } };
     $('cfgReusable').onchange = (e) => { reusable = e.target.checked; markDirty(); }; // #106: only meaningful when the roadbook is Public
@@ -1211,7 +1207,8 @@
         } catch (e) { /* a cover is non-essential — never let it break a save */ }
     }
     $('saveAccount').onclick = () => saveRoadbook('saveAccount');
-    $('cfgSave').onclick = () => saveRoadbook('cfgSave'); // the same Save, available inside the settings view too
+    $('cfgSave').onclick = () => saveRoadbook('cfgSave'); // the same Save, available inside the settings view too —
+    $('cfgSaveBottom').onclick = () => saveRoadbook('cfgSaveBottom'); // at its top and at its foot (#752)
     // Leave the editor: unsaved changes get a save prompt first, then return to the editor
     // landing (the roadbook list), not the home page.
     async function leaveEditor() {
@@ -2239,7 +2236,7 @@
                 ${row('kmz', 'fa-earth-americas', 'KMZ', 'To view in Google Earth')}
                 ${row('source', 'fa-code', 'View source', 'The roadbook as JSON or GPX, to inspect and copy')}
             </div>
-            <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow scroll');
+            <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
         const cb = (g) => m.q(`[data-g="${g}"]`);
         const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
         cb('wpt').onchange = syncIcons; syncIcons();

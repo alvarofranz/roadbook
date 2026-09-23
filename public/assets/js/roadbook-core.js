@@ -241,7 +241,7 @@
 
     /* ---------------- scoring constants (Reader and Ranking must agree) ---------------- */
     const CONST = {
-        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 50, REACH_MIN_M: 18,
+        MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
         COURSE_WINDOW_M: 15, COURSE_DEVICE_KMH: 12, // course-up: ground covered over the last 15 m, the device's own course only from 12 km/h
         FIX_ACC_MAX_M: 35, MAX_SPEED_MS: 70, // a fix worse than this is junk; a step faster than this never happened (252 km/h)
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
