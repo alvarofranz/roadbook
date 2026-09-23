@@ -49,3 +49,10 @@ describe('what the PDF says (#784)', () => {
         expect(ed).toContain("const link = status === 'public' && publicSlug ? RBPublicLink('/challenge/' + encodeURIComponent(publicSlug)) : null;");
     });
 });
+
+describe('handing the PDF over (#904)', () => {
+    it('opens in the system sheet in the app, downloads on the web', () => {
+        expect(src).toContain("if (RBIsNativeApp()) await RBShareFile(doc.output('blob'), name, title);");
+        expect(src).toContain('else doc.save(name);');
+    });
+});
