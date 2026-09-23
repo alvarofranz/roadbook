@@ -59,3 +59,14 @@ describe('one Turnstile loader (RBTurnstile)', () => {
         expect(account).not.toMatch(/__tsReady|loadTurnstile/);
     });
 });
+
+describe('the roadbook page header on a phone (#865)', () => {
+    const html = fs.readFileSync('public/challenge/index.html', 'utf8');
+    it('leads with the image as a rounded banner, sizes the title, and lays the actions out evenly', () => {
+        const phone = html.slice(html.indexOf('@media (max-width: 640px)'));
+        expect(phone).toContain('.ch-head .ch-logo { order: -1; width: 100%;');
+        expect(phone).toContain('.ch-head h1 { font-size: 1.6rem;');
+        expect(phone).toContain('.ch-actions .btn-primary { flex-basis: 100%; }');
+        expect(html).toMatch(/\.ch-logo \{[^}]*border-radius: 12px;/);
+    });
+});

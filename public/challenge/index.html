@@ -16,17 +16,31 @@
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.6-179">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.6-180">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.6-179">
+    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.6-180">
     <style>
         .ch-owner { display: flex; gap: .6rem; align-items: center; margin-top: .5rem; }
         #chLoading { padding: 2rem 0; }
-        .ch-logo { flex-shrink: 0; max-height: 120px; max-width: 240px; width: auto; height: auto; object-fit: contain; }
+        .ch-logo { flex-shrink: 0; max-height: 120px; max-width: 240px; width: auto; height: auto; object-fit: contain; border-radius: 12px; }
+        .ch-owner .grow { min-width: 0; }
         .ch-desc { color: var(--text); line-height: 1.6; }
         .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
         .ch-comments { margin-top: 2rem; scroll-margin-top: 5rem; } /* clear of the top bar when the Comments button scrolls here */
+        /* a phone (#865): the image leads as a rounded banner, the title is sized for the screen, and the
+           actions sit evenly — Navigate across the width, the others sharing one row */
+        @media (max-width: 640px) {
+            .ch-head { flex-direction: column; align-items: stretch; gap: .9rem; }
+            .ch-head .ch-logo { order: -1; width: 100%; max-width: none; max-height: 200px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-2); }
+            .ch-head .ch-logo.photo { aspect-ratio: 16 / 9; object-fit: cover; max-height: none; }
+            .ch-head h1 { font-size: 1.6rem; line-height: 1.2; }
+            .ch-actions { gap: .5rem; }
+            .ch-actions .btn { flex: 1 1 0; justify-content: center; min-width: 0; padding-left: .6rem; padding-right: .6rem; }
+            .ch-actions .btn-primary { flex-basis: 100%; }
+            .ch-actions .btn:not(.btn-primary) { flex-direction: column; gap: .25rem; font-size: .8rem; padding-top: .55rem; padding-bottom: .55rem; }
+            .ch-actions .btn:not(.btn-primary) i { font-size: 1.05rem; }
+        }
     </style>
 </head>
 <body>
@@ -37,21 +51,21 @@
     <article id="chContent" hidden>
         <p class="ch-ev-bar" id="chEvent" hidden></p>
         <!-- title + owner on the left, the event logo on the right: the shared heading row (#642) -->
-        <div class="head-row">
+        <div class="head-row ch-head">
             <div class="grow">
                 <h1 id="chTitle"></h1>
                 <div class="ch-owner">
                     <img id="chAvatar" class="avatar avatar-sm" alt="">
-                    <div><b id="chOwner"></b> <span id="chStatus"></span><div class="muted small" id="chMeta"></div></div>
+                    <div class="grow"><b id="chOwner"></b> <span id="chStatus"></span><div class="muted small" id="chMeta"></div></div>
                 </div>
             </div>
             <img id="chLogo" class="ch-logo" alt="" hidden>
         </div>
-        <div class="btnrow start">
+        <div class="btnrow start ch-actions">
             <a class="btn btn-primary" id="chNav"><i class="fa-solid fa-location-arrow"></i> <span data-i18n="Navigate">Navigate</span></a>
             <button class="btn btn-ghost" id="chPdf" type="button"><i class="fa-solid fa-file-pdf"></i> <span data-i18n="PDF">PDF</span></button>
             <a class="btn btn-ghost" id="chEdit" hidden><i class="fa-solid fa-pen"></i> <span data-i18n="Edit">Edit</span></a>
-            <a class="btn btn-ghost" id="chCommentsBtn" href="#chComments" hidden><i class="fa-solid fa-comments"></i> <span data-i18n="Comments">Comments</span> <span id="chCommentsBtnCount"></span></a>
+            <a class="btn btn-ghost" id="chCommentsBtn" href="#chComments" hidden><i class="fa-solid fa-comments"></i> <span><span data-i18n="Comments">Comments</span> <span id="chCommentsBtnCount"></span></span></a>
         </div>
         <p id="chDesc" class="ch-desc"></p>
         <div id="chMap" class="ch-map" hidden></div>
@@ -79,18 +93,18 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=1.9.6-179"></script>
-<script src="/assets/js/roadbook-core.js?v=1.9.6-179"></script>
-<script src="/assets/js/note-canvas.js?v=1.9.6-179"></script>
-<script src="/assets/js/rb-pdf.js?v=1.9.6-179"></script>
-<script src="/assets/js/rbmap.js?v=1.9.6-179"></script>
-<script src="/assets/js/challenges.js?v=1.9.6-179"></script>
-<script src="/assets/js/i18n.es.js?v=1.9.6-179"></script>
-<script src="/assets/js/i18n.it.js?v=1.9.6-179"></script>
-<script src="/assets/js/i18n.de.js?v=1.9.6-179"></script>
-<script src="/assets/js/i18n.fr.js?v=1.9.6-179"></script>
-<script src="/assets/js/i18n.js?v=1.9.6-179"></script>
-<script src="/assets/js/app.js?v=1.9.6-179"></script>
-<script src="challenge.js?v=1.9.6-179"></script>
+<script src="/assets/js/config.js?v=1.9.6-180"></script>
+<script src="/assets/js/roadbook-core.js?v=1.9.6-180"></script>
+<script src="/assets/js/note-canvas.js?v=1.9.6-180"></script>
+<script src="/assets/js/rb-pdf.js?v=1.9.6-180"></script>
+<script src="/assets/js/rbmap.js?v=1.9.6-180"></script>
+<script src="/assets/js/challenges.js?v=1.9.6-180"></script>
+<script src="/assets/js/i18n.es.js?v=1.9.6-180"></script>
+<script src="/assets/js/i18n.it.js?v=1.9.6-180"></script>
+<script src="/assets/js/i18n.de.js?v=1.9.6-180"></script>
+<script src="/assets/js/i18n.fr.js?v=1.9.6-180"></script>
+<script src="/assets/js/i18n.js?v=1.9.6-180"></script>
+<script src="/assets/js/app.js?v=1.9.6-180"></script>
+<script src="challenge.js?v=1.9.6-180"></script>
 </body>
 </html>
