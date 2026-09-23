@@ -32,7 +32,6 @@ Un roadbook se abre primero en **vista previa de solo lectura**: la lista de not
 |--------|-------------|
 | **Grabar una traza GPX** | Registra la traza GPS del recorrido (a prueba de cierres) |
 | **Sonido en cada nota** | Una campanilla en cada nota validada, una fanfarria en la última. Suena por encima de tu música en lugar de pararla |
-| **Mando externo** | Avanza con un pedal o un clicker Bluetooth (ver §4) |
 
 No hay modo que elegir: un roadbook abierto desde un evento que lo **puntúa** va en **competición** (se pide tu número de vehículo, se aplican penalizaciones, el resultado firmado va a la clasificación del evento); todo lo demás va como **viaje**.
 
@@ -71,12 +70,12 @@ Apaga **Auto**: entonces un toque **en cualquier punto de la fila de la nota act
 - Tocar **otra** nota lleva el recorrido allí y pregunta antes: las notas intermedias quedan sin validar, y en competición cada nota puntuada saltada cuesta 450 puntos
 - En competición no se puede volver a una nota ya validada
 
-### Manos libres con un mando externo
-Marca **Mando externo** en el diálogo de inicio para avanzar sin tocar la pantalla.
+### Manos libres con un mando remoto
+Cualquier mando que envíe teclas —un pedal pasapáginas, un controlador de rally de manillar, un clicker— maneja el Reader mientras navegas. Funciona sin más: no hay nada que activar.
 
-- Un **pedal pasapáginas** Bluetooth, un disparador de cámara o un mando de presentaciones se empareja como teclado: nada que configurar, funciona sin conexión, en el navegador y en la app
-- **Avanzar**: → · ↓ · Av Pág · Espacio · Intro — **Atrás**: ← · ↑ · Re Pág (solo en viaje: en competición una nota validada no se deshace)
-- El ajuste se recuerda en el dispositivo, y las teclas se ignoran mientras escribes o con un diálogo abierto
+- De serie: → · ↓ · Av Pág · Espacio · Intro validan la nota, ← · ↑ · Re Pág vuelven atrás (solo en viaje: en competición una nota validada no se deshace)
+- Tus propios botones: en **Perfil → Mando remoto**, toca **Asignar** junto a una acción y pulsa el botón del mando. Puedes asignar validar / siguiente, anterior, Auto, el mapa de la nota, pausa y los controles del Tripmaster
+- Los botones se guardan en el dispositivo y se ignoran mientras escribes o hay un diálogo abierto
 
 ---
 

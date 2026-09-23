@@ -1336,8 +1336,8 @@
         const root = document.createElement('div');
         root.className = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
         root.innerHTML = '<div class="tour-hole"></div><div class="tour-bubble" aria-live="polite"><b class="tour-title"></b><p class="tour-text"></p>'
-            + '<div class="tour-foot"><span class="tour-dots">' + live.map(() => '<i></i>').join('') + '</span>'
-            + '<button type="button" class="btn btn-ghost btn-sm" data-skip></button><button type="button" class="btn btn-primary btn-sm" data-next></button></div></div>';
+            + '<span class="tour-dots">' + live.map(() => '<i></i>').join('') + '</span>'
+            + '<div class="tour-foot"><button type="button" class="btn btn-ghost" data-skip></button><button type="button" class="btn btn-primary" data-next></button></div></div>';
         document.body.appendChild(root);
         const hole = root.querySelector('.tour-hole'), bubble = root.querySelector('.tour-bubble'), nextBtn = root.querySelector('[data-next]');
         let i = 0;

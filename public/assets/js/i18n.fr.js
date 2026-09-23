@@ -341,12 +341,12 @@
             'Paused': 'En pause', 
             'You left unsaved changes here. Continue from them?': 'Vous avez laissé ici des modifications non enregistrées. Continuer à partir de celles-ci ?',
             'Record a GPX track': 'Enregistrer une trace GPX', 'Sound on note': 'Son à chaque note',
-            /* external remote (#20) */             'External remote (bluetooth remote)': 'Télécommande externe (télécommande bluetooth)',
+            /* external remote (#20) */             
             'No GPS fixes yet — check that location is turned on.': 'Toujours pas de fix GPS — vérifiez que la localisation est activée.',
             'Position too coarse for a reliable track — grant precise location.': 'Position trop imprécise pour une trace fiable — accordez la localisation précise.',
             'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.': 'L’optimisation batterie est active et peut couper le GPS en arrière-plan, avec des trous dans la trace.',
             'Notifications are off, so background recording may stop with the screen off.': 'Notifications coupées : l’enregistrement en arrière-plan peut s’arrêter écran éteint.',
-            'Open battery settings': 'Ouvrir réglages batterie', 'Open settings': 'Ouvrir réglages', 'A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.': 'Une télécommande Bluetooth ou un clicker photo fonctionne comme un clavier — pensez à garder les mains sur le volant.', 'Advance': 'Avancer', 'trip mode': 'mode trip',
+            'Open battery settings': 'Ouvrir réglages batterie', 'Open settings': 'Ouvrir réglages', 
             'Note map': 'Carte de la note', 'Map not configured.': 'Carte non configurée.',
             'Auto validation is on — switch it off to validate notes by hand.': 'La validation automatique est activée : désactivez-la pour valider les notes à la main.', 'Auto validation on': 'Validation auto activée', 'Auto validation off': 'Validation auto désactivée',
             'Author': 'Auteur', 'Organization': 'Organisation', 'Upload logo': 'Importer le logo', 'Organizer website': 'Site de l’organisateur', 'Event headquarters': 'Lieu de l’événement', 'Tap the map to set the event headquarters location.': 'Tapez la carte pour définir le lieu de l’événement.', 'Last modified': 'Dernière modification', 'Author name': 'Nom de l\'auteur',
@@ -1537,4 +1537,26 @@ Object.assign(window.RBi18nLangs.fr, {
     "Title, description, author, logo and photos.": "Titre, description, auteur, logo et photos.",
     "Keep it on your profile, public or private.": "Garde-le sur ton profil, public ou privé.",
     "A .rdbk, a GPX or a PDF.": "Un .rdbk, un GPX ou un PDF.",
+});
+
+/* the remote controller (#909) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Remote controller": "Télécommande",
+    "Connect your remote to this device, then give each action its buttons: tap Assign and press the button.": "Connecte ta télécommande à cet appareil, puis donne à chaque action ses boutons : touche Attribuer et appuie sur le bouton.",
+    "Restore defaults": "Rétablir par défaut",
+    "Validate / next note": "Valider / note suivante",
+    "Reader: validates · Tripmaster: marks a note · Recorder: drops a note": "Reader : valide · Tripmaster : marque une note · Recorder : pose une note",
+    "Previous note": "Note précédente",
+    "Reader": "Reader",
+    "Auto validation on / off": "Validation auto oui / non",
+    "Pause / resume": "Pause / reprendre",
+    "Reader · Recorder": "Reader · Recorder",
+    "Reset partial": "Remettre le partiel à zéro",
+    "Partial +10 m": "Partiel +10 m",
+    "Partial −10 m": "Partiel −10 m",
+    "Timer start / stop": "Chrono démarrer / arrêter",
+    "No button": "Aucun bouton",
+    "Press a button…": "Appuie sur un bouton…",
+    "Assign": "Attribuer",
+    "Restore the standard buttons? Your own assignments will be lost.": "Rétablir les boutons par défaut ? Tes propres attributions seront perdues.",
 });

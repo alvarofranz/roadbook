@@ -628,15 +628,19 @@ Operational notes:
   settings modal, localStorage checkpoint with recovery (a declined one is marked, never deleted),
   finished-track modal (download / convert into a roadbook), `handOver()` for a caller that ends the
   log along with its own work (the Reader's run); the file is written once at the end via `RBDownload`.
-- `rb-remote.js` (`RBRemote`, #20) — hands-free advance from an external remote. The cheap
-  hardware (Bluetooth page-turner **pedals**, camera clickers, ring remotes) pairs as a
-  keyboard, so the whole transport is `keydown` — no permissions, no plugin, identical in the
-  browser, the PWA and the app. `KEYMAP` (next: → ↓ Page↓ Space Enter · prev: ← ↑ Page↑) ·
-  `commandFor(event)` (pure, unit-tested) · `attach({next, prev})` → detach. The page owns what
-  the commands DO; the module owns the mapping and the guards (silent while typing or with a
-  modal open, and Space/Enter left to a focused button so it never advances twice). Used by the
-  **Reader** (switch in the start dialog, remembered per device); a Gamepad or BLE transport can
-  feed the same commands later.
+- `rb-remote.js` (`RBRemote`, #20 · #909) — the **remote controller**: any remote that sends keys
+  (page-turner pedals, handlebar rally controllers, clickers) drives the hands-free tools, so the
+  whole transport is `keydown` — no permissions, no plugin, identical in the browser, the PWA and
+  the app. Which button does what is the rider's own mapping (key → action, kept on the device),
+  set in the profile's **Remote controller** table (Assign → press the button; × unbinds; Restore
+  defaults); without one it is `DEFAULT_MAP` (→ ↓ Page↓ Space Enter = next · ← ↑ Page↑ = prev).
+  `ACTIONS` (next · prev · auto · map · pause · reset · plus10 · minus10 · timer) · `mapping()` /
+  `saveMapping()` / `resetMapping()` · `commandFor(event)` · `attach(commands)` → detach ·
+  `capture(onKey)` (the settings' press-a-button). The page owns what an action DOES and attaches
+  only its own: the **Reader** while navigating (validate, previous, Auto, note map, pause), the
+  **Tripmaster** (mark note, reset partial, ±10 m, timer), the **Recorder** while recording (drop a
+  note, pause). The module owns the guards (silent while typing or with a modal open, and
+  Space/Enter left to a focused button so it never acts twice).
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos
   buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
   `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·

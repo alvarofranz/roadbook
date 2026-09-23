@@ -62,9 +62,64 @@ describe('key → command mapping', () => {
         expect(RBRemote.commandFor({ key: 'ArrowRight' })).toBe('next'); // no target → still a remote press
     });
 
-    it('every mapped key is claimed by exactly one command', () => {
-        const all = [...RBRemote.KEYMAP.next, ...RBRemote.KEYMAP.prev];
-        expect(new Set(all).size).toBe(all.length);
+    it('every default button runs a known action', () => {
+        for (const action of Object.values(RBRemote.DEFAULT_MAP)) expect(RBRemote.ACTIONS).toContain(action);
+    });
+});
+
+describe('the rider’s own mapping (#909)', () => {
+    beforeEach(() => localStorage.clear());
+    it('is the standard one until the rider changes it', () => {
+        expect(RBRemote.mapping()).toEqual(RBRemote.DEFAULT_MAP);
+    });
+    it('runs whatever the rider bound, even an odd key, in either case', () => {
+        RBRemote.saveMapping({ F5: 'next', m: 'map', '+': 'plus10' });
+        expect(RBRemote.commandFor(press('F5'))).toBe('next');
+        expect(RBRemote.commandFor(press('M'))).toBe('map');
+        expect(RBRemote.commandFor(press('+'))).toBe('plus10');
+        expect(RBRemote.commandFor(press('ArrowRight'))).toBeNull(); // no longer bound
+    });
+    it('a button belongs to one action: binding it again moves it', () => {
+        const m = RBRemote.mapping(); m.Enter = 'pause'; RBRemote.saveMapping(m);
+        expect(RBRemote.commandFor(press('Enter'))).toBe('pause');
+        expect(RBRemote.commandFor(press('PageDown'))).toBe('next');
+    });
+    it('restores the standard buttons', () => {
+        RBRemote.saveMapping({ x: 'next' });
+        RBRemote.resetMapping();
+        expect(RBRemote.mapping()).toEqual(RBRemote.DEFAULT_MAP);
+    });
+    it('captures the next button pressed, whatever it is, without acting on it', () => {
+        let got = null;
+        const stop = RBRemote.capture((k) => { got = k; });
+        const event = new window.KeyboardEvent('keydown', { key: 'F7', bubbles: true, cancelable: true });
+        document.body.dispatchEvent(event);
+        stop();
+        expect(got).toBe('F7');
+        expect(event.defaultPrevented).toBe(true);
+    });
+    it('names the buttons plainly', () => {
+        expect(RBRemote.labelOf(' ')).toBe('Space');
+        expect(RBRemote.labelOf('PageDown')).toBe('Page ↓');
+        expect(RBRemote.labelOf('a')).toBe('A');
+    });
+});
+
+describe('the remote simply works in every hands-free tool (#909)', () => {
+    const fs = require('fs');
+    it('the Reader attaches it while navigating, with no switch to tick', () => {
+        const reader = fs.readFileSync('public/reader/reader.js', 'utf8');
+        expect(reader).toContain('detachRemote = RBRemote.attach({');
+        expect(fs.readFileSync('public/reader/index.html', 'utf8')).not.toContain('id="optRemote"');
+    });
+    it('the Tripmaster and the Recorder run their own controls from it', () => {
+        expect(fs.readFileSync('public/tripmaster/tripmaster.js', 'utf8')).toContain("next: () => $('tmNoteBtn').click(), reset: doReset,");
+        expect(fs.readFileSync('public/recorder/recorder.js', 'utf8')).toContain("next: () => { if (RBGpxRecorder.recording) $('recWpt').click(); },");
+    });
+    it('the profile lets the rider assign every action', () => {
+        const account = fs.readFileSync('public/assets/../account/account.js', 'utf8');
+        expect(account).toContain('stopCapture = RBRemote.capture((key) => {');
+        for (const action of RBRemote.ACTIONS) expect(account).toMatch(new RegExp(`\\b${action}: \\['`));
     });
 });
 

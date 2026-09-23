@@ -103,13 +103,13 @@
             'Right-click opens the menu — long-press on touch.': 'Right-click opens the menu — long-press on touch.',
             'Cut (tap two points) — C': 'Cut (tap two points) — C',
             'Delete icon': 'Delete icon', 'and remove it from its notes?': 'and remove it from its notes?',
-            'External remote (bluetooth remote)': 'External remote (bluetooth remote)',
+            
             'No GPS fixes yet — check that location is turned on.': 'No GPS fixes yet — check that location is turned on.',
             'Position too coarse for a reliable track — grant precise location.': 'Position too coarse for a reliable track — grant precise location.',
             'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.': 'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.',
             'Notifications are off, so background recording may stop with the screen off.': 'Notifications are off, so background recording may stop with the screen off.',
             'Open battery settings': 'Open battery settings', 'Open settings': 'Open settings',
-            'A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.': 'A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.',
+            
             'seo.feat_recorder.title': 'Roadbook Recorder — RDBK.app', 'seo.feat_recorder.desc': 'Record your route live with GPS — accuracy-aware sampling, pause/resume, crash-safe GPX and geotagged photos.',
             'seo.feat_tripmaster.title': 'Tripmaster — RDBK.app', 'seo.feat_tripmaster.desc': 'A precise GPS trip computer: partial and total odometer, speed alerts, heading, stopwatch and GPX recording — no roadbook needed.',
             'seo.feat_ranking.title': 'Event classification — RDBK.app', 'seo.feat_ranking.desc': 'Score a rally from signed result QRs — accuracy, CAP, speed and regularity rankings into a final classification, with CSV export.',

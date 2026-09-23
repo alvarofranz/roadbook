@@ -57,6 +57,12 @@
             $('tmTimer').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         }, 500);
         render();
+        // the rider's remote controller (#909): its mapped buttons run the dashboard's own controls
+        RBRemote.attach({
+            next: () => $('tmNoteBtn').click(), reset: doReset,
+            plus10: () => $('tmPlus10').click(), minus10: () => $('tmMinus10').click(),
+            timer: () => $('tmTimerBtn').click(),
+        });
         setTimeout(() => RBTour('tripmaster', TRIPMASTER_TOUR), 700); // the first visit (#906)
     }
     // The Tripmaster's guided tour (#906): what the dashboard's controls do, once
