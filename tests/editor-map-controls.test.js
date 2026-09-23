@@ -57,3 +57,10 @@ describe('Add junction sits beside the tulip, not inside it', () => {
         expect(html).toMatch(/<div id="canvasWrap" hidden>[\s\S]{0,120}id="addJunction"/);
     });
 });
+
+describe('Add junction on a phone', () => {
+    it('moves to the free right side of the tulip, the line still tying it to the canvas', () => {
+        expect(html).toContain('.add-junction { right: auto; left: calc(100% + 12px); }');
+        expect(html).toContain('.add-junction::after { left: auto; right: 100%; }');
+    });
+});
