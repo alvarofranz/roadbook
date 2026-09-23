@@ -410,20 +410,25 @@
         if (!s) { s = document.createElement('div'); s.className = 'app-chip-stack'; document.body.appendChild(s); }
         return s;
     }
+    // The chip carries its own small red close button (#793): someone not interested closes it once
+    // and it stays closed on this device.
+    const INSTALL_CLOSED_KEY = 'rb_install_chip_closed';
+    const installClosed = () => { try { return !!localStorage.getItem(INSTALL_CLOSED_KEY); } catch (e) { return false; } };
     function ensureBtn() {
         if (installBtn || isStandalone()) return installBtn;
-        installBtn = document.createElement('button');
-        installBtn.id = 'installBtn';
-        installBtn.className = 'install-btn';
-        installBtn.innerHTML = `<i class="fa-solid fa-circle-down"></i> ${RBt('Install')}`;
+        installBtn = document.createElement('div');
+        installBtn.className = 'install-chip';
         installBtn.hidden = true;
-        installBtn.onclick = onInstall;
+        installBtn.innerHTML = `<button type="button" class="install-btn" id="installBtn"><i class="fa-solid fa-circle-down"></i> ${RBt('Install')}</button>`
+            + `<button type="button" class="chip-close" aria-label="${RBesc(RBt('Close'))}" title="${RBesc(RBt('Close'))}"><i class="fa-solid fa-xmark"></i></button>`;
+        installBtn.querySelector('.install-btn').onclick = onInstall;
+        installBtn.querySelector('.chip-close').onclick = () => { try { localStorage.setItem(INSTALL_CLOSED_KEY, '1'); } catch (e) {} installBtn.hidden = true; };
         chipStack().prepend(installBtn);
         return installBtn;
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
     // display-mode:standalone / navigator.standalone, so without this it would wrongly show (#198).
-    function showInstall() { if (isStandalone() || isNativeApp()) return; const b = ensureBtn(); if (b) b.hidden = false; }
+    function showInstall() { if (isStandalone() || isNativeApp() || installClosed()) return; const b = ensureBtn(); if (b) b.hidden = false; }
     // The captured install prompt, shared with the /install/ guide (#333) so both offer the same
     // one-tap install. Chromium only — iOS Safari never fires beforeinstallprompt, which is exactly
     // why the guide exists.

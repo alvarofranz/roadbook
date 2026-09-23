@@ -237,6 +237,9 @@ describe('floating chips and the tab bar (#609 · #615)', () => {
     const app = fs.readFileSync('public/assets/js/app.js', 'utf8');
     it('the chips share one stack; the language is chosen on the Profile page only (#670)', () => {
         expect(app).toContain('chipStack().prepend(installBtn);');
+        // …with its own close button, remembered on the device (#793)
+        expect(app).toContain("installBtn.querySelector('.chip-close').onclick = () => { try { localStorage.setItem(INSTALL_CLOSED_KEY, '1'); } catch (e) {} installBtn.hidden = true; };");
+        expect(app).toContain('if (isStandalone() || isNativeApp() || installClosed()) return;');
         expect(app).toContain('chipStack().prepend(pill);');
         expect(app).not.toContain('lang-mobile');
         expect(css).not.toContain('.lang-mobile');
