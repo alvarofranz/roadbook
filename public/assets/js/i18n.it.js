@@ -1598,3 +1598,16 @@ Object.assign(window.RBi18nLangs.it, {
     "Assign": "Assegna",
     "Restore the standard buttons? Your own assignments will be lost.": "Ripristinare i pulsanti predefiniti? Le tue assegnazioni andranno perse.",
 });
+
+/* user management (#910) */
+Object.assign(window.RBi18nLangs.it, {
+    "Never": "Mai",
+    "Today": "Oggi",
+    "Yesterday": "Ieri",
+    "Last active": "Ultima attività",
+    "Joined": "Iscritto",
+    "Admins": "Admin",
+    "admins": "admin",
+    "unverified": "non verificati",
+    "Delete user": "Elimina utente",
+});

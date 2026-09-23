@@ -1,12 +1,32 @@
 'use strict';
-/* Admin panel: list users with disk usage, promote/demote, delete. Gated to admins
- * (the API enforces it too). Talks to /api (same-origin session). */
+/* User management (#910): every user at a glance — who they are, their roadbooks, runs, disk and
+ * last activity — sortable, searchable and filtered with one tap; a tap on a user opens their sheet,
+ * where every action on them lives. Gated to admins (the API enforces it too). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast, api = RBApi; // shared helpers (app.js / i18n.js)
     const fmtSize = RBFmtSize; // shared byte formatter (app.js)
     const PER = 25; // users per page
-    let me = 0, meSuper = false, allUsers = [], byId = {}, query = '', fltRb = false, fltEv = false;
+    let me = 0, meSuper = false, allUsers = [], byId = {}, query = '';
+    // the quick filters (icons with a tooltip, #805): each one narrows the list, several combine
+    const QUICK = {
+        roadbooks: (u) => (u.roadbooks || 0) > 0,
+        events: (u) => !!u.manages_events,
+        unverified: (u) => !u.verified && !u.system,
+        blocked: (u) => !!u.blocked,
+        admins: (u) => !!u.is_admin,
+    };
+    const quick = new Set();
+    // the sort: a column header toggles it; newest activity first by default
+    let sortKey = 'last_active', sortDir = -1;
+    const SORT = {
+        name: (u) => (u.name || u.username || '').toLowerCase(),
+        roadbooks: (u) => u.roadbooks || 0,
+        runs: (u) => u.runs || 0,
+        bytes: (u) => u.bytes || 0,
+        last_active: (u) => u.last_active || '',
+        created_at: (u) => u.created_at || '',
+    };
     let everyone = null; // the unfiltered user list, fetched once for the pickers (the table may be filtered)
     async function allPickable() {
         if (!everyone) {
@@ -17,31 +37,90 @@
         return everyone.filter((u) => !u.system); // never the deleted-user system account
     }
 
-    // One row per user: who they are (badges, one style), their disk use, and only the actions the
-    // server accepts from this admin (#702) — nothing on the system account, and another admin is
-    // changed only by a superuser. The organizer role lives in the Edit dialog, once (#707).
-    function rowHtml(u) {
-        const isMe = u.id === me;
+    // Who a user is: the badges, one style — and the actions the server accepts from this admin
+    // (#702): nothing on the system account, and another admin is changed only by a superuser.
+    function badgesHtml(u) {
         const badge = (cls, label, tip) => `<span class="u-badge ${cls}"${tip ? ` title="${esc(t(tip))}"` : ''}>${esc(t(label))}</span> `;
-        const badges = (u.system ? badge('u-unverified', 'System account', 'Keeps the roadbooks of deleted users. It never signs in.') : '')
+        return (u.system ? badge('u-unverified', 'System account', 'Keeps the roadbooks of deleted users. It never signs in.') : '')
             + (u.locked ? badge('u-admin', 'Superuser', 'Configured in .env') : (u.is_admin ? badge('u-admin', 'Admin') : ''))
             + (u.is_organizer ? badge('u-organizer', 'Organizer') : '')
             + (u.blocked ? badge('u-blocked', 'Blocked') : '')
             + (u.mustchange ? badge('u-unverified', 'Must change password') : '')
             + (u.verified || u.system ? '' : badge('u-unverified', 'Unverified'));
-        const canManage = !u.system && (isMe || !u.is_admin || meSuper);
-        const activate = canManage && !u.verified ? `<button class="btn btn-ghost" data-verify="${u.id}">${esc(t('Activate'))}</button>` : '';
-        const edit = canManage ? `<button class="btn btn-ghost" data-edit="${u.id}">${esc(t('Edit'))}</button>` : '';
-        const activity = `<button class="btn btn-ghost" data-activity="${u.id}">${esc(t('Activity'))}</button>`;
-        const block = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
-        const del = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-del="${u.id}" data-name="${esc(u.username)}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete'))}</button>`;
-        const roadbooks = `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>`;
-        const runs = `<button class="btn btn-ghost" data-runs="${u.id}">${esc(t('Runs'))}</button>`;
-        return `<tr>
-            <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
-            <td class="num">${fmtSize(u.bytes)}<div class="u-quota">/ ${fmtSize(u.quota)}</div></td>
-            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${runs}${block}${del}</div></td>
+    }
+    const canManage = (u) => !u.system && (u.id === me || !u.is_admin || meSuper);
+    const avatarHtml = (u, cls) => `<img class="avatar ${cls}" src="${u.avatar ? esc(RBMediaSrc(u.avatar)) : '../assets/icon.svg'}" alt="" loading="lazy">`;
+    // "today", "yesterday", or the date — when a user was last active
+    function whenText(ts) {
+        if (!ts) return t('Never');
+        const day = String(ts).slice(0, 10), today = new Date().toISOString().slice(0, 10);
+        const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+        return day === today ? t('Today') : day === yesterday ? t('Yesterday') : RBFmtDate(day);
+    }
+    const diskHtml = (u) => `<meter class="u-disk" min="0" max="${u.quota || 1}" value="${u.bytes || 0}" high="${(u.quota || 1) * 0.85}"></meter><div class="u-quota">${fmtSize(u.bytes)} / ${fmtSize(u.quota)}</div>`;
+    // One row per user: who they are and their figures; the whole row opens the user's sheet
+    function rowHtml(u) {
+        return `<tr class="u-row" data-user="${u.id}" tabindex="0">
+            <td><div class="u-who">${avatarHtml(u, 'avatar-xs')}<div class="u-id"><b>${esc(u.name || u.username)}</b> ${badgesHtml(u)}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${u.id === me ? ' · ' + esc(t('you')) : ''}</div></div></div></td>
+            <td class="num" data-label="${esc(t('Roadbooks'))}">${u.roadbooks || 0}</td>
+            <td class="num" data-label="${esc(t('Runs'))}">${u.runs || 0}</td>
+            <td class="u-disk-cell" data-label="${esc(t('Disk'))}">${diskHtml(u)}</td>
+            <td class="u-when" data-label="${esc(t('Last active'))}">${esc(whenText(u.last_active))}</td>
+            <td class="u-go"><i class="fa-solid fa-chevron-right"></i></td>
         </tr>`;
+    }
+
+    // The user's sheet: who they are, their figures, and every action on them in one place
+    function openUser(u) {
+        const manage = canManage(u), self = u.id === me;
+        const action = (id, icon, label, cls = 'btn-ghost') => `<button class="btn ${cls}" type="button" data-act="${id}"><i class="fa-solid ${icon}"></i> ${esc(t(label))}</button>`;
+        const acts = [
+            manage ? action('edit', 'fa-pen', 'Edit') : '',
+            action('roadbooks', 'fa-book', 'Roadbooks'),
+            action('runs', 'fa-flag-checkered', 'Runs'),
+            action('activity', 'fa-clock-rotate-left', 'Activity'),
+            manage && !u.verified ? action('verify', 'fa-circle-check', 'Activate') : '',
+            manage && !u.locked && !self ? action('block', u.blocked ? 'fa-lock-open' : 'fa-ban', u.blocked ? 'Unblock' : 'Block') : '',
+        ].join('');
+        const figure = (label, value) => `<div class="stat"><b>${value}</b><span>${esc(t(label))}</span></div>`;
+        const m = RBModal(`<div class="u-sheet-head">${avatarHtml(u, 'avatar-sm')}<div class="u-id"><h2>${esc(u.name || u.username)}</h2>
+                <div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${u.organization ? ' · ' + esc(u.organization) : ''}</div><div>${badgesHtml(u)}</div></div></div>
+            <div class="stat-grid u-sheet-stats">
+                ${figure('Roadbooks', u.roadbooks || 0)}${figure('Runs', u.runs || 0)}
+                ${figure('Disk', `${fmtSize(u.bytes)}<small>/ ${fmtSize(u.quota)}</small>`)}
+            </div>
+            <p class="muted small u-sheet-dates"><i class="fa-regular fa-calendar"></i> ${esc(t('Joined'))} ${esc(RBFmtDate(String(u.created_at).slice(0, 10)))} · <i class="fa-regular fa-clock"></i> ${esc(t('Last active'))}: ${esc(whenText(u.last_active))}</p>
+            <div class="u-sheet-actions">${acts}</div>
+            <div class="btnrow between u-sheet-foot">
+                ${manage && !u.locked && !self ? action('delete', 'fa-trash-can', 'Delete user', 'btn-danger') : '<span></span>'}
+                <button class="btn btn-ghost" type="button" data-close>${esc(t('Close'))}</button>
+            </div>`, 'wide u-sheet');
+        m.q('[data-close]').onclick = m.close;
+        const on = (id, fn) => { const b = m.q(`[data-act="${id}"]`); if (b) b.onclick = () => fn(b); };
+        on('edit', () => { m.close(); editUser(u); });
+        on('roadbooks', () => { m.close(); viewRoadbooks(u); });
+        on('runs', () => { m.close(); viewRuns(u); });
+        on('activity', () => { m.close(); RBActivityLog({ user: u }); }); // the one activity viewer (#665)
+        on('verify', async (b) => {
+            const busy = RBBusy(b);
+            const x = await api('admin_verify', { id: u.id });
+            if (!x.ok) { busy.reset(); return toast(x.error || 'Could not save.'); }
+            m.close(); load();
+        });
+        on('block', async (b) => {
+            if (!u.blocked && !(await RBConfirmDanger(t('Block') + ' @' + esc(u.username) + '?'))) return;
+            const busy = RBBusy(b);
+            const x = await api('admin_block', { id: u.id, blocked: u.blocked ? 0 : 1 });
+            if (!x.ok) { busy.reset(); return toast(x.error || 'Could not save.'); }
+            m.close(); load();
+        });
+        on('delete', async (b) => {
+            if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + esc(u.username) + ')'))) return;
+            const busy = RBBusy(b);
+            const x = await api('admin_delete', { id: u.id });
+            if (!x.ok) { busy.reset(); return toast(x.error || 'Could not delete.'); }
+            m.close(); load();
+        });
     }
 
     // Edit a user's identity; optionally set a temporary password they must change at next login.
@@ -243,34 +322,25 @@
         render();
     }
 
-    // Re-bind the per-row action buttons (called after every render of #usersBody). Each
-    // mutating action re-fetches via load(); the current search + page are preserved.
+    // A tap — or Enter — on a row opens that user's sheet
     function wireRows() {
-        const body = $('usersBody');
-        body.querySelectorAll('[data-verify]').forEach((b) => b.onclick = async () => {
-            const busy = RBBusy(b);
-            const x = await api('admin_verify', { id: +b.dataset.verify });
-            busy.reset();
-            x.ok ? load() : toast(x.error || 'Could not save.');
+        $('usersBody').querySelectorAll('[data-user]').forEach((row) => {
+            row.onclick = () => openUser(byId[+row.dataset.user]);
+            row.onkeydown = (e) => { if (e.key === 'Enter') openUser(byId[+row.dataset.user]); };
         });
-        body.querySelectorAll('[data-block]').forEach((b) => b.onclick = async () => {
-            const u = byId[+b.dataset.block];
-            if (+b.dataset.on === 1 && !(await RBConfirmDanger(t('Block') + ' @' + esc((u && u.username) || '') + '?'))) return;
-            const busy = RBBusy(b);
-            const x = await api('admin_block', { id: +b.dataset.block, blocked: +b.dataset.on });
-            busy.reset();
-            x.ok ? load() : toast(x.error || 'Could not save.');
-        });
-        body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
-        body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => RBActivityLog({ user: byId[+b.dataset.activity] })); // the one activity viewer (#665)
-        body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
-        body.querySelectorAll('[data-runs]').forEach((b) => b.onclick = () => viewRuns(byId[+b.dataset.runs]));
-        body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
-            if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + esc(b.dataset.name) + ')'))) return;
-            const busy = RBBusy(b);
-            const x = await api('admin_delete', { id: +b.dataset.del });
-            busy.reset();
-            x.ok ? load() : toast(x.error || 'Could not delete.');
+    }
+    // the summary over the table: how many, and what needs a look
+    function renderSummary() {
+        const n = (f) => allUsers.filter(f).length;
+        const part = (count, label) => (count ? ` · <b>${count}</b> ${esc(t(label))}` : '');
+        $('usersSummary').innerHTML = `<b>${allUsers.filter((u) => !u.system).length}</b> ${esc(t('users'))}`
+            + part(n(QUICK.unverified), 'unverified') + part(n(QUICK.blocked), 'blocked') + part(n(QUICK.admins), 'admins');
+    }
+    function syncSortHeads() {
+        document.querySelectorAll('.users-table th[data-sort]').forEach((th) => {
+            const on = th.dataset.sort === sortKey;
+            th.classList.toggle('sorted', on);
+            th.setAttribute('aria-sort', on ? (sortDir > 0 ? 'ascending' : 'descending') : 'none');
         });
     }
 
@@ -278,15 +348,15 @@
     const list = RBPagedList({
         pager: $('usersPager'), per: PER, source: () => allUsers,
         filter: (items) => {
-            let filtered = RB.filterByText(items, query, ['username', 'email', 'first_name', 'last_name', 'name']);
-            if (fltRb) filtered = filtered.filter((u) => (u.roadbooks || 0) > 0);
-            if (fltEv) filtered = filtered.filter((u) => !!u.manages_events);
-            return filtered;
+            let filtered = RB.filterByText(items, query, ['username', 'email', 'first_name', 'last_name', 'name', 'organization']);
+            for (const key of quick) filtered = filtered.filter(QUICK[key]);
+            const val = SORT[sortKey];
+            return filtered.slice().sort((a, b) => { const x = val(a), y = val(b); return x < y ? -sortDir : x > y ? sortDir : 0; });
         },
         draw: (slice) => {
             $('usersBody').innerHTML = slice.length
                 ? slice.map(rowHtml).join('')
-                : `<tr><td colspan="3" class="muted">${esc(t('Nothing matches that search.'))}</td></tr>`;
+                : `<tr><td colspan="6" class="muted">${esc(t('Nothing matches that search.'))}</td></tr>`;
             wireRows();
         },
         label: (n) => (n ? `${n} ${esc(t('users'))}` : ''),
@@ -308,7 +378,7 @@
         allUsers = r.users || []; everyone = null; // the next picker re-reads the full list
         byId = {}; allUsers.forEach((u) => byId[u.id] = u);
         $('adminMsg').hidden = true; $('usersBox').hidden = false; $('usersHeadActions').hidden = false;
-        render();
+        renderSummary(); render();
     }
 
     // Event filter: narrow the list to one event's people (participants + organizers).
@@ -361,17 +431,25 @@
     async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('userSearch').oninput = () => { query = $('userSearch').value; list.reset(); };
-        const syncToggle = (btn, on) => btn.classList.toggle('active', on);
-        $('userRbFilter').onclick = () => { fltRb = !fltRb; syncToggle($('userRbFilter'), fltRb); list.reset(); };
-        $('userEvFilter').onclick = () => { fltEv = !fltEv; syncToggle($('userEvFilter'), fltEv); list.reset(); };
+        document.querySelectorAll('[data-quick]').forEach((b) => b.onclick = () => {
+            const key = b.dataset.quick, on = !quick.has(key);
+            if (on) quick.add(key); else quick.delete(key);
+            b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on));
+            list.reset();
+        });
+        document.querySelectorAll('.users-table th[data-sort]').forEach((th) => th.onclick = () => {
+            if (sortKey === th.dataset.sort) sortDir = -sortDir; else { sortKey = th.dataset.sort; sortDir = th.dataset.sort === 'name' ? 1 : -1; }
+            syncSortHeads(); list.reset();
+        });
+        syncSortHeads();
         $('userCreate').onclick = createUser;
         // the organization filter asks the server: debounced, not a call per keystroke (#664)
         $('userOrgFilter').oninput = RBDebounce(() => { list.reset(); load(); });
         loadEventFilter();
         load().then(() => {
-            // deep link from the locations map (#499): open the user card directly
+            // deep link from the locations map (#499): open the user's sheet directly
             const deepId = +(new URLSearchParams(location.search).get('user') || 0);
-            if (deepId && byId[deepId]) editUser(byId[deepId]);
+            if (deepId && byId[deepId]) openUser(byId[deepId]);
         });
     }
     init();

@@ -13,30 +13,58 @@
     <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.7-199">
     <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-199">
     <style>
-        /* Column table; min-width keeps the columns intact and the shared .table-scroll wrapper
-           scrolls horizontally on narrow/medium screens instead of squeezing the layout. */
-        .users-table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: .9rem; }
-        .users-table th, .users-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-        .users-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+        /* the user list (#910): one clean row per user — who, roadbooks, runs, disk, last active — the
+           whole row opening the user's sheet; a phone turns every row into a card */
+        .users-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .users-table th, .users-table td { padding: .6rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+        .users-table th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+        .users-table th[data-sort] { cursor: pointer; user-select: none; }
+        .users-table th[data-sort]:hover, .users-table th.sorted { color: var(--sand); }
+        .users-table th.sorted[aria-sort="ascending"] span::after { content: " ↑"; }
+        .users-table th.sorted[aria-sort="descending"] span::after { content: " ↓"; }
         .users-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; word-break: break-word; }
-        .u-quota { color: var(--muted); font-size: .82rem; } /* second line of the Disk cell: assigned space */
-        .u-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
-        .u-actions .btn { padding: .25rem .55rem; font-size: .78rem; }
+        .u-row { cursor: pointer; transition: background .15s ease; }
+        .u-row:hover, .u-row:focus-visible { background: var(--card-2); outline: none; }
+        .u-who { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+        .u-id { min-width: 0; }
+        .avatar.avatar-xs { width: 34px; height: 34px; }
+        .u-handle { color: var(--muted); font-size: .8rem; margin-top: .1rem; overflow-wrap: anywhere; }
+        .u-disk-cell { min-width: 8rem; }
+        .u-disk { width: 100%; height: 6px; display: block; }
+        .u-quota { color: var(--muted); font-size: .78rem; margin-top: .2rem; white-space: nowrap; }
+        .u-when { white-space: nowrap; }
+        .u-go { color: var(--muted); width: 1.2rem; }
         /* the filters wrap as a row: the search takes what is left, the others keep a usable width (#706) */
-        .users-toolbar { margin-bottom: .7rem; color: var(--muted); }
+        .users-toolbar { margin-bottom: .4rem; color: var(--muted); }
         .users-toolbar #userSearch { flex: 1 1 14rem; min-width: 0; }
         .users-toolbar #userOrgFilter { flex: 1 1 10rem; min-width: 8rem; max-width: 16rem; }
         .users-toolbar .users-event-filter { flex: 0 1 14rem; min-width: 8rem; width: auto; }
-        #userRbFilter.active, #userEvFilter.active { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
-        /* a phone: every user is a card — name and disk on top, the actions wrapping underneath */
-        @media (max-width: 640px) {
+        .users-quick .btn.active { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
+        .users-summary { margin: 0 0 .6rem; }
+        /* the user's sheet: who, the figures, every action — Delete apart, in red */
+        .modal-card.u-sheet { max-width: 560px; }
+        .u-sheet-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; }
+        .u-sheet-head h2 { margin: 0; overflow-wrap: anywhere; }
+        .u-sheet-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: .5rem; }
+        .u-sheet-stats b { white-space: nowrap; }
+        .u-sheet-stats small { display: block; color: var(--muted); font-weight: 600; font-size: .75rem; }
+        .u-sheet-dates { margin: 0 0 .8rem; }
+        .u-sheet-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .5rem; margin: .4rem 0 1rem; }
+        .u-sheet-actions .btn { justify-content: flex-start; }
+        .u-sheet-foot { border-top: 1px solid var(--line); padding-top: .8rem; }
+        @media (max-width: 720px) {
             .users-toolbar #userOrgFilter, .users-toolbar .users-event-filter { flex: 1 1 100%; max-width: none; }
-            .users-table { min-width: 0; }
             .users-table thead { display: none; }
-            .users-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .6rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
-            .users-table td { padding: 0; border: 0; }
-            .users-table td:last-child { grid-column: 1 / -1; margin-top: .4rem; }
+            .users-table tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; grid-template-areas: "who who who go" "rb runs when go" "disk disk disk go"; gap: .35rem .6rem; padding: .75rem .2rem; border-bottom: 1px solid var(--line); }
+            .users-table td { padding: 0; border: 0; text-align: left; }
+            .users-table td:nth-child(1) { grid-area: who; }
+            .users-table td:nth-child(2) { grid-area: rb; }
+            .users-table td:nth-child(3) { grid-area: runs; }
+            .users-table td:nth-child(4) { grid-area: disk; }
+            .users-table td:nth-child(5) { grid-area: when; }
+            .users-table td:nth-child(6) { grid-area: go; align-self: center; }
+            .users-table td[data-label]::before { content: attr(data-label); display: block; color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; }
+            .users-table td.num { text-align: left; }
         }
         /* #552: roadbook list + in-popup map preview, side by side on desktop.
            Triple class: .modal-card.wide (520px) would otherwise win on specificity
@@ -73,14 +101,25 @@
             <i class="fa-solid fa-magnifying-glass"></i><input type="search" id="userSearch" class="field" placeholder="Search users…" data-i18n-ph="Search users…" autocomplete="off" spellcheck="false">
             <input type="text" id="userOrgFilter" class="field" placeholder="Organization" data-i18n-ph="Organization" autocomplete="off">
             <select id="userEventFilter" class="field users-event-filter" aria-label="Events" data-i18n-aria="Events"></select>
-            <button class="btn btn-ghost" id="userRbFilter" type="button" aria-pressed="false" title="With roadbooks" data-i18n-title="With roadbooks" aria-label="With roadbooks" data-i18n-aria="With roadbooks"><i class="fa-solid fa-book"></i></button>
-            <button class="btn btn-ghost" id="userEvFilter" type="button" aria-pressed="false" title="Event organizers" data-i18n-title="Event organizers" aria-label="Event organizers" data-i18n-aria="Event organizers"><i class="fa-solid fa-calendar-check"></i></button>
+            <!-- the quick filters: icons with a tooltip (#805), several combine -->
+            <div class="btn-group users-quick">
+                <button class="btn btn-ghost" id="userRbFilter" data-quick="roadbooks" type="button" aria-pressed="false" title="With roadbooks" data-i18n-title="With roadbooks" aria-label="With roadbooks" data-i18n-aria="With roadbooks"><i class="fa-solid fa-book"></i></button>
+                <button class="btn btn-ghost" id="userEvFilter" data-quick="events" type="button" aria-pressed="false" title="Event organizers" data-i18n-title="Event organizers" aria-label="Event organizers" data-i18n-aria="Event organizers"><i class="fa-solid fa-calendar-check"></i></button>
+                <button class="btn btn-ghost" data-quick="unverified" type="button" aria-pressed="false" title="Unverified" data-i18n-title="Unverified" aria-label="Unverified" data-i18n-aria="Unverified"><i class="fa-solid fa-envelope-circle-check"></i></button>
+                <button class="btn btn-ghost" data-quick="blocked" type="button" aria-pressed="false" title="Blocked" data-i18n-title="Blocked" aria-label="Blocked" data-i18n-aria="Blocked"><i class="fa-solid fa-ban"></i></button>
+                <button class="btn btn-ghost" data-quick="admins" type="button" aria-pressed="false" title="Admins" data-i18n-title="Admins" aria-label="Admins" data-i18n-aria="Admins"><i class="fa-solid fa-user-shield"></i></button>
+            </div>
         </div>
+        <p class="muted small users-summary" id="usersSummary"></p>
         <div class="table-scroll">
             <table class="users-table">
+                <!-- a header sorts on a tap (again: the other way round) -->
                 <thead><tr>
-                    <th data-i18n="User">User</th>
-                    <th class="num" data-i18n="Disk">Disk</th>
+                    <th data-sort="name"><span data-i18n="User">User</span></th>
+                    <th class="num" data-sort="roadbooks"><span data-i18n="Roadbooks">Roadbooks</span></th>
+                    <th class="num" data-sort="runs"><span data-i18n="Runs">Runs</span></th>
+                    <th data-sort="bytes"><span data-i18n="Disk">Disk</span></th>
+                    <th data-sort="last_active"><span data-i18n="Last active">Last active</span></th>
                     <th></th>
                 </tr></thead>
                 <tbody id="usersBody"></tbody>
