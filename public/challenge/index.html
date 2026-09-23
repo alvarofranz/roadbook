@@ -27,7 +27,12 @@
         .ch-desc { color: var(--text); line-height: 1.6; }
         .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-        .ch-comments { margin-top: 2rem; scroll-margin-top: 5rem; } /* clear of the top bar when the Comments button scrolls here */
+        .ch-comments, .ch-completions { margin-top: 2rem; scroll-margin-top: 5rem; }
+        .completion-list { display: flex; flex-direction: column; }
+        .completion { display: flex; align-items: center; gap: .7rem; padding: .6rem 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+        .completion:last-child { border-bottom: 0; }
+        .completion .grow { min-width: 0; overflow-wrap: anywhere; }
+        .completion > .fa-chevron-right { color: var(--muted); } /* clear of the top bar when the Comments button scrolls here */
         /* a phone (#865): the image leads as a rounded banner, the title is sized for the screen, and the
            actions sit evenly — Navigate across the width, the others sharing one row */
         @media (max-width: 640px) {
@@ -87,6 +92,12 @@
                     </div>
                 </div>
             </form>
+        </section>
+
+        <!-- who completed it (#869): the public runs name their runner and link to the run; private ones only count -->
+        <section class="ch-completions" id="chCompletions" hidden>
+            <h2><i class="fa-solid fa-flag-checkered icon-accent"></i> <span data-i18n="Completed by">Completed by</span> <span class="muted" id="chCompletionsCount"></span></h2>
+            <div class="completion-list" id="chCompletionList"></div>
         </section>
     </article>
 </main>

@@ -1431,3 +1431,14 @@ Object.assign(window.RBi18nLangs.fr, {
     "Check out my run!": "Regarde mon parcours !",
     "Sharing makes this run public. Share it?": "Partager rend ce parcours public. Le partager ?",
 });
+
+/* completions, the run's device (#867 · #868 · #869 · #870) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Device": "Appareil",
+    "No runs yet.": "Pas encore de parcours.",
+    "Times completed": "Fois terminé",
+    "Completed by": "Terminé par",
+    "And 1 private run.": "Et 1 parcours privé.",
+    "And {n} private runs.": "Et {n} parcours privés.",
+    "priv.runs.4": "Chaque rapport enregistre aussi le type d’appareil utilisé (par exemple « App · iPhone · iOS 17.5 ») : modèle et version du système, jamais un identifiant. Seuls les administrateurs le voient, pour résoudre les problèmes.",
+});

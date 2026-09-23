@@ -79,6 +79,7 @@ try {
         case 'run_save':       run_save(require_user(), $d); break;
         case 'run_update':     run_update(require_user(), $d); break;
         case 'run_delete':     run_delete(require_user(), $d); break;
+        case 'roadbook_completions': roadbook_completions(require_user(), $d); break;
         case 'comments_list':  comments_list(require_user(), $d); break;
         case 'comment_add':    comment_add(require_user(), $d); break;
         case 'comment_delete': comment_delete(require_user(), $d); break;
@@ -89,6 +90,7 @@ try {
         case 'ranking_clear':  ranking_clear(require_user(), $d); break;
         case 'admin_unpublish': admin_unpublish(require_admin(), $d); break;
         case 'admin_user_roadbooks': admin_user_roadbooks(require_admin(), $d); break;
+        case 'admin_user_runs':  admin_user_runs(require_admin(), $d); break;
         case 'admin_rb_get':     admin_rb_get(require_admin(), $d); break;
         case 'admin_set_status':    admin_set_status(require_admin(), $d); break;
         case 'admin_move_roadbook': admin_move_roadbook(require_admin(), $d); break;

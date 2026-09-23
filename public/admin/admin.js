@@ -36,10 +36,11 @@
         const block = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-block="${u.id}" data-on="${u.blocked ? 0 : 1}">${esc(t(u.blocked ? 'Unblock' : 'Block'))}</button>`;
         const del = (!canManage || u.locked || isMe) ? '' : `<button class="btn btn-ghost" data-del="${u.id}" data-name="${esc(u.username)}"><i class="fa-solid fa-trash-can icon-danger"></i> ${esc(t('Delete'))}</button>`;
         const roadbooks = `<button class="btn btn-ghost" data-rbs="${u.id}">${esc(t('Roadbooks'))} (${u.roadbooks})</button>`;
+        const runs = `<button class="btn btn-ghost" data-runs="${u.id}">${esc(t('Runs'))}</button>`;
         return `<tr>
             <td><b>${esc(u.name || u.username)}</b> ${badges}<div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${isMe ? ' · ' + esc(t('you')) : ''}</div></td>
             <td class="num">${fmtSize(u.bytes)}<div class="u-quota">/ ${fmtSize(u.quota)}</div></td>
-            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${block}${del}</div></td>
+            <td><div class="u-actions">${activate}${edit}${activity}${roadbooks}${runs}${block}${del}</div></td>
         </tr>`;
     }
 
@@ -113,6 +114,25 @@
     // a per-row view in the Reader (admin-authenticated, works for draft/ready/public) and a
     // .rdbk export (media-less, like the Editor without "Include photos & audio").
     // Pagination + search (#244).
+    // A user's runs, as only an admin sees them (#870): the device each one was made on, public or private
+    async function viewRuns(u) {
+        const m = RBModal(`<h2>${esc(t('Runs'))} · @${esc(u.username)}</h2><div id="runsBody" class="muted small">${esc(t('Loading…'))}</div>
+            <div class="btnrow end"><button class="btn btn-ghost" data-close type="button">${esc(t('Close'))}</button></div>`, 'wide');
+        m.q('[data-close]').onclick = m.close;
+        const r = await api('admin_user_runs', { user_id: u.id });
+        const box = m.q('#runsBody');
+        if (!r.ok) { box.textContent = t(r.error || 'Could not load.'); return; }
+        if (!r.runs.length) { box.textContent = t('No runs yet.'); return; }
+        box.classList.remove('muted', 'small');
+        box.innerHTML = `<div class="table-scroll"><table class="users-table"><thead><tr>
+                <th>${esc(t('Date'))}</th><th>${esc(t('Roadbook'))}</th><th class="num">${esc(t('Notes'))}</th><th>${esc(t('Device'))}</th></tr></thead><tbody>
+            ${r.runs.map((x) => `<tr>
+                <td class="small">${esc(RBFmtDateTime(x.ended_at))}</td>
+                <td><b>${esc(x.title)}</b><div class="u-handle">${esc(RBKm(x.distance_m, 1))}${x.completed ? '' : ' · ' + esc(t('Not finished'))}${x.is_public ? '' : ' · <i class="fa-solid fa-lock"></i> ' + esc(t('Private'))}${x.mode === 'competition' ? ' · ' + esc(t('Competition')) : ''}</div></td>
+                <td class="num">${x.notes_reached}/${x.notes_total}</td>
+                <td class="small">${esc(x.device || '—')}</td>
+            </tr>`).join('')}</tbody></table></div>`;
+    }
     function viewRoadbooks(u) {
         let rbMap = null, previewId = 0, changed = false; // a change refreshes the user list's count on close (#705)
         const finish = () => { if (rbMap) { rbMap.destroy(); rbMap = null; } if (changed) load(); };
@@ -242,6 +262,7 @@
         body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => editUser(byId[+b.dataset.edit]));
         body.querySelectorAll('[data-activity]').forEach((b) => b.onclick = () => RBActivityLog({ user: byId[+b.dataset.activity] })); // the one activity viewer (#665)
         body.querySelectorAll('[data-rbs]').forEach((b) => b.onclick = () => viewRoadbooks(byId[+b.dataset.rbs]));
+        body.querySelectorAll('[data-runs]').forEach((b) => b.onclick = () => viewRuns(byId[+b.dataset.runs]));
         body.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
             if (!(await RBConfirmDanger(t('Delete this user and all their data?') + ' (@' + esc(b.dataset.name) + ')'))) return;
             const busy = RBBusy(b);

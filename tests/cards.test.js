@@ -47,7 +47,7 @@ describe('every event card comes from RBEventCard', () => {
         expect(read('public/events/events.js')).toContain('RBEventCard(e)');
     });
     it('gets the vehicles of the event page roadbooks from the API', () => {
-        expect(read('app/events.php')).toContain("'vehicles' => rb_vehicle_list($r['vehicles']), // the card's vehicle icons (#770)");
+        expect(read('app/events.php')).toContain('$roadbooks = array_map(fn($r) => rb_card_fields($r) +'); // the card's vehicle icons (#770) come with every card
     });
 });
 

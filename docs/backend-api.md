@@ -565,3 +565,11 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   proprietario), e un roadbook `ready` associato è **consegnato** in lettura ai partecipanti
   attivi e agli organizzatori (#25) — mai la sua galleria né le note vocali.
 - **SendGrid hard-coded** come provider mail; nessun fallback SMTP.
+
+### Runs: the device and the completions (#868 · #869 · #870)
+- `run_save` stores `device`, a coarse model/OS string from `RBDeviceLabel()` ("App · iPhone · iOS 17.5").
+  It's internal: only `admin_user_runs {user_id}` returns it, whatever the run's visibility.
+- `rb_card_fields($row)` is the one card shape (`public_list`, `profile_get`, `event_get`), with
+  `completions` = the roadbook's completed runs, public or private, counted by `RB_COMPLETIONS_SQL`.
+- `roadbook_completions {slug}` returns the public completed runs of a public roadbook, plus a count of the private ones.
+- `profile_get` adds `run_roadbooks` (roadbook_key → card) for the public roadbooks its runs ran.

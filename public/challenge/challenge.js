@@ -135,5 +135,23 @@
         $('chCommentsBtn').hidden = false;
         $('chCommentsBtn').onclick = (e) => { e.preventDefault(); $('chComments').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
         window.addEventListener('rb-lang', render);
+
+        // Completed by (#869): every public completed run — runner, notes, date, a link to the run —
+        // and a count of the private ones, which never name their runner
+        const done = await RBApi('roadbook_completions', { slug });
+        const renderDone = () => {
+            if (!done.ok || !(done.runs.length || done.private)) { $('chCompletions').hidden = true; return; }
+            const total = done.runs.length + done.private;
+            $('chCompletionsCount').textContent = `(${total})`;
+            $('chCompletionList').innerHTML = done.runs.map((r) => `<a class="completion" href="/run/${r.id}">
+                    <img class="avatar avatar-sm" src="${r.avatar ? esc(RBMediaSrc(r.avatar)) : '/assets/icon.svg'}" alt="" loading="lazy">
+                    <span class="grow"><b>@${esc(r.username)}</b><span class="muted small"> · ${r.notes_reached}/${r.notes_total} ${esc(t('notes'))} · ${esc(RBFmtDate(String(r.ended_at).slice(0, 10)))}</span></span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>`).join('')
+                + (done.private ? `<p class="muted small">${esc(t(done.private === 1 ? 'And 1 private run.' : 'And {n} private runs.').replace('{n}', done.private))}</p>` : '');
+            $('chCompletions').hidden = false;
+        };
+        renderDone();
+        window.addEventListener('rb-lang', renderDone);
     }
 })();

@@ -774,7 +774,8 @@
         href, thumb: r.thumb, title: r.title, overlays, body,
         placeholder: `<div class="thumb thumb-placeholder" data-route="${RBesc(r.slug || '')}"><i class="fa-solid fa-route"></i></div>`,
         badges: RBVehicleIcons(r.vehicles) + (category ? `<span class="card-chip">${RBesc(category)}</span>` : ''),
-        stats: [['fa-route', RBKm(r.total_distance, 1), RBt('Distance')], ['fa-location-dot', String(r.note_count), RBt('Notes')]],
+        stats: [['fa-route', RBKm(r.total_distance, 1), RBt('Distance')], ['fa-location-dot', String(r.note_count), RBt('Notes')]]
+            .concat(r.completions ? [['fa-flag-checkered', r.completions + '×', RBt('Times completed')]] : []), // #868
         meta: r.username ? `<i class="fa-solid fa-circle-user"></i> @${RBesc(r.username)}` : '',
     });
     // An event's card: its image, a calendar tile with its first day, where it stands
@@ -1284,6 +1285,20 @@
         window.addEventListener('scroll', hide, true);
         window.addEventListener('resize', hide);
     })();
+    // The device a run was made on, for the admins (#870): a coarse model / OS read from the user
+    // agent — never an identifier — and where it ran (the app, the installed PWA, the browser).
+    // Android names its model; iOS only the device class, which is all WebKit tells.
+    window.RBDeviceLabel = () => {
+        const ua = navigator.userAgent || '';
+        const surface = isNativeApp() ? 'App' : (isStandalone() ? 'PWA' : 'Web');
+        const ios = ua.match(/(iPhone|iPad|iPod).*?OS (\d+)[_.](\d+)/);
+        const android = ua.match(/Android (\d+(?:\.\d+)?)(?:; ([^;)]+?))?(?: Build|\))/);
+        const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
+        const os = ios ? `${ios[1]} · iOS ${ios[2]}.${ios[3]}`
+            : android ? [android[2] && android[2] !== 'K' ? android[2].trim() : '', 'Android ' + android[1]].filter(Boolean).join(' · ')
+            : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+        return [surface, surface === 'App' ? '' : browser, os].filter(Boolean).join(' · ').slice(0, 80);
+    };
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
     // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
     // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and

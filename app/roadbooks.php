@@ -378,19 +378,23 @@ function audio_delete(array $user, array $d): void {
 }
 
 /* ---- public (no auth): home gallery + challenge page ---- */
+// A roadbook as every card draws it (RBRoadbookCard): the gallery, a profile, an event.
+function rb_card_fields(array $r): array {
+    return ['id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
+        'note_count' => (int)$r['note_count'], 'username' => $r['username'] ?? null, 'vehicles' => rb_vehicle_list($r['vehicles'] ?? null),
+        'completions' => (int)($r['completions'] ?? 0), // how many times it was completed (#868)
+        'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null];
+}
+
 function public_list(array $d = []): void {
     // #106: the Editor's fork search passes reusable=1 to show only copyable roadbooks; the
     // read-only listings (gallery, home, Reader picker) pass nothing and see every public one.
     $filter = !empty($d['reusable']) ? ' AND r.reusable = 1' : '';
-    $st = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, u.username,
+    $st = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, u.username, " . RB_COMPLETIONS_SQL . ",
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM roadbooks r JOIN users u ON u.id = r.user_id
         WHERE r.status = 'public' AND r.slug IS NOT NULL" . $filter . " ORDER BY r.updated_at DESC LIMIT 60");
-    $rows = array_map(fn($r) => [
-        'id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
-        'note_count' => (int)$r['note_count'], 'username' => $r['username'], 'vehicles' => rb_vehicle_list($r['vehicles']), // the gallery filter (#713)
-        'thumb' => $r['thumb'] ? '/photos/' . $r['id'] . '/' . $r['thumb'] : null,
-    ], $st->fetchAll());
+    $rows = array_map('rb_card_fields', $st->fetchAll()); // vehicles drive the gallery filter (#713)
     json_out(['ok' => true, 'roadbooks' => $rows]);
 }
 

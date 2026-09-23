@@ -44,15 +44,21 @@
         data.runs.forEach((r) => { if (!groups.has(r.roadbook_key)) groups.set(r.roadbook_key, []); groups.get(r.roadbook_key).push(r); });
         $('pfPrivateHint').hidden = !(data.is_me && data.runs.some((r) => !r.is_public));
         if (!groups.size) { $('pfRuns').innerHTML = `<p class="muted small">${esc(t(data.is_me ? 'Your finished runs appear here — navigate a roadbook in the Reader and finish it.' : 'No public runs yet.'))}</p>`; return; }
-        $('pfRuns').innerHTML = [...groups.values()].map((runs, gi) => {
-            const first = runs[0], done = runs.filter((r) => r.completed).length;
-            const title = first.roadbook_slug ? `<a href="/challenge/${encodeURIComponent(first.roadbook_slug)}">${esc(first.title)}</a>` : esc(first.title);
-            return `<details class="pf-rb"${gi === 0 ? ' open' : ''}>
-                <summary><i class="fa-solid fa-book"></i><b class="grow">${title}</b>
-                    <span class="u-badge">${done} × ${esc(t('completed'))}</span><span class="muted small">${runs.length} ${esc(t(runs.length === 1 ? 'run' : 'runs'))}</span></summary>
-                ${runs.map(runHTML).join('')}
-            </details>`;
+        // each roadbook ran is its own card (#867) — the one every gallery draws — with the runs beside it;
+        // a roadbook nobody may open any more keeps just its title
+        $('pfRuns').innerHTML = [...groups.values()].map((runs) => {
+            const first = runs[0], done = runs.filter((r) => r.completed).length, card = data.run_roadbooks[first.roadbook_key];
+            const head = card ? RBRoadbookCard(card, { href: '/challenge/' + encodeURIComponent(card.slug) })
+                : `<div class="pf-rb-title"><i class="fa-solid fa-book"></i> <b>${esc(first.title)}</b></div>`;
+            return `<section class="pf-rb">
+                <div class="pf-rb-card">${head}</div>
+                <div class="pf-rb-runs">
+                    <div class="pf-rb-count"><span class="u-badge">${done} × ${esc(t('completed'))}</span> <span class="muted small">${runs.length} ${esc(t(runs.length === 1 ? 'run' : 'runs'))}</span></div>
+                    ${runs.map(runHTML).join('')}
+                </div>
+            </section>`;
         }).join('');
+        RBFillRoutes($('pfRuns'));
         $('pfRuns').querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => setVisibility(+b.dataset.run, b.dataset.vis === '1'));
         $('pfRuns').querySelectorAll('[data-del]').forEach((b) => b.onclick = () => removeRun(+b.dataset.del));
         $('pfRuns').querySelectorAll('[data-share-card]').forEach((b) => b.onclick = async () => {
@@ -73,13 +79,12 @@
         ].filter(Boolean).join(' ');
         const own = data.is_me ? `<button class="btn btn-ghost btn-sm" data-vis="${r.is_public ? 0 : 1}" data-run="${r.id}" type="button"><i class="fa-solid fa-${r.is_public ? 'lock' : 'globe'}"></i> ${esc(t(r.is_public ? 'Make private' : 'Make public'))}</button>
             <button class="btn btn-ghost btn-sm" data-del="${r.id}" type="button" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : '';
-        // the run's shareable image (#785), when it has one — the runner can share it again from here
+        // the run's shareable image (#785) is for sharing, not for the profile (#867): the runner shares it from here
         const cardSrc = r.card ? RBMediaSrc(r.card) : '';
-        const card = cardSrc ? `<div class="pf-run-card"><a href="${esc(cardSrc)}" target="_blank" rel="noopener"><img src="${esc(cardSrc)}" alt="" loading="lazy"></a>
-            ${data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(cardSrc)}" data-run-id="${r.id}" data-public="${r.is_public ? 1 : 0}" type="button"><i class="fa-solid fa-share-nodes"></i> ${esc(t('Share'))}</button>` : ''}</div>` : '';
+        const share = cardSrc && data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(cardSrc)}" data-run-id="${r.id}" data-public="${r.is_public ? 1 : 0}" type="button" title="${esc(t('Share'))}" aria-label="${esc(t('Share'))}"><i class="fa-solid fa-share-nodes"></i></button>` : '';
         return `<div class="pf-run" id="run-${r.id}">
-            <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${own}</div>
-            ${card}${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}
+            <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${share}${own}</div>
+            ${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}
         </div>`;
     }
     async function setVisibility(id, isPublic) {

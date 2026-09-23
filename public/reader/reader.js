@@ -745,7 +745,7 @@
         const now = Date.now();
         const report = {
             title: (rb.meta && rb.meta.title) || 'Roadbook', roadbook_id: rbRef, event_slug: eventSlug,
-            mode: competition ? 'competition' : 'trip', team: competition ? team : null, completed: completed ? 1 : 0,
+            mode: competition ? 'competition' : 'trip', team: competition ? team : null, completed: completed ? 1 : 0, device: RBDeviceLabel(),
             started_at: runStartedAt, ended_at: now, duration_s: Math.round((now - (runStartedAt || now)) / 1000),
             distance_m: Math.round(tripTotalM), notes_total: notes.length, notes_reached: reached.size,
             skipped: notes.map((n, i) => (reached.has(i) ? null : n.num)).filter((x) => x != null),
