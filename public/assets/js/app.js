@@ -1258,6 +1258,32 @@
     // Confirm for a destructive/data-losing action: same as RBConfirm but a red button + warning
     // icon. Use it for anything that deletes or overwrites; name the object in `msg` (e.g. its title).
     window.RBConfirmDanger = (msg) => window.RBConfirm(msg, true);
+    // Field help (#859): every .help-tip shares ONE bubble, fixed to the viewport so no scrolling panel
+    // clips it, placed ABOVE its ⓘ so it never covers the field it explains (below only when there is
+    // no room above) and clamped 8 px inside the screen. Hover, focus or a tap opens it; leaving,
+    // blurring, scrolling or a tap elsewhere closes it. data-tip holds the (translated) text.
+    (function helpTips() {
+        let bubble = null, owner = null;
+        const hide = () => { if (bubble) bubble.classList.remove('on'); owner = null; };
+        function show(tip) {
+            if (!bubble) { bubble = document.createElement('div'); bubble.className = 'tip-bubble'; bubble.setAttribute('role', 'tooltip'); document.body.appendChild(bubble); }
+            owner = tip;
+            bubble.textContent = tip.getAttribute('data-tip') || '';
+            const r = tip.getBoundingClientRect(), b = bubble.getBoundingClientRect(), gap = 7, edge = 8;
+            const left = Math.min(Math.max(edge, r.left + r.width / 2 - b.width / 2), window.innerWidth - b.width - edge);
+            const top = r.top - b.height - gap >= edge ? r.top - b.height - gap : r.bottom + gap;
+            bubble.style.setProperty('--tip-x', Math.round(left) + 'px'); bubble.style.setProperty('--tip-y', Math.round(top) + 'px');
+            bubble.classList.add('on');
+        }
+        const tipOf = (e) => e.target.closest && e.target.closest('.help-tip');
+        document.addEventListener('pointerover', (e) => { const tip = tipOf(e); if (tip && e.pointerType === 'mouse') show(tip); });
+        document.addEventListener('pointerout', (e) => { if (tipOf(e) === owner && e.pointerType === 'mouse') hide(); });
+        document.addEventListener('focusin', (e) => { const tip = tipOf(e); if (tip) show(tip); });
+        document.addEventListener('focusout', (e) => { if (tipOf(e) === owner) hide(); });
+        document.addEventListener('click', (e) => { const tip = tipOf(e); if (tip) { e.preventDefault(); if (owner === tip) hide(); else show(tip); } else hide(); });
+        window.addEventListener('scroll', hide, true);
+        window.addEventListener('resize', hide);
+    })();
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
     // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
     // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and
