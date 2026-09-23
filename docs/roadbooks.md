@@ -18,8 +18,9 @@ copies links to the entire public listing.
 
 `render()` (`roadbooks.js:33`) filters the list client-side with
 `RB.filterByText(all, q, ['title', 'username'])`, paginates at **12 per page**
-(`PER`), and builds cards via `RBGalleryCard` — the same shared helper used by
-the home gallery and event listings. Each card links to `/challenge/<slug>`.
+(`PER`), and builds cards via `RBRoadbookCard` — the same shared card the home, the event
+page and the public profile use (#770), then fills the route shapes (`RBFillRoutes`). Each
+card links to `/challenge/<slug>`.
 
 ### Card overlays
 

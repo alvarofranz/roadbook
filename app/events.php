@@ -619,7 +619,7 @@ function event_public_get(array $d): void {
     $statuses = "'public'";
     if ($joined || $orgRead) $statuses .= ",'ready'";
     if ($orgRead) $statuses .= ",'draft'";
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, u.username, er.scoring_mode,
+    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.category, r.total_distance, r.note_count, r.status, r.vehicles, u.username, er.scoring_mode,
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status IN ($statuses) ORDER BY er.sort, er.roadbook_id");
@@ -627,6 +627,7 @@ function event_public_get(array $d): void {
     $roadbooks = array_map(fn($r) => [
         'slug' => $r['slug'], 'title' => $r['title'], 'category' => $r['category'], 'total_distance' => (int)$r['total_distance'],
         'note_count' => (int)$r['note_count'], 'status' => $r['status'], 'username' => $r['username'], 'scoring_mode' => $r['scoring_mode'],
+        'vehicles' => rb_vehicle_list($r['vehicles']), // the card's vehicle icons (#770)
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null,
     ], $rb->fetchAll());
     json_out(['ok' => true, 'event' => [

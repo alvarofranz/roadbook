@@ -29,9 +29,8 @@
             ${tile('fa-list-ol', s.runs, 'Runs')}
         </div>`;
         renderRuns();
-        $('pfRoadbooks').innerHTML = data.roadbooks.length ? data.roadbooks.map((r) => RBGalleryCard({
-            href: '/challenge/' + encodeURIComponent(r.slug), thumb: r.thumb, title: r.title, meta: RBSummary(r.total_distance, r.note_count),
-        })).join('') : `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`;
+        $('pfRoadbooks').innerHTML = data.roadbooks.length ? data.roadbooks.map((r) => RBRoadbookCard(r, { href: '/challenge/' + encodeURIComponent(r.slug) })).join('') : `<p class="gallery-empty">${esc(t('No public roadbooks yet.'))}</p>`;
+        RBFillRoutes($('pfRoadbooks'));
     }
 
     // Runs grouped by the roadbook they ran, newest first, each group saying how often it was done.

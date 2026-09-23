@@ -200,7 +200,7 @@ In caso di errore di `loadPublic`, mostra "This challenge does not exist or is p
 ## 6. La gallery della home
 
 `home.js` ([home.js](../public/assets/js/home.js)) riusa `RBChallenges`: chiama `listPublic()`
-e disegna le card con l'helper condiviso `RBGalleryCard`, ognuna linkata a
+e disegna le card con la card condivisa `RBRoadbookCard` (+ `RBFillRoutes`), ognuna linkata a
 `${ROOT}challenge/<slug>`. Cache la lista in `cards` così un cambio lingua (`rb-lang`)
 ri-renderizza senza rifetchare.
 

@@ -47,7 +47,8 @@ describe('the events gallery (#745)', () => {
     });
     it('badges each event with the vehicles of its roadbooks', () => {
         expect(php).toContain('RB_VEHICLES');
-        expect(js).toContain('RBVehicleIcons(e.vehicles)');
+        expect(js).toContain('RBEventCard(e)');
+        expect(fs.readFileSync('public/assets/js/app.js', 'utf8')).toContain('[null, RBVehicleIcons(e.vehicles)]');
     });
 });
 

@@ -385,10 +385,27 @@ Sottotitolo one-liner di un roadbook: `"12.3 km · 45 notes"` (la parola unità 
 Aggiunti man mano che le feature (eventi, gestione, registrazione vocale) li hanno richiesti;
 vivono qui in **un solo posto** e sono riusati ovunque.
 
-#### `RBGalleryCard({ href, thumb, title, meta, icon?, placeholder?, overlays?, body? }) → html`
-Una card di galleria pubblica (Roadbooks · Events · pagina evento · teaser home): thumbnail (o un
-placeholder con icona), titolo e riga meta. `meta`/`overlays`/`body`/`placeholder` sono HTML già
-sanificati dal chiamante.
+#### Le card: `RBGalleryCard` · `RBRoadbookCard` · `RBEventCard` · `RBFillRoutes` (#770)
+**Un solo disegno** per ogni galleria. `RBGalleryCard({ href, thumb, title, meta, icon?, placeholder?,
+overlays?, badges?, stats?, body?, contain? })` costruisce l'anatomia: in alto il **media** (foto,
+rotta o logo, scurito al piede da un gradiente perché ciò che ci sta sopra si legga) con i `badges`
+in alto a sinistra, le azioni `overlays` in alto a destra (`.card-actions`, es. `RBCopyLinkOverlay`)
+e le `stats` (`[icona|null, valore, etichetta]`) al piede, tutte come pillole scure traslucide;
+sotto, titolo (max 2 righe) e riga `meta`. `contain` adatta l'immagine invece di ritagliarla (il logo
+di un evento). HTML in `meta`/`overlays`/`body`/`placeholder`/`badges` già sanificato dal chiamante.
+
+Le pagine non la chiamano direttamente, ma tramite due builder:
+- **`RBRoadbookCard(r, { href, overlays?, body?, category? })`** — veicoli (`RBVehicleIcons`) e
+  categoria dell'evento sul media, distanza e numero di note al piede, `@autore` sotto. Usata da home,
+  galleria Roadbooks, pagina evento, profilo pubblico e dal carosello dell'app.
+- **`RBEventCard(e)`** — il logo intero, un foglietto di calendario con il primo giorno, lo stato
+  (*Upcoming* sabbia · *Live* verde · *Ended* spento), numero di roadbook e veicoli al piede,
+  organizzatore e intervallo di date sotto.
+
+Una card roadbook **senza foto** parte con un placeholder `data-route`: **`RBFillRoutes(container)`**
+(chiamata da chi disegna) carica il roadbook una sola volta per slug e lo sostituisce con un SVG
+statico della **forma della rotta** (nessuna basemap). Chi nasconde la mappa (`map_access:false`)
+resta sull'icona.
 
 #### `RBPager(el, page, pages, onGo, label?)`
 Renderizza in `el` i controlli di paginazione (precedente / `pagina / totale` [`· label`] /
@@ -456,12 +473,8 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
 
 - Chiama `RBChallenges.listPublic()` per i roadbook pubblici dal database e li mette in cache in
   `cards`; ne mostra solo un **teaser di 6** (la lista completa vive su `/roadbooks`).
-- `render()` costruisce le card **via `RBGalleryCard`**: titolo, `@username` e il sottotitolo via
-  `RBSummary`. Ogni card linka a `challenge/<slug>`.
-- **Card senza foto → forma della rotta.** Invece di una generica icona, una card senza thumbnail
-  parte con un placeholder marcato che `fillRoutes()` sostituisce con un **SVG statico della
-  polilinea** della traccia (`routeSvg`, nessuna basemap, fetch lazy una sola volta per slug). Un
-  roadbook che nasconde la mappa (`map_access:false`) **non** rivela la forma: resta sull'icona.
+- `render()` disegna le card con **`RBRoadbookCard`** (vedi sopra) e poi `RBFillRoutes(grid)` per
+  la forma della rotta delle card senza foto. Ogni card linka a `challenge/<slug>`.
 - Lista vuota o errore di fetch → messaggio tradotto `gallery.empty`.
 - Si riaggancia all'evento `rb-lang` per **ri-renderizzare al cambio lingua senza rifare la fetch**
   (usa la cache `cards`).

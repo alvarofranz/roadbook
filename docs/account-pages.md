@@ -32,10 +32,9 @@ mostra `.app-only`.
 | Gallery / Public Challenges | web **e** app | Griglia delle challenge pubbliche, popolata da JS ([index.html:86](../public/index.html#L86)) |
 
 La galleria è l'unico pezzo dinamico. [home.js](../public/assets/js/home.js) chiama
-`RBChallenges.listPublic()` e disegna un **teaser di 6** roadbook pubblici via `RBGalleryCard`:
-thumbnail, titolo, `@username` e il riepilogo distanza/note via `RBSummary`; ogni card linka a
-`challenge/<slug>`. Una card **senza foto** riceve un SVG statico della **forma della rotta**
-(fetch lazy, saltato se `map_access:false`) invece di una generica icona. La lista è **in cache**
+`RBChallenges.listPublic()` e disegna un **teaser di 6** roadbook pubblici con la card condivisa
+`RBRoadbookCard` (veicoli, distanza, note, `@autore`); ogni card linka a `challenge/<slug>`. Una card
+**senza foto** riceve la **forma della rotta** (`RBFillRoutes`, saltata se `map_access:false`). La lista è **in cache**
 (`cards`) così un cambio lingua ri-disegna senza rifare la fetch (evento `rb-lang`). La lista
 completa e ricercabile vive su `/roadbooks`.
 

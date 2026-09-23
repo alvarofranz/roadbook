@@ -1440,3 +1440,9 @@ Object.assign(window.RBi18nLangs.es, {
     "The server did not answer properly — please try again in a moment.": "El servidor no respondió correctamente — inténtalo de nuevo en un momento.",
     "Delete the last note": "Eliminar la última nota",
 });
+
+/* event card state (#770) */
+Object.assign(window.RBi18nLangs.es, {
+    "Upcoming": "Próximo",
+    "Live": "En curso",
+});

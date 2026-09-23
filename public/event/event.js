@@ -41,11 +41,9 @@
     };
     const card = (r, e) => {
         const canOpen = r.status !== 'ready' || e.active_participant || e.org_read;
-        return RBGalleryCard({
+        return RBRoadbookCard(r, {
             href: canOpen ? '/challenge/' + encodeURIComponent(r.slug) + '?event=' + encodeURIComponent(slug) : null,
-            thumb: r.thumb, title: r.title,
-            meta: (r.category ? '<span class="u-badge">' + esc(r.category) + '</span> ' : '') + '@' + esc(r.username) + ' · ' + RBSummary(r.total_distance, r.note_count),
-            body: statusBadge(r, e),
+            category: r.category, body: statusBadge(r, e),
             overlays: r.status === 'public' ? RBCopyLinkOverlay(r.slug) : '', // public ones are shareable (#493)
         });
     };
@@ -75,6 +73,7 @@
         $('evRoadbooks').innerHTML = roadbooks.length
             ? roadbooks.map((r) => card(r, e)).join('')
             : `<p class="gallery-empty">${esc(t('No roadbooks yet.'))}</p>`;
+        RBFillRoutes($('evRoadbooks'));
         const compRbs = roadbooks.filter((r) => r.scoring_mode && r.scoring_mode !== 'free');
         $('evRanking').hidden = !(compRbs.length && (e.active_participant || e.org_read));
         $('evRankingLinks').innerHTML = compRbs.map((r) => `<a class="btn btn-primary btn-sm" href="/ranking/?event=${encodeURIComponent(slug)}&rb=${encodeURIComponent(r.slug)}"><i class="fa-solid fa-ranking-star"></i> ${esc(r.title || r.slug)}</a>`).join(' ');

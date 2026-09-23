@@ -30,17 +30,16 @@ Flusso ([home.js:65](../public/assets/js/home.js#L65)):
 1. `RBChallenges.listPublic()` → `public_list` dell'API restituisce i roadbook pubblici
    (`WHERE status = 'public' AND slug IS NOT NULL`, ordinati per `updated_at`, max 60) con per
    ciascuno `slug · title · total_distance · note_count · username · thumb`.
-2. `render()` costruisce una card per roadbook con l'helper condiviso **`RBGalleryCard`**
-   (`.gallery-card`), linkata a `/challenge/<slug>`.
+2. `render()` costruisce una card per roadbook con la card condivisa **`RBRoadbookCard`**
+   (`.gallery-card`, #770), linkata a `/challenge/<slug>`.
 
 **La miniatura** di ogni card, in ordine di preferenza:
 - **`thumb`** — l'URL immagine restituito da `public_list`. È la **cover** del roadbook quando
   esiste (vedi §2), altrimenti la prima foto reale della galleria. Mostrato come `<img>`.
 - **fallback** — se `thumb` è assente (roadbook mai salvato dopo l'introduzione della cover, o
   senza foto), si disegna al volo un SVG leggero della **sola** polilinea della rotta
-  (`routeSvg`, [home.js:16](../public/assets/js/home.js#L16)): nessuna tile, nessun basemap.
-  La traccia viene presa caricando il roadbook una sola volta (`fillRoutes`,
-  [home.js:48](../public/assets/js/home.js#L48), lazy e cache-ata per slug).
+  (`RBFillRoutes` in `app.js`, condiviso da ogni galleria): nessuna tile, nessun basemap. La traccia
+  viene presa caricando il roadbook una sola volta, lazy e cache-ata per slug.
 - Se il roadbook nasconde la mappa (`meta.map_access === false`) il fallback **non** rivela la
   forma della rotta: resta l'icona segnaposto.
 

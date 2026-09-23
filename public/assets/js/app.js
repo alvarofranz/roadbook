@@ -733,13 +733,79 @@
     // One public gallery card (Roadbooks · Events · event page · home teaser): thumb (or an icon
     // placeholder), title and a meta line. `meta`/`overlays`/`body`/`placeholder` are HTML the
     // caller already escaped; `overlays` floats over the image, `body` follows the meta line.
-    window.RBGalleryCard = ({ href, thumb, title, meta, icon = 'fa-map-location-dot', placeholder = '', overlays = '', body = '' }) =>
+    /* ONE card for every gallery (#770): the media on top — the photo or the route, darkened at the
+       foot so what sits on it reads — carrying `badges` top-left, the `overlays` actions top-right
+       and the key `stats` ([icon, value, label] — icon may be null) at its foot; the title and a `meta` line below.
+       `contain` fits the image instead of cropping it (an event's logo). RBRoadbookCard and
+       RBEventCard fill it the same way everywhere, so the cards read alike on every page. */
+    window.RBGalleryCard = ({ href, thumb, title, meta = '', icon = 'fa-map-location-dot', placeholder = '', overlays = '', badges = '', stats = [], body = '', contain = false }) =>
         (href ? `<a class="gallery-card" href="${RBesc(href)}">` : `<div class="gallery-card">`)
+        + `<div class="card-media${contain ? ' contain' : ''}">`
         + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
-        + overlays
-        + `<div class="gallery-body"><h3>${RBesc(title)}</h3><div class="gallery-meta">${meta}</div>${body}</div>`
+        + (badges ? `<div class="card-badges">${badges}</div>` : '')
+        + (overlays ? `<div class="card-actions">${overlays}</div>` : '')
+        + (stats.length ? `<div class="card-stats">${stats.map(([i, value, label]) => `<span${label ? ` title="${RBesc(label)}"` : ''}>${i ? `<i class="fa-solid ${i}"></i> ` : ''}${value}</span>`).join('')}</div>` : '')
+        + '</div>'
+        + `<div class="gallery-body"><h3>${RBesc(title)}</h3>${meta ? `<div class="gallery-meta">${meta}</div>` : ''}${body}</div>`
         + (href ? '</a>' : '</div>');
+    // A roadbook's card: what it suits and its event category on the media, its length and notes at
+    // the foot, its author below. No photo → the route's own shape (RBFillRoutes), never a stock icon.
+    window.RBRoadbookCard = (r, { href, overlays = '', body = '', category = '' } = {}) => RBGalleryCard({
+        href, thumb: r.thumb, title: r.title, overlays, body,
+        placeholder: `<div class="thumb thumb-placeholder" data-route="${RBesc(r.slug || '')}"><i class="fa-solid fa-route"></i></div>`,
+        badges: RBVehicleIcons(r.vehicles) + (category ? `<span class="card-chip">${RBesc(category)}</span>` : ''),
+        stats: [['fa-route', RBKm(r.total_distance, 1), RBt('Distance')], ['fa-location-dot', String(r.note_count), RBt('Notes')]],
+        meta: r.username ? `<i class="fa-solid fa-circle-user"></i> @${RBesc(r.username)}` : '',
+    });
+    // An event's card: its logo whole, a calendar tile with its first day, where it stands
+    // (upcoming · live · ended), how many roadbooks and for which vehicles, who runs it and when.
+    window.RBEventCard = (e) => {
+        const today = new Date().toISOString().slice(0, 10);
+        const state = e.ended ? ['ended', 'Ended'] : (e.starts_on && e.starts_on <= today ? ['live', 'Live'] : ['upcoming', 'Upcoming']);
+        const day = e.starts_on ? new Date(e.starts_on + 'T12:00:00') : null;
+        const lang = document.documentElement.lang || undefined;
+        return RBGalleryCard({
+            href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered', contain: true,
+            badges: (day ? `<span class="card-date"><b>${day.getDate()}</b><small>${RBesc(day.toLocaleDateString(lang, { month: 'short' }))}</small></span>` : ''),
+            overlays: `<span class="card-chip state-${state[0]}">${RBesc(RBt(state[1]))}</span>`,
+            stats: [['fa-book-open', `${e.roadbooks} ${RBesc(RBt('roadbooks'))}`]].concat(e.vehicles && e.vehicles.length ? [[null, RBVehicleIcons(e.vehicles)]] : []),
+            meta: `<i class="fa-solid fa-circle-user"></i> @${RBesc(e.organizer)}${RBDateRange(e.starts_on, e.ends_on) ? ` · <i class="fa-solid fa-calendar-days"></i> ${RBesc(RBDateRange(e.starts_on, e.ends_on))}` : ''}`,
+        });
+    };
+    /* A photo-less roadbook card shows its route: the track is fetched once per roadbook and drawn
+       as a static SVG fit to the media box (equirectangular, lon scaled by cos(lat)). A roadbook
+       that hides its map (map_access:false) keeps the icon — its shape is not revealed. */
+    const routeShapes = {}; // slug → SVG ('' once known to have none), so each is fetched once
+    function routeSvg(track) {
+        if (!Array.isArray(track) || track.length < 2) return '';
+        let pts = track;
+        if (pts.length > 240) { const step = Math.ceil(pts.length / 240); pts = track.filter((_, i) => i % step === 0 || i === track.length - 1); }
+        const W = 320, H = 200, pad = 18;
+        const latM = pts.reduce((sum, p) => sum + (+p.lat), 0) / pts.length;
+        const k = Math.cos(latM * Math.PI / 180) || 1;
+        const X = pts.map((p) => (+p.lon) * k), Y = pts.map((p) => -(+p.lat));
+        const minX = Math.min(...X), maxX = Math.max(...X), minY = Math.min(...Y), maxY = Math.max(...Y);
+        const spanX = (maxX - minX) || 1e-9, spanY = (maxY - minY) || 1e-9;
+        const scale = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+        const offX = (W - spanX * scale) / 2, offY = (H - spanY * scale) / 2;
+        const d = pts.map((p, i) => `${((X[i] - minX) * scale + offX).toFixed(1)},${((Y[i] - minY) * scale + offY).toFixed(1)}`).join(' ');
+        return `<svg class="thumb thumb-route" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${RBesc(RBt('route map'))}"><rect width="${W}" height="${H}"/><polyline points="${d}"/></svg>`;
+    }
+    window.RBFillRoutes = (container) => {
+        if (!container || !window.RBChallenges) return;
+        container.querySelectorAll('.thumb-placeholder[data-route]').forEach((el) => {
+            const slug = el.getAttribute('data-route'); if (!slug) return;
+            if (routeShapes[slug] != null) { if (routeShapes[slug]) el.outerHTML = routeShapes[slug]; return; }
+            routeShapes[slug] = ''; // in flight: never fetched twice
+            RBChallenges.loadPublic(slug).then((j) => {
+                const m = j.roadbook && j.roadbook.meta;
+                const svg = (m && m.map_access === false) ? '' : routeSvg(j.roadbook && j.roadbook.track);
+                routeShapes[slug] = svg;
+                if (svg) document.querySelectorAll(`.thumb-placeholder[data-route="${CSS.escape(slug)}"]`).forEach((cur) => { cur.outerHTML = svg; });
+            }).catch(() => {});
+        });
+    };
     /* A thumbnail whose file is gone (a deleted photo, a failed upload) shows the card's own
        placeholder, never its alt text on a grey box: one capture-phase listener (`error` does not
        bubble) swaps it in. */
