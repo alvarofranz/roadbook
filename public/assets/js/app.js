@@ -1362,7 +1362,7 @@
             px(bubble, '--tour-ax', Math.min(Math.max(18, r.left + r.width / 2 - left), b.width - 18));
         }
         function show() {
-            live[i].el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            live[i].el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }); // the step's control in the middle of the screen, the hole following it there
             root.querySelector('.tour-title').textContent = RBt(live[i].title);
             root.querySelector('.tour-text').textContent = RBt(live[i].text);
             root.querySelectorAll('.tour-dots i').forEach((d, k) => d.classList.toggle('on', k === i));

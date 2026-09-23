@@ -72,3 +72,9 @@ describe('every tool has its tour', () => {
         });
     }
 });
+
+describe('each step in view', () => {
+    it('scrolls its control to the centre of the screen', () => {
+        expect(app).toContain("live[i].el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });");
+    });
+});
