@@ -288,6 +288,7 @@
         .load-card i { font-size: 1.3rem; color: var(--sand); margin-bottom: .15rem; }
         .load-card b { font-size: 1rem; }
         .load-card small { color: var(--muted); font-size: .76rem; }
+        a.load-card, a.load-card:hover { text-decoration: none; }
         .record-bar { display: flex; flex-direction: column; gap: .55rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .65rem .9rem; margin-bottom: .8rem; }
         .rec-status { display: flex; align-items: center; gap: .5rem; }
         .rec-btns { display: flex; gap: .45rem; }
@@ -337,7 +338,7 @@
             /* the screen is there: photos take the space, the destructive action sits beside them
                instead of under everything (#438) */
             .config-bottom { grid-template-columns: 2fr 1fr; }
-            .load-opts { grid-template-columns: repeat(4, 1fr); }
+            .load-opts { grid-template-columns: repeat(5, 1fr); } /* the five ways, on one row */
         }
         /* tablet portrait and up: RB-suite split — the map pinned on the
            left, the notes + inline editor column on the right.
@@ -404,6 +405,8 @@
                     <button class="load-card" id="drawRoute"><i class="fa-solid fa-pen"></i><b data-i18n="Draw on the map">Draw on the map</b><small data-i18n="Tap the map to add the route point by point">Tap the map to add the route point by point</small></button>
                     <button class="load-card" id="loadJson"><i class="fa-solid fa-file-code"></i><b>.rdbk</b><small data-i18n="Open an existing roadbook">Open an existing roadbook</small></button>
                     <button class="load-card" id="pickChallenge"><i class="fa-solid fa-book-open"></i><b data-i18n="Copy a public roadbook">Copy a public roadbook</b><small data-i18n="Start from one shared by others">Start from one shared by others</small></button>
+                    <!-- the fifth way (#808): out on the road, with the Recorder -->
+                    <a class="load-card" href="../recorder/"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record a track">Record a track</b><small data-i18n="Record while you add notes">Record while you add notes</small></a>
                 </div>
             </div>
             <div id="myRbSection" hidden>

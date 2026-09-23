@@ -1485,3 +1485,9 @@ Object.assign(window.RBi18nLangs.es, {
     "Open the roadbook": "Abrir el roadbook",
     "This run is not public, or no longer exists.": "Este recorrido no es público o ya no existe.",
 });
+
+/* Editor start: record a track (#808) */
+Object.assign(window.RBi18nLangs.es, {
+    "Record a track": "Grabar una traza",
+    "Record while you add notes": "Graba mientras añades notas",
+});
