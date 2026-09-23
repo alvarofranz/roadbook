@@ -84,7 +84,7 @@ describe('the editor saves through it', () => {
     it('every Save reports on the button that was pressed', () => {
         expect(editor).toContain("$('saveAccount').onclick = () => saveRoadbook('saveAccount');");
         expect(editor).toContain("$('cfgSave').onclick = () => saveRoadbook('cfgSave');");
-        expect(editor).toContain("RBBusy('saveAsAccount'");
+        expect(editor).toContain("$('cfgSaveBottom').onclick = () => saveRoadbook('cfgSaveBottom');");
         const save = editor.match(/async function saveRoadbook\(btn\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(save).toContain('RBBusy(btn, { onEnd: updateSaveBtn })');
         expect(save).toContain('if (r.ok) busy.ok(); else busy.reset();');

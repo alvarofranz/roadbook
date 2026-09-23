@@ -64,3 +64,9 @@ describe('Add junction on a phone', () => {
         expect(html).toContain('.add-junction::after { left: auto; right: 100%; }');
     });
 });
+
+describe('the Editor saves, it does not duplicate (#761)', () => {
+    it('has no "Save a copy": copies are made from My roadbooks', () => {
+        expect(html + editor).not.toMatch(/saveAsAccount|Save a copy/);
+    });
+});

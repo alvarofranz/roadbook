@@ -559,11 +559,11 @@ meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo regi
 `currentRbId`, azzera `dirty`, pulisce il draft e **fissa `?rb=<id>` nell'URL** via
 `history.replaceState` — così un reload (o l'auto-refresh di versione) continua a editare lo
 stesso roadbook, e i successivi save aggiornano la stessa entità. `$('saveAccount')` richiede
-login (`RBNeedAuth`). **"Save as"** azzera l'identità, aggiunge "(copy)" al titolo e salva una
-nuova entità privata, lasciando intatto l'originale.
+login (`RBNeedAuth`). L'Editor **salva e basta**: una copia di un roadbook si fa da *My roadbooks*
+(Save as), non da qui (#761).
 
-`saveRoadbook(btn)` riceve **quale** Save è stato premuto (ce ne sono due: quello in alto e quello
-dentro le impostazioni) e lo passa a `RBBusy` (vedi [app-shell.md](app-shell.md)): gira mentre il
+`saveRoadbook(btn)` riceve **quale** Save è stato premuto (quello in alto e i due delle impostazioni,
+in cima e in fondo alla pagina) e lo passa a `RBBusy` (vedi [app-shell.md](app-shell.md)): gira mentre il
 roadbook sale, poi diventa verde con la spunta. Prima l'unico segnale era un toast, e non si
 distingueva un salvataggio riuscito da uno fallito (#459).
 

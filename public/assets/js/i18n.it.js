@@ -339,7 +339,7 @@
             'Distance-only OpenRally: a placeholder track was inserted — redraw it on the map.': 'OpenRally solo-distanza: inserita una traccia segnaposto — ridisegnala sulla mappa.', 'OpenRally track built from the waypoint coordinates.': 'Traccia OpenRally costruita dalle coordinate dei waypoint.',
             'Route too short to save.': 'Percorso troppo corto per salvare.',
             'Waiting for a GPS fix…': 'In attesa del segnale GPS…', 'No geolocation on this device.': 'Questo dispositivo non ha geolocalizzazione.', 'Uploading photo…': 'Caricamento foto…',
-            'Saved to your profile.': 'Salvato nel tuo profilo.', 'Could not save.': 'Impossibile salvare.', 'Saved as a new roadbook.': 'Salvato come nuovo roadbook.',
+            'Saved to your profile.': 'Salvato nel tuo profilo.', 'Could not save.': 'Impossibile salvare.', 
             'On the trail — recording your variant.': 'Sul percorso — registrando la tua variante.', 'Trail adjusted · metrics recomputed.': 'Percorso regolato · metriche ricalcolate.',
             'Walk onto the trail (≤10 m) to start adjusting.': 'Cammina sul percorso (≤10 m) per iniziare a regolare.',
             'Sign in to save this roadbook to your profile.': 'Accedi per salvare questo roadbook nel tuo profilo.',
@@ -1277,7 +1277,7 @@ Object.assign(window.RBi18nLangs.it, {
     "Copy a public roadbook": "Copia un roadbook pubblico",
     "Start from one shared by others": "Parti da uno condiviso da altri",
     "Roadbook settings": "Impostazioni del roadbook",
-    "Save a copy": "Salva una copia",
+    
     "Back to the map": "Torna alla mappa",
     "The whole roadbook, to open again or share": "Il roadbook completo, da riaprire o condividere",
     "To print or read on paper": "Da stampare o leggere su carta",
