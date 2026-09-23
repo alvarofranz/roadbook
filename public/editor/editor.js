@@ -13,15 +13,11 @@
     // A field label followed by an inline ⓘ help tooltip (#89). `tipKey` is an i18n key.
     const labelHelp = (label, tipKey) => `${t(label)}<button type="button" class="help-tip" data-tip="${esc(t(tipKey))}" aria-label="${esc(t(tipKey))}"><i class="fa-solid fa-circle-info"></i></button>`;
     const RT = RB.ROAD_TYPES.map((r) => r.name); // the road-type names live on the catalog (#561)
-    // base map style: satellite photo, terrain (detailed off-road tracks + contours), or OSM.
-    // The style URLs live in ONE place — RBMap (shared with the Reader's layer toggle).
-    const MAP_STYLES = [RBMap.STYLE_SATELLITE, RBMap.STYLE_TOPO, RBMap.STYLE_OSM];
-    const MAP_STYLE_KEYS = ['satellite', 'terrain', 'osm'];
-    let mapStyleIdx = MAP_STYLE_KEYS.indexOf(localStorage.getItem('rb_map_style'));
-    if (mapStyleIdx < 0) mapStyleIdx = 0;
     // The editor map IS the work surface (draw the route, drag notes, tap to add) — it needs
     // one-finger pan / free wheel-zoom, so it opts out of the shared cooperative-gestures default.
-    const map = new RBMap('edMap', { zoom: 13, style: MAP_STYLES[mapStyleIdx], geolocate: true, wpIcons: true, compass: false, cooperativeGestures: false });
+    // Its base-map toggle (satellite · topo · OSM, beside the zoom buttons) is RBMap's own, with the
+    // compact labels a 34 px button fits, and it remembers the author's choice.
+    const map = new RBMap('edMap', { zoom: 13, geolocate: true, wpIcons: true, compass: false, cooperativeGestures: false, layerToggle: { short: true, remember: 'rb_map_style' } });
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.
@@ -203,12 +199,19 @@
     });
     let rbLock = { mine: true }; // soft edit lock (#154): while someone else holds it, this Editor is read-only
     const readOnly = () => !rbLock.mine;
+    // The gate of every tool that changes the roadbook: something loaded, and the lock is ours.
+    function editable() {
+        if (!rb) { toast('Load a roadbook first.'); return false; }
+        if (readOnly()) { toast('Read-only while someone else is editing.'); return false; }
+        return true;
+    }
     let rb = null, sel = 0, std = null, dirty = false, exported = false, editorOpen = false, vertRaf = 0;
     // draft checkpoint: every edit schedules a debounced write of the whole working
     // state; cleared once the work is safe (saved to profile or exported)
     const DRAFT_KEY = 'rb_editor_draft';
     let draftTimer = null;
-    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, gaps, rbIsOwner, rbOwner, at: Date.now() })); } catch (e) {} };
+    // the whole working state, including the server-side settings a save writes back (#106 · #713 · #784)
+    const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ rb, currentRbId, status, reusable, vehicles, publicSlug, gaps, rbIsOwner, rbOwner, at: Date.now() })); } catch (e) {} };
     const clearDraft = () => { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
     // A declined recovery is marked, not deleted (#436): the work stays recoverable until the next
     // checkpoint replaces it, but the offer is not repeated. `saveDraft` writes a fresh object, so
@@ -240,14 +243,12 @@
         if (n.speed_limit == null) { if (n.wp_type === 'dz' || n.wp_type === 'fz') delete n.wp_type; }
         else n.wp_type = n.speed_limit === 0 ? 'fz' : 'dz';
     }
-    // bare note anchored at track index `idx` — recomputeMetrics fills in the rest
-    const makeNote = (r, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: r.track[idx].lat, lon: r.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), missingIcon: '../assets/icons/W28_general_danger.svg', resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     // Show note i on the canvas. One place asks whether it is the roadbook's end note, so the
     // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
     const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
-    $('addJunction').onclick = () => { if (!rb) return toast('Load a roadbook first.'); canvas.addJunction(); };
+    $('addJunction').onclick = () => { if (editable()) canvas.addJunction(); };
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
@@ -266,7 +267,7 @@
     // handles); the metrics/notes recompute once, on release.
     function onVertexDrag(i, lat, lon) {
         if (!rb || i < 0 || i >= rb.track.length) return;
-        rb.track[i] = { lat: RB.round6(lat), lon: RB.round6(lon) };
+        Object.assign(rb.track[i], { lat: RB.round6(lat), lon: RB.round6(lon) }); // only the position moves: ele and t stay
         if (vertRaf) return;
         vertRaf = requestAnimationFrame(() => { vertRaf = 0; refreshMap(true); map.refreshVertices(rb.track); });
     }
@@ -281,7 +282,7 @@
     function onWptDrag(ni, lat, lon) {
         if (!rb || ni < 0 || ni >= rb.notes.length) return;
         const n = rb.notes[ni];
-        rb.track[n.idx] = { lat: RB.round6(lat), lon: RB.round6(lon) };
+        Object.assign(rb.track[n.idx], { lat: RB.round6(lat), lon: RB.round6(lon) }); // only the position moves: ele and t stay
         n.lat = rb.track[n.idx].lat; n.lon = rb.track[n.idx].lon; // keep the marker + line together while dragging
         if (vertRaf) return;
         vertRaf = requestAnimationFrame(() => { vertRaf = 0; refreshMap(true); });
@@ -447,6 +448,7 @@
         modeNameTimer = setTimeout(() => rail.classList.remove('show-name'), 3000);
     }
     function setMapTool(tool) {
+        if (readOnly()) tool = 'pan'; // read-only: the map only pans — no mode may arm a drag or an edit (#698)
         if (tool !== mapTool) flashModeName();
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
@@ -495,37 +497,15 @@
         applyToolTips();
         if (rb) { renderNotes(); renderIcons(); updateSaveBtn(); if (editorOpen) { renderEditor(); canvas.render(); } }
     });
-    function toggleMapStyle() {
-        mapStyleIdx = (mapStyleIdx + 1) % MAP_STYLES.length;
-        try { localStorage.setItem('rb_map_style', MAP_STYLE_KEYS[mapStyleIdx]); } catch (e) {}
-        map.setBaseStyle(MAP_STYLES[mapStyleIdx]); // RBMap paints back everything it was showing (#788)
-    }
-    // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle. The control is
-    // one 29 px map button, so the current style shows as a short code; its full, translated name
-    // is the tooltip (#700).
-    const MAP_STYLE_LABELS = ['SAT', 'TOPO', 'OSM'];
-    if (map.map) map.map.addControl({
-        onAdd() {
-            const c = document.createElement('div');
-            c.className = 'maplibregl-ctrl maplibregl-ctrl-group rb-mapctl';
-            const b = document.createElement('button');
-            b.type = 'button'; b.className = 'rb-mapctl-layers';
-            const name = () => { b.title = t('Map: satellite · topographic · OpenStreetMap'); b.setAttribute('aria-label', b.title); };
-            name(); window.addEventListener('rb-lang', name);
-            b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i> ';
-            const label = document.createElement('span');
-            label.className = 'rb-map-style-label';
-            label.textContent = MAP_STYLE_LABELS[mapStyleIdx];
-            b.appendChild(label);
-            b.onclick = () => { toggleMapStyle(); label.textContent = MAP_STYLE_LABELS[mapStyleIdx]; };
-            c.append(b); this._c = c;
-            return c;
-        },
-        onRemove() { this._c.remove(); },
-    }, 'top-right');
     // Escape → back to the default Move tool; never mid-adjust — the drag editors must not
-    // touch a track that is being live re-recorded (#220)
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && recWatch == null) setMapTool('points'); });
+    // touch a track that is being live re-recorded (#220) — never read-only, and never while a
+    // dialog or the photo viewer is open: there Escape belongs to them. Heard in the capture
+    // phase, before the viewer's own Escape closes it.
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || recWatch != null || readOnly()) return;
+        if (document.querySelector('.modal') || !$('lightbox').hidden) return;
+        setMapTool('points');
+    }, true);
     // Draw (#712): every tap adds a new point, joining the nearest OPEN end — the finish, the
     // start, or either edge of an open cut (tapping on the opposite edge closes the cut). With
     // nothing loaded, the first two taps create a fresh roadbook (start/end notes ride the
@@ -598,7 +578,8 @@
     }
     // Cut mode: tap two points — at the ends it trims; in the middle it removes
     // the span and leaves an OPEN cut (dashed connector) to fill by drawing.
-    function cutPoint(p) {
+    // The notes inside the span go with it, so the cut asks first, naming them.
+    async function cutPoint(p) {
         if (!rb) return toast('Load a roadbook first.');
         const idx = splitTrackAt(p);
         if (cutFromIdx < 0) { cutFromIdx = idx; map.setPin(rb.track[idx]); toast('Now tap the other end of the cut.'); return; }
@@ -606,6 +587,9 @@
         cutFromIdx = -1; map.setPin(null);
         if (b - a < 1) return toast('Nothing to cut.');
         if (a === 0 && b === rb.track.length - 1) return toast('Nothing would remain.');
+        const inside = (n) => (a === 0 ? n.idx < b : b === rb.track.length - 1 ? n.idx > a : n.idx > a && n.idx < b);
+        const losing = rb.notes.filter(inside);
+        if (losing.length && !(await RBConfirmDanger(t('Cut the route? These notes are inside the cut and will be deleted:') + ' ' + losing.map(noteLabel).join(', ')))) return;
         let toastMsg = 'Cut applied · metrics recomputed.';
         if (a === 0) { // trim the head
             rb.track = rb.track.slice(b);
@@ -622,18 +606,18 @@
             toastMsg = 'Cut open — draw to fill it, or it closes straight on export.';
         }
         const last = rb.track.length - 1;
-        if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(makeNote(rb, 0, roadOutBefore(0)));
-        if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(makeNote(rb, last, roadOutBefore(last)));
+        if (!rb.notes.some((n) => n.idx === 0)) rb.notes.push(RB.bareNote(rb, 0, roadOutBefore(0)));
+        if (!rb.notes.some((n) => n.idx === last)) rb.notes.push(RB.bareNote(rb, last, roadOutBefore(last)));
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0; routeChanged(toastMsg); setMapTool('points'); // cut done → back to the default Move tool
     }
     // Add GPX: if both ends of the piece touch the route it offers a detour
     // (replace the matching segment); otherwise it joins the piece to the nearest
     // end, auto-orienting it. Either way the route stays ONE track.
-    $('toolAddGpx').onclick = () => { if (!rb) return toast('Load a roadbook first.'); $('addGpxFile').click(); };
+    $('toolAddGpx').onclick = () => { if (editable()) $('addGpxFile').click(); };
     $('addGpxFile').onchange = async (e) => {
         const f = e.target.files[0]; e.target.value = '';
-        if (!f || !rb) return;
+        if (!f || !editable()) return;
         try {
             const p = RB.parseGPX(await f.text());
             // A GPX with a real track → smart-join it. A GPX with little/no track but waypoints
@@ -664,7 +648,7 @@
                 rb.notes.forEach((n) => { if (n.idx >= at) n.idx++; });
                 if (cutFromIdx >= at) cutFromIdx++;
             }
-            const note = makeNote(rb, at, roadOutBefore(at));
+            const note = RB.bareNote(rb, at, roadOutBefore(at));
             note.text = (wp.name || '').trim();
             if (wp.icon) note.icons = [{ name: wp.icon, pos: [0, 0], angle: 0, size: 40, flip_x: false }];
             if (wp.danger) note.danger = wp.danger;
@@ -709,23 +693,20 @@
             joinAtStart = Math.min(D(rb.track[0], pieceStart), D(rb.track[0], pieceEnd))
                 < Math.min(D(rb.track[rb.track.length - 1], pieceStart), D(rb.track[rb.track.length - 1], pieceEnd));
         }
-        if (joinAtStart) RB.reverseRoadbook(rb); // join at the start = extend the reversed route
-        const anchor = rb.track[rb.track.length - 1];
+        const anchor = joinAtStart ? rb.track[0] : rb.track[rb.track.length - 1];
         // time decided the orientation; otherwise orient the piece so its nearest end meets the anchor
-        extension(rb, byTime || (D(anchor, pieceStart) <= D(anchor, pieceEnd) ? trkpts : trkpts.slice().reverse()));
-        RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        if (joinAtStart) RB.reverseRoadbook(rb);
+        RB.joinTrack(rb, byTime || (D(anchor, pieceStart) <= D(anchor, pieceEnd) ? trkpts : trkpts.slice().reverse()), joinAtStart);
         sel = 0; routeChanged('Track joined to the route.');
     }
     // Reverse lives in the roadbook settings (it flips the whole route) and asks first.
     $('cfgReverse').onclick = async () => {
-        if (!rb) return toast('Load a roadbook first.');
+        if (!editable()) return;
         if (!(await RBConfirm(t('Reverse the whole route? Start and finish swap, and every vignette is recomputed.')))) return;
         RB.reverseRoadbook(rb); sel = 0;
         routeChanged('Route reversed — review the vignettes.');
     };
     $('toolSimplify').onclick = () => {
-        if (!rb) return toast('Load a roadbook first.');
+        if (!editable()) return;
         const d = RBModal(`<h3>${t('Simplify')}</h3>
             <label class="muted small">${t('Tolerance (metres) — higher removes more points')}</label>
             <input id="simpTol" class="modal-in" type="number" min="0.5" max="50" step="0.5" value="2" inputmode="decimal">
@@ -739,7 +720,7 @@
             d.close(); routeChanged(t('Removed') + ' ' + (before - rb.track.length) + ' ' + t('points') + '.');
         };
     };
-    $('toolAdjust').onclick = () => { if (!rb) return toast('Load a roadbook first.'); setMapTool('pan'); startRecording(); };
+    $('toolAdjust').onclick = () => { if (!editable()) return; setMapTool('pan'); startRecording(); };
     $('drawRoute').onclick = () => { loadStarted = true; showEditing(); setMapTool('draw'); toast('Tap the map to draw your route.'); };
 
     /* ---------- loading ---------- */
@@ -749,7 +730,15 @@
     let loadStarted = false;
     $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
-    $('pickChallenge').onclick = () => { loadStarted = true; RBChallenges.pick((r) => { resetIdentity(); setRoadbook(r); }); };
+    // Copy a public roadbook: only the ones their owner lets others copy (#106), as a new roadbook
+    // for the same vehicles.
+    $('pickChallenge').onclick = () => {
+        loadStarted = true;
+        RBChallenges.pick((j) => {
+            if (!j.reusable) return toast('This public roadbook cannot be copied.');
+            resetIdentity(); vehicles = j.vehicles; paintVehicles(); setRoadbook(j.roadbook);
+        }, { reusable: true });
+    };
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files); e.target.value = ''; // picking the same file again must fire again (#659)
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -794,7 +783,9 @@
     // hidden until there's a roadbook to edit, so the editor never opens on a
     // blank map.
     function showEditing() { $('landing').hidden = true; $('mapEditor').hidden = false; if (map.map) map.map.resize(); }
-    function setRoadbook(r) {
+    // `restoredGaps`: the open cuts of a recovered draft, in place before the history starts, so
+    // the first undo snapshot already holds them.
+    function setRoadbook(r, restoredGaps) {
         rb = RB.importRoadbook(r); // canonical schema + structural defaults (also opens pre-standard Italian files)
         // Pre-load AND refresh the used standard-palette icons as data URIs (#174): the palette
         // is canonical, so updated sign art replaces a stale copy embedded in an older roadbook;
@@ -815,18 +806,15 @@
             renderNotes(); reportUnresolvedIcons(); canvas.render();
         });
 
-        dirty = false; gaps = [];
+        dirty = false; gaps = restoredGaps || [];
         showEditing();
         $('recBar').hidden = true; $('rbPanel').hidden = false;
         closeEditor(); // park the inline editor; tap a note to open it
-        ['toolAddGpx', 'toolSimplify', 'toolAdjust', 'toolShortcuts'].forEach((id) => $(id).disabled = false); // route ops need a roadbook; the modes paint their own state
-        $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
-        $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
-        setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
-        $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
-        $('cfgReusable').checked = reusable; // #106: server-side flag, not part of the .rdbk
-        $('cfgProfile').value = rb.meta.profile === 'rally' ? 'rally' : 'basic'; // absent ⇒ basic
-        $('cfgWpRadius').value = rb.meta.default_wp_radius != null ? rb.meta.default_wp_radius : ''; // absent ⇒ per-type defaults
+        // route ops need a roadbook and the lock (setLock ran first when the lock is someone else's);
+        // the modes paint their own state
+        ['toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = readOnly());
+        $('toolShortcuts').disabled = false;
+        fillSettings();
         updatePhotos(); updateAudio(); updateSaveBtn();
         refreshMap(false); renderNotes(); renderIcons(); reportUnresolvedIcons();
         sel = 0;
@@ -836,6 +824,17 @@
         setMapTool(routeless ? 'draw' : 'points'); // a routeless roadbook opens ready to draw; a loaded one defaults to Move
         showView('map'); // tap a note to open its editor inline below the row
         if (routeless) { centerOnDefault(); toast('Tap the map to draw your route.'); } // no route to fit → start at the user's default location
+    }
+
+    // The settings fields, filled from rb — on load and after every undo/redo.
+    function fillSettings() {
+        $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
+        $('rbAuthor').value = rb.meta.author || userName() || ''; $('rbOrg').value = rb.meta.organization || '';
+        setLogoPreview(rb.meta.logo); $('rbModified').textContent = rb.meta.modified || '—';
+        $('cfgMapAccess').checked = rb.meta.map_access !== false; // optional field; default ON, absent = allowed
+        $('cfgReusable').checked = reusable; // #106: server-side flag, not part of the .rdbk
+        $('cfgProfile').value = rb.meta.profile === 'rally' ? 'rally' : 'basic'; // absent ⇒ basic
+        $('cfgWpRadius').value = rb.meta.default_wp_radius != null ? rb.meta.default_wp_radius : ''; // absent ⇒ per-type defaults
     }
 
     /* ---------- undo / redo: debounced snapshots of the working roadbook ---------- */
@@ -855,11 +854,10 @@
         rb = st.rb; sel = Math.max(0, Math.min(st.sel, rb.notes.length - 1)); gaps = st.gaps;
         dirty = true; exported = false; updateSaveBtn();
         clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000);
-        $('rbTitle').value = rb.meta.title || ''; $('rbDesc').value = rb.meta.description || '';
-        $('rbAuthor').value = rb.meta.author || ''; $('rbOrg').value = rb.meta.organization || '';
-        setLogoPreview(rb.meta.logo); $('cfgMapAccess').checked = rb.meta.map_access !== false; $('cfgReusable').checked = reusable;
-        refreshMap(true); renderNotes(); renderIcons(); renderEditor(); showOnCanvas(sel);
-        map.select(rb.notes[sel], true);
+        fillSettings();
+        refreshMap(true); renderNotes(); renderIcons();
+        if (rb.notes.length) { renderEditor(); showOnCanvas(sel); } else { closeEditor(); canvas.setNote(null); } // a routeless snapshot has no note to show
+        map.select(rb.notes[sel] || null, true);
         updateHistBtns();
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
@@ -924,6 +922,7 @@
     // notes where they were, silently. Hence the offer: apply the new value to every note, or to
     // none. Nothing in between, and nothing without asking — rewriting the radius of notes the
     // author tuned by hand is a data change, so it takes a Yes (#532).
+    $('cfgWpRadius').placeholder = RB.CONST.REACH_DEFAULT_M; // left empty, a waypoint of no type validates at the system default
     $('cfgWpRadius').onchange = async (e) => {
         if (!rb) return;
         const v = parseInt(e.target.value, 10);
@@ -967,7 +966,7 @@
         updateRecStats();
     };
     document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState === 'hidden') { if (rb && dirty) saveDraft(); return; } // flush the draft before a possible OS kill
+        if (document.visibilityState === 'hidden') { if (rb && dirty && !exported) saveDraft(); return; } // flush the draft before a possible OS kill
         if (recWatch != null && 'wakeLock' in navigator && (!recWake || recWake.released)) {
             try { recWake = await navigator.wakeLock.request('screen'); } catch (e) {}
         }
@@ -1059,19 +1058,27 @@
         // merge any waypoints dropped during the adjust session (snap to the new track)
         recWpts.forEach((w) => {
             const idx = RB.nearestIdx(rb.track, w);
-            if (!rb.notes.some((n) => n.idx === idx)) { const note = makeNote(rb, idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
+            if (!rb.notes.some((n) => n.idx === idx)) { const note = RB.bareNote(rb, idx, roadOutBefore(idx)); note.text = w.text || ''; rb.notes.push(note); }
         });
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         sel = 0; refreshMap(false); renderNotes(); renderEditor(); showOnCanvas(0); updatePhotos(); updateAudio(); markDirty();
         toast('Trail adjusted · metrics recomputed.');
     }
+    // Replace the track after i1 (up to i2, or to the end) with `newTrk`; its points keep their
+    // elevation and time, like every other join (#158).
     function spliceByIndex(r, newTrk, i1, i2) {
-        const nt = r.track.slice(0, i1 + 1).concat(newTrk.map((p) => ({ lat: RB.round6(p.lat), lon: RB.round6(p.lon) }))).concat(i2 != null ? r.track.slice(i2) : []);
+        const piece = newTrk.map((p) => {
+            const q = { lat: RB.round6(p.lat), lon: RB.round6(p.lon) };
+            if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
+            if (p.t != null) q.t = p.t;
+            return q;
+        });
+        const nt = r.track.slice(0, i1 + 1).concat(piece).concat(i2 != null ? r.track.slice(i2) : []);
         const last = r.notes[r.notes.length - 1];
         r.notes = r.notes.filter((n) => n.idx <= i1 || (i2 != null && n.idx >= i2));
         r.track = nt;
         // tail replace (no rejoin): keep an end note at the new finish
-        if (i2 == null) r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));
+        if (i2 == null) r.notes.push(RB.bareNote(r, nt.length - 1, last ? last.road_type_out : 3));
         r.notes.forEach((n) => { n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }); });
         RB.recomputeMetrics(r); RB.recomputeCaps(r);
     }
@@ -1826,7 +1833,7 @@
     function promoteVertex(i) {
         if (i < 0 || i >= rb.track.length) return;
         if (rb.notes.some((n) => n.idx === i)) return toast('There is already a note here.');
-        rb.notes.push(makeNote(rb, i, roadOutBefore(i)));
+        rb.notes.push(RB.bareNote(rb, i, roadOutBefore(i)));
         RB.recomputeMetrics(rb); markDirty();
         refreshMap(true); renderNotes();
         select(rb.notes.findIndex((n) => n.idx === i)); // open the new note to fill it in
@@ -1836,7 +1843,7 @@
         const idx = splitTrackAt(pt);
         if (rb.notes.some((n) => n.idx === idx)) return toast('There is already a note here.');
         const cur = editorOpen ? rb.notes[sel] : null; // keep editing the same note across the re-sort
-        rb.notes.push(makeNote(rb, idx, roadOutBefore(idx)));
+        rb.notes.push(RB.bareNote(rb, idx, roadOutBefore(idx)));
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
@@ -1857,7 +1864,7 @@
         if (!rb) return;
         const at = insertPointAtExact(pt);
         const cur = editorOpen ? rb.notes[sel] : null;
-        rb.notes.push(makeNote(rb, at, roadOutBefore(at)));
+        rb.notes.push(RB.bareNote(rb, at, roadOutBefore(at)));
         RB.recomputeMetrics(rb);
         if (cur) sel = rb.notes.indexOf(cur);
         refreshMap(true); renderNotes(); markDirty();
@@ -1891,11 +1898,6 @@
     /* ---------- icons (standard palette + yours, embedded in the roadbook) ---------- */
     let iconCat = ''; // active category filter: '' = all · '__yours' = custom · else a palette category key
     async function loadStd() { if (std) return std; try { std = await (await fetch('../assets/icons/index.json')).json(); } catch (e) { std = { categories: {} }; } return std; }
-    // Icons whose symbol file doesn't exist (e.g. Roadbook Suite pictograms with no
-    // standard equivalent): show a fallback marker and flag it in the note text so the
-    // author adds the real symbol. Existence is probed on disk (HEAD) — index.json is
-    // only the picker and omits some real files, so it can't decide this. Idempotent:
-    // the original name is gone once swapped, and the flag is appended only if absent.
     /* An icon name that resolves to nothing — a roadbook written elsewhere, a file renamed since —
        is REPORTED, never repaired behind the author's back: the data stays exactly as they wrote
        it, the vignette draws a placeholder where the icon sits, and this names the files to
@@ -1978,17 +1980,18 @@
     const iconBtn = (name, src, cat, rmv, title) =>
         `<button data-add="${esc(name)}" data-cat="${esc(cat)}" title="${esc(title || name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
-        if (!rb) return toast('Load a roadbook first.');
+        if (!editable()) return;
         canvas.addIcon(mkIcon(name, [0, 0]));
         toast('Icon added — drag it on the vignette');
     }
     async function delCustomIcon(name) {
+        if (!editable()) return;
         const low = name.toLowerCase();
         // A `cover` tulip (imported OpenRally vignette) is meant to be deletable in place: drop it
         // from its note too, so the vignette reverts to the editable one and export emits that.
         const hitNotes = rb.notes.filter((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
         if (hitNotes.length) {
-            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '” ' + t('and remove it from its notes?')))) return;
+            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '” ' + t('and remove it from its notes?')))) return;
             rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
             delete rb.icons[name];
             markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
@@ -1996,7 +1999,7 @@
             return;
         }
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
-        if (!(await RBConfirmDanger(t('Delete icon') + ' “' + name + '”?'))) return;
+        if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '”?'))) return;
         delete rb.icons[name]; renderIcons();
     }
     /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note.
@@ -2005,7 +2008,7 @@
        clipboard calls everything "image.png" — so it gets a unique one instead of overwriting the
        last paste (#455). A picked file keeps its name, so re-uploading one deliberately replaces it. */
     async function addIconFiles(files, pasted) {
-        if (!rb) return toast('Load a roadbook first.');
+        if (!editable()) return;
         if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {}; // a map, never a list (#523)
         let n = 0;
         for (const f of files) {
@@ -2074,21 +2077,6 @@
         refreshMap(true); renderNotes(); renderEditor(); showOnCanvas(sel); markDirty();
         map.select(rb.notes[sel], true);
         if (toastMsg) toast(toastMsg);
-    }
-
-    // lengthen the route with another track; an end note rides the new finish. Keep each joined
-    // point's elevation and time (#158) so the merged track stays uniform and its time span stays
-    // accurate for a later join.
-    function extension(r, trk) {
-        const nt = r.track.concat(trk.slice(1).map((p) => {
-            const q = { lat: p.lat, lon: p.lon };
-            if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
-            if (p.t != null) q.t = p.t;
-            return q;
-        }));
-        const last = r.notes[r.notes.length - 1];
-        r.track = nt; r.notes.forEach((n) => n.idx = RB.nearestIdx(nt, { lat: n.lat, lon: n.lon }));
-        r.notes.push(makeNote(r, nt.length - 1, last ? last.road_type_out : 3));
     }
 
     /* ---------- export (single button → popup with every format) ----------
@@ -2363,9 +2351,16 @@
             const what = '<br><b>' + esc((draft.rb.meta && draft.rb.meta.title) || 'Roadbook') + '</b> · ' + draft.rb.notes.length + ' ' + t('notes') + (when ? ' · ' + esc(when) : '');
             if (await RBConfirm(t('You left unsaved changes here. Continue from them?') + what)) {
                 currentRbId = draft.currentRbId || 0; setStatus(draft.status);
+                reusable = !!draft.reusable; publicSlug = draft.publicSlug || null;
+                vehicles = Array.isArray(draft.vehicles) && draft.vehicles.length ? draft.vehicles : ['car']; paintVehicles();
                 setOwnership(draft.rbIsOwner !== false, draft.rbOwner || '');
-                setRoadbook(draft.rb);
-                if (Array.isArray(draft.gaps) && draft.gaps.length) { gaps = draft.gaps; refreshMap(true); }
+                // a saved roadbook is edited under its soft lock (#154), like opening it by ?rb=: when
+                // someone else holds it the draft opens read-only (it stays on this device until then)
+                if (currentRbId > 0) {
+                    const r = await RBApi('rb_get', { id: currentRbId, lock: 1 });
+                    if (r.ok) setLock(r.lock);
+                }
+                setRoadbook(draft.rb, Array.isArray(draft.gaps) ? draft.gaps : []);
                 markDirty();
                 return;
             }

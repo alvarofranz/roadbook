@@ -34,9 +34,6 @@
         return { lat: toDeg(φ2), lon: ((toDeg(λ2) + 540) % 360) - 180 };
     }
 
-    /* ---------------- road types ---------------- */
-    // width: stroke width in vignette reference units — indicative of the road
-    // type (motorway widest, off-piste thinnest).
     /* ---------------- note blocks (#542) ----------------
        Every row in `notes[]` is a NOTE. What a note may also carry is material around it — a
        photo, an advert, a block of text — placed BEFORE or AFTER it, none, one or several. They
@@ -56,9 +53,12 @@
     const noteBlocks = (n, at) => ((n && Array.isArray(n.blocks)) ? n.blocks : [])
         .filter((b) => b && (!at || (b.at === 'before' ? 'before' : 'after') === at));
 
+    /* ---------------- road types ---------------- */
     // The .rdbk format's own vocabulary of surfaces — not a FIA or OpenRally standard. Each entry
     // carries its NAME as well as its stroke, so the editor and the vignette toolbar name them
     // from one place; a type a reader does not know falls back to the track style.
+    // `width` is the type's reference stroke, indicative of the road (motorway widest, off-piste
+    // thinnest); the tulip draws its own, bolder strokes from it (ROAD_STYLE in note-canvas.js).
     const ROAD_TYPES = [
         { id: 0, name: 'Default',   color: '#9aa4b2', width: 5, dashed: false },
         { id: 1, name: 'Motorway',  color: '#3b82f6', width: 9, dashed: false },
@@ -460,8 +460,7 @@
         return best;
     }
     // Resolve a waypoint's track index: by TIME when both the waypoint and the track carry a
-    // timestamp (robust on loops/out-and-backs), otherwise by nearest position. One rule, reused
-    // by buildRoadbook and the Editor's waypoint snap.
+    // timestamp (robust on loops/out-and-backs), otherwise by nearest position (buildRoadbook).
     const trackHasTime = (trkpts) => trkpts.some((p) => p.t != null);
     function resolveIdx(trkpts, pt) {
         return (pt.t != null && trackHasTime(trkpts)) ? nearestIdxByTime(trkpts, pt.t) : nearestIdx(trkpts, pt);
@@ -811,20 +810,19 @@
     }
     // Recompute the red CAP (heading + straight-line distance in metres to the next note) where active.
     function recomputeCaps(rb) {
-        const normal = rb.notes;
-        for (let i = 0; i < normal.length; i++) {
-            const n = normal[i], nx = normal[i + 1];
+        const notes = rb.notes;
+        for (let i = 0; i < notes.length; i++) {
+            const n = notes[i], nx = notes[i + 1];
             if (n.cap != null && nx) { n.cap = Math.round(bearingDeg(n, nx)); n.cap_distance = Math.round(haversineM(n, nx)); }
             else if (n.cap != null) { n.cap = null; n.cap_distance = null; } // target note was deleted → clear stale cap
         }
         return rb;
     }
     /* ---------------- route operations (editor tools) ---------------- */
-    // Douglas-Peucker simplification with a tolerance in METRES, iterative (no
-    // recursion limit) on a local equirectangular projection. Indices listed in
-    // `keepIdx` (note anchors) always survive.
-    // The Douglas-Peucker kept-vertex mask (endpoints + keepIdx always kept), shared by
-    // simplifyTrack and simplifyRoadbook; null when the track is too short to simplify.
+    // Douglas-Peucker simplification with a tolerance in METRES, iterative (no recursion limit)
+    // on a local equirectangular projection: the kept-vertex mask, where the endpoints and the
+    // indices in `keepIdx` (note anchors) always survive; null when the track is too short to
+    // simplify. simplifyRoadbook applies it.
     function simplifyKeepMask(trkpts, toleranceM, keepIdx) {
         if (!trkpts || trkpts.length < 3) return null;
         const lat0 = toRad(trkpts[0].lat);
@@ -849,10 +847,6 @@
             if (worstDist > toleranceM) { keep[worst] = 1; stack.push([a, worst], [worst, b]); }
         }
         return keep;
-    }
-    function simplifyTrack(trkpts, toleranceM, keepIdx) {
-        const keep = simplifyKeepMask(trkpts, toleranceM, keepIdx);
-        return keep ? trkpts.filter((_, i) => keep[i]) : (trkpts || []).slice();
     }
     /* Background removal for a custom icon (#694) — in the browser, no server, no model. A symbol
      * photographed or copied from a document sits on a flat backdrop (white paper, a coloured
@@ -948,6 +942,34 @@
         const last = rb.track.length - 1;
         rb.track.forEach((p) => { delete p.t; });
         rb.notes.forEach((n) => { n.idx = last - n.idx; n.road_type_out = n.road_type_in; });
+        recomputeMetrics(rb); recomputeCaps(rb);
+        return rb;
+    }
+    // A bare note anchored at track index `idx` — recomputeMetrics fills in the rest. The one
+    // shape every tool that adds a note starts from.
+    const bareNote = (rb, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: rb.track[idx].lat, lon: rb.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
+    // Lengthen the route with another track (the Editor's Add GPX). `piece` is oriented so its
+    // FIRST point meets the joined end: after the finish, or — `atStart` — before the start,
+    // running into it. The meeting point is not duplicated, every joined point keeps its
+    // elevation and time (#158) so a later join can still read the time span, the existing notes
+    // keep their own vertices, and a new end note rides the new tip.
+    function joinTrack(rb, piece, atStart) {
+        const pts = piece.slice(1).map((p) => {
+            const q = { lat: p.lat, lon: p.lon };
+            if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
+            if (p.t != null) q.t = p.t;
+            return q;
+        });
+        if (atStart) {
+            const first = rb.notes[0];
+            rb.track = pts.reverse().concat(rb.track);
+            rb.notes.forEach((n) => { n.idx += pts.length; });
+            rb.notes.push(bareNote(rb, 0, first ? first.road_type_out : 3));
+        } else {
+            const last = rb.notes[rb.notes.length - 1];
+            rb.track = rb.track.concat(pts);
+            rb.notes.push(bareNote(rb, rb.track.length - 1, last ? last.road_type_out : 3));
+        }
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
@@ -1406,7 +1428,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

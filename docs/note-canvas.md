@@ -20,7 +20,7 @@ Una sola IIFE espone due superfici pubbliche più alcuni helper privati:
 |------|------|----------|
 | `NoteCanvas` (classe) | editor interattivo SVG | Editor |
 | `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
-| `trunkSegments` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
+| `trunkSegments` · `coverIcon` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
 
 Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che poi
 `toSVG` ripropone in sola lettura, perciò ciò che si vede nell'Editor è ciò che vede il
@@ -90,11 +90,10 @@ così il diagramma mostra già la direzione da prendere (dritto = prosegui, dest
 destra…).
 
 ### Colore
-- Ogni tratto è colorato **secondo il suo tipo di strada** (`RB.ROAD_TYPES[roadType].color`,
+- Ogni tratto del tronco è colorato **secondo il suo tipo di strada** (`RB.ROAD_TYPES[roadType].color`,
   la palette del RB System): `trunkSegments` colora così la strada da seguire e la
-  provenienza. Fanno eccezione i tratti **fuori-route**, che restano grigi (`#9aa4b2`): la
-  provenienza sulla **prima nota** (`note.num > 1` è falso), perché la nota iniziale non ha
-  una provenienza reale — è l'unico caso di tronco non su route.
+  provenienza. La **prima nota** non disegna provenienza affatto (`isFirst`, #472), quindi il
+  tronco è sempre su route; restano grigi (`#9aa4b2`) solo i vettori di giunzione (§4).
 
 ### Stile per tipo di strada (`ROAD_STYLE`)
 Il tronco usa una tabella di stile **propria** (`ROAD_STYLE` in note-canvas.js), indipendente
@@ -108,6 +107,7 @@ codificano il tipo, il colore viene invece da `RB.ROAD_TYPES`.
 | 2 asphalt | linea spessa singola | 11 | no | no |
 | 3 track | linea medio-spessa | 8 | no | no |
 | 4 off-piste | linea sottile **tratteggiata** | 5 | sì | no |
+| 5 bike lane | linea sottile continua (#561) | 5 | no | no |
 | altro | fallback su 3 (track) | 8 | no | no |
 
 L'autostrada è resa "doppia" sovrapponendo una linea bianca centrale di spessore
@@ -180,17 +180,19 @@ Le icone arrivano in due modi:
 
 - `setNote(note, isEnd, isFirst)` ([note-canvas.js:48](../public/assets/js/note-canvas.js#L48)) carica la
   nota, normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
-- `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e notifica
-  `onSelect(sel)` ([note-canvas.js:121](../public/assets/js/note-canvas.js#L121)); toccare
-  lo sfondo deseleziona ([note-canvas.js:32](../public/assets/js/note-canvas.js#L32)).
+- `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e ridisegna (con la
+  toolbar dell'elemento selezionato); toccare lo sfondo deseleziona
+  ([note-canvas.js:32](../public/assets/js/note-canvas.js#L32)).
 - `_startDrag` installa i listener `pointermove`/`pointerup` su `window`. Il modello si
   aggiorna a ogni `pointermove` (posizione finale esatta), ma il rebuild dell'SVG è
   **accorpato a un render per frame** via `requestAnimationFrame` — un `render()` per
   animation frame invece che per mossa. `onChange()` è chiamato **solo al rilascio** (un
   singolo cambio per gesto).
 
-I tre callback passati al costruttore: `onChange` (qualcosa è cambiato → l'Editor salva /
-ricalcola), `onSelect` (la selezione è cambiata) e `resolveIcon` (vedi §7).
+Le opzioni del costruttore: `toolbarEl` (l'elemento, fuori dal canvas, che ospita la toolbar
+dell'elemento selezionato — obbligatorio), `onChange` (qualcosa è cambiato → l'Editor salva /
+ricalcola), `resolveIcon` (vedi §7) e `missingIcon` (il segnaposto di un nome che non si
+risolve, #521).
 
 ---
 
@@ -240,7 +242,9 @@ pubbliche (§1).
 > **Icona `cover`**: se la nota ha un'icona con `cover: true` (una tulip importata opaca che
 > **è** l'intera vignetta, es. da OpenRally), `toSVG` va in corto-circuito e rende solo quella
 > a piena scatola — niente tronco/giunzioni/pericolo generati, perché il disegno importato li
-> incorpora già.
+> incorpora già. Il `render()` dell'editor fa lo stesso (`coverIcon(note)`, un solo test per
+> entrambi): la tulip a piena scatola, niente da selezionare né trascinare. Per tornare alla
+> vignetta modificabile si elimina la cover dalla palette ("Yours").
 
 ---
 

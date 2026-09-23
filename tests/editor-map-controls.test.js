@@ -81,7 +81,33 @@ describe('a map style switch paints everything back (#788)', () => {
         expect(rbmap).toContain('this._lastPhotos = photos;');
     });
     it('leaves no page to repaint by hand', () => {
-        expect(editor).toContain('map.setBaseStyle(MAP_STYLES[mapStyleIdx]); // RBMap paints back');
+        expect(editor).not.toMatch(/setBaseStyle|MAP_STYLES|mapStyleIdx/);
+    });
+    it('paints the Adjust overlay back too', () => {
+        expect(rbmap).toContain('this._lastOverlay = pts && pts.length ? pts : null;');
+        expect(rbmap.slice(rbmap.indexOf('_replay() {'))).toContain('if (this._lastOverlay) this.setOverlay(this._lastOverlay);');
+    });
+});
+
+describe('one base-map toggle, RBMap’s own', () => {
+    it('the Editor uses it, with the short labels and a remembered choice', () => {
+        expect(editor).toContain("layerToggle: { short: true, remember: 'rb_map_style' }");
+        expect(editor).not.toContain('addControl(');
+        expect(rbmap).toContain("const STYLE_SHORT = ['SAT', 'TOPO', 'OSM'];");
+        expect(rbmap).toContain('localStorage.getItem(this._rememberKey)');
+        expect(rbmap).toContain('localStorage.setItem(this._rememberKey, STYLE_KEYS[this._mapLayer])');
+    });
+    it('keeps the Editor’s look: the compact button class and its tooltip', () => {
+        expect(rbmap).toContain("b.type = 'button'; b.className = 'rb-mapctl-layers';");
+        expect(rbmap).toContain("t('Map: satellite · topographic · OpenStreetMap')");
+        expect(html).toContain('.map-editor .maplibregl-ctrl-group button.rb-mapctl-layers {');
+    });
+    it('names the button for screen readers once its title exists, and again on a language switch', () => {
+        const control = rbmap.slice(rbmap.indexOf('function layerToggleControl('));
+        const start = control.indexOf('const update = () => {');
+        const update = control.slice(start, control.indexOf('};', start));
+        expect(update).toContain("b.setAttribute('aria-label', b.title);");
+        expect(control).toContain("window.addEventListener('rb-lang', update);");
     });
 });
 

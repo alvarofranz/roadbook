@@ -241,7 +241,7 @@ Bei **Export/Save**: `recomputeMetrics` hängt Notizen an Spur (lat/lon, distanc
 
 ## Grenzen & Eigenheiten
 
-- `makeNote` gibt `num: 0` aus → korrekte Nummerierung nach `recomputeMetrics` (die Zeilen rufen es sofort auf)
+- `RB.bareNote` gibt `num: 0` aus → korrekte Nummerierung nach `recomputeMetrics` (die Zeilen rufen es sofort auf)
 - Standard-Autor kann leeres Feld beim Login überschreiben (hängt von Promise-Reihenfolge `account` ab)
 - `spliceByIndex` hängt alle Notizen mit `nearestIdx` neu an → kann Note unintuitiv verschieben, wenn Variante nahe an „alter" Note vorbeiführt
 - Offene Schnitte → gerade geschlossen (vorausgehend `confirmOpenCuts`)

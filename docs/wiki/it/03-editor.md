@@ -241,7 +241,7 @@ In **export/save**: `recomputeMetrics` aggancia note a traccia (lat/lon, distanc
 
 ## Limiti & quirk
 
-- `makeNote` emette `num: 0` → numerazione corretta dopo `recomputeMetrics` (le righe lo chiamano subito)
+- `RB.bareNote` emette `num: 0` → numerazione corretta dopo `recomputeMetrics` (le righe lo chiamano subito)
 - Autore default può sovrascrivere campo vuoto al login (dipende ordine promise `account`)
 - `spliceByIndex` ri-aggancia tutte le note con `nearestIdx` → può spostare nota in modo non intuitivo se variante passa vicino a nota "vecchia"
 - Tagli aperti → chiusi in linea retta (preceduto da `confirmOpenCuts`)

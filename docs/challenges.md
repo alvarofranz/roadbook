@@ -40,7 +40,7 @@ dalle sottocartelle dei tool senza percorsi hard-coded.
 |--------|---------|--------------|
 | `listPublic(opts)` | Elenco dei roadbook pubblici per gallery e picker; con `{reusable:true}` filtra ai soli riusabili (la ricerca-fork dell'Editor) | `RBApi('public_list')` (POST, col Bearer nell'app) |
 | `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + foto + owner + `reusable`) | `RBApi('public_get', {slug})` (POST, col Bearer nell'app) |
-| `pick(onPick, opts)` | Apre il picker modale e richiama `onPick(roadbook, slug)`; passa `opts` a `listPublic` | (usa `listPublic`/`loadPublic`) |
+| `pick(onPick, opts)` | Apre il picker modale e richiama `onPick(risposta, slug)` con l'intera risposta di `public_get` (roadbook, `reusable`, `vehicles`…); passa `opts` a `listPublic` | (usa `listPublic`/`loadPublic`) |
 | `publicFromUrl()` | Estrae lo slug dall'URL amichevole corrente | — |
 | `ROOT` | Radice dell'app, riusata altrove (es. home, gallery) | — |
 
@@ -83,15 +83,13 @@ condiviso "apri una sfida pubblica nel tool corrente". Flusso:
    `fa-map-location-dot`), titolo, `@username` e il riassunto `RBSummary(total_distance,
    note_count)` (`app.js`, formato "X.X km · N notes");
 4. al click di una riga chiude il modale, fa `loadPublic(slug)` e invoca
-   `onPick(j.roadbook, slug)`.
+   `onPick(j, slug)` — l'intera risposta di `public_get`.
 
-Chi lo usa e con quale intento:
-
-- **Reader** ([reader.js:42](../public/reader/reader.js#L42)): `pick((r) => loadRb(r))` —
-  apre la sfida per navigarla.
-- **Editor** ([editor.js:313](../public/editor/editor.js#L313)):
-  `pick((r) => { resetIdentity(); setRoadbook(r); })` — il fork **azzera l'identità** e parte
-  come roadbook NUOVO (il salvataggio ne creerà uno proprio).
+Chi lo usa: l'**Editor** (*Copia un roadbook pubblico*), con
+`pick((j) => { … }, { reusable: true })` — elenca solo i roadbook che il proprietario lascia
+copiare (#106), rifiuta comunque una risposta con `!j.reusable`, e il fork **azzera l'identità**,
+prende i `vehicles` dell'originale e parte come roadbook NUOVO (il salvataggio ne creerà uno
+proprio).
 
 > Tutti i campi di testo passano per `RBesc` prima di finire nell'HTML; le righe sono
 > costruite via `innerHTML`, quindi `RBesc` è l'unica barriera contro l'injection.

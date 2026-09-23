@@ -241,7 +241,7 @@ En **export/save**: `recomputeMetrics` engancha notas a la trazada (lat/lon, dis
 
 ## Límites & quirk
 
-- `makeNote` emite `num: 0` → numeración correcta tras `recomputeMetrics` (las filas lo llaman al instante)
+- `RB.bareNote` emite `num: 0` → numeración correcta tras `recomputeMetrics` (las filas lo llaman al instante)
 - Autor por defecto puede sobrescribir campo vacío al login (depende del orden de promise `account`)
 - `spliceByIndex` re-engancha todas las notas con `nearestIdx` → puede mover nota de forma no intuitiva si la variante pasa cerca de nota "vieja"
 - Cortes abiertos → cerrados en línea recta (precedido de `confirmOpenCuts`)

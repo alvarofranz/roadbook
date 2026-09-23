@@ -30,7 +30,7 @@ La pagina ha due viste, commutate da `showView(v)`
 Lo stato globale del modulo vive in poche variabili: `rb` (il roadbook), `sel` (indice nota
 selezionata), `dirty`/`exported` (per il pulsante Save e il prompt di uscita), `editorOpen`
 (editor nota aperto inline), più `gaps` (i tagli aperti, §3) e l'identità lato profilo
-`currentRbId` + `status` (draft/ready/public) + `reusable` (§6).
+`currentRbId` + `status` (draft/ready/public) + `reusable` + `vehicles` + `publicSlug` (§6).
 
 ---
 
@@ -48,7 +48,7 @@ roadbook datato, mentre un'icona custom (fetch fallito) mantiene la sua (#174).
 | **GPX** (`+ .wpt`)  | `$('gpxFile').onchange` | `RB.parseGPX` (+ `RB.parseWPT` se manca) → `RB.buildRoadbook` |
 | **Draw on the map** | `$('drawRoute').onclick` | apre la mappa in modalità `draw`; i primi due tap creano il roadbook |
 | **.rdbk**           | `$('jsonFile').onchange` | `JSON.parse`, valida `track`+`notes`, `setRoadbook` — dettaglio e fedeltà per il Ranking in **§9** |
-| **Roadbook pubblico** | `$('pickChallenge').onclick` | `RBChallenges.pick(…, { reusable: true })` → fork come **nuovo** roadbook (solo i pubblici riusabili, #106) |
+| **Roadbook pubblico** | `$('pickChallenge').onclick` | `RBChallenges.pick(…, { reusable: true })` → fork come **nuovo** roadbook (solo i pubblici riusabili, #106: il picker elenca solo quelli e la callback rifiuta comunque una risposta con `!j.reusable`), coi `vehicles` dell'originale |
 
 Le sorgenti che importano contenuto *fresco* (GPX, .rdbk, pubblico) chiamano prima
 `resetIdentity()`: azzera `currentRbId`, rimette lo stato a `draft` + `reusable` a false, e
@@ -120,6 +120,10 @@ qualunque altra operazione; `resolveGaps()`
 quelli morti. Il buco si riempie disegnando, o si chiude come **linea retta** all'export/save
 dopo una conferma (`confirmOpenCuts`, [editor.js:103](../public/editor/editor.js#L103)).
 
+**Un taglio chiede prima di togliere note.** Le note dentro il tratto tagliato (in testa, in coda
+o nel mezzo) se ne vanno con lui, quindi `cutPoint` le elenca per numero e testo in un
+`RBConfirmDanger` prima di toccare la traccia; con un "No" non succede nulla.
+
 ### 3.2 One-shot
 
 | Tool         | Handler                                                  | Funzione |
@@ -133,9 +137,12 @@ dopo una conferma (`confirmOpenCuts`, [editor.js:103](../public/editor/editor.js
 
 **add GPX** (`addGpxTrack`, [editor.js:265](../public/editor/editor.js#L265)): se **entrambe**
 le estremità del pezzo toccano la rotta (entro 200 m) offre la **sostituzione del tratto**
-intermedio (`spliceByIndex`); altrimenti unisce il pezzo all'estremità più vicina,
-auto-orientandolo (eventuale `reverseRoadbook` per agganciare in testa). In ogni caso la
-rotta resta una sola traccia.
+intermedio (`spliceByIndex`); altrimenti unisce il pezzo all'estremità più vicina (nel tempo, se
+rotta e pezzo hanno orari che non si sovrappongono, #158; altrimenti nello spazio),
+auto-orientandolo, con **`RB.joinTrack(rb, pezzo, inTesta)`**: in coda lo accoda, in testa lo
+antepone — mai un doppio `reverseRoadbook`, che cancella ogni `t`. In ogni caso la rotta resta
+una sola traccia, e ogni punto aggiunto (join, splice, adjust) **tiene quota e orario**; un
+trascinamento sposta solo `lat`/`lon`.
 
 **Simplify e chilometraggio.** Dopo l'ottimizzazione `recomputeMetrics` **ricalcola da zero**
 totale, parziali e distanza di ogni nota sulla polilinea semplificata — nulla resta dei valori
@@ -152,13 +159,18 @@ roadbook da gara: ottimizzare **prima** di rifinire i parziali, così i numeri s
 corrispondono alla polilinea definitiva.
 
 **Undo/redo.** Snapshot dell'intero `{rb, sel, gaps}` serializzato
-([editor.js:378](../public/editor/editor.js#L378)), max 30, push debounced a 400 ms. Ogni
+([editor.js:378](../public/editor/editor.js#L378)), max 30, push debounced a 400 ms. Applicare
+uno snapshot (`histApply`) riempie i campi dei Settings con lo stesso `fillSettings()` di
+`setRoadbook`, e uno snapshot senza note (una rotta non ancora disegnata) chiude l'editor della
+nota invece di disegnarne una che non c'è. Ogni
 `markDirty()` ([editor.js:36](../public/editor/editor.js#L36)) schedula un push. Scorciatoie
 Ctrl/Cmd+Z / Ctrl+Y (Shift+Z) ([editor.js:404](../public/editor/editor.js#L404)), disabilitate
 dentro campi testo e durante un recording.
 
 Move, Aggiungi note, Aggiungi punti e Cut restano `disabled` finché non c'è una rotta (`paintModes`).
-`Escape` chiude il menu contestuale se aperto, altrimenti torna a Move.
+`Escape` chiude il menu contestuale se aperto, altrimenti torna a Move — ma non in sola lettura,
+né con un dialogo o il visore foto aperti (lì `Escape` è loro; il listener ascolta in fase di
+capture, prima che il visore si chiuda).
 
 ### 3.3 Comportamento della mappa
 
@@ -167,9 +179,10 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
 
 - **Basemap & controllo in alto a destra.** Le viste base sono raster gratuite senza chiave:
   **ESRI World Imagery** (satellite) e **OSM standard** (topo), con `glyphs` OpenFreeMap per il
-  testo dei layer. Un controllo MapLibre in alto a destra
-  (accanto ai tasti zoom) unisce il **toggle satellite/terreno** (`toggleMapStyle`, persistito
-  in `localStorage`) e l'indicatore del **livello di zoom**.
+  testo dei layer. In alto a destra, accanto ai tasti zoom, il **toggle satellite · topo · OSM**
+  è quello di `RBMap` (`layerToggle: { short: true, remember: 'rb_map_style' }`): etichetta
+  compatta `SAT · TOPO · OSM`, le tre mappe nominate nel tooltip, e la scelta ricordata in
+  `localStorage` (la mappa riapre sull'ultima).
 - **Default move points + pallini.** Le note sono pallini **blu** (`rb-wpts`), **sempre**
   visibili. I **vertici della traccia** (punti non-nota, `rb-verts`, trascinabili in move
   mode) hanno `minzoom: 13` → compaiono solo a zoom alto, per non intasare l'overview.
@@ -573,7 +586,10 @@ cose coerenti:
   co-editor **mantiene lo stato di pubblicazione del proprietario**.
 - **Soft lock (#154).** `setLock(lock)` implementa un lock morbido: mentre lo tiene qualcun
   altro (`lock.mine === false`) l'Editor è **read-only** e mostra `lockBanner` (*@utente sta
-  modificando — sola lettura*); `updateSaveBtn` disabilita il Save (`!rbLock.mine`). Chi tiene
+  modificando — sola lettura*); `updateSaveBtn` disabilita il Save (`!rbLock.mine`). `setLock`
+  gira **prima** di `setRoadbook`, che lascia spenti gli strumenti di rotta (`readOnly()`);
+  `setMapTool` in sola lettura resta sempre su `pan` (nessun modo arma un drag), e ogni
+  strumento che cambia il roadbook passa da `editable()` (roadbook caricato **e** lock nostro). Chi tiene
   il lock lo **rinnova** ogni 4 min (`rb_lock_refresh`) e lo **rilascia** in chiusura via
   `sendBeacon` (`rb_lock_release`); è possibile **forzarlo** (`rb_lock_force`).
 - **Chiudi → landing dell'editor (#166).** `leaveEditor` (pulsante `#closeEditor`) con modifiche
@@ -591,7 +607,10 @@ schedula un **checkpoint debounced (2 s)** dell'intero stato in `localStorage` (
 **pulito** solo quando il lavoro è al sicuro (save su profilo o export). `beforeunload`
 ([editor.js:435](../public/editor/editor.js#L435)) e `visibilitychange`
 ([editor.js:474](../public/editor/editor.js#L474)) flushano il draft prima di un'eventuale
-chiusura/kill dell'OS.
+chiusura/kill dell'OS — non subito dopo un export (`!exported`), che lo ha appena pulito. Il
+draft è l'intero stato di lavoro: il roadbook, i tagli aperti e anche le impostazioni lato
+server che un save riscrive (`status`, `reusable`, `vehicles`, `publicSlug`), così recuperarlo
+e salvare non le rimette ai default.
 
 Il prompt di recupero dice **cosa sono** quelle modifiche — lavoro mai salvato, col titolo, il
 numero di note e **l'istante del checkpoint** (`at`, formattato nella lingua attiva) — perché la
@@ -611,7 +630,10 @@ precisa:
 2. **`?trip=1`** — traccia GPX registrata nel Reader o nel Tripmaster, passata via `sessionStorage`
    (il Recorder invece salva la registrazione come draft e apre `?rb=<id>`, #791).
 3. **Draft non salvato** in `localStorage` — `RBConfirm` di recupero (rifiutare **non** lo
-   cancella: viene sovrascritto al prossimo checkpoint).
+   cancella: viene sovrascritto al prossimo checkpoint). Il draft di un roadbook salvato
+   (`currentRbId > 0`) prende prima il soft lock con `rb_get lock:1`, come l'apertura via
+   `?rb=`: se lo tiene qualcun altro si apre in sola lettura (e resta sul dispositivo). I tagli
+   aperti entrano con `setRoadbook(draft.rb, draft.gaps)`, prima che parta la storia undo.
 4. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.
 5. **`?rb=<id>`** — carica un roadbook salvato dal profilo (richiede login).
 
@@ -754,7 +776,7 @@ Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
 
 ## 10. Limiti e quirk da segnalare
 
-- **`makeNote` non emette il campo `num`.** `makeNote` crea `num: 0`; la numerazione corretta arriva solo dopo
+- **`RB.bareNote` non emette il campo `num`.** `RB.bareNote` crea `num: 0`; la numerazione corretta arriva solo dopo
   `RB.recomputeMetrics`. Le righe che inseriscono note lo chiamano subito, quindi in pratica è
   coerente — ma una nota appena creata e mostrata prima del recompute apparirebbe come `0`.
 - **L'autore di default può sovrascrivere il campo vuoto al login.** In startup, se l'utente

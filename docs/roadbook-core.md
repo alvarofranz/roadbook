@@ -21,7 +21,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 
 | Chiave            | Cosa contiene |
 |-------------------|---------------|
-| `ROAD_TYPES`      | tabella dei 5 tipi di strada (§2) |
+| `ROAD_TYPES`      | tabella dei 6 tipi di strada (§2) |
 | `CONST`           | costanti di punteggio e larghezze META (§2) |
 | `geo`             | `{ haversineM, bearingDeg, destPoint }` (§3) |
 | `parseGPX`, `parseWPT`, `parseOpenRally` | parser di import (§4) |
@@ -30,7 +30,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `cumulativeM`, `deriveBearings` | distanza cumulativa / bearing in-out a un indice (§5-6) |
 | `repairDegenerateBearings(rb)` | ripara **solo** i bearing derivati da un vertice duplicato — vedi sotto (#452). Chiamata da `importRoadbook` |
 | `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
-| `simplifyRoadbook`, `reverseRoadbook`, `nearestOnTrack` | operazioni traccia (§7) |
+| `simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`, `nearestOnTrack` | operazioni traccia (§7) |
 | `gpxDocument`, `kmlDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / KML / OpenRally (§7) |
 | `WP_TYPES`, `wpType`, `wpTypeByCap`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
 | `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
@@ -58,9 +58,10 @@ concatenazione: non producono una copia.
 
 ## 2. Costanti (`ROAD_TYPES`, `CONST`)
 
-`ROAD_TYPES` è la tabella dei 5 tipi di strada, usata per disegnare (colore del tratto nella
-vignetta e larghezza della linea sulla mappa) e come `id` nel modello nota (`road_type_in` /
-`road_type_out`). Le larghezze del *tulip* sono invece in `ROAD_STYLE` di note-canvas (§ nota).
+`ROAD_TYPES` è la tabella dei 6 tipi di strada, usata per disegnare (colore del tratto nella
+vignetta e dell'accento della riga nota; `width` è il tratto di riferimento del tipo) e come `id`
+nel modello nota (`road_type_in` / `road_type_out`). Le larghezze del *tulip* sono invece in
+`ROAD_STYLE` di note-canvas (§ nota).
 
 | id | tipo       | colore     | tratteggiato |
 |:--:|------------|------------|:------------:|
@@ -69,6 +70,7 @@ vignetta e larghezza della linea sulla mappa) e come `id` nel modello nota (`roa
 | 2  | asfalto    | `#22c55e`  | no  |
 | 3  | sterrato   | `#ff5a45`  | no  |
 | 4  | fuoripista | `#ff5a45`  | **sì** |
+| 5  | pista ciclabile | `#2dd4bf` | no (#561) |
 
 `CONST` raccoglie le costanti che **Reader e Ranking devono condividere** per essere d'accordo
 sul punteggio:
@@ -223,19 +225,30 @@ nota seguente, `cap_distance` = distanza in linea d'aria in metri. Non *crea* CA
 
 ## 7. Operazioni sulla traccia ed export GPX
 
-**Interna (non esportata su `window.RB`):**
-[`simplifyTrack(trkpts, toleranceM, keepIdx)`](../public/assets/js/roadbook-core.js#L240) —
+**Interna (non esportata su `window.RB`):** `simplifyKeepMask(trkpts, toleranceM, keepIdx)` —
 Douglas-Peucker con tolleranza in **metri**, implementazione **iterativa** (stack, niente limite
-di ricorsione) su una proiezione equirettangolare locale. Gli indici elencati in `keepIdx`
-(le ancore delle note) e i due estremi **sopravvivono sempre**. Usata da `simplifyRoadbook`.
+di ricorsione) su una proiezione equirettangolare locale; ritorna la maschera dei vertici tenuti.
+Gli indici elencati in `keepIdx` (le ancore delle note) e i due estremi **sopravvivono sempre**.
 
 [`simplifyRoadbook(rb, toleranceM)`](../public/assets/js/roadbook-core.js#L285) — semplifica
-`rb.track` proteggendo gli `idx` delle note, poi ri-ancora ogni nota al punto più vicino e
-richiama `recomputeMetrics` + `recomputeCaps`.
+`rb.track` con quella maschera proteggendo gli `idx` delle note, ri-mappa ogni nota
+**esattamente** sul proprio vertice (#216) e richiama `recomputeMetrics` + `recomputeCaps`.
 
 [`reverseRoadbook(rb)`](../public/assets/js/roadbook-core.js#L295) — inverte il senso di marcia:
 ribalta la traccia, ri-mappa ogni `idx` (`last - idx`), scambia `road_type_out ← road_type_in`,
-poi ricalcola metriche e CAP (che `normalizeRoadTypes` rideriva `road_type_in`).
+poi ricalcola metriche e CAP (che `normalizeRoadTypes` rideriva `road_type_in`). Toglie gli
+orari (`t`): letti al contrario non descrivono più una registrazione.
+
+`joinTrack(rb, piece, atStart)` — allunga la rotta con un'altra traccia (l'*Add GPX* dell'Editor).
+`piece` è orientato col **primo** punto sull'estremità a cui si aggancia: accodato dopo l'arrivo,
+o — `atStart` — anteposto alla partenza, verso di essa. Il punto d'incontro non si duplica, ogni
+punto aggiunto **tiene `ele` e `t`** (#158; un doppio reverse li perdeva), le note esistenti
+restano sui loro vertici (indici spostati, non ri-ancorate nello spazio) e una nuova nota di
+estremità cavalca la nuova punta.
+
+`bareNote(rb, idx, roadType)` — la nota nuda ancorata all'indice `idx` (`num: 0`, testo vuoto,
+nessuna icona): la forma da cui parte ogni strumento che aggiunge una nota; `recomputeMetrics`
+riempie il resto.
 
 [`nearestOnTrack(trkpts, pt)`](../public/assets/js/roadbook-core.js#L268) — posizione più vicina
 **sulla polilinea** (non solo su un vertice): ritorna il segmento `i`, la frazione `t` lungo di
@@ -340,7 +353,7 @@ Helper finali:
   l'originale deve clonarlo prima.
 - **Modello sferico.** `haversineM`/`bearingDeg`/`destPoint` assumono una Terra sferica
   (raggio fisso 6371 km); va benissimo per le distanze di un roadbook, ma non è geodetico.
-- **`simplifyTrack`/`nearestOnTrack` usano una proiezione equirettangolare locale** ancorata
+- **Il simplify e `nearestOnTrack` usano una proiezione equirettangolare locale** ancorata
   al primo punto (o al `pt`): su tracce molto lunghe in latitudine la distorsione cresce, ma a
   scala di roadbook è trascurabile.
 - **`nearestIdx` è O(n)** su tutta la traccia ad ogni chiamata: `buildRoadbook` e

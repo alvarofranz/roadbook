@@ -2,7 +2,7 @@
 /* NoteCanvas — visual editor for a note's vignette: icons that drag, scale,
  * rotate and flip, plus junction vectors you can draw and drag. Reference box
  * 230×162 (+y up, relative to the centre), matching the roadbook model. All
- * SVG (auto-scales). The toolbar lives OUTSIDE the canvas (opts.toolbarEl).
+ * SVG (auto-scales). The toolbar lives OUTSIDE the canvas, in opts.toolbarEl.
  * Accepts icons dropped from the palette (drag & drop) as well as click-to-add. */
 (function () {
 window.NoteCanvas = class NoteCanvas {
@@ -10,9 +10,8 @@ window.NoteCanvas = class NoteCanvas {
         this.REF_W = 230; this.REF_H = 162;
         this.el = container;
         this.onChange = opts.onChange || (() => {});
-        this.onSelect = opts.onSelect || (() => {}); // notified whenever the selected element changes
         this.resolveIcon = opts.resolveIcon || ((ic) => ic.name);
-        this.toolbarEl = opts.toolbarEl || null;
+        this.toolbarEl = opts.toolbarEl;
         this.missingIcon = opts.missingIcon || '';   // drawn in place of a name that resolves to nothing (#521)
         this._onDrop = null;
         this.note = null; this.sel = null; // {type:'icon'|'junctions', i}
@@ -30,7 +29,6 @@ window.NoteCanvas = class NoteCanvas {
         defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
             + `<marker id="vignette-box-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"></path></marker>`;
         this.svg.appendChild(defs);
-        if (!this.toolbarEl) { this.toolbarEl = document.createElement('div'); this.el.parentNode.insertBefore(this.toolbarEl, this.el.nextSibling); }
         this.toolbarEl.classList.add('vignette-toolbar');
         // deselect when tapping the background
         this.svg.addEventListener('pointerdown', (e) => { if (e.target === this.svg || e.target.classList.contains('vignette-box-bg')) this.select(null); });
@@ -57,7 +55,7 @@ window.NoteCanvas = class NoteCanvas {
             note.icons = Array.isArray(note.icons) ? note.icons : [];
             note.junctions = Array.isArray(note.junctions) ? note.junctions : null;
         }
-        this.sel = null; this.render(); this.onSelect(this.sel);
+        this.sel = null; this.render();
     }
     onDropIcon(cb) { this._onDrop = cb; }
 
@@ -65,6 +63,14 @@ window.NoteCanvas = class NoteCanvas {
         [...this.svg.querySelectorAll('.vignette-box-dyn')].forEach((n) => n.remove());
         if (!this.note) { this.toolbarEl.innerHTML = ''; return; }
         this.svg.appendChild(svg('rect', { class: 'vignette-box-dyn vignette-box-bg', x: 0, y: 0, width: this.REF_W, height: this.REF_H, fill: 'transparent' }));
+        // a `cover` icon IS the vignette (an imported OpenRally tulip): drawn full-box and nothing
+        // else, exactly as toSVG draws it — there is nothing on it to select or drag
+        const cover = coverIcon(this.note);
+        if (cover) {
+            this.svg.appendChild(svg('image', { class: 'vignette-box-dyn', x: 0, y: 0, width: this.REF_W, height: this.REF_H, href: this.resolveIcon(cover), preserveAspectRatio: 'xMidYMid meet' }));
+            this.sel = null; this._toolbar();
+            return;
+        }
         trunkSegments(this.note, this.isEnd, this.isFirst).forEach((s) => {
             const attrs = { class: 'vignette-box-dyn', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, stroke: s.color, 'stroke-width': s.width, 'stroke-linecap': s.dashed ? 'butt' : 'round', 'stroke-dasharray': s.dashed ? DASH : '' };
             if (s.arrow) attrs['marker-end'] = 'url(#vignette-box-arrow)';
@@ -137,7 +143,7 @@ window.NoteCanvas = class NoteCanvas {
         const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); if (raf) { cancelAnimationFrame(raf); raf = 0; } this.render(); this.onChange(); };
         window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
     }
-    select(sel) { this.sel = sel; this.render(); this.onSelect(this.sel); }
+    select(sel) { this.sel = sel; this.render(); }
 
     // Remove whatever is selected on the vignette — the trash button and the Del key share it.
     deleteSelected() {
@@ -175,7 +181,7 @@ window.NoteCanvas = class NoteCanvas {
             t.querySelector('[data-a="del"]').onclick = () => this.deleteSelected();
         }
     }
-    _chg() { this.render(); this.onChange(); this.onSelect(this.sel); }
+    _chg() { this.render(); this.onChange(); }
 
     /* ---- public API ---- */
     addIcon(ic) { this.note.icons.push(ic); this.sel = { type: 'icon', i: this.note.icons.length - 1 }; this._chg(); }
@@ -195,7 +201,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd, isFirst) {
     // A `cover` icon IS the whole vignette (an opaque imported tulip — e.g. OpenRally):
     // render it full-box and nothing else (no generated trunk/junctions). The danger marks
     // are skipped too, since the imported drawing already bakes them in.
-    const cover = (note.icons || []).find((ic) => ic.cover);
+    const cover = coverIcon(note);
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<image x="0" y="0" width="${W}" height="${H}" href="${RBesc(resolveIcon(cover))}" preserveAspectRatio="xMidYMid meet"/></svg>`;
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
@@ -226,6 +232,8 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, isEnd, isFirst) {
     return s + '</svg>';
 };
 
+// The note's `cover` icon, if it has one: an opaque imported tulip that is the whole vignette.
+const coverIcon = (note) => (note.icons || []).find((ic) => ic.cover) || null;
 /* FIA-style danger grading: the note's `danger` (1-3) renders as '!' / '!!' /
  * '!!!' in red INSIDE the diagram box (top-left), never in the text column. */
 function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repeat(Math.min(d, 3)) : ''; }
@@ -246,6 +254,7 @@ const ROAD_STYLE = {
     2: { width: 11, dashed: false, double: false }, // asphalt: thick single line
     3: { width: 8, dashed: false, double: false },  // track: medium-thick single line
     4: { width: 5, dashed: true, double: false },   // off-piste: thin dashed line
+    5: { width: 5, dashed: false, double: false },  // bike lane: thin solid line (#561)
 };
 const roadStyle = (rt) => ROAD_STYLE[rt] || ROAD_STYLE[3];
 // off-piste dash: red dash 12 / white gap 9. Dashed lines use butt caps — round caps would
@@ -261,11 +270,11 @@ function trunkSegments(note, isEnd, isFirst) {
     const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     // incoming (provenance): styled by road_type_in — which normalizeRoadTypes derives from the
-    // PREVIOUS note's road_type_out — and coloured by road type like the rest of the route, except
-    // on the first note (no real provenance → grey). The roadbook's START draws no incoming road
-    // at all: nothing comes before it, so a line from the bottom edge points from nowhere (#472).
+    // PREVIOUS note's road_type_out — and coloured by road type like the rest of the route. The
+    // roadbook's START draws no incoming road at all: nothing comes before it, so a line from the
+    // bottom edge points from nowhere (#472).
     const segs = [];
-    if (!isFirst) segs.push(seg(note.road_type_in, cx, 154, cx, cy, false, note.num > 1));
+    if (!isFirst) segs.push(seg(note.road_type_in, cx, 154, cx, cy, false, true));
     // The END note has no exit road and no arrow: past the finish there is nothing to follow, so
     // an arrow leaving the waypoint points at nothing — in a race that note is the finish arch
     // (#447). The incoming road stops at the centre, where the validation dot marks the spot.
