@@ -52,3 +52,14 @@ describe('an event card image covers its box, like a roadbook photo', () => {
         expect(css).not.toContain('.card-media.contain');
     });
 });
+
+describe('a card hover is subtle (#790)', () => {
+    it('never moves or zooms the card or its image', () => {
+        expect(css).not.toMatch(/\.gallery-card:hover[^{]*\{[^}]*transform/);
+        expect(css).not.toMatch(/\.gallery-card:hover \.thumb/);
+    });
+    it('lightens the darker overlay a little, only on a pointer that hovers', () => {
+        expect(css).toContain('@media (hover: hover) { .gallery-card:hover .card-media::after { opacity: .7; } }');
+        expect(css).toContain('rgba(8, 10, 14, .9) 0%');
+    });
+});
