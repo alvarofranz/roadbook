@@ -31,15 +31,31 @@ describe('the Recorder while riding (#768)', () => {
     });
 });
 
+describe('the sounds mix with the music of other apps (#842 · #843)', () => {
+    it('play through Web Audio in a transient (mixable) session, never a media element', () => {
+        const cue = app.slice(app.indexOf('window.RBSuccess = (function () {'), app.indexOf('// Publication-status labels'));
+        expect(cue).toContain("navigator.audioSession.type = 'transient'");
+        expect(cue).toContain('c.createBufferSource()');
+        expect(cue).not.toContain('new Audio(');
+    });
+    it('resume the context inside the tap, before any await (iOS)', () => {
+        expect(app).toContain("const resumed = c.state === 'running' ? null : c.resume();");
+    });
+    it('end a completed roadbook with the fanfare', () => {
+        expect(fs.existsSync('public/assets/sounds/fanfare.mp3')).toBe(true);
+        expect(app).toContain("fanfare: () => play('fanfare'),");
+    });
+});
+
 describe('the success cue (#768)', () => {
     it('is one bell file, shared', () => {
         expect(fs.existsSync('public/assets/sounds/success.mp3')).toBe(true);
-        expect(app).toContain("new Audio(ROOT + 'assets/sounds/success.mp3')");
+        expect(app).toContain("fetch(ROOT + 'assets/sounds/' + name + '.mp3')");
     });
     it('rings in the Reader on every validated note, unlocked by the start tap', () => {
         const reader = read('public/reader/reader.js');
-        expect(reader).toContain('const ring = () => { if (sound) RBSuccess.ring(); };');
-        expect(reader.match(/reached\.add\(i\); tripPartialM = 0; ring\(\);/g)).toHaveLength(2);
+        expect(reader).toContain('const ring = (i) => { if (sound) (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)(); };');
+        expect(reader.match(/reached\.add\(i\); tripPartialM = 0; ring\(i\);/g)).toHaveLength(2);
         expect(reader).toContain('if (sound) RBSuccess.unlock();');
         expect(reader).not.toMatch(/AudioContext|beep\(/);
     });

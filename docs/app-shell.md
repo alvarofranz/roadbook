@@ -402,12 +402,19 @@ resta sull'icona.
 Renderizza in `el` i controlli di paginazione (precedente / `pagina / totale` [`· label`] /
 successivo); i pulsanti chiamano `onGo(p)`. Con una sola pagina mostra solo l'eventuale `label`.
 
-#### `RBSuccess` — `ring()` · `flash()` · `unlock()`
+#### `RBSuccess` — `ring()` · `fanfare()` · `flash()` · `unlock()`
 Il segnale di "fatto" (#768): il campanello `assets/sounds/success.mp3`. `flash()` lo suona e mostra
 un grande check a schermo per meno di un secondo (una nota caduta nel Recorder o in *Adjust on the
-trail*); `ring()` suona soltanto (il Reader, a ogni nota validata). Un `<audio>` parte solo dopo un
-gesto dell'utente: una pagina che suonerà più tardi senza gesto (la validazione automatica via GPS
-del Reader) chiama `unlock()` dal tap che avvia la sessione.
+trail*); `ring()` suona soltanto (il Reader, a ogni nota validata); `fanfare()` suona le trombe
+`assets/sounds/fanfare.mp3` quando il roadbook è completato (l'ultima nota, #843).
+
+I suoni si **mescolano con la musica** di un'altra app, non la fermano (#842): vengono decodificati una
+volta e suonati con Web Audio, non con un `<audio>` — Chrome e la WebView Android chiedono l'audio
+focus solo per gli elementi media — e su iOS la pagina dichiara il suo audio `transient`
+(`navigator.audioSession`, WebKit 16.4+), una sessione mescolabile. Su iOS una sessione mescolabile
+segue l'interruttore del silenzioso. Il contesto audio parte solo da un gesto dell'utente: la pagina
+che suonerà più tardi senza gesto (la validazione automatica via GPS del Reader) chiama `unlock()`
+dal tap che avvia la sessione, che decodifica anche entrambi i suoni in anticipo.
 
 #### `RBRequireUser(msgEl, { admin?, account? }) → Promise<user|null>`
 Gate di una pagina di gestione: risolve l'utente loggato, o scrive il messaggio standard in `msgEl`

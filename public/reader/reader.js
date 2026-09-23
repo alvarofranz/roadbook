@@ -204,8 +204,9 @@
         auto = true; optGpx = $('optGpx').checked; sound = $('optSound').checked;
     }
     // The success bell when a note is validated, auto or manual (#768) — the same bell the Recorder
-    // rings on a note. The run's start tap unlocks it (startNav), so a GPS auto-validation can ring.
-    const ring = () => { if (sound) RBSuccess.ring(); };
+    // rings on a note — and the fanfare on the last one: the roadbook is completed (#843). The run's
+    // start tap unlocks them (startNav), so a GPS auto-validation can play.
+    const ring = (i) => { if (sound) (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)(); };
     $('startGo').onclick = async () => {
         if (!(await RBWebGpsConfirm(runComp))) return; // one-time browser warning (stronger for a scored run)
         readStartOpts(); closeModal('startModal');
@@ -500,7 +501,7 @@
     // trip is followed by eye, and the driver saying they are there is the whole authority.
     function markReached(i) {
         passLimit(notes[i], false);
-        reached.add(i); tripPartialM = 0; ring();
+        reached.add(i); tripPartialM = 0; ring(i);
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
@@ -581,7 +582,7 @@
         }
         extraAccum = 0; armed = false;
         passLimit(n, scored);
-        reached.add(i); tripPartialM = 0; ring();
+        reached.add(i); tripPartialM = 0; ring(i);
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
