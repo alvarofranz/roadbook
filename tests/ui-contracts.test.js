@@ -572,7 +572,7 @@ describe('activity log modal, filtered by user type (#448)', () => {
         expect(fn).toContain('RBRowPicker({'); // an admin picks whose log through the shared picker (#731)
         // ONE viewer (#665): the admin user list opens it on a user instead of its own copy
         const admin = read('public/admin/admin.js');
-        expect(admin).toContain('RBActivityLog({ user: byId[+b.dataset.activity] })');
+        expect(admin).toContain("on('activity', () => { m.close(); RBActivityLog({ user: u }); });");
         expect(admin).not.toContain('function viewActivity');
     });
 });
@@ -622,8 +622,9 @@ describe('async actions report on their own button (#491)', () => {
         ['public/assets/js/app.js', "[data-del]"],
         ['public/myroadbooks/myroadbooks.js', "[data-restore="],
         ['public/reader/reader.js', "'pickMine'"],
-        ['public/admin/admin.js', "[data-verify]"],
-        ['public/admin/admin.js', "[data-block]"],
+        ['public/admin/admin.js', "on('verify', async"],
+        ['public/admin/admin.js', "on('block', async"],
+        ['public/admin/admin.js', "on('delete', async"],
         ['public/admin/admin.js', "[data-trash]"],
         ['public/myroadbooks/myroadbooks.js', "[data-purge="],
         ['public/admin/trash/admin-trash.js', "async function purge(rb, btn)"],

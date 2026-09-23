@@ -1561,3 +1561,16 @@ Object.assign(window.RBi18nLangs.de, {
     "Assign": "Zuweisen",
     "Restore the standard buttons? Your own assignments will be lost.": "Standardtasten wiederherstellen? Deine eigenen Zuweisungen gehen verloren.",
 });
+
+/* user management (#910) */
+Object.assign(window.RBi18nLangs.de, {
+    "Never": "Nie",
+    "Today": "Heute",
+    "Yesterday": "Gestern",
+    "Last active": "Zuletzt aktiv",
+    "Joined": "Dabei seit",
+    "Admins": "Admins",
+    "admins": "Admins",
+    "unverified": "nicht bestätigt",
+    "Delete user": "Benutzer löschen",
+});

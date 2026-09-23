@@ -114,8 +114,8 @@ describe('what the server says, and what a confirm shows', () => {
     it('a username in a confirm is escaped (the confirm renders HTML)', () => {
         const admin = read('public/admin/admin.js');
         expect(admin).toContain("' @' + esc(au.username) + '?'");
-        expect(admin).toContain("' @' + esc((u && u.username) || '') + '?'");
-        expect(admin).toContain("' (@' + esc(b.dataset.name) + ')'");
+        expect(admin).toContain("t('Block') + ' @' + esc(u.username) + '?'");
+        expect(admin).toContain("' (@' + esc(u.username) + ')'");
         expect(read('public/admin/trash/admin-trash.js')).toContain("' @' + esc(u.username) + '?'");
     });
     it('the translation editor survives blocked storage', () => {

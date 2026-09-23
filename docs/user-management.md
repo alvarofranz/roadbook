@@ -180,34 +180,33 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
 
 ## 5. Pannello admin (front-end)
 
-[public/admin/index.html](../public/admin/index.html) + [admin.js](../public/admin/admin.js),
-una IIFE che parla a `/api` con la sessione (cookie). Stile tabellare con CSS locale nella
-pagina (badge, azioni per riga).
+`public/admin/index.html` + `public/admin/admin.js` (#910): tutti gli utenti a colpo d'occhio, e ogni
+azione su un utente in un posto solo.
 
-- **`init()`**: gate via `config` — non loggato → invito al login; non admin → "Solo
-  amministratori".
-- **`load()`**: `admin_users` → render della tabella; ogni riga ha i pulsanti contestuali
-  cablati a `data-*` (`data-role`, `data-verify`, `data-block`, `data-edit`, `data-del`).
-- **`rowHtml(u)`**: badge in un solo stile nell'area del nome — *System account* · *Superuser*
-  / *Admin* · *Organizer* · *Blocked* · *Must change password* · *Unverified*; pulsanti
-  **Activate** (solo se non verificato), **Edit**, **Activity**, **Roadbooks**, **Runs** (data,
-  roadbook, note, dispositivo — `admin_user_runs`),
-  **Block/Unblock**, **Delete** — solo quelli che il server accetta da chi guarda (#702):
-  nessuno sull'account di sistema, e su un altro admin solo per un superuser. Il ruolo
-  organizer si imposta nel dialogo Edit, una volta sola (#707). Sotto i 640 px ogni utente è
-  una card (#706).
-- **`editUser(u)`**: apre un `RBModal` (classe `narrow`) con i campi identità + una password
-  temporanea opzionale; usa le classi condivise `.field` / `.field-label` / `.hint`. Al salva
-  chiama `admin_update`.
-
-Colonne tabella: **User** (nome + handle + badge) · **Email** · **Roadbooks** · **Disk**
-(`fmtSize`) · azioni.
-
-Aree admin separate (pagine proprie, non in `admin.js`): cestino roadbook (`trash/`, #187),
-mappa posizioni utenti (`users-map/`, #499), log (`logs/`), partecipanti eventi
-(`events/participants/`).
-
----
+- **La lista**: una riga pulita per utente — avatar, nome e badge (Superuser/Admin/Organizer/Blocked/
+  Unverified/Must change password/System account), `@username · email` — e le sue cifre: **roadbook**,
+  **run**, **disco** (una barra `meter` sulla quota) e **ultima attività** (oggi · ieri · la data · mai).
+  Tutta la riga apre la **scheda** dell'utente (anche con Invio); su un telefono ogni riga diventa una
+  card con le cifre etichettate.
+- **Ordina** un tap sull'intestazione (di nuovo: al contrario); di default l'attività più recente in cima.
+- **Filtra**:
+  - ricerca su nome/username/email/organizzazione;
+  - organizzazione e evento (lato server, debounced);
+  - **filtri rapidi a icona** con tooltip (#805), che si combinano: con roadbook, organizzatori di
+    eventi, non verificati, bloccati, admin.
+- **Riepilogo** sopra la tabella: quanti utenti, e quanti non verificati / bloccati / admin.
+- **La scheda dell'utente** (`openUser`):
+  - chi è (avatar, nome, @username, email, organizzazione, badge);
+  - tre cifre: roadbook, run, disco;
+  - la riga "iscritto il · ultima attività";
+  - **tutte le azioni**: Modifica, Roadbook, Run (con il dispositivo, #870), Attività, Attiva, Blocca /
+    Sblocca;
+  - in fondo e a parte, in rosso, **Elimina utente** (conferma che nomina l'utente).
+  Si vede solo quello che il server accetterebbe da questo admin (nulla sull'account di sistema; un
+  altro admin solo da un superuser). `?user=<id>` apre direttamente la scheda (dalla mappa delle
+  posizioni, #499).
+- `admin_users` restituisce per ogni utente anche `runs`, `last_active` (l'ultima riga di
+  `activity_log`) e `avatar`, con due query raggruppate: nessuna query per utente.
 
 ## 6. Pagina account: viste rilevanti
 

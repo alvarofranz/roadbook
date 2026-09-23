@@ -111,7 +111,7 @@ function admin_users(array $user, array $d = []): void {
         $where .= ($where ? ' AND' : ' WHERE') . ' users.organization LIKE ?';
         $args[] = '%' . $orgQ . '%';
     }
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, organization, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, organization, avatar, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
         FROM users' . $where . ' ORDER BY id');
     $st->execute($args);
     $rows = $st->fetchAll();
@@ -126,6 +126,11 @@ function admin_users(array $user, array $d = []): void {
     foreach (db()->query("SELECT user_id, COUNT(*) c FROM roadbooks WHERE status <> 'deleted' GROUP BY user_id")->fetchAll() as $r) $rbCount[(int)$r['user_id']] = (int)$r['c'];
     // One set for the manages-events flag: event owners + co-organizers (same rule as
     // user_manages_events, #442) — cheaper than a per-user check.
+    // what the admin reads at a glance (#910): how many runs, and when the user was last active
+    $runCount = [];
+    foreach (db()->query('SELECT user_id, COUNT(*) c FROM roadbook_runs GROUP BY user_id')->fetchAll() as $r) $runCount[(int)$r['user_id']] = (int)$r['c'];
+    $lastActive = [];
+    foreach (db()->query('SELECT user_id, MAX(created_at) t FROM activity_log WHERE user_id IS NOT NULL GROUP BY user_id')->fetchAll() as $r) $lastActive[(int)$r['user_id']] = $r['t'];
     $manages = [];
     foreach (db()->query('SELECT DISTINCT organizer_id AS id FROM events UNION SELECT DISTINCT user_id FROM event_organizers')->fetchAll() as $r) $manages[(int)$r['id']] = true;
     $users = array_map(fn($r) => [
@@ -136,6 +141,7 @@ function admin_users(array $user, array $d = []): void {
         'username'   => $r['username'],
         'email'      => $r['email'],
         'organization' => $r['organization'],
+        'avatar'     => $r['avatar'],
         'verified'   => (int)$r['email_verified'],
         'is_admin'   => is_admin($r) ? 1 : 0,
         'is_organizer' => (int)$r['is_organizer'],
@@ -145,6 +151,8 @@ function admin_users(array $user, array $d = []): void {
         'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete
         'system'     => $r['username'] === GRAVEYARD_USERNAME ? 1 : 0, // the deleted-user account: no actions (#702)
         'roadbooks'  => $rbCount[(int)$r['id']] ?? 0,
+        'runs'       => $runCount[(int)$r['id']] ?? 0,
+        'last_active' => $lastActive[(int)$r['id']] ?? null,
         'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),
         'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
         'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
