@@ -1258,3 +1258,9 @@ describe('routeAhead: where the driver is along the route (#847 · #849)', () =>
         expect(RB.routeAhead(rb, cum, 0, null)).toBeNull();
     });
 });
+
+describe('road types', () => {
+    it('paints the bike lane violet', () => {
+        expect(RB.ROAD_TYPES.find((r) => r.id === 5).color).toBe('#532b78');
+    });
+});

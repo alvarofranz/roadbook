@@ -65,7 +65,7 @@
         { id: 2, name: 'Asphalt',   color: '#22c55e', width: 7, dashed: false },
         { id: 3, name: 'Track',     color: '#ff5a45', width: 5, dashed: false },
         { id: 4, name: 'Off-piste', color: '#ff5a45', width: 4, dashed: true },
-        { id: 5, name: 'Bike lane', color: '#2dd4bf', width: 4, dashed: false }, // #561
+        { id: 5, name: 'Bike lane', color: '#532b78', width: 4, dashed: false }, // #561
     ];
 
     /* A roadbook's publication lifecycle (#96): draft (in progress, private) → ready

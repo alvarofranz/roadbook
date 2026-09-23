@@ -70,7 +70,7 @@ nel modello nota (`road_type_in` / `road_type_out`). Le larghezze del *tulip* so
 | 2  | asfalto    | `#22c55e`  | no  |
 | 3  | sterrato   | `#ff5a45`  | no  |
 | 4  | fuoripista | `#ff5a45`  | **sì** |
-| 5  | pista ciclabile | `#2dd4bf` | no (#561) |
+| 5  | pista ciclabile | `#532b78` (viola) | no (#561) |
 
 `CONST` raccoglie le costanti che **Reader e Ranking devono condividere** per essere d'accordo
 sul punteggio:
