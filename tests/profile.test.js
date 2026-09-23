@@ -55,3 +55,11 @@ describe('the account menu', () => {
         expect(app).not.toContain('Wiki / Guida');
     });
 });
+
+describe('your own public profile (#777)', () => {
+    it('calls your public roadbooks yours', () => {
+        const page = fs.readFileSync('public/assets/js/profile-page.js', 'utf8');
+        expect(page).toContain("const rbTitle = data.is_me ? 'My public roadbooks' : 'Public roadbooks';");
+        expect(fs.readFileSync('public/u/index.html', 'utf8')).toContain('id="pfRbTitle"');
+    });
+});
