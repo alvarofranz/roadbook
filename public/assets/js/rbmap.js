@@ -39,6 +39,8 @@ const STYLE_SATELLITE = (window.RB_CONFIG && RB_CONFIG.styleSatellite) || RASTER
 const STYLE_OSM = (window.RB_CONFIG && RB_CONFIG.styleOsm) || RASTER_OSM;
 const STYLES = [STYLE_SATELLITE, STYLE_TOPO, STYLE_OSM];
 const STYLE_LABELS = ['Satellite', 'Topo', 'OSM'];
+const STYLE_SHORT = ['SAT', 'TOPO', 'OSM'];          // the compact labels (`layerToggle.short`)
+const STYLE_KEYS = ['satellite', 'terrain', 'osm'];  // the names a remembered choice is stored under
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
@@ -46,6 +48,14 @@ window.RBMap = class RBMap {
         this._wpIcons = !!opts.wpIcons; this._wpMarkers = []; this._lastNotes = null; // WP-type badge overlay (opt-in)
         const { layerToggle, geolocate, headingToggle, wpIcons, compass = true, ...mapOpts } = opts; // ours, not MapLibre options
         const cont = document.getElementById(containerId);
+        // `layerToggle: { remember: key }` keeps the viewer's base style in localStorage under `key`
+        // and opens on it next time (the Editor)
+        this._rememberKey = (layerToggle && layerToggle.remember) || null;
+        if (this._rememberKey) {
+            let kept = -1;
+            try { kept = STYLE_KEYS.indexOf(localStorage.getItem(this._rememberKey)); } catch (e) {}
+            if (kept >= 0) mapOpts.style = STYLES[kept];
+        }
         if (!window.maplibregl) {
             if (cont) cont.innerHTML = '<div class="map-placeholder">Map unavailable.</div>';
             return;
@@ -73,7 +83,7 @@ window.RBMap = class RBMap {
         // "centre on my position" button, sitting just under the zoom controls (top-right)
         if (geolocate) this.map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false, showUserLocation: true }), 'top-right');
         this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
-        if (layerToggle) this.map.addControl(layerToggleControl(this), 'top-right');
+        if (layerToggle) this.map.addControl(layerToggleControl(this, layerToggle === true ? {} : layerToggle), 'top-right');
         if (headingToggle) this.map.addControl(headingToggleControl(this), 'top-right');
         // layer-scoped listeners register ONCE (they survive style swaps; re-adding them would double-fire)
         const m = this.map;
@@ -133,6 +143,17 @@ window.RBMap = class RBMap {
         m.on('touchstart', 'rb-photos', photoDown);
         m.on('mousemove', photoMove); m.on('touchmove', photoMove);
         m.on('mouseup', photoUp); m.on('touchend', photoUp);
+        // With terrain on, a DOM marker (a user's pin, a draggable location) takes its opacity from
+        // whether the relief covers it — judged before the elevation tiles exist, so on a real GPU
+        // it stayed hidden until the map was touched (#741). Once the relief has loaded and the map
+        // is idle, a move event makes every marker judge itself again. Registered once: map events
+        // survive style swaps, and _terrain() runs again on each one.
+        let demPending = false;
+        m.on('sourcedata', (e) => {
+            if (e.sourceId !== 'rb-dem' || !e.isSourceLoaded || demPending) return;
+            demPending = true;
+            m.once('idle', () => { demPending = false; m.fire('move'); });
+        });
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastPos) this._replayPosition(); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
     }
     // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom source/layer on
@@ -144,21 +165,23 @@ window.RBMap = class RBMap {
         if (!this.map) return;
         this.ready = false;
         this._mapLayer = STYLES.indexOf(styleUrl); if (this._mapLayer < 0) this._mapLayer = 0;
+        if (this._rememberKey) { try { localStorage.setItem(this._rememberKey, STYLE_KEYS[this._mapLayer]); } catch (e) {} }
         this.map.setStyle(styleUrl, { diff: false });
         this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; this._replay(); if (onReady) onReady(); });
     }
     _replay() {
         if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
         if (this._lastLive) this.setLiveTrack(this._lastLive.pts, this._lastLive.wpts, this._lastLive.photos);
+        if (this._lastOverlay) this.setOverlay(this._lastOverlay);
         if (this._lastPhotos) this.setPhotos(this._lastPhotos);
         if (this._vertShow) this._paintVerts(this._vertShow);
         if (this._lastSel) this.select(this._lastSel, true);
         if (this._lastPos) this._replayPosition();
         if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
     }
-    // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base styles. Simple
-    // consumers (the Reader) get it as a map control via `{ layerToggle: true }`; the Recorder
-    // calls it from its own button.
+    // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base styles. The Reader
+    // and the Editor get it as a map control via `layerToggle`; the Recorder calls it from its own
+    // button.
     toggleBaseStyle() { this.setBaseStyle(STYLES[(this._mapLayer + 1) % STYLES.length]); }
     // Tear down the GL context (Reader closes the inline note map this way).
     destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; this._lastPos = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
@@ -176,16 +199,6 @@ window.RBMap = class RBMap {
             if (!m.getSource('rb-dem')) m.addSource('rb-dem', { type: 'raster-dem', tiles: ['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'], encoding: 'terrarium', tileSize: 256, maxzoom: 14 });
             m.setTerrain({ source: 'rb-dem', exaggeration: 1.3 });
             m.setMaxPitch(80);
-            // With terrain on, a DOM marker (a user's pin, a draggable location) takes its opacity from
-            // whether the relief covers it — judged before the elevation tiles exist, so on a real GPU
-            // it stayed hidden until the map was touched (#741). Once the relief has loaded and the map
-            // is idle, a move event makes every marker judge itself again.
-            let pending = false;
-            m.on('sourcedata', (e) => {
-                if (e.sourceId !== 'rb-dem' || !e.isSourceLoaded || pending) return;
-                pending = true;
-                m.once('idle', () => { pending = false; m.fire('move'); });
-            });
         } catch (e) { /* terrain unavailable offline */ }
     }
     _init() {
@@ -315,6 +328,7 @@ window.RBMap = class RBMap {
     }
     // Green overlay for an in-progress "adjust" sub-track (keeps the base track visible).
     setOverlay(pts) {
+        this._lastOverlay = pts && pts.length ? pts : null; // remembered: a style switch paints it back (#788)
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-live').setData(pts && pts.length ? { type: 'Feature', geometry: { type: 'LineString', coordinates: pts.map((p) => [p.lon, p.lat]) } } : this._empty());
     }
@@ -395,29 +409,34 @@ window.RBMap = class RBMap {
         } : this._empty());
     }
 };
-// A small MapLibre control button that cycles the base style (satellite ↔ topo ↔ OSM).
-function layerToggleControl(rbmap) {
+// A small MapLibre control button that cycles the base style (satellite ↔ topo ↔ OSM), the
+// current one named under the icon. `opts.short`: a compact code (SAT · TOPO · OSM) that fits a
+// 34 px button, with the three maps named in the tooltip (the Editor, #700). The tooltip and the
+// screen-reader name are one translated string, refreshed on a language switch.
+function layerToggleControl(rbmap, opts) {
+    const t = (s) => (window.RBt ? RBt(s) : s);
     return {
         onAdd() {
             const c = document.createElement('div');
             c.className = 'maplibregl-ctrl maplibregl-ctrl-group';
             const b = document.createElement('button');
-            b.type = 'button';
+            b.type = 'button'; b.className = 'rb-mapctl-layers';
             const label = document.createElement('span');
             label.className = 'rb-map-style-label';
             const update = () => {
-                label.textContent = STYLE_LABELS[rbmap._mapLayer];
-                b.title = (window.RBt ? RBt('Map style') : 'Map style') + ': ' + STYLE_LABELS[rbmap._mapLayer];
+                label.textContent = (opts.short ? STYLE_SHORT : STYLE_LABELS)[rbmap._mapLayer];
+                b.title = opts.short ? t('Map: satellite · topographic · OpenStreetMap') : t('Map style') + ': ' + STYLE_LABELS[rbmap._mapLayer];
+                b.setAttribute('aria-label', b.title);
             };
-            b.setAttribute('aria-label', b.title);
             b.innerHTML = '<i class="fa-solid fa-layer-group" aria-hidden="true"></i> ';
             b.appendChild(label);
             update();
+            window.addEventListener('rb-lang', update);
             b.onclick = () => { rbmap.toggleBaseStyle(); update(); };
-            c.appendChild(b); this._c = c;
+            c.appendChild(b); this._c = c; this._update = update;
             return c;
         },
-        onRemove() { this._c.remove(); },
+        onRemove() { window.removeEventListener('rb-lang', this._update); this._c.remove(); },
     };
 }
 // A control button that toggles heading-up (map rotates with the course) ↔ north-locked.
@@ -440,8 +459,6 @@ function headingToggleControl(rbmap) {
         onRemove() { this._c.remove(); },
     };
 }
-// The canonical base-style URLs, exposed so the Editor's own toggle reuses them.
-window.RBMap.STYLE_SATELLITE = STYLE_SATELLITE;
+// The topographic style, exposed for the maps that open on it instead of satellite.
 window.RBMap.STYLE_TOPO = STYLE_TOPO;
-window.RBMap.STYLE_OSM = STYLE_OSM;
 })();

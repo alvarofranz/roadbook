@@ -1536,3 +1536,8 @@ Object.assign(window.RBi18nLangs.es, {
     "Record a Roadbook with notes, photos and geotags.": "Graba un Roadbook con notas, fotos y geoetiquetas.",
     "Build a roadbook from a GPX; design each note with rally standards.": "Crea un roadbook desde un GPX y diseña cada nota con los estándares de rally.",
 });
+
+/* Editor review fixes: the Cut confirm names the notes it deletes */
+Object.assign(window.RBi18nLangs.es, {
+    "Cut the route? These notes are inside the cut and will be deleted:": "¿Cortar la ruta? Estas notas están dentro del corte y se borrarán:",
+});

@@ -20,7 +20,6 @@
         .config-head { margin-top: .8rem; }
         .config-foot { margin-top: 1rem; }
         #loadFrom .icon-category { margin-top: 0; }
-        .icon-category.flush { margin: 0; }
         .notecount { text-transform: none; letter-spacing: 0; }
         .note-list { display: flex; flex-direction: column; gap: .4rem; }
         /* The list, the icon palette and the page all scroll: leave the list's scrollbar visible so
@@ -134,9 +133,8 @@
         .tab-pane { padding-top: .5rem; }
         .kind-tab { display: inline-flex; align-items: center; gap: .3rem; background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 9px; padding: .28rem .5rem; font: inherit; font-size: .75rem; font-weight: 700; white-space: nowrap; cursor: pointer; }
         .kind-tab.on { background: var(--sand); border-color: var(--sand); color: var(--on-sand); }
-        .kind-tab:disabled { opacity: .4; cursor: not-allowed; }
-        /* how many icons / how much material this tab already holds */
-        .kind-tab.has:not(.on) { border-color: var(--sand); color: var(--sand); } /* the note carries this material */
+        /* a material tab whose material the note already carries is lit in sand */
+        .kind-tab.has:not(.on) { border-color: var(--sand); color: var(--sand); }
         .note-list-zone > .icon-category { display: flex; align-items: center; gap: .4rem; }
         /* the panel a material tab opens: the control itself — no box inside the box */
         #blockPanel { display: flex; flex-direction: column; gap: .6rem; }
@@ -164,7 +162,6 @@
         .note-audio audio { height: 30px; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
-        /* photo viewer: overlays ONLY the map box (so the notes panel stays editable) */
         /* the gallery viewer is the whole screen, never an overlay on the map area (#792) */
         #lightbox { position: fixed; inset: 0; z-index: 300; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
         #lightbox img { max-width: 94%; max-height: 88%; object-fit: contain; border-radius: 8px; }
@@ -214,7 +211,7 @@
         .shortcut-grid h3 { margin: .5rem 0 .2rem; font-size: .9rem; color: var(--sand); }
         .shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .22rem 0; font-size: .86rem; border-bottom: 1px solid var(--line); }
         .shortcut-row:last-child { border-bottom: 0; }
-        /* collapsible "more tools" menu (Navigate + Add note) flying out to the right of the bar */
+        /* the collapsible ☰ panel (Cut · Add GPX · Simplify · Adjust · Shortcuts) flying out to the right of the bar */
         .map-tools-menu { position: absolute; top: 10px; left: 58px; display: flex; flex-direction: column; z-index: 8; min-width: min(220px, calc(100% - 60px)); max-width: calc(100% - 60px); }
         /* labelled tool rows (icon + name + key chip): readable without hover, so touch sees them too (#458) */
         .map-tool-row { display: flex; align-items: center; gap: .6rem; width: 100%; border: 0; border-radius: 7px; background: transparent; color: var(--text); cursor: pointer; font-size: .88rem; font-weight: 600; padding: .5rem .6rem; text-align: left; overflow-wrap: anywhere; }
@@ -461,7 +458,7 @@
                 <button class="mode-btn" type="button" id="modeDraw" data-tool="draw"><i class="fa-solid fa-pen"></i><span class="mode-name" data-i18n="Draw">Draw</span><kbd class="key-chip">D</kbd></button>
                 <button class="mode-btn" type="button" id="modeCut" data-tool="cut" hidden><i class="fa-solid fa-scissors"></i><span class="mode-name" data-i18n="Cut">Cut</span><kbd class="key-chip">C</kbd></button>
             </div>
-            <!-- photo viewer: overlays ONLY the map, so the notes panel stays editable -->
+            <!-- the photo viewer: the whole screen (#792) -->
             <div id="lightbox" hidden>
                 <button type="button" id="lbClose" class="lb-close" aria-label="Close" data-i18n-aria="Close">✕</button>
                 <button type="button" id="lbPrev" class="lb-nav lb-prev" aria-label="Previous" data-i18n-aria="Previous">‹</button>
@@ -562,7 +559,7 @@
                 <div class="meta-grouphead" data-i18n="Notes & scoring">Notes &amp; scoring</div>
                 <div class="meta-grid">
                     <label class="meta-field"><span><span data-i18n="Roadbook type">Roadbook type</span><button class="help-tip" data-i18n-tip="help.profile" data-i18n-aria="help.profile" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><select id="cfgProfile" class="field"><option value="basic" data-i18n="Basic (adventure)">Basic (adventure)</option><option value="rally" data-i18n="Rally (FIA)">Rally (FIA)</option></select></label>
-                    <label class="meta-field"><span><span data-i18n="Default detection radius (m)">Default detection radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1" placeholder="50"></label>
+                    <label class="meta-field"><span><span data-i18n="Default detection radius (m)">Default detection radius (m)</span><button class="help-tip" data-i18n-tip="help.defRadius" data-i18n-aria="help.defRadius" aria-label="Help"><i class="fa-solid fa-circle-info"></i></button></span><input type="number" id="cfgWpRadius" class="field" min="1" step="1"></label>
                 </div>
             </div>
             <div class="meta-group">

@@ -1,6 +1,6 @@
 'use strict';
 /* RBChallenges — public, DB-backed challenges (roadbooks shared by users).
- * App root is derived from this script's URL (works on the home and tool subfolders). */
+ * ROOT is the app root app.js publishes as window.RB_ROOT ('../' when this loads on its own). */
 (function () {
     const ROOT = window.RB_ROOT || '../'; // set by app.js; fallback for isolated loads
 
@@ -19,7 +19,7 @@
     async function loadPublic(slug) {
         const j = await RBApi('public_get', { slug });
         if (!j.ok) throw new Error(j.error || 'Not found');
-        return j; // { slug, roadbook, photos, owner }
+        return j; // { slug, roadbook, reusable, vehicles, photos, owner, … }
     }
     // Slug from a friendly URL: /reader/<slug> or /editor/<slug>.
     const publicFromUrl = () => {
@@ -34,9 +34,10 @@
                 <span><b>${RBesc(r.title)}</b><small>${withOwner ? '@' + RBesc(r.username) + ' · ' : ''}${RBSummary(r.total_distance, r.note_count)}</small></span>
             </button>`;
 
-    // Picker: choose a public roadbook to open in the current tool.
-    /* The public-roadbook picker (the Editor's "start from a public roadbook"): the shared row
-       picker draws it, so it gets the same rows and the same search box as the Reader's. */
+    /* The public-roadbook picker (the Editor's "copy a public roadbook"): the shared row picker
+       draws it, so it gets the same rows and the same search box as the Reader's. `opts` go to
+       listPublic ({ reusable: true } = only the copyable ones, #106); onPick(answer, slug) gets the
+       whole public_get answer — the roadbook with its reusable flag and vehicles. */
     async function pick(onPick, opts) {
         const loading = RBModal(`<h2>${RBt('Public roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
         const rbs = await listPublic(opts);
@@ -48,7 +49,7 @@
             rowHTML: (r, i) => pickerRow(r, i, true),
             onPick: async (r, modal) => {
                 modal.close();
-                try { const j = await loadPublic(r.slug); onPick(j.roadbook, r.slug); } catch (e) { console.error(e); RBToast('Could not load the roadbook.'); }
+                try { const j = await loadPublic(r.slug); onPick(j, r.slug); } catch (e) { console.error(e); RBToast('Could not load the roadbook.'); }
             },
         });
     }

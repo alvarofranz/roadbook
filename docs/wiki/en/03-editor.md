@@ -241,7 +241,7 @@ On **export/save**: `recomputeMetrics` attaches notes to track (lat/lon, distanc
 
 ## Limits & quirks
 
-- `makeNote` emits `num: 0` → correct numbering after `recomputeMetrics` (rows call it immediately)
+- `RB.bareNote` emits `num: 0` → correct numbering after `recomputeMetrics` (rows call it immediately)
 - Default author can overwrite empty field on login (depends on `account` promise order)
 - `spliceByIndex` re-attaches all notes with `nearestIdx` → can move a note unintuitively if a variant passes near an "old" note
 - Open cuts → closed as straight line (preceded by `confirmOpenCuts`)

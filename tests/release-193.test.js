@@ -33,7 +33,13 @@ describe('the CSP lets through no speech-model host (#746 · #767)', () => {
 describe('map pins survive the terrain loading late (#741)', () => {
     it('re-evaluates marker occlusion once the DEM tiles are in', () => {
         const map = read('public/assets/js/rbmap.js');
-        expect(map).toMatch(/e\.sourceId !== 'rb-dem'[\s\S]{0,160}m\.once\('idle', \(\) => \{ pending = false; m\.fire\('move'\); \}\)/);
+        expect(map).toMatch(/e\.sourceId !== 'rb-dem'[\s\S]{0,160}m\.once\('idle', \(\) => \{ demPending = false; m\.fire\('move'\); \}\)/);
+    });
+    it('listens once, not once more on every style switch', () => {
+        const map = read('public/assets/js/rbmap.js');
+        const terrain = map.slice(map.indexOf('    _terrain() {'), map.indexOf('    _init() {'));
+        expect(terrain).not.toContain("m.on('sourcedata'");
+        expect(map.match(/m\.on\('sourcedata'/g)).toHaveLength(1);
     });
 });
 

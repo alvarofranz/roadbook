@@ -241,7 +241,7 @@ En **export/save** : `recomputeMetrics` accroche les notes à la trace (lat/lon,
 
 ## Limites & particularités
 
-- `makeNote` émet `num: 0` → numérotation correcte après `recomputeMetrics` (les lignes l'appellent immédiatement)
+- `RB.bareNote` émet `num: 0` → numérotation correcte après `recomputeMetrics` (les lignes l'appellent immédiatement)
 - L'auteur par défaut peut écraser un champ vide à la connexion (dépend de l'ordre des promesses `account`)
 - `spliceByIndex` ré-accroche toutes les notes avec `nearestIdx` → peut déplacer une note de façon non intuitive si une variante passe près d'une note « ancienne »
 - Coupes ouvertes → fermées en ligne droite (précédées de `confirmOpenCuts`)

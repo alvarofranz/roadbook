@@ -27,8 +27,10 @@ limiti.
 - Default: stile **satellite**, centro `[-3.6, 37.178]`, zoom 12, controllo di
   attribuzione attivo ([rbmap.js:22](../public/assets/js/rbmap.js#L22)).
 - Controlli aggiunti d'ufficio: `NavigationControl` (con `visualizePitch`) in alto a
-  destra, `ScaleControl` metrica, e — se `layerToggle:true` — il bottone di toggle stile
-  ([rbmap.js:32-34](../public/assets/js/rbmap.js#L32)).
+  destra, `ScaleControl` metrica, e — se `layerToggle` — il bottone di toggle stile (§7).
+  `layerToggle` è `true` oppure `{ short, remember }`: `remember: '<chiave>'` legge lo stile
+  salvato in `localStorage` sotto quella chiave **prima** di creare la mappa (che apre così
+  sull'ultima scelta) e lo riscrive a ogni cambio di stile.
 
 ### Degrado robusto (mai uccidere la pagina)
 - Se **MapLibre non è caricato**, il container mostra "Map unavailable." e il costruttore
@@ -88,7 +90,10 @@ altri add (incluso `rb-vsel`), così i marker restano afferrabili.
 `_terrain()` aggiunge una source `raster-dem` da tile Terrarium AWS (gratis, senza
 chiave), imposta il terreno con esagerazione 1.3 e alza il max pitch a 80°
 ([rbmap.js:84](../public/assets/js/rbmap.js#L84)). È in un `try/catch`: offline il terreno
-semplicemente non c'è.
+semplicemente non c'è. `_terrain()` gira di nuovo a ogni cambio di stile, quindi **non**
+registra listener: quello su `sourcedata` che, a DEM caricato e mappa `idle`, rifà giudicare
+ai marker DOM se il rilievo li copre (#741) è registrato **una volta** nel costruttore (gli
+eventi della mappa sopravvivono a `setStyle`).
 
 ---
 
@@ -138,7 +143,8 @@ Metodi correlati:
   torna a nord); l'opzione costruttore **`{headingToggle:true}`** aggiunge il bottone di controllo.
   Il Recorder usa il proprio pulsante nella griglia di cattura.
 - **`setOverlay(pts)`** — overlay verde su `rb-live` per una sub-traccia "adjust on the
-  trail" in corso, mantenendo visibile la traccia base
+  trail" in corso, mantenendo visibile la traccia base; memorizzato (`_lastOverlay`) e
+  ridipinto da `_replay()` dopo un cambio di stile (#788)
   ([rbmap.js:171](../public/assets/js/rbmap.js#L171)).
 
 ---
@@ -191,13 +197,15 @@ trascinando direttamente il suo marker blu, esattamente come un punto traccia.
 - **`toggleBaseStyle()`** — cicla satellite→topo→OSM→satellite e **ridipinge** l'ultimo
   roadbook + selezione nel callback `onReady`
   ([rbmap.js:74](../public/assets/js/rbmap.js#L74)).
-- Il bottone di toggle (`{layerToggle:true}`) è un piccolo controllo MapLibre che mostra
-  il nome dello stile corrente sotto l'icona (`<span class="rb-map-style-label">`),
-  titolo tradotto via `RBt('Map style')`
-  ([rbmap.js:216](../public/assets/js/rbmap.js#L216)).
-- Gli URL canonici degli stili sono esposti come `RBMap.STYLE_SATELLITE` /
-  `RBMap.STYLE_TOPO` / `RBMap.STYLE_OSM` così l'Editor può riusare il proprio toggle
-  ([rbmap.js:234](../public/assets/js/rbmap.js#L234)).
+- Il bottone di toggle (`layerToggle`) è un piccolo controllo MapLibre
+  (`button.rb-mapctl-layers`) che mostra lo stile corrente sotto l'icona
+  (`<span class="rb-map-style-label">`): il nome intero (`Satellite · Topo · OSM`, titolo
+  `RBt('Map style')`: *nome*) oppure, con `short: true`, un codice compatto
+  (`SAT · TOPO · OSM`) che entra in un bottone da 34 px, col titolo che nomina le tre mappe
+  (l'Editor, #700). Titolo e `aria-label` sono la stessa stringa tradotta, riscritta in
+  `update()` a ogni cambio di stile e di lingua (`rb-lang`).
+- `RBMap.STYLE_TOPO` è esposto per le mappe che aprono sul topografico invece del satellite
+  (account, admin, eventi, pagina pubblica).
 
 `_mapLayer` (index 0-2) traccia quale stile è attualmente vivo
 ([rbmap.js:31](../public/assets/js/rbmap.js#L31)).
@@ -212,7 +220,7 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 
 | Consumatore | Uso |
 |-------------|-----|
-| **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setVertexEditor`/`setWaypointEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile proprio via `RBMap.STYLE_*`. |
+| **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setVertexEditor`/`setWaypointEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile di RBMap con `layerToggle: { short: true, remember: 'rb_map_style' }`. |
 | **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true, geolocate:true, headingToggle:true}`, `showRoadbook` + `select`, `setPosition(..., follow=true, heading)` a ogni fix — **tu al centro, la mappa girata sulla tua rotta** (#536) — `setGuide` per la freccia alla nota, `destroy` alla chiusura. |
 
 ---

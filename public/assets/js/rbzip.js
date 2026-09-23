@@ -7,7 +7,9 @@
  * build step. The server still stores JSON — the ZIP is only the portable export/import artifact.
  *
  * API: RBZip.read(blob) → { name: Uint8Array } · RBZip.write({ name: bytes|string }) → Blob
- *      RBZip.readRdbk(file) → the roadbook object (accepts both a v2 ZIP and a plain-JSON .rdbk)
+ *      RBZip.readBundle(file) → { roadbook, media } (the roadbook + its bundled photos/audio)
+ *      RBZip.readRdbk(file) → the roadbook object alone
+ *      (both accept a v2 ZIP and a plain-JSON .rdbk)
  *      RBZip.isZip(bytes4) · RBZip.textOf(bytes) */
 (function () {
     const enc = new TextEncoder(), dec = new TextDecoder();
@@ -145,17 +147,8 @@
         return { roadbook, media };
     }
 
-    /* ---- open a .rdbk file: a v2 ZIP (read roadbook.json) or a plain-JSON .rdbk ---- */
-    async function readRdbk(file) {
-        const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
-        if (isZip(head)) {
-            const files = await read(file);
-            const json = files['roadbook.json'];
-            if (!json) throw new Error('No roadbook.json in the .rdbk container');
-            return JSON.parse(textOf(json));
-        }
-        return JSON.parse(await file.text());
-    }
+    /* ---- open a .rdbk file for its roadbook alone ---- */
+    const readRdbk = async (file) => (await readBundle(file)).roadbook;
 
     const RBZip = { read, write, readRdbk, readBundle, isZip, textOf };
     if (typeof window !== 'undefined') window.RBZip = RBZip;
