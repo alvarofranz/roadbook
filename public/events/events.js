@@ -9,18 +9,11 @@
     let all = [], q = '';
     const grid = $('evGrid'), pager = $('evPager'), search = $('evSearch');
 
-    // the logo URL carries its upload version (#588): cached normally, fresh after a re-upload
-    const card = (e) => RBGalleryCard({
-        href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered',
-        meta: `@${esc(e.organizer)}${RBDateRange(e.starts_on, e.ends_on) ? ' · ' + esc(RBDateRange(e.starts_on, e.ends_on)) : ''} · ${e.roadbooks} ${esc(t('roadbooks'))}`
-            + RBVehicleIcons(e.vehicles)
-            + (e.ended ? ` <span class="u-badge u-blocked">${esc(t('Ended'))}</span>` : ''),
-    });
 
     const list = RBPagedList({
         pager, per: PER, source: () => all,
         filter: (items) => RB.filterByText(items, q, ['title', 'organizer']),
-        draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t(q ? 'Nothing matches that search.' : 'No events yet.'))}</p>`; },
+        draw: (slice) => { grid.innerHTML = slice.length ? slice.map((e) => RBEventCard(e)).join('') : `<p class="gallery-empty">${esc(t(q ? 'Nothing matches that search.' : 'No events yet.'))}</p>`; },
     });
 
     // Where a /go/ event link that leads nowhere lands (#579): say why, in the visitor's language.

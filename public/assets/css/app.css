@@ -445,14 +445,34 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .gallery-card { position: relative; display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
 .gallery-card:hover, .launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
-/* overlay button on a gallery card (copy-link + admin-force-private) */
-.card-btn { position: absolute; top: .5rem; z-index: 2; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(14, 17, 22, .7); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(4px); }
-.card-copy { right: .5rem; }
+/* The card's media (#770): the photo, the route or the logo, darkened at its foot so what sits on
+   it reads on any picture. Badges top-left, actions top-right, the key stats at the foot — each a
+   dark translucent pill, so every card on every page carries its data the same way. */
+.card-media { position: relative; aspect-ratio: 16/10; background: var(--card-2); overflow: hidden; }
+.card-media::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(8, 10, 14, .82) 0%, rgba(8, 10, 14, .25) 38%, rgba(8, 10, 14, 0) 60%, rgba(8, 10, 14, .35) 100%); }
+.gallery-card .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+.gallery-card:hover .thumb { transform: scale(1.04); }
+.card-media.contain .thumb { object-fit: contain; padding: 1.1rem 1.1rem 2.6rem; background: radial-gradient(circle at 50% 40%, #232a36, var(--card-2) 70%); }
+.gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.8rem; color: rgba(232, 176, 89, .38); background: radial-gradient(circle at 50% 38%, #26303d, var(--card-2) 72%); }
+.card-badges, .card-actions { position: absolute; top: .55rem; z-index: 2; display: flex; gap: .35rem; align-items: center; }
+.card-badges { left: .55rem; }
+.card-actions { right: .55rem; }
+.card-stats { position: absolute; left: .6rem; right: .6rem; bottom: .55rem; z-index: 2; display: flex; flex-wrap: wrap; gap: .35rem; }
+.card-stats > span, .card-chip, .card-media .vehicle-icons { display: inline-flex; align-items: center; gap: .35rem; padding: .22rem .55rem; border-radius: 999px; background: rgba(8, 10, 14, .62); backdrop-filter: blur(6px); color: #fff; font-size: .78rem; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.card-stats > span > i { color: var(--sand); font-size: .72rem; }
+.card-stats .vehicle-icons { padding: 0; margin: 0; background: none; backdrop-filter: none; }
+.card-media .vehicle-icons { margin: 0; color: var(--sand); gap: .45rem; }
+.card-chip.state-upcoming { background: var(--sand); color: var(--on-sand); }
+.card-chip.state-live { background: var(--ok); color: #06231a; }
+.card-chip.state-ended { background: rgba(8, 10, 14, .62); color: var(--muted); }
+/* an event's first day, as a small calendar leaf */
+.card-date { display: inline-flex; flex-direction: column; align-items: center; min-width: 2.8rem; padding: .25rem .4rem .3rem; border-radius: 10px; background: #fff; color: #14110b; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.card-date b { font-size: 1.15rem; font-weight: 800; }
+.card-date small { margin-top: .12rem; font-size: .62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--track); }
+/* action button on a card (copy link · admin make-private), in the top-right actions row */
+.card-btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: rgba(8, 10, 14, .62); color: #fff; font-size: .9rem; cursor: pointer; backdrop-filter: blur(6px); }
 .card-copy:hover { background: var(--sand); color: var(--on-sand); }
-.card-unpub { left: .5rem; }
 .card-unpub:hover { background: var(--track); color: #fff; }
-.gallery-card .thumb { aspect-ratio: 16/10; width: 100%; object-fit: cover; background: var(--card-2); display: block; }
-.gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; color: var(--muted); }
 .challenge-row-placeholder { width: 84px; height: 54px; border-radius: 8px; flex: 0 0 auto; background: var(--card); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.3rem; }
 
 /* White "paper" roadbook note row — shared by the Reader and the public challenge page
@@ -507,9 +527,10 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow.arriving .col-distance .togo { color: #0b4d8c; }
 /* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
 .vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
-.gallery-card .gallery-body { padding: .9rem 1rem; }
-.gallery-card h3 { margin: 0 0 .2rem; font-size: 1.05rem; }
-.gallery-card .gallery-meta { color: var(--muted); font-size: .82rem; }
+.gallery-card .gallery-body { padding: .8rem 1rem .95rem; }
+.gallery-card h3 { margin: 0 0 .3rem; font-size: 1.05rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.gallery-card .gallery-meta { color: var(--muted); font-size: .8rem; display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .4rem; min-width: 0; }
+.gallery-card .gallery-meta i { color: var(--sand); font-size: .75rem; }
 .gallery-empty { color: var(--muted); }
 .challenge-row { display: flex; gap: .8rem; align-items: center; width: 100%; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem; margin-bottom: .5rem; cursor: pointer; color: var(--text); }
 /* The picker's list scrolls inside the dialog, so its search box and its Close row stay put
@@ -804,7 +825,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 /* Admin event pages: one label/value/actions line */
 /* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
 .thumb-route rect { fill: var(--card-2); }
-.thumb-route polyline { fill: none; stroke: var(--sand); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.thumb-route polyline { fill: none; stroke: var(--sand); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(232, 176, 89, .5)); }
 /* a deletion confirm shows the photo it deletes (#652) */
 .confirm-thumb { display: block; max-width: 100%; max-height: 160px; margin: .5rem auto 0; border-radius: 10px; object-fit: cover; }
 /* two fields side by side (account profile, admin user dialogs) — one column on a phone (#661) */

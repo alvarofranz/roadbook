@@ -62,15 +62,11 @@
     function gallery({ grid, pager, search, vehicles, href, overlays = () => '', per = 12 }) {
         let all = [], q = '', picked = [];
         const t = RBt, esc = RBesc;
-        const card = (r) => RBGalleryCard({
-            href: href(r), thumb: r.thumb, title: r.title,
-            meta: `@${esc(r.username)} · ${RBSummary(r.total_distance, r.note_count)}`,
-            overlays: RBCopyLinkOverlay(r.slug) + overlays(r),
-        });
+        const card = (r) => RBRoadbookCard(r, { href: href(r), overlays: RBCopyLinkOverlay(r.slug) + overlays(r) });
         const list = RBPagedList({
             pager, per, source: () => all,
             filter: (items) => RB.filterByVehicles(RB.filterByText(items, q, ['title', 'username']), picked),
-            draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t(picked.length && !q ? 'No public roadbooks for this vehicle yet.' : 'Nothing matches that search.'))}</p>`; },
+            draw: (slice) => { grid.innerHTML = slice.length ? slice.map(card).join('') : `<p class="gallery-empty">${esc(t(picked.length && !q ? 'No public roadbooks for this vehicle yet.' : 'Nothing matches that search.'))}</p>`; RBFillRoutes(grid); },
         });
         const say = (msg) => { grid.innerHTML = `<p class="gallery-empty">${esc(t(msg))}</p>`; if (search) search.closest('.rb-toolbar').hidden = true; if (vehicles) vehicles.hidden = true; };
         if (search) search.oninput = () => { q = search.value; list.reset(); };
