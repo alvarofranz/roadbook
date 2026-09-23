@@ -78,10 +78,11 @@
         profile:   { path: 'account/',   label: 'Profile',   icon: 'fa-circle-user', covers: ['account'] },
         back:      { label: 'Back',      icon: 'fa-arrow-left' },
     };
-    // Web top nav: the Recorder is its own entry; Reader + Tripmaster collapse into "Navigate".
-    // Native bottom bar: five icon-only tabs (Events stands in for Ranking there).
-    const WEB_NAV = ['recorder', 'editor', 'navigate', 'roadbooks', 'events'];
-    const APP_TABS = ['back', 'recorder', 'editor', 'navigate', 'events', 'profile'];
+    // One order everywhere (#807): the roadbooks first — the heart of the site —, the Recorder in the
+    // middle. Web top nav: Reader + Tripmaster collapse into "Navigate", the account control follows.
+    // Bottom bar (every mobile-width view): the same sections as icon-only tabs, after Back.
+    const WEB_NAV = ['roadbooks', 'editor', 'recorder', 'navigate', 'events'];
+    const APP_TABS = ['back', 'roadbooks', 'editor', 'recorder', 'navigate', 'events', 'profile'];
     // Common words are translated; product names stay as-is (RBt falls back to English regardless).
     const NAV_TRANSLATE = { navigate: 1, events: 1, profile: 1, roadbooks: 1 };
 

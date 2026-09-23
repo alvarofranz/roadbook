@@ -39,21 +39,21 @@
 ### Web desktop (top bar — `WEB_NAV`)
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ [RDBK.app]  Recorder  Editor  Navigate  Roadbooks  Events   [👤 Acct] │
+│ [RDBK.app]  Roadbooks  Editor  Recorder  Navigate  Events   [👤 Acct] │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Web mobile / PWA (bottom tab bar — `WEB_NAV`)
+### Web mobile / PWA (bottom tab bar — `APP_TABS`)
 ```
 ┌────────────────────────────────────────────────┐
-│  Recorder  Editor  Navigate  Roadbooks  Events │
+│ ← Roadbooks Editor Recorder Navigate Events Profile │
 └────────────────────────────────────────────────┘
 ```
 
 ### App nativa iOS/Android (bottom tab bar — `APP_TABS`)
 ```
 ┌───────────────────────────────────────────────┐
-│  Recorder  Editor  Navigate  Events  Profile  │
+│ ← Roadbooks Editor Recorder Navigate Events Profile │
 └───────────────────────────────────────────────┘
 ```
 

@@ -309,3 +309,11 @@ describe('nothing sits under the status bar (#787)', () => {
         expect(fs.readFileSync('native/src/native.js', 'utf8')).toContain("if (Capacitor.getPlatform() !== 'android') return;");
     });
 });
+
+describe('one menu order everywhere (#807)', () => {
+    const appSrc = fs.readFileSync('public/assets/js/app.js', 'utf8');
+    it('Roadbooks · Editor · Recorder · Navigate · Events on the web, the same tabs plus Profile at the bottom', () => {
+        expect(appSrc).toContain("const WEB_NAV = ['roadbooks', 'editor', 'recorder', 'navigate', 'events'];");
+        expect(appSrc).toContain("const APP_TABS = ['back', 'roadbooks', 'editor', 'recorder', 'navigate', 'events', 'profile'];");
+    });
+});
