@@ -9,6 +9,7 @@
 !/source/stamp-version.mjs
 !/source/check-syntax.mjs
 !/source/check-stamp.mjs
+!/source/assets.mjs
 /public/assets/fontawesome
 /public/assets/js/config.js
 /.env

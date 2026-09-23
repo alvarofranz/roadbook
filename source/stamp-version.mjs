@@ -16,9 +16,10 @@
  *
  * Usage:  node source/stamp-version.mjs <MAJOR.MINOR.PATCH>   (e.g. 1.1.0)
  * Run on every web release — see CLAUDE.md "Releasing". */
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assetRefs, releaseId, htmlFiles } from './assets.mjs';
 
 const version = process.argv[2];
 if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
@@ -32,39 +33,24 @@ const versionFile = join(publicDir, 'version.json');
 // the new release id even when older HTML still carries a previous scheme's token.
 const CACHE_BUST = /\?v=[\w.+-]+/g;
 
-async function htmlFiles(dir) {
-    const out = [];
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
-        const p = join(dir, entry.name);
-        if (entry.isDirectory()) out.push(...await htmlFiles(p));
-        else if (entry.name.endsWith('.html')) out.push(p);
-    }
-    return out;
-}
-
 // build: the ever-growing counter, read from the current version.json and incremented. It never
 // resets — not even when the semver bumps — so every release has a strictly larger build.
 let prevBuild = 0;
 try { prevBuild = JSON.parse(await readFile(versionFile, 'utf8')).build || 0; } catch { /* first run under this scheme */ }
 const build = prevBuild + 1;
-const release = `${version}-${build}`; // the unique per-release token (cache-buster + refresh key)
+const release = releaseId({ version, build }); // the unique per-release token (cache-buster + refresh key)
 
 // version.json — the trigger the app polls to force-refresh open clients.
 await writeFile(versionFile, JSON.stringify({ version, build }) + '\n');
 
 let stamped = 0, files = 0;
 const unstamped = []; // first-party asset refs with NO ?v= token — this stamper would never touch them
-// A local <script src>/<link href> .js/.css reference; CDN URLs (a scheme or //) are exempt.
-const ASSET_REF = /(?:src|href)="([^"]+\.(?:js|css))(\?[^"]*)?"/g;
 for (const file of await htmlFiles(publicDir)) {
     const src = await readFile(file, 'utf8');
     let n = 0;
     const out = src.replace(CACHE_BUST, () => { n++; return `?v=${release}`; });
     if (n) { await writeFile(file, out); stamped += n; files++; }
-    for (const m of out.matchAll(ASSET_REF)) {
-        if (/^(?:[a-z]+:)?\/\//i.test(m[1])) continue; // third-party CDN — not ours to stamp
-        if (!m[2] || !m[2].startsWith('?v=')) unstamped.push(`${file.slice(publicDir.length + 1)} → ${m[1]}`);
-    }
+    for (const ref of assetRefs(out)) if (ref.token === null) unstamped.push(`${file.slice(publicDir.length + 1)} → ${ref.url}`);
 }
 console.log(`Stamped v${version} (build ${build}): version.json + ${stamped} cache-buster(s) across ${files} HTML file(s).`);
 // A ref without a buster serves stale through the host's static cache for hours after every

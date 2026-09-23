@@ -37,8 +37,9 @@ DB/Convenzioni rapide below have counterparts there).
   button) + `APPLE_APP_ID` (iOS bundle id) are the accepted Apple audiences, each optional so a
   surface's button only appears once it is configured.
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
-  `roadbook_audio`, `roadbook_locks`, `api_tokens`, `activity_log`, `settings`, plus the events
-  family (`events`, `event_roadbooks`, `event_categories`, `event_organizers`, `event_participants`).
+  `roadbook_audio`, `roadbook_locks`, `roadbook_runs`, `roadbook_comments`, `api_tokens`,
+  `activity_log`, `settings`, plus the events family (`events`, `event_roadbooks`,
+  `event_organizers`, `event_participants`, `event_results`).
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
 - UI languages: **English (default) · Spanish · Italian · German · French**, browser
   auto-detected. English is the source (in `i18n.js`); each other language lives in its own
@@ -157,8 +158,8 @@ DB/Convenzioni rapide below have counterparts there).
     `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`unlock()` (the "done" bell +
     big check — a Recorder note, a Reader validation, #768), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
-    plus the global header/footer (minimal nav, full-viewport
-    mobile menu), version auto-refresh and install button.
+    plus the global chrome (desktop top bar + footer, the mobile bottom tab bar), version
+    auto-refresh and the Install chip.
   - **`i18n.js`** (+ per-language `i18n.<lang>.js`): `RBt(key)` (translate; a missing key falls
     back to English, then to the key) + `data-i18n` / `data-i18n-html` / `data-i18n-ph` /
     `data-i18n-title` / `data-i18n-aria` / `data-i18n-tip` in HTML. Keep **every** language file
@@ -245,7 +246,7 @@ DB/Convenzioni rapide below have counterparts there).
   test a change by hand, ADD or extend automated tests (Vitest in `tests/`) that cover the change
   and get `ddev exec npm test` green. **Every local test/lint command runs inside the DDEV web
   container** (`ddev exec …`), never on the host — the container is the one pinned toolchain
-  (PHP 8.4 · Node 24 · MariaDB 10.11), so a green run there means the same thing for everyone
+  (PHP 8.4 · Node 22 · MariaDB 10.11), so a green run there means the same thing for everyone
   and matches CI. Prefer testing pure logic in `roadbook-core.js` — and *extract* logic there so
   it is testable, rather than leaving it untestable inside a page IIFE. For server-side PHP or
   purely visual UI the harness can't unit-test, say so explicitly and state what you verified
@@ -293,21 +294,24 @@ automatically.
 
 ## Tests and lint (always through DDEV)
 **ALL local tests and lints run inside the DDEV web container — never on the host.** The
-container carries the pinned toolchain (PHP 8.4 · Node 24 · MariaDB 10.11), so everyone's run is
-identical and matches CI; a host Node of another version is not a valid way to check a change.
+container carries the pinned toolchain (PHP 8.4 · Node 22 · MariaDB 10.11 — `.ddev/config.yaml`,
+the same Node every CI workflow uses), so everyone's run is identical and matches CI; a host Node
+of another version is not a valid way to check a change.
 ```bash
 ddev start                      # once per session, if the project isn't up (ddev describe to check)
 ddev exec npm install           # first run / after a package.json change
 ddev exec npm test              # Vitest + happy-dom — the suite that must be green before hand-off
-ddev exec npm run check         # syntax-check the whole codebase (source/check-syntax.mjs)
+ddev exec npm run check         # node --check every public/**/*.js except *.min.js (source/check-syntax.mjs)
 ddev exec node --check public/event/event.js   # one file
 ```
 The suite covers the pure core of `roadbook-core.js` — geo math,
 GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX serializer,
 the 55-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
 (`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
-tests can import it — no build step is introduced on the web. Tests live in `tests/`; CI
-runs them on every push/PR via `.github/workflows/test.yml`.
+tests can import it — no build step is introduced on the web. Tests live in `tests/`. CI runs
+the same syntax check + `npm test` on every pull request (and on manual dispatch) via
+`.github/workflows/test.yml`, and again on every push to `main` in the Deploy workflow's `test`
+job, which gates the deploy.
 
 ## Production DB (migrations + fresh dev DB)
 Three prod-DB workflows: **reseeding the dev DB from a fresh copy of prod**, **refreshing the
@@ -521,12 +525,14 @@ Operational notes:
   the distance since the last note on the map); signed-in, it saves the
   route as a draft roadbook to edit later. Recording a new route lives here only; the
   Editor's recording bar serves just "Adjust on the trail".
-- **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
-  `.nrow` (total/partial + number · vignette via `NoteCanvas.toSVG` · comments · per-note
-  buttons), colour-coded by state (reached green · skipped pink · active red border ·
-  upcoming white) — and the ACTIVE row alone takes the live GPS proximity state (blue as you
-  close in, with the metres still to run) — with an optional per-note
-  MapLibre mini-map; a note's FIA waypoint-type badge (`wp_type`) sits beside its number.
+- **Reader** — the navigator. Paper-style white roadbook table drawn by the shared
+  `NoteCanvas.rowsHTML` (#635): each note is a 3-column `.nrow` (total/partial + number with its
+  FIA waypoint-type badge (`wp_type`) · vignette via `NoteCanvas.toSVG` · text, CAP, speed limit,
+  coordinates) with no buttons on the row (#569), colour-coded by state (reached green · skipped
+  pink · active red border · upcoming white) — and the ACTIVE row alone takes the live GPS
+  proximity state (blue as you close in, with the metres still to run). One **Note map** toggle in
+  the action bar opens the MapLibre mini-map under the active note and follows it (only where the
+  roadbook allows a map).
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
@@ -539,9 +545,9 @@ Operational notes:
   fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
   slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
   `meta.default_wp_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
-  (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
-  the whole active row (and the Validate button, and the per-row check) marks it done — or
-  hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
+  (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar; with Auto
+  off, validation is manual: a tap on the whole active row marks it done (with Auto on, only the
+  GPS validates) — or hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
   (`RBRemote`, switch in the start dialog, #20). Tapping any OTHER row moves the run cursor and
   always asks first — it leaves notes unvalidated and in competition costs 450 pts each.
   Every run ends with its **report** (#618 — notes reached/skipped, speed-limit zones, time;
@@ -563,6 +569,10 @@ Operational notes:
 - **Public pages** — `/roadbooks/` lists every public roadbook (search + pagination) and the
   per-roadbook public view lives at `/challenge/<slug>` (read on site · Navigate · PDF export;
   a non-owner can't fork or download the `.rdbk`). The home shows a last-6 teaser linking there.
+  **Comments (#809):** signed-in users comment on a public roadbook on its `/challenge/<slug>`
+  page (Turnstile-guarded, rate-limited); comments are never shown in navigation, and the author,
+  the roadbook's owner or an admin may delete one. Table `roadbook_comments`; API
+  `comments_list` / `comment_add` / `comment_delete` (`app/comments.php`).
 - **Events** — `/events/` lists public events and `/event/<slug>` is the event view
   (categories, organizers, linked roadbooks). Participants join as *pending* and are activated
   by the organizer (QR token or the admin panel); `/go/<code>` is the participant deep link
@@ -572,7 +582,7 @@ Operational notes:
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
   `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
-  (`simplifyTrack`/`simplifyRoadbook`, `reverseRoadbook`),
+  (`simplifyRoadbook`, `reverseRoadbook`),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
   the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
@@ -581,8 +591,8 @@ Operational notes:
   `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
-  `deleteNote`, `pendingWork`, `isEndNote` — the last non-comment note, whose tulip draws no exit
-  road because past the finish there is nothing to follow, #447), `CONST`, `ROAD_TYPES`.
+  `deleteNote`, `pendingWork`, `isEndNote` — the last note, whose tulip draws no exit road because
+  past the finish there is nothing to follow, #447 — and `isFirstNote`), `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by both the Reader rows and the challenge page).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
@@ -595,8 +605,8 @@ Operational notes:
   phantom kilometres, #383). In the native app it uses RBNative's background-capable watch
   (logging survives a locked screen).
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
-  settings modal, localStorage checkpoint with recovery, live file handle, finished-track
-  modal (download / convert into a roadbook).
+  settings modal, localStorage checkpoint with recovery, finished-track modal (download /
+  convert into a roadbook); the file itself is written once at the end via `RBDownload`.
 - `rb-remote.js` (`RBRemote`, #20) — hands-free advance from an external remote. The cheap
   hardware (Bluetooth page-turner **pedals**, camera clickers, ring remotes) pairs as a
   keyboard, so the whole transport is `keydown` — no permissions, no plugin, identical in the
@@ -609,13 +619,14 @@ Operational notes:
 - `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
   voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
   `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·
-  `items()` (queued records, for a local export) · `clear()` · `flush()` (drain now, e.g. once a
-  draft exists after sign-in) · `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
-  `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in). Signed-out
-  captures stay local and are bundled into a self-contained `.rdbk` (RBZip). Pure `createQueue`
-  core (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
+  `flush()` (drain now, e.g. once a draft exists after sign-in) ·
+  `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
+  `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in), and until it
+  can, a signed-out capture stays queued on the device. Pure `createQueue` core
+  (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
 - `changelog.js` (`RBChangelog`) — the release notes, one entry per release, newest first;
-  rendered by `about/about.js` and linked from App Info. See **Releasing**.
+  rendered on `/changelog/` by `public/changelog/changelog.js` and linked from App Info. See
+  **Releasing**.
 - `challenges.js` (`RBChallenges`) — public roadbooks (DB-backed): `listPublic`/`loadPublic`/
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
@@ -662,12 +673,14 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   top-level entry; Reader + Tripmaster collapse into a single **Navigate** entry → the `/navigate/`
   hub). *Every mobile-width
   view — web, PWA and the native app alike* — hides the top bar and shows a fixed icon-only
-  **bottom tab bar** (Instagram-style); there is no hamburger/full-screen menu. "Navigate" covers
+  **bottom tab bar** (Instagram-style): Back, then the same six sections; there is no
+  hamburger/full-screen menu. "Navigate" covers
   `/tripmaster/` + `/reader/`; "Events" covers `/event/` + `/ranking/` (Ranking has no nav entry of
   its own — it opens per competition roadbook from the event page). The **language is
-  browser-detected** and only changed at the bottom of the Profile page
-  (no picker in the nav). The site footer is hidden on mobile (its About/Privacy/Terms links move
-  to the Profile page); Install + unsaved-work chips float above the tab bar.
+  browser-detected** and changed from the flag picker in the desktop footer or at the bottom of
+  the Profile page (no picker in the nav). The site footer is hidden on mobile (its site links move
+  to the Profile page); Install + unsaved-work chips float above the tab bar. Full matrix:
+  `docs/menu.md`.
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
   client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token
   only inside the app.
@@ -684,11 +697,11 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   (`parseDeepLink`, unit-tested) maps a URL to an action; `native.js` runs a `/go/<code>` as an
   API join (`event_join`, Bearer — no PHP in the app) then opens `/event/<slug>`, else navigates
   to the bundled route. No true *deferred* deep link exists (links route only to an already-installed
-  app; for a fresh user the web `/go/` join persists on the account). Before it verifies: fill the
-  Play signing SHA-256 in `assetlinks.json` and enable Associated Domains on the iOS App ID — see
-  `NATIVE.md` §4.
-- **Projects:** `android/` is committed (build artifacts git-ignored); generate iOS with
-  `npx cap add ios` on a Mac with Xcode.
+  app; for a fresh user the web `/go/` join persists on the account). `assetlinks.json` carries
+  the Play App Signing + upload-key SHA-256; the iOS App ID must have Associated Domains (and Sign
+  in with Apple) enabled, or the build fails at signing — see `NATIVE.md` §4.
+- **Projects:** `android/` and `ios/` are both committed (build artifacts git-ignored), so a fresh
+  clone needs only `npm run sync`; iOS builds on a Mac with Xcode (or in Xcode Cloud).
 
 ## The `.rdbk` format (open standard, documented at /standard)
 A **ZIP container** (MIME `application/x-roadbook`) holding `roadbook.json` — the
@@ -715,13 +728,13 @@ The `roadbook.json` schema:
     "cap": int|null, "cap_distance": int|null,                // CAP heading (deg) + metres
     "cap_type"?: "exit"|"average"|"calculated"|"turning",     // FIA CAP qualifier (exit = default); rendered next to the CAP
     "bearing_in": float, "bearing_out": float,
-    "road_type_in": 0..4, "road_type_out": 0..4,
+    "road_type_in": 0..5, "road_type_out": 0..5,
     "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
     "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|…); on disk (.rdbk/server) written as its OpenRally cap code (WPM, WPN…), normalized to internal ids on import (wpTypeByCap/importRoadbook) and re-emitted by roadbookForExport; editor badge + GPX sym
     "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
     "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
-    "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..4 } ]
+    "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..5 } ]
   } ],
   "icons": { "x.png": "data:image/png;base64,…" }             // EVERY used symbol, embedded
 }
@@ -729,13 +742,14 @@ The `roadbook.json` schema:
 - Symbols sit on a **230×162** box; origin = centre, **+y up**; `angle` clockwise.
 - **Self-contained rule:** a writer MUST embed every used symbol in top-level `icons`.
   `RB.iconSrc` resolves: inline `data:` → `rb.icons` → `assets/icons/` (standard palette).
-- ROAD_TYPES: 0 default · 1 motorway · 2 asphalt · 3 track · 4 off-piste (dashed).
+- ROAD_TYPES: 0 default · 1 motorway · 2 asphalt · 3 track · 4 off-piste (dashed) · 5 bike lane (#561).
   Speed limits encoded in symbol names (`S03_30km` ⇒ 30, `S99_end` clears).
 - Standard palette (`public/assets/icons/` + `index.json`): roadbook pictograms (PNG)
   plus a Vienna-Convention EU traffic-sign set (SVG: warning `W*`, priority `B*`,
   prohibitory `C*`/`S*`, mandatory `D*`). The sign set was produced by a generator script
-  that is LOCAL-ONLY (`source/` is gitignored except `stamp-version.mjs` and
-  `check-syntax.mjs`), so a fresh
+  that is LOCAL-ONLY (`source/` is gitignored except `stamp-version.mjs`, `check-syntax.mjs`,
+  `check-stamp.mjs` and `assets.mjs` — the asset-reference rules the stamper and the stamp check
+  share), so a fresh
   clone doesn't have it: edit the committed SVGs directly, keeping the change minimal and
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
   used standard icons embedded in a roadbook on open and on save/export (#174), so art

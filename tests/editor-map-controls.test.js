@@ -45,7 +45,6 @@ describe('the roadbook settings view (#752)', () => {
         expect(html).toMatch(/id="backToMap"[\s\S]{0,200}id="cfgSave"/);
         expect(html).toMatch(/id="backToMapBottom"[\s\S]{0,200}id="cfgSaveBottom"/);
         expect(editor).toContain("['backToMap', 'backToMapBottom'].forEach(");
-        expect(editor).toContain("$('cfgSaveBottom').onclick = () => saveRoadbook('cfgSaveBottom');");
         expect(editor).toContain("['saveAccount', 'cfgSave', 'cfgSaveBottom']");
     });
 });

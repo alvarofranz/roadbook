@@ -1023,14 +1023,8 @@ describe('parseOpenRally — fallback paths and tulipToDataURL', () => {
 
 describe('isEndNote — which note is the roadbook\'s finish (#447)', () => {
     const nav = (num) => ({ num, lat: 0, lon: 0 });
-    const comment = (num) => ({ num, note_kind: 'comment', text: 'careful' });
 
     it('is the last note, and only it', () => {
-        const notes = [nav(1), nav(2), nav(3)];
-        expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, false, true]);
-    });
-
-    it('is the last note, and nothing else is', () => {
         const notes = [nav(1), nav(2), nav(3)];
         expect(notes.map((n, i) => RB.isEndNote(notes, i))).toEqual([false, false, true]);
     });
@@ -1041,21 +1035,15 @@ describe('isEndNote — which note is the roadbook\'s finish (#447)', () => {
         expect(RB.isEndNote(null, 0)).toBe(false);
     });
 
-    it('a single navigational note is both start and end', () => {
+    it('a single note is both start and end', () => {
         expect(RB.isEndNote([nav(1)], 0)).toBe(true);
     });
 });
 
 describe('isFirstNote — which note the roadbook starts from (#472)', () => {
     const nav = (num) => ({ num, lat: 0, lon: 0 });
-    const comment = (num) => ({ num, note_kind: 'comment', text: 'careful' });
 
     it('is the first note, and only it', () => {
-        const notes = [nav(1), nav(2), nav(3)];
-        expect(notes.map((n, i) => RB.isFirstNote(notes, i))).toEqual([true, false, false]);
-    });
-
-    it('is the first note, and nothing else is', () => {
         const notes = [nav(1), nav(2), nav(3)];
         expect(notes.map((n, i) => RB.isFirstNote(notes, i))).toEqual([true, false, false]);
     });
@@ -1066,7 +1054,7 @@ describe('isFirstNote — which note the roadbook starts from (#472)', () => {
         expect(RB.isFirstNote(null, 0)).toBe(false);
     });
 
-    it('a single navigational note is both start and end', () => {
+    it('a single note is both start and end', () => {
         expect(RB.isFirstNote([nav(1)], 0)).toBe(true);
     });
 });

@@ -14,19 +14,19 @@ Per architettura, strumenti, deploy e convenzioni dettagliate leggi **`CLAUDE.md
 
 ## Branch e PR
 
-- **`main` è protetto** — nessun push diretto (GH006). Ogni modifica va su un branch → PR → merge. Self-merge consentito (`gh pr merge --squash --delete-branch`).
+- **`main` è protetto** — nessun push diretto (GH006). Ogni modifica va su un branch → PR → merge. Self-merge consentito (`gh pr merge <n> --merge --delete-branch`).
 - **PR di process/architettura/db/deploy/CI** → chiedere review ad Álvaro prima di mergiare (`CLAUDE.md` "Process/architecture changes need an Alvaro review").
 
 ## Test e lint (SEMPRE via DDEV)
 
-**TUTTI i test e i lint locali si eseguono dentro il container web di DDEV, mai sull'host.** Il container ha la toolchain fissata (PHP 8.4 · Node 24 · MariaDB 10.11): così ogni run è identico per tutti e coincide con la CI su PHP/DB (la CI usa Node 22 — se un test dipende dalla versione di Node, verifica su entrambe). Un `npm test` lanciato sull'host, con un Node di un'altra versione, non è una verifica valida.
+**TUTTI i test e i lint locali si eseguono dentro il container web di DDEV, mai sull'host.** Il container ha la toolchain fissata (PHP 8.4 · Node 22 · MariaDB 10.11, in `.ddev/config.yaml` — lo stesso Node di tutti i workflow CI): così ogni run è identico per tutti e coincide con la CI. Un `npm test` lanciato sull'host, con un Node di un'altra versione, non è una verifica valida.
 
 ```bash
 ddev start                                     # una volta per sessione, se il progetto non è su (verifica: ddev describe)
 ddev exec npm install                          # primo giro / dopo una modifica a package.json
 ddev exec npm test                             # Vitest (tests/**/*.test.js, happy-dom)
-ddev exec npm run check                        # syntax check su tutta la codebase (source/check-syntax.mjs)
-ddev exec node --check public/event/event.js   # syntax check di un singolo file (la CI lo fa su tutti i .js non minified)
+ddev exec npm run check                        # node --check su ogni public/**/*.js tranne *.min.js (source/check-syntax.mjs; la CI esegue lo stesso controllo)
+ddev exec node --check public/event/event.js   # syntax check di un singolo file
 ```
 
 - Prima di chiedere all'utente di testare, esegui `ddev exec npm test` e risolvi eventuali rossi.
@@ -57,7 +57,7 @@ ddev exec node --check public/event/event.js   # syntax check di un singolo file
   store: cambiare il semver fa scattare Android (Play) + iOS (TestFlight), il `build` da solo no.
   Il check CI `stamp` fallisce la PR che cambia asset senza stamp.
 - **Release:** `node source/stamp-version.mjs <X.Y.Z>` → commit → branch → PR → merge. Quel merge fa partire web + Android (Play) + iOS (Xcode Cloud).
-- **Una release semver scrive prima la sua nota:** `public/assets/js/changelog.js` è l'unica fonte di "Novità" (una voce per release: versione · data · titolo · cosa è cambiato), mostrata sulla pagina About (`/about/#changelog`) e linkata dal pop-up App Info. Aggiungi la voce PRIMA di stampare il nuovo `X.Y.Z`: `tests/about-page.test.js` fallisce se `version.json` è avanti alla lista o se la nota non è tradotta in tutte e cinque le lingue.
+- **Una release semver scrive prima la sua nota:** `public/assets/js/changelog.js` è l'unica fonte di "Novità" (una voce per release: versione · data · titolo · cosa è cambiato), mostrata sulla pagina dedicata `/changelog/` (anticipata su About) e linkata dal pop-up App Info. Aggiungi la voce PRIMA di stampare il nuovo `X.Y.Z`: `tests/about-page.test.js` fallisce se `version.json` è avanti alla lista o se la nota non è tradotta in tutte e cinque le lingue.
 - **Build nativo:** `npm run build:native` (esbuild `native/src/native.js` → `public/assets/js/native.bundle.js`). Serve prima di `npx cap sync`.
 
 ## API DB
@@ -69,7 +69,7 @@ curl -fsS -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects/rdbk/m
 curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects/rdbk/migrations/<file>.sql/apply | jq -r '.stdout // .'
 ```
 - **Schema prima del codice**: una nuova colonna/tabella deve esistere in prod PRIMA che il codice che la usa venga deployato.
-- **Chiave DB/produzione**: in `db.md` (gitignored).
+- **Chiave DB/produzione**: in `DB.md` (gitignored).
 - **Aggiornare il DDEV locale con i dati di produzione = DUE passi, DB *e* file.** Il dump del pannello contiene SOLO il DB: i payload dei roadbook stanno su disco (`storage/users/<user_id>/<id>.rdbk`, più `public/photos/<id>/` e `public/audio/<id>/`). Importato il solo dump, ogni roadbook risponde `{"ok":false,"error":"File missing."}`. Procedura completa (dump → `ddev import-db` → recupero dei file dei roadbook pubblici → cancellazione del dump, che contiene email e hash reali) in `CLAUDE.md` § *Production DB*.
 
 ## Convenzioni rapide
@@ -84,7 +84,7 @@ curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects
 - **Un'operazione asincrona la riporta il pulsante che l'ha lanciata: `RBBusy(el, {onEnd})`** (#459): spinner mentre gira, spunta verde per 3 s al successo. Un toast si perde, e senza segnale sul pulsante un salvataggio riuscito e uno fallito si assomigliano.
 - **Una modale che tiene l'unica copia del lavoro non ha un "Close"** (#217 · #460): non è dismissable (né backdrop né Escape), e l'uscita è un **Discard** (`btn-danger` + cestino) che chiede conferma nominando cosa si perde; diventa un normale *Close* solo quando il lavoro è arrivato in un posto sicuro. Il checkpoint anti-crash resta acceso fino a quel momento, non si pulisce quando la registrazione semplicemente *finisce*.
 - **Nessun commento legacy** ("prima era X, ora Y"). Quando cambi qualcosa, riscrivi i commenti come se fosse sempre stato così.
-- **Stesso FontAwesome icona per tool** in tutta l'app (`fa-circle-dot` Recorder, `fa-pen-ruler` Editor, `fa-compass` Reader, `fa-gauge-high` Tripmaster).
-- **Bottoni di conferma: prima il ghost, poi il primary.** In una riga di conferma l'azione dismissiva (Cancel/No, ghost) viene prima, quella affermativa (primary) per ultima (#490).
+- **Stesso FontAwesome icona per tool** in tutta l'app (`fa-circle-dot` Recorder, `fa-pen-ruler` Editor, `fa-compass` Reader, `fa-gauge-high` Tripmaster, `fa-ranking-star` Ranking; nel menu `fa-location-arrow` Navigate, `fa-calendar-check` Events, `fa-circle-user` Profile).
+- **Una conferma fa una domanda: i pulsanti sono sempre No / Sì** (#435). `RBConfirm(msg, danger)` non accetta etichette — ciò che è specifico sta nel messaggio — e "Cancel" è la parola sbagliata per la metà negativa. Nella riga il No (ghost) viene prima, il Sì (primary) per ultimo (#490).
 - **Le barre condivise non coprono i comandi del tool** (#401 · #403 · #404 · #405): una barra ancorata a un bordo prende spazio nel flusso o pubblica la sua altezza (`--notice-h`, `--bottom-stack`); una modale sta sopra tutto. Dettagli in `docs/app-shell.md § La regola delle barre condivise`.
 - **Uno strumento che possiede lo schermo è un guscio applicativo** (#429): il Reader in navigazione è `position: fixed; inset: 0` a colonna flex, lista note unico scroller, barre come righe di flusso, inset di sicurezza sul guscio. Mai fissare una barra e calcolarne l'offset da `window.innerHeight`: su iOS quel viewport si muove e il valore nasce già vecchio. In quella modalità il documento non scrolla: si usa `list.scrollTop`, non `window.scrollY`.

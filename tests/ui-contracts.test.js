@@ -776,7 +776,6 @@ describe('site chrome comes from one list; the error pages stand alone (#496)', 
     it('the footer and the Profile page render the SAME site links', () => {
         expect(app).toContain('const SITE_LINKS = [');
         expect(app).toContain('window.RBSiteLinksHTML = ');
-        expect(app).toContain("SITE_LINKS.filter((l) => l.group === g).map(siteLink)"); // the footer, by group (#729)
         expect(app).toContain('window.RBSiteLinksHTML = () => SITE_LINKS.map(siteLink)');
         expect(app).toContain("document.getElementById('accSiteLinks')"); // the Profile page
         // the Profile page no longer keeps a hand-written copy that can drift

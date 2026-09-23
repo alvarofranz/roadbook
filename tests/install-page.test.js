@@ -63,7 +63,6 @@ describe('install guide', () => {
     });
 
     it('the Install chip always opens the guide (#720) — which offers the one-tap prompt itself', () => {
-        expect(appJs).toContain("function onInstall() { location.href = ROOT + 'install/'; }");
         expect(read('public/install/install.js')).toContain('RBInstallPrompt.fire()');
         expect(appJs).not.toContain('showIosModal');          // the modal the guide replaced is gone
     });

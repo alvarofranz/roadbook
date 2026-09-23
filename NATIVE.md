@@ -6,9 +6,10 @@ One codebase → web + iOS + Android.
 
 **App scope:** every tool ships in the app — **Reader · Editor · Tripmaster · Recorder ·
 Ranking** — plus sign-in and opening a `.rdbk` from the OS. There is no separate app page:
-`public/index.html` is the **one contextual home** — the marketing landing on the web, the
-field-tool launcher in the app (CSS toggles `.web-only`/`.app-only` via the `.native` class
-that `app.js` puts on `<html>` only inside the shell).
+`public/index.html` is the **one contextual home** — the marketing landing on the web, the app
+home in the app (#720: a greeting, Record a route, quick tiles, your last roadbooks and the public
+ones; CSS toggles `.web-only`/`.app-only` via the `.native` class that `app.js` puts on `<html>`
+only inside the shell).
 
 The whole point of going native is **GPS that survives a locked screen**: inside the
 app, location logging keeps running with the screen off / app in the background, so the
@@ -64,12 +65,14 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
 - **MapLibre** — `rbmap.js` now uses MapLibre GL (no Mapbox, no paid token) with a free,
   no-key topo style (OpenFreeMap) and free 3D terrain (AWS Terrarium). The satellite toggle
   uses `RB_CONFIG.styleSatellite` (a MapTiler style URL); unset, it falls back to topo (§4).
-- **Camera & share** — already native through the webview: photo capture is a file input
-  (opens the OS camera/picker) and the result QR uses Web Share (the OS share sheet). Only
-  the iOS usage-description keys are needed (§4).
-- **App scope / launcher** — `public/index.html` is the one contextual home: marketing landing
-  on the web, tool launcher in the app (`.web-only`/`.app-only` toggled by the `.native` class).
-  All five tools (Reader · Editor · Tripmaster · Recorder · Ranking) are in the app's nav.
+- **Camera & share** — photo capture is a file input (opens the OS camera/picker, through the
+  webview), and a generated file — the result QR, the run card — goes through `RBShareFile`, which
+  in the app hands it to `RBNative.shareFile` (the OS share sheet). Only the iOS usage-description
+  keys are needed (§4).
+- **Navigation** — `public/index.html` is the one contextual home (marketing landing on the web,
+  app home in the app). The bottom tab bar carries back + **Roadbooks · Editor · Recorder ·
+  Navigate · Events · Profile** (`APP_TABS` in `app.js`); Navigate covers the Reader + Tripmaster,
+  and Ranking has no entry of its own — it opens per competition roadbook from the event page.
 
 You don't run anything for the above; it's committed and verified (the map and camera need a
 quick visual check on a device — see §6).
@@ -235,16 +238,10 @@ repo:
   app**, so `/go/` cannot run there) and opens `/event/<slug>`; any other rdbk.app link is opened
   as its bundled route. A signed-out user's code is stashed and replayed after login.
 
-**Two external values are still required before it verifies** (the OSes check the association
-both ways):
-1. **Android — the signing SHA-256** in `assetlinks.json`. Replace the placeholders with the
-   **Play App Signing** certificate SHA-256 (Play Console → *Test and release → App integrity →
-   App signing*) **and** the upload-key SHA-256. Until then Android App Links fall back to opening
-   the browser (no crash).
-2. **iOS — enable the Associated Domains capability** on the `app.rdbk` App ID (Apple Developer
-   portal). With automatic signing the Xcode Cloud build provisions it, but if the capability is
-   not available to the account **the iOS build fails at signing** — so confirm it before the
-   next iOS release.
+`assetlinks.json` carries the SHA-256 of both the **Play App Signing** certificate and the upload
+key. On iOS the **Associated Domains** capability must be enabled on the `app.rdbk` App ID (Apple
+Developer portal): with automatic signing the Xcode Cloud build provisions it, but if the capability
+is not available to the account **the iOS build fails at signing**.
 
 **Rollout order**: deploy the web first so the `/.well-known/` files are live, *then* bump the
 version to ship the native builds that declare the association (a native build that declares an
@@ -310,7 +307,8 @@ No release yet (or API unreachable) → a fallback card linking the releases lis
   and the photo uploads.
 - **Account**: signing in stores the Bearer token, so you stay signed in across restarts and
   can save/load roadbooks (needs the backend deployed + migration applied, §4).
-- **Share**: the result QR's share button opens the native share sheet.
+- **Share**: the result QR's and the run card's share buttons open the native share sheet
+  (`RBShareFile` → `RBNative.shareFile`).
 
 ---
 
@@ -334,9 +332,9 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
   Node 22 + `npm ci`, then `config.js` and the licensed FontAwesome Pro files
   fetched from the live site (public client assets by design — no workflow
   secrets), then the native bridge + `npx cap sync ios`.
-- **`ci_pre_xcodebuild.sh`** stamps the version from the release tag, so the tag is
-  the single source of truth (like Android's workflow): `MARKETING_VERSION`
-  (CFBundleShortVersionString) ← the semver in `ios-X.Y.Z`, and `CFBundleVersion`
+- **`ci_pre_xcodebuild.sh`** stamps the version from the release tag, which the Deploy
+  workflow cuts from `public/version.json` (the file Android's workflow reads too):
+  `MARKETING_VERSION` (CFBundleShortVersionString) ← the semver in `ios-X.Y.Z`, and `CFBundleVersion`
   (the build number) ← Xcode Cloud's monotonic `CI_BUILD_NUMBER`. The semver is the
   ONE human-facing version — identical on the web footer and the Android
   `versionName`. Because each new semver is a fresh CFBundleVersion train, App Store
@@ -347,8 +345,10 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
 **One-time setup:**
 1. Register the App ID: https://developer.apple.com → Certificates, Identifiers &
    Profiles → **Identifiers → + → App IDs → App** → Explicit **`app.rdbk`**,
-   description "RDBK" (no extra capabilities — background location is an
-   Info.plist key, not an App ID capability).
+   description "RDBK", with the **Associated Domains** and **Sign In with Apple**
+   capabilities (both declared in `ios/App/App/App.entitlements`; without them on the
+   App ID the build fails at signing). Background location is an Info.plist key, not an
+   App ID capability.
 2. https://appstoreconnect.apple.com → Apps → **+ New app** → iOS, name
    **RDBK**, bundle id `app.rdbk` (appears once step 1 is done), SKU `rdbk`.
 3. Xcode (`npx cap open ios`) → menu **Integrate → Create Workflow** → pick the
@@ -359,11 +359,12 @@ sits next to `App.xcodeproj`; the `App` scheme is shared for the same reason):
    iOS build. Action **Archive** (Release) → post-action **TestFlight (internal
    group)**. No environment variables needed.
 
-**Cutting a TestFlight build:** the tag carries the semver —
-`git tag ios-<X.Y.Z> && git push origin ios-<X.Y.Z>` (e.g. `ios-1.1.0`) — or press
-▶ Start Build on the workflow in Xcode / App Store Connect. `ci_pre_xcodebuild.sh`
-turns that tag into `MARKETING_VERSION`. Promote to App Store review from TestFlight
-when happy.
+**Cutting a TestFlight build** is automatic: a merge to `main` that bumps
+`public/version.json` runs the Deploy workflow's `ios-tag` job, which pushes `ios-<X.Y.Z>`,
+and Xcode Cloud builds that tag. `ci_pre_xcodebuild.sh` turns it into `MARKETING_VERSION`.
+To re-cut a build without a bump, push the tag by hand
+(`git tag ios-<X.Y.Z> && git push origin ios-<X.Y.Z>`) or press ▶ Start Build on the
+workflow in Xcode / App Store Connect. Promote to App Store review from TestFlight when happy.
 
 **First submission:** fill the privacy nutrition labels (you collect **Location**
 for app functionality, and account email if signed in), add screenshots, and
@@ -372,17 +373,18 @@ it's a GPS roadbook navigator with **background location recording**, camera
 capture and offline use — native capabilities, not a website.
 
 ### Android → Play (CI/CD on GitHub Actions)
-Releases build in the cloud from a tag — no local archive step — mirroring the iOS `ios-*` flow.
-The pipeline is `.github/workflows/android-release.yml`: it rehydrates the gitignored client
-assets from the live site (config.js + FontAwesome, public by design), builds the native bridge,
-`cap sync android`, restores the signing keystore from secrets, `bundleRelease` (versionName from
-the tag, versionCode = `MAJOR*10000 + MINOR*100 + PATCH` from that semver so it always climbs above
-the last upload), and uploads the `.aab` to the **Closed testing (alpha)** track via the service
-account. It fires **only on an `android-*` tag**, so a web release never triggers an app build.
+Releases build in the cloud — no local archive step. The pipeline is
+`.github/workflows/android-release.yml`: it rehydrates the gitignored client assets from the live
+site (config.js + FontAwesome, public by design), builds the native bridge, `cap sync android`,
+restores the signing keystore from secrets, `bundleRelease` (versionName from
+`public/version.json`, versionCode = `MAJOR*10000 + MINOR*100 + PATCH` from that semver so it always
+climbs above the last upload), and uploads the `.aab` to the **Closed testing (alpha)** track via the
+service account. It fires on a push to `main` that **bumps the version in `public/version.json`**
+(a merge without a bump skips the build), so it ships together with the web deploy and the iOS tag.
 
-**Cutting a release:** the tag carries the semver — push it, e.g.
-`git tag android-1.1.0 && git push origin android-1.1.0` (or run the workflow from the Actions tab).
-The build lands straight in **Closed testing – Alpha**. Promote Closed → Production in the Play
+**Cutting a release** is the version bump itself (`node source/stamp-version.mjs <X.Y.Z>` → PR →
+merge). To re-cut a build without a bump, push an `android-<X.Y.Z>` tag or run the workflow from the
+Actions tab. The build lands straight in **Closed testing – Alpha**. Promote Closed → Production in the Play
 Console once the closed-test gate is met (a new personal Play account must keep **≥12 testers opted
 in for 14 days** before Production unlocks; testers are managed on the closed track itself, so you
 can add them right away — they don't depend on a specific build).

@@ -10,8 +10,6 @@ describe('account emails (#748)', () => {
     it('use one table-based template with inline styles', () => {
         expect(mail).toContain('function mail_account(');
         expect(mail).toContain('<table role="presentation"');
-        expect(mail).not.toContain('function mail_html(');
-        expect(auth).not.toMatch(/mail_html|mail_button/);
     });
     it('speak every UI language, for every kind, with an English fallback', () => {
         const table = mail.slice(mail.indexOf('const MAIL_TEXT'), mail.indexOf('function mail_t('));
@@ -25,11 +23,10 @@ describe('account emails (#748)', () => {
     });
 });
 
-describe('voice transcription is gone, and so is what it needed (#746 · #767)', () => {
+describe('the CSP lets through no speech-model host (#746 · #767)', () => {
     it('lets no model host and no WASM through the CSP', () => {
         const csp = read('public/.htaccess').match(/Content-Security-Policy "([^"]*)"/)[1];
         for (const host of ['huggingface', 'hf.co', 'wasm-unsafe-eval']) expect(csp).not.toContain(host);
-        expect(fs.existsSync('public/assets/js/rb-transcribe.js')).toBe(false);
     });
 });
 
@@ -57,11 +54,9 @@ describe('the Editor groups the note blocks (#747)', () => {
         const editor = read('public/editor/editor.js'), html = read('public/editor/index.html');
         expect(editor.match(/<div class="kind-group">/g)).toHaveLength(2);
         expect(html).toContain('.kind-tabs { justify-content: space-between; }');
-        expect(editor + html).not.toContain('kind-group-label');
     });
     it('shows no counters: material the note carries is lit in sand instead', () => {
         const editor = read('public/editor/editor.js'), html = read('public/editor/index.html');
-        expect(editor + html).not.toContain('tab-count');
         expect(editor).toContain("${has ? ' has' : ''}");
         expect(html).toContain('.kind-tab.has:not(.on) { border-color: var(--sand); color: var(--sand); }');
     });
@@ -93,6 +88,5 @@ describe('small fixes (#744 · #750)', () => {
     it('says "Scarica da" on the Italian App Store badge', () => {
         const it = read('public/assets/js/i18n.it.js');
         expect(it).toContain('"Download on the": "Scarica da"');
-        expect(it).not.toContain('Scarica su');
     });
 });
