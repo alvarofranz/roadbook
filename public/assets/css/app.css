@@ -115,10 +115,13 @@ h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-
     body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--notice-h, 0px)); }
 }
 /* The status bar is transparent over the page (viewport-fit=cover), so the top inset is covered by
-   ONE fixed, opaque strip above everything (#787): nothing that scrolls — a page, a sheet shifted
-   up by the iOS keyboard — ever shows behind the clock. It is exactly the inset: zero where there
-   is none (a desktop browser), so it only exists where there is a status bar to keep clear. */
-body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--bg); z-index: 1000; pointer-events: none; }
+   ONE fixed strip above everything (#787), the way native apps treat their top bar: the app's own
+   dark surface, frosted, so what scrolls under it blurs away instead of showing behind the clock
+   — a page, a sheet shifted up by the iOS keyboard. It is exactly the inset: zero where there is
+   none (a desktop browser). While a dialog is open it takes the dialog's dimmer tone, so the
+   screen above the dialog reads as one. */
+body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: rgba(14, 17, 22, .86); -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px); z-index: 1000; pointer-events: none; transition: background-color .2s ease; }
+body:has(> .modal:not([hidden]))::before { background: rgba(8, 9, 14, .94); }
 /* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
    `body.rb-fs`/`body.rb-immersive` outweigh the plain-`body` padding rules above on specificity,
    so no !important is needed. */
