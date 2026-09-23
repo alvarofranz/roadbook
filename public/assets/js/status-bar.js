@@ -28,7 +28,7 @@ window.RBStatusBar = (function () {
         const now = new Date();
         q('clock').textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
         if (battery) { const p = Math.round(battery.level * 100); q('batt').textContent = p + '%'; q('bicon').className = 'fa-solid ' + (battery.charging ? 'fa-bolt' : battIcon(p)); }
-        else { q('batt').textContent = now.toLocaleDateString(document.documentElement.lang || undefined, { day: 'numeric', month: 'short' }); q('bicon').className = 'fa-solid fa-calendar-day'; }
+        else { q('batt').textContent = now.toLocaleDateString(RBi18n.current(), { day: 'numeric', month: 'short' }); q('bicon').className = 'fa-solid fa-calendar-day'; }
         q('gpscell').className = 'status-cell ' + gpsCls;
         q('gps').textContent = gpsTxt;
     }

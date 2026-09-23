@@ -144,7 +144,7 @@ DB/Convenzioni rapide below have counterparts there).
   - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss)`
     (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
     returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
-    `RBToast(msg)` (translated toast into the page's `#toast`), `RBApi(action, body)` (JSON POST
+    `RBToast(msg)` (translated toast; the `#toast` element is created on first use), `RBApi(action, body)` (JSON POST
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
@@ -156,7 +156,7 @@ DB/Convenzioni rapide below have counterparts there).
     galleries, My roadbooks and user management all drive their search + pager through it),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
     `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`unlock()` (the "done" bell +
-    big check — a Recorder note, a Reader validation, #768), `RBBusy(el, {onEnd})` (the button that launched an async job
+    big check — a Recorder note, a Reader validation, #768), `RBDebounce(fn, ms)` (with `.cancel()`), `RBCsv(rows)` (a CSV Blob with a BOM, so Excel reads the accents — every export), `RBTurnstile(el, siteKey)` (the one Turnstile loader → `{token(), reset()}`), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
     plus the global chrome (desktop top bar + footer, the mobile bottom tab bar), version
     auto-refresh and the Install chip.
@@ -576,13 +576,13 @@ Operational notes:
 - **Events** — `/events/` lists public events and `/event/<slug>` is the event view
   (categories, organizers, linked roadbooks). Participants join as *pending* and are activated
   by the organizer (QR token or the admin panel); `/go/<code>` is the participant deep link
-  (auto-join + redirect). Admin side under `/admin/events/`. Tables: the `events` family in
+  (asks to join, then joins + redirects; the app joins through the API). Admin side under `/admin/events/`. Tables: the `events` family in
   `migrations/`.
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
   `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
-  (`simplifyRoadbook`, `reverseRoadbook`),
+  (`simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
   `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
   the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
@@ -604,9 +604,10 @@ Operational notes:
   movement, so `disp` is only ever ground actually covered (a junk or jittering fix used to add
   phantom kilometres, #383). In the native app it uses RBNative's background-capable watch
   (logging survives a locked screen).
-- `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader + Tripmaster):
-  settings modal, localStorage checkpoint with recovery, finished-track modal (download /
-  convert into a roadbook); the file itself is written once at the end via `RBDownload`.
+- `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader · Tripmaster · Recorder):
+  settings modal, localStorage checkpoint with recovery (a declined one is marked, never deleted),
+  finished-track modal (download / convert into a roadbook), `handOver()` for a caller that ends the
+  log along with its own work (the Reader's run); the file is written once at the end via `RBDownload`.
 - `rb-remote.js` (`RBRemote`, #20) — hands-free advance from an external remote. The cheap
   hardware (Bluetooth page-turner **pedals**, camera clickers, ring remotes) pairs as a
   keyboard, so the whole transport is `keydown` — no permissions, no plugin, identical in the
@@ -616,10 +617,10 @@ Operational notes:
   modal open, and Space/Enter left to a focused button so it never advances twice). Used by the
   **Reader** (switch in the start dialog, remembered per device); a Gamepad or BLE transport can
   feed the same commands later.
-- `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos +
-  voice notes buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
+- `rb-media-queue.js` (`RBMediaQueue`) — offline-first media queue (#147): geotagged photos
+  buffered as blobs in IndexedDB, uploaded to the server with retry (auto-flush on
   `online` + resume across reloads/crashes). `add(kind, blob, fields, name, token)` ·
-  `flush()` (drain now, e.g. once a draft exists after sign-in) ·
+  `get(token)` · `drop(tokens)` (a discarded recording's photos) · `flush()` (drain now, e.g. once a draft exists after sign-in) ·
   `init({onDone, onChange, resolveRoadbook})`. Items may be enqueued without a `roadbook`; the
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in), and until it
   can, a signed-out capture stays queued on the device. Pure `createQueue` core

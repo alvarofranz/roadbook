@@ -1389,7 +1389,8 @@
     // — the same "is this resumable?" guard each tool applies to its own checkpoint. The
     // shell formats the human label/detail (i18n stays out of the core).
     function pendingWork(snap) {
-        snap = snap || {};
+        // a checkpoint the user declined stays on the device but is never offered again (#436)
+        snap = Object.fromEntries(Object.entries(snap || {}).filter(([, v]) => !(v && v.declined)));
         const out = [];
         const draft = snap.rb_editor_draft;
         if (draft && draft.rb && draft.rb.meta && Array.isArray(draft.rb.notes)) {

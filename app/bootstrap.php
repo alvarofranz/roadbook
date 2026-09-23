@@ -19,6 +19,10 @@ $CFG = [
     'app_secret'       => $_ENV['APP_SECRET'] ?? '',
     'turnstile_site'   => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
     'turnstile_secret' => $_ENV['TURNSTILE_SECRET'] ?? '',
+    // The reverse proxies whose X-Forwarded-For is believed (client_ip): IPs or CIDRs, comma-separated.
+    // Loopback + the private ranges by default — where a local proxy hop lives. Behind Cloudflare's
+    // proxy, add its published ranges (https://www.cloudflare.com/ips/).
+    'trusted_proxies'  => array_values(array_filter(array_map('trim', explode(',', $_ENV['TRUSTED_PROXIES'] ?? '127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7')))),
     'admin_emails'     => array_values(array_filter(array_map('trim', explode(',', strtolower($_ENV['ADMIN_EMAILS'] ?? ''))))),
     // Google Sign-In (#46): comma-separated OAuth client IDs, WEB first then Android. Every id is
     // an accepted `aud` when verifying a Google ID token; the first (web) drives the GIS button.
@@ -108,7 +112,41 @@ function rate_hit_file(string $key, int $window): array {
     flock($fh, LOCK_UN); fclose($fh);
     return [$count, $exp];
 }
-function client_ip(): string { return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'; }
+// The client's IP — the key of every rate limit, the Turnstile `remoteip` and the (anonymised)
+// activity log. Behind a reverse proxy REMOTE_ADDR is the proxy, which would put every user in one
+// bucket; so when REMOTE_ADDR is a trusted proxy, X-Forwarded-For is walked from the RIGHT, skipping
+// trusted hops: the first untrusted address is the one our own proxy saw. The entries to its left
+// come from the client and are never believed.
+function client_ip(): string {
+    static $ip = null;
+    if ($ip !== null) return $ip;
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    if (!ip_trusted($ip)) return $ip;
+    $hops = array_reverse(array_map('trim', explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))));
+    foreach ($hops as $hop) {
+        if (!filter_var($hop, FILTER_VALIDATE_IP)) break;
+        $ip = $hop;
+        if (!ip_trusted($hop)) break;
+    }
+    return $ip;
+}
+function ip_trusted(string $ip): bool {
+    global $CFG;
+    foreach ($CFG['trusted_proxies'] as $cidr) if (ip_in_cidr($ip, $cidr)) return true;
+    return false;
+}
+// Is $ip inside $cidr ("10.0.0.0/8", "::1/128", or a bare address)? IPv4 and IPv6, byte-wise.
+function ip_in_cidr(string $ip, string $cidr): bool {
+    [$net, $bits] = array_pad(explode('/', $cidr, 2), 2, null);
+    $a = @inet_pton($ip); $b = @inet_pton($net);
+    if ($a === false || $b === false || strlen($a) !== strlen($b)) return false;
+    $bits = $bits === null ? strlen($a) * 8 : max(0, min(strlen($a) * 8, (int)$bits));
+    $whole = intdiv($bits, 8); $rest = $bits % 8;
+    if (substr($a, 0, $whole) !== substr($b, 0, $whole)) return false;
+    if (!$rest) return true;
+    $mask = (0xFF << (8 - $rest)) & 0xFF;
+    return (ord($a[$whole]) & $mask) === (ord($b[$whole]) & $mask);
+}
 
 // True when the request reached the user over HTTPS — directly, or via the production proxy whose
 // internal hop to PHP is plain HTTP (so trust X-Forwarded-Proto). Drives the Secure cookie flag:
@@ -183,21 +221,11 @@ function anon_ip(string $ip): string {
     return $ip;
 }
 
-// The client IP for logging: behind the production proxy the real client is the first entry of
-// X-Forwarded-For (REMOTE_ADDR is the proxy). Used ONLY for anonymised logging, never for a
-// security decision, so trusting the proxy header here is fine — and rate-limiting keeps using
-// the un-proxied client_ip(), so anonymisation here doesn't widen its buckets.
-function logged_ip(): string {
-    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
-    if ($xff !== '') { $first = trim(explode(',', $xff)[0]); if ($first !== '') return $first; }
-    return client_ip();
-}
-
 // Record a security/activity event (#86). The IP is anonymised; rows auto-purge after 90 days
 // and CASCADE-delete with the user. Best-effort: logging must never break the actual request.
 function log_activity(?int $userId, string $action, ?string $detail = null): void {
     try {
         db()->prepare('INSERT INTO activity_log (user_id, action, detail, ip) VALUES (?,?,?,?)')
-            ->execute([$userId, substr($action, 0, 40), $detail !== null ? substr($detail, 0, 255) : null, anon_ip(logged_ip())]);
+            ->execute([$userId, substr($action, 0, 40), $detail !== null ? substr($detail, 0, 255) : null, anon_ip(client_ip())]);
     } catch (\Throwable $e) { /* never let logging fail the request */ }
 }

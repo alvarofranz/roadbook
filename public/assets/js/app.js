@@ -127,8 +127,8 @@
         }).join('');
         // Top bar — the desktop-web navigation only. Hidden on every mobile-width view (web · PWA ·
         // native), where the fixed bottom tab bar below takes over — so there is no hamburger and no
-        // full-screen menu. No language switcher either: the language is browser-detected and only
-        // ever changed at the bottom of the Profile page.
+        // full-screen menu. The language is browser-detected; it is changed from the Profile page or
+        // the desktop footer's picker, never from the nav.
         let header = document.querySelector('header.topbar') || document.querySelector('header');
         if (!header) { header = document.createElement('header'); document.body.prepend(header); }
         header.className = 'topbar';
