@@ -7,9 +7,10 @@ const php = read('app/comments.php'), api = read('public/api/index.php'), page =
 const html = read('public/challenge/index.html'), app = read('public/assets/js/app.js'), account = read('public/account/account.js');
 
 describe('the comments API', () => {
-    it('exists only on public roadbooks, for signed-in users', () => {
+    it('exists only on public roadbooks: anyone reads, signed-in users write (#884)', () => {
         expect(php).toContain("WHERE slug = ? AND status = 'public'");
-        for (const a of ['comments_list', 'comment_add', 'comment_delete']) expect(api).toMatch(new RegExp(`case '${a}':\\s+${a}\\(require_user\\(\\), \\$d\\)`));
+        for (const a of ['comment_add', 'comment_delete']) expect(api).toMatch(new RegExp(`case '${a}':\\s+${a}\\(require_user\\(\\), \\$d\\)`));
+        expect(api).toContain("case 'comments_list':  comments_list(current_user(), $d); break;");
         expect(api).not.toMatch(/\$readOnly = \[[^\]]*comments_list/); // POST like every other action
     });
     it('guards posting: length, a per-user rate limit and Turnstile', () => {

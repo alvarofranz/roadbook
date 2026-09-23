@@ -30,10 +30,9 @@ La schermata iniziale (`#loadScreen`) offre tre ingressi:
 - **Carica da roadbook pubblici** — `#pickChallenge` apre il picker DB-backed
   (`RBChallenges.pick`).
 
-**Accesso richiesto (#146)**: aprire un roadbook **pubblico** (dal picker o da `/reader/<slug>`)
-richiede di essere loggati — da non loggati parte `RBNeedAuth` invece del caricamento. Perciò
-`config` viene letto in testa all'avvio per conoscere lo stato di login (`meUser`). File `.rdbk`
-locali e roadbook propri per `?rb=` non sono soggetti al gate.
+**Nessun login per un roadbook pubblico (#884)**: dal picker o da `/reader/<slug>` si apre e si
+naviga per chiunque. `meUser` dice solo se il report della run sale al profilo; da non loggati resta
+sul dispositivo finché non si accede.
 
 `loadRb` normalizza lo schema con
 `RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
@@ -52,7 +51,7 @@ ordine di priorità:
    solo all'uscita esplicita.
 2. **Roadbook da URL** (`loadFromUrl`) — due forme:
    - **Roadbook pubblico** via `/reader/<slug>` (es. il pulsante "Naviga" di un roadbook
-     pubblico): `RBChallenges.publicFromUrl` + `loadPublic`, previo login (#146).
+     pubblico): `RBChallenges.publicFromUrl` + `loadPublic`.
    - **Roadbook personale/privato per id (#71)** via `/reader/?rb=<id>`: lo carica dal profilo
      con `RBApi('rb_get', { id })` — endpoint gated sul proprietario (e sui co-organizzatori
      dell'evento, #123), così solo chi ne ha diritto apre i roadbook privati. Affianca il

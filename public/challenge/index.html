@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0e1116">
     <title>Public roadbook · RDBK.app</title>
     <meta name="description" content="A public digital roadbook on RDBK.app — sign in to read it, navigate it with GPS or export a PDF.">
-    <meta name="robots" content="noindex">
+    <meta name="robots" content="index, follow">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="RDBK.app">
     <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
@@ -16,9 +16,9 @@
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.7-187">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.7-188">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.7-187">
+    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.7-188">
     <style>
         .ch-owner { display: flex; gap: .6rem; align-items: center; margin-top: .5rem; }
         #chLoading { padding: 2rem 0; }
@@ -81,6 +81,7 @@
         <section class="ch-comments" id="chComments" hidden>
             <h2><i class="fa-solid fa-comments icon-accent"></i> <span data-i18n="Comments">Comments</span> <span class="muted" id="chCommentCount"></span></h2>
             <div class="comment-list" id="chCommentList"></div>
+            <a class="btn btn-ghost" id="chCommentSignIn" hidden><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="Sign in to comment">Sign in to comment</span></a>
             <form class="comment-form" id="chCommentForm">
                 <img id="chMeAvatar" class="avatar avatar-sm" src="/assets/icon.svg" alt="">
                 <div class="grow">
@@ -104,18 +105,18 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=1.9.7-187"></script>
-<script src="/assets/js/roadbook-core.js?v=1.9.7-187"></script>
-<script src="/assets/js/note-canvas.js?v=1.9.7-187"></script>
-<script src="/assets/js/rb-pdf.js?v=1.9.7-187"></script>
-<script src="/assets/js/rbmap.js?v=1.9.7-187"></script>
-<script src="/assets/js/challenges.js?v=1.9.7-187"></script>
-<script src="/assets/js/i18n.es.js?v=1.9.7-187"></script>
-<script src="/assets/js/i18n.it.js?v=1.9.7-187"></script>
-<script src="/assets/js/i18n.de.js?v=1.9.7-187"></script>
-<script src="/assets/js/i18n.fr.js?v=1.9.7-187"></script>
-<script src="/assets/js/i18n.js?v=1.9.7-187"></script>
-<script src="/assets/js/app.js?v=1.9.7-187"></script>
-<script src="challenge.js?v=1.9.7-187"></script>
+<script src="/assets/js/config.js?v=1.9.7-188"></script>
+<script src="/assets/js/roadbook-core.js?v=1.9.7-188"></script>
+<script src="/assets/js/note-canvas.js?v=1.9.7-188"></script>
+<script src="/assets/js/rb-pdf.js?v=1.9.7-188"></script>
+<script src="/assets/js/rbmap.js?v=1.9.7-188"></script>
+<script src="/assets/js/challenges.js?v=1.9.7-188"></script>
+<script src="/assets/js/i18n.es.js?v=1.9.7-188"></script>
+<script src="/assets/js/i18n.it.js?v=1.9.7-188"></script>
+<script src="/assets/js/i18n.de.js?v=1.9.7-188"></script>
+<script src="/assets/js/i18n.fr.js?v=1.9.7-188"></script>
+<script src="/assets/js/i18n.js?v=1.9.7-188"></script>
+<script src="/assets/js/app.js?v=1.9.7-188"></script>
+<script src="challenge.js?v=1.9.7-188"></script>
 </body>
 </html>

@@ -17,14 +17,15 @@ Le challenge danno a un roadbook salvato un **URL condivisibile e amichevole** e
 presentazione pubblica. Da lì si può:
 
 - scoprirla nella **gallery** della home e in `/roadbooks/` (senza login);
-- **navigarla** nel Reader (`/reader/<slug>`) — **richiede login** (#146);
+- **navigarla** nel Reader (`/reader/<slug>`), anche senza account;
 - esportarne il **PDF**;
 - **forkarla** nell'Editor (`/editor/<slug>`) solo se il proprietario l'ha marcata
   *riusabile* (flag `reusable`, #106).
 
-**Lettura dietro login (#146)**: leggere il contenuto di un roadbook pubblico (la pagina
-`/challenge/<slug>` e il Reader) richiede di essere autenticati — a un visitatore anonimo la
-pagina mostra `RBNeedAuth` invece del roadbook. La gallery/elenco resta pubblica.
+**Pubblico vuol dire pubblico (#884)**: chiunque, anche senza account, legge la pagina
+`/challenge/<slug>`, ne esporta il PDF, legge i commenti e "Completato da", e la naviga nel Reader.
+Serve un account solo per **scrivere** un commento (al posto del form, un link *Sign in to comment*) e
+per salvare la run nel proprio profilo.
 
 ---
 
@@ -179,7 +180,7 @@ rispettando la regola self-contained del formato (inline → `rb.icons` → pale
 ### I bottoni d'azione
 Per tutti:
 
-- **Navigate** → `href = /reader/<slug>` (apre nel Reader, previo login #146);
+- **Navigate** → `href = /reader/<slug>` (apre nel Reader);
 - **Export PDF** → genera il PDF client-side (jsPDF).
 
 **Nessun bottone Fork per i non proprietari**: un roadbook pubblico si legge, si naviga e si

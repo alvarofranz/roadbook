@@ -1,5 +1,5 @@
 <?php
-/* Public comments on a public roadbook (#809): signed-in readers write them under the roadbook on
+/* Public comments on a public roadbook (#809): anyone reads them (#884), signed-in readers write them under the roadbook on
  * its page (/challenge/<slug>) — never while navigating it. Posting is guarded by Turnstile and a
  * rate limit; the author, the roadbook's owner and an admin may delete one. */
 
@@ -14,13 +14,15 @@ function comment_roadbook(string $slug): array {
     return $row;
 }
 
-function comment_shape(array $r, array $me, int $ownerId): array {
+// $me is null for a reader who is not signed in: a public roadbook's comments are public (#884)
+function comment_shape(array $r, ?array $me, int $ownerId): array {
+    $uid = $me ? (int)$me['id'] : 0;
     return ['id' => (int)$r['id'], 'body' => $r['body'], 'created_at' => $r['created_at'],
         'username' => $r['username'], 'avatar' => $r['avatar'],
-        'can_delete' => (int)$r['user_id'] === (int)$me['id'] || $ownerId === (int)$me['id'] || is_admin($me)];
+        'can_delete' => $me && ((int)$r['user_id'] === $uid || $ownerId === $uid || is_admin($me))];
 }
 
-function comments_list(array $me, array $d): void {
+function comments_list(?array $me, array $d): void {
     $rb = comment_roadbook((string)($d['slug'] ?? ''));
     $st = db()->prepare('SELECT c.id, c.user_id, c.body, c.created_at, u.username, u.avatar
         FROM roadbook_comments c JOIN users u ON u.id = c.user_id WHERE c.roadbook_id = ? ORDER BY c.created_at, c.id');

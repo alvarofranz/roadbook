@@ -153,7 +153,7 @@ function profile_get(array $d): void {
 // The history of a public roadbook's completions, under its comments (#869): every public
 // completed run with its runner, and how many private ones there were besides — a private run
 // never names its runner.
-function roadbook_completions(array $me, array $d): void {
+function roadbook_completions(array $d): void { // public, like the roadbook (#884)
     $st = db()->prepare("SELECT id FROM roadbooks WHERE slug = ? AND status = 'public'");
     $st->execute([(string)($d['slug'] ?? '')]);
     $rbId = (int)$st->fetchColumn();
