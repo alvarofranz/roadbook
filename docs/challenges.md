@@ -245,3 +245,11 @@ through an event) has none.
     after each attempt.
   - Deleting asks first and names the author and the start of the text.
   - The roadbook's author carries the *Author* badge.
+
+## Completed by (#869)
+
+Under the comments, **Completed by** lists every *public* completed run of the roadbook: runner, notes
+reached, date, and a link to the run's page (`/run/<id>`). The private ones are only counted
+("And 3 private runs."), and never name their runner. API: `roadbook_completions {slug}` (signed in,
+public roadbooks only). Every roadbook card carries the same number as a pill, *Times completed*
+(`completions`, counted by the one `RB_COMPLETIONS_SQL` fragment and shaped by `rb_card_fields`, #868).

@@ -1432,3 +1432,14 @@ Object.assign(window.RBi18nLangs.de, {
     "Check out my run!": "Schau dir meine Fahrt an!",
     "Sharing makes this run public. Share it?": "Teilen macht diese Fahrt öffentlich. Teilen?",
 });
+
+/* completions, the run's device (#867 · #868 · #869 · #870) */
+Object.assign(window.RBi18nLangs.de, {
+    "Device": "Gerät",
+    "No runs yet.": "Noch keine Fahrten.",
+    "Times completed": "Mal geschafft",
+    "Completed by": "Geschafft von",
+    "And 1 private run.": "Und 1 private Fahrt.",
+    "And {n} private runs.": "Und {n} private Fahrten.",
+    "priv.runs.4": "Jeder Bericht speichert auch, auf welcher Art Gerät er entstand (zum Beispiel „App · iPhone · iOS 17.5“): Modell und Systemversion, nie eine Kennung. Nur Administratoren sehen es, um Probleme zu beheben.",
+});

@@ -12,6 +12,10 @@ function run_int($v, int $max = 2147483647): int { return max(0, min($max, (int)
 
 // Save the report of a finished run. Visibility: the choice made on the report, else the runner's
 // standing preference; "remember" makes the choice that preference (#619).
+// How many times a roadbook was completed, for its card (#868): every completed run counts, public
+// or private — a number names nobody. One SQL fragment, used by every listing that draws a card.
+const RB_COMPLETIONS_SQL = '(SELECT COUNT(*) FROM roadbook_runs ru WHERE ru.roadbook_id = r.id AND ru.completed = 1) AS completions';
+
 function run_save(array $user, array $d): void {
     $title = mb_substr(trim((string)($d['title'] ?? '')), 0, 200) ?: 'Roadbook';
     $mode = ($d['mode'] ?? '') === 'competition' ? 'competition' : 'trip';
@@ -41,14 +45,15 @@ function run_save(array $user, array $d): void {
     $penalties = $mode === 'competition' ? json_encode(array_map('intval', array_intersect_key($pen, array_flip(['acc', 'cap', 'skip', 'extra', 'speed'])))) : null;
     $meta = $mode === 'competition' ? mb_substr(trim((string)($d['result_meta'] ?? '')), 0, 255) : '';
     db()->prepare('INSERT INTO roadbook_runs (user_id, roadbook_id, event_id, roadbook_title, mode, team, completed, started_at, ended_at, duration_s,
-            distance_m, notes_total, notes_reached, skipped, speed_zones, speed_exceeded, max_over_kmh, penalties, result_meta, is_public)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute([
+            distance_m, notes_total, notes_reached, skipped, speed_zones, speed_exceeded, max_over_kmh, penalties, result_meta, is_public, device)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute([
         (int)$user['id'], $rbId, $event ? (int)$event['id'] : null, $title, $mode,
         $mode === 'competition' ? mb_substr(preg_replace('/\D/', '', (string)($d['team'] ?? '')), 0, 8) : null,
         !empty($d['completed']) ? 1 : 0, $ms($d['started_at'] ?? 0), $ms($d['ended_at'] ?? 0), run_int($d['duration_s'] ?? 0),
         run_int($d['distance_m'] ?? 0), run_int($d['notes_total'] ?? 0, 65535), run_int($d['notes_reached'] ?? 0, 65535),
         $skipped ? implode(',', $skipped) : null, run_int($d['speed_zones'] ?? 0, 65535), run_int($d['speed_exceeded'] ?? 0, 65535),
         run_int($d['max_over_kmh'] ?? 0, 65535), $penalties, $meta !== '' ? $meta : null, $isPublic,
+        mb_substr(trim((string)($d['device'] ?? '')), 0, 80) ?: null, // admins only (#870)
     ]);
     $runId = (int)db()->lastInsertId();
     // a competition run of an event roadbook enters its classification at once (#590) — unverified
@@ -105,7 +110,7 @@ function profile_get(array $d): void {
     if (!$u) fail('Not found.', 404);
     $me = current_user();
     $isMe = $me && (int)$me['id'] === (int)$u['id'];
-    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count,
+    $rb = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, " . RB_COMPLETIONS_SQL . ",
             (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
         FROM roadbooks r WHERE r.user_id = ? AND r.status = 'public' ORDER BY r.updated_at DESC LIMIT 60");
     $rb->execute([(int)$u['id']]);
@@ -115,6 +120,16 @@ function profile_get(array $d): void {
     $runs->execute([(int)$u['id']]);
     $rows = $runs->fetchAll();
     $pub = array_filter($rows, fn($r) => (int)$r['is_public'] === 1); // the totals count what everyone sees
+    // the card of every public roadbook these runs ran (#867): what the completed list shows
+    $ranIds = array_values(array_unique(array_filter(array_map(fn($r) => $r['rb_status'] === 'public' ? (int)$r['roadbook_id'] : 0, $rows))));
+    $ran = [];
+    if ($ranIds) {
+        $cards = db()->prepare("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, u.username, " . RB_COMPLETIONS_SQL . ",
+                (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+            FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.id IN (" . implode(',', array_fill(0, count($ranIds), '?')) . ')');
+        $cards->execute($ranIds);
+        foreach ($cards->fetchAll() as $c) $ran['rb' . $c['id']] = rb_card_fields($c);
+    }
     json_out(['ok' => true, 'is_me' => $isMe,
         'user' => ['username' => $u['username'], 'bio' => $u['bio'], 'organization' => $u['organization'], 'avatar' => $u['avatar'], 'member_since' => substr((string)$u['created_at'], 0, 10)],
         'stats' => [
@@ -124,8 +139,8 @@ function profile_get(array $d): void {
             'distance_m' => array_sum(array_map(fn($r) => (int)$r['distance_m'], $pub)),
             'duration_s' => array_sum(array_map(fn($r) => (int)$r['duration_s'], $pub)),
         ],
-        'roadbooks' => array_map(fn($r) => ['slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'], 'note_count' => (int)$r['note_count'],
-            'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null], $rb->fetchAll()),
+        'roadbooks' => array_map('rb_card_fields', $rb->fetchAll()),
+        'run_roadbooks' => (object)$ran, // roadbook_key → card
         'runs' => array_map(fn($r) => [
             'id' => (int)$r['id'], 'title' => $r['roadbook_title'], 'roadbook_key' => $r['roadbook_id'] ? 'rb' . $r['roadbook_id'] : 't:' . $r['roadbook_title'],
             'roadbook_slug' => $r['rb_status'] === 'public' ? $r['rb_slug'] : null, // linked only where anyone may open it
@@ -139,6 +154,39 @@ function profile_get(array $d): void {
             'card' => run_card_url((int)$r['id']), // the shareable image, when the run has one (#785)
         ], $rows),
     ]);
+}
+
+// The history of a public roadbook's completions, under its comments (#869): every public
+// completed run with its runner, and how many private ones there were besides — a private run
+// never names its runner.
+function roadbook_completions(array $me, array $d): void {
+    $st = db()->prepare("SELECT id FROM roadbooks WHERE slug = ? AND status = 'public'");
+    $st->execute([(string)($d['slug'] ?? '')]);
+    $rbId = (int)$st->fetchColumn();
+    if (!$rbId) fail('This roadbook does not exist or is private.', 404);
+    $runs = db()->prepare('SELECT ru.id, ru.notes_reached, ru.notes_total, COALESCE(ru.ended_at, ru.created_at) AS ended_at, u.username, u.avatar
+        FROM roadbook_runs ru JOIN users u ON u.id = ru.user_id
+        WHERE ru.roadbook_id = ? AND ru.completed = 1 AND ru.is_public = 1 ORDER BY ended_at DESC LIMIT 100');
+    $runs->execute([$rbId]);
+    $private = db()->prepare('SELECT COUNT(*) FROM roadbook_runs WHERE roadbook_id = ? AND completed = 1 AND is_public = 0');
+    $private->execute([$rbId]);
+    json_out(['ok' => true, 'private' => (int)$private->fetchColumn(), 'runs' => array_map(fn($r) => [
+        'id' => (int)$r['id'], 'username' => $r['username'], 'avatar' => $r['avatar'], 'ended_at' => $r['ended_at'],
+        'notes_reached' => (int)$r['notes_reached'], 'notes_total' => (int)$r['notes_total'],
+    ], $runs->fetchAll())]);
+}
+
+// A user's runs for the admin (#870): what everyone sees plus what only admins do — the device.
+function admin_user_runs(array $admin, array $d): void {
+    $st = db()->prepare('SELECT ru.id, ru.roadbook_title, ru.mode, ru.device, ru.completed, ru.is_public, ru.notes_reached, ru.notes_total, ru.distance_m,
+            COALESCE(ru.ended_at, ru.created_at) AS ended_at
+        FROM roadbook_runs ru WHERE ru.user_id = ? ORDER BY ended_at DESC LIMIT 300');
+    $st->execute([(int)($d['user_id'] ?? 0)]);
+    json_out(['ok' => true, 'runs' => array_map(fn($r) => [
+        'id' => (int)$r['id'], 'title' => $r['roadbook_title'], 'mode' => $r['mode'], 'device' => $r['device'], 'completed' => (int)$r['completed'],
+        'is_public' => (int)$r['is_public'], 'notes_reached' => (int)$r['notes_reached'], 'notes_total' => (int)$r['notes_total'],
+        'distance_m' => (int)$r['distance_m'], 'ended_at' => $r['ended_at'],
+    ], $st->fetchAll())]);
 }
 
 /* ---- the shared event ranking (#590 · #607 · #608) ---- */
