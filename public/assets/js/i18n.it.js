@@ -1447,3 +1447,13 @@ Object.assign(window.RBi18nLangs.it, {
     "Could not load the log.": "Impossibile caricare il log.",
     "banner.level.warning": "Avviso",
 });
+
+/* release notes 1.9.6 */
+Object.assign(window.RBi18nLangs.it, {
+    "Talk about the route": "Parla del percorso",
+    "Public roadbooks have comments: signed-in readers talk about the route on its page, never while navigating it.": "I roadbook pubblici hanno i commenti: chi ha effettuato l’accesso parla del percorso sulla sua pagina, mai durante la navigazione.",
+    "Recordings, photos and drafts survive a crash, a sign-in and a full phone; Discard really discards, and a recording you chose not to resume never asks again.": "Registrazioni, foto e bozze sopravvivono a un crash, a un accesso e a un telefono pieno; Scarta scarta davvero, e una registrazione che hai scelto di non riprendere non lo chiede più.",
+    "Pausing a run no longer counts the road driven while paused, and a run resumed after a crash keeps its roadbook and its event.": "Mettere in pausa un percorso non conta più la strada fatta durante la pausa, e un percorso ripreso dopo un crash mantiene il suo roadbook e il suo evento.",
+    "A roadbook locked by someone else is truly read-only, and a public roadbook can only be copied when its owner allows it.": "Un roadbook bloccato da un’altra persona è davvero in sola lettura, e un roadbook pubblico si può copiare solo se il proprietario lo consente.",
+    "Safer accounts: a password reset signs out the app everywhere, and organizers no longer see the email of the people they add.": "Account più sicuri: reimpostare la password disconnette l’app ovunque, e gli organizzatori non vedono più l’email delle persone che aggiungono.",
+});
