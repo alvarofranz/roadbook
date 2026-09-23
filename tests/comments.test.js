@@ -52,6 +52,9 @@ describe('one Turnstile loader (RBTurnstile)', () => {
     it('is shared by the account forms and the comments', () => {
         expect(app).toContain('window.RBTurnstile = (el, siteKey) => {');
         expect(app).toContain("if (!el || !siteKey || isNativeApp()) return handle;");
+        // api.js is loaded async: render from its load, never through turnstile.ready(), which refuses that and never fires (#863)
+        expect(app).toContain('turnstileScript.then(() => {\n            widget = window.turnstile.render(el,');
+        expect(app).not.toContain('turnstile.ready(');
         expect(account).toContain("ts[el.dataset.ts] = RBTurnstile(el, cfg.turnstile);");
         expect(account).not.toMatch(/__tsReady|loadTurnstile/);
     });

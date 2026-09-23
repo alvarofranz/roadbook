@@ -1300,9 +1300,11 @@
             s.async = true; s.onload = resolve; s.onerror = reject;
             document.head.appendChild(s);
         });
-        turnstileScript.then(() => window.turnstile.ready(() => {
-            widget = window.turnstile.render(el, { sitekey: siteKey, theme: 'dark', callback: (t) => { token = t; }, 'expired-callback': () => { token = null; } });
-        })).catch(() => {}); // blocked or offline: the server answers "Please complete the challenge."
+        // the script is loaded async, so render straight from its load: turnstile.ready() refuses an
+        // async-loaded api.js and would never fire (the widget then never showed, #863)
+        turnstileScript.then(() => {
+            widget = window.turnstile.render(el, { sitekey: siteKey, theme: 'dark', callback: (t) => { token = t; }, 'expired-callback': () => { token = null; }, 'error-callback': () => { token = null; } });
+        }).catch(() => {}); // blocked or offline: the server answers "Please complete the challenge."
         return handle;
     };
     window.RBNeedAuth = (msg) => {
