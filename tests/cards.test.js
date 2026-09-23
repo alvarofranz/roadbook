@@ -45,3 +45,10 @@ describe('every event card comes from RBEventCard', () => {
         expect(read('app/events.php')).toContain("'vehicles' => rb_vehicle_list($r['vehicles']), // the card's vehicle icons (#770)");
     });
 });
+
+describe('an event card image covers its box, like a roadbook photo', () => {
+    it('has no contain mode', () => {
+        expect(app).not.toMatch(/contain: true|card-media\$\{contain/);
+        expect(css).not.toContain('.card-media.contain');
+    });
+});

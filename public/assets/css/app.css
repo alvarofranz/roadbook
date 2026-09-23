@@ -452,7 +452,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .card-media::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(8, 10, 14, .82) 0%, rgba(8, 10, 14, .25) 38%, rgba(8, 10, 14, 0) 60%, rgba(8, 10, 14, .35) 100%); }
 .gallery-card .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
 .gallery-card:hover .thumb { transform: scale(1.04); }
-.card-media.contain .thumb { object-fit: contain; padding: 1.1rem 1.1rem 2.6rem; background: radial-gradient(circle at 50% 40%, #232a36, var(--card-2) 70%); }
 .gallery-card .thumb-placeholder { display: flex; align-items: center; justify-content: center; font-size: 2.8rem; color: rgba(232, 176, 89, .38); background: radial-gradient(circle at 50% 38%, #26303d, var(--card-2) 72%); }
 .card-badges, .card-actions { position: absolute; top: .55rem; z-index: 2; display: flex; gap: .35rem; align-items: center; }
 .card-badges { left: .55rem; }

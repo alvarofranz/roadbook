@@ -736,11 +736,11 @@
     /* ONE card for every gallery (#770): the media on top — the photo or the route, darkened at the
        foot so what sits on it reads — carrying `badges` top-left, the `overlays` actions top-right
        and the key `stats` ([icon, value, label] — icon may be null) at its foot; the title and a `meta` line below.
-       `contain` fits the image instead of cropping it (an event's logo). RBRoadbookCard and
+       The image always covers the media box, photo and logo alike. RBRoadbookCard and
        RBEventCard fill it the same way everywhere, so the cards read alike on every page. */
-    window.RBGalleryCard = ({ href, thumb, title, meta = '', icon = 'fa-map-location-dot', placeholder = '', overlays = '', badges = '', stats = [], body = '', contain = false }) =>
+    window.RBGalleryCard = ({ href, thumb, title, meta = '', icon = 'fa-map-location-dot', placeholder = '', overlays = '', badges = '', stats = [], body = '' }) =>
         (href ? `<a class="gallery-card" href="${RBesc(href)}">` : `<div class="gallery-card">`)
-        + `<div class="card-media${contain ? ' contain' : ''}">`
+        + '<div class="card-media">'
         + (thumb ? `<img class="thumb" src="${RBesc(RBMediaSrc(thumb))}" alt="${RBesc(title)}" loading="lazy">`
                  : (placeholder || `<div class="thumb thumb-placeholder"><i class="fa-solid ${icon}"></i></div>`))
         + (badges ? `<div class="card-badges">${badges}</div>` : '')
@@ -758,7 +758,7 @@
         stats: [['fa-route', RBKm(r.total_distance, 1), RBt('Distance')], ['fa-location-dot', String(r.note_count), RBt('Notes')]],
         meta: r.username ? `<i class="fa-solid fa-circle-user"></i> @${RBesc(r.username)}` : '',
     });
-    // An event's card: its logo whole, a calendar tile with its first day, where it stands
+    // An event's card: its image, a calendar tile with its first day, where it stands
     // (upcoming · live · ended), how many roadbooks and for which vehicles, who runs it and when.
     window.RBEventCard = (e) => {
         const today = new Date().toISOString().slice(0, 10);
@@ -766,7 +766,7 @@
         const day = e.starts_on ? new Date(e.starts_on + 'T12:00:00') : null;
         const lang = document.documentElement.lang || undefined;
         return RBGalleryCard({
-            href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered', contain: true,
+            href: `/event/${encodeURIComponent(e.slug)}`, thumb: e.logo, title: e.title, icon: 'fa-flag-checkered',
             badges: (day ? `<span class="card-date"><b>${day.getDate()}</b><small>${RBesc(day.toLocaleDateString(lang, { month: 'short' }))}</small></span>` : ''),
             overlays: `<span class="card-chip state-${state[0]}">${RBesc(RBt(state[1]))}</span>`,
             stats: [['fa-book-open', `${e.roadbooks} ${RBesc(RBt('roadbooks'))}`]].concat(e.vehicles && e.vehicles.length ? [[null, RBVehicleIcons(e.vehicles)]] : []),
