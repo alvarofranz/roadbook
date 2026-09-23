@@ -10,11 +10,13 @@
  * discarded before the bridge loaded is dropped from the mirror, never resurrected. */
 
 // The keys worth surviving a purge: the session, who is signed in, participant mode, the run
-// reports waiting to upload, and every crash checkpoint of a session in progress.
+// reports waiting to upload, every crash checkpoint of a session in progress, and the rider's own
+// device settings (the tour answers, the remote's buttons).
 export const DURABLE_KEYS = [
     'rb_token', 'rb_cfg_user', 'rb_participant', 'rb_pending_runs',
     'rb_session', 'rb_session_roadbook', 'rb_recorder_session', 'rb_recorder_pending_save',
     'rb_tripmaster_session', 'rb_trip_gpx', 'rb_editor_draft',
+    'rb_tour', 'rb_remote_map', // the rider's own settings on this device: the tour answers (#914), the remote's buttons (#909)
 ];
 export const SENTINEL = 'rb_durable';
 export const isDurable = (key) => DURABLE_KEYS.includes(key);
