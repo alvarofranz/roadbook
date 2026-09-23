@@ -1442,10 +1442,16 @@
             out.push({ tool: 'editor', url: 'editor/', keys: ['rb_editor_draft'], kind: 'draft',
                 title: draft.rb.meta.title || '', noteCount: draft.rb.notes.length });
         }
-        const rec = snap.rb_recorder_session;
+        // A recording — still running, or finished and waiting for Save / Discard (its session, or the
+        // stash kept across the sign-in trip). Only resumable from here: the Recorder's own Discard is
+        // the one that also drops its queued photos and its draft (#460).
+        const rec = snap.rb_recorder_session, stash = snap.rb_recorder_pending_save;
+        const finished = rec && rec.finishing ? rec : (stash && stash.finishing ? stash : null);
         if (rec && rec.recording) {
-            out.push({ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording',
+            out.push({ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording', resumeOnly: true,
                 distanceM: rec.recordedM || 0 });
+        } else if (finished) {
+            out.push({ tool: 'recorder', url: 'recorder/', keys: [], kind: 'finished', resumeOnly: true, distanceM: finished.recordedM || 0 });
         }
         const tm = snap.rb_tripmaster_session;
         if (tm && (tm.totalM > 0 || tm.waypoints > 0 || tm.timerOn || tm.timerAcc > 0 || tm.gpxRecording)) {

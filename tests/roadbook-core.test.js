@@ -598,8 +598,12 @@ describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
         const [d] = RB.pendingWork(draft);
         expect(d).toMatchObject({ tool: 'editor', url: 'editor/', kind: 'draft', title: 'My route', noteCount: 3, keys: ['rb_editor_draft'] });
     });
+    it('lists a finished recording waiting for Save / Discard, resumable only (#460)', () => {
+        expect(RB.pendingWork({ rb_recorder_session: { finishing: true, recordedM: 900 } })).toEqual([{ tool: 'recorder', url: 'recorder/', keys: [], kind: 'finished', resumeOnly: true, distanceM: 900 }]);
+        expect(RB.pendingWork({ rb_recorder_pending_save: { finishing: true, recordedM: 400 } })[0]).toMatchObject({ kind: 'finished', resumeOnly: true });
+    });
     it('describes a recorder recording only while it is recording', () => {
-        expect(RB.pendingWork(rec)).toEqual([{ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording', distanceM: 3210 }]);
+        expect(RB.pendingWork(rec)).toEqual([{ tool: 'recorder', url: 'recorder/', keys: ['rb_recorder_session'], kind: 'recording', resumeOnly: true, distanceM: 3210 }]);
         expect(RB.pendingWork({ rb_recorder_session: { recording: false, recordedM: 99 } })).toEqual([]);
     });
     it('describes a tripmaster run when any counter/timer/GPX is active, not when idle', () => {

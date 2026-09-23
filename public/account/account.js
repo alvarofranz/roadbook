@@ -169,7 +169,8 @@
     function finishLogin(user) {
         if (user.must_change_password) return showForce();
         const next = new URLSearchParams(location.search).get('next');
-        if (next && next.charAt(0) === '/' && next.charAt(1) !== '/') { location.href = next; return; }
+        // only a path on this site: '//x' and '/\x' are both read by browsers as another host
+        if (next && next.charAt(0) === '/' && !/^[/\\]/.test(next.charAt(1))) { location.href = next; return; }
         showAccount(user);
     }
 

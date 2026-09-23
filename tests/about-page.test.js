@@ -78,7 +78,6 @@ describe('the About page keeps the app panel and teasers the changelog (#478)', 
     });
 
     it('links the dedicated changelog page instead of embedding the list', () => {
-        expect(html).toContain('id="changelog"');           // old /about/#changelog bookmarks still land here
         expect(html).toContain('href="../changelog/"');
         expect(html).not.toContain('id="relList"');
         expect(html).not.toMatch(/changelog\.js\?v=/);

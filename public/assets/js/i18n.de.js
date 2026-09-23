@@ -1463,3 +1463,9 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "Discard the pending edits of this label?": "Die ausstehenden Änderungen dieser Beschriftung verwerfen?",
 });
+
+/* review 2 leftovers */
+Object.assign(window.RBi18nLangs.de, {
+    "Leave": "Verlassen",
+    "Recording to save": "Aufzeichnung zu speichern",
+});

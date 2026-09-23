@@ -14,6 +14,7 @@ describe('the run’s device (#870)', () => {
         expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148', { app: true })).toBe('App · iPhone · iOS 17.5');
         expect(label('Mozilla/5.0 (Linux; Android 15; Pixel 8 Build/AP3A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36', { app: true })).toBe('App · Pixel 8 · Android 15');
         expect(label('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36')).toBe('Web · Chrome · Android 10');
+        expect(label('Mozilla/5.0 (Linux; Android 10; K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36', { app: true })).toBe('App · Android 10');
         expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1', { pwa: true })).toBe('PWA · Safari · iPhone · iOS 16.4');
     });
     it('names the browser an iPhone runs, not the WebKit every iOS browser reports', () => {

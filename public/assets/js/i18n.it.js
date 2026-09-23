@@ -1500,3 +1500,9 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "Discard the pending edits of this label?": "Scartare le modifiche in sospeso di questa etichetta?",
 });
+
+/* review 2 leftovers */
+Object.assign(window.RBi18nLangs.it, {
+    "Leave": "Esci",
+    "Recording to save": "Registrazione da salvare",
+});

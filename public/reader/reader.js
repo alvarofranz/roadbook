@@ -865,7 +865,7 @@
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => RBShareFile(await (await fetch(lastQrUrl)).blob(), 'RB_' + team + '.png', lastPayload);
     // reports that finished offline or signed out go up as soon as the Reader can reach the server
-    cfgReady.then(() => { if (meUser) RBRun.flush(); });
+    cfgReady.then(() => { if (meUser) { RBRun.settleAbandoned(); RBRun.flush(); } });
 
     /* ---------- utils ---------- */
     // An action-bar button that is ON swaps ghost for primary: stacked, .btn-ghost (declared later

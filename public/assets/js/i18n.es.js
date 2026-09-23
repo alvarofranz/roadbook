@@ -1500,3 +1500,9 @@ Object.assign(window.RBi18nLangs.es, {
 Object.assign(window.RBi18nLangs.es, {
     "Discard the pending edits of this label?": "¿Descartar las ediciones pendientes de esta etiqueta?",
 });
+
+/* review 2 leftovers */
+Object.assign(window.RBi18nLangs.es, {
+    "Leave": "Salir",
+    "Recording to save": "Grabación por guardar",
+});
