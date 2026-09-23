@@ -378,11 +378,17 @@ function audio_delete(array $user, array $d): void {
 }
 
 /* ---- public (no auth): home gallery + challenge page ---- */
-// A roadbook as every card draws it (RBRoadbookCard): the gallery, a profile, an event.
+// A roadbook as every card draws it (RBRoadbookCard): the gallery, a profile, an event. RB_CARD_SQL
+// selects what rb_card_fields shapes, from `roadbooks r`; the author's `u.username` is the caller's
+// to join. The thumbnail is the cover (sort -1 sorts first), else the first photo. The completions
+// count every completed run, public or private — a number names nobody (#868).
+const RB_CARD_SQL = 'r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles,
+    (SELECT COUNT(*) FROM roadbook_runs ru WHERE ru.roadbook_id = r.id AND ru.completed = 1) AS completions,
+    (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb';
 function rb_card_fields(array $r): array {
     return ['id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'total_distance' => (int)$r['total_distance'],
-        'note_count' => (int)$r['note_count'], 'username' => $r['username'] ?? null, 'vehicles' => rb_vehicle_list($r['vehicles'] ?? null),
-        'completions' => (int)($r['completions'] ?? 0), // how many times it was completed (#868)
+        'note_count' => (int)$r['note_count'], 'username' => $r['username'] ?? null, 'vehicles' => rb_vehicle_list($r['vehicles']),
+        'completions' => (int)$r['completions'],
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null];
 }
 
@@ -390,8 +396,7 @@ function public_list(array $d = []): void {
     // #106: the Editor's fork search passes reusable=1 to show only copyable roadbooks; the
     // read-only listings (gallery, home, Reader picker) pass nothing and see every public one.
     $filter = !empty($d['reusable']) ? ' AND r.reusable = 1' : '';
-    $st = db()->query("SELECT r.id, r.slug, r.title, r.total_distance, r.note_count, r.vehicles, u.username, " . RB_COMPLETIONS_SQL . ",
-            (SELECT filename FROM roadbook_photos p WHERE p.roadbook_id = r.id ORDER BY p.sort, p.id LIMIT 1) AS thumb
+    $st = db()->query('SELECT ' . RB_CARD_SQL . ", u.username
         FROM roadbooks r JOIN users u ON u.id = r.user_id
         WHERE r.status = 'public' AND r.slug IS NOT NULL" . $filter . " ORDER BY r.updated_at DESC LIMIT 60");
     $rows = array_map('rb_card_fields', $st->fetchAll()); // vehicles drive the gallery filter (#713)
@@ -400,7 +405,7 @@ function public_list(array $d = []): void {
 
 function public_get(array $d): void {
     $slug = (string)($d['slug'] ?? '');
-    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.status, r.reusable, r.vehicles, u.username, u.first_name, u.last_name, u.bio, u.avatar
+    $st = db()->prepare('SELECT r.id, r.title, r.total_distance, r.note_count, r.filename, r.user_id, r.status, r.reusable, r.vehicles, u.username, u.avatar
         FROM roadbooks r JOIN users u ON u.id = r.user_id WHERE r.slug = ?');
     $st->execute([$slug]);
     $row = $st->fetch();
@@ -419,7 +424,7 @@ function public_get(array $d): void {
     $coverFn = $c->fetchColumn();
     $cover = $coverFn ? '/photos/' . $row['id'] . '/' . $coverFn : null;
     json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $slug, 'is_owner' => $isOwner, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'vehicles' => rb_vehicle_list($row['vehicles']), 'roadbook' => $rb, 'cover' => $cover,
-        'owner' => ['username' => $row['username'], 'name' => trim($row['first_name'] . ' ' . $row['last_name']), 'bio' => $row['bio'], 'avatar' => $row['avatar']]]);
+        'owner' => ['username' => $row['username'], 'avatar' => $row['avatar']]]); // never the real name (#620)
 }
 
 function rb_delete(array $user, array $d): void {

@@ -24,7 +24,7 @@ describe('roadbook vehicles', () => {
         expect(php).toContain("return $picked ? implode(',', $picked) : 'car';");
         expect(php).toContain("$vehicles = array_key_exists('vehicles', $d) ? rb_clean_vehicles($d['vehicles']) : null;");
         expect(php).toContain("$vehicles = $vehicles ?? rb_clean_vehicles($row['vehicles']);");
-        expect(php).toContain("'vehicles' => rb_vehicle_list($r['vehicles'] ?? null)"); // rb_card_fields: public_list feeds the filter
+        expect(php).toContain("'vehicles' => rb_vehicle_list($r['vehicles'])"); // rb_card_fields: public_list feeds the filter
         expect(php).toContain("$rows = array_map('rb_card_fields', $st->fetchAll());");
         expect(fs.readFileSync('migrations/038_roadbook_vehicles.sql', 'utf8')).toContain("vehicles SET('car','moto','bike') NOT NULL DEFAULT 'car'");
     });

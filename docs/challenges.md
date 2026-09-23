@@ -39,7 +39,7 @@ dalle sottocartelle dei tool senza percorsi hard-coded.
 | Metodo | Cosa fa | Endpoint API |
 |--------|---------|--------------|
 | `listPublic(opts)` | Elenco dei roadbook pubblici per gallery e picker; con `{reusable:true}` filtra ai soli riusabili (la ricerca-fork dell'Editor) | `RBApi('public_list')` (POST, col Bearer nell'app) |
-| `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + foto + owner + `reusable`) | `RBApi('public_get', {slug})` (POST, col Bearer nell'app) |
+| `loadPublic(slug)` | Carica un singolo roadbook pubblico (roadbook + `cover` + owner + `reusable`) | `RBApi('public_get', {slug})` (POST, col Bearer nell'app) |
 | `pick(onPick, opts)` | Apre il picker modale e richiama `onPick(risposta, slug)` con l'intera risposta di `public_get` (roadbook, `reusable`, `vehicles`…); passa `opts` a `listPublic` | (usa `listPublic`/`loadPublic`) |
 | `publicFromUrl()` | Estrae lo slug dall'URL amichevole corrente | — |
 | `ROOT` | Radice dell'app, riusata altrove (es. home, gallery) | — |
@@ -61,7 +61,7 @@ riporta `{ok:false}` — quindi la distinzione è su `j.ok === false`.
 ### `loadPublic(slug)`
 `RBApi('public_get', { slug })`. A differenza di `listPublic`, qui un `j.ok` falso **lancia**
 (`throw new Error(j.error || 'Not found')`), così i chiamanti possono mostrare un messaggio di
-errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, photos, owner, ... }`.
+errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, cover, owner, ... }`.
 
 ### `publicFromUrl()`
 ([challenges.js:25-28](../public/assets/js/challenges.js#L25)) — vedi §4.
@@ -138,7 +138,7 @@ l'ultimo segmento del path (`/challenge/<slug>`). Se manca o è `challenge`, mos
 Caricato `loadPublic(slug)` ([challenge.js:11](../public/challenge/challenge.js#L11)),
 popola:
 
-- **titolo** + `document.title`, **owner** (nome o `@username`) e avatar (rimosso se assente);
+- **titolo** + `document.title`, **owner** (`@username`, mai il nome reale) e avatar (rimosso se assente);
 - una riga **meta**: `@username · RBSummary(…)`, eventuale badge di stato (`🔒 Ready`/`Draft`
   per un roadbook non ancora pubblico servito via evento), e il credito dichiarato nel
   roadbook (`author · organization · modified`);
