@@ -25,7 +25,7 @@ Per architettura, strumenti, deploy e convenzioni dettagliate leggi **`CLAUDE.md
 ddev start                                     # una volta per sessione, se il progetto non è su (verifica: ddev describe)
 ddev exec npm install                          # primo giro / dopo una modifica a package.json
 ddev exec npm test                             # Vitest (tests/**/*.test.js, happy-dom)
-ddev exec npm run check                        # node --check su ogni public/**/*.js tranne *.min.js (source/check-syntax.mjs; la CI esegue lo stesso comando)
+ddev exec npm run check                        # node --check su ogni public/**/*.js tranne *.min.js (source/check-syntax.mjs; la CI esegue lo stesso controllo)
 ddev exec node --check public/event/event.js   # syntax check di un singolo file
 ```
 

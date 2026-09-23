@@ -309,7 +309,7 @@ GPX/WPT parsing, `buildRoadbook`, metric/CAP recomputation, route ops, the GPX s
 the 55-char QR meta and its HMAC signing. `roadbook-core.js` stays a browser global
 (`window.RB`) and additionally exports the same object to Node (`module.exports`) so the
 tests can import it — no build step is introduced on the web. Tests live in `tests/`. CI runs
-`npm run check` + `npm test` on every pull request (and on manual dispatch) via
+the same syntax check + `npm test` on every pull request (and on manual dispatch) via
 `.github/workflows/test.yml`, and again on every push to `main` in the Deploy workflow's `test`
 job, which gates the deploy.
 
