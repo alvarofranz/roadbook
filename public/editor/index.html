@@ -274,6 +274,8 @@
            still scrolls and a row still opens, to read */
         body.rb-readonly #noteEditZone, body.rb-readonly .note-del, body.rb-readonly .del-badge,
         body.rb-readonly #rbLogoBtn, body.rb-readonly #rbLogoClr, body.rb-readonly #rbLogoPrev { pointer-events: none; opacity: .5; }
+        /* the open note's vignette reads, but no icon or junction on it drags */
+        body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction { pointer-events: none; }
         /* the Editor owns the screen while a roadbook is open: no floating chip on its controls */
         body:has(#mapEditor:not([hidden])) .app-chip-stack { display: none; }
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }

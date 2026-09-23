@@ -290,7 +290,7 @@ window.RBMap = class RBMap {
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
         this._noteIdx = new Set(rb.notes.map((n) => n.idx)); // points carrying a note get the blue marker, not a white vertex dot
-        if (this._vertShow) this._paintVerts(rb.track); // keep the vertex dots in sync (and visible on first load)
+        if (this._vertShow) { this._vertShow = rb.track; this._paintVerts(rb.track); } // the dots follow the track shown — an undo or a join replaces the array, and a style swap repaints from it
         this._lastNotes = rb.notes; this._paintWpIcons(); // refresh the WP-type icon overlay when it's on
         if (!noFit) this._fit(rb);
     }
@@ -392,7 +392,7 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-vsel').setData(pt ? { type: 'Feature', geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] } } : this._empty());
     }
     // Repaint the vertex handles (used live while a point is being dragged).
-    refreshVertices(track) { if (this._vertShow) this._paintVerts(track); }
+    refreshVertices(track) { if (this._vertShow) { this._vertShow = track; this._paintVerts(track); } }
     _paintVerts(track) {
         if (!this.map || !this.ready) return;
         const skip = this._noteIdx || new Set(); // note points show their blue marker, not a white dot

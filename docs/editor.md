@@ -591,7 +591,9 @@ cose coerenti:
   modificando — sola lettura*); `updateSaveBtn` disabilita il Save (`!rbLock.mine`). `setLock`
   gira **prima** di `setRoadbook`, che lascia spenti gli strumenti di rotta (`readOnly()`);
   `setMapTool` in sola lettura resta sempre su `pan` (nessun modo arma un drag), e ogni
-  strumento che cambia il roadbook passa da `editable()` (roadbook caricato **e** lock nostro). Chi tiene
+  strumento che cambia il roadbook passa da `editable()` (roadbook caricato **e** lock nostro); la
+  vignetta della nota aperta si legge ma non si trascina, e la pillola foto apre la nota senza
+  aggiungerle la foto. Chi tiene
   il lock lo **rinnova** ogni 4 min (`rb_lock_refresh`) e lo **rilascia** in chiusura via
   `sendBeacon` (`rb_lock_release`); è possibile **forzarlo** (`rb_lock_force`).
 - **Chiudi → landing dell'editor (#166).** `leaveEditor` (pulsante `#closeEditor`) con modifiche
@@ -634,7 +636,8 @@ precisa:
 3. **Draft non salvato** in `localStorage` — `RBConfirm` di recupero (rifiutare **non** lo
    cancella: viene sovrascritto al prossimo checkpoint). Il draft di un roadbook salvato
    (`currentRbId > 0`) prende prima il soft lock con `rb_get lock:1`, come l'apertura via
-   `?rb=`: se lo tiene qualcun altro si apre in sola lettura (e resta sul dispositivo). I tagli
+   `?rb=`: se lo tiene qualcun altro si apre in sola lettura (e resta sul dispositivo: anche
+   Chiudi, in sola lettura, non lo cancella). I tagli
    aperti entrano con `setRoadbook(draft.rb, draft.gaps)`, prima che parta la storia undo.
 4. **Challenge dall'URL** (`RBChallenges.publicFromUrl`) — fork come nuovo roadbook.
 5. **`?rb=<id>`** — carica un roadbook salvato dal profilo (richiede login).

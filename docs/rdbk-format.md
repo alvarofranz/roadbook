@@ -247,7 +247,7 @@ stesso posto (#561):
 | `2` | Asfalto               | continuo, tratto largo                     |
 | `3` | Pista / sterrato      | continuo, tratto medio (default fuoristrada) |
 | `4` | Off-piste             | **tratteggiato**, tratto più sottile       |
-| `5` | Bike lane (ciclabile) | continuo, tratto sottile (verde acqua)     |
+| `5` | Bike lane (ciclabile) | continuo, tratto sottile (viola `#532b78`) |
 
 La vignetta di una nota è un *tulip*: la strada da cui si arriva entra sempre dal bordo
 inferiore al centro del box (disegnata secondo `road_type_in`), la strada su cui si esce va
