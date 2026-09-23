@@ -132,3 +132,16 @@ describe('the report says only what the run had, and shares happily (#848 · #85
         expect(reader).toContain('if (!cardBlob || !(await shareGate())) return;');
     });
 });
+
+describe('a report left without a choice (#460)', () => {
+    it('settles as private at the next start and goes up', () => {
+        localStorage.clear();
+        window.RBt = (k) => k; window.RBesc = (s) => String(s);
+        eval(fs.readFileSync('public/assets/js/run-report.js', 'utf8'));
+        const key = RBRun.enqueue({ title: 'x' }, false);
+        RBRun.settleAbandoned();
+        const item = JSON.parse(localStorage.getItem('rb_pending_runs')).find((i) => i.key === key);
+        expect(item).toMatchObject({ ready: true, visibility: 'private' });
+        expect(fs.readFileSync('public/reader/reader.js', 'utf8')).toContain('RBRun.settleAbandoned(); RBRun.flush();');
+    });
+});

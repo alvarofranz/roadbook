@@ -51,6 +51,9 @@
         write(read().concat([{ key, report, ready, visibility: null, remember: false }]));
         return key;
     }
+    // A report whose runner never picked Private or Public (the app closed on the report) would wait
+    // forever: at the next start it settles as private — the safe answer, changeable on the profile.
+    function settleAbandoned() { write(read().map((i) => (i.ready ? i : Object.assign(i, { ready: true, visibility: 'private' })))); }
     function update(key, patch) { write(read().map((i) => (i.key === key ? Object.assign(i, patch) : i))); }
     // Upload every ready item; resolves { [key]: saved run id } for what went through. Needs a
     // signed-in user — signed out, the items simply wait for the next flush after sign-in. A call
@@ -77,5 +80,5 @@
     // What a shared run card says (#852): the runner's own words, glad to have done it
     const shareText = (run, link) => [t(run.completed ? 'Check out the roadbook I completed!' : 'Check out my run!'), run.title ? '“' + run.title + '”' : '', link].filter(Boolean).join(' ');
 
-    window.RBRun = { statsHTML, detailsHTML, shareText, fmtDuration, avgKmh, enqueue, update, flush };
+    window.RBRun = { statsHTML, detailsHTML, shareText, settleAbandoned, fmtDuration, avgKmh, enqueue, update, flush };
 })();

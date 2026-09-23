@@ -21,14 +21,17 @@ function run_save(array $user, array $d): void {
     if ($choice && !empty($d['remember'])) {
         db()->prepare('UPDATE users SET runs_visibility = ? WHERE id = ?')->execute([$choice, (int)$user['id']]);
     }
-    // the roadbook it ran, when it is one of the server's (a local .rdbk file has none)
+    // the roadbook it ran, when it is one of the server's (a local .rdbk file has none) — and only one
+    // the runner may read: public, their own, or delivered to them by an event. Anything else stays
+    // unlinked, so a run can't pad the completions of, or point at, somebody's private roadbook.
     $rbId = null;
     if (!empty($d['roadbook_id']) || !empty($d['roadbook_slug'])) {
         $st = !empty($d['roadbook_id'])
-            ? db()->prepare("SELECT id FROM roadbooks WHERE id = ? AND status <> 'deleted'")
-            : db()->prepare("SELECT id FROM roadbooks WHERE slug = ? AND status <> 'deleted'");
+            ? db()->prepare("SELECT id, user_id, status FROM roadbooks WHERE id = ? AND status <> 'deleted'")
+            : db()->prepare("SELECT id, user_id, status FROM roadbooks WHERE slug = ? AND status <> 'deleted'");
         $st->execute([!empty($d['roadbook_id']) ? (int)$d['roadbook_id'] : (string)$d['roadbook_slug']]);
-        $rbId = ($v = $st->fetchColumn()) ? (int)$v : null;
+        $row = $st->fetch();
+        if ($row && ($row['status'] === 'public' || (int)$row['user_id'] === (int)$user['id'] || event_grants_read($user, (int)$row['id']))) $rbId = (int)$row['id'];
     }
     $event = null;
     if (!empty($d['event_slug'])) {

@@ -19,7 +19,7 @@
     async function loadPublic(slug) {
         const j = await RBApi('public_get', { slug });
         if (!j.ok) throw new Error(j.error || 'Not found');
-        return j; // { slug, roadbook, reusable, vehicles, photos, owner, … }
+        return j; // { slug, roadbook, reusable, vehicles, cover, owner, … }
     }
     // Slug from a friendly URL: /reader/<slug> or /editor/<slug>.
     const publicFromUrl = () => {

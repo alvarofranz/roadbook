@@ -1462,3 +1462,9 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Discard the pending edits of this label?": "Abandonner les modifications en attente de ce libellé ?",
 });
+
+/* review 2 leftovers */
+Object.assign(window.RBi18nLangs.fr, {
+    "Leave": "Quitter",
+    "Recording to save": "Enregistrement à sauvegarder",
+});

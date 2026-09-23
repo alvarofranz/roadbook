@@ -110,10 +110,6 @@
         };
     }
 
-    // A user's roadbooks (any status) with an admin status control, owner reassignment (#126),
-    // a per-row view in the Reader (admin-authenticated, works for draft/ready/public) and a
-    // .rdbk export (media-less, like the Editor without "Include photos & audio").
-    // Pagination + search (#244).
     // A user's runs, as only an admin sees them (#870): the device each one was made on, public or private
     async function viewRuns(u) {
         const m = RBModal(`<h2>${esc(t('Runs'))} · @${esc(u.username)}</h2><div id="runsBody" class="muted small">${esc(t('Loading…'))}</div>
@@ -135,6 +131,10 @@
                 <td class="small cell-wrap">${esc(x.device || '—')}</td>
             </tr>`).join('')}</tbody></table>`;
     }
+    // A user's roadbooks (any status) with an admin status control, owner reassignment (#126),
+    // a per-row view in the Reader (admin-authenticated, works for draft/ready/public) and a
+    // .rdbk export (media-less, like the Editor without "Include photos & audio").
+    // Pagination + search (#244).
     function viewRoadbooks(u) {
         let rbMap = null, previewId = 0, changed = false; // a change refreshes the user list's count on close (#705)
         const finish = () => { if (rbMap) { rbMap.destroy(); rbMap = null; } if (changed) load(); };

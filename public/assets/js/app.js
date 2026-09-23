@@ -1531,7 +1531,7 @@
        its OWN page. This surfaces that work EVERYWHERE ELSE: a header pill (shown only when
        something is pending in another tool) opens a list to resume or discard each item — so a
        recording, a run or an unsaved draft left in one tool is never silently orphaned. */
-    const PENDING_KEYS = ['rb_editor_draft', 'rb_recorder_session', 'rb_tripmaster_session', 'rb_session', 'rb_session_roadbook'];
+    const PENDING_KEYS = ['rb_editor_draft', 'rb_recorder_session', 'rb_recorder_pending_save', 'rb_tripmaster_session', 'rb_session', 'rb_session_roadbook'];
     const PENDING_LABEL = { editor: 'Unsaved draft', recorder: 'Recording in progress', tripmaster: 'Tripmaster run', reader: 'Run in progress' };
     const PENDING_ICON = { editor: 'fa-pen-ruler', recorder: 'fa-circle-dot', tripmaster: 'fa-gauge-high', reader: 'fa-compass' };
     const curTool = (location.pathname.slice(new URL(ROOT, location.href).pathname.length).replace(/^\/+/, '').split('/')[0]) || '';
@@ -1557,9 +1557,9 @@
             if (!items.length) { d.close(); refreshPendingPill(); return; }
             listEl.innerHTML = items.map((it, i) => `<div class="roadbook-row" data-i="${i}">
                 <i class="fa-solid ${PENDING_ICON[it.tool]} icon-accent"></i>
-                <div class="meta"><b>${RBesc(RBt(PENDING_LABEL[it.tool]))}</b><small>${RBesc(pendingDetail(it))}</small></div>
+                <div class="meta"><b>${RBesc(RBt(it.kind === 'finished' ? 'Recording to save' : PENDING_LABEL[it.tool]))}</b><small>${RBesc(pendingDetail(it))}</small></div>
                 <a class="btn btn-primary" href="${ROOT}${it.url}">${RBt('Resume')}</a>
-                <button class="btn btn-ghost" data-discard><i class="fa-solid fa-trash-can icon-danger"></i></button>
+                ${it.resumeOnly ? '' : '<button class="btn btn-ghost" data-discard><i class="fa-solid fa-trash-can icon-danger"></i></button>'}
             </div>`).join('');
             listEl.querySelectorAll('[data-discard]').forEach((b) => b.onclick = async () => {
                 const it = items[+b.closest('[data-i]').dataset.i];
