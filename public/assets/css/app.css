@@ -769,6 +769,25 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .help-tip:hover, .help-tip:focus-visible { color: var(--sand); outline: none; }
 .tip-bubble { position: fixed; left: 0; top: 0; transform: translate(var(--tip-x, 0), var(--tip-y, 0)); width: max-content; max-width: min(260px, calc(100vw - 16px)); white-space: normal; text-align: left; font-weight: 500; background: #0a0d12; border: 1px solid var(--line); color: var(--text); font-size: .78rem; line-height: 1.4; padding: .45rem .6rem; border-radius: 8px; box-shadow: var(--shadow); pointer-events: none; z-index: 1000; opacity: 0; transition: opacity .12s; }
 .tip-bubble.on { opacity: 1; }
+/* a guided tour (RBTour, #906): the screen dimmed around a glowing hole over one control, and a
+   bubble pointing at it — a title, one line, the progress dots, Skip and Next. Above every dialog, and
+   it takes every tap: only its own buttons act. */
+.tour { position: fixed; inset: 0; z-index: 1100; animation: tour-in .2s ease; }
+.tour-hole { position: fixed; left: 0; top: 0; width: var(--tour-hw, 0); height: var(--tour-hh, 0); transform: translate(var(--tour-hx, 0), var(--tour-hy, 0)); border-radius: 14px; box-shadow: 0 0 0 200vmax rgba(5, 8, 12, .78); transition: transform .3s cubic-bezier(.2, .8, .2, 1), width .3s cubic-bezier(.2, .8, .2, 1), height .3s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+.tour-hole::after { content: ""; position: absolute; inset: -4px; border-radius: 18px; border: 2px solid var(--sand); animation: tour-pulse 1.6s ease-out infinite; }
+.tour-bubble { position: fixed; left: 0; top: 0; transform: translate(var(--tour-x, 0), var(--tour-y, 0)); width: min(300px, calc(100vw - 20px)); background: linear-gradient(180deg, var(--card), var(--card-2)); border: 1px solid rgba(232, 176, 89, .55); border-radius: 16px; padding: .9rem 1rem .8rem; box-shadow: 0 18px 40px rgba(0, 0, 0, .45); transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+.tour-bubble::before { content: ""; position: absolute; left: calc(var(--tour-ax, 50%) - 8px); width: 16px; height: 16px; background: var(--card); border: 1px solid rgba(232, 176, 89, .55); transform: rotate(45deg); }
+.tour-bubble[data-side="below"]::before { top: -9px; border-right: 0; border-bottom: 0; }
+.tour-bubble[data-side="above"]::before { bottom: -9px; background: var(--card-2); border-left: 0; border-top: 0; }
+.tour-title { display: block; color: var(--sand); font-size: 1.05rem; margin-bottom: .25rem; }
+.tour-text { margin: 0 0 .8rem; line-height: 1.45; overflow-wrap: break-word; }
+.tour-foot { display: flex; align-items: center; gap: .5rem; }
+.tour-dots { flex: 1; display: flex; gap: .3rem; }
+.tour-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: width .25s ease, background .25s ease; }
+.tour-dots i.on { width: 18px; border-radius: 3px; background: var(--sand); }
+@keyframes tour-pulse { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
+@keyframes tour-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tour, .tour-hole, .tour-hole::after, .tour-bubble, .tour-dots i { animation: none; transition: none; } }
 /* saved-roadbook list (shared by My roadbooks + the Editor landing, via RBRoadbookList) */
 .rb-grid { display: flex; flex-direction: column; gap: .6rem; }
 .roadbook-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .9rem; }

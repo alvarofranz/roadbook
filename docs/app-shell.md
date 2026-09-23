@@ -517,3 +517,18 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`.
   chiamate.
 - **`RBImg.toBlob` degrada in silenzio**: se il canvas/encoding fallisce ritorna il file originale,
   quindi un upload può finire più grande del previsto senza errore visibile.
+
+#### `RBTour(id, steps)` — i tour guidati (#906)
+La prima volta che si apre uno strumento, i suoi comandi principali vengono indicati uno per uno:
+schermo scurito, un foro con un anello dorato che pulsa sopra il comando, e un fumetto che lo indica
+con titolo, una frase, i puntini di avanzamento, **Salta tutorial** e **Avanti**.
+
+- **Si chiede una volta sola**, per sempre (`RBConfirm`, No / Sì, `rb_tour_optin`). Con un No non
+  compare più nessun tour, da nessuna parte.
+- Dopo un Sì, **ogni strumento mostra il suo tour una volta** (`rb_tour_seen`). Conta come visto dal
+  primo passo, così un tour interrotto non torna. Salta ed Esc lo chiudono per sempre.
+- Un passo il cui comando non è sullo schermo viene saltato.
+- `steps: [{ target, title, text }]` sono stringhe sorgente inglesi brevi, tradotte con `RBt`.
+- I tour: Reader (all'inizio della navigazione, da fermi), Recorder (all'inizio della registrazione),
+  Editor (al primo roadbook aperto), Tripmaster (alla prima visita). `tests/guided-tours.test.js` li
+  prova e controlla che ogni passo indichi un comando che esiste.

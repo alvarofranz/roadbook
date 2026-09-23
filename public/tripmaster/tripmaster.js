@@ -57,7 +57,17 @@
             $('tmTimer').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         }, 500);
         render();
+        setTimeout(() => RBTour('tripmaster', TRIPMASTER_TOUR), 700); // the first visit (#906)
     }
+    // The Tripmaster's guided tour (#906): what the dashboard's controls do, once
+    const TRIPMASTER_TOUR = [
+        { target: '.tm-odo', title: 'Odometers', text: 'Total and partial. ±10 m corrects them; hold ↺ to reset the partial.' },
+        { target: '#tmSpeedAlert', title: 'Speed', text: 'Tap it to set speed alerts.' },
+        { target: '#tmTimerBtn', title: 'Timer', text: 'Tap to start and stop it.' },
+        { target: '#tmNoteBtn', title: 'Mark note', text: 'Counts a note and resets the partial.' },
+        { target: '#tmRecBtn', title: 'Record GPX', text: 'Logs the whole run as a GPX track.' },
+        { target: '#tmExit', title: 'Leave', text: 'Ends the session.' },
+    ];
     function onFix(fix) {
         RBStatusBar.setGps(fix.coords.accuracy);
         totalM += fix.disp; partialM += fix.disp;
