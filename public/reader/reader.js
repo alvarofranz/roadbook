@@ -177,23 +177,14 @@
     // "Map access from player" is a roadbook-level setting (default allowed when absent): it decides
     // whether the Reader has a map at all — the action-bar toggle and the preview's tap-to-map (#569).
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
-    let optGpx = false, sound = true, audioCtx = null;
+    let optGpx = false, sound = true;
     function readModeOpts() {
         // Advancement starts on Automatic (GPS); the nav-screen Auto switch toggles it during the run.
         auto = true; optGpx = $('optGpx').checked; sound = $('optSound').checked;
     }
-    // Short beep when a note is reached (WebAudio — no asset, CSP-safe). The context is created
-    // on the start tap (a user gesture) so it can later sound on a GPS auto-validation.
-    function beep() {
-        if (!sound) return;
-        try {
-            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t0 = audioCtx.currentTime;
-            o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(0.15, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
-            o.start(t0); o.stop(t0 + 0.2);
-        } catch (e) { /* audio unavailable */ }
-    }
+    // The success bell when a note is validated, auto or manual (#768) — the same bell the Recorder
+    // rings on a note. The run's start tap unlocks it (startNav), so a GPS auto-validation can ring.
+    const ring = () => { if (sound) RBSuccess.ring(); };
     $('modeStart').onclick = async () => {
         if (!(await RBWebGpsConfirm(runComp))) return; // one-time browser warning (stronger for a scored run)
         readModeOpts(); closeModal('modeModal');
@@ -209,7 +200,7 @@
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
-        if (sound) { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} } // unlock audio on this user gesture
+        if (sound) RBSuccess.unlock(); // this tap is the gesture that lets a later auto-validation ring
         scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
         // Immersive navigation: the Reader owns the screen (its own action row carries the exit
@@ -485,7 +476,7 @@
     // trip is followed by eye, and the driver saying they are there is the whole authority.
     function markReached(i) {
         passLimit(notes[i], false);
-        reached.add(i); tripPartialM = 0; beep();
+        reached.add(i); tripPartialM = 0; ring();
         if (notes[i].distance != null) tripTotalM = notes[i].distance;
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
@@ -563,7 +554,7 @@
         }
         extraAccum = 0; armed = false;
         passLimit(n, scored);
-        reached.add(i); tripPartialM = 0; beep();
+        reached.add(i); tripPartialM = 0; ring();
         if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);

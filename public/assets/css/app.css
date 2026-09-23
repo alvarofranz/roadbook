@@ -805,10 +805,6 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 /* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
 .thumb-route rect { fill: var(--card-2); }
 .thumb-route polyline { fill: none; stroke: var(--sand); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
-/* the shared waypoint quick-note (RBWaypointPrompt): text field + dictation mic, which pulses while listening (#661) */
-.wf-row { display: flex; gap: .5rem; align-items: center; }
-.wf-row .field { flex: 1; min-width: 0; }
-#wfMic.on { color: var(--track); animation: recpulse 1.2s infinite; }
 /* a deletion confirm shows the photo it deletes (#652) */
 .confirm-thumb { display: block; max-width: 100%; max-height: 160px; margin: .5rem auto 0; border-radius: 10px; object-fit: cover; }
 /* two fields side by side (account profile, admin user dialogs) — one column on a phone (#661) */
@@ -860,14 +856,6 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .status-bar .status-cell.mid i, .status-bar .status-cell.mid span { color: #ff9f1c; }
 .status-bar .status-cell.bad i, .status-bar .status-cell.bad span { color: var(--track); }
 
-/* ---------- voice-note transcription (#133) ---------- */
-/* the "➜ text" button beside a note's audio player */
-.audio-totext { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border: 1px solid var(--line); background: var(--card-2); color: var(--muted); border-radius: 8px; cursor: pointer; }
-.audio-totext:hover { color: var(--sand); border-color: var(--sand); }
-.audio-totext:disabled { opacity: .6; cursor: default; }
-/* one-time model-download progress (also reusable elsewhere) */
-.progress { height: 8px; background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: .5rem 0 .3rem; }
-.progress-bar { height: 100%; width: var(--progress, 0%); background: var(--sand); transition: width .2s ease; }
 /* ---------- in-context UI translation editor (#118, admin-only) ---------- */
 /* Site settings → find a label (#709): each result is a row that opens it in the editor */
 .trans-results { margin-top: .6rem; }
@@ -888,3 +876,8 @@ body:has(.modal) .i18ne-bar { display: none; } /* the edit bar never sits over a
 .i18ne-lang { width: 1.7rem; text-transform: uppercase; font-size: .72rem; color: var(--muted); flex-shrink: 0; }
 .i18ne-krow { margin-top: .3rem; }
 .i18ne-export { width: 100%; min-height: 220px; font-family: ui-monospace, monospace; font-size: .8rem; white-space: pre; }
+/* the success cue's check (RBSuccess.flash, #768): big, centred, gone in under a second */
+.success-flash { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; pointer-events: none; }
+.success-flash i { font-size: min(38vw, 11rem); color: var(--ok); background: rgba(14, 17, 22, .55); border-radius: 50%; padding: .12em; animation: success-pop .9s ease-out forwards; }
+@keyframes success-pop { 0% { transform: scale(.4); opacity: 0; } 20% { transform: scale(1.08); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .success-flash i { animation: none; } }

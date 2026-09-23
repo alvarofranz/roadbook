@@ -31,7 +31,6 @@ e una sezione onesta di limiti/quirk.
 - [i18n-edit](i18n-edit.md) — editor di traduzione in-context (solo admin).
 - [rbzip](rbzip.md) — `RBZip`: codec ZIP lato browser (container .rdbk e foto/audio).
 - [rb-media-queue](rb-media-queue.md) — `RBMediaQueue`: coda offline-first per upload di foto/audio.
-- [rb-transcribe](rb-transcribe.md) — `RBTranscribe`: trascrizione Whisper in-browser.
 - [challenges](challenges.md) — `RBChallenges`: sfide pubbliche DB-backed e URL amichevoli.
 - [pdf](pdf.md) — `RBPdf`: generazione PDF A4 del roadbook sul dispositivo.
 

@@ -12,7 +12,16 @@
 
     const api = RBApi; // shared helper (app.js)
     const IS_APP = document.documentElement.classList.contains('native'); // Capacitor shell (set before paint)
-    const msg = (text, ok) => { const m = $('auth-message'); if (!text) { m.hidden = true; return; } m.textContent = RBt(text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false; };
+    // One message box for every form on the page. An error is always SEEN (#764): the keyboard
+    // closes and the box scrolls into view, since on a phone the form sits below it. What it says
+    // stays generic where it must — a failed sign-in never tells which of the two was wrong — and
+    // explains the failures that are not the user's: no connection, a server that did not answer.
+    const PLAIN = { 'Network error.': 'Could not reach the server — check your connection and try again.' };
+    const msg = (text, ok) => {
+        const m = $('auth-message'); if (!text) { m.hidden = true; return; }
+        m.textContent = RBt(PLAIN[text] || text); m.className = 'auth-message ' + (ok ? 'ok' : 'err'); m.hidden = false;
+        if (!ok) { if (document.activeElement) document.activeElement.blur(); m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    };
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vForce', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
     /* ---------- Turnstile ---------- */

@@ -2,7 +2,9 @@
 /* RBStatusBar — a shared sticky status bar (clock · battery · satellite/GPS signal)
  * shown by the Recorder and the Tripmaster while a GPS session is active. It owns
  * the clock tick and the Battery Status API; the page feeds it the GPS accuracy of
- * each fix via setGps(). The bar is created once, just below the global header. */
+ * each fix via setGps(). The bar is created once, just below the global header.
+ * Where the device gives no battery reading (iOS Safari, Firefox…) the cell shows the
+ * date instead — a real value, never a broken "N/A" (#768). */
 window.RBStatusBar = (function () {
     let el = null, clockTimer = null, battery = null, gpsCls = 'bad', gpsTxt = '—';
     const pad2 = RB.pad2; // shared zero-pad (roadbook-core)
@@ -12,7 +14,7 @@ window.RBStatusBar = (function () {
         el = document.createElement('div');
         el.className = 'status-bar'; el.hidden = true;
         el.innerHTML = '<div class="status-cell"><i class="fa-solid fa-clock"></i><span data-sb="clock">--:--</span></div>'
-            + '<div class="status-cell"><i class="fa-solid fa-battery-half" data-sb="bicon"></i><span data-sb="batt">—</span></div>'
+            + '<div class="status-cell"><i class="fa-solid fa-calendar-day" data-sb="bicon"></i><span data-sb="batt"></span></div>'
             + '<div class="status-cell" data-sb="gpscell"><i class="fa-solid fa-satellite-dish"></i><span data-sb="gps">—</span></div>';
         const h = document.querySelector('header.topbar');
         if (h) h.insertAdjacentElement('afterend', el); else document.body.prepend(el);
@@ -26,26 +28,13 @@ window.RBStatusBar = (function () {
         const now = new Date();
         q('clock').textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
         if (battery) { const p = Math.round(battery.level * 100); q('batt').textContent = p + '%'; q('bicon').className = 'fa-solid ' + (battery.charging ? 'fa-bolt' : battIcon(p)); }
-        else q('batt').textContent = 'N/A';
+        else { q('batt').textContent = now.toLocaleDateString(document.documentElement.lang || undefined, { day: 'numeric', month: 'short' }); q('bicon').className = 'fa-solid fa-calendar-day'; }
         q('gpscell').className = 'status-cell ' + gpsCls;
         q('gps').textContent = gpsTxt;
     }
     return {
         show() { ensure(); el.hidden = false; if (!clockTimer) clockTimer = setInterval(render, 1000); render(); },
         hide() { if (el) el.hidden = true; if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } },
-        // Battery feed for other bars (the Reader's odometer strip): onUpdate({pct, charging,
-        // icon}) fires on subscribe and on every level/charging change. Returns false where
-        // the Battery Status API is unsupported (e.g. iOS Safari) — the caller shows N/A.
-        watchBattery(onUpdate) {
-            if (!('getBattery' in navigator)) return false;
-            try {
-                navigator.getBattery().then((b) => {
-                    const fire = () => { const p = Math.round(b.level * 100); onUpdate({ pct: p, charging: b.charging, icon: b.charging ? 'fa-bolt' : battIcon(p) }); };
-                    ['levelchange', 'chargingchange'].forEach((e) => b.addEventListener(e, fire)); fire();
-                }).catch(() => {});
-            } catch (e) {}
-            return true;
-        },
         // The Geolocation API exposes accuracy, not a satellite count — show signal quality.
         setGps(acc) {
             const t = window.RBt || ((k) => k);

@@ -217,9 +217,10 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
   start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
 - **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
-  (sia trip `markReached` sia competition `validateAt`, auto o manuale) parte un breve **beep**
-  WebAudio (`beep()`, ~880 Hz, nessun file → CSP-safe). Il contesto audio viene sbloccato sul
-  tap di avvio (un gesto utente) così può suonare anche su una convalida GPS automatica.
+  (sia trip `markReached` sia competition `validateAt`, auto o manuale) suona il **campanello di
+  successo** (`RBSuccess.ring()`, `assets/sounds/success.mp3`, #768) — lo stesso della nota nel
+  Recorder. Il tap di avvio lo sblocca (`RBSuccess.unlock()`, un gesto utente) così può suonare
+  anche su una convalida GPS automatica.
 
 **La modalità non si sceglie** (#617): la gara esiste per la classifica di un evento, quindi
 `openModeModal` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel

@@ -175,16 +175,9 @@ Tap pin / thumbnail → full-screen viewer (covers only the map, **not** the not
 
 ---
 
-## Voice notes (WP audio) — player + transcription
+## Voice notes — player
 
-Server-side (`roadbook_audio`, `audio_list`/`audio_delete`). They appear as an **audio player** on the nearest note row (≤80m). **"➜ text"** button (`transcribeInto`):
-
-> 📸 *Screenshot: audio player with transcription button on a note*
-- **Whisper** via `RBTranscribe` (transformers.js/WASM, model `Xenova/whisper-tiny`, browser cache)
-- Audio **never leaves the device**, no server cost
-- Language = account `voice_lang` or auto-detected
-- First use: model download modal (~tens of MB), then works **offline**
-- Text **appended** to the note (never overwrites)
+Voice notes already recorded are stored server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Each one appears as an **audio player** on the nearest note row (≤80m), with a **×** to delete it (the confirmation names the note).
 
 ---
 

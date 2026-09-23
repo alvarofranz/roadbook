@@ -175,16 +175,9 @@ Tap pin / miniatura → visore a pieno schermo (copre solo mappa, **non** pannel
 
 ---
 
-## Note vocali (WP audio) — player + trascrizione
+## Note vocali — player
 
-Server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Compaiono come **player audio** sulla riga nota più vicina (≤80m). Pulsante **"➜ testo"** (`transcribeInto`):
-
-> 📸 *Screenshot: player audio con pulsante trascrizione su una nota*
-- **Whisper** via `RBTranscribe` (transformers.js/WASM, modello `Xenova/whisper-tiny`, cache browser)
-- Audio **non lascia il device**, nessun costo server
-- Lingua = `voice_lang` account o auto-rilevata
-- Primo uso: modale download modello (~decine MB), poi funziona **offline**
-- Testo **appeso** alla nota (mai overwrite)
+Le note vocali già registrate sono salvate server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Ognuna compare come **player audio** sulla riga nota più vicina (≤80m), con una **×** per eliminarla (la conferma nomina la nota).
 
 ---
 

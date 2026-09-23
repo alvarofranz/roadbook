@@ -51,7 +51,6 @@ describe('every CSS custom property a rule reads is actually defined (#422)', ()
         '--cap-rotation': 'public/reader/reader.js',        // the bearing/CAP arrow
         '--speed-band': 'public/tripmaster/tripmaster.js',  // speed-alert colour
         '--tm-band': 'public/tripmaster/tripmaster.js',
-        '--progress': 'public/editor/editor.js',       // the editor's progress bar
     };
 
     it('the runtime-published variables really are published by the code named here', () => {

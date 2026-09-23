@@ -247,7 +247,6 @@ Recorder e Tripmaster mentre una sessione GPS è attiva.
 | `show()` | crea la barra (una volta), la mostra e avvia il tick dell'orologio (1 s) |
 | `hide()` | nasconde la barra e ferma il tick |
 | `setGps(acc)` | aggiorna la cella GPS con l'accuratezza in metri dell'ultimo fix |
-| `watchBattery(onUpdate)` | sottoscrive il feed batteria: `onUpdate({ pct, charging, icon })` scatta alla sottoscrizione e a ogni cambio livello/carica; ritorna `false` dove la Battery API non c'è. |
 
 La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.topbar`.
 
@@ -255,7 +254,8 @@ La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.top
 
 - **Orologio** — ridisegnato ogni secondo dal timer di `show()`.
 - **Batteria** — via Battery Status API, *best-effort*: non tutti i browser la espongono
-  (es. iOS Safari), nel qual caso mostra `N/A`
+  (es. iOS Safari): dove manca, la cella mostra **la data** (icona calendario) invece di un `N/A`
+  rotto (#768)
   ([status-bar.js:20](../public/assets/js/status-bar.js#L20),
   [status-bar.js:29](../public/assets/js/status-bar.js#L29)). L'icona segue il livello e
   diventa un fulmine in carica.
@@ -315,6 +315,6 @@ All'avvio chiama anche `RBGpxRecorder.init({ onChange, toast })`, e tenta una
 - **`RBStatusBar` mostra qualità del segnale, non satelliti.** L'icona è un disco satellitare
   ma il dato è l'accuratezza in metri — il Web non espone il numero di satelliti.
 - **Batteria assente su alcuni dispositivi.** Dove la Battery Status API manca (iOS Safari)
-  la cella batteria resta `N/A` per tutta la sessione.
+  la cella batteria mostra la data per tutta la sessione.
 - **L'altitudine può mancare.** `feed`/`add` salvano `ele: null` quando `coords.altitude` non
   è un numero finito; i GPX risultanti possono avere punti senza quota.

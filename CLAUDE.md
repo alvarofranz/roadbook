@@ -150,7 +150,8 @@ DB/Convenzioni rapide below have counterparts there).
     `RBPagedList({pager, per, source, filter, draw, label})` (ONE filtered, paged list — the
     galleries, My roadbooks and user management all drive their search + pager through it),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
-    `RBesc(str)` (HTML-escape), `RBBusy(el, {onEnd})` (the button that launched an async job
+    `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`unlock()` (the "done" bell +
+    big check — a Recorder note, a Reader validation, #768), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
     plus the global header/footer (minimal nav, full-viewport
     mobile menu), version auto-refresh and install button.
@@ -512,7 +513,8 @@ Operational notes:
   one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons + junction
   vectors); searchable icon palette.
 - **Recorder** — THE live-GPS route recorder (accuracy-aware sampling, pause/resume,
-  crash-safe GPX, geotagged photos + voice notes via the camera/mic); signed-in, it saves the
+  crash-safe GPX, one-tap notes confirmed by a bell + a big check (`RBSuccess`), geotagged photos,
+  the distance since the last note on the map); signed-in, it saves the
   route as a draft roadbook to edit later. Recording a new route lives here only; the
   Editor's recording bar serves just "Adjust on the trail".
 - **Reader** — the navigator. Paper-style white roadbook table: each note is a 4-column
@@ -614,11 +616,6 @@ Operational notes:
   `pick` (picker), `publicFromUrl` (parses the friendly `/reader/<slug>` or `/editor/<slug>`).
   ("Challenge" stays the internal name + the `/challenge/<slug>` view route; the user-facing
   label is "public roadbook", with "challenge" reserved for the events feature.)
-- `rb-transcribe.js` (`RBTranscribe`, #133) — in-browser voice-note→text (Whisper via
-  transformers.js/WASM, imported from a CDN only on first use; `Xenova/whisper-tiny`, browser-cached).
-  `run(url, {lang, onProgress})` → text; no server, audio never leaves the device. Used by the
-  Editor's per-voice-note "➜ text" button (appends to the note, never overwrites). Desktop-only:
-  gated off on iOS/iPadOS (`RBIsIOS()`, app.js) since WebKit can't run the model (#340).
 - `i18n.js` (+ `i18n.es/it/de/fr.js`), `app.js` (global header/footer, SW + version
   auto-refresh, Install button, account control, styled modals), `config.js`, `qrcode.min.js`.
 - `rb-qr.js` (`RBQr`) — every QR in the product, drawn on a canvas: `draw(canvas, payload)`

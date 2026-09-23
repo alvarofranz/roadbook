@@ -175,16 +175,9 @@ Tap sur épingle / miniature → visionneuse plein écran (ne couvre que la cart
 
 ---
 
-## Notes vocales (WP audio) — lecteur + transcription
+## Notes vocales — lecteur
 
-Côté serveur (`roadbook_audio`, `audio_list`/`audio_delete`). Apparaissent comme **lecteur audio** sur la ligne de note la plus proche (≤80m). Bouton **« ➜ texte »** (`transcribeInto`) :
-
-> 📸 *Capture : lecteur audio avec le bouton de transcription sur une note*
-- **Whisper** via `RBTranscribe` (transformers.js/WASM, modèle `Xenova/whisper-tiny`, cache navigateur)
-- L'audio **ne quitte pas l'appareil**, aucun coût serveur
-- Langue = `voice_lang` du compte ou auto-détectée
-- Première utilisation : modale de téléchargement du modèle (~dizaines de Mo), puis fonctionne **hors ligne**
-- Le texte est **ajouté** à la note (jamais écrasé)
+Les notes vocales déjà enregistrées sont stockées côté serveur (`roadbook_audio`, `audio_list`/`audio_delete`). Chacune apparaît comme **lecteur audio** sur la ligne de note la plus proche (≤80m), avec une **×** pour la supprimer (la confirmation nomme la note).
 
 ---
 

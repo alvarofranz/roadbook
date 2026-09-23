@@ -1,6 +1,6 @@
 # Roadbook Recorder — Registrare una traccia GPS live
 
-Il **Recorder** è lo strumento da usare **sul campo**. Registra la traccia GPS e ti permette di arricchirla con waypoint, foto geotaggate e note vocali. Il risultato è un draft che passa all'Editor per la creazione del roadbook definitivo.
+Il **Recorder** è lo strumento da usare **sul campo**. Registra la traccia GPS e ti permette di lasciare note e foto geotaggate lungo il percorso. Il risultato è un draft che passa all'Editor per la creazione del roadbook definitivo.
 
 > Funziona **offline** al 100% per GPS + waypoint + media. I media restano in coda locale finché non c'è rete. Serve connessione solo per: login iniziale, upload differito, salvataggio sul profilo.
 
@@ -14,7 +14,7 @@ Apri il **Recorder** dal menu principale o vai direttamente su `/recorder/`.
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-Vedrai la schermata iniziale con il pulsante **Start recording**. Se non sei loggato, compare un avviso: *"Foto e audio richiedono login"* — puoi registrare lo stesso, ma i media resteranno solo sul device.
+Vedrai la schermata iniziale con il pulsante **Start recording**. Se non sei loggato, compare un avviso: *"Non autenticato: le foto restano su questo dispositivo e finiscono in un .rdbk locale al termine. Accedi per salvarle sul tuo account."* — puoi registrare lo stesso.
 
 ---
 
@@ -30,36 +30,43 @@ Si apre un modal per il **nome** della sessione (default: data/ora `YYYY-MM-DD H
 
 ### 3. Dashboard live — la registrazione è in corso
 
-La dashboard live mostra tutti i dati in tempo reale:
+Durante la registrazione, lo schermo mostra in alto quattro indicatori:
 
 > ![Dashboard registrazione](../assets/screenshots/rec03a.jpg)
 
 | Elemento | Cosa vedi |
 |----------|-----------|
 | **Tempo** | Durata della registrazione (escluso pause) |
-| **Velocità** | Velocità istantanea + massima |
-| **Waypoint** | Contatore waypoint piazzati |
-| **Distanza** | Km percorsi |
-| **Mappa** | Mappa heading-up (marcia in alto) con traccia e waypoint |
+| **km/h** | Velocità attuale |
+| **Note** | Numero di note piazzate |
+| **km** | Distanza percorsa |
 
-> La mappa è **heading-up** di default — la direzione di marcia è sempre verso l'alto. Tocca il controllo in alto a destra per bloccare a Nord.
+Sotto ci sono i pulsanti di cattura (passo 4) e la mappa live (passo 5). **Pause** ed **End** stanno in una barra in basso, metà larghezza ciascuno; sul telefono quella barra galleggia appena sopra la barra delle schede in basso.
 
 ---
 
 ### 4. Arricchisci la traccia durante il percorso
 
-Durante la registrazione hai a disposizione 4 pulsanti:
+La riga di cattura ha un grande pulsante **Nota** a sinistra e, alla sua destra, una griglia 2×2 di pulsanti a icona alta quanto lui:
 
 | Pulsante | Azione | Come si usa |
 |----------|--------|-------------|
-| **⏸ Pause** | Sospende GPS e cronometro | Tocca per mettere in pausa (soste, attese). Riprendi con lo stesso pulsante |
-| **📍 Waypoint** | Crea un waypoint alla posizione GPS attuale | Tocca → scrivi il testo (auto-chiude 5 s). Usa il mic per dettare |
-| **🎤 WP audio** | Registra clip vocale | **Tieni premuto** per registrare. Rilascia → countdown 5→0 → salva. Su desktop trascrive automaticamente |
-| **📷 WP Foto** | Scatta foto geotag | Apre la fotocamera posteriore. La foto viene agganciata alla posizione GPS attuale |
+| **📍 Nota** | Piazza una nota alla posizione GPS attuale | Tocca: la nota viene piazzata all'istante (serve GPS fix). Suona un campanello di conferma e compare a schermo un grande check verde per meno di un secondo. Non c'è niente da scrivere: il testo della nota si scrive dopo nell'Editor |
+| **📷 Foto** | Scatta foto geotag | Apre la fotocamera posteriore. La foto viene agganciata alla posizione GPS attuale e piazza sempre anche una nota lì |
+| **↩ Annulla ultima nota** | Elimina l'ultima nota | Chiede prima conferma, nominando la nota che elimina |
+| **🗺 Stile mappa** | Cambia la mappa di base | Satellite ↔ topografica |
+| **🧭 Heading up** | Orientamento mappa | La mappa ruota con la tua rotta (heading up) o resta con il nord in alto |
+
+La barra in basso contiene gli altri due:
+
+| Pulsante | Azione |
+|----------|--------|
+| **⏸ Pause** | Sospende GPS e cronometro (soste, attese). Tocca di nuovo per riprendere |
+| **🏁 End** | Termina la registrazione (passo 6) |
 
 > ![Pulsanti waypoint e media](../assets/screenshots/rec04a.jpg)
 
-> **Consiglio**: usa **Waypoint** per riferimenti scritti (incroci, pericoli, cambi di strada), **WP audio** per note lunghe mentre guidi, **WP Foto** per segnali e punti visivi.
+> **Consiglio**: tocca **Nota** a ogni incrocio, pericolo o cambio di strada senza staccare gli occhi dalla strada, e aggiungi le parole dopo nell'Editor. Usa **Foto** per segnali e punti visivi.
 
 ---
 
@@ -68,27 +75,27 @@ Durante la registrazione hai a disposizione 4 pulsanti:
 > ![Mappa live](../assets/screenshots/rec05.jpg)
 
 - La traccia è una **linea continua**
-- I waypoint sono **pallini blu numerati**
+- Le note sono **pallini blu numerati**
 - Le foto hanno un **pin 📷**
+- In alto a sinistra, grande e senza etichetta: la **distanza dall'ultima nota** (km, due decimali; dalla partenza prima della prima nota)
 - Il tuo marker GPS diventa un **chevron** direzionale quando sei in movimento
-- Tocca un waypoint/foto → info e azioni (elimina, modifica testo)
 
 ---
 
 ### 6. Fine registrazione
 
-Tocca **Finish** per terminare la registrazione.
+Tocca **End** (barra in basso) per terminare la registrazione.
 
 > ![Riepilogo registrazione](../assets/screenshots/rec06a.jpeg)
 
-Si apre il modal di riepilogo con i dati della sessione: punti percorso, km, waypoint, foto. Qui scegli cosa fare:
+Si apre il modal di riepilogo con i dati della sessione: punti percorso, km, note, foto. Qui scegli cosa fare:
 
 | Opzione | Quando usarla | Cosa succede |
 |---------|---------------|--------------|
 | **💾 Save to server** | Sei loggato e vuoi ritrovare tutto sul profilo | Salva il **draft** sul server (traccia + waypoint + media). Resti nel Recorder con il pulsante **Edit** per aprire nell'Editor |
-| **📦 Export .rdbk** | Vuoi un file portatile offline | Crea un `.rdbk` ZIP (roadbook.json + foto + audio). Scarica il file |
+| **📦 Export .rdbk** | Vuoi un file portatile offline | Crea un `.rdbk` ZIP (roadbook.json + foto). Scarica il file |
 | **✏️ Open in Editor** | Vuoi rifinire subito la rotta | Passa traccia e waypoint all'Editor. Foto già su server restano collegate |
-| **📍 Export GPX** | Ti serve solo per altro software | Scarica `.gpx` standard (traccia + waypoint con nome). Foto e audio **non** inclusi |
+| **📍 Export GPX** | Ti serve solo per altro software | Scarica `.gpx` standard (traccia + note come waypoint con nome). Foto **non** incluse |
 
 > 📸 *Screenshot: opzioni salvataggio — Save to server, Export .rdbk, Open in Editor, Export GPX*
 
@@ -106,9 +113,8 @@ Se hai scelto **Save to server**, il Recorder mostra il pulsante **Edit** che ti
 | Cosa | Loggato + online | Loggato + offline | Sloggato |
 |------|------------------|-------------------|----------|
 | Traccia GPS | ✅ locale + checkpoint | ✅ locale + checkpoint | ✅ locale + checkpoint |
-| Waypoint testo | ✅ locale | ✅ locale | ✅ locale |
+| Note | ✅ locale | ✅ locale | ✅ locale |
 | Foto | ✅ coda → upload | ✅ coda locale | ✅ coda locale |
-| Audio | ✅ coda → upload | ✅ coda locale | ✅ coda locale |
 | Draft server | creato/aggiornato live | creato al primo flush | mai creato |
 | Recupero post-crash | ✅ automatico | ✅ automatico | ✅ automatico |
 
@@ -125,18 +131,6 @@ Il Recorder salva la sessione in tempo reale. Se l'app si chiude (telefonata, cr
 > 📸 *Screenshot: modal recupero sessione interrotta*
 
 > Rifiutare il resume **non cancella** la sessione: viene sovrascritta solo quando inizi una nuova registrazione o esci con "End the trip".
-
----
-
-## Scorciatoie tastiera (desktop)
-
-| Tasto | Azione |
-|-------|--------|
-| `Spazio` | Waypoint (serve GPS fix) |
-| `A` | WP audio (tieni premuto) |
-| `F` | WP Foto |
-| `P` | Pause / Resume |
-| `Esc` | Finish / chiudi modal |
 
 ---
 
