@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.6', date: '2026-09-23',
+        title: 'Talk about the route',
+        items: [
+            'Public roadbooks have comments: signed-in readers talk about the route on its page, never while navigating it.',
+            'Recordings, photos and drafts survive a crash, a sign-in and a full phone; Discard really discards, and a recording you chose not to resume never asks again.',
+            'Pausing a run no longer counts the road driven while paused, and a run resumed after a crash keeps its roadbook and its event.',
+            'A roadbook locked by someone else is truly read-only, and a public roadbook can only be copied when its owner allows it.',
+            'Safer accounts: a password reset signs out the app everywhere, and organizers no longer see the email of the people they add.',
+        ],
+    },
+    {
         version: '1.9.5', date: '2026-09-23',
         title: 'Share the ride',
         items: [
