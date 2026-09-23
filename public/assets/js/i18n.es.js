@@ -95,13 +95,13 @@
             'Position': 'Posición',
             
             'help.wpType': 'El tipo de waypoint FIA. Define el icono en el mapa y, en un roadbook de rally, cómo se valida y puntúa el waypoint.',
-            'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook, luego al del tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y por último a los 50 m del sistema. El marcador muestra qué valor se aplica.',
+            'help.radius': 'Radio de validación en metros: el geocerco para la detección automática de paso. Si se deja vacío, recurre al valor por defecto del roadbook, luego al del tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y por último a los 30 m del sistema. El marcador muestra qué valor se aplica.',
             'help.visibility': 'Borrador mantiene el roadbook privado mientras lo trabajas. Listo lo marca como terminado pero sigue privado. Público lo lista en el sitio para que cualquiera pueda leerlo o exportar un PDF, pero solo tú puedes descargar el .rdbk.',
             'help.description': 'Se muestra en la página pública del roadbook: un breve resumen de la ruta o el evento.',
             'help.author': 'El nombre del autor, incrustado en el roadbook y mostrado a los lectores.',
             'help.org': 'El club u organización del evento, incrustado en el roadbook y mostrado a los lectores.',
             'help.profile': 'Básico (aventura) ofrece un conjunto sencillo de waypoints; Rally (FIA) añade todos los tipos de waypoint FIA, que determinan la puntuación.',
-            'help.defRadius': 'Un radio de validación aplicado solo a las notas donde no has fijado uno. Si se deja vacío, cada waypoint recurre al valor por defecto de su tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y luego a los 50 m del sistema.',
+            'help.defRadius': 'Un radio de validación aplicado solo a las notas donde no has fijado uno. Si se deja vacío, cada waypoint recurre al valor por defecto de su tipo (WPN/WPC/WPS 90 m · WPM/WPE/WPV 200 m · WPP 30 m) y luego a los 30 m del sistema.',
             'help.mapAccess': 'Si está activo, el Lector puede mostrar el mapa. Desactívalo para que los lectores naveguen solo con las notas del roadbook.',
             'help.route': 'Invertir cambia el sentido de marcha: la traza, el orden de las notas y todos los rumbos se recalculan.',
             'Copy link': 'Copiar enlace', 'Link copied': 'Enlace copiado', 
@@ -971,7 +971,7 @@ Object.assign(window.RBi18nLangs.es, {
     'Note added.': 'Nota añadida.',
     
     'Notes added from the GPX': 'Notas añadidas desde el GPX',
-    'Note icons': 'Iconos de las notas',
+    
     'Note type': 'Tipo de nota',
     'Turn this note into a plain track point? Its text and symbols will be removed.': '¿Convertir esta nota en un simple punto del track? Se perderán su texto y sus símbolos.',
     'The heart of a roadbook: an ordered list of notes, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.': 'El corazón de un roadbook: una lista ordenada de notas, cada una con su instrucción, su rumbo y sus símbolos. Un lector resalta la nota activa y valida el avance contra el track GPS.',

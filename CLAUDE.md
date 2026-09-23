@@ -533,7 +533,7 @@ Operational notes:
   fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
   slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
   `meta.default_wp_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
-  (50 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
+  (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar, or manual:
   the whole active row (and the Validate button, and the per-row check) marks it done — or
   hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
   (`RBRemote`, switch in the start dialog, #20). Tapping any OTHER row moves the run cursor and

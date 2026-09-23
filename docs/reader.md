@@ -245,14 +245,14 @@ classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
 di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
-`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (50 m) — poi
+`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (30 m) — poi
 lo limita a **metà del gap along-track più piccolo** verso un vicino (usando `partial_distance`,
 così i reach di due note non si sovrappongono) e lo *flooring* sopra il rumore GPS:
 
 ```
 reach = max(REACH_MIN_M=18, min(detectionRadius, min(gapPrev, gapNext) / 2))
 ```
-Non c'è un cap fisso: il limite superiore è il raggio di rilevamento della nota (default di sistema 50 m).
+Non c'è un cap fisso: il limite superiore è il raggio di rilevamento della nota (default di sistema 30 m).
 Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio del tipo.
 
 ---
