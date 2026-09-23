@@ -39,7 +39,7 @@ describe('RBCsv: the one CSV writer', () => {
     });
     it('is what every export writes', () => {
         expect(appJs).toContain("RBDownload(RBCsv([['created_at', 'action', 'detail', 'ip']");
-        expect(read('public/admin/events/participants/participants.js')).toContain("RBDownload(RBCsv([['username', 'first_name', 'last_name', 'email', 'status', 'joined']");
+        expect(read('public/admin/events/participants/participants.js')).toContain("RBDownload(RBCsv([columns, ...rows.map((p) => columns.map((c) => p[c]))]), name + '.csv');");
         expect(read('public/ranking/ranking.js')).toContain('RBDownload(RBCsv([head, ...lines])');
         for (const p of ['public/assets/js/app.js', 'public/admin/events/participants/participants.js', 'public/ranking/ranking.js']) {
             expect(read(p), p).not.toContain("type: 'text/csv'");
