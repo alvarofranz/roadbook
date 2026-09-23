@@ -198,7 +198,7 @@ describe('the immersive Reader is an app shell, not pinned bars (#429)', () => {
         // a floating chip was sitting on the action row mid-drive
         const hidden = appCss.match(/body\.rb-immersive \.app-chip-stack[^{]*\{([^}]*)\}/)[1];
         expect(declOf(hidden, 'display')).toBe('none');
-        expect(declOf(readerRule('body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint'), 'display')).toBe('none');
+        expect(declOf(readerRule('body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint, body.rb-immersive .foot'), 'display')).toBe('none');
     });
 
     it('the toast clears whatever is pinned to the bottom', () => {
