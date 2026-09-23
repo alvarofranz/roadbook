@@ -103,50 +103,34 @@ Costanti in [rb-pdf.js:60-65](../public/assets/js/rb-pdf.js#L60):
 | `TOP`/`RIGHT`/`BOTTOM` | 20/12/12 |                                                      |
 | `CW`             | 168    | Larghezza contenuto (`PW − LEFT − RIGHT`).                |
 | `CB`             | 285    | Fondo contenuto (`PH − BOTTOM`).                           |
-| `H1` / `H2`      | 50 / 12| Altezza intestazione: prima pagina / pagine successive.   |
-| `ROWS_FIRST` / `ROWS_REST` | 4 / 6 | Righe-nota per pagina.                            |
+| `HEADER_H`       | 18     | Altezza dell'intestazione, identica su ogni pagina.       |
+| `ROWS`           | 6      | Righe per pagina, la prima compresa.                      |
 
-Il numero totale di pagine è calcolato in anticipo:
-`N ≤ ROWS_FIRST ? 1 : 1 + ceil((N − ROWS_FIRST) / ROWS_REST)`
-([rb-pdf.js:140](../public/assets/js/rb-pdf.js#L140)).
+Il numero di pagine-tabella è `ceil(righe / ROWS)` (`paginate`), più la copertina.
 
-### Intestazioni
-- **Prima pagina** — `firstHeader` ([rb-pdf.js:142](../public/assets/js/rb-pdf.js#L142)):
-  intestazione alta (50 mm) con, a sinistra, i due totali (km totali e numero note) in grande,
-  separati da una linea verticale; al centro/destra il **logo evento** (se presente, fittato in
-  60×24 mm) e sotto il **titolo** centrato; in alto a destra "Page X of Y" (etichette tradotte
-  via `RBt`). Una linea orizzontale chiude l'intestazione.
-- **Pagine successive** — `runHeader` ([rb-pdf.js:156](../public/assets/js/rb-pdf.js#L156)):
-  intestazione sottile (12 mm) con logo piccolo a sinistra, titolo al centro, "Page X of Y" a
-  destra.
+### Intestazione (#810)
+Una sola intestazione, `header`, uguale su **ogni** pagina-tabella — la prima non ha un'intestazione
+propria: a sinistra il **QR** verso la versione digitale del roadbook (quando c'è un `opts.link`),
+disegnato a quadratini vettoriali dalla matrice di `RBQr.matrix` — nitido in stampa; al centro il
+**titolo** (`rb.meta.title`, fallback `'Roadbook'`, rimpicciolito finché entra); a destra
+"Page X of Y" (etichette tradotte via `RBt`). **Nessuna linea sotto**: la tabella ha già il suo bordo.
+I km sono formattati da `km(m) = (m/1000).toFixed(2)`.
 
-Il titolo è `rb.meta.title` con fallback `'Roadbook'`; il totale è
-`rb.meta.total_distance` con fallback alla `distance` dell'ultima nota
-([rb-pdf.js:136-137](../public/assets/js/rb-pdf.js#L136)). I km sono formattati da
-`km(m) = (m/1000).toFixed(2)` ([rb-pdf.js:65](../public/assets/js/rb-pdf.js#L65)).
+### Copertina, niente footer, niente chiusura (#784 · #810)
 
-Il logo è collocato da `placeLogo` ([rb-pdf.js:76](../public/assets/js/rb-pdf.js#L76)), che lo
-fitta in una scatola `maxW×maxH` mantenendo le proporzioni e lo ancora per centro-x/top-y; un
-logo illeggibile viene semplicemente saltato (`try/catch`).
-
-### Copertina, niente footer, la chiusura (#784)
-
-La **copertina** — `drawCover` — è centrata su una pagina simmetrica (non si rilega): logo, titolo
+La **copertina** — `drawCover` — è centrata su una pagina simmetrica (non si rilega): titolo
 (max 2 righe), descrizione (max 3), il **percorso** disegnato come vettore (`drawRoute`:
 equirettangolare con la longitudine scalata per cos(lat), su un riquadro chiaro, pallino verde alla
 partenza e scuro all'arrivo — saltato se il roadbook nasconde la mappa, `map_access:false`), poi tre
-colonne **distanza · note · data** e la riga autore · organizzazione. Nient'altro.
+colonne **distanza · note · data** e la riga autore · organizzazione. Nient'altro. L'immagine del
+roadbook (`meta.logo`) non compare come immagine: è lo **sfondo del riquadro del percorso**
+(`drawBackdrop` — riempie il riquadro, ritagliata ai suoi angoli arrotondati, sotto un velo color
+carta al 86 %), così resta solo una traccia di colore dietro la linea.
 
-Le pagine-tabella **non hanno footer**: niente "generato da", niente nome del file sotto la
-tabella. Le intestazioni restano (totali, logo, titolo, *Pagina n di N*, con la copertina che conta
-come pagina 1).
-
-Con un `opts.link`, l'ultima pagina chiude con **"Digital version available online"**, l'URL e un
-**QR in basso a destra** (`drawClosing`), disegnato a quadratini vettoriali dalla matrice di
-`RBQr.matrix` — nitido in stampa. `paginate(count, closing)` (pura, esportata per Node e coperta da
-`tests/pdf.test.js`) decide quali righe vanno in quale pagina: con la chiusura, l'ultima pagina
-lascia libero lo spazio di una riga e non resta mai con la chiusura da sola. `qrcode.min.js` e
-`rb-qr.js` si caricano su richiesta, come jsPDF.
+Le pagine-tabella **non hanno footer** e dopo l'ultima nota **non c'è nulla**: niente "generato da",
+niente nome del file, niente blocco finale. `paginate(count)` (pura, esportata per Node e coperta da
+`tests/pdf.test.js`) divide le righe a gruppi di `ROWS`. `qrcode.min.js` e `rb-qr.js` si caricano su
+richiesta, come jsPDF, solo quando c'è un link.
 
 ### La riga-nota (`drawRow`)
 `drawRow(n, tulip, close, x, y, h)` ([rb-pdf.js:171](../public/assets/js/rb-pdf.js#L171))
@@ -209,17 +193,16 @@ Il `resolver` passato a `NoteCanvas.toSVG` legge dalla mappa, con fallback a
 
 - **Note con tante icone/righe testo**: il commento è **troncato a 4 righe**
   ([rb-pdf.js:221](../public/assets/js/rb-pdf.js#L221)); il testo eccedente non compare nel PDF.
-- **Altezza riga fissa per pagina**: 4 righe sulla prima pagina, 6 sulle successive, sempre
-  con altezza uniforme `(CB − top)/rows`. Non c'è adattamento all'altezza del contenuto della
+- **Altezza riga fissa per pagina**: 6 righe per pagina, sempre con altezza uniforme `(CB − top)/rows`. Non c'è adattamento all'altezza del contenuto della
   singola nota.
 - **Le foto della galleria non sono incluse**: il PDF rende solo la tabella roadbook (vignette
   + testo), coerentemente col fatto che le foto sono una feature server-side mai parte del modello.
-- **CAP non ha una colonna dedicata**: l'intestazione mostra solo km totali e numero note; il
+- **CAP non ha una colonna dedicata**: il
   CAP (`cap`/`cap_distance`) vive dentro la vignetta tramite `NoteCanvas`, non come colonna a sé.
 - **Rasterizzazione, non vettori**: le vignette sono PNG a 3× (≈380 dpi). Ottime in stampa, ma
   non vettoriali: zoom estremi possono mostrare i pixel; il peso del file cresce col numero di note.
-- **Logo illeggibile saltato in silenzio**: `placeLogo` ingoia l'errore
-  ([rb-pdf.js:82](../public/assets/js/rb-pdf.js#L82)); un logo corrotto sparisce senza avviso.
+- **Immagine illeggibile saltata in silenzio**: `drawBackdrop` ingoia l'errore; un'immagine
+  corrotta lascia il riquadro del percorso semplice, senza avviso.
 - **jsPDF caricato dalla cartella di `rb-pdf.js`**: se l'asset manca o la rete fallisce,
   `generate` rigetta e la pagina chiamante mostra un toast; nessun fallback offline oltre al retry implicito.
 - **Dipende da `NoteCanvas`, `RB`, `RBt` e `RBConfig`**: `rb-pdf.js` presuppone che

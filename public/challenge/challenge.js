@@ -43,7 +43,7 @@
     if (j.is_owner) { $('chEdit').hidden = false; $('chEdit').href = '/editor/?rb=' + j.id; }
     $('chPdf').onclick = async (e) => {
         const busy = RBBusy(e.currentTarget);
-        // the closing QR points at this page when it is public, else at the event it was opened from (#784)
+        // the header QR points at this page when it is public, else at the event it was opened from (#784 · #810)
         const link = j.status === 'public' ? RBPublicLink('/challenge/' + encodeURIComponent(slug)) : (evParam ? RBPublicLink('/event/' + encodeURIComponent(evParam)) : null);
         try { await RBPdf.generate(rb, { iconBasePath: '/assets/icons/', link }); busy.ok(); }
         catch (err) { busy.reset(); RBToast('Could not export the PDF.'); }
