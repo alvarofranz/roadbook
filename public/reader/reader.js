@@ -716,8 +716,16 @@
             $('qrMeta').textContent = report.result_meta;
         }
         openModal('reportModal', () => {}); // an explicit outcome below, never a dismiss
+        // the shareable image (#785): made while the runner reads the report; once the run is saved
+        // on the profile it goes up with it (best-effort — a card that fails never blocks the report)
+        const cardP = makeCard(report, user);
+        const attachCard = async (saved) => {
+            const blob = await cardP;
+            if (blob && saved && saved.id) RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
+        };
         const box = $('reportSave');
         const done = (saved) => {
+            attachCard(saved);
             const where = saved && saved.is_public ? t('Saved to your profile — public.') : t('Saved to your profile — private.');
             box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-check"></i> <span>${esc(saved ? where : t('Saved on this device — it uploads to your profile as soon as you are online.'))}</span></p>
                 <div class="btnrow end">${user ? `<a class="btn btn-ghost" href="${RBProfileLink(user.username)}"><i class="fa-solid fa-circle-user"></i> ${esc(t('My profile'))}</a>` : ''}
@@ -747,16 +755,20 @@
             upload();
         });
     }
+    // The run card: rendered once per report, shown, shared and saved from the same Blob.
+    let cardBlob = null;
+    async function makeCard(report, user) {
+        cardBlob = null; $('reportCard').hidden = true;
+        try { cardBlob = await RBRunCard.render({ report, roadbook: rb, username: user && user.username }); }
+        catch (e) { cardBlob = null; }
+        if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCard').hidden = false; }
+        return cardBlob;
+    }
+    const cardName = () => 'rdbk-' + RB.slug((rb.meta && rb.meta.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
+    $('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(), (rb.meta && rb.meta.title) || 'RDBK.app'); };
+    $('cardSave').onclick = () => { if (cardBlob) RBDownload(cardBlob, cardName()); };
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
-    $('qrShare').onclick = async () => {
-        try {
-            const blob = await (await fetch(lastQrUrl)).blob();
-            const file = new File([blob], 'RB_' + team + '.png', { type: 'image/png' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: 'RDBK.app result', text: lastPayload });
-            if (navigator.share) return navigator.share({ title: 'RDBK.app result', text: lastPayload });
-            toast('Sharing not supported here — use Save QR.');
-        } catch (e) { /* user cancelled */ }
-    };
+    $('qrShare').onclick = async () => RBShareFile(await (await fetch(lastQrUrl)).blob(), 'RB_' + team + '.png', lastPayload);
     // reports that finished offline or signed out go up as soon as the Reader can reach the server
     cfgReady.then(() => { if (meUser) RBRun.flush(); });
 

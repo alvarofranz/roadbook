@@ -52,10 +52,13 @@ La cover è una **mappa statica della rotta**: la polilinea (rossa, `#ff5a45`) s
 CyclOSM, composta su un `<canvas>` ed esportata in PNG. **Nessun marker di waypoint, nessuna
 zona** — solo la rotta sulla mappa.
 
-`RBCoverMap.capture(track, opts)` ([cover-map.js:15](../public/assets/js/cover-map.js#L15)):
+`RBCoverMap.capture(track, opts)` è `render(track, opts)` — che restituisce il canvas, e serve anche
+alla card della run (#785) con i marker delle note e un riquadro con margini diversi per lato —
+seguito da `toBlob`:
 1. Proietta la traccia in **Web-Mercator** (la proiezione delle tile) e ne calcola il bounding
    box.
-2. Sceglie lo **zoom** più alto che fa stare il bbox (più padding) nel box `1200×750`.
+2. Sceglie lo **zoom** che fa stare il bbox (più padding) nel box `1200×750`: le tile arrivano a
+   livelli interi e la frazione che avanza le ingrandisce, così la rotta riempie il suo riquadro.
 3. Scarica le tile che coprono il box (`crossOrigin = 'anonymous'`) e le disegna sul canvas; poi
    disegna la rotta (alone scuro sotto per contrasto + tratto rosso sopra), i pallini
    **start (verde) / finish (rosso)** e il credito "© OpenStreetMap, CyclOSM".

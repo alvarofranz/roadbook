@@ -147,7 +147,9 @@ DB/Convenzioni rapide below have counterparts there).
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
-    `RBRoadbookCard(r, opts)` / `RBEventCard(e)` (the ONE card design of every gallery, on top of
+    `RBShareFile(blob, name, text)` (share a generated file: the OS sheet in the app, Web Share in
+    the browser, a download otherwise, #785), `RBPublicLink(path)` (an absolute, shareable link to a
+    site page — the real domain inside the app), `RBRoadbookCard(r, opts)` / `RBEventCard(e)` (the ONE card design of every gallery, on top of
     `RBGalleryCard`; `RBFillRoutes(container)` draws the route of a photo-less roadbook card, #770),
     `RBPagedList({pager, per, source, filter, draw, label})` (ONE filtered, paged list — the
     galleries, My roadbooks and user management all drive their search + pager through it),

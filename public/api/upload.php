@@ -3,7 +3,8 @@
  *   type=avatar                 → square 256px AVIF avatar (re-compressed; original never stored)
  *   type=event_logo event=<id>  → event logo, max 512px AVIF (manage rights; #151)
  *   type=photo   roadbook=<id>  → gallery photo, max 1600px AVIF
- *   type=audio   roadbook=<id>  → waypoint voice note, stored as-is (no transcoding) */
+ *   type=audio   roadbook=<id>  → waypoint voice note, stored as-is (no transcoding)
+ *   type=run_card run=<id>      → the run's shareable image, 1080px AVIF (the runner's own run, #785) */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
 require dirname(__DIR__, 2) . '/app/images.php';
 global $CFG;
@@ -70,6 +71,13 @@ if ($type === 'event_logo') {
     $url = '/event-logos/' . (int)$e['id'] . '.avif?v=' . time();
     db()->prepare('UPDATE events SET logo = ? WHERE id = ?')->execute([$url, (int)$e['id']]);
     json_out(['ok' => true, 'logo' => $url]);
+}
+
+if ($type === 'run_card') {
+    run_owned($user, $runId = (int)($_POST['run'] ?? 0)); // only the runner's own run
+    if (!is_dir($CFG['run_cards_dir'])) mkdir($CFG['run_cards_dir'], 0755, true);
+    if (!process_to_avif($tmp, run_card_path($runId), 1080, false, 60)) fail('Could not process the image.');
+    json_out(['ok' => true, 'card' => run_card_url($runId)]);
 }
 
 if ($type === 'photo') {

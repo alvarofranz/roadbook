@@ -373,6 +373,10 @@ disco per-utente**: superata, rispondono **`413`** (`user_disk_bytes` vs `user_q
 - **`type=event_logo` + `event=<id>`** (#151) → logo evento, AVIF max 512px in
   `public/event-logos/<event_id>.avif`. Richiede i diritti di gestione dell'evento
   (`require_event_manage`: proprietario / co-organizzatore / admin); aggiorna `events.logo`.
+- **`type=run_card` + `run=<id>`** (#785) → l'immagine condivisibile di una run, AVIF max 1080px in
+  `public/run-cards/<nome>.avif`. Solo per una run propria (`run_owned`). Il nome è un HMAC dell'id
+  con `APP_SECRET` (`run_card_name`), così l'immagine di una run privata non si indovina dall'id;
+  `profile_get` la restituisce come `card` insieme alla run, e `run_delete` la cancella.
 - **`type=photo` + `roadbook=<id>`** → foto galleria, max 1600px. Verifica la proprietà del
   roadbook, impone un tetto di **60 foto** per galleria, e accetta `lat`/`lon` opzionali (geotag)
   clampati al range valido. La riga viene inserita come `pending`, poi il file prende un nome

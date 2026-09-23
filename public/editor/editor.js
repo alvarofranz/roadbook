@@ -1081,6 +1081,7 @@
     }
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
+    let publicSlug = null; // the roadbook's /challenge/<slug>, once it has one — the PDF's closing QR points there (#784)
     let vehicles = ['car']; // #713: which vehicles the route suits — server-side, set by the owner, never empty
     document.querySelector('#vehField .segmented').innerHTML = RBVehicleSegmentsHTML();
     function paintVehicles() {
@@ -1151,7 +1152,7 @@
         updateSaveBtn();
     }
     // fresh content (imported GPX / .rdbk) is a NEW roadbook, even mid-edit of a saved one
-    function resetIdentity() { currentRbId = 0; setStatus('draft'); reusable = false; vehicles = ['car']; paintVehicles(); pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    function resetIdentity() { currentRbId = 0; publicSlug = null; setStatus('draft'); reusable = false; vehicles = ['car']; paintVehicles(); pendingMedia = []; setOwnership(true, ''); setLock({ mine: true }); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
     // Media bundled in an imported .rdbk v2 (#162): once the roadbook has a server id, upload each
     // photo/audio into its gallery with the geotag from the bundle's manifest, then clear the queue.
     async function flushImportedMedia() {
@@ -1170,7 +1171,7 @@
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb); await embedUsed(rb);
         const r = await RBApi('rb_save', { id: currentRbId, status, reusable, vehicles, roadbook: RB.roadbookForExport(rb) });
         if (r.ok) {
-            currentRbId = r.id; dirty = false; clearDraft();
+            currentRbId = r.id; if (r.slug) publicSlug = r.slug; dirty = false; clearDraft();
             if (pendingMedia.length) await flushImportedMedia(); // upload media bundled in an imported .rdbk (#162)
             RBMediaQueue.flush(); // photos/voice notes queued by the Recorder now have a roadbook to join (#648)
             updatePhotos(); updateAudio(); updateSaveBtn();
@@ -2113,7 +2114,9 @@
     async function exportPdf() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         toast('Generating PDF…');
-        try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/' }); }
+        // a public roadbook's PDF ends with a QR to its page (#784)
+        const link = status === 'public' && publicSlug ? RBPublicLink('/challenge/' + encodeURIComponent(publicSlug)) : null;
+        try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/', link }); }
         catch (e) { toast(e.message || 'Could not generate the PDF.'); }
     }
     // One GPX per the chosen options (#34): track on/off · waypoints on/off · Garmin/OSMAnd
@@ -2375,7 +2378,7 @@
                 // Yes load it straight into draw mode (No falls through to the list, #650).
                 const hasRoute = (r.roadbook.track || []).length >= 2;
                 if (hasRoute || await RBConfirm('This roadbook has no route yet. Draw it on the map?')) {
-                    currentRbId = id; setStatus(r.status); reusable = !!r.reusable; vehicles = r.vehicles; paintVehicles(); setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
+                    currentRbId = id; publicSlug = r.slug || null; setStatus(r.status); reusable = !!r.reusable; vehicles = r.vehicles; paintVehicles(); setOwnership(!!r.is_owner, r.owner); setLock(r.lock); setRoadbook(r.roadbook);
                 }
             } else {
                 toast(t('Roadbook not found or no edit rights.')); // explicit target failed → show error, don't fall through to the list

@@ -107,6 +107,14 @@ const RBNative = {
         return 'share';
     },
 
+    // Hand a generated file (the run card, the result QR) to the OS share sheet (#785): written to
+    // the app cache first, since the sheet takes a file URI, not bytes.
+    async shareFile(blob, filename, text) {
+        const data = await blobToBase64(blob);
+        const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: filename, text, files: [uri] });
+    },
+
     // Native Google Sign-In (#46). The web GIS button can't run inside a WebView, so the app
     // uses the OS Google account picker (Credential Manager on Android, GoogleSignIn on iOS) via
     // @capgo/capacitor-social-login, then hands the ID token to /api google_auth — the same

@@ -1037,7 +1037,10 @@
     // Absolute "read in the Reader" link for a public roadbook slug — the shareable URL. In the
     // native app location.origin is the WebView-local host, so a copied link would be a dead
     // localhost URL — always share the production domain instead.
-    window.RBReaderLink = (slug) => (isNativeApp() ? 'https://rdbk.app' : location.origin) + '/reader/' + encodeURIComponent(slug);
+    // An absolute link to a page of the site, the kind that is shared or printed: this origin on
+    // the web, the real domain inside the app (whose own origin is a WebView-local one).
+    window.RBPublicLink = (path) => (isNativeApp() ? PROD_ROOT.replace(/\/+$/, '') : location.origin) + path;
+    window.RBReaderLink = (slug) => RBPublicLink('/reader/' + encodeURIComponent(slug));
     // API auth: a Capacitor webview can't carry the cross-origin session cookie, so in the
     // native apps login returns a Bearer token we store and replay on every call. In the
     // browser this is completely inert — the httponly session cookie is used as before and
@@ -1123,6 +1126,23 @@
     // public Documents, iOS → the "Save to Files" share sheet) and the outcome is ALWAYS
     // surfaced — a save that silently does nothing is a bug.
     const SAVED_IN = { pictures: 'Saved to your Pictures folder', downloads: 'Saved to your Downloads folder' };
+    // Share a generated file (the run card, the result QR): the OS share sheet in the app, the Web
+    // Share sheet where the browser can share files, a download everywhere else (#785).
+    window.RBShareFile = async (blob, filename, text) => {
+        if (isNativeApp()) {
+            const native = await RBNativeReady();
+            if (!native || !native.shareFile) return RBDownload(blob, filename);
+            try { await native.shareFile(blob, filename, text); }
+            catch (e) { if (!/cancel/i.test((e && e.message) || '')) RBToast('Could not share.'); } // dismissing the sheet is a choice
+            return;
+        }
+        const file = new File([blob], filename, { type: blob.type });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file], text }); } catch (e) { /* cancelled */ }
+            return;
+        }
+        return RBDownload(blob, filename);
+    };
     window.RBDownload = async (data, filename) => {
         if (isNativeApp()) {
             try {

@@ -53,6 +53,10 @@
         }).join('');
         $('pfRuns').querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => setVisibility(+b.dataset.run, b.dataset.vis === '1'));
         $('pfRuns').querySelectorAll('[data-del]').forEach((b) => b.onclick = () => removeRun(+b.dataset.del));
+        $('pfRuns').querySelectorAll('[data-share-card]').forEach((b) => b.onclick = async () => {
+            try { RBShareFile(await (await fetch(b.dataset.shareCard)).blob(), 'rdbk-run.avif', 'RDBK.app'); }
+            catch (e) { toast('Could not share.'); }
+        });
     }
     function runHTML(r) {
         const when = RBFmtDate(String(r.ended_at).slice(0, 10));
@@ -64,9 +68,12 @@
         ].filter(Boolean).join(' ');
         const own = data.is_me ? `<button class="btn btn-ghost btn-sm" data-vis="${r.is_public ? 0 : 1}" data-run="${r.id}" type="button"><i class="fa-solid fa-${r.is_public ? 'lock' : 'globe'}"></i> ${esc(t(r.is_public ? 'Make private' : 'Make public'))}</button>
             <button class="btn btn-ghost btn-sm" data-del="${r.id}" type="button" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : '';
+        // the run's shareable image (#785), when it has one — the runner can share it again from here
+        const card = r.card ? `<div class="pf-run-card"><a href="${esc(r.card)}" target="_blank" rel="noopener"><img src="${esc(r.card)}" alt="" loading="lazy"></a>
+            ${data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(r.card)}" type="button"><i class="fa-solid fa-share-nodes"></i> ${esc(t('Share'))}</button>` : ''}</div>` : '';
         return `<div class="pf-run">
             <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${own}</div>
-            ${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}
+            ${card}${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}
         </div>`;
     }
     async function setVisibility(id, isPublic) {

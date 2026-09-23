@@ -248,6 +248,16 @@ preferenza `ask` il report chiede *Keep private* / *Make public* con *Remember m
 altrimenti salva con la preferenza. Una run di gara di un roadbook di evento entra da sola nella
 classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
 
+Mentre il report si legge, il Reader crea la **card condivisibile** della run (#785,
+`RBRunCard.render`, `assets/js/run-card.js`): un PNG 1080×1350 fatto sul dispositivo, con tutto il
+percorso sulla mappa (`RBCoverMap.render`) e ogni nota — verde raggiunta, rosa saltata —, sfumato
+verso il basso dove stanno esito, titolo, @utente · data e quattro cifre (distanza · tempo · media ·
+note raggiunte). Se il roadbook nasconde la mappa, la card porta solo le cifre; offline il percorso si
+disegna senza tile. Il report la mostra con **Share** (`RBShareFile`: foglio di condivisione del
+sistema nell'app, Web Share nel browser, download altrimenti) e **Save image**; appena la run è salvata
+sul profilo, la card sale con lei (`RBUpload` `type=run_card`) e compare su quella run nel profilo.
+Anche lo **Share** del QR del risultato passa da `RBShareFile`.
+
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
 di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
