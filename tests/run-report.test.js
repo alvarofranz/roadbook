@@ -10,7 +10,7 @@ const html = read('public/reader/index.html');
 describe('the mode comes from the context (#617)', () => {
     it('the start dialog asks no mode', () => {
         expect(html).not.toMatch(/id="modeTrip"|modeGrid|modeLocked|Competition mode/);
-        expect(html).toContain('id="modeStart"');
+        expect(html).toContain('id="startGo"');
     });
     it('a scored event roadbook runs in competition, everything else as a trip', () => {
         expect(reader).toContain("runComp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');");
@@ -61,6 +61,7 @@ describe('RBRun', () => {
         window.RBApi = async (action, body) => { calls.push(body); return body.title === 'offline' ? { ok: false, error: 'Network error.' } : { ok: true, id: calls.length, is_public: body.visibility === 'public' ? 1 : 0 }; };
         eval(read('public/assets/js/run-report.js'));
     });
+    const queued = (key) => JSON.parse(localStorage.getItem('rb_pending_runs') || '[]').find((i) => i.key === key) || null;
     const run = { title: 'X', distance_m: 12400, duration_s: 3600, notes_total: 10, notes_reached: 9, skipped: [4], speed_zones: 2, speed_exceeded: 1, max_over_kmh: 8, penalties: null };
 
     it('renders the tiles and says what went wrong', () => {
@@ -78,16 +79,32 @@ describe('RBRun', () => {
         const ready = window.RBRun.enqueue({ ...run, title: 'Y' }, true);
         const done = await window.RBRun.flush();
         expect(Object.keys(done)).toEqual([ready]);
-        expect(window.RBRun.pending(waiting)).not.toBeNull();
+        expect(queued(waiting)).not.toBeNull();
         window.RBRun.update(waiting, { ready: true, visibility: 'public', remember: true });
         const done2 = await window.RBRun.flush();
         expect(done2[waiting].is_public).toBe(1);
         expect(calls[1].remember).toBe(1);
-        expect(window.RBRun.pending(waiting)).toBeNull();
+        expect(queued(waiting)).toBeNull();
     });
     it('keeps a report that could not reach the server', async () => {
         const k = window.RBRun.enqueue({ ...run, title: 'offline' }, true);
         await window.RBRun.flush();
-        expect(window.RBRun.pending(k)).not.toBeNull();
+        expect(queued(k)).not.toBeNull();
+    });
+    it('a flush asked for during another one still uploads what became ready meanwhile', async () => {
+        const first = window.RBRun.enqueue(run, true);
+        const running = window.RBRun.flush();          // reads the queue now: only `first`
+        const later = window.RBRun.enqueue({ ...run, title: 'Y' }, false);
+        window.RBRun.update(later, { ready: true });  // the runner picks while the first upload runs
+        const done = await window.RBRun.flush();
+        expect(Object.keys(await running)).toEqual([first]);
+        expect(Object.keys(done)).toEqual([later]);
+        expect(queued(later)).toBeNull();
+    });
+    it('owns the average speed the run card shows too', () => {
+        expect(window.RBRun.avgKmh(run)).toBe('12.4');
+        expect(window.RBRun.avgKmh({ ...run, duration_s: 0 })).toBe('—');
+        expect(read('public/assets/js/run-card.js')).toContain("RBRun.avgKmh(report) + ' km/h'");
+        expect(read('public/assets/js/run-card.js')).not.toContain('report.duration_s > 0');
     });
 });

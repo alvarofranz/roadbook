@@ -25,7 +25,7 @@ window.RBGpxRecorder = (() => {
         // whole growing track on every point would cost O(n²) over a session.
         if (tnow - lastPersist < 3000) return;
         lastPersist = tnow;
-        if (useCheckpoint) { try { localStorage.setItem(CHECKPOINT_KEY, JSON.stringify({ pts, name: fileName })); } catch (e) {} }
+        if (useCheckpoint) RBCheckpoint.write(CHECKPOINT_KEY, { pts, name: fileName });
     }
 
     // checkpoint: false → the caller keeps its own richer crash checkpoint (the
@@ -35,7 +35,7 @@ window.RBGpxRecorder = (() => {
     function feed(coords, here, tnow) {
         if (!on || RB.recJunkFix(coords.accuracy) || tnow - lastT < sampleMs) return;
         pts.push({ lat: here.lat, lon: here.lon, ele: (coords.altitude != null && isFinite(coords.altitude)) ? coords.altitude : null, t: tnow });
-        lastT = tnow; persist(tnow); // crash-safe: localStorage + live file write
+        lastT = tnow; persist(tnow); // crash-safe: the localStorage checkpoint
     }
     // direct intake (Editor route recording): the caller already decided this point belongs
     function add(here, tnow) { if (!on) return; pts.push({ lat: here.lat, lon: here.lon, ele: here.ele ?? null, t: tnow }); persist(tnow); }
@@ -48,18 +48,25 @@ window.RBGpxRecorder = (() => {
         on = false; onChange(false);
         return { pts: pts.slice(), name: fileName };
     }
-    // End the log and offer the standard finished-track modal. The stop itself asks first:
-    // it kills the live watch and a recording can't seamlessly restart (#217).
+    // End the log and hand it to the standard finished-track modal; resolves once the modal is
+    // done with (a download or a confirmed discard — Convert leaves the page). The caller that
+    // ends a log along with its own work (the Reader's run) uses this directly.
+    function handOver() {
+        const r = end();
+        if (r.pts.length >= 2) return new Promise((done) => finishedModal(r.pts, r.name, done));
+        toast('Track too short.'); clearCheckpoint();
+        return Promise.resolve();
+    }
+    // The user's Stop asks first: it kills the live watch and a recording can't seamlessly
+    // restart (#217).
     async function stop() {
         if (!(await RBConfirm(RBt('Stop recording?')))) return;
-        const r = end();
-        if (r.pts.length >= 2) { finishedModal(r.pts, r.name); }
-        else { toast('Track too short.'); clearCheckpoint(); }
+        return handOver();
     }
-    // continue an interrupted log after a reload (a live file handle cannot survive one)
+    // continue an interrupted log after a reload, from its checkpoint
     function resume(savedName) {
         fileName = savedName || defaultName();
-        let saved; try { saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || 'null'); } catch (e) {}
+        const saved = RBCheckpoint.read(CHECKPOINT_KEY);
         pts = (saved && saved.pts) || []; lastT = 0; on = true; onChange(true);
     }
     // Offer to rescue an orphaned checkpoint (crash/closed tab with no session to resume). A No is
@@ -67,7 +74,7 @@ window.RBGpxRecorder = (() => {
     // points to the finished-track modal, whose destinations clear it (#460 · #686). A new
     // recording's checkpoint replaces a declined one.
     async function offerRecovery() {
-        let saved; try { saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || 'null'); } catch (e) {}
+        const saved = RBCheckpoint.read(CHECKPOINT_KEY);
         if (!saved || !saved.pts || saved.pts.length < 2 || saved.declined) return;
         const t = RBt;
         if (await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')')) return finishedModal(saved.pts, saved.name || defaultName());
@@ -81,7 +88,7 @@ window.RBGpxRecorder = (() => {
         const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
         const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
             <input id="gxFreq" class="modal-in gx-rate-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}"></div>
-            <p class="muted small gx-rate-hint">${t('Suggested: 3s car/rally · 5s bike · 10s walking')}</p>`;
+            <p class="muted small">${t('Suggested: 3s car/rally · 5s bike · 10s walking')}</p>`;
         const d = RBModal(`<h3>${t('Record GPX')}</h3>
             ${rateField}
             <label class="muted small">${nameLabel}</label>
@@ -102,7 +109,8 @@ window.RBGpxRecorder = (() => {
             d.close(); (opts.onStart || begin)();
         };
     }
-    function finishedModal(finished, name) {
+    // onDone: called once the modal has closed on an outcome that stays on the page
+    function finishedModal(finished, name, onDone = () => {}) {
         const t = RBt;
         // Not dismissable: the recording only leaves through an explicit outcome — download,
         // convert, or a confirmed discard — never a stray backdrop tap or Escape (#217). Each
@@ -114,17 +122,17 @@ window.RBGpxRecorder = (() => {
                 <button class="btn btn-ghost" id="trDl"><i class="fa-solid fa-download"></i> ${t('Download GPX')}</button>
                 <button class="btn btn-primary" id="trEd"><i class="fa-solid fa-map-location-dot"></i> ${t('Convert into roadbook')}</button>
             </div>
-            <div class="btnrow center"><button class="btn btn-ghost" id="trClose"><i class="fa-solid fa-trash"></i> ${t('Discard')}</button></div>`, 'slim center', null, { dismissable: false });
-        d.q('#trDl').onclick = () => { download(finished, name); clearCheckpoint(); d.close(); };
+            <div class="btnrow center"><button class="btn btn-danger" id="trDiscard"><i class="fa-solid fa-trash"></i> ${t('Discard')}</button></div>`, 'slim center', null, { dismissable: false });
+        d.q('#trDl').onclick = () => { download(finished, name); clearCheckpoint(); d.close(); onDone(); };
         d.q('#trEd').onclick = () => { try { sessionStorage.setItem('rb_trip_track', JSON.stringify(finished)); } catch (e) {} clearCheckpoint(); location.href = '../editor/?trip=1'; };
-        d.q('#trClose').onclick = async () => {
+        d.q('#trDiscard').onclick = async () => {
             if (!(await RBConfirmDanger(t('Discard this recording?') + '<br>' + summary))) return; // the same line the modal shows, so the confirm names exactly what goes
-            clearCheckpoint(); d.close();
+            clearCheckpoint(); d.close(); onDone();
         };
     }
 
     return {
-        settings, begin, stop, end, clearCheckpoint, feed, add, resume, offerRecovery,
+        settings, begin, stop, handOver, end, clearCheckpoint, feed, add, resume, offerRecovery,
         get recording() { return on; },
         get fileName() { return fileName; },
         init(opts) { onChange = opts.onChange || onChange; toast = opts.toast || toast; },

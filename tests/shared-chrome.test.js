@@ -189,9 +189,11 @@ describe('the immersive Reader is an app shell, not pinned bars (#429)', () => {
     });
 
     it('every bar is a flow row inside the shell', () => {
-        for (const sel of ['body.rb-immersive .odometer-bar', 'body.rb-immersive .fabrow']) {
-            expect(declOf(readerRule(sel), 'position'), sel).toBe('static');
-        }
+        // the action row is pinned elsewhere, so the shell puts it back in the flow; the odometer bar
+        // is never positioned at all — the preview hides it, so the shell is the only place it shows
+        expect(declOf(readerRule('body.rb-immersive .fabrow'), 'position')).toBe('static');
+        for (const sel of ['.odometer-bar', 'body.rb-immersive .odometer-bar']) expect(declOf(readerRule(sel), 'position'), sel).toBeNull();
+        expect(readerRule('body.rb-preview .odometer-bar, body.rb-preview .fabrow')).toContain('display: none');
     });
 
     it('nothing shared floats onto the tool while it owns the screen', () => {

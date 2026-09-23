@@ -1523,3 +1523,8 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "priv.rb.4": "Un <b>commento</b> che pubblichi sotto un roadbook pubblico è mostrato sulla sua pagina a tutti i lettori che hanno effettuato l’accesso, con il tuo nome utente e il tuo avatar. Tu, il proprietario del roadbook e un amministratore potete eliminarlo; eliminando il tuo account si eliminano i tuoi commenti.",
 });
+
+/* Reader: a .rdbk opened from the OS during a run */
+Object.assign(window.RBi18nLangs.it, {
+    "Open this file and leave the run in progress? Your progress on the notes will be lost.": "Aprire questo file e lasciare il percorso in corso? I tuoi progressi sulle note andranno persi.",
+});

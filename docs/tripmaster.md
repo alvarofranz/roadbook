@@ -218,7 +218,7 @@ file e recupero post-crash della traccia sono documentati nel doc di `RBGpxRecor
 
 ## 10. Persistenza e ripristino dopo kill
 
-La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`).
+La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`), letta e scritta con `RBCheckpoint`.
 
 - **Salvataggio**: `saveSession()` ([tripmaster.js:17](../public/tripmaster/tripmaster.js#L17))
   serializza tutto lo stato (odometri, max, waypoint, stato cronometro, stato registrazione GPX

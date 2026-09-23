@@ -19,13 +19,13 @@
         if (keepDeclined && !(totalM > 0 || waypoints > 0 || timerOn || timerAcc > 0 || RBGpxRecorder.recording)) return;
         keepDeclined = false;
         const s = { totalM, partialM, maxKmh, waypoints, timerAcc, timerOn, timerStart, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName };
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+        RBCheckpoint.write(SESSION_KEY, s);
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
 
     /* ---------- startup: resume → GPX crash recovery → fresh ---------- */
     (async function () {
-        let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+        const session = RBCheckpoint.read(SESSION_KEY);
         if (session && !session.declined && (session.totalM > 0 || session.waypoints > 0 || session.timerOn || session.timerAcc > 0 || session.gpxRecording)) {
             // A declined resume is MARKED, never deleted (#436 · #644): asking twice is nagging,
             // overwriting it is data loss. It stays as it is until this trip has data of its own.
@@ -49,6 +49,7 @@
     function start() {
         window.RB_BUSY = true; // never auto-refresh mid-trip
         RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
+        $('tmNativeHint').hidden = document.documentElement.classList.contains('native'); // the "use the app" recommendation, in a browser only (as in the Recorder)
         RBStatusBar.show(); // shared bar: clock · battery · satellite/GPS
         meter = new RBGpsMeter(onFix, () => toast('No geolocation'));
         setInterval(() => { // the stopwatch (the clock is the status bar's)

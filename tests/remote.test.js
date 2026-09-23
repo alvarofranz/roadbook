@@ -98,7 +98,7 @@ describe('attach', () => {
         expect(event.defaultPrevented).toBe(false);
     });
 
-    // A dialog owns the keyboard: the vehicle-number prompt, a confirm, the mode chooser.
+    // A dialog owns the keyboard: the vehicle-number prompt, a confirm, the start dialog.
     it('stays silent while a modal is open', () => {
         document.body.innerHTML = '<div class="modal"><div class="modal-card"></div></div>';
         fire('ArrowRight');

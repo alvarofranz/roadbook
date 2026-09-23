@@ -93,7 +93,7 @@ quindi conta solo il tempo di effettiva registrazione.
 Due livelli di persistenza:
 
 - **La traccia** è checkpointata da `RBGpxRecorder` (è lui a possedere la traccia
-  *autorevole*, crash-safe, e il file live).
+  *autorevole* e crash-safe).
 - **I metadati** (km, tempo, pausa, waypoint, foto, `draftId`, nome file) li salva il
   Recorder in `localStorage` chiave `rb_recorder_session` via `saveSession()`
   ([recorder.js:26-28](../public/recorder/recorder.js#L26)), richiamata ad ogni tick e

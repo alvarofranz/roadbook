@@ -76,12 +76,10 @@ window.RBGpsMeter = class RBGpsMeter {
             } else if (navigator.geolocation) {
                 this.watchId = navigator.geolocation.watchPosition(
                     (pos) => this._fix(pos.coords, Date.now()),
-                    (e) => {
-                        if (e && e.TIMEOUT && this._running) {
-                            // Cold-start GPS on Android can take >30s; retry once.
-                            this._retryTimer = setTimeout(() => { if (this._running) this.resume(); }, 5000);
-                        } else err(e);
-                    },
+                    // A TIMEOUT only means no fix arrived in time (a cold start can take longer): the
+                    // watch keeps running and delivers the fix when it comes, and the stall watchdog
+                    // is what tells the user. Anything else (denied, unavailable) is a real failure.
+                    (e) => { if (!(e && e.code === e.TIMEOUT)) err(e); },
                     { enableHighAccuracy: true, maximumAge: 1000, timeout: 45000 });
             } else err();
         });
@@ -174,14 +172,17 @@ window.RBGpsMeter = class RBGpsMeter {
         this._onFix({ here, coords: c, disp: step.disp, from: from && { lat: from.lat, lon: from.lon }, trusted, speedKmh: this.speedKmh, heading: this.heading, tnow });
     }
     async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
-    // Stop the watch and release the screen wake lock (resume() re-arms everything).
+    // Stop the watch and release the screen wake lock (resume() re-arms everything). The movement
+    // references go with it: whatever the device does while stopped is not a drive, so the first
+    // fix after resume() starts afresh — it never adds the paused distance in one step, and never
+    // hands out a `from` that would test the notes along a straight line across the pause.
     stop() {
         this._running = false;
+        this._anchor = null; this._trail = []; this._lastSpeedPos = null; this._lastSpeedT = null;
         this._clearStall();
         document.removeEventListener('visibilitychange', this._onVis);
         if (this._native) RBNative.geo.stop();
         if (this.watchId != null) { navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
-        if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
         if (this._wakeLock) { this._wakeLock.release().catch(() => {}); this._wakeLock = null; }
     }
 };

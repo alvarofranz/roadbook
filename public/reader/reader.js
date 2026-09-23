@@ -25,17 +25,28 @@
     let zones = { count: 0, exceeded: 0, maxOver: 0 }; // speed-limit zones the run went through (#618)
     let rbRef = null, runStartedAt = null;             // the server roadbook this run is of (none for a file) · when it began
     let startedAt = null, endedAt = null, auto = false, meter = null, paused = false;
+    let finished = false; // the run is over (finished or left): nothing is checkpointed any more
+    // A run's own state back to a fresh start — for a roadbook opened in the same page life after
+    // a run was ended (endRun) without leaving the page.
+    function resetRun() {
+        activeIdx = 0; reached = new Set(); tripTotalM = 0; tripPartialM = 0; curLimit = null; maxSpdSeg = 0;
+        armed = false; extraAccum = 0; pen = { acc: 0, cap: 0, skip: 0, extra: 0, speed: 0 }; zones = { count: 0, exceeded: 0, maxOver: 0 };
+        runStartedAt = null; startedAt = null; endedAt = null; meter = null; paused = false; finished = false; lastScrollIdx = -1;
+        clearInterval(clockTimer);
+        if (detachRemote) { detachRemote(); detachRemote = null; } // the remote drives a run, not a preview
+    }
     let preview = false; // roadbook opened but navigation not started yet (read-only look)
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map
     let lastHere = null, lastAcc = null;     // last TRUSTED position + its accuracy — what every distance is measured from
     let lastPayload = '', lastQrUrl = '';
     let meUser = null; // #146: public roadbooks open in the Reader only for signed-in users
-    const rbSlug = location.pathname.replace(/\/+$/, '').split('/').pop(); // roadbook slug from URL
+    let rbSlug = ''; // the server roadbook's slug (none for a file): the event lookup and the result QR's rb prefix
     // Which roadbook this visit is FOR, if any (the friendly slug, ?rb= or ?admin_rb=). The run
     // checkpoint records it, so a later visit can tell "resume this very run" from "you asked for
-    // something else" — in which case there is nothing to ask about (#436).
-    const openedAs = (() => {
+    // something else" — in which case there is nothing to ask about (#436). A resumed run takes
+    // back the one it was started with.
+    let openedAs = (() => {
         const q = new URLSearchParams(location.search);
         const pub = RBChallenges.publicFromUrl();
         if (pub) return 'slug:' + pub;
@@ -49,6 +60,8 @@
     /* ---------- startup ---------- */
     $('pickRb').onclick = () => $('rbFile').click();
     RBFullscreen($('odoFs')); // fullscreen toggle in the odometer bar (hides the site header + footer)
+    // the "use the app" recommendation, in a browser only (as in the Recorder)
+    $('rdNativeHint').hidden = $('prNativeHint').hidden = document.documentElement.classList.contains('native');
     $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast('Could not load the roadbook.'); } };
     // The public roadbook gallery on the load screen — the same one as /roadbooks/ (#636). A card
     // links to /reader/<slug> — the deep link the Navigate button uses — so opening one navigates
@@ -72,7 +85,7 @@
             onPick: async (rb, modal) => {
                 modal.close();
                 const j = await RBApi('rb_get', { id: +rb.id });
-                if (j.ok && j.roadbook) loadRb(j.roadbook, j.id); else toast(j.error || 'Could not load the roadbook.');
+                if (j.ok && j.roadbook) loadRb(j.roadbook, j.id, j.slug); else toast(j.error || 'Could not load the roadbook.');
             },
         });
     };
@@ -87,10 +100,10 @@
     (async function () {
         await cfgReady; // #146: know sign-in state before deciding to open a public roadbook
         RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
-        let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+        let session = RBCheckpoint.read(SESSION_KEY);
         let savedRb = null;
         if (session && session.pen) {
-            try { savedRb = JSON.parse(localStorage.getItem(SESSION_RB_KEY) || 'null'); } catch (e) {}
+            savedRb = RBCheckpoint.read(SESSION_RB_KEY);
             if (!savedRb || !savedRb.notes) session = null;
         } else session = null;
         if (!session) clearSession(); // an unrecoverable checkpoint is just litter
@@ -101,11 +114,11 @@
         const loadFromUrl = () => {
             if (pub) {
                 if (!meUser) return RBNeedAuth('Sign in to read public roadbooks.');
-                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook, j.id); if (eventSlug) openModeModal(); }).catch(() => toast('Could not load the roadbook.'));
+                RBChallenges.loadPublic(pub).then((j) => { loadRb(j.roadbook, j.id, j.slug); if (eventSlug) openStartDialog(); }).catch(() => toast('Could not load the roadbook.'));
             } else if (rbId > 0) {
-                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook, j.id); if (eventSlug) openModeModal(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+                RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook, j.id, j.slug); if (eventSlug) openStartDialog(); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             } else if (adminRbId > 0) {
-                RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook, j.id); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+                RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook, j.id, j.slug); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             }
         };
         // Worth asking about only when this visit has no target of its own, or when the saved run
@@ -124,26 +137,34 @@
         await RBGpxRecorder.offerRecovery();
         loadFromUrl();
     })();
-    // File Handling API (installed PWA): open a .rdbk straight from the OS.
+    // File Handling API (installed PWA): open a .rdbk straight from the OS. During a run that
+    // throws the run away, so it asks first, naming the run it replaces.
     if ('launchQueue' in window && window.LaunchParams) {
         launchQueue.setConsumer(async (params) => {
             if (!params.files || !params.files.length) return;
-            try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) {}
+            if (meter && !finished) {
+                const what = esc((rb.meta && rb.meta.title) || t('Roadbook')) + ' · ' + activeIdx + '/' + notes.length + ' ' + t('notes');
+                if (!(await RBConfirmDanger(t('Open this file and leave the run in progress? Your progress on the notes will be lost.') + '<br><b>' + what + '</b>'))) return;
+                await endRun();
+                resetRun();
+            }
+            try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) { toast('Could not load the roadbook.'); }
         });
     }
 
     let competition = false;
-    const eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event: it decides the mode (#155 · #617)
-    // `id`: the server roadbook it is, so the run report can point at it — a local file has none
-    function loadRb(r, id) {
+    let eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event: it decides the mode (#155 · #617)
+    // `id` + `slug`: the server roadbook it is, so the run report can point at it and a competition
+    // result names it — a local file has neither
+    function loadRb(r, id, slug) {
         r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
         if (!r.notes.length) return toast('Roadbook has no notes.');
-        rb = r; notes = r.notes; rbRef = id ? +id : null;
+        rb = r; notes = r.notes; rbRef = id ? +id : null; rbSlug = slug || '';
         showPreview();
     }
-    // Preview an opened roadbook read-only, BEFORE choosing a mode — you might just want to look.
+    // Preview an opened roadbook read-only, BEFORE starting — you might just want to look.
     // No GPS, no active-note highlighting; the bottom tab bar stays (not immersive). The sticky
-    // "Navigate" CTA is what opens the mode chooser and starts the actual navigation.
+    // "Navigate" CTA is what opens the start dialog and starts the actual navigation.
     function showPreview() {
         preview = true;
         document.body.classList.remove('rb-immersive');
@@ -157,45 +178,45 @@
     // exists for an event's Ranking, so a roadbook opened from an event whose roadbook is SCORED runs
     // in competition (vehicle number asked, result QR at the end); everything else runs as a trip.
     let runComp = false;
-    async function openModeModal() {
+    async function openStartDialog() {
         runComp = false;
-        $('modeComp').hidden = true;
+        $('startComp').hidden = true;
         $('optRemote').checked = remoteEnabled(); syncRemoteRow(); // the device's remote preference, remembered across runs
-        openModal('modeModal', () => closeModal('modeModal')); // Esc dismisses → back to the preview
+        openModal('startModal', () => closeModal('startModal')); // Esc dismisses → back to the preview
         if (!eventSlug) return;
-        $('modeStart').disabled = true; // until the event says whether this roadbook is scored
+        $('startGo').disabled = true; // until the event says whether this roadbook is scored
         const j = await RBApi('event_get', { slug: eventSlug });
         const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug);
         runComp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');
         if (runComp) {
-            $('modeCompTxt').textContent = t('Scored in the event') + ' “' + j.event.title + '”: ' + t('you will be asked your vehicle number, and the result goes to the event ranking.');
-            $('modeComp').hidden = false;
+            $('startCompTxt').textContent = t('Scored in the event') + ' “' + j.event.title + '”: ' + t('you will be asked your vehicle number, and the result goes to the event ranking.');
+            $('startComp').hidden = false;
         }
-        $('modeStart').disabled = false;
+        $('startGo').disabled = false;
     }
-    $('modeClose').onclick = () => closeModal('modeModal');
+    $('startClose').onclick = () => closeModal('startModal');
     // "Map access from player" is a roadbook-level setting (default allowed when absent): it decides
     // whether the Reader has a map at all — the action-bar toggle and the preview's tap-to-map (#569).
     const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
     let optGpx = false, sound = true;
-    function readModeOpts() {
+    function readStartOpts() {
         // Advancement starts on Automatic (GPS); the nav-screen Auto switch toggles it during the run.
         auto = true; optGpx = $('optGpx').checked; sound = $('optSound').checked;
     }
     // The success bell when a note is validated, auto or manual (#768) — the same bell the Recorder
     // rings on a note. The run's start tap unlocks it (startNav), so a GPS auto-validation can ring.
     const ring = () => { if (sound) RBSuccess.ring(); };
-    $('modeStart').onclick = async () => {
+    $('startGo').onclick = async () => {
         if (!(await RBWebGpsConfirm(runComp))) return; // one-time browser warning (stronger for a scored run)
-        readModeOpts(); closeModal('modeModal');
+        readStartOpts(); closeModal('startModal');
         if (!runComp) { startNav(false); if (optGpx) RBGpxRecorder.begin(); return; }
         $('teamInput').value = '1';
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
     };
-    $('navigateBtn').onclick = openModeModal; // preview → run options → navigate
+    $('navigateBtn').onclick = openStartDialog; // preview → run options → navigate
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startNav(true); if (optGpx) RBGpxRecorder.begin(); };
-    $('teamCancel').onclick = () => { closeModal('teamModal'); openModal('modeModal'); };
+    $('teamCancel').onclick = () => { closeModal('teamModal'); openModal('startModal', () => closeModal('startModal')); };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
@@ -212,17 +233,20 @@
         $('navGpx').hidden = !optGpx;
         $('mapBtn').hidden = !mapAllowed(); syncMapBtn();
         $('navTitle').textContent = (rb.meta && rb.meta.title) || 'Roadbook';
-        if (evCtx) {
-            var bar = document.querySelector('.odo-ev-bar') || document.createElement('div');
-            bar.className = 'odo-ev-bar'; bar.innerHTML = '<a href="/event/' + esc(evCtx.event_slug) + '" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ' + esc(evCtx.event_title) + '</a>';
-            var ob = document.querySelector('.odometer-bar');
+        // the way back to the event this run was opened from — only that event (#640)
+        if (eventSlug && evCtx && evCtx.event_slug === eventSlug) {
+            const bar = document.querySelector('.odo-ev-bar') || document.createElement('div');
+            bar.className = 'odo-ev-bar';
+            bar.innerHTML = `<a href="/event/${encodeURIComponent(eventSlug)}" class="ev-back"><i class="fa-solid fa-arrow-left"></i> ${esc(evCtx.event_title)}</a>`;
+            const ob = document.querySelector('.odometer-bar');
             if (ob && !ob.contains(bar)) ob.insertBefore(bar, ob.firstChild);
         }
         const odoLogo = $('odoLogo'); if (rb.meta && rb.meta.logo) { odoLogo.src = rb.meta.logo; odoLogo.hidden = false; } else { odoLogo.hidden = true; }
-        try { localStorage.setItem(SESSION_RB_KEY, JSON.stringify(rb)); } catch (e) {} // roadbook stored once; live counters checkpoint separately
+        RBCheckpoint.write(SESSION_RB_KEY, rb); // roadbook stored once; live counters checkpoint separately
         renderNotes();
         paused = false; updatePauseBtn();
         syncRemote(); // hands-free advance while navigating (#20)
+        if (meter) meter.stop(); // startNav can run again in the same page life — one watch at a time
         meter = new RBGpsMeter(onFix, () => setGps('bad'));
         clearInterval(clockTimer); // startNav can run again in the same page life — never stack clocks
         clockTimer = setInterval(() => { const now = new Date(); $('odoClock').textContent = pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2); }, 1000);
@@ -231,9 +255,9 @@
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
-        if (!meter) return; // nothing to checkpoint until a run starts
-        const s = { openedAs, competition, team, auto, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+        if (!meter || finished) return; // nothing to checkpoint before a run starts or once it is over
+        const s = { openedAs, rbSlug, eventSlug, competition, team, auto, sound, gpxOption: optGpx, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        RBCheckpoint.write(SESSION_KEY, s);
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
     // A declined resume is marked, not deleted: asking twice is nagging, deleting is data loss.
@@ -244,7 +268,7 @@
         rb = savedRb; notes = rb.notes;
         team = s.team; auto = s.auto; optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
-        zones = s.zones; rbRef = s.rbRef; runStartedAt = s.runStartedAt;
+        zones = s.zones; rbRef = s.rbRef; rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs; runStartedAt = s.runStartedAt;
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
         endedAt = s.endedAt ? new Date(s.endedAt) : null;
@@ -496,6 +520,9 @@
         closeZone(scored);
         curLimit = lim === 0 ? null : lim; maxSpdSeg = 0;
     }
+    // Notes [from, to) passed over without being reached still change the speed limit: the sign
+    // was on the road whether or not the note was validated.
+    function passOver(from, to) { for (let k = from; k < to; k++) passLimit(notes[k], isScored(k)); }
     // Scored sections (rally special stages) live in the core — RB.scoredNoteSet: only notes
     // between a START and the next FINISH icon are penalised; null = whole roadbook scored.
     const isScored = (i) => RB.isScoredIdx(scoredSet, i);
@@ -520,9 +547,10 @@
     // over (the overshoot belonged to those, so P_extra resets with them). The gate is asked
     // FIRST: a refused validation must leave the run exactly as it was, penalty included.
     function setActiveNote(i) {
-        if (!competition) { activeIdx = i; tripPartialM = 0; updateNoteStates(); return; }
+        if (!competition) { passOver(activeIdx, i); activeIdx = i; tripPartialM = 0; updateNoteStates(); return; }
         if (tooFarFrom(i)) return;
         pen.skip += RB.skipPenalty(scoredSet, activeIdx, i); extraAccum = 0; armed = false;
+        passOver(activeIdx, i);
         validateAt(i, lastHere);
     }
     // Moving the cursor by TAPPING the roadbook is an explicit act, never the outcome of a mis-tap
@@ -566,6 +594,7 @@
         if (i !== activeIdx) {
             if (competition) pen.skip += RB.skipPenalty(scoredSet, activeIdx, i);
             extraAccum = 0; armed = false;
+            passOver(activeIdx, i);
         }
         validateAt(i, here);
     }
@@ -589,6 +618,7 @@
         if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
         if (!(await RBConfirm(msg))) return;
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
+        passOver(i, i + 1);
         activeIdx = i + 1; tripPartialM = 0; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
     }
@@ -611,7 +641,7 @@
         const back = activeIdx - 1;
         if (back >= 0) setActiveNote(back);
     }
-    // Called whenever navigation (re)starts or the switch flips — start.Nav can run twice in one page
+    // Called whenever navigation (re)starts or the switch flips — startNav can run twice in one page
     // life, and attaching twice would advance twice per press.
     function syncRemote() {
         if (detachRemote) { detachRemote(); detachRemote = null; }
@@ -654,9 +684,20 @@
     $('endBtn').onclick = async () => {
         if (await RBConfirmDanger(t('Leave the run without a report? Your progress on the notes will be lost.'))) leaveRun('../');
     };
-    function leaveRun(to) {
-        if (meter) meter.stop();      // release the GPS explicitly, not via the unload path (#430)
-        clearSession(); window.RB_BUSY = false; location.href = to; // unblock the version auto-refresh before leaving
+    // The run is over: release the GPS explicitly, not via the unload path (#430), drop the run
+    // checkpoint and unblock the version auto-refresh. A GPX log belongs to the run, so it ends
+    // with it and goes to its finished-track modal — whose explicit outcomes are the only way the
+    // track's own checkpoint is cleared (#460) — before anything else happens.
+    async function endRun() {
+        finished = true;
+        if (meter) meter.stop();
+        clearSession(); window.RB_BUSY = false;
+        if (RBGpxRecorder.recording) await RBGpxRecorder.handOver();
+    }
+    async function leaveRun(to) {
+        closeModal('reportModal'); // the report is done with; the track's modal must not open under it
+        await endRun();
+        location.href = to;
     }
     $('navGpx').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
 
@@ -680,12 +721,13 @@
         });
         return RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
     }
-    let finished = false;
     async function finishRun(completed) {
         if (finished) return;
         finished = true;
-        closeZone(true); curLimit = null; // the open zone ends with the run
+        closeZone(isScored(Math.min(activeIdx, notes.length - 1))); curLimit = null; // the open zone ends with the run
         if (meter) meter.stop();
+        // finished early: the notes not reached count as skipped, exactly as the confirm said
+        if (competition) pen.skip += RB.skipPenalty(scoredSet, activeIdx, notes.length);
         const now = Date.now();
         const report = {
             title: (rb.meta && rb.meta.title) || 'Roadbook', roadbook_id: rbRef, event_slug: eventSlug,
