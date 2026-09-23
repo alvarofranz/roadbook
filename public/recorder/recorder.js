@@ -235,7 +235,9 @@
     }
     function startMeter() {
         segStart = paused ? 0 : Date.now();
-        meter = new RBGpsMeter(onFix, () => toast(t('GPS could not get a fix. Move to an open area and restart the recording.')));
+        // a lost signal never stops a recording (#901 gates only the start): it says so, and the
+        // recording carries on, picking the track up again when the fixes come back
+        meter = new RBGpsMeter(onFix, () => toast(t('GPS signal lost — the recording carries on and picks up when it returns.'), 4000));
         tick = setInterval(renderBar, 1000);
     }
     function stopMeter() {

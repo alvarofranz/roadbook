@@ -154,8 +154,9 @@ describe('small Recorder fixes', () => {
     it('describes photos only — no voice notes, no live file', () => {
         expect(rec).not.toMatch(/voice|live file/);
     });
-    it('the GPS-fix toast is translated', () => {
-        for (const lang of ['es', 'it', 'de', 'fr']) expect(read(`public/assets/js/i18n.${lang}.js`)).toContain('"GPS could not get a fix. Move to an open area and restart the recording."');
+    it('a lost GPS signal never stops the recording, and says so in every language (#901)', () => {
+        expect(rec).toContain("meter = new RBGpsMeter(onFix, () => toast(t('GPS signal lost — the recording carries on and picks up when it returns.'), 4000));");
+        for (const lang of ['es', 'it', 'de', 'fr']) expect(read(`public/assets/js/i18n.${lang}.js`)).toContain('"GPS signal lost — the recording carries on and picks up when it returns."');
     });
 });
 
