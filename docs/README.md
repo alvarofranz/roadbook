@@ -29,6 +29,8 @@ e una sezione onesta di limiti/quirk.
   worker, auto-refresh di versione, install PWA.
 - [i18n](i18n.md) — internazionalizzazione a stringhe-sorgente (EN · ES · IT · DE · FR).
 - [i18n-edit](i18n-edit.md) — editor di traduzione in-context (solo admin).
+- [label-mgmt](label-mgmt.md) — come si traducono le label con l'editor in-context e come arrivano in produzione.
+- [menu](menu.md) — la matrice delle voci di menu per superficie (web, PWA, app, partecipante).
 - [rbzip](rbzip.md) — `RBZip`: codec ZIP lato browser (container .rdbk e foto/audio).
 - [rb-media-queue](rb-media-queue.md) — `RBMediaQueue`: coda offline-first per upload di foto/audio.
 - [challenges](challenges.md) — `RBChallenges`: sfide pubbliche DB-backed e URL amichevoli.

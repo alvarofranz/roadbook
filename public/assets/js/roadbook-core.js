@@ -1124,26 +1124,16 @@
     // reading order: { code, count?, notes? } where `notes` holds the note NUMBERS involved.
     // Codes and numbers only — the wording lives in the UI, translated, never here.
     //
-    //   notes_without_radius  — notes with no wp_radius of their own; they fall back to the
-    //                           roadbook default, then the type default, then the system one.
-    //   no_default_radius     — no roadbook-wide default AND notes rely on that fallback, so their
-    //                           validation radius silently comes from the system default. Reported
-    //                           only in that case: a roadbook where every note carries its own
-    //                           radius needs no default and must not be nagged about one.
+    // A note without a radius of its own is not a finding: it validates at the roadbook default,
+    // then the type default, then the system one (RB.detectionRadius) — always a real radius (#773).
+    //
     //   speed_zone_unclosed   — a note imposes a speed limit that no later note ever lifts (a
     //                           controlled zone with a start and no finish).
     //   speed_zone_unopened   — a note lifts a speed limit while none is in force.
     function consistencyReport(rb) {
         const notes = (rb && rb.notes) || [];
-        const meta = (rb && rb.meta) || {};
         const findings = [];
         const numberOf = (note, i) => (note.num != null ? note.num : i + 1);
-
-        const withoutRadius = notes.reduce((acc, n, i) => (n.wp_radius == null ? acc.concat(numberOf(n, i)) : acc), []);
-        if (withoutRadius.length) {
-            findings.push({ code: 'notes_without_radius', count: withoutRadius.length, notes: withoutRadius });
-            if (meta.default_wp_radius == null) findings.push({ code: 'no_default_radius' });
-        }
 
         // Walk the notes once, tracking the limit in force: >0 opens a controlled zone, 0 lifts it.
         // Only the LAST zone can stay unclosed — any later 0 closes whatever was open.

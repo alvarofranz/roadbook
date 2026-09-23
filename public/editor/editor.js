@@ -395,13 +395,11 @@
         return RBConfirm(t('The route has open cuts — they will close as straight lines. Continue?'));
     }
     /* Pre-save consistency check (#339). RB.consistencyReport finds what is probably a mistake but
-     * that the editor can't decide on its own — notes with no validation radius, no roadbook-wide
-     * default behind them, a speed-controlled zone that never ends. A clean roadbook saves with no
+     * that the editor can't decide on its own — a speed-controlled zone that never ends, or a limit
+     * lifted where none is in force. A clean roadbook saves with no
      * interruption; otherwise the findings are listed and the author chooses to fix or save anyway,
      * so the check informs and never blocks. Numbers come from the core, wording from here. */
     const CONSISTENCY_TEXT = {
-        notes_without_radius: (f) => t('Notes with no validation radius of their own') + ': ' + f.count + ' (' + noteList(f.notes) + ')',
-        no_default_radius: () => t('No roadbook-wide default radius is set, so those notes fall back to the system default.'),
         speed_zone_unclosed: (f) => t('A speed-controlled zone is never lifted — it starts at note') + ' ' + f.notes[0],
         speed_zone_unopened: (f) => t('A speed limit is lifted where no zone is open') + ': ' + noteList(f.notes),
     };
@@ -1280,7 +1278,7 @@
         if (map) map.setPhotos(notePhotos, (ph) => { if (!photoPlacing && ph && ph.id != null) openLightbox(+ph.id); });
         if (rb) renderNotes(); // refresh the per-note IMG pills
     }
-    /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
+    /* ---------- voice notes (recorded audio) — shown on their nearest note's row ---------- */
     function updateAudio() {
         if (currentRbId > 0) loadAudio();
         else { noteAudio = []; if (rb) renderNotes(); }
@@ -1455,7 +1453,7 @@
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('Add note text…'))}" autocomplete="off"${readOnly() ? ' readonly' : ''}>${esc(n.text || '')}</textarea>
-                    <div class="note-meta" data-meta="${i}">${noteMetaHTML(n)}</div>
+                    <div class="note-meta">${noteMetaHTML(n)}</div>
                     ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
             </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
@@ -1510,7 +1508,6 @@
     // the other settings in the Note tab (#560) — a chip saying "CAP disabled" on every row was
     // reading matter in the one place meant for the note's own words.
     const noteMetaHTML = (n) => `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
-    function refreshRowMeta(i) { const m = $('noteList').querySelector('[data-meta="' + i + '"]'); if (m) m.innerHTML = noteMetaHTML(rb.notes[i]); }
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
     const tulipSVG = (n, i) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
     function placeTulips() {

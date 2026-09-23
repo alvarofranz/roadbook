@@ -23,8 +23,8 @@ function post_latlon(): array {
 }
 
 if ($type === 'audio') {
-    // Voice note: keep the recorded clip as-is alongside its transcription, so a wrong
-    // transcription can be replayed and re-checked. Geolocated, so the Editor can tie it
+    // Voice note: the recorded clip kept as-is (an imported .rdbk can bundle them), so it can be
+    // replayed on its note. Geolocated, so the Editor can tie it
     // to the note at that position. App/server feature only — never inside the .rdbk.
     if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) fail('No audio uploaded.');
     if (($_FILES['audio']['size'] ?? 0) > 12 * 1024 * 1024) fail('Audio too large (max 12 MB).');

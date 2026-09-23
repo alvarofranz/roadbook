@@ -2,41 +2,17 @@ import { describe, it, expect } from 'vitest';
 import RB from '../public/assets/js/roadbook-core.js';
 
 /* Pre-save consistency report (#339). The editor shows these findings before a save, so a false
-   positive nags on every save and a false negative is a roadbook that silently validates notes at
-   the wrong radius (or a speed-controlled zone that never ends). Both directions are pinned here. */
+   positive nags on every save and a false negative is a speed-controlled zone that never ends. Both directions are pinned here. */
 
 const note = (num, extra = {}) => ({ num, idx: num, lat: 0, lon: 0, distance: num * 1000, partial_distance: 1000, text: '', ...extra });
 const roadbook = (notes, meta = {}) => ({ meta: { title: 'T', ...meta }, notes, track: [], icons: {} });
 const codes = (rb) => RB.consistencyReport(rb).map((f) => f.code);
 const finding = (rb, code) => RB.consistencyReport(rb).find((f) => f.code === code);
 
-describe('consistencyReport — validation radius', () => {
-    it('says nothing when every note carries its own radius', () => {
-        expect(codes(roadbook([note(1, { wp_radius: 50 }), note(2, { wp_radius: 80 })]))).toEqual([]);
-    });
-
-    it('counts the notes with no radius and names them', () => {
-        const rb = roadbook([note(1, { wp_radius: 50 }), note(2), note(3)]);
-        const f = finding(rb, 'notes_without_radius');
-        expect(f.count).toBe(2);
-        expect(f.notes).toEqual([2, 3]);
-    });
-
-    it('flags the missing roadbook default only when notes actually fall back to it', () => {
-        expect(codes(roadbook([note(1), note(2)]))).toContain('no_default_radius');
-        // a default IS set → the fallback is deliberate, so only the count is reported
-        expect(codes(roadbook([note(1), note(2)], { default_wp_radius: 60 }))).toEqual(['notes_without_radius']);
-        // every note has its own radius → no default needed, no nagging
-        expect(codes(roadbook([note(1, { wp_radius: 40 })]))).toEqual([]);
-    });
-
-    it('treats radius 0 as a set radius, not a missing one', () => {
-        expect(codes(roadbook([note(1, { wp_radius: 0 })]))).toEqual([]);
-    });
-
-    it('uses the note index when a note has no num', () => {
-        const rb = roadbook([{ lat: 0, lon: 0, text: '' }, { lat: 0, lon: 0, text: '' }]);
-        expect(finding(rb, 'notes_without_radius').notes).toEqual([1, 2]);
+describe('consistencyReport — validation radius (#773)', () => {
+    it('never flags a note without a radius of its own: the defaults always give it one', () => {
+        expect(RB.consistencyReport(roadbook([note(1), note(2)]))).toEqual([]);
+        expect(RB.consistencyReport(roadbook([note(1)], { default_wp_radius: 60 }))).toEqual([]);
     });
 });
 
@@ -85,15 +61,15 @@ describe('consistencyReport — shape', () => {
         expect(RB.consistencyReport(null)).toEqual([]);
     });
 
-    it('reports several problems together, radius first', () => {
-        const rb = roadbook([note(1), note(2, { speed_limit: 50 })]);
-        expect(codes(rb)).toEqual(['notes_without_radius', 'no_default_radius', 'speed_zone_unclosed']);
+    it('reports several problems together, in reading order', () => {
+        const rb = roadbook([note(1, { speed_limit: 0 }), note(2, { speed_limit: 50 })]);
+        expect(codes(rb)).toEqual(['speed_zone_unclosed', 'speed_zone_unopened']);
     });
 
     // The editor renders one line per code — an unknown code would throw there, so the report must
     // only ever emit codes the UI knows about.
-    it('emits only the four documented codes', () => {
-        const known = ['notes_without_radius', 'no_default_radius', 'speed_zone_unclosed', 'speed_zone_unopened'];
+    it('emits only the two documented codes', () => {
+        const known = ['speed_zone_unclosed', 'speed_zone_unopened'];
         const rb = roadbook([note(1), note(2, { speed_limit: 0 }), note(3, { speed_limit: 50 })]);
         for (const f of RB.consistencyReport(rb)) expect(known).toContain(f.code);
     });

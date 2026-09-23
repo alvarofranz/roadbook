@@ -40,7 +40,7 @@ function current_user(): ?array {
         }
     }
     if (!$uid) return null;
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, blocked, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, voice_lang, ui_lang, runs_visibility, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, email_verified, blocked, is_admin, is_organizer, must_change_password, bio, organization, avatar, quota_bytes, ui_lang, runs_visibility, default_lat, default_lon, (password_hash IS NOT NULL) AS has_password FROM users WHERE id = ?');
     $st->execute([$uid]);
     $u = $st->fetch() ?: null;
     // A blocked account gets no access even with a still-valid session or Bearer token: treat it as
@@ -114,10 +114,7 @@ function update_profile(array $user, array $d): void {
     $bio = mb_substr(trim((string)($d['bio'] ?? '')), 0, 500);
     // Collapse internal whitespace so the same club doesn't split into "Club  X" vs "Club X" (#116).
     $organization = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($d['organization'] ?? ''))), 0, 120);
-    // Voice-note speech-to-text language; '' = follow the device. Whitelisted to the UI languages.
-    $voice = (string)($d['voice_lang'] ?? '');
-    if (!in_array($voice, ['', 'en-US', 'es-ES', 'it-IT', 'de-DE', 'fr-FR'], true)) $voice = '';
-    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, organization = ?, voice_lang = ? WHERE id = ?')->execute([$first, $last, $bio, $organization !== '' ? $organization : null, $voice, $user['id']]);
+    db()->prepare('UPDATE users SET first_name = ?, last_name = ?, bio = ?, organization = ? WHERE id = ?')->execute([$first, $last, $bio, $organization !== '' ? $organization : null, $user['id']]);
     json_out(['ok' => true]);
 }
 

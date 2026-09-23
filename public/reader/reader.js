@@ -515,7 +515,6 @@
         toast(t('Too far from note') + ' ' + notes[i].num + ' · ' + fmtDist(dist));
         return true;
     }
-    const validateHere = (i) => { if (!tooFarFrom(i)) validateAt(i, lastHere); };
     // Put the run on note i. A trip only moves its cursor; in competition, arriving at a later
     // note means validating it there and paying the skip penalty for every scored note jumped
     // over (the overshoot belonged to those, so P_extra resets with them). The gate is asked
