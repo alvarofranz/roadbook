@@ -114,6 +114,11 @@ h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-
     .app-tabbar { display: flex; }
     body { padding-top: env(safe-area-inset-top); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--notice-h, 0px)); }
 }
+/* The status bar is transparent over the page (viewport-fit=cover), so the top inset is covered by
+   ONE fixed, opaque strip above everything (#787): nothing that scrolls — a page, a sheet shifted
+   up by the iOS keyboard — ever shows behind the clock. It is exactly the inset: zero where there
+   is none (a desktop browser), so it only exists where there is a status bar to keep clear. */
+body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--bg); z-index: 1000; pointer-events: none; }
 /* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
    `body.rb-fs`/`body.rb-immersive` outweigh the plain-`body` padding rules above on specificity,
    so no !important is needed. */
@@ -545,8 +550,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* A dialog is what the app is asking you to answer, so it is the TOP layer: above the cookie
    notice and the web-GPS banner, which otherwise drew over its buttons on a short screen — and a
    notice can't be dismissed while a modal is up, since the backdrop swallows the click (#404). */
-.modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); }
-.modal-card { width: 100%; max-width: 420px; max-height: calc(100dvh - 2rem); overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); } /* never taller than the screen: a long card scrolls inside itself (#754) */
+.modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: calc(1rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left)); background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); } /* a dialog keeps clear of the notch and the home indicator (#787) */
+.modal-card { width: 100%; max-width: 420px; max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); } /* never taller than the screen: a long card scrolls inside itself (#754) */
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
 /* the throwaway textarea RBCopy falls back to: reachable by the selection, invisible to the eye */
 .copy-shuttle { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }

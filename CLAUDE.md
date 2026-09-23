@@ -645,8 +645,10 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   watch in the app, the Web Geolocation watch otherwise.
 - **Durable storage + status bar (#778):** the session token and every crash checkpoint are
   mirrored from `localStorage` into native Preferences (`native/src/durable.js`) and restored if the
-  OS wipes the WebView storage; the system status bar is light-on-dark and hides while a tool owns
-  the screen (`body.rb-immersive` · `body.gps-live`).
+  OS wipes the WebView storage; the system status bar is light-on-dark, and on Android hides while
+  a tool owns the screen (`body.rb-immersive` · `body.gps-live`). **Nothing ever sits under the
+  status bar (#787):** one fixed opaque strip covers the top inset (`body::before`, above everything)
+  and every dialog pads itself by the safe areas.
 - **One contextual home:** `index.html` shows the marketing landing on the web and an app home in
   the app — CSS toggles `.web-only`/`.app-only` via `.native`, no second page. The web landing
   leads with the official-style store badges (`RBGetAppHTML`, from `RBStore`) and "Start in the
