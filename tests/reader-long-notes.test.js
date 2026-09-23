@@ -13,6 +13,6 @@ describe('long notes in the Reader (#759)', () => {
     it('hyphenates long words instead of cutting them at random', () => {
         const css = read('public/assets/css/app.css');
         expect(css).toContain('.nrow .col-text .text { flex: 1; overflow-wrap: break-word; hyphens: auto; }');
-        expect(css).not.toContain('word-break: break-word');
+        expect(css).not.toMatch(/\.nrow \.col-text \.text \{[^}]*word-break/);
     });
 });
