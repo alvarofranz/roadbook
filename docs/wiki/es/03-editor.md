@@ -175,16 +175,9 @@ Tap pin / miniatura → visor a pantalla completa (cubre solo el mapa, **no** el
 
 ---
 
-## Notas de voz (WP audio) — reproductor + transcripción
+## Notas de voz — reproductor
 
-Server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Aparecen como **reproductor de audio** en la fila de nota más cercana (≤80m). Botón **"➜ texto"** (`transcribeInto`):
-
-> 📸 *Screenshot: reproductor de audio con botón de transcripción en una nota*
-- **Whisper** vía `RBTranscribe` (transformers.js/WASM, modelo `Xenova/whisper-tiny`, caché del navegador)
-- El audio **no sale del dispositivo**, ningún coste de servidor
-- Idioma = `voice_lang` de la cuenta o auto-detectado
-- Primer uso: modal de descarga de modelo (~decenas de MB), luego funciona **offline**
-- El texto se **añade** a la nota (nunca overwrite)
+Las notas de voz ya grabadas se guardan server-side (`roadbook_audio`, `audio_list`/`audio_delete`). Cada una aparece como **reproductor de audio** en la fila de nota más cercana (≤80m), con una **×** para eliminarla (la confirmación nombra la nota).
 
 ---
 

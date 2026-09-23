@@ -19,16 +19,13 @@
     const recName = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()); };
 
     let meter = null, map = null, meUser = null, draftId = 0;
-    // Speech-to-text language for voice notes: the signed-in user's account preference
-    // (set in /account/), or the device language when unset or signed out.
-    const voiceLang = () => (meUser && meUser.voice_lang) || navigator.language || 'en-US';
     let recordedM = 0, paused = false, lastAcc = null, here = null, lastSampled = null, lastFixT = 0;
     let track = [], wpts = [], photos = [];
     let mediaSeq = 0; // client tokens for optimistic photo pins reconciled by RBMediaQueue
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
 
     /* ---------- map ---------- */
-    map = new RBMap('recMap', { zoom: 15, headingToggle: true });
+    map = new RBMap('recMap', { zoom: 15 }); // its style and course-up switches live in the capture grid (#768)
     let course = null, lastHeadingPos = null; // smoothed travel heading for the heading-up map
 
     // Smooth a compass heading (deg) toward a new sample along the shortest arc, so the
@@ -59,6 +56,7 @@
             $('recIdle').hidden = recording;
             $('recRunning').hidden = !recording;
             if (recording) RBStatusBar.show(); else RBStatusBar.hide();
+            document.body.classList.toggle('rec-live', recording); // a phone: the screen becomes the tool (#768)
             if (recording && map && map.map) setTimeout(() => map.map.resize(), 60);
         },
     });
@@ -66,7 +64,7 @@
     /* ---------- startup: know the user, then pending-save → resume → rescue → idle ---------- */
     RBConfig().then(async (c) => {
         meUser = c.user || null; // offline falls back to the last-known user, so capture stays available (#189)
-        updateRecUi(); // login known → reveal WP audio (signed-in) or show the sign-in hint
+        updateRecUi(); // login known → show the sign-in hint when signed out
         // Before the first fix, centre on the user's saved default location if they set one.
         if (meUser && meUser.default_lat != null && meUser.default_lon != null && !here && map && map.map)
             map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 13 });
@@ -95,7 +93,7 @@
                 RBGpxRecorder.resume(session.fileName);
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
                 track = []; wpts = session.wpts || []; photos = (session.photos || []).filter((p) => !p.local); draftId = session.draftId || 0;
-                updateRecUi(); // photo/audio buttons follow sign-in, not the draft (#147 F2)
+                updateRecUi();
                 startMeter(); renderPauseBtn(); refreshMap(); renderBar();
                 return;
             }
@@ -114,7 +112,7 @@
     function begin() {
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
         course = null; lastHeadingPos = null;
-        track = []; wpts = []; photos = []; draftId = 0; showWpText(null);
+        track = []; wpts = []; photos = []; draftId = 0;
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
         // a draft roadbook holds the geotagged photos/voice notes (signed-in only), titled with the
@@ -213,134 +211,39 @@
     // copy used only to draw the live map. After a resume it starts empty and refills.
     function refreshMap() { if (map) map.setLiveTrack(track, wpts, photos); }
 
-    function dropWaypoint(lat, lon, text) {
+    // A note drops the instant it is tapped — no prompt, nothing to read or type while riding
+    // (#768): the bell and the big check say it is done, and its words come later in the Editor.
+    // `at_m` is the odometer when it dropped, for the distance since the last note on the map.
+    function dropWaypoint(lat, lon) {
         // stamp when it was dropped so the Editor can anchor it on the track by time (#158)
-        const note = { lat, lon, name: 'wpt' + (wpts.length + 1), num: wpts.length + 1, text: text || '', t: lastFixT || null };
+        const note = { lat, lon, name: 'wpt' + (wpts.length + 1), num: wpts.length + 1, text: '', t: lastFixT || null, at_m: recordedM };
         wpts.push(note); refreshMap(); saveSession(); renderBar();
+        RBSuccess.flash();
         return note;
     }
-    // #53: surface the latest waypoint's note (especially the dictated audio text) on the running screen.
-    function showWpText(note) {
-        const el = $('recLastWp');
-        if (note && note.text) { el.textContent = t('Note') + ' ' + note.num + ': ' + note.text; el.hidden = false; }
-        else el.hidden = true;
-    }
-    // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s),
-    // with the dictation mic where speech-to-text is supported.
     $('recWpt').onclick = () => {
         if (!here) return toast(t('Waiting for a GPS fix…'));
-        const note = dropWaypoint(here.lat, here.lon, '');
-        RBWaypointPrompt(note.num, (text) => { note.text = text; showWpText(note); }, { mic: true, lang: voiceLang });
+        dropWaypoint(here.lat, here.lon);
     };
-
-    // "WP audio" (#129): press and HOLD to record — drops a waypoint and records its note
-    // (speech-to-text + the kept audio when signed in). On release it keeps recording for 5s
-    // more, then stops, so the last words aren't clipped. Pointer events + capture so a finger
-    // sliding off still releases; the touch callout / selection are suppressed in CSS.
-    const SR_REC = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const CAN_REC_AUDIO = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-    const wptBtn = $('recWptAudio');
-    // WP photo / WP audio are available to EVERYONE, signed in or not (#147 F3): captures buffer in
-    // the local queue. Signed in, they upload to the draft; signed out, they're kept on the device and
-    // saved into a self-contained .rdbk at the end (audio only where the device can record). The idle
-    // hint tells signed-out users their media is kept locally. Called once config() is known.
-function updateRecUi() {
-        wptBtn.hidden = !(SR_REC || CAN_REC_AUDIO);
-        $('recPhoto').hidden = false;
+    // Undo a note tapped by mistake: it names the note it removes and asks first
+    $('recUndo').onclick = async () => {
+        const last = wpts[wpts.length - 1]; if (!last) return;
+        if (!(await RBConfirmDanger(t('Delete note') + ' ' + last.num + '?'))) return;
+        wpts.pop(); refreshMap(); saveSession(); renderBar();
+    };
+    // the map's own switches, big enough to hit on the move: base style · course-up
+    $('recLayer').onclick = () => { if (map) map.toggleBaseStyle(); };
+    const paintHeading = () => $('recHeading').classList.toggle('on', !!(map && map._headingUp));
+    $('recHeading').onclick = () => { if (map) { map.setHeadingUp(!map._headingUp); paintHeading(); } };
+    paintHeading();
+    // The photo is open to everyone: the shot is queued, uploaded when signed in and kept on the
+    // device otherwise (#147 F3); the idle hint tells a signed-out user so. Called once config() is known.
+    function updateRecUi() {
         const hint = $('recLoginHint'); if (hint) hint.hidden = !!meUser;
         const bg = $('recBgHint'); if (bg) bg.hidden = document.documentElement.classList.contains('native');
         const nativeHint = $('recNativeHint'); if (nativeHint) nativeHint.hidden = document.documentElement.classList.contains('native');
         RBWebGpsWarn(); // browser-only floating warning: web GPS is unreliable on phones
     }
-    let wptRecActive = false, wptSR = null, wptMedia = null, wptTail = null, wptHolding = false, wptCount = 5, wptFinish = null;
-    const wptLabel = wptBtn.querySelector('span'); // the "WP audio" caption — also shows the release countdown
-    const setWptCount = (n) => { if (wptLabel) wptLabel.textContent = (n == null) ? t('Voice note') : String(n); };
-
-    async function startWptAudio() {
-        if (wptRecActive) return; // already recording (or in the release countdown)
-        if (!here) return toast(t('Waiting for a GPS fix…'));
-        wptRecActive = true; wptHolding = true; wptCount = 5; // hold to record; first release counts down from 5
-        const note = dropWaypoint(here.lat, here.lon, '');
-        const wptLat = here.lat, wptLon = here.lon;
-        let ended = false;
-        wptFinish = () => {
-            if (ended) return; ended = true; wptRecActive = false; wptHolding = false;
-            if (wptTail) { clearInterval(wptTail); wptTail = null; }
-            wptBtn.classList.remove('on'); setWptCount(null);
-            if (wptSR) { try { wptSR.stop(); } catch (e) {} }
-            if (wptMedia && wptMedia.state !== 'inactive') wptMedia.stop(); // → onstop uploads the clip
-            wptSR = null; wptMedia = null; wptFinish = null; refreshMap();
-        };
-        // Record the audio clip FIRST, so it claims the microphone. On mobile the mic is exclusive:
-        // starting speech-to-text first was stealing it, so getUserMedia failed and the clip came out
-        // empty (and Android STT didn't transcribe either). The clip is buffered and handled later, so
-        // it works offline, before the draft exists, and signed out (kept locally) (#147 F2/F3).
-        if (CAN_REC_AUDIO) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                if (ended) { stream.getTracks().forEach((tk) => tk.stop()); return; } // released during the mic prompt
-                const mr = new MediaRecorder(stream), chunks = [];
-                wptMedia = mr;
-                mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
-                mr.onstop = () => {
-                    stream.getTracks().forEach((tk) => tk.stop());
-                    if (!chunks.length) { toast(t('No audio captured.')); return; } // nothing recorded
-                    // buffer + upload with retry (#147); roadbook is resolved at flush (draft may not exist yet)
-                    const fields = { type: 'audio', lat: wptLat, lon: wptLon };
-                    if (draftId) fields.roadbook = String(draftId);
-                    RBMediaQueue.add('audio', new Blob(chunks, { type: mr.mimeType }), fields);
-                    toast(t('Voice note saved.'));
-                };
-                mr.start(1000); // periodic data chunks → robust even if stop() timing is odd on mobile
-            } catch (e) { wptMedia = null; toast(t('Microphone unavailable.')); } // surface the failure, don't fail silently
-        }
-        // Speech-to-text → note.text: best-effort, started AFTER the recorder has the mic, so it only
-        // runs where the platform allows a second mic consumer (e.g. desktop). It never controls the
-        // lifecycle — if it ends/errors (as on Android) we just keep recording the clip.
-        if (SR_REC) {
-            try {
-                wptSR = new SR_REC();
-                wptSR.lang = voiceLang();
-                wptSR.interimResults = true; wptSR.continuous = true;
-                wptSR.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; note.text = txt; saveSession(); showWpText(note); };
-                wptSR.onend = () => { wptSR = null; };
-                wptSR.onerror = () => { wptSR = null; };
-                wptSR.start();
-            } catch (e) { wptSR = null; }
-        }
-        if (!wptSR && !wptMedia) { wptRecActive = false; wptFinish = null; return; } // nothing to record
-        wptBtn.classList.add('on'); toast(t('Recording… release to finish'));
-    }
-
-    // Release → keep recording while a countdown ticks ON the button (5s first, 2s after a re-press),
-    // then save automatically at 0 (the waypoint was already dropped on press — no confirm).
-    function releaseWptAudio() {
-        if (!wptRecActive || !wptHolding) return; // not recording, or already counting down
-        wptHolding = false;
-        let n = wptCount; setWptCount(n);
-        wptTail = setInterval(() => {
-            n -= 1;
-            if (n <= 0) { clearInterval(wptTail); wptTail = null; if (wptFinish) wptFinish(); }
-            else setWptCount(n);
-        }, 1000);
-    }
-
-    // Press to start; release anywhere (document-level, so a finger sliding off still releases) to
-    // begin the countdown. Re-pressing during the countdown cancels it and keeps recording, with the
-    // next countdown shortened to 2. No setPointerCapture — it's flaky on Android.
-    wptBtn.addEventListener('pointerdown', (e) => {
-        if (e.button && e.button !== 0) return; // primary button / touch only
-        e.preventDefault();                     // no text selection / iOS long-press callout / synthetic click
-        if (wptRecActive) { // re-press during the release countdown → resume recording, next countdown is 2
-            if (wptTail) { clearInterval(wptTail); wptTail = null; }
-            wptHolding = true; wptCount = 2; setWptCount(null);
-            return;
-        }
-        startWptAudio();
-    });
-    document.addEventListener('pointerup', releaseWptAudio);
-    document.addEventListener('pointercancel', releaseWptAudio);
-    wptBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     /* ---------- offline-first media queue (#147) ----------
        Photos and voice notes are buffered in IndexedDB and uploaded with retry, so a
@@ -385,7 +288,7 @@ function updateRecUi() {
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
         // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
         // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
-        if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note added.'); }
+        if (lat != null) dropWaypoint(lat, lon);
     };
 
     /* ---------- finish: save to the server, export GPX, or open in the Editor ---------- */
@@ -468,7 +371,7 @@ function updateRecUi() {
                 <button class="btn btn-ghost" id="rfEd"><i class="fa-solid fa-pen-ruler"></i> ${t('Open in the editor')}</button>
             </div>
             <p class="muted small" id="rfStatus"${savedId ? '' : ' hidden'}>${savedId ? savedLine(savedId) : ''}</p>
-            <p class="muted small">${signedIn ? t('Saving keeps your photos and voice notes; GPX is a local file without them.') : t('Save to your account, or export a self-contained .rdbk with your photos and voice notes.')}</p>
+            <p class="muted small">${signedIn ? t('Saving keeps your photos; GPX is a local file without them.') : t('Save to your account, or export a self-contained .rdbk with your photos.')}</p>
             <div class="btnrow center"><button class="btn" id="rfClose"></button></div>`, 'slim center', null, { dismissable: false });
         const showSaved = (id) => { const s = d.q('#rfStatus'); s.hidden = false; s.innerHTML = savedLine(id); };
         // The exit says what it will do: discard the recording, or — once it is safe somewhere — close.
@@ -510,7 +413,7 @@ function updateRecUi() {
             if (n == null) return; // track too short — toast already shown
             markDone(btn, t('Export .rdbk')); land();
             // the media now lives in the downloaded file → offer to free it from the device
-            if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos and voice notes. Remove them from this device now?')))
+            if (n > 0 && await RBConfirm(t('Saved a local .rdbk with your photos. Remove them from this device now?')))
                 await RBMediaQueue.clear();
         };
         d.q('#rfDl').onclick = () => {
@@ -540,6 +443,9 @@ function updateRecUi() {
         $('rbKmBox').textContent = (recordedM / 1000).toFixed(2);
         $('rbSpeed').textContent = meter ? Math.round(meter.speedKmh) : 0;
         $('rbWptsN').textContent = wpts.length;
+        const last = wpts[wpts.length - 1];
+        $('recSince').textContent = ((recordedM - (last ? last.at_m || 0 : 0)) / 1000).toFixed(2); // since the last note (or the start)
+        $('recUndo').disabled = !last;
         const s = Math.floor(elapsed() / 1000);
         $('rbElapsed').textContent = Math.floor(s / 60) + ':' + pad2(s % 60);
         saveSession();

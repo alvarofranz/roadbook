@@ -1015,18 +1015,16 @@
         const head = recPaused ? t('Paused ·') : (adjP1 < 0 ? t('Adjust: get on the trail…') : (adjP2 >= 0 ? t('Adjust · will rejoin') : t('Adjust · recording')));
         $('recStats').textContent = `${head} ${recTrack.length} ${t('points')} · ${RBKm(m)} · ${recWpts.length} ${t('notes')} · ${recPhotos.length} ${t('photos')}${acc != null ? ' · ±' + Math.round(acc) + ' m' : ''}`;
     }
-    // drop a waypoint (shared by the button and "convert photo → waypoint")
-    function dropWaypoint(lat, lon, text) {
-        const note = { lat, lon, name: 'wpt' + (recWpts.length + 1), num: recWpts.length + 1, text: text || '', t: lastFixT || null };
-        recWpts.push(note);
+    // Drop a waypoint (the button, and every photo): instantly, with the success bell and check —
+    // nothing to type on the trail, its words come later (#768, like the Recorder)
+    function dropWaypoint(lat, lon) {
+        recWpts.push({ lat, lon, name: 'wpt' + (recWpts.length + 1), num: recWpts.length + 1, text: '', t: lastFixT || null });
         updateRecStats();
-        return note;
+        RBSuccess.flash();
     }
-    // Waypoint: drops instantly, then the shared quick-text prompt (auto-dismisses in 5 s).
     $('recWaypoint').onclick = () => {
         if (!recHere) return toast('Waiting for a GPS fix…');
-        const note = dropWaypoint(recHere.lat, recHere.lon, '');
-        RBWaypointPrompt(note.num, (text) => { note.text = text; updateRecStats(); });
+        dropWaypoint(recHere.lat, recHere.lon);
     };
     // photo: camera → upload, and the note is dropped with it — the same capture as the Recorder (#649)
     $('recPhoto').onclick = () => {
@@ -1043,7 +1041,7 @@
         recPhotos.push({ token, url: localUrl, lat, lon, local: true, pending: true }); if (map) map.setPhotos(recPhotos);
         updateRecStats();
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
-        if (lat != null) { dropWaypoint(lat, lon, ''); toast('Note added.'); }
+        if (lat != null) dropWaypoint(lat, lon);
     };
     $('recStop').onclick = async () => {
         if (!(await RBConfirm(t('Finish the recording?')))) return; // the same question as the Recorder (#655)
@@ -1283,9 +1281,6 @@
         if (rb) renderNotes(); // refresh the per-note IMG pills
     }
     /* ---------- voice notes (recorded WP audio) — shown on their nearest note's row ---------- */
-    // WebKit (Safari, every iOS/iPadOS browser) can't run the Whisper WASM model — say so upfront
-    // instead of downloading it and failing with a generic error (#340).
-    const TRANSCRIBE_LABEL = RBIsIOS() ? 'Transcription is only available on desktop browsers.' : 'Transcribe to text';
     function updateAudio() {
         if (currentRbId > 0) loadAudio();
         else { noteAudio = []; if (rb) renderNotes(); }
@@ -1294,41 +1289,6 @@
         const r = await RBApi('audio_list', { roadbook: currentRbId });
         noteAudio = ((r.ok && r.audio) || []).map((a) => ({ ...a, url: RBMediaSrc(a.url) })); // absolute in the app (#232)
         if (rb) renderNotes(); // each clip surfaces on its nearest note row
-    }
-    // Transcribe a voice note in the browser (#133) and APPEND the text to its note (never
-    // overwrite). The Whisper model downloads once on first use — show its progress in a modal.
-    async function transcribeInto(i, url, btn) {
-        if (!window.RBTranscribe || !rb || !rb.notes[i]) return;
-        if (RBIsIOS()) return toast(t(TRANSCRIBE_LABEL));
-        const prog = RBTranscribe.ready() ? null : progressModal();
-        const busy = RBBusy(btn); // the shared spinner/tick (#657)
-        try {
-            const lang = (meUser && meUser.voice_lang) || navigator.language; // force a language — tiny auto-detect is unreliable
-            const text = await RBTranscribe.run(url, { lang, onProgress: (p) => prog && prog.set(p.pct) });
-            if (prog) prog.close();
-            if (!text) return toast(t('No speech detected.'));
-            const n = rb.notes[i];
-            n.text = (n.text && n.text.trim() ? n.text.trim() + '\n' : '') + text;
-            markDirty();
-            const ta = $('noteList').querySelector('.note-title[data-i="' + i + '"]'); if (ta) ta.value = n.text;
-            busy.ok();
-            toast(t('Transcription added.'));
-        } catch (e) {
-            if (prog) prog.close();
-            busy.reset();
-            toast(t('Transcription failed. Please try again.'));
-        }
-    }
-    // First-use progress while the (one-time) transcription model downloads.
-    function progressModal() {
-        const d = RBModal(`<h3>${t('Preparing transcription')}</h3>
-            <p class="muted small">${t('Downloading the voice-to-text model — this happens only once, then it works offline.')}</p>
-            <div class="progress"><div class="progress-bar" data-bar></div></div>
-            <p class="muted small"><span data-pct>0</span>%</p>`, 'narrow');
-        return {
-            set: (pct) => { const bar = d.q('[data-bar]'), pc = d.q('[data-pct]'); if (bar) bar.style.setProperty('--progress', (pct || 0) + '%'); if (pc) pc.textContent = pct || 0; },
-            close: d.close,
-        };
     }
     /* ---------- photo upload: every photo needs coordinates ---------- */
     // Read GPS from the JPEG's EXIF; if absent, queue the file and let the user tap the
@@ -1496,7 +1456,7 @@
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('Add note text…'))}" autocomplete="off"${readOnly() ? ' readonly' : ''}>${esc(n.text || '')}</textarea>
                     <div class="note-meta" data-meta="${i}">${noteMetaHTML(n)}</div>
-                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="audio-totext" data-totext="${i}" data-aurl="${esc(a.url)}" aria-label="${esc(t(TRANSCRIBE_LABEL))}" title="${esc(t(TRANSCRIBE_LABEL))}"><i class="fa-solid fa-feather"></i></button><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
+                    ${audioByNote[i] ? `<div class="note-audio">${audioByNote[i].map((a) => `<span class="audio-item"><audio controls preload="none" src="${esc(a.url)}"></audio><button type="button" class="del-badge" data-dela="${a.id}" data-note="${esc(n.num)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('')}</div>` : ''}
                 </div>
             </div>${blockRowsHTML(n, 'after', i)}<div class="note-edit-slot" id="editSlot${i}"></div>`).join('');
         // road-type accent colour is data-driven → set the CSS variable per row (material blocks skip it)
@@ -1527,8 +1487,6 @@
             if (!r.ok) { busy.reset(); return toast(r.error || 'Could not delete the voice note.'); } // same rule as the photos (#525)
             busy.ok(); loadAudio();
         });
-        // transcribe a voice note → append the text to its note (#133, in-browser Whisper)
-        $('noteList').querySelectorAll('[data-totext]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); transcribeInto(+b.dataset.totext, b.dataset.aurl, b); });
         // the title is edited in place — update the model only (no rebuild, so focus is kept)
         $('noteList').querySelectorAll('.note-title').forEach((inp) => {
             inp.onfocus = () => { if (!(editorOpen && sel === +inp.dataset.i)) select(+inp.dataset.i); };

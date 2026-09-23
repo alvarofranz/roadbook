@@ -20,20 +20,23 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden`
 ([recorder.js:35-37](../public/recorder/recorder.js#L35)):
 
 - **`recIdle`** — schermata di avvio con il pulsante *Start recording* più due avvisi
-  contestuali: `recLoginHint` (visibile ai **non loggati**: la traccia si registra comunque,
-  ma foto/audio richiedono il login) e `recBgHint` (visibile solo **fuori dall'app nativa**:
+  contestuali: `recLoginHint` (visibile ai **non loggati**: la traccia e le foto si registrano
+  comunque, e le foto restano sul dispositivo fino al `.rdbk` locale) e `recBgHint` (visibile solo **fuori dall'app nativa**:
   solo l'app registra a schermo bloccato/in background). Entrambi sono governati da
   `updateRecUi()` una volta noto l'utente.
-- **`recRunning`** — dashboard live: quattro readout (tempo trascorso, velocità,
-  numero note, km registrati), la fila di pulsanti azione (Pause · Note · Voice note ·
-  Photo — che va a capo sotto i 400 px), la mappa live e il pulsante *Finish* (primario, non
-  distruttivo; stesse etichette della barra di registrazione dell'Editor, #655). Su smartphone (≤430px)
-  la spaziatura verticale è compatta (padding ridotto, gap unico della `.dash`,
-  margini ridondanti azzerati) così la mappa guadagna schermo.
+- **`recRunning`** — dashboard live (#768), pensata per chi guida e guarda solo di sfuggita:
+  - quattro readout (tempo trascorso, velocità, numero note, km registrati);
+  - la **riga di cattura**: un grande pulsante **Note** a sinistra e, alla sua destra, una griglia
+    2×2 di icone alta quanto lui — **Photo** · **Annulla l'ultima nota** (chiede conferma
+    nominandola) · **stile mappa** (`toggleBaseStyle`) · **course-up** (`setHeadingUp`);
+  - la **mappa live**, con in alto a sinistra, grande e senza etichetta, la **distanza dall'ultima
+    nota** (`#recSince`, km con due decimali: `recordedM` meno l'`at_m` salvato sulla nota);
+  - la barra **Pause · End** (50 % ciascuno). Su un telefono (≤1024 px, dove c'è la tab bar)
+    galleggia **sopra la tab bar** e la mappa prende esattamente l'altezza che resta, così la
+    pagina non scorre.
 
 La barra di stato globale (orologio, batteria, stato satellite/GPS) è `RBStatusBar`,
 mostrata solo durante la registrazione ([recorder.js:38](../public/recorder/recorder.js#L38)).
-Il pulsante *Photo* è nascosto di default e compare solo a draft creato (§3, §6).
 
 Le dipendenze sono caricate dall'HTML nell'ordine: MapLibre, `config.js`,
 `roadbook-core.js`, `rbmap.js`, `gps-meter.js`, `gpx-recorder.js`, `i18n.js`,
@@ -206,57 +209,29 @@ in attesa del satellite. Il primo fix reale prende poi il sopravvento sul marker
 
 ---
 
-## 5. Waypoint con testo (e dettatura)
+## 5. Note con un tocco (#768)
 
-*Waypoint* richiede un fix GPS (altrimenti toast *"Waiting for a GPS fix…"*). Il flusso è:
+*Note* richiede un fix GPS (altrimenti toast *"Waiting for a GPS fix…"*). La nota cade **subito**
+alla posizione corrente via `dropWaypoint(lat, lon)`: crea
+`{ lat, lon, name: 'wptN', num, text: '', t: lastFixT, at_m: recordedM }`, la aggiunge a `wpts`,
+ridisegna e salva. Il campo **`t`** è il timestamp dell'ultimo fix (#158): l'Editor lo userà per
+ancorare la nota alla traccia **per tempo**; **`at_m`** è il contachilometri in quel momento, da cui
+la distanza dall'ultima nota sulla mappa.
 
-1. **Drop immediato** alla posizione corrente via `dropWaypoint(lat, lon, text)`: crea
-   `{ lat, lon, name: 'wptN', num, text, t: lastFixT }`, lo aggiunge a `wpts`, ridisegna e
-   salva. Il campo **`t`** è il timestamp dell'ultimo fix (#158): l'Editor lo userà per
-   ancorare il waypoint alla traccia **per tempo**.
-2. Apre il **prompt di testo condiviso** `RBWaypointPrompt(note.num, cb, { mic: true, lang:
-   voiceLang })` — lo stesso primitivo usato altrove: si auto-chiude dopo **5 s** salvo si
-   inizi a digitare, e include il microfono di dettatura dove supportato.
+Nessun prompt, niente da leggere o scrivere mentre si guida: conferma **`RBSuccess.flash()`** — il
+campanello di successo (`assets/sounds/success.mp3`) e un grande check a schermo per meno di un
+secondo. Il testo della nota si scrive dopo, nell'Editor. Lo stesso campanello suona nel Reader a
+ogni nota validata, automatica o manuale.
 
-### Speech-to-text
-La lingua del riconoscimento vocale è `voiceLang()`: la **preferenza dell'account**
-(`meUser.voice_lang`, impostabile in `/account/`) oppure, se assente o da sloggati,
-`navigator.language`. È la stessa lingua usata sia dal mic del prompt *Waypoint* sia dalla
-trascrizione best-effort di *WP audio*. Il microfono pulsa mentre ascolta (classe `.on`).
-
-### "WP audio" (registrazione vocale, press-and-hold)
-Il pulsante **"WP audio"** (`#recWptAudio`, `.btn-accent`/sand; visibile dove c'è
-speech-to-text **o** registrazione audio) è il flusso pensato per il telefono in movimento:
-**tieni premuto per registrare**, senza modale. Alla pressione rilascia subito un waypoint
-alla posizione corrente, poi:
-
-- **Audio (primario):** registra la **clip vocale** via `getUserMedia` + `MediaRecorder` e la
-  **accoda** (`RBMediaQueue.add('audio', …)` → upload differito con retry a `RBUploadAudio` →
-  tabella `roadbook_audio`, come le foto) — solo da **loggato + bozza** (`meUser && draftId`).
-  La clip si rivede/riascolta nell'Editor, **sulla riga della nota** più vicina.
-- **Testo (best-effort):** in parallelo tenta `SpeechRecognition` → `note.text`. **Il microfono
-  è esclusivo**, quindi la registrazione lo prende per prima: il testo dal vivo esce **solo dove
-  il mic è condivisibile (desktop)**; su **Android/iOS** = **audio sì, testo no**. (Per il solo
-  testo dal vivo c'è il mic del modale *Waypoint*, che è STT-only.)
-- **Countdown al rilascio:** lasciando il tasto parte un conto alla rovescia **sul pulsante**
-  (5→0 la prima volta, 2→0 dopo una ri-pressione) durante il quale **continua a registrare**;
-  a **0 salva** automaticamente (il waypoint è già creato → nessun OK). **Ripremere** durante il
-  countdown lo annulla e riprende a registrare (prossimo countdown = 2). Il rilascio è gestito a
-  livello `document` (un dito che scivola via chiude comunque); niente `setPointerCapture`
-  (instabile su Android).
-- **Feedback:** toast diagnostici — *Microphone unavailable* / *No audio captured* / *Voice note
-  saved* — così un fallimento non è silenzioso.
-
-Trascrivere la clip *registrata* in testo (post-registrazione, nell'Editor) è tracciato in **#133**.
-
-> Il pulsante foto è etichettato **"WP Foto"**.
+Una nota toccata per sbaglio si toglie con **Annulla l'ultima nota** della griglia, che chiede
+conferma nominandola.
 
 ---
 
 ## 6. Foto geotaggate
 
-Il pulsante *WP Foto* è **sempre visibile** (`updateRecUi`: `recPhoto.hidden = false`), a
-prescindere da login e draft (#147 F3): la cattura entra in coda. Da loggato viene caricata nel
+Il pulsante *Photo* della griglia è **sempre disponibile**, a prescindere da login e draft
+(#147 F3): la cattura entra in coda. Da loggato viene caricata nel
 draft (creato best-effort/pigro, `ensureDraft`, §3); da sloggato resta sul dispositivo e va nel
 `.rdbk` locale a fine registrazione (§8).
 
@@ -270,8 +245,8 @@ Il flusso:
 - Subito compare un **pin ottimistico** da un `objectURL` locale (`photos` con `{ token, url,
   lat, lon, local: true, pending: true }`), la mappa si ridisegna e la sessione si salva. Quando
   l'upload va a buon fine, `onDone` **riconcilia** quella voce con `{ id, url }` del server
-  (via `token`) e revoca l'`objectURL`. Poi `RBPhotoPreview(url, cb)` mostra l'anteprima:
-  confermando la callback lascia un waypoint vuoto alla posizione della foto.
+  (via `token`) e revoca l'`objectURL`. Una foto con posizione lascia **sempre** anche una nota
+  alla sua posizione (#282), con il campanello e il check di una nota normale (§5).
 
 ### Dove finiscono davvero le foto (quirk importante)
 Le foto **non** sono parte della traccia GPX e non stanno in `roadbook.json`. Dove vivono
@@ -312,7 +287,7 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 
 ## 8. Termine: salva sul server / esporta .rdbk, GPX o apri nell'Editor
 
-A *Finish* confermato si apre `finishModal(pts, name)` con il riepilogo
+Un *End* confermato si apre `finishModal(pts, name)` con il riepilogo
 (punti · km · note · foto) e **tre** azioni. L'azione **primaria dipende dal login**:
 
 - **Save to server** *(loggato, primaria, #143)*: in un tap costruisce il roadbook dalla

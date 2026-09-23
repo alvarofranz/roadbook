@@ -486,7 +486,7 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **CSP + header di sicurezza:** `public/.htaccess` invia una `Content-Security-Policy` che
   **vieta gli script inline** (il sito non ne ha — l'unico bootstrap è in
   `assets/js/native-detect.js`) e ammette solo gli origin realmente usati (MapLibre da unpkg,
-  transformers.js/Whisper da jsdelivr + Hugging Face (`huggingface.co` e la CDN `*.hf.co` su cui redirige il download del modello, #746), Google Sign-In, Sign in with Apple
+  jsQR da jsdelivr per lo scanner, Google Sign-In, Sign in with Apple
   (`appleid.cdn-apple.com` per lo script, `appleid.apple.com` per connect/frame), Turnstile, i
   tile delle mappe), più `X-Content-Type-Options: nosniff` e `Referrer-Policy`.
 - **Iniezione SQL:** non possibile per come è scritto — prepared statement reali ovunque,

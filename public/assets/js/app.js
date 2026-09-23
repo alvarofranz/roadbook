@@ -392,7 +392,6 @@
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     // iPadOS reports as "Macintosh" (desktop-class UA) unless it's a touch device — catches iPhone/iPad/iPod alike.
     const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    window.RBIsIOS = isIOS; // shared: WebKit-only feature gates (e.g. the Editor's transcription, #340)
     // The device this page runs on: 'ios' · 'android' · 'desktop'. UA-based on purpose — it decides
     // which INSTALL INSTRUCTIONS to show, never whether a feature exists. Shared so the Install chip
     // and the /install/ guide always agree on the device (#333). RBPlatform answers a different
@@ -556,7 +555,7 @@
     window.RBKm = (m, digits = 2) => ((m || 0) / 1000).toFixed(digits) + ' km';
     // The ONE vehicle table (#713): each vehicle's icon + label, for the small icons on the cards
     // (#745) and the segmented toggles of the gallery filter and the Editor settings alike
-    const VEHICLE_ICON = { car: ['fa-truck-monster', 'Car'], moto: ['fa-motorcycle', 'Motorbike'], bike: ['fa-person-biking', 'Bicycle'] };
+    const VEHICLE_ICON = { car: ['fa-truck-monster', '4x4'], moto: ['fa-motorcycle', 'Motorbike'], bike: ['fa-person-biking', 'Bicycle'] };
     window.RBVehicleSegmentsHTML = () => Object.entries(VEHICLE_ICON).map(([v, [icon, label]]) =>
         `<button class="segment" type="button" data-vehicle="${v}" aria-pressed="false"><i class="fa-solid ${icon}"></i> <span data-i18n="${label}">${RBesc(RBt(label))}</span></button>`).join('');
     window.RBVehicleIcons = (list) => (list || []).length ? `<span class="vehicle-icons">${list.map((v) => `<i class="fa-solid ${VEHICLE_ICON[v][0]}" title="${RBesc(RBt(VEHICLE_ICON[v][1]))}" aria-label="${RBesc(RBt(VEHICLE_ICON[v][1]))}"></i>`).join('')}</span>` : '';
@@ -801,40 +800,27 @@
         const r = await RBApi('org_suggest').catch(() => ({}));
         if (r && r.ok && Array.isArray(r.organizations)) el.innerHTML = r.organizations.map((o) => `<option value="${RBesc(o)}"></option>`).join('');
     };
-    // The waypoint quick-text prompt (Recorder + the Editor's route recording): shown right
-    // after the waypoint drops, auto-dismisses after 5 s ("Edit later (5)…") unless the user
-    // starts typing. opts.mic adds the dictation button (speech-to-text where supported) with
-    // opts.lang() as its language. onDone(text) fires exactly once, however the modal closes.
-    window.RBWaypointPrompt = (num, onDone, opts = {}) => {
-        const SR = opts.mic ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
-        const inputHtml = SR
-            ? `<div class="wf-row"><input id="wfText" class="field" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off"><button class="btn btn-ghost" type="button" id="wfMic" aria-label="${RBesc(RBt('Dictate'))}" title="${RBesc(RBt('Dictate'))}"><i class="fa-solid fa-microphone"></i></button></div>`
-            : `<input id="wfText" class="modal-in" placeholder="${RBesc(RBt('Quick note (optional)…'))}" autocomplete="off">`;
-        const d = RBModal(`<h3>${RBesc(RBt('Note'))} ${num}</h3>
-            ${inputHtml}
-            <div class="btnrow end"><button class="btn btn-primary" id="wfBtn">${RBesc(RBt('Edit later'))} (5)</button></div>`, 'narrow', () => finish());
-        const inp = d.q('#wfText'), btn = d.q('#wfBtn');
-        setTimeout(() => inp.focus(), 50);
-        let n = 5, typed = false, done = false;
-        const timer = setInterval(() => { if (typed) return; if (--n <= 0) finish(); else btn.textContent = `${RBt('Edit later')} (${n})`; }, 1000);
-        function finish() { if (done) return; done = true; clearInterval(timer); d.close(); onDone(inp.value.trim()); }
-        inp.addEventListener('input', () => { if (inp.value && !typed) { typed = true; btn.textContent = RBt('Save note'); } });
-        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(); });
-        btn.onclick = finish;
-        if (SR) { // dictate straight into the field (tap to start, tap to stop)
-            const mic = d.q('#wfMic'); let rec = null;
-            mic.onclick = () => {
-                if (rec) { rec.stop(); return; }
-                rec = new SR();
-                rec.lang = opts.lang ? opts.lang() : document.documentElement.lang;
-                rec.interimResults = true;
-                rec.onresult = (e) => { let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript; inp.value = txt; typed = true; btn.textContent = RBt('Save note'); };
-                const stop = () => { mic.classList.remove('on'); rec = null; };
-                rec.onend = stop; rec.onerror = stop;
-                mic.classList.add('on'); try { rec.start(); } catch (e) { stop(); }
-            };
-        }
-    };
+    /* The success cue (#768): one bell for "done", shared by the Recorder (a note dropped) and the
+       Reader (a note validated, auto or manual). An <audio> may only start after a user gesture, so
+       a page that will ring later without one (the Reader's GPS auto-validation) calls unlock() from
+       the tap that starts the session. flash() adds the big check on screen for a glance-only UI. */
+    window.RBSuccess = (function () {
+        let audio = null;
+        const bell = () => { if (!audio) { audio = new Audio(ROOT + 'assets/sounds/success.mp3'); audio.preload = 'auto'; } return audio; };
+        const ring = () => { try { const a = bell(); a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+        return {
+            ring,
+            unlock() { try { const a = bell(); a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, done); else done(); } catch (e) {} },
+            flash() {
+                ring();
+                const el = document.createElement('div');
+                el.className = 'success-flash'; el.setAttribute('aria-hidden', 'true');
+                el.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 900);
+            },
+        };
+    })();
     // The signed-in user's saved roadbooks rendered into `container` — shared by My roadbooks
     // and the Editor landing. Loads rb_list, draws one .roadbook-row each (View/Edit/Duplicate/
     // Delete), wires duplicate+delete (re-rendering after each). Returns the count (0 = none).
@@ -1010,7 +996,8 @@
     window.RBApi = (action, body) => fetch(API_ROOT + 'api/index.php', {
         method: 'POST', credentials: 'same-origin', headers: rbAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(Object.assign({ action }, body || {})),
-    }).then((r) => r.json()).then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
+    }).then((r) => r.json().catch(() => ({ ok: false, error: 'The server did not answer properly — please try again in a moment.' }))) // reached, but no JSON back (a crash, a proxy page)
+        .then((j) => rbCaptureToken(action, j)).catch(() => ({ ok: false, error: 'Network error.' }));
     // The same call, sent so it survives the page going away (pagehide): the shared API host and
     // auth headers, so it works inside the app too — sendBeacon can carry neither (#651).
     window.RBApiKeepalive = (action, body) => fetch(API_ROOT + 'api/index.php', {

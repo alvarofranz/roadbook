@@ -310,8 +310,8 @@ fissare l'ingresso `adjP1`, poi rileva un eventuale rientro più avanti (`adjP2`
 `finishAdjust` chiede conferma e fa `spliceByIndex`, sostituendo il tratto e ri-agganciando le
 note (`RB.nearestIdx`).
 
-Le note istantanee in recording passano dal prompt condiviso `RBWaypointPrompt`
-(tipo waypoint + testo); le foto sono geotaggate, mostrate con `RBPhotoPreview` e caricate lato
+Le note in recording cadono subito, con il campanello e il check di `RBSuccess.flash()` — niente da
+scrivere sul sentiero, il testo si aggiunge dopo (#768, come nel Recorder); ogni foto è geotaggata, lascia anche lei una nota e si carica lato
 server (`recPhoto`) — si agganciano al roadbook in adjust (serve un roadbook salvato + login).
 
 ---
@@ -397,17 +397,11 @@ Frecce ‹/›, `←`/`→` e `Esc`, più una riga azioni:
   aggiorna le coordinate della foto via l'endpoint **`ph_move`** ([roadbooks.php](../app/roadbooks.php), `UPDATE … SET lat,lon`, con check proprietà);
 - **Delete** — elimina la foto (`ph_delete`, con conferma) e aggiorna lightbox + pin.
 
-### 6.2 Note vocali: player sulla riga e trascrizione in-browser (#133)
-Le note vocali (registrate come *WP audio*) sono server-side (tabella `roadbook_audio`,
-`audio_list`/`audio_delete`) e compaiono come **player audio sulla riga della nota più vicina**
-(entro 80 m). Accanto al player, il pulsante **"➜ testo"** (`data-totext`, `transcribeInto`) le
-**trascrive nel browser** e **appende** il testo alla nota (mai overwrite):
-- motore **Whisper** via `RBTranscribe` (`rb-transcribe.js`): transformers.js/WASM importato da CDN
-  **solo al primo click**, modello `Xenova/whisper-tiny` (cache del browser);
-- l'audio **non lascia il dispositivo**, nessun costo/infra server; la lingua segue `voice_lang`
-  dell'utente o è auto-rilevata da Whisper;
-- al primo uso un modale mostra il download del modello (una-tantum, ~decine di MB), poi funziona
-  offline.
+### 6.2 Note vocali: player sulla riga
+Le note vocali già registrate sono server-side (tabella `roadbook_audio`, `audio_list`/`audio_delete`)
+e compaiono come **player audio sulla riga della nota più vicina** (entro 80 m), con la × per
+eliminarle (conferma che nomina la nota). Non c'è trascrizione: il testo della nota lo scrive chi
+edita (#767).
 
 ---
 

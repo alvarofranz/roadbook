@@ -9,42 +9,52 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-131">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-133">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-131">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-133">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
-        /* recorded km box sits to the right of Waypoints → four readouts in a row */
         .rec-readouts { grid-template-columns: repeat(4, 1fr); }
-        /* live map: the recorded track + waypoints + geotagged photos */
-        .rec-map { height: 46vh; min-height: 280px; padding: 0; overflow: hidden; border-radius: 14px; margin-bottom: .8rem; }
-        /* compact readouts; big full-width Pause/Waypoint on one row (as wide as the map) */
         .rec-main .row3 .mini { padding: .4rem .35rem; }
         .rec-main .row3 .value { font-size: 1.2rem; }
         .rec-main .row3 .key { font-size: .6rem; }
         /* speed is the at-a-glance number while riding: bigger and accented */
         .rec-readouts .mini.speed .value { font-size: 1.75rem; color: var(--sand); }
-        #recRunning .btnrow { flex-wrap: wrap; }
-        #recRunning .btnrow .btn { flex: 1; min-width: 0; justify-content: center; padding: 1rem .5rem; font-size: 1.05rem; }
-        /* latest waypoint note (incl. live dictated audio text) shown while recording */
-        .rec-lastwp { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: .5rem .7rem; margin-bottom: .8rem; font-size: .9rem; color: var(--text); }
-        /* narrow/tall phones: shrink so four readouts + action buttons stay on one row each,
-           and tighten the vertical rhythm so the map gets more of the screen */
+        .rec-dash { display: flex; flex-direction: column; gap: .55rem; }
+        /* the capture row (#768): one big Note — the button pressed while riding — and a 2×2 grid
+           of icon buttons as tall as it */
+        .rec-capture { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; height: 7.2rem; }
+        .rec-note { height: 100%; justify-content: center; font-size: 1.6rem; font-weight: 800; border-radius: 16px; }
+        .rec-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: .45rem; }
+        .rec-grid .btn { height: 100%; min-width: 0; padding: 0; justify-content: center; font-size: 1.15rem; border-radius: 12px; }
+        .rec-grid .btn.on { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
+        /* the live map: the recorded track, the notes and the photos */
+        .rec-map-wrap { position: relative; }
+        .rec-map { height: 46vh; min-height: 220px; padding: 0; overflow: hidden; border-radius: 14px; margin: 0; }
+        .rec-since { position: absolute; top: 10px; left: 10px; z-index: 5; padding: .15rem .6rem; border-radius: 10px; background: rgba(14, 17, 22, .86); border: 1px solid var(--line); color: #fff; font-size: 2.1rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; pointer-events: none; }
+        /* Pause · End, half and half */
+        .rec-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin-top: .55rem; }
+        .rec-actions .btn { justify-content: center; padding: .9rem .5rem; font-size: 1.05rem; }
+        .rec-pending { margin: 0; }   /* the readout itself is styled in app.css */
+        /* a phone (the tab bar shows) while recording: the screen IS the tool. The page becomes one
+           viewport-high column that never scrolls — whatever sits above (the browser-GPS banner, the
+           status bar) takes its height, and the map flexes into exactly what is left. Pause · End
+           float above the tab bar. */
+        @media (max-width: 1024px) {
+            .rec-actions { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 40; margin: 0; padding: .5rem 16px; background: rgba(14, 17, 22, .94); border-top: 1px solid var(--line); }
+            body.rec-live { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+            body.rec-live .rec-main { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; padding-top: .45rem; }
+            body.rec-live #recRunning { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 4.9rem; } /* the floating bar's room */
+            body.rec-live .rec-dash { flex: 1; min-height: 0; padding-top: 0; }
+            body.rec-live .rec-map-wrap { flex: 1; min-height: 0; }
+            body.rec-live .rec-map { height: 100%; min-height: 0; }
+            body.rec-live .app-chip-stack { display: none; } /* the Install chip is no use mid-recording, and there is no room for it */
+        }
         @media (max-width: 430px) {
             .rec-readouts { gap: .45rem; }
             .rec-main .row3 .value { font-size: 1rem; }
             .rec-readouts .mini.speed .value { font-size: 1.4rem; }
-            #recRunning .btnrow .btn { padding: .85rem .3rem; font-size: .82rem; gap: .25rem; }
-            .rec-main { padding-top: .35rem; }
-            .rec-main .dash { padding-top: .35rem; gap: .5rem; } /* one uniform gap between sections */
-            #recRunning .btnrow { margin-top: 0; }
-            .rec-lastwp { margin-bottom: 0; padding: .45rem .6rem; } /* spacing handled by .dash gap */
-            .rec-map { margin-bottom: 0; }
         }
-        #recWptAudio.on { color: var(--track); animation: recpulse 1.2s infinite; }
-        /* press-and-hold (#129): no text selection, no iOS long-press callout, no touch-scroll steal */
-        #recWptAudio { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-        .rec-pending { margin-bottom: .6rem; }   /* the readout itself is styled in app.css */
     </style>
 </head>
 <body class="gps-tool">
@@ -59,32 +69,41 @@
         </div>
         <p class="muted" data-i18n="Record a Roadbook with geotagged notes, photos and voice memos.">Record a Roadbook with geotagged notes, photos and voice memos.</p>
         <p id="recNativeHint" class="native-hint" data-i18n="native.better.gps.recorder" hidden><i class="fa-solid fa-mobile-screen-button"></i> For background GPS recording and better accuracy, use the native iOS or Android app.</p>
-        <p id="recLoginHint" class="muted small" data-i18n="Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account." hidden>Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.</p>
+        <p id="recLoginHint" class="muted small" data-i18n="Not signed in: photos are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account." hidden>Not signed in: photos are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.</p>
         <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
         <div class="btnrow mt-2"><button class="btn btn-primary" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Start recording">Start recording</span></button></div>
     </div>
 
-    <!-- running: readouts + controls, the live map between the action buttons and Finish -->
+    <!-- running (#768): the readouts, the capture row — one big Note, a 2×2 grid of the rest — and
+         the live map filling what is left, with the distance since the last note on it. Pause and
+         End sit in their own bar, floating above the tab bar on a phone. -->
     <div id="recRunning" hidden>
-        <div class="dash">
+        <div class="dash rec-dash">
             <div class="row3 rec-readouts">
                 <div class="mini"><div class="value" id="rbElapsed">0:00</div><div class="key" data-i18n="Elapsed">Elapsed</div></div>
                 <div class="mini speed"><div class="value" id="rbSpeed">0</div><div class="key">km/h</div></div>
                 <div class="mini"><div class="value" id="rbWptsN">0</div><div class="key" data-i18n="Notes">Notes</div></div>
                 <div class="mini"><div class="value" id="rbKmBox">0.00</div><div class="key">km</div></div>
             </div>
-            <div class="btnrow">
-                <button class="btn btn-ghost" id="recPause"><i class="fa-solid fa-pause"></i> <span id="recPauseTxt" data-i18n="Pause">Pause</span></button>
-                <button class="btn btn-ghost" id="recWpt"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Note">Note</span></button>
-                <button class="btn btn-accent" id="recWptAudio" hidden title="Hold to record a voice note; keeps recording 5s after you let go." data-i18n-title="Hold to record a voice note; keeps recording 5s after you let go."><i class="fa-solid fa-microphone"></i> <span data-i18n="Voice note">Voice note</span></button>
-                <button class="btn btn-ghost" id="recPhoto" hidden><i class="fa-solid fa-camera"></i> <span data-i18n="Photo">Photo</span></button>
+            <div class="rec-capture">
+                <button class="btn btn-primary rec-note" id="recWpt" type="button"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Note">Note</span></button>
+                <div class="rec-grid">
+                    <button class="btn btn-ghost" id="recPhoto" type="button" title="Photo" data-i18n-title="Photo" aria-label="Photo" data-i18n-aria="Photo"><i class="fa-solid fa-camera"></i></button>
+                    <button class="btn btn-ghost" id="recUndo" type="button" disabled title="Delete the last note" data-i18n-title="Delete the last note" aria-label="Delete the last note" data-i18n-aria="Delete the last note"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="btn btn-ghost" id="recLayer" type="button" title="Map style" data-i18n-title="Map style" aria-label="Map style" data-i18n-aria="Map style"><i class="fa-solid fa-layer-group"></i></button>
+                    <button class="btn btn-ghost" id="recHeading" type="button" title="Heading up" data-i18n-title="Heading up" aria-label="Heading up" data-i18n-aria="Heading up"><i class="fa-solid fa-location-arrow"></i></button>
+                </div>
             </div>
-            <div id="recLastWp" class="rec-lastwp" hidden></div>
             <div id="recPending" class="rec-pending" hidden></div>
-            <div id="recMap" class="rec-map panel"></div>
-            <div class="btnrow">
-                <button class="btn btn-primary grow" id="recStop"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
+            <div class="rec-map-wrap">
+                <div id="recMap" class="rec-map panel"></div>
+                <!-- the distance since the last note: the number alone, the co-pilot knows what it is -->
+                <div class="rec-since" id="recSince">0.00</div>
             </div>
+        </div>
+        <div class="rec-actions">
+            <button class="btn btn-ghost" id="recPause" type="button"><i class="fa-solid fa-pause"></i> <span id="recPauseTxt" data-i18n="Pause">Pause</span></button>
+            <button class="btn btn-primary" id="recStop" type="button"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="End">End</span></button>
         </div>
     </div>
 </main>
@@ -93,20 +112,20 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.3-131"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.3-131"></script>
-<script src="../assets/js/rbzip.js?v=1.9.3-131"></script>
-<script src="../assets/js/rbmap.js?v=1.9.3-131"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.3-131"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.3-131"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.3-131"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.3-131"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.3-131"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.3-131"></script>
-<script src="../assets/js/i18n.js?v=1.9.3-131"></script>
-<script src="../assets/js/app.js?v=1.9.3-131"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.3-131"></script>
-<script src="../assets/js/status-bar.js?v=1.9.3-131"></script>
-<script src="recorder.js?v=1.9.3-131"></script>
+<script src="../assets/js/config.js?v=1.9.3-133"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.3-133"></script>
+<script src="../assets/js/rbzip.js?v=1.9.3-133"></script>
+<script src="../assets/js/rbmap.js?v=1.9.3-133"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.3-133"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.3-133"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.3-133"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.3-133"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.3-133"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.3-133"></script>
+<script src="../assets/js/i18n.js?v=1.9.3-133"></script>
+<script src="../assets/js/app.js?v=1.9.3-133"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.3-133"></script>
+<script src="../assets/js/status-bar.js?v=1.9.3-133"></script>
+<script src="recorder.js?v=1.9.3-133"></script>
 </body>
 </html>

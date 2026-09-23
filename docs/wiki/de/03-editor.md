@@ -175,16 +175,9 @@ Tap auf Pin / Miniatur → Vollbild-Betrachter (deckt nur die Karte ab, **nicht*
 
 ---
 
-## Sprachnotizen (WP audio) — Player + Transkription
+## Sprachnotizen — Player
 
-Server-seitig (`roadbook_audio`, `audio_list`/`audio_delete`). Erscheinen als **Audio-Player** auf der nächstgelegenen Notizzeile (≤80m). Button **„➜ testo"** (`transcribeInto`):
-
-> 📸 *Screenshot: Audio-Player mit Transkriptions-Button auf einer Note*
-- **Whisper** via `RBTranscribe` (transformers.js/WASM, Modell `Xenova/whisper-tiny`, Browser-Cache)
-- Audio **verlässt das Gerät nicht**, keine Server-Kosten
-- Sprache = `voice_lang` des Accounts oder automatisch erkannt
-- Erste Nutzung: Modell-Download-Modal (~einige Dutzend MB), danach funktioniert es **offline**
-- Text wird an die Note **angehängt** (nie Überschreibung)
+Bereits aufgenommene Sprachnotizen werden server-seitig gespeichert (`roadbook_audio`, `audio_list`/`audio_delete`). Jede erscheint als **Audio-Player** auf der nächstgelegenen Notizzeile (≤80m), mit einem **×** zum Löschen (die Bestätigung nennt die Note).
 
 ---
 

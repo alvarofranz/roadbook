@@ -394,15 +394,12 @@ sanificati dal chiamante.
 Renderizza in `el` i controlli di paginazione (precedente / `pagina / totale` [`· label`] /
 successivo); i pulsanti chiamano `onGo(p)`. Con una sola pagina mostra solo l'eventuale `label`.
 
-#### `RBWaypointPrompt(num, onDone, opts?)`
-Il prompt rapido di testo per un waypoint (Recorder + registrazione dell'Editor): appare appena il
-waypoint è creato, **si auto-chiude dopo 5 s** (`Edit later (5)…`) salvo si inizi a digitare;
-`opts.mic` aggiunge il microfono di dettatura con `opts.lang()` come lingua. `onDone(text)` scatta
-**una sola volta**.
-
-#### `RBPhotoPreview(url, onWaypoint)`
-Anteprima a pieno di una foto appena scattata, con *OK* / *Convert into waypoint*; `onWaypoint`
-scatta solo se si converte.
+#### `RBSuccess` — `ring()` · `flash()` · `unlock()`
+Il segnale di "fatto" (#768): il campanello `assets/sounds/success.mp3`. `flash()` lo suona e mostra
+un grande check a schermo per meno di un secondo (una nota caduta nel Recorder o in *Adjust on the
+trail*); `ring()` suona soltanto (il Reader, a ogni nota validata). Un `<audio>` parte solo dopo un
+gesto dell'utente: una pagina che suonerà più tardi senza gesto (la validazione automatica via GPS
+del Reader) chiama `unlock()` dal tap che avvia la sessione.
 
 #### `RBRequireUser(msgEl, { admin?, account? }) → Promise<user|null>`
 Gate di una pagina di gestione: risolve l'utente loggato, o scrive il messaggio standard in `msgEl`

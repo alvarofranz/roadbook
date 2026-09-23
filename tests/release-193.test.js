@@ -25,10 +25,11 @@ describe('account emails (#748)', () => {
     });
 });
 
-describe('voice transcription can fetch its model (#746)', () => {
-    it('lets the Hugging Face CDN through the CSP', () => {
-        const csp = read('public/.htaccess').match(/connect-src[^;]*/)[0];
-        for (const host of ['https://huggingface.co', 'https://*.huggingface.co', 'https://*.hf.co']) expect(csp).toContain(host);
+describe('voice transcription is gone, and so is what it needed (#746 · #767)', () => {
+    it('lets no model host and no WASM through the CSP', () => {
+        const csp = read('public/.htaccess').match(/Content-Security-Policy "([^"]*)"/)[1];
+        for (const host of ['huggingface', 'hf.co', 'wasm-unsafe-eval']) expect(csp).not.toContain(host);
+        expect(fs.existsSync('public/assets/js/rb-transcribe.js')).toBe(false);
     });
 });
 

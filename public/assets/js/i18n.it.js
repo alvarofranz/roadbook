@@ -125,7 +125,7 @@
             'Read': 'Leggi', 'View': 'Vedi', 'Search roadbooks…': 'Cerca roadbook…',
             'Search users…': 'Cerca utenti…', 'Search participants…': 'Cerca partecipanti…', 'Remove the event logo?': 'Rimuovere il logo dell’evento?', 'All events': 'Tutti gli eventi', 'Export CSV': 'Esporta CSV', 'Only the owner can change the visibility.': 'Solo il proprietario può cambiare la visibilità.', 'From your events': 'Dai tuoi eventi', 'is editing this roadbook — read-only.': 'sta modificando questo roadbook — sola lettura.', 'Force unlock': 'Forza sblocco', 'Force unlock? The other editor may lose unsaved changes.': 'Forzare lo sblocco? L’altro editor potrebbe perdere le modifiche non salvate.', 'This roadbook is being edited by someone else.': 'Questo roadbook è in modifica da un altro utente.', 'users': 'utenti',
             'Roadbook name': 'Nome del roadbook', 'Recorded trip': 'Percorso registrato',
-            'Elapsed': 'Tempo', 'No GPS': 'No GPS', 'Resume the recording in progress?': 'Riprendere la registrazione in corso?', 'Finish the recording?': 'Terminare la registrazione?', 'Dictate': 'Detta',
+            'Elapsed': 'Tempo', 'No GPS': 'No GPS', 'Resume the recording in progress?': 'Riprendere la registrazione in corso?', 'Finish the recording?': 'Terminare la registrazione?', 
             'Adjust on the trail (live GPS)': 'Regola sul percorso (GPS dal vivo)',
             'Title': 'Titolo', 'Description': 'Descrizione', 'Shown on the public roadbook page': 'Mostrato nella pagina pubblica del roadbook',
             'Photos': 'Foto', 'Add photos': 'Aggiungi foto', 'Notes': 'Note', 'Back': 'Torna',
@@ -142,7 +142,7 @@
             'Default': 'Standard', 'Motorway': 'Autostrada', 'Asphalt': 'Asfalto', 'Track': 'Pista', 'Off-piste': 'Fuoripista',
             'Draw on the map': 'Disegna sulla mappa', 
             'Export GPX': 'Esporta GPX',
-            'Not signed in: photos and voice notes are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.': 'Non autenticato: foto e note vocali restano su questo dispositivo e finiscono in un .rdbk locale al termine. Accedi per salvarle sul tuo account.',
+            'Not signed in: photos are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.': 'Non autenticato: le foto restano su questo dispositivo e finiscono in un .rdbk locale al termine. Accedi per salvarle sul tuo account.',
             'Export': 'Esporta', '.rdbk file': 'File .rdbk', 'Include photos & audio in the .rdbk': 'Includi foto e audio nel .rdbk', 'Photos & audio': 'Foto e audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Questo roadbook include foto o note vocali. Restano nascoste finché non lo salvi nel tuo profilo.', 'Track line': 'Traccia', 'Waypoints (notes)': 'Waypoint (note)', 'Garmin icons': 'Icone Garmin', 'OSMAnd icons': 'Icone OSMAnd', 'Delete me to export the edited tulip': 'Cancellami per esportare il tulip modificato',
             'Settings': 'Impostazioni', 
             'Identity': 'Identità', 'Visibility & map': 'Visibilità e mappa',
@@ -360,8 +360,8 @@
             'Change email': 'Cambia email', 'New email': 'Nuova email', 'Confirm new email': 'Conferma la nuova email', 'Update email': 'Aggiorna email', "Emails don't match.": 'Le email non coincidono.',
             'We’ll email a confirmation link to the new address; it changes only once you confirm.': 'Ti invieremo un link di conferma al nuovo indirizzo; la modifica avviene solo dopo la conferma.',
             'That is already your email.': 'Questa è già la tua email.', 'That email is already in use.': 'Questa email è già in uso.', 'Check your new inbox to confirm the change.': 'Controlla la nuova casella per confermare la modifica.', 'That confirmation link is invalid or has expired.': 'Il link di conferma non è valido o è scaduto.', 'That email is now in use by another account.': 'Questa email è ora usata da un altro account.', 'Email updated.': 'Email aggiornata.',
-            'Short bio…': 'Bio breve…', 'Quick note (optional)…': 'Nota rapida (opzionale)…',
-            'Edit later': 'Modifica dopo', 'Save note': 'Salva nota',
+            'Short bio…': 'Bio breve…', 
+            
             'Sign in to <b>create, edit and store</b> your roadbooks, share them as <b>public roadbooks</b>, fork others’ and build your profile — free.': 'Accedi per <b>creare, modificare e salvare</b> i tuoi roadbook, condividerli come <b>roadbook pubblici</b>, forkare quelli altrui e creare il tuo profilo — gratis.',
             'We’ll email you a link to set a new password.': 'Ti invieremo via email un link per impostare una nuova password.',
             'Discard': 'Scarta',
@@ -370,7 +370,7 @@
             'notes': 'note',
             'Total': 'Totale', 'Partial': 'Parziale', 'Reset': 'Azzera', 'Hold to reset.': 'Tieni premuto per azzerare.', 'Pause': 'Pausa', 'Max km/h': 'Max km/h',
             'Record GPX': 'Registra GPX', 'Stop recording': 'Ferma registrazione', 'Speed alert': 'Allerta velocità', 'Speed to watch (km/h · 0 = off)': 'Velocità da controllare (km/h · 0 = off)', 'Colours': 'Colori',
-            'green': 'verde', 'orange': 'arancione', 'red': 'rosso', 'Recorded track': 'Traccia registrata', 'points': 'punti', 'Download GPX': 'Scarica GPX', 'Convert into roadbook': 'Converti in roadbook', 'Save to account': 'Salva nel tuo account', 'Saving…': 'Salvataggio…', 'Exported': 'Esportato', 'Sign in to save this recording to your account.': 'Accedi per salvare questa registrazione nel tuo account.', 'Save to your account, or export a self-contained .rdbk with your photos and voice notes.': 'Salva nel tuo account o esporta un .rdbk autonomo con foto e note vocali.', 'Open in the editor': 'Apri nell’editor', 'Saving keeps your photos and voice notes; GPX is a local file without them.': 'Salvando mantieni foto e note vocali; il GPX è un file locale senza di esse.',
+            'green': 'verde', 'orange': 'arancione', 'red': 'rosso', 'Recorded track': 'Traccia registrata', 'points': 'punti', 'Download GPX': 'Scarica GPX', 'Convert into roadbook': 'Converti in roadbook', 'Save to account': 'Salva nel tuo account', 'Saving…': 'Salvataggio…', 'Exported': 'Esportato', 'Sign in to save this recording to your account.': 'Accedi per salvare questa registrazione nel tuo account.', 'Save to your account, or export a self-contained .rdbk with your photos.': 'Salva nel tuo account o esporta un .rdbk autonomo con le foto.', 'Open in the editor': 'Apri nell’editor', 'Saving keeps your photos; GPX is a local file without them.': 'Salvando mantieni le foto; il GPX è un file locale senza di esse.',
             'End the trip and reset everything?': 'Terminare il viaggio e azzerare tutto?', 'Trip reset.': 'Viaggio azzerato.', 'Recording GPX track.': 'Registrazione traccia GPX.', 'Could not load the recorded trip.': 'Impossibile caricare il trip registrato.',
             'Sample every (seconds)': 'Ogni quanti secondi', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Consigliato: 3s auto/rally · 5s bici · 10s a piedi', 'File name': 'Nome del file', 'Saved to your Pictures folder': 'Salvato nella cartella Immagini', 'Saved to your Downloads folder': 'Salvato nella cartella Download', 'Saved to your device': 'Salvato sul dispositivo', 'Could not save the file.': 'Impossibile salvare il file.', 'Latitude': 'Latitudine', 'Longitude': 'Longitudine', 'Installed': 'Installata', 'latest': 'ultima', 'Profile': 'Profilo', 'Language': 'Lingua', 'Sections': 'Sezioni', 'Public roadbooks': 'Roadbook pubblici', 'Set up an event with its roadbooks, participants and rankings.': 'Crea un evento con i suoi roadbook, partecipanti e classifiche.', 'Open from a file or your roadbooks, or pick a public one below.': 'Apri da un file o dai tuoi roadbook, o scegline uno pubblico qui sotto.', 'seo.navigate.title': 'Naviga — RDBK.app', 'seo.navigate.desc': 'Modalità GPS in tempo reale: il computer di viaggio Tripmaster e il Roadbook Reader.', 'Stop recording?': 'Fermare la registrazione?', 'Discard this recording?': 'Scartare questa registrazione?', 'You are offline — reconnect to see your roadbooks.': 'Sei offline — riconnettiti per vedere i tuoi roadbook.', 'Track too short.': 'Traccia troppo corta.',
                        'Auto-saved while recording, recovered if the app closes.': 'Salvataggio automatico durante la registrazione; recuperato se l’app si chiude.',
@@ -463,14 +463,14 @@
             // Feature pages (/features/<tool>/) — tool descriptions + Tips & tricks
             'fp.tool.recorder': 'Roadbook Recorder',
             'fp.tool.editor': 'Roadbook Editor',
-            'fp.recorder.lead': 'Registra il tuo percorso dal vivo col GPS e trasformalo in un roadbook. Campionamento attento alla precisione, pausa/ripresa, registrazione a prova di crash, note vocali e foto geolocalizzate — poi salvalo nel tuo profilo per modificarlo nell’Editor.',
+            'fp.recorder.lead': 'Registra il tuo percorso dal vivo col GPS e trasformalo in un roadbook. Campionamento attento alla precisione, pausa/ripresa, registrazione a prova di crash, note con un tocco e foto geolocalizzate — poi salvalo nel tuo profilo per modificarlo nell’Editor.',
             'fp.recorder.open': 'Apri il Registratore',
             'fp.recorder.f1t': 'Registrazione GPS dal vivo',
             'fp.recorder.f1d': 'Campionamento attento alla precisione che ignora i segnali rumorosi, con pausa/ripresa e odometro, velocità e direzione dal vivo.',
             'fp.recorder.f2t': 'GPX a prova di crash',
             'fp.recorder.f2d': 'La tua traccia viene salvata di continuo e recuperata se l’app o il dispositivo si chiude durante la registrazione — non si perde nulla.',
-            'fp.recorder.f3t': 'Note vocali',
-            'fp.recorder.f3d': 'Inserisci una nota e detta il suo testo senza mani con il riconoscimento vocale, nella lingua che scegli.',
+            'fp.recorder.f3t': 'Note con un tocco',
+            'fp.recorder.f3d': 'Un grande pulsante Nota lascia una nota esattamente dove sei; un campanello e una grande spunta lo confermano. Niente da leggere o scrivere mentre guidi.',
             'fp.recorder.f4t': 'Foto geolocalizzate',
             'fp.recorder.f4d': 'Scatta foto strada facendo; ognuna viene fissata alla sua posizione sulla traccia per modificarla in seguito.',
             'fp.recorder.f5t': 'Esporta e salva',
@@ -481,7 +481,7 @@
             'fp.recorder.t1t': 'Aspetta un buon segnale',
             'fp.recorder.t1d': 'Lascia che il GPS si stabilizzi a buona precisione prima di iniziare — il campionamento è attento alla precisione e ignora i segnali rumorosi, quindi un avvio pulito significa una traccia più pulita.',
             'fp.recorder.t2t': 'Aggiungi note strada facendo',
-            'fp.recorder.t2d': 'Segna incroci e pericoli in tempo reale; detta la nota a mani libere col riconoscimento vocale così tieni gli occhi sul percorso.',
+            'fp.recorder.t2d': 'Segna incroci e pericoli con un tocco senza staccare gli occhi dal percorso; la mappa mostra la distanza dall’ultima nota, e il testo arriva dopo nell’Editor.',
             'fp.recorder.t3t': 'Scatta foto geolocalizzate',
             'fp.recorder.t3d': 'Ogni foto si fissa alla sua posizione sulla traccia, pronta per diventare nota in seguito nell’Editor.',
             'fp.recorder.t4t': 'Metti in pausa alle soste',
@@ -682,21 +682,21 @@
             'added.': 'aggiunto.',
                         'Waiting for QR code…': 'In attesa del codice QR…', 'Scanning…': 'Scansione…',
             'Could not access camera.': 'Impossibile accedere alla fotocamera.',
-            'Recording… release to finish': 'Registrazione… rilascia per terminare',
-            'Hold to record a voice note; keeps recording 5s after you let go.': 'Tieni premuto per registrare una nota vocale; continua a registrare 5 s dopo il rilascio.',
+            
+            
             'fp.recorder.t7t': 'Le foto richiedono account + fix GPS',
             'fp.recorder.t7d': 'Puoi scattare foto delle tue note. Le foto sono una funzione lato server legata all’account: accedi e avvia una registrazione (basta un roadbook in bozza). Il pulsante della foto compare solo quando esistono la bozza e una posizione GPS; finché non c’è posizione l’app mostra «In attesa del GPS…» e non può geolocalizzare.',
             'fp.recorder.t8t': 'Le foto diventano pin geolocalizzati',
             'fp.recorder.t8d': 'Ogni foto è ancorata alle coordinate GPS esatte dove l’hai scattata (precisione del GPS in quel momento, pochi metri), proprio sul tracciato GPX. Nell’Editor rivedi i pin delle foto sulla mappa e li trasformi in note nel punto giusto.',
-            'No audio captured.': 'Nessun audio registrato.',
-            'Voice note saved.': 'Nota vocale salvata.',
+            
+            
             'awaiting upload': 'in attesa di upload',
             'kept on this device': 'salvate su questo dispositivo',
             'Export .rdbk': 'Esporta .rdbk',
             
-            'Saved a local .rdbk with your photos and voice notes. Remove them from this device now?': 'Salvato un .rdbk locale con le tue foto e note vocali. Rimuoverle ora da questo dispositivo?',
-            'Microphone unavailable.': 'Microfono non disponibile.',            'fp.recorder.t9t': 'Nota vocale: tieni premuto per registrare',
-            'fp.recorder.t9d': 'Tieni premuto il pulsante della nota vocale per registrare una nota vocale sul posto; al rilascio un breve conto alla rovescia sul pulsante continua a registrare e poi salva da solo. Salva il clip audio (si riascolta sulla nota nell’Editor); su desktop trascrive anche dal vivo — sul telefono il microfono è esclusivo, quindi per il testo dettato usa il microfono del pulsante Nota.',
+            'Saved a local .rdbk with your photos. Remove them from this device now?': 'Salvato un .rdbk locale con le tue foto. Rimuoverle ora da questo dispositivo?',
+            
+            
             
             
             'Heading up': 'Direzione in alto',
@@ -1188,7 +1188,7 @@ Object.assign(window.RBi18nLangs.it, {
     "Duplicate": "Duplica",
     "Could not unlock.": "Impossibile sbloccare.",
     "Nothing to export.": "Niente da esportare.",
-    "Voice note": "Nota vocale",
+    
     "Photo": "Foto",
     "photos": "foto",
     "Discard it with its notes and photos?": "Scartarla con le sue note e foto?",
@@ -1314,7 +1314,7 @@ Object.assign(window.RBi18nLangs.it, {
 /* roadbook vehicles: car · moto · bike (#713) */
 Object.assign(window.RBi18nLangs.it, {
     "Suitable for": "Adatto a",
-    "Car": "Auto",
+    
     "Motorbike": "Moto",
     "Bicycle": "Bici",
     "A roadbook suits at least one vehicle.": "Un roadbook è adatto ad almeno un veicolo.",
@@ -1427,4 +1427,16 @@ Object.assign(window.RBi18nLangs.it, {
 /* note block: a heading line before/after a note (#747) */
 Object.assign(window.RBi18nLangs.it, {
     "Heading": "Intestazione",
+});
+
+/* vehicle label: the car is a 4x4 to the public (#768) */
+Object.assign(window.RBi18nLangs.it, {
+    "4x4": "4x4",
+});
+
+/* sign-in and API failures, said plainly (#764) */
+Object.assign(window.RBi18nLangs.it, {
+    "Could not reach the server — check your connection and try again.": "Impossibile raggiungere il server — controlla la connessione e riprova.",
+    "The server did not answer properly — please try again in a moment.": "Il server non ha risposto correttamente — riprova tra un momento.",
+    "Delete the last note": "Elimina l’ultima nota",
 });
