@@ -14,6 +14,14 @@
     <link rel="stylesheet" href="../assets/css/app.css?v=1.9.7-192">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
+        /* the landing (#896): three short points, then one big, inviting Start */
+        .rec-points { list-style: none; padding: 0; margin: 1rem 0 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+        .rec-points li { display: flex; gap: .75rem; align-items: flex-start; line-height: 1.4; }
+        .rec-points i { color: var(--sand); width: 1.3rem; text-align: center; margin-top: .15rem; flex: none; }
+        .rec-start { width: 100%; min-height: 5.5rem; justify-content: center; gap: 1rem; border-radius: 20px; text-align: left; }
+        .rec-start > i { font-size: 2.6rem; }
+        .rec-start b { display: block; font-size: 1.35rem; }
+        .rec-start small { display: block; font-weight: 600; opacity: .75; }
         .rec-readouts { grid-template-columns: repeat(4, 1fr); }
         .rec-main .row3 .mini { padding: .4rem .35rem; }
         .rec-main .row3 .value { font-size: 1.2rem; }
@@ -71,7 +79,13 @@
         <p id="recNativeHint" class="native-hint" data-i18n="native.better.gps.recorder" hidden><i class="fa-solid fa-mobile-screen-button"></i> For background GPS recording and better accuracy, use the native iOS or Android app.</p>
         <p id="recLoginHint" class="muted small" data-i18n="Not signed in: the route and its photos wait on this device, and Save asks you to sign in." hidden>Not signed in: the route and its photos wait on this device, and Save asks you to sign in.</p>
         <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
-        <div class="btnrow mt-2"><button class="btn btn-primary" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Start recording">Start recording</span></button></div>
+        <!-- what it does, in three lines, then the one big way in (#896) — all within the screen -->
+        <ul class="rec-points">
+            <li><i class="fa-solid fa-location-dot"></i> <span data-i18n="One big button drops a note right where you are.">One big button drops a note right where you are.</span></li>
+            <li><i class="fa-solid fa-camera"></i> <span data-i18n="Photos are pinned to the track as you ride.">Photos are pinned to the track as you ride.</span></li>
+            <li><i class="fa-solid fa-pen-ruler"></i> <span data-i18n="At the end it becomes a draft roadbook to finish in the Editor.">At the end it becomes a draft roadbook to finish in the Editor.</span></li>
+        </ul>
+        <button class="btn btn-primary rec-start" id="recStart"><i class="fa-solid fa-circle-dot"></i> <span><b data-i18n="Start recording">Start recording</b><small data-i18n="The GPS starts right away">The GPS starts right away</small></span></button>
     </div>
 
     <!-- running (#768): the readouts, the capture row — one big Note, a 2×2 grid of the rest — and

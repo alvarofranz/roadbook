@@ -139,9 +139,10 @@
     <p class="muted" data-i18n="Open from a file or your roadbooks, or pick a public one below.">Open from a file or your roadbooks, or pick a public one below.</p>
     <p id="rdNativeHint" class="native-hint" data-i18n="native.better.gps.reader" hidden><i class="fa-solid fa-mobile-screen-button"></i> For uninterrupted GPS navigation and background tracking, use the native iOS or Android app.</p>
     <input id="rbFile" type="file" accept=".rdbk,.json,application/x-roadbook" hidden>
-    <div class="btnrow start mt-2">
-        <button class="btn btn-primary" id="pickRb" data-i18n="Load .rdbk file"><i class="fa-solid fa-folder-open"></i> Load .rdbk file</button>
-        <button class="btn btn-ghost" id="pickMine" hidden data-i18n="Open from My roadbooks"><i class="fa-solid fa-folder-open"></i> Open from My roadbooks</button>
+    <!-- the two ways in, side by side (#898) -->
+    <div class="btnrow split mt-2">
+        <button class="btn btn-primary" id="pickRb"><i class="fa-solid fa-file-arrow-up"></i> <span data-i18n=".rdbk file">.rdbk file</span></button>
+        <button class="btn btn-ghost" id="pickMine" hidden><i class="fa-solid fa-book"></i> <span data-i18n="My roadbooks">My roadbooks</span></button>
     </div>
     <section class="reader-gallery">
         <h2 data-i18n="Public roadbooks">Public roadbooks</h2>

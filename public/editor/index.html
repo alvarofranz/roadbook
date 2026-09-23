@@ -281,7 +281,10 @@
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
         .note-edit-zone .vignette-toolbar { max-width: none; }
         /* canvas above, icon palette below — keeps both usable in the narrow column */
-        .load-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
+        /* the ways to start (#897): two columns on a phone — an odd last one takes the full width — and
+           all five on one line from a tablet up */
+        .load-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+        .load-opts > :last-child:nth-child(odd) { grid-column: 1 / -1; }
         .load-card { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; padding: .9rem 1rem; cursor: pointer; color: var(--text); text-align: left; transition: border-color .15s, transform .1s; }
         .load-card:hover { border-color: var(--sand); transform: translateY(-1px); }
         .load-card i { font-size: 1.3rem; color: var(--sand); margin-bottom: .15rem; }
@@ -300,6 +303,10 @@
         @container panel (max-width: 520px) { .ed-toolbar .btn-label { display: none; } } /* narrow: icons only, named by their tooltips */
         /* the export dialog and the landing share one card; in a dialog it is a full-width row */
         .load-opts.stack { grid-template-columns: 1fr; }
+        @media (min-width: 640px) {
+            .load-opts:not(.stack) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            .load-opts:not(.stack) > :last-child:nth-child(odd) { grid-column: auto; }
+        }
         .load-card.row { flex-direction: row; align-items: center; gap: .8rem; width: 100%; padding: .7rem .9rem; }
         .load-card.row i { margin: 0; width: 1.4em; text-align: center; flex-shrink: 0; }
         .load-card.row > span { display: flex; flex-direction: column; min-width: 0; }
@@ -337,7 +344,6 @@
             /* the screen is there: photos take the space, the destructive action sits beside them
                instead of under everything (#438) */
             .config-bottom { grid-template-columns: 2fr 1fr; }
-            .load-opts { grid-template-columns: repeat(5, 1fr); } /* the five ways, on one row */
         }
         /* tablet portrait and up: RB-suite split — the map pinned on the
            left, the notes + inline editor column on the right.

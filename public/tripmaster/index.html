@@ -44,9 +44,16 @@
         .tm-timer-reset { position: absolute; top: .3rem; right: .3rem; padding: .2rem .4rem; }
         /* the actions: Mark note is the big one (it also resets the partial), then record · fullscreen · end */
         .tm-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
-        .tm-controls .tm-marknote { grid-column: 1 / -1; min-height: 64px; font-size: 1rem; }
+        .tm-controls .tm-marknote { grid-column: 1 / -1; min-height: clamp(64px, 13dvh, 104px); font-size: 1.15rem; } /* as big as the screen allows, never a scroll (#899) */
+        .tm-controls .tm-marknote i { font-size: 1.6rem; }
         .tm-controls .btn { width: 100%; flex-direction: column; gap: .25rem; padding: .6rem .3rem; font-size: .8rem; justify-content: center; }
         .tm-controls .btn i { font-size: 1.2rem; }
+        /* a phone (#899): the page is one full-height column and the dashboard sits in its middle,
+           not at the top over half a screen of nothing */
+        @media (max-width: 899px) {
+            body.gps-tool { display: flex; flex-direction: column; min-height: 100dvh; }
+            body.gps-tool .trip-main { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; justify-content: center; }
+        }
         /* desktop and tablet (#721): a dashboard that uses the width — readouts on the left, the
            actions in a column on the right, Mark note the tallest */
         @media (min-width: 900px) {

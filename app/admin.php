@@ -165,9 +165,10 @@ function admin_user_locations(array $user): void {
     ], $st->fetchAll())]);
 }
 
-// Every Android build with an APK, newest first (#742): the rolling test build (tag apk-latest,
-// rebuilt on every push to main) and the versioned releases, each with the moment its APK was
-// built (the asset's upload time), its size and — for the recent ones — its SHA-256. Resolved
+// Every versioned Android release with an APK, newest first (#742 · #894) — the release's own
+// semver, nothing else (the CI's rolling apk-latest debug build is not a version and never lists) —
+// each with the moment its APK was built (the asset's upload time), its size and, for the recent
+// ones, its SHA-256. Resolved
 // server-side, so the page needs no CSP exception and never hits the GitHub rate limit.
 function admin_apk_builds(array $user): void {
     $ctx = stream_context_create(['http' => [
@@ -179,7 +180,7 @@ function admin_apk_builds(array $user): void {
     if (!is_array($releases)) fail('Could not reach the release list.');
     $builds = [];
     foreach ($releases as $rel) {
-        if (!is_array($rel) || !empty($rel['draft'])) continue;
+        if (!is_array($rel) || !empty($rel['draft']) || !preg_match('/^android-\d+\.\d+\.\d+$/', (string)($rel['tag_name'] ?? ''))) continue;
         $apk = null; $shaUrl = '';
         foreach ((array)($rel['assets'] ?? []) as $a) {
             $name = (string)($a['name'] ?? '');
@@ -187,8 +188,7 @@ function admin_apk_builds(array $user): void {
             if (preg_match('/\.sha256$/i', $name)) $shaUrl = (string)($a['browser_download_url'] ?? '');
         }
         if (!$apk) continue;
-        $builds[] = ['tag' => (string)($rel['tag_name'] ?? ''), 'test' => ($rel['tag_name'] ?? '') === 'apk-latest',
-            'prerelease' => !empty($rel['prerelease']), 'built_at' => (string)($apk['updated_at'] ?? $rel['published_at'] ?? ''),
+        $builds[] = ['tag' => (string)$rel['tag_name'], 'prerelease' => !empty($rel['prerelease']), 'built_at' => (string)($apk['updated_at'] ?? $rel['published_at'] ?? ''),
             'url' => (string)$apk['browser_download_url'], 'size' => (int)($apk['size'] ?? 0), 'sha_url' => $shaUrl];
     }
     usort($builds, fn($x, $y) => strcmp($y['built_at'], $x['built_at']));
