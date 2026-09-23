@@ -1621,3 +1621,10 @@ Object.assign(window.RBi18nLangs.es, {
     "The Recorder waits for a good GPS before it starts, and the note map points at the next note with a short arrow.": "El Recorder espera a tener buen GPS antes de empezar, y el mapa de la nota apunta a la siguiente con una flecha corta.",
     "PDFs open straight in the app, and a deep review fixed dozens of bugs, from distances on loops to the admin tools.": "Los PDF se abren directamente en la app, y una revisión a fondo ha corregido decenas de fallos, desde las distancias en bucles hasta las herramientas de admin.",
 });
+
+/* release notes 1.9.9 */
+Object.assign(window.RBi18nLangs.es, {
+    "The finishing touches": "Los últimos retoques",
+    "Each step of the tutorial brings its control to the middle of the screen, so nothing it points at is ever out of sight.": "Cada paso del tutorial lleva su control al centro de la pantalla, así nunca queda fuera de la vista lo que señala.",
+    "Clearer wording for the tutorial in every language, and simpler settings behind it.": "Textos más claros para el tutorial en todos los idiomas, y ajustes más sencillos por detrás.",
+});

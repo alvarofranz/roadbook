@@ -11,6 +11,14 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.9', date: '2026-09-23',
+        title: 'The finishing touches',
+        items: [
+            'Each step of the tutorial brings its control to the middle of the screen, so nothing it points at is ever out of sight.',
+            'Clearer wording for the tutorial in every language, and simpler settings behind it.',
+        ],
+    },
+    {
         version: '1.9.8', date: '2026-09-23',
         title: 'Made to be ridden',
         items: [

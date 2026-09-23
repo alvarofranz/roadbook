@@ -1583,3 +1583,10 @@ Object.assign(window.RBi18nLangs.fr, {
     "The Recorder waits for a good GPS before it starts, and the note map points at the next note with a short arrow.": "Le Recorder attend un bon GPS avant de démarrer, et la carte de la note pointe vers la suivante avec une flèche courte.",
     "PDFs open straight in the app, and a deep review fixed dozens of bugs, from distances on loops to the admin tools.": "Les PDF s’ouvrent directement dans l’app, et une revue en profondeur a corrigé des dizaines de bugs, des distances sur les boucles aux outils d’admin.",
 });
+
+/* release notes 1.9.9 */
+Object.assign(window.RBi18nLangs.fr, {
+    "The finishing touches": "Les dernières retouches",
+    "Each step of the tutorial brings its control to the middle of the screen, so nothing it points at is ever out of sight.": "Chaque étape du tutoriel amène sa commande au centre de l’écran, pour que rien de ce qu’elle montre ne reste hors de vue.",
+    "Clearer wording for the tutorial in every language, and simpler settings behind it.": "Des textes plus clairs pour le tutoriel dans toutes les langues, et des réglages plus simples derrière.",
+});
