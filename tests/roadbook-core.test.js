@@ -1237,3 +1237,27 @@ describe('RB.distanceChars (#730)', () => {
         expect(RB.distanceChars([])).toBe(4);
     });
 });
+
+describe('activeScrollTop — where the Reader list scrolls on advancing (#177 · #759)', () => {
+    const at = (o) => RB.activeScrollTop(Object.assign({ viewHeight: 600 }, o));
+    it('keeps the note just used whole above the active one when both fit', () => {
+        expect(at({ prevTop: 1000, activeTop: 1150, activeBottom: 1300 })).toBe(992);
+    });
+    it('a long note just used gives up its top so the active row shows whole', () => {
+        // previous row 500 px tall, active 300 px: only 300 px of the previous can stay
+        expect(at({ prevTop: 1000, activeTop: 1500, activeBottom: 1800 })).toBe(1208);
+    });
+    it('an active row taller than the list is shown from its top', () => {
+        expect(at({ prevTop: 1000, activeTop: 1200, activeBottom: 2000 })).toBe(1192);
+    });
+    it('the first note scrolls to its own top, never above zero', () => {
+        expect(at({ prevTop: null, activeTop: 4, activeBottom: 200 })).toBe(0);
+    });
+    it('the active row is always fully visible when it fits', () => {
+        for (const [p, a, b] of [[0, 900, 1200], [100, 150, 700], [0, 50, 500]]) {
+            const top = at({ prevTop: p, activeTop: a, activeBottom: b });
+            expect(a).toBeGreaterThanOrEqual(top);
+            expect(b).toBeLessThanOrEqual(top + 600 + 8);
+        }
+    });
+});
