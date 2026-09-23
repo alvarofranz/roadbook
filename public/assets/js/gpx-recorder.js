@@ -30,7 +30,13 @@ window.RBGpxRecorder = (() => {
 
     // checkpoint: false → the caller keeps its own richer crash checkpoint (the
     // Editor's route recording does), so this one stays out of its way.
-    function begin(opts = {}) { on = true; pts = []; lastT = 0; lastPersist = 0; useCheckpoint = opts.checkpoint !== false; onChange(true); toast('Recording GPX track.'); }
+    // The new log's checkpoint is written at once: until its first point, the one left by an
+    // earlier log (declined, or another tool's) would otherwise be what a crash resumes from.
+    function begin(opts = {}) {
+        on = true; pts = []; lastT = 0; lastPersist = 0; useCheckpoint = opts.checkpoint !== false;
+        if (useCheckpoint) RBCheckpoint.write(CHECKPOINT_KEY, { pts, name: fileName });
+        onChange(true); toast('Recording GPX track.');
+    }
     // sampled intake (Tripmaster + Reader): one point per interval, junk fixes dropped
     function feed(coords, here, tnow) {
         if (!on || RB.recJunkFix(coords.accuracy) || tnow - lastT < sampleMs) return;

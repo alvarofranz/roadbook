@@ -51,7 +51,9 @@ newcomer to confirm, joins the event, and redirects to the event page in
    `/event/<slug>`.
 
 The **native app** never shows this page: its App-Links deep link (`native/src/deeplink.js`)
-runs `event_join` through the API with the code, then opens the event page (#268).
+runs `event_join` through the API with the code, then opens the event page (#268). Signed out,
+the code is kept on the device (`rb_pending_join`) and the app goes through the sign-in page
+(`RBLoginUrl()`, back to the page it was on), where the stored code joins on the next load.
 
 ---
 

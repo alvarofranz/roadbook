@@ -73,11 +73,13 @@ describe('the Recorder keeps the recording through the sign-in round-trip (#460)
     it('reads the stash without removing it, and only a landed save clears it', () => {
         expect(startup).toContain('const pend = RBCheckpoint.read(PENDING_SAVE);');
         expect(startup).not.toContain('removeItem(PENDING_SAVE)');
-        expect(fn('saveAfterLogin')).toMatch(/if \(!built\) return finishModal\(pend\.pts, pend\.name\);\s+clearRecording\(\);/);
+        expect(fn('saveAfterLogin')).toMatch(/if \(!built\) return finishModal\(\);\s+clearRecording\(\);/);
+        expect(startup).toContain('holdFinished(pend.pts, pend.name, true);');
         expect(fn('clearRecording')).toContain('localStorage.removeItem(PENDING_SAVE)');
     });
     it('stashes the photo pins and the draft with the track', () => {
-        expect(rec).toContain('JSON.stringify({ pts, wpts, photos: persistedPhotos(), draftId, name: nm, recordedM })');
+        expect(rec).toContain('localStorage.setItem(PENDING_SAVE, JSON.stringify(finishedRecord()))');
+        expect(rec).toContain('const finishedRecord = () => ({ finishing: true, pts: finished.pts, name: finished.name, recordedM, wpts, photos: persistedPhotos(), draftId });');
         expect(startup).toContain('photos = await restorePhotos(pend.photos); draftId = pend.draftId || 0;');
     });
     it('the stash is durable in the app, like every checkpoint', async () => {
@@ -122,7 +124,6 @@ describe('photos waiting to upload survive a crash and the sign-in return (#792)
     it('checkpoints keep the pins by token, without their dead blob URL', () => {
         expect(rec).toContain('const persistedPhotos = () => photos.map((p) => (p.local ? Object.assign({}, p, { url: null }) : p));');
         expect(fn('saveSession')).toContain('photos: persistedPhotos()');
-        expect(fn('saveFinishing')).toContain('photos: persistedPhotos()');
         expect(rec).not.toContain('filter((p) => !p.local)');
     });
     it('a restored pin finds its blob in the queue again', () => {
@@ -191,6 +192,11 @@ describe('a deferred event join is retried until it lands', () => {
         const join = native.match(/async function joinEvent\(code\) \{[\s\S]*?\n\}/)[0];
         expect(join).toContain("if (res && res.error !== 'Network error.') {");
         expect(join).toContain('localStorage.removeItem(PENDING_JOIN);\n        window.RBToast(');
+    });
+    it('a signed-out join goes through the sign-in page and comes back to replay the code', () => {
+        const join = read('native/src/native.js').match(/async function joinEvent\(code\) \{[\s\S]*?\n\}/)[0];
+        expect(join).toContain('window.location.href = window.RBLoginUrl();');
+        expect(join).not.toContain("'/account/'");
     });
     it('keeps the stored code for joinEvent to remove on success', () => {
         const native = read('native/src/native.js');

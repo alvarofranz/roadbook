@@ -11,7 +11,7 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const recorder = read('public/recorder/recorder.js');
 const gpx = read('public/assets/js/gpx-recorder.js');
 
-const finishModal = recorder.match(/function finishModal\(pts, name\) \{[\s\S]*?\n {4}\}\n/)[0];
+const finishModal = recorder.match(/function finishModal\(\) \{[\s\S]*?\n {4}\}\n/)[0];
 const finishedModal = gpx.match(/function finishedModal\(finished, name, onDone = \(\) => \{\}\) \{[\s\S]*?\n {4}\}\n/)[0];
 
 describe('the crash checkpoint stays on until the recording lands somewhere', () => {
@@ -82,8 +82,24 @@ describe('a finished recording survives a crash until it lands (#647 · #686)', 
     const rec = fs.readFileSync('public/recorder/recorder.js', 'utf8');
     const gpx = fs.readFileSync('public/assets/js/gpx-recorder.js', 'utf8');
     it('Stop keeps notes, photos and the draft in a finishing checkpoint, reopened on the next visit', () => {
-        expect(rec).toContain('saveFinishing(r.pts, r.name);');
+        expect(rec).toContain('holdFinished(r.pts, r.name, false);');
         expect(rec).toContain('if (session && session.finishing && session.pts)');
+    });
+    it('what changes on the finish options (a photo landing, the draft created) reaches that checkpoint', () => {
+        const save = rec.match(/function saveSession\(\) \{[\s\S]*?\n {4}\}/)[0];
+        expect(save).toContain('if (RBGpxRecorder.recording) RBCheckpoint.write(SESSION_KEY,');
+        expect(save).toContain('else if (finished) RBCheckpoint.write(finished.stashed ? PENDING_SAVE : SESSION_KEY, finishedRecord());');
+        // the finish options keep the version auto-refresh away until the recording lands
+        expect(rec).toMatch(/function holdFinished\(pts, name, stashed\) \{[\s\S]*?window\.RB_BUSY = true;[\s\S]*?saveSession\(\);/);
+        expect(rec).toMatch(/function clearRecording\(\) \{[\s\S]*?finished = null; window\.RB_BUSY = false;/);
+    });
+    it('a queued capture creates no draft on a page that holds no recording', () => {
+        const ensure = rec.match(/function ensureDraft\(\) \{[\s\S]*?\n {4}\}/)[0];
+        expect(ensure).toContain('if (!meUser || (!RBGpxRecorder.recording && !finished)) return Promise.resolve(null);');
+    });
+    it('a new log replaces the old checkpoint at once, so a crash before its first point never resumes the old track', () => {
+        const begin = gpx.match(/function begin\(opts = \{\}\) \{[\s\S]*?\n {4}\}/)[0];
+        expect(begin).toContain('if (useCheckpoint) RBCheckpoint.write(CHECKPOINT_KEY, { pts, name: fileName });');
     });
     it('declining the GPX recovery keeps the recording, and Yes does not drop it early', () => {
         const offer = gpx.match(/async function offerRecovery\(\) \{([\s\S]*?)\n {4}\}/)[1];
