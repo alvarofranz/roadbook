@@ -51,10 +51,17 @@ describe('the events gallery (#745)', () => {
 });
 
 describe('the Editor groups the note blocks (#747)', () => {
-    it('frames the Extras apart from Note and Icon', () => {
-        const editor = read('public/editor/editor.js');
-        expect(editor).toContain('<div class="kind-group extras"><span class="kind-group-label">');
-        expect(read('public/editor/index.html')).toContain('.kind-group-label');
+    it('frames Note + Icon left and the material right, on one row, with no label', () => {
+        const editor = read('public/editor/editor.js'), html = read('public/editor/index.html');
+        expect(editor.match(/<div class="kind-group">/g)).toHaveLength(2);
+        expect(html).toContain('.kind-tabs { justify-content: space-between; }');
+        expect(editor + html).not.toContain('kind-group-label');
+    });
+    it('shows no icon counter on the Icon tab', () => {
+        expect(read('public/editor/editor.js')).toContain("tab('icon', 'fa-icons', t('Icon'), 0)");
+    });
+    it('calls the big-text block a Heading', () => {
+        expect(read('public/assets/js/roadbook-core.js')).toContain("{ id: 'text',  name: 'Heading', icon: 'fa-heading' }");
     });
 });
 

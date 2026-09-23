@@ -489,7 +489,7 @@ Operational notes:
   radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
   drag a note on the map to
   reposition. **The GPX is edited ON the map.** The four everyday modes have their own
-  rail bottom-left, one letter each, the active one lit and named (#692): *M move (drag any
+  rail bottom-left, one letter each, the active one lit and — for 3 s after a change — named (#692 · #754): *M move (drag any
   track point, note or photo) · N add notes · P add points (a tap inserts one into the
   existing track) · D draw (each tap adds a new point from the nearest open end; a drag
   always pans the map, #712)*; the ☰ panel holds *cut (C — tap any two spots — the track is split
