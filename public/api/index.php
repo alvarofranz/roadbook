@@ -79,6 +79,9 @@ try {
         case 'run_save':       run_save(require_user(), $d); break;
         case 'run_update':     run_update(require_user(), $d); break;
         case 'run_delete':     run_delete(require_user(), $d); break;
+        case 'comments_list':  comments_list(require_user(), $d); break;
+        case 'comment_add':    comment_add(require_user(), $d); break;
+        case 'comment_delete': comment_delete(require_user(), $d); break;
         case 'runs_settings':  runs_settings(require_user(), $d); break;
         case 'ranking_list':   ranking_list(require_user(), $d); break;
         case 'ranking_add':    ranking_add(require_user(), $d); break;

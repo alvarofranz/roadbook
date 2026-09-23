@@ -1212,6 +1212,27 @@
     // Confirm for a destructive/data-losing action: same as RBConfirm but a red button + warning
     // icon. Use it for anything that deletes or overwrites; name the object in `msg` (e.g. its title).
     window.RBConfirmDanger = (msg) => window.RBConfirm(msg, true);
+    // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
+    // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
+    // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and
+    // token() is null: the widget is domain-locked and can't run in the WebView, and the server
+    // exempts the app origins from the challenge to match (verify_turnstile).
+    let turnstileScript = null;
+    window.RBTurnstile = (el, siteKey) => {
+        let token = null, widget = null;
+        const handle = { token: () => token, reset: () => { token = null; if (widget != null) window.turnstile.reset(widget); } };
+        if (!el || !siteKey || isNativeApp()) return handle;
+        turnstileScript = turnstileScript || new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+            s.async = true; s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+        });
+        turnstileScript.then(() => window.turnstile.ready(() => {
+            widget = window.turnstile.render(el, { sitekey: siteKey, theme: 'dark', callback: (t) => { token = t; }, 'expired-callback': () => { token = null; } });
+        })).catch(() => {}); // blocked or offline: the server answers "Please complete the challenge."
+        return handle;
+    };
     window.RBNeedAuth = (msg) => {
         const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> ${RBt('Sign in')}</h2>
             <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>

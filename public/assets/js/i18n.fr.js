@@ -1357,6 +1357,7 @@ Object.assign(window.RBi18nLangs.fr, {
     "Choose who sees this run to save it to your profile.": "Choisis qui voit ce parcours pour l’enregistrer sur ton profil.",
 });
 
+<<<<<<< Updated upstream
 /* release notes 1.9.5 */
 Object.assign(window.RBi18nLangs.fr, {
     "Share the ride": "Partage ton parcours",
@@ -1365,4 +1366,20 @@ Object.assign(window.RBi18nLangs.fr, {
     "The PDF carries the QR to its digital copy on every page, with the same clean header throughout and the cover image as a soft backdrop to the route.": "Le PDF porte le QR vers sa version numérique sur chaque page, avec le même en-tête épuré partout et l’image de couverture en fond discret du parcours.",
     "The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.": "Le menu est Roadbooks · Éditeur · Recorder · Naviguer · Événements · Profil partout, et l’Éditeur peut lancer un enregistrement dès son premier écran.",
     "Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.": "Les champs de date ne chevauchent plus leurs libellés, et la gestion des utilisateurs affiche la vraie distance de chaque roadbook.",
+=======
+/* public comments on a public roadbook (#809) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Comments": "Commentaires",
+    "Post": "Publier",
+    "Write a comment…": "Écris un commentaire…",
+    "No comments yet — be the first.": "Pas encore de commentaires : sois le premier.",
+    "Delete this comment by": "Supprimer ce commentaire de",
+    "Write something first.": "Écris d’abord quelque chose.",
+    "That comment is too long.": "Ce commentaire est trop long.",
+});
+
+/* privacy: public comments (#809) */
+Object.assign(window.RBi18nLangs.fr, {
+    "priv.rb.4": "Un <b>commentaire</b> que tu publies sous un roadbook public s’affiche sur sa page pour tous les lecteurs connectés, avec ton nom d’utilisateur et ton avatar. Toi, le propriétaire du roadbook et un administrateur pouvez le supprimer ; supprimer ton compte supprime tes commentaires.",
+>>>>>>> Stashed changes
 });

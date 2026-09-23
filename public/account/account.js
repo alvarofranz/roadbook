@@ -7,7 +7,7 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc; // shared helpers (app.js / i18n.js)
     const params = new URLSearchParams(location.search);
-    let tsSite = '', tsTokens = {};
+    const ts = {}; // the Turnstile widget of each form, by data-ts name
     let me = null; // the signed-in user (held so the change-password handler knows the credential id)
 
     const api = RBApi; // shared helper (app.js)
@@ -25,21 +25,8 @@
     const show = (id) => ['vLogin', 'vRegister', 'vForgot', 'vReset', 'vForce', 'vAccount'].forEach((v) => $(v).hidden = v !== id);
 
     /* ---------- Turnstile ---------- */
-    window.__tsReady = function renderTurnstile() {
-        if (!tsSite || !window.turnstile) return;
-        document.querySelectorAll('.turnstile[data-ts]').forEach((el) => {
-            if (el.dataset.rendered) return; el.dataset.rendered = '1';
-            const name = el.dataset.ts;
-            window.turnstile.render(el, { sitekey: tsSite, theme: 'dark', callback: (t) => { tsTokens[name] = t; } });
-        });
-    };
-    function loadTurnstile() {
-        if (!tsSite) return;
-        const s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__tsReady';
-        s.async = true; document.head.appendChild(s);
-    }
-    function resetTs(name) { tsTokens[name] = null; if (window.turnstile) document.querySelectorAll(`.turnstile[data-ts="${name}"]`).forEach((el) => window.turnstile.reset(el)); }
+    const tsToken = (name) => (ts[name] ? ts[name].token() : null);
+    const resetTs = (name) => { if (ts[name]) ts[name].reset(); };
 
     /* ---------- Social sign-in: Google (#46) + Apple (#370) ---------- */
     // Both providers run through the SAME one-call server flow — verify the identity token, then
@@ -243,11 +230,7 @@
     /* ---------- routes ---------- */
     async function init() {
         const cfg = await RBConfig(); // offline, a signed-in user still gets their account (#630)
-        // Turnstile is a domain-locked Cloudflare widget: it can't run in the app's WebView
-        // (origin localhost, not rdbk.app), so never load it there. The backend exempts the
-        // trusted app origins from the challenge to match (see verify_turnstile).
-        tsSite = IS_APP ? '' : (cfg.turnstile || '');
-        loadTurnstile();
+        document.querySelectorAll('.turnstile[data-ts]').forEach((el) => { ts[el.dataset.ts] = RBTurnstile(el, cfg.turnstile); });
         // In the Capacitor app the providers' web SDKs can't run (they block OAuth in a WebView), so
         // ALWAYS use the native OS sheets there. Decided by the shell class — set synchronously at
         // startup — never by whether the async RBNative bridge finished loading: racing on it could
@@ -289,7 +272,7 @@
     onSubmit('loginForm', async () => {
         const busy = busySubmit('loginForm');
         const pass = $('loginPass').value;
-        const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsTokens.login });
+        const r = await api('login', { email: $('loginId').value, password: pass, turnstile: tsToken('login') });
         busy.reset();
         if (r.ok) { me = r.user; await storeCredential(me.email, pass); finishLogin(me); }
         else if (r.retry_after) rateLimited(r.retry_after); // too many attempts → popup + countdown
@@ -307,13 +290,13 @@
         if ($('regPass').value !== $('regPass2').value) return msg("Passwords don't match.", false);
         if (!$('regTerms').checked) return msg('You must accept the Terms of Use to register.', false);
         const busy = busySubmit('registerForm');
-        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsTokens.register, lang: RBi18n.current() });
+        const r = await api('register', { first_name: $('regFirst').value, last_name: $('regLast').value, username: $('regUser').value, email: $('regEmail').value, password: $('regPass').value, password_confirm: $('regPass2').value, accept_terms: true, turnstile: tsToken('register'), lang: RBi18n.current() });
         busy.reset();
         msg(r.message || r.error, !!r.ok); if (r.ok) show('vLogin'); else resetTs('register');
     });
     onSubmit('forgotForm', async () => {
         const busy = busySubmit('forgotForm');
-        const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsTokens.forgot, lang: RBi18n.current() });
+        const r = await api('forgot', { email: $('forgotEmail').value, turnstile: tsToken('forgot'), lang: RBi18n.current() });
         busy.reset();
         msg(r.message || r.error, !!r.ok); resetTs('forgot');
     });

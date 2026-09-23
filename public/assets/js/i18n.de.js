@@ -1358,6 +1358,7 @@ Object.assign(window.RBi18nLangs.de, {
     "Choose who sees this run to save it to your profile.": "Wähle, wer diese Fahrt sieht, um sie in deinem Profil zu speichern.",
 });
 
+<<<<<<< Updated upstream
 /* release notes 1.9.5 */
 Object.assign(window.RBi18nLangs.de, {
     "Share the ride": "Teile deine Fahrt",
@@ -1366,4 +1367,20 @@ Object.assign(window.RBi18nLangs.de, {
     "The PDF carries the QR to its digital copy on every page, with the same clean header throughout and the cover image as a soft backdrop to the route.": "Das PDF trägt auf jeder Seite den QR-Code zur digitalen Version, mit derselben klaren Kopfzeile durchgehend und dem Titelbild als dezentem Hintergrund der Route.",
     "The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.": "Das Menü lautet überall Roadbooks · Editor · Recorder · Navigieren · Veranstaltungen · Profil, und der Editor startet eine Aufzeichnung direkt vom ersten Bildschirm.",
     "Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.": "Datumsfelder überlappen ihre Beschriftungen nicht mehr, und die Benutzerverwaltung zeigt die echte Distanz jedes Roadbooks.",
+=======
+/* public comments on a public roadbook (#809) */
+Object.assign(window.RBi18nLangs.de, {
+    "Comments": "Kommentare",
+    "Post": "Posten",
+    "Write a comment…": "Schreib einen Kommentar…",
+    "No comments yet — be the first.": "Noch keine Kommentare – schreib den ersten.",
+    "Delete this comment by": "Diesen Kommentar löschen von",
+    "Write something first.": "Schreib zuerst etwas.",
+    "That comment is too long.": "Dieser Kommentar ist zu lang.",
+});
+
+/* privacy: public comments (#809) */
+Object.assign(window.RBi18nLangs.de, {
+    "priv.rb.4": "Ein <b>Kommentar</b>, den du unter einem öffentlichen Roadbook schreibst, wird auf dessen Seite allen angemeldeten Lesern mit deinem Benutzernamen und Avatar angezeigt. Du, der Eigentümer des Roadbooks und ein Admin können ihn löschen; mit deinem Konto werden auch deine Kommentare gelöscht.",
+>>>>>>> Stashed changes
 });

@@ -1498,6 +1498,7 @@ Object.assign(window.RBi18nLangs.es, {
     "Choose who sees this run to save it to your profile.": "Elige quién ve este recorrido para guardarlo en tu perfil.",
 });
 
+<<<<<<< Updated upstream
 /* release notes 1.9.5 */
 Object.assign(window.RBi18nLangs.es, {
     "Share the ride": "Comparte la ruta",
@@ -1506,4 +1507,20 @@ Object.assign(window.RBi18nLangs.es, {
     "The PDF carries the QR to its digital copy on every page, with the same clean header throughout and the cover image as a soft backdrop to the route.": "El PDF lleva el QR a su versión digital en cada página, con la misma cabecera limpia en todas y la imagen de portada como fondo suave de la ruta.",
     "The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.": "El menú es Roadbooks · Editor · Recorder · Navegar · Eventos · Perfil en todas partes, y el Editor puede empezar una grabación desde su primera pantalla.",
     "Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.": "Los campos de fecha ya no se solapan con sus etiquetas, y la gestión de usuarios muestra la distancia real de cada roadbook.",
+=======
+/* public comments on a public roadbook (#809) */
+Object.assign(window.RBi18nLangs.es, {
+    "Comments": "Comentarios",
+    "Post": "Publicar",
+    "Write a comment…": "Escribe un comentario…",
+    "No comments yet — be the first.": "Aún no hay comentarios: sé el primero.",
+    "Delete this comment by": "¿Eliminar este comentario de",
+    "Write something first.": "Escribe algo primero.",
+    "That comment is too long.": "Ese comentario es demasiado largo.",
+});
+
+/* privacy: public comments (#809) */
+Object.assign(window.RBi18nLangs.es, {
+    "priv.rb.4": "Un <b>comentario</b> que publiques en un roadbook público se muestra en su página a todos los lectores con sesión iniciada, con tu nombre de usuario y tu avatar. Tú, el propietario del roadbook y un administrador podéis eliminarlo; al eliminar tu cuenta se eliminan tus comentarios.",
+>>>>>>> Stashed changes
 });

@@ -915,3 +915,22 @@ body:has(.modal) .i18ne-bar { display: none; } /* the edit bar never sits over a
 .success-flash i { font-size: min(38vw, 11rem); color: var(--ok); background: rgba(14, 17, 22, .55); border-radius: 50%; padding: .12em; animation: success-pop .9s ease-out forwards; }
 @keyframes success-pop { 0% { transform: scale(.4); opacity: 0; } 20% { transform: scale(1.08); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .success-flash i { animation: none; } }
+
+/* the Cloudflare Turnstile widget (RBTurnstile): centred under its form; never in the app, whose
+   WebView can't run the domain-locked widget */
+.turnstile { display: flex; justify-content: center; margin: .6rem 0; }
+.turnstile:empty { margin: 0; }
+.native .turnstile { display: none; }
+
+/* public comments under a public roadbook (#809) */
+.comment-list { display: flex; flex-direction: column; gap: .2rem; margin: .6rem 0 1rem; }
+.comment { display: flex; gap: .7rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
+.comment:last-child { border-bottom: 0; }
+.comment-main { min-width: 0; }
+.comment-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.comment-head a { color: var(--text); text-decoration: none; }
+.comment-head .btn { margin-left: auto; }
+.comment-body { margin: .3rem 0 0; white-space: pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
+.comment-form { display: flex; gap: .7rem; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .9rem; }
+.comment-form .field { resize: vertical; min-height: 4.5rem; margin: 0; }
+.comment-form .btnrow { align-items: center; margin-top: .5rem; }
