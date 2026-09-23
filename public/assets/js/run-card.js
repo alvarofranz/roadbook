@@ -6,7 +6,7 @@
  * (map_access:false) keeps its route to itself: the card then carries the figures alone.
  *
  * render({ report, roadbook, username }) → Promise<Blob|null>. RBRun supplies the figures'
- * formatting, RBCoverMap the map. */
+ * formatting (so run-report.js loads first), RBCoverMap the map. */
 (function () {
     const W = 1080, H = 1350, SIDE = 64;
     const REACHED = '#3ad29f', SKIPPED = '#ff7aa8';
@@ -42,9 +42,10 @@
             markers: notes.map((n) => ({ lat: n.lat, lon: n.lon, color: skipped.has(n.num) ? SKIPPED : REACHED })),
         };
         let canvas = showMap ? (await RBCoverMap.render(track, mapOpts)) || (await RBCoverMap.render(track, Object.assign({}, mapOpts, { tiles: false }))) : null;
-        if (!canvas) { canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H; }
+        const mapped = !!canvas; // no map drawn (hidden, or none could be): a plain backdrop instead
+        if (!mapped) { canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H; }
         const ctx = canvas.getContext('2d');
-        if (!showMap) { const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1b2330'); g.addColorStop(1, '#0b0e13'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+        if (!mapped) { const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1b2330'); g.addColorStop(1, '#0b0e13'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
 
         // the foot darkens so the words read on any map
         const shade = ctx.createLinearGradient(0, 620, 0, 980);
@@ -76,11 +77,10 @@
         ctx.fillText([username ? '@' + username : '', when, report.team ? t('Vehicle') + ' ' + report.team : ''].filter(Boolean).join('  ·  '), SIDE, y - 8);
 
         // the figures, four columns
-        const avg = report.duration_s > 0 ? ((report.distance_m / 1000) / (report.duration_s / 3600)).toFixed(1) : '—';
         const figures = [
             [RBKm(report.distance_m, 1), t('Distance')],
             [RBRun.fmtDuration(report.duration_s), t('Time')],
-            [avg + ' km/h', t('Average speed')],
+            [RBRun.avgKmh(report) + ' km/h', t('Average speed')],
             [`${report.notes_reached}/${report.notes_total}`, t('Notes reached')],
         ];
         const top = Math.max(y + 60, 1150), colW = (W - 2 * SIDE) / figures.length;

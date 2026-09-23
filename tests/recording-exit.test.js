@@ -12,7 +12,7 @@ const recorder = read('public/recorder/recorder.js');
 const gpx = read('public/assets/js/gpx-recorder.js');
 
 const finishModal = recorder.match(/function finishModal\(pts, name\) \{[\s\S]*?\n {4}\}\n/)[0];
-const finishedModal = gpx.match(/function finishedModal\(finished, name\) \{[\s\S]*?\n {4}\}\n/)[0];
+const finishedModal = gpx.match(/function finishedModal\(finished, name, onDone = \(\) => \{\}\) \{[\s\S]*?\n {4}\}\n/)[0];
 
 describe('the crash checkpoint stays on until the recording lands somewhere', () => {
     it('Stop hands over the track without clearing it', () => {
@@ -21,7 +21,7 @@ describe('the crash checkpoint stays on until the recording lands somewhere', ()
         expect(recorder).toContain('RBGpxRecorder.end()');
         expect(recorder).not.toContain('RBGpxRecorder.finish()');
         expect(gpx).not.toMatch(/function finish\(\)/);        // and the clearing variant is gone
-        expect(gpx).toContain('settings, begin, stop, end, clearCheckpoint,');
+        expect(gpx).toContain('settings, begin, stop, handOver, end, clearCheckpoint,');
     });
 
     it('a track too short to keep clears it, since no modal will offer it', () => {

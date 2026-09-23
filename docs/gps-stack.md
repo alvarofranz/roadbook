@@ -7,7 +7,7 @@ condivisi che ogni strumento con il GPS riusa invece di reimplementarli:
 | Modulo | Globale | Ruolo |
 |--------|---------|-------|
 | [gps-meter.js](../public/assets/js/gps-meter.js) | `RBGpsMeter` | il **loop GPS**: watch posizione + wake lock, un fix pulito per posizione |
-| [gpx-recorder.js](../public/assets/js/gpx-recorder.js) | `RBGpxRecorder` | il **logger GPX** crash-safe: modal impostazioni, checkpoint, file live, recovery |
+| [gpx-recorder.js](../public/assets/js/gpx-recorder.js) | `RBGpxRecorder` | il **logger GPX** crash-safe: modal impostazioni, checkpoint, recovery, modal traccia registrata |
 | [status-bar.js](../public/assets/js/status-bar.js) | `RBStatusBar` | la **barra di stato**: orologio · batteria · qualità del segnale GPS |
 
 > I tre moduli sono indipendenti: la pagina li orchestra. Tipicamente crea un
@@ -44,7 +44,10 @@ const meter = new RBGpsMeter(onFix, onError);
 ```
 
 - `onFix({ here, coords, disp, from, trusted, speedKmh, heading, tnow })` — chiamata a ogni fix.
-- `onError()` — chiamata **una volta** se il GPS è assente o negato.
+- `onError()` — chiamata **una volta** se il GPS è assente o negato. Un `TIMEOUT` del watch web
+  **non** è un errore: il watch resta attivo e consegna il fix quando arriva (un cold start può
+  metterci di più); a dirlo all'utente è il watchdog `stalled`. Solo gli altri codici (permesso
+  negato, posizione non disponibile) arrivano a `onError`.
 
 ### Il modello del fix
 
@@ -101,10 +104,13 @@ tachimetro non resta "incollato" all'ultimo valore.
 |--------|---------|
 | `constructor(onFix, onError)` | salva le callback, *definisce* l'handler di visibilità, aggancia il ciclo di vita della pagina (sotto) e chiama `resume()` |
 | `resume()` | (ri)avvia il watch, **aggiunge** il listener `visibilitychange` e riacquisisce il wake lock; no-op se già attivo |
-| `stop()` | ferma il watch, **rimuove** il listener `visibilitychange` e rilascia il wake lock |
+| `stop()` | ferma il watch, **rimuove** il listener `visibilitychange`, rilascia il wake lock e azzera i riferimenti di movimento (ancora dell'odometro, traccia della rotta, ultima posizione di velocità) |
 
-`stop()` + `resume()` sono la coppia Pausa/Riprendi (il Reader li usa così,
-[reader.js:345](../public/reader/reader.js#L345)).
+`stop()` + `resume()` sono la coppia Pausa/Riprendi (il Reader li usa così). Il primo fix dopo
+`resume()` è un `first`: `disp` 0 e `from` null, quindi la strada fatta mentre il meter era fermo
+non entra mai nell'odometro in un solo passo e non diventa un segmento su cui validare note.
+Tripmaster e Recorder non mettono in pausa il meter (il Recorder ne crea uno nuovo per sessione e
+in pausa smette solo di campionare), quindi per loro vale solo per `pagehide`/`pageshow`.
 
 **Il watch non sopravvive alla pagina (#430).** Nel browser lo smontaggio della pagina si porta
 via il watch della Geolocation, ma nell'app il watch **è un foreground service nativo**: restava
@@ -125,7 +131,7 @@ col permesso già concesso. Quindi:
 Se gira dentro l'app Capacitor (`window.RBNative.available`) il watch è quello **nativo**
 in background (il logging sopravvive a schermo bloccato); altrimenti è il
 `navigator.geolocation.watchPosition` standard con `enableHighAccuracy: true`,
-`maximumAge: 1000`, `timeout: 15000`. Entrambe le sorgenti consegnano a `_fix()` un oggetto
+`maximumAge: 1000`, `timeout: 45000`. Entrambe le sorgenti consegnano a `_fix()` un oggetto
 con la stessa forma di `GeolocationCoordinates`, così il resto del codice è identico
 ([gps-meter.js:26-33](../public/assets/js/gps-meter.js#L26)).
 
@@ -157,13 +163,14 @@ traccia GPX e fa di tutto per non perderla.
 | Membro | Cosa fa |
 |--------|---------|
 | `init({ onChange, toast })` | aggancia i callback della pagina: `onChange(recording)` riflette on/off in UI, `toast` mostra i messaggi |
-| `settings(opts)` | apre il modal impostazioni (intervallo, nome file, file picker opzionale) e all'OK avvia la registrazione ([gpx-recorder.js:70](../public/assets/js/gpx-recorder.js#L70)) |
+| `settings(opts)` | apre il modal impostazioni (intervallo, nome file) e all'OK avvia la registrazione ([gpx-recorder.js:70](../public/assets/js/gpx-recorder.js#L70)) |
 | `begin(opts)` | avvia la registrazione senza UI ([gpx-recorder.js:30](../public/assets/js/gpx-recorder.js#L30)) |
 | `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js:32](../public/assets/js/gpx-recorder.js#L32)) |
 | `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js:38](../public/assets/js/gpx-recorder.js#L38)) |
 | `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js:46](../public/assets/js/gpx-recorder.js#L46)) |
 | `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
-| `stop()` | chiama `end()` e mostra il modal "traccia registrata" |
+| `handOver()` | chiude il log (`end()`) e lo affida al modal "traccia registrata"; risolve quando il modal ha finito (Download o Scarta confermato — Converti lascia la pagina). Una traccia sotto i 2 punti non ha modal: "Track too short", checkpoint pulito. Lo usa il Reader alla fine di una run |
+| `stop()` | lo Stop dell'utente: chiede conferma, poi `handOver()` |
 | `resume(savedName)` | riprende un log interrotto da un reload, dal checkpoint ([gpx-recorder.js:54](../public/assets/js/gpx-recorder.js#L54)) |
 | `offerRecovery()` | offre di recuperare un checkpoint orfano (crash senza sessione) ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)) |
 | `recording` (getter) | `true` mentre registra |
@@ -182,16 +189,12 @@ traccia GPX e fa di tutto per non perderla.
   "Adjust on the trail" ([editor.js:515](../public/editor/editor.js#L515)), che fa già il
   suo campionamento per-distanza e l'aliasing dell'accuratezza a monte.
 
-### Persistenza crash-safe (due livelli)
+### Persistenza crash-safe
 
-`persist(tnow)` accorpa entrambi i livelli in **una sola finestra da 3 s** (guardia condivisa
-`lastPersist`), per evitare la ri-serializzazione O(n²) dell'intero array a ogni punto:
-
-1. **Checkpoint localStorage** (chiave `rb_trip_gpx`): l'intero array di punti + il nome —
-   riscritto una volta per finestra da 3 s, non a ogni punto. Sopravvive a un crash/chiusura.
-2. **File live** (File System Access): se l'utente ha scelto un file nel modal, la traccia
-   viene riscritta su disco nella stessa finestra (`writeFile`, di per sé non throttlato). Il
-   file picker compare solo sui dispositivi che supportano `showSaveFilePicker`.
+`persist(tnow)` scrive il **checkpoint localStorage** (chiave `rb_trip_gpx`, via
+`RBCheckpoint.write`): l'intero array di punti + il nome, **una volta per finestra da 3 s**
+(guardia `lastPersist`), per evitare la ri-serializzazione O(n²) dell'intero array a ogni punto.
+Sopravvive a un crash/chiusura. Il file `.gpx` si scrive una volta sola, alla fine (`RBDownload`).
 
 L'opzione `begin({ checkpoint: false })` disattiva il checkpoint localStorage del recorder,
 per quando il chiamante tiene un proprio checkpoint più ricco
@@ -205,8 +208,7 @@ Due percorsi distinti, in base a se la pagina ha una sessione da riprendere:
   sessione lo dice) e ricarica i punti dal checkpoint del recorder, rimettendolo in stato
   `on`. Usato da Tripmaster ([tripmaster.js:34](../public/tripmaster/tripmaster.js#L34)),
   Recorder ([recorder.js:50](../public/recorder/recorder.js#L50)) e Reader
-  ([reader.js:151](../public/reader/reader.js#L151)). **Nota:** un file handle live **non**
-  sopravvive a un reload — dopo `resume` la traccia continua solo su localStorage.
+  ([reader.js:151](../public/reader/reader.js#L151)).
 - **`offerRecovery()`** — non c'è sessione da riprendere ma resta un checkpoint orfano (≥2
   punti): mostra un `RBConfirm` e, se accettato, apre il modal della traccia recuperata
   ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)). Ogni strumento lo chiama
@@ -214,13 +216,12 @@ Due percorsi distinti, in base a se la pagina ha una sessione da riprendere:
 
 ### Il modal "traccia registrata"
 
-`finishedModal` mostra punti + km e offre **Download GPX** (nascosto se già salvato su file) e
-**Convert into roadbook**, che parcheggia la traccia in `sessionStorage` e apre l'Editor con
+`finishedModal` mostra punti + km e offre **Download GPX** e **Convert into roadbook**, che parcheggia la traccia in `sessionStorage` e apre l'Editor con
 `?trip=1`.
 
 Il modal tiene l'**unica copia** della registrazione, quindi segue il contratto delle uscite
 (#217 · #460), lo stesso del Recorder: **non è dismissable** (né backdrop né Escape) e l'unica
-uscita è **Discard**, `btn-danger` col cestino, che chiede conferma nominando la stessa riga di
+uscita è **Discard** (`#trDiscard`), `btn-danger` col cestino, che chiede conferma nominando la stessa riga di
 riepilogo mostrata nel modal. Il checkpoint anti-crash lo pulisce **solo** un esito reale —
 download, conversione o discard confermato.
 
@@ -307,9 +308,6 @@ All'avvio chiama anche `RBGpxRecorder.init({ onChange, toast })`, e tenta una
   registrazione è ora l'unico helper `RB.recJunkFix`, usato dal logger GPX (`feed`), dal
   Recorder e dall'Editor (e il passo di campionamento è `RB.recStepM`). Restano invece distinte
   la soglia "ok ≤ 25 m" del Reader e il "bad > 35 m" della barra di stato.
-- **Il file live non sopravvive a un reload.** Dopo `resume()` la traccia continua solo su
-  localStorage; il file handle scelto prima del crash va riselezionato per tornare a
-  scrivere su disco.
 - **Un solo recorder per pagina.** `RBGpxRecorder` è un singleton: non si possono registrare
   due tracce in parallelo nella stessa pagina.
 - **`RBStatusBar` mostra qualità del segnale, non satelliti.** L'icona è un disco satellitare

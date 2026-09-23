@@ -52,12 +52,13 @@
         return key;
     }
     function update(key, patch) { write(read().map((i) => (i.key === key ? Object.assign(i, patch) : i))); }
-    const pending = (key) => read().find((i) => i.key === key) || null;
     // Upload every ready item; resolves { [key]: saved run id } for what went through. Needs a
-    // signed-in user — signed out, the items simply wait for the next flush after sign-in.
+    // signed-in user — signed out, the items simply wait for the next flush after sign-in. A call
+    // made while a flush is running waits for it and then runs its own: the running one read the
+    // queue before this call, so an item made ready since would otherwise be left out.
     let flushing = null;
     function flush() {
-        if (flushing) return flushing;
+        if (flushing) return flushing.then(() => flush());
         flushing = (async () => {
             const done = {};
             for (const item of read().filter((i) => i.ready)) {
@@ -73,5 +74,5 @@
     }
     window.addEventListener('online', () => flush());
 
-    window.RBRun = { statsHTML, detailsHTML, fmtDuration, enqueue, update, pending, flush };
+    window.RBRun = { statsHTML, detailsHTML, fmtDuration, avgKmh, enqueue, update, flush };
 })();

@@ -61,9 +61,11 @@ ordine di priorità:
 
 ### Apertura `.rdbk` dal sistema operativo (PWA installata)
 Se il browser espone la **File Handling API** (`launchQueue` + `LaunchParams`), il Reader
-registra un consumer che apre un `.rdbk` aperto direttamente dall'OS
-([reader.js:75-80](../public/reader/reader.js#L75)) — toccando il file nel file manager o
-"Apri con" la PWA installata.
+registra un consumer che apre un `.rdbk` aperto direttamente dall'OS — toccando il file nel file
+manager o "Apri con" la PWA installata. Durante una run aprire un altro file la butterebbe via,
+quindi prima chiede (`RBConfirmDanger`, nominando la run: titolo · nota attiva/totale); con un Sì la
+run si chiude come un'uscita (`endRun`: GPS rilasciato, checkpoint cancellato, eventuale GPX al suo
+modal) e lo stato della run riparte da zero (`resetRun`) prima di aprire il file.
 
 ---
 
@@ -138,8 +140,8 @@ Distinzioni chiave:
 
 ## 4. La barra odometro in alto
 
-`.odometer-bar` ([index.html:70-78](../public/reader/index.html#L70)) è una barra *sticky*
-(sotto l'header; in landscape basso l'header sparisce e la barra sale a `top:0`). È una griglia
+`.odometer-bar` si vede solo in navigazione (l'anteprima la nasconde), dove è una riga del guscio
+applicativo (sotto) — non è mai posizionata. È una griglia
 disegnata come una riga nota (#567): nella colonna **sinistra** prog. con part. subito sotto —
 come ogni nota mostra totale sopra parziale, così il parziale live si legge allineato a quello
 delle note — e a destra bussola · ora sulla prima riga, GPS · velocità sulla seconda. I readout
@@ -168,7 +170,7 @@ giusti — barra odometro · lista note · riga d'azione. Quindi è lui il **gus
 
 ```
 body.rb-immersive #navScreen   position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden
-├── .odometer-bar              position: static; flex: none
+├── .odometer-bar              flex: none
 ├── #noteList                  flex: 1; min-height: 0; overflow-y: auto     ← l'UNICO scroller
 └── .fabrow                    position: static; flex: none
 ```
@@ -212,7 +214,8 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 
 ## 5. Il modal di avvio
 
-`loadRb` apre `#modeModal` con le opzioni di sessione, lette da `readModeOpts`:
+**Navigate** (o l'apertura da un evento) apre la finestra di avvio `#startModal`
+(`openStartDialog`) con le opzioni di sessione, lette da `readStartOpts`:
 
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
   start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
@@ -223,10 +226,12 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
   anche su una convalida GPS automatica.
 
 **La modalità non si sceglie** (#617): la gara esiste per la classifica di un evento, quindi
-`openModeModal` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel
-roadbook ha `scoring_mode ≠ free`, la run è in **competition** — `#modeStart` apre `#teamModal`
-per il **numero veicolo** (`team`, 1–999, solo cifre) e poi `startNav(true)`; il modal lo dice in
-`#modeComp`. Tutto il resto parte subito come **trip** (`startNav(false)`). Il punteggio è in
+`openStartDialog` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel
+roadbook (cercato per lo **slug del roadbook caricato**, quello che restituiscono `public_get` /
+`rb_get` / `admin_rb_get` — mai l'ultimo pezzo dell'URL) ha `scoring_mode ≠ free`, la run è in
+**competition** — `#startGo` apre `#teamModal` per il **numero veicolo** (`team`, 1–999, solo cifre)
+e poi `startNav(true)`; il modal lo dice in `#startComp`. *Cancel* sul numero veicolo torna alla
+finestra di avvio (Esc la chiude). Tutto il resto parte subito come **trip** (`startNav(false)`). Il punteggio è in
 [ranking-model.md](./ranking-model.md).
 
 `auto` parte sempre `true` e si commuta durante la corsa con l'interruttore Auto nella barra di
@@ -234,12 +239,16 @@ navigazione (`#autoBtn`).
 
 ### Fine della run e report (#618 · #619)
 **Finish** è nella barra d'azione in ogni run (prima dell'ultima nota chiede conferma: le note
-non raggiunte contano come saltate); validare l'ultima nota finisce la run da sola. `finishRun`
-chiude la zona di velocità aperta, ferma il GPS e costruisce il **report**: distanza, tempo,
+non raggiunte contano come saltate — e in gara pagano davvero `RB.skipPenalty(scoredSet, activeIdx,
+notes.length)` prima della firma); validare l'ultima nota finisce la run da sola. `finishRun`
+chiude la zona di velocità aperta (a punteggio solo se lo è la nota su cui finisce), ferma il GPS e
+costruisce il **report**: distanza, tempo,
 media, note raggiunte/totali e quali saltate, zone di limite di velocità rispettate/superate (col
 peggior eccesso) e, in gara, penalità + risultato firmato (`signedResult`). Le zone si seguono in
-**ogni** run (`passLimit`/`closeZone`, condivise da `markReached` e `validateAt`); in gara una zona
-del tratto a punteggio costa anche la sua penalità.
+**ogni** run (`passLimit`/`closeZone`, condivise da `markReached` e `validateAt`) — anche sulle
+note **saltate**: il cartello era sulla strada comunque, quindi ogni salto (tap su un'altra riga,
+auto-validazione di una nota più avanti, "Salta e continua") passa i loro limiti con `passOver`;
+in gara una zona del tratto a punteggio costa anche la sua penalità.
 
 Il report va **prima sul dispositivo** (`RBRun.enqueue`, `assets/js/run-report.js`), poi il
 checkpoint della sessione si cancella e parte l'upload (`run_save`): offline o senza login resta in
@@ -251,6 +260,17 @@ Una volta salvata, lo stesso interruttore la cambia (`run_update`), e Share mand
 solo finché è pubblica. Il report parte dalla card (con un segnaposto della sua misura mentre si
 disegna), Share subito sotto, poi l'interruttore, le cifre e il QR di gara. Una run di gara di un roadbook di evento entra da sola nella
 classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
+
+**Il log GPX finisce con la run.** Sia **Done** sul report sia **End** passano per `endRun`, che —
+se `RBGpxRecorder.recording` — chiude il log e apre il modal "traccia registrata"
+(`RBGpxRecorder.handOver`) **dopo** aver chiuso il report: il report non è congedabile, quindi i
+due modal sono in sequenza, mai sovrapposti. Solo gli esiti espliciti del modal (Download ·
+Converti · Scarta confermato) cancellano il checkpoint della traccia (#460); si lascia la pagina
+quando il modal ha finito. Una run del Reader non lascia quindi mai un checkpoint GPX orfano.
+
+Il checkpoint della run (`rb_session`, via `RBCheckpoint`) porta anche `rbSlug`, `eventSlug` e
+`openedAs`: una run ripresa dopo un crash firma col prefisso del roadbook giusto e resta legata al
+suo evento, anche se riaperta da `/reader/` senza parametri.
 
 Mentre il report si legge, il Reader crea la **card condivisibile** della run (#785,
 `RBRunCard.render`, `assets/js/run-card.js`): un PNG 1080×1350 fatto sul dispositivo, con tutto il
@@ -430,12 +450,14 @@ che addebita il salto quando la nota raggiunta non è quella attiva e poi chiama
 Il pulsante `#pauseBtn` ([reader.js:342](../public/reader/reader.js#L342)) ferma il watch GPS
 (`meter.stop()`) e rilascia il **wake lock** per risparmiare batteria (es. sosta pranzo);
 mostra "Paused" e pallino GPS spento. Il `resume` riavvia lo stesso meter. Mentre è in pausa
-l'odometro semplicemente non avanza (nessun fix, nessun `disp`). Il watch GPS e il wake lock
+l'odometro non avanza, e nemmeno dopo: `stop()` azzera l'ancora dell'odometro, la traccia della
+rotta e l'ultima posizione di velocità, quindi il primo fix dopo Resume riparte da lì (`disp` 0,
+`from` null) — la strada fatta in pausa non entra in un solo passo e non valida note lungo una
+linea retta. Il watch GPS e il wake lock
 sono gestiti internamente da `RBGpsMeter` — vedi quel modulo.
 
-Il pulsante `#endBtn` ([reader.js:350](../public/reader/reader.js#L350)) esce dalla
-navigazione previa conferma (il progresso note va perso): cancella la sessione e torna alla
-home.
+Il pulsante `#endBtn` esce dalla navigazione previa conferma (il progresso note va perso):
+`endRun` (sessione cancellata, GPX al suo modal) e poi torna alla home.
 
 ---
 
