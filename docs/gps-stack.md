@@ -25,10 +25,10 @@ condivisi che ogni strumento con il GPS riusa invece di reimplementarli:
 | **Recorder** | sì | sì (è il suo scopo) | sì |
 | **Editor** — "Adjust on the trail" | no² | sì (`add`/`finish`) | no |
 
-1. Il Reader ha una sua spia GPS in pagina (`setGps` locale, [reader.js:181](../public/reader/reader.js#L181)),
+1. Il Reader ha una sua spia GPS in pagina (`setGps` locale, [reader.js](../public/reader/reader.js)),
    non la barra condivisa.
 2. L'Editor in registrazione usa un **proprio** `navigator.geolocation.watchPosition`
-   ([editor.js:491](../public/editor/editor.js#L491)) con una sua logica di campionamento
+   ([editor.js](../public/editor/editor.js)) con una sua logica di campionamento
    per-distanza, e si limita a versare i punti nel `RBGpxRecorder`. Non passa per
    `RBGpsMeter`.
 
@@ -36,7 +36,7 @@ condivisi che ogni strumento con il GPS riusa invece di reimplementarli:
 
 ## 2. `RBGpsMeter` — il loop GPS condiviso
 
-Una **classe** ([gps-meter.js:10](../public/assets/js/gps-meter.js#L10)). Si istanzia una
+Una **classe** ([gps-meter.js](../public/assets/js/gps-meter.js)). Si istanzia una
 volta passando due callback; da lì in poi emette un oggetto pulito a ogni posizione.
 
 ```js
@@ -51,7 +51,7 @@ const meter = new RBGpsMeter(onFix, onError);
 
 ### Il modello del fix
 
-L'oggetto passato a `onFix` ([gps-meter.js:52](../public/assets/js/gps-meter.js#L52)):
+L'oggetto passato a `onFix` ([gps-meter.js](../public/assets/js/gps-meter.js)):
 
 | Campo | Tipo | Significato |
 |-------|------|-------------|
@@ -135,7 +135,7 @@ in background (il logging sopravvive a schermo bloccato); altrimenti è il
 `navigator.geolocation.watchPosition` standard con `enableHighAccuracy: true`,
 `maximumAge: 1000`, `timeout: 45000`. Entrambe le sorgenti consegnano a `_fix()` un oggetto
 con la stessa forma di `GeolocationCoordinates`, così il resto del codice è identico
-([gps-meter.js:26-33](../public/assets/js/gps-meter.js#L26)).
+([gps-meter.js](../public/assets/js/gps-meter.js)).
 
 Poiché la GPS nel browser è strutturalmente meno affidabile che nell'app nativa (vedi sotto
 "Accessibilità e UX"), i tool espongono due avvisi condivisi definiti in `app.js`:
@@ -156,28 +156,28 @@ rilasciato subito, altrimenti lo schermo resterebbe acceso a corsa finita senza 
 
 ## 3. `RBGpxRecorder` — il logging GPX crash-safe
 
-Un **singleton** (IIFE, [gpx-recorder.js:8](../public/assets/js/gpx-recorder.js#L8)): esiste
+Un **singleton** (IIFE, [gpx-recorder.js](../public/assets/js/gpx-recorder.js)): esiste
 un solo recorder per pagina, con stato interno (`on`, `pts`, `fileHandle`…). Registra una
 traccia GPX e fa di tutto per non perderla.
 
 ### L'API pubblica
 
-([gpx-recorder.js:117-122](../public/assets/js/gpx-recorder.js#L117))
+([gpx-recorder.js](../public/assets/js/gpx-recorder.js))
 
 | Membro | Cosa fa |
 |--------|---------|
 | `init({ onChange, toast })` | aggancia i callback della pagina: `onChange(recording)` riflette on/off in UI, `toast` mostra i messaggi |
-| `settings(opts)` | apre il modal impostazioni (intervallo, nome file) e all'OK avvia la registrazione ([gpx-recorder.js:70](../public/assets/js/gpx-recorder.js#L70)) |
-| `begin(opts)` | avvia la registrazione senza UI e scrive subito il checkpoint vuoto del nuovo log, così un crash prima del primo punto non riprende la traccia di un log precedente (declinato o di un altro tool) ([gpx-recorder.js:30](../public/assets/js/gpx-recorder.js#L30)) |
-| `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js:32](../public/assets/js/gpx-recorder.js#L32)) |
-| `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js:38](../public/assets/js/gpx-recorder.js#L38)) |
-| `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js:46](../public/assets/js/gpx-recorder.js#L46)) |
+| `settings(opts)` | apre il modal impostazioni (intervallo, nome file) e all'OK avvia la registrazione ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `begin(opts)` | avvia la registrazione senza UI e scrive subito il checkpoint vuoto del nuovo log, così un crash prima del primo punto non riprende la traccia di un log precedente (declinato o di un altro tool) ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
 | `handOver()` | chiude il log (`end()`) e lo affida al modal "traccia registrata"; risolve quando il modal ha finito (Download o Scarta confermato — Converti lascia la pagina). Una traccia sotto i 2 punti non ha modal: "Track too short", checkpoint pulito. Lo usa il Reader alla fine di una run |
 | `stop()` | lo Stop dell'utente: chiede conferma, poi `handOver()` |
 | `resume(savedName, fromPts?)` | riprende un log: dopo un reload dal checkpoint, oppure dai punti che `end()` aveva reso (`fromPts`, più freschi dell'ultimo checkpoint da 3 s) |
 | `decline()` | l'utente ha detto No a riprendere: il checkpoint viene **marcato** `declined`, mai cancellato (#436), e `offerRecovery` non lo propone più |
-| `offerRecovery()` | offre di recuperare un checkpoint orfano (crash senza sessione) ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)) |
+| `offerRecovery()` | offre di recuperare un checkpoint orfano (crash senza sessione) ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `recording` (getter) | `true` mentre registra |
 | `fileName` (getter) | il nome del file corrente |
 
@@ -185,13 +185,13 @@ traccia GPX e fa di tutto per non perderla.
 
 - **`feed(coords, here, tnow)`** è il modo "telemetro": campiona da sé a `sampleMs`
   (default 3 s, configurabile) e **scarta** i fix con `accuracy > 35 m`
-  ([gpx-recorder.js:33](../public/assets/js/gpx-recorder.js#L33)). Lo usano Tripmaster
-  ([tripmaster.js:58](../public/tripmaster/tripmaster.js#L58)), Recorder
-  ([recorder.js:94](../public/recorder/recorder.js#L94)) e Reader
-  ([reader.js:159](../public/reader/reader.js#L159)), girando direttamente il `coords`,
+  ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)). Lo usano Tripmaster
+  ([tripmaster.js](../public/tripmaster/tripmaster.js)), Recorder
+  ([recorder.js](../public/recorder/recorder.js)) e Reader
+  ([reader.js](../public/reader/reader.js)), girando direttamente il `coords`,
   `here` e `tnow` del fix di `RBGpsMeter`.
 - **`add(here, tnow)`** salta ogni filtro: registra il punto e basta. Lo usa l'Editor in
-  "Adjust on the trail" ([editor.js:515](../public/editor/editor.js#L515)), che fa già il
+  "Adjust on the trail" ([editor.js](../public/editor/editor.js)), che fa già il
   suo campionamento per-distanza e l'aliasing dell'accuratezza a monte.
 
 ### Persistenza crash-safe
@@ -203,7 +203,7 @@ Sopravvive a un crash/chiusura. Il file `.gpx` si scrive una volta sola, alla fi
 
 L'opzione `begin({ checkpoint: false })` disattiva il checkpoint localStorage del recorder,
 per quando il chiamante tiene un proprio checkpoint più ricco
-([gpx-recorder.js:28-30](../public/assets/js/gpx-recorder.js#L28)).
+([gpx-recorder.js](../public/assets/js/gpx-recorder.js)).
 
 ### Recovery dopo un kill
 
@@ -212,12 +212,12 @@ Due percorsi distinti, in base a se la pagina ha una sessione da riprendere:
 - **`resume(savedName)`** — la pagina sapeva di stare registrando (il suo checkpoint di
   sessione lo dice) e ricarica i punti dal checkpoint del recorder, rimettendolo in stato
   `on`. Il Recorder lo usa anche senza reload, `resume(name, r.pts)`, quando un *End* su una
-  traccia troppo corta viene annullato: riparte da tutti i punti resi da `end()`. Usato da Tripmaster ([tripmaster.js:34](../public/tripmaster/tripmaster.js#L34)),
-  Recorder ([recorder.js:50](../public/recorder/recorder.js#L50)) e Reader
-  ([reader.js:151](../public/reader/reader.js#L151)).
+  traccia troppo corta viene annullato: riparte da tutti i punti resi da `end()`. Usato da Tripmaster ([tripmaster.js](../public/tripmaster/tripmaster.js)),
+  Recorder ([recorder.js](../public/recorder/recorder.js)) e Reader
+  ([reader.js](../public/reader/reader.js)).
 - **`offerRecovery()`** — non c'è sessione da riprendere ma resta un checkpoint orfano (≥2
   punti): mostra un `RBConfirm` e, se accettato, apre il modal della traccia recuperata
-  ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)). Ogni strumento lo chiama
+  ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)). Ogni strumento lo chiama
   all'avvio.
 
 ### Il modal "traccia registrata"
@@ -234,16 +234,16 @@ download, conversione o discard confermato.
 ### Impostazioni persistite
 
 L'intervallo di campionamento si salva in `localStorage` (chiave `rb_gpx_settings`) e
-viene riletto all'avvio del modulo ([gpx-recorder.js:13](../public/assets/js/gpx-recorder.js#L13),
-[gpx-recorder.js:96](../public/assets/js/gpx-recorder.js#L96)). `opts.sampleRate === false`
+viene riletto all'avvio del modulo ([gpx-recorder.js](../public/assets/js/gpx-recorder.js),
+[gpx-recorder.js](../public/assets/js/gpx-recorder.js)). `opts.sampleRate === false`
 nasconde il campo intervallo (per chi campiona a modo suo), e `opts.onStart` sostituisce il
-`begin()` di default ([gpx-recorder.js:69-100](../public/assets/js/gpx-recorder.js#L69)).
+`begin()` di default ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)).
 
 ---
 
 ## 4. `RBStatusBar` — la barra di stato
 
-Un **singleton** (IIFE, [status-bar.js:6](../public/assets/js/status-bar.js#L6)): una barra
+Un **singleton** (IIFE, [status-bar.js](../public/assets/js/status-bar.js)): una barra
 appiccicosa sotto l'header globale con orologio, batteria e qualità del segnale GPS. La usano
 Recorder e Tripmaster mentre una sessione GPS è attiva.
 
@@ -263,11 +263,11 @@ La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.top
 - **Batteria** — via Battery Status API, *best-effort*: non tutti i browser la espongono
   (es. iOS Safari): dove manca, la cella mostra **la data** (icona calendario) invece di un `N/A`
   rotto (#768)
-  ([status-bar.js:20](../public/assets/js/status-bar.js#L20),
-  [status-bar.js:29](../public/assets/js/status-bar.js#L29)). L'icona segue il livello e
+  ([status-bar.js](../public/assets/js/status-bar.js),
+  [status-bar.js](../public/assets/js/status-bar.js)). L'icona segue il livello e
   diventa un fulmine in carica.
 - **GPS** — la Geolocation API espone l'**accuratezza**, non un conteggio di satelliti:
-  la barra traduce i metri in qualità del segnale ([status-bar.js:36-41](../public/assets/js/status-bar.js#L36)):
+  la barra traduce i metri in qualità del segnale ([status-bar.js](../public/assets/js/status-bar.js)):
 
   | Accuratezza | Classe | Etichetta |
   |-------------|--------|-----------|
@@ -277,15 +277,15 @@ La barra si crea pigramente in `ensure()` e si inserisce subito dopo `header.top
   | > 35 m | `bad` | `±N m` |
 
   La pagina passa `setGps(fix.coords.accuracy)` a ogni fix
-  ([tripmaster.js:55](../public/tripmaster/tripmaster.js#L55),
-  [recorder.js:84](../public/recorder/recorder.js#L84)).
+  ([tripmaster.js](../public/tripmaster/tripmaster.js),
+  [recorder.js](../public/recorder/recorder.js)).
 
 ---
 
 ## 5. Come si incastrano (Tripmaster, esempio canonico)
 
 Il Tripmaster mostra il flusso completo dei tre moduli
-([tripmaster.js:44-58](../public/tripmaster/tripmaster.js#L44)):
+([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
 ```js
 RBStatusBar.show();                                   // accende la barra
@@ -308,7 +308,7 @@ All'avvio chiama anche `RBGpxRecorder.init({ onChange, toast })`, e tenta una
 - **`RBGpsMeter` non ha pausa "morbida".** `stop()` chiude del tutto il watch e rilascia il
   wake lock; `resume()` riapre tutto da capo. Non c'è uno stato intermedio.
 - **Il wake lock è best-effort.** Errori e API mancanti sono silenziati
-  ([gps-meter.js:54](../public/assets/js/gps-meter.js#L54)); su browser senza Wake Lock lo
+  ([gps-meter.js](../public/assets/js/gps-meter.js)); su browser senza Wake Lock lo
   schermo può spegnersi e — nel browser, non nell'app nativa — sospendere il watch.
 - **Soglia scarto-fix condivisa, altre soglie distinte.** Lo scarto a > 35 m dell'intake di
   registrazione è ora l'unico helper `RB.recJunkFix`, usato dal logger GPX (`feed`), dal

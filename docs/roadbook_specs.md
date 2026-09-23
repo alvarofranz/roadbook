@@ -4,7 +4,7 @@ How the RDBK roadbook **looks** and the product decisions behind it. The
 machine-readable format lives in [rdbk-format.md](rdbk-format.md) and the public
 [/standard](../public/standard/index.html) page; this is the "why + how it
 renders" companion. Rendering code: `RB.ROAD_TYPES`
-([roadbook-core.js](../public/assets/js/roadbook-core.js#L40)) and the tulip
+([roadbook-core.js](../public/assets/js/roadbook-core.js)) and the tulip
 renderer `NoteCanvas` / `ROAD_STYLE`
 ([note-canvas.js](../public/assets/js/note-canvas.js)).
 

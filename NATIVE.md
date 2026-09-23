@@ -29,7 +29,8 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
 - **`gps-meter.js`** — when running natively it uses `RBNative` (background watch); in the
   browser it uses the standard Web Geolocation watch. Same data contract either way, so the
   Reader, Tripmaster and Recorder gained background GPS with no changes to their own code.
-- **`app.css`** — safe-area inset for the header under the notch (`.native` body class).
+- **`app.css`** — safe-area insets under the notch, keyed on the `.native` class `app.js` puts on
+  `<html>`.
 - **Durable storage (#778)** — `native/src/durable.js` mirrors the keys that matter (the session
   token, the signed-in user, participant mode, run reports waiting to upload, and every crash
   checkpoint: Reader run, Recorder session, Tripmaster session, GPX track) from the WebView's
@@ -48,7 +49,8 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
 - **Token auth** — `app/auth.php` issues a Bearer token on login (alongside the web session
   cookie) and `current_user()` accepts it; `RBApi`/`RBUpload` send & store it **only in the
   app**, so accounts, save-to-profile, challenges and photo upload work inside the app while
-  the browser stays cookie-only and unchanged. Requires migration `006_api_tokens.sql` (§4).
+  the browser stays cookie-only and unchanged. Tokens live in `api_tokens`
+  (`migrations/006_api_tokens.sql`).
 - **Sign-in providers** — the providers' web SDKs can't run in a WebView, so the app signs in
   through the OS sheets: `RBNative.googleSignIn` (Credential Manager on Android, GoogleSignIn on
   iOS) and `RBNative.appleSignIn` (**iOS only** — the Apple sheet is an Apple-platform feature and
@@ -56,15 +58,15 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   same `google_auth`/`apple_auth` endpoints the web uses. Apple needs the capability on the App ID
   (§4).
 - **Production API host + CORS** — the app serves its bundled UI from a WebView-local origin
-  (`https://localhost`) with no backend, so `app.js` points every API/upload/version call at the
+  (`https://localhost` on Android, `capacitor://localhost` on iOS) with no backend, so `app.js` points every API/upload/version call at the
   production domain (`RB_API_ROOT = https://rdbk.app/`), reached **cross-origin**. `cors_for_app()`
   (`app/bootstrap.php`) whitelists the app origins, answers the preflight, and `require_same_origin`
-  exempts them — safe because a real website can't forge `Origin: https://localhost`, and every
+  exempts them — safe because a real website can't forge those origins, and every
   state-changing action still needs the Bearer token. `version.json` carries its own
   `Access-Control-Allow-Origin: *` (`public/.htaccess`) so the footer shows the live version.
-- **MapLibre** — `rbmap.js` now uses MapLibre GL (no Mapbox, no paid token) with a free,
-  no-key topo style (OpenFreeMap) and free 3D terrain (AWS Terrarium). The satellite toggle
-  uses `RB_CONFIG.styleSatellite` (a MapTiler style URL); unset, it falls back to topo (§4).
+- **MapLibre** — `rbmap.js` uses MapLibre GL with free, no-key raster tiles — satellite (ESRI
+  World Imagery) · topo (OpenTopoMap) · OSM, cycled by the layer toggle — and free 3D terrain (AWS
+  Terrarium). `RB_CONFIG.styleSatellite` / `styleTopo` / `styleOsm` swap in a licensed provider (§4).
 - **Camera & share** — photo capture is a file input (opens the OS camera/picker, through the
   webview), and a generated file — the result QR, the run card — goes through `RBShareFile`, which
   in the app hands it to `RBNative.shareFile` (the OS share sheet). Only the iOS usage-description
@@ -175,17 +177,12 @@ nothing and that plugin's calls fail only in the release build.
 The workflow uploads `mapping.txt` next to the AAB, so Android vitals de-obfuscates crash
 traces. Resource shrinking stays off: it is not what the metric measures and it can strip assets.
 
-### Backend — token auth (one-time)
-The native apps sign in with a Bearer token instead of the cross-origin session cookie. The
-code is in `app/auth.php` + `public/api`; to make it live you must:
-1. **Deploy the backend change** — merge `native-apps` into `main` (the normal push-to-`main`
-   deploy ships `app/` and `public/`). The web is unaffected (it keeps using the cookie).
-2. **Apply the migration** on the server's MariaDB:
-   ```sh
-   mysql rdbk < migrations/006_api_tokens.sql
-   ```
-   Until both are done, in-app login returns an error; the offline tools (editor, reader,
-   tripmaster, GPX recording, background GPS) work regardless.
+### Backend — token auth
+The native apps sign in with a Bearer token instead of the cross-origin session cookie (code in
+`app/auth.php` + `public/api`, table `api_tokens` from `migrations/006_api_tokens.sql`). The web is
+unaffected: it keeps using the cookie. Under PHP-FPM the `Authorization` header only reaches PHP
+through the forwarding rule in `public/.htaccess`; without it every in-app call is signed out. The
+offline tools (editor, reader, tripmaster, GPX recording, background GPS) work without an account.
 
 ### Sign in with Apple (#370)
 App Store **guideline 4.8** rejects an app that offers Google Sign-In without a login option that
@@ -208,9 +205,9 @@ can hide the user's real email — so the iOS app must ship Sign in with Apple. 
    → More → Configure Sign in with Apple for Email Communication**. Unregistered senders are
    rejected by Apple's relay.
 
-### Maps — satellite layer (optional)
-Topo + 3D terrain work out of the box (free, no key). For real satellite imagery, set a
-MapTiler style in your `public/assets/js/config.js`:
+### Maps — licensed styles (optional)
+Satellite, topo, OSM and 3D terrain work out of the box (free, no key). To use a licensed
+provider instead, set its style in your `public/assets/js/config.js`, e.g.:
 ```js
 styleSatellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAPTILER_KEY'
 ```
@@ -301,12 +298,12 @@ No release yet (or API unreachable) → a fallback card linking the releases lis
 4. Unlock → the odometer kept counting and the GPX track is continuous (no gap). ✅
 
 ### Also worth a quick check on device
-- **Map** (Editor/Reader): the MapLibre topo map + 3D terrain render; the layer toggle flips
-  to satellite once you've set a MapTiler key (§4), otherwise it stays on topo.
+- **Map** (Editor/Reader): the MapLibre map + 3D terrain render, and the layer toggle cycles
+  satellite → topo → OSM.
 - **Camera/photos** (signed-in Editor/Recorder): the photo button opens the OS camera/picker
   and the photo uploads.
 - **Account**: signing in stores the Bearer token, so you stay signed in across restarts and
-  can save/load roadbooks (needs the backend deployed + migration applied, §4).
+  can save/load roadbooks.
 - **Share**: the result QR's and the run card's share buttons open the native share sheet
   (`RBShareFile` → `RBNative.shareFile`).
 
@@ -405,15 +402,14 @@ can add them right away — they don't depend on a specific build).
 
 ---
 
-## 9. Optional refinements (everything from the plan is integrated)
+## 9. Optional refinements
 
-Background GPS, token auth, the MapLibre migration and native camera/share are all done. What
-remains is polish, best done with the app running:
+Polish still open, best done with the app running:
 
 - **Self-hosted / offline tiles** — point `RB_CONFIG.styleTopo` at the nginx PMTiles cache on
   Hetzner and download per-route packs to the device, so the topo map works with no signal.
-  (Today the map streams tiles online, as before.)
-- **Vendor MapLibre** — it loads from a CDN (as Mapbox did), so the map needs a connection on
+  (The map streams its tiles online.)
+- **Vendor MapLibre** — it loads from a CDN, so the map needs a connection on
   first load. Vendor `maplibre-gl` into `public/assets/` for a fully offline shell.
 - **`.rdbk` open-from-OS** — wire `@capacitor/app` `appUrlOpen` to the Reader so tapping a
   `.rdbk` file opens it in the app (the web already handles this via `launchQueue`).

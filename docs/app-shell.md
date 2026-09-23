@@ -215,7 +215,9 @@ Ogni pagina riusa questi invece di reimplementarli. Firme reali:
 #### `RBModal(cardHtml, cardClass, onDismiss, opts) → { el, q(sel), close }`
 La modale base di **ogni** dialogo. Crea `.modal` > `.modal-card`, inietta `cardHtml`, applica il
 focus-trap e si chiude cliccando sullo sfondo o con Escape (invocando `onDismiss` se passata).
-`opts` (4° argomento) regola comportamenti opzionali della modale. Ritorna `el` (l'overlay),
+Con `opts = { dismissable: false }` né lo sfondo né Escape la chiudono (il focus resta intrappolato):
+si esce solo dai suoi pulsanti — la forma di ogni modale che tiene l'unica copia del lavoro
+dell'utente (vedi `CLAUDE.md`, *A modal holding the only copy…*). Ritorna `el` (l'overlay),
 `q(sel)` (query dentro la modale) e `close()`.
 
 `cardClass` è un **modificatore** della `.modal-card` (definito in `app.css`):
@@ -292,6 +294,15 @@ spinner dentro un pulsante prende `currentColor`: quello standard è un anello `
 `--sand`, invisibile su un `.btn-primary` sabbia. Un `el` che non esiste restituisce uno stub inerte —
 `leaveEditor` salva senza alcun pulsante a schermo. Comportamento verificato in
 [tests/busy-button.test.js](../tests/busy-button.test.js).
+
+#### Le help tip (`.help-tip` + `data-tip`, #859)
+L'aiuto di un campo è un'icona ⓘ `.help-tip` il cui `data-tip` porta il testo (tradotto via
+`data-i18n-tip`). Non c'è una funzione da chiamare: `app.js` delega gli eventi a livello di documento e
+tutte le tip condividono **una sola bolla** (`.tip-bubble`), `position: fixed` sul viewport così che
+nessun pannello che scorre la tagli, messa **sopra** la sua ⓘ (sotto solo se sopra non c'è spazio)
+perché non copra mai il campo che spiega, e tenuta a 8 px dentro lo schermo. Si apre con hover, focus
+o tap; si chiude uscendo, perdendo il focus, scorrendo o toccando altrove. Verificato da
+[tests/help-tips.test.js](../tests/help-tips.test.js).
 
 ### La regola delle barre condivise
 
@@ -430,23 +441,28 @@ e ritorna `null` (con `admin: true` esige anche il ruolo admin).
 | `RBDateField(input)` | rende un input data localizzato |
 | `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
 | `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
-| `RBCopy(text, okMsg?)` | copia negli appunti (vedi sotto) |
+| `RBCopy(text, okMsg?)` | copia negli appunti (vedi sopra) |
 | `RBDebounce(fn, ms = 300)` | `fn` parte `ms` dopo l’ultima chiamata (`.cancel()` la annulla) — le ricerche che interrogano il server, sempre insieme a un contatore di sequenza che scarta le risposte superate |
 | `RBCsv(rows)` | righe (array di celle, intestazione in testa) → Blob CSV con BOM UTF-8 e quoting RFC-4180: l’unico modo in cui un export scrive un CSV (attività, partecipanti, classifica) |
-| `RBBusy(el, { onEnd })` | il pulsante che ha lanciato un'operazione ne riporta l'esito (vedi sotto) |
+| `RBBusy(el, { onEnd })` | il pulsante che ha lanciato un'operazione ne riporta l'esito (vedi sopra) |
+| `RBTurnstile(el, siteKey) → { token(), reset() }` | l'unico loader di Cloudflare Turnstile (moduli account, commenti #809): rende il widget in `el` dal `load` dello script (#863); senza chiave o dentro l'app non fa nulla e `token()` è `null` — il server esenta le origin dell'app |
+| `RBDeviceLabel()` | stringa grezza del dispositivo, per gli admin (#870): superficie (App · PWA · Web), browser e modello/OS letti dallo user agent — mai un identificativo; `run_save` la salva in `roadbook_runs.device` |
 
 ### Lista roadbook condivisa
 
-#### `RBRoadbookList(container) → Promise<number>`
+#### `RBRoadbookList(container, onChange?) → Promise<number>`
 La lista dei roadbook salvati dell'utente loggato, **condivisa** da *My roadbooks* e dalla landing
 dell'Editor (lì non c'è una seconda implementazione: entrambe chiamano questo helper). Fa
-`RBApi('rb_list')`, e se non c'è nessun roadbook scrive un messaggio tradotto e ritorna `0`.
+`RBApi('rb_list')`, e se non c'è nessun roadbook scrive un messaggio tradotto e ritorna `0`; una
+chiamata fallita non è una lista vuota (offline sul campo non deve mai leggersi "non hai roadbook",
+#218), quindi scrive l'errore — o l'avviso offline — e ritorna `0`. `onChange` scatta dopo un
+duplica/elimina, perché la pagina aggiorni ciò che sta accanto (es. il cestino, #238).
 Altrimenti ritorna il numero di roadbook e disegna, in testa, una riga di **uso spazio**
 (`used_bytes / quota_bytes`, #99) e, per ogni riga (`rowHtml`):
 
 - il riassunto `RBSummary` + data ultima modifica, e un **select di stato** (`draft` · `ready` ·
   `public`, da `RB.ROADBOOK_STATUSES`) che chiama `rb_status` al cambio e ri-renderizza dalla
-  verità del server (non è più un badge Public/Private su `rb.is_public`);
+  verità del server;
 - azioni con percorsi relativi (funzionano da `/editor/` come da `/myroadbooks/`):
   - **Read** → `../reader/?rb=<id>` — apre quel roadbook nel Reader, **anche se privato/personale**;
   - **View** → `../challenge/<slug>` — la vetrina pubblica;
@@ -454,7 +470,8 @@ Altrimenti ritorna il numero di roadbook e disegna, in testa, una riga di **uso 
   - **Edit** → `../editor/?rb=<id>`;
   - **Export** → `../editor/?rb=<id>&export=1` — apre l'Editor e fa **scattare subito il popup
     Export** (l'Editor toglie poi il flag `export=1` dall'URL, così un refresh non lo riapre);
-  - **Save as** (duplica) e **Delete** (con conferma `RBConfirmDanger` che **nomina il titolo**).
+  - **Duplicate** (`rb_duplicate`) e **Delete** (con la conferma `RBConfirmTrash`, che **nomina il
+    titolo** e dice che il roadbook va nel cestino).
 
 **Ricerca + paginazione.** La barra di ricerca viene mostrata **solo se la lista ha più di 5
 voci**; filtra in locale via `RB.filterRoadbooks(all, q)` (match case-insensitive sul titolo). La

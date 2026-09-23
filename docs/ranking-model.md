@@ -63,7 +63,7 @@ team date  start  end  ac sk ex cap sp  km  av   rb     firma
 | `avg`      | 3     | Velocità media raggiunta                      | **decimi** di km/h  |
 | `rb`       | 6     | Prefisso dello slug del roadbook (match nel Ranking) | testo, padding a spazi |
 
-Note di codifica (in [buildMeta](../public/assets/js/roadbook-core.js#L326)):
+Note di codifica (in [buildMeta](../public/assets/js/roadbook-core.js)):
 - I campi numerici sono **clampati a 0** se negativi e **saturati a tutti-9** in overflow
   (un `-` o un valore troncato a sinistra non possono mai corrompere la stringa).
 - `km` e `avg` sono in *decimi* (interi): `12345` → 1234.5 km, `305` → 30.5 km/h.
@@ -78,7 +78,7 @@ La valorizzazione delle penalità nasce durante la navigazione, non nel ranking.
 
 ### Sezione a punteggio
 Le penalità maturano **solo dentro la sezione cronometrata**. La sezione è delimitata dalle
-icone speciali nelle note ([reader.js:280](../public/reader/reader.js#L280)):
+icone speciali nelle note ([reader.js](../public/reader/reader.js)):
 - inizio = `I02_partenza.png`, fine = `I01_arrivo.png`;
 - `scoredSet` contiene tutte le note tra una partenza (inclusa) e il primo arrivo successivo;
 - **se nessuna nota ha l'icona di partenza, l'intero roadbook è a punteggio** (`scoredSet = null`).
@@ -167,7 +167,7 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
 ## 6. Firma e validità
 
 - La firma è `HMAC-SHA256(meta, signKey)` troncata a 10 hex; `signKey` vive in
-  `config.js` lato client ([roadbook-core.js:354](../public/assets/js/roadbook-core.js#L354)).
+  `config.js` lato client ([roadbook-core.js](../public/assets/js/roadbook-core.js)).
 - Essendo la chiave nel client, la firma protegge da **manomissioni casuali/accidentali**,
   non da un falsario determinato. È comunque molto meglio di un QR in chiaro non verificabile.
 - In ranking, un risultato con firma non valida **viene comunque aggiunto** ma marcato con

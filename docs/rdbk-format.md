@@ -67,7 +67,7 @@ puri prodotti prima del contenitore restano leggibili come `roadbook.json` nudo.
 ```
 
 Lo scheletro è prodotto da `buildRoadbook` in
-[roadbook-core.js](../public/assets/js/roadbook-core.js#L161); i metadati derivati
+[roadbook-core.js](../public/assets/js/roadbook-core.js); i metadati derivati
 (distanza totale, numero note), i tipi di strada e le note vengono ricalcolati da
 `recomputeMetrics`/`recomputeCaps`/`normalizeRoadTypes`.
 
@@ -95,11 +95,12 @@ Lo scheletro è prodotto da `buildRoadbook` in
 
 Un array **ordinato** di punti che descrive la polilinea del percorso. Le note vi fanno
 riferimento per indice (`idx`). Ogni punto può portare un `ele` opzionale — l'altitudine
-in metri interi.
+in metri interi — e un `t` opzionale — l'ora del fix in millisecondi epoch (UTC), conservata
+da una registrazione così che gli strumenti possano ordinare o allineare i punti nel tempo.
 
 ```jsonc
 "track": [
-  { "lat": 45.82712, "lon": 9.41164, "ele": 1245 },
+  { "lat": 45.82712, "lon": 9.41164, "ele": 1245, "t": 1790000000000 },
   { "lat": 45.82740, "lon": 9.41180 }
 ]
 ```
@@ -122,10 +123,12 @@ la traccia GPS.
 | `text`             | string          | L'istruzione / commento.                                                           |
 | `cap`              | integer \| null | CAP — il rilevamento in gradi (0–360) da tenere fino alla nota successiva, se mostrato. |
 | `cap_distance`     | integer \| null | Distanza in linea retta per cui tenere quel rilevamento (metri).                   |
+| `cap_type`         | string, opzionale | Qualifica il CAP: `exit` (default), `average`, `calculated` o `turning`; reso accanto al CAP. |
 | `bearing_in`       | number          | Rilevamento della traccia in arrivo alla nota (gradi).                             |
 | `bearing_out`      | number          | Rilevamento della traccia in uscita dalla nota (gradi).                            |
 | `road_type_in`     | 0–5             | Superficie in arrivo — vedi [§8 Tipi di strada](#8-tipi-di-strada).                |
 | `road_type_out`    | 0–5             | Superficie in uscita.                                                              |
+| `speed_limit`      | integer, opzionale | Limite di velocità dichiarativo (km/h) in vigore da questa nota; `0` = limite annullato. Preferito a un limite codificato nel nome di un simbolo (§7). |
 | `danger`           | 1–3, opzionale  | Gradazione di pericolo stile FIA. Resa come `!` / `!!` / `!!!` in rosso dentro il box del diagramma (mai nella colonna del testo). Assente o 0 = nessun pericolo. |
 | `wp_type`          | string, opzionale | Tipo di waypoint FIA (`RB.WP_TYPES`): i 7 tipi `masked`/`control`/`security`/`navigation`/`precise`/`visible`/`eclipse` più i marcatori `start`/`finish`, gli estremi di settore (`ss_start`/`ss_end`), di zona (`dz`/`fz`, `dn`/`fn`, `dt`/`ft`) e i controlli (`cp`/`pc`/`stop`). **Nel file (`.rdbk` e JSON sul server) il valore è scritto come codice OpenRally standard** — `WPM`, `WPN`, `WPE`, `WPS`, `WPC`, `WPP`, `WPV`, più i marcatori `DSS`/`ASS`/`DZ`/`FZ`/`DN`/`FN`/`DT`/`FT`/`CP`/`PC`/`STOP`. All'import un reader lo normalizza (insieme ai vecchi ID interni) negli ID `RB.WP_TYPES` via `wpTypeByCap`/`importRoadbook`, e `roadbookForExport` fa la conversione inversa in scrittura. Reso come pastiglia colorata (acronimo) accanto al numero nota e mappato a un `sym` Garmin/OSMAnd nell'export GPX. I tipi `rally` compaiono nell'editor solo con `meta.profile = "rally"`. |
 | `wp_radius`        | integer, opzionale | Raggio di convalida specifico della nota (metri). `RB.detectionRadius(note, meta)` ne applica la precedenza a runtime: `wp_radius` per-nota → `meta.default_wp_radius` → default del tipo → `CONST.REACH_DEFAULT_M` (30 m); il Reader lo usa come geofence per il rilevamento automatico. |
@@ -155,7 +158,7 @@ la traccia GPS.
 > **`road_type_in` è derivato, non autorale.** La strada continua finché una nota non
 > cambia `road_type_out`; perciò `road_type_in` di ogni nota è sempre il `road_type_out`
 > della nota precedente, ricalcolato da `normalizeRoadTypes`
-> ([roadbook-core.js:204](../public/assets/js/roadbook-core.js#L204)). Si autora solo
+> ([roadbook-core.js](../public/assets/js/roadbook-core.js)). Si autora solo
 > `road_type_out`.
 
  > **Il materiale di una nota (`blocks`, #284 · #534 · #542).** Ogni riga di `notes[]` è una
@@ -235,7 +238,7 @@ legge dalle icone:
 ## 8. Tipi di strada
 
 `road_type_in` / `road_type_out` (e il `road_type` dei vettori di incrocio) usano un
-identificatore 0–5 ([roadbook-core.js:59](../public/assets/js/roadbook-core.js#L59)) — un
+identificatore 0–5 ([roadbook-core.js](../public/assets/js/roadbook-core.js)) — un
 vocabolario **nostro**, non uno standard FIA o OpenRally. Il nome di ogni tipo vive sul catalogo
 `RB.ROAD_TYPES` insieme a colore e spessore, così editor e barra del tulip li chiamano dallo
 stesso posto (#561):
@@ -267,7 +270,7 @@ tipo di strada e disegnato con uno spessore `width`.
 | `pivot`     | [x, y]  | Inizio del vettore (unità di riferimento, +y in alto). |
 | `tip`       | [x, y]  | Punta / freccia del vettore.                      |
 | `width`     | number  | Spessore del tratto.                              |
-| `road_type` | 0–4     | Tipo di strada → colore del vettore.              |
+| `road_type` | 0–5     | Tipo di strada → colore del vettore.              |
 
 ```jsonc
 "junctions": [
@@ -288,7 +291,7 @@ Il valore è `null` quando la nota non disegna incroci espliciti.
   resta un documento di sola navigazione (traccia + note + simboli).
 - **Nessun dato personale** nel file né nel token risultato (vedi sotto).
 - Niente tempi GPS per-punto nel modello `notes`: il logging GPX live è separato (lo
-  produce il `gpxDocument`, [roadbook-core.js:303](../public/assets/js/roadbook-core.js#L303)).
+  produce il `gpxDocument`, [roadbook-core.js](../public/assets/js/roadbook-core.js)).
 
 ---
 

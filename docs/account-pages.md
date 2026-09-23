@@ -20,16 +20,16 @@ della sola galleria in [home.js](../public/assets/js/home.js).
 
 Ha una particolarità: lo **stesso documento serve sia il sito web sia l'app nativa**. Uno
 script inline marca `<html class="native">` quando gira dentro Capacitor
-([index.html:7](../public/index.html#L7)); il CSS allora nasconde i blocchi `.web-only` e
+([index.html](../public/index.html)); il CSS allora nasconde i blocchi `.web-only` e
 mostra `.app-only`.
 
 | Blocco | Visibilità | Contenuto |
 |--------|------------|-----------|
-| Hero | solo web (`.web-only`) | Titolo, lead, e i 4 passi del workflow: registra → costruisci → usa con amici → organizza un evento ([index.html:24](../public/index.html#L24)) |
+| Hero | solo web (`.web-only`) | Titolo, lead, e i 4 passi del workflow: registra → costruisci → usa con amici → organizza un evento ([index.html](../public/index.html)) |
 | Features | solo web | Le card degli strumenti: Roadbook Recorder, Roadbook Editor, Roadbook Reader, Tripmaster, Event classification, più *Events* (coming soon) |
-| Install / Cross-platform | solo web | PWA installabile su Windows, macOS/iOS, Android ([index.html:63](../public/index.html#L63)) |
-| App launcher | solo app nativa (`.app-only`) | Tre tile verso Reader, Tripmaster, Recorder ([index.html:77](../public/index.html#L77)) |
-| Gallery / Public Challenges | web **e** app | Griglia delle challenge pubbliche, popolata da JS ([index.html:86](../public/index.html#L86)) |
+| Install / Cross-platform | solo web | PWA installabile su Windows, macOS/iOS, Android ([index.html](../public/index.html)) |
+| App launcher | solo app nativa (`.app-only`) | Tre tile verso Reader, Tripmaster, Recorder ([index.html](../public/index.html)) |
+| Gallery / Public Challenges | web **e** app | Griglia delle challenge pubbliche, popolata da JS ([index.html](../public/index.html)) |
 
 La galleria è l'unico pezzo dinamico. [home.js](../public/assets/js/home.js) chiama
 `RBChallenges.listPublic()` e disegna un **teaser di 6** roadbook pubblici con la card condivisa
@@ -43,7 +43,7 @@ completa e ricercabile vive su `/roadbooks`.
 ## 2. Le voci di menu account (header globale)
 
 L'header è reso da `app.js` su ogni pagina; al suo interno un piccolo "account control"
-([app.js:301](../public/assets/js/app.js#L301)) interroga `RBApi('config')` per sapere se
+([app.js](../public/assets/js/app.js)) interroga `RBApi('config')` per sapere se
 c'è una sessione e cambia forma di conseguenza:
 
 - **Non loggato** → una sola icona utente che linka alla pagina account via `RBLoginUrl()`
@@ -82,12 +82,12 @@ Una sola pagina che fa da hub di autenticazione **e** da profilo. Markup in
 [index.html](../public/account/index.html), logica in
 [account.js](../public/account/account.js). Il commento di testa è esplicito: registrazione,
 verifica, login, recupero/reset password e profilo (avatar + bio); i roadbook salvati
-**vivono sulla loro pagina** ([account.js:2](../public/account/account.js#L2)).
+**vivono sulla loro pagina** ([account.js](../public/account/account.js)).
 
 ### 3.1 Le viste
 
 La pagina contiene sei sezioni mutuamente esclusive; `show(id)` ne mostra una sola
-nascondendo le altre ([account.js:15](../public/account/account.js#L15)):
+nascondendo le altre ([account.js](../public/account/account.js)):
 
 | Vista | id | Scopo |
 |-------|------|-------|
@@ -98,7 +98,7 @@ nascondendo le altre ([account.js:15](../public/account/account.js#L15)):
 | Forced change | `vForce` | cambio password obbligato quando un admin ha impostato una password temporanea (`must_change_password`) |
 | Account / profilo | `vAccount` | il profilo vero e proprio |
 
-`init()` ([account.js:87](../public/account/account.js#L87)) decide quale mostrare: legge
+`init()` ([account.js](../public/account/account.js)) decide quale mostrare: legge
 `RBApi('config')`, gestisce i parametri URL `?verify=…`, `?reset=…` e `?verifyemail=…`
 (conferma del cambio email, §3.4), e **se `cfg.user` esiste salta dritto al profilo**
 (`showAccount`, o `showForce` se deve ancora cambiare la password temporanea). Altrimenti
@@ -107,7 +107,7 @@ mostra il login.
 ### 3.2 Si apre già in modifica
 
 Non c'è una modalità "sola lettura": appena loggato, `showAccount(user)`
-([account.js:206](../public/account/account.js#L206)) mostra subito il form modificabile.
+([account.js](../public/account/account.js)) mostra subito il form modificabile.
 Popola l'intestazione e i campi:
 
 | Elemento | Origine dato |
@@ -128,13 +128,13 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
 
 - **Cambia foto** — `pfAvatarBtn` fa scattare l'`<input type=file>` nascosto; al `change`
   l'immagine sale con `RBUpload({type:'avatar'}, f, 'avatar.jpg')` e, se ok, l'avatar viene
-  aggiornato in pagina ([account.js:221](../public/account/account.js#L221)).
+  aggiornato in pagina ([account.js](../public/account/account.js)).
 - **Save profile** — `pfSave` invia `RBApi('profile', { first_name, last_name, bio,
   organization })`. Salva quindi **nome, cognome, bio e organizzazione** in un colpo solo, e
   ri-sincronizza il nome mostrato nell'intestazione.
 - **Default map location** (`#defaultLocation`) — una card con una mini-mappa (`#pfLocMap`, `RBMap` con
   `RBMap.STYLE_TOPO`, tile topografiche gratuite) e un pin trascinabile
-  ([account.js:183](../public/account/account.js#L183)). Si imposta toccando la mappa,
+  ([account.js](../public/account/account.js)). Si imposta toccando la mappa,
   trascinando il pin, con **Use my location** (GPS via `navigator.geolocation`) o si svuota
   con **Clear**; le coordinate scelte si salvano col proprio bottone **Save location** via
   `RBApi('save_location', { default_lat, default_lon })`
@@ -142,24 +142,24 @@ proprio bottone di salvataggio — non esiste un unico "Save" globale.
   `app.js`): *Use my location* la salva subito, *Choose on the map* porta qui
   (`account/#defaultLocation`), *Not now* resta ricordato sul dispositivo. Mai sopra questa
   pagina, un tool a schermo intero o un altro dialogo.
-  ([account.js:189](../public/account/account.js#L189)). La posizione salvata centra l'Editor
-  a partenza vuota (es. "Draw on the map", [editor.js:1662](../public/editor/editor.js#L1662))
-  e il Recorder prima del primo fix GPS ([recorder.js:61](../public/recorder/recorder.js#L61)).
+  ([account.js](../public/account/account.js)). La posizione salvata centra l'Editor
+  a partenza vuota (es. "Draw on the map", [editor.js](../public/editor/editor.js))
+  e il Recorder prima del primo fix GPS ([recorder.js](../public/recorder/recorder.js)).
 - **Change email** — emaila un link di conferma al **nuovo** indirizzo; l'email cambia solo
   dopo la conferma (§3.4). Doppio campo (new + confirm) con controllo di uguaglianza, poi
-  `RBApi('change_email', { email })` ([account.js:153](../public/account/account.js#L153)).
+  `RBApi('change_email', { email })` ([account.js](../public/account/account.js)).
 - **Change password** — current + new + confirm (con conferma di uguaglianza), via
   `RBApi('change_password', { current, new })`; al successo memorizza la nuova credenziale
-  nel password manager (§3.5) e svuota i campi ([account.js:146](../public/account/account.js#L146)).
+  nel password manager (§3.5) e svuota i campi ([account.js](../public/account/account.js)).
 - **Delete account** — chiede conferma con `RBConfirmDanger` (che nomina l'azione
   irreversibile), poi `RBApi('account_delete', { password })` e, se ok, torna alla home
-  ([account.js:159](../public/account/account.js#L159)).
+  ([account.js](../public/account/account.js)).
 - **Sign out** — `RBSignOut()`, condiviso col menu account.
 - **Run reports** (#619) — la scelta fissa per i nuovi report: *Ask me each time* / *Always
   public* / *Always private* (`runs_settings`); il report nel Reader la chiede quando è `ask`.
 - **View my public profile** — il link a `/u/<username>` nella testata.
 - In fondo, un bottone **My roadbooks** verso `../myroadbooks/`
-  ([index.html:197](../public/account/index.html#L197)).
+  ([index.html](../public/account/index.html)).
 
 ### 3.4 Cambio email con ri-verifica
 
@@ -167,7 +167,7 @@ Il cambio email è a **due fasi**, per non lasciare l'account agganciato a un in
 provato. Inviato `change_email`, il server NON sostituisce l'email: la mette da parte (in
 `pending_email`) e spedisce un link di conferma al nuovo indirizzo. Aprendo quel link si
 torna su `/account/?verifyemail=…`; `init()` chiama
-`RBApi('verify_email_change', { token })` ([account.js:105](../public/account/account.js#L105)),
+`RBApi('verify_email_change', { token })` ([account.js](../public/account/account.js)),
 ri-legge `config` (l'email può essere cambiata) e rientra nel profilo aggiornato. Solo a
 questo punto l'email è effettivamente cambiata.
 
@@ -175,7 +175,7 @@ questo punto l'email è effettivamente cambiata.
 
 I form di RDBK postano via `fetch` (nessuna navigazione), quindi il browser non vede mai
 una submission di credenziali e da solo non offrirebbe di salvare/aggiornare la password.
-`storeCredential(id, password)` ([account.js:42](../public/account/account.js#L42)) è il
+`storeCredential(id, password)` ([account.js](../public/account/account.js)) è il
 trigger esplicito: dopo un login andato a buon fine e dopo un cambio password (anche quello
 forzato) chiama `navigator.credentials.store(new PasswordCredential({ id, password }))`, e il
 gestore password del browser propone di salvare/aggiornare. Richiede **HTTPS + un browser
@@ -190,17 +190,17 @@ avatar via `RBUpload` (→ `upload.php`). Tutto attraverso `RBApi`/`RBUpload`.
 ### 3.7 Dettagli onesti
 
 - **Cloudflare Turnstile** (anti-bot) è renderizzato su login/register/forgot **solo se**
-  il server espone una site key in `config` ([account.js:18](../public/account/account.js#L18));
+  il server espone una site key in `config` ([account.js](../public/account/account.js));
   senza configurazione i widget restano vuoti e inerti. Nell'**app nativa non viene mai
   caricato** (il widget è domain-locked e non gira in WebView) e il backend esenta gli
   Origin app fidati dal challenge (`verify_turnstile`).
 - Ogni campo password riceve un toggle "occhio" mostra/nascondi iniettato a runtime
-  ([account.js:65](../public/account/account.js#L65)).
+  ([account.js](../public/account/account.js)).
 - I form usano `submit` con `preventDefault` per non ricaricare mai la pagina
-  ([account.js:35](../public/account/account.js#L35)).
+  ([account.js](../public/account/account.js)).
 - **Rate limiting del login.** Su un 429 del server (`retry_after`), il bottone Sign in si
   disabilita con un conto alla rovescia live finché la finestra non si libera
-  ([account.js:50](../public/account/account.js#L50)).
+  ([account.js](../public/account/account.js)).
 
 ---
 
@@ -276,14 +276,14 @@ Riassunto del contenuto (data ultimo aggiornamento: 18 giugno 2026):
 
 | Sezione | Punto chiave |
 |---------|--------------|
-| Location | Il GPS è letto **sul dispositivo** per navigare/registrare; la posizione live **non** va ai server; nell'app nativa la registrazione continua a schermo bloccato via foreground service ([index.html:37](../public/privacy/index.html#L37)) |
-| Account (opzionale) | Gli strumenti base funzionano senza account; se creato, si memorizzano nome/cognome, username, email e password con **hash** sicuro ([index.html:48](../public/privacy/index.html#L48)) |
-| Roadbook & foto | Salvati sul server solo se **tu** li salvi; ogni roadbook è **privato di default**, pubblico solo se pubblicato come challenge ([index.html:56](../public/privacy/index.html#L56)) |
-| Camera & foto | La fotocamera è usata solo quando aggiungi una foto a un roadbook ([index.html:64](../public/privacy/index.html#L64)) |
-| Cosa NON facciamo | Niente pubblicità, niente SDK di tracking di terze parti, niente vendita di dati, niente raccolta posizione in background ([index.html:68](../public/privacy/index.html#L68)) |
-| Storage & sicurezza | Dati su server **in EU**; password e token con hash; HTTPS ([index.html:75](../public/privacy/index.html#L75)) |
-| Diritti & scelte | Uso completo senza account; modifica/eliminazione roadbook e foto; richiesta di cancellazione account via email ([index.html:79](../public/privacy/index.html#L79)) |
-| Bambini | Non rivolto a under 13 ([index.html:86](../public/privacy/index.html#L86)) |
+| Location | Il GPS è letto **sul dispositivo** per navigare/registrare; la posizione live **non** va ai server; nell'app nativa la registrazione continua a schermo bloccato via foreground service ([index.html](../public/privacy/index.html)) |
+| Account (opzionale) | Gli strumenti base funzionano senza account; se creato, si memorizzano nome/cognome, username, email e password con **hash** sicuro ([index.html](../public/privacy/index.html)) |
+| Roadbook & foto | Salvati sul server solo se **tu** li salvi; ogni roadbook è **privato di default**, pubblico solo se pubblicato come challenge ([index.html](../public/privacy/index.html)) |
+| Camera & foto | La fotocamera è usata solo quando aggiungi una foto a un roadbook ([index.html](../public/privacy/index.html)) |
+| Cosa NON facciamo | Niente pubblicità, niente SDK di tracking di terze parti, niente vendita di dati, niente raccolta posizione in background ([index.html](../public/privacy/index.html)) |
+| Storage & sicurezza | Dati su server **in EU**; password e token con hash; HTTPS ([index.html](../public/privacy/index.html)) |
+| Diritti & scelte | Uso completo senza account; modifica/eliminazione roadbook e foto; richiesta di cancellazione account via email ([index.html](../public/privacy/index.html)) |
+| Bambini | Non rivolto a under 13 ([index.html](../public/privacy/index.html)) |
 | Contatto | [info@rdbk.app](mailto:info@rdbk.app) |
 
 ---

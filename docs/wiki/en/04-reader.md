@@ -1,163 +1,125 @@
 # Reader — Navigate a roadbook with GPS
 
-The **Reader** is the digital co-pilot: it loads a roadbook and turns it into a paper-style table of notes driven by GPS. Odometer, CAP compass, automatic or manual validation and — in Competition mode — a signed QR with the result.
+The **Reader** is the digital co-pilot: it loads a roadbook and turns it into a paper-style table of notes driven by GPS. Odometers measured along the route, automatic or manual validation, a run report at the end and — in an event's competition — a signed result for the ranking.
 
-> Works 100% offline for navigation and validation. A connection is only needed for: login, loading roadbooks from profile/public gallery, saving results.
+> Navigation and validation work 100% offline. A connection is only needed to sign in, to load a roadbook from your profile or the public gallery, and to save the run report.
 
 ---
 
 ## 1. Load a roadbook
 
-Open the Reader (`/reader/`) — the start screen offers 3 entries:
+Open the Reader (`/reader/`). The start screen offers:
 
-| Entry | How to do it | What happens |
-|-------|--------------|--------------|
-| **Upload `.rdbk` file** | Tap "Upload .rdbk" → choose file | Imports a complete roadbook (track + notes + icons) |
-| **Your roadbooks** | Tap "Your roadbooks" (only if logged in) | Picker of roadbooks saved on your profile |
-| **Public roadbooks** | Tap "Public roadbooks" | Picker of public challenges from the gallery |
+| Entry | What happens |
+|-------|--------------|
+| **Load .rdbk file** | Imports a complete roadbook (track + notes + icons) |
+| **Open from My roadbooks** | Picks one of the roadbooks saved on your profile (signed in) |
+| **Public gallery** | The public roadbooks, right below: tap one to open it |
 
-**From URL** (automatic):
-- `/reader/<slug>` → loads a public roadbook directly
-- `?rb=<id>` → loads one of your saved roadbooks by ID
+**From a link**: `/reader/<slug>` opens a public roadbook, `?rb=<id>` one of your own.
 
-> To open a public roadbook you must be logged in.
+> Opening a public roadbook requires signing in.
+
+A roadbook first opens as a **read-only preview**: the note list, no GPS. You may just want to look. Tap **Navigate** to start.
 
 ---
 
-## 2. Choose the navigation mode
+## 2. Start a run
 
-After loading, the start modal opens with these options:
+**Navigate** opens the start dialog:
 
 | Option | Description |
 |--------|-------------|
-| **Record GPX** | Saves the GPS track of the navigation (crash-safe) |
-| **Sound on note** | Short beep when a note is validated |
+| **Record a GPX track** | Logs the GPS track of the run (crash-safe) |
+| **Sound on note** | A bell on every validated note, a fanfare on the last one. It plays over your music instead of stopping it |
+| **External remote (bluetooth remote)** | Advance with a Bluetooth pedal or clicker (see §4) |
 
-There is no mode to choose: a roadbook opened from an event that **scores** it runs as a **competition** (your vehicle number is asked, penalties apply, the signed result goes to the event ranking); anything else runs as a **trip**. Every run ends with its **report** (notes reached, speed limits respected, time, distance), which you keep private or show on your public profile.
+There is no mode to choose: a roadbook opened from an event that **scores** it runs as a **competition** (your vehicle number is asked, penalties apply, the signed result goes to the event ranking); anything else runs as a **trip**.
 
 ---
 
 ## 3. The navigation screen
 
-```
-┌─────────────────────────────────────────┐
-│ Roadbook title                          │
-│ Total: 12.34 km  |  Partial: 0.56 km  │
-│ Compass: 045° ↗  |  GPS: ±3m 🟢         │
-├─────────────────────────────────────────┤
-│ #  │ Vignette │ Directions    │ [Map] │
-│ 1  │  ┌───┐   │ Turn right    │  [☗]   │
-│    │  │ ╱  │   │ CAP 045°     │         │
-│    │  └───┘   │ Asphalt       │         │
-│─── │───────── │────────────── │─────────│
-│ 2  │  ┌───┐   │ Straight      │  [☗]   │
-│    │  │ ↑  │   │ Dirt          │         │
-│    │  └───┘   │               │         │
-│    │   ✅     │ REACHED       │         │
-├─────────────────────────────────────────┤
-│              [⏸ Pause] [🏁 Finish]        │
-└─────────────────────────────────────────┘
-```
+The Reader takes the whole screen:
 
-### Screen elements
+1. **Odometer bar** at the top: title, total (*prog.*) over partial (*part.*), heading, clock, GPS status and speed
+2. **Note list**: one row per note, in three columns — total and partial distance with the note number (and its waypoint type, if any) · the vignette · the text, CAP, speed limit and coordinates
+3. **Action bar** at the bottom: **Auto** switch · **Note map** · **Pause** · GPX · **Finish** · **End**
 
-1. **Odometer bar** (sticky at top): title, total, partial, CAP compass, time, GPS status, battery
-2. **Note table**: each note on a row with distance, tulip vignette, text, CAP, road type
-3. **Note states**: ✅ Reached (green) · ⏭ Skipped (pink) · ▶ Active (red border) · white (future). The active note also turns **blue as you close in on it**, and shows the metres still to run
-4. **Columns**: Distances + number | Vignette | Directions — the whole active row is what you tap to validate
+Note states: **reached** (green) · **skipped** (pink) · **active** (red border) · upcoming (white). As you close in on the active note it turns **blue** and shows the distance still to run, in km with two decimals.
+
+When a note is validated, the next one moves to the **top of the list**: the road ahead gets all the room.
+
+### Distances along the route
+The distance still to run is measured **along the road**, like the roadbook's own partials, not as the crow flies: the partial you have driven plus the distance left always equals the note's partial. At every change of note both odometers are re-anchored on the route, so the partial reads 0.00 exactly at the note.
 
 ---
 
-## 4. Progress: automatic vs manual
+## 4. Progress: automatic or manual
 
 ### Automatic (default)
-As soon as you drive into the **validation radius** of the active note, the note is marked as reached automatically.
+The active note validates as soon as you drive into its **validation radius**.
 
-- The radius is adaptive: it depends on the note's `wp_radius`, with a maximum that avoids overlaps and a minimum that stays above GPS noise (18 m)
-- What is tested is the **path driven between two GPS fixes**, not just the fixes themselves: at speed a phone can move 25 m between two positions, so a tight waypoint would otherwise fit right between them and never validate
-- A position the phone is not sure about (poor accuracy) is ignored rather than acted on — it can neither validate a note nor add distance to the odometer
-- Toggle with the **Auto** switch in the bar
+- The radius comes from the note (`wp_radius`), then the roadbook's default, then its waypoint type, then 30 m; it never goes below 18 m, above GPS noise
+- What is tested is the **road driven between two GPS fixes**, not just the fixes: at speed a phone can move 25 m between two positions, and a tight waypoint would otherwise slip between them
+- A position the phone is not sure about (poor accuracy) is ignored: it can neither validate a note nor add distance
 
 ### Manual
-Tap **anywhere on the active note's row**, or the "Reached" button, or the Validate button — all three do the same thing (the whole row is the target, so you don't have to aim at a small button while moving).
+Switch **Auto** off: then a tap **anywhere on the active note's row** marks it done (the whole row is the target, no small button to aim at while moving). With Auto on, only the GPS validates.
 
-- In Trip: marks green and syncs the odometer
-- In Competition: validates with score (you must be within 100 m of the note, plus whatever margin your GPS accuracy needs)
-- Tapping **another** note moves the run to it and asks for confirmation first: the notes in between stay unvalidated, and in Competition each scored one skipped costs 450 points
-- In Competition you cannot go back to an already validated note
+- In competition a manual validation needs you within 100 m of the note, plus whatever margin your GPS accuracy needs
+- Tapping **another** note moves the run there and asks first: the notes in between stay unvalidated, and in competition each scored note skipped costs 450 points
+- In competition you cannot go back to a validated note
 
 ### Hands-free with an external remote
-Tick **External remote (pedal / clicker)** in the mode chooser to advance without touching the screen.
+Tick **External remote** in the start dialog to advance without touching the screen.
 
-- A Bluetooth **page-turner pedal**, camera clicker or presentation remote pairs as a keyboard: nothing to configure, works offline, in the browser and in the app alike
-- **Advance**: → · ↓ · Page ↓ · Space · Enter — **Back**: ← · ↑ · Page ↑ (Trip mode only; a validated note cannot be un-validated in Competition)
-- A foot pedal keeps both hands on the wheel; a handlebar clicker suits moto and bike
-- The setting is remembered on that device, and keys are ignored while you type or a dialog is open
-
----
-
-## 5. CAP bar (between two notes)
-
-When the previous note has a CAP, a bar appears at the bottom with:
-- **Heading to keep** (e.g. CAP 045°)
-- **Current speed**
-- **Distance to destination**
-- **Directional arrow**
-
-It's a "compass" aid to navigate between two notes without getting lost.
+- A Bluetooth **page-turner pedal**, camera clicker or presentation remote pairs as a keyboard: nothing to configure, it works offline, in the browser and in the app
+- **Advance**: → · ↓ · Page ↓ · Space · Enter — **Back**: ← · ↑ · Page ↑ (trip only: a validated note cannot be undone in competition)
+- The setting is remembered on the device, and keys are ignored while you type or a dialog is open
 
 ---
 
-## 6. Interactive map per note
+## 5. Note map
 
-Optional (only when the roadbook allows the map): the map button in the bottom bar opens a mini-map under the active note; tap it again to close it.
+Only when the roadbook allows a map: **Note map** in the action bar opens a mini-map under the active note; tap it again to close it.
 
-- Centered on the note at zoom ~13
-- Shows the whole track + pins for context
-- Blue GPS dot in real time
-- The top-left corner shows the note number and the distance still to go
-- When the note is validated the map moves on to the next note, still open
-
-> The map per note is useful to confirm the position on the ground when the note text is ambiguous.
+- It shows the track, your live position and, in the corner, the note number with the distance still to go
+- One **yellow line** guides you: the road still to drive to the note
+- When the note is validated, the map follows you to the next one
 
 ---
 
-## 7. Additional features
+## 6. Pause, finish, end
 
-| Function | How to use it |
-|----------|---------------|
-| **Odometer correction** | Nudge ±10 m when needed; validating a note syncs the total to that note's distance |
-| **Pause** | Stops GPS and wake lock to save battery (lunch stops, waiting) |
-| **Sound on note** | Short WebAudio beep when a note is validated (auto or manual) |
-| **GPX recording** | Crash-safe: checkpoint at every fix, recovery if the app closes |
-| **Session recovery** | If interrupted (phone call, crash), resumes exactly where you were |
-| **Language change** | Change language mid-session without losing data |
+| Button | What it does |
+|--------|--------------|
+| **Pause** | Stops the GPS and the screen wake lock to save battery (a lunch stop); the odometers don't move while paused |
+| **Finish** | Ends the run and opens its report. Before the last note it asks first: the notes not reached count as skipped |
+| **End** (the exit icon) | Leaves the run without a report, after a confirmation |
 
 ---
 
-## 8. In Competition — result QR
+## 7. The run report
 
-In Competition mode, at the end of navigation a **signed HMAC QR** (55 characters) is generated containing:
-- Full result: penalties, times, speeds
-- Signed against the server (not forgeable)
+Every run ends with its **report**: notes reached and skipped, speed-limit zones, time and distance. It leads with your run card, **Share** right under it and one switch to keep the run **Private** or make it **Public** (shown on your profile `/u/<username>`). Sharing before you have chosen asks first, because sharing makes the run public.
 
-Hand the QR to the organizer for the leaderboard (Ranking).
+The report is stored on the device first and uploaded as soon as there is a connection.
 
----
-
-## 9. Interrupted session recovery
-
-At startup the Reader checks in order:
-1. **Ongoing session** in `localStorage` → proposes resume
-2. **Roadbook from URL** → loads it directly
-3. **Orphan GPX** → proposes track recovery
-4. **Nothing** → clean start
-
-> Declining the resume **does not delete the session**: it is only overwritten when you start a new run or explicitly exit.
+### In competition — the signed result
+A competition run also produces an **HMAC-signed result** (a QR you can share or download) and enters the event's shared ranking, where the organizers verify it.
 
 ---
 
-## 10. Next step
+## 8. Interrupted session recovery
 
-Finished navigating? → [Tripmaster: GPS on-board computer →](05-tripmaster.md)  
+The run checkpoints itself on the device. If it is interrupted (a call, a crash, the phone closing the app), the next visit asks **Resume the run in progress?** and continues exactly where you were. A GPX being logged is recovered the same way.
+
+> Declining does not delete anything, and the question does not come back for that run. It is never asked when the link names a different roadbook.
+
+---
+
+## 9. Next step
+
+Finished navigating? → [Tripmaster: GPS on-board computer →](05-tripmaster.md)
 Want to create a roadbook? → [Editor: create/edit →](03-editor.md)

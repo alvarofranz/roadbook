@@ -93,7 +93,7 @@ A dialog shows a short summary (km · notes · photos) and asks one question, wi
 | Button | What happens |
 |--------|--------------|
 | **💾 Save** | Signed in: the recording is saved as a **draft** roadbook (with its photos) and the **Editor opens** on it straight away. Signed out: you're taken to the sign-in page and, once signed in, you come back and it is saved the same way, then the Editor opens |
-| **🗑 Discard** | Asks for confirmation, naming what would be lost (track, notes, photos, voice notes), then drops the recording |
+| **🗑 Discard** | Asks for confirmation, naming what would be lost (track, notes, photos), then drops the recording |
 
 There are no export buttons here: exporting (GPX, `.rdbk`, PDF…) is done later from the Editor.
 

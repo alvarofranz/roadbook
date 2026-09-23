@@ -7,25 +7,25 @@ un marker di edit trascinabile, l'editing dei vertici della traccia e un toggle 
 sfondo satellite e topografico. Documento di riferimento per l'API pubblica e i suoi
 limiti.
 
-> **Non è Mapbox.** Nonostante il nome storico, il modulo usa
-> [MapLibre GL](https://maplibre.org/) con tile **gratuite, senza chiave**: il **topo** è
-> CyclOSM (`RASTER_TOPO`), il **satellite** è ESRI World Imagery (`RASTER_SATELLITE`),
-> **OSM** è OpenFreeMap standard (`RASTER_OSM`); OpenFreeMap serve anche i glyph/font.
-> Non serve un token in `config.js` per la mappa di base; una chiave MapTiler eventuale
-> migliora solo il satellite.
+> **Tile gratuite, senza chiave.** Il modulo usa [MapLibre GL](https://maplibre.org/) con tre
+> stili raster: il **satellite** è ESRI World Imagery (`RASTER_SATELLITE`), il **topo** è
+> OpenTopoMap, con curve di livello e ombreggiatura (`RASTER_TOPO`), **OSM** è la mappa standard
+> di OpenStreetMap (`RASTER_OSM`); OpenFreeMap serve i glyph/font e il rilievo 3D viene dalle tile
+> Terrarium di AWS. Nessun token in `config.js`: `RB_CONFIG.styleSatellite` / `styleTopo` /
+> `styleOsm` sostituiscono uno stile con quello di un provider a licenza.
 
 ---
 
 ## 1. Costruzione e inizializzazione
 
 `new RBMap(containerId, opts)` costruisce la mappa sul `<div>` con quell'id
-([rbmap.js:13](../public/assets/js/rbmap.js#L13)).
+([rbmap.js](../public/assets/js/rbmap.js)).
 
 - `opts.layerToggle` è un'opzione **nostra**, non di MapLibre: viene estratta e il resto
   di `opts` passa pari pari al costruttore `maplibregl.Map`
-  ([rbmap.js:15](../public/assets/js/rbmap.js#L15)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 - Default: stile **satellite**, centro `[-3.6, 37.178]`, zoom 12, controllo di
-  attribuzione attivo ([rbmap.js:22](../public/assets/js/rbmap.js#L22)).
+  attribuzione attivo ([rbmap.js](../public/assets/js/rbmap.js)).
 - Controlli aggiunti d'ufficio: `NavigationControl` (con `visualizePitch`) in alto a
   destra, `ScaleControl` metrica, e — se `layerToggle` — il bottone di toggle stile (§7).
   `layerToggle` è `true` oppure `{ short, remember }`: `remember: '<chiave>'` legge lo stile
@@ -34,18 +34,18 @@ limiti.
 
 ### Degrado robusto (mai uccidere la pagina)
 - Se **MapLibre non è caricato**, il container mostra "Map unavailable." e il costruttore
-  esce ([rbmap.js:17](../public/assets/js/rbmap.js#L17)).
+  esce ([rbmap.js](../public/assets/js/rbmap.js)).
 - Se **non c'è WebGL**, il `try/catch` cattura l'errore, mostra "Map unavailable (WebGL)."
-  e lascia `this.map = null` ([rbmap.js:26](../public/assets/js/rbmap.js#L26)).
+  e lascia `this.map = null` ([rbmap.js](../public/assets/js/rbmap.js)).
 - Per questo **ogni metodo pubblico controlla `this.map`** prima di agire: su un
   dispositivo senza mappa le chiamate sono no-op silenziose.
 
 ### Il ciclo `ready` e la coda di attesa
 La mappa diventa utilizzabile solo all'evento `load`. Fino ad allora `this.ready` è
-`false`. Conseguenze ([rbmap.js:59](../public/assets/js/rbmap.js#L59)):
+`false`. Conseguenze ([rbmap.js](../public/assets/js/rbmap.js)):
 
 - Una `showRoadbook()` chiamata **prima** del load viene messa in coda (`this._pending`)
-  e ridisegnata al load ([rbmap.js:135](../public/assets/js/rbmap.js#L135)).
+  e ridisegnata al load ([rbmap.js](../public/assets/js/rbmap.js)).
 - I metodi che richiedono i layer (`setPosition`, `setLiveTrack`, `setPhotos`,
   `setOverlay`, `select`, `_paintVerts`) richiedono **sia** `this.map` **sia**
   `this.ready` e altrimenti escono senza fare nulla.
@@ -58,7 +58,7 @@ La mappa diventa utilizzabile solo all'evento `load`. Fino ad allora `this.ready
 ### I listener registrati una sola volta
 I listener legati ai **layer** (click/hover su waypoint, foto, vertici) e il drag dei
 vertici sono registrati **una volta** nel costruttore
-([rbmap.js:35-58](../public/assets/js/rbmap.js#L35)). Sono pensati per **sopravvivere agli
+([rbmap.js](../public/assets/js/rbmap.js)). Sono pensati per **sopravvivere agli
 swap di stile**: ri-registrarli a ogni `setStyle` li farebbe scattare doppio. Restano
 inerti finché i rispettivi callback (`_onWpt`, `_onPhoto`, `_vertOnDrag`) non vengono
 armati dai metodi pubblici.
@@ -68,7 +68,7 @@ armati dai metodi pubblici.
 ## 2. I layer disegnati (`_init`)
 
 `_init()` crea tutte le source/layer GeoJSON, inizialmente vuote
-([rbmap.js:93](../public/assets/js/rbmap.js#L93)). Viene chiamato al primo `load` **e a
+([rbmap.js](../public/assets/js/rbmap.js)). Viene chiamato al primo `load` **e a
 ogni swap di stile** (MapLibre azzera source e layer custom su `setStyle`).
 
 | Source / Layer | Tipo | Cosa rappresenta | Colore |
@@ -89,7 +89,7 @@ altri add (incluso `rb-vsel`), così i marker restano afferrabili.
 ### Rilievo 3D (`_terrain`)
 `_terrain()` aggiunge una source `raster-dem` da tile Terrarium AWS (gratis, senza
 chiave), imposta il terreno con esagerazione 1.3 e alza il max pitch a 80°
-([rbmap.js:84](../public/assets/js/rbmap.js#L84)). È in un `try/catch`: offline il terreno
+([rbmap.js](../public/assets/js/rbmap.js)). È in un `try/catch`: offline il terreno
 semplicemente non c'è. `_terrain()` gira di nuovo a ogni cambio di stile, quindi **non**
 registra listener: quello su `sourcedata` che, a DEM caricato e mappa `idle`, rifà giudicare
 ai marker DOM se il rilievo li copre (#741) è registrato **una volta** nel costruttore (gli
@@ -100,33 +100,33 @@ eventi della mappa sopravvivono a `setStyle`).
 ## 3. Disegnare la traccia + i waypoint (`showRoadbook`)
 
 `showRoadbook(rb, noFit, gapIdx)` è il metodo principale di rendering
-([rbmap.js:132](../public/assets/js/rbmap.js#L132)).
+([rbmap.js](../public/assets/js/rbmap.js)).
 
 - Memorizza `rb` e `gapIdx` (`_lastRb`/`_lastGaps`) così uno swap di stile può ridisegnare.
 - **`gapIdx`** (uso Editor): lista di indici nella traccia il cui segmento successivo è un
   **taglio aperto**. La traccia viene spezzata in pezzi a quei punti e disegnata come
   `MultiLineString`; i buchi diventano segmenti tratteggiati su `rb-gap`
-  ([rbmap.js:137-144](../public/assets/js/rbmap.js#L137)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 - I waypoint vengono ridisegnati da `rb.notes`, ognuno con `num` (numero nota) e `i`
   (indice nell'array) nelle proprietà del feature.
 - `noFit` salta l'inquadratura automatica; altrimenti `_fit(rb)` fa `fitBounds`
   sull'estensione della traccia con padding 40
-  ([rbmap.js:181](../public/assets/js/rbmap.js#L181)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 
 ### Selezione di una nota
 - `select(note, noEase)` disegna l'alone su `rb-sel` e, se non `noEase`, fa `easeTo` sulla
-  nota ([rbmap.js:175](../public/assets/js/rbmap.js#L175)). Ricorda `_lastSel` per
+  nota ([rbmap.js](../public/assets/js/rbmap.js)). Ricorda `_lastSel` per
   ri-evidenziare dopo uno swap.
 - `onWaypoint(cb)` registra il callback chiamato al click su un waypoint: riceve l'indice
-  intero della nota ([rbmap.js:186](../public/assets/js/rbmap.js#L186), listener a
-  [rbmap.js:37](../public/assets/js/rbmap.js#L37)).
+  intero della nota ([rbmap.js](../public/assets/js/rbmap.js), listener a
+  [rbmap.js](../public/assets/js/rbmap.js)).
 
 ---
 
 ## 4. Registrazione live (`setLiveTrack`)
 
 `setLiveTrack(pts, wpts, photos)` ridisegna la traccia che cresce durante la registrazione
-GPS ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
+GPS ([rbmap.js](../public/assets/js/rbmap.js)).
 
 - `pts` → la traccia come `LineString` (riusa la source `rb-track`).
 - `wpts` (opzionale) → i waypoint istantanei, numerati `i+1`.
@@ -138,26 +138,26 @@ Metodi correlati:
   direzionale (`.rb-pos-arrow`) e — se l'heading-up è attivo — la mappa ruota in modo che la
   marcia sia in alto, col chevron fisso dritto in alto sullo schermo (`rotationAlignment:
   'viewport'`, #565); a nord bloccato il chevron è ancorato alla mappa e mostra la rotta. Senza `heading` resta il puntino tondo
-  (es. l'Editor) ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
+  (es. l'Editor) ([rbmap.js](../public/assets/js/rbmap.js)).
 - **`headingUp()`** / **`setHeadingUp(on)`** — legge / imposta heading-up ↔ nord bloccato (off →
   torna a nord); l'opzione costruttore **`{headingToggle:true}`** aggiunge il bottone di controllo.
   Il Recorder usa il proprio pulsante nella griglia di cattura.
 - **`setOverlay(pts)`** — overlay verde su `rb-live` per una sub-traccia "adjust on the
   trail" in corso, mantenendo visibile la traccia base; memorizzato (`_lastOverlay`) e
   ridipinto da `_replay()` dopo un cambio di stile (#788)
-  ([rbmap.js:171](../public/assets/js/rbmap.js#L171)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 
 ---
 
 ## 5. Pin foto (`setPhotos`)
 
 `setPhotos(photos, onClick)` disegna i pin foto geolocalizzati su `rb-photos`
-([rbmap.js:162](../public/assets/js/rbmap.js#L162)).
+([rbmap.js](../public/assets/js/rbmap.js)).
 
 - Filtra le foto con `lat != null` (le foto senza posizione non hanno pin).
 - L'intero oggetto foto viene serializzato JSON nella proprietà `d` del feature, così il
   listener di click lo può riconsegnare al callback `onClick(photo)`
-  ([rbmap.js:38](../public/assets/js/rbmap.js#L38)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 - `onClick` si registra solo se passato; poi resta memorizzato in `_onPhoto`.
 
 ---
@@ -182,9 +182,9 @@ trascinando direttamente il suo marker blu, esattamente come un punto traccia.
   `rb-wpts`): `onDrag(noteIndex, lat, lon)` live, `onCommit()` al rilascio. L'Editor sposta
   il vertice traccia sotto la nota, così la linea la segue (la nota è mobile come un trk, #61).
 - **`setCursor(cursor)`** imposta il cursore base della mappa (es. crosshair mentre si
-  disegna o si taglia) ([rbmap.js:117](../public/assets/js/rbmap.js#L117)).
+  disegna o si taglia) ([rbmap.js](../public/assets/js/rbmap.js)).
 - **`setPin(pt)`** mette un singolo marker sabbia (seed di disegno / ancora di taglio);
-  `null` lo toglie ([rbmap.js:119](../public/assets/js/rbmap.js#L119)).
+  `null` lo toglie ([rbmap.js](../public/assets/js/rbmap.js)).
 
 ---
 
@@ -193,10 +193,10 @@ trascinando direttamente il suo marker blu, esattamente come un punto traccia.
 - **`setBaseStyle(styleUrl, onReady)`** — cambia lo stile base. Poiché MapLibre **azzera
   ogni source/layer custom** su `setStyle`, mette `ready=false`, attende `style.load`, poi
   rifà `_init()` + `_terrain()` e richiama `onReady`
-  ([rbmap.js:64](../public/assets/js/rbmap.js#L64)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 - **`toggleBaseStyle()`** — cicla satellite→topo→OSM→satellite e **ridipinge** l'ultimo
   roadbook + selezione nel callback `onReady`
-  ([rbmap.js:74](../public/assets/js/rbmap.js#L74)).
+  ([rbmap.js](../public/assets/js/rbmap.js)).
 - Il bottone di toggle (`layerToggle`) è un piccolo controllo MapLibre
   (`button.rb-mapctl-layers`) che mostra lo stile corrente sotto l'icona
   (`<span class="rb-map-style-label">`): il nome intero (`Satellite · Topo · OSM`, titolo
@@ -208,11 +208,11 @@ trascinando direttamente il suo marker blu, esattamente come un punto traccia.
   (account, admin, eventi, pagina pubblica).
 
 `_mapLayer` (index 0-2) traccia quale stile è attualmente vivo
-([rbmap.js:31](../public/assets/js/rbmap.js#L31)).
+([rbmap.js](../public/assets/js/rbmap.js)).
 
 ### Distruzione
 `destroy()` smonta il contesto GL (`map.remove()`); il Reader chiude così la mappa inline
-per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
+per-nota ([rbmap.js](../public/assets/js/rbmap.js)).
 
 ---
 
@@ -227,9 +227,9 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 
 ## 9. Limiti e quirk
 
-- **Non è Mapbox.** Il nome `RBMap` e i riferimenti storici a "Mapbox" sono obsoleti: il
-  codice usa MapLibre GL con tile senza chiave (satellite ESRI World Imagery, topo CyclOSM).
-  Una chiave MapTiler eventuale in `RB_CONFIG` migliora solo il satellite.
+- **Tile di terzi, online.** I tre stili vengono da server pubblici gratuiti (ESRI, OpenTopoMap,
+  OpenStreetMap) con i loro limiti d'uso, e la mappa non funziona senza rete; un provider a licenza
+  si imposta con `RB_CONFIG.styleSatellite` / `styleTopo` / `styleOsm`.
 - **Source condivisa traccia.** `setLiveTrack` e `showRoadbook` scrivono **entrambi** su
   `rb-track`: live usa un `LineString`, il roadbook un `MultiLineString`. Sono modalità
   mutuamente esclusive sulla stessa source, non sovrapponibili.

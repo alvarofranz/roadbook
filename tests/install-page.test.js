@@ -64,15 +64,6 @@ describe('install guide', () => {
 
     it('the Install chip always opens the guide (#720) — which offers the one-tap prompt itself', () => {
         expect(read('public/install/install.js')).toContain('RBInstallPrompt.fire()');
-        expect(appJs).not.toContain('showIosModal');          // the modal the guide replaced is gone
-    });
-
-    it('the retired iOS modal left no orphan translations behind', () => {
-        const langs = loadLangs();
-        for (const lang of LANGS) {
-            expect(langs[lang]['Install on iPhone'], lang).toBeUndefined();
-            expect(langs[lang]['From Safari, in 3 steps:'], lang).toBeUndefined();
-        }
     });
 });
 

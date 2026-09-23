@@ -38,11 +38,11 @@ locali e roadbook propri per `?rb=` non sono soggetti al gate.
 `loadRb` normalizza lo schema con
 `RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
 roadbook senza note, legge il flag roadbook-level `map_access` (`mapAllowed`,
-[reader.js:92](../public/reader/reader.js#L92)) che decide se il Reader ha una mappa (§6), e
+[reader.js](../public/reader/reader.js)) che decide se il Reader ha una mappa (§6), e
 apre il **modal di modalità** (§5).
 
 ### Altri ingressi (oltre al picker manuale)
-All'avvio una IIFE asincrona ([reader.js:51-73](../public/reader/reader.js#L51)) decide in
+All'avvio una IIFE asincrona ([reader.js](../public/reader/reader.js)) decide in
 ordine di priorità:
 
 1. **Ripresa di una sessione interrotta** — se in `localStorage` c'è un checkpoint valido
@@ -72,9 +72,9 @@ modal) e lo stato della run riparte da zero (`resetRun`) prima di aprire il file
 ## 2. La tabella note stile cartaceo
 
 Il cuore della vista è `#noteList`, ricostruito interamente da `renderNotes`
-([reader.js:212](../public/reader/reader.js#L212)). Ogni nota è una riga `.nrow` a **3
+([reader.js](../public/reader/reader.js)). Ogni nota è una riga `.nrow` a **3
 colonne** (la griglia bianca "carta" è definita in `app.css`; il Reader sovrascrive solo
-dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
+dimensioni e padding in [index.html](../public/reader/index.html)):
 
 | Colonna | Classe | Contenuto |
 |---------|--------|-----------|
@@ -83,10 +83,10 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
 | 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale (con qualificatore FIA Average/Calculated/Turning in `.note-cap`) · riga **limite di velocità** opzionale (`.note-speed`) · coordinate `lat, lon` |
 
 - La risoluzione icone passa per `iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/')`
-  ([reader.js:206](../public/reader/reader.js#L206)): inline `data:` → `rb.icons` → palette
+  ([reader.js](../public/reader/reader.js)): inline `data:` → `rb.icons` → palette
   standard.
 - La riga CAP (`.note-cap`) appare solo se la nota ha un `cap`, mostrando `CAP n°` ed
-  eventualmente la `cap_distance` in km ([reader.js:219](../public/reader/reader.js#L219)).
+  eventualmente la `cap_distance` in km ([reader.js](../public/reader/reader.js)).
 - Non c'è una colonna pulsanti (#569): la sua larghezza va al testo. La riga attiva intera è il
   bersaglio della validazione manuale e la mappa è un solo pulsante nella barra d'azione (§6).
 - Sotto ogni riga c'è un contenitore `.nmap` nascosto, slot per la mappa per-nota (§6).
@@ -146,7 +146,7 @@ disegnata come una riga nota (#567): nella colonna **sinistra** prog. con part. 
 come ogni nota mostra totale sopra parziale, così il parziale live si legge allineato a quello
 delle note — e a destra bussola · ora sulla prima riga, GPS · velocità sulla seconda. I readout
 si aggiornano a ogni fix in `onFix`
-([reader.js:155](../public/reader/reader.js#L155)):
+([reader.js](../public/reader/reader.js)):
 
 | Elemento | ID | Sorgente |
 |----------|-----|----------|
@@ -154,8 +154,8 @@ si aggiornano a ogni fix in `onFix`
 | **Totale** (prog.) | `#odoTotal` | `tripTotalM/1000`, 2 decimali |
 | **Parziale** (part.) | `#odoPartial` | `tripPartialM/1000`, 2 decimali |
 | **Bussola + freccia** | `#odoBrg` / `#odoBrgArrow` | rilevamento alla prossima nota (`RB.geo.bearingDeg`), altrimenti `meter.heading`; freccia ruotata *relativa* al proprio heading (0° = su = dritto) |
-| **Ora** | `#odoClock` | orologio di sistema, aggiornato ogni secondo da un `setInterval` ([reader.js:120](../public/reader/reader.js#L120)) |
-| **GPS** | `#gpsDot` / `#gpsTxt` | `setGps`: pallino `ok`/`bad` e `±N m`; verde se `accuracy ≤ 25 m` ([reader.js:157](../public/reader/reader.js#L157), [reader.js:181](../public/reader/reader.js#L181)) |
+| **Ora** | `#odoClock` | orologio di sistema, aggiornato ogni secondo da un `setInterval` ([reader.js](../public/reader/reader.js)) |
+| **GPS** | `#gpsDot` / `#gpsTxt` | `setGps`: pallino `ok`/`bad` e `±N m`; verde se `accuracy ≤ 25 m` ([reader.js](../public/reader/reader.js)) |
 | **Velocità** | `#odoSpeed` | `speedKmh` del fix (`RBGpsMeter`), arrotondata, in km/h — il readout che il navigatore legge davvero mentre ci si muove (#529) |
 
 L'odometro avanza di `disp` (lo spostamento per-fix **già giudicato** da `RBGpsMeter` /
@@ -205,8 +205,8 @@ variabile viene rimossa da sé.
 ### Sincronizzazione dell'odometro alla distanza nota
 A ogni validazione, se la nota ha una `distance`, il totale viene **riallineato** alla
 distanza cumulativa della nota: `tripTotalM = n.distance`
-([reader.js:274](../public/reader/reader.js#L274) in manuale-trip;
-[reader.js:322](../public/reader/reader.js#L322) in `validateAt`). Così l'odometro assorbe la
+([reader.js](../public/reader/reader.js) in manuale-trip;
+[reader.js](../public/reader/reader.js) in `validateAt`). Così l'odometro assorbe la
 deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale azzera
 (`tripPartialM = 0`).
 
@@ -218,7 +218,7 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 (`openStartDialog`) con le opzioni di sessione, lette da `readStartOpts`:
 
 - **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
-  start ([reader.js:97](../public/reader/reader.js#L97), [reader.js:103](../public/reader/reader.js#L103)).
+  start ([reader.js](../public/reader/reader.js)).
 - **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
   (sia trip `markReached` sia competition `validateAt`, auto o manuale) suona il **campanello di
   successo** (`RBSuccess.ring()`, `assets/sounds/success.mp3`, #768) — lo stesso della nota nel
@@ -317,7 +317,7 @@ attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga.
 (zoom, layer e heading-up restano) e la ri-punta sul suo waypoint; dopo l'ultima nota si chiude.
 Nell'angolo in alto a sinistra `.nmap-togo` mostra numero della nota e distanza ancora da
 percorrere (`paintMapTogo`, aggiornato da `refreshLive` a ogni fix). `toggleNoteMap`
-([reader.js:239](../public/reader/reader.js#L239)) apre un `RBMap` nello slot `.nmap` sotto la
+([reader.js](../public/reader/reader.js)) apre un `RBMap` nello slot `.nmap` sotto la
 riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
 `NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
 true)`), evidenziato con `select(n, true)` — `noEase` per non spostare il centro dal pilota. Senza
@@ -325,7 +325,7 @@ fix GPS la nota stessa è l'unica posizione nota e diventa il centro. Prima eran
 e tutti i pin a zoom 13: troppo grosso per leggere un incrocio, e gli altri pin sono rumore
 quando la domanda è "dove sono rispetto a QUESTO waypoint" (#427). La vista d'insieme del
 percorso resta sulla pagina pubblica del roadbook e nell'Editor. Toccare la mappa
-aperta la richiude. `closeInlineMap` ([reader.js:251](../public/reader/reader.js#L251))
+aperta la richiude. `closeInlineMap` ([reader.js](../public/reader/reader.js))
 distrugge pulitamente la mappa GL — ed è chiamata **all'inizio di ogni `renderNotes`**, dato
 che la lista viene ricostruita per intero. Se MapLibre non è configurato, mostra un toast.
 
@@ -448,7 +448,7 @@ dove guarda chi naviga (#529).
   `setActiveNote`, una pressione su un dispositivo dedicato *è* la conferma); in Competition no,
   e lo dice con un toast invece di ignorare il tap.
 
-`validateAt` ([reader.js:303](../public/reader/reader.js#L303)) è il punto comune di
+`validateAt` ([reader.js](../public/reader/reader.js)) è il punto comune di
 validazione (auto e manuale): avvia/aggiorna l'orologio (`startedAt`/`endedAt`), accumula le
 penalità (dettaglio in [ranking-model.md](./ranking-model.md)), marca `reached`, azzera il
 parziale e l'arancione, sincronizza il totale e avanza `activeIdx`. All'ultima nota mostra un
@@ -465,7 +465,7 @@ che addebita il salto quando la nota raggiunta non è quella attiva e poi chiama
 
 ## 8. Pausa e wake-lock
 
-Il pulsante `#pauseBtn` ([reader.js:342](../public/reader/reader.js#L342)) ferma il watch GPS
+Il pulsante `#pauseBtn` ([reader.js](../public/reader/reader.js)) ferma il watch GPS
 (`meter.stop()`) e rilascia il **wake lock** per risparmiare batteria (es. sosta pranzo);
 mostra "Paused" e pallino GPS spento. Il `resume` riavvia lo stesso meter. Mentre è in pausa
 l'odometro non avanza, e nemmeno dopo: `stop()` azzera l'ancora dell'odometro, la traccia della
@@ -491,13 +491,13 @@ l'uscita esplicita li cancella), così declinare non distrugge niente. Il GPX ch
 registrava non è più di nessuno: dopo il "No" si offre subito il suo recupero
 (`RBGpxRecorder.offerRecovery`), prima che un nuovo log lo sovrascriva.
 
-`saveSession` ([reader.js:136](../public/reader/reader.js#L136)) serializza i contatori vivi
+`saveSession` ([reader.js](../public/reader/reader.js)) serializza i contatori vivi
 (modalità, team, indice attivo, `reached`, odometri, penalità, limiti velocità, orologio
 gara, stato GPX) nella chiave `rb_session`, scritta **a ogni fix e a ogni cambio di stato**.
 Il roadbook intero è scritto una sola volta all'avvio in `rb_session_roadbook`
-([reader.js:116](../public/reader/reader.js#L116)). `resumeSession`
-([reader.js:142](../public/reader/reader.js#L142)) ricostruisce lo stato e, se c'era un GPX in
-corso, riprende anche quello. `RB_BUSY = true` ([reader.js:107](../public/reader/reader.js#L107))
+([reader.js](../public/reader/reader.js)). `resumeSession`
+([reader.js](../public/reader/reader.js)) ricostruisce lo stato e, se c'era un GPX in
+corso, riprende anche quello. `RB_BUSY = true` ([reader.js](../public/reader/reader.js))
 impedisce l'auto-refresh di versione a metà gara.
 
 ---

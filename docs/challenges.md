@@ -31,9 +31,9 @@ pagina mostra `RBNeedAuth` invece del roadbook. La gallery/elenco resta pubblica
 ## 2. Il modulo `RBChallenges`
 
 Un'unica IIFE ([challenges.js](../public/assets/js/challenges.js)) che espone il global
-`window.RBChallenges` ([challenges.js:52](../public/assets/js/challenges.js#L52)). La radice
+`window.RBChallenges` ([challenges.js](../public/assets/js/challenges.js)). La radice
 dell'app (`ROOT`) è derivata **dall'URL dello script stesso**
-([challenges.js:5-6](../public/assets/js/challenges.js#L5)), così funziona sia dalla home sia
+([challenges.js](../public/assets/js/challenges.js)), così funziona sia dalla home sia
 dalle sottocartelle dei tool senza percorsi hard-coded.
 
 | Metodo | Cosa fa | Endpoint API |
@@ -64,7 +64,7 @@ riporta `{ok:false}` — quindi la distinzione è su `j.ok === false`.
 errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, cover, owner, ... }`.
 
 ### `publicFromUrl()`
-([challenges.js:25-28](../public/assets/js/challenges.js#L25)) — vedi §4.
+([challenges.js](../public/assets/js/challenges.js)) — vedi §4.
 
 > Entrambe le chiamate passano da `RBApi`, che porta con sé l'identità del chiamante
 > (cookie di sessione sul web, token Bearer nell'app): senza, il server vedrebbe un
@@ -74,7 +74,7 @@ errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, cover, owner, ... 
 
 ## 3. Il picker
 
-`pick(onPick, opts)` ([challenges.js:32-50](../public/assets/js/challenges.js#L32)) è il selettore
+`pick(onPick, opts)` ([challenges.js](../public/assets/js/challenges.js)) è il selettore
 condiviso "apri una sfida pubblica nel tool corrente". Flusso:
 
 1. apre subito un `RBModal` `wide` con uno stato di caricamento;
@@ -98,7 +98,7 @@ proprio).
 
 ## 4. Gli URL amichevoli
 
-`publicFromUrl()` ([challenges.js:25-28](../public/assets/js/challenges.js#L25)) ricava lo
+`publicFromUrl()` ([challenges.js](../public/assets/js/challenges.js)) ricava lo
 slug dal `location.pathname` corrente con la regex:
 
 ```js
@@ -110,7 +110,7 @@ ammette lettere, cifre, `_` e `-`. Ritorna lo slug o `null`.
 
 Chi lo usa all'avvio della pagina:
 
-- **Reader** ([reader.js:60-61](../public/reader/reader.js#L60)): se presente uno slug e non
+- **Reader** ([reader.js](../public/reader/reader.js)): se presente uno slug e non
   c'è una sessione da riprendere, fa `loadPublic` e `loadRb(j.roadbook)`.
 - **Editor**: se presente uno slug, forka via `resetIdentity()` (azzera `currentRbId`, rimette lo
   stato a `draft`) e `setRoadbook(j.roadbook)`, quindi un salvataggio crea un roadbook nuovo invece
@@ -125,17 +125,17 @@ Chi lo usa all'avvio della pagina:
 
 `public/challenge/index.html` + `public/challenge/challenge.js` — la vetrina pubblica di una
 singola sfida. Usa percorsi **assoluti** `/assets/…`
-([index.html:57-65](../public/challenge/index.html#L57)), diversamente dai tool a un livello
+([index.html](../public/challenge/index.html)), diversamente dai tool a un livello
 di profondità. Oltre al core la pagina carica anche **maplibre-gl**, `config.js` e `rbmap.js`
-([index.html:57-61](../public/challenge/index.html#L57)) per la mappa di anteprima (vedi sotto).
+([index.html](../public/challenge/index.html)) per la mappa di anteprima (vedi sotto).
 
 ### Risoluzione dello slug
-([challenge.js:7-9](../public/challenge/challenge.js#L7)) — prima il query param `?s=`, poi
+([challenge.js](../public/challenge/challenge.js)) — prima il query param `?s=`, poi
 l'ultimo segmento del path (`/challenge/<slug>`). Se manca o è `challenge`, mostra
 "Challenge not found." e si ferma.
 
 ### Cosa mostra
-Caricato `loadPublic(slug)` ([challenge.js:11](../public/challenge/challenge.js#L11)),
+Caricato `loadPublic(slug)` ([challenge.js](../public/challenge/challenge.js)),
 popola:
 
 - **titolo** + `document.title`, **owner** (`@username`, mai il nome reale) e avatar (rimosso se assente);
@@ -143,15 +143,15 @@ popola:
   per un roadbook non ancora pubblico servito via evento), e il credito dichiarato nel
   roadbook (`author · organization · modified`);
 - **logo evento** (`meta.logo`, data URI embedded) inserito prima del titolo se presente
-  ([challenge.js:25](../public/challenge/challenge.js#L25));
+  ([challenge.js](../public/challenge/challenge.js));
 - **descrizione** e una **gallery di foto** (le foto sono una feature server-side, mai dentro
   il `.rdbk`) come link che aprono l'immagine a piena risoluzione
-  ([challenge.js:30-32](../public/challenge/challenge.js#L30));
+  ([challenge.js](../public/challenge/challenge.js));
 - una **mappa di anteprima** in cima (vedi sotto);
 - la **tabella delle note** nel layout canonico bianco "paper" del Reader, in sola lettura.
 
 ### La mappa di anteprima
-([challenge.js:48-55](../public/challenge/challenge.js#L48)) — sopra la tabella, la pagina
+([challenge.js](../public/challenge/challenge.js)) — sopra la tabella, la pagina
 mostra il tracciato con i marker numerati delle note via `RBMap.showRoadbook(rb)`, su tile
 gratuite `RBMap.STYLE_TOPO` (nessuna chiave). **Toccare un marker** scrolla alla riga della
 nota corrispondente (`map.onWaypoint(i)` → `chNotes.children[i].scrollIntoView`). Il container
@@ -164,7 +164,7 @@ La mappa compare **solo** quando entrambe le condizioni sono vere:
 - c'è una **traccia reale** (`rb.track.length >= 2`); senza percorso vero la mappa è saltata.
 
 ### Le note via `NoteCanvas`
-([challenge.js:36-43](../public/challenge/challenge.js#L36)) — ogni nota è una `.nrow readonly`
+([challenge.js](../public/challenge/challenge.js)) — ogni nota è una `.nrow readonly`
 a 3 colonne (la 4ª colonna dei bottoni/stato del Reader qui non c'è):
 
 - **distanza**: totale + parziale (`fkm`, metri → km a 2 decimali) + numero nota;
@@ -173,7 +173,7 @@ a 3 colonne (la 4ª colonna dei bottoni/stato del Reader qui non c'è):
 - **testo**: testo nota, eventuale `CAP <gradi>° · <km>` e le coordinate.
 
 Gli alias delle icone si risolvono con
-`RB.iconSrc(ic, rb, '/assets/icons/')` ([challenge.js:33](../public/challenge/challenge.js#L33)),
+`RB.iconSrc(ic, rb, '/assets/icons/')` ([challenge.js](../public/challenge/challenge.js)),
 rispettando la regola self-contained del formato (inline → `rb.icons` → palette standard).
 
 ### I bottoni d'azione
@@ -204,7 +204,38 @@ ri-renderizza senza rifetchare.
 
 ---
 
-## 7. Limiti e quirk
+## 7. Commenti pubblici (#809)
+
+La pagina di un roadbook **pubblico** (`/challenge/<slug>`) finisce con i suoi commenti; il Reader non li
+mostra mai. Ogni lettore autenticato li vede e può scriverne uno; un roadbook non pubblico (una bozza, o un
+`ready` consegnato tramite un evento) non ne ha.
+
+- **Tabella** `roadbook_comments` (migrazione `041`): roadbook, autore, testo, `created_at`. Un commento se ne
+  va con il suo roadbook e con l'account del suo autore (`ON DELETE CASCADE`).
+- **API** (`app/comments.php`, tutte da autenticati):
+  - `comments_list {slug}` restituisce i commenti dal più vecchio, ognuno con `username`, `avatar` e `can_delete`.
+  - `comment_add {slug, body, turnstile}` vuole un testo di 1–2000 caratteri, ammette 10 commenti per utente
+    ogni 10 minuti e passa da `verify_turnstile`; le origin dell'app sono esenti da Turnstile, come per l'accesso.
+  - `comment_delete {id}` è aperta all'autore, al proprietario del roadbook e a un admin.
+  - Ogni commento e ogni eliminazione finiscono in `activity_log`.
+- **Client** (`challenge.js`):
+  - Un pulsante **Comments** accanto a Navigate · PDF · Edit (con il conteggio) scorre fino ai commenti (#853).
+  - Sotto la lista c'è il modulo con il widget Turnstile, reso dal condiviso `RBTurnstile(el, siteKey)` di
+    `app.js` (lo stesso dei moduli dell'account). Un token vale per un solo invio, quindi il widget si
+    azzera dopo ogni tentativo.
+  - Eliminare chiede prima conferma e nomina l'autore e l'inizio del testo.
+  - L'autore del roadbook porta il badge *Author*.
+
+## 8. Completato da (#869)
+
+Sotto i commenti, **Completed by** elenca ogni run *pubblica* completata del roadbook: runner, note
+raggiunte, data e un link alla pagina della run (`/run/<id>`). Quelle private sono solo contate
+("And 3 private runs.") e non nominano mai il loro runner. API: `roadbook_completions {slug}` (da
+autenticati, solo roadbook pubblici). Ogni card di roadbook porta lo stesso numero come pillola,
+*Times completed* (`completions`, contate dall'unico frammento `RB_COMPLETIONS_SQL` e messe in forma da
+`rb_card_fields`, #868).
+
+## 9. Limiti e quirk
 
 - **`listPublic` nasconde gli errori**: rete giù e "nessuna sfida pubblica" sono
   indistinguibili per l'utente (sempre lista vuota).
@@ -223,33 +254,3 @@ ri-renderizza senza rifetchare.
 - Il dettaglio di **come uno slug diventa pubblico** (creazione, visibilità, generazione dello
   slug, storage delle foto) è interamente backend e qui non è coperto: vedi la documentazione
   dell'API PHP.
-
-## Public comments (#809)
-
-A **public** roadbook's page (`/challenge/<slug>`) ends with its comments, and the Reader never shows them. Every
-signed-in reader sees them and can post one; a roadbook that is not public (a draft, or a ready one delivered
-through an event) has none.
-
-- **Table** `roadbook_comments` (migration `041`): roadbook, author, body, `created_at`. A comment goes with
-  its roadbook and with its author's account (`ON DELETE CASCADE`).
-- **API** (`app/comments.php`, all signed-in):
-  - `comments_list {slug}` returns the comments oldest first, each with `username`, `avatar` and `can_delete`.
-  - `comment_add {slug, body, turnstile}` requires a body of 1–2000 characters, allows 10 posts per user per
-    10 minutes, and runs `verify_turnstile`; the app origins are exempt from Turnstile, as for sign-in.
-  - `comment_delete {id}` is open to the author, the roadbook's owner and an admin.
-  - Each post and each deletion lands in `activity_log`.
-- **Client** (`challenge.js`):
-  - A **Comments** button beside Navigate · PDF · Edit (with the count) scrolls down to them (#853).
-  - The list is followed by a form holding the Turnstile widget, rendered by the shared `RBTurnstile(el, siteKey)`
-    in `app.js`, which is also used by the account forms. A token is good for one post, so the widget resets
-    after each attempt.
-  - Deleting asks first and names the author and the start of the text.
-  - The roadbook's author carries the *Author* badge.
-
-## Completed by (#869)
-
-Under the comments, **Completed by** lists every *public* completed run of the roadbook: runner, notes
-reached, date, and a link to the run's page (`/run/<id>`). The private ones are only counted
-("And 3 private runs."), and never name their runner. API: `roadbook_completions {slug}` (signed in,
-public roadbooks only). Every roadbook card carries the same number as a pill, *Times completed*
-(`completions`, counted by the one `RB_COMPLETIONS_SQL` fragment and shaped by `rb_card_fields`, #868).
