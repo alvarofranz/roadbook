@@ -234,8 +234,14 @@ async function joinEvent(code) {
     if (res && res.ok && res.slug) {
         localStorage.removeItem(PENDING_JOIN);
         window.location.href = '/event/' + encodeURIComponent(res.slug);
+        return;
     }
-    // On failure the pending code is left in place; the next launch / sign-in retries it.
+    // Offline, the code stays for the next launch to retry. A real refusal (unknown code, closed
+    // registration) never passes, and retrying it on every page would only burn the join rate limit.
+    if (res && res.error !== 'Network error.') {
+        localStorage.removeItem(PENDING_JOIN);
+        window.RBToast(res.error || 'Could not join.');
+    }
 }
 
 // Replay a join deferred while the user was signed out (runs on every app page load). The code
