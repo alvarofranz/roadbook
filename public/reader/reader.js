@@ -705,8 +705,12 @@
         clearSession(); window.RB_BUSY = false;
         showReport(report, key, cfg.user, askFirst);
     }
+    // The end of the run (#820): the card first with Share under it, then who sees the run — a
+    // Private/Public switch that saves at once and can be flipped at any time — then the figures.
     function showReport(report, key, user, askFirst) {
         $('reportTitle').textContent = t(report.completed ? 'Roadbook completed' : 'Run finished');
+        $('reportBadge').classList.toggle('stopped', !report.completed);
+        $('reportBadge').innerHTML = `<i class="fa-solid ${report.completed ? 'fa-flag-checkered' : 'fa-circle-stop'}"></i>`;
         $('reportSub').textContent = report.title + ' · ' + RBFmtDate(new Date(report.ended_at).toISOString().slice(0, 10)) + (report.team ? ' · ' + t('Vehicle') + ' ' + report.team : '');
         $('reportStats').innerHTML = RBRun.statsHTML(report) + RBRun.detailsHTML(report);
         $('reportQr').hidden = !report.result_meta;
@@ -715,55 +719,80 @@
             $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
             $('qrMeta').textContent = report.result_meta;
         }
+        $('reportProfile').hidden = !user;
+        if (user) $('reportProfile').href = RBProfileLink(user.username);
+        $('reportDone').onclick = () => leaveRun('./');
         openModal('reportModal', () => {}); // an explicit outcome below, never a dismiss
         // the shareable image (#785): made while the runner reads the report; once the run is saved
         // on the profile it goes up with it (best-effort — a card that fails never blocks the report)
         const cardP = makeCard(report, user);
-        const attachCard = async (saved) => {
-            const blob = await cardP;
-            if (!blob || !saved || !saved.id) return;
-            await RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
-            if (saved.is_public) cardLink = RBPublicLink('/run/' + saved.id); // from now on Share sends the run's page, its preview being this card (#803)
-        };
-        const box = $('reportSave');
-        const done = (saved) => {
-            attachCard(saved);
-            const where = saved && saved.is_public ? t('Saved to your profile — public.') : t('Saved to your profile — private.');
-            box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-check"></i> <span>${esc(saved ? where : t('Saved on this device — it uploads to your profile as soon as you are online.'))}</span></p>
-                <div class="btnrow end">${user ? `<a class="btn btn-ghost" href="${RBProfileLink(user.username)}"><i class="fa-solid fa-circle-user"></i> ${esc(t('My profile'))}</a>` : ''}
-                <button class="btn btn-primary" data-close type="button">${esc(t('Close'))}</button></div>`;
-            box.querySelector('[data-close]').onclick = () => leaveRun('./');
-        };
-        const upload = async () => { const res = await RBRun.flush(); done(res[key] || null); };
+        const vis = $('reportVis');
         if (!user) {
             // signed out: the report waits on this device and goes to the profile after sign-in
-            box.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-info"></i> <span>${esc(t('Sign in to keep this report on your profile — it waits on this device until you do.'))}</span></p>
-                <div class="btnrow end"><a class="btn btn-ghost" href="${RBLoginUrl()}">${esc(t('Sign in'))}</a><button class="btn btn-primary" data-close type="button">${esc(t('Close'))}</button></div>`;
-            box.querySelector('[data-close]').onclick = () => leaveRun('./');
+            vis.innerHTML = `<p class="notice"><i class="fa-solid fa-circle-info"></i> <span>${esc(t('Sign in to keep this report on your profile — it waits on this device until you do.'))}</span></p>
+                <div class="btnrow"><a class="btn btn-ghost" href="${RBLoginUrl()}"><i class="fa-solid fa-right-to-bracket"></i> ${esc(t('Sign in'))}</a></div>`;
             return;
         }
-        if (!askFirst) { box.innerHTML = `<p class="muted small">${esc(t('Saving…'))}</p>`; upload(); return; }
-        // the runner decides where it goes, once or for good (#619) — both answers save it
-        box.innerHTML = `<p>${esc(t('Show this run on your public profile?'))}</p>
-            <label class="checkbox-row"><input type="checkbox" id="reportRemember"> <span>${esc(t('Remember my choice'))}</span></label>
-            <p class="muted small">${esc(t('You can change it any time in your profile settings.'))}</p>
-            <div class="btnrow end">
-                <button class="btn btn-ghost" data-vis="private" type="button"><i class="fa-solid fa-lock"></i> ${esc(t('Keep private'))}</button>
-                <button class="btn btn-primary" data-vis="public" type="button"><i class="fa-solid fa-globe"></i> ${esc(t('Make public'))}</button>
+        // choice: null until picked ("ask each time"), else the runner's default, saved right away
+        let choice = askFirst ? null : (user.runs_visibility === 'public' ? 'public' : 'private');
+        let saved = null, busy = false, carded = false;
+        const status = () => {
+            if (!choice) return `<i class="fa-solid fa-circle-info"></i> ${esc(t('Choose who sees this run to save it to your profile.'))}`;
+            if (busy) return `<i class="fa-solid fa-spinner fa-spin"></i> ${esc(t('Saving…'))}`;
+            if (!saved) return `<i class="fa-solid fa-mobile-screen"></i> ${esc(t('Saved on this device — it uploads to your profile as soon as you are online.'))}`;
+            return `<i class="fa-solid fa-circle-check"></i> ${esc(t(saved.is_public ? 'Saved to your profile — public.' : 'Saved to your profile — private.'))}`;
+        };
+        const segment = (v, icon, label) => `<button class="segment${choice === v ? ' on' : ''}" data-vis="${v}" type="button" role="radio" aria-checked="${choice === v}"${busy ? ' disabled' : ''}><i class="fa-solid ${icon}"></i> ${esc(t(label))}</button>`;
+        const render = () => {
+            vis.innerHTML = `<div class="report-vis">
+                <span class="field-label">${esc(t('Who sees this run'))}</span>
+                <div class="segmented fill" role="radiogroup">${segment('private', 'fa-lock', 'Private')}${segment('public', 'fa-globe', 'Public')}</div>
+                ${askFirst && !saved && !busy ? `<label class="checkbox-row"><input type="checkbox" id="reportRemember"> <span>${esc(t('Remember my choice'))}</span></label>` : ''}
+                <p class="muted small report-vis-status">${status()}</p>
             </div>`;
-        box.querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => {
-            RBRun.update(key, { ready: true, visibility: b.dataset.vis, remember: box.querySelector('#reportRemember').checked });
-            box.innerHTML = `<p class="muted small">${esc(t('Saving…'))}</p>`;
-            upload();
-        });
+            vis.querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => pick(b.dataset.vis));
+            $('reportDone').disabled = !choice; // an unpicked report would never leave the device (#460)
+        };
+        // the card follows the run: uploaded once it is saved, and Share sends the run's page while it is public (#803)
+        const followCard = async () => {
+            cardLink = saved && saved.is_public ? RBPublicLink('/run/' + saved.id) : null;
+            const blob = await cardP;
+            if (!blob || !saved || carded) return;
+            carded = true;
+            await RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
+        };
+        const upload = async () => {
+            busy = true; render();
+            const res = await RBRun.flush();
+            saved = res[key] || null; busy = false;
+            if (saved) { choice = saved.is_public ? 'public' : 'private'; followCard(); }
+            render();
+        };
+        async function pick(v) {
+            if (v === choice || busy) return;
+            const first = !choice;
+            choice = v;
+            if (first) { RBRun.update(key, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked }); return upload(); }
+            if (!saved) { RBRun.update(key, { visibility: v }); return render(); } // still on the device: it goes up as chosen
+            busy = true; render();
+            const x = await RBApi('run_update', { id: saved.id, is_public: v === 'public' ? 1 : 0 });
+            busy = false;
+            if (x.ok) { saved.is_public = v === 'public' ? 1 : 0; followCard(); }
+            else { choice = saved.is_public ? 'public' : 'private'; toast(x.error || 'Could not save.'); }
+            render();
+        }
+        render();
+        if (!askFirst) upload();
     }
     // The run card: rendered once per report, shown, shared and saved from the same Blob.
     let cardBlob = null, cardLink = null;
     async function makeCard(report, user) {
-        cardBlob = null; cardLink = null; $('reportCard').hidden = true;
+        cardBlob = null; cardLink = null;
         try { cardBlob = await RBRunCard.render({ report, roadbook: rb, username: user && user.username }); }
         catch (e) { cardBlob = null; }
-        if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCard').hidden = false; }
+        if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCardImg').hidden = false; }
+        else $('reportCard').hidden = true; // no card, no hero: the figures take the dialog
+        $('cardShare').disabled = $('cardSave').disabled = !cardBlob;
         return cardBlob;
     }
     const cardName = () => 'rdbk-' + RB.slug((rb.meta && rb.meta.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
