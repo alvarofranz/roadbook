@@ -70,3 +70,18 @@ describe('the Editor saves, it does not duplicate (#761)', () => {
         expect(html + editor).not.toMatch(/saveAsAccount|Save a copy/);
     });
 });
+
+describe('a map style switch paints everything back (#788)', () => {
+    it('reloads the style fully and replays what the map was showing', () => {
+        expect(rbmap).toContain("this.map.setStyle(styleUrl, { diff: false });");
+        expect(rbmap).toContain('this._replay(); if (onReady) onReady();');
+        for (const k of ['this._lastRb', 'this._lastLive', 'this._lastPhotos', 'this._vertShow', 'this._lastSel', 'this._lastPos', 'this._lastGuide']) expect(rbmap.slice(rbmap.indexOf('_replay() {'))).toContain(k);
+    });
+    it('remembers the live recording and the photos to paint them back', () => {
+        expect(rbmap).toContain('this._lastLive = { pts, wpts, photos };');
+        expect(rbmap).toContain('this._lastPhotos = photos;');
+    });
+    it('leaves no page to repaint by hand', () => {
+        expect(editor).toContain('map.setBaseStyle(MAP_STYLES[mapStyleIdx]); // RBMap paints back');
+    });
+});

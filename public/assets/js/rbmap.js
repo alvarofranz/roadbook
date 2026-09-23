@@ -135,28 +135,31 @@ window.RBMap = class RBMap {
         m.on('mouseup', photoUp); m.on('touchend', photoUp);
         m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastPos) this._replayPosition(); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
     }
-    // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom
-    // source/layer on setStyle, so everything is rebuilt and the caller repaints
-    // its data in onReady.
+    // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom source/layer on
+    // setStyle, so they are rebuilt and EVERYTHING this map was showing is painted back — the
+    // roadbook, a live recording, the photos, the track-point dots, the selection, the position,
+    // the guide (#788) — so no page has to remember to repaint after a switch. A full reload
+    // (diff:false) makes `style.load` fire every time. onReady runs after the repaint.
     setBaseStyle(styleUrl, onReady) {
         if (!this.map) return;
         this.ready = false;
         this._mapLayer = STYLES.indexOf(styleUrl); if (this._mapLayer < 0) this._mapLayer = 0;
-        this.map.setStyle(styleUrl);
-        this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; if (onReady) onReady(); });
+        this.map.setStyle(styleUrl, { diff: false });
+        this.map.once('style.load', () => { this._init(); this._terrain(); this.ready = true; this._replay(); if (onReady) onReady(); });
     }
-    // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base
-    // styles and repaints the last roadbook + selection. Simple consumers (the
-    // Reader) get this for free via `{ layerToggle: true }`.
-    toggleBaseStyle() {
-        const next = (this._mapLayer + 1) % STYLES.length;
-        this.setBaseStyle(STYLES[next], () => {
-            if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
-            if (this._lastSel) this.select(this._lastSel, true);
-            if (this._lastPos) this._replayPosition();
-            if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
-        });
+    _replay() {
+        if (this._lastRb) this.showRoadbook(this._lastRb, true, this._lastGaps);
+        if (this._lastLive) this.setLiveTrack(this._lastLive.pts, this._lastLive.wpts, this._lastLive.photos);
+        if (this._lastPhotos) this.setPhotos(this._lastPhotos);
+        if (this._vertShow) this._paintVerts(this._vertShow);
+        if (this._lastSel) this.select(this._lastSel, true);
+        if (this._lastPos) this._replayPosition();
+        if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
     }
+    // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base styles. Simple
+    // consumers (the Reader) get it as a map control via `{ layerToggle: true }`; the Recorder
+    // calls it from its own button.
+    toggleBaseStyle() { this.setBaseStyle(STYLES[(this._mapLayer + 1) % STYLES.length]); }
     // Tear down the GL context (Reader closes the inline note map this way).
     destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; this._lastPos = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
     // Re-apply the last known position once the map can actually draw it.
@@ -290,6 +293,7 @@ window.RBMap = class RBMap {
     }
     // Live recording: draw the growing track + waypoint + geolocated-photo markers.
     setLiveTrack(pts, wpts, photos) {
+        this._lastLive = { pts, wpts, photos }; // remembered: a style switch paints it back (#788)
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-track').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: pts.map((p) => [p.lon, p.lat]) } });
         if (wpts) this.map.getSource('rb-wpts').setData({
@@ -301,6 +305,7 @@ window.RBMap = class RBMap {
     // Photo pins (capture position). onClick(photo) fires when a pin is tapped.
     setPhotos(photos, onClick) {
         if (onClick) this._onPhoto = onClick;
+        this._lastPhotos = photos;
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-photos').setData({
             type: 'FeatureCollection',

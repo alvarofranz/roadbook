@@ -498,11 +498,7 @@
     function toggleMapStyle() {
         mapStyleIdx = (mapStyleIdx + 1) % MAP_STYLES.length;
         try { localStorage.setItem('rb_map_style', MAP_STYLE_KEYS[mapStyleIdx]); } catch (e) {}
-        map.setBaseStyle(MAP_STYLES[mapStyleIdx], () => {
-            if (recWatch != null) { map.setLiveTrack(recTrack, recWpts, recPhotos); return; } // repaint a live recording
-            if (rb) { refreshMap(true); map.select(rb.notes[sel], true); } // setStyle wiped the selection layer
-            if (currentRbId > 0) loadPhotos();
-        });
+        map.setBaseStyle(MAP_STYLES[mapStyleIdx]); // RBMap paints back everything it was showing (#788)
     }
     // Top-right map control (beside the zoom buttons): satellite / topo / OSM toggle. The control is
     // one 29 px map button, so the current style shows as a short code; its full, translated name
