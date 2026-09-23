@@ -108,3 +108,27 @@ describe('RBRun', () => {
         expect(read('public/assets/js/run-card.js')).not.toContain('report.duration_s > 0');
     });
 });
+
+describe('the report says only what the run had, and shares happily (#848 · #852)', () => {
+    beforeEach(() => {
+        window.RBt = (k) => k; window.RBesc = (s) => String(s); window.RBKm = (m) => m + ' m';
+        eval(fs.readFileSync('public/assets/js/run-report.js', 'utf8'));
+    });
+    it('a run through no speed-limit zone says nothing about limits', () => {
+        const run = { distance_m: 1000, duration_s: 600, notes_reached: 3, notes_total: 3, speed_zones: 0, speed_exceeded: 0 };
+        expect(RBRun.statsHTML(run)).not.toContain('Speed limits respected');
+        expect(RBRun.detailsHTML(run)).toContain('Every note reached.');
+        expect(RBRun.statsHTML({ ...run, speed_zones: 2 })).toContain('Speed limits respected');
+        expect(RBRun.detailsHTML({ ...run, speed_zones: 2 })).toContain('Every note reached and every limit respected.');
+    });
+    it('shares in the runner’s own glad words', () => {
+        expect(RBRun.shareText({ completed: 1, title: 'Giro' }, 'https://rdbk.app/run/6')).toBe('Check out the roadbook I completed! “Giro” https://rdbk.app/run/6');
+        expect(RBRun.shareText({ completed: 0, title: 'Giro' }, null)).toBe('Check out my run! “Giro”');
+    });
+    it('Share before a choice asks first and picks Public on a Yes', () => {
+        const reader = fs.readFileSync('public/reader/reader.js', 'utf8');
+        expect(reader).toContain("if (!(await RBConfirm(t('Sharing makes this run public. Share it?')))) return false;");
+        expect(reader).toContain("await pick('public');");
+        expect(reader).toContain('if (!cardBlob || !(await shareGate())) return;');
+    });
+});

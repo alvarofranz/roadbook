@@ -19,14 +19,14 @@
     const avgKmh = (run) => run.duration_s > 0 ? ((run.distance_m / 1000) / (run.duration_s / 3600)).toFixed(1) : '—';
     const tile = (icon, value, label, cls = '') => `<div class="stat${cls ? ' ' + cls : ''}"><i class="fa-solid ${icon}"></i><b>${value}</b><span>${esc(t(label))}</span></div>`;
 
+    // a run through no speed-limit zone says nothing about limits (#848)
     function statsHTML(run) {
-        const limits = run.speed_zones ? `${run.speed_zones - run.speed_exceeded}/${run.speed_zones}` : '—';
         return `<div class="stat-grid">
             ${tile('fa-route', RBKm(run.distance_m, 1), 'Distance')}
             ${tile('fa-stopwatch', fmtDuration(run.duration_s), 'Time')}
             ${tile('fa-gauge-high', avgKmh(run) + ' km/h', 'Average speed')}
             ${tile('fa-flag-checkered', `${run.notes_reached}/${run.notes_total}`, 'Notes reached', run.notes_reached < run.notes_total ? 'warn' : 'ok')}
-            ${tile('fa-circle-exclamation', limits, 'Speed limits respected', run.speed_exceeded ? 'warn' : (run.speed_zones ? 'ok' : ''))}
+            ${run.speed_zones ? tile('fa-circle-exclamation', `${run.speed_zones - run.speed_exceeded}/${run.speed_zones}`, 'Speed limits respected', run.speed_exceeded ? 'warn' : 'ok') : ''}
         </div>`;
     }
     function detailsHTML(run) {
@@ -38,7 +38,7 @@
             const total = Object.values(p).reduce((a, b) => a + (+b || 0), 0);
             lines.push(`<li><i class="fa-solid fa-ranking-star icon-accent"></i> ${esc(t('Penalties'))}: <b>${total} ${esc(t('pts'))}</b> <span class="muted small">(${esc(t('Accuracy'))} ${p.acc || 0} · ${esc(t('Skips'))} ${p.skip || 0} · ${esc(t('Extra'))} ${p.extra || 0} · CAP ${p.cap || 0} · ${esc(t('Speed'))} ${p.speed || 0})</span></li>`);
         }
-        if (!lines.length) lines.push(`<li><i class="fa-solid fa-circle-check icon-ok"></i> ${esc(t('Every note reached and every limit respected.'))}</li>`);
+        if (!lines.length) lines.push(`<li><i class="fa-solid fa-circle-check icon-ok"></i> ${esc(t(run.speed_zones ? 'Every note reached and every limit respected.' : 'Every note reached.'))}</li>`);
         return `<ul class="run-details">${lines.join('')}</ul>`;
     }
 
@@ -74,5 +74,8 @@
     }
     window.addEventListener('online', () => flush());
 
-    window.RBRun = { statsHTML, detailsHTML, fmtDuration, avgKmh, enqueue, update, flush };
+    // What a shared run card says (#852): the runner's own words, glad to have done it
+    const shareText = (run, link) => [t(run.completed ? 'Check out the roadbook I completed!' : 'Check out my run!'), run.title ? '“' + run.title + '”' : '', link].filter(Boolean).join(' ');
+
+    window.RBRun = { statsHTML, detailsHTML, shareText, fmtDuration, avgKmh, enqueue, update, flush };
 })();

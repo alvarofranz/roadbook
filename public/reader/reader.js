@@ -791,6 +791,14 @@
         }
         // choice: null until picked ("ask each time"), else the runner's default, saved right away
         let choice = askFirst ? null : (user.runs_visibility === 'public' ? 'public' : 'private');
+        // Share before any choice asks first (#852): a shared card carries the run's page, so
+        // sharing makes it public — Yes picks Public and then shares, No leaves everything as it is
+        shareGate = async () => {
+            if (choice) return true;
+            if (!(await RBConfirm(t('Sharing makes this run public. Share it?')))) return false;
+            await pick('public');
+            return true;
+        };
         let saved = null, busy = false, carded = false;
         const status = () => {
             if (!choice) return `<i class="fa-solid fa-circle-info"></i> ${esc(t('Choose who sees this run to save it to your profile.'))}`;
@@ -841,9 +849,9 @@
         if (!askFirst) upload();
     }
     // The run card: rendered once per report, shown, shared and saved from the same Blob.
-    let cardBlob = null, cardLink = null;
+    let cardBlob = null, cardLink = null, cardReport = null, shareGate = async () => true;
     async function makeCard(report, user) {
-        cardBlob = null; cardLink = null;
+        cardBlob = null; cardLink = null; cardReport = report; shareGate = async () => true;
         try { cardBlob = await RBRunCard.render({ report, roadbook: rb, username: user && user.username }); }
         catch (e) { cardBlob = null; }
         if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCardImg').hidden = false; }
@@ -852,7 +860,10 @@
         return cardBlob;
     }
     const cardName = () => 'rdbk-' + RB.slug((rb.meta && rb.meta.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
-    $('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(), [(rb.meta && rb.meta.title) || 'RDBK.app', cardLink].filter(Boolean).join(' ')); };
+    $('cardShare').onclick = async () => {
+        if (!cardBlob || !(await shareGate())) return;
+        RBShareFile(cardBlob, cardName(), RBRun.shareText(cardReport, cardLink));
+    };
     $('cardSave').onclick = () => { if (cardBlob) RBDownload(cardBlob, cardName()); };
     $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
     $('qrShare').onclick = async () => RBShareFile(await (await fetch(lastQrUrl)).blob(), 'RB_' + team + '.png', lastPayload);
