@@ -32,7 +32,7 @@ describe('the Editor map controls (#754)', () => {
 
 describe('no dialog is taller than the screen (#754)', () => {
     it('caps every modal card at the viewport and scrolls inside it', () => {
-        expect(read('public/assets/css/app.css')).toMatch(/\.modal-card \{[^}]*max-height: calc\(100dvh - 2rem\); overflow-y: auto;/);
+        expect(read('public/assets/css/app.css')).toMatch(/\.modal-card \{[^}]*max-height: calc\(100dvh - 2rem - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\); overflow-y: auto;/);
     });
     it('lays the shortcut sheet out in compact columns', () => {
         expect(editor).toContain('<div class="shortcut-grid">');

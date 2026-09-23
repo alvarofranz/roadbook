@@ -291,3 +291,17 @@ describe('find a label in the translation editor (#709)', () => {
         expect(cfg).toContain('RBI18nEditKeys([hits[+b.dataset.hit].key]');
     });
 });
+
+describe('nothing sits under the status bar (#787)', () => {
+    const css = fs.readFileSync('public/assets/css/app.css', 'utf8');
+    it('covers the top inset with one opaque strip above everything', () => {
+        expect(css).toMatch(/body::before \{ content: ''; position: fixed; top: 0; left: 0; right: 0; height: env\(safe-area-inset-top\); background: var\(--bg\); z-index: 1000; pointer-events: none; \}/);
+    });
+    it('pads every dialog by the safe areas and keeps its card within them', () => {
+        expect(css).toMatch(/\.modal \{[^}]*padding: calc\(1rem \+ env\(safe-area-inset-top\)\)/);
+        expect(css).toMatch(/\.modal-card \{[^}]*max-height: calc\(100dvh - 2rem - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
+    });
+    it('hides the status bar only on Android, where it gives its strip back', () => {
+        expect(fs.readFileSync('native/src/native.js', 'utf8')).toContain("if (Capacitor.getPlatform() !== 'android') return;");
+    });
+});

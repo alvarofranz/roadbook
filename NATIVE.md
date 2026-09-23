@@ -37,8 +37,11 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   at once. At startup a sentinel key tells whether the WebView storage was wiped: if so the keys come
   back and the page reloads once; if not, Preferences is realigned to `localStorage`, so nothing the
   user discarded is ever resurrected. No permission involved.
-- **Status bar (#778)** — `@capacitor/status-bar`: light icons on the app's dark background, and the
-  bar is hidden while a tool owns the screen — the Reader navigating (`body.rb-immersive`) or a GPS
+- **Status bar (#778 · #787)** — `@capacitor/status-bar`: light icons on the app's dark background.
+  The page draws under the transparent bar (viewport-fit=cover), so `app.css` covers the top inset
+  with one fixed opaque strip (`body::before`) above everything, and dialogs pad themselves by the
+  safe areas: nothing ever shows behind the clock. On **Android** the bar is also hidden while a tool
+  owns the screen (iOS keeps the notch's inset with the bar hidden, so it stays there) — the Reader navigating (`body.rb-immersive`) or a GPS
   session with its own clock · battery · GPS bar (`body.gps-live`, set by `RBStatusBar`). One
   `MutationObserver` on the body's classes in `native.js`; no page calls the bridge for it.
 - **Token auth** — `app/auth.php` issues a Bearer token on login (alongside the web session

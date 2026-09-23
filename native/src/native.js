@@ -269,14 +269,17 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) mirro
 App.addListener('pause', () => { mirror.flush(); });
 mirror.reconcile().then((restored) => { if (restored) window.location.reload(); }).catch(() => {});
 
-/* The system status bar (#778): light icons on the app's dark background, and hidden while a tool
- * owns the screen — the Reader navigating (body.rb-immersive) or a GPS session with its own bar
+/* The system status bar (#778): light icons on the app's dark background, and — on Android — hidden
+ * while a tool owns the screen — the Reader navigating (body.rb-immersive) or a GPS session with its own bar
  * of clock · battery · GPS (body.gps-live). One observer on the body's classes, so no page has to
  * call the bridge. */
 StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
 if (Capacitor.getPlatform() === 'android') StatusBar.setBackgroundColor({ color: '#0e1116' }).catch(() => {});
+// Android only: there hiding the bar gives its strip back to the tool. iOS keeps the notch's inset
+// with the bar hidden, so hiding would only leave an empty band where the clock was (#787).
 let statusBarHidden = false;
 function syncStatusBar() {
+    if (Capacitor.getPlatform() !== 'android') return;
     const hide = document.body.classList.contains('rb-immersive') || document.body.classList.contains('gps-live');
     if (hide === statusBarHidden) return;
     statusBarHidden = hide;
