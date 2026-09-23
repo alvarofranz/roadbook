@@ -79,7 +79,6 @@ Lo schema `users` è esteso da diverse migrazioni (vedi anche [backend-api](back
 | [008_admin.sql](../migrations/008_admin.sql) | `is_admin` | `TINYINT(1)` def. 0 | ruolo amministratore (flag DB) |
 | [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `must_change_password` | `TINYINT(1)` def. 0 | l'utente deve cambiare password al prossimo accesso |
 | [009_admin_user_flags.sql](../migrations/009_admin_user_flags.sql) | `blocked` | `TINYINT(1)` def. 0 | account bloccato (login rifiutato) |
-| [010_voice_lang.sql](../migrations/010_voice_lang.sql) | `voice_lang` | `VARCHAR(16)` def. `''` | lingua speech-to-text delle note vocali (`''` = segue il dispositivo) |
 | [011_pending_email.sql](../migrations/011_pending_email.sql) | `pending_email` | `VARCHAR(190)` NULL | nuovo indirizzo email in attesa di conferma (cambio email) |
 | [013_default_location.sql](../migrations/013_default_location.sql) | `default_lat` / `default_lon` | `DECIMAL(10,7)` NULL | posizione mappa di default dell'utente |
 | [014_ui_lang.sql](../migrations/014_ui_lang.sql) | `ui_lang` | `VARCHAR(5)` NULL | lingua UI preferita (una delle 5 lingue; NULL = segue il browser) |
