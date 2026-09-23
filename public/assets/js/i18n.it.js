@@ -1507,3 +1507,19 @@ Object.assign(window.RBi18nLangs.it, {
     "The menu reads Roadbooks · Editor · Recorder · Navigate · Events · Profile everywhere, and the Editor can start a recording straight from its first screen.": "Il menu è Roadbook · Editor · Recorder · Naviga · Eventi · Profilo ovunque, e l’Editor può avviare una registrazione direttamente dalla prima schermata.",
     "Date fields no longer overlap their labels, and user management shows the real distance of each roadbook.": "I campi data non si sovrappongono più alle etichette, e la gestione utenti mostra la distanza reale di ogni roadbook.",
 });
+
+/* public comments on a public roadbook (#809) */
+Object.assign(window.RBi18nLangs.it, {
+    "Comments": "Commenti",
+    "Post": "Pubblica",
+    "Write a comment…": "Scrivi un commento…",
+    "No comments yet — be the first.": "Ancora nessun commento: scrivi il primo.",
+    "Delete this comment by": "Eliminare questo commento di",
+    "Write something first.": "Scrivi prima qualcosa.",
+    "That comment is too long.": "Questo commento è troppo lungo.",
+});
+
+/* privacy: public comments (#809) */
+Object.assign(window.RBi18nLangs.it, {
+    "priv.rb.4": "Un <b>commento</b> che pubblichi sotto un roadbook pubblico è mostrato sulla sua pagina a tutti i lettori che hanno effettuato l’accesso, con il tuo nome utente e il tuo avatar. Tu, il proprietario del roadbook e un amministratore potete eliminarlo; eliminando il tuo account si eliminano i tuoi commenti.",
+});

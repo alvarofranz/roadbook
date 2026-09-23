@@ -225,3 +225,24 @@ ri-renderizza senza rifetchare.
 - Il dettaglio di **come uno slug diventa pubblico** (creazione, visibilità, generazione dello
   slug, storage delle foto) è interamente backend e qui non è coperto: vedi la documentazione
   dell'API PHP.
+
+## Public comments (#809)
+
+A **public** roadbook's page (`/challenge/<slug>`) ends with its comments, and the Reader never shows them. Every
+signed-in reader sees them and can post one; a roadbook that is not public (a draft, or a ready one delivered
+through an event) has none.
+
+- **Table** `roadbook_comments` (migration `041`): roadbook, author, body, `created_at`. A comment goes with
+  its roadbook and with its author's account (`ON DELETE CASCADE`).
+- **API** (`app/comments.php`, all signed-in):
+  - `comments_list {slug}` returns the comments oldest first, each with `username`, `avatar` and `can_delete`.
+  - `comment_add {slug, body, turnstile}` requires a body of 1–2000 characters, allows 10 posts per user per
+    10 minutes, and runs `verify_turnstile`; the app origins are exempt from Turnstile, as for sign-in.
+  - `comment_delete {id}` is open to the author, the roadbook's owner and an admin.
+  - Each post and each deletion lands in `activity_log`.
+- **Client** (`challenge.js`):
+  - The list is followed by a form holding the Turnstile widget, rendered by the shared `RBTurnstile(el, siteKey)`
+    in `app.js`, which is also used by the account forms. A token is good for one post, so the widget resets
+    after each attempt.
+  - Deleting asks first and names the author and the start of the text.
+  - The roadbook's author carries the *Author* badge.

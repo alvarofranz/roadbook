@@ -1,7 +1,8 @@
 'use strict';
 /* Public roadbook page: /challenge/<slug>. The roadbook's notes in the same paper rows as the
  * Reader (NoteCanvas.rowsHTML, #635), its route map, the owner (linked to their public profile),
- * Navigate (Reader), PDF export and, for the owner, Edit. Reading requires a signed-in account (#146). */
+ * Navigate (Reader), PDF export and, for the owner, Edit, and — on a public roadbook — its public
+ * comments (#809). Reading requires a signed-in account (#146). */
 (async function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
@@ -66,5 +67,66 @@
         map.showRoadbook(rb);
         map.onWaypoint((i) => { const row = $('chNotes').querySelector(`.nrow[data-i="${i}"]`); if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
         setTimeout(() => map.map && map.map.resize(), 60); // the container was just unhidden
+    }
+
+    // Public comments (#809): only on a public roadbook, only here — the Reader never shows them.
+    // Posting passes Turnstile; the author, the roadbook's owner and an admin may delete one.
+    if (j.status === 'public') {
+        const COMMENT_MAX = 2000;
+        const list = $('chCommentList'), body = $('chCommentBody');
+        let comments = [];
+        const turnstile = RBTurnstile($('chCommentTs'), cfg.turnstile);
+        if (cfg.user.avatar) $('chMeAvatar').src = RBMediaSrc(cfg.user.avatar);
+        const commentHTML = (c) => {
+            const profile = RBProfileLink(c.username);
+            return `<article class="comment" data-id="${c.id}">
+                <a href="${profile}"><img class="avatar avatar-sm" src="${c.avatar ? esc(RBMediaSrc(c.avatar)) : '/assets/icon.svg'}" alt="" loading="lazy"></a>
+                <div class="grow comment-main">
+                    <div class="comment-head">
+                        <a href="${profile}"><b>@${esc(c.username)}</b></a>
+                        ${c.username === o.username ? `<span class="u-badge">${esc(t('Author'))}</span>` : ''}
+                        <span class="muted small">${esc(RBFmtDateTime(c.created_at))}</span>
+                        ${c.can_delete ? `<button class="btn btn-ghost btn-sm" data-delete="${c.id}" type="button" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>` : ''}
+                    </div>
+                    <p class="comment-body">${esc(c.body)}</p>
+                </div>
+            </article>`;
+        };
+        const render = () => {
+            $('chCommentCount').textContent = comments.length ? `(${comments.length})` : '';
+            list.innerHTML = comments.length ? comments.map(commentHTML).join('') : `<p class="muted">${esc(t('No comments yet — be the first.'))}</p>`;
+        };
+        const counter = () => {
+            const left = COMMENT_MAX - body.value.length;
+            $('chCommentLeft').textContent = left < 200 ? `${left}` : '';
+        };
+        body.addEventListener('input', counter);
+        list.addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-delete]');
+            if (!btn) return;
+            const c = comments.find((x) => x.id === +btn.dataset.delete);
+            const excerpt = c.body.length > 80 ? c.body.slice(0, 80) + '…' : c.body;
+            if (!(await RBConfirmDanger(`${esc(t('Delete this comment by'))} <b>@${esc(c.username)}</b>?<br><i>“${esc(excerpt)}”</i>`))) return;
+            const r = await RBApi('comment_delete', { id: c.id });
+            if (!r.ok) return RBToast(r.error || 'Could not delete.');
+            comments = comments.filter((x) => x.id !== c.id); render();
+        });
+        $('chCommentForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const text = body.value.trim();
+            if (!text) return body.focus();
+            const busy = RBBusy($('chCommentSend'));
+            const r = await RBApi('comment_add', { slug, body: text, turnstile: turnstile.token() });
+            turnstile.reset(); // a token is good for one post
+            if (!r.ok) { busy.reset(); return RBToast(r.error || 'Could not save.'); }
+            busy.ok();
+            comments.push(r.comment); render(); body.value = ''; counter();
+            list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+        const r = await RBApi('comments_list', { slug });
+        comments = r.ok ? r.comments : [];
+        render();
+        $('chComments').hidden = false;
+        window.addEventListener('rb-lang', render);
     }
 })();
