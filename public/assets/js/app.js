@@ -428,7 +428,8 @@
     }
     // Never offer "Install" inside the native app: it IS the app, and a Capacitor WebView is not
     // display-mode:standalone / navigator.standalone, so without this it would wrongly show (#198).
-    function showInstall() { if (isStandalone() || isNativeApp() || installClosed()) return; const b = ensureBtn(); if (b) b.hidden = false; }
+    // …nor on the install guide itself, the page the chip leads to (#794).
+    function showInstall() { if (isStandalone() || isNativeApp() || installClosed() || /\/install\/?$/.test(location.pathname)) return; const b = ensureBtn(); if (b) b.hidden = false; }
     // The captured install prompt, shared with the /install/ guide (#333) so both offer the same
     // one-tap install. Chromium only — iOS Safari never fires beforeinstallprompt, which is exactly
     // why the guide exists.
