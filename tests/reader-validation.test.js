@@ -31,10 +31,10 @@ describe('validation lives on the note (#529)', () => {
         const move = js.match(/function moveNoteMap\(i\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(move).toContain('while (from.firstChild) to.appendChild(from.firstChild);'); // the same GL map, re-parented
         expect(move).toContain('closeInlineMap()');                                         // nothing past the last note
-        expect(move).toContain('inlineMap.setGuide(lastHere, n)');
+        expect(move).toContain('guideTo(i, lastHere)');
         const live = js.match(/function refreshLive\(\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(live).toContain('paintMapTogo();');
-        expect(js).toContain('fmtDist(RB.geo.haversineM(lastHere, n))');
+        expect(js).toContain('fmtKm(toGoM(inlineMapIdx, lastHere))'); // along the route, in the roadbook's km (#846 · #847)
         expect(html).toContain('.nmap-togo {');
     });
 
@@ -114,7 +114,7 @@ describe("the note map is YOUR map: centred on you, turned your way (#536)", () 
         expect(open).toContain('bearing: lastHere ? heading : 0');
         expect(open).toContain('headingToggle: true');                       // north can still be locked
         expect(open).toContain('inlineMap.setPosition(lastHere.lat, lastHere.lon, true,');
-        expect(open).toContain('inlineMap.setGuide(lastHere, n)');
+        expect(open).toContain('guideTo(i, lastHere)');
     });
 
     it('a fix that lands before the map can draw is not lost', () => {
@@ -125,10 +125,11 @@ describe("the note map is YOUR map: centred on you, turned your way (#536)", () 
         expect(rbmap).toContain('this._lastPos = null;'); // and dropped with the map
     });
 
-    it('the guidance arrow is anchored to the map, so it reads against your own heading', () => {
-        const guide = rbmap.match(/setGuide\(from, to\) \{([\s\S]*?)\n {4}\}/)[1];
-        expect(guide).toContain("rotationAlignment: 'map'");
-        expect(guide).toContain('RB.geo.bearingDeg(from, to) - 90');
+    it('the guide is the route still to drive, a line and nothing else (#849)', () => {
+        const guide = rbmap.match(/setGuide\(from, to, path\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(guide).toContain('const line = path && path.length ? [from, ...path] : [from, to];');
+        expect(rbmap).not.toMatch(/guideArrow|rb-guide-arrow/);
+        expect(js).toContain('inlineMap.setGuide(here, notes[i], a ? a.path : null)');
     });
 
     it('asks the core for the course, measured along the ground actually covered (#565)', () => {

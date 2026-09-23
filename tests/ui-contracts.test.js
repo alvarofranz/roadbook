@@ -538,23 +538,18 @@ describe('per-note map guidance line + 1 cm arrow (#485)', () => {
 
     it('RBMap paints the guidance through a dedicated source, cleared with nulls', () => {
         expect(rbmap).toContain("m.addSource('rb-guide'");
-        expect(rbmap).toMatch(/setGuide\(from, to\)/);
-        expect(rbmap).toContain('rb-guide-arrow');
-    });
-
-    it('the arrow keeps a physical centimetre at any zoom and points along the bearing', () => {
-        expect(css).toMatch(/\.rb-guide-arrow\s*\{[^}]*width:\s*1cm/);
-        expect(rbmap).toContain('bearingDeg(from, to) - 90'); // artwork points east; rotation 0 is north
+        expect(rbmap).toMatch(/setGuide\(from, to, path\)/);
+        expect(css).not.toContain('rb-guide-arrow'); // a line only (#849)
     });
 
     it('the reader draws the guide on open and follows the live fix', () => {
-        expect(reader).toContain('inlineMap.setGuide(lastHere, n)');
-        expect(reader).toContain('inlineMap.setGuide(here, notes[inlineMapIdx])');
+        expect(reader).toContain('guideTo(i, lastHere)');
+        expect(reader).toContain('guideTo(inlineMapIdx, here)');
     });
 
     it('the guide survives style swaps and dies with the map', () => {
-        expect(rbmap).toContain('if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to)');
-        expect(rbmap).toContain('this._guideArrow.remove()');
+        expect(rbmap).toContain('if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to, this._lastGuide.path)');
+        expect(rbmap).toContain('this._lastGuide = null;');
     });
 });
 

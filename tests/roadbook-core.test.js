@@ -1231,26 +1231,30 @@ describe('RB.distanceChars (#730)', () => {
     });
 });
 
-describe('activeScrollTop — where the Reader list scrolls on advancing (#177 · #759)', () => {
-    const at = (o) => RB.activeScrollTop(Object.assign({ viewHeight: 600 }, o));
-    it('keeps the note just used whole above the active one when both fit', () => {
-        expect(at({ prevTop: 1000, activeTop: 1150, activeBottom: 1300 })).toBe(992);
+describe('routeAhead: where the driver is along the route (#847 · #849)', () => {
+    // a straight east-west road with notes at its 2nd and 4th vertex, ~111 m between vertices
+    const track = [0, 1, 2, 3, 4, 5].map((k) => ({ lat: 45, lon: 9 + k * 0.001414 }));
+    const rb = RB.recomputeMetrics({ meta: {}, track, notes: [RB.bareNote({ track, notes: [] }, 1, 3), RB.bareNote({ track, notes: [] }, 3, 3)] });
+    const cum = RB.cumulativeM(track);
+
+    it('measures what is left to the note along the track, in the notes’ own metres', () => {
+        const half = { lat: 45.00005, lon: 9 + 2.5 * 0.001414 }; // halfway between vertex 2 and 3, a bit off the road
+        const a = RB.routeAhead(rb, cum, 1, half);
+        expect(Math.round(rb.notes[1].distance - a.atM)).toBe(Math.round((cum[3] - cum[2]) / 2));
+        expect(a.offRouteM).toBeGreaterThan(4);
     });
-    it('a long note just used gives up its top so the active row shows whole', () => {
-        // previous row 500 px tall, active 300 px: only 300 px of the previous can stay
-        expect(at({ prevTop: 1000, activeTop: 1500, activeBottom: 1800 })).toBe(1208);
+    it('draws the road still to drive, ending on the note, and nothing once past it', () => {
+        const a = RB.routeAhead(rb, cum, 1, { lat: 45, lon: 9 + 1.5 * 0.001414 });
+        expect(a.path[a.path.length - 1]).toEqual({ lat: track[3].lat, lon: track[3].lon });
+        expect(a.path).toHaveLength(3); // projected point · vertex 2 · vertex 3
+        expect(RB.routeAhead(rb, cum, 1, { lat: 45, lon: 9 + 3.5 * 0.001414 }).path).toEqual([]);
     });
-    it('an active row taller than the list is shown from its top', () => {
-        expect(at({ prevTop: 1000, activeTop: 1200, activeBottom: 2000 })).toBe(1192);
+    it('never snaps onto a stretch of the route outside the notes around it', () => {
+        const a = RB.routeAhead(rb, cum, 0, { lat: 45, lon: 9 + 4.5 * 0.001414 }); // far past note 2
+        expect(a.atM).toBeLessThanOrEqual(cum[3] + 1);                          // clamped to the window
     });
-    it('the first note scrolls to its own top, never above zero', () => {
-        expect(at({ prevTop: null, activeTop: 4, activeBottom: 200 })).toBe(0);
-    });
-    it('the active row is always fully visible when it fits', () => {
-        for (const [p, a, b] of [[0, 900, 1200], [100, 150, 700], [0, 50, 500]]) {
-            const top = at({ prevTop: p, activeTop: a, activeBottom: b });
-            expect(a).toBeGreaterThanOrEqual(top);
-            expect(b).toBeLessThanOrEqual(top + 600 + 8);
-        }
+    it('has nothing to say without a route or a fix', () => {
+        expect(RB.routeAhead({ track: [], notes: rb.notes }, [], 0, { lat: 45, lon: 9 })).toBeNull();
+        expect(RB.routeAhead(rb, cum, 0, null)).toBeNull();
     });
 });

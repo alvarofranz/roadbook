@@ -154,7 +154,7 @@ window.RBMap = class RBMap {
             demPending = true;
             m.once('idle', () => { demPending = false; m.fire('move'); });
         });
-        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastPos) this._replayPosition(); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to); });
+        m.on('load', () => { this._init(); this._terrain(); this.ready = true; m.resize(); if (this._pending) { this.showRoadbook(this._pending, this._pendingNoFit, this._pendingGaps); this._pending = null; } if (this._lastSel) this.select(this._lastSel, true); if (this._lastPos) this._replayPosition(); if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to, this._lastGuide.path); });
     }
     // Swap the base style (satellite ↔ topo ↔ OSM). MapLibre wipes every custom source/layer on
     // setStyle, so they are rebuilt and EVERYTHING this map was showing is painted back — the
@@ -177,14 +177,14 @@ window.RBMap = class RBMap {
         if (this._vertShow) this._paintVerts(this._vertShow);
         if (this._lastSel) this.select(this._lastSel, true);
         if (this._lastPos) this._replayPosition();
-        if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
+        if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to, this._lastGuide.path);
     }
     // Built-in layer toggle (satellite ↔ topo ↔ OSM): cycles through the base styles. The Reader
     // and the Editor get it as a map control via `layerToggle`; the Recorder calls it from its own
     // button.
     toggleBaseStyle() { this.setBaseStyle(STYLES[(this._mapLayer + 1) % STYLES.length]); }
     // Tear down the GL context (Reader closes the inline note map this way).
-    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } this._lastGuide = null; this._lastPos = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
+    destroy() { if (this._posArrow) { this._posArrow.remove(); this._posArrow = null; } this._lastGuide = null; this._lastPos = null; if (this.map) { this.map.remove(); this.map = null; } this.ready = false; }
     // Re-apply the last known position once the map can actually draw it.
     _replayPosition() { const p = this._lastPos; if (p) this.setPosition(p.lat, p.lon, p.follow, p.heading); }
     // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
@@ -338,24 +338,18 @@ window.RBMap = class RBMap {
         this.map.getSource('rb-sel').setData(note ? { type: 'Feature', geometry: { type: 'Point', coordinates: [note.lon, note.lat] } } : this._empty());
         if (note && !noEase) this.map.easeTo({ center: [note.lon, note.lat], duration: 500 });
     }
-    // Guidance line from the live position to one waypoint + a 1 cm arrow at the position
-    // pointing that way (#485). Pass nulls to clear. The arrow is an HTML marker (fixed CSS
-    // size, so it stays 1 cm at any zoom) rotated to the bearing, tail pinned on the position.
-    setGuide(from, to) {
-        this._lastGuide = (from && to) ? { from, to } : null; // remembered for style swaps
+    // The guidance line from the live position to one waypoint (#485 · #849): the route itself when
+    // the caller has it (`path`, from RB.routeAhead: the road still to drive, so the line bends where
+    // the road bends), else the straight line. A line, nothing else — the waypoint's halo marks the
+    // end, the position chevron the start. Pass nulls to clear.
+    setGuide(from, to, path) {
+        this._lastGuide = (from && to) ? { from, to, path } : null; // remembered for style swaps
         if (!this.map || !this.ready) return;
         const show = !!(from && to && window.RB && RB.geo
             && RB.geo.haversineM(from, to) > 5); // arrived: the waypoint halo says it all
+        const line = path && path.length ? [from, ...path] : [from, to];
         this.map.getSource('rb-guide').setData(!show ? this._empty()
-            : { type: 'Feature', geometry: { type: 'LineString', coordinates: [[from.lon, from.lat], [to.lon, to.lat]] } });
-        if (!show) { if (this._guideArrow) { this._guideArrow.remove(); this._guideArrow = null; } return; }
-        if (!this._guideArrow) {
-            const el = document.createElement('div');
-            el.className = 'rb-guide-arrow';
-            el.innerHTML = '<svg viewBox="0 0 38 12" width="100%" height="100%"><line x1="2" y1="6" x2="28" y2="6" stroke="#e8b059" stroke-width="5" stroke-linecap="round"/><path d="M26 1 L37 6 L26 11 z" fill="#e8b059"/></svg>';
-            this._guideArrow = new maplibregl.Marker({ element: el, anchor: 'left', rotationAlignment: 'map' }).setLngLat([from.lon, from.lat]).addTo(this.map);
-        }
-        this._guideArrow.setLngLat([from.lon, from.lat]).setRotation(RB.geo.bearingDeg(from, to) - 90); // the artwork points east; rotation 0 is north
+            : { type: 'Feature', geometry: { type: 'LineString', coordinates: line.map((p) => [p.lon, p.lat]) } });
     }
     _fit(rb) {
         if (!this.map || !rb.track.length) return;

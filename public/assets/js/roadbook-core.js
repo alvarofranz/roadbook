@@ -137,16 +137,6 @@
         const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
-    /* Where the Reader's note list scrolls when a new note becomes active (#177 · #759), in the list's
-       own coordinates. The active note always wins: its whole row shows, the note just used keeps
-       whatever room is left above it (all of it when both fit), and an active row taller than the
-       list is shown from its top. prevTop is null for the first note. */
-    function activeScrollTop({ prevTop, activeTop, activeBottom, viewHeight, margin = 8 }) {
-        let top = (prevTop == null ? activeTop : prevTop) - margin;          // ideal: the note just used, whole
-        if (activeBottom - top > viewHeight) top = activeBottom + margin - viewHeight; // …unless that pushes the active row off the bottom
-        if (top > activeTop - margin) top = activeTop - margin;              // an active row taller than the list: show its top
-        return Math.max(0, top);
-    }
     /* Is note i the roadbook's END — the last one you navigate to? Its tulip draws no exit road: past the finish there is nothing to follow, and in a race
        that note is the finish arch (#447). One rule, so the Editor, the Reader, the public page
        and the PDF all agree about which note that is. */
@@ -916,6 +906,26 @@
         const a = trkpts[best.i], b = trkpts[best.i + 1];
         return { i: best.i, t: best.t, dist: best.dist, lat: round6(a.lat + (b.lat - a.lat) * best.t), lon: round6(a.lon + (b.lon - a.lon) * best.t) };
     }
+    // Where the driver is ALONG the route, relative to note i (#847): the fix projected onto the track
+    // between the note before i and the note after it — never onto a loop or a parallel stretch
+    // elsewhere on the route. `atM` is metres from the start, the scale of every note's `distance`
+    // (both come from cumulativeM), so `notes[i].distance − atM` is what is left to the note measured
+    // the way the roadbook measures its partials; a straight line to the waypoint undercuts every
+    // bend. `path` is the route itself from the projected point to the note (empty once past it):
+    // the line a map draws to guide the driver there (#849). `cum` = cumulativeM(rb.track).
+    function routeAhead(rb, cum, i, here) {
+        const track = rb.track, notes = rb.notes, n = notes && notes[i];
+        if (!n || !here || !track || track.length < 2) return null;
+        const last = track.length - 1;
+        const from = Math.max(0, Math.min(i > 0 ? notes[i - 1].idx : 0, last - 1));
+        const to = Math.max(from + 1, Math.min(notes[i + 1] ? notes[i + 1].idx : last, last));
+        const p = nearestOnTrack(track.slice(from, to + 1), here);
+        if (!p) return null;
+        const k = from + p.i;
+        const atM = cum[k] + (cum[k + 1] - cum[k]) * p.t;
+        const path = k < n.idx ? [{ lat: p.lat, lon: p.lon }, ...track.slice(k + 1, n.idx + 1).map((q) => ({ lat: q.lat, lon: q.lon }))] : [];
+        return { atM, path, offRouteM: p.dist };
+    }
     // Simplify rb.track (notes' anchor points always survive), then remap and recompute.
     function simplifyRoadbook(rb, toleranceM) {
         const keep = simplifyKeepMask(rb.track, toleranceM, rb.notes.map((n) => n.idx));
@@ -1425,11 +1435,11 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, activeScrollTop, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
+        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
