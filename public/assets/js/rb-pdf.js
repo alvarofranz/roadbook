@@ -1,18 +1,16 @@
 'use strict';
 /* rb-pdf.js (window.RBPdf) — client-side A4 PDF export of a roadbook, generated
  * entirely on the device (no server). jsPDF is vendored and lazy-loaded on first
- * use. Text, the page frame, the row grid, the cover's route and the closing QR are
+ * use. Text, the page frame, the row grid, the cover's route and the header QR are
  * crisp vectors; each note's tulip (an SVG from NoteCanvas.toSVG) is rasterised at
  * high DPI on white and placed as an image — the only faithful way to carry the SVG
  * traffic-sign icons and arrowhead markers across.
  *
  * Layout (the printer binds the top + left edges):
- *   Cover: logo · title · description · the route drawn as a line · distance / notes / date ·
- *   author and organization — nothing else (#784).
- *   Content: A4 · 20 mm top · 30 mm left · header(totals · logo · title · page) · note rows,
- *   4 rows under the tall first header, 6 under the slim running one. No footer.
- *   The very end: "Digital version available online" and a QR to the roadbook's page, when
- *   the caller has a public page to point at (opts.link). */
+ *   Cover: title · description · the route drawn as a line, over the roadbook's image as a faint
+ *   backdrop · distance / notes / date · author and organization — nothing else (#784 · #810).
+ *   Content: A4 · 20 mm top · 30 mm left · the same header on every page (QR to the digital
+ *   copy · title · page) · 6 note rows. No footer, nothing after the last note (#810). */
 (function () {
     // jsPDF lives next to this file; load it from our own directory, on demand.
     const SELF_SRC = (document.currentScript && document.currentScript.src) || '';
@@ -76,8 +74,8 @@
     const PW = 210, PH = 297, LEFT = 30, TOP = 20, RIGHT = 12, BOTTOM = 12;
     const CW = PW - LEFT - RIGHT;   // content width 168
     const CB = PH - BOTTOM;         // content bottom 285
-    const H1 = 50, H2 = 12;         // header heights: first page / running
-    const ROWS_FIRST = 4, ROWS_REST = 6;
+    const HEADER_H = 18;            // the running header, identical on every content page
+    const ROWS = 6;                 // sheet rows per content page
     const km = (m) => ((m || 0) / 1000).toFixed(2);
 
     // Draw centred text, shrinking the font size so a long title never runs past maxW (mm).
@@ -88,16 +86,6 @@
         doc.text(text, cx, y, { align: 'center' });
     }
 
-    // Place a logo (data URI) fitted into maxW×maxH, anchored by its centre-x / top-y.
-    function placeLogo(doc, logo, cx, top, maxW, maxH) {
-        try {
-            const p = doc.getImageProperties(logo);
-            let h = maxH, w = h * (p.width / p.height);
-            if (w > maxW) { w = maxW; h = w * (p.height / p.width); }
-            doc.addImage(logo, p.fileType || 'PNG', cx - w / 2, top, w, h);
-        } catch (e) { /* unreadable logo — skip it */ }
-    }
-
     function fmtDate(d) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
@@ -105,8 +93,22 @@
     // bind margin here, it is never punched. The route is the roadbook's own line, drawn as a
     // vector (equirectangular, lon scaled by cos(lat) so the shape is not stretched); a roadbook
     // that hides its map (map_access:false) keeps its route to itself.
+    // The roadbook's image as the route box's backdrop (#810): cover-fitted, clipped to the
+    // rounded box and washed out under a strong paper-coloured veil, so it only tints the page.
+    function drawBackdrop(doc, image, x, y, w, h) {
+        try {
+            const p = doc.getImageProperties(image), scale = Math.max(w / p.width, h / p.height);
+            const iw = p.width * scale, ih = p.height * scale;
+            doc.saveGraphicsState();
+            doc.roundedRect(x, y, w, h, 4, 4, null); doc.clip(); doc.discardPath();
+            doc.addImage(image, p.fileType || 'PNG', x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+            doc.setGState(new doc.GState({ opacity: 0.86 }));
+            doc.setFillColor(246, 244, 239); doc.rect(x, y, w, h, 'F');
+            doc.restoreGraphicsState();
+        } catch (e) { /* unreadable image — the plain box stays */ }
+    }
     const COVER_MARGIN = 20, COVER_W = PW - 2 * COVER_MARGIN;
-    function drawRoute(doc, track, x, y, w, h) {
+    function drawRoute(doc, track, x, y, w, h, backdrop) {
         let pts = track;
         if (pts.length > 1500) { const step = Math.ceil(pts.length / 1500); pts = track.filter((_, i) => i % step === 0 || i === track.length - 1); }
         const k = Math.cos((pts.reduce((sum, p) => sum + (+p.lat), 0) / pts.length) * Math.PI / 180) || 1;
@@ -117,6 +119,7 @@
         const offX = x + (w - spanX * scale) / 2, offY = y + (h - spanY * scale) / 2;
         const at = (i) => [offX + (X[i] - minX) * scale, offY + (Y[i] - minY) * scale];
         doc.setFillColor(246, 244, 239); doc.roundedRect(x, y, w, h, 4, 4, 'F');
+        if (backdrop) drawBackdrop(doc, backdrop, x, y, w, h);
         doc.setDrawColor(201, 128, 28); doc.setLineWidth(0.9); doc.setLineCap('round'); doc.setLineJoin('round');
         const segs = []; for (let i = 1; i < pts.length; i++) { const [ax, ay] = at(i - 1), [bx, by] = at(i); segs.push([bx - ax, by - ay]); }
         const [sx, sy] = at(0); doc.lines(segs, sx, sy, [1, 1], 'S', false);
@@ -128,15 +131,6 @@
         const meta = rb.meta || {}, cx = PW / 2;
         const title = meta.title || 'Roadbook';
         let y = 30;
-        if (logo) {
-            try {
-                const p = doc.getImageProperties(logo);
-                let h = 30, w = h * (p.width / p.height);
-                if (w > 80) { w = 80; h = w * (p.height / p.width); }
-                doc.addImage(logo, p.fileType || 'PNG', cx - w / 2, y - 8, w, h);
-                y += h + 6;
-            } catch (e) { /* unreadable logo — skip it */ }
-        }
         doc.setFont('helvetica', 'bold'); doc.setTextColor(20); doc.setFontSize(26);
         const titleLines = doc.splitTextToSize(title, COVER_W).slice(0, 2);
         doc.text(titleLines, cx, y + 8, { align: 'center' }); y += 8 + titleLines.length * 10;
@@ -148,7 +142,7 @@
         const track = rb.track || [];
         if (meta.map_access !== false && track.length >= 2) {
             const boxTop = Math.max(y + 6, 92);
-            drawRoute(doc, track, COVER_MARGIN, boxTop, COVER_W, 118);
+            drawRoute(doc, track, COVER_MARGIN, boxTop, COVER_W, 118, logo);
             y = boxTop + 118;
         }
         // the three figures, as columns: distance · notes · date
@@ -168,63 +162,34 @@
     }
 
     /* ---------- pagination (pure, unit-tested) ---------- */
-    // Which sheet rows go on which content page. With a closing block (the "digital version"
-    // QR, #784) the last page keeps the room of one row free at its foot for it — and never
-    // ends up holding the closing block alone.
-    const CLOSING_H = 34;
-    function paginate(count, closing) {
+    // Which sheet rows go on which content page: ROWS at a time, every page alike.
+    function paginate(count) {
         const pages = [];
-        let i = 0;
-        while (i < count) {
-            const first = !pages.length, rows = first ? ROWS_FIRST : ROWS_REST, left = count - i;
-            if (left <= (closing ? rows - 1 : rows)) { pages.push({ first, from: i, to: count, closing }); break; }
-            const take = closing && left <= rows ? left - 1 : rows; // leave at least one row to share the last page
-            pages.push({ first, from: i, to: i + take, closing: false });
-            i += take;
-        }
+        for (let from = 0; from < count; from += ROWS) pages.push({ from, to: Math.min(count, from + ROWS) });
         return pages;
     }
 
     function buildDoc(jsPDF, rb, tulips, logo, link) {
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const when = new Date(); // one instant for the whole document
-        const notes = rb.notes, N = notes.length;
-        const total = (rb.meta && rb.meta.total_distance) || (notes[N - 1] && notes[N - 1].distance) || 0;
+        const notes = rb.notes;
         const title = (rb.meta && rb.meta.title) || 'Roadbook';
 
-        function firstHeader(pageNum) {
-            doc.setTextColor(60); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-            doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 2, { align: 'right' });
-            doc.setTextColor(20);
-            doc.setFontSize(9); doc.text(RBt('Total km') + ':', LEFT, TOP + 4);
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text(km(total), LEFT, TOP + 13);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(RBt('Notes') + ':', LEFT, TOP + 22);
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text(String(N), LEFT, TOP + 31);
-            doc.setDrawColor(180); doc.setLineWidth(0.3); doc.line(LEFT + 34, TOP + 1, LEFT + 34, TOP + 33);
-            if (logo) placeLogo(doc, logo, (LEFT + 34 + PW - RIGHT) / 2, TOP, 60, 24);
+        // The header every content page shares (#810): the QR to the roadbook's digital copy
+        // top-left (inside the bind margin's reach), the title, the page count. No rule under it —
+        // the sheet's own border closes it.
+        const QR_SIZE = 16;
+        const qr = link ? RBQr.matrix(link) : null;
+        function header(pageNum) {
+            if (qr) {
+                const cell = QR_SIZE / qr.modules, qy = TOP - 3;
+                doc.setFillColor(20, 20, 20);
+                for (let r = 0; r < qr.modules; r++) for (let c = 0; c < qr.modules; c++) if (qr.isDark(r, c)) doc.rect(LEFT + c * cell, qy + r * cell, cell + 0.02, cell + 0.02, 'F');
+            }
             doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-            centeredFit(doc, title, PW / 2, TOP + 43, 15, CW);
-            doc.setDrawColor(40); doc.setLineWidth(0.4); doc.line(LEFT, TOP + H1 - 2, PW - RIGHT, TOP + H1 - 2);
-        }
-        function runHeader(pageNum) {
-            if (logo) placeLogo(doc, logo, LEFT + 10, TOP - 2, 20, 10); // cx keeps a max-width logo inside the 30 mm bind margin
-            doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-            centeredFit(doc, title, PW / 2, TOP + 4, 11, PW - 2 * (LEFT + 20));
+            centeredFit(doc, title, PW / 2, TOP + 6, 13, CW - 2 * (QR_SIZE + 6));
             doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(60);
-            doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 4, { align: 'right' });
-            doc.setDrawColor(120); doc.setLineWidth(0.3); doc.line(LEFT, TOP + H2 - 2, PW - RIGHT, TOP + H2 - 2);
-        }
-        // The very end of the roadbook (#784): where its living, digital copy is, and a QR to it.
-        function drawClosing() {
-            const size = 26, qx = PW - RIGHT - size, qy = CB - size, ty = qy + 9;
-            doc.setDrawColor(215); doc.setLineWidth(0.3); doc.line(LEFT, qy - 5, PW - RIGHT, qy - 5);
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20);
-            doc.text(RBt('Digital version available online'), LEFT, ty);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
-            doc.text(link.replace(/^https?:\/\//, ''), LEFT, ty + 6);
-            const qr = RBQr.matrix(link), cell = size / qr.modules;
-            doc.setFillColor(20, 20, 20);
-            for (let r = 0; r < qr.modules; r++) for (let c = 0; c < qr.modules; c++) if (qr.isDark(r, c)) doc.rect(qx + c * cell, qy + r * cell, cell + 0.02, cell + 0.02, 'F');
+            doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 6, { align: 'right' });
         }
 
         // A piece of the material a note carries (#542): a picture fills the diagram column
@@ -292,25 +257,23 @@
             sheet.push({ note: n, tulip: tulips[i], close: notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 });
             RB.noteBlocks(n, 'after').forEach((b) => { if (b.image || b.text) sheet.push({ block: b }); });
         });
-        const pages = paginate(sheet.length, !!link), totalPages = 1 + pages.length;
+        const pages = paginate(sheet.length), totalPages = 1 + pages.length;
         pages.forEach((pg, p) => {
             doc.addPage();
-            pg.first ? firstHeader(p + 2) : runHeader(p + 2);
-            const rows = pg.first ? ROWS_FIRST : ROWS_REST;
-            const top = TOP + (pg.first ? H1 : H2), rowH = (CB - top) / rows;
+            header(p + 2);
+            const top = TOP + HEADER_H, rowH = (CB - top) / ROWS;
             for (let i = pg.from; i < pg.to; i++) {
                 const row = sheet[i], y = top + (i - pg.from) * rowH;
                 if (row.block) drawBlock(row.block, LEFT, y, rowH);
                 else drawRow(row.note, row.tulip, row.close, LEFT, y, rowH);
             }
-            if (pg.closing) drawClosing();
         });
         doc.save(RB.slug(title) + '.pdf');
     }
 
     // Public: build + download the PDF on the device. Mutates nothing.
-    // opts.link: the absolute URL of the roadbook's public page (or its event's), for the closing
-    // QR; without one the PDF simply ends with the last note.
+    // opts.link: the absolute URL of the roadbook's public page (or its event's), for the header
+    // QR; without one the header carries just the title and the page count.
     async function generate(rb, opts = {}) {
         if (!rb || !rb.notes || !rb.notes.length) throw new Error('Nothing to export.');
         await ensureJsPDF();

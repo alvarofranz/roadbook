@@ -144,7 +144,7 @@ describe('every surface draws the material the same way (#542)', () => {
         expect(pdf).toContain('function drawBlock(b, x, y, h)');
         expect(pdf).toContain("RB.noteBlocks(n, 'before')");
         expect(pdf).toContain("RB.noteBlocks(n, 'after')");
-        expect(pdf).toContain('const pages = paginate(sheet.length, !!link)'); // the pages are counted over the sheet, material included
+        expect(pdf).toContain('const pages = paginate(sheet.length)'); // the pages are counted over the sheet, material included
     });
 });
 

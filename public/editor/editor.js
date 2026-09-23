@@ -1077,7 +1077,7 @@
     }
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
-    let publicSlug = null; // the roadbook's /challenge/<slug>, once it has one — the PDF's closing QR points there (#784)
+    let publicSlug = null; // the roadbook's /challenge/<slug>, once it has one — the PDF's header QR points there (#784)
     let vehicles = ['car']; // #713: which vehicles the route suits — server-side, set by the owner, never empty
     document.querySelector('#vehField .segmented').innerHTML = RBVehicleSegmentsHTML();
     function paintVehicles() {

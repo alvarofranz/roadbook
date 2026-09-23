@@ -1321,10 +1321,9 @@ Object.assign(window.RBi18nLangs.fr, {
     "My public roadbooks": "Mes roadbooks publics",
 });
 
-/* PDF cover and closing (#784) */
+/* PDF cover (#784) */
 Object.assign(window.RBi18nLangs.fr, {
     "Date": "Date",
-    "Digital version available online": "Version numérique disponible en ligne",
 });
 
 /* the run card (#785) */
