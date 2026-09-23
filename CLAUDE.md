@@ -155,8 +155,9 @@ DB/Convenzioni rapide below have counterparts there).
     `RBPagedList({pager, per, source, filter, draw, label})` (ONE filtered, paged list — the
     galleries, My roadbooks and user management all drive their search + pager through it),
     `RBUpload(fields, file, name)` (image → `upload.php`), `RBDownload(blobOrUrl, name)`,
-    `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`unlock()` (the "done" bell +
-    big check — a Recorder note, a Reader validation, #768), `RBDebounce(fn, ms)` (with `.cancel()`), `RBCsv(rows)` (a CSV Blob with a BOM, so Excel reads the accents — every export), `RBTurnstile(el, siteKey)` (the one Turnstile loader → `{token(), reset()}`), `RBBusy(el, {onEnd})` (the button that launched an async job
+    `RBesc(str)` (HTML-escape), `RBSuccess.flash()`/`ring()`/`fanfare()`/`unlock()` (the "done" bell +
+    big check — a Recorder note, a Reader validation, #768 — and the arrival fanfare; Web Audio in a
+    mixable session, so the music of another app keeps playing, #842), `RBDebounce(fn, ms)` (with `.cancel()`), `RBCsv(rows)` (a CSV Blob with a BOM, so Excel reads the accents — every export), `RBTurnstile(el, siteKey)` (the one Turnstile loader → `{token(), reset()}`), `RBBusy(el, {onEnd})` (the button that launched an async job
     reports it: spinner while it runs, green tick for 3 s on `ok()`, back as it was on `reset()`),
     plus the global chrome (desktop top bar + footer, the mobile bottom tab bar), version
     auto-refresh and the Install chip.

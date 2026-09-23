@@ -222,8 +222,9 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 - **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
   (sia trip `markReached` sia competition `validateAt`, auto o manuale) suona il **campanello di
   successo** (`RBSuccess.ring()`, `assets/sounds/success.mp3`, #768) — lo stesso della nota nel
-  Recorder. Il tap di avvio lo sblocca (`RBSuccess.unlock()`, un gesto utente) così può suonare
-  anche su una convalida GPS automatica.
+  Recorder; l'**ultima** nota suona invece la fanfara dell'arrivo (`RBSuccess.fanfare()`, #843). Il
+  tap di avvio li sblocca (`RBSuccess.unlock()`, un gesto utente) così possono suonare anche su una
+  convalida GPS automatica. Si mescolano con la musica di un'altra app, senza fermarla (#842).
 
 **La modalità non si sceglie** (#617): la gara esiste per la classifica di un evento, quindi
 `openStartDialog` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel

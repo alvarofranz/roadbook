@@ -887,13 +887,53 @@
        Reader (a note validated, auto or manual). An <audio> may only start after a user gesture, so
        a page that will ring later without one (the Reader's GPS auto-validation) calls unlock() from
        the tap that starts the session. flash() adds the big check on screen for a glance-only UI. */
+    // The "done" cue (#768): a bell + a big check — a Recorder note, a Reader validation — and the
+    // arrival fanfare when a roadbook is completed (#843). The sounds are decoded once and played
+    // through Web Audio, which MIXES with the music of another app instead of taking the audio
+    // over the way a media element does (#842): Chrome and the Android WebView ask for audio focus
+    // only for media elements, and on iOS the page declares its audio `transient`
+    // (navigator.audioSession, WebKit 16.4+), a mixable session — so the context can simply stay
+    // running between sounds, and a GPS validation minutes after the last tap still rings. A
+    // mixable iOS session follows the silent switch.
     window.RBSuccess = (function () {
-        let audio = null;
-        const bell = () => { if (!audio) { audio = new Audio(ROOT + 'assets/sounds/success.mp3'); audio.preload = 'auto'; } return audio; };
-        const ring = () => { try { const a = bell(); a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+        let context = null;
+        const buffers = {};
+        const audio = () => {
+            if (context) return context;
+            const Context = window.AudioContext || window.webkitAudioContext;
+            if (!Context) return null;
+            try { if (navigator.audioSession) navigator.audioSession.type = 'transient'; } catch (e) {}
+            context = new Context();
+            return context;
+        };
+        const load = (name) => buffers[name] || (buffers[name] = fetch(ROOT + 'assets/sounds/' + name + '.mp3')
+            .then((r) => r.arrayBuffer())
+            .then((bytes) => new Promise((resolve, reject) => audio().decodeAudioData(bytes, resolve, reject)))
+            .catch((e) => { delete buffers[name]; throw e; }));
+        async function play(name) {
+            const c = audio();
+            if (!c) return;
+            try {
+                const resumed = c.state === 'running' ? null : c.resume(); // before any await: inside the tap that asked
+                const buffer = await load(name);
+                await resumed;
+                const source = c.createBufferSource();
+                source.buffer = buffer; source.connect(c.destination);
+                source.start();
+            } catch (e) { /* no sound is never an error worth showing */ }
+        }
+        const ring = () => play('success');
         return {
             ring,
-            unlock() { try { const a = bell(); a.muted = true; const p = a.play(); const done = () => { a.pause(); a.currentTime = 0; a.muted = false; }; if (p && p.then) p.then(done, done); else done(); } catch (e) {} },
+            fanfare: () => play('fanfare'),
+            // the tap that starts a run: resume the context inside the gesture (iOS needs one) and
+            // decode both sounds now, so a GPS validation minutes later rings at once
+            unlock() {
+                const c = audio();
+                if (!c) return;
+                c.resume().catch(() => {});
+                load('success').catch(() => {}); load('fanfare').catch(() => {});
+            },
             flash() {
                 ring();
                 const el = document.createElement('div');
