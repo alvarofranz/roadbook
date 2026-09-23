@@ -25,4 +25,16 @@ function parseDeepLink(url) {
     return { navigate: u.pathname + u.search + u.hash };
 }
 
-export { parseDeepLink };
+/* The URL the app was LAUNCHED with stays the same for the whole session, and the bridge runs on
+ * every page — so the page a launch link leads to would open it again, and again: the app "shook"
+ * in an endless reload and never showed the page (#812). A launch link is followed once (`handled`
+ * is the one already followed this session), and never to the page already on screen (`here`,
+ * path + query + hash). Returns the action to run, or null. */
+function launchAction(url, handled, here) {
+    if (!url || url === handled) return null;
+    const action = parseDeepLink(url);
+    if (action && action.navigate && action.navigate === here) return null;
+    return action;
+}
+
+export { parseDeepLink, launchAction };

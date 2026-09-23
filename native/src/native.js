@@ -29,7 +29,7 @@ import { FileSharer } from '@capgo/capacitor-file-sharer';
 import { Preferences } from '@capacitor/preferences';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { createMirror } from './durable.js';
-import { parseDeepLink } from './deeplink.js';
+import { parseDeepLink, launchAction } from './deeplink.js';
 import { androidSaveFolder } from './save-target.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
@@ -247,15 +247,23 @@ async function consumePendingJoin() {
     if (cfg && cfg.user) { localStorage.removeItem(PENDING_JOIN); joinEvent(code); }
 }
 
-function handleDeepLink(url) {
-    const action = parseDeepLink(url);
+function runDeepLink(action) {
     if (!action) return;
     if (action.join) joinEvent(action.join);
     else window.location.href = action.navigate;
 }
 
-App.addListener('appUrlOpen', (e) => { if (e && e.url) handleDeepLink(e.url); });
-App.getLaunchUrl().then((res) => { if (res && res.url) handleDeepLink(res.url); }).catch(() => {});
+// A link opened while the app runs: once, as it arrives.
+App.addListener('appUrlOpen', (e) => { if (e && e.url) runDeepLink(parseDeepLink(e.url)); });
+// The link the app was launched with: once per session, never onto the page already shown (#812).
+const LAUNCH_HANDLED = 'rb_launch_url';
+App.getLaunchUrl().then((res) => {
+    const url = res && res.url;
+    let handled = null; try { handled = sessionStorage.getItem(LAUNCH_HANDLED); } catch (e) {}
+    const action = launchAction(url, handled, location.pathname + location.search + location.hash);
+    if (url) { try { sessionStorage.setItem(LAUNCH_HANDLED, url); } catch (e) {} }
+    runDeepLink(action);
+}).catch(() => {});
 consumePendingJoin();
 
 /* Durable storage (#778, durable.js). Every write to a durable key goes to localStorage as usual

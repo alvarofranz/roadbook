@@ -213,6 +213,12 @@ styleSatellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAP
 ```
 
 ### Deep links — Universal Links / App Links (#268)
+
+The bridge follows the link the app was **launched** with **once per session**, and never onto the page
+already on screen (`launchAction` in `native/src/deeplink.js`): `App.getLaunchUrl()` keeps returning the same
+URL for the whole session and the bridge runs on every page, so following it each time reloaded the page it
+led to forever — the app "shook" and never showed it (#812). A link opened while the app runs
+(`appUrlOpen`) is followed once as it arrives.
 When the app is installed, scanning/tapping an `https://rdbk.app/…` link opens the app
 instead of the browser — the whole point of the event QR (`/go/<code>`). What's wired in the
 repo:
