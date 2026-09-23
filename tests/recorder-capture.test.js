@@ -55,7 +55,7 @@ describe('the success cue (#768)', () => {
     it('rings in the Reader on every validated note, unlocked by the start tap', () => {
         const reader = read('public/reader/reader.js');
         expect(reader).toContain('const ring = (i) => { if (sound) (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)(); };');
-        expect(reader.match(/reached\.add\(i\); tripPartialM = 0; ring\(i\);/g)).toHaveLength(2);
+        expect(reader.match(/reached\.add\(i\); reanchor\(i \+ 1, [^)]*\); ring\(i\);/g)).toHaveLength(2);
         expect(reader).toContain('if (sound) RBSuccess.unlock();');
         expect(reader).not.toMatch(/AudioContext|beep\(/);
     });

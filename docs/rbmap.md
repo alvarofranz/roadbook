@@ -221,7 +221,7 @@ per-nota ([rbmap.js:81](../public/assets/js/rbmap.js#L81)).
 | Consumatore | Uso |
 |-------------|-----|
 | **Editor**  | editing completo: `showRoadbook` con `gapIdx`, `setVertexEditor`/`setWaypointEditor`/`refreshVertices`, `setPin`/`setCursor`, `setLiveTrack`/`setOverlay` per la registrazione e l'adjust, toggle stile di RBMap con `layerToggle: { short: true, remember: 'rb_map_style' }`. |
-| **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true, geolocate:true, headingToggle:true}`, `showRoadbook` + `select`, `setPosition(..., follow=true, heading)` a ogni fix — **tu al centro, la mappa girata sulla tua rotta** (#536) — `setGuide` per la freccia alla nota, `destroy` alla chiusura. |
+| **Reader**  | mini-mappa interattiva per-nota: costruita con `{layerToggle:true, geolocate:true, headingToggle:true}`, `showRoadbook` + `select`, `setPosition(..., follow=true, heading)` a ogni fix — **tu al centro, la mappa girata sulla tua rotta** (#536) — `setGuide` per la linea lungo la strada fino alla nota (#849), `destroy` alla chiusura. |
 
 ---
 

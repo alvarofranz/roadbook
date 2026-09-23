@@ -159,7 +159,7 @@
     function loadRb(r, id, slug) {
         r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
         if (!r.notes.length) return toast('Roadbook has no notes.');
-        rb = r; notes = r.notes; rbRef = id ? +id : null; rbSlug = slug || '';
+        rb = r; notes = r.notes; routeCum = RB.cumulativeM(rb.track || []); rbRef = id ? +id : null; rbSlug = slug || '';
         showPreview();
     }
     // Preview an opened roadbook read-only, BEFORE starting — you might just want to look.
@@ -266,7 +266,7 @@
     const declineSession = () => RBCheckpoint.decline(SESSION_KEY);
     function resumeSession(s, savedRb) {
         tripTotalM = s.totalM; tripPartialM = s.partialM;
-        rb = savedRb; notes = rb.notes;
+        rb = savedRb; notes = rb.notes; routeCum = RB.cumulativeM(rb.track || []);
         team = s.team; auto = s.auto; optGpx = s.gpxOption; sound = s.sound !== false;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         zones = s.zones; rbRef = s.rbRef; rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs; runStartedAt = s.runStartedAt;
@@ -292,7 +292,7 @@
         lastHere = here; lastAcc = coords.accuracy;
         if (inlineMap && inlineMap.ready) {
             inlineMap.setPosition(here.lat, here.lon, true, meter.heading); // follow: you stay in the middle, the map turns with you
-            if (inlineMapIdx >= 0 && notes[inlineMapIdx]) inlineMap.setGuide(here, notes[inlineMapIdx]); // the line + arrow follow the live fix
+            if (inlineMapIdx >= 0 && notes[inlineMapIdx]) guideTo(inlineMapIdx, here); // the line follows the live fix
         }
         tripTotalM += disp; tripPartialM += disp;
         if (curLimit && curLimit > 0 && speedKmh > curLimit) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
@@ -315,7 +315,7 @@
         }
         // top odometer bar
         odoEls.total.textContent = (tripTotalM / 1000).toFixed(2);
-        odoEls.partial.textContent = (tripPartialM / 1000).toFixed(2);
+        odoEls.partial.textContent = (Math.max(0, tripPartialM) / 1000).toFixed(2); // below 0 until the note validated early is passed
         odoEls.speed.textContent = Math.round(speedKmh || 0) + ' km/h';
         // bearing readout (to the next note, else device heading) + a directional arrow
         // that points relative to where you're pointing: 0° = up = straight ahead.
@@ -353,26 +353,40 @@
     // border · upcoming = white. The active row additionally takes the LIVE GPS proximity state
     // (near → arriving, painted by paintApproach); `tight` marks the distance cell of a note whose
     // successor is under 50 m away — a property of the roadbook, not of where the driver is.
-    // live distances read in metres up close and in km further out — the co-pilot's own units
-    const fmtDist = (m) => m >= 1000 ? RBKm(m) : Math.round(m) + ' m';
+    // Every distance on the roadbook reads the way the roadbook writes it: km with two decimals (#846)
+    const fmtKm = (m) => (m / 1000).toFixed(2);
+    // What is left to note i, measured ALONG the route like the roadbook's own partials (#847), so the
+    // partial driven plus what is left add up to the note's partial; a roadbook without a route
+    // has only the straight line to the waypoint.
+    let routeCum = null;
+    const ahead = (i, here) => (routeCum && routeCum.length > 1 && here ? RB.routeAhead(rb, routeCum, i, here) : null);
+    function toGoM(i, here) {
+        const a = ahead(i, here);
+        return a ? Math.max(0, notes[i].distance - a.atM) : RB.geo.haversineM(here, notes[i]);
+    }
+    // The note map's guide (#849): the route itself from where you are to the note, no arrow
+    const guideTo = (i, here) => { const a = ahead(i, here); inlineMap.setGuide(here, notes[i], a ? a.path : null); };
+    // Whenever the cursor lands on note j — the note before it validated, skipped or jumped past —
+    // the odometers re-anchor on the route (#847): the total becomes where the driver really is
+    // along it, the partial the distance past note j−1. Projected around that note, so a note
+    // validated early, inside its radius, leaves the partial below zero: it reads 0.00 exactly at
+    // the note, and the partial always matches the roadbook's own.
+    function reanchor(j, here) {
+        const prev = notes[j - 1], a = ahead(Math.max(0, j - 1), here);
+        if (a) { tripTotalM = a.atM; tripPartialM = a.atM - (prev ? prev.distance : 0); return; }
+        if (prev && prev.distance != null) tripTotalM = prev.distance;
+        tripPartialM = 0;
+    }
     let lastScrollIdx = -1;
-    // Advancing scrolls the new active note fully into view, with as much of the note just used
-    // above it as still fits (RB.activeScrollTop, #177 · #759) — a long note never leaves the active
-    // one half hidden. Inside the shell the list is the scroller and the odometer bar is a sibling
-    // ABOVE it (#429), so this is arithmetic in the list's own coordinates — no page scroll.
+    // Advancing puts the note to drive to at the very TOP of the list (#844): the one just
+    // validated is done with, and the road ahead gets all the room. The material placed before a
+    // note (#542) belongs to it, so the top is its first block. Once the active index changes only.
     function scrollActiveIntoView() {
         const list = $('noteList');
-        const act = list.querySelector('.nrow.active');
-        if (!act) return;
-        const rows = [...list.querySelectorAll('.nrow')];
-        const at = rows.indexOf(act);
-        const origin = list.getBoundingClientRect().top - list.scrollTop;
-        const box = act.getBoundingClientRect();
-        list.scrollTo({ top: RB.activeScrollTop({
-            prevTop: at > 0 ? rows[at - 1].getBoundingClientRect().top - origin : null,
-            activeTop: box.top - origin, activeBottom: box.bottom - origin,
-            viewHeight: list.clientHeight,
-        }), behavior: 'smooth' });
+        let top = list.querySelector('.nrow.active');
+        if (!top) return;
+        while (top.previousElementSibling && top.previousElementSibling.classList.contains('block')) top = top.previousElementSibling;
+        list.scrollTo({ top: Math.max(0, top.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop), behavior: 'smooth' });
     }
     function renderNotes() {
         closeInlineMap(); // the list HTML is rebuilt wholesale — tear the GL map down cleanly first
@@ -446,7 +460,7 @@
         inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], bearing: lastHere ? heading : 0, layerToggle: true, geolocate: true, headingToggle: true });
         inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
         inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
-        if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, true, meter && meter.heading); inlineMap.setGuide(lastHere, n); }
+        if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, true, meter && meter.heading); guideTo(i, lastHere); }
         paintMapTogo();
     }
     // Hand the open map on to note i without closing it (#571): the same GL map (tiles, zoom,
@@ -460,13 +474,13 @@
         if (inlineMap.map) inlineMap.map.resize();
         inlineMap.showRoadbook({ track: [], notes: [n] }, true);
         inlineMap.select(n, true);
-        if (lastHere) inlineMap.setGuide(lastHere, n);
+        if (lastHere) guideTo(i, lastHere);
         paintMapTogo();
     }
     function paintMapTogo() {
         const badge = $('nmapTogo'), n = notes[inlineMapIdx];
         if (!badge || !n) return;
-        badge.innerHTML = `<span class="num">${n.num}</span>${lastHere ? ' ' + fmtDist(RB.geo.haversineM(lastHere, n)) : ''}`;
+        badge.innerHTML = `<span class="num">${n.num}</span>${lastHere ? ' ' + fmtKm(toGoM(inlineMapIdx, lastHere)) : ''}`;
     }
     function closeInlineMap() {
         if (inlineMap) { inlineMap.destroy(); inlineMap = null; }
@@ -481,28 +495,28 @@
     // distance to go. Driven by every trusted fix, and again whenever the active note changes, so
     // no readout is ever left describing the note before it (#387).
     function refreshLive() {
-        const an = notes[activeIdx];
-        paintApproach((an && lastHere) ? RB.geo.haversineM(lastHere, an) : null);
+        const an = notes[activeIdx], live = an && lastHere;
+        paintApproach(live ? RB.geo.haversineM(lastHere, an) : null, live ? toGoM(activeIdx, lastHere) : null);
         paintMapTogo();
     }
     // Live proximity on the active row: the roadbook stays paper, but the note you are driving to
     // reacts as you close in — `near` inside the manual radius, `arriving` once inside the reach
-    // circle, where auto-validation fires — and carries its own distance-to-go.
-    function paintApproach(dist) {
+    // circle, where auto-validation fires (both on the straight line: that is what the radius
+    // measures) — and carries its own distance-to-go, along the route.
+    function paintApproach(dist, togoM) {
         const row = $('noteList').querySelector('.nrow.active');
         if (!row) return;
         const arriving = dist != null && dist <= reachRadius(activeIdx);
         row.classList.toggle('arriving', arriving);
         row.classList.toggle('near', !arriving && dist != null && dist <= C.MANUAL_RADIUS_M);
         const togo = row.querySelector('.togo');
-        if (togo) togo.textContent = dist == null ? '' : fmtDist(dist);
+        if (togo) togo.textContent = togoM == null ? '' : fmtKm(togoM);
     }
     // Trip mode's "note done": mark it green and move on. No scoring, no proximity gate — a
     // trip is followed by eye, and the driver saying they are there is the whole authority.
     function markReached(i) {
         passLimit(notes[i], false);
-        reached.add(i); tripPartialM = 0; ring(i);
-        if (notes[i].distance != null) tripTotalM = notes[i].distance;
+        reached.add(i); reanchor(i + 1, lastHere); ring(i);
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
     }
@@ -540,7 +554,7 @@
     function tooFarFrom(i) {
         const dist = farFrom(i);
         if (dist == null) return false;
-        toast(t('Too far from note') + ' ' + notes[i].num + ' · ' + fmtDist(dist));
+        toast(t('Too far from note') + ' ' + notes[i].num + ' · ' + RBKm(dist));
         return true;
     }
     // Put the run on note i. A trip only moves its cursor; in competition, arriving at a later
@@ -548,7 +562,7 @@
     // over (the overshoot belonged to those, so P_extra resets with them). The gate is asked
     // FIRST: a refused validation must leave the run exactly as it was, penalty included.
     function setActiveNote(i) {
-        if (!competition) { passOver(activeIdx, i); activeIdx = i; tripPartialM = 0; updateNoteStates(); return; }
+        if (!competition) { passOver(activeIdx, i); activeIdx = i; reanchor(i, lastHere); updateNoteStates(); return; }
         if (tooFarFrom(i)) return;
         pen.skip += RB.skipPenalty(scoredSet, activeIdx, i); extraAccum = 0; armed = false;
         passOver(activeIdx, i);
@@ -582,8 +596,7 @@
         }
         extraAccum = 0; armed = false;
         passLimit(n, scored);
-        reached.add(i); tripPartialM = 0; ring(i);
-        if (n.distance != null) tripTotalM = n.distance; // keep the total synced with the notes' cumulative distance (absorbs GPS drift / different trajectories)
+        reached.add(i); reanchor(i + 1, here || lastHere); ring(i); // the odometers follow the roadbook, not the GPS drift
         activeIdx = i + 1; updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
     }
@@ -615,12 +628,12 @@
         const i = activeIdx, far = farFrom(i);
         if (far == null) return validateAt(i, lastHere);
         const n = notes[i], pts = RB.skipPenalty(scoredSet, i, i + 1);
-        let msg = t('Too far from note') + ' ' + n.num + ' · ' + fmtDist(far) + '<br>' + t('Skip it and continue?');
+        let msg = t('Too far from note') + ' ' + n.num + ' · ' + RBKm(far) + '<br>' + t('Skip it and continue?');
         if (pts) msg += ' ' + t('Penalty:') + ' ' + pts + ' ' + t('pts');
         if (!(await RBConfirm(msg))) return;
         pen.skip += pts; extraAccum = 0; armed = false; // the overshoot belonged to the note being given up
         passOver(i, i + 1);
-        activeIdx = i + 1; tripPartialM = 0; updateNoteStates();
+        activeIdx = i + 1; reanchor(i + 1, lastHere); updateNoteStates();
         if (activeIdx >= notes.length) finishRun(true);
     }
 

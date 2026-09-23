@@ -99,10 +99,10 @@ dimensioni e padding in [index.html:38-46](../public/reader/index.html#L38)):
   done/skipped/active), senza ridisegnare
   ogni vignetta — così anche la mini-mappa per-nota aperta sopravvive all'avanzamento.
 - **Auto-scroll**: la vista si sposta sulla nota attiva *solo quando l'indice attivo
-  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno. Dove si ferma lo decide
-  `RB.activeScrollTop` (#177 · #759): la riga attiva si vede **sempre intera**; la nota appena usata
-  resta sopra con tutto lo spazio che avanza (intera se ci stanno entrambe); una riga attiva più alta
-  della lista si mostra dalla sua cima. Una nota lunga non lascia più l'attiva mezza nascosta.
+  cambia davvero* (`lastScrollIdx`), non a ogni ridisegno, e mette la nota da raggiungere
+  **esattamente in cima** alla lista (#844): quella appena validata non serve più, e la strada davanti
+  prende tutto lo spazio. Il materiale messo prima di una nota (#542) fa parte della nota, quindi la
+  cima è il suo primo blocco.
 - Il testo delle note va a capo tra le parole e sillaba nella lingua della pagina
   (`overflow-wrap: break-word; hyphens: auto`), mai tagliando una parola a caso.
 - Un cambio lingua a metà sessione (`rb-lang`) forza un re-render delle righe tradotte.
@@ -350,11 +350,19 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   salta di decine di gradi tra un fix e l'altro. Senza abbastanza terreno resta l'ultima rotta,
   quindi il rumore GPS non fa ruotare la mappa. In course-up il **chevron è fisso in alto**
   (tu che vai avanti, `rotationAlignment:'viewport'`) e la mappa gira sotto di lui
-- **Guida al waypoint** (#485): `setGuide(from, to)` disegna la linea dalla posizione live al
-  waypoint più una freccia fisica da 1 cm sulla posizione, ruotata sul bearing. La freccia è
-  ancorata allo **spazio mappa** (`rotationAlignment: 'map'`), quindi con la mappa girata sulla
-  tua rotta punta alla nota **rispetto a dove sei rivolto**: dritta in alto = dritto davanti.
-  Sotto i 5 m linea e freccia spariscono (sei arrivato).
+- **Guida al waypoint** (#485 · #849): `setGuide(from, to, path)` disegna **solo una linea** gialla
+  dalla posizione live al waypoint, lungo **la strada ancora da fare** (`RB.routeAhead(...).path`:
+  la traccia dal punto proiettato fino alla nota, quindi piega dove piega la strada). Senza
+  traccia è la linea retta. Nessuna freccia: l'inizio lo segna il chevron, la fine l'alone del
+  waypoint. Sotto i 5 m sparisce (sei arrivato).
+- **Distanze** (#846 · #847): ogni distanza si legge come la scrive il roadbook, in km con due
+  decimali. Il "mancano" della riga attiva e della mappa è misurato **lungo il percorso**
+  (`RB.routeAhead`: il fix proiettato sulla traccia tra la nota precedente e la successiva), così
+  il parziale fatto + quello che manca = il parziale della nota. Il raggio di validazione resta
+  in linea retta, perché è quello che misura. A ogni cambio di nota (validata, saltata o scelta)
+  gli odometri si **ri-ancorano** sul percorso (`reanchor`): il totale diventa la posizione reale
+  lungo la traccia, il parziale la distanza dalla nota precedente. Una nota validata in anticipo
+  lascia il parziale sotto zero (mostrato 0.00) finché non la passi.
 - Quando non c'è una navigazione attiva (modalità preview), `lastHere` è null e la mappa
   mostra solo il pulsante GeolocateControl — l'utente può comunque cliccare il mirino per
   attivare la geolocalizzazione del browser
