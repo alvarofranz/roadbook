@@ -164,7 +164,7 @@ traccia GPX e fa di tutto per non perderla.
 |--------|---------|
 | `init({ onChange, toast })` | aggancia i callback della pagina: `onChange(recording)` riflette on/off in UI, `toast` mostra i messaggi |
 | `settings(opts)` | apre il modal impostazioni (intervallo, nome file) e all'OK avvia la registrazione ([gpx-recorder.js:70](../public/assets/js/gpx-recorder.js#L70)) |
-| `begin(opts)` | avvia la registrazione senza UI ([gpx-recorder.js:30](../public/assets/js/gpx-recorder.js#L30)) |
+| `begin(opts)` | avvia la registrazione senza UI e scrive subito il checkpoint vuoto del nuovo log, così un crash prima del primo punto non riprende la traccia di un log precedente (declinato o di un altro tool) ([gpx-recorder.js:30](../public/assets/js/gpx-recorder.js#L30)) |
 | `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js:32](../public/assets/js/gpx-recorder.js#L32)) |
 | `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js:38](../public/assets/js/gpx-recorder.js#L38)) |
 | `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js:46](../public/assets/js/gpx-recorder.js#L46)) |

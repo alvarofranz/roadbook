@@ -26,6 +26,9 @@
     let track = [], wpts = [], photos = [];
     let mediaSeq = 0; // client tokens for optimistic photo pins reconciled by RBMediaQueue
     let elapsedAcc = 0, segStart = 0, tick = null; // recording stopwatch (pauses with the recording)
+    // The finished recording on the finish options, until Save or Discard lands it: its points, its
+    // name, and whether the sign-in stash (rather than the session checkpoint) is its copy.
+    let finished = null;
 
     /* ---------- map ---------- */
     map = new RBMap('recMap', { zoom: 15 }); // its style and course-up switches live in the capture grid (#768)
@@ -55,20 +58,30 @@
         }
         return out;
     }
-    function saveSession() {
-        if (!RBGpxRecorder.recording) return; // don't clobber a resumable session before recording starts
-        RBCheckpoint.write(SESSION_KEY, { recording: true, fileName: RBGpxRecorder.fileName, recordedM, elapsedAcc: elapsed(), paused, wpts, photos: persistedPhotos(), draftId });
-    }
-    function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
     // A finished recording that has not landed anywhere yet: everything the finish options need
     // (points, notes, photo pins, the draft), so a crash with them on screen reopens them (#647).
-    function saveFinishing(pts, name) {
-        RBCheckpoint.write(SESSION_KEY, { finishing: true, pts, name, recordedM, wpts, photos: persistedPhotos(), draftId });
+    const finishedRecord = () => ({ finishing: true, pts: finished.pts, name: finished.name, recordedM, wpts, photos: persistedPhotos(), draftId });
+    // Every change is checkpointed into the copy the recording lives in right now: the session while
+    // recording; once finished, the finishing checkpoint or the sign-in stash — so a photo landing
+    // or the draft being created on the finish options is not lost to a crash (#460). Before a
+    // recording starts it writes nothing, so a resumable session is never clobbered.
+    function saveSession() {
+        if (RBGpxRecorder.recording) RBCheckpoint.write(SESSION_KEY, { recording: true, fileName: RBGpxRecorder.fileName, recordedM, elapsedAcc: elapsed(), paused, wpts, photos: persistedPhotos(), draftId });
+        else if (finished) RBCheckpoint.write(finished.stashed ? PENDING_SAVE : SESSION_KEY, finishedRecord());
+    }
+    function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+    // The track is finished and waits on the finish options: hold it, and keep the version
+    // auto-refresh away until it lands.
+    function holdFinished(pts, name, stashed) {
+        finished = { pts, name: name || recName(), stashed };
+        window.RB_BUSY = true;
+        saveSession();
     }
     // The recording reached its destination (saved) or was discarded: every copy of it goes.
     function clearRecording() {
         RBGpxRecorder.clearCheckpoint(); clearSession();
         try { localStorage.removeItem(PENDING_SAVE); } catch (e) {}
+        finished = null; window.RB_BUSY = false;
     }
     // Discard, after the confirm that named the loss: the recording, its photos still queued on
     // the device and the draft holding the uploaded ones all go — nothing is left behind to
@@ -113,15 +126,17 @@
             clearSession(); // a finished track is not resumable: the stash is its one copy
             wpts = pend.wpts || []; photos = await restorePhotos(pend.photos); draftId = pend.draftId || 0;
             recordedM = pend.recordedM || 0; // restore the odometer so the finish modal shows the real km
-            if (meUser) { await saveAfterLogin(pend); return; }
-            finishModal(pend.pts, pend.name); return; // sign-in skipped — ask again
+            holdFinished(pend.pts, pend.name, true);
+            if (meUser) { await saveAfterLogin(); return; }
+            finishModal(); return; // sign-in skipped — ask again
         }
 
         const session = RBCheckpoint.read(SESSION_KEY);
         // finished but never landed (a crash with the finish options on screen): reopen them
         if (session && session.finishing && session.pts) {
             wpts = session.wpts || []; photos = await restorePhotos(session.photos); draftId = session.draftId || 0; recordedM = session.recordedM || 0;
-            finishModal(session.pts, session.name); return;
+            holdFinished(session.pts, session.name, false);
+            finishModal(); return;
         }
         // A No is remembered on both checkpoints, which stay (#436): never asked again, and the
         // next recording's checkpoints replace them.
@@ -160,12 +175,14 @@
         if (meUser) ensureDraft();
     }
     // Get the draft container id, creating it once when signed-in and online. Returns null when it
-    // can't be made yet (offline, or signed out) so queued captures simply wait (#147 F2). Memoised
-    // so a burst of queued items shares a single draft creation.
+    // can't be made yet (offline, or signed out) so queued captures simply wait (#147 F2), and when
+    // this page holds no recording: a capture left in the queue from another one must not create an
+    // empty draft of its own. Memoised so a burst of queued items shares a single draft creation.
     let draftPromise = null;
     function ensureDraft() {
         if (draftId) return Promise.resolve(draftId);
-        if (!meUser || (typeof navigator !== 'undefined' && navigator.onLine === false)) return Promise.resolve(null);
+        if (!meUser || (!RBGpxRecorder.recording && !finished)) return Promise.resolve(null);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve(null);
         if (!draftPromise) {
             draftPromise = RBApi('rb_draft', { name: RBGpxRecorder.fileName || recName() })
                 .then((r) => { draftPromise = null; if (r && r.ok) { draftId = r.id; saveSession(); return draftId; } return null; })
@@ -242,8 +259,8 @@
             }
             discardRecording(); return toast(t('Route too short to save.'));
         }
-        saveFinishing(r.pts, r.name); // the checkpoint holds it until the finish options land it (#460 · #647)
-        finishModal(r.pts, r.name);
+        holdFinished(r.pts, r.name, false); // the checkpoint holds it until the finish options land it (#460 · #647)
+        finishModal();
     };
 
     /* ---------- waypoints ---------- */
@@ -374,9 +391,9 @@
 
     // Back from the sign-in redirect with a recording queued for saving: save it and open it in the
     // Editor; if that fails, the question comes back (the toast has said why) and the stash stays.
-    async function saveAfterLogin(pend) {
-        const built = await saveToProfile(pend.pts, pend.name);
-        if (!built) return finishModal(pend.pts, pend.name);
+    async function saveAfterLogin() {
+        const built = await saveToProfile(finished.pts, finished.name);
+        if (!built) return finishModal();
         clearRecording();
         location.href = '../editor/?rb=' + built.id;
     }
@@ -385,8 +402,8 @@
     // and opens it in the Editor — where it is named, written up and exported; signed out, it goes
     // through the sign-in page first and comes back to the same save. Discard asks first and names
     // what would be lost. Until one of the two lands, the crash checkpoint keeps the recording (#460).
-    function finishModal(pts, name) {
-        const nm = name || recName();
+    function finishModal() {
+        const { pts, name: nm } = finished;
         const summary = `${RBKm(recordedM)} · ${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')}`;
         const d = RBModal(`<h3>${t('Recorded track')}</h3>
             <p class="muted small">${summary}</p>
@@ -400,8 +417,9 @@
                 // brings it back here to be saved. Leave only once it is safely stashed — a storage-quota
                 // failure on a huge track must not redirect and lose it.
                 let stashed = false;
-                try { localStorage.setItem(PENDING_SAVE, JSON.stringify({ pts, wpts, photos: persistedPhotos(), draftId, name: nm, recordedM })); stashed = true; } catch (e) {}
+                try { localStorage.setItem(PENDING_SAVE, JSON.stringify(finishedRecord())); stashed = true; } catch (e) {}
                 if (!stashed) return toast(t('Could not save.'));
+                finished.stashed = true;
                 RBGpxRecorder.clearCheckpoint(); clearSession(); // the stash is the copy now, kept until the save lands
                 location.href = RBLoginUrl();
                 return;

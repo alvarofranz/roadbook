@@ -94,10 +94,12 @@ Tre checkpoint in `localStorage`, tutti anche nello storage durevole dell'app na
 - **La traccia** — `rb_trip_gpx`, di `RBGpxRecorder` (è lui a possedere la traccia *autorevole*,
   scritta al più ogni 3 s).
 - **I metadati** — `rb_recorder_session` via `saveSession()`: km, tempo, pausa, note, pin delle
-  foto, `draftId`, nome. Richiamata ad ogni tick e ad ogni modifica; **non scrive nulla** se la
-  registrazione non è attiva, per non sovrascrivere una sessione recuperabile non ancora ripresa.
-  Allo stop diventa un checkpoint **`finishing`** (`saveFinishing`: punti, note, pin, `draftId`,
-  km).
+  foto, `draftId`, nome. Richiamata ad ogni tick e ad ogni modifica; **non scrive nulla** prima che
+  una registrazione parta, per non sovrascrivere una sessione recuperabile non ancora ripresa.
+  Allo stop diventa un checkpoint **`finishing`** (`holdFinished` → `finishedRecord()`: punti, note,
+  pin, `draftId`, km), e da lì `saveSession()` scrive in quello (o nello stash del login, quando è
+  lui la copia): una foto caricata o il draft creato con la domanda Save / Discard a schermo
+  arrivano al checkpoint, così un crash non perde il pin né crea un secondo draft.
 - **Lo stash del login** — `rb_recorder_pending_save`: la registrazione finita che *Save* mette da
   parte prima di passare dalla pagina di login (§8).
 
@@ -120,8 +122,8 @@ suo pin):
    la prossima registrazione li sostituisce.
 4. Altrimenti `RBGpxRecorder.offerRecovery()` (recupero di una traccia orfana lasciata da un crash).
 
-`window.RB_BUSY = true` durante la registrazione impedisce all'app l'auto-refresh di versione a
-metà sessione.
+`window.RB_BUSY = true` durante la registrazione, e poi finché la registrazione finita non arriva a
+destinazione, impedisce all'app l'auto-refresh di versione a metà sessione.
 
 ---
 
@@ -149,7 +151,8 @@ subito, ma se è offline non fallisce — le catture entrano comunque in coda e 
 
 Il pulsante foto è **sempre attivo**, anche **da sloggato** (#147 F3): la cattura entra comunque in
 coda. Da loggato viene caricata nel draft (subito o al primo flush); **da sloggato** resta sul
-dispositivo (`ensureDraft` ritorna `null` senza `meUser`, quindi non si creano draft orfani) finché
+dispositivo (`ensureDraft` ritorna `null` senza `meUser`, e anche quando la pagina non tiene una
+registrazione — una foto rimasta in coda da un'altra non crea un draft vuoto) finché
 *Save* non passa dal login e il draft esiste: allora la coda la carica lì (se la pagina viene
 lasciata prima, l'Editor la attacca al roadbook che salva, #648).
 
@@ -256,7 +259,7 @@ idle/running, mostra/nasconde la barra di stato e imposta `RB_BUSY`.
 
 ## 8. Termine: Save o Discard (#791)
 
-Un *End* confermato apre `finishModal(pts, name)`: il riepilogo (km · note · foto) e **una sola
+Un *End* confermato apre `finishModal()` sulla registrazione tenuta da `holdFinished`: il riepilogo (km · note · foto) e **una sola
 domanda**, *Discard* o *Save*. Niente export né altre scelte qui: esportare si fa poi dall'Editor.
 
 - **Save** — da loggato costruisce il roadbook dalla traccia + note (`RB.buildRoadbook`) e lo scrive
@@ -288,7 +291,7 @@ prossimo avvio (#647).
 | `onFix(fix)`        | `RB.recJunkFix` (scarto) + `RB.recStepM` (campionamento adattivo) |
 | `startMeter`/`stopMeter` | ciclo `RBGpsMeter` + cronometro |
 | `dropWaypoint()`    | crea e registra una nota (con timestamp `t` e odometro `at_m`) |
-| `saveSession()` / `saveFinishing()` | checkpoint della sessione in corso / finita in localStorage |
+| `saveSession()` / `holdFinished()` | checkpoint della sessione in corso o finita (sessione · `finishing` · stash) in localStorage |
 | `persistedPhotos()` / `restorePhotos()` | i pin delle foto nei checkpoint, e di ritorno con il blob dalla coda |
 | `finishModal()`     | Save (nel draft, poi l'Editor; da sloggato passando dal login) o Discard confermato; non dismissable (#460 · #791) |
 | `clearRecording()`  | la registrazione è arrivata (o è stata scartata): spegne tutti i checkpoint |

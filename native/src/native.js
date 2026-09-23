@@ -227,7 +227,7 @@ async function joinEvent(code) {
     const cfg = await window.RBConfig();
     if (!cfg || !cfg.user) {                     // must be signed in to join — stash, log in, resume
         localStorage.setItem(PENDING_JOIN, code);
-        window.location.href = '/account/';
+        window.location.href = window.RBLoginUrl(); // back here once signed in, where the stored code joins
         return;
     }
     const res = await window.RBApi('event_join', { code });
