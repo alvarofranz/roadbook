@@ -156,8 +156,11 @@ window.RBGpsMeter = class RBGpsMeter {
         this._anchor = step.anchor;
         if (trusted) {
             this.pos = here; this.accuracy = c.accuracy;
+            // Without a device speed it is derived from the step — never from a teleport: that step
+            // is a GPS jump, and its "speed" (hundreds of km/h) would land on the speed-limit zone
+            // and the Tripmaster's max. The speed then stands until the next real step.
             if (c.speed != null && isFinite(c.speed) && c.speed >= 0) this.speedKmh = c.speed * 3.6;
-            else if (this._lastSpeedPos && this._lastSpeedT) {
+            else if (step.verdict !== 'teleport' && this._lastSpeedPos && this._lastSpeedT) {
                 const dt = (tnow - this._lastSpeedT) / 1000;
                 if (dt > 0) this.speedKmh = RB.geo.haversineM(this._lastSpeedPos, here) / dt * 3.6;
             }
@@ -171,7 +174,15 @@ window.RBGpsMeter = class RBGpsMeter {
         }
         this._onFix({ here, coords: c, disp: step.disp, from: from && { lat: from.lat, lon: from.lon }, trusted, speedKmh: this.speedKmh, heading: this.heading, tnow });
     }
-    async _wake() { try { if ('wakeLock' in navigator) this._wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+    // The request resolves later: a meter stopped meanwhile lets the lock go at once, or the screen
+    // would stay awake after the run with nothing left to release it.
+    async _wake() {
+        try {
+            if (!('wakeLock' in navigator)) return;
+            const lock = await navigator.wakeLock.request('screen');
+            if (this._running) this._wakeLock = lock; else lock.release().catch(() => {});
+        } catch (e) {}
+    }
     // Stop the watch and release the screen wake lock (resume() re-arms everything). The movement
     // references go with it: whatever the device does while stopped is not a drive, so the first
     // fix after resume() starts afresh — it never adds the paused distance in one step, and never

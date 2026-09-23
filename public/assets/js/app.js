@@ -884,10 +884,6 @@
         const r = await RBApi('org_suggest').catch(() => ({}));
         if (r && r.ok && Array.isArray(r.organizations)) el.innerHTML = r.organizations.map((o) => `<option value="${RBesc(o)}"></option>`).join('');
     };
-    /* The success cue (#768): one bell for "done", shared by the Recorder (a note dropped) and the
-       Reader (a note validated, auto or manual). An <audio> may only start after a user gesture, so
-       a page that will ring later without one (the Reader's GPS auto-validation) calls unlock() from
-       the tap that starts the session. flash() adds the big check on screen for a glance-only UI. */
     // The "done" cue (#768): a bell + a big check — a Recorder note, a Reader validation — and the
     // arrival fanfare when a roadbook is completed (#843). The sounds are decoded once and played
     // through Web Audio, which MIXES with the music of another app instead of taking the audio

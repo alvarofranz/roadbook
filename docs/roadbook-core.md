@@ -30,7 +30,7 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `cumulativeM`, `deriveBearings` | distanza cumulativa / bearing in-out a un indice (§5-6) |
 | `repairDegenerateBearings(rb)` | ripara **solo** i bearing derivati da un vertice duplicato — vedi sotto (#452). Chiamata da `importRoadbook` |
 | `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
-| `simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`, `nearestOnTrack` | operazioni traccia (§7) |
+| `simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`, `nearestOnTrack`, `routeAhead`, `leftToNote` | operazioni traccia (§7) |
 | `gpxDocument`, `kmlDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / KML / OpenRally (§7) |
 | `WP_TYPES`, `wpType`, `wpTypeByCap`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
 | `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
@@ -253,6 +253,13 @@ riempie il resto.
 [`nearestOnTrack(trkpts, pt)`](../public/assets/js/roadbook-core.js#L268) — posizione più vicina
 **sulla polilinea** (non solo su un vertice): ritorna il segmento `i`, la frazione `t` lungo di
 esso, il punto proiettato `lat`/`lon` e la distanza in metri. Usata dagli strumenti di editing.
+
+`routeAhead(rb, cum, i, here, hintM)` — dove si trova il pilota **lungo il percorso** rispetto
+alla nota `i` (#847): il fix proiettato sulla traccia tra la nota precedente e la successiva →
+`{atM, path, offRouteM}` (metri dall'inizio, la strada ancora da fare fino alla nota, la distanza
+dalla traccia). Se quel tratto passa due volte nello stesso posto, `hintM` (l'odometro) sceglie il
+passaggio giusto. `leftToNote(rb, cum, i, here, hintM)` — quanto manca alla nota: lungo il percorso,
+mai meno della linea retta. Usate dal Reader (§ Distanze in [reader.md](reader.md)).
 
 [`gpxDocument(name, pts, wpts)`](../public/assets/js/roadbook-core.js#L303) — serializza un GPX
 1.1 (`creator="RDBK.app"`): una `<trk>` (i punti possono portare `ele` e `t` → `<time>` ISO) più

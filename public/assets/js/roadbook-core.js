@@ -887,21 +887,23 @@
         }
         return removed;
     }
+    // A local flat projection around `pt` (metres), and where `P` falls on the segment A→B in it.
+    const planarAround = (pt) => { const lat0 = toRad(pt.lat); return (p) => ({ x: toRad(p.lon) * Math.cos(lat0) * EARTH_RADIUS_M, y: toRad(p.lat) * EARTH_RADIUS_M }); };
+    function onSegment(P, A, B) {
+        const dx = B.x - A.x, dy = B.y - A.y, l2 = dx * dx + dy * dy;
+        const t = l2 ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / l2)) : 0;
+        return { t, dist: Math.hypot(P.x - (A.x + t * dx), P.y - (A.y + t * dy)) };
+    }
     // Closest position ON the track polyline (not just a vertex): the segment
     // index `i` (between points i and i+1), the fraction `t` along it, the
     // projected point and its distance in metres.
     function nearestOnTrack(trkpts, pt) {
         if (!trkpts || trkpts.length < 2) return null;
-        const lat0 = toRad(pt.lat);
-        const proj = (p) => ({ x: toRad(p.lon) * Math.cos(lat0) * EARTH_RADIUS_M, y: toRad(p.lat) * EARTH_RADIUS_M });
-        const P = proj(pt);
+        const proj = planarAround(pt), P = proj(pt);
         let best = null;
         for (let i = 0; i < trkpts.length - 1; i++) {
-            const A = proj(trkpts[i]), B = proj(trkpts[i + 1]);
-            const dx = B.x - A.x, dy = B.y - A.y, l2 = dx * dx + dy * dy;
-            const t = l2 ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / l2)) : 0;
-            const dist = Math.hypot(P.x - (A.x + t * dx), P.y - (A.y + t * dy));
-            if (!best || dist < best.dist) best = { i, t, dist };
+            const s = onSegment(P, proj(trkpts[i]), proj(trkpts[i + 1]));
+            if (!best || s.dist < best.dist) best = { i, t: s.t, dist: s.dist };
         }
         const a = trkpts[best.i], b = trkpts[best.i + 1];
         return { i: best.i, t: best.t, dist: best.dist, lat: round6(a.lat + (b.lat - a.lat) * best.t), lon: round6(a.lon + (b.lon - a.lon) * best.t) };
@@ -913,18 +915,49 @@
     // the way the roadbook measures its partials; a straight line to the waypoint undercuts every
     // bend. `path` is the route itself from the projected point to the note (empty once past it):
     // the line a map draws to guide the driver there (#849). `cum` = cumulativeM(rb.track).
-    function routeAhead(rb, cum, i, here) {
+    // Even that stretch can pass the same place twice — an out-and-back to a note at the end of a
+    // spur, a figure of eight — where the nearest segment is a coin toss between the two passes.
+    // `hintM` (the odometer: where the driver should be, metres from the start) settles it: a pass
+    // about as close as the nearest one but clearly elsewhere along the route wins when it is
+    // nearer the odometer. Only a genuinely different pass can win — one more than twice the tie
+    // margin away along the route — so the neighbouring segments of the same pass never do.
+    const ROUTE_TIE_M = 20;
+    function routeAhead(rb, cum, i, here, hintM) {
         const track = rb.track, notes = rb.notes, n = notes && notes[i];
         if (!n || !here || !track || track.length < 2) return null;
         const last = track.length - 1;
         const from = Math.max(0, Math.min(i > 0 ? notes[i - 1].idx : 0, last - 1));
         const to = Math.max(from + 1, Math.min(notes[i + 1] ? notes[i + 1].idx : last, last));
-        const p = nearestOnTrack(track.slice(from, to + 1), here);
-        if (!p) return null;
-        const k = from + p.i;
-        const atM = cum[k] + (cum[k + 1] - cum[k]) * p.t;
-        const path = k < n.idx ? [{ lat: p.lat, lon: p.lon }, ...track.slice(k + 1, n.idx + 1).map((q) => ({ lat: q.lat, lon: q.lon }))] : [];
-        return { atM, path, offRouteM: p.dist };
+        const proj = planarAround(here), P = proj(here), passes = [];
+        let best = null;
+        for (let k = from; k < to; k++) {
+            const s = onSegment(P, proj(track[k]), proj(track[k + 1]));
+            const c = { k, t: s.t, dist: s.dist, atM: cum[k] + (cum[k + 1] - cum[k]) * s.t };
+            passes.push(c);
+            if (!best || c.dist < best.dist) best = c;
+        }
+        let at = best;
+        if (hintM != null && isFinite(hintM)) {
+            const tie = best.dist + ROUTE_TIE_M;
+            for (const c of passes) {
+                if (c.dist <= tie && Math.abs(c.atM - best.atM) > 2 * tie && Math.abs(c.atM - hintM) < Math.abs(at.atM - hintM)) at = c;
+            }
+        }
+        const a = track[at.k], b = track[at.k + 1];
+        const onRoute = { lat: round6(a.lat + (b.lat - a.lat) * at.t), lon: round6(a.lon + (b.lon - a.lon) * at.t) };
+        const path = at.k < n.idx ? [onRoute, ...track.slice(at.k + 1, n.idx + 1).map((q) => ({ lat: q.lat, lon: q.lon }))] : [];
+        return { atM: at.atM, path, offRouteM: at.dist };
+    }
+    // What is left to note i (#847): along the route like the roadbook's own partials, so the partial
+    // driven plus what is left add up to the note's partial — but never less than the straight line
+    // to the waypoint. The route can only be longer than that, and a driver who is not on the
+    // stretch around the note (on the way to the start, off on a detour) would otherwise read the
+    // bit of route nearest to them: 0.00 in the car park before the first note. Without a route
+    // (`cum` shorter than 2) the straight line is all there is.
+    function leftToNote(rb, cum, i, here, hintM) {
+        const n = rb.notes[i], straight = haversineM(here, n);
+        const a = cum && cum.length > 1 ? routeAhead(rb, cum, i, here, hintM) : null;
+        return a ? Math.max(n.distance - a.atM, straight) : straight;
     }
     // Simplify rb.track (notes' anchor points always survive), then remap and recompute.
     function simplifyRoadbook(rb, toleranceM) {
@@ -1441,7 +1474,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, leftToNote, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
