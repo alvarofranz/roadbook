@@ -14,7 +14,7 @@ Open the **Recorder** from the main menu or go directly to `/recorder/`.
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-You'll see the start screen with the **Start recording** button. If you're not logged in, a notice appears: *"Not signed in: photos are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account."* — you can still record.
+You'll see the start screen with the **Start recording** button. If you're not logged in, a notice appears: *"Not signed in: the route and its photos wait on this device, and Save asks you to sign in."* — you can still record.
 
 ---
 
@@ -84,29 +84,26 @@ The bottom bar holds the other two:
 
 ### 6. End recording
 
-Tap **End** (bottom bar) to end the recording.
+Tap **End** (bottom bar) and confirm to end the recording.
 
 > ![Recording summary](../assets/screenshots/rec06a.jpeg)
 
-A summary modal opens with the session data: route points, km, notes, photos. Here you choose what to do:
+A dialog shows a short summary (km · notes · photos) and asks one question, with two buttons:
 
-| Option | When to use it | What happens |
-|--------|----------------|--------------|
-| **💾 Save to server** | You're logged in and want to find everything on your profile | Saves the **draft** to the server (track + waypoint + media). You stay in the Recorder with the **Edit** button to open in the Editor |
-| **📦 Export .rdbk** | You want a portable offline file | Creates a `.rdbk` ZIP (roadbook.json + photos). Downloads the file |
-| **✏️ Open in Editor** | You want to refine the route right away | Passes track and waypoint to the Editor. Photos already on the server stay linked |
-| **📍 Export GPX** | You only need it for other software | Downloads standard `.gpx` (track + notes as named waypoints). Photos are **not** included |
+| Button | What happens |
+|--------|--------------|
+| **💾 Save** | Signed in: the recording is saved as a **draft** roadbook (with its photos) and the **Editor opens** on it straight away. Signed out: you're taken to the sign-in page and, once signed in, you come back and it is saved the same way, then the Editor opens |
+| **🗑 Discard** | Asks for confirmation, naming what would be lost (track, notes, photos, voice notes), then drops the recording |
 
-> 📸 *Screenshot: save options — Save to server, Export .rdbk, Open in Editor, Export GPX*
+There are no export buttons here: exporting (GPX, `.rdbk`, PDF…) is done later from the Editor.
 
-> **Best practice**: if logged in → **Save to server** → then **Open in Editor**.  
-> If logged out → **Export .rdbk** → then at home: log in → Editor → import `.rdbk` → Save to profile.
+> The dialog can't be closed by tapping outside it. Until you save or discard, the recording is kept safe — even if the app crashes, it is offered again on your next visit.
 
 ---
 
-### 7. After saving
+### 7. In the Editor
 
-If you chose **Save to server**, the Recorder shows the **Edit** button that takes you directly to the Editor with the track and waypoint already loaded. The draft is saved and you'll also find it in **My roadbooks** from the main menu.
+The Editor opens with the track, the notes and the photos already loaded: give the roadbook a name, write the notes' text and export it if you want. The draft is saved and you'll also find it in **My roadbooks** from the main menu.
 
 ## Offline behavior
 
@@ -115,7 +112,7 @@ If you chose **Save to server**, the Recorder shows the **Edit** button that tak
 | GPS track | ✅ local + checkpoint | ✅ local + checkpoint | ✅ local + checkpoint |
 | Notes | ✅ local | ✅ local | ✅ local |
 | Photos | ✅ queue → upload | ✅ local queue | ✅ local queue |
-| Server draft | created/updated live | created at first flush | never created |
+| Server draft | created/updated live | created at first flush | created on **Save**, after sign-in |
 | Post-crash recovery | ✅ automatic | ✅ automatic | ✅ automatic |
 
 ---

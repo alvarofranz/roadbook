@@ -488,8 +488,8 @@ Operational notes:
 
 ## The tools (`public/<tool>/`)
 - **Editor** — the creation hub. Load from **GPX**, **Draw on the map** (sketch a
-  route from scratch), **`.rdbk`** or a public **roadbook** — and the Recorder hands its
-  live capture straight in (`?trip=1`). Edit notes (text, road
+  route from scratch), **`.rdbk`** or a public **roadbook** — a finished Recorder session arrives
+  as its saved draft (`?rb=<id>`), a GPX logged in the Reader/Tripmaster via `?trip=1`. Edit notes (text, road
   type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`wp_type`) + validation
   radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
   drag a note on the map to

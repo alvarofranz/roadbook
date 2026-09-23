@@ -255,11 +255,8 @@ dipende dallo stato di login:
 - **Loggato**: caricate **lato server, legate al draft roadbook** (`draftId`, tabella
   `roadbook_photos`); in `photos` resta il riferimento (`{ id, url, lat, lon }` una volta
   riconciliato dalla coda).
-- **Sloggato**: restano nella **coda locale** (blob in IndexedDB) e vengono impacchettate come
-  media nel **contenitore `.rdbk` ZIP** all'export di fine registrazione (#162/#147 F3).
-- Allo *scarico GPX* le foto **non** sono mai incluse (il GPX porta solo traccia + waypoint):
-  sopravvivono via *Save to server* / *Convert into roadbook* (da loggato) o *Export .rdbk* (da
-  sloggato), §8.
+- **Sloggato**: restano nella **coda locale** (blob in IndexedDB) finché *Save* non passa dal login
+  e il draft esiste: allora la coda le carica lì (§8).
 
 ---
 
@@ -285,45 +282,24 @@ commuta le viste idle/running, mostra/nasconde la barra di stato e imposta `RB_B
 
 ---
 
-## 8. Termine: salva sul server / esporta .rdbk, GPX o apri nell'Editor
+## 8. Termine: Save o Discard (#791)
 
-Un *End* confermato si apre `finishModal(pts, name)` con il riepilogo
-(punti · km · note · foto) e **tre** azioni. L'azione **primaria dipende dal login**:
+Un *End* confermato apre `finishModal(pts, name)`: il riepilogo (km · note · foto) e **una sola
+domanda**, *Discard* o *Save*. Niente export né altre scelte qui: esportare si fa poi dall'Editor.
 
-- **Save to server** *(loggato, primaria, #143)*: in un tap costruisce il roadbook dalla
-  traccia + waypoint (`RB.buildRoadbook`) e lo scrive **dentro il draft già esistente**
-  (`rb_save` con `id = draftId`, `status:'draft'`), così le **foto e le note vocali già
-  caricate restano attaccate** senza passare dall'Editor. **Si resta sul Recorder**: una
-  piccola conferma offre un link *Edit* (`../editor/?rb=<id>`) per rifinire.
-- **Export .rdbk** *(sloggato, primaria, #147 F3)*: `exportLocalRdbk` costruisce il roadbook e lo
-  impacchetta con i media in coda in un **contenitore `.rdbk` ZIP** self-contained (`roadbook.json`
-  + `photos/`/`audio/` + `media.json`, via `RBZip.write` — stesso formato dell'Editor, #162), poi
-  lo scarica. Se ci sono media, un `RBConfirm` offre di **rimuoverli dal dispositivo** (`RBMediaQueue.clear`)
-  ora che vivono nel file. Così un utente non loggato non perde nulla, senza account.
-- **Open in the editor**: mette in `sessionStorage` la traccia (`rb_trip_track`), i waypoint
-  (`rb_trip_wpts`), il **nome scelto** (`rb_trip_name`, #54) e — se c'è — il `draftId`
-  (`rb_trip_draft`, il ponte verso le foto già sul server), poi naviga a `../editor/?trip=1`.
-- **Export GPX**: serializza con `RB.gpxDocument(name, pts, gpxWpts)`, dove i waypoint diventano
-  `{ lat, lon, name, t }` (testo del waypoint o `wptN` se vuoto, più il timestamp). Il file
-  scende via `RBDownload`. Le foto/audio **non** sono nel GPX.
+- **Save** — da loggato costruisce il roadbook dalla traccia + note (`RB.buildRoadbook`) e lo scrive
+  **dentro il draft** che tiene già le foto (`rb_save` con `id = draftId`, `status:'draft'`), poi apre
+  subito l'**Editor** su quel roadbook (`../editor/?rb=<id>`), dove si nomina, si scrive e si
+  esporta. Da sloggato: mette la registrazione da parte (`PENDING_SAVE`) e passa dalla pagina di
+  login, che la riporta qui: `saveAfterLogin` la salva e apre l'Editor (se il salvataggio fallisce,
+  la domanda torna).
+- **Discard** — `btn-danger` + cestino, chiede conferma nominando il riepilogo.
 
-### L'uscita del modale (#460)
-
-Finché la registrazione non è arrivata da qualche parte, **questo modale è l'unica copia**: quindi
-segue il contratto delle uscite (vedi [gps-stack.md](gps-stack.md) e `CLAUDE.md`), lo stesso del
-modale condiviso di Reader/Tripmaster:
-
-- **non è dismissable** — né backdrop né Escape;
-- l'uscita è un **Discard** (`btn-danger` + cestino) che chiede conferma nominando lo stesso
-  riepilogo mostrato in cima (punti · km · waypoint · foto);
-- appena un esito **atterra** (`land()`: salvataggio, export `.rdbk`, export GPX, apertura
-  nell'Editor, o lo stash prima del login) l'uscita diventa un normale **Close** e il checkpoint
-  anti-crash si spegne.
-
-Allo stop la sessione diventa un checkpoint **`finishing`** (`saveFinishing`: punti, note, pin
-delle foto, `draftId`, km): un crash con il modale a schermo lo riapre al prossimo avvio con
-tutto dentro (#647). Sessione e checkpoint GPX si spengono **solo** a un esito (`land()`) o a un
-Discard confermato.
+Il modale **è l'unica copia** della registrazione finché uno dei due esiti non arriva: **non è
+dismissable** (né backdrop né Escape) e il checkpoint anti-crash si spegne **solo** a un salvataggio
+riuscito, allo stash prima del login o a un Discard confermato. Un salvataggio fallito lascia tutto
+com'era. Allo stop la sessione diventa un checkpoint **`finishing`** (`saveFinishing`: punti, note,
+pin delle foto, `draftId`, km): un crash con il modale a schermo lo riapre al prossimo avvio (#647).
 
 ---
 
@@ -336,9 +312,8 @@ Discard confermato.
 | `startMeter`/`stopMeter` | ciclo `RBGpsMeter` + cronometro |
 | `dropWaypoint()`    | crea e registra un waypoint (con timestamp `t`) |
 | `saveSession()`     | checkpoint metadati in localStorage |
-| `finishModal()`     | loggato: salva sul server · sloggato: esporta `.rdbk` · apri nell'Editor · esporta GPX; non dismissable, esce con Discard confermato finché non è atterrata (#460) |
+| `finishModal()`     | Save (nel draft, poi l'Editor; da sloggato passando dal login) o Discard confermato; non dismissable (#460 · #791) |
 | `land()`            | un esito ha messo la traccia al sicuro: pulisce il checkpoint e l'uscita diventa *Close* |
-| `exportLocalRdbk()` | costruisce e scarica un `.rdbk` ZIP con i media in coda (percorso di salvataggio da sloggato, #147 F3) |
 | `refreshMap()`      | ridisegno mappa live |
 | `ensureDraft()`     | crea il draft una sola volta (memoizzato), pigro/best-effort — il resolver della coda (#147 F2); ritorna `null` da sloggato |
 | `RBMediaQueue`      | coda foto/audio offline-first (IndexedDB): `add`/`flush`/`items`/`clear`/`count`; upload differito con retry (#147) |

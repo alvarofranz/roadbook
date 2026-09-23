@@ -14,7 +14,7 @@ Abre el **Recorder** desde el menú principal o ve directamente a `/recorder/`.
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-Verás la pantalla inicial con el botón **Start recording**. Si no has iniciado sesión, aparece un aviso: *"Sin sesión: las fotos se guardan en este dispositivo y en un .rdbk local al terminar. Inicia sesión para guardarlas en tu cuenta."* — puedes grabar igualmente.
+Verás la pantalla inicial con el botón **Start recording**. Si no has iniciado sesión, aparece un aviso: *"Sin sesión: la ruta y sus fotos esperan en este dispositivo, y Guardar te pide iniciar sesión."* — puedes grabar igualmente.
 
 ---
 
@@ -84,29 +84,26 @@ La barra inferior contiene los otros dos:
 
 ### 6. Fin de la grabación
 
-Toca **End** (barra inferior) para terminar la grabación.
+Toca **End** (barra inferior) y confirma para terminar la grabación.
 
 > ![Resumen de grabación](../assets/screenshots/rec06a.jpeg)
 
-Se abre el modal de resumen con los datos de la sesión: puntos de recorrido, km, notas, fotos. Aquí eliges qué hacer:
+Un diálogo muestra un breve resumen (km · notas · fotos) y hace una sola pregunta, con dos botones:
 
-| Opción | Cuándo usarla | Qué sucede |
-|---------|---------------|--------------|
-| **💾 Save to server** | Estás logueado y quieres recuperar todo en el perfil | Guarda el **draft** en el servidor (trazada + waypoint + media). Sigues en el Recorder con el botón **Edit** para abrir en el Editor |
-| **📦 Export .rdbk** | Quieres un archivo portátil offline | Crea un `.rdbk` ZIP (roadbook.json + fotos). Descarga el archivo |
-| **✏️ Open in Editor** | Quieres refinar ya la ruta | Pasa trazada y waypoint al Editor. Las fotos ya en el servidor permanecen enlazadas |
-| **📍 Export GPX** | Te sirve solo para otro software | Descarga `.gpx` estándar (trazada + notas como waypoint con nombre). Fotos **no** incluidas |
+| Botón | Qué sucede |
+|--------|--------------|
+| **💾 Guardar** | Con sesión iniciada: la grabación se guarda como **draft** de roadbook (con sus fotos) y el **Editor se abre** sobre él al instante. Sin sesión: te lleva a la página de inicio de sesión y, una vez dentro, vuelves y se guarda del mismo modo; luego se abre el Editor |
+| **🗑 Descartar** | Pide confirmación, nombrando lo que se perdería (trazada, notas, fotos, notas de voz), y luego descarta la grabación |
 
-> 📸 *Screenshot: opciones de guardado — Save to server, Export .rdbk, Open in Editor, Export GPX*
+Aquí no hay botones de exportación: exportar (GPX, `.rdbk`, PDF…) se hace después desde el Editor.
 
-> **Buenas prácticas**: si estás logueado → **Save to server** → luego **Open in Editor**.  
-> Si no estás logueado → **Export .rdbk** → luego en casa: login → Editor → importa `.rdbk` → Save to profile.
+> El diálogo no se cierra tocando fuera de él. Hasta que guardes o descartes, la grabación está a salvo: aunque la app se cierre de golpe, se te vuelve a ofrecer en la siguiente visita.
 
 ---
 
-### 7. Tras el guardado
+### 7. En el Editor
 
-Si elegiste **Save to server**, el Recorder muestra el botón **Edit** que te lleva directamente al Editor con la trazada y los waypoint ya cargados. El draft queda guardado y lo recuperas también en **I miei roadbook** desde el menú principal.
+El Editor se abre con la trazada, las notas y las fotos ya cargadas: ponle nombre al roadbook, escribe el texto de las notas y expórtalo si quieres. El draft queda guardado y lo recuperas también en **Mis roadbooks** desde el menú principal.
 
 ## Comportamiento offline
 
@@ -115,7 +112,7 @@ Si elegiste **Save to server**, el Recorder muestra el botón **Edit** que te ll
 | Trazada GPS | ✅ local + checkpoint | ✅ local + checkpoint | ✅ local + checkpoint |
 | Notas | ✅ local | ✅ local | ✅ local |
 | Foto | ✅ cola → subida | ✅ cola local | ✅ cola local |
-| Draft servidor | creado/actualizado live | creado en el primer flush | nunca creado |
+| Draft servidor | creado/actualizado live | creado en el primer flush | creado al pulsar **Guardar**, tras iniciar sesión |
 | Recuperación post-crash | ✅ automática | ✅ automática | ✅ automática |
 
 ---

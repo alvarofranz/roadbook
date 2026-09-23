@@ -38,8 +38,6 @@ Returns `{ add, flush, clear, items, init }`.
 |--------|-----------|---------|
 | `init` | `init({ onDone, onChange, resolveRoadbook })` | Wire callbacks and drain any leftover items from a previous session |
 | `add` | `add(kind, blob, fields, name, token)` | Enqueue a capture (`token` = client-side id for optimistic UI reconciliation) |
-| `items` | `items()` | All queued records (for local `.rdbk` export) |
-| `clear` | `clear()` | Empty the queue (after a signed-out user saved a local `.rdbk`) |
 
 ### Callbacks (`init`)
 
@@ -58,7 +56,7 @@ Returns `{ add, flush, clear, items, init }`.
 | **Logged in, online** | Uploads immediately via `RBUpload`/`RBUploadAudio`; `onDone` reconciles the optimistic UI pin with the server id |
 | **Logged in, offline** | Stays queued; retried every 20 s (`RETRY_MS`) and on the `online` event |
 | **No draft yet** | `resolveRoadbook` is called (creates the draft lazily, #147 F2); item stays queued until a draft id is obtained |
-| **Logged out** | Photos/audio stay on device; `resolveRoadbook` returns `null` → items remain queued; exported in the local `.rdbk` at finish (#147 F3) |
+| **Logged out** | Photos stay on the device; `resolveRoadbook` returns `null` → items remain queued until Save goes through sign-in and the draft exists, then they upload into it (#791) |
 
 - The queue is **FIFO** but each pass attempts every item: a single poisoned item
   never blocks the rest.

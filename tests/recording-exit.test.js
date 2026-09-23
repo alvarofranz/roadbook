@@ -11,7 +11,7 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const recorder = read('public/recorder/recorder.js');
 const gpx = read('public/assets/js/gpx-recorder.js');
 
-const finishModal = recorder.match(/function finishModal\(pts, name, savedId\) \{[\s\S]*?\n {4}\}\n/)[0];
+const finishModal = recorder.match(/function finishModal\(pts, name\) \{[\s\S]*?\n {4}\}\n/)[0];
 const finishedModal = gpx.match(/function finishedModal\(finished, name\) \{[\s\S]*?\n {4}\}\n/)[0];
 
 describe('the crash checkpoint stays on until the recording lands somewhere', () => {
@@ -31,10 +31,11 @@ describe('the crash checkpoint stays on until the recording lands somewhere', ()
         expect(stop).toContain('RBGpxRecorder.resume(r.name); startMeter(); return;');
     });
 
-    it('every destination clears it, and nothing else does', () => {
-        // save · export .rdbk · export GPX · open in the editor · the stash before sign-in
-        expect((finishModal.match(/\bland\(\)/g) || []).length).toBe(5);
-        expect(finishModal).toContain('const land = () => { landed = true; RBGpxRecorder.clearCheckpoint(); clearSession(); renderExit(); };');
+    it('every outcome clears it, and nothing else does (#791)', () => {
+        // saved into the draft · stashed before sign-in · discarded after the confirm
+        expect((finishModal.match(/RBGpxRecorder\.clearCheckpoint\(\); clearSession\(\);/g) || []).length).toBe(3);
+        // a failed save keeps it: the button resets and the recording is still there
+        expect(finishModal).toContain("if (!built) { busy.reset(); return; }");
     });
 });
 
@@ -51,30 +52,23 @@ describe('both finish modals share one exit contract (#217 · #460)', () => {
         });
     }
 
-    it('the Recorder exit reads Discard while the recording is the only copy, Close once it is safe', () => {
-        expect(finishModal).toContain("b.innerHTML = landed ? t('Close') : '<i class=\"fa-solid fa-trash-can\"></i> ' + t('Discard');");
-        expect(finishModal).toContain("b.className = 'btn ' + (landed ? 'btn-ghost' : 'btn-danger');");
-        // …and a recording already saved (back from the sign-in redirect) starts in that safe state
-        expect(finishModal).toContain('let landed = !!savedId;');
+    it('the Recorder asks one question: Save or Discard (#791)', () => {
+        expect(finishModal).toContain('id="rfDiscard"');
+        expect(finishModal).toContain('id="rfSave"');
+        expect(finishModal).not.toMatch(/rfClose|rfDl|rfEd|rfRdbk|Export/);
+        // saving opens the Editor on the saved draft
+        expect(finishModal).toContain("location.href = '../editor/?rb=' + built.id;");
     });
 
     it('no exit is wired straight to dismiss', () => {
-        expect(recorder).not.toContain("d.q('#rfClose').onclick = d.close;");
-        expect(finishModal).toContain("if (!landed && !(await RBConfirmDanger(");
+        expect(finishModal).toContain("if (!(await RBConfirmDanger(t('Discard this recording?') + '<br>' + summary))) return;");
     });
 });
 
-describe('the finish options spin through the shared primitive', () => {
-    it('both async actions use RBBusy rather than a fourth hand-rolled spinner', () => {
-        expect(finishModal).toContain('const busy = RBBusy(btn);');
-        expect((finishModal.match(/busy\.reset\(\);/g) || []).length).toBe(2); // save · export .rdbk
+describe('the save spins through the shared primitive', () => {
+    it('uses RBBusy rather than a hand-rolled spinner', () => {
+        expect(finishModal).toContain("const busy = RBBusy(d.q('#rfSave'));");
         expect(finishModal).not.toContain('fa-spinner fa-spin');
-    });
-
-    it('a completed destination keeps its own tick — the modal is a checklist', () => {
-        // RBBusy's tick is transient by design; here each destination stays marked while the
-        // modal is open, so you can see what you have already done and still do the rest
-        expect(finishModal).toContain('markDone(btn, ');
     });
 });
 

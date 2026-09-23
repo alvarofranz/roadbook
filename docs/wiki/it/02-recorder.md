@@ -14,7 +14,7 @@ Apri il **Recorder** dal menu principale o vai direttamente su `/recorder/`.
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-Vedrai la schermata iniziale con il pulsante **Start recording**. Se non sei loggato, compare un avviso: *"Non autenticato: le foto restano su questo dispositivo e finiscono in un .rdbk locale al termine. Accedi per salvarle sul tuo account."* — puoi registrare lo stesso.
+Vedrai la schermata iniziale con il pulsante **Start recording**. Se non sei loggato, compare un avviso: *"Non autenticato: il percorso e le sue foto aspettano su questo dispositivo, e Salva ti chiede di accedere."* — puoi registrare lo stesso.
 
 ---
 
@@ -84,29 +84,26 @@ La barra in basso contiene gli altri due:
 
 ### 6. Fine registrazione
 
-Tocca **End** (barra in basso) per terminare la registrazione.
+Tocca **End** (barra in basso) e conferma per terminare la registrazione.
 
 > ![Riepilogo registrazione](../assets/screenshots/rec06a.jpeg)
 
-Si apre il modal di riepilogo con i dati della sessione: punti percorso, km, note, foto. Qui scegli cosa fare:
+Un dialogo mostra un breve riepilogo (km · note · foto) e pone una sola domanda, con due pulsanti:
 
-| Opzione | Quando usarla | Cosa succede |
-|---------|---------------|--------------|
-| **💾 Save to server** | Sei loggato e vuoi ritrovare tutto sul profilo | Salva il **draft** sul server (traccia + waypoint + media). Resti nel Recorder con il pulsante **Edit** per aprire nell'Editor |
-| **📦 Export .rdbk** | Vuoi un file portatile offline | Crea un `.rdbk` ZIP (roadbook.json + foto). Scarica il file |
-| **✏️ Open in Editor** | Vuoi rifinire subito la rotta | Passa traccia e waypoint all'Editor. Foto già su server restano collegate |
-| **📍 Export GPX** | Ti serve solo per altro software | Scarica `.gpx` standard (traccia + note come waypoint con nome). Foto **non** incluse |
+| Pulsante | Cosa succede |
+|---------|--------------|
+| **💾 Salva** | Se sei loggato: la registrazione viene salvata come **draft** di roadbook (con le sue foto) e si **apre subito l'Editor** su di esso. Se non sei loggato: vai alla pagina di accesso e, una volta entrato, torni e viene salvata allo stesso modo; poi si apre l'Editor |
+| **🗑 Scarta** | Chiede conferma, indicando cosa andrebbe perso (traccia, note, foto, note vocali), poi elimina la registrazione |
 
-> 📸 *Screenshot: opzioni salvataggio — Save to server, Export .rdbk, Open in Editor, Export GPX*
+Qui non ci sono pulsanti di esportazione: l'esportazione (GPX, `.rdbk`, PDF…) si fa dopo dall'Editor.
 
-> **Best practice**: se loggato → **Save to server** → poi **Open in Editor**.  
-> Se sloggato → **Export .rdbk** → poi da casa: login → Editor → importa `.rdbk` → Save to profile.
+> Il dialogo non si chiude toccando fuori. Finché non salvi o scarti, la registrazione resta al sicuro: anche se l'app va in crash, ti viene riproposta alla visita successiva.
 
 ---
 
-### 7. Dopo il salvataggio
+### 7. Nell'Editor
 
-Se hai scelto **Save to server**, il Recorder mostra il pulsante **Edit** che ti porta direttamente all'Editor con la traccia e i waypoint già caricati. Il draft è salvato e lo ritrovi anche in **I miei roadbook** dal menu principale.
+L'Editor si apre con la traccia, le note e le foto già caricate: dai un nome al roadbook, scrivi il testo delle note ed esportalo se vuoi. Il draft è salvato e lo ritrovi anche in **I miei roadbook** dal menu principale.
 
 ## Comportamento offline
 
@@ -115,7 +112,7 @@ Se hai scelto **Save to server**, il Recorder mostra il pulsante **Edit** che ti
 | Traccia GPS | ✅ locale + checkpoint | ✅ locale + checkpoint | ✅ locale + checkpoint |
 | Note | ✅ locale | ✅ locale | ✅ locale |
 | Foto | ✅ coda → upload | ✅ coda locale | ✅ coda locale |
-| Draft server | creato/aggiornato live | creato al primo flush | mai creato |
+| Draft server | creato/aggiornato live | creato al primo flush | creato con **Salva**, dopo il login |
 | Recupero post-crash | ✅ automatico | ✅ automatico | ✅ automatico |
 
 ---

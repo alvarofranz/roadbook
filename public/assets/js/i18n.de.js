@@ -140,8 +140,8 @@
             'Road': 'Straße', 'Danger': 'Gefahr', 'CAP type': 'KAP-Typ', 'Exit': 'Ausfahrt', 'Average': 'Mittel', 'Calculated': 'Berechnet', 'Turning': 'Kurve', 'End of limit': 'Ende Limit', 'END': 'ENDE',
             'Default': 'Standard', 'Motorway': 'Autobahn', 'Asphalt': 'Asphalt', 'Track': 'Piste', 'Off-piste': 'Gelände',
             'Draw on the map': 'Auf der Karte zeichnen', 
-            'Export GPX': 'GPX exportieren',
-            'Not signed in: photos are kept on this device and saved into a local .rdbk at the end. Sign in to save them to your account.': 'Nicht angemeldet: Fotos bleiben auf diesem Gerät und kommen am Ende in eine lokale .rdbk. Melde dich an, um sie in deinem Konto zu speichern.',
+            
+            
             'Export': 'Exportieren', '.rdbk file': '.rdbk-Datei', 'Include photos & audio in the .rdbk': 'Fotos & Audio in die .rdbk aufnehmen', 'Photos & audio': 'Fotos & Audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Dieses Roadbook enthält Fotos oder Sprachnotizen. Sie bleiben verborgen, bis du es in deinem Profil speicherst.', 'Track line': 'Tracklinie', 'Waypoints (notes)': 'Wegpunkte (Noten)', 'Garmin icons': 'Garmin-Icons', 'OSMAnd icons': 'OSMAnd-Icons', 'Delete me to export the edited tulip': 'Mich löschen um das bearbeitete Tulip zu exportieren',
             'Settings': 'Einstellungen', 
             'Identity': 'Identität', 'Visibility & map': 'Sichtbarkeit & Karte',
@@ -332,7 +332,7 @@
             'notes': 'Noten',
             'Total': 'Gesamt', 'Partial': 'Teilweise', 'Reset': 'Zurücksetzen', 'Hold to reset.': 'Gedrückt halten zum Zurücksetzen.', 'Pause': 'Pause', 'Max km/h': 'Max km/h',
             'Record GPX': 'GPX aufzeichnen', 'Stop recording': 'Aufnahme stoppen', 'Speed alert': 'Geschwindigkeitsalarm', 'Speed to watch (km/h · 0 = off)': 'Zu überwachende Geschwindigkeit (km/h · 0 = aus)', 'Colours': 'Farben',
-            'green': 'grün', 'orange': 'orange', 'red': 'rot', 'Recorded track': 'Aufgezeichneter Track', 'points': 'Punkte', 'Download GPX': 'GPX herunterladen', 'Convert into roadbook': 'In Roadbook umwandeln', 'Save to account': 'Im Konto speichern', 'Saving…': 'Speichern…', 'Exported': 'Exportiert', 'Sign in to save this recording to your account.': 'Melde dich an, um diese Aufnahme in deinem Konto zu speichern.', 'Save to your account, or export a self-contained .rdbk with your photos.': 'Im Konto speichern oder ein eigenständiges .rdbk mit den Fotos exportieren.', 'Open in the editor': 'Im Editor öffnen', 'Saving keeps your photos; GPX is a local file without them.': 'Beim Speichern bleiben die Fotos erhalten; das GPX ist eine lokale Datei ohne sie.',
+            'green': 'grün', 'orange': 'orange', 'red': 'rot', 'Recorded track': 'Aufgezeichneter Track', 'points': 'Punkte', 'Download GPX': 'GPX herunterladen', 'Convert into roadbook': 'In Roadbook umwandeln', 'Saving…': 'Speichern…', 'Exported': 'Exportiert', 
             'End the trip and reset everything?': 'Fahrt beenden und alles zurücksetzen?', 'Trip reset.': 'Fahrt zurückgesetzt.', 'Recording GPX track.': 'GPX-Track wird aufgezeichnet.', 'Could not load the recorded trip.': 'Aufgezeichnete Fahrt konnte nicht geladen werden.',
             'Sample every (seconds)': 'Intervall (Sekunden)', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Empfohlen: 3s Auto/Rallye · 5s Fahrrad · 10s zu Fuß', 'File name': 'Dateiname', 'Saved to your Pictures folder': 'Im Ordner „Bilder" gespeichert', 'Saved to your Downloads folder': 'Im Ordner „Download" gespeichert', 'Saved to your device': 'Auf dem Gerät gespeichert', 'Could not save the file.': 'Die Datei konnte nicht gespeichert werden.', 'Latitude': 'Breitengrad', 'Longitude': 'Längengrad', 'Installed': 'Installiert', 'latest': 'neueste', 'Profile': 'Profil', 'Language': 'Sprache', 'Sections': 'Bereiche', 'Public roadbooks': 'Öffentliche Roadbooks', 'Set up an event with its roadbooks, participants and rankings.': 'Richte ein Event mit Roadbooks, Teilnehmern und Ranglisten ein.', 'Open from a file or your roadbooks, or pick a public one below.': 'Aus einer Datei oder deinen Roadbooks öffnen, oder unten ein öffentliches wählen.', 'seo.navigate.title': 'Navigieren — RDBK.app', 'seo.navigate.desc': 'Live-GPS-Modi: der Tripmaster-Reisecomputer und der Roadbook Reader.', 'Stop recording?': 'Aufzeichnung beenden?', 'Discard this recording?': 'Diese Aufzeichnung verwerfen?', 'You are offline — reconnect to see your roadbooks.': 'Du bist offline — verbinde dich erneut, um deine Roadbooks zu sehen.', 'Track too short.': 'Track zu kurz.',
                        'Auto-saved while recording, recovered if the app closes.': 'Wird während der Aufnahme automatisch gespeichert; wiederhergestellt wenn die App geschlossen wird.',
@@ -654,9 +654,9 @@
             
             'awaiting upload': 'warten auf Upload',
             'kept on this device': 'auf diesem Gerät gespeichert',
-            'Export .rdbk': '.rdbk exportieren',
             
-            'Saved a local .rdbk with your photos. Remove them from this device now?': 'Eine lokale .rdbk mit deinen Fotos wurde gespeichert. Jetzt von diesem Gerät entfernen?',
+            
+            
             
             
             
@@ -1332,4 +1332,9 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "Save image": "Bild speichern",
     "Could not share.": "Teilen nicht möglich.",
+});
+
+/* Recorder, signed out (#791) */
+Object.assign(window.RBi18nLangs.de, {
+    "Not signed in: the route and its photos wait on this device, and Save asks you to sign in.": "Nicht angemeldet: Die Route und ihre Fotos warten auf diesem Gerät, und Speichern bittet dich, dich anzumelden.",
 });

@@ -14,7 +14,7 @@ Der **Recorder** ist das Werkzeug für den Einsatz **im Feld**. Er zeichnet die 
 
 > ![Recorder start](../assets/screenshots/rec01.jpg)
 
-Du siehst den Startbildschirm mit dem Button **Start recording**. Wenn du nicht angemeldet bist, erscheint ein Hinweis: *„Nicht angemeldet: Fotos bleiben auf diesem Gerät und kommen am Ende in eine lokale .rdbk. Melde dich an, um sie in deinem Konto zu speichern.“* — du kannst trotzdem aufzeichnen.
+Du siehst den Startbildschirm mit dem Button **Start recording**. Wenn du nicht angemeldet bist, erscheint ein Hinweis: *„Nicht angemeldet: Die Route und ihre Fotos warten auf diesem Gerät, und Speichern bittet dich, dich anzumelden.“* — du kannst trotzdem aufzeichnen.
 
 ---
 
@@ -84,29 +84,26 @@ Die untere Leiste enthält die anderen beiden:
 
 ### 6. Ende der Aufzeichnung
 
-Tippe **End** (untere Leiste), um die Aufzeichnung zu beenden.
+Tippe **End** (untere Leiste) und bestätige, um die Aufzeichnung zu beenden.
 
 > ![Riepilogo registrazione](../assets/screenshots/rec06a.jpeg)
 
-Es öffnet sich das Zusammenfassungs-Modal mit den Sitzungsdaten: Streckenpunkte, km, Notizen, Fotos. Hier wählst du, was du tun möchtest:
+Ein Dialog zeigt eine kurze Zusammenfassung (km · Notizen · Fotos) und stellt genau eine Frage, mit zwei Buttons:
 
-| Option | Wann nutzen | Was passiert |
-|---------|---------------|--------------|
-| **💾 Save to server** | Du bist angemeldet und möchtest alles im Profil wiederfinden | Speichert den **draft** auf dem Server (Spur + Waypoint + Medien). Du bleibst im Recorder mit dem Button **Edit**, um im Editor zu öffnen |
-| **📦 Export .rdbk** | Du willst eine portable Offline-Datei | Erstellt eine `.rdbk`-ZIP (roadbook.json + Fotos). Datei herunterladen |
-| **✏️ Open in Editor** | Du willst die Route sofort verfeinern | Gibt Spur und Waypoint an den Editor weiter. Bereits auf dem Server liegende Fotos bleiben verknüpft |
-| **📍 Export GPX** | Du brauchst es nur für andere Software | Lädt `.gpx` im Standardformat herunter (Spur + Notizen als Waypoints mit Namen). Fotos sind **nicht** enthalten |
+| Button | Was passiert |
+|---------|--------------|
+| **💾 Speichern** | Angemeldet: Die Aufzeichnung wird als roadbook-**draft** (mit ihren Fotos) gespeichert und der **Editor öffnet sich** sofort darauf. Abgemeldet: Du kommst zur Anmeldeseite und, sobald du angemeldet bist, kehrst du zurück und sie wird genauso gespeichert; dann öffnet sich der Editor |
+| **🗑 Verwerfen** | Fragt nach einer Bestätigung und nennt, was verloren ginge (Spur, Notizen, Fotos, Sprachnotizen), dann wird die Aufzeichnung verworfen |
 
-> 📸 *Screenshot: Speicheroptionen — Save to server, Export .rdbk, Open in Editor, Export GPX*
+Hier gibt es keine Export-Buttons: Exportieren (GPX, `.rdbk`, PDF…) erledigst du später im Editor.
 
-> **Best practice**: wenn angemeldet → **Save to server** → dann **Open in Editor**.  
-> Wenn abgemeldet → **Export .rdbk** → dann zu Hause: Login → Editor → `.rdbk` importieren → Save to profile.
+> Der Dialog lässt sich nicht durch Tippen daneben schließen. Bis du speicherst oder verwirfst, ist die Aufzeichnung sicher — selbst wenn die App abstürzt, wird sie dir beim nächsten Besuch erneut angeboten.
 
 ---
 
-### 7. Nach dem Speichern
+### 7. Im Editor
 
-Wenn du **Save to server** gewählt hast, zeigt der Recorder den Button **Edit**, der dich direkt in den Editor mit bereits geladener Spur und Waypoints bringt. Der draft ist gespeichert und findet sich auch unter **I miei roadbook** (Meine roadbook) im Hauptmenü.
+Der Editor öffnet sich mit bereits geladener Spur, Notizen und Fotos: Gib dem roadbook einen Namen, schreib den Text der Notizen und exportiere es, wenn du möchtest. Der draft ist gespeichert und findet sich auch unter **Meine Roadbooks** im Hauptmenü.
 
 ## Offline-Verhalten
 
@@ -115,7 +112,7 @@ Wenn du **Save to server** gewählt hast, zeigt der Recorder den Button **Edit**
 | GPS-Spur | ✅ lokal + Checkpoint | ✅ lokal + Checkpoint | ✅ lokal + Checkpoint |
 | Notizen | ✅ lokal | ✅ lokal | ✅ lokal |
 | Foto | ✅ Warteschlange → Upload | ✅ lokale Warteschlange | ✅ lokale Warteschlange |
-| Server-draft | live erstellt/aktualisiert | beim ersten Flush erstellt | nie erstellt |
+| Server-draft | live erstellt/aktualisiert | beim ersten Flush erstellt | bei **Speichern** erstellt, nach der Anmeldung |
 | Wiederherstellung nach Absturz | ✅ automatisch | ✅ automatisch | ✅ automatisch |
 
 ---

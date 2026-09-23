@@ -14,7 +14,7 @@ Ouvrez le **Recorder** depuis le menu principal ou allez directement sur `/recor
 
 > ![Démarrage Recorder](../assets/screenshots/rec01.jpg)
 
-Vous verrez l'écran initial avec le bouton **Start recording**. Si vous n'êtes pas connecté, un avertissement apparaît : *« Non connecté : les photos sont gardées sur cet appareil et enregistrées dans un .rdbk local à la fin. Connectez-vous pour les enregistrer sur votre compte. »* — vous pouvez tout de même enregistrer.
+Vous verrez l'écran initial avec le bouton **Start recording**. Si vous n'êtes pas connecté, un avertissement apparaît : *« Non connecté : l’itinéraire et ses photos attendent sur cet appareil, et Enregistrer vous demande de vous connecter. »* — vous pouvez tout de même enregistrer.
 
 ---
 
@@ -84,29 +84,26 @@ La barre du bas contient les deux autres :
 
 ### 6. Fin de l'enregistrement
 
-Touchez **End** (barre du bas) pour terminer l'enregistrement.
+Touchez **End** (barre du bas) et confirmez pour terminer l'enregistrement.
 
 > ![Récapitulatif d'enregistrement](../assets/screenshots/rec06a.jpeg)
 
-Le modal de récapitulatif s'ouvre avec les données de la session : points parcourus, km, notes, photos. Vous choisissez alors quoi faire :
+Une boîte de dialogue affiche un bref récapitulatif (km · notes · photos) et pose une seule question, avec deux boutons :
 
-| Option | Quand l'utiliser | Ce qui se passe |
-|---------|---------------|--------------|
-| **💾 Save to server** | Vous êtes connecté et voulez retrouver tout sur le profil | Sauvegarde le **brouillon** sur le serveur (trace + waypoints + médias). Vous restez dans le Recorder avec le bouton **Edit** pour ouvrir dans l'Editor |
-| **📦 Export .rdbk** | Vous voulez un fichier portable hors ligne | Crée un `.rdbk` ZIP (roadbook.json + photos). Télécharge le fichier |
-| **✏️ Open in Editor** | Vous voulez peaufiner la route tout de suite | Transmet la trace et les waypoints à l'Editor. Les photos déjà sur le serveur restent liées |
-| **📍 Export GPX** | Vous en avez seulement besoin pour un autre logiciel | Télécharge un `.gpx` standard (trace + notes comme waypoints nommés). Photos **non** incluses |
+| Bouton | Ce qui se passe |
+|---------|--------------|
+| **💾 Enregistrer** | Connecté : l'enregistrement est sauvegardé comme **brouillon** de roadbook (avec ses photos) et l'**Editor s'ouvre** aussitôt dessus. Non connecté : vous êtes dirigé vers la page de connexion et, une fois connecté, vous revenez et il est sauvegardé de la même façon, puis l'Editor s'ouvre |
+| **🗑 Abandonner** | Demande confirmation en nommant ce qui serait perdu (trace, notes, photos, notes vocales), puis abandonne l'enregistrement |
 
-> 📸 *Capture : options de sauvegarde — Save to server, Export .rdbk, Open in Editor, Export GPX*
+Il n'y a pas de boutons d'export ici : l'export (GPX, `.rdbk`, PDF…) se fait ensuite depuis l'Editor.
 
-> **Bonne pratique** : si connecté → **Save to server** → puis **Open in Editor**.  
-> Si hors connexion → **Export .rdbk** → puis depuis chez vous : connexion → Editor → importez `.rdbk` → Save to profile.
+> La boîte de dialogue ne se ferme pas en touchant à l'extérieur. Tant que vous n'avez ni enregistré ni abandonné, l'enregistrement reste en sécurité — même si l'app plante, il vous est proposé à nouveau lors de votre prochaine visite.
 
 ---
 
-### 7. Après la sauvegarde
+### 7. Dans l'Editor
 
-Si vous avez choisi **Save to server**, le Recorder affiche le bouton **Edit** qui vous mène directement à l'Editor avec la trace et les waypoints déjà chargés. Le brouillon est sauvegardé et vous le retrouvez aussi dans **Mes roadbooks** depuis le menu principal.
+L'Editor s'ouvre avec la trace, les notes et les photos déjà chargées : donnez un nom au roadbook, écrivez le texte des notes et exportez-le si vous le souhaitez. Le brouillon est sauvegardé et vous le retrouvez aussi dans **Mes roadbooks** depuis le menu principal.
 
 ## Comportement hors ligne
 
@@ -115,7 +112,7 @@ Si vous avez choisi **Save to server**, le Recorder affiche le bouton **Edit** q
 | Trace GPS | ✅ locale + point de contrôle | ✅ locale + point de contrôle | ✅ locale + point de contrôle |
 | Notes | ✅ local | ✅ local | ✅ local |
 | Photo | ✅ file → envoi | ✅ file locale | ✅ file locale |
-| Brouillon serveur | créé/mis à jour en direct | créé au premier flush | jamais créé |
+| Brouillon serveur | créé/mis à jour en direct | créé au premier flush | créé avec **Enregistrer**, après connexion |
 | Récupération post-crash | ✅ automatique | ✅ automatique | ✅ automatique |
 
 ---
