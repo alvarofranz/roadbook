@@ -342,12 +342,12 @@
             'Paused': 'Pausiert', 
             'You left unsaved changes here. Continue from them?': 'Du hast hier nicht gespeicherte Änderungen hinterlassen. Damit fortfahren?',
             'Record a GPX track': 'GPX-Track aufzeichnen', 'Sound on note': 'Ton bei Notiz',
-            /* external remote (#20) */             'External remote (bluetooth remote)': 'Externe Fernbedienung (Bluetooth-Fernbedienung)',
+            /* external remote (#20) */             
             'No GPS fixes yet — check that location is turned on.': 'Noch keine GPS-Fixes — prüfe, ob Standort aktiviert ist.',
             'Position too coarse for a reliable track — grant precise location.': 'Position zu ungenau für einen verlässlichen Track — genauen Standort erlauben.',
             'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.': 'Akkuoptimierung ist an und kann GPS im Hintergrund stoppen — mit Lücken im Track.',
             'Notifications are off, so background recording may stop with the screen off.': 'Mitteilungen sind aus, daher kann die Aufnahme im Hintergrund bei dunklem Bildschirm stoppen.',
-            'Open battery settings': 'Akku-Einstellungen öffnen', 'Open settings': 'Einstellungen öffnen', 'A Bluetooth remote or camera clicker works as a keyboard — remember to keep your hands on the wheel.': 'Eine Bluetooth-Fernbedienung oder ein Kamera-Clicker funktioniert wie eine Tastatur — denke daran, die Hände am Lenkrad zu lassen.', 'Advance': 'Weiter', 'trip mode': 'Trip-Modus',
+            'Open battery settings': 'Akku-Einstellungen öffnen', 'Open settings': 'Einstellungen öffnen', 
             'Note map': 'Karte zur Notiz', 'Map not configured.': 'Karte nicht konfiguriert.',
             'Auto validation is on — switch it off to validate notes by hand.': 'Die automatische Validierung ist an – schalte sie aus, um Notizen von Hand zu validieren.', 'Auto validation on': 'Auto-Validierung ein', 'Auto validation off': 'Auto-Validierung aus',
             'Author': 'Autor', 'Organization': 'Organisation', 'Upload logo': 'Logo hochladen', 'Organizer website': 'Website des Veranstalters', 'Event headquarters': 'Veranstaltungsort', 'Tap the map to set the event headquarters location.': 'Karte antippen, um den Veranstaltungsort zu setzen.', 'Last modified': 'Zuletzt geändert', 'Author name': 'Autorname',
@@ -1499,7 +1499,7 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "tour.next": "Weiter",
     "Take a quick tour? Each tool shows you its main controls once, the first time you open it.": "Eine kurze Tour? Jedes Werkzeug zeigt dir seine wichtigsten Bedienelemente einmal, beim ersten Öffnen.",
-    "Skip tutorial": "Tutorial überspringen",
+    "Skip tutorial": "Tour überspringen",
     "The roadbook": "Das Roadbook",
     "The next note always sits on top; the blue box shows what is left along the track.": "Die nächste Notiz steht immer oben; das blaue Feld zeigt, was entlang des Tracks noch fehlt.",
     "Odometers": "Kilometerzähler",
@@ -1538,4 +1538,26 @@ Object.assign(window.RBi18nLangs.de, {
     "Title, description, author, logo and photos.": "Titel, Beschreibung, Autor, Logo und Fotos.",
     "Keep it on your profile, public or private.": "Behalte es in deinem Profil, öffentlich oder privat.",
     "A .rdbk, a GPX or a PDF.": "Eine .rdbk, ein GPX oder ein PDF.",
+});
+
+/* the remote controller (#909) */
+Object.assign(window.RBi18nLangs.de, {
+    "Remote controller": "Fernbedienung",
+    "Connect your remote to this device, then give each action its buttons: tap Assign and press the button.": "Verbinde deine Fernbedienung mit diesem Gerät und gib jeder Aktion ihre Tasten: Tippe auf Zuweisen und drücke die Taste.",
+    "Restore defaults": "Standard wiederherstellen",
+    "Validate / next note": "Bestätigen / nächste Notiz",
+    "Reader: validates · Tripmaster: marks a note · Recorder: drops a note": "Reader: bestätigt · Tripmaster: markiert eine Notiz · Recorder: setzt eine Notiz",
+    "Previous note": "Vorherige Notiz",
+    "Reader": "Reader",
+    "Auto validation on / off": "Automatische Bestätigung an / aus",
+    "Pause / resume": "Pause / fortsetzen",
+    "Reader · Recorder": "Reader · Recorder",
+    "Reset partial": "Teilstrecke zurücksetzen",
+    "Partial +10 m": "Teilstrecke +10 m",
+    "Partial −10 m": "Teilstrecke −10 m",
+    "Timer start / stop": "Timer start / stopp",
+    "No button": "Keine Taste",
+    "Press a button…": "Drücke eine Taste…",
+    "Assign": "Zuweisen",
+    "Restore the standard buttons? Your own assignments will be lost.": "Standardtasten wiederherstellen? Deine eigenen Zuweisungen gehen verloren.",
 });

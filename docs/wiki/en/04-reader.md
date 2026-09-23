@@ -32,7 +32,6 @@ A roadbook first opens as a **read-only preview**: the note list, no GPS. You ma
 |--------|-------------|
 | **Record a GPX track** | Logs the GPS track of the run (crash-safe) |
 | **Sound on note** | A bell on every validated note, a fanfare on the last one. It plays over your music instead of stopping it |
-| **External remote (bluetooth remote)** | Advance with a Bluetooth pedal or clicker (see §4) |
 
 There is no mode to choose: a roadbook opened from an event that **scores** it runs as a **competition** (your vehicle number is asked, penalties apply, the signed result goes to the event ranking); anything else runs as a **trip**.
 
@@ -71,12 +70,12 @@ Switch **Auto** off: then a tap **anywhere on the active note's row** marks it d
 - Tapping **another** note moves the run there and asks first: the notes in between stay unvalidated, and in competition each scored note skipped costs 450 points
 - In competition you cannot go back to a validated note
 
-### Hands-free with an external remote
-Tick **External remote** in the start dialog to advance without touching the screen.
+### Hands-free with a remote controller
+Any remote that sends keys — a page-turner pedal, a handlebar rally controller, a clicker — drives the Reader while you navigate. It simply works: there is nothing to switch on.
 
-- A Bluetooth **page-turner pedal**, camera clicker or presentation remote pairs as a keyboard: nothing to configure, it works offline, in the browser and in the app
-- **Advance**: → · ↓ · Page ↓ · Space · Enter — **Back**: ← · ↑ · Page ↑ (trip only: a validated note cannot be undone in competition)
-- The setting is remembered on the device, and keys are ignored while you type or a dialog is open
+- Out of the box: → · ↓ · Page ↓ · Space · Enter validate the note, ← · ↑ · Page ↑ go back (trip only: a validated note cannot be undone in competition)
+- Your own buttons: in **Profile → Remote controller**, tap **Assign** next to an action and press the button on your remote. You can bind validate / next, previous, Auto, the note map, pause, and the Tripmaster's controls
+- The buttons are kept on the device, and ignored while you type or a dialog is open
 
 ---
 

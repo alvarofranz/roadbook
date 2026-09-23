@@ -199,6 +199,12 @@
     window.addEventListener('rb-lang', renderGpsHealth);
     renderGpsHealth(); // searching, Start locked, until the first fix
 
+    // The rider's remote controller (#909): while recording, its mapped buttons drop a note and pause
+    RBRemote.attach({
+        next: () => { if (RBGpxRecorder.recording) $('recWpt').click(); },
+        pause: () => { if (RBGpxRecorder.recording) $('recPause').click(); },
+    });
+
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
         if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning: web GPS is unreliable

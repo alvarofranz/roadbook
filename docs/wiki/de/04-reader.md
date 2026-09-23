@@ -32,7 +32,6 @@ Ein Roadbook öffnet sich zuerst als **schreibgeschützte Vorschau**: die Notenl
 |--------|--------------|
 | **GPX-Track aufzeichnen** | Zeichnet den GPS-Track der Fahrt auf (absturzsicher) |
 | **Ton bei Notiz** | Eine Glocke bei jeder validierten Notiz, eine Fanfare bei der letzten. Sie spielt über deiner Musik, statt sie anzuhalten |
-| **Externe Fernbedienung** | Weiterschalten mit einem Bluetooth-Pedal oder -Klicker (siehe §4) |
 
 Es gibt keinen Modus zu wählen: Ein Roadbook, das aus einer Veranstaltung geöffnet wird, die es **wertet**, läuft als **Wettbewerb** (deine Fahrzeugnummer wird abgefragt, Strafen gelten, das signierte Ergebnis geht in die Rangliste der Veranstaltung); alles andere läuft als **Tour**.
 
@@ -71,12 +70,12 @@ Schalte **Auto** aus: Dann markiert ein Tippen **irgendwo auf die Zeile der akti
 - Ein Tippen auf eine **andere** Notiz verlegt die Fahrt dorthin und fragt vorher: Die Notizen dazwischen bleiben unvalidiert, und im Wettbewerb kostet jede übersprungene gewertete Notiz 450 Punkte
 - Im Wettbewerb kannst du nicht zu einer bereits validierten Notiz zurück
 
-### Freihändig mit einer externen Fernbedienung
-Hake im Startdialog **Externe Fernbedienung** an, um weiterzuschalten, ohne den Bildschirm zu berühren.
+### Freihändig mit einer Fernbedienung
+Jede Fernbedienung, die Tasten sendet – ein Blätterpedal, ein Rally-Controller am Lenker, ein Klicker – steuert den Reader während der Navigation. Sie funktioniert einfach: Es gibt nichts einzuschalten.
 
-- Ein Bluetooth-**Blätterpedal**, ein Kamera-Klicker oder ein Präsentations-Presenter koppelt sich als Tastatur: nichts einzurichten, funktioniert offline, im Browser und in der App
-- **Weiter**: → · ↓ · Bild ↓ · Leertaste · Enter — **Zurück**: ← · ↑ · Bild ↑ (nur auf Tour: Im Wettbewerb lässt sich eine validierte Notiz nicht rückgängig machen)
-- Die Einstellung wird auf dem Gerät gespeichert, und Tasten werden ignoriert, während du tippst oder ein Dialog offen ist
+- Ab Werk: → · ↓ · Bild ↓ · Leertaste · Enter bestätigen die Notiz, ← · ↑ · Bild ↑ gehen zurück (nur auf einer Tour: im Wettbewerb lässt sich eine bestätigte Notiz nicht zurücknehmen)
+- Deine eigenen Tasten: unter **Profil → Fernbedienung** tippst du bei einer Aktion auf **Zuweisen** und drückst die Taste der Fernbedienung. Zuweisbar sind bestätigen / nächste, vorherige, Auto, die Notizkarte, Pause und die Bedienelemente des Tripmasters
+- Die Tasten bleiben auf dem Gerät und werden ignoriert, während du tippst oder ein Dialog offen ist
 
 ---
 

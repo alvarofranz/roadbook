@@ -32,7 +32,6 @@ Un roadbook si apre prima in **anteprima di sola lettura**: la lista delle note,
 |---------|-------------|
 | **Registra una traccia GPX** | Registra la traccia GPS del percorso (a prova di crash) |
 | **Suono su nota** | Un campanello a ogni nota validata, una fanfara sull'ultima. Suona sopra la tua musica invece di fermarla |
-| **Telecomando esterno** | Avanza con un pedale o un clicker Bluetooth (vedi §4) |
 
 Non c'è una modalità da scegliere: un roadbook aperto da un evento che lo **punteggia** gira in **competizione** (ti viene chiesto il numero del veicolo, si applicano le penalità, il risultato firmato va nella classifica dell'evento); tutto il resto gira come **viaggio**.
 
@@ -71,12 +70,12 @@ Spegni **Auto**: allora un tocco **in qualsiasi punto della riga della nota atti
 - Toccare **un'altra** nota sposta lì il percorso e chiede prima conferma: le note in mezzo restano non validate, e in competizione ogni nota a punteggio saltata costa 450 punti
 - In competizione non si torna su una nota già validata
 
-### A mani libere con un telecomando esterno
-Spunta **Telecomando esterno** nel dialogo di avvio per avanzare senza toccare lo schermo.
+### A mani libere con un telecomando
+Qualsiasi telecomando che invii tasti — un pedale voltapagina, un controller da rally sul manubrio, un clicker — guida il Reader mentre navighi. Funziona e basta: non c'è niente da attivare.
 
-- Un **pedale voltapagina** Bluetooth, un clicker per foto o un telecomando per presentazioni si abbina come tastiera: niente da configurare, funziona offline, nel browser e nell'app
-- **Avanti**: → · ↓ · Pag ↓ · Spazio · Invio — **Indietro**: ← · ↑ · Pag ↑ (solo in viaggio: in competizione una nota validata non si annulla)
-- L'impostazione resta memorizzata sul dispositivo, e i tasti vengono ignorati mentre scrivi o con un dialogo aperto
+- Di serie: → · ↓ · Pag ↓ · Spazio · Invio convalidano la nota, ← · ↑ · Pag ↑ tornano indietro (solo in viaggio: in gara una nota convalidata non si annulla)
+- I tuoi pulsanti: in **Profilo → Telecomando**, tocca **Assegna** accanto a un'azione e premi il pulsante del telecomando. Puoi assegnare convalida / successiva, precedente, Auto, la mappa della nota, pausa e i comandi del Tripmaster
+- I pulsanti restano sul dispositivo e vengono ignorati mentre scrivi o c'è una finestra aperta
 
 ---
 

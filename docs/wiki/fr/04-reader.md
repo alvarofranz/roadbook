@@ -32,7 +32,6 @@ Un roadbook s'ouvre d'abord en **aperçu en lecture seule** : la liste des notes
 |--------|-------------|
 | **Enregistrer une trace GPX** | Enregistre la trace GPS du parcours (à l'épreuve des plantages) |
 | **Son à chaque note** | Une clochette à chaque note validée, une fanfare à la dernière. Elle joue par-dessus votre musique au lieu de l'arrêter |
-| **Télécommande externe** | Avancez avec une pédale ou un déclencheur Bluetooth (voir §4) |
 
 Il n'y a pas de mode à choisir : un roadbook ouvert depuis un événement qui le **note** roule en **compétition** (votre numéro de véhicule est demandé, les pénalités s'appliquent, le résultat signé va au classement de l'événement) ; tout le reste roule en **balade**.
 
@@ -71,12 +70,12 @@ Coupez **Auto** : un appui **n'importe où sur la ligne de la note active** la m
 - Toucher **une autre** note y déplace le parcours et demande d'abord : les notes intermédiaires restent non validées, et en compétition chaque note notée sautée coûte 450 points
 - En compétition, on ne peut pas revenir sur une note déjà validée
 
-### Mains libres avec une télécommande externe
-Cochez **Télécommande externe** dans la fenêtre de départ pour avancer sans toucher l'écran.
+### Mains libres avec une télécommande
+Toute télécommande qui envoie des touches — une pédale tourne-page, une commande de rallye au guidon, un clicker — pilote le Reader pendant la navigation. Elle fonctionne, tout simplement : rien à activer.
 
-- Une **pédale tourne-page** Bluetooth, un déclencheur photo ou une télécommande de présentation s'appaire comme un clavier : rien à configurer, cela marche hors ligne, dans le navigateur comme dans l'app
-- **Avancer** : → · ↓ · Page ↓ · Espace · Entrée — **Reculer** : ← · ↑ · Page ↑ (en balade seulement : en compétition une note validée ne s'annule pas)
-- Le réglage est mémorisé sur l'appareil, et les touches sont ignorées pendant la saisie ou quand une fenêtre est ouverte
+- Par défaut : → · ↓ · Page ↓ · Espace · Entrée valident la note, ← · ↑ · Page ↑ reviennent en arrière (en balade seulement : en compétition une note validée ne s'annule pas)
+- Tes propres boutons : dans **Profil → Télécommande**, touche **Attribuer** à côté d'une action et appuie sur le bouton de la télécommande. Tu peux attribuer valider / suivante, précédente, Auto, la carte de la note, pause et les commandes du Tripmaster
+- Les boutons restent sur l'appareil et sont ignorés pendant la saisie ou quand une fenêtre est ouverte
 
 ---
 

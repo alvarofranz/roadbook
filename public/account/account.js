@@ -406,6 +406,71 @@
     }
 
     /* ---------- account ---------- */
+    /* ---------- the remote controller (#909) ----------
+       Every action a remote button can run, the buttons bound to it (the user's own mapping, kept on
+       this device by RBRemote), Assign to bind the next button pressed, × to unbind one. A button
+       belongs to one action: binding it elsewhere moves it. Outside Assign, pressing a bound button
+       lights its row, so the remote can be checked right here. */
+    const REMOTE_ACTIONS = {
+        next: ['Validate / next note', 'Reader: validates · Tripmaster: marks a note · Recorder: drops a note'],
+        prev: ['Previous note', 'Reader'],
+        auto: ['Auto validation on / off', 'Reader'],
+        map: ['Note map', 'Reader'],
+        pause: ['Pause / resume', 'Reader · Recorder'],
+        reset: ['Reset partial', 'Tripmaster'],
+        plus10: ['Partial +10 m', 'Tripmaster'],
+        minus10: ['Partial −10 m', 'Tripmaster'],
+        timer: ['Timer start / stop', 'Tripmaster'],
+    };
+    let stopCapture = null, listeningAction = null;
+    function renderRemote() {
+        const map = RBRemote.mapping();
+        $('remoteTable').innerHTML = RBRemote.ACTIONS.map((action) => {
+            const keys = Object.keys(map).filter((k) => map[k] === action);
+            const listening = listeningAction === action;
+            return `<div class="remote-row${listening ? ' listening' : ''}" data-action="${action}">
+                <div class="remote-what"><b>${esc(t(REMOTE_ACTIONS[action][0]))}</b><small>${esc(t(REMOTE_ACTIONS[action][1]))}</small></div>
+                <div class="remote-keys">${keys.length ? keys.map((k) => `<span class="remote-key">${esc(RBRemote.labelOf(k))}<button type="button" data-unbind="${esc(k)}" aria-label="${esc(t('Remove'))}">×</button></span>`).join('') : `<span class="remote-none">${esc(t('No button'))}</span>`}</div>
+                <button class="btn ${listening ? 'btn-primary' : 'btn-ghost'} btn-sm" type="button" data-assign="${action}">${listening ? `<i class="fa-solid fa-hand-pointer"></i> ${esc(t('Press a button…'))}` : `<i class="fa-solid fa-plus"></i> ${esc(t('Assign'))}`}</button>
+            </div>`;
+        }).join('');
+        $('remoteTable').querySelectorAll('[data-assign]').forEach((b) => b.onclick = () => listenFor(b.dataset.assign));
+        $('remoteTable').querySelectorAll('[data-unbind]').forEach((b) => b.onclick = () => {
+            const m = RBRemote.mapping(); delete m[b.dataset.unbind]; RBRemote.saveMapping(m); renderRemote();
+        });
+    }
+    function stopListening() { if (stopCapture) stopCapture(); stopCapture = null; listeningAction = null; }
+    function listenFor(action) {
+        const again = listeningAction === action;
+        stopListening();
+        if (again) { renderRemote(); return; } // a second tap on the waiting button cancels
+        listeningAction = action; renderRemote();
+        stopCapture = RBRemote.capture((key) => {
+            stopListening();
+            if (key && key !== 'Escape') { // Escape cancels
+                const m = RBRemote.mapping(); m[key] = action; RBRemote.saveMapping(m);
+                $('remoteLive').textContent = RBRemote.labelOf(key) + ' → ' + t(REMOTE_ACTIONS[action][0]);
+            }
+            renderRemote();
+        });
+    }
+    $('remoteReset').onclick = async () => {
+        if (!(await RBConfirm(t('Restore the standard buttons? Your own assignments will be lost.')))) return;
+        stopListening(); RBRemote.resetMapping(); $('remoteLive').textContent = ''; renderRemote();
+    };
+    // the check: a bound button pressed here lights its row
+    window.addEventListener('keydown', (e) => {
+        if (listeningAction || $('vAccount').hidden) return;
+        const action = RBRemote.commandFor(e);
+        if (!action) return;
+        e.preventDefault();
+        const row = $('remoteTable').querySelector(`[data-action="${action}"]`);
+        if (!row) return;
+        row.classList.add('hit'); setTimeout(() => row.classList.remove('hit'), 600);
+        $('remoteLive').textContent = RBRemote.labelOf(RBRemote.keyOf(e)) + ' → ' + t(REMOTE_ACTIONS[action][0]);
+    });
+    window.addEventListener('rb-lang', () => { if (!$('vAccount').hidden) renderRemote(); });
+
     async function showAccount(user) {
         me = user;
         show('vAccount'); msg('');
@@ -438,6 +503,7 @@
         if (!user.is_admin && !user.is_organizer) grants.push({ label: t('Basic user'), cls: '' });
         $('grantsList').innerHTML = grants.map((g) => `<span class="u-badge ${g.cls}">${esc(g.label)}</span>`).join('');
         $('pfRunsVis').value = user.runs_visibility || 'ask';
+        renderRemote();
         $('pfRunsSave').onclick = async (e) => {
             const busy = RBBusy(e.currentTarget);
             const r = await api('runs_settings', { runs_visibility: $('pfRunsVis').value });

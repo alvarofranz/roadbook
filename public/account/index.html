@@ -45,6 +45,25 @@
         @media (min-width: 1025px) { .acc-links { display: none; } }
         /* grants recap card (#310) */
         .grants-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+        /* the remote controller table (#909): an action, its buttons as chips, and Assign */
+        .remote-table { display: flex; flex-direction: column; margin: .4rem 0 .6rem; }
+        .remote-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "what assign" "keys keys"; gap: .35rem .7rem; align-items: center; padding: .7rem .2rem; border-bottom: 1px solid var(--line); border-radius: 10px; transition: background .2s ease; }
+        .remote-row:last-child { border-bottom: 0; }
+        .remote-what { grid-area: what; min-width: 0; }
+        .remote-what b { display: block; }
+        .remote-what small { display: block; color: var(--muted); }
+        .remote-keys { grid-area: keys; display: flex; flex-wrap: wrap; gap: .35rem; }
+        .remote-row > .btn { grid-area: assign; }
+        .remote-key { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .25rem .15rem .55rem; border-radius: 8px; background: var(--card-2); border: 1px solid var(--line); font-weight: 700; font-size: .85rem; }
+        .remote-key button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: .1rem .3rem; border-radius: 6px; }
+        .remote-key button:hover { color: var(--track); }
+        .remote-none { color: var(--muted); font-size: .85rem; }
+        /* waiting for a press, and a press recognised */
+        .remote-row.listening { background: rgba(232, 176, 89, .1); }
+        .remote-row.listening > .btn { animation: remote-wait 1.2s ease-in-out infinite; }
+        .remote-row.hit { background: rgba(58, 210, 159, .14); }
+        @keyframes remote-wait { 50% { opacity: .55; } }
+        @media (prefers-reduced-motion: reduce) { .remote-row.listening > .btn { animation: none; } }
     </style>
 </head>
 <body>
@@ -177,6 +196,16 @@
             </select>
             <button class="btn btn-primary" id="pfRunsSave" type="button" data-i18n="Save">Save</button>
         </div>
+        <!-- the remote controller (#909): which of its buttons runs which action, kept on this device -->
+        <div class="auth-card profile-form" id="remoteCard">
+            <h2 data-i18n="Remote controller">Remote controller</h2>
+            <p class="muted small" data-i18n="Connect your remote to this device, then give each action its buttons: tap Assign and press the button.">Connect your remote to this device, then give each action its buttons: tap Assign and press the button.</p>
+            <div class="remote-table" id="remoteTable"></div>
+            <div class="btnrow between">
+                <span class="muted small remote-live" id="remoteLive" aria-live="polite"></span>
+                <button class="btn btn-ghost btn-sm" id="remoteReset" type="button"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Restore defaults">Restore defaults</span></button>
+            </div>
+        </div>
         <div class="auth-card profile-form" id="defaultLocation">
             <h2 data-i18n="Default map location">Default map location</h2>
             <p class="muted small" data-i18n="Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.">Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.</p>
@@ -251,6 +280,7 @@
 <script src="../assets/js/rbzip.js?v=1.9.7-198"></script>
 <script src="../assets/js/roadbook-core.js?v=1.9.7-198"></script>
 <script src="../assets/js/app.js?v=1.9.7-198"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.7-198"></script>
 <script src="account.js?v=1.9.7-198"></script>
 </body>
 </html>
