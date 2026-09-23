@@ -85,7 +85,7 @@ Hake im Startdialog **Externe Fernbedienung** an, um weiterzuschalten, ohne den 
 Nur wenn das Roadbook eine Karte erlaubt: **Karte zur Note** in der Aktionsleiste öffnet eine Minikarte unter der aktiven Note; tippe erneut, um sie zu schließen.
 
 - Sie zeigt den Track, deine Live-Position und in der Ecke die Notennummer mit der verbleibenden Distanz
-- **Eine gelbe Linie** führt dich: die noch zu fahrende Straße bis zur Note
+- **Ein kurzer gelber Pfeil** führt dich: von deiner Position zeigt er direkt auf die Notiz
 - Wird die Note validiert, folgt dir die Karte zur nächsten
 
 ---

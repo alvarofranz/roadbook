@@ -85,7 +85,7 @@ Spunta **Telecomando esterno** nel dialogo di avvio per avanzare senza toccare l
 Solo se il roadbook consente la mappa: **Mappa della nota** nella barra delle azioni apre una mini-mappa sotto la nota attiva; toccala di nuovo per chiuderla.
 
 - Mostra la traccia, la tua posizione live e, nell'angolo, il numero della nota con la distanza che manca
-- Ti guida **una linea gialla**: la strada ancora da fare fino alla nota
+- Ti guida **una freccia gialla** corta: dalla tua posizione punta dritta alla nota
 - Quando la nota viene validata, la mappa ti segue sulla successiva
 
 ---

@@ -85,7 +85,7 @@ Marca **Mando externo** en el diálogo de inicio para avanzar sin tocar la panta
 Solo si el roadbook permite el mapa: **Mapa de la nota** en la barra de acciones abre un minimapa bajo la nota activa; tócalo otra vez para cerrarlo.
 
 - Muestra la traza, tu posición en directo y, en la esquina, el número de la nota con la distancia que falta
-- Te guía **una línea amarilla**: la carretera que queda hasta la nota
+- Te guía **una flecha amarilla** corta: desde tu posición apunta recta a la nota
 - Cuando se valida la nota, el mapa te sigue a la siguiente
 
 ---

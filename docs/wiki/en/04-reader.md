@@ -85,7 +85,7 @@ Tick **External remote** in the start dialog to advance without touching the scr
 Only when the roadbook allows a map: **Note map** in the action bar opens a mini-map under the active note; tap it again to close it.
 
 - It shows the track, your live position and, in the corner, the note number with the distance still to go
-- One **yellow line** guides you: the road still to drive to the note
+- A short **yellow arrow** guides you: from your position it points straight at the note
 - When the note is validated, the map follows you to the next one
 
 ---

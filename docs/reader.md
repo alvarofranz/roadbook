@@ -352,11 +352,11 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   salta di decine di gradi tra un fix e l'altro. Senza abbastanza terreno resta l'ultima rotta,
   quindi il rumore GPS non fa ruotare la mappa. In course-up il **chevron è fisso in alto**
   (tu che vai avanti, `rotationAlignment:'viewport'`) e la mappa gira sotto di lui
-- **Guida al waypoint** (#485 · #849): `setGuide(from, to, path)` disegna **solo una linea** gialla
-  dalla posizione live al waypoint, lungo **la strada ancora da fare** (`RB.routeAhead(...).path`:
-  la traccia dal punto proiettato fino alla nota, quindi piega dove piega la strada). Senza
-  traccia è la linea retta. Nessuna freccia: l'inizio lo segna il chevron, la fine l'alone del
-  waypoint. Sotto i 5 m sparisce (sei arrivato).
+- **Guida al waypoint** (#485 · #890): `setGuide(from, to)` disegna una **freccia corta e dritta**
+  di misura fissa (64 × 20 px, intera a ogni zoom) con la coda sulla posizione live, che **punta alla
+  nota**: una direzione, mai una linea fino alla nota. È ancorata allo spazio mappa
+  (`rotationAlignment: 'map'`), quindi con la mappa girata sulla tua rotta punta alla nota rispetto a
+  dove sei rivolto. Sotto i 5 m sparisce (sei arrivato).
 - **Distanze** (#846 · #847): ogni distanza si legge come la scrive il roadbook, in km con due
   decimali. Il "mancano" della riga attiva e della mappa è misurato **lungo il percorso**
   (`RB.leftToNote` su `RB.routeAhead`: il fix proiettato sulla traccia tra la nota precedente e la

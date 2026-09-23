@@ -85,7 +85,7 @@ Cochez **Télécommande externe** dans la fenêtre de départ pour avancer sans 
 Seulement si le roadbook autorise la carte : **Carte de la note** dans la barre d'actions ouvre une mini-carte sous la note active ; touchez-la à nouveau pour la fermer.
 
 - Elle montre la trace, votre position en direct et, dans le coin, le numéro de la note avec la distance restante
-- **Une ligne jaune** vous guide : la route qu'il reste à parcourir jusqu'à la note
+- **Une courte flèche jaune** vous guide : depuis votre position, elle pointe droit vers la note
 - Quand la note est validée, la carte vous suit sur la suivante
 
 ---

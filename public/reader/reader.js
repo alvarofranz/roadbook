@@ -291,7 +291,7 @@
         lastHere = here; lastAcc = coords.accuracy;
         if (inlineMap && inlineMap.ready) {
             inlineMap.setPosition(here.lat, here.lon, true, meter.heading); // follow: you stay in the middle, the map turns with you
-            if (inlineMapIdx >= 0 && notes[inlineMapIdx]) guideTo(inlineMapIdx, here); // the line follows the live fix
+            if (inlineMapIdx >= 0 && notes[inlineMapIdx]) guideTo(inlineMapIdx, here); // the arrow follows the live fix
         }
         tripTotalM += disp; tripPartialM += disp;
         if (curLimit && curLimit > 0 && speedKmh > curLimit) maxSpdSeg = Math.max(maxSpdSeg, speedKmh);
@@ -359,8 +359,8 @@
     let routeCum = null;
     const ahead = (i, here) => (routeCum && routeCum.length > 1 && here ? RB.routeAhead(rb, routeCum, i, here, tripTotalM) : null);
     const toGoM = (i, here) => RB.leftToNote(rb, routeCum, i, here, tripTotalM);
-    // The note map's guide (#849): the route itself from where you are to the note, no arrow
-    const guideTo = (i, here) => { const a = ahead(i, here); inlineMap.setGuide(here, notes[i], a ? a.path : null); };
+    // The note map's guide (#890): a short straight arrow from where you are, pointing at the note
+    const guideTo = (i, here) => inlineMap.setGuide(here, notes[i]);
     // Whenever the cursor lands on note j — the note before it validated, skipped or jumped past —
     // the odometers re-anchor on the route (#847): the total becomes where the driver really is
     // along it, the partial the distance past note j−1. Projected around that note, so a note

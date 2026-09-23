@@ -531,15 +531,15 @@ describe('a thumbnail that fails to load falls back to the placeholder (#482)', 
     });
 });
 
-describe('per-note map guidance line + 1 cm arrow (#485)', () => {
+describe('per-note map guidance arrow (#485 · #890)', () => {
     const rbmap = read('public/assets/js/rbmap.js');
     const css = read('public/assets/css/app.css');
     const reader = read('public/reader/reader.js');
 
-    it('RBMap paints the guidance through a dedicated source, cleared with nulls', () => {
-        expect(rbmap).toContain("m.addSource('rb-guide'");
-        expect(rbmap).toMatch(/setGuide\(from, to, path\)/);
-        expect(css).not.toContain('rb-guide-arrow'); // a line only (#849)
+    it('RBMap paints the guidance as one arrow marker, cleared with nulls — no line source', () => {
+        expect(rbmap).not.toContain("m.addSource('rb-guide'");
+        expect(rbmap).toMatch(/setGuide\(from, to\)/);
+        expect(css).toMatch(/\.rb-guide-arrow \{ width: 64px; height: 20px;/); // a fixed-size arrow, whole at any zoom (#890)
     });
 
     it('the reader draws the guide on open and follows the live fix', () => {
@@ -548,7 +548,7 @@ describe('per-note map guidance line + 1 cm arrow (#485)', () => {
     });
 
     it('the guide survives style swaps and dies with the map', () => {
-        expect(rbmap).toContain('if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to, this._lastGuide.path)');
+        expect(rbmap).toContain('if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to)');
         expect(rbmap).toContain('this._lastGuide = null;');
     });
 });

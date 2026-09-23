@@ -256,8 +256,7 @@ esso, il punto proiettato `lat`/`lon` e la distanza in metri. Usata dagli strume
 
 `routeAhead(rb, cum, i, here, hintM)` — dove si trova il pilota **lungo il percorso** rispetto
 alla nota `i` (#847): il fix proiettato sulla traccia tra la nota precedente e la successiva →
-`{atM, path, offRouteM}` (metri dall'inizio, la strada ancora da fare fino alla nota, la distanza
-dalla traccia). Se quel tratto passa due volte nello stesso posto, `hintM` (l'odometro) sceglie il
+`{atM, offRouteM}` (metri dall'inizio lungo la traccia GPX, la distanza dalla traccia). Se quel tratto passa due volte nello stesso posto, `hintM` (l'odometro) sceglie il
 passaggio giusto. `leftToNote(rb, cum, i, here, hintM)` — quanto manca alla nota: lungo il percorso,
 mai meno della linea retta. Usate dal Reader (§ Distanze in [reader.md](reader.md)).
 

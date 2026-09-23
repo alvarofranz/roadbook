@@ -125,11 +125,12 @@ describe("the note map is YOUR map: centred on you, turned your way (#536)", () 
         expect(rbmap).toContain('this._lastPos = null;'); // and dropped with the map
     });
 
-    it('the guide is the route still to drive, a line and nothing else (#849)', () => {
-        const guide = rbmap.match(/setGuide\(from, to, path\) \{([\s\S]*?)\n {4}\}/)[1];
-        expect(guide).toContain('const line = path && path.length ? [from, ...path] : [from, to];');
-        expect(rbmap).not.toMatch(/guideArrow|rb-guide-arrow/);
-        expect(js).toContain('inlineMap.setGuide(here, notes[i], a ? a.path : null)');
+    it('the guide is a short straight arrow pointing at the note, never a line (#890)', () => {
+        const guide = rbmap.match(/setGuide\(from, to\) \{([\s\S]*?)\n {4}\}/)[1];
+        expect(guide).toContain("rotationAlignment: 'map'");
+        expect(guide).toContain('RB.geo.bearingDeg(from, to) - 90');
+        expect(rbmap).not.toContain("addSource('rb-guide'");
+        expect(js).toContain('const guideTo = (i, here) => inlineMap.setGuide(here, notes[i]);');
     });
 
     it('asks the core for the course, measured along the ground actually covered (#565)', () => {
