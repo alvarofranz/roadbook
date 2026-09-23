@@ -441,7 +441,15 @@
         });
         $('modeCut').hidden = mapTool !== 'cut'; // Cut joins the rail only while it is the active mode
     }
+    // the mode's name shows beside the rail for 3 s when the mode changes, then the lit button alone says it
+    let modeNameTimer = null;
+    function flashModeName() {
+        const rail = document.querySelector('.mode-rail');
+        rail.classList.add('show-name'); clearTimeout(modeNameTimer);
+        modeNameTimer = setTimeout(() => rail.classList.remove('show-name'), 3000);
+    }
     function setMapTool(tool) {
+        if (tool !== mapTool) flashModeName();
         mapTool = tool; cutFromIdx = -1; drawSeed = []; map.setPin(null); map.setSelectedVertex(null); selVertex = -1;
         if (photoMoveMarker) { photoMoveMarker.remove(); photoMoveMarker = null; } // cancel a photo move on tool switch / Escape
         map.setCursor(tool === 'pan' || tool === 'points' ? '' : 'crosshair'); // Move shows a per-handle grab cursor
@@ -1632,9 +1640,9 @@
         const count = (id) => RB.noteBlocks(n).filter((b) => RB.blockType(b).id === id).length;
         const tab = (id, icon, label, badge) =>
             `<button type="button" class="kind-tab${blockTab === id ? ' on' : ''}" role="tab" aria-selected="${blockTab === id}" data-tab="${id}"><i class="fa-solid ${icon}"></i> ${esc(label)}${badge ? ` <span class="tab-count">${badge}</span>` : ''}</button>`;
-        // two framed groups (#747): the note itself, then the EXTRAS added around it
-        $('kindTabs').innerHTML = `<div class="kind-group">${tab('', 'fa-location-dot', t('Note'), 0) + tab('icon', 'fa-icons', t('Icon'), (n.icons || []).length)}</div>`
-            + `<div class="kind-group extras"><span class="kind-group-label">${esc(t('Extras'))}</span>${RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('')}</div>`;
+        // two framed groups on one row (#747): the note itself left, the material around it right
+        $('kindTabs').innerHTML = `<div class="kind-group">${tab('', 'fa-location-dot', t('Note'), 0) + tab('icon', 'fa-icons', t('Icon'), 0)}</div>`
+            + `<div class="kind-group">${RB.NOTE_BLOCKS.map((k) => tab(k.id, k.icon, t(k.name), count(k.id))).join('')}</div>`;
         $('kindTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = (e) => {
             e.stopPropagation(); blockTab = b.dataset.tab; renderEditor();
         });

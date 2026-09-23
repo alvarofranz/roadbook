@@ -47,7 +47,7 @@
     const NOTE_BLOCKS = [
         { id: 'photo', name: 'Photo', icon: 'fa-image',        image: true, imageMax: 1024 },
         { id: 'ad',    name: 'Ad',    icon: 'fa-rectangle-ad', image: true, imageMax: 512 },
-        { id: 'text',  name: 'Big text', icon: 'fa-align-left' },
+        { id: 'text',  name: 'Heading', icon: 'fa-heading' },
     ];
     const NOTE_BLOCK_BY_ID = Object.fromEntries(NOTE_BLOCKS.map((b) => [b.id, b]));
     // How to draw a block; material of a type this version does not know still reads as text.

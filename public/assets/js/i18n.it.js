@@ -377,7 +377,7 @@
             'Recover unsaved GPX recording?': 'Recuperare la registrazione GPX non salvata?', 'Recover': 'Recupera',
             'Resume the run in progress?': 'Riprendere il percorso in corso?', 'Resume': 'Riprendi',
             'Unsaved work': 'Lavoro non salvato', 'Work left in progress in other tools. Resume it, or discard it.': 'Lavoro lasciato a metà in altri strumenti. Riprendilo o scartalo.', 'Discarded.': 'Scartato.', 'Untitled': 'Senza titolo',
-            'Unsaved draft': 'Bozza non salvata', 'Recording in progress': 'Registrazione in corso', 'Tripmaster run': 'Percorso Tripmaster', 'Run in progress': 'Percorso in corso', 'Every note now validates at this radius.': 'Ora tutte le note si convalidano con questo raggio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Pubblicità', '(caption)': '(didascalia)', 'Text': 'Testo', 'Icon': 'Icona', 'Big text': 'Testo grande', 'Before the note': 'Prima della nota', 'After the note': 'Dopo la nota', 'Add': 'Aggiungi', '(text)': '(testo)', 'Delete this from note {n}?': 'Eliminare questo dalla nota {n}?', 'Compass (CAP)': 'Bussola (CAP)', 'On': 'Attivo', 'Off': 'Disattivato', 'The last note has no note to head toward.': 'L’ultima nota non ha una nota verso cui puntare.', 'solid, thin stroke': 'continuo, tratto sottile', 'Bike lane': 'Pista ciclabile', 'help.cap': 'Se questa nota porta un CAP: la rotta da tenere DOPO di essa, calcolata verso la nota successiva insieme alla distanza in linea retta. Disattivarlo cancella anche il tipo di CAP.', 'Detection radius': 'Raggio di rilevamento', 'Roadbook type': 'Tipo di roadbook', 'Basic (adventure)': 'Base (avventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Raggio di rilevamento predefinito (m)', 
+            'Unsaved draft': 'Bozza non salvata', 'Recording in progress': 'Registrazione in corso', 'Tripmaster run': 'Percorso Tripmaster', 'Run in progress': 'Percorso in corso', 'Every note now validates at this radius.': 'Ora tutte le note si convalidano con questo raggio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Pubblicità', '(caption)': '(didascalia)', 'Text': 'Testo', 'Icon': 'Icona', 'Before the note': 'Prima della nota', 'After the note': 'Dopo la nota', 'Add': 'Aggiungi', '(text)': '(testo)', 'Delete this from note {n}?': 'Eliminare questo dalla nota {n}?', 'Compass (CAP)': 'Bussola (CAP)', 'On': 'Attivo', 'Off': 'Disattivato', 'The last note has no note to head toward.': 'L’ultima nota non ha una nota verso cui puntare.', 'solid, thin stroke': 'continuo, tratto sottile', 'Bike lane': 'Pista ciclabile', 'help.cap': 'Se questa nota porta un CAP: la rotta da tenere DOPO di essa, calcolata verso la nota successiva insieme alla distanza in linea retta. Disattivarlo cancella anche il tipo di CAP.', 'Detection radius': 'Raggio di rilevamento', 'Roadbook type': 'Tipo di roadbook', 'Basic (adventure)': 'Base (avventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Raggio di rilevamento predefinito (m)', 
             'Selective section start': 'Inizio settore selettivo', 'Selective section end': 'Fine settore selettivo',
             'Navigation WP': 'WP di navigazione', 'Masked WP': 'WP nascosto', 'Eclipse WP': 'WP eclipse', 'Control WP': 'WP di controllo', 'Security WP': 'WP di sicurezza', 'Precise WP': 'WP preciso', 'Visible WP': 'WP visibile',
             'Difficult-overtaking zone start': 'Inizio zona sorpasso difficile', 'Difficult-overtaking zone end': 'Fine zona sorpasso difficile',
@@ -1403,7 +1403,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* 1.9.3 — the Editor's Extras group (#747) and the APK builds list (#742) */
 Object.assign(window.RBi18nLangs.it, {
-    "Extras": "Extra",
+    
     "Pre-release": "Pre-release",
     "Built": "Compilato",
 });
@@ -1422,4 +1422,9 @@ Object.assign(window.RBi18nLangs.it, {
     "Where do you usually ride?": "Dove giri di solito?",
     "Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.": "Imposta la tua posizione predefinita: il Recorder e l’Editor aprono la mappa lì finché il GPS non aggancia il segnale. Puoi cambiarla quando vuoi nelle impostazioni dell’account.",
     "Choose on the map": "Scegli sulla mappa",
+});
+
+/* note block: a heading line before/after a note (#747) */
+Object.assign(window.RBi18nLangs.it, {
+    "Heading": "Intestazione",
 });

@@ -339,7 +339,7 @@
             'Recover unsaved GPX recording?': 'Nicht gespeicherte GPX-Aufnahme wiederherstellen?', 'Recover': 'Wiederherstellen',
             'Resume the run in progress?': 'Laufende Fahrt fortsetzen?', 'Resume': 'Fortsetzen',
             'Unsaved work': 'Nicht gespeicherte Arbeit', 'Work left in progress in other tools. Resume it, or discard it.': 'Arbeit in anderen Tools in Bearbeitung. Fortsetzen oder verwerfen.', 'Discarded.': 'Verworfen.', 'Untitled': 'Ohne Titel',
-            'Unsaved draft': 'Nicht gespeicherter Entwurf', 'Recording in progress': 'Aufnahme läuft', 'Tripmaster run': 'Tripmaster-Fahrt', 'Run in progress': 'Fahrt läuft', 'Every note now validates at this radius.': 'Jede Note validiert jetzt mit diesem Radius.', 'Note': 'Note', 'Photo': 'Foto', 'Ad': 'Werbung', '(caption)': '(Bildunterschrift)', 'Text': 'Text', 'Icon': 'Icon', 'Big text': 'Großer Text', 'Before the note': 'Vor der Note', 'After the note': 'Nach der Note', 'Add': 'Hinzufügen', '(text)': '(Text)', 'Delete this from note {n}?': 'Dies von Note {n} löschen?', 'Compass (CAP)': 'Kompass (CAP)', 'On': 'Ein', 'Off': 'Aus', 'The last note has no note to head toward.': 'Die letzte Note hat keine Note, auf die sie zusteuern könnte.', 'solid, thin stroke': 'durchgezogen, dünner Strich', 'Bike lane': 'Radweg', 'help.cap': 'Ob diese Note einen CAP trägt: den Kurs, der NACH ihr zu halten ist, berechnet zur nächsten Note samt Luftlinie. Ausschalten löscht auch den CAP-Typ.', 'Detection radius': 'Erkennungsradius', 'Roadbook type': 'Roadbook-Typ', 'Basic (adventure)': 'Basis (Abenteuer)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Standard-Erkennungsradius (m)', 
+            'Unsaved draft': 'Nicht gespeicherter Entwurf', 'Recording in progress': 'Aufnahme läuft', 'Tripmaster run': 'Tripmaster-Fahrt', 'Run in progress': 'Fahrt läuft', 'Every note now validates at this radius.': 'Jede Note validiert jetzt mit diesem Radius.', 'Note': 'Note', 'Photo': 'Foto', 'Ad': 'Werbung', '(caption)': '(Bildunterschrift)', 'Text': 'Text', 'Icon': 'Icon', 'Before the note': 'Vor der Note', 'After the note': 'Nach der Note', 'Add': 'Hinzufügen', '(text)': '(Text)', 'Delete this from note {n}?': 'Dies von Note {n} löschen?', 'Compass (CAP)': 'Kompass (CAP)', 'On': 'Ein', 'Off': 'Aus', 'The last note has no note to head toward.': 'Die letzte Note hat keine Note, auf die sie zusteuern könnte.', 'solid, thin stroke': 'durchgezogen, dünner Strich', 'Bike lane': 'Radweg', 'help.cap': 'Ob diese Note einen CAP trägt: den Kurs, der NACH ihr zu halten ist, berechnet zur nächsten Note samt Luftlinie. Ausschalten löscht auch den CAP-Typ.', 'Detection radius': 'Erkennungsradius', 'Roadbook type': 'Roadbook-Typ', 'Basic (adventure)': 'Basis (Abenteuer)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Standard-Erkennungsradius (m)', 
             'Selective section start': 'Wertungsabschnitt Start', 'Selective section end': 'Wertungsabschnitt Ende',
             'Navigation WP': 'Navigation WP', 'Masked WP': 'Maskierter WP', 'Eclipse WP': 'Eclipse WP', 'Control WP': 'Kontroll-WP', 'Security WP': 'Sicherheits-WP', 'Precise WP': 'Präzisions-WP', 'Visible WP': 'Sichtbarer WP',
             'Difficult-overtaking zone start': 'Überholverbotszone Beginn', 'Difficult-overtaking zone end': 'Überholverbotszone Ende',
@@ -1263,7 +1263,7 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* 1.9.3 — the Editor's Extras group (#747) and the APK builds list (#742) */
 Object.assign(window.RBi18nLangs.de, {
-    "Extras": "Extras",
+    
     "Pre-release": "Vorabversion",
     "Built": "Erstellt",
 });
@@ -1282,4 +1282,9 @@ Object.assign(window.RBi18nLangs.de, {
     "Where do you usually ride?": "Wo bist du meistens unterwegs?",
     "Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.": "Lege deinen Standardort fest: Recorder und Editor öffnen die Karte dort, bis das GPS ein Signal hat. Du kannst ihn jederzeit in den Kontoeinstellungen ändern.",
     "Choose on the map": "Auf der Karte wählen",
+});
+
+/* note block: a heading line before/after a note (#747) */
+Object.assign(window.RBi18nLangs.de, {
+    "Heading": "Überschrift",
 });

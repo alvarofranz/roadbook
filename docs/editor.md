@@ -66,10 +66,12 @@ si dividono in **mode tool** (toggle esclusivi) e **one-shot** (azioni immediate
 > Caricata una rotta, il modo attivo di **default** è **Move** (`setMapTool('points')` in
 > `setRoadbook`): si trascina qualunque punto — traccia **o** nota — e la linea segue (#61).
 > I quattro modi di tutti i giorni hanno una **barra propria in basso a sinistra** (`.mode-rail`,
-> #692): **M** Move · **N** Aggiungi note · **P** Aggiungi punti · **D** Disegna. Ogni pulsante mostra
-> icona e tasto; quello attivo è acceso e mostra **anche il nome**, così il modo corrente si legge
-> sempre — a clic, da tastiera e su touch (dove i chip dei tasti sono nascosti). Toccare di nuovo il
-> modo attivo riporta a Move. La barra in alto mostra ☰ · Undo · Redo; il menu **☰**
+> #692): **M** Move · **N** Aggiungi note · **P** Aggiungi punti · **D** Disegna. Ogni pulsante è
+> l'icona con la lettera nell'angolo (nascosta su touch); quello attivo è acceso in sabbia e, **quando il
+> modo cambia**, il suo nome compare accanto alla barra per 3 s (`.show-name`, #754). Tutti i controlli
+> della mappa — sinistra, destra (zoom · posizione · layer MapLibre) e la scala — hanno **una sola pelle
+> scura** con l'accento sabbia; nell'Editor non ci sono bussola né indicatore di zoom, e i badge del tipo
+> di waypoint si vedono sempre (`wpIcons`). Toccare di nuovo il modo attivo riporta a Move. La barra in alto mostra ☰ · Undo · Redo; il menu **☰**
 > (`#mapMenuPanel`) contiene **Cut `C`** (entra nella barra dei modi solo mentre è attivo), gli
 > one-shot **Add GPX · Simplify · Adjust** e il foglio **Shortcuts** (`fa-keyboard`). **Esc** (o il
 > completamento di un taglio) riporta a Move. **Reverse** è nei *Settings* del roadbook (§7).
