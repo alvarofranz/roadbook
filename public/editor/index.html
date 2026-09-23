@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-125">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.3-126">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-125">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.3-126">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -127,17 +127,16 @@
         .note-block.block-text .block-text { font-size: 1.05rem; line-height: 1.45; white-space: pre-wrap; text-align: center; font-style: italic; }
         /* the editor tabs: the note itself, or the material around it */
         .kind-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .5rem; }
-        /* the note's own tabs left, the material around it right — one row, two frames (#747) */
+        /* the note's own tabs left, the material around it right — one row, two plain groups (#747) */
         .kind-tabs { justify-content: space-between; }
-        .kind-group { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .22rem; border: 1px solid var(--line); border-radius: 11px; }
+        .kind-group { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
         /* a tab's pane: the zone around it is the box, so the pane draws none of its own */
         .tab-pane { padding-top: .5rem; }
         .kind-tab { display: inline-flex; align-items: center; gap: .3rem; background: var(--card-2); border: 1px solid var(--line); color: var(--muted); border-radius: 9px; padding: .28rem .5rem; font: inherit; font-size: .75rem; font-weight: 700; white-space: nowrap; cursor: pointer; }
         .kind-tab.on { background: var(--sand); border-color: var(--sand); color: var(--on-sand); }
         .kind-tab:disabled { opacity: .4; cursor: not-allowed; }
         /* how many icons / how much material this tab already holds */
-        .kind-tab .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 .25rem; background: rgba(255, 255, 255, .12); border-radius: 999px; font-size: .68rem; font-weight: 800; }
-        .kind-tab.on .tab-count { background: rgba(0, 0, 0, .18); }
+        .kind-tab.has:not(.on) { border-color: var(--sand); color: var(--sand); } /* the note carries this material */
         .note-list-zone > .icon-category { display: flex; align-items: center; gap: .4rem; }
         /* the panel a material tab opens: the control itself — no box inside the box */
         #blockPanel { display: flex; flex-direction: column; gap: .6rem; }
@@ -617,22 +616,22 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.3-125"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.3-125"></script>
-<script src="../assets/js/rbzip.js?v=1.9.3-125"></script>
-<script src="../assets/js/rbmap.js?v=1.9.3-125"></script>
-<script src="../assets/js/cover-map.js?v=1.9.3-125"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.3-125"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.3-125"></script>
-<script src="../assets/js/challenges.js?v=1.9.3-125"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.3-125"></script>
-<script src="../assets/js/rb-transcribe.js?v=1.9.3-125"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.3-125"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.3-125"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.3-125"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.3-125"></script>
-<script src="../assets/js/i18n.js?v=1.9.3-125"></script>
-<script src="../assets/js/app.js?v=1.9.3-125"></script>
-<script src="editor.js?v=1.9.3-125"></script>
+<script src="../assets/js/config.js?v=1.9.3-126"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.3-126"></script>
+<script src="../assets/js/rbzip.js?v=1.9.3-126"></script>
+<script src="../assets/js/rbmap.js?v=1.9.3-126"></script>
+<script src="../assets/js/cover-map.js?v=1.9.3-126"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.3-126"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.3-126"></script>
+<script src="../assets/js/challenges.js?v=1.9.3-126"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.3-126"></script>
+<script src="../assets/js/rb-transcribe.js?v=1.9.3-126"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.3-126"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.3-126"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.3-126"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.3-126"></script>
+<script src="../assets/js/i18n.js?v=1.9.3-126"></script>
+<script src="../assets/js/app.js?v=1.9.3-126"></script>
+<script src="editor.js?v=1.9.3-126"></script>
 </body>
 </html>
