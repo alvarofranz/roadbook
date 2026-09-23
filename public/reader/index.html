@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-141">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-143">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-141">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-143">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -98,6 +98,9 @@
         /* the shell is the screen: a page-level banner would be behind it, so hide it honestly
            (the run was already gated by RBWebGpsConfirm's dialog) */
         body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint, body.rb-immersive .foot { display: none; }
+        /* the run card preview in the report (#785): the 4:5 image, capped so the dialog stays readable */
+        .report-card { margin: .8rem 0 .4rem; text-align: center; }
+        .report-card img { display: block; width: 100%; max-width: 340px; aspect-ratio: 4/5; margin: 0 auto .6rem; border-radius: 14px; border: 1px solid var(--line); background: var(--card-2); object-fit: cover; }
         #prNativeHint { margin: .6rem 1.1rem; }
     </style>
 </head>
@@ -208,6 +211,14 @@
         <h2 id="reportTitle"></h2>
         <div class="muted small" id="reportSub"></div>
         <div id="reportStats"></div>
+        <!-- the run's shareable image (#785): made here, on the device; it also goes to the run on the profile -->
+        <div id="reportCard" class="report-card" hidden>
+            <img id="reportCardImg" alt="">
+            <div class="btnrow">
+                <button class="btn btn-primary" id="cardShare" type="button"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="Share">Share</span></button>
+                <button class="btn btn-ghost" id="cardSave" type="button"><i class="fa-solid fa-download"></i> <span data-i18n="Save image">Save image</span></button>
+            </div>
+        </div>
         <div id="reportQr" hidden>
             <div id="qrImg" class="qr-box"></div>
             <code id="qrMeta" class="qr-code-text"></code>
@@ -223,24 +234,26 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.4-141"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.4-141"></script>
-<script src="../assets/js/rbzip.js?v=1.9.4-141"></script>
-<script src="../assets/js/rbmap.js?v=1.9.4-141"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.4-141"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.4-141"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.4-141"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.4-141"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.4-141"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.4-141"></script>
-<script src="../assets/js/challenges.js?v=1.9.4-141"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.4-141"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.4-141"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.4-141"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.4-141"></script>
-<script src="../assets/js/i18n.js?v=1.9.4-141"></script>
-<script src="../assets/js/app.js?v=1.9.4-141"></script>
-<script src="../assets/js/run-report.js?v=1.9.4-141"></script>
-<script src="reader.js?v=1.9.4-141"></script>
+<script src="../assets/js/config.js?v=1.9.4-143"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.4-143"></script>
+<script src="../assets/js/rbzip.js?v=1.9.4-143"></script>
+<script src="../assets/js/rbmap.js?v=1.9.4-143"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.4-143"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.4-143"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.4-143"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.4-143"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.4-143"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.4-143"></script>
+<script src="../assets/js/challenges.js?v=1.9.4-143"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.4-143"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.4-143"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.4-143"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.4-143"></script>
+<script src="../assets/js/i18n.js?v=1.9.4-143"></script>
+<script src="../assets/js/app.js?v=1.9.4-143"></script>
+<script src="../assets/js/run-report.js?v=1.9.4-143"></script>
+<script src="../assets/js/cover-map.js?v=1.9.4-143"></script>
+<script src="../assets/js/run-card.js?v=1.9.4-143"></script>
+<script src="reader.js?v=1.9.4-143"></script>
 </body>
 </html>

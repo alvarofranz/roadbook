@@ -7,8 +7,8 @@
  * both check that the name, the declared type and the bytes agree. So the matrix is painted
  * onto a canvas here and PNG is the only image format that ever leaves this module.
  *
- * It is also the one place a QR is rendered — the signed run result and the event activation
- * code share this drawing loop.
+ * It is also the one place a QR is built — the signed run result, the event activation code and
+ * the PDF's "digital version" code all come from matrix().
  *
  * The vendor global (`qrcode`) is read at call time, not at load, so this module can be
  * imported into the unit tests with a stub in place. */
@@ -20,11 +20,18 @@
     // Paint `payload` into `canvas` — a real one, or anything exposing width/height and a
     // 2D context. Module size is floored to whole pixels: a half-lit cell is a cell a
     // scanner may read either way, and this QR is a competition result.
-    function draw(canvas, payload) {
+    // The module matrix of `payload`: { modules, isDark(row, col) } — what every rendering paints,
+    // on a canvas here or as vector squares in the PDF (rb-pdf.js).
+    function matrix(payload) {
         const qr = globalThis.qrcode(0, 'M');
         qr.addData(payload);
         qr.make();
-        const modules = qr.getModuleCount();
+        return { modules: qr.getModuleCount(), isDark: (row, col) => qr.isDark(row, col) };
+    }
+
+    function draw(canvas, payload) {
+        const qr = matrix(payload);
+        const modules = qr.modules;
         const width = canvas.width, height = canvas.height;
         const cell = Math.max(1, Math.floor(width / (modules + QUIET_MODULES * 2)));
         const offset = Math.floor((width - cell * modules) / 2); // centre the matrix in its quiet zone
@@ -48,7 +55,7 @@
         return canvas.toDataURL('image/png');
     }
 
-    const RBQr = { draw, dataURL, QUIET_MODULES };
+    const RBQr = { matrix, draw, dataURL, QUIET_MODULES };
     if (typeof window !== 'undefined') window.RBQr = RBQr;
     if (typeof module !== 'undefined' && module.exports) module.exports = RBQr;
 })();

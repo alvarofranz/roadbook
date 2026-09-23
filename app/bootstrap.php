@@ -31,6 +31,7 @@ $CFG = [
     'storage'          => $ROOT . '/storage/users',   // per-user private storage (volume-backed)
     'avatars_dir'      => $ROOT . '/public/avatars',  // public avatars (web: /avatars/)
     'event_logos_dir'  => $ROOT . '/public/event-logos', // public event logos (web: /event-logos/)
+    'run_cards_dir'    => $ROOT . '/public/run-cards',   // shareable run images (web: /run-cards/, #785)
     'photos_dir'       => $ROOT . '/public/photos',   // public photos (web: /photos/)
     'audio_dir'        => $ROOT . '/public/audio',    // public voice notes (web: /audio/)
 ];

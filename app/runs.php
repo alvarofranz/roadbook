@@ -73,7 +73,17 @@ function run_update(array $user, array $d): void {
 function run_delete(array $user, array $d): void {
     run_owned($user, $id = (int)($d['id'] ?? 0));
     db()->prepare('DELETE FROM roadbook_runs WHERE id = ?')->execute([$id]);
+    @unlink(run_card_path($id)); // its shareable image goes with it
     json_out(['ok' => true]);
+}
+/* A run's shareable image (#785), made on the runner's device at the end of the run. Its file
+   name is keyed with the app secret, so the image of a private run cannot be guessed from the
+   run id; the profile hands it out only with the run it belongs to. */
+function run_card_name(int $id): string { global $CFG; return substr(hash_hmac('sha256', 'run-card:' . $id, (string)$CFG['app_secret']), 0, 24) . '.avif'; }
+function run_card_path(int $id): string { global $CFG; return $CFG['run_cards_dir'] . '/' . run_card_name($id); }
+function run_card_url(int $id): ?string {
+    $path = run_card_path($id);
+    return is_file($path) ? '/run-cards/' . run_card_name($id) . '?v=' . filemtime($path) : null;
 }
 // The standing choice for new reports, from the account settings (#619).
 function runs_settings(array $user, array $d): void {
@@ -124,6 +134,7 @@ function profile_get(array $d): void {
             'skipped' => $r['skipped'] ? array_map('intval', explode(',', $r['skipped'])) : [],
             'speed_zones' => (int)$r['speed_zones'], 'speed_exceeded' => (int)$r['speed_exceeded'], 'max_over_kmh' => (int)$r['max_over_kmh'],
             'penalties' => $r['penalties'] ? json_decode($r['penalties'], true) : null, 'is_public' => (int)$r['is_public'],
+            'card' => run_card_url((int)$r['id']), // the shareable image, when the run has one (#785)
         ], $rows),
     ]);
 }
