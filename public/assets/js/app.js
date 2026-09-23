@@ -1192,7 +1192,9 @@
         }
         const file = new File([blob], filename, { type: blob.type });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], text }); } catch (e) { /* cancelled */ }
+            // a dismissed sheet is a choice; a refused one (the tap is long gone after an upload,
+            // NotAllowedError) is not — the file is saved instead of nothing happening
+            try { await navigator.share({ files: [file], text }); } catch (e) { if (e && e.name === 'NotAllowedError') RBDownload(blob, filename); }
             return;
         }
         return RBDownload(blob, filename);
@@ -1299,11 +1301,11 @@
         const ua = navigator.userAgent || '';
         const surface = isNativeApp() ? 'App' : (isStandalone() ? 'PWA' : 'Web');
         const ios = ua.match(/(iPhone|iPad|iPod).*?OS (\d+)[_.](\d+)/);
-        const android = ua.match(/Android (\d+(?:\.\d+)?)(?:; ([^;)]+?))?(?: Build|\))/);
+        const android = ua.match(/Android (\d+(?:\.\d+)?)(?:; ([^;)]+?))?(?: Build|;|\))/);
         // iOS browsers are all WebKit and say so ("Safari/"), naming themselves in their own token
         const browser = /Edg(e|A|iOS)?\//.test(ua) ? 'Edge' : /Firefox\/|FxiOS\//.test(ua) ? 'Firefox' : /Chrome\/|CriOS\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
         const os = ios ? `${ios[1]} · iOS ${ios[2]}.${ios[3]}`
-            : android ? [android[2] && android[2] !== 'K' ? android[2].trim() : '', 'Android ' + android[1]].filter(Boolean).join(' · ')
+            : android ? [android[2] && !['K', 'wv'].includes(android[2].trim()) ? android[2].trim() : '', 'Android ' + android[1]].filter(Boolean).join(' · ')
             : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
         return [surface, surface === 'App' ? '' : browser, os].filter(Boolean).join(' · ').slice(0, 80);
     };
