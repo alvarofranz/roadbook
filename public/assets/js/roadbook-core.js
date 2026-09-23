@@ -960,11 +960,13 @@
     const bareNote = (rb, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: rb.track[idx].lat, lon: rb.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
     // Lengthen the route with another track (the Editor's Add GPX). `piece` is oriented so its
     // FIRST point meets the joined end: after the finish, or — `atStart` — before the start,
-    // running into it. The meeting point is not duplicated, every joined point keeps its
-    // elevation and time (#158) so a later join can still read the time span, the existing notes
-    // keep their own vertices, and a new end note rides the new tip.
+    // running into it. A first point ON the joined end is not duplicated; one merely near it is
+    // kept, the route bridging to it. Every joined point keeps its elevation and time (#158) so a
+    // later join can still read the time span, the existing notes keep their own vertices, and a
+    // new end note rides the new tip.
     function joinTrack(rb, piece, atStart) {
-        const pts = piece.slice(1).map((p) => {
+        const end = atStart ? rb.track[0] : rb.track[rb.track.length - 1];
+        const pts = piece.slice(haversineM(end, piece[0]) < 1 ? 1 : 0).map((p) => {
             const q = { lat: p.lat, lon: p.lon };
             if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
             if (p.t != null) q.t = p.t;

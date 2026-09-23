@@ -247,7 +247,7 @@
     // Show note i on the canvas. One place asks whether it is the roadbook's end note, so the
     // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
     const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
-    canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
+    canvas.onDropIcon((name, pos) => { if (editable()) canvas.addIcon(mkIcon(name, pos)); });
     // A tap on the open note's vignette means working on its icons (#856): open that tab
     $('noteCanvas').addEventListener('click', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } });
     $('addJunction').onclick = () => { if (editable()) canvas.addJunction(); };
@@ -854,6 +854,8 @@
     function histApply(snap) {
         const st = JSON.parse(snap);
         rb = st.rb; sel = Math.max(0, Math.min(st.sel, rb.notes.length - 1)); gaps = st.gaps;
+        // a half-done cut, a selected vertex or a draw seed point at the track just replaced
+        cutFromIdx = -1; drawSeed = []; selVertex = -1; map.setPin(null); map.setSelectedVertex(null);
         dirty = true; exported = false; updateSaveBtn();
         clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 2000);
         fillSettings();
@@ -1242,7 +1244,9 @@
             if (choice === 'cancel') return;
             if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
         }
-        clearDraft();
+        // Read-only under someone else's lock nothing here wrote the checkpoint — it may be a
+        // recovered draft waiting for the lock, so it stays on this device.
+        if (!readOnly()) clearDraft();
         location.href = location.pathname.replace(/[^/]*$/, ''); // close → the editor landing (roadbook list), stripping any ?rb / /<slug>
     }
     $('closeEditor').onclick = leaveEditor;
@@ -1384,7 +1388,7 @@
     async function photoToExtra(i, photo) {
         const n = rb && rb.notes[i];
         if (!n) return;
-        if (photo && !blockOf(n, 'photo')) {
+        if (photo && !blockOf(n, 'photo') && !readOnly()) { // read-only: the note just opens on its Photo tab
             try {
                 const image = await RBImg.toDataURL(await (await fetch(photo.url)).blob(), PHOTO_BLOCK.imageMax);
                 (n.blocks = n.blocks || []).push({ type: 'photo', at: 'after', image });
@@ -2006,7 +2010,7 @@
         }
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
         if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '”?'))) return;
-        delete rb.icons[name]; renderIcons();
+        delete rb.icons[name]; markDirty(); renderIcons(); // a change like any other: saved, checkpointed, undoable
     }
     /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note —
        and one added while a note is open goes straight into its vignette too, since that is what
@@ -2124,7 +2128,7 @@
     async function exportPdf() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         toast('Generating PDF…');
-        // a public roadbook's PDF ends with a QR to its page (#784)
+        // a public roadbook's PDF carries a QR to its page in the header of every page (#810)
         const link = status === 'public' && publicSlug ? RBPublicLink('/challenge/' + encodeURIComponent(publicSlug)) : null;
         try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/', link }); }
         catch (e) { toast(e.message || 'Could not generate the PDF.'); }

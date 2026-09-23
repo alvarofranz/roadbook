@@ -241,8 +241,8 @@ orari (`t`): letti al contrario non descrivono più una registrazione.
 
 `joinTrack(rb, piece, atStart)` — allunga la rotta con un'altra traccia (l'*Add GPX* dell'Editor).
 `piece` è orientato col **primo** punto sull'estremità a cui si aggancia: accodato dopo l'arrivo,
-o — `atStart` — anteposto alla partenza, verso di essa. Il punto d'incontro non si duplica, ogni
-punto aggiunto **tiene `ele` e `t`** (#158; un doppio reverse li perdeva), le note esistenti
+o — `atStart` — anteposto alla partenza, verso di essa. Un primo punto che cade **sull'estremità**
+(< 1 m) non si duplica; uno solo vicino resta, e la rotta lo raggiunge. Ogni punto aggiunto **tiene `ele` e `t`** (#158; un doppio reverse li perdeva), le note esistenti
 restano sui loro vertici (indici spostati, non ri-ancorate nello spazio) e una nuova nota di
 estremità cavalca la nuova punta.
 
