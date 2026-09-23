@@ -657,8 +657,8 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   Navigate / Edit, and the public ones as a carousel. There is no "home" button back to it —
   navigation is the bottom tab bar. The Install chip exists only on the web and opens `/install/`.
 - **Navigation — one section catalog, two presentations (`SECTION`/`WEB_NAV`/`APP_TABS` in
-  `app.js`).** Sections: **Recorder · Editor · Navigate · Events · Profile** (bottom bar) plus
-  **Roadbooks** (web top nav only). *Desktop web* renders the top bar (the Recorder is a
+  `app.js`).** One order everywhere (#807): **Roadbooks · Editor · Recorder · Navigate · Events ·
+  Profile** — the roadbooks first, the Recorder in the middle. *Desktop web* renders the top bar (the Recorder is a
   top-level entry; Reader + Tripmaster collapse into a single **Navigate** entry → the `/navigate/`
   hub). *Every mobile-width
   view — web, PWA and the native app alike* — hides the top bar and shows a fixed icon-only
