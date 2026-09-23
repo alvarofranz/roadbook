@@ -1,8 +1,9 @@
 #!/bin/sh
 #
 # ci_pre_xcodebuild.sh — Xcode Cloud runs this right before `xcodebuild`, after the clone and
-# dependency resolution. It makes the release TAG the single source of truth for the version,
-# exactly like the Android workflow derives versionName from its tag:
+# dependency resolution. It stamps the version from the release tag `ios-X.Y.Z`, which the Deploy
+# workflow cuts from public/version.json on a version bump (the same file the Android workflow reads
+# its versionName from), so every surface ships the same semver:
 #
 #   · MARKETING_VERSION      (CFBundleShortVersionString) ← the semver from the tag `ios-X.Y.Z`
 #   · CURRENT_PROJECT_VERSION (CFBundleVersion / build)   ← Xcode Cloud's monotonic CI_BUILD_NUMBER

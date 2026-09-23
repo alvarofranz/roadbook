@@ -14,7 +14,7 @@ installazione PWA e l'animazione della home. Documento di riferimento per
 ## 1. Bootstrap e radice dell'app
 
 Lo script ricava la propria radice dall'URL dello `<script>` che lo carica, così funziona
-identico alla radice del dominio e in una sottocartella ([app.js:11](../public/assets/js/app.js#L11)):
+identico alla radice del dominio e in una sottocartella:
 
 ```js
 const here = (document.currentScript && document.currentScript.src) || location.href;
@@ -23,98 +23,97 @@ const ROOT = here.replace(/assets\/js\/app\.js.*$/, ''); // .../roadbook/
 
 `ROOT` è il prefisso usato per ogni link, fetch e risorsa generati dal guscio.
 
-C'è anche un rilevamento della **shell nativa** Capacitor ([app.js:15](../public/assets/js/app.js#L15)):
+C'è anche un rilevamento della **shell nativa** Capacitor:
 `isNativeApp()` è vero solo dentro un webview nativo. In quel caso il documento riceve la classe
 `native` (safe-area) e viene caricato il bridge `native.bundle.js`. In un browser normale tutto
 questo è inerte.
 
 ---
 
-## 2. Header e footer globali
+## 2. Header, tab bar e footer globali
 
-`renderChrome()` ([app.js:27](../public/assets/js/app.js#L27)) costruisce l'intera "chrome"
-comune. Viene chiamato subito; un secondo controllo a `DOMContentLoaded`
-([app.js:72](../public/assets/js/app.js#L72)) lo ri-esegue come rete di sicurezza se qualcosa è
-andato in race.
+`renderChrome()` costruisce l'intera "chrome" comune. Viene chiamato subito; un secondo controllo
+a `DOMContentLoaded` lo ri-esegue come rete di sicurezza se l'header è rimasto senza `.topnav`.
 
-**Navigazione.** L'elenco dei tool cambia a seconda della piattaforma
-([app.js:33](../public/assets/js/app.js#L33)):
+**Un catalogo, due presentazioni.** `SECTION` è l'unica fonte di verità della navigazione: per
+ogni sezione `path`, etichetta i18n, icona FontAwesome canonica e `covers` (i prefissi di route
+che la accendono). Due liste ne scelgono l'ordine — lo stesso ovunque (#807), vedi
+[menu.md](menu.md):
 
-| Contesto | Tool nel menu |
-|----------|---------------|
-| App nativa (companion da campo) | Reader · Tripmaster · Recorder |
-| Sito web | Recorder · Editor · Reader · Tripmaster · **Roadbooks** · **Events** |
+| Lista | Dove | Voci |
+|-------|------|------|
+| `WEB_NAV` | top bar (`.topnav`) del **web desktop**, e colonna *Product* del footer | Roadbooks · Editor · Recorder · Navigate · Events |
+| `APP_TABS` | **bottom tab bar** icon-only (`nav.app-tabbar`) su **ogni vista mobile** — web, PWA e app nativa | Back · Roadbooks · Editor · Recorder · Navigate · Events · Profile |
 
-> Le etichette dei tool a due parole vengono spezzate su due righe nella barra desktop
-> (`twoLine` → `<span class="nl-w">`); un'etichetta già HTML (es. lo `Events` tradotto) passa
-> intatta.
+Su mobile il CSS nasconde la top bar e mostra la tab bar; su desktop il contrario. Non esiste un
+menu hamburger né un menu a tutto schermo. *Navigate* copre Reader e Tripmaster (hub
+`/navigate/`), *Events* copre `/event/` e `/ranking/`, *Profile* copre `/account/`. La voce attiva
+è quella il cui nome coincide con il primo segmento del path, altrimenti quella che lo "copre".
+Le etichette comuni (`NAV_TRANSLATE`: Navigate, Events, Profile, Roadbooks) sono `data-i18n`; i
+nomi di prodotto restano in inglese. Nella tab bar *Back* fa `history.back()` (o torna alla home)
+e *Profile* apre il menu account in un *dropup* (§3).
 
-Il link al tool corrente riceve la classe `active`, decisa confrontando il path relativo alla
-`ROOT` con il prefisso del tool ([app.js:30](../public/assets/js/app.js#L30)).
+**Logo / brand.** L'header contiene il brand `RDBK.app` con il logo (`assets/logo.png`) che linka
+alla home.
 
-**Logo / brand.** L'header contiene il brand `RDBK.app` con il logo
-(`assets/logo.png`) che linka alla home ([app.js:41](../public/assets/js/app.js#L41)).
-
-**Menu mobile full-viewport.** Un `<button class="navtoggle">` (icona hamburger) apre/chiude la
-`<nav class="topnav">`. `setOpen(open)` ([app.js:46](../public/assets/js/app.js#L46)):
-
-- aggiunge/toglie `.open` al nav e `.nav-open` all'header (quest'ultima toglie il blur così il
-  menu può coprire l'intera viewport);
-- sincronizza `aria-expanded`;
-- alterna l'icona tra barre (`fa-bars`) e croce (`fa-xmark`).
-
-Il menu si chiude cliccando fuori ([app.js:53](../public/assets/js/app.js#L53)) o cliccando un
-link / un pulsante che **non** sia `.account-button` ([app.js:54](../public/assets/js/app.js#L54)) —
-il pulsante account resta aperto per mostrare il proprio sottomenu.
-
-**Footer.** `renderChrome` crea anche il `<footer class="foot">` con: marchio, link **About**,
-**The .rdbk standard**, **Privacy**, **Terms of Use**, il copyright, la versione corrente
-(`#appVersion`, popolata dal sistema di versione) e il selettore lingua a bandiere. Se `RBi18n`
-non è caricato, il selettore lingua viene nascosto.
+**Footer (#729).** `renderChrome` crea anche il `<footer class="foot">`: il brand con il claim e
+i badge degli store (`[data-get-app="stores"]`), tre colonne — *Product* (`WEB_NAV`), *Resources*
+e *Legal* (da `SITE_LINKS`: Help · Install · The .rdbk standard · What’s new · About · Privacy ·
+Terms of Use · Contact) — e una riga in basso con il selettore lingua (`.lang`, costruito da
+`i18n.js`), il copyright e la versione (`#appVersion`, §5). Il footer è nascosto su mobile: la
+pagina Profile ripete gli stessi link (`RBSiteLinksHTML()` in `#accSiteLinks`) e ha il proprio
+selettore lingua in fondo.
 
 **Banner di sito (#103).** `renderBanner(banner)` inietta, sotto l'header, un avviso di sito
 (`.site-banner`, livello `info`/`warning`, chiudibile) preso dal payload `config.banner`.
 
 ---
 
-## 3. Il controllo account nel menu
+## 3. Il controllo account
 
-`accountControl()` è una IIFE asincrona che chiede all'API chi è loggato (`RBApi('config')`,
-campo `user`), rende il banner di sito e inserisce un controllo nel nav:
+`accountControl()` è una IIFE asincrona che chiede chi è loggato con `RBConfig()` (la chiamata
+`config` con fallback offline), rende il banner di sito e mette il controllo account in coda
+alla `.topnav`:
 
-- **Anonimo** → un'icona-link alla pagina account via `RBLoginUrl()` (che aggiunge `?next=`
-  con il percorso corrente, così dopo il login si torna dov'eri).
-- **Loggato** → un pulsante con lo username che apre un `account-menu` con:
-  - sempre: *My profile*, *My roadbooks*, *Sign out*;
-  - se **admin**: *Public Roadbooks*, *User management*, *Site settings*, *Event management*;
-  - se **organizer** o co-organizzatore di un evento (`is_organizer` / `manages_events`, e non
-    admin): *Event management*.
+- **Anonimo** → un link *Sign in* via `RBLoginUrl()` (che aggiunge `?next=` con il percorso
+  corrente, così dopo il login si torna dov'eri); nella tab bar il tab *Profile* porta lì.
+- **Loggato** → un pulsante con lo username che apre l'`account-menu`. Il menu è **una lista
+  sola**, `accountMenuHTML(user, participant, p)`, resa sia nel dropdown desktop (`acc…`) sia
+  nel dropup della tab bar (`tab…`) e cablata da un solo `wireAccountMenu`:
+  - *My profile* (`/u/<username>`) · *Account settings*;
+  - fuori dalla modalità partecipante: *My roadbooks* · *Public roadbooks*;
+  - i link di gestione di `manageLinks()` (#303): admin → *Event management*, *User management*,
+    *Site settings*, *Roadbook trash*, *Logs*; organizzatore o co-organizzatore
+    (`is_organizer` / `manages_events`) → *Event management*;
+  - *My activity*; in modalità partecipante *Switch to full mode*;
+  - in fondo *Help* · *App Info* · *Sign out*.
+- **Modalità partecipante** (#163): la top bar nasconde i tool e mette in testa il link di ritorno
+  all'evento; la home reindirizza a `/event/<slug>`.
 - Se loggato, la **lingua UI** dell'account viene applicata all'avvio e ogni cambio dal
-  selettore è persistito (`set_lang`).
+  selettore è persistito (`set_lang`). Un nuovo account riceve una volta la domanda sulla
+  posizione predefinita (`askForLocation`, #749).
 
-Il menu si apre col click sul pulsante (con `stopPropagation` così il listener globale non lo
-richiude subito) e si chiude cliccando altrove. *Sign out* chiama `RBApi('logout')` e ricarica
-la pagina.
+Ogni voce del menu porta la sua etichetta come `<span data-i18n>` (`menuLabel`), così un menu
+aperto segue il cambio di lingua (#495). Il menu si apre col click sul pulsante (con
+`stopPropagation` così il listener globale non lo richiude subito) e si chiude cliccando altrove.
 
 > Il **login vero e proprio** vive nella pagina account, non qui (vedi `docs/account-pages.md`).
 > Vale la pena ricordare un dettaglio del flusso: quando l'API risponde con un 429 di
-> rate-limit, la risposta porta un `retry_after` (secondi) e `account.js` (`rateLimited`,
-> [account.js:50](../public/account/account.js#L50)) mostra un toast e avvia un **conto alla
-> rovescia live "Try again in M:SS"** sul bottone Sign in, tenendolo disabilitato finché la
-> finestra non si esaurisce.
+> rate-limit, la risposta porta un `retry_after` (secondi) e `account.js` (`rateLimited`)
+> mostra un toast e avvia un **conto alla rovescia live "Try again in M:SS"** sul bottone Sign
+> in, tenendolo disabilitato finché la finestra non si esaurisce.
 
 ---
 
 ## 4. Service worker
 
-Registrazione network-first con auto-reload all'aggiornamento
-([app.js:79](../public/assets/js/app.js#L79)):
+Registrazione network-first con auto-reload all'aggiornamento:
 
 - registra `sw.js` con `updateViaCache: 'none'` (la cache non serve mai il SW vecchio);
 - memorizza `swReg` (riusato dal hard refresh) e forza subito un `reg.update()`;
 - su `controllerchange` ricarica una sola volta, ma **solo se c'era già un controller** prima
   (`hadController`): così la primissima installazione non provoca un reload inatteso
-  ([app.js:82](../public/assets/js/app.js#L82)).
+ .
 
 ---
 
@@ -131,45 +130,40 @@ se irraggiungibile. Accanto ci sono `RBPlatformName()` (la piattaforma a parole)
 lo stamp `?v=` con cui è stata servita questa pagina). Li usano `checkVersion`, il pop-up
 **App Info** e la pagina About.
 
-`checkVersion()` ([app.js:93](../public/assets/js/app.js#L93)):
+`checkVersion()`:
 
 - chiede la release viva a `RBLiveVersion()`;
 - scrive `v<versione> · build: <build>` in `#appVersion` nel footer;
 - alla **prima** lettura registra solo il riferimento (`appVer`), senza ricaricare;
 - se in seguito la versione cambia, esegue `hardRefresh()`.
 
-`hardRefresh()` ([app.js:109](../public/assets/js/app.js#L109)) aggiorna il SW, cancella **tutte**
+`hardRefresh()` aggiorna il SW, cancella **tutte**
 le cache e fa `location.reload()`.
 
 `checkVersion` gira: subito, ogni **60 secondi** (`setInterval`) e ad ogni ritorno in primo piano
-(`visibilitychange`) ([app.js:114](../public/assets/js/app.js#L114)).
+(`visibilitychange`).
 
 **Quirk — niente reload durante una sessione attiva.** Se un tool imposta `window.RB_BUSY` (es. il
 Reader durante una gara), la versione nuova viene memorizzata ma il refresh è **rimandato**
-(`pendingRefresh`); appena `RB_BUSY` torna falso, al tick successivo scatta il `hardRefresh`
-([app.js:96](../public/assets/js/app.js#L96), [app.js:104](../public/assets/js/app.js#L104)). Se la
+(`pendingRefresh`); appena `RB_BUSY` torna falso, al tick successivo scatta il `hardRefresh`. Se la
 fetch fallisce (offline) non succede nulla: si riprova al tick dopo.
 
 ---
 
-## 6. Pulsante di installazione (PWA) + iOS
+## 6. Il chip Install
 
-Helper di stato ([app.js:119](../public/assets/js/app.js#L119)): `isStandalone()` (già installata),
-`isIOS()` (iPhone/iPad, incluso l'iPad che si presenta come `MacIntel` touch).
+Helper di stato: `isStandalone()` (già installata), `isIOS()` (iPhone/iPad, incluso l'iPad che si
+presenta come `MacIntel` touch), `RBDevice()` (`ios` · `android` · `desktop`, condiviso con la
+guida `/install/`).
 
-Flusso ([app.js:123](../public/assets/js/app.js#L123)):
-
-- su `beforeinstallprompt` il guscio intercetta l'evento, lo memorizza (`deferred`) e mostra il
-  pulsante;
-- su `appinstalled` nasconde il pulsante;
-- `ensureBtn()` crea il pulsante una sola volta dentro la `.topnav` (mai se già standalone)
-  ([app.js:126](../public/assets/js/app.js#L126));
-- `onInstall()` ([app.js:140](../public/assets/js/app.js#L140)): se c'è il `deferred` lancia il
-  prompt nativo; altrimenti, su **iOS** (dove `beforeinstallprompt` non scatta mai) apre una modale
-  con le istruzioni Safari in 3 passi (`showIosModal`, [app.js:152](../public/assets/js/app.js#L152)).
-
-Su iOS non standalone il pulsante viene mostrato già a `DOMContentLoaded`
-([app.js:150](../public/assets/js/app.js#L150)).
+- Il chip **Install** vive nella pila flottante dei chip (`chipStack()`, sopra la tab bar su
+  mobile, in basso a destra su desktop) e non compare mai nell'app nativa, in una PWA già
+  installata, sulla pagina `/install/` stessa, né dopo che l'utente l'ha chiuso con la sua ×
+  (ricordato per dispositivo, #793).
+- Su `beforeinstallprompt` il guscio memorizza l'evento e mostra il chip; su iOS (dove quell'evento
+  non scatta mai) il chip compare a `DOMContentLoaded`.
+- `onInstall()` apre **sempre** la guida `/install/` (#720): su un telefono mette in testa le app
+  native, su un computer offre lei stessa l'installazione one-tap tramite `RBInstallPrompt.fire()`.
 
 ---
 
@@ -182,20 +176,17 @@ pagina**, propone di riprenderlo all'avvio (il Recorder, il Tripmaster, il Reade
 registrazione resterebbe orfana e invisibile. Il guscio la fa emergere **ovunque tranne** nel tool
 che la possiede.
 
-**Pillola in header.** `refreshPendingPill()` ([app.js:490](../public/assets/js/app.js#L490))
-inserisce nella barra — **dentro `.wrap`, non nella `.topnav`**, così resta visibile anche col menu
-mobile chiuso — una pillola **"Unsaved work · N"** che compare **solo** se c'è lavoro in sospeso in
-un *altro* tool. Cliccandola si apre una `RBModal` (`openPendingModal`,
-[app.js:467](../public/assets/js/app.js#L467)) con una riga per ciascun lavoro:
+**Il chip.** `refreshPendingPill()` mette nella pila flottante dei chip (la stessa del chip
+Install, visibile su ogni layout) una pillola **"Unsaved work · N"** che compare **solo** se c'è
+lavoro in sospeso in un *altro* tool. Cliccandola si apre una `RBModal` (`openPendingModal`) con una riga per ciascun lavoro:
 
 - **Resume** → un link al tool relativo (`reader/`, `recorder/`, …), che poi esegue il **proprio**
   flusso di recupero;
 - **Discard** → `RBConfirmDanger` che **nomina** l'elemento (tipo + descrizione), poi rimuove le sue
   chiavi da `localStorage` e ridisegna la lista (regola "conferma prima di distruggere dati").
 
-**La logica pura sta nel core.** `listPending()` ([app.js:456](../public/assets/js/app.js#L456))
-legge le chiavi di `PENDING_KEYS` ([app.js:450](../public/assets/js/app.js#L450)), le passa a
-**`RB.pendingWork(snapshot)`** ([roadbook-core.js:733](../public/assets/js/roadbook-core.js#L733)) e
+**La logica pura sta nel core.** `listPending()` legge le chiavi di `PENDING_KEYS`, le passa a
+**`RB.pendingWork(snapshot)`** (in [roadbook-core.js](../public/assets/js/roadbook-core.js)) e
 **filtra via il tool corrente** (quello già si occupa del proprio recupero). `pendingWork` applica
 lo **stesso** guard "è recuperabile?" che ogni tool usa sul proprio checkpoint e ritorna un
 descrittore per voce — `{ tool, url, keys[], kind, title?, noteCount?, distanceM?, noteIdx?,
@@ -237,7 +228,7 @@ focus-trap e si chiude cliccando sullo sfondo o con Escape (invocando `onDismiss
 | `center` | contenuto centrato (es. `narrow center` in `RBNeedAuth`) |
 
 #### `RBFocusTrap(card, onEscape) → release()`
-([app.js:199](../public/assets/js/app.js#L199)) — Gestione del focus per una `.modal-card`: porta
+Gestione del focus per una `.modal-card`: porta
 il focus dentro, cicla il Tab all'interno e su Escape chiama `onEscape`. Ritorna `release()` che
 sgancia il listener e ripristina il focus precedente. Usata da `RBModal` **e** dai dialoghi statici
 del Reader — una sola casa per la logica.
@@ -259,7 +250,7 @@ Scorciatoia per `RBConfirm(msg, true)` — la conferma usata per **ogni azione c
 (cancellazioni, discard), che per convenzione **nomina** l'oggetto rimosso.
 
 #### `RBWebGpsWarn(msg?)`
-([app.js:1041](../public/assets/js/app.js#L1041)) — Banner che avverte che la GPS del browser è
+Banner che avverte che la GPS del browser è
 inaffidabile sui telefoni. Chiamata una volta per pagina dai tool di navigazione (Recorder,
 Reader, Tripmaster). Inerte nell'app nativa (`.webgps-banner` è nascosto da `.native`). Si chiude
 per **sessione** (`sessionStorage`), quindi non assilla ma riappare a ogni visita — la scelta è
@@ -325,22 +316,22 @@ non riappare. `comp === true` seleziona la variante con copia più severa (prova
 `web.gps.comp.*`); altrimenti usa `web.gps.*`.
 
 #### `RBNeedAuth(msg)` → (apre una modale, nessun ritorno)
-([app.js:290](../public/assets/js/app.js#L290)) — Prompt "serve un account" con CTA verso
+Prompt "serve un account" con CTA verso
 `account/`. `msg` ha un default tradotto.
 
 #### `RBToast(msg)`
-([app.js:234](../public/assets/js/app.js#L234)) — Toast tradotto nell'elemento `#toast` della
+Toast tradotto nell'elemento `#toast` della
 pagina (ogni tool ne spedisce uno vuoto). Imposta `role=status`/`aria-live=polite`, mostra il
 messaggio per **2500 ms**, poi lo nasconde. Se `#toast` non c'è, non fa nulla.
 
 ### Dati / rete
 
 #### `RBApi(action, body) → Promise<object>`
-([app.js:258](../public/assets/js/app.js#L258)) — POST JSON a `api/index.php` con
+POST JSON a `api/index.php` con
 `{ action, ...body }`. Ritorna la risposta parsata, oppure `{ ok: false, error: 'Network error.' }`
 in caso di fallimento di rete. Nelle app native aggiunge l'header `Authorization: Bearer <token>`
 e cattura il token dalle risposte di login (inerte nel browser, dove vale il cookie di sessione
-httponly — vedi [app.js:244](../public/assets/js/app.js#L244)).
+httponly).
 
 #### `RBUpload(fields, file, name) → Promise<object>`
 Carica **un'immagine** su `upload.php`. Riduce prima il file con `RBImg.toBlob`, poi lo invia come
@@ -349,10 +340,10 @@ campo `photo` insieme ai `fields` extra (`type` = avatar/event_logo/photo/cover,
 
 #### `RBUploadAudio(fields, blob, name) → Promise<object>`
 Carica **una clip audio** (una nota vocale) su `upload.php` come campo `audio` — senza passare dal
-downscaler immagini. Usato dal *WP audio* del Recorder e dalla registrazione dell'Editor.
+downscaler immagini. Usato dalla coda media condivisa (`RBMediaQueue`) per le voci di tipo `audio`.
 
 #### `RBDownload(data, filename)`
-([app.js:263](../public/assets/js/app.js#L263)) — Scarica un Blob **o** una URL stringa. Nel browser
+Scarica un Blob **o** una URL stringa. Nel browser
 crea un `<a download>` e lo clicca; **nell'app** `<a download>` è ignorato dalla WebView, quindi il
 file passa da `RBNative.downloadFile`, che risponde con la cartella in cui è finito e da lì il toast
 ("Saved to your Pictures/Downloads folder"). Il `contentType` del blob viaggia col file ed è quello
@@ -361,20 +352,20 @@ che sceglie la cartella su Android — vedi `native/src/save-target.js` (#392).
 ### Immagini
 
 #### `RBImg` — downscaler lato client
-([app.js:167](../public/assets/js/app.js#L167)) — Riduce le foto nel browser **prima** dell'upload,
+Riduce le foto nel browser **prima** dell'upload,
 così non superano mai `post_max_size` di PHP. Usato da avatar, galleria e logo evento.
 
 - `RBImg.toBlob(file, max = 900, q = 0.82) → Promise<Blob>`
-  ([app.js:183](../public/assets/js/app.js#L183)) — un JPEG piccolo per l'upload. Se il file non è
+  — un JPEG piccolo per l'upload. Se il file non è
   un'immagine, o qualcosa fallisce, ritorna il file originale (degrada con grazia).
 - `RBImg.toDataURL(file, max = 256) → Promise<string>`
-  ([app.js:189](../public/assets/js/app.js#L189)) — una data: URI **PNG** per l'embedding (es. il
+  — una data: URI **PNG** per l'embedding (es. il
   logo evento — mantiene la trasparenza). Helper privato `_canvas(file, max)` per il ridimensionamento.
 
 ### Utility stringa
 
 #### `RBesc(s) → string`
-([app.js:229](../public/assets/js/app.js#L229)) — HTML-escape (`& < > "`) per interpolazione sicura
+HTML-escape (`& < > "`) per interpolazione sicura
 in `innerHTML`.
 
 #### `RBSummary(distanceM, noteCount) → string`
@@ -467,8 +458,7 @@ digitato non si perdono); duplica/elimina/cambio-stato ri-chiamano `RBRoadbookLi
 ## 9. `home.js` — la galleria della home
 
 [home.js](../public/assets/js/home.js) anima la **galleria di roadbook pubblici (challenge)** in
-homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
-([home.js:4](../public/assets/js/home.js#L4)).
+homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`.
 
 - Chiama `RBChallenges.listPublic()` per i roadbook pubblici dal database e li mette in cache in
   `cards`; ne mostra solo un **teaser di 6** (la lista completa vive su `/roadbooks`).
@@ -483,8 +473,8 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
 ## 10. Limiti e quirk
 
 - **Un solo IIFE, niente export.** Tutto vive su `window.RB*`; non c'è modularità a moduli ES.
-  L'ordine di caricamento conta: `RBModal`/`RBesc`/`RBt` devono esistere prima dell'uso (l'header
-  usa `RBt` per il pulsante Install, quindi `i18n.js` va caricato prima).
+  L'ordine di caricamento conta: `RBModal`/`RBesc`/`RBt` devono esistere prima dell'uso (la chrome
+  usa `RBt` per le etichette, quindi `i18n.js` va caricato prima).
 - **`renderChrome` viene chiamato fino a due volte** (subito + rete di sicurezza a
   `DOMContentLoaded`): è idempotente perché riusa l'`<header>` esistente, ma la seconda passata
   scatta solo se il nav manca.
@@ -492,8 +482,8 @@ homepage. È una piccola IIFE che esce subito se non trova `#galleryGrid`
   vuoto finché `checkVersion` non riesce.
 - **Il refresh di versione è rimandato, non perso, durante `RB_BUSY`** — ma se la tab resta
   `RB_BUSY` per sempre, l'utente resta sulla versione vecchia finché la sessione non finisce.
-- **Il pulsante Install su iOS è euristico**: si basa su user-agent / `maxTouchPoints`, perché
-  Safari non espone `beforeinstallprompt`. Mostra istruzioni manuali, non un vero prompt.
+- **Il chip Install su iOS è euristico**: si basa su user-agent / `maxTouchPoints`, perché
+  Safari non espone `beforeinstallprompt`. Porta alla guida `/install/`, non a un vero prompt.
 - **L'autenticazione a token è solo per la shell nativa.** Nel browser `RBApi`/`RBUpload` non
   leggono né inviano alcun token: si affidano al cookie di sessione `same-origin`.
 - **`RBUpload` carica una sola immagine** per chiamata (campo `photo`); più file richiedono più

@@ -12,42 +12,14 @@
  * static cache and the CDN edge both key on the URL, and the PWA only force-refreshes when
  * version.json itself moves (#407). Third-party CDN URLs (a scheme, or protocol-relative)
  * are exempt — they are not ours to stamp. */
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-// A local <script src>/<link href> .js/.css reference, with its query string if any.
-const ASSET_REF = /(?:src|href)="([^"]+\.(?:js|css))(\?[^"]*)?"/g;
-const isThirdParty = (url) => /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(url);
-
-/** Every first-party asset reference in one HTML source, as {url, token}; token is null when
- *  the reference carries no ?v= at all. Pure — the unit tests drive this directly. */
-export function assetRefs(html) {
-    const refs = [];
-    for (const m of html.matchAll(ASSET_REF)) {
-        if (isThirdParty(m[1])) continue;
-        const token = m[2] && m[2].startsWith('?v=') ? m[2].slice(3) : null;
-        refs.push({ url: m[1], token });
-    }
-    return refs;
-}
+import { assetRefs, releaseId, htmlFiles } from './assets.mjs';
 
 /** The references in one HTML source that would serve stale, given the expected release id. */
 export function staleRefs(html, release) {
     return assetRefs(html).filter((r) => r.token !== release);
-}
-
-/** The release id version.json describes: the token the stamper writes into every URL. */
-export const releaseId = ({ version, build }) => `${version}-${build}`;
-
-async function htmlFiles(dir) {
-    const out = [];
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
-        const p = join(dir, entry.name);
-        if (entry.isDirectory()) out.push(...await htmlFiles(p));
-        else if (entry.name.endsWith('.html')) out.push(p);
-    }
-    return out;
 }
 
 /** Walk public/ and report every stale or unstamped reference. Returns {release, problems}. */

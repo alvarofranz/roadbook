@@ -76,8 +76,7 @@ non modificabile a mano ([note-canvas.js:208](../public/assets/js/note-canvas.js
   segna il posto. Chi disegna passa i flag (`trunkSegments(note, isEnd, isFirst)`,
   `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)`, `setNote(note, isEnd, isFirst)`) e lo ricava da
   **`RB.isEndNote(notes, i)`** — una regola sola, così Editor, Reader, pagina pubblica ed export
-  PDF concordano su quale sia quella nota (ed è l'ultima **non-commento**: una riga di commento
-  non si naviga e può stare dopo l'arrivo).
+  PDF concordano su quale sia quella nota (l'ultima del roadbook).
 
 > I bearing arrivano dalla traccia (`RB.deriveBearings`), che **salta i vertici duplicati**: un
 > vicino coincidente dava bearing 0° e quindi una freccia puntata dove capita — una nota dritta

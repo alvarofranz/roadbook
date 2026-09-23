@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { assetRefs, staleRefs, releaseId, checkStamp } from '../source/check-stamp.mjs';
+import { assetRefs, releaseId } from '../source/assets.mjs';
+import { staleRefs, checkStamp } from '../source/check-stamp.mjs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

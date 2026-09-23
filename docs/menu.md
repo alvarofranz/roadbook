@@ -1,148 +1,113 @@
 # Struttura menu RDBK.app
 
+Un'unica sorgente di verità: il catalogo `SECTION` in `public/assets/js/app.js`, reso in due
+presentazioni con **lo stesso ordine** (#807) — i roadbook prima, il Recorder al centro:
+
+- `WEB_NAV = ['roadbooks', 'editor', 'recorder', 'navigate', 'events']` — la **top bar** del web
+  desktop, seguita dal controllo account;
+- `APP_TABS = ['back', 'roadbooks', 'editor', 'recorder', 'navigate', 'events', 'profile']` — la
+  **bottom tab bar** icon-only, su *ogni* vista a larghezza mobile (web mobile, PWA e app nativa
+  allo stesso modo). Su mobile la top bar è nascosta via CSS; non c'è hamburger né menu a tutto
+  schermo.
+
 ## Matrice comparativa
 
-| Voce di menu | Web desktop<br>non aut. | Web desktop<br>autenticato | Web desktop<br>admin | Web mobile<br>/ PWA | App nativa<br>iOS/Android | Modalità<br>partecipante |
-|---|---|---|---|---|---|---|
-| **Recorder** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
-| **Editor** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
-| **Navigate** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ❌ |
-| ├ Reader | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ⬜ (solo da evento) |
-| └ Tripmaster | via Navigate | via Navigate | via Navigate | via Navigate | via Navigate | ❌ |
-| **Roadbooks** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ❌ | ❌ |
-| **Events** | ✅ top bar | ✅ top bar | ✅ top bar | ✅ tab bar | ✅ tab bar | ⬜ (solo evento corrente) |
-| ├ Event list | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| └ Ranking | via Events | via Events | via Events | via Events | via Events | ⬜ (solo da evento) |
-| **Profile / Account** | ❌ (Sign in) | ✅ dropdown | ✅ dropdown | ✅ dropdown | ✅ tab bar | ✅ (ridotto) |
-| ├ My profile (`/u/<username>`) | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ├ Account settings | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ├ My roadbooks | — | ✅ | ✅ | ✅ | ✅ | ❌ |
-| ├ Public roadbooks | — | ✅ | ✅ | ✅ | ✅ | ❌ |
-| ├ Guide | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ├ Admin: Public Roadbooks | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: Event management | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: User management | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: Site settings | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: Roadbook trash | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Admin: Logs | — | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ├ Organizer: Event mgmt | — | ✅ (se org) | — | ✅ (se org) | ❌ | ❌ |
-| ├ Organizer: Participant mgmt | — | ✅ (se org) | — | ✅ (se org) | ❌ | ❌ |
-| ├ **Switch to full mode** | — | ❌ | ❌ | ❌ | ❌ | ✅ |
-| └ Sign out | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Home page** | landing marketing | landing marketing | landing marketing | landing marketing | launcher tool | reindirizza a evento |
-| **Footer** | About · Standard · Privacy · Terms · Contact | idem | idem | idem | idem | idem |
+| Voce | Web desktop | Mobile (web · PWA · app nativa) | Modalità partecipante |
+|---|---|---|---|
+| **Roadbooks** (`/roadbooks/`) | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
+| **Editor** | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
+| **Recorder** | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
+| **Navigate** (hub `/navigate/`: Reader + Tripmaster) | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
+| **Events** (anche `/event/` e `/ranking/`) | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
+| **Back** | — | ✅ tab bar (prima voce: `history.back()`, altrimenti la home) | ✅ tab bar |
+| **Profile** | controllo account a destra della top bar | ✅ tab bar (apre il menu account in *dropup*) | ✅ |
+| Link all'evento (`← Nome evento`) | — | — | ✅ top bar, al posto dei tool |
 
-**Legenda:** ✅ = visibile · ❌ = nascosto/non disponibile · ⬜ = visibile ma limitato al contesto evento
+La top bar in modalità partecipante nasconde i link ai tool (`.nav-tool`) e mette in testa il
+link di ritorno all'evento; la tab bar resta quella di sempre.
+
+### Il menu account (`accountMenuHTML`)
+
+Una lista sola, resa nel dropdown desktop (`acc…`) e nel dropup della tab bar (`tab…`) — quindi
+identica su ogni superficie. Non autenticato: al suo posto c'è **Sign in** (il tab Profile porta
+al login).
+
+| Voce | Utente | Organizzatore | Admin | Partecipante |
+|---|---|---|---|---|
+| My profile (`/u/<username>`) | ✅ | ✅ | ✅ | ✅ |
+| Account settings | ✅ | ✅ | ✅ | ✅ |
+| My roadbooks | ✅ | ✅ | ✅ | ❌ |
+| Public roadbooks | ✅ | ✅ | ✅ | ❌ |
+| Event management (`/admin/events/`) | ❌ | ✅ | ✅ | ❌ |
+| User management · Site settings · Roadbook trash · Logs | ❌ | ❌ | ✅ | ❌ |
+| My activity | ✅ | ✅ | ✅ | ✅ |
+| **Switch to full mode** | ❌ | ❌ | ❌ | ✅ |
+| Help · App Info · Sign out | ✅ | ✅ | ✅ | ✅ |
+
+I link di gestione vengono da `manageLinks(user, participant)` (#303).
+
+### Home e footer
+
+- **Home** (`public/index.html`): landing marketing sul web, home dell'app nell'app nativa (#720).
+  In modalità partecipante reindirizza a `/event/<slug>`.
+- **Footer** (solo desktop — nascosto su mobile): colonna *Product* (le voci di `WEB_NAV`),
+  *Resources* (Help · Install · The .rdbk standard · What’s new · About) e *Legal* (Privacy ·
+  Terms of Use · Contact), da `SITE_LINKS`; nella riga in basso il selettore di lingua, © e la
+  versione. Su mobile la pagina Profile ripete gli stessi `SITE_LINKS` (`RBSiteLinksHTML`) e ha il
+  selettore di lingua in fondo.
 
 ## Schema navigazione
 
 ### Web desktop (top bar — `WEB_NAV`)
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ [RDBK.app]  Roadbooks  Editor  Recorder  Navigate  Events   [👤 Acct] │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ [RDBK.app]  Roadbooks  Editor  Recorder  Navigate  Events  [👤 Acct] │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Web mobile / PWA (bottom tab bar — `APP_TABS`)
+### Ogni vista mobile: web, PWA, app nativa (bottom tab bar — `APP_TABS`)
 ```
-┌────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────┐
 │ ← Roadbooks Editor Recorder Navigate Events Profile │
-└────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────┘
 ```
 
-### App nativa iOS/Android (bottom tab bar — `APP_TABS`)
-```
-┌───────────────────────────────────────────────┐
-│ ← Roadbooks Editor Recorder Navigate Events Profile │
-└───────────────────────────────────────────────┘
-```
-
-### Modalità partecipante (dopo `/go/<codice>`)
+### Modalità partecipante (dopo `/go/<codice>`), top bar desktop
 ```
 ┌──────────────────────────────────────┐
-│ [RDBK.app]  ← Nome Evento    [👤 Acct]│
+│ [RDBK.app]  ← Nome Evento   [👤 Acct] │
 └──────────────────────────────────────┘
-  ↓ home page reindirizza a /event/<slug>
-  ↓ nav ridotta: i tool spariscono, resta il back-link all'evento + menu account ridotto
+  ↓ la home reindirizza a /event/<slug>
+  ↓ il menu account perde My roadbooks / Public roadbooks / gestione, e guadagna Switch to full mode
 ```
 
 ## Note
 
-- Un'unica sorgente di verità: il catalogo `SECTION` in `public/assets/js/app.js`. Il web lo rende come top bar (`WEB_NAV`), l'app come bottom tab bar icon-only (`APP_TABS`); la top bar è nascosta via CSS su ogni viewport mobile (web · PWA · nativa), dove prende il posto la tab bar inferiore.
-- La tab bar mostra **5 voci** sia sul web mobile/PWA (`Recorder · Editor · Navigate · Roadbooks · Events`) sia nell'app nativa (`Recorder · Editor · Navigate · Events · Profile`, senza Roadbooks ma con Profile).
-- **Recorder** è una voce di primo livello. **"Navigate"** raggruppa **Reader** e **Tripmaster** (hub `/navigate/`, `covers: ['tripmaster', 'reader']`).
-- Ranking **non ha una voce di menu propria**: è dentro **Events** (`covers: ['event', 'ranking']`) e si apre per singolo roadbook di competizione dalla pagina dell'evento (`?event=<slug>&rb=<slug>`), riservato a partecipanti/organizzatori.
-- I link amministrativi/organizzatore appaiono solo nel dropdown del menu account (web), non nella tab bar dell'app.
-- In modalità partecipante non c'è una tab bar ridotta a 3 voci: i tool si nascondono e resta il back-link all'evento con menu account ridotto (#163).
+- **"Navigate"** raggruppa **Reader** e **Tripmaster** (`covers: ['tripmaster', 'reader']`).
+- Ranking **non ha una voce propria**: è dentro **Events** (`covers: ['event', 'ranking']`) e si
+  apre per singolo roadbook di competizione dalla pagina dell'evento (`?event=<slug>&rb=<slug>`),
+  riservato a partecipanti/organizzatori.
+- La voce attiva: una corrispondenza esatta del primo segmento del path vince, altrimenti la voce
+  che lo "copre" (`covers`).
+- Le etichette delle voci comuni (`Navigate`, `Events`, `Profile`, `Roadbooks`) sono tradotte; i
+  nomi di prodotto (Editor, Recorder) restano così.
 
 ---
 
 ## Scenario evento dal vivo
 
-### Flussi di ingresso
-
 ```
-┌──────────────┐     ┌──────────────────┐     ┌──────────────────────┐
-│ Manifesto    │────→│ Scansiona QR     │────→│ App già installata?  │
-│ con QR       │     │ (/go/<codice>)   │     └──────────┬───────────┘
-└──────────────┘                                       │
-                                                  ┌────┴────┐
-                                                  │         │
-                                                  SI        NO
-                                                  │         │
-                                                  ↓         ↓
-                                          ┌──────────┐  ┌──────────────┐
-                                          │ Apre app  │  │ Store       │
-                                          │ deep link │  │ (Play/AppStore)│
-                                          └────┬─────┘  └──────┬───────┘
-                                               │               │
-                                               │               ↓
-                                               │         ┌──────────┐
-                                               │         │ Installa  │
-                                               │         │ app +     │
-                                               │         │ deep link │
-                                               │         └────┬─────┘
-                                               │               │
-                                               └───────┬───────┘
-                                                       │
-                                                       ↓
-                                              ┌─────────────────┐
-                                              │ /go/<codice>     │
-                                              │ auto-join come   │
-                                              │ pending          │
-                                              └────────┬─────────┘
-                                                       │
-                                              ┌────────┴────────┐
-                                              │                 │
-                                              │                 │
-                                              ↓                 ↓
-                                     ┌──────────────┐   ┌──────────────┐
-                                     │ Già account? │   │ Crea account │
-                                     │              │   │ (login)      │
-                                     └──────┬───────┘   └──────┬───────┘
-                                            │                  │
-                                            └────────┬─────────┘
-                                                     │
-                                                     ↓
-                                           ┌──────────────────┐
-                                           │ Pagina evento    │
-                                           │ (modalità        │
-                                           │  partecipante)   │
-                                           │                  │
-                                           │ Vede:            │
-                                           │ • titolo evento  │
-                                           │ • codice attivaz.│
-                                           │   (6 caratteri)  │
-                                           │ • roadbook       │
-                                           │   (lock se draft)│
-                                           │ • Reader         │
-                                           │ • Ranking        │
-                                           └──────────────────┘
+Manifesto con QR (https://rdbk.app/go/<codice>)
+        │
+        ├── app installata → Universal Link / App Link (#268): l'app esegue event_join via API
+        │                     (Bearer) e apre /event/<slug>
+        │
+        └── app non installata → il browser apre /go/<codice>: auto-join come *pending*
+                                  (login/registrazione prima, se serve, poi ritorno a /go/)
+                                  → pagina evento in modalità partecipante
 ```
 
-### Punti da risolvere
-
-1. **Deep link nativo** — `/go/<codice>` deve funzionare come universal link (iOS) / app link (Android) per aprire l'app direttamente. Oggi non è implementato.
-2. **Poster QR** — il QR sul manifesto codifica `https://rdbk.app/go/<codice>`. Se l'app non è installata → store. Se è installata → apre l'app e arriva alla pagina evento.
-3. **Primo accesso senza account** — il flusso porta al login/registrazione, poi torna al `/go/<codice>`. Funziona già.
-4. **Nav in modalità partecipante** — i tool si nascondono (topnav) e il menu account si riduce; non esiste una tab bar dedicata a 3 voci (scelta implementativa, #163).
+Non esiste un vero *deferred deep link* (i link portano solo a un'app già installata): per chi
+installa l'app dopo, l'iscrizione fatta sul web resta sull'account, quindi basta accedere per
+ritrovare l'evento. La pagina evento mostra al partecipante il titolo, il codice di attivazione, i
+roadbook (bloccati se in bozza), il Reader e la Ranking.
