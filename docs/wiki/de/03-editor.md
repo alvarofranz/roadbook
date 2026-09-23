@@ -41,8 +41,8 @@ Die Karte ist das Herzstück. Darauf liegen zwei Leisten:
 
 | Modus | Taste | Funktion |
 |------|-------|---------|
-| **Verschieben** (Standard) | `M` | Zieht **jeden beliebigen Punkt**: Spurpunkt, Note oder Foto. Die Linie folgt. Metriken werden beim Loslassen neu berechnet |
-| **Notizen hinzufügen** | `N` | Tap auf die Route → setzt dort eine Note. Der Modus bleibt aktiv, so kannst du mehrere nacheinander setzen |
+| **Verschieben** (Standard) | `M` | Zieht **jeden beliebigen Punkt**: Spurpunkt, Notiz oder Foto. Die Linie folgt. Metriken werden beim Loslassen neu berechnet |
+| **Notizen hinzufügen** | `N` | Tap auf die Route → setzt dort eine Notiz. Der Modus bleibt aktiv, so kannst du mehrere nacheinander setzen |
 | **Punkte hinzufügen** | `P` | Tap auf die bestehende Route → fügt einen Punkt in diesen Abschnitt ein. Braucht eine Route |
 | **Zeichnen** | `D` | Jeder Tap fügt einen **neuen** Punkt hinzu und verlängert die Route ab ihrem nächstgelegenen offenen Ende (Start, Ziel oder Rand eines offenen Schnitts); ein Tap auf den gegenüberliegenden Rand eines Schnitts schließt ihn. Ist nichts geladen, erstellen die ersten zwei Taps das roadbook |
 | **Schneiden** | `C` | Menü ☰ → Schneiden (erscheint nur während er aktiv ist in der Modusleiste). 2 Punkte tippen → schneiden (lässt Lücke = *gap*) |
@@ -65,7 +65,7 @@ Erneutes Tippen auf den aktiven Modus kehrt zu **Verschieben** zurück; ebenso `
 
 ### Rechtsklick-Menü (langes Drücken auf Touch)
 
-Eine dunkle Karte im Stil der App. Oben steht, was getroffen wurde — eine Note (mit ihrer Nummer), ein Spurpunkt oder „diese Stelle" — samt Koordinaten und einem Button, der sie mit einem Klick kopiert. Darunter die Befehle in Gruppen (Bearbeiten · Fotos · in Google Maps / Google Earth öffnen), jeder mit seiner Taste. Die Pfeiltasten bewegen sich durch die Befehle; `Esc` oder ein Klick daneben schließt es.
+Eine dunkle Karte im Stil der App. Oben steht, was getroffen wurde — eine Notiz (mit ihrer Nummer), ein Spurpunkt oder „diese Stelle" — samt Koordinaten und einem Button, der sie mit einem Klick kopiert. Darunter die Befehle in Gruppen (Bearbeiten · Fotos · in Google Maps / Google Earth öffnen), jeder mit seiner Taste. Die Pfeiltasten bewegen sich durch die Befehle; `Esc` oder ein Klick daneben schließt es.
 
 ### Tastenkürzel
 
@@ -79,10 +79,10 @@ Dieselben Buchstaben gelten im Rechtsklick-Menü und auf einem ausgewählten Spu
 
 | Taste | Aktion |
 |-------|--------|
-| `N` | In eine Note umwandeln / Note hinzufügen |
+| `N` | In eine Notiz umwandeln / Notiz hinzufügen |
 | `P` | Spurpunkt hinzufügen |
 | `I` | Zwischenpunkt |
-| `T` | Note in einen Spurpunkt umwandeln |
+| `T` | Notiz in einen Spurpunkt umwandeln |
 | `Del` | Löschen |
 
 ---
@@ -101,20 +101,20 @@ Ein innerer Schnitt hinterlässt eine **echte Lücke** (kein Segment). Gespeiche
 
 Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt sich** unter diese Zeile (einziges physisch verschobenes `#noteEditZone`). Vignetten-Canvas (`#canvasWrap`) verschiebt sich IN die Tulpen-Zelle.
 
-> 📸 *Screenshot: Notiz-Panel mit geöffnetem Inline-Editor auf einer Note*
+> 📸 *Screenshot: Notiz-Panel mit geöffnetem Inline-Editor auf einer Notiz*
 
-### Felder pro Note
+### Felder pro Notiz
 
 | Feld | Bearbeitung | Hinweis |
 |-------|---------------|------|
 | **Testo** | `textarea` direkt (behält Fokus) | Aktualisiert Modell ohne Rebuild |
-| **Road type** | Select „Road" → setzt `road_type_out` | Nur die Straße, die du **verlässt**, ist zulässig; Ankunft leitet sich aus `road_out` der vorigen Note ab |
+| **Road type** | Select „Road" → setzt `road_type_out` | Nur die Straße, die du **verlässt**, ist zulässig; Ankunft leitet sich aus `road_out` der vorigen Notiz ab |
 | **Danger** | Select `—` / `!` / `!!` / `!!!` → `n.danger` | 0 = entfernt |
-| **CAP** | Zeilen-Toggle → berechnet `bearingDeg` + `haversineM` zur nächsten Note | Letzte Note: kein CAP |
+| **CAP** | Zeilen-Toggle → berechnet `bearingDeg` + `haversineM` zur nächsten Notiz | Letzte Notiz: kein CAP |
 | **Icone / Vignette** | `NoteCanvas` auf `#noteCanvas` | Standard-Palette + eingebettete Custom-Icons (siehe § unten) |
 
 ### Ziehen auf der Karte (Tool Verschieben)
-Note wird vom blauen Marker gezogen → verschiebt den **Spur-Eckpunkt** darunter → Linie folgt. Note bewegt sich wie ein Spur-Punkt.
+Notiz wird vom blauen Marker gezogen → verschiebt den **Spur-Eckpunkt** darunter → Linie folgt. Notiz bewegt sich wie ein Spur-Punkt.
 
 ### Umordnen / Löschen
 Pfeile ↑/↓ (ändert `sel` ±1), `Del` → `delNote` (Minimum 2 Notizen). **Zentriert Karte nicht neu** (Fix #65).
@@ -177,7 +177,7 @@ Tap auf Pin / Miniatur → Vollbild-Betrachter (deckt nur die Karte ab, **nicht*
 
 ## Sprachnotizen — Player
 
-Bereits aufgenommene Sprachnotizen werden server-seitig gespeichert (`roadbook_audio`, `audio_list`/`audio_delete`). Jede erscheint als **Audio-Player** auf der nächstgelegenen Notizzeile (≤80m), mit einem **×** zum Löschen (die Bestätigung nennt die Note).
+Bereits aufgenommene Sprachnotizen werden server-seitig gespeichert (`roadbook_audio`, `audio_list`/`audio_delete`). Jede erscheint als **Audio-Player** auf der nächstgelegenen Notizzeile (≤80m), mit einem **×** zum Löschen (die Bestätigung nennt die Notiz).
 
 ---
 
@@ -210,7 +210,7 @@ Checkboxen: **Spur** (Pflicht für Garmin/OSMAnd), **Waypoint**, **Garmin-Icons*
 
 | Aspekt | Regel |
 |---------|--------|
-| **Proprietà** | `setOwnership(isOwner, owner)`: Co-Editor sieht Note *Solo il proprietario può cambiare la visibilità* (nur der Eigentümer kann die Sichtbarkeit ändern); Save des Co-Editors **behält Veröffentlichungsstatus des Eigentümers bei** |
+| **Proprietà** | `setOwnership(isOwner, owner)`: Co-Editor sieht Notiz *Solo il proprietario può cambiare la visibilità* (nur der Eigentümer kann die Sichtbarkeit ändern); Save des Co-Editors **behält Veröffentlichungsstatus des Eigentümers bei** |
 | **Soft lock** | `setLock(lock)`: wenn `lock.mine===false` → Editor read-only + `lockBanner` (@user bearbeitet gerade). Wer den Lock hält, erneuert ihn alle 4 min (`rb_lock_refresh`), gibt ihn beim Schließen frei (`sendBeacon` → `rb_lock_release`). Erzwingbar (`rb_lock_force`) |
 | **Chiudi** | `leaveEditor` (Button `#closeEditor`): nicht gespeicherte Änderungen → *Salva e chiudi · Chiudi senza salvare · Annulla* (Speichern und schließen · Ohne Speichern schließen · Abbrechen) → zurück zur **Editor-Landing** (roadbook-Liste), nicht Home; räumt `?rb=`/`/<slug>` auf |
 
@@ -243,7 +243,7 @@ Bei **Export/Save**: `recomputeMetrics` hängt Notizen an Spur (lat/lon, distanc
 
 - `RB.bareNote` gibt `num: 0` aus → korrekte Nummerierung nach `recomputeMetrics` (die Zeilen rufen es sofort auf)
 - Standard-Autor kann leeres Feld beim Login überschreiben (hängt von Promise-Reihenfolge `account` ab)
-- `spliceByIndex` hängt alle Notizen mit `nearestIdx` neu an → kann Note unintuitiv verschieben, wenn Variante nahe an „alter" Note vorbeiführt
+- `spliceByIndex` hängt alle Notizen mit `nearestIdx` neu an → kann Notiz unintuitiv verschieben, wenn Variante nahe an „alter" Notiz vorbeiführt
 - Offene Schnitte → gerade geschlossen (vorausgehend `confirmOpenCuts`)
 - Fotos erfordern **bereits gespeichertes** roadbook (`currentRbId > 0` / `draftId`)
 
