@@ -5,6 +5,7 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
+    $('rbVehicles').querySelector('.segmented').innerHTML = RBVehicleSegmentsHTML();
     RBConfig().then((cfg) => {
         const isAdmin = !!(cfg.user && cfg.user.is_admin);
         const gallery = RBChallenges.gallery({

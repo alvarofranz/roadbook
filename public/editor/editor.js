@@ -1086,6 +1086,7 @@
     /* ---------- account: save to profile · draft/ready/public · load by ?rb ---------- */
     let meUser = null, currentRbId = 0, status = 'draft', reusable = false; // reusable (#106): server-side flag, may others copy this public roadbook
     let vehicles = ['car']; // #713: which vehicles the route suits — server-side, set by the owner, never empty
+    document.querySelector('#vehField .segmented').innerHTML = RBVehicleSegmentsHTML();
     function paintVehicles() {
         document.querySelectorAll('[data-vehicle]').forEach((b) => {
             const on = vehicles.includes(b.dataset.vehicle);

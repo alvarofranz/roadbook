@@ -33,7 +33,9 @@ describe('roadbook vehicles', () => {
         expect(editor).toContain("if (vehicles.includes(v) && vehicles.length === 1) return toast('A roadbook suits at least one vehicle.');");
         expect(editor).toContain('vehicles, roadbook: RB.roadbookForExport(rb)');
         expect(fs.readFileSync('public/assets/js/challenges.js', 'utf8')).toContain('RB.filterByVehicles(');
-        const gallery = fs.readFileSync('public/roadbooks/index.html', 'utf8');
-        for (const v of ['car', 'moto', 'bike']) expect(gallery).toContain(`data-vehicle="${v}"`);
+        // the gallery's toggles come from the one vehicle table, which covers the whole catalog
+        const table = fs.readFileSync('public/assets/js/app.js', 'utf8').match(/const VEHICLE_ICON = \{([^}]*)\}/)[1];
+        for (const v of ['car', 'moto', 'bike']) expect(table).toContain(`${v}: [`);
+        expect(fs.readFileSync('public/roadbooks/roadbooks.js', 'utf8')).toContain('RBVehicleSegmentsHTML()');
     });
 });
