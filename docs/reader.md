@@ -243,9 +243,13 @@ del tratto a punteggio costa anche la sua penalità.
 
 Il report va **prima sul dispositivo** (`RBRun.enqueue`, `assets/js/run-report.js`), poi il
 checkpoint della sessione si cancella e parte l'upload (`run_save`): offline o senza login resta in
-coda e sale al prossimo `RBRun.flush` (all'avvio del Reader, all'evento `online`). Con la
-preferenza `ask` il report chiede *Keep private* / *Make public* con *Remember my choice*;
-altrimenti salva con la preferenza. Una run di gara di un roadbook di evento entra da sola nella
+coda e sale al prossimo `RBRun.flush` (all'avvio del Reader, all'evento `online`). Chi vede la run è
+un interruttore **Private / Public** nel report (#820): con la preferenza `public`/`private` parte già
+scelto e la run si salva subito; con `ask` nulla è scelto (con *Remember my choice*) e **Done** resta
+disattivato finché non si sceglie, perché una run non scelta non lascerebbe mai il dispositivo.
+Una volta salvata, lo stesso interruttore la cambia (`run_update`), e Share manda la pagina `/run/<id>`
+solo finché è pubblica. Il report parte dalla card (con un segnaposto della sua misura mentre si
+disegna), Share subito sotto, poi l'interruttore, le cifre e il QR di gara. Una run di gara di un roadbook di evento entra da sola nella
 classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
 
 Mentre il report si legge, il Reader crea la **card condivisibile** della run (#785,

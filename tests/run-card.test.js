@@ -26,10 +26,10 @@ describe('the report shows, shares and attaches it', () => {
     it('renders it while the report is read and shares it through RBShareFile', () => {
         expect(reader).toContain('const cardP = makeCard(report, user);');
         expect(reader).toContain("$('cardShare').onclick = () => { if (cardBlob) RBShareFile(cardBlob, cardName(),");
-        expect(read('public/reader/index.html')).toMatch(/<div id="reportCard" class="report-card" hidden>/);
+        expect(read('public/reader/index.html')).toContain('<div class="report-card" id="reportCard">');
     });
     it('uploads it to the run once the run is saved on the profile', () => {
-        expect(reader).toMatch(/const done = \(saved\) => \{\s*attachCard\(saved\);/);
+        expect(reader).toContain("if (saved) { choice = saved.is_public ? 'public' : 'private'; followCard(); }");
         expect(reader).toContain("RBUpload({ type: 'run_card', run: String(saved.id) }");
     });
     it('the result QR shares through the same helper', () => {
@@ -69,7 +69,7 @@ describe('the run’s shareable page (#803)', () => {
         expect(read('public/.htaccess')).toContain('RewriteRule ^run/([0-9]+)$ /run/index.php?id=$1 [L]');
     });
     it('is what Share sends once the run is public, from the report and the profile', () => {
-        expect(reader).toContain("if (saved.is_public) cardLink = RBPublicLink('/run/' + saved.id);");
+        expect(reader).toContain("cardLink = saved && saved.is_public ? RBPublicLink('/run/' + saved.id) : null;");
         expect(read('public/assets/js/profile-page.js')).toContain("RBPublicLink('/run/' + b.dataset.runId)");
     });
 });

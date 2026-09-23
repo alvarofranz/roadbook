@@ -968,10 +968,10 @@ Object.assign(window.RBi18nLangs.de, {
     "Saved to your profile — private.": "In deinem Profil gespeichert – privat.",
     "Saved on this device — it uploads to your profile as soon as you are online.": "Auf diesem Gerät gespeichert – es wird in dein Profil geladen, sobald du online bist.",
     "Sign in to keep this report on your profile — it waits on this device until you do.": "Melde dich an, um diesen Bericht in deinem Profil zu behalten – bis dahin wartet er auf diesem Gerät.",
-    "Show this run on your public profile?": "Diese Fahrt in deinem öffentlichen Profil zeigen?",
+    
     "Remember my choice": "Meine Wahl merken",
-    "You can change it any time in your profile settings.": "Du kannst es jederzeit in deinen Profileinstellungen ändern.",
-    "Keep private": "Privat behalten",
+    
+    
     "Make public": "Öffentlich machen",
     "Distance": "Distanz",
     "Time": "Zeit",
@@ -1349,4 +1349,11 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "Record a track": "Spur aufzeichnen",
     "Record while you add notes": "Aufzeichnen und dabei Noten setzen",
+});
+
+/* the end of a run (#820) */
+Object.assign(window.RBi18nLangs.de, {
+    "Done": "Fertig",
+    "Who sees this run": "Wer diese Fahrt sieht",
+    "Choose who sees this run to save it to your profile.": "Wähle, wer diese Fahrt sieht, um sie in deinem Profil zu speichern.",
 });

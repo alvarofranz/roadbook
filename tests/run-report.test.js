@@ -35,10 +35,18 @@ describe('the end of a run (#618)', () => {
     it('the report modal has no dismiss — its exits are explicit outcomes', () => {
         expect(reader).toContain("openModal('reportModal', () => {});");
     });
-    it('with the "ask" preference both answers save it, with Remember my choice (#619)', () => {
-        expect(reader).toContain('data-vis="private"');
-        expect(reader).toContain('data-vis="public"');
-        expect(reader).toContain("RBRun.update(key, { ready: true, visibility: b.dataset.vis, remember: box.querySelector('#reportRemember').checked });");
+    it('who sees the run is a Private/Public switch: the first pick saves it, with Remember my choice (#619 · #820)', () => {
+        expect(reader).toContain("segment('private', 'fa-lock', 'Private')}${segment('public', 'fa-globe', 'Public')}");
+        expect(reader).toContain("if (first) { RBRun.update(key, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked }); return upload(); }");
+    });
+    it('a saved run flips visibility from the same switch, and an unpicked one cannot be left behind (#820 · #460)', () => {
+        expect(reader).toContain("const x = await RBApi('run_update', { id: saved.id, is_public: v === 'public' ? 1 : 0 });");
+        expect(reader).toContain("$('reportDone').disabled = !choice;");
+    });
+    it('the card is the hero, Share under it, with a placeholder at its size while it renders (#820)', () => {
+        const html = fs.readFileSync('public/reader/index.html', 'utf8');
+        expect(html).toMatch(/<div class="report-card" id="reportCard">\s*<div class="report-card-frame"><img id="reportCardImg" alt="" hidden><\/div>/);
+        expect(html).toContain('.report-card-frame:has(img[hidden])::after');
     });
 });
 
