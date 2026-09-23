@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-139">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.4-140">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-139">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.4-140">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -82,8 +82,11 @@
            rows running behind the action row. Here the bars are ordinary flow items: they
            cannot float, cannot be overlapped and cannot go out of date, and iOS rubber-banding
            happens inside the list, where it belongs. The insets are handled once, here. */
+        /* z-index 65: above every piece of page chrome (the sticky header, the footer, the tab bar at
+           60) so none of it paints over the tool on a wide screen (#776); below the toast (70) and
+           the dialogs (300), which must stay on top of it */
         body.rb-immersive #navScreen {
-            position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;
+            position: fixed; inset: 0; z-index: 65; display: flex; flex-direction: column; overflow: hidden;
             padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
             background: var(--bg);
         }
@@ -94,7 +97,7 @@
         body.rb-immersive .fabrow { position: static; flex: none; }
         /* the shell is the screen: a page-level banner would be behind it, so hide it honestly
            (the run was already gated by RBWebGpsConfirm's dialog) */
-        body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint { display: none; }
+        body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint, body.rb-immersive .foot { display: none; }
         #prNativeHint { margin: .6rem 1.1rem; }
     </style>
 </head>
@@ -220,24 +223,24 @@
 <div id="toast" class="toast" hidden></div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.4-139"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.4-139"></script>
-<script src="../assets/js/rbzip.js?v=1.9.4-139"></script>
-<script src="../assets/js/rbmap.js?v=1.9.4-139"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.4-139"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.4-139"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.4-139"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.4-139"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.4-139"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.4-139"></script>
-<script src="../assets/js/challenges.js?v=1.9.4-139"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.4-139"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.4-139"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.4-139"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.4-139"></script>
-<script src="../assets/js/i18n.js?v=1.9.4-139"></script>
-<script src="../assets/js/app.js?v=1.9.4-139"></script>
-<script src="../assets/js/run-report.js?v=1.9.4-139"></script>
-<script src="reader.js?v=1.9.4-139"></script>
+<script src="../assets/js/config.js?v=1.9.4-140"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.4-140"></script>
+<script src="../assets/js/rbzip.js?v=1.9.4-140"></script>
+<script src="../assets/js/rbmap.js?v=1.9.4-140"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.4-140"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.4-140"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.4-140"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.4-140"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.4-140"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.4-140"></script>
+<script src="../assets/js/challenges.js?v=1.9.4-140"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.4-140"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.4-140"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.4-140"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.4-140"></script>
+<script src="../assets/js/i18n.js?v=1.9.4-140"></script>
+<script src="../assets/js/app.js?v=1.9.4-140"></script>
+<script src="../assets/js/run-report.js?v=1.9.4-140"></script>
+<script src="reader.js?v=1.9.4-140"></script>
 </body>
 </html>
