@@ -5,7 +5,7 @@ import fs from 'fs';
 /* Guided tours (#906): asked once, each tool once, always skippable. RBTour is lifted out of app.js
    and run against a real DOM; RBConfirm is the only stub (it answers the one-time question). */
 const app = fs.readFileSync('public/assets/js/app.js', 'utf8');
-const src = app.slice(app.indexOf("    const TOUR_OPTIN = 'rb_tour_optin'"), app.indexOf('    // Cloudflare Turnstile: ONE loader'));
+const src = app.slice(app.indexOf('    // The device\'s answers'), app.indexOf('    // Cloudflare Turnstile: ONE loader'));
 let asked;
 const load = (answer) => {
     asked = 0;
@@ -55,6 +55,22 @@ describe('RBTour', () => {
         await window.RBTour('tripmaster', steps); await tick();
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
         expect(document.querySelector('.tour')).toBeNull();
+    });
+});
+
+describe('a new tour generation (#914)', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        document.body.innerHTML = '<button id="a">A</button><button id="b">B</button>';
+        for (const el of document.querySelectorAll('button')) el.getBoundingClientRect = () => ({ left: 10, top: 10, right: 60, bottom: 40, width: 50, height: 30 });
+    });
+    it('hands the tours back to a device that answered an older one', async () => {
+        localStorage.setItem('rb_tour', JSON.stringify({ gen: 1, optin: 'no', seen: ['reader'] }));
+        load(true);
+        await window.RBTour('reader', steps); await tick();
+        expect(asked).toBe(1);                             // asked again
+        expect(document.querySelector('.tour')).not.toBeNull(); // and shown
+        expect(JSON.parse(localStorage.getItem('rb_tour'))).toMatchObject({ gen: 2, optin: 'yes', seen: ['reader'] });
     });
 });
 

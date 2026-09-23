@@ -1316,23 +1316,28 @@
        from its first step, so an interrupted one (a reload, a crash) never comes back. A step whose
        control is not on screen is left out. steps: [{ target: CSS selector, title, text }] — short English
        source strings: a title of a word or two and one line saying what the control does. */
-    const TOUR_OPTIN = 'rb_tour_optin', TOUR_SEEN = 'rb_tour_seen';
-    const tourGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-    const tourSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    // The device's answers — { gen, optin: 'yes'|'no', seen: [tool ids] } — belong to one tour
+    // GENERATION: raising TOUR_GEN hands the tours back to everyone, as if never answered (#914).
+    const TOUR_KEY = 'rb_tour', TOUR_GEN = 2;
+    function tourState() {
+        try { const s = JSON.parse(localStorage.getItem(TOUR_KEY) || 'null'); if (s && s.gen === TOUR_GEN) return s; } catch (e) {}
+        return { gen: TOUR_GEN, optin: null, seen: [] };
+    }
+    const saveTour = (s) => { try { localStorage.setItem(TOUR_KEY, JSON.stringify(s)); } catch (e) {} };
     let touring = false;
     window.RBTour = async (id, steps) => {
-        const seen = (tourGet(TOUR_SEEN) || '').split(',').filter(Boolean);
-        if (touring || seen.includes(id) || tourGet(TOUR_OPTIN) === 'no') return;
+        const state = tourState();
+        if (touring || state.seen.includes(id) || state.optin === 'no') return;
         const onScreen = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
         const live = steps.map((s) => ({ title: s.title, text: s.text, el: document.querySelector(s.target) })).filter((s) => onScreen(s.el));
         if (!live.length) return;
         touring = true;
-        if (tourGet(TOUR_OPTIN) !== 'yes') {
+        if (state.optin !== 'yes') {
             const yes = await RBConfirm(RBt('Take a quick tour? Each tool shows you its main controls once, the first time you open it.'));
-            tourSet(TOUR_OPTIN, yes ? 'yes' : 'no');
+            state.optin = yes ? 'yes' : 'no'; saveTour(state);
             if (!yes) { touring = false; return; }
         }
-        tourSet(TOUR_SEEN, [...new Set(seen.concat(id))].join(','));
+        state.seen = [...new Set(state.seen.concat(id))]; saveTour(state);
         const root = document.createElement('div');
         root.className = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
         root.innerHTML = '<div class="tour-hole"></div><div class="tour-bubble" aria-live="polite"><b class="tour-title"></b><p class="tour-text"></p>'

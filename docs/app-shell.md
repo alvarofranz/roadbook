@@ -523,10 +523,13 @@ La prima volta che si apre uno strumento, i suoi comandi principali vengono indi
 schermo scurito, un foro con un anello dorato che pulsa sopra il comando, e un fumetto che lo indica
 con titolo, una frase, i puntini di avanzamento, **Salta tutorial** e **Avanti**.
 
-- **Si chiede una volta sola**, per sempre (`RBConfirm`, No / Sì, `rb_tour_optin`). Con un No non
-  compare più nessun tour, da nessuna parte.
-- Dopo un Sì, **ogni strumento mostra il suo tour una volta** (`rb_tour_seen`). Conta come visto dal
+- **Si chiede una volta sola**, per sempre (`RBConfirm`, No / Sì). Con un No non compare più nessun
+  tour, da nessuna parte.
+- Dopo un Sì, **ogni strumento mostra il suo tour una volta**. Conta come visto dal
   primo passo, così un tour interrotto non torna. Salta ed Esc lo chiudono per sempre.
+- Le risposte del dispositivo stanno in `rb_tour` (`{ gen, optin, seen }`) e valgono per una
+  **generazione** di tour: alzare `TOUR_GEN` in `app.js` li ridà a tutti, come se non avessero mai
+  risposto (#914, oggi 2).
 - Un passo il cui comando non è sullo schermo viene saltato.
 - `steps: [{ target, title, text }]` sono stringhe sorgente inglesi brevi, tradotte con `RBt`.
 - I tour: Reader (all'inizio della navigazione, da fermi), Recorder (all'inizio della registrazione),
