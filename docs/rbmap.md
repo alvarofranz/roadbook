@@ -134,8 +134,9 @@ Metodi correlati:
   marcia sia in alto, col chevron fisso dritto in alto sullo schermo (`rotationAlignment:
   'viewport'`, #565); a nord bloccato il chevron è ancorato alla mappa e mostra la rotta. Senza `heading` resta il puntino tondo
   (es. l'Editor) ([rbmap.js:152](../public/assets/js/rbmap.js#L152)).
-- **`setHeadingUp(on)`** + opzione costruttore **`{headingToggle:true}`** — bottone di
-  controllo che alterna heading-up ↔ nord bloccato (off → torna a nord). Usato dal Recorder.
+- **`headingUp()`** / **`setHeadingUp(on)`** — legge / imposta heading-up ↔ nord bloccato (off →
+  torna a nord); l'opzione costruttore **`{headingToggle:true}`** aggiunge il bottone di controllo.
+  Il Recorder usa il proprio pulsante nella griglia di cattura.
 - **`setOverlay(pts)`** — overlay verde su `rb-live` per una sub-traccia "adjust on the
   trail" in corso, mantenendo visibile la traccia base
   ([rbmap.js:171](../public/assets/js/rbmap.js#L171)).

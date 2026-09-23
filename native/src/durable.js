@@ -13,7 +13,8 @@
 // reports waiting to upload, and every crash checkpoint of a session in progress.
 export const DURABLE_KEYS = [
     'rb_token', 'rb_cfg_user', 'rb_participant', 'rb_pending_runs',
-    'rb_session', 'rb_session_roadbook', 'rb_recorder_session', 'rb_tripmaster_session', 'rb_trip_gpx',
+    'rb_session', 'rb_session_roadbook', 'rb_recorder_session', 'rb_recorder_pending_save',
+    'rb_tripmaster_session', 'rb_trip_gpx', 'rb_editor_draft',
 ];
 export const SENTINEL = 'rb_durable';
 export const isDurable = (key) => DURABLE_KEYS.includes(key);

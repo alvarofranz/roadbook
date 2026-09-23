@@ -5,7 +5,7 @@
     <!-- Native app: flag the document so the launcher shows instead of the marketing home
          (CSS toggles `.web-only`/`.app-only`). Set before paint to avoid a flash; inert in a browser.
          External (not inline) so the CSP can forbid inline scripts — see public/.htaccess. -->
-    <script src="assets/js/native-detect.js?v=1.9.5-165"></script>
+    <script src="assets/js/native-detect.js?v=1.9.5-166"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
     <title data-i18n="seo.home.title">RDBK.app — digital roadbooks for your adventures</title>
@@ -33,8 +33,8 @@
     <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96x96.png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=1.9.5-165">
-    <link rel="stylesheet" href="assets/css/app.css?v=1.9.5-165">
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css?v=1.9.5-166">
+    <link rel="stylesheet" href="assets/css/app.css?v=1.9.5-166">
 </head>
 <body>
 <header class="topbar"></header>
@@ -52,9 +52,8 @@
             </div>
             <!-- the apps, across the full width of the hero (#725) -->
             <div class="hero-stores" data-get-app="stores"></div>
-            <!-- Full-width "how it works" strip below the hero so the four steps + arrows lay out on
-                 one clean row on desktop/tablet and wrap to a 2×2 grid on phones. -->
-            <!-- how it works: four numbered steps on one even row (a 2×2 grid on a phone), #725 -->
+            <!-- how it works: a full-width strip below the hero, four numbered steps on one even row
+                 (a 2×2 grid on a phone), #725 -->
             <ol class="workflow" aria-label="Workflow" data-i18n-aria="Workflow">
                 <li><a class="wf-step" href="features/recorder/"><i class="fa-solid fa-circle-dot"></i><span data-i18n="flow.s1">Record a route</span></a></li>
                 <li><a class="wf-step" href="features/editor/"><i class="fa-solid fa-pen-ruler"></i><span data-i18n="flow.s2">Build a roadbook</span></a></li>
@@ -72,8 +71,8 @@
                 <h2 data-i18n="flow.title">Everything you need</h2>
             </div>
             <div class="flow">
-                <div class="step"><i class="fa-solid fa-circle-dot"></i><h4 data-i18n="feat.2.t">Roadbook Recorder</h4><p data-i18n="feat.2.d">Record a Roadbook with waypoints, voice memos, photos and geotags.</p><a class="feat-more" href="features/recorder/" data-i18n="Learn more →">Learn more →</a></div>
-                <div class="step"><i class="fa-solid fa-pen-ruler"></i><h4 data-i18n="feat.1.t">Roadbook Editor</h4><p data-i18n="feat.1.d">Build a roadbook from a GPX, Design each note with rally standards.</p><a class="feat-more" href="features/editor/" data-i18n="Learn more →">Learn more →</a></div>
+                <div class="step"><i class="fa-solid fa-circle-dot"></i><h4 data-i18n="feat.2.t">Roadbook Recorder</h4><p data-i18n="Record a Roadbook with notes, photos and geotags.">Record a Roadbook with notes, photos and geotags.</p><a class="feat-more" href="features/recorder/" data-i18n="Learn more →">Learn more →</a></div>
+                <div class="step"><i class="fa-solid fa-pen-ruler"></i><h4 data-i18n="feat.1.t">Roadbook Editor</h4><p data-i18n="Build a roadbook from a GPX; design each note with rally standards.">Build a roadbook from a GPX; design each note with rally standards.</p><a class="feat-more" href="features/editor/" data-i18n="Learn more →">Learn more →</a></div>
                 <div class="step"><i class="fa-solid fa-compass"></i><h4 data-i18n="feat.4.t">Roadbook Reader</h4><p data-i18n="feat.4.d">Navigate with odometer, bearing, a live map and the CAP direction bar.</p><a class="feat-more" href="features/reader/" data-i18n="Learn more →">Learn more →</a></div>
                 <div class="step"><i class="fa-solid fa-gauge-high"></i><h4 data-i18n="feat.5.t">Tripmaster</h4><p data-i18n="feat.5.d">A precise GPS odometer with no roadbook — partial and total distance.</p><a class="feat-more" href="features/tripmaster/" data-i18n="Learn more →">Learn more →</a></div>
                 <div class="step"><i class="fa-solid fa-ranking-star"></i><h4 data-i18n="feat.7.t">Event classification</h4><p data-i18n="feat.7.d">Run a rally on one roadbook: compare every team's run — accuracy, CAP, speed and regularity — into a final classification, from signed result QRs.</p><a class="feat-more" href="features/ranking/" data-i18n="Learn more →">Learn more →</a></div>
@@ -95,13 +94,13 @@
 
     <!-- APP HOME (native app only, #720): an app's opening screen, not a web page — who you are, the
          one big action, quick ways in, your own roadbooks. Navigation from here is the bottom bar. -->
-    <section class="block app-only app-home">
+    <section class="block app-only">
         <div class="wrap">
             <div class="app-head">
                 <img class="app-logo" src="assets/logo.png" alt="" width="40" height="40">
                 <div class="grow"><h2 class="app-title">RDBK</h2><p class="muted small app-hello" id="appHello" hidden></p></div>
             </div>
-            <a class="app-primary" href="recorder/"><i class="fa-solid fa-circle-dot"></i><span class="grow"><b data-i18n="Record a route">Record a route</b><small data-i18n="GPS track, notes, photos and voice memos">GPS track, notes, photos and voice memos</small></span><i class="fa-solid fa-chevron-right"></i></a>
+            <a class="app-primary" href="recorder/"><i class="fa-solid fa-circle-dot"></i><span class="grow"><b data-i18n="Record a route">Record a route</b><small data-i18n="GPS track, notes and photos">GPS track, notes and photos</small></span><i class="fa-solid fa-chevron-right"></i></a>
             <nav class="app-quick" aria-label="RDBK sections" data-i18n-aria="RDBK sections">
                 <a class="launch-tile" href="navigate/"><i class="fa-solid fa-location-arrow"></i><span class="launch-name" data-i18n="Navigate">Navigate</span></a>
                 <a class="launch-tile" href="editor/"><i class="fa-solid fa-pen-ruler"></i><span class="launch-name" data-i18n="Editor">Editor</span></a>
@@ -129,13 +128,13 @@
 
 </main>
 
-<script src="assets/js/i18n.es.js?v=1.9.5-165"></script>
-<script src="assets/js/i18n.it.js?v=1.9.5-165"></script>
-<script src="assets/js/i18n.de.js?v=1.9.5-165"></script>
-<script src="assets/js/i18n.fr.js?v=1.9.5-165"></script>
-<script src="assets/js/i18n.js?v=1.9.5-165"></script>
-<script src="assets/js/roadbook-core.js?v=1.9.5-165"></script>
-<script src="assets/js/challenges.js?v=1.9.5-165"></script>
-<script src="assets/js/app.js?v=1.9.5-165"></script>
-<script src="assets/js/home.js?v=1.9.5-165"></script></body>
+<script src="assets/js/i18n.es.js?v=1.9.5-166"></script>
+<script src="assets/js/i18n.it.js?v=1.9.5-166"></script>
+<script src="assets/js/i18n.de.js?v=1.9.5-166"></script>
+<script src="assets/js/i18n.fr.js?v=1.9.5-166"></script>
+<script src="assets/js/i18n.js?v=1.9.5-166"></script>
+<script src="assets/js/roadbook-core.js?v=1.9.5-166"></script>
+<script src="assets/js/challenges.js?v=1.9.5-166"></script>
+<script src="assets/js/app.js?v=1.9.5-166"></script>
+<script src="assets/js/home.js?v=1.9.5-166"></script></body>
 </html>

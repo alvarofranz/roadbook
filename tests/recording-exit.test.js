@@ -27,13 +27,18 @@ describe('the crash checkpoint stays on until the recording lands somewhere', ()
     it('a track too short to keep clears it, since no modal will offer it', () => {
         const stop = recorder.match(/\$\('recStop'\)\.onclick = async \(\) => \{[\s\S]*?\n {4}\};/)[0];
         // …after naming what would be lost when notes/photos were captured (#647), No going back to recording
-        expect(stop).toContain("clearSession(); RBGpxRecorder.clearCheckpoint(); return toast(t('Route too short to save.'));");
-        expect(stop).toContain('RBGpxRecorder.resume(r.name); startMeter(); return;');
+        expect(stop).toContain("discardRecording(); return toast(t('Route too short to save.'));");
+        // …and a No resumes from every point end() handed over, with the clock frozen meanwhile
+        expect(stop).toContain('RBGpxRecorder.resume(r.name, r.pts); startMeter(); return;');
+        expect(stop).toMatch(/Finish the recording\?'\)\)\)\) return;\n\s+elapsedAcc = elapsed\(\); segStart = 0;/);
     });
 
     it('every outcome clears it, and nothing else does (#791)', () => {
-        // saved into the draft · stashed before sign-in · discarded after the confirm
-        expect((finishModal.match(/RBGpxRecorder\.clearCheckpoint\(\); clearSession\(\);/g) || []).length).toBe(3);
+        // saved into the draft · discarded after the confirm; the sign-in stash replaces the two
+        // others and stays until the save lands
+        expect((finishModal.match(/clearRecording\(\);/g) || []).length).toBe(1);
+        expect((finishModal.match(/discardRecording\(\);/g) || []).length).toBe(1);
+        expect(finishModal).toContain('RBGpxRecorder.clearCheckpoint(); clearSession(); // the stash is the copy now');
         // a failed save keeps it: the button resets and the recording is still there
         expect(finishModal).toContain("if (!built) { busy.reset(); return; }");
     });
@@ -83,7 +88,8 @@ describe('a finished recording survives a crash until it lands (#647 · #686)', 
     it('declining the GPX recovery keeps the recording, and Yes does not drop it early', () => {
         const offer = gpx.match(/async function offerRecovery\(\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(offer).not.toContain('removeItem');
-        expect(offer).toContain('RBCheckpoint.decline(CHECKPOINT_KEY);'); // marked, never deleted (#436)
+        expect(offer).toContain('decline();'); // marked, never deleted (#436)
+        expect(gpx).toContain('const decline = () => RBCheckpoint.decline(CHECKPOINT_KEY);');
         expect(offer).toContain('saved.declined) return;');
     });
 });

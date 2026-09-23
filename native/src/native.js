@@ -238,13 +238,14 @@ async function joinEvent(code) {
     // On failure the pending code is left in place; the next launch / sign-in retries it.
 }
 
-// Replay a join deferred while the user was signed out (runs on every app page load).
+// Replay a join deferred while the user was signed out (runs on every app page load). The code
+// stays stored until joinEvent lands it, so a failed join is retried on the next load.
 async function consumePendingJoin() {
     const code = localStorage.getItem(PENDING_JOIN);
     if (!code) return;
     await whenAppReady();
     const cfg = await window.RBConfig();
-    if (cfg && cfg.user) { localStorage.removeItem(PENDING_JOIN); joinEvent(code); }
+    if (cfg && cfg.user) await joinEvent(code);
 }
 
 function runDeepLink(action) {
@@ -264,7 +265,7 @@ App.getLaunchUrl().then((res) => {
     if (url) { try { sessionStorage.setItem(LAUNCH_HANDLED, url); } catch (e) {} }
     runDeepLink(action);
 }).catch(() => {});
-consumePendingJoin();
+consumePendingJoin().catch(() => {}); // offline or a failed call: the code waits for the next load
 
 /* Durable storage (#778, durable.js). Every write to a durable key goes to localStorage as usual
  * and is mirrored into native Preferences; at startup a wiped storage is refilled from them, and
