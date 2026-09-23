@@ -28,8 +28,27 @@ function issue_api_token(int $uid): string {
     db()->prepare('INSERT INTO api_tokens (token_hash, user_id) VALUES (?, ?)')->execute([token_hash($raw), $uid]);
     return $raw;
 }
+// Sign a user out of every app: drop their Bearer tokens — all of them, or all but the one the
+// current request carries ($keepToken, the device that changed its own password). Web sessions are
+// PHP file sessions with no per-user index, so they end on their own expiry.
+function revoke_api_tokens(int $uid, ?string $keepToken = null): void {
+    if ($keepToken) db()->prepare('DELETE FROM api_tokens WHERE user_id = ? AND token_hash <> ?')->execute([$uid, token_hash($keepToken)]);
+    else db()->prepare('DELETE FROM api_tokens WHERE user_id = ?')->execute([$uid]);
+}
 
+// The signed-in user, looked up once per request: require_user, participant_context and the
+// config call all ask, and the Bearer path costs a SELECT + an UPDATE each time. The cache is
+// keyed on the credentials the request carries, so a login (a new session uid) or a logout (an
+// emptied session) within the same request is seen at once.
 function current_user(): ?array {
+    static $cache = null;
+    $key = (int)($_SESSION['uid'] ?? 0) . '|' . (bearer_token() ?? '');
+    if ($cache !== null && $cache[0] === $key) return $cache[1];
+    $user = current_user_lookup();
+    $cache = [$key, $user];
+    return $user;
+}
+function current_user_lookup(): ?array {
     $uid = !empty($_SESSION['uid']) ? (int)$_SESSION['uid'] : 0;
     if (!$uid && ($tok = bearer_token())) {            // no cookie session → try a Bearer token (native apps)
         $st = db()->prepare('SELECT user_id FROM api_tokens WHERE token_hash = ?');
@@ -159,6 +178,8 @@ function change_password(array $user, array $d): void {
         if ($h && !password_verify((string)($d['current'] ?? ''), $h)) fail('Current password is wrong.', 403);
     }
     db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
+    // every other app signed in to this account is signed out; the device making the change keeps its token
+    revoke_api_tokens((int)$user['id'], empty($_SESSION['uid']) ? bearer_token() : null);
     log_activity((int)$user['id'], 'password_change');
     json_out(['ok' => true, 'message' => 'Password updated.']);
 }
@@ -419,12 +440,22 @@ function social_auth(string $provider, array $identity, array $d): void {
     $st = db()->prepare("SELECT id, blocked FROM users WHERE $column = ?"); $st->execute([$sub]);
     $u = $st->fetch(); $linkEmail = false;
     if (!$u) {
-        $st = db()->prepare('SELECT id, blocked FROM users WHERE email = ?'); $st->execute([$email]);
+        $st = db()->prepare('SELECT id, blocked, email_verified FROM users WHERE email = ?'); $st->execute([$email]);
         $u = $st->fetch(); $linkEmail = (bool)$u;   // an existing password account with the same (provider-verified) email
     }
 
     if ($u) {
-        if ($linkEmail) db()->prepare("UPDATE users SET $column = ?, email_verified = 1 WHERE id = ?")->execute([$sub, $u['id']]);
+        if ($linkEmail && (int)$u['email_verified']) {
+            db()->prepare("UPDATE users SET $column = ? WHERE id = ?")->execute([$sub, $u['id']]);
+        } elseif ($linkEmail) {
+            // An UNVERIFIED account with this address was never proven to belong to its owner —
+            // anyone can register someone else's email and wait (account pre-hijacking). The
+            // provider has just proven the owner, so the account becomes theirs alone: its password
+            // is dropped (set one from the profile, #211), and any app token with it.
+            db()->prepare("UPDATE users SET $column = ?, email_verified = 1, password_hash = NULL, must_change_password = 0, verify_token = NULL, verify_expires = NULL WHERE id = ?")->execute([$sub, $u['id']]);
+            revoke_api_tokens((int)$u['id']);
+            log_activity((int)$u['id'], 'social_claim_unverified');
+        }
     } else {
         if (empty($d['accept_terms'])) { json_out(['ok' => false, 'need_terms' => true, 'email' => $email]); return; }
         $first = mb_substr(trim((string)$identity['first']), 0, 80) ?: 'RDBK';
@@ -487,6 +518,7 @@ function forgot_password(array $d): void {
 }
 
 function reset_password(array $d): void {
+    rate_limit('reset_' . client_ip(), 10, 900);
     $t = (string)($d['token'] ?? '');
     $pass = (string)($d['password'] ?? '');
     if (strlen($pass) < 8) fail('Password must be at least 8 characters.');
@@ -495,6 +527,7 @@ function reset_password(array $d): void {
     $u = $st->fetch();
     if (!$u) fail('That reset link is invalid or has expired.');
     db()->prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $u['id']]);
+    revoke_api_tokens((int)$u['id']); // a reset means the old password may be known: sign every app out
     log_activity((int)$u['id'], 'password_reset');
     json_out(['ok' => true, 'message' => 'Password updated — you can sign in now.']);
 }

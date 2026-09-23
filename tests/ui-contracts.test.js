@@ -883,9 +883,11 @@ describe('a map-shaped field is stored as an object (#523)', () => {
     it('the server shapes the icon map on the way in and on the way out', () => {
         expect(php).toContain('function rb_shape_maps(array $rb): array');
         expect(php).toContain("$rb['icons'] = new stdClass();");
-        // both save branches and both read paths go through it
+        // both save branches go through it, and every read goes through the one payload reader
         expect(php.match(/json_encode\(rb_shape_maps\(\$rb\)\)/g).length).toBe(2);
-        expect(php.match(/rb_shape_maps\(\(array\)json_decode/g).length).toBe(2);
+        expect(php.match(/rb_shape_maps\(\(array\)json_decode/g).length).toBe(1);
+        expect(read('app/admin.php')).toContain("'roadbook' => rb_read_payload($row)");
+        expect(php.match(/rb_read_payload\(\$row\)/g).length).toBe(2); // rb_get + public_get
     });
 
     it('the editor never writes an icon onto a list', () => {

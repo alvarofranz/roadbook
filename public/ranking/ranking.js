@@ -33,6 +33,10 @@
         const r = await RBApi('ranking_list', scope);
         if (!r.ok) return gate(r.error === 'Network error.' ? 'You are offline — reconnect to load this event.' : (REFUSALS[r.error] || r.error));
         results = r.results; isOrg = r.is_org;
+        // a result the server has not judged (valid null — a run the Reader sent, #590) is checked
+        // here, the same signature check as a scanned QR
+        const key = (window.RB_CONFIG || {}).signKey;
+        await Promise.all(results.filter((x) => x.valid === null).map(async (x) => { x.valid = (await RB.verifyMeta(x.meta, key)).valid ? 1 : 0; }));
         $('evHeader').hidden = false;
         $('evHeader').innerHTML = `<a href="/event/${encodeURIComponent(r.event.slug)}"><i class="fa-solid fa-calendar-check"></i> ${esc(r.event.title)}</a> · <i class="fa-solid fa-book"></i> ${esc(r.roadbook.title)}`;
         $('gate').hidden = true; $('rankResults').hidden = false;

@@ -112,10 +112,10 @@ try {
         case 'rb_trash_list': rb_trash_list(require_user()); break;
         case 'rb_restore':    rb_restore(require_user(), $d); break;
         case 'rb_purge':      rb_purge(require_user(), $d); break;
-        case 'ph_list':     ph_list(current_user(), $d); break;
+        case 'ph_list':     ph_list(require_user(), $d); break;
         case 'ph_delete':   ph_delete(require_user(), $d); break;
         case 'ph_move':     ph_move(require_user(), $d); break;
-        case 'audio_list':   audio_list(current_user(), $d); break;
+        case 'audio_list':   audio_list(require_user(), $d); break;
         case 'audio_delete': audio_delete(require_user(), $d); break;
         case 'public_list': public_list($d); break;
         case 'public_get':  public_get($d); break;

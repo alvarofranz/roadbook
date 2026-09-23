@@ -246,23 +246,15 @@ function admin_user_roadbooks(array $user, array $d): void {
 }
 
 // Admin: read ANY user's roadbook payload (draft/ready/public) so the per-user view can open
-// it in the Reader. Mirrors rb_get's file read — no ownership filter, no edit lock; a
-// recording draft with no route yet (filename 'pending') returns an empty skeleton.
+// it in the Reader. The same read as rb_get (rb_read_payload) — no ownership filter, no edit lock.
 function admin_rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $st = db()->prepare('SELECT id, slug, title, status, filename, user_id FROM roadbooks WHERE id = ? AND status <> \'deleted\'');
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) fail('Not found.', 404);
-    if ($row['filename'] === 'pending') {
-        $rb = ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
-    } else {
-        $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
-        if (!is_file($path)) fail('File missing.', 404);
-        $rb = json_decode((string)file_get_contents($path), true);
-    }
     json_out(['ok' => true, 'id' => (int)$row['id'], 'slug' => $row['slug'], 'status' => $row['status'],
-        'title' => $row['title'], 'roadbook' => $rb]);
+        'title' => $row['title'], 'roadbook' => rb_read_payload($row)]);
 }
 
 // Admin: set any roadbook's publication status (draft/ready/public) from the per-user view (#126).
@@ -492,6 +484,7 @@ function admin_update_user(array $user, array $d): void {
         ->execute([$first, $last, $username, $email, $org !== '' ? $org : null, $quota, !empty($d['is_organizer']) ? 1 : 0, $id]);
     if ($pw !== '') {
         db()->prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?')->execute([password_hash($pw, PASSWORD_DEFAULT), $id]);
+        revoke_api_tokens($id); // a new password set by an admin signs the account out of every app
     }
     log_activity((int)$user['id'], 'admin_edit_user', 'user #' . $id);
     json_out(['ok' => true]);

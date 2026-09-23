@@ -123,8 +123,9 @@ Dettagli rilevanti:
 - **`admin_update_user`** ([app/admin.php](../app/admin.php)): valida **tutto prima di
   scrivere** (username/email unici e nel formato, username riservato, password ≥8 char) — un
   errore non lascia l'identità salvata a metà (#702); poi aggiorna l'identità e, **se** è
-  fornita una password, imposta il nuovo hash con `must_change_password = 1`. La password è
-  quindi *temporanea*: serve solo per il primo accesso.
+  fornita una password, imposta il nuovo hash con `must_change_password = 1` e revoca tutti i
+  token app dell'account (`revoke_api_tokens`). La password è quindi *temporanea*: serve solo per
+  il primo accesso.
 - **`admin_block`**: imposta `blocked`. Non puoi bloccare te stesso né un superuser `.env`.
 - **Eliminazione dati.** Le funzioni di cleanup file (`purge_user_files`, `user_roadbook_ids`,
   `user_disk_bytes`, `dir_size`, `rrmdir`) vivono in admin.php. L'ordine è: si raccolgono
@@ -157,7 +158,9 @@ In [app/auth.php](../app/auth.php), esposte da `change_password` / `change_email
   posizione di default `default_lat`/`default_lon` (numeri o `null`).
 - **`change_password()`** (app/auth.php): normalmente richiede la
   password attuale; se l'utente ha `must_change_password` attivo la imposta **senza** la
-  attuale (l'admin gliene ha data una temporanea). In entrambi i casi il flag viene azzerato.
+  attuale (l'admin gliene ha data una temporanea). In entrambi i casi il flag viene azzerato, e
+  ogni altra app collegata all'account viene disconnessa: si revocano i suoi token tranne quello
+  del dispositivo che fa il cambio. Il reset via email (`reset_password`) li revoca tutti.
 - **Cambio email con ri-verifica.** [`change_email()`](../app/auth.php#L239) valida il nuovo
   indirizzo, ne controlla l'unicità (anche contro i `pending_email` altrui) e lo salva in
   **`pending_email`**, poi invia un link di conferma `/account/?verifyemail=<raw>` **al nuovo

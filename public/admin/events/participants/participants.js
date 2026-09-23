@@ -46,7 +46,7 @@
         renderFilter();
         $('ppList').innerHTML = r.participants.length ? r.participants.map((p) => `<div class="ev-line">
             <span class="meta"><i class="fa-solid fa-${p.status === 'active' ? 'circle-check icon-ok' : 'hourglass-half'}"></i> ${esc(p.username)}
-                <span class="muted small">${fullName(p) ? '· ' + esc(fullName(p)) + ' ' : ''}· ${esc(p.email)} · ${esc(RBFmtDate(p.joined))}</span></span>
+                <span class="muted small">${fullName(p) ? '· ' + esc(fullName(p)) + ' ' : ''}${p.email ? '· ' + esc(p.email) + ' ' : ''}· ${esc(RBFmtDate(p.joined))}</span></span>
             ${p.status === 'pending' ? `<button class="btn btn-ghost" data-ppact="${p.id}" type="button"><i class="fa-solid fa-check icon-ok"></i> ${esc(t('Activate'))}</button>` : ''}
             <button class="btn btn-ghost" data-ppdel="${p.id}" data-name="${esc(p.username)}" type="button" title="${esc(t('Remove'))}" aria-label="${esc(t('Remove'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
         </div>`).join('') : `<p class="muted small">${esc(emptyText())}</p>`;
@@ -208,7 +208,9 @@
         }
         if (!rows.length) { busy.reset(); return toast(q ? 'Nothing matches that search.' : 'No participants yet.'); }
         busy.ok();
-        const lines = ['username,first_name,last_name,email,status,joined', ...rows.map((p) => [p.username, p.first_name, p.last_name, p.email, p.status, p.joined].map(cell).join(','))];
+        // the email only reaches a site admin (the server leaves it out for organizers)
+        const columns = ['username', 'first_name', 'last_name', ...('email' in rows[0] ? ['email'] : []), 'status', 'joined'];
+        const lines = [columns.join(','), ...rows.map((p) => columns.map((c) => cell(p[c])).join(','))];
         const name = (eventTitle || 'rdbk-participants').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim(); // named after the event
         RBDownload(new Blob([lines.join('\n')], { type: 'text/csv' }), name + '.csv');
     };

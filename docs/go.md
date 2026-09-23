@@ -2,43 +2,56 @@
 
 The short‑link entry point for event participants. A participant receives a
 **join code** (e.g. `DA2C0926`) at the registration desk — printed as a QR code
-on a card or sent as a link. Opening `/go/<code>` handles authentication, joins
-the event, and redirects to the event page in **participant mode**.
+on a card or sent as a link. Opening `/go/<code>` handles authentication, asks the
+newcomer to confirm, joins the event, and redirects to the event page in
+**participant mode**.
 
-> The handler is a single PHP script: [go/index.php](../public/go/index.php). It is
-> the only public page rendered entirely server-side (no JS IIFE). Referenced by
-> [events.md](events.md) §8.
+> The handler is a single PHP script: [go/index.php](../public/go/index.php), rendered
+> server-side on the shared shell of `app/page.php` (the same icons, styles, scripts and
+> cache-buster as the stamped pages — the header, the tab bar and the translation of its
+> `data-i18n` labels come from `app.js`). Referenced by [events.md](events.md) §8.
 
 ---
 
 ## 1. URL scheme and flow
 
 ```
-/go/<join_code>  ──▶  1. validate code (+ gate open)
-                       2. authenticated?  ──no──▶  /account/?next=/go/<code>
-                       3. already joined? ──no──▶  INSERT (status from activation setting)
-                       4. set participant context + cookie
-                       5. redirect →  /event/<slug>
+/go/<join_code>  ──▶  1. validate code
+                       2. authenticated?     ──no──▶  /account/?next=/go/<code>
+                       3. already joined?    ──yes─▶  5.
+                       4. gate open? ──no──▶ /events/?link=closed|ended
+                          GET  → "Join <event>?" page (Join · Not now)
+                          POST → enrol (status from the activation setting)
+                       5. set participant context + cookie → /event/<slug>
 ```
 
 **Steps:**
 
-1. **Validate** — the `join_code` must match an existing `events` row with
-   `is_public = 1` **whose gate is not `closed`**. Unknown codes — and closed events,
-   which admit nobody even through a once-valid link — get a 404 with a minimal HTML
-   error page (`go_error()`), styled the same as the app shell.
-2. **Authentication** — unauthenticated users are redirected to `/account/` with
-   `?next=/go/<code>` so they log in and come back.
-3. **Join** — same rule as `event_join` (#414): the gate decides HOW you get in (the
-   `/go/` URL itself carries the code), `require_activation` decides the landing —
-   `pending` with a personal QR, or `active` at once. If they already exist the row
-   is **upserted** to the same outcome. The activity is logged.
-4. **Participant context** — `set_participant_context()` + `setcookie('rb_participant',
+1. **Validate** — the code (A–Z 0–9, plus `-`/`_` for links printed before #576,
+   matched upper-cased) must be an event's `join_code`. Listed or not, the link reaches
+   the event (#573). An unknown code lands on `/events/?link=invalid`, which explains it
+   in the visitor's language (#579).
+2. **Authentication** — a signed-out visitor goes to `/account/` with
+   `?next=/go/<code>`, signs in and comes back.
+3. **Already in** — someone already a participant goes straight to step 5: joining is
+   idempotent (#574) and there is nothing to ask.
+4. **Confirm, then join** — a newcomer passes the same checks as `event_join`
+   (`event_registration_refusal`: a `closed` gate or an ended event lands on
+   `/events/?link=closed|ended`). Opening the link never enrols anyone by itself — a GET
+   can be fired by a prefetch, an `<img>` on another site or a link preview — so the GET
+   renders the event title with **Join** (a `<form method="post">` back to `/go/<code>`)
+   and **Not now** (the event page, without joining). The POST is same-origin only
+   (`require_same_origin`), rate-limited like `event_join`, and enrols through the shared
+   `event_enrol`: `pending` with a personal QR when the event requires activation, else
+   `active` at once (#414). The activity is logged.
+5. **Participant context** — `set_participant_context()` + `setcookie('rb_participant',
    '1', …)` switch the UI to **participant mode**: reduced nav (only event‑scoped
-   tools), home redirects to the event page. The cookie is a UX flag the header reads
-   in JS (so **not** `HttpOnly`); it carries `Secure` (on HTTPS) + `SameSite=Lax`.
-5. **Redirect** — the browser lands on `/event/<slug>` where the participant sees
-   the full roadbook gallery (public + `ready`) and the ranking link if applicable.
+   tools). The cookie is a UX flag the header reads in JS (so **not** `HttpOnly`); it
+   carries `Secure` (on HTTPS) + `SameSite=Lax`. Then the browser lands on
+   `/event/<slug>`.
+
+The **native app** never shows this page: its App-Links deep link (`native/src/deeplink.js`)
+runs `event_join` through the API with the code, then opens the event page (#268).
 
 ---
 
@@ -56,13 +69,8 @@ a pending participant already sees the reduced UI while waiting for activation.
 
 ## 3. Limits and quirks
 
-- **Server-side only**, no JS: the error page includes the standard `app.js` shell
-  but does not depend on it for the flow.
 - **The activation code** (`gen_activation_code()`) is a random string stored
   per-participant row; the organizer activates it from `/admin/events/participants/`
   (typed or QR-scanned), and the pending user sees their own code on the event page.
-- **Join code is case-sensitive**: the regex `^[A-Za-z0-9_-]+$` allows mixed case;
-  matching against the DB is exact.
-- **One click = one join**: the upsert means the same link can be clicked twice
-  without error — it recomputes the same outcome and generates a fresh activation
-  code each time the outcome is pending.
+- **One join, however many opens**: `event_enrol` keeps whatever an existing participant
+  already has — an active participant is never sent back to pending by a second open.

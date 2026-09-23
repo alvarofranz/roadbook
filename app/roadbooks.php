@@ -28,7 +28,7 @@ function rb_vehicle_list(string $set): array { return explode(',', rb_clean_vehi
 
 function rb_list(array $user): void {
     global $CFG;
-    $st = db()->prepare("SELECT id, title, category, total_distance, note_count, status, slug, updated_at FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
+    $st = db()->prepare("SELECT id, title, category, total_distance, note_count, status, slug, updated_at, filename FROM roadbooks WHERE user_id = ? AND status <> 'deleted' ORDER BY updated_at DESC");
     $st->execute([$user['id']]);
     $rbs = $st->fetchAll();
     // Per-roadbook disk usage: the .rdbk file + photos + audio (#246)
@@ -40,7 +40,9 @@ function rb_list(array $user): void {
             if (is_file($f)) $bytes += (int)@filesize($f);
         }
         $rb['total_bytes'] = $bytes;
+        unset($rb['filename']); // the storage name stays server-side
     }
+    unset($rb);
     json_out(['ok' => true, 'roadbooks' => $rbs, 'used_bytes' => user_disk_bytes((int)$user['id']), 'quota_bytes' => user_quota_bytes($user)]);
 }
 
@@ -104,15 +106,7 @@ function rb_get(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
     $row = rb_require_edit($user, $id);
     $isOwner = (int)$row['user_id'] === (int)$user['id'];
-    // A recording draft that never got a route has no file yet (filename = 'pending'): hand back
-    // an empty skeleton so the Editor can open it and draw the route (the first save writes the file).
-    if ($row['filename'] === 'pending') {
-        $rb = ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
-    } else {
-        $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
-        if (!is_file($path)) fail('File missing.', 404);
-        $rb = rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
-    }
+    $rb = rb_read_payload($row);
     // is_owner/owner drive the Editor's co-editing UI (visibility + delete stay with the owner).
     // The soft edit lock (#154) is taken only when the caller ASKS for it (the Editor does;
     // the Reader reads the same roadbooks without blocking anyone's editing).
@@ -127,7 +121,7 @@ function rb_coedit_list(array $user): void {
     $st = db()->prepare('SELECT r.id, r.title, r.status, u.username AS owner, e.title AS event_title
         FROM event_roadbooks er JOIN events e ON e.id = er.event_id
         JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
-        WHERE r.user_id <> ? AND (e.organizer_id = ?
+        WHERE r.user_id <> ? AND r.status <> \'deleted\' AND (e.organizer_id = ?
             OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?))
         ORDER BY e.title, er.sort, r.id');
     $st->execute([(int)$user['id'], (int)$user['id'], (int)$user['id']]);
@@ -185,10 +179,21 @@ function rb_shape_maps(array $rb): array {
     return $rb;
 }
 
+// The roadbook payload of a row (user_id, filename, title), read from the owner's storage in the
+// .rdbk shape — the one read shared by rb_get, public_get and admin_rb_get. A recording draft that
+// never got a route has no file yet (filename 'pending'): it reads as an empty skeleton, so the
+// Editor can open it and draw the route (the first save writes the file).
+function rb_read_payload(array $row): array {
+    if ($row['filename'] === 'pending') return ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
+    $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
+    if (!is_file($path)) fail('File missing.', 404);
+    return rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
+}
+
 function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
     if (!is_array($rb) || empty($rb['notes']) || empty($rb['track'])) fail('Invalid roadbook.');
-    $title = substr(trim((string)($rb['meta']['title'] ?? '')) ?: 'Untitled', 0, 200);
+    $title = mb_substr(trim((string)($rb['meta']['title'] ?? '')) ?: 'Untitled', 0, 200);
     $category = mb_substr(trim((string)($rb['meta']['category'] ?? '')), 0, 100) ?: null;
     $dist = (int)($rb['meta']['total_distance'] ?? 0);
     $nc = count($rb['notes']);
@@ -258,11 +263,14 @@ function rb_duplicate(array $user, array $d): void {
     $dir = rb_dir((int)$user['id']);
     $srcPath = $dir . '/' . $src['filename'];
     if (!is_file($srcPath)) fail('File missing.', 404);
+    // the copy doubles the roadbook on its owner's disk: the file and every photo + voice note
+    $copyBytes = (int)filesize($srcPath) + dir_size($CFG['photos_dir'] . '/' . $srcId) + dir_size($CFG['audio_dir'] . '/' . $srcId);
+    rb_assert_quota((int)$user['id'], 0, $copyBytes);
 
     // Every row lands in one transaction: a mid-way failure (a fail() exit included — the
     // dropped connection rolls back) leaves no half-copied roadbook. The copied FILES are
     // best-effort: an orphaned photo dir without rows is harmless and re-copyable.
-    $title = substr(trim((string)$src['title']) . ' (copy)', 0, 200);
+    $title = mb_substr(trim((string)$src['title']) . ' (copy)', 0, 200);
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -307,19 +315,6 @@ function rb_duplicate(array $user, array $d): void {
     json_out(['ok' => true, 'id' => $newId, 'title' => $title, 'slug' => $slug]);
 }
 
-// The media read gate shared by ph_list/audio_list: public, yours, or co-edited through an
-// event. Media is deliberately NARROWER than the roadbook itself — an event participant may
-// read a delivered READY roadbook (public_get) but never its photos/voice notes, which are
-// the authors' working material (#214, per Maurizio's call).
-function rb_media_readable(?array $user, int $rbId): void {
-    $st = db()->prepare('SELECT user_id, status FROM roadbooks WHERE id = ?');
-    $st->execute([$rbId]);
-    $rb = $st->fetch();
-    if (!$rb || $rb['status'] === 'deleted') fail('Not found.', 404);
-    if ($rb['status'] === 'public') return;
-    if ($user && ((int)$user['id'] === (int)$rb['user_id'] || event_co_edits_roadbook($user, $rbId))) return;
-    fail('This roadbook is private.', 403);
-}
 /* Media delete, shared by ph_delete/audio_delete: one row + its file (#214 DRY). Whoever may
    EDIT the roadbook may delete its media — an event's co-organizer adds photos through exactly
    the same right (upload.php uses rb_require_edit), and could not remove them again (#525). */
@@ -335,9 +330,13 @@ function rb_media_delete(array $user, int $id, string $table, string $dirKey): v
     json_out(['ok' => true]);
 }
 
-function ph_list(?array $user, array $d): void {
+/* Listing a roadbook's gallery photos and voice notes (with their geotags) is for whoever may EDIT
+   it — the owner or an event co-editor (rb_require_edit). The media is the authors' working
+   material: a public roadbook discloses only its cover (public_get, #316), and an event participant
+   reading a delivered READY roadbook never sees its photos or voice notes (#214). */
+function ph_list(array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
-    rb_media_readable($user, $rbId);
+    rb_require_edit($user, $rbId);
     // the reserved cover (sort -1) is the listing thumbnail, not a gallery photo → never listed here
     $p = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_photos WHERE roadbook_id = ? AND sort >= 0 ORDER BY sort, id');
     $p->execute([$rbId]);
@@ -355,17 +354,19 @@ function ph_move(array $user, array $d): void {
     $lat = isset($d['lat']) && $d['lat'] !== '' ? (float)$d['lat'] : null;
     $lon = isset($d['lon']) && $d['lon'] !== '' ? (float)$d['lon'] : null;
     if ($lat === null || $lon === null || $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) fail('Bad coordinates.');
-    $st = db()->prepare('SELECT p.id FROM roadbook_photos p JOIN roadbooks r ON r.id = p.roadbook_id WHERE p.id = ? AND r.user_id = ?');
-    $st->execute([$id, $user['id']]);
-    if (!$st->fetch()) fail('Not found.', 404);
+    $st = db()->prepare('SELECT roadbook_id FROM roadbook_photos WHERE id = ?');
+    $st->execute([$id]);
+    $rbId = (int)$st->fetchColumn();
+    if (!$rbId) fail('Not found.', 404);
+    rb_require_edit($user, $rbId); // owner or event co-editor, like every other media action
     db()->prepare('UPDATE roadbook_photos SET lat = ?, lon = ? WHERE id = ?')->execute([$lat, $lon, $id]);
     json_out(['ok' => true]);
 }
 
 /* ---- voice notes: recorded audio clips, geotagged, per roadbook ---- */
-function audio_list(?array $user, array $d): void {
+function audio_list(array $user, array $d): void {
     $rbId = (int)($d['roadbook'] ?? 0);
-    rb_media_readable($user, $rbId);
+    rb_require_edit($user, $rbId);
     $a = db()->prepare('SELECT id, filename, lat, lon FROM roadbook_audio WHERE roadbook_id = ? ORDER BY id');
     $a->execute([$rbId]);
     $audio = array_map(fn($r) => ['id' => (int)$r['id'], 'url' => '/audio/' . $rbId . '/' . $r['filename'], 'lat' => $r['lat'] !== null ? (float)$r['lat'] : null, 'lon' => $r['lon'] !== null ? (float)$r['lon'] : null], $a->fetchAll());
@@ -406,9 +407,7 @@ function public_get(array $d): void {
     // participants and organizers — never anonymously; drafts stay owner-only.
     $viaEvent = !$isOwner && $me && $row['status'] === 'ready' && event_grants_read($me, (int)$row['id']);
     if ($row['status'] !== 'public' && !$isOwner && !$viaEvent) fail('This roadbook is private.', 403);
-    $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
-    if (!is_file($path)) fail('File missing.', 404);
-    $rb = rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
+    $rb = rb_read_payload($row);
     // Cover only (route-map preview, sort = -1). Gallery photos and audio are editor-only
     // working material — not disclosed through the challenge/player (#316).
     $c = db()->prepare('SELECT filename FROM roadbook_photos WHERE roadbook_id = ? AND sort = -1');

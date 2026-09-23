@@ -9,7 +9,7 @@ endpoint del back-end.
 > soltanto gli account e la condivisione — login, salvataggio dei roadbook nel proprio
 > profilo, gallerie foto e la pubblicazione di challenge pubbliche.
 
-Stack: **PHP 8.1 + MariaDB**, configurazione via `.env` ([phpdotenv](../app/bootstrap.php#L6)).
+Stack: **PHP 8.4 + MariaDB**, configurazione via `.env` ([phpdotenv](../app/bootstrap.php#L6)).
 Il codice di logica vive in `app/` (fuori dalla web root), i due endpoint HTTP in `public/api/`.
 
 ---
@@ -22,7 +22,7 @@ front-end (RBApi)                public/api/                 app/
 RBApi('rb_save', body) ──POST──▶ index.php (router) ──────▶ roadbooks.php  ──▶ MariaDB + storage/users/
 RBUpload(...)          ──POST──▶ upload.php          ──────▶ images.php     ──▶ public/photos/ , public/avatars/
                                        │
-                                 bootstrap.php  (carica .env, apre la sessione, include db/mail/auth/roadbooks/admin/settings/events)
+                                 bootstrap.php  (carica .env, apre la sessione, include db/mail/auth/roadbooks/admin/settings/events/runs)
 ```
 
 - **Un unico front controller per le action JSON:** [`public/api/index.php`](../public/api/index.php)
@@ -32,7 +32,9 @@ RBUpload(...)          ──POST──▶ upload.php          ─────�
   il router JSON parla solo JSON.
 - Entrambi gli entry point caricano per prima cosa [`app/bootstrap.php`](../app/bootstrap.php),
   che costruisce `$CFG` dall'`.env`, apre la sessione e include `db.php`, `mail.php`, `auth.php`,
-  `roadbooks.php`, `admin.php`, `settings.php`, `events.php`.
+  `roadbooks.php`, `admin.php`, `settings.php`, `events.php`, `runs.php`. Le due pagine che PHP
+  rende da sé (`/run/<id>`, `/go/<code>`) aggiungono `app/page.php`, la shell condivisa (icone,
+  stili, script e cache-buster delle pagine timbrate).
 
 ### Il front-end parla con l'API
 `RBApi(action, body)` (descritto in `CLAUDE.md`, definito in `app.js`) fa una POST JSON a
@@ -48,8 +50,8 @@ Il dispatch è uno `switch ($action)` ([index.php:19](../public/api/index.php#L1
 switch ci sono i guard di metodo e di origine.
 
 ### Regole di metodo e CSRF
-- **Solo cinque action sono leggibili via GET** — `config`, `public_list`, `public_get`,
-  `events_list`, `event_get` (l'array `$readOnly` in `index.php`); tutto ciò che cambia stato
+- **Solo sei action sono leggibili via GET** — `config`, `public_list`, `public_get`,
+  `events_list`, `event_get`, `profile_get` (l'array `$readOnly` in `index.php`); tutto ciò che cambia stato
   esige `POST`, altrimenti `405`. Questo blocca il CSRF via navigazione GET top-level con il
   cookie di sessione `SameSite=Lax`.
 - **Same-origin guard sulle POST:** ogni POST passa da `require_same_origin()` (helper
@@ -74,18 +76,18 @@ audio/pubblici) e `app/events.php` (eventi). Colonna **Auth**: *nessuna* = anoni
 | `config` | Bootstrap del front-end: chiave Turnstile (sito), **`google_client`** (id OAuth Web per il pulsante GIS, #46), **`apple_client`** (Services ID per il pulsante Apple sul web, #370 — vuoto = pulsante nascosto), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
 | `register` | Crea l'account (richiede `password_confirm` **e** `accept_terms`, timbra `terms_accepted_at`/`terms_version`) e invia la mail di verifica | nessuna |
 | `verify` | Verifica l'email tramite token | nessuna |
-| `login` | Login (email **o** username), rigenera la sessione, restituisce anche un Bearer token | nessuna |
+| `login` | Login (email **o** username), rigenera la sessione; un Bearer token **solo** a un Origin app (#213) — il web usa il cookie | nessuna |
 | `google_auth` | **Google Sign-In (#46)**: verifica l'ID token Google (tokeninfo: firma/`iss`/`exp`, `aud` ∈ `GOOGLE_CLIENT_IDS`), poi passa l'identità a `social_auth` | nessuna |
 | `apple_auth` | **Sign in with Apple (#370)** — richiesto dalla guideline 4.8 dell'App Store accanto a Google. Verifica l'identity token in casa: JWT RS256 controllato contro le chiavi pubbliche Apple (`appleid.apple.com/auth/keys`, `kid` dall'header, `alg` MAI preso dal token), più `iss`/`exp` e `aud` ∈ `APPLE_SERVICE_ID` (web) o `APPLE_APP_ID` (app iOS). L'email può essere l'indirizzo relay di *Hide My Email* — Apple la attesta comunque; il nome arriva dal client, perché Apple lo rivela solo alla PRIMA autorizzazione e mai nel token. Poi passa l'identità a `social_auth` | nessuna |
-| — `social_auth` | Coda condivisa dei due social login: (1) accede all'account già collegato via `google_sub`/`apple_sub`, (2) lo collega a un account con email **verificata** corrispondente, o (3) crea un account *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Una sola chiamata (#519): la scelta dell'account nel chooser di Google / nel foglio di Apple è già la decisione dell'utente. | nessuna |
+| — `social_auth` | Coda condivisa dei due social login: (1) accede all'account già collegato via `google_sub`/`apple_sub`, (2) lo collega all'account con la stessa email — se quell'account **non era verificato** (nessuno ne aveva provato il possesso: pre-hijacking) la sua password viene azzerata e i suoi token app revocati, così resta solo del titolare appena provato dal provider — o (3) crea un account *senza password* (richiede `accept_terms`; se manca risponde `need_terms`). Una sola chiamata (#519): la scelta dell'account nel chooser di Google / nel foglio di Apple è già la decisione dell'utente. | nessuna |
 | `logout` | Distrugge la sessione e revoca il Bearer token usato | sessione |
-| `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token | nessuna |
+| `forgot` / `reset` | Mail di reset password (risposta sempre positiva) / nuova password via token (revoca tutti i token app dell'account) | nessuna |
 | `profile` | Aggiorna nome/cognome/bio e **organizzazione** | richiesta |
 | `save_location` | Salva la posizione mappa di default (`default_lat`/`default_lon`); coppia non valida → azzera | richiesta |
 | `activity_mine` | Timeline attività **proprie** dell'utente loggato, paginata + cercabile (#448) | richiesta |
 | `rb_trash_list` / `rb_restore` / `rb_purge` | Il proprio cestino, ripristino a draft (#238), eliminazione definitiva immediata dal cestino (#704) | richiesta |
 | `set_lang` | Salva la lingua UI preferita (`ui_lang`, whitelist `en`/`es`/`it`/`de`/`fr`) | richiesta |
-| `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)) | richiesta |
+| `change_password` | Cambia la password da loggati (vedi [user-management](user-management.md)); revoca i token app dell'account tranne quello del dispositivo che la cambia | richiesta |
 | `change_email` / `verify_email_change` | Cambio email con ri-verifica (`pending_email` + link) / conferma dal link | richiesta / nessuna |
 | `account_delete` | Elimina il proprio account (vedi [user-management](user-management.md)) | richiesta |
 
@@ -111,13 +113,13 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
 | `event_join_code` | Genera/rigenera il codice di adesione dell'evento; un codice scelto a mano è 4–16 caratteri `A–Z 0–9`, perché diventa il link `/go/<code>` (#576) | richiesta |
 | `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414). **Idempotente** (#574): chi è già dentro riceve il suo stato attuale senza modifiche. Niente nuove adesioni a evento terminato (#587). Un evento non listato si raggiunge col suo link come uno listato (#573) | richiesta |
-| `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge (attivo, l'unico modo di iscrivere qualcuno) / elenca (paginato, con i `counts` per stato) i partecipanti | richiesta |
+| `event_participant_remove` / `event_participant_add` / `event_participants_list` | Rimuove / aggiunge (attivo, l'unico modo di iscrivere qualcuno) / elenca (paginato, con i `counts` per stato) i partecipanti; l'`email` solo a un admin del sito, mai a un organizzatore | richiesta |
 | `event_activate_by_code` / `participant_activate` | Attiva un partecipante **pending di quell'evento** (`event_id` obbligatorio) tramite codice / dal roster; non iscrive mai nessuno (#577) e risponde con chi è stato attivato (#604) | richiesta |
 | `event_participants_activate_pending` | Ammette in un colpo solo tutti i `pending` (#416) | richiesta |
 | `leave_participant_mode` | Esce dalla modalità partecipante (pulisce cookie + contesto) | richiesta |
 | `event_logo_remove` | Rimuove il logo evento | richiesta |
 | `user_search` | Ricerca utenti (per aggiungere organizzatori/partecipanti): almeno 2 caratteri, `%`/`_` letterali, username/nome/organizzazione in parziale, email **solo esatta**; **non restituisce mai le email** (#575) | organizzatore/admin |
-| `run_save` / `run_update` / `run_delete` | Il report di una run del Reader (note, zone di velocità, tempi, penalità, risultato firmato): visibilità scelta sul report o dalla preferenza (`remember` la salva); una run di competizione di un roadbook di evento entra nella sua classifica. Solo il proprietario cambia/cancella (#618/#619) | richiesta |
+| `run_save` / `run_update` / `run_delete` | Il report di una run del Reader (note, zone di velocità, tempi, penalità, risultato firmato): visibilità scelta sul report o dalla preferenza (`remember` la salva); una run di competizione di un roadbook di evento entra nella sua classifica **non verificata** (`valid` NULL: la pagina Ranking ne controlla la firma come per un QR). Solo il proprietario cambia/cancella (#618/#619) | richiesta |
 | `runs_settings` | La scelta fissa per i nuovi report: `ask` / `public` / `private` (#619) | richiesta |
 | `ranking_list` / `ranking_add` / `ranking_remove` / `ranking_clear` | La classifica condivisa di un roadbook di evento con punteggio (`event_results`): organizzatori modificano, partecipanti attivi leggono; lo stesso payload firmato non entra due volte, un altro risultato per lo stesso veicolo sostituisce solo con `replace=1` (#590/#607/#608) | richiesta |
 | `profile_get` | Profilo pubblico `/u/<username>`: bio, organizzazione, roadbook pubblici, run pubbliche con i totali (il proprietario vede anche le private); mai nome reale né email (#620) | nessuna (GET) |
@@ -137,10 +139,10 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `rb_status` | Cambia solo lo `status` di pubblicazione (proprietario) | richiesta |
 | `rb_duplicate` | Duplica un proprio roadbook (file + riga + galleria **+ audio**), in **una transazione**; la copia parte `draft` | richiesta |
 | `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino admin | richiesta |
-| `ph_list` / `ph_delete` / `ph_move` | Elenca (pubblico, proprio o co-editato) / elimina / sposta il geotag di una foto | opzionale / richiesta / richiesta |
-| `audio_list` / `audio_delete` | Elenca / elimina una nota vocale | opzionale / richiesta |
+| `ph_list` / `ph_delete` / `ph_move` | Elenca / elimina / sposta il geotag di una foto — tutte per chi può **editare** il roadbook (proprietario o co-editor di evento, `rb_require_edit`): la galleria non è mai pubblica (#316) | richiesta |
+| `audio_list` / `audio_delete` | Elenca / elimina una nota vocale — stesso gate | richiesta |
 | `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) (con `reusable=1` filtra i clonabili, #106) | nessuna |
-| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include foto + `cover` + dati autore | opzionale |
+| `public_get` | Carica via slug un roadbook `public` (o proprio, o **`ready` per i partecipanti/organizzatori** del suo evento, #25); include la sola `cover` (mai galleria né audio, #316) + dati autore | opzionale |
 
 `current_user()` — il payload restituito da `config` e da `login` — include anche le preferenze
 utente: `ui_lang` (lingua UI scelta), la posizione mappa
@@ -190,7 +192,8 @@ false`). Tutte le query passano da prepared statement: non c'è concatenazione d
   **fallback su file** (un contatore per chiave sotto la temp dir, con `flock`) quando
   l'estensione non è caricata, così il limite è **sempre applicato**
   ([bootstrap.php](../app/bootstrap.php)). Usato su `register` (10/h), `login` (20/15min),
-  `forgot` (8/15min) per IP. Al primo hit della finestra registra quando scade, così la
+  `forgot` (8/15min), `reset` (10/15min), `google_auth`/`apple_auth` (30/15min) per IP, e su
+  `event_join` / il Join di `/go/` (20/h) per utente. Al primo hit della finestra registra quando scade, così la
   risposta `429` include `retry_after` (secondi da attendere) oltre a `{ok:false,
   error:'Too many attempts. Please wait a moment.'}` — il form di login lo trasforma in un
   countdown.
@@ -219,8 +222,9 @@ il token (controllo scadenza) e setta `email_verified = 1`.
 ### Login e sessione
 [`login_user`](../app/auth.php#L181): accetta **email *oppure* username** nello stesso campo,
 verifica la password, **rifiuta gli account non verificati** (`403`), poi
-`session_regenerate_id(true)` (anti session-fixation) e salva `$_SESSION['uid']`. Restituisce
-anche un **Bearer token** ([`issue_api_token`](../app/auth.php#L21)) — vedi sotto.
+`session_regenerate_id(true)` (anti session-fixation) e salva `$_SESSION['uid']`. A un Origin app
+(`is_app_origin`) restituisce anche un **Bearer token** ([`issue_api_token`](../app/auth.php)) —
+vedi sotto; al web no, perché lo scarterebbe e resterebbe una credenziale orfana (#213).
 
 ### Bearer token per le app native
 Una webview Capacitor non porta il cookie di sessione cross-origin, quindi le app native si
@@ -228,7 +232,13 @@ autenticano con un Bearer token (tabella `api_tokens`). [`current_user`](../app/
 prima prova la sessione, poi ricade su `Authorization: Bearer <token>`
 ([`bearer_token`](../app/auth.php#L13), che legge anche `REDIRECT_HTTP_AUTHORIZATION` /
 `apache_request_headers`), aggiornando `last_used_at`. Il web non tocca mai questo percorso.
-`logout` revoca il token usato ([auth.php:199](../app/auth.php#L199)).
+`current_user()` è memoizzato per richiesta (la chiave è la credenziale che la richiesta porta, così
+un login o un logout nella stessa richiesta si vede subito): `require_user`, `participant_context` e
+`config` non ripetono la SELECT + UPDATE del token. `logout` revoca il token usato;
+`revoke_api_tokens` revoca quelli di un account quando la password cambia (reset, cambio da
+loggati — tranne il token del dispositivo che la cambia —, password impostata da un admin) e quando
+un social login rivendica un account non verificato. Le sessioni web sono file di sessione PHP
+senza indice per utente: finiscono alla loro scadenza.
 
 > ⚠️ **PHP-FPM scarta l'header `Authorization`.** Sotto FPM Apache non passa l'header a PHP se
 > non lo si inoltra esplicitamente, quindi `public/.htaccess` lo espone
@@ -240,8 +250,8 @@ prima prova la sessione, poi ricade su `Authorization: Bearer <token>`
 ### Reset password
 [`forgot_password`](../app/auth.php#L205): genera un `reset_token` valido 1 h e invia la mail,
 ma **risponde sempre positivamente** per non rivelare se un'email è registrata
-([auth.php:220](../app/auth.php#L220)). [`reset_password`](../app/auth.php#L223) consuma il
-token e aggiorna l'hash.
+([auth.php](../app/auth.php)). [`reset_password`](../app/auth.php) (rate-limitato per IP) consuma il
+token, aggiorna l'hash e revoca tutti i token app dell'account.
 
 ### Cambio email (con ri-verifica del nuovo indirizzo)
 [`change_email`](../app/auth.php#L239) (da loggati): valida il nuovo indirizzo, ne controlla
@@ -275,9 +285,10 @@ password se rieseguita.
 [`verify_turnstile`](../app/auth.php#L125) protegge `register`/`login`/`forgot`. È un **no-op se
 `turnstile_secret` è vuoto** (feature non ancora attivata): in locale e senza configurazione,
 i form passano senza challenge. Le **app native sono esenti**: il widget è domain-locked e non
-può girare nella WebView (origin `localhost`), quindi un Origin app fidato (`is_app_origin`,
-lo stesso whitelist della guardia CSRF, non falsificabile da una pagina web) salta il challenge —
-sotto restano i rate limit per IP su ogni endpoint di auth. Il web lo richiede come sempre.
+può girare nella WebView (origin `localhost`), quindi una richiesta con un Origin app
+(`is_app_origin`, lo stesso whitelist della guardia CSRF) salta il challenge. Una pagina web non
+può falsificare quell'header, ma un bot fuori dal browser sì — vedi §9: lì a proteggere restano
+solo i rate limit. Il web lo richiede come sempre.
 
 ---
 
@@ -336,13 +347,17 @@ all'avvio della registrazione, **intitolata col nome scelto** (#148) invece del 
 bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cleanup-drafts.php`).
 
 ### Lista, lettura, duplicazione, eliminazione
-- `rb_list`: metadati dei propri roadbook ordinati per `updated_at`. `rb_coedit_list`: i roadbook
-  **altrui** che puoi co-editare tramite un tuo evento (ognuno nomina l'evento di provenienza).
+- `rb_list`: metadati dei propri roadbook ordinati per `updated_at`, ognuno con `total_bytes`
+  (file `.rdbk` + foto + audio). `rb_coedit_list`: i roadbook **altrui** (non cestinati) che puoi
+  co-editare tramite un tuo evento (ognuno nomina l'evento di provenienza).
+- `rb_get`, `public_get` e `admin_rb_get` leggono il payload con lo stesso `rb_read_payload` (path
+  nello storage del proprietario, decodifica, `rb_shape_maps`; una bozza `pending` è uno scheletro).
 - `rb_get`: via `rb_require_edit` legge il `.rdbk` di un roadbook che puoi editare (proprietario
   **o** co-editor). Restituisce `status`, `reusable`, `is_owner`/`owner` (che pilotano la UI di
   co-editing) e, **se il chiamante lo chiede** (`lock`), acquisisce il soft lock — l'Editor lo
   chiede, il Reader no. Per una bozza senza file torna uno scheletro vuoto da disegnare.
-- `rb_duplicate`: in **una singola transazione** copia file `.rdbk`, riga DB, intera galleria foto
+- `rb_duplicate`: controlla prima la quota (`rb_assert_quota` con la dimensione di file + foto +
+  audio), poi in **una singola transazione** copia file `.rdbk`, riga DB, intera galleria foto
   **e le note vocali** (file + righe) in un nuovo roadbook; un errore a metà fa rollback (niente
   copie parziali). La copia parte `draft`, con titolo "… (copy)" e slug proprio.
 - `rb_delete`: sposta nel cestino (`status='deleted'`, #187) invece di cancellare; il purge
@@ -354,8 +369,8 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
   `reusable=1` nel body filtra i soli clonabili (la ricerca di fork dell'Editor, #106).
 - `public_get`: carica un roadbook via **slug**. È servito se `public`, **o** al proprietario, **o**
   — se `ready` — ai **partecipanti/organizzatori dell'evento** a cui è associato (#25,
-  `event_grants_read`); altrimenti `403`. Include il `.rdbk`, la lista foto (esclusa la cover), la
-  `cover` a parte, e i dati pubblici dell'autore. È la base della pagina challenge / vista pubblica.
+  `event_grants_read`); altrimenti `403`. Include il `.rdbk`, la sola `cover` (galleria e note
+  vocali sono materiale di lavoro dell'autore, mai esposte, #316) e i dati pubblici dell'autore. È la base della pagina challenge / vista pubblica.
 
 ---
 
@@ -366,7 +381,7 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
 applica lo stesso `require_same_origin()` del router. Accetta `multipart` con un campo file
 (`photo` per le immagini, `audio` per le note vocali; max **12 MB**, deve essere un vero
 `is_uploaded_file`). Gli upload che consumano spazio (foto/audio) verificano prima la **quota
-disco per-utente**: superata, rispondono **`413`** (`user_disk_bytes` vs `user_quota_bytes`, §5).
+disco del proprietario del roadbook** (`rb_assert_quota`): superata, rispondono **`413`**.
 
 - **`type=avatar`** → AVIF quadrato 256px in `public/avatars/<user_id>.avif`; aggiorna
   `users.avatar` e risponde con l'URL cache-busted.
@@ -377,8 +392,8 @@ disco per-utente**: superata, rispondono **`413`** (`user_disk_bytes` vs `user_q
   `public/run-cards/<nome>.avif`. Solo per una run propria (`run_owned`). Il nome è un HMAC dell'id
   con `APP_SECRET` (`run_card_name`), così l'immagine di una run privata non si indovina dall'id;
   `profile_get` la restituisce come `card` insieme alla run, e `run_delete` la cancella.
-- **`type=photo` + `roadbook=<id>`** → foto galleria, max 1600px. Verifica la proprietà del
-  roadbook, impone un tetto di **60 foto** per galleria, e accetta `lat`/`lon` opzionali (geotag)
+- **`type=photo` + `roadbook=<id>`** → foto galleria, max 1600px. Accesso via `rb_require_edit`
+  (proprietario o co-editor di evento, mai un roadbook cestinato), impone un tetto di **60 foto** per galleria, e accetta `lat`/`lon` opzionali (geotag)
   clampati al range valido. La riga viene inserita come `pending`, poi il file prende un nome
   **non indovinabile** (`bin2hex(random_bytes(8)).avif`) così le foto di roadbook privati non sono
   enumerabili; se l'elaborazione fallisce la riga viene rimossa.
@@ -390,7 +405,7 @@ disco per-utente**: superata, rispondono **`413`** (`user_disk_bytes` vs `user_q
   elimina il file precedente. Accesso via `rb_require_edit`.
 - **`type=audio` + `roadbook=<id>`** → nota vocale di un waypoint, **archiviata così com'è
   (nessun transcoding)** accanto alla sua trascrizione, così una trascrizione errata si può
-  riascoltare. Verifica la proprietà del roadbook, impone un tetto di **200 note** per roadbook,
+  riascoltare. Accesso via `rb_require_edit` come la foto, impone un tetto di **200 note** per roadbook,
   accetta `lat`/`lon` opzionali, deriva l'estensione dal MIME del browser
   (`webm`/`ogg`/`m4a`/`mp3`/`wav`, default `webm`) e usa lo stesso nome **non indovinabile** in
   `public/audio/<roadbook_id>/`. Inserisce la riga in `roadbook_audio`. Gestita lato JSON da
@@ -468,10 +483,11 @@ loro somma.
 | [038_roadbook_vehicles.sql](../migrations/038_roadbook_vehicles.sql) | `roadbooks.vehicles` SET `car`/`moto`/`bike` (per quali veicoli è adatto, filtro della galleria, #713) |
 | [039_drop_event_open_join.sql](../migrations/039_drop_event_open_join.sql) | drop di `events.open_join` (l'iscrizione è `join_gate` + `require_activation`, #732) |
 | [040_drop_voice_lang.sql](../migrations/040_drop_voice_lang.sql) | drop di `users.voice_lang` (dettatura e trascrizione non esistono più, #773) |
+| [041_roadbook_comments.sql](../migrations/041_roadbook_comments.sql) | tabella `roadbook_comments` (commenti pubblici sotto un roadbook pubblico, #809) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
-`api_tokens`, `activity_log`, `settings`, `events`, `event_roadbooks`,
-`event_organizers`, `event_participants`. I token (verify/reset/api) sono colonne/righe con
+`roadbook_runs`, `roadbook_comments`, `api_tokens`, `activity_log`, `settings`, `events`,
+`event_roadbooks`, `event_organizers`, `event_participants`, `event_results`. I token (verify/reset/api) sono colonne/righe con
 **solo l'hash**; `pending_email` tiene il nuovo indirizzo finché il cambio non è confermato. Le FK
 sono `ON DELETE CASCADE`: cancellare un utente porta via i suoi roadbook, i suoi eventi e le sue
 righe di partecipazione; cancellare un roadbook porta via foto, note vocali e lock; i suoi token
@@ -489,6 +505,11 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **Rate limiting:** **APCu** come via veloce, con **fallback su file** quando l'estensione
   non c'è, così register/login/forgot/reset/join restano limitati su ogni hosting
   ([bootstrap.php](../app/bootstrap.php)).
+- **L'esenzione Turnstile delle app è un header:** `verify_turnstile` salta il challenge quando
+  l'`Origin` è quello di un'app (`is_app_origin`). Un browser non lascia a una pagina web
+  falsificarlo, ma uno script fuori dal browser manda l'`Origin` che vuole: per un bot
+  `register`/`login`/`forgot` sono quindi protetti **solo dai rate limit per IP**, come se
+  Turnstile non fosse configurato.
 - **CSP + header di sicurezza:** `public/.htaccess` invia una `Content-Security-Policy` che
   **vieta gli script inline** (il sito non ne ha — l'unico bootstrap è in
   `assets/js/native-detect.js`) e ammette solo gli origin realmente usati (MapLibre da unpkg,
@@ -503,8 +524,10 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
   vede/ascolta il media anche se il roadbook è privato.
 - **Avatar prevedibili:** l'avatar è `public/avatars/<user_id>.avif`, cioè un URL pubblico e
   indovinabile dato l'`id` — accettabile perché l'avatar è per natura pubblico.
-- **Firma del Bearer token:** è un segreto opaco hashato con pepper; la revoca è per-token su
-  logout. Non c'è scadenza dei token API (solo `last_used_at` come traccia).
+- **Firma del Bearer token:** è un segreto opaco hashato con pepper. Si revoca il singolo token al
+  logout, tutti quelli dell'account a ogni cambio di password (vedi §4); il cron
+  (`prune-stale-tokens.php`, slot 4) elimina quelli **inutilizzati da 180 giorni**
+  (`COALESCE(last_used_at, created_at)`).
 - **Verifica email del reviewer:** bypassata di proposito (account di test); è comunque non
   privilegiato.
 - **Errori:** ogni eccezione diventa un generico `500` lato client e finisce in `error_log` —
@@ -528,8 +551,13 @@ a prod *prima* del codice che la legge, vedi `CLAUDE.md`).
 - **Foto e note vocali private non sono davvero private** a livello di accesso (vedi §9): la
   riservatezza è "by obscurity" via nome file casuale.
 - **Pulizia differita al cron** (`cron/cron.php`, round-robin un task/minuto): bozze `rb_draft`
-  mai finite (`note_count = 0`, slot 0), retention log attività 90gg (slot 1) e purga del cestino
-  roadbook a 30gg (slot 2, #187). Serve lo scheduler di sistema (`* * * * *`).
-- **Un solo livello di condivisione** (pubblico/privato): niente link non-listati, niente
-  permessi per-utente o collaborazione.
+  mai finite (`note_count = 0`, slot 0 — riga prima, poi file, come ogni purge), retention log
+  attività 90gg (slot 1), purga del cestino roadbook a 30gg (slot 2, #187) e token app inattivi da
+  180gg (slot 4). Serve lo scheduler di sistema (`* * * * *`).
+- **Condivisione per stato, più gli eventi:** un roadbook è privato (`draft`/`ready`) o
+  `public`; niente link non-listati né permessi per singolo utente. L'unica collaborazione passa
+  dagli **eventi**: gli organizzatori (proprietario, co-organizzatori, admin) di un evento
+  **co-editano** i roadbook associati (#123, con soft lock #154 — la pubblicazione resta del
+  proprietario), e un roadbook `ready` associato è **consegnato** in lettura ai partecipanti
+  attivi e agli organizzatori (#25) — mai la sua galleria né le note vocali.
 - **SendGrid hard-coded** come provider mail; nessun fallback SMTP.
