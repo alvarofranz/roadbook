@@ -243,6 +243,7 @@
     const CONST = {
         MANUAL_RADIUS_M: 100, MIN_DISP_M: 5, REACH_DEFAULT_M: 30, REACH_MIN_M: 18,
         COURSE_WINDOW_M: 15, COURSE_DEVICE_KMH: 12, // course-up: ground covered over the last 15 m, the device's own course only from 12 km/h
+        GPS_GOOD_M: 15, // a fix at least this accurate is a good GPS (the status bar, the Recorder's start, #901)
         FIX_ACC_MAX_M: 35, MAX_SPEED_MS: 70, // a fix worse than this is junk; a step faster than this never happened (252 km/h)
         P_SKIP: 450, P_SPEED_PER_KMH: 10, // accuracy/cap/extra = 1 pt/m
         REG_GRACE_S: 59,
@@ -514,6 +515,10 @@
     // worse than FIX_ACC_MAX_M is junk; the sampling step scales with the accuracy — dense
     // detail with a good fix, no jitter with a weak one.
     const recJunkFix = (acc) => acc != null && acc > CONST.FIX_ACC_MAX_M;
+    // How healthy a GPS fix is (#901) — the ONE scale the status bar and the Recorder's start read:
+    // 'good' ≤ GPS_GOOD_M · 'fair' up to FIX_ACC_MAX_M, still recorded · 'weak' beyond it, a fix the
+    // recording throws away · 'none' without one.
+    const gpsHealth = (acc) => (acc == null || !isFinite(acc) ? 'none' : acc <= CONST.GPS_GOOD_M ? 'good' : acc <= CONST.FIX_ACC_MAX_M ? 'fair' : 'weak');
     const recStepM = (acc) => Math.max(2.5, (acc || 10) * 0.35);
 
     /* Odometer intake (the Reader's and Tripmaster's travelled distance, #383). A phone's
@@ -1481,7 +1486,7 @@
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, distanceChars, deleteNote, pendingWork,
-        cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, recStepM, odometerStep,
+        cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, gpsHealth, recStepM, odometerStep,
         eventLink,
     };
     // The browser uses the global; Node (the test runner) imports the same object.

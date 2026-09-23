@@ -317,3 +317,13 @@ prossimo avvio (#647).
 - **Una registrazione declinata resta** (#436): non viene più proposta, ma il chip "Unsaved work"
   del guscio la elenca ancora finché la prossima registrazione non la sostituisce o non la si
   scarta da lì.
+
+## Salute del GPS prima di partire (#901)
+
+La landing apre subito un `RBGpsMeter` e mostra la salute del GPS in una scheda: *cercando*, *debole*,
+*pronto* (discreto o buono) con la precisione, oppure *posizione bloccata*. La scala è una sola,
+`RB.gpsHealth(acc)`: `good` ≤ `CONST.GPS_GOOD_M` (15 m), `fair` fino a `FIX_ACC_MAX_M` (35 m, ancora
+registrato), `weak` oltre, cioè un fix che la registrazione scarterebbe, e `none` senza fix. È la stessa
+scala che legge la barra di stato. **Avvia** si sblocca solo a fine avvio e con un fix fresco (non più
+vecchio di 10 s) almeno `fair`, così una registrazione non parte mai alla cieca. Il watch passa alla
+registrazione quando parte (`stopPreview`) e torna dopo uno Scarta.

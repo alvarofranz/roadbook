@@ -1513,3 +1513,16 @@ Object.assign(window.RBi18nLangs.es, {
     "The GPS starts right away": "El GPS arranca al momento",
 });
 
+/* the Recorder's GPS health (#901) */
+Object.assign(window.RBi18nLangs.es, {
+    "Searching for GPS…": "Buscando GPS…",
+    "Stay outdoors, with a clear view of the sky.": "Quédate al aire libre, con el cielo despejado a la vista.",
+    "GPS too weak to record": "GPS demasiado débil para grabar",
+    "Move to an open area — Start opens as soon as the signal is good.": "Ve a un sitio despejado: Iniciar se activa en cuanto la señal sea buena.",
+    "GPS ready": "GPS listo",
+    "A fair signal: it sharpens as you go.": "Señal aceptable: mejora mientras avanzas.",
+    "A strong signal.": "Señal fuerte.",
+    "Location is blocked": "La ubicación está bloqueada",
+    "Allow location for RDBK in your device settings.": "Permite la ubicación para RDBK en los ajustes del dispositivo.",
+    "Waiting for a good GPS signal": "Esperando una buena señal GPS",
+});

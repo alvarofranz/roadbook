@@ -92,6 +92,7 @@
         if (id) RBApi('rb_delete', { id }).then((r) => (r && r.ok ? RBApi('rb_purge', { id }) : null)).catch(() => {});
         clearRecording();
         track = []; wpts = []; photos = []; draftId = 0; recordedM = 0;
+        startPreview(); // back on the landing: its GPS health again
     }
 
     RBGpxRecorder.init({
@@ -155,7 +156,48 @@
         }
         await RBGpxRecorder.offerRecovery(); // orphaned GPX (no session) → offer rescue
     }).catch(() => toast('Could not load.')) // a failed startup says so instead of skipping its prompts in silence (#659)
-        .finally(() => { initMediaQueue(); $('recStart').disabled = false; });
+        .finally(() => { initMediaQueue(); startupDone = true; if (!RBGpxRecorder.recording && !finished) startPreview(); renderGpsHealth(); });
+
+    /* ---------- the GPS before the start (#901) ----------
+       The landing watches the GPS so the rider sees its health, and Start opens only once startup
+       has decided AND the last fix — fresh, not older than GPS_STALE_MS — is good enough to record
+       (RB.gpsHealth: fair or good): a recording never begins blind. The watch is the shared
+       RBGpsMeter, released the moment the recording starts its own. */
+    const GPS_STALE_MS = 10000;
+    let preview = null, previewTick = null, previewAcc = null, previewAt = 0, previewDenied = false, startupDone = false;
+    const GPS_TEXT = {
+        none: ['Searching for GPS…', 'Stay outdoors, with a clear view of the sky.'],
+        weak: ['GPS too weak to record', 'Move to an open area — Start opens as soon as the signal is good.'],
+        fair: ['GPS ready', 'A fair signal: it sharpens as you go.'],
+        good: ['GPS ready', 'A strong signal.'],
+        denied: ['Location is blocked', 'Allow location for RDBK in your device settings.'],
+    };
+    function gpsState() {
+        if (previewDenied) return 'denied';
+        return Date.now() - previewAt > GPS_STALE_MS ? 'none' : RB.gpsHealth(previewAcc);
+    }
+    function renderGpsHealth() {
+        const state = gpsState(), ready = state === 'good' || state === 'fair';
+        $('recGps').dataset.health = state;
+        $('recGpsTitle').textContent = t(GPS_TEXT[state][0]);
+        $('recGpsHint').textContent = t(GPS_TEXT[state][1]);
+        $('recGpsAcc').textContent = state !== 'none' && state !== 'denied' ? '±' + Math.round(previewAcc) + ' m' : '';
+        $('recStart').disabled = !(startupDone && ready);
+        $('recStartHint').textContent = t(ready ? 'The GPS starts right away' : 'Waiting for a good GPS signal');
+    }
+    function startPreview() {
+        if (preview || RBGpxRecorder.recording) return;
+        preview = new RBGpsMeter((fix) => { previewAcc = fix.coords.accuracy; previewAt = Date.now(); previewDenied = false; renderGpsHealth(); },
+            (e) => { if (e && e.code === 1) previewDenied = true; renderGpsHealth(); }); // 1 = permission denied
+        previewTick = setInterval(renderGpsHealth, 2000); // a signal going stale shows too
+        renderGpsHealth();
+    }
+    function stopPreview() {
+        if (preview) preview.stop();
+        preview = null; clearInterval(previewTick); previewTick = null;
+    }
+    window.addEventListener('rb-lang', renderGpsHealth);
+    renderGpsHealth(); // searching, Start locked, until the first fix
 
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
@@ -167,6 +209,7 @@
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
         course = null; lastHeadingPos = null;
         track = []; wpts = []; photos = []; draftId = 0;
+        stopPreview(); // the landing's watch hands over to the recording's own
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
         // a draft roadbook holds the geotagged photos (signed-in only), titled with the
