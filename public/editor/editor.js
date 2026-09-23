@@ -248,6 +248,8 @@
     // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
     const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
     canvas.onDropIcon((name, pos) => canvas.addIcon(mkIcon(name, pos)));
+    // A tap on the open note's vignette means working on its icons (#856): open that tab
+    $('noteCanvas').addEventListener('click', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } });
     $('addJunction').onclick = () => { if (editable()) canvas.addJunction(); };
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
@@ -1934,7 +1936,8 @@
         const coverAll = new Set();
         (rb?.notes || []).forEach((n) => (n.icons || []).forEach((ic) => { if (ic.cover && ic.name) coverAll.add(ic.name.toLowerCase()); }));
         const curCover = new Set(((editorOpen && rb?.notes[sel]?.icons) || []).filter((ic) => ic.cover).map((ic) => (ic.name || '').toLowerCase()));
-        const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; });
+        // newest first (#855): rb.icons keeps insertion order, and an upload is always inserted last
+        const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; }).reverse();
         // The strip is icons and nothing else: each tile carries its category, and the chips
         // above are what name and filter the groups.
         let html = '';
@@ -2005,8 +2008,10 @@
         if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '”?'))) return;
         delete rb.icons[name]; renderIcons();
     }
-    /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note.
-       markDirty matters: without it an upload was not checkpointed, so a crash between adding the
+    /* Custom icons go into rb.icons, the roadbook's own library, and are offered to EVERY note —
+       and one added while a note is open goes straight into its vignette too, since that is what
+       it was added for (#855). The library lists the newest first, so a (re-)upload is inserted
+       last. markDirty matters: without it an upload was not checkpointed, so a crash between adding the
        icon and the next edit lost it (#454). A pasted image has no meaningful file name — the
        clipboard calls everything "image.png" — so it gets a unique one instead of overwriting the
        last paste (#455). A picked file keeps its name, so re-uploading one deliberately replaces it. */
@@ -2014,14 +2019,16 @@
         if (!editable()) return;
         if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {}; // a map, never a list (#523)
         let n = 0;
+        const added = [];
         for (const f of files) {
             // downscaled to a 256 px PNG like every embedded image (#657): an icon is drawn at most
             // 120 px, so a full-size photo would only bloat every .rdbk
             const name = pasted ? 'pasted-' + Date.now() + '-' + n + '.png' : safeName(f.name).replace(/\.[^.]+$/, '') + '.png';
-            try { rb.icons[name] = await iconDataURL(f); n++; }
+            try { const data = await iconDataURL(f); delete rb.icons[name]; rb.icons[name] = data; added.push(name); n++; }
             catch (e) { toast('Could not read the image.'); }
         }
         if (!n) return;
+        if (editorOpen && rb.notes[sel]) { added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0]))); markDirty(); await renderIcons(); return toast('Icon added — drag it on the vignette'); }
         markDirty(); await renderIcons();
         toast(n === 1 ? 'Icon added — tap it to place.' : 'Icons added — tap them to place.');
     }

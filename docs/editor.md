@@ -294,7 +294,9 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 
 `renderIcons` ([editor.js:874](../public/editor/editor.js#L874)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook
-(`rb.icons`). La galleria è una **striscia di due righe che scorre in orizzontale**: solo icone,
+(`rb.icons`), le **più recenti per prime** (#855). Un'icona caricata o incollata con una nota aperta
+entra **subito nella sua vignetta**, perché è per quello che la si aggiunge; e un tap sulla vignetta
+della nota aperta apre il tab **Icona** (#856). La galleria è una **striscia di due righe che scorre in orizzontale**: solo icone,
 ogni tile della stessa misura, niente titoli di sezione dentro la striscia — la categoria viaggia
 sul `data-cat` del tile e sono i **chip** sopra (`renderIconCats`) a nominare e filtrare i gruppi,
 con un nome di una sola parola ciascuno (#530). Chip e ricerca live (`filterIcons`,
