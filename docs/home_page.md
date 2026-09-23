@@ -87,9 +87,9 @@ roadbook privati non devono essere enumerabili), rigenerata a ogni salvataggio.
 - **Miniatura** (`public_list`, [roadbooks.php:209](../app/roadbooks.php#L209)): la subquery del
   `thumb` ordina `sort, id` → con `sort = -1` la cover è **sempre** la prima, quindi la
   miniatura. Senza cover ricade sulla prima foto reale.
-- **Esclusa dallo swipe**: `public_get` e `ph_list` filtrano `sort >= 0`, così la cover non
-  compare tra le foto utente né nell'editor. `public_get` la restituisce a parte nel campo
-  **`cover`** (letto dalla riga a `sort -1`).
+- **Esclusa dalla galleria**: `ph_list` (solo per chi edita il roadbook) filtra `sort >= 0`, così
+  la cover non compare tra le foto dell'editor. `public_get` non espone la galleria (#316) e
+  restituisce la sola cover nel campo **`cover`** (letto dalla riga a `sort -1`).
 
 In sintesi: **cover-only** (fuori dalla galleria), **sempre la miniatura**, base **CyclOSM**.
 

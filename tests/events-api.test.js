@@ -73,7 +73,7 @@ describe('codes, activation and slugs', () => {
     });
     it('a /go/ link that leads nowhere lands on the Events page, which explains it (#579)', () => {
         expect(go).toContain("header('Location: /events/?link=' . $why);");
-        expect(go).not.toMatch(/<html|style="/);
+        expect(go).not.toMatch(/style="|<style/);
         const list = read('public/events/events.js');
         for (const why of ['invalid', 'closed', 'ended']) expect(list).toMatch(new RegExp(`${why}: '`));
     });

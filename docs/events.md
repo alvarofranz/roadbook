@@ -103,7 +103,7 @@ ridisegna tutta la vista (#584/#586). Agli organizzatori la pagina offre **Manag
 quando l'evento non è listato (#585/#573); un evento terminato porta il badge *Ended* (#587). Da un roadbook della lista si va al Reader / alla pagina
 `/challenge/<slug>`.
 
-Questa è anche la pagina su cui **atterra il QR dell'evento** (`/go/<code>` unisce e redirige
+Questa è anche la pagina su cui **atterra il QR dell'evento** (`/go/<code>` chiede conferma, unisce e redirige
 qui), quindi porta un `.native-hint`: un evento si guida con l'app nativa — GPS che continua a
 schermo bloccato, roadbook offline, link evento che si aprono direttamente nell'app (#350). Il
 componente è condiviso e si nasconde da sé dentro l'app (`.native .native-hint`), così non
@@ -158,7 +158,9 @@ La lista partecipanti su pagina propria (#144): un evento può averne centinaia,
   qualcuno aspetta, altrimenti su *All*, e il messaggio vuoto nomina il filtro. Azioni: attivazione
   singola (`participant_activate`), **Activate all** (`event_participants_activate_pending`, #416),
   **Add participant** (`user_search` con `event_id`: chi è già dentro è marcato e non aggiungibile,
-  #605) e **Export CSV** (`username, first_name, last_name, email, status, joined`, #606).
+  #605) e **Export CSV** (`username, first_name, last_name, status, joined`, #606 — più `email`
+  solo per un admin del sito: un organizzatore non vede mai l'indirizzo di chi è entrato o è stato
+  aggiunto, e l'elenco organizzatori di `event_manage_get` non porta email).
   **Import list** (#153): un CSV (anche l'export stesso) o una lista incollata — `RB.parseEmailList`
   trova le email in qualunque colonna; `event_participants_import` iscrive come **attivi** gli
   account esistenti (idempotente) e restituisce chi non ha un account, senza mai crearne: quelle
@@ -178,7 +180,9 @@ un admin ha questi diritti: è la prima riga della tabella in §2. Quel ramo man
 permetteva a un admin di aprire la gestione di un evento (`event_can_manage`, che invece controlla)
 e poi di essere respinto dal gate del roadbook, pulsante Edit compreso (#450). Con il ramo al suo
 posto la pagina di gestione è onesta per costruzione: chiunque possa arrivarci (admin ·
-proprietario · co-organizzatore) può anche editare i roadbook associati.
+proprietario · co-organizzatore) può anche editare i roadbook associati. Il ramo admin vale però
+solo per un roadbook **associato a un evento**: i roadbook privati di un utente restano suoi (l'admin
+li legge con `admin_rb_get`, la sua vista dedicata).
 
 - **Lettura consegnata (#25):** `event_grants_read($user, $roadbookId)` — un roadbook `ready`
   associato a un evento è leggibile da **partecipanti e organizzatori** di quell'evento. È il
@@ -238,8 +242,11 @@ dell'evento.
    registrazione chiusa, evento terminato) atterra su `/events/?link=invalid|closed|ended`, che lo
    spiega nella lingua del visitatore (#579).
 2. Se non autenticato → redirect a `/account/?next=/go/<code>`.
-3. Se autenticato e non ancora iscritto → viene iscritto (`event_enrol`: **pending** se l'evento
-   richiede l'attivazione, altrimenti attivo) e reindirizzato a `/event/<slug>`. L'iscrizione è
+3. Se autenticato e non ancora iscritto → una pagina di conferma ("Join this event as a
+   participant." · **Join** · **Not now**): aprire un link non iscrive mai nessuno da solo (un GET
+   parte anche da un prefetch, da un `<img>` altrui, da un'anteprima). **Join** fa un POST
+   same-origin su `/go/<code>`, che iscrive (`event_enrol`: **pending** se l'evento richiede
+   l'attivazione, altrimenti attivo) e reindirizza a `/event/<slug>`. L'iscrizione è
    **idempotente** (#574): chi è già dentro non viene mai toccato — né dal web né dall'app, che
    trasforma ogni apertura del QR in un `event_join`.
 4. Se autenticato e già **active** → viene impostato il contesto partecipante
@@ -283,4 +290,5 @@ Quando il cookie `rb_participant=1` è attivo:
 - **Evento terminato** (`ends_on` passato, #587): niente nuove adesioni (API, `/go/`, pagina); i
   partecipanti esistenti mantengono l'accesso.
 - **`user_search` non espone le email** (#575): 2+ caratteri, niente wildcard dell'utente, email
-  solo per corrispondenza esatta.
+  solo per corrispondenza esatta. Neanche il roster (`event_participants_list`) né l'elenco
+  organizzatori le mostrano a un organizzatore: `email` arriva solo a un admin del sito.

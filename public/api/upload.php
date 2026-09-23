@@ -30,12 +30,10 @@ if ($type === 'audio') {
     if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) fail('No audio uploaded.');
     if (($_FILES['audio']['size'] ?? 0) > 12 * 1024 * 1024) fail('Audio too large (max 12 MB).');
     $rbId = (int)($_POST['roadbook'] ?? 0);
-    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$rbId, $user['id']]);
-    if (!$st->fetch()) fail('Roadbook not found.', 404);
+    $rb = rb_require_edit($user, $rbId); // the owner or an event co-editor; never a trashed roadbook
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_audio WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 200) fail('Too many voice notes (200 max).');
-    if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
+    rb_assert_quota((int)$rb['user_id'], 0, (int)$_FILES['audio']['size']); // media counts against the roadbook's OWNER
     [$lat, $lon] = post_latlon();
     // Extension from the browser-reported MIME (MediaRecorder output differs by browser); default webm.
     $ext = ['audio/webm' => 'webm', 'video/webm' => 'webm', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'audio/mpeg' => 'mp3', 'audio/wav' => 'wav'][$_FILES['audio']['type'] ?? ''] ?? 'webm';
@@ -82,12 +80,10 @@ if ($type === 'run_card') {
 
 if ($type === 'photo') {
     $rbId = (int)($_POST['roadbook'] ?? 0);
-    $st = db()->prepare('SELECT id FROM roadbooks WHERE id = ? AND user_id = ?');
-    $st->execute([$rbId, $user['id']]);
-    if (!$st->fetch()) fail('Roadbook not found.', 404);
+    $rb = rb_require_edit($user, $rbId); // the owner or an event co-editor; never a trashed roadbook
     $cnt = db()->prepare('SELECT COUNT(*) c FROM roadbook_photos WHERE roadbook_id = ?'); $cnt->execute([$rbId]);
     if ((int)$cnt->fetch()['c'] >= 60) fail('Gallery is full (60 photos max).');
-    if (user_disk_bytes($user['id']) >= user_quota_bytes($user)) fail('Storage limit reached — free up space or ask an admin for more.', 413);
+    rb_assert_quota((int)$rb['user_id'], 0, 0); // media counts against the roadbook's OWNER; the AVIF size is known only once encoded
     [$lat, $lon] = post_latlon();
     db()->prepare('INSERT INTO roadbook_photos (roadbook_id, filename, lat, lon) VALUES (?,?,?,?)')->execute([$rbId, 'pending', $lat, $lon]);
     $pid = (int)db()->lastInsertId();

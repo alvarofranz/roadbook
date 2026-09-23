@@ -51,9 +51,11 @@ function run_save(array $user, array $d): void {
         run_int($d['max_over_kmh'] ?? 0, 65535), $penalties, $meta !== '' ? $meta : null, $isPublic,
     ]);
     $runId = (int)db()->lastInsertId();
-    // a competition run of an event roadbook enters its classification at once (#590)
+    // a competition run of an event roadbook enters its classification at once (#590) — unverified
+    // (valid NULL): the result is whatever the device sent, so the Ranking page checks its signature
+    // like a scanned QR's before it counts as valid
     if ($event && $rbId && $meta !== '' && event_results_access($user, $event, $rbId) !== null) {
-        db()->prepare('INSERT IGNORE INTO event_results (event_id, roadbook_id, team, meta, valid, run_id, added_by) VALUES (?,?,?,?,1,?,?)')
+        db()->prepare('INSERT IGNORE INTO event_results (event_id, roadbook_id, team, meta, valid, run_id, added_by) VALUES (?,?,?,?,NULL,?,?)')
             ->execute([(int)$event['id'], $rbId, mb_substr(preg_replace('/\D/', '', (string)($d['team'] ?? '')), 0, 8) ?: '0', $meta, $runId, (int)$user['id']]);
     }
     log_activity((int)$user['id'], 'run_save', 'run #' . $runId);

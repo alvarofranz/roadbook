@@ -172,7 +172,9 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
   non da un falsario determinato. È comunque molto meglio di un QR in chiaro non verificabile.
 - In ranking, un risultato con firma non valida **viene comunque aggiunto** ma marcato con
   l'icona di avviso (`fa-triangle-exclamation`); la validità (`event_results.valid`) finisce anche
-  nel CSV.
+  nel CSV. Un QR scansionato arriva con la validità già calcolata dalla pagina; una run del Reader
+  (`run_save`) entra invece con `valid` **NULL** — il server non si fida di ciò che il dispositivo
+  manda — e la pagina ne verifica la firma al caricamento, come per un QR.
 
 ---
 

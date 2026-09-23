@@ -5,6 +5,7 @@
  * leads to the runner's profile and, when it is public, the roadbook. A private or unknown run is a
  * plain 404 page: the link says nothing about it. */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
+require dirname(__DIR__, 2) . '/app/page.php';
 global $CFG;
 
 $id = (int)($_GET['id'] ?? 0);
@@ -16,8 +17,6 @@ $st->execute([$id]);
 $run = $st->fetch() ?: null;
 if (!$run) http_response_code(404);
 
-$ver = json_decode((string)@file_get_contents(dirname(__DIR__) . '/version.json'), true) ?: [];
-$v = rawurlencode(($ver['version'] ?? '0') . '-' . ($ver['build'] ?? '0')); // the same cache-buster the stamped pages carry
 $base = rtrim((string)$CFG['base_url'], '/');
 $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES);
 
@@ -63,21 +62,11 @@ header('Content-Type: text/html; charset=utf-8');
     <title>RDBK.app</title>
     <meta name="robots" content="noindex">
 <?php endif; ?>
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=<?= $v ?>">
-    <link rel="stylesheet" href="/assets/css/app.css?v=<?= $v ?>">
-    <style>
-        .run-page { text-align: center; padding-top: 1.4rem; }
-        .run-page .run-card-img { display: block; width: 100%; max-width: 420px; aspect-ratio: 4/5; object-fit: cover; margin: 0 auto 1.2rem; border-radius: 18px; border: 1px solid var(--line); background: var(--card-2); box-shadow: var(--shadow); }
-        .run-page h1 { font-size: 1.5rem; margin: 0 0 .3rem; overflow-wrap: break-word; }
-        .run-page .run-figures { font-size: 1.05rem; font-weight: 700; margin: .6rem 0 1.2rem; }
-    </style>
+<?php page_head_links(); ?>
 </head>
 <body>
 <header class="topbar"></header>
-<main class="wrap page-col run-page">
+<main class="wrap page-col page-centered">
 <?php if ($run): ?>
     <?php if ($card): ?><img class="run-card-img" src="<?= $h($card) ?>" alt=""><?php endif; ?>
     <h1><?= $h($run['roadbook_title']) ?></h1>
@@ -91,14 +80,6 @@ header('Content-Type: text/html; charset=utf-8');
     <p class="muted" data-i18n="This run is not public, or no longer exists.">This run is not public, or no longer exists.</p>
 <?php endif; ?>
 </main>
-<div id="toast" class="toast" hidden></div>
-<script src="/assets/js/config.js?v=<?= $v ?>"></script>
-<script src="/assets/js/roadbook-core.js?v=<?= $v ?>"></script>
-<script src="/assets/js/i18n.es.js?v=<?= $v ?>"></script>
-<script src="/assets/js/i18n.it.js?v=<?= $v ?>"></script>
-<script src="/assets/js/i18n.de.js?v=<?= $v ?>"></script>
-<script src="/assets/js/i18n.fr.js?v=<?= $v ?>"></script>
-<script src="/assets/js/i18n.js?v=<?= $v ?>"></script>
-<script src="/assets/js/app.js?v=<?= $v ?>"></script>
+<?php page_scripts(); ?>
 </body>
 </html>

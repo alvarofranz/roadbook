@@ -79,8 +79,14 @@ function user_manages_events(int $uid): bool {
 // check) and then be refused by the roadbook gate, Edit button and all (#450).
 function event_rights_on_roadbook(?array $user, int $roadbookId, bool $includeParticipants): bool {
     if (!$user) return false;
-    if (is_admin($user)) return true;
     $uid = (int)$user['id'];
+    // an admin's rights are an EVENT's rights too: they reach a roadbook attached to some event, not
+    // every roadbook on the site (a user's own drafts stay theirs; admin_rb_get is the admin's reader)
+    if (is_admin($user)) {
+        $st = db()->prepare('SELECT 1 FROM event_roadbooks WHERE roadbook_id = ? LIMIT 1');
+        $st->execute([$roadbookId]);
+        return (bool)$st->fetch();
+    }
     $st = db()->prepare('SELECT 1 FROM event_roadbooks er JOIN events e ON e.id = er.event_id
         WHERE er.roadbook_id = ? AND (e.organizer_id = ?
             OR EXISTS (SELECT 1 FROM event_organizers eo WHERE eo.event_id = e.id AND eo.user_id = ?)'
@@ -147,7 +153,7 @@ function events_manage(array $user): void {
 function event_manage_get(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['id'] ?? 0));
     $id = (int)$e['id'];
-    $org = db()->prepare('SELECT u.id, u.username, u.email, u.organization FROM event_organizers eo JOIN users u ON u.id = eo.user_id
+    $org = db()->prepare('SELECT u.id, u.username, u.organization FROM event_organizers eo JOIN users u ON u.id = eo.user_id
         WHERE eo.event_id = ? ORDER BY u.username');
     $org->execute([$id]);
     $rb = db()->prepare('SELECT r.id, r.title, r.category, r.status, er.scoring_mode, u.id AS owner_id, u.username
@@ -166,7 +172,7 @@ function event_manage_get(array $user, array $d): void {
         'starts_on' => $e['starts_on'], 'ends_on' => $e['ends_on'], 'is_public' => (int)$e['is_public'],
         'join_gate' => event_join_gate($e['join_gate'] ?? null), 'require_activation' => (int)($e['require_activation'] ?? 1),
         'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
-        'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'email' => $x['email'], 'organization' => $x['organization']], $org->fetchAll()),
+        'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
         'participant_count' => (int)$pp->fetchColumn(), 'pending_count' => (int)$pend->fetchColumn(),
@@ -175,7 +181,9 @@ function event_manage_get(array $user, array $d): void {
 
 // Paged, searchable participant list (#144) — an event's roster can run into the hundreds, so
 // the page never gets it whole. q matches the username or the full name (like user_search);
-// the response row shape is the contract P2.4 (#124) will widen with the entry fields.
+// the response row shape is the contract P2.4 (#124) will widen with the entry fields. The email
+// goes to site admins only: an organizer never learns the address of someone who joined (or was
+// added) without sharing it with them.
 function event_participants_list(array $user, array $d): void {
     $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
     $q = trim((string)($d['q'] ?? ''));
@@ -206,10 +214,11 @@ function event_participants_list(array $user, array $d): void {
     $cnt->execute([(int)$e['id']]);
     $counts = ['pending' => 0, 'active' => 0];
     foreach ($cnt->fetchAll() as $c) $counts[$c['status']] = (int)$c['n'];
+    $withEmail = is_admin($user);
     json_out(['ok' => true, 'total' => $total, 'page' => $page, 'per_page' => $perPage, 'counts' => $counts,
         'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'],
-            'first_name' => $x['first_name'], 'last_name' => $x['last_name'], 'email' => $x['email'],
-            'joined' => $x['created_at'], 'status' => $x['status']], $st->fetchAll())]);
+            'first_name' => $x['first_name'], 'last_name' => $x['last_name'],
+            'joined' => $x['created_at'], 'status' => $x['status']] + ($withEmail ? ['email' => $x['email']] : []), $st->fetchAll())]);
 }
 
 // Create or update an event's own parameters. The roadbook associations and the
@@ -217,11 +226,11 @@ function event_participants_list(array $user, array $d): void {
 // organizer role; editing is per-event (owner / co-organizer / admin).
 function event_save(array $user, array $d): void {
     $id = (int)($d['id'] ?? 0);
-    $title = substr(trim((string)($d['title'] ?? '')) ?: 'Untitled event', 0, 200);
-    $desc = substr(trim((string)($d['description'] ?? '')), 0, 5000);
+    $title = mb_substr(trim((string)($d['title'] ?? '')) ?: 'Untitled event', 0, 200);
+    $desc = mb_substr(trim((string)($d['description'] ?? '')), 0, 5000);
     $starts = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['starts_on'] ?? '')) ? $d['starts_on'] : null;
     $ends = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($d['ends_on'] ?? '')) ? $d['ends_on'] : null;
-    $website = substr(trim((string)($d['organizer_website'] ?? '')), 0, 500);
+    $website = mb_substr(trim((string)($d['organizer_website'] ?? '')), 0, 500);
     $hqLat = isset($d['hq_lat']) && is_numeric($d['hq_lat']) ? (float)$d['hq_lat'] : null;
     $hqLon = isset($d['hq_lon']) && is_numeric($d['hq_lon']) ? (float)$d['hq_lon'] : null;
     $isPublic = !empty($d['is_public']) ? 1 : 0;
