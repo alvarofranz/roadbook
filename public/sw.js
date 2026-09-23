@@ -12,12 +12,18 @@ self.addEventListener('activate', (e) => {
             .then(() => self.clients.claim())
     );
 });
+// Store a copy of a response on its way to the page — only a good one: a 404, a 500 or an
+// opaque error page cached here would be served offline in place of the real file.
+const keep = (request) => (res) => {
+    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(request, copy)); }
+    return res;
+};
 self.addEventListener('fetch', (e) => {
     const { request } = e;
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
 
-    // Cross-origin (Mapbox SDK/tiles, etc.) — let the browser handle it; never put it in our cache.
+    // Cross-origin (MapLibre SDK/tiles, etc.) — let the browser handle it; never put it in our cache.
     if (url.origin !== location.origin) return;
 
     // Dynamic endpoints (auth/account, uploads, version) — always network, never cache.
@@ -26,9 +32,7 @@ self.addEventListener('fetch', (e) => {
     // Standard palette icons (immutable) are rendered into note vignettes — cache
     // them first so an installed Reader shows them offline (like FontAwesome).
     if (url.pathname.includes('/assets/icons/')) {
-        e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((res) => {
-            const copy = res.clone(); caches.open(CACHE).then((c) => c.put(request, copy)); return res;
-        })));
+        e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then(keep(request))));
         return;
     }
     // Other images (avatars, photos, thumbnails, mockups) are content, not shell —
@@ -37,20 +41,12 @@ self.addEventListener('fetch', (e) => {
 
     // Immutable: FontAwesome (CSS + webfonts) → cache-first.
     if (url.pathname.includes('/fontawesome/')) {
-        e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-            return res;
-        })));
+        e.respondWith(caches.match(request).then((hit) => hit || fetch(request).then(keep(request))));
         return;
     }
 
     // Shell → network-first, with the cache as offline fallback.
     e.respondWith(
-        fetch(request).then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-            return res;
-        }).catch(() => caches.match(request))
+        fetch(request).then(keep(request)).catch(() => caches.match(request))
     );
 });

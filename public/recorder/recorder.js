@@ -1,12 +1,15 @@
 'use strict';
-/* RDBK Recorder — a dedicated live GPX track recorder. Records a route with the
- * shared GPS loop (RBGpsMeter) and crash-safe GPX logging (RBGpxRecorder), shows
- * it live on a map (RBMap), and lets you drop named waypoints and snap geotagged
- * photos along the way. The shared status bar (RBStatusBar) shows the clock,
- * battery and satellite/GPS status; the recorded kilometres show in the dashboard.
- * On Finish you can download the GPX or convert the whole thing (track + waypoints
- * + photos) into a roadbook in the Editor. The session is checkpointed so a reload
- * or an OS kill can resume. */
+/* RDBK Recorder — the live-GPS route recorder. Records a route with the shared GPS
+ * loop (RBGpsMeter) and crash-safe GPX logging (RBGpxRecorder) and shows it live on a
+ * map (RBMap). A tap on Note drops a note on the spot, nothing to type (the bell and
+ * the big check confirm it, #768); a photo is queued offline-first (RBMediaQueue) and
+ * drops its own note carrying it (#792). The shared status bar (RBStatusBar) shows the
+ * clock, battery and GPS status; the recorded kilometres show in the dashboard.
+ * The end is one question (#791): Save stores the draft roadbook and opens it in the
+ * Editor (signed out, through the sign-in page first); Discard asks, naming what goes,
+ * and throws away the track, the notes, the queued photos and the draft. The recording
+ * is checkpointed until one of the two lands, so a reload or an OS kill can resume it
+ * (#460). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, toast = RBToast;
@@ -38,15 +41,44 @@
 
     /* ---------- session checkpoint: survive reloads and OS tab kills ----------
        The track itself is checkpointed by RBGpxRecorder; here we keep the meta. */
+    // The photo pins as a checkpoint keeps them: a pin still waiting to upload drops its blob URL
+    // (it dies with the page) and keeps its token, which finds its blob in the queue again.
+    const persistedPhotos = () => photos.map((p) => (p.local ? Object.assign({}, p, { url: null }) : p));
+    // Back from a checkpoint: each waiting pin gets a fresh blob URL from its queued capture; one
+    // whose capture is gone (it never reached the queue) has nothing left to show.
+    async function restorePhotos(list) {
+        const out = [];
+        for (const p of list || []) {
+            if (!p.local) { out.push(p); continue; }
+            const rec = await RBMediaQueue.get(p.token).catch(() => null);
+            if (rec && rec.blob) out.push(Object.assign({}, p, { url: URL.createObjectURL(rec.blob) }));
+        }
+        return out;
+    }
     function saveSession() {
         if (!RBGpxRecorder.recording) return; // don't clobber a resumable session before recording starts
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify({ recording: true, fileName: RBGpxRecorder.fileName, recordedM, elapsedAcc: elapsed(), paused, wpts, photos, draftId })); } catch (e) {}
+        RBCheckpoint.write(SESSION_KEY, { recording: true, fileName: RBGpxRecorder.fileName, recordedM, elapsedAcc: elapsed(), paused, wpts, photos: persistedPhotos(), draftId });
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
     // A finished recording that has not landed anywhere yet: everything the finish options need
     // (points, notes, photo pins, the draft), so a crash with them on screen reopens them (#647).
     function saveFinishing(pts, name) {
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify({ finishing: true, pts, name, recordedM, wpts, photos: photos.filter((p) => !p.local), draftId })); } catch (e) {}
+        RBCheckpoint.write(SESSION_KEY, { finishing: true, pts, name, recordedM, wpts, photos: persistedPhotos(), draftId });
+    }
+    // The recording reached its destination (saved) or was discarded: every copy of it goes.
+    function clearRecording() {
+        RBGpxRecorder.clearCheckpoint(); clearSession();
+        try { localStorage.removeItem(PENDING_SAVE); } catch (e) {}
+    }
+    // Discard, after the confirm that named the loss: the recording, its photos still queued on
+    // the device and the draft holding the uploaded ones all go — nothing is left behind to
+    // upload into the next roadbook. Removing the draft is best-effort (offline, it stays a draft).
+    function discardRecording() {
+        const id = draftId;
+        RBMediaQueue.drop(photos.map((p) => p.token)).catch(() => {});
+        if (id) RBApi('rb_delete', { id }).then((r) => (r && r.ok ? RBApi('rb_purge', { id }) : null)).catch(() => {});
+        clearRecording();
+        track = []; wpts = []; photos = []; draftId = 0; recordedM = 0;
     }
 
     RBGpxRecorder.init({
@@ -61,7 +93,11 @@
         },
     });
 
-    /* ---------- startup: know the user, then pending-save → resume → rescue → idle ---------- */
+    /* ---------- startup: know the user, then pending-save → resume → rescue → idle ----------
+       Start stays disabled until startup has decided: a tap before it would begin() over the
+       checkpoints of an unfinished recording. The media queue starts after it too, so a photo
+       uploading at load finds its pin already restored. */
+    $('recStart').disabled = true;
     RBConfig().then(async (c) => {
         meUser = c.user || null; // offline falls back to the last-known user, so capture stays available (#189)
         updateRecUi(); // login known → show the sign-in hint when signed out
@@ -70,38 +106,41 @@
             map.map.jumpTo({ center: [meUser.default_lon, meUser.default_lat], zoom: 13 });
 
         // Returning from the sign-in redirect with a recording queued for saving: save it now (signed
-        // in), or ask Save / Discard again if sign-in was skipped. This finished track
-        // is not resumable, so clear the in-progress session either way.
-        let pend; try { pend = JSON.parse(localStorage.getItem(PENDING_SAVE) || 'null'); } catch (e) {}
+        // in), or ask Save / Discard again if sign-in was skipped. The stash stays the recording's
+        // checkpoint until the save lands or the user discards it (#460).
+        const pend = RBCheckpoint.read(PENDING_SAVE);
         if (pend && pend.pts) {
-            localStorage.removeItem(PENDING_SAVE);
-            clearSession();
-            wpts = pend.wpts || [];
+            clearSession(); // a finished track is not resumable: the stash is its one copy
+            wpts = pend.wpts || []; photos = await restorePhotos(pend.photos); draftId = pend.draftId || 0;
             recordedM = pend.recordedM || 0; // restore the odometer so the finish modal shows the real km
             if (meUser) { await saveAfterLogin(pend); return; }
             finishModal(pend.pts, pend.name); return; // sign-in skipped — ask again
         }
 
-        let session; try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+        const session = RBCheckpoint.read(SESSION_KEY);
         // finished but never landed (a crash with the finish options on screen): reopen them
         if (session && session.finishing && session.pts) {
-            wpts = session.wpts || []; photos = session.photos || []; draftId = session.draftId || 0; recordedM = session.recordedM || 0;
+            wpts = session.wpts || []; photos = await restorePhotos(session.photos); draftId = session.draftId || 0; recordedM = session.recordedM || 0;
             finishModal(session.pts, session.name); return;
         }
-        if (session && session.recording) {
+        // A No is remembered on both checkpoints, which stay (#436): never asked again, and the
+        // next recording's checkpoints replace them.
+        if (session && session.recording && !session.declined) {
             if (await RBConfirm(t('Resume the recording in progress?') + '<br><b>' + ((session.recordedM || 0) / 1000).toFixed(2) + ' km</b>')) {
                 RBGpxRecorder.resume(session.fileName);
                 recordedM = session.recordedM || 0; elapsedAcc = session.elapsedAcc || 0; paused = !!session.paused;
-                track = []; wpts = session.wpts || []; photos = (session.photos || []).filter((p) => !p.local); draftId = session.draftId || 0;
+                track = []; wpts = session.wpts || []; photos = await restorePhotos(session.photos); draftId = session.draftId || 0;
                 updateRecUi();
                 startMeter(); renderPauseBtn(); refreshMap(); renderBar();
                 return;
             }
-            clearSession();
-            RBGpxRecorder.clearCheckpoint(); // the orphaned GPX data goes with it — one simple prompt (#260)
+            RBCheckpoint.decline(SESSION_KEY);
+            RBGpxRecorder.decline(); // its GPX is not offered separately — one simple prompt (#260)
+            return;
         }
         await RBGpxRecorder.offerRecovery(); // orphaned GPX (no session) → offer rescue
-    }).catch(() => toast('Could not load.')); // a failed startup says so instead of skipping its prompts in silence (#659)
+    }).catch(() => toast('Could not load.')) // a failed startup says so instead of skipping its prompts in silence (#659)
+        .finally(() => { initMediaQueue(); $('recStart').disabled = false; });
 
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
@@ -115,7 +154,7 @@
         track = []; wpts = []; photos = []; draftId = 0;
         RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
-        // a draft roadbook holds the geotagged photos/voice notes (signed-in only), titled with the
+        // a draft roadbook holds the geotagged photos (signed-in only), titled with the
         // chosen date+time name so it never shows as "Recording…" (#148). Best-effort now; if it can't
         // be created (offline), captures still buffer and the draft is created on the first flush (#147 F2).
         if (meUser) ensureDraft();
@@ -163,7 +202,7 @@
         const step = RB.recStepM(c.accuracy); // accuracy-scaled sampling (shared with the Editor's recording)
         if (!lastSampled || RB.geo.haversineM(lastSampled, here) >= step) {
             lastSampled = here; track.push(here);
-            RBGpxRecorder.add(here, fix.tnow); // the crash-safe checkpoint + live file own the authoritative track
+            RBGpxRecorder.add(here, fix.tnow); // its crash-safe checkpoint owns the authoritative track
             refreshMap();
         }
         renderBar();
@@ -188,6 +227,7 @@
     };
     $('recStop').onclick = async () => {
         if (!(await RBConfirm(t('Finish the recording?')))) return;
+        elapsedAcc = elapsed(); segStart = 0; // the clock stops here (and a No below resumes it from here)
         stopMeter();
         // end() stops logging and hands over the track but KEEPS the crash checkpoint: from here
         // until the finish options land it somewhere, this is the only copy of the recording, so
@@ -198,9 +238,9 @@
             // drop them in silence (#647); No goes back to recording
             const lost = wpts.length + photos.length;
             if (lost && !(await RBConfirmDanger(t('Route too short to save.') + '<br>' + t('Discard it with its notes and photos?') + ` (${wpts.length} ${t('notes')} · ${photos.length} ${t('photos')})`))) {
-                RBGpxRecorder.resume(r.name); startMeter(); return;
+                RBGpxRecorder.resume(r.name, r.pts); startMeter(); return; // every point so far, not the last checkpoint
             }
-            clearSession(); RBGpxRecorder.clearCheckpoint(); return toast(t('Route too short to save.'));
+            discardRecording(); return toast(t('Route too short to save.'));
         }
         saveFinishing(r.pts, r.name); // the checkpoint holds it until the finish options land it (#460 · #647)
         finishModal(r.pts, r.name);
@@ -233,8 +273,8 @@
     };
     // the map's own switches, big enough to hit on the move: base style · course-up
     $('recLayer').onclick = () => { if (map) map.toggleBaseStyle(); };
-    const paintHeading = () => $('recHeading').classList.toggle('on', !!(map && map._headingUp));
-    $('recHeading').onclick = () => { if (map) { map.setHeadingUp(!map._headingUp); paintHeading(); } };
+    const paintHeading = () => $('recHeading').classList.toggle('on', !!(map && map.headingUp()));
+    $('recHeading').onclick = () => { if (map) { map.setHeadingUp(!map.headingUp()); paintHeading(); } };
     paintHeading();
     // The photo is open to everyone: the shot is queued, uploaded when signed in and kept on the
     // device otherwise (#147 F3); the idle hint tells a signed-out user so. Called once config() is known.
@@ -246,10 +286,11 @@
     }
 
     /* ---------- offline-first media queue (#147) ----------
-       Photos and voice notes are buffered in IndexedDB and uploaded with retry, so a
-       network drop mid-recording never loses them. A photo shows an optimistic pin from
-       a local blob URL, reconciled to the server URL (with its id) when the upload lands. */
-    RBMediaQueue.init({
+       Photos are buffered in IndexedDB and uploaded with retry, so a network drop
+       mid-recording never loses them. A photo shows an optimistic pin from a local blob
+       URL, reconciled to the server URL (with its id) when the upload lands. Started once
+       startup has restored the pins (see above). */
+    const initMediaQueue = () => RBMediaQueue.init({
         // pre-draft/offline captures have no roadbook yet; the queue asks for one at flush
         // time and this creates the draft once a connection is back (#147 F2)
         resolveRoadbook: ensureDraft,
@@ -260,7 +301,6 @@
             el.textContent = n ? (n + ' ' + t(meUser ? 'awaiting upload' : 'kept on this device')) : '';
         },
         onDone: (item, res) => {
-            if (item.kind !== 'photo') return; // voice notes have no map pin to reconcile
             const p = photos.find((x) => x.token === item.token);
             if (!p) return; // uploaded from a previous session — no pin in this one
             if (p.local && p.url) { try { URL.revokeObjectURL(p.url); } catch (e) {} }
@@ -283,9 +323,15 @@
         // optimistic pin from the local blob; reconciled to the server URL on upload (onDone)
         const token = 'p' + Date.now() + '_' + (++mediaSeq);
         const localUrl = URL.createObjectURL(f);
-        photos.push({ token, url: localUrl, lat, lon, local: true, pending: true });
+        const pin = { token, url: localUrl, lat, lon, local: true, pending: true };
+        photos.push(pin);
         refreshMap(); saveSession(); renderBar();
-        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
+        // The device could not keep it (storage full, private mode): say so. The pin is marked
+        // failed — it lives in this page only, and a reload cannot bring it back.
+        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token).catch(() => {
+            pin.pending = false; pin.failed = true; saveSession();
+            toast('Could not save.');
+        });
         // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
         // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
         if (lat != null) { dropWaypoint(lat, lon).photo = token; saveSession(); } // the note knows its photo (#792)
@@ -294,18 +340,23 @@
     /* ---------- finish: Save (into the draft, then the Editor) or Discard ---------- */
 
     // Build the roadbook from the track + waypoints and write it into the draft that holds the
-    // geotagged photos and voice notes (rb_save with id=draft), so nothing has to go through the
-    // Editor. ensureDraft() first guarantees a single container for both the notes and the media.
+    // geotagged photos (rb_save with id=draft), so nothing has to go through the Editor.
+    // ensureDraft() first guarantees a single container for both the notes and the photos.
     // Returns { id, roadbook } or null (too short / save failed — a toast is shown).
     // A note dropped by a photo carries that photo as its Photo extra (#792), embedded like any
-    // extra; the photo itself stays in the roadbook's gallery. A photo that cannot be read (gone
-    // from the device, offline) just leaves its note without the extra.
+    // extra; the photo itself stays in the roadbook's gallery. One still waiting to upload is read
+    // from its queued capture. A photo that cannot be read (gone from the device, offline) just
+    // leaves its note without the extra.
     const PHOTO_MAX = RB.blockType({ type: 'photo' }).imageMax;
+    async function photoBlob(p) {
+        const rec = p.local ? await RBMediaQueue.get(p.token) : null;
+        return rec && rec.blob ? rec.blob : (await fetch(p.url)).blob();
+    }
     async function withPhotos(list) {
         return Promise.all(list.map(async (w) => {
             const p = w.photo && photos.find((x) => x.token === w.photo);
             if (!p || !p.url) return w;
-            try { return Object.assign({}, w, { blocks: [{ type: 'photo', at: 'after', image: await RBImg.toDataURL(await (await fetch(p.url)).blob(), PHOTO_MAX) }] }); }
+            try { return Object.assign({}, w, { blocks: [{ type: 'photo', at: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }] }); }
             catch (e) { return w; }
         }));
     }
@@ -313,8 +364,8 @@
         let roadbook;
         try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts: await withPhotos(wpts) }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
-        const id = await ensureDraft(); // the draft the queued photos/voice notes also attach to
-        const r = await RBApi('rb_save', { id: id || draftId || 0, status: 'draft', roadbook: RB.roadbookForExport(roadbook) });
+        const id = await ensureDraft(); // the draft the queued photos also attach to
+        const r = await RBApi('rb_save', { id: id || 0, status: 'draft', roadbook: RB.roadbookForExport(roadbook) });
         if (!r.ok) { toast(r.error || t('Could not save.')); return null; }
         draftId = r.id;
         try { RBMediaQueue.flush(); } catch (e) {} // push any still-buffered media into this draft
@@ -322,10 +373,12 @@
     }
 
     // Back from the sign-in redirect with a recording queued for saving: save it and open it in the
-    // Editor; if that fails, the question comes back (the toast has said why).
+    // Editor; if that fails, the question comes back (the toast has said why) and the stash stays.
     async function saveAfterLogin(pend) {
         const built = await saveToProfile(pend.pts, pend.name);
-        if (built) location.href = '../editor/?rb=' + built.id; else finishModal(pend.pts, pend.name);
+        if (!built) return finishModal(pend.pts, pend.name);
+        clearRecording();
+        location.href = '../editor/?rb=' + built.id;
     }
 
     // The end of a recording is one question (#791): Save or Discard. Save stores the draft roadbook
@@ -347,21 +400,21 @@
                 // brings it back here to be saved. Leave only once it is safely stashed — a storage-quota
                 // failure on a huge track must not redirect and lose it.
                 let stashed = false;
-                try { localStorage.setItem(PENDING_SAVE, JSON.stringify({ pts, wpts, name: nm, recordedM })); stashed = true; } catch (e) {}
+                try { localStorage.setItem(PENDING_SAVE, JSON.stringify({ pts, wpts, photos: persistedPhotos(), draftId, name: nm, recordedM })); stashed = true; } catch (e) {}
                 if (!stashed) return toast(t('Could not save.'));
-                RBGpxRecorder.clearCheckpoint(); clearSession(); // the stash is the copy now
+                RBGpxRecorder.clearCheckpoint(); clearSession(); // the stash is the copy now, kept until the save lands
                 location.href = RBLoginUrl();
                 return;
             }
             const busy = RBBusy(d.q('#rfSave')); // the network write takes a moment
             const built = await saveToProfile(pts, nm);
             if (!built) { busy.reset(); return; } // the toast said why; the recording is still safe
-            RBGpxRecorder.clearCheckpoint(); clearSession();
+            clearRecording();
             location.href = '../editor/?rb=' + built.id;
         };
         d.q('#rfDiscard').onclick = async () => {
             if (!(await RBConfirmDanger(t('Discard this recording?') + '<br>' + summary))) return;
-            RBGpxRecorder.clearCheckpoint(); clearSession();
+            discardRecording();
             d.close();
         };
     }

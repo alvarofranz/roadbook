@@ -1,6 +1,6 @@
 'use strict';
-/* RBGpxRecorder — crash-safe GPX track logging, shared by the Tripmaster and
- * the Reader (optional log while navigating). Owns the settings modal (sample
+/* RBGpxRecorder — crash-safe GPX track logging, shared by the Tripmaster, the
+ * Reader (optional log while navigating) and the Recorder (the route it records). Owns the settings modal (sample
  * rate, file name), a localStorage checkpoint recovered after a crash, and the
  * finished-track modal (download · convert into a roadbook in the Editor). The
  * page reflects on/off state via init({ onChange }) and feeds GPS fixes with feed().
@@ -63,12 +63,15 @@ window.RBGpxRecorder = (() => {
         if (!(await RBConfirm(RBt('Stop recording?')))) return;
         return handOver();
     }
-    // continue an interrupted log after a reload, from its checkpoint
-    function resume(savedName) {
+    // Continue a log: after a reload from the checkpoint, or — when the caller still holds the
+    // points end() handed it — from those, which are fresher than the last 3 s checkpoint.
+    function resume(savedName, fromPts) {
         fileName = savedName || defaultName();
         const saved = RBCheckpoint.read(CHECKPOINT_KEY);
-        pts = (saved && saved.pts) || []; lastT = 0; on = true; onChange(true);
+        pts = fromPts ? fromPts.slice() : ((saved && saved.pts) || []); lastT = 0; on = true; onChange(true);
     }
+    // The user said No to picking this log back up: mark it, never delete it (#436).
+    const decline = () => RBCheckpoint.decline(CHECKPOINT_KEY);
     // Offer to rescue an orphaned checkpoint (crash/closed tab with no session to resume). A No is
     // remembered on the checkpoint and never asked again — it is not deleted (#436); a Yes hands the
     // points to the finished-track modal, whose destinations clear it (#460 · #686). A new
@@ -78,7 +81,7 @@ window.RBGpxRecorder = (() => {
         if (!saved || !saved.pts || saved.pts.length < 2 || saved.declined) return;
         const t = RBt;
         if (await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')')) return finishedModal(saved.pts, saved.name || defaultName());
-        RBCheckpoint.decline(CHECKPOINT_KEY);
+        decline();
     }
     // opts.sampleRate: false hides the interval field (the Editor samples by
     // distance itself) · opts.onStart replaces the default begin()
@@ -132,7 +135,7 @@ window.RBGpxRecorder = (() => {
     }
 
     return {
-        settings, begin, stop, handOver, end, clearCheckpoint, feed, add, resume, offerRecovery,
+        settings, begin, stop, handOver, end, clearCheckpoint, decline, feed, add, resume, offerRecovery,
         get recording() { return on; },
         get fileName() { return fileName; },
         init(opts) { onChange = opts.onChange || onChange; toast = opts.toast || toast; },

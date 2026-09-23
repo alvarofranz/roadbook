@@ -165,6 +165,7 @@ window.RBMap = class RBMap {
     // Re-apply the last known position once the map can actually draw it.
     _replayPosition() { const p = this._lastPos; if (p) this.setPosition(p.lat, p.lon, p.follow, p.heading); }
     // Heading-up on/off (the live recorder's map toggle). Off snaps back to north.
+    headingUp() { return this._headingUp; }
     setHeadingUp(on) { this._headingUp = !!on; this._replayPosition(); if (!this._headingUp && this.map) this.map.easeTo({ bearing: 0, duration: 400 }); } // the replay re-anchors the chevron
     _empty() { return { type: 'FeatureCollection', features: [] }; }
     // 3D: real elevation + atmospheric sky for a richer satellite view.
@@ -430,8 +431,8 @@ function headingToggleControl(rbmap) {
             b.title = window.RBt ? RBt('Heading up') : 'Heading up';
             b.setAttribute('aria-label', b.title);
             b.innerHTML = '<i class="fa-solid fa-location-arrow" aria-hidden="true"></i>';
-            const sync = () => b.classList.toggle('rb-ctrl-on', rbmap._headingUp);
-            b.onclick = () => { rbmap.setHeadingUp(!rbmap._headingUp); sync(); };
+            const sync = () => b.classList.toggle('rb-ctrl-on', rbmap.headingUp());
+            b.onclick = () => { rbmap.setHeadingUp(!rbmap.headingUp()); sync(); };
             sync();
             c.appendChild(b); this._c = c;
             return c;

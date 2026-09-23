@@ -171,7 +171,8 @@ traccia GPX e fa di tutto per non perderla.
 | `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
 | `handOver()` | chiude il log (`end()`) e lo affida al modal "traccia registrata"; risolve quando il modal ha finito (Download o Scarta confermato — Converti lascia la pagina). Una traccia sotto i 2 punti non ha modal: "Track too short", checkpoint pulito. Lo usa il Reader alla fine di una run |
 | `stop()` | lo Stop dell'utente: chiede conferma, poi `handOver()` |
-| `resume(savedName)` | riprende un log interrotto da un reload, dal checkpoint ([gpx-recorder.js:54](../public/assets/js/gpx-recorder.js#L54)) |
+| `resume(savedName, fromPts?)` | riprende un log: dopo un reload dal checkpoint, oppure dai punti che `end()` aveva reso (`fromPts`, più freschi dell'ultimo checkpoint da 3 s) |
+| `decline()` | l'utente ha detto No a riprendere: il checkpoint viene **marcato** `declined`, mai cancellato (#436), e `offerRecovery` non lo propone più |
 | `offerRecovery()` | offre di recuperare un checkpoint orfano (crash senza sessione) ([gpx-recorder.js:60](../public/assets/js/gpx-recorder.js#L60)) |
 | `recording` (getter) | `true` mentre registra |
 | `fileName` (getter) | il nome del file corrente |
@@ -206,7 +207,8 @@ Due percorsi distinti, in base a se la pagina ha una sessione da riprendere:
 
 - **`resume(savedName)`** — la pagina sapeva di stare registrando (il suo checkpoint di
   sessione lo dice) e ricarica i punti dal checkpoint del recorder, rimettendolo in stato
-  `on`. Usato da Tripmaster ([tripmaster.js:34](../public/tripmaster/tripmaster.js#L34)),
+  `on`. Il Recorder lo usa anche senza reload, `resume(name, r.pts)`, quando un *End* su una
+  traccia troppo corta viene annullato: riparte da tutti i punti resi da `end()`. Usato da Tripmaster ([tripmaster.js:34](../public/tripmaster/tripmaster.js#L34)),
   Recorder ([recorder.js:50](../public/recorder/recorder.js#L50)) e Reader
   ([reader.js:151](../public/reader/reader.js#L151)).
 - **`offerRecovery()`** — non c'è sessione da riprendere ma resta un checkpoint orfano (≥2

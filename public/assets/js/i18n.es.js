@@ -79,8 +79,8 @@
             'hero.lead': 'Crea un roadbook desde un GPX, síguelo con GPS y compártelo. 4x4, moto, bici, correr… cualquier aventura.',
             'flow.kicker': 'Funciones', 'flow.title': 'Todo lo que necesitas',
             'flow.s1': 'Graba una ruta', 'flow.s2': 'Prepara un roadbook', 'flow.s3': 'Úsalo con amigos', 'flow.s4': 'Organiza un evento',
-            'feat.1.t': 'Editor de roadbook', 'feat.1.d': 'Crea un roadbook desde un GPX y edita notas con Rally standards.',
-            'feat.2.t': 'Roadbook Recorder', 'feat.2.d': 'Graba un Roadbook con notas, notas de voz, fotos y geoetiquetas.',
+            'feat.1.t': 'Editor de roadbook',
+            'feat.2.t': 'Roadbook Recorder',
             'feat.4.t': 'Lector de roadbook', 'feat.4.d': 'Navega con odómetro, rumbo, mapa en vivo y la barra de dirección CAP.',
             'feat.5.t': 'Tripmaster', 'feat.5.d': 'Un odómetro GPS preciso sin roadbook — distancia parcial y total.',
             'feat.7.t': 'Clasificación del evento', 'feat.7.d': 'Organiza un rally sobre un mismo roadbook: compara la vuelta de cada equipo — precisión, CAP, velocidad y regularidad — en una clasificación final, a partir de los QR de resultado firmados.',
@@ -115,7 +115,7 @@
             'Finish': 'Finalizar', 'Save': 'Guardar',
             'Public': 'Público', 'Visibility': 'Visibilidad', 'Draft': 'Borrador', 'Ready': 'Listo', 'Status': 'Estado', 'Status updated.': 'Estado actualizado.',
             'Open in Google Maps': 'Abrir en Google Maps', 'Open in Google Earth': 'Abrir en Google Earth', 
-            'Record a Roadbook with geotagged notes, photos and voice memos.': 'Graba un Roadbook con notas, fotos y notas de voz georreferenciadas.', 'Start recording': 'Empezar a grabar',
+            'Start recording': 'Empezar a grabar',
             
             'Default map location': 'Ubicación predeterminada del mapa',
             'Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.': 'Centra el mapa cuando aún no hay señal GPS — al abrir la Grabadora o al dibujar una ruta nueva. Toca el mapa o arrastra el pin.',
@@ -1370,7 +1370,6 @@ Object.assign(window.RBi18nLangs.es, {
 Object.assign(window.RBi18nLangs.es, {
     
     "Record a route": "Grabar una ruta",
-    "GPS track, notes, photos and voice memos": "Traza GPS, notas, fotos y notas de voz",
     "See all": "Ver todos",
     "Keep your roadbooks and runs, and join events": "Guarda tus roadbooks y recorridos, y únete a eventos",
     "Hi": "Hola",
@@ -1527,4 +1526,13 @@ Object.assign(window.RBi18nLangs.es, {
 /* Reader: a .rdbk opened from the OS during a run */
 Object.assign(window.RBi18nLangs.es, {
     "Open this file and leave the run in progress? Your progress on the notes will be lost.": "¿Abrir este archivo y salir del recorrido en curso? Se perderá tu progreso en las notas.",
+});
+
+/* Recorder: notes and photos, the GPS-fix toast, the Editor feature line */
+Object.assign(window.RBi18nLangs.es, {
+    "GPS could not get a fix. Move to an open area and restart the recording.": "El GPS no consigue una posición. Ve a una zona despejada y vuelve a iniciar la grabación.",
+    "Record a Roadbook with geotagged notes and photos.": "Graba un Roadbook con notas y fotos georreferenciadas.",
+    "GPS track, notes and photos": "Traza GPS, notas y fotos",
+    "Record a Roadbook with notes, photos and geotags.": "Graba un Roadbook con notas, fotos y geoetiquetas.",
+    "Build a roadbook from a GPX; design each note with rally standards.": "Crea un roadbook desde un GPX y diseña cada nota con los estándares de rally.",
 });

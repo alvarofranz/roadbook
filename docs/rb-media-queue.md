@@ -1,8 +1,8 @@
 # RBMediaQueue — offline-first media upload queue
 
-Buffers geotagged photos and voice notes in IndexedDB so a network drop mid-recording
-never silently loses a capture. Used by the [Recorder](recorder.md) and the Editor's
-"Record route" feature.
+Buffers geotagged photos in IndexedDB so a network drop mid-recording never silently
+loses a capture. Used by the [Recorder](recorder.md) and the Editor's "Adjust on the
+trail".
 
 > Module: [rb-media-queue.js](../public/assets/js/rb-media-queue.js). Exposes
 > `window.RBMediaQueue`. The pure orchestration is in `createQueue`, also exported
@@ -17,7 +17,7 @@ Two layers:
 | Layer | File | Role |
 |-------|------|------|
 | **Orchestration** (`createQueue`) | pure factory | FIFO ordering, retry, reconciliation — testable with a mock store |
-| **Browser adapter** | IndexedDB + `RBUpload`/`RBUploadAudio` | persistent blob storage, real upload, `online` event listener |
+| **Browser adapter** | IndexedDB + `RBUpload` | persistent blob storage, real upload, `online` event listener |
 
 ### `createQueue(deps)` — pure factory
 
@@ -28,7 +28,7 @@ Two layers:
 | `schedule` | `() => void` | schedule a retry pass |
 | `isOffline` | `() => boolean` | gate to skip a pass when offline |
 
-Returns `{ add, flush, clear, items, init }`.
+Returns `{ add, flush, get, drop, init }`.
 
 ---
 
@@ -37,7 +37,10 @@ Returns `{ add, flush, clear, items, init }`.
 | Method | Signature | Purpose |
 |--------|-----------|---------|
 | `init` | `init({ onDone, onChange, resolveRoadbook })` | Wire callbacks and drain any leftover items from a previous session |
-| `add` | `add(kind, blob, fields, name, token)` | Enqueue a capture (`token` = client-side id for optimistic UI reconciliation) |
+| `add` | `add(kind, blob, fields, name, token)` | Enqueue a capture (`token` = client-side id for optimistic UI reconciliation). Rejects when IndexedDB cannot store it (quota, private mode): nothing is queued and the caller says so (the Recorder toasts *Could not save.* and marks the pin failed) |
+| `flush` | `flush()` | Drain now, e.g. once a draft exists, instead of waiting for the retry timer or `online` |
+| `get` | `get(token)` | The queued record (blob included) of one capture, or `null` once it has uploaded — how the Recorder gets a waiting photo back after a reload |
+| `drop` | `drop(tokens)` | Delete the captures with these tokens, and skip them in a pass already running — a discarded recording takes its photos with it instead of leaving them to upload into the next roadbook |
 
 ### Callbacks (`init`)
 
@@ -53,7 +56,7 @@ Returns `{ add, flush, clear, items, init }`.
 
 | Scenario | Behaviour |
 |----------|-----------|
-| **Logged in, online** | Uploads immediately via `RBUpload`/`RBUploadAudio`; `onDone` reconciles the optimistic UI pin with the server id |
+| **Logged in, online** | Uploads immediately via `RBUpload`; `onDone` reconciles the optimistic UI pin with the server id |
 | **Logged in, offline** | Stays queued; retried every 20 s (`RETRY_MS`) and on the `online` event |
 | **No draft yet** | `resolveRoadbook` is called (creates the draft lazily, #147 F2); item stays queued until a draft id is obtained |
 | **Logged out** | Photos stay on the device; `resolveRoadbook` returns `null` → items remain queued until Save goes through sign-in and the draft exists, then they upload into it (#791) |
@@ -70,9 +73,8 @@ Returns `{ add, flush, clear, items, init }`.
 
 - **No upload prioritisation**: all items are attempted in timestamp order, one
   HTTP call per item. A large batch of photos uploads sequentially.
-- **`RBUpload`/`RBUploadAudio` handle the actual HTTP**: the queue only decides
-  *when* to upload; the image downscale and audio MIME detection are in those
-  shared helpers (see [app-shell.md](app-shell.md) §8).
+- **`RBUpload` handles the actual HTTP**: the queue only decides *when* to upload;
+  the image downscale is in that shared helper (see [app-shell.md](app-shell.md) §8).
 - **Retry is a timer, not exponential backoff**: 20 s fixed interval.
-- **Clearing the queue does not cancel in-flight uploads**: `clear` deletes all
-  queued items from IndexedDB but an already-started `fetch` completes normally.
+- **Dropping does not cancel an in-flight upload**: `drop` deletes the queued items
+  and skips them in the running pass, but a `fetch` already started completes.
