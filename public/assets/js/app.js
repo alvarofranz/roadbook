@@ -1316,12 +1316,11 @@
        from its first step, so an interrupted one (a reload, a crash) never comes back. A step whose
        control is not on screen is left out. steps: [{ target: CSS selector, title, text }] — short English
        source strings: a title of a word or two and one line saying what the control does. */
-    // The device's answers — { gen, optin: 'yes'|'no', seen: [tool ids] } — belong to one tour
-    // GENERATION: raising TOUR_GEN hands the tours back to everyone, as if never answered (#914).
-    const TOUR_KEY = 'rb_tour', TOUR_GEN = 2;
+    // The device's answers: { optin: 'yes'|'no', seen: [tool ids] }
+    const TOUR_KEY = 'rb_tour';
     function tourState() {
-        try { const s = JSON.parse(localStorage.getItem(TOUR_KEY) || 'null'); if (s && s.gen === TOUR_GEN) return s; } catch (e) {}
-        return { gen: TOUR_GEN, optin: null, seen: [] };
+        try { const s = JSON.parse(localStorage.getItem(TOUR_KEY) || 'null'); if (s && Array.isArray(s.seen)) return s; } catch (e) {}
+        return { optin: null, seen: [] };
     }
     const saveTour = (s) => { try { localStorage.setItem(TOUR_KEY, JSON.stringify(s)); } catch (e) {} };
     let touring = false;
