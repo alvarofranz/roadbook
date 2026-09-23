@@ -527,9 +527,7 @@ con titolo, una frase, i puntini di avanzamento, **Salta tutorial** e **Avanti**
   tour, da nessuna parte.
 - Dopo un Sì, **ogni strumento mostra il suo tour una volta**. Conta come visto dal
   primo passo, così un tour interrotto non torna. Salta ed Esc lo chiudono per sempre.
-- Le risposte del dispositivo stanno in `rb_tour` (`{ gen, optin, seen }`) e valgono per una
-  **generazione** di tour: alzare `TOUR_GEN` in `app.js` li ridà a tutti, come se non avessero mai
-  risposto (#914, oggi 2).
+- Le risposte del dispositivo stanno in `rb_tour` (`{ optin, seen }`).
 - Un passo il cui comando non è sullo schermo viene saltato.
 - `steps: [{ target, title, text }]` sono stringhe sorgente inglesi brevi, tradotte con `RBt`.
 - I tour: Reader (all'inizio della navigazione, da fermi), Recorder (all'inizio della registrazione),

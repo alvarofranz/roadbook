@@ -58,22 +58,6 @@ describe('RBTour', () => {
     });
 });
 
-describe('a new tour generation (#914)', () => {
-    beforeEach(() => {
-        localStorage.clear();
-        document.body.innerHTML = '<button id="a">A</button><button id="b">B</button>';
-        for (const el of document.querySelectorAll('button')) el.getBoundingClientRect = () => ({ left: 10, top: 10, right: 60, bottom: 40, width: 50, height: 30 });
-    });
-    it('hands the tours back to a device that answered an older one', async () => {
-        localStorage.setItem('rb_tour', JSON.stringify({ gen: 1, optin: 'no', seen: ['reader'] }));
-        load(true);
-        await window.RBTour('reader', steps); await tick();
-        expect(asked).toBe(1);                             // asked again
-        expect(document.querySelector('.tour')).not.toBeNull(); // and shown
-        expect(JSON.parse(localStorage.getItem('rb_tour'))).toMatchObject({ gen: 2, optin: 'yes', seen: ['reader'] });
-    });
-});
-
 describe('every tool has its tour', () => {
     for (const [file, id] of [['public/reader/reader.js', 'reader'], ['public/editor/editor.js', 'editor'], ['public/recorder/recorder.js', 'recorder'], ['public/tripmaster/tripmaster.js', 'tripmaster']]) {
         it(`${id}: every step points at a control that exists`, () => {
