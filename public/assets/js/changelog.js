@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.4', date: '2026-09-23',
+        title: 'Built for the ride',
+        items: [
+            'The Recorder is one big Note button: a bell and a big check confirm each note, the map shows the distance since the last one, and Pause · End sit at the bottom.',
+            'The Reader rings the same bell on every validated note, and a long note never hides the next one.',
+            'Roadbook and event cards share one clear design, with vehicles, distance, notes and dates at a glance.',
+            'In the app your session and any recording in progress survive the phone clearing its storage, and the status bar steps aside while you navigate.',
+            'The Editor map is cleaner and darker, a failed sign-in always tells you why, and a car is now a 4x4.',
+        ],
+    },
+    {
         version: '1.9.3', date: '2026-09-23',
         title: 'Polish from the road test',
         items: [

@@ -33,8 +33,10 @@ window.RBStatusBar = (function () {
         q('gps').textContent = gpsTxt;
     }
     return {
-        show() { ensure(); el.hidden = false; if (!clockTimer) clockTimer = setInterval(render, 1000); render(); },
-        hide() { if (el) el.hidden = true; if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } },
+        // `gps-live` on the body says a GPS tool owns the screen; in the app the system status bar
+        // steps aside then, since this bar already carries the clock and the battery (#778)
+        show() { ensure(); el.hidden = false; document.body.classList.add('gps-live'); if (!clockTimer) clockTimer = setInterval(render, 1000); render(); },
+        hide() { if (el) el.hidden = true; document.body.classList.remove('gps-live'); if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } },
         // The Geolocation API exposes accuracy, not a satellite count — show signal quality.
         setGps(acc) {
             const t = window.RBt || ((k) => k);

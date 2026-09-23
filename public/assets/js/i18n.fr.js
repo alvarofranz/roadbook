@@ -1305,3 +1305,13 @@ Object.assign(window.RBi18nLangs.fr, {
     "Upcoming": "À venir",
     "Live": "En cours",
 });
+
+/* 1.9.4 release note */
+Object.assign(window.RBi18nLangs.fr, {
+    "Built for the ride": "Fait pour la route",
+    "The Recorder is one big Note button: a bell and a big check confirm each note, the map shows the distance since the last one, and Pause · End sit at the bottom.": "Le Recorder, c’est un grand bouton Note : une cloche et une grande coche confirment chaque note, la carte affiche la distance depuis la dernière, et Pause · Terminer sont en bas.",
+    "The Reader rings the same bell on every validated note, and a long note never hides the next one.": "Le Reader fait sonner la même cloche à chaque note validée, et une note longue ne cache plus la suivante.",
+    "Roadbook and event cards share one clear design, with vehicles, distance, notes and dates at a glance.": "Les cartes des roadbooks et des événements partagent un design clair, avec véhicules, distance, notes et dates en un coup d’œil.",
+    "In the app your session and any recording in progress survive the phone clearing its storage, and the status bar steps aside while you navigate.": "Dans l’app, votre session et tout enregistrement en cours survivent au nettoyage du stockage par le téléphone, et la barre d’état s’efface pendant la navigation.",
+    "The Editor map is cleaner and darker, a failed sign-in always tells you why, and a car is now a 4x4.": "La carte de l’Éditeur est plus nette et plus sombre, une connexion échouée dit toujours pourquoi, et la voiture est désormais un 4x4.",
+});

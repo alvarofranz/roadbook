@@ -12,7 +12,11 @@
  * device storage (the WebView ignores `<a download>` — we write the blob with the
  * native Filesystem plugin and, on iOS, open the OS "Save to Files" sheet). RBGpsMeter
  * calls RBNative.geo when it is present, so the Reader, Tripmaster and Recorder gain
- * uninterrupted tracking with no change to their own code. */
+ * uninterrupted tracking with no change to their own code.
+ *
+ * It also keeps the session and the work in progress safe from a wiped WebView storage (durable.js
+ * over native Preferences), and styles the system status bar: light on dark to match the app, out
+ * of the way while a GPS tool owns the screen (#778). */
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BackgroundGeolocation } from '@capgo/background-geolocation';
@@ -22,6 +26,9 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { FileSharer } from '@capgo/capacitor-file-sharer';
+import { Preferences } from '@capacitor/preferences';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { createMirror } from './durable.js';
 import { parseDeepLink } from './deeplink.js';
 import { androidSaveFolder } from './save-target.js';
 
@@ -242,3 +249,30 @@ function handleDeepLink(url) {
 App.addListener('appUrlOpen', (e) => { if (e && e.url) handleDeepLink(e.url); });
 App.getLaunchUrl().then((res) => { if (res && res.url) handleDeepLink(res.url); }).catch(() => {});
 consumePendingJoin();
+
+/* Durable storage (#778, durable.js). Every write to a durable key goes to localStorage as usual
+ * and is mirrored into native Preferences; at startup a wiped storage is refilled from them, and
+ * the page reloads once so it starts from the restored session instead of a signed-out blank. */
+const mirror = createMirror({ storage: window.localStorage, prefs: Preferences });
+const storageSet = Storage.prototype.setItem, storageRemove = Storage.prototype.removeItem;
+Storage.prototype.setItem = function (key, value) { storageSet.call(this, key, value); if (this === window.localStorage) mirror.onSet(key); };
+Storage.prototype.removeItem = function (key) { storageRemove.call(this, key); if (this === window.localStorage) mirror.onRemove(key); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) mirror.flush(); });
+App.addListener('pause', () => { mirror.flush(); });
+mirror.reconcile().then((restored) => { if (restored) window.location.reload(); }).catch(() => {});
+
+/* The system status bar (#778): light icons on the app's dark background, and hidden while a tool
+ * owns the screen — the Reader navigating (body.rb-immersive) or a GPS session with its own bar
+ * of clock · battery · GPS (body.gps-live). One observer on the body's classes, so no page has to
+ * call the bridge. */
+StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+if (Capacitor.getPlatform() === 'android') StatusBar.setBackgroundColor({ color: '#0e1116' }).catch(() => {});
+let statusBarHidden = false;
+function syncStatusBar() {
+    const hide = document.body.classList.contains('rb-immersive') || document.body.classList.contains('gps-live');
+    if (hide === statusBarHidden) return;
+    statusBarHidden = hide;
+    (hide ? StatusBar.hide() : StatusBar.show()).catch(() => {});
+}
+function watchBody() { syncStatusBar(); new MutationObserver(syncStatusBar).observe(document.body, { attributes: true, attributeFilter: ['class'] }); }
+if (document.body) watchBody(); else document.addEventListener('DOMContentLoaded', watchBody);
