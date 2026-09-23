@@ -1495,3 +1495,8 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "Sign in to comment": "Accedi per commentare",
 });
+
+/* the translation editor asks before a reset throws a label’s edits away */
+Object.assign(window.RBi18nLangs.it, {
+    "Discard the pending edits of this label?": "Scartare le modifiche in sospeso di questa etichetta?",
+});

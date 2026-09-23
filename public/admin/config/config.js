@@ -40,7 +40,7 @@
         }, 200);
         $('transEditOn').onclick = () => {
             if (!window.RBI18nSetEdit) return toast('The translation editor is still loading — try again in a moment.'); // never a dead button (#667)
-            RBI18nSetEdit(true); toast(t('Translation editor is on. Navigate to any page and right-click a label to edit it.'));
+            RBI18nSetEdit(true); toast('Translation editor is on. Navigate to any page and right-click a label to edit it.');
         };
     })();
 })();

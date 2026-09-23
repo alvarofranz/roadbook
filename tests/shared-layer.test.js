@@ -69,6 +69,11 @@ describe('RBDebounce + a sequence guard for the searches that ask the server', (
         expect(admin).toContain("m.q('#rbsSearch').oninput = RBDebounce(");
         expect(admin).toMatch(/const seq = \+\+rbSeq;[\s\S]*?if \(seq !== rbSeq\) return;/);
     });
+    it('so do the other debounced lists: the users, the global log and the participants', () => {
+        expect(read('public/admin/admin.js')).toMatch(/async function load\(\) \{\n {8}const seq = \+\+loadSeq;[\s\S]*?const r = await api\('admin_users', params\);\n {8}if \(seq !== loadSeq\) return;/);
+        expect(read('public/admin/logs/admin-logs.js')).toMatch(/const seq = \+\+activitySeq;\n {8}const r = await RBApi\('admin_activity_log', \{ q, page \}\);\n {8}if \(seq !== activitySeq\) return;/);
+        expect(read('public/admin/events/participants/participants.js')).toMatch(/const seq = \+\+loadSeq;\n {8}const r = await api\('event_participants_list'[^\n]*\n {8}if \(seq !== loadSeq\) return;/);
+    });
     it('no page hand-rolls its own search timer any more', () => {
         for (const p of ['public/admin/admin.js', 'public/admin/config/config.js', 'public/admin/logs/admin-logs.js', 'public/admin/events/participants/participants.js']) {
             expect(read(p), p).not.toMatch(/clearTimeout\((search|add|org)Timer\)/);
@@ -147,5 +152,39 @@ describe('the dictionaries', () => {
     it('the site banner level has its own key; the icon palette keeps “Warning” for its danger signs', () => {
         expect(read('public/admin/config/index.html')).toContain('<option value="warning" data-i18n="banner.level.warning">Warning</option>');
         expect(read('public/assets/js/i18n.js')).toContain("'banner.level.warning': 'Warning',");
+    });
+});
+
+describe('what a destructive click in the shared layer asks first', () => {
+    it('the translation editor asks before a reset throws a label’s edits away, naming the label', () => {
+        const edit = read('public/assets/js/i18n-edit.js');
+        expect(edit).toContain("if (LANGS.some((l) => key in delta[l]) && !(await RBConfirmDanger(`${esc(t('Discard the pending edits of this label?'))}<br><b>${esc(key)}</b>`))) return;");
+        expect(edit).toContain("if (!(await RBConfirmDanger(t('Discard all pending translation edits?')))) return;");
+    });
+    it('deleting the account names whose account goes', () => {
+        expect(read('public/account/account.js')).toContain("RBConfirmDanger(t('Delete your account permanently? This cannot be undone.') + (me ? '<br><b>@' + esc(me.username) + '</b>' : ''))");
+    });
+});
+
+describe('a phone never scrolls sideways on the shared pages (#480)', () => {
+    const css = read('public/assets/css/app.css');
+    it('a long handle, email, club, credit or banner wraps instead of widening the page', () => {
+        expect(css).toContain('.head-row > .grow { min-width: 0; }');
+        expect(css).toMatch(/\.site-banner span \{ flex: 1; min-width: 0; overflow-wrap: anywhere; \}/);
+        expect(css).toMatch(/\.ev-line \.meta \{ flex: 1; min-width: 10rem; overflow-wrap: anywhere; \}/);
+        expect(css).toMatch(/\.comment-head a \{ min-width: 0; overflow-wrap: anywhere;/);
+        expect(read('public/u/index.html')).toMatch(/\.pf-id \{ flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; \}/);
+        expect(read('public/account/index.html')).toMatch(/\.profile-id \{ flex: 1; min-width: 200px; overflow-wrap: anywhere; \}/);
+        expect(read('public/challenge/index.html')).toMatch(/\.ch-owner \.grow \{ min-width: 0; overflow-wrap: anywhere; \}/);
+    });
+    it('the public roadbook’s header column is as wide as the screen, never as its longest word', () => {
+        // a WRAPPING column flexbox sizes its line to the items' max-content: one long title word made
+        // the phone page 700 px wide
+        expect(read('public/challenge/index.html')).toMatch(/\.ch-head \{ flex-direction: column; flex-wrap: nowrap;/);
+    });
+    it('the admin’s Runs view is the compact table that fits its dialog', () => {
+        const admin = read('public/admin/admin.js');
+        expect(admin.match(/async function viewRuns[\s\S]*?\n {4}\}/)[0]).toContain('<table class="act-table"><thead>');
+        expect(css).toMatch(/\.act-table th \{/);
     });
 });

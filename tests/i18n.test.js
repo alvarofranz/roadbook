@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { parseAst } from 'rollup/parseAst';
 
 /* i18n regression guards (happy-dom env gives us window/document):
    - every data-i18n key the /features/ pages use must be translated in ALL languages
@@ -104,6 +105,41 @@ describe('i18n — English key parity + all-page data-i18n keys', () => {
         expect(allKeys.size).toBeGreaterThan(400);
         for (const lang of LANGS) {
             const missing = [...allKeys].filter((k) => !(k in langs[lang]));
+            expect(missing, lang).toEqual([]);
+        }
+    });
+
+    // The strings the SCRIPTS translate — RBt/t, the auto-translating toast and the confirms — are no
+    // page attribute, so the walk above never saw them: a toast or a confirm written in English and
+    // never added to a dictionary shipped untranslated. Every literal key a call passes (including
+    // both arms of a `cond ? 'A' : 'B'` and the fallback of `r.error || 'B'`) must exist everywhere.
+    it('every literal key a script passes to RBt, a toast or a confirm is defined in every language', () => {
+        const CALLS = new Set(['t', 'RBt', 'RBToast', 'toast', 'RBConfirm', 'RBConfirmDanger', 'RBNeedAuth']);
+        const scripts = [];
+        const walk = (dir) => {
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const p = path.join(dir, e.name);
+                if (e.isDirectory()) { if (!['fontawesome', 'icons', 'photos', 'audio', 'avatars', 'event-logos'].includes(e.name)) walk(p); }
+                else if (e.name.endsWith('.js') && !/\.min\.js$|native\.bundle\.js$|^i18n(\.\w+)?\.js$|^config\.js$/.test(e.name)) scripts.push(p);
+            }
+        };
+        walk('public');
+        const used = new Map(); // key → the first file that uses it
+        const literals = (node) => node.type === 'Literal' && typeof node.value === 'string' ? [node.value]
+            : node.type === 'ConditionalExpression' ? [...literals(node.consequent), ...literals(node.alternate)]
+            : node.type === 'LogicalExpression' ? literals(node.right) : [];
+        const visit = (node, file) => {
+            if (!node || typeof node !== 'object') return;
+            if (Array.isArray(node)) { node.forEach((n) => visit(n, file)); return; }
+            if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && CALLS.has(node.callee.name) && node.arguments[0]) {
+                for (const k of literals(node.arguments[0])) if (k.trim() && !used.has(k)) used.set(k, file);
+            }
+            for (const key in node) visit(node[key], file);
+        };
+        for (const f of scripts) visit(parseAst(read(f)), f);
+        expect(used.size).toBeGreaterThan(500);
+        for (const lang of LANGS) {
+            const missing = [...used].filter(([k]) => !(k in langs[lang])).map(([k, f]) => `${f}: ${k}`);
             expect(missing, lang).toEqual([]);
         }
     });

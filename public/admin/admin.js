@@ -124,14 +124,16 @@
         if (!r.ok) { box.textContent = t(r.error || 'Could not load.'); return; }
         if (!r.runs.length) { box.textContent = t('No runs yet.'); return; }
         box.classList.remove('muted', 'small');
-        box.innerHTML = `<div class="table-scroll"><table class="users-table"><thead><tr>
+        // the activity log's compact table: it fits the dialog (the users table is 700 px wide) and
+        // scrolls inside itself on a phone, keeping its column heads
+        box.innerHTML = `<table class="act-table"><thead><tr>
                 <th>${esc(t('Date'))}</th><th>${esc(t('Roadbook'))}</th><th class="num">${esc(t('Notes'))}</th><th>${esc(t('Device'))}</th></tr></thead><tbody>
             ${r.runs.map((x) => `<tr>
                 <td class="small">${esc(RBFmtDateTime(x.ended_at))}</td>
-                <td><b>${esc(x.title)}</b><div class="u-handle">${esc(RBKm(x.distance_m, 1))}${x.completed ? '' : ' · ' + esc(t('Not finished'))}${x.is_public ? '' : ' · <i class="fa-solid fa-lock"></i> ' + esc(t('Private'))}${x.mode === 'competition' ? ' · ' + esc(t('Competition')) : ''}</div></td>
+                <td class="cell-wrap"><b>${esc(x.title)}</b><div class="u-handle">${esc(RBKm(x.distance_m, 1))}${x.completed ? '' : ' · ' + esc(t('Not finished'))}${x.is_public ? '' : ' · <i class="fa-solid fa-lock"></i> ' + esc(t('Private'))}${x.mode === 'competition' ? ' · ' + esc(t('Competition')) : ''}</div></td>
                 <td class="num">${x.notes_reached}/${x.notes_total}</td>
-                <td class="small">${esc(x.device || '—')}</td>
-            </tr>`).join('')}</tbody></table></div>`;
+                <td class="small cell-wrap">${esc(x.device || '—')}</td>
+            </tr>`).join('')}</tbody></table>`;
     }
     function viewRoadbooks(u) {
         let rbMap = null, previewId = 0, changed = false; // a change refreshes the user list's count on close (#705)
@@ -291,13 +293,16 @@
     });
     const render = () => list.render();
 
+    let loadSeq = 0; // only the latest request paints: a slow answer to an older filter is dropped
     async function load() {
+        const seq = ++loadSeq;
         const eventId = +($('userEventFilter').value || 0);
         const params = {};
         if (eventId) params.event_id = eventId;
         const org = ($('userOrgFilter').value || '').trim();
         if (org) params.organization = org;
         const r = await api('admin_users', params);
+        if (seq !== loadSeq) return;
         if (!r.ok) { $('adminMsg').hidden = false; $('usersBox').hidden = true; $('adminMsg').textContent = t(r.error || 'Admins only.'); return; }
         me = r.me; meSuper = !!r.me_super;
         allUsers = r.users || []; everyone = null; // the next picker re-reads the full list

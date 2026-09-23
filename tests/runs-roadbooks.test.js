@@ -16,6 +16,11 @@ describe('the run’s device (#870)', () => {
         expect(label('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36')).toBe('Web · Chrome · Android 10');
         expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1', { pwa: true })).toBe('PWA · Safari · iPhone · iOS 16.4');
     });
+    it('names the browser an iPhone runs, not the WebKit every iOS browser reports', () => {
+        expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/129.0 Mobile/15E148 Safari/604.1')).toBe('Web · Chrome · iPhone · iOS 17.5');
+        expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/130.0 Mobile/15E148 Safari/605.1.15')).toBe('Web · Firefox · iPhone · iOS 17.5');
+        expect(label('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/129.0 Mobile/15E148 Safari/605.1.15')).toBe('Web · Edge · iPhone · iOS 17.5');
+    });
     it('is saved with the run and shown to admins only', () => {
         expect(read('public/reader/reader.js')).toContain('device: RBDeviceLabel(),');
         expect(runs).toContain("mb_substr(trim((string)($d['device'] ?? '')), 0, 80) ?: null");

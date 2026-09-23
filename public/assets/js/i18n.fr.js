@@ -1457,3 +1457,8 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Sign in to comment": "Connecte-toi pour commenter",
 });
+
+/* the translation editor asks before a reset throws a label’s edits away */
+Object.assign(window.RBi18nLangs.fr, {
+    "Discard the pending edits of this label?": "Abandonner les modifications en attente de ce libellé ?",
+});

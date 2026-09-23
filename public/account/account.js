@@ -354,7 +354,7 @@
         RBDownload(await RBZip.write(outerFiles), 'rdbk-export_' + (me ? me.username : 'user') + '.zip');
     }
     onSubmit('delForm', async () => {
-        if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.')))) return;
+        if (!(await RBConfirmDanger(t('Delete your account permanently? This cannot be undone.') + (me ? '<br><b>@' + esc(me.username) + '</b>' : '')))) return; // names whose account goes
         if (await RBConfirm(t('Download all your data as a ZIP before deleting?'))) await buildTakeout();
         const busy = busySubmit('delForm');
         const r = await api('account_delete', { password: $('delPass').value });
