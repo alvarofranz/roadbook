@@ -208,6 +208,9 @@ azione su un utente in un posto solo.
 - `admin_users` restituisce per ogni utente anche `runs`, `last_active` (l'ultima riga di
   `activity_log`) e `avatar`, con due query raggruppate: nessuna query per utente.
 
+Aree admin separate (pagine proprie, non in `admin.js`): cestino roadbook (`trash/`, #187), mappa delle
+posizioni utenti (`users-map/`, #499), log (`logs/`), partecipanti eventi (`events/participants/`).
+
 ## 6. Pagina account: viste rilevanti
 
 [public/account/index.html](../public/account/index.html) + [account.js](../public/account/account.js).
