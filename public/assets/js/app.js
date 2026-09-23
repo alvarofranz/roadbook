@@ -1273,11 +1273,22 @@
             bubble.classList.add('on');
         }
         const tipOf = (e) => e.target.closest && e.target.closest('.help-tip');
+        // a tap focuses the ⓘ (opening it) before its click lands, so a tap toggles by what was open
+        // when the finger went DOWN — else its own focus would open it and its own click close it. A
+        // mouse click keeps it open: hovering already showed it, and leaving closes it.
+        let openAtPress = false;
+        document.addEventListener('pointerdown', (e) => { const tip = tipOf(e); openAtPress = !!tip && tip === owner && e.pointerType !== 'mouse'; }, true);
         document.addEventListener('pointerover', (e) => { const tip = tipOf(e); if (tip && e.pointerType === 'mouse') show(tip); });
         document.addEventListener('pointerout', (e) => { if (tipOf(e) === owner && e.pointerType === 'mouse') hide(); });
         document.addEventListener('focusin', (e) => { const tip = tipOf(e); if (tip) show(tip); });
         document.addEventListener('focusout', (e) => { if (tipOf(e) === owner) hide(); });
-        document.addEventListener('click', (e) => { const tip = tipOf(e); if (tip) { e.preventDefault(); if (owner === tip) hide(); else show(tip); } else hide(); });
+        document.addEventListener('click', (e) => {
+            const tip = tipOf(e);
+            if (!tip) return hide();
+            e.preventDefault();
+            if (openAtPress) hide(); else show(tip);
+            openAtPress = false;
+        });
         window.addEventListener('scroll', hide, true);
         window.addEventListener('resize', hide);
     })();
@@ -1289,7 +1300,8 @@
         const surface = isNativeApp() ? 'App' : (isStandalone() ? 'PWA' : 'Web');
         const ios = ua.match(/(iPhone|iPad|iPod).*?OS (\d+)[_.](\d+)/);
         const android = ua.match(/Android (\d+(?:\.\d+)?)(?:; ([^;)]+?))?(?: Build|\))/);
-        const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
+        // iOS browsers are all WebKit and say so ("Safari/"), naming themselves in their own token
+        const browser = /Edg(e|A|iOS)?\//.test(ua) ? 'Edge' : /Firefox\/|FxiOS\//.test(ua) ? 'Firefox' : /Chrome\/|CriOS\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
         const os = ios ? `${ios[1]} · iOS ${ios[2]}.${ios[3]}`
             : android ? [android[2] && android[2] !== 'K' ? android[2].trim() : '', 'Android ' + android[1]].filter(Boolean).join(' · ')
             : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';

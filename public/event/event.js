@@ -83,8 +83,7 @@
     // Joining changes what the server returns (the READY roadbooks appear), so join/leave
     // always re-fetch the whole page payload instead of patching the local state.
     const load = () => RBApi('event_get', { slug })
-        .then((j) => { if (j.ok) { data = j; render(); } else $('evLoading').textContent = t('Not found.'); })
-        .catch(() => { $('evLoading').textContent = t('Not found.'); });
+        .then((j) => { if (j.ok) { data = j; render(); } else $('evLoading').textContent = t(j.error === 'Network error.' ? 'You are offline — reconnect to load this page.' : 'Not found.'); });
     window.addEventListener('rb-lang', () => { if (data) render(); });
     load();
 

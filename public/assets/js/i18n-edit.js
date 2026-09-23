@@ -87,7 +87,11 @@
             block.querySelectorAll('input[data-l]').forEach((inp) => {
                 inp.addEventListener('input', () => setValue(inp.getAttribute('data-l'), key, inp.value));
             });
-            block.querySelector('[data-reset]').onclick = () => { clearKey(key); d.close(); };
+            // a reset throws the typed translations away, so it asks first, naming the label
+            block.querySelector('[data-reset]').onclick = async () => {
+                if (LANGS.some((l) => key in delta[l]) && !(await RBConfirmDanger(`${esc(t('Discard the pending edits of this label?'))}<br><b>${esc(key)}</b>`))) return;
+                clearKey(key); d.close();
+            };
         });
         d.q('[data-export]').onclick = () => { d.close(); exportDelta(); };
         d.q('[data-close]').onclick = d.close;
@@ -114,9 +118,9 @@
         d.q('[data-copy]').onclick = () => RBCopy(text, 'Copied.');
         // Prepend a UTF-8 BOM so Windows tools (Notepad, etc.) read the accents correctly instead
         // of mis-decoding the UTF-8 bytes as Windows-1252 (#118).
-        d.q('[data-dl]').onclick = () => RBDownload(new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' }), 'i18n-delta.txt');
+        d.q('[data-dl]').onclick = () => RBDownload(new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' }), 'i18n-delta.txt');
         d.q('[data-clear]').onclick = async () => {
-            if (!(await RBConfirm(t('Discard all pending translation edits?'), true))) return;
+            if (!(await RBConfirmDanger(t('Discard all pending translation edits?')))) return;
             LANGS.forEach((l) => { delta[l] = {}; }); saveDelta(); d.close(); location.reload();
         };
         d.q('[data-close]').onclick = d.close;

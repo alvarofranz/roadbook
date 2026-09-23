@@ -33,8 +33,11 @@
         if (status === 'active') return t('No active participants yet.');
         return t('No participants yet.');
     }
+    let loadSeq = 0; // the search, the filter, the pager and the desk refresh all load: only the latest paints
     async function load() {
+        const seq = ++loadSeq;
         const r = await api('event_participants_list', { event_id: id, q, status: status || '', page });
+        if (seq !== loadSeq) return;
         if (!r.ok) { $('adminMsg').textContent = t(r.error || 'Not found.'); $('adminMsg').hidden = false; $('ppBody').hidden = true; return; }
         counts = r.counts;
         // opening: the waiting list when someone is waiting, else everyone

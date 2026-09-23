@@ -18,8 +18,8 @@
     <style>
         .pf-head { display: flex; align-items: center; gap: .6rem 1rem; flex-wrap: wrap; margin-bottom: .6rem; }
         .pf-head .avatar { width: 88px; height: 88px; }
-        .pf-id { flex: 1 1 12rem; min-width: 0; }
-        .pf-id h1 { margin: 0 0 .2rem; font-size: 1.7rem; overflow-wrap: anywhere; }
+        .pf-id { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; } /* a long club name or handle wraps inside the column */
+        .pf-id h1 { margin: 0 0 .2rem; font-size: 1.7rem; }
         .pf-bio { white-space: pre-wrap; line-height: 1.55; margin: .4rem 0 .8rem; }
         .pf-section { margin-top: 1.6rem; }
         /* one completed roadbook (#867): its card — the gallery's — and its runs beside it, under it on a phone */
@@ -38,7 +38,7 @@
 <body>
 <header class="topbar"></header>
 
-<main class="wrap page-col" id="pfWrap">
+<main class="wrap page-col">
     <p id="pfLoading" class="muted" data-i18n="gallery.loading">Loading…</p>
     <article id="pfContent" hidden>
         <div class="pf-head">

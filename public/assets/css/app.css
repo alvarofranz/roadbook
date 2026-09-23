@@ -315,6 +315,7 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
 .head-row h1, .head-row h2 { margin: 0; flex: 1; min-width: 12rem; }
 .head-row .btn, .head-row .btnrow, .head-row .btn-group { margin: 0; }
+.head-row > .grow { min-width: 0; } /* a title wrapped in a column still shrinks, so its long words wrap (#480) */
 /* On a phone the title takes its own line and the actions sit under it — squeezed beside a button,
    a title like "Event management" broke mid-word. AFTER the base rule: last one wins (#476). */
 @media (max-width: 560px) {
@@ -756,7 +757,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .clickable { cursor: pointer; }
 .icon-danger { color: var(--track); }
 /* Inline field help: a small ⓘ after a label; its explanation (data-tip) shows on hover and on
-   tap/focus, in the ONE shared bubble RBHelpTips positions (#859): above the ⓘ, so it never covers
+   tap/focus, in the ONE shared bubble app.js positions (helpTips, #859): above the ⓘ, so it never covers
    the field it explains, and clamped inside the screen, so no panel ever cuts it. */
 .help-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-left: .25rem; padding: 0; border: 0; background: none; color: var(--muted); cursor: help; font-size: .8rem; line-height: 1; vertical-align: middle; }
 .help-tip:hover, .help-tip:focus-visible { color: var(--sand); outline: none; }
@@ -811,6 +812,9 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 /* Admin activity-inspection timeline (#86) */
 .act-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .act-table td { padding: .25rem .45rem; border-top: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+.act-table th { padding: .25rem .45rem; text-align: left; color: var(--muted); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.act-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.act-table .cell-wrap { white-space: normal; overflow-wrap: anywhere; min-width: 8rem; } /* a title or a device string wraps instead of widening the dialog */
 /* Wide tables scroll inside their own box on a phone, so the PAGE never scrolls sideways (#480).
    The ones wrapped in .table-scroll already do; these three are plain markup — the spec page, the
    wiki's rendered Markdown and the activity log. The block sits after their base rules (#476). */
@@ -821,7 +825,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .cfg-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
 .log-pre { max-height: 320px; overflow: auto; background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: .6rem; font-family: ui-monospace, monospace; font-size: .78rem; white-space: pre-wrap; }
 .site-banner { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; font-size: .9rem; }
-.site-banner span { flex: 1; }
+.site-banner span { flex: 1; min-width: 0; overflow-wrap: anywhere; } /* an admin-typed banner may carry a URL: it wraps, never widens the page */
 .site-banner-info { background: var(--card-2); border-bottom: 1px solid var(--line); }
 .site-banner-warning { background: #4a3b12; border-bottom: 1px solid #8a6d1a; color: #ffe9a8; }
 .site-banner-x { background: none; border: 0; color: inherit; cursor: pointer; opacity: .7; padding: .2rem; }
@@ -869,7 +873,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .u-unverified { background: rgba(255, 90, 69, .18); color: var(--track); border-color: transparent; }
 .u-blocked { background: var(--track); color: #fff; border-color: transparent; }
 .ev-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; }
-.ev-line .meta { flex: 1; min-width: 10rem; }
+.ev-line .meta { flex: 1; min-width: 10rem; overflow-wrap: anywhere; } /* a 40-character handle wraps on a phone */
 .ch-ev-bar, .odo-ev-bar { padding: .4rem .6rem; background: var(--card-2); border-radius: 8px; margin-bottom: .5rem; }
 .ev-back { color: var(--sand); text-decoration: none; font-weight: 600; font-size: .92rem; display: inline-flex; align-items: center; gap: .4rem; }
 .ev-back:hover { text-decoration: underline; }
@@ -934,7 +938,7 @@ body:has(.modal) .i18ne-bar { display: none; } /* the edit bar never sits over a
 .comment:last-child { border-bottom: 0; }
 .comment-main { min-width: 0; }
 .comment-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.comment-head a { color: var(--text); text-decoration: none; }
+.comment-head a { min-width: 0; overflow-wrap: anywhere; color: var(--text); text-decoration: none; } /* a 40-character handle wraps on a phone */
 .comment-head .btn { margin-left: auto; }
 .comment-body { margin: .3rem 0 0; white-space: pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
 .comment-form { display: flex; gap: .7rem; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .9rem; }

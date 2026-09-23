@@ -23,20 +23,20 @@
         .ch-owner { display: flex; gap: .6rem; align-items: center; margin-top: .5rem; }
         #chLoading { padding: 2rem 0; }
         .ch-logo { flex-shrink: 0; max-height: 120px; max-width: 240px; width: auto; height: auto; object-fit: contain; border-radius: 12px; }
-        .ch-owner .grow { min-width: 0; }
+        .ch-owner .grow { min-width: 0; overflow-wrap: anywhere; } /* a long handle or credit line wraps on a phone */
         .ch-desc { color: var(--text); line-height: 1.6; }
         .ch-map { height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 1rem 0; }
         #chNotes { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-        .ch-comments, .ch-completions { margin-top: 2rem; scroll-margin-top: 5rem; }
+        .ch-comments, .ch-completions { margin-top: 2rem; scroll-margin-top: 5rem; } /* clear of the top bar when the Comments button scrolls here */
         .completion-list { display: flex; flex-direction: column; }
         .completion { display: flex; align-items: center; gap: .7rem; padding: .6rem 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
         .completion:last-child { border-bottom: 0; }
         .completion .grow { min-width: 0; overflow-wrap: anywhere; }
-        .completion > .fa-chevron-right { color: var(--muted); } /* clear of the top bar when the Comments button scrolls here */
+        .completion > .fa-chevron-right { color: var(--muted); }
         /* a phone (#865): the image leads as a rounded banner, the title is sized for the screen, and the
            actions sit evenly — Navigate across the width, the others sharing one row */
         @media (max-width: 640px) {
-            .ch-head { flex-direction: column; align-items: stretch; gap: .9rem; }
+            .ch-head { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .9rem; } /* one column: a wrapping one would size to its longest word, not the screen */
             .ch-head .ch-logo { order: -1; width: 100%; max-width: none; max-height: 200px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-2); }
             .ch-head .ch-logo.photo { aspect-ratio: 16 / 9; object-fit: cover; max-height: none; }
             .ch-head h1 { font-size: 1.6rem; line-height: 1.2; }
@@ -51,7 +51,7 @@
 <body>
 <header class="topbar"></header>
 
-<main class="wrap page-col" id="chWrap">
+<main class="wrap page-col">
     <p id="chLoading" class="muted" data-i18n="gallery.loading">Loading…</p>
     <article id="chContent" hidden>
         <p class="ch-ev-bar" id="chEvent" hidden></p>

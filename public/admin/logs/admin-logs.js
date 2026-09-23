@@ -42,8 +42,11 @@
         el.hidden = false;
     }
 
+    let activitySeq = 0; // only the latest request paints: a slow answer to an older search is dropped
     async function loadActivity() {
+        const seq = ++activitySeq;
         const r = await RBApi('admin_activity_log', { q, page });
+        if (seq !== activitySeq) return;
         if (!r.ok) { $('logTable').textContent = t(r.error || 'Could not load the log.'); return; }
         per = r.per_page || 50; page = r.page || 1;
         const rows = r.rows || [];

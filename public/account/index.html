@@ -26,7 +26,7 @@
         .auth-message.err { background: rgba(255,90,69,.14); color: var(--track); }
         .profile-head { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin: 1.2rem 0 .5rem; }
         .profile-head .avatar { width: 88px; height: 88px; }
-        .profile-id { flex: 1; min-width: 200px; }
+        .profile-id { flex: 1; min-width: 200px; overflow-wrap: anywhere; } /* a long email wraps instead of widening the page */
         .profile-id h1 { font-size: 1.6rem; margin: 0; }
         .profile-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
         .intro-text { margin-top: -.4rem; }
@@ -94,7 +94,7 @@
             <input id="regPass2" class="field" type="password" autocomplete="new-password">
             <label class="checkbox-row"><input type="checkbox" id="regTerms" required> <span data-i18n-html="reg.acceptTerms">I have read and accept the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a></span></label>
             <div class="turnstile" data-ts="register"></div>
-            <button class="btn btn-primary" id="regBtn" type="submit" data-i18n="Create account"><i class="fa-solid fa-user-plus"></i> Create account</button>
+            <button class="btn btn-primary" type="submit" data-i18n="Create account"><i class="fa-solid fa-user-plus"></i> Create account</button>
         </form>
         <div class="links"><a href="#" id="toLogin" data-i18n="Already have an account? Sign in">Already have an account? Sign in</a></div>
     </section>
@@ -106,7 +106,7 @@
         <form id="forgotForm">
             <input id="forgotEmail" class="field" type="email" placeholder="Your email" data-i18n-ph="Your email" data-i18n-aria="Your email" autocomplete="email">
             <div class="turnstile" data-ts="forgot"></div>
-            <button class="btn btn-primary" id="forgotBtn" type="submit" data-i18n="Send reset link"><i class="fa-solid fa-paper-plane"></i> Send reset link</button>
+            <button class="btn btn-primary" type="submit" data-i18n="Send reset link"><i class="fa-solid fa-paper-plane"></i> Send reset link</button>
         </form>
         <div class="links"><a href="#" id="toLogin2" data-i18n="Back to sign in">Back to sign in</a></div>
     </section>
@@ -117,7 +117,7 @@
         <form id="resetForm">
             <input id="resetPass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
             <input id="resetPass2" class="field" type="password" placeholder="Confirm new password" data-i18n-ph="Confirm new password" data-i18n-aria="Confirm new password" autocomplete="new-password">
-            <button class="btn btn-primary" id="resetBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
+            <button class="btn btn-primary" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
         </form>
     </section>
 
@@ -128,7 +128,7 @@
         <form id="forceForm">
             <input id="forcePass" class="field" type="password" placeholder="New password (min 8 chars)" data-i18n-ph="New password (min 8 chars)" data-i18n-aria="New password (min 8 chars)" autocomplete="new-password">
             <input id="forcePass2" class="field" type="password" placeholder="Confirm new password" data-i18n-ph="Confirm new password" data-i18n-aria="Confirm new password" autocomplete="new-password">
-            <button class="btn btn-primary" id="forceBtn" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
+            <button class="btn btn-primary" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
         </form>
     </section>
 
@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <div id="profileForm" class="auth-card profile-form">
+        <div class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <div class="row2">
                 <div><label class="field-label" for="pfFirst" data-i18n="First name">First name</label><input id="pfFirst" class="field" autocomplete="given-name" maxlength="80"></div>
@@ -161,7 +161,7 @@
             <button class="btn btn-primary" id="pfSave" data-i18n="Save profile">Save profile</button>
         </div>
 
-        <div class="auth-card profile-form" id="grantsCard">
+        <div class="auth-card profile-form">
             <h2 data-i18n="Grants">Grants</h2>
             <div id="grantsList" class="grants-list"></div>
         </div>
@@ -197,7 +197,7 @@
                 <input id="emNew" class="field" type="email" autocomplete="email">
                 <label class="field-label" for="emNew2" data-i18n="Confirm new email">Confirm new email</label>
                 <input id="emNew2" class="field" type="email" autocomplete="email">
-                <button class="btn btn-primary" id="emSave" type="submit" data-i18n="Update email"><i class="fa-solid fa-envelope"></i> Update email</button>
+                <button class="btn btn-primary" type="submit" data-i18n="Update email"><i class="fa-solid fa-envelope"></i> Update email</button>
             </form>
         </div>
 
@@ -211,7 +211,7 @@
                 <input id="pwNew" class="field" type="password" autocomplete="new-password">
                 <label class="field-label" for="pwNew2" data-i18n="Confirm new password">Confirm new password</label>
                 <input id="pwNew2" class="field" type="password" autocomplete="new-password">
-                <button class="btn btn-primary" id="pwSave" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
+                <button class="btn btn-primary" type="submit" data-i18n="Update password"><i class="fa-solid fa-key"></i> Update password</button>
             </form>
         </div>
 
@@ -221,7 +221,7 @@
             <form id="delForm">
                 <label class="field-label" id="delPassLabel" for="delPass" data-i18n="Password">Password</label>
                 <input id="delPass" class="field" type="password" autocomplete="current-password">
-                <button class="btn btn-danger" id="delBtn" type="submit" data-i18n="Delete account"><i class="fa-solid fa-trash-can"></i> Delete account</button>
+                <button class="btn btn-danger" type="submit" data-i18n="Delete account"><i class="fa-solid fa-trash-can"></i> Delete account</button>
             </form>
         </div>
 

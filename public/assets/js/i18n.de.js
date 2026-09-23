@@ -1458,3 +1458,8 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "Sign in to comment": "Melde dich an, um zu kommentieren",
 });
+
+/* the translation editor asks before a reset throws a label’s edits away */
+Object.assign(window.RBi18nLangs.de, {
+    "Discard the pending edits of this label?": "Die ausstehenden Änderungen dieser Beschriftung verwerfen?",
+});
