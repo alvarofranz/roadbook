@@ -320,9 +320,9 @@ Prompt "serve un account" con CTA verso
 `account/`. `msg` ha un default tradotto.
 
 #### `RBToast(msg)`
-Toast tradotto nell'elemento `#toast` della
-pagina (ogni tool ne spedisce uno vuoto). Imposta `role=status`/`aria-live=polite`, mostra il
-messaggio per **2500 ms**, poi lo nasconde. Se `#toast` non c'è, non fa nulla.
+Toast tradotto nell'elemento `#toast`, su ogni
+pagina: se la pagina non ne ha uno, lo crea alla prima chiamata. Imposta `role=status`/`aria-live=polite`,
+mostra il messaggio per **2500 ms**, poi lo nasconde.
 
 ### Dati / rete
 
@@ -393,7 +393,8 @@ Le pagine non la chiamano direttamente, ma tramite due builder:
   organizzatore e intervallo di date sotto.
 
 Una card roadbook **senza foto** parte con un placeholder `data-route`: **`RBFillRoutes(container)`**
-(chiamata da chi disegna) carica il roadbook una sola volta per slug e lo sostituisce con un SVG
+(chiamata da chi disegna) carica il roadbook una sola volta per slug (`public_get`, direttamente —
+non serve `challenges.js` sulla pagina) e lo sostituisce con un SVG
 statico della **forma della rotta** (nessuna basemap). Chi nasconde la mappa (`map_access:false`)
 resta sull'icona.
 
@@ -422,7 +423,9 @@ e ritorna `null` (con `admin: true` esige anche il ruolo admin).
 | `RBDateField(input)` | rende un input data localizzato |
 | `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
 | `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
-| `RBCopy(text, okMsg?)` · `RBReaderLink(slug)` | copia negli appunti (vedi sotto) · link Reader pubblico di uno slug |
+| `RBCopy(text, okMsg?)` | copia negli appunti (vedi sotto) |
+| `RBDebounce(fn, ms = 300)` | `fn` parte `ms` dopo l’ultima chiamata (`.cancel()` la annulla) — le ricerche che interrogano il server, sempre insieme a un contatore di sequenza che scarta le risposte superate |
+| `RBCsv(rows)` | righe (array di celle, intestazione in testa) → Blob CSV con BOM UTF-8 e quoting RFC-4180: l’unico modo in cui un export scrive un CSV (attività, partecipanti, classifica) |
 | `RBBusy(el, { onEnd })` | il pulsante che ha lanciato un'operazione ne riporta l'esito (vedi sotto) |
 
 ### Lista roadbook condivisa
@@ -440,7 +443,7 @@ Altrimenti ritorna il numero di roadbook e disegna, in testa, una riga di **uso 
 - azioni con percorsi relativi (funzionano da `/editor/` come da `/myroadbooks/`):
   - **Read** → `../reader/?rb=<id>` — apre quel roadbook nel Reader, **anche se privato/personale**;
   - **View** → `../challenge/<slug>` — la vetrina pubblica;
-  - **Copy link** → copia il link Reader pubblico (`RBCopy`/`RBReaderLink`), **solo se `public`**;
+  - **Copy link** → copia il link Reader pubblico (`RBCopy`), **solo se `public`**;
   - **Edit** → `../editor/?rb=<id>`;
   - **Export** → `../editor/?rb=<id>&export=1` — apre l'Editor e fa **scattare subito il popup
     Export** (l'Editor toglie poi il flag `export=1` dall'URL, così un refresh non lo riapre);

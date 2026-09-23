@@ -4,7 +4,7 @@
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
-    let q = '', page = 1, per = 50, searchTimer = null;
+    let q = '', page = 1, per = 50;
 
     /* Cron health, at a glance (#505). The log itself is a wall of text; what an admin needs to
        know is whether the runner ran AT ALL — every minute it writes a `[YYYY-MM-DD HH:MM:SS]`
@@ -63,10 +63,7 @@
     (async function init() {
         if (!(await RBRequireUser($('adminMsg'), { admin: true }))) return;
         $('adminMsg').hidden = true; $('logsWrap').hidden = false;
-        $('logSearch').addEventListener('input', () => {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => { q = $('logSearch').value.trim(); page = 1; loadActivity(); }, 300);
-        });
+        $('logSearch').addEventListener('input', RBDebounce(() => { q = $('logSearch').value.trim(); page = 1; loadActivity(); }));
         loadActivity();
         loadCron();
     })();

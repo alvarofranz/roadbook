@@ -33,6 +33,11 @@ describe('every roadbook card comes from RBRoadbookCard', () => {
         expect(app).toContain('window.RBFillRoutes = (container) =>');
         expect(read('public/assets/js/home.js')).not.toContain('function routeSvg');
     });
+    it('fetches the route itself, so it works on pages that do not load challenges.js (event · profile)', () => {
+        const fill = app.slice(app.indexOf('window.RBFillRoutes'), app.indexOf('document.addEventListener(\'error\''));
+        expect(fill).toContain("RBApi('public_get', { slug })");
+        expect(fill).not.toContain('RBChallenges');
+    });
 });
 
 describe('every event card comes from RBEventCard', () => {

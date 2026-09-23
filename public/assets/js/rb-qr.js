@@ -17,9 +17,6 @@
     // symbol at all; the spec asks for 4, and 2 is the practical floor on a phone screen.
     const QUIET_MODULES = 2;
 
-    // Paint `payload` into `canvas` — a real one, or anything exposing width/height and a
-    // 2D context. Module size is floored to whole pixels: a half-lit cell is a cell a
-    // scanner may read either way, and this QR is a competition result.
     // The module matrix of `payload`: { modules, isDark(row, col) } — what every rendering paints,
     // on a canvas here or as vector squares in the PDF (rb-pdf.js).
     function matrix(payload) {
@@ -29,6 +26,9 @@
         return { modules: qr.getModuleCount(), isDark: (row, col) => qr.isDark(row, col) };
     }
 
+    // Paint `payload` into `canvas` — a real one, or anything exposing width/height and a
+    // 2D context. Module size is floored to whole pixels: a half-lit cell is a cell a
+    // scanner may read either way, and this QR is a competition result.
     function draw(canvas, payload) {
         const qr = matrix(payload);
         const modules = qr.modules;

@@ -63,7 +63,7 @@
             if (!(await RBConfirm(t('Vehicle') + ' ' + team + ' ' + t('already has a result. Replace it with this one?')))) return;
             x = await RBApi('ranking_add', Object.assign(body, { replace: 1 }));
         }
-        if (!x.ok) return msg(x.error || t('Could not save.'), true);
+        if (!x.ok) return msg(t(x.error || 'Could not save.'), true);
         $('manualMeta').value = '';
         const added = t('Added vehicle') + ' ' + team;
         msg(valid === false ? t('Invalid signature') + ' · ' + added : added, valid === false);
@@ -128,8 +128,8 @@
     $('exportCsv').onclick = () => {
         if (!rows.length) return;
         const head = ['rank', 'vehicle', 'km', 'accuracy', 'cap', 'speed', 'regularity', 'final', 'valid'];
-        const lines = rows.map((r, i) => [i + 1, r.team, r.km.toFixed(1), r.accuracy, r.cap, r.speed, r.reg, r.finalScore, r.valid === 0 ? 'no' : 'yes'].join(','));
-        RBDownload(new Blob([head.join(',') + '\n' + lines.join('\n')], { type: 'text/csv' }), 'rdbk-ranking-' + scope.rb + '.csv');
+        const lines = rows.map((r, i) => [i + 1, r.team, r.km.toFixed(1), r.accuracy, r.cap, r.speed, r.reg, r.finalScore, r.valid === 0 ? 'no' : 'yes']);
+        RBDownload(RBCsv([head, ...lines]), 'rdbk-ranking-' + scope.rb + '.csv');
     };
 
     function msg(text, err) { const el = $('msg'); el.textContent = text; el.classList.toggle('err', !!err); el.classList.toggle('ok', !err); }

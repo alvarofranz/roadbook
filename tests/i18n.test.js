@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
@@ -133,6 +133,15 @@ describe('i18n apply round-trip', () => {
         window.RBi18n.set('en');
         expect(el.textContent.trim()).toBe('Tips & tricks'); // restored, not stuck on Italian
     });
+
+    it('t() speaks the applied language even when storage cannot remember it', () => {
+        window.RBi18n.set('it');
+        const blocked = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        try {
+            expect(window.RBi18n.current()).toBe('it');
+            expect(window.RBt('fp.tips')).toBe(window.RBi18nLangs.it['fp.tips']);
+        } finally { blocked.mockRestore(); window.RBi18n.set('en'); }
+    });
 });
 
 describe('the active language is one answer, not two (#459)', () => {
@@ -142,8 +151,9 @@ describe('the active language is one answer, not two (#459)', () => {
     const src = read('public/assets/js/i18n.js');
 
     it('current() resolves through the same source as t()', () => {
-        expect(src).toContain('t(key) { const v = tr(pickLang(), key);');
-        expect(src).toContain('current() { return applied || pickLang(); }');
+        expect(src).toContain('const current = () => applied || pickLang();');
+        expect(src).toContain('t(key) { const v = tr(current(), key);');
+        expect(src).toMatch(/\n\s+current,\n/);
         expect(src).not.toContain('document.documentElement.lang || pickLang()');
     });
 

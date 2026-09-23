@@ -273,8 +273,9 @@ describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #
         expect(app).toContain("function onInstall() { location.href = ROOT + 'install/'; }");
         expect(app).toContain('function showInstall() { if (isStandalone() || isNativeApp() || installClosed() || /\\/install\\/?$/.test(location.pathname)) return;');
     });
-    it('the install page can show its toast', () => {
-        expect(fs.readFileSync('public/install/index.html', 'utf8')).toContain('<div id="toast" class="toast" hidden></div>');
+    it('every page can show a toast: RBToast creates the element where the page has none', () => {
+        expect(app).toContain("if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }");
+        expect(fs.readFileSync('public/install/index.html', 'utf8')).not.toContain('id="toast"');
     });
     it('the guide reaches the server from the app and has no language picker of its own', () => {
         const js = fs.readFileSync('public/wiki/wiki.js', 'utf8'), html = fs.readFileSync('public/wiki/index.html', 'utf8');

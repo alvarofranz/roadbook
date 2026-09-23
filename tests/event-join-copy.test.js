@@ -9,7 +9,7 @@ import fs from 'fs';
 
 const LANGS = ['es', 'it', 'de', 'fr'];
 const OPEN_PROMPT = 'Sign in to join this event.';
-const CODE_PROMPT = "Sign in to join this event with the organizer's code.";
+const CODE_PROMPT = 'Sign in to join this event with the organizer’s code.'; // typographic apostrophe (#114)
 const read = (p) => fs.readFileSync(p, 'utf8');
 
 function loadLangs() {
@@ -22,11 +22,11 @@ describe('event join prompt (signed out)', () => {
     const source = read('public/event/event.js');
 
     it('picks the prompt from the gate instead of always asking for a code', () => {
-        expect(source).toContain(String.raw`gate === 'code' ? t('Sign in to join this event with the organizer\'s code.')`);
+        expect(source).toContain(`gate === 'code' ? t('${CODE_PROMPT}')`);
     });
 
     it('still asks for the code when the event is code-gated', () => {
-        expect(source).toContain(String.raw`t('Sign in to join this event with the organizer\'s code.')`);
+        expect(source).toContain(`t('${CODE_PROMPT}')`);
     });
 
     const langs = loadLangs();

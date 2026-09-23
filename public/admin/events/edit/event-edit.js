@@ -245,8 +245,7 @@
     /* ---------- associated roadbooks — immediate ---------- */
     // The real status (#596): a READY roadbook is exactly what participants receive; a draft is
     // invisible to them, and says so.
-    const STATUS = { draft: 'Draft', ready: 'Ready', public: 'Public' };
-    const statusBadge = (s) => `<span class="u-badge">${esc(t(STATUS[s] || s))}</span>`;
+    const statusBadge = (s) => `<span class="u-badge">${esc(t(RBStatusLabel[s] || s))}</span>`;
     function renderRbs() {
         $('rbSection').hidden = !ev;
         if (!ev) return;
@@ -300,7 +299,7 @@
     let hqMap = null, hqMarker = null;
     function placeHqMarker(lat, lon) {
         if (!hqMap || !hqMap.map) return;
-        if (!hqMarker) hqMarker = new maplibregl.Marker({ color: '#dc3545' }).setLngLat([lon, lat]).addTo(hqMap.map);
+        if (!hqMarker) hqMarker = new maplibregl.Marker({ color: RBCssVar('--track') }).setLngLat([lon, lat]).addTo(hqMap.map);
         else hqMarker.setLngLat([lon, lat]);
     }
     // the coordinate inputs are the form's truth; the map follows them
@@ -329,7 +328,7 @@
     /* ---------- load / refresh ---------- */
     async function load() {
         const r = await api('event_manage_get', { id });
-        if (!r.ok) { $('adminMsg').textContent = r.error || t('Not found.'); $('adminMsg').hidden = false; $('evBody').hidden = true; return false; }
+        if (!r.ok) { $('adminMsg').textContent = t(r.error || 'Not found.'); $('adminMsg').hidden = false; $('evBody').hidden = true; return false; }
         ev = r.event;
         renderSections();
         return true;

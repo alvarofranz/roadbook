@@ -23,18 +23,17 @@
         });
     }
 
-    async function load() {
+    async function fetchEvents() {
         const r = await api('events_manage');
         events = (r.ok && r.events) || []; loadError = r.ok ? '' : errorText(r);
-        render();
     }
+    async function load() { await fetchEvents(); render(); }
     window.addEventListener('rb-lang', () => { if (events.length) render(); }); // re-format the dates in the new language
 
     (async function init() {
         const user = await RBRequireUser($('adminMsg'));
         if (!user) return;
-        const r = await api('events_manage');
-        events = (r.ok && r.events) || []; loadError = r.ok ? '' : errorText(r);
+        await fetchEvents();
         // organizers and admins always get the console; a co-organizer gets it for their events
         if (!loadError && !user.is_admin && !user.is_organizer && !events.length) { $('adminMsg').textContent = t('Organizers only.'); return; }
         $('adminMsg').hidden = true; $('evBody').hidden = false;
