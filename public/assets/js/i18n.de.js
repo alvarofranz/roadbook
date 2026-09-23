@@ -113,7 +113,7 @@
             'Open an existing roadbook': 'Vorhandenes Roadbook öffnen',
             'Finish': 'Fertig', 'Save': 'Speichern',
             'Public': 'Öffentlich', 'Visibility': 'Sichtbarkeit', 'Draft': 'Entwurf', 'Ready': 'Fertig', 'Status': 'Status', 'Status updated.': 'Status aktualisiert.',
-            'Open in Google Maps': 'In Google Maps öffnen', 'Open in Google Earth': 'In Google Earth öffnen', 'View photo': 'Foto ansehen',
+            'Open in Google Maps': 'In Google Maps öffnen', 'Open in Google Earth': 'In Google Earth öffnen', 
             'Record a Roadbook with geotagged notes, photos and voice memos.': 'Nimm ein Roadbook mit geolokalisierten Notizen, Fotos und Sprachnotizen auf.', 'Start recording': 'Aufnahme starten',
             
             'Default map location': 'Standard-Kartenposition',

@@ -593,6 +593,7 @@
             };
             if (w.danger) note.danger = w.danger;       // recovered from an imported special_marker
             if (w.appwpt) note.appwpt = w.appwpt;        // unmapped Garmin/OSMAnd icon, re-emitted verbatim
+            if (w.blocks && w.blocks.length) note.blocks = w.blocks; // its material, e.g. the Recorder's photo (#792)
             return note;
         });
 

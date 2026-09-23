@@ -37,6 +37,11 @@ AddType audio/mpeg .mp3
     <Files "version.json">
         Header set Access-Control-Allow-Origin "*"
     </Files>
+    # …and so do the images it reads back into a canvas (a gallery photo becoming a note's extra,
+    # a run card to share, #792 · #785): a WebView-local origin needs CORS to read their bytes.
+    <FilesMatch "\.(avif|png|jpe?g|webp)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
 
     # Security headers. The CSP is the important one: it forbids inline scripts (the site carries
     # none — the one bootstrap moved to assets/js/native-detect.js), so an injected <script> can't

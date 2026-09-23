@@ -1364,6 +1364,24 @@
         map.map.easeTo({ center: [+photo.lon, +photo.lat], zoom: Math.max(map.map.getZoom(), 14), duration: 400 });
     }
 
+    /* ---------- a gallery photo as a note's Photo extra (#792) ---------- */
+    // The note opens on its Photo tab: the photo is already there if the note has one, and a gallery
+    // photo taken beside it becomes that extra otherwise (after the note, embedded like any extra —
+    // the gallery keeps the original). Caption, side and removal are the extras' own controls.
+    const PHOTO_BLOCK = RB.blockType({ type: 'photo' });
+    async function photoToExtra(i, photo) {
+        const n = rb && rb.notes[i];
+        if (!n) return;
+        if (photo && !blockOf(n, 'photo')) {
+            try {
+                const image = await RBImg.toDataURL(await (await fetch(photo.url)).blob(), PHOTO_BLOCK.imageMax);
+                (n.blocks = n.blocks || []).push({ type: 'photo', at: 'after', image });
+                markDirty(); renderNotes();
+            } catch (e) { toast('Could not read the image.'); }
+        }
+        select(i, 'photo');
+    }
+
     /* ---------- lightbox: browse all the roadbook's photos ---------- */
     let lbList = [], lbIdx = -1;
     // Open the viewer. `list` scopes which photos to browse (e.g. a note's nearby ones);
@@ -1372,7 +1390,6 @@
         lbList = (list && list.length ? list : notePhotos).slice();
         if (!lbList.length) return;
         lbIdx = lbList.findIndex((p) => +p.id === +id); if (lbIdx < 0) lbIdx = 0;
-        showView('map'); // the viewer overlays the map, so make sure the map view is shown
         $('lbImg').src = lbList[lbIdx].url; $('lightbox').hidden = false;
     }
     function lbStep(d) { if (!lbList.length) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; $('lbImg').src = lbList[lbIdx].url; }
@@ -1446,7 +1463,7 @@
         $('noteList').style.setProperty('--dist-ch', RB.distanceChars(rb.notes)); // the distance column fits the longest (#730)
         $('noteList').innerHTML = rb.notes.map((n, i) => `${blockRowsHTML(n, 'before', i)}<div class="note-mini${editorOpen && i === sel ? ' sel' : ''}" data-i="${i}">
                 <span class="note-number">${n.num}${RB.wpBadgeSVG(n.wp_type, 22)}<button type="button" class="note-del icon-danger" data-del="${i}" aria-label="${esc(t('Delete'))}" title="${esc(t('Delete'))}"><i class="fa-solid fa-trash-can"></i></button></span>
-                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('View photo'))}" title="${esc(t('View photo'))}"><i class="fa-solid fa-camera"></i></button>` : ''}</span>
+                <span class="note-km"><b>${((n.distance ?? 0) / 1000).toFixed(2)}</b> +${((n.partial_distance ?? 0) / 1000).toFixed(2)}${photosByNote[i] ? `<button type="button" class="note-photo" data-photo="${i}" aria-label="${esc(t('Photo'))}" title="${esc(t('Photo'))}"><i class="fa-solid fa-camera"></i></button>` : ''}</span>
                 <span class="note-tulip" id="tulipSlot${i}"></span>
                 <div class="note-textcell">
                     <textarea class="note-title field" data-i="${i}" placeholder="${esc(t('Add note text…'))}" autocomplete="off"${readOnly() ? ' readonly' : ''}>${esc(n.text || '')}</textarea>
@@ -1467,11 +1484,10 @@
         $('noteList').querySelectorAll('.note-block').forEach((el) => el.onclick = (e) => {
             e.stopPropagation(); select(+el.dataset.block, el.dataset.tab);
         });
-        // tap the IMG pill under the km to view the note's photo(s)
+        // the camera pill: the note's nearby gallery photo becomes its Photo extra (#792)
         $('noteList').querySelectorAll('.note-photo').forEach((b) => b.onclick = (e) => {
             e.stopPropagation();
-            const ph = photosByNote[+b.dataset.photo] || [];
-            if (ph.length) openLightbox(ph[0].id, ph); // same viewer, scoped to this note's nearby photos
+            photoToExtra(+b.dataset.photo, (photosByNote[+b.dataset.photo] || [])[0]);
         });
         // delete a voice note straight from its note row
         $('noteList').querySelectorAll('[data-dela]').forEach((b) => b.onclick = async (e) => {

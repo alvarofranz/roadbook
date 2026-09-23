@@ -165,7 +165,8 @@
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
         /* photo viewer: overlays ONLY the map box (so the notes panel stays editable) */
-        #lightbox { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
+        /* the gallery viewer is the whole screen, never an overlay on the map area (#792) */
+        #lightbox { position: fixed; inset: 0; z-index: 300; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 12, .94); }
         #lightbox img { max-width: 94%; max-height: 88%; object-fit: contain; border-radius: 8px; }
         .lb-close, .lb-nav { position: absolute; border: 0; background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer; border-radius: 50%; }
         .lb-close { top: 1rem; right: 1rem; width: 44px; height: 44px; font-size: 1.2rem; }

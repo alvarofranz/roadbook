@@ -288,7 +288,7 @@
         RBMediaQueue.add('photo', f, fields, 'photo.jpg', token);
         // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
         // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
-        if (lat != null) dropWaypoint(lat, lon);
+        if (lat != null) { dropWaypoint(lat, lon).photo = token; saveSession(); } // the note knows its photo (#792)
     };
 
     /* ---------- finish: Save (into the draft, then the Editor) or Discard ---------- */
@@ -297,9 +297,21 @@
     // geotagged photos and voice notes (rb_save with id=draft), so nothing has to go through the
     // Editor. ensureDraft() first guarantees a single container for both the notes and the media.
     // Returns { id, roadbook } or null (too short / save failed — a toast is shown).
+    // A note dropped by a photo carries that photo as its Photo extra (#792), embedded like any
+    // extra; the photo itself stays in the roadbook's gallery. A photo that cannot be read (gone
+    // from the device, offline) just leaves its note without the extra.
+    const PHOTO_MAX = RB.blockType({ type: 'photo' }).imageMax;
+    async function withPhotos(list) {
+        return Promise.all(list.map(async (w) => {
+            const p = w.photo && photos.find((x) => x.token === w.photo);
+            if (!p || !p.url) return w;
+            try { return Object.assign({}, w, { blocks: [{ type: 'photo', at: 'after', image: await RBImg.toDataURL(await (await fetch(p.url)).blob(), PHOTO_MAX) }] }); }
+            catch (e) { return w; }
+        }));
+    }
     async function saveToProfile(pts, nm) {
         let roadbook;
-        try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts }); }
+        try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts: await withPhotos(wpts) }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
         const id = await ensureDraft(); // the draft the queued photos/voice notes also attach to
         const r = await RBApi('rb_save', { id: id || draftId || 0, status: 'draft', roadbook: RB.roadbookForExport(roadbook) });

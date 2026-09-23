@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
+import RBcore from '../public/assets/js/roadbook-core.js';
 
 /* Every row of a roadbook is a NOTE. What a note may also carry is material around it — a photo,
    an advert, a block of text — placed before or after it, none, one or several (#542). One
@@ -204,5 +205,29 @@ describe('export and import keep the material, and the other formats unharmed (#
         expect(suite.notes.length, 'the sponsor row is no longer a row').toBe(2);
         expect(suite.notes.map((n) => n.text)).toEqual(['Partenza', 'Arrivo']);
         expect(RB.noteBlocks(suite.notes[0], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:logo' });
+    });
+});
+
+describe('a photo becomes its note’s Photo extra (#792)', () => {
+    const fsx = fs;
+    it('buildRoadbook carries a waypoint’s material onto its note', () => {
+        const trkpts = [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9 }, { lat: 45.002, lon: 9 }];
+        const block = { type: 'photo', at: 'after', image: 'data:image/png;base64,AA' };
+        const rb = RBcore.buildRoadbook({ name: 't', trkpts, wpts: [{ lat: 45.001, lon: 9, name: 'wpt1', blocks: [block] }] });
+        const note = rb.notes.find((n) => n.blocks);
+        expect(note.blocks).toEqual([block]);
+        expect(rb.notes.filter((n) => n.blocks).length).toBe(1);
+    });
+    it('the Recorder attaches each photo to the note it dropped', () => {
+        const rec = fsx.readFileSync('public/recorder/recorder.js', 'utf8');
+        expect(rec).toContain('dropWaypoint(lat, lon).photo = token;');
+        expect(rec).toContain('wpts: await withPhotos(wpts)');
+    });
+    it('the Editor turns a note’s gallery photo into its extra instead of a viewer over the map', () => {
+        const ed = fsx.readFileSync('public/editor/editor.js', 'utf8');
+        expect(ed).toContain("photoToExtra(+b.dataset.photo, (photosByNote[+b.dataset.photo] || [])[0]);");
+        expect(ed).toContain("select(i, 'photo');");
+        expect(ed).not.toContain("showView('map'); // the viewer overlays the map");
+        expect(fsx.readFileSync('public/editor/index.html', 'utf8')).toContain('#lightbox { position: fixed; inset: 0; z-index: 300;');
     });
 });
