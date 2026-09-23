@@ -16,3 +16,13 @@ describe('long notes in the Reader (#759)', () => {
         expect(css).not.toMatch(/\.nrow \.col-text \.text \{[^}]*word-break/);
     });
 });
+
+describe('the Reader shell covers the page chrome on a wide screen (#776)', () => {
+    const html = read('public/reader/index.html');
+    it('stacks above the header, footer and tab bar, below the toast and the dialogs', () => {
+        expect(html).toMatch(/body\.rb-immersive #navScreen \{\s*position: fixed; inset: 0; z-index: 65;/);
+    });
+    it('hides the footer while navigating', () => {
+        expect(html).toContain('body.rb-immersive .webgps-banner, body.rb-immersive #prNativeHint, body.rb-immersive .foot { display: none; }');
+    });
+});
