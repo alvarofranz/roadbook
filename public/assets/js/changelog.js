@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.8', date: '2026-09-23',
+        title: 'Made to be ridden',
+        items: [
+            'A short guided tour shows each tool’s main controls once, and it is always one tap to skip.',
+            'Your remote controller drives the Reader, the Tripmaster and the Recorder, with the buttons you assign in your profile.',
+            'Public roadbooks open for everyone, no account needed, with a Comments button, who completed them and a cleaner page on the phone.',
+            'The Recorder waits for a good GPS before it starts, and the note map points at the next note with a short arrow.',
+            'PDFs open straight in the app, and a deep review fixed dozens of bugs, from distances on loops to the admin tools.',
+        ],
+    },
+    {
         version: '1.9.7', date: '2026-09-23',
         title: 'Every metre counts',
         items: [

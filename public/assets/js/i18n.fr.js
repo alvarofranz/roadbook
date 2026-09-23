@@ -1573,3 +1573,13 @@ Object.assign(window.RBi18nLangs.fr, {
     "unverified": "non vérifiés",
     "Delete user": "Supprimer l’utilisateur",
 });
+
+/* release notes 1.9.8 */
+Object.assign(window.RBi18nLangs.fr, {
+    "Made to be ridden": "Fait pour rouler",
+    "A short guided tour shows each tool’s main controls once, and it is always one tap to skip.": "Un court tour guidé montre une fois les commandes principales de chaque outil, et se passe toujours d’un appui.",
+    "Your remote controller drives the Reader, the Tripmaster and the Recorder, with the buttons you assign in your profile.": "Ta télécommande pilote le Reader, le Tripmaster et le Recorder, avec les boutons que tu attribues dans ton profil.",
+    "Public roadbooks open for everyone, no account needed, with a Comments button, who completed them and a cleaner page on the phone.": "Les roadbooks publics s’ouvrent pour tous, sans compte, avec un bouton Commentaires, qui les a terminés et une page plus nette sur le téléphone.",
+    "The Recorder waits for a good GPS before it starts, and the note map points at the next note with a short arrow.": "Le Recorder attend un bon GPS avant de démarrer, et la carte de la note pointe vers la suivante avec une flèche courte.",
+    "PDFs open straight in the app, and a deep review fixed dozens of bugs, from distances on loops to the admin tools.": "Les PDF s’ouvrent directement dans l’app, et une revue en profondeur a corrigé des dizaines de bugs, des distances sur les boucles aux outils d’admin.",
+});
