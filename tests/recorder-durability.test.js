@@ -186,6 +186,12 @@ describe('the app claims the same deep-link paths on both platforms (#268)', () 
 });
 
 describe('a deferred event join is retried until it lands', () => {
+    it('drops a join code the server refused for good, and keeps one that only met no network', () => {
+        const native = fs.readFileSync('native/src/native.js', 'utf8');
+        const join = native.match(/async function joinEvent\(code\) \{[\s\S]*?\n\}/)[0];
+        expect(join).toContain("if (res && res.error !== 'Network error.') {");
+        expect(join).toContain('localStorage.removeItem(PENDING_JOIN);\n        window.RBToast(');
+    });
     it('keeps the stored code for joinEvent to remove on success', () => {
         const native = read('native/src/native.js');
         const consume = native.match(/async function consumePendingJoin\(\) \{[\s\S]*?\n\}/)[0];
