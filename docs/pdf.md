@@ -38,9 +38,9 @@ Editor / challenge ──▶ RBPdf.generate(rb, opts)
         │   ensureJsPDF()    ▼   (lazy-load jspdf.umd.min.js)
         │   resolveIcons()   ▼   (icone → data: URI, senza mutare rb)
         │   NoteCanvas.toSVG ▼   (vignetta → SVG → PNG rasterizzato)
-        │   buildDoc()       ▼   (impagina A4 → doc.save(...))
+        │   buildDoc()       ▼   (impagina A4 → il documento)
         ▼
-   download del file <slug>.pdf
+   app: foglio di sistema (RBShareFile) · web: download di <slug>.pdf
 ```
 
 ---
@@ -63,7 +63,7 @@ Comportamento:
 - Chiama `buildDoc(...)` passando il logo da `rb.meta.logo` (o `null`)
   ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
-Non restituisce nulla di utile: l'effetto è il download del file. Il nome del file è
+Non restituisce nulla di utile: nell'app il PDF si apre nel **foglio di sistema** (`RBShareFile`: anteprima, apri in…, salva in File, invia), perché un download dentro la WebView non si vede da nessuna parte (#904); sul web si scarica. Il nome del file è
 `RB.slug(title) + '.pdf'` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 ---
@@ -155,7 +155,7 @@ Dettagli fedeli al Reader:
 ### Il loop di pagina
 `while (i < N)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)): dalla seconda pagina in
 poi aggiunge una pagina, sceglie l'intestazione giusta, calcola l'altezza riga
-`rowH = (CB − top) / rows` e disegna fino a `rows` note, poi `doc.save(...)`
+`rowH = (CB − top) / rows` e disegna fino a `rows` note, poi `generate` consegna il documento
 ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 ---

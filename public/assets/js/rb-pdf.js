@@ -268,10 +268,12 @@
                 else drawRow(row.note, row.tulip, row.close, LEFT, y, rowH);
             }
         });
-        doc.save(RB.slug(title) + '.pdf');
+        return doc;
     }
 
-    // Public: build + download the PDF on the device. Mutates nothing.
+    // Public: build the PDF on the device and hand it over. Mutates nothing. In the app it opens in
+    // the system sheet (RBShareFile: the PDF preview, open in…, save to Files, send) — a download
+    // inside the WebView goes nowhere you can see (#904); on the web it downloads.
     // opts.link: the absolute URL of the roadbook's public page (or its event's), for the header
     // QR; without one the header carries just the title and the page count.
     async function generate(rb, opts = {}) {
@@ -283,7 +285,10 @@
         const resolver = (ic) => iconMap[ic.name] || RB.iconSrc(ic, rb, basePath);
         const tulips = [];
         for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i)), 3));
-        buildDoc(window.jspdf.jsPDF, rb, tulips, (rb.meta && rb.meta.logo) || null, opts.link || null);
+        const doc = buildDoc(window.jspdf.jsPDF, rb, tulips, (rb.meta && rb.meta.logo) || null, opts.link || null);
+        const title = (rb.meta && rb.meta.title) || 'Roadbook', name = RB.slug(title) + '.pdf';
+        if (RBIsNativeApp()) await RBShareFile(doc.output('blob'), name, title);
+        else doc.save(name);
     }
 
     // `paginate` is pure and unit-tested; the browser reaches it through the global, Node (the
