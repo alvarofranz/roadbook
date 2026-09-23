@@ -264,12 +264,12 @@ describe('one chrome: stores, the guide, the web-GPS question (#669 · #673 · #
             expect(html, page).toContain('data-get-app');
             expect(html, page).not.toContain('apps.apple.com');
         }
-        // the install guide leads each phone card with its store, from the same RBStore (#539)
-        expect(fs.readFileSync('public/install/install.js', 'utf8')).toMatch(/store: \{ href: \(\) => RBStore\.android[\s\S]*?store: \{ href: \(\) => RBStore\.ios/);
+        // the install guide leads with the very same store badges (#539 · #794)
+        expect(fs.readFileSync('public/install/install.js', 'utf8')).toContain('${RBGetAppHTML(false)}');
     });
     it('the Install chip only on the web, and it always opens the guide (#720)', () => {
         expect(app).toContain("function onInstall() { location.href = ROOT + 'install/'; }");
-        expect(app).toContain('function showInstall() { if (isStandalone() || isNativeApp() || installClosed()) return;');
+        expect(app).toContain('function showInstall() { if (isStandalone() || isNativeApp() || installClosed() || /\/install\/?$/.test(location.pathname)) return;');
     });
     it('the install page can show its toast', () => {
         expect(fs.readFileSync('public/install/index.html', 'utf8')).toContain('<div id="toast" class="toast" hidden></div>');

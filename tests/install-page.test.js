@@ -76,3 +76,14 @@ describe('install guide', () => {
         }
     });
 });
+
+describe('the install guide shows everything open (#794)', () => {
+    it('has no accordion: every device card is on the page, the detected one first', () => {
+        expect(installJs).not.toMatch(/<details|<summary/);
+        expect(installJs).toContain('const ordered = PLATFORMS.filter((p) => p.key === here).concat(PLATFORMS.filter((p) => p.key !== here));');
+    });
+    it('offers the apps with the home’s own store badges', () => {
+        expect(installJs).toContain('${RBGetAppHTML(false)}');
+        expect(installJs).not.toContain('RBStore.');
+    });
+});
