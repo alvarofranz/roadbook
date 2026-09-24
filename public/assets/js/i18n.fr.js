@@ -1661,3 +1661,13 @@ Object.assign(window.RBi18nLangs.fr, {
     "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Facultatif. Le tulip importé de la note (p. ex. depuis OpenRally) : une image opaque qui est toute la vignette, dessinée sur toute la boîte et seule — jamais comme symbole dessus. Il reste avec la note pour de bon.",
     "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Facultatif, uniquement sur une icône cover : true affiche le tulip propre à l’éditeur (routes, embranchements, symboles) à la place de l’original. Absent = l’original.",
 });
+
+/* release 1.9.11 notes */
+Object.assign(window.RBi18nLangs.fr, {
+    "Tulips that bend with the road": "Des tulips qui épousent la route",
+    "Draw the arrow you want: put four points or more on the track close to a note, and its tulip bends with them; with fewer, the tulip keeps its clean straight turn, now aimed where the road really goes.": "Dessinez la flèche que vous voulez : placez quatre points ou plus sur la trace près d’une note et son tulip suit leur courbe ; avec moins, le tulip garde son virage droit et net, désormais orienté là où va vraiment la route.",
+    "The Editor shows each note’s detection radius and the radius that shapes its tulip, zooms in on the note you pick and turns the map the way you arrive.": "L’Éditeur montre le rayon de détection de chaque note et le rayon qui donne forme à son tulip, zoome sur la note choisie et oriente la carte dans le sens où vous arrivez.",
+    "Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.": "Les tulips importés d’OpenRally restent avec leur note : un toucher passe de l’original au vôtre, et ajouter une icône passe au vôtre.",
+    "Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.": "Chaque parcours garde la trace que vous avez réellement suivie : voyez-la sur une carte et téléchargez-la en GPX, directement depuis le parcours.",
+    "Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.": "Annuler les modifications dans l’Éditeur les annule désormais vraiment, et la carte de la note du Reader s’ouvre plus large.",
+});

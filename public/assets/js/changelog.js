@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.11', date: '2026-09-24',
+        title: 'Tulips that bend with the road',
+        items: [
+            'Draw the arrow you want: put four points or more on the track close to a note, and its tulip bends with them; with fewer, the tulip keeps its clean straight turn, now aimed where the road really goes.',
+            'The Editor shows each note’s detection radius and the radius that shapes its tulip, zooms in on the note you pick and turns the map the way you arrive.',
+            'Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.',
+            'Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.',
+            'Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.',
+        ],
+    },
+    {
         version: '1.9.10', date: '2026-09-24',
         title: 'Navigate and go',
         items: [
