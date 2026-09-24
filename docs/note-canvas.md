@@ -88,41 +88,35 @@ di mezzo, a strade dritte.
   di convalida segna il posto. La nota di **PARTENZA** (`isFirst`, da `RB.isFirstNote`) non ha
   provenienza (#472).
 
-### La forma reale della strada in uscita (#945)
-L'**uscita** segue la forma reale della strada subito dopo la nota — una curva, una S — quando
-curva davvero: `ctx.shape` = `RB.tulipShape(rb, i, isEnd)` = `{ exit }`, una polilinea già in
-coordinate viewBox o `null` ([roadbook-core.js](../public/assets/js/roadbook-core.js)). L'**ingresso**
-è sempre quello classico, dritto dal basso: dice solo da dove arrivi, e una curva molto prima della
-nota non fa parte della manovra.
+### La forma disegnata dall'autore (#945)
+Ogni strada del tulip prende la forma che l'autore ha dato alla traccia attorno alla nota:
+`ctx.shape` = `RB.tulipShape(rb, i, isEnd, isFirst)` = `{ entry, exit, turn }`
+([roadbook-core.js](../public/assets/js/roadbook-core.js)).
 
-- il tratto è la traccia dei **~50 m dopo** la nota, misurati lungo la traccia e **fermati alla
-  nota successiva**, così un tulip non disegna mai la curva della nota dopo;
-- semplificato con **Douglas-Peucker** (via il jitter GPS, resta la curva vera), **ruotato** in
-  modo che `bearing_in` punti dritto in su (come ogni tulip) e **scalato** perché la lunghezza
-  lungo la strada sia quella fissa dell'uscita, **63 px**: un roadbook in moto e uno a piedi si
-  disegnano della stessa misura, sempre dentro il box;
-- è una curva **solo se la strada curva davvero**: se il tratto si scosta dalla propria corda
-  (la nota → il suo estremo) per più del **12% della sua lunghezza** (mai meno di **5 m**).
-  Altrimenti `null`, e l'uscita è quella dritta classica dai bearing memorizzati: mai curve
-  inutili per una deriva leggera o il rumore GPS;
-- nessun segmento troppo corto da leggere (≥ 12 px), e l'ultimo — quello su cui punta la freccia —
-  di almeno 26 px, così la freccia punta dove va la strada e non su un gancio finale;
-- un **tornante** si prova su un tratto più corto (35 · 25 m), o resta in forma classica: il
-  disegno non passa mai sopra la nota (l'uscita resta nella metà alta del box);
-- una nota con **incroci** tiene l'uscita classica: il suo tulip è composto dall'autore attorno a
-  quella, e i rami sono disegnati rispetto a lei.
+- **Il segnale è la traccia stessa:** nei **50 m** su un lato della nota (prima per la strada da cui
+  arrivi, dopo per quella da cui esci — lungo la traccia, fermandosi alla nota vicina) **più di 6
+  punti** vogliono dire che quella strada è stata disegnata apposta, punto per punto, e il tulip la
+  segue; con meno è la strada dritta classica. Per curvare una freccia si aggiungono punti sulla
+  mappa (modo P); per raddrizzarla si tolgono. Un tratto fitto ma dritto resta dritto.
+- Il tratto si ripulisce dal jitter (**Douglas-Peucker**, 1 m), si **ruota** perché `bearing_in`
+  punti in su e si **scala** perché la lunghezza lungo la strada sia quella fissa della vignetta —
+  **73 px** l'ingresso, **63 px** l'uscita — sempre dentro il box.
+- Una forma che tornerebbe sopra la nota (l'uscita sotto il centro, l'ingresso sopra) o che
+  passerebbe su un **incrocio** disegnato dall'autore (campionata lungo ogni segmento) resta classica.
+- Nessun segmento troppo corto da leggere (≥ 8 px), e l'ultimo dell'uscita — dove punta la freccia —
+  di almeno 20 px.
 
-`smoothPath(pts)` fa passare per quei punti una curva liscia (Catmull-Rom come Bézier cubiche):
-passa per ogni punto, quindi la curva **è** la forma della strada, e finisce lungo il suo ultimo
-segmento — dove punta la freccia. Nel `.rdbk` non si memorizza nulla: la forma si ricava al render.
-Per cambiarla si modifica la traccia sulla mappa.
+`smoothPath(pts)` fa passare per quei punti una curva liscia (Catmull-Rom come Bézier cubiche),
+che finisce lungo il suo ultimo segmento — dove punta la freccia. Nel `.rdbk` non si memorizza nulla.
 
 ### La strada dritta
-L'ingresso è sempre verticale, da
-`cx,154` al centro; dove la strada va dritta (`shape.exit` `null`) l'uscita, lunga `L=63`, prende l'angolo della **variazione di rotta**
+Senza forma (`shape.entry` `null`) l'ingresso è verticale, da
+`cx,154` al centro; senza forma (`shape.exit` `null`) l'uscita, lunga `L=63`, prende l'angolo della **variazione di rotta**
 `(bearing_out − bearing_in)` normalizzata a `0..360`; `θ=0` = dritto in su, senso **orario**
 come una bussola. La punta è quindi `cx + sin(θ)·L`, `cy − cos(θ)·L`, così il diagramma mostra
-già la direzione da prendere (dritto = prosegui, destra = svolta a destra…).
+già la direzione da prendere (dritto = prosegui, destra = svolta a destra…). L'angolo è quello dove va la strada nei suoi **primi 20 m** (`shape.turn`), non nel
+primo metro (il `bearing_out` memorizzato), che su una traccia registrata è rumore GPS — un angolo
+retto letto come 37°; se così passerebbe su un incrocio dell'autore, resta l'angolo memorizzato.
 
 > I bearing arrivano dalla traccia (`RB.deriveBearings`), che **salta i vertici duplicati**: un
 > vicino coincidente dava bearing 0° e quindi una freccia puntata dove capita — una nota dritta

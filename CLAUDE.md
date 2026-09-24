@@ -632,13 +632,13 @@ Operational notes:
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
   `deleteNote`, `pendingWork`, `isEndNote` — the last note, whose tulip draws no exit road because
   past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
-  (the real shape of the road just past a note — the exit, when it really bends — derived at render
-  time and never stored, #945),
+  (the shape the author drew into the track around a note — more than 6 points within 50 m on
+  a side — derived at render time and never stored, #945),
   `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by the Reader rows, the challenge page, the PDF and the OpenRally export).
   Every render takes `ctx = RB.tulipContext(rb, i)` (`toSVG(note, resolveIcon, ctx)` ·
-  `setNote(note, ctx)`), so the tulip's exit (a `<path>`) follows the road the same everywhere;
+  `setNote(note, ctx)`), so the tulip's roads (`<path>`s) follow the drawn track the same everywhere;
   an imported tulip is a `cover` icon, shown unless `hidden` (`NoteCanvas.originalTulip`, #943).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker, satellite → topo → OSM layer toggle). Used by the **Editor**
