@@ -24,9 +24,11 @@ window.NoteCanvas = class NoteCanvas {
         this.el.appendChild(this.svg);
         const defs = svg('defs', {});
         // Arrow is a FIXED ~33px (markerUnits=userSpaceOnUse) so every road gets the SAME
-        // arrowhead, well wider than the road it ends. The junction
+        // arrowhead, well wider than the road it ends. The road ends deep inside it (refX 6.5 of
+        // 10): the head reaches beyond the road's end and the line's round cap never shows beside
+        // the narrow tip — refX 8 left a dot of road poking out there. The junction
         // end-tick stays proportional to its (thin) line.
-        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
+        defs.innerHTML = `<marker id="vignette-box-arrow" viewBox="0 0 10 10" refX="6.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"></path></marker>`
             + `<marker id="vignette-box-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"></path></marker>`;
         this.svg.appendChild(defs);
         this.toolbarEl.classList.add('vignette-toolbar');
@@ -212,7 +214,7 @@ window.NoteCanvas.toSVG = function (note, resolveIcon, ctx) {
     if (cover) return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
         + `<image x="0" y="0" width="${W}" height="${H}" href="${RBesc(resolveIcon(cover))}" preserveAspectRatio="xMidYMid meet"/></svg>`;
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
-        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
+        + `<defs><marker id="vig-arr" viewBox="0 0 10 10" refX="6.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="33" markerHeight="33" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker>`
         + `<marker id="vig-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2" orient="auto"><path d="M5 0 L5 10" stroke="context-stroke" stroke-width="2" fill="none"/></marker></defs>`;
     (note.junctions || []).forEach((b) => {
         const [px, py] = toV(b.pivot[0], b.pivot[1]), [tx, ty] = toV(b.tip[0], b.tip[1]);

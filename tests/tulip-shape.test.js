@@ -214,3 +214,11 @@ describe('the Editor edits on a flat map (#945 feedback)', () => {
         expect(editor).toContain('if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;');
     });
 });
+
+describe('the arrowhead (#945 feedback)', () => {
+    it('the road ends deep inside the head, so its round cap never shows beside the tip', () => {
+        const canvas = require('fs').readFileSync('public/assets/js/note-canvas.js', 'utf8');
+        expect(canvas.match(/viewBox="0 0 10 10" refX="6\.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="33"/g)).toHaveLength(2); // editor + toSVG
+        expect(canvas).not.toContain('refX="8"');
+    });
+});
