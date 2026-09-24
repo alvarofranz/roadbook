@@ -88,35 +88,38 @@ di mezzo, a strade dritte.
   di convalida segna il posto. La nota di **PARTENZA** (`isFirst`, da `RB.isFirstNote`) non ha
   provenienza (#472).
 
-### La forma reale della traccia (#945)
-Le due strade seguono la **forma reale della traccia** attorno alla nota — una curva, una S,
-l'ingresso in un guado — quando ce l'ha: `ctx.shape` = `RB.tulipShape(rb, i, isEnd, isFirst)` =
-`{ entry, exit }`, ognuna una polilinea già in coordinate viewBox o `null`
-([roadbook-core.js](../public/assets/js/roadbook-core.js)):
+### La forma reale della strada in uscita (#945)
+L'**uscita** segue la forma reale della strada subito dopo la nota — una curva, una S — quando
+curva davvero: `ctx.shape` = `RB.tulipShape(rb, i, isEnd)` = `{ exit }`, una polilinea già in
+coordinate viewBox o `null` ([roadbook-core.js](../public/assets/js/roadbook-core.js)). L'**ingresso**
+è sempre quello classico, dritto dal basso: dice solo da dove arrivi, e una curva molto prima della
+nota non fa parte della manovra.
 
-- il tratto è la traccia **~80 m prima** (ingresso) e **~80 m dopo** (uscita) la nota, misurati
-  lungo la traccia e **fermati alla nota vicina**, così un tulip non disegna mai la curva della
-  nota successiva;
+- il tratto è la traccia dei **~50 m dopo** la nota, misurati lungo la traccia e **fermati alla
+  nota successiva**, così un tulip non disegna mai la curva della nota dopo;
 - semplificato con **Douglas-Peucker** (via il jitter GPS, resta la curva vera), **ruotato** in
   modo che `bearing_in` punti dritto in su (come ogni tulip) e **scalato** perché la lunghezza
-  lungo la strada sia quella fissa della vignetta — **73 px** l'ingresso, **63 px** l'uscita:
-  un roadbook in moto e uno a piedi si disegnano della stessa misura, sempre dentro il box;
+  lungo la strada sia quella fissa dell'uscita, **63 px**: un roadbook in moto e uno a piedi si
+  disegnano della stessa misura, sempre dentro il box;
 - è una curva **solo se la strada curva davvero**: se il tratto si scosta dalla propria corda
-  (la nota → il suo estremo) per più del **12% della sua lunghezza** (mai meno di **6 m**).
-  Altrimenti `null`, e il tronco è la strada dritta classica dai bearing memorizzati: mai curve
+  (la nota → il suo estremo) per più del **12% della sua lunghezza** (mai meno di **5 m**).
+  Altrimenti `null`, e l'uscita è quella dritta classica dai bearing memorizzati: mai curve
   inutili per una deriva leggera o il rumore GPS;
-- un **tornante** si disegna su un tratto più corto (60 · 45 · 30 m), o in forma classica se
-  curva ancora: il disegno non passa mai sopra la nota (l'uscita resta nella metà alta del box,
-  l'ingresso in quella bassa).
+- nessun segmento troppo corto da leggere (≥ 12 px), e l'ultimo — quello su cui punta la freccia —
+  di almeno 26 px, così la freccia punta dove va la strada e non su un gancio finale;
+- un **tornante** si prova su un tratto più corto (35 · 25 m), o resta in forma classica: il
+  disegno non passa mai sopra la nota (l'uscita resta nella metà alta del box);
+- una nota con **incroci** tiene l'uscita classica: il suo tulip è composto dall'autore attorno a
+  quella, e i rami sono disegnati rispetto a lei.
 
 `smoothPath(pts)` fa passare per quei punti una curva liscia (Catmull-Rom come Bézier cubiche):
-passa per ogni punto, quindi la curva **è** la forma della traccia, e finisce lungo il suo ultimo
+passa per ogni punto, quindi la curva **è** la forma della strada, e finisce lungo il suo ultimo
 segmento — dove punta la freccia. Nel `.rdbk` non si memorizza nulla: la forma si ricava al render.
 Per cambiarla si modifica la traccia sulla mappa.
 
 ### La strada dritta
-Dove la traccia va dritta (`shape.entry`/`shape.exit` `null`) l'ingresso è verticale, da
-`cx,154` al centro, e l'uscita, lunga `L=63`, prende l'angolo della **variazione di rotta**
+L'ingresso è sempre verticale, da
+`cx,154` al centro; dove la strada va dritta (`shape.exit` `null`) l'uscita, lunga `L=63`, prende l'angolo della **variazione di rotta**
 `(bearing_out − bearing_in)` normalizzata a `0..360`; `θ=0` = dritto in su, senso **orario**
 come una bussola. La punta è quindi `cx + sin(θ)·L`, `cy − cos(θ)·L`, così il diagramma mostra
 già la direzione da prendere (dritto = prosegui, destra = svolta a destra…).

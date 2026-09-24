@@ -4,9 +4,9 @@ import NoteCanvas from '../public/assets/js/note-canvas.js';
 globalThis.RB = RB;
 globalThis.RBesc = (s) => String(s);
 
-/* The tulip's roads follow the real shape of the track around the note (#945): ~80 m before and
-   after it, simplified, rotated so the arrival points up and scaled to the vignette. A straight
-   track keeps the classic straight tulip; the shape is derived at render time, never stored. */
+/* The tulip's exit follows the real shape of the road just past the note (#945): ~40 m of track,
+   simplified, rotated so the arrival points up and scaled to the vignette, drawn only when the road
+   really bends. The entry is always the classic straight one; the shape is never stored. */
 const M_PER_DEG_LAT = 111195, LAT0 = 45;
 const mPerDegLon = M_PER_DEG_LAT * Math.cos(LAT0 * Math.PI / 180);
 const at = (east, north) => ({ lat: LAT0 + north / M_PER_DEG_LAT, lon: 9 + east / mPerDegLon });
@@ -34,21 +34,20 @@ describe('RB.tulipShape (#945)', () => {
     it('a straight track gives no shape: the classic straight tulip', () => {
         const trk = track([[0, -300], [0, 300]]);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        expect(RB.tulipShape(rb, 1, false, false)).toEqual({ entry: null, exit: null });
+        expect(RB.tulipShape(rb, 1, false)).toEqual({ exit: null });
     });
 
     it('GPS jitter on a straight road is not a bend', () => {
         const trk = track([[0, -300], [0, 300]], 5).map((p, i) => ({ lat: p.lat, lon: p.lon + ((i % 3) - 1) * 1.2 / mPerDegLon })); // ±1.2 m wobble
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        expect(RB.tulipShape(rb, 1, false, false)).toEqual({ entry: null, exit: null });
+        expect(RB.tulipShape(rb, 1, false)).toEqual({ exit: null });
     });
 
     it('a bend after the note curves the exit, from the centre, the full road length, inside the box', () => {
-        // north through the note, then bending right 40 m after it
-        const trk = track([[0, -300], [0, 40], [30, 70], [300, 70]]);
+        // north through the note, then bending right 15 m after it
+        const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]]);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        const { entry, exit } = RB.tulipShape(rb, 1, false, false);
-        expect(entry).toBeNull(); // the arrival is straight
+        const { exit } = RB.tulipShape(rb, 1, false);
         expect(exit.length).toBeGreaterThanOrEqual(3);
         expect(exit[0]).toEqual([115, 81]); // it leaves the note
         expect(exit[exit.length - 1][0]).toBeGreaterThan(115 + 20); // and ends to the right, where the road goes
@@ -56,28 +55,24 @@ describe('RB.tulipShape (#945)', () => {
         expect(inBox(exit)).toBe(true);
     });
 
-    it('an S on the way in curves the entry, from the bottom into the centre', () => {
-        const trk = track([[0, -300], [0, -80], [15, -60], [15, -40], [0, -20], [0, 0], [0, 300]], 4);
+    it('the entry is always the classic straight one: a bend before the note is no part of the manoeuvre', () => {
+        const trk = track([[0, -300], [0, -60], [15, -40], [15, -25], [0, -10], [0, 0], [0, 300]], 3);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        const { entry } = RB.tulipShape(rb, 1, false, false);
-        expect(entry.length).toBeGreaterThanOrEqual(3);
-        expect(entry[entry.length - 1]).toEqual([115, 81]); // it arrives at the note
-        expect(entry[0][1]).toBeGreaterThan(81 + 40); // from well below
-        expect(entry.some(([x]) => x > 115 + 5)).toBe(true); // the S swings to the side
-        expect(inBox(entry)).toBe(true);
+        expect(RB.tulipShape(rb, 1, false)).toEqual({ exit: null });
+        expect(NoteCanvas.toSVG(rb.notes[1], (ic) => ic.name, RB.tulipContext(rb, 1))).toContain('<path d="M115 154 L115 81"');
     });
 
     it('turns with the arrival: a road arriving east that bends north draws its exit to the left', () => {
-        const trk = track([[-300, 0], [30, 0], [60, 40], [60, 300]]);
+        const trk = track([[-300, 0], [10, 0], [30, 25], [30, 300]]);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        const { exit } = RB.tulipShape(rb, 1, false, false);
+        const { exit } = RB.tulipShape(rb, 1, false);
         expect(exit[exit.length - 1][0]).toBeLessThan(115 - 20);
     });
 
     it('a hairpin never curls back over the note: shorter, in the upper half, or the classic road', () => {
-        const trk = track([[0, -300], [0, 20], [10, 30], [20, 20], [20, -300]], 3);
+        const trk = track([[0, -300], [0, 12], [6, 18], [12, 12], [12, -300]], 2);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        const { exit } = RB.tulipShape(rb, 1, false, false);
+        const { exit } = RB.tulipShape(rb, 1, false);
         if (exit) {
             for (const [, y] of exit.slice(1)) expect(y).toBeLessThanOrEqual(81 + 6); // never down over the entry
             let out = false;
@@ -87,32 +82,40 @@ describe('RB.tulipShape (#945)', () => {
     });
 
     it('only a real bend draws a curve: a gentle drift keeps the classic direct turn', () => {
-        // drifting 8 m sideways over 90 m — a road that is basically straight
-        const drift = track([[0, -300], [0, 0], [8, 90], [30, 300]]);
+        // drifting 3 m sideways over 45 m — a road that is basically straight
+        const drift = track([[0, -300], [0, 0], [3, 45], [15, 300]]);
         expect(RB.tulipShape(roadbook(drift, [0, idxNear(drift, 0, 0), drift.length - 1]), 1, false, false).exit).toBeNull();
         // a clean 90° turn right at the note is the classic tulip too: the direct turn says it all
         const turn = track([[0, -300], [0, 0], [300, 0]]);
-        expect(RB.tulipShape(roadbook(turn, [0, idxNear(turn, 0, 0), turn.length - 1]), 1, false, false)).toEqual({ entry: null, exit: null });
+        expect(RB.tulipShape(roadbook(turn, [0, idxNear(turn, 0, 0), turn.length - 1]), 1, false)).toEqual({ exit: null });
+    });
+
+    it('a note with junctions keeps its classic exit: its branches are drawn against it', () => {
+        const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]]);
+        const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
+        expect(RB.tulipShape(rb, 1, false).exit).not.toBeNull();
+        rb.notes[1].junctions = [{ pivot: [0, 0], tip: [-40, 30], width: 6, road_type: 3 }];
+        expect(RB.tulipShape(rb, 1, false).exit).toBeNull();
     });
 
     it('stops at a neighbouring note: never draws the next one’s curve', () => {
-        // straight for 30 m to the next note, which is where the road turns
-        const trk = track([[0, -300], [0, 30], [100, 30], [300, 30]]);
-        const rb = roadbook(trk, [0, idxNear(trk, 0, 0), idxNear(trk, 0, 30), trk.length - 1]);
-        expect(RB.tulipShape(rb, 1, false, false).exit).toBeNull();
+        // straight for 20 m to the next note, which is where the road turns
+        const trk = track([[0, -300], [0, 20], [100, 20], [300, 20]]);
+        const rb = roadbook(trk, [0, idxNear(trk, 0, 0), idxNear(trk, 0, 20), trk.length - 1]);
+        expect(RB.tulipShape(rb, 1, false).exit).toBeNull();
     });
 
-    it('a sparse track has no shape to copy in 80 m: straight, like today', () => {
+    it('a sparse track has no shape to copy in 40 m: straight, like today', () => {
         const trk = [at(0, -600), at(0, -400), at(0, -200), at(0, 0), at(150, 150), at(300, 300)];
         const rb = roadbook(trk, [0, 3, 5]);
-        expect(RB.tulipShape(rb, 1, false, false)).toEqual({ entry: null, exit: null });
+        expect(RB.tulipShape(rb, 1, false)).toEqual({ exit: null });
     });
 
     it('the start has no entry and the end no exit (#472 · #447)', () => {
-        const trk = track([[0, 0], [0, 40], [30, 70], [300, 70]]);
+        const trk = track([[0, 0], [0, 15], [25, 40], [300, 40]]);
         const rb = roadbook(trk, [0, trk.length - 1]);
         const ctx0 = RB.tulipContext(rb, 0), ctxEnd = RB.tulipContext(rb, 1);
-        expect(ctx0).toMatchObject({ isFirst: true, isEnd: false }); expect(ctx0.shape.entry).toBeNull();
+        expect(ctx0).toMatchObject({ isFirst: true, isEnd: false });
         expect(ctx0.shape.exit.length).toBeGreaterThanOrEqual(3); // the start's exit still curves
         expect(ctxEnd).toMatchObject({ isEnd: true }); expect(ctxEnd.shape.exit).toBeNull();
     });
@@ -120,11 +123,11 @@ describe('RB.tulipShape (#945)', () => {
     it('an OpenRally distance-only placeholder track stays straight', () => {
         const trk = Array.from({ length: 40 }, (_, k) => ({ lat: 0, lon: (k * 50) / 111320 }));
         const rb = roadbook(trk, [0, 10, 20, 39]);
-        for (let i = 0; i < 4; i++) expect(RB.tulipShape(rb, i, i === 3, i === 0)).toEqual({ entry: null, exit: null });
+        for (let i = 0; i < 4; i++) expect(RB.tulipShape(rb, i, i === 3)).toEqual({ exit: null });
     });
 
     it('stores nothing: the roadbook is untouched', () => {
-        const trk = track([[0, -300], [0, 40], [30, 70], [300, 70]]);
+        const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]]);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
         const before = JSON.stringify(rb);
         RB.tulipContext(rb, 1);
@@ -134,7 +137,7 @@ describe('RB.tulipShape (#945)', () => {
 
 describe('the tulip draws the shape (#945)', () => {
     it('a curved road is a smooth path through the track’s shape, arrow at its end', () => {
-        const trk = track([[0, -300], [0, 40], [30, 70], [300, 70]]);
+        const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]]);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
         const svg = NoteCanvas.toSVG(rb.notes[1], (ic) => ic.name, RB.tulipContext(rb, 1));
         const exit = svg.match(/<path d="(M115 81 C[^"]*)"[^>]*marker-end="url\(#vig-arr\)"/);

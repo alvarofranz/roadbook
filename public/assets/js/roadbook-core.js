@@ -486,36 +486,37 @@
         const bIn = bearingAlong(trkpts, idx, -1), bOut = bearingAlong(trkpts, idx, 1);
         return { bIn: bIn != null ? bIn : (bOut != null ? bOut : 0), bOut: bOut != null ? bOut : (bIn != null ? bIn : 0) };
     }
-    /* The tulip's roads follow the real shape of the track around the note (#945). The entry is the
-       track the last TULIP_SHAPE_M before the note, the exit the first TULIP_SHAPE_M after it —
-       measured along the track, stopping short at a neighbouring note so a tulip never draws the
-       next one's curve. Each stretch is simplified (Douglas-Peucker, so GPS jitter goes and a real
-       bend stays), rotated so the road you arrive on points straight up (the stored bearing_in,
-       like every tulip) and scaled so its length along the road is the vignette's fixed road length
-       — a motorbike roadbook and a walking one draw at the same size, and the drawing can never
-       leave the box. The shape is drawn only when the road REALLY bends: when the stretch strays
-       from its own straight line (the note to its far end) by more than TULIP_BEND share of its
-       length (never under TULIP_BEND_MIN_M). A stretch that is straight — at whatever angle — a
-       gentle drift or GPS jitter gives no shape (`null`), and the renderer draws the classic
-       straight road with its direct turn: a tulip is never filled with pointless curves (and a
-       straight road keeps the exact angle it always had, however the recorded track wobbles). A
-       hairpin is drawn over a shorter stretch rather than curling back over the note. To change a
-       tulip's shape, edit the track on the map.
+    /* The tulip's exit follows the real shape of the road after the note (#945): the first
+       TULIP_SHAPE_M of track past it, measured along the track and stopping short at the next note,
+       so a tulip never draws the next one's curve. That is the manoeuvre — the road you arrive on
+       only says where you come from, so it is always the classic straight entry, like every rally
+       tulip. The stretch is simplified (Douglas-Peucker: GPS jitter goes, a real bend stays),
+       rotated so the road you arrive on points straight up (the stored bearing_in, like every
+       tulip) and scaled so its length along the road is the vignette's fixed exit length — a
+       motorbike roadbook and a walking one draw at the same size, and the drawing never leaves the
+       box. The shape is drawn only when the road REALLY bends: when the stretch strays from its own
+       straight line (the note to its far end) by more than TULIP_BEND share of its length (never
+       under TULIP_BEND_MIN_M). A straight stretch — at whatever angle — a gentle drift or GPS
+       jitter gives no shape (`null`), and the renderer draws the classic straight exit with its
+       direct turn: a tulip is never filled with pointless curves, and a straight road keeps the
+       exact angle it always had, however the recorded track wobbles. A hairpin is drawn over a
+       shorter stretch rather than curling back over the note. To change a shape, edit the track.
        Vignette coordinates: the 230×162 box, y down, the note at its centre (115, 81). Returns
-       { entry, exit } — each a polyline [[x, y], …] from the far end to the centre (entry) or from
-       the centre outwards (exit), or null — and nothing is ever stored in the roadbook. */
-    const TULIP_SHAPE_M = 80, TULIP_MIN_M = 12, TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63;
-    const TULIP_BEND = 0.12, TULIP_BEND_MIN_M = 6, TULIP_HAIRPIN_M = [60, 45, 30];
-    const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6;
-    // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note,
-    // up to TULIP_SHAPE_M or the neighbouring note — the last step cut to fit exactly.
-    function tulipStretch(rb, i, dir, maxM = TULIP_SHAPE_M) {
+       { exit } — a polyline [[x, y], …] from the centre outwards, or null — and nothing is ever
+       stored in the roadbook. A note with junctions keeps its classic exit: its branches were drawn
+       against it. */
+    const TULIP_SHAPE_M = 50, TULIP_MIN_M = 12, TULIP_EXIT_PX = 63;
+    const TULIP_BEND = 0.12, TULIP_BEND_MIN_M = 5, TULIP_HAIRPIN_M = [35, 25];
+    const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 12, TULIP_ARROW_LEG_PX = 26;
+    // The track from note i onwards, as metres east/north of the note, up to maxM or the next note —
+    // the last step cut to fit exactly.
+    function tulipStretch(rb, i, maxM) {
         const track = rb.track, notes = rb.notes, n = notes[i], at = n && track && track[n.idx];
         if (!at) return null;
-        const stop = notes[i + dir] ? notes[i + dir].idx : (dir > 0 ? track.length - 1 : 0);
+        const stop = notes[i + 1] ? notes[i + 1].idx : track.length - 1;
         const proj = planarAround(at), O = proj(at), pts = [{ x: 0, y: 0 }];
         let len = 0;
-        for (let k = n.idx + dir; dir > 0 ? k <= stop : k >= stop; k += dir) {
+        for (let k = n.idx + 1; k <= stop; k++) {
             const P = proj(track[k]), prev = pts[pts.length - 1];
             const q = { x: P.x - O.x, y: P.y - O.y }, step = Math.hypot(q.x - prev.x, q.y - prev.y);
             if (step < 0.01) continue; // a duplicate vertex (#452)
@@ -528,8 +529,7 @@
         }
         return len >= TULIP_MIN_M ? { pts, len } : null;
     }
-    // Douglas-Peucker on a short planar polyline (metres); the tolerance grows a little with the
-    // stretch so a long gentle stretch is not read as a bend
+    // Douglas-Peucker on a short planar polyline (metres)
     function tulipSimplify(pts, tol) {
         const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
         const stack = [[0, pts.length - 1]];
@@ -541,51 +541,61 @@
         }
         return pts.filter((_, k) => keep[k]);
     }
-    function tulipShape(rb, i, isEnd, isFirst) {
+    function tulipShape(rb, i, isEnd) {
         const n = rb && rb.notes && rb.notes[i];
-        if (!n || !rb.track || rb.track.length < 2) return { entry: null, exit: null };
+        // a note with junctions is a tulip the author composed around the classic exit — the branches
+        // are drawn against it — so it keeps it; the shape is for the notes that follow the road
+        if (isEnd || !n || !rb.track || rb.track.length < 2 || (n.junctions && n.junctions.length)) return { exit: null };
         const up = toRad(n.bearing_in || 0), c = Math.cos(up), s = Math.sin(up);
         // how far a stretch strays from its own straight line (the note to its far end)
         const stray = (pts) => {
             const end = pts[pts.length - 1], len = Math.hypot(end.x, end.y) || 1;
             return pts.reduce((m, p) => Math.max(m, Math.abs(p.x * end.y - p.y * end.x) / len), 0);
         };
-        const toBox = (pts, len, px) => pts.map((p) => [TULIP_CX + (p.x * c - p.y * s) * px / len, TULIP_CY - (p.x * s + p.y * c) * px / len]);
-        // does the drawing curl back (a hairpin)? The exit must stay in the upper half of the box and
-        // the entry in the lower one — otherwise they cross each other over the note — and neither
-        // may come back to the note once it has left it.
-        const curlsBack = (line, dir) => {
+        const toBox = (pts, len) => pts.map((p) => [TULIP_CX + (p.x * c - p.y * s) * TULIP_EXIT_PX / len, TULIP_CY - (p.x * s + p.y * c) * TULIP_EXIT_PX / len]);
+        // a hairpin curls back: the exit must stay in the upper half of the box (below it, it would
+        // cross the entry) and never come back to the note once it has left it
+        const curlsBack = (line) => {
             let out = false;
             for (let j = 1; j < line.length; j++) {
                 const [x, y] = line[j], d = Math.hypot(x - TULIP_CX, y - TULIP_CY);
-                if (dir > 0 ? y > TULIP_CY + TULIP_OVERLAP_PX : y < TULIP_CY - TULIP_OVERLAP_PX) return true;
+                if (y > TULIP_CY + TULIP_OVERLAP_PX) return true;
                 if (d > TULIP_GUARD_PX * 1.4) out = true;
                 else if (out && d < TULIP_GUARD_PX) return true;
             }
             return false;
         };
-        const side = (dir, px) => {
-            for (const maxM of [TULIP_SHAPE_M, ...TULIP_HAIRPIN_M]) {
-                const st = tulipStretch(rb, i, dir, maxM);
-                if (!st) return null;
-                // a real bend, or the classic straight road: never a curve for a drift or GPS jitter
-                if (stray(st.pts) < Math.max(TULIP_BEND_MIN_M, st.len * TULIP_BEND)) return null;
-                const simple = tulipSimplify(st.pts, Math.max(2.5, st.len * 0.04));
-                if (simple.length < 3) return null;
-                const line = toBox(simple, st.len, px);
-                if (curlsBack(line, dir)) continue; // a hairpin: try it over a shorter stretch
-                const rounded = line.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
-                return dir < 0 ? rounded.reverse() : rounded; // entry: from its far end in to the centre
+        // no leg too short to read: a stub between two bends is a kink, and the arrowhead points along
+        // the last leg, so that one must be long enough to aim it
+        const legible = (line) => {
+            const out = [line[0]];
+            for (let j = 1; j < line.length - 1; j++) {
+                const p = out[out.length - 1];
+                if (Math.hypot(line[j][0] - p[0], line[j][1] - p[1]) >= TULIP_LEG_PX) out.push(line[j]);
             }
-            return null; // a hairpin even at its shortest: the classic road
+            const end = line[line.length - 1];
+            while (out.length > 1 && Math.hypot(end[0] - out[out.length - 1][0], end[1] - out[out.length - 1][1]) < TULIP_ARROW_LEG_PX) out.pop();
+            return out.concat([end]);
         };
-        return { entry: isFirst ? null : side(-1, TULIP_ENTRY_PX), exit: isEnd ? null : side(1, TULIP_EXIT_PX) };
+        for (const maxM of [TULIP_SHAPE_M, ...TULIP_HAIRPIN_M]) {
+            const st = tulipStretch(rb, i, maxM);
+            if (!st) break;
+            // a real bend, or the classic straight exit: never a curve for a drift or GPS jitter
+            if (stray(st.pts) < Math.max(TULIP_BEND_MIN_M, st.len * TULIP_BEND)) break;
+            const simple = tulipSimplify(st.pts, Math.max(1.5, st.len * 0.04));
+            if (simple.length < 3) break;
+            const line = legible(toBox(simple, st.len));
+            if (line.length < 3) break; // what is left is a straight line: the classic exit
+            if (curlsBack(line)) continue; // a hairpin: try it over a shorter stretch
+            return { exit: line.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]) };
+        }
+        return { exit: null }; // straight, or a hairpin even at its shortest: the classic exit
     }
     // Everything a tulip render needs besides the note itself: where it sits in the roadbook and
     // the shape of the road around it (#945). One call for every renderer.
     function tulipContext(rb, i) {
         const notes = (rb && rb.notes) || [], isEnd = isEndNote(notes, i), isFirst = isFirstNote(notes, i);
-        return { isEnd, isFirst, shape: tulipShape(rb, i, isEnd, isFirst) };
+        return { isEnd, isFirst, shape: tulipShape(rb, i, isEnd) };
     }
     // Is the vertex a note sits on cut off from its neighbour on that side by duplicates?
     const degenerateSide = (trkpts, idx, dir) => {
