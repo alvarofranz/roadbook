@@ -52,7 +52,10 @@ window.RBMap = class RBMap {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
         this._headingUp = true; this._posArrow = null; // heading-up rotation (opt-in), live-position chevron
         this._wpIcons = !!opts.wpIcons; this._wpMarkers = []; this._lastNotes = null; // WP-type badge overlay (opt-in)
-        const { layerToggle, geolocate, headingToggle, wpIcons, compass = true, ...mapOpts } = opts; // ours, not MapLibre options
+        const { layerToggle, geolocate, headingToggle, wpIcons, compass = true, terrain = true, ...mapOpts } = opts; // ours, not MapLibre options
+        // 3D relief — opt out for a map read straight from above (the Editor): with terrain on, points
+        // stand at their elevation while the lines lie on the ground, and perspective pulls them apart
+        this._terrainOn = terrain;
         const cont = document.getElementById(containerId);
         // `layerToggle: { remember: key }` keeps the viewer's base style in localStorage under `key`
         // and opens on it next time (the Editor)
@@ -201,6 +204,7 @@ window.RBMap = class RBMap {
     // 3D: real elevation + atmospheric sky for a richer satellite view.
     _terrain() {
         const m = this.map;
+        if (!this._terrainOn) return;
         try {
             // Free, no-key elevation (AWS open Terrarium tiles) for 3D relief.
             if (!m.getSource('rb-dem')) m.addSource('rb-dem', { type: 'raster-dem', tiles: ['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'], encoding: 'terrarium', tileSize: 256, maxzoom: 14 });

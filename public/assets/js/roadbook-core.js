@@ -507,7 +507,7 @@
        to change a shape, add or move points on the track. */
     const TULIP_SHAPE_M = 30, TULIP_SHAPE_POINTS = 4, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
     const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_STRAIGHT_M = 2;
-    const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 8, TULIP_ARROW_LEG_PX = 20, TULIP_BRANCH_CLEAR_PX = 12;
+    const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 5, TULIP_ARROW_LEG_PX = 14, TULIP_BRANCH_CLEAR_PX = 12;
     // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note, up
     // to maxM or the neighbouring note — the last step cut to fit exactly — and how many of the
     // track's own points it passes.
@@ -596,7 +596,8 @@
         const side = (dir, px) => {
             const st = tulipStretch(rb, i, dir, TULIP_SHAPE_M);
             if (!st || st.points < TULIP_SHAPE_POINTS) return null; // a point or two: the classic straight road
-            const simple = tulipSimplify(st.pts, 1);
+            // the author placed these points: kept as drawn, only a sub-metre wobble smoothed away
+            const simple = tulipSimplify(st.pts, 0.5);
             if (simple.length < 3 || stray(simple) < TULIP_STRAIGHT_M) return null; // drawn straight
             const line = legible(toBox(simple, px / st.len), dir);
             if (line.length < 3 || curlsBack(line, dir) || nearBranch(line)) return null;

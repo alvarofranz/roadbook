@@ -98,13 +98,13 @@ Ogni strada del tulip prende la forma che l'autore ha dato alla traccia attorno 
   punti** vogliono dire che quella strada è stata disegnata apposta, punto per punto, e il tulip la
   segue; con meno è la strada dritta classica. Per curvare una freccia si aggiungono punti sulla
   mappa (modo P); per raddrizzarla si tolgono. Un tratto fitto ma dritto resta dritto.
-- Il tratto si ripulisce dal jitter (**Douglas-Peucker**, 1 m), si **ruota** perché `bearing_in`
+- Il tratto si ripulisce dal jitter (**Douglas-Peucker**, 0,5 m: i punti dell’autore restano come li ha messi), si **ruota** perché `bearing_in`
   punti in su e si **scala** perché la lunghezza lungo la strada sia quella fissa della vignetta —
   **73 px** l'ingresso, **63 px** l'uscita — sempre dentro il box.
 - Una forma che tornerebbe sopra la nota (l'uscita sotto il centro, l'ingresso sopra) o che
   passerebbe su un **incrocio** disegnato dall'autore (campionata lungo ogni segmento) resta classica.
-- Nessun segmento troppo corto da leggere (≥ 8 px), e l'ultimo dell'uscita — dove punta la freccia —
-  di almeno 20 px.
+- Nessun segmento troppo corto da leggere (≥ 5 px), e l'ultimo dell'uscita — dove punta la freccia —
+  di almeno 14 px.
 
 `smoothPath(pts)` fa passare per quei punti una curva liscia (Catmull-Rom come Bézier cubiche),
 che finisce lungo il suo ultimo segmento — dove punta la freccia. Nel `.rdbk` non si memorizza nulla.

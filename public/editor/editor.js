@@ -17,7 +17,7 @@
     // one-finger pan / free wheel-zoom, so it opts out of the shared cooperative-gestures default.
     // Its base-map toggle (satellite · topo · OSM, beside the zoom buttons) is RBMap's own, with the
     // compact labels a 34 px button fits, and it remembers the author's choice.
-    const map = new RBMap('edMap', { zoom: 13, geolocate: true, wpIcons: true, compass: false, cooperativeGestures: false, layerToggle: { short: true, remember: 'rb_map_style' } });
+    const map = new RBMap('edMap', { zoom: 13, geolocate: true, wpIcons: true, compass: false, terrain: false, cooperativeGestures: false, layerToggle: { short: true, remember: 'rb_map_style' } }); // flat: the track is edited from straight above
     // Right-click on the map → a context popup whose commands depend on what's under the cursor:
     // a note (waypoint), a plain track point, or empty ground — same look, context-specific items.
     // Every point command also has a one-key shortcut (#35), shown to the right of its label.

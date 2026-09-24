@@ -169,3 +169,11 @@ describe('the Editor shows what a note reaches and what shapes its tulip (#945)'
         expect(editor).toContain('zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0');
     });
 });
+
+describe('the Editor edits on a flat map (#945 feedback)', () => {
+    it('turns the 3D relief off, so the track points sit on the line they belong to', () => {
+        const fs = require('fs');
+        expect(fs.readFileSync('public/editor/editor.js', 'utf8')).toMatch(/new RBMap\('edMap', \{[^}]*terrain: false/);
+        expect(fs.readFileSync('public/assets/js/rbmap.js', 'utf8')).toContain('if (!this._terrainOn) return;');
+    });
+});
