@@ -782,7 +782,7 @@ Object.assign(window.RBi18nLangs.es, {
     'Track / piste': 'Pista / camino',
     'solid, medium stroke (default off-road)': 'continuo, trazo medio (por defecto fuera de asfalto)',
     'dashed, thinnest stroke': 'discontinuo, el trazo más fino',
-    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el autor dibujó una vía punto a punto en el <code>track</code> alrededor de la nota, esa vía sigue la forma dibujada — una curva, una S — calculada al dibujar, nunca guardada. El grosor del trazo es indicativo del tipo de vía.",
+    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el autor dibujó una vía punto a punto en el <code>track</code> alrededor de la nota, esa vía sigue la forma dibujada — una curva, una S — calculada al dibujar, nunca guardada. En la viñeta todas las vías se dibujan con el mismo grosor: el tipo se lee en su color, el trazo discontinuo del fuera de pista y la doble línea de la autopista.",
     'junctions.h2': 'Vectores de cruce (<code>junctions</code>)',
     'junctions.intro': 'Más allá del texto, una nota puede dibujar el cruce en sí: uno o varios vectores sobre la misma caja de 230 × 162. Cada uno va de un <code>pivot</code> a una <code>tip</code> (la punta de flecha), con el color del tipo de vía y un grosor de trazo <code>width</code>.',
     'Vector start (reference units, +y up).': 'Origen del vector (unidades de referencia, +y hacia arriba).',
@@ -1708,4 +1708,15 @@ Object.assign(window.RBi18nLangs.es, {
     "Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.": "Las tulips importadas de OpenRally se quedan con su nota: un toque cambia entre la original y la tuya, y al añadir un icono se pasa a la tuya.",
     "Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.": "Cada recorrido guarda el track que hiciste de verdad: míralo en un mapa y descárgalo como GPX, directamente desde el recorrido.",
     "Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.": "Descartar los cambios en el Editor ahora los descarta de verdad, y el mapa de la nota del Reader se abre más amplio.",
+});
+
+/* Editor: the note's rings — detection radius and tulip shape (#945) */
+Object.assign(window.RBi18nLangs.es, {
+    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "El radio de detección de la nota: el Reader da la nota por validada en cuanto el recorrido entra en este círculo.",
+    "Metres": "Metros",
+    "Drawn smaller: the circle never reaches past halfway to the next note.": "Se dibuja más pequeño: el círculo nunca pasa de la mitad del camino a la nota vecina.",
+    "Tulip shape": "Forma de la tulipa",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Cada punto del track dentro de este círculo da forma a la flecha de la tulipa. Dibuja al menos 4 en un lado y ese camino se curva tal como lo dibujaste; con menos, queda recto.",
+    "No room for more points here.": "Aquí no caben más puntos.",
+    "Points added — drag them to shape the curve.": "Puntos añadidos: arrástralos para dar forma a la curva.",
 });

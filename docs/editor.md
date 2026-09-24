@@ -194,8 +194,8 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
 - **Selezione nota = primo piano della nota.** Selezionare una nota — dalla riga lista **o** dal
   marker sulla mappa — la evidenzia (`markOnMap`: `map.select(note, true)` + gli anelli), apre il
-  suo editor inline, porta la riga in vista e porta la mappa su **~200 m attorno alla nota**
-  (`RBMap.zoomForRadius(200)`, misurato sulla scala reale della mappa), **ruotata** su
+  suo editor inline, porta la riga in vista e porta la mappa su **~120 m attorno alla nota**
+  (`RBMap.zoomForRadius(120)`, misurato sulla scala reale della mappa), **ruotata** su
   `bearing_in`: la strada da cui arrivi viene dal basso e punta in su, come nel tulip. Solo una
   selezione voluta muove la vista: modifiche e cancellazioni rinfrescano via `renderNotes`, che
   non la tocca (#65), e alla chiusura dell'editor (`closeEditor`) la mappa torna **a nord**.
@@ -203,7 +203,14 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   **raggio di rilevamento** (pieno, sabbia: `RB.reachRadius`, quello che valida il Reader) e,
   **tratteggiato e sottile**, il raggio di `RB.TULIP_SHAPE_M` (30 m) i cui punti della traccia
   danno forma al tulip: 4 o più punti dentro, su un lato, e quella strada del tulip segue la
-  forma disegnata (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a ogni modifica).
+  forma disegnata — ogni lato per conto suo (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a
+  ogni modifica). **Un tocco dentro un anello** (in Move, fuori da punti, note e foto: `ringInfo`)
+  apre la sua scheda: il cerchio pieno spiega il raggio di rilevamento e lo modifica lì (lo stesso
+  `wp_radius` del campo della nota); quello tratteggiato conta i punti per lato (`RB.tulipPoints`,
+  x / 4) e, se ne mancano, **Aggiungi punti** (`RB.tulipAddPoints`) ne mette 4 per lato **sulla
+  traccia** — la rotta non cambia, un taglio aperto resta com'è — e arma Move per piegarli.
+  Concentrici: il più piccolo possiede il suo interno, il più grande la corona attorno; se
+  coincidono (30 m e 30 m), una scheda sola con entrambe le parti.
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema

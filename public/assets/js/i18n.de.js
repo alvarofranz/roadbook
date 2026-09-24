@@ -228,7 +228,7 @@
             'neutral, medium stroke': 'neutral, mittlere Linie', 'Motorway / paved fast': 'Autobahn / schnell geteerte Straße',
             'solid, widest stroke': 'durchgezogen, breiteste Linie', 'solid, wide stroke': 'durchgezogen, breite Linie',
             'Track / piste': 'Piste', 'solid, medium stroke (default off-road)': 'durchgezogen, mittlere Linie (Standard Gelände)', 'dashed, thinnest stroke': 'gestrichelt, dünnste Linie',
-            'roadtypes.tulip': "Die Vignette einer Notiz ist ein Tulip: Die Straße, aus der du kommst, führt vom unteren Rand bis zur Mitte (gemäß <code>road_type_in</code>), die Straße, auf der du weiterfährst, verlässt die Mitte mit einem Pfeil in der echten Abbiegerichtung (gemäß <code>road_type_out</code>), und <a href=\"#junctions\">Abzweigvektoren</a> gehen von der Mitte aus. Wo der Autor eine Straße Punkt für Punkt auf dem <code>track</code> um die Notiz gezeichnet hat, folgt diese Straße der gezeichneten Form — eine Kurve, ein S —, beim Zeichnen abgeleitet, nie gespeichert. Die Strichstärke zeigt den Straßentyp an.",
+            'roadtypes.tulip': "Die Vignette einer Notiz ist ein Tulip: Die Straße, aus der du kommst, führt vom unteren Rand bis zur Mitte (gemäß <code>road_type_in</code>), die Straße, auf der du weiterfährst, verlässt die Mitte mit einem Pfeil in der echten Abbiegerichtung (gemäß <code>road_type_out</code>), und <a href=\"#junctions\">Abzweigvektoren</a> gehen von der Mitte aus. Wo der Autor eine Straße Punkt für Punkt auf dem <code>track</code> um die Notiz gezeichnet hat, folgt diese Straße der gezeichneten Form — eine Kurve, ein S —, beim Zeichnen abgeleitet, nie gespeichert. In der Vignette hat jede Straße dieselbe Strichstärke: Der Typ zeigt sich an ihrer Farbe, der gestrichelten Linie im Gelände und der Doppellinie der Autobahn.",
             'junctions.h2': 'Kreuzungsvektoren (<code>junctions</code>)',
             'junctions.intro': 'Eine Notiz kann die Kreuzung selbst zeichnen: Vektoren von einem <code>pivot</code> zu einem <code>tip</code>, farbig nach Straßentyp.',
             'Vector start (reference units, +y up).': 'Vektorstart (Referenzeinheiten, +y nach oben).', 'Vector tip / arrow head.': 'Vektorspitze / Pfeilkopf.',
@@ -1671,4 +1671,15 @@ Object.assign(window.RBi18nLangs.de, {
     "Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.": "Importierte OpenRally-Tulips bleiben bei ihrer Notiz: Ein Tippen wechselt zwischen dem Original und deinem eigenen Tulip, und beim Hinzufügen eines Symbols wird zu deinem gewechselt.",
     "Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.": "Jede Fahrt behält den Track, den du wirklich gefahren bist: Sieh ihn auf einer Karte und lade ihn als GPX herunter, direkt aus der Fahrt.",
     "Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.": "Änderungen im Editor verwerfen verwirft sie jetzt wirklich, und die Notizkarte des Readers öffnet weiter.",
+});
+
+/* Editor: the note's rings — detection radius and tulip shape (#945) */
+Object.assign(window.RBi18nLangs.de, {
+    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "Der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in diesen Kreis eintritt.",
+    "Metres": "Meter",
+    "Drawn smaller: the circle never reaches past halfway to the next note.": "Kleiner gezeichnet: Der Kreis reicht nie über die halbe Strecke zur Nachbarnotiz hinaus.",
+    "Tulip shape": "Form der Tulpe",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Jeder Trackpunkt in diesem Kreis formt den Pfeil der Tulpe. Zeichne mindestens 4 auf einer Seite, und diese Straße biegt sich so, wie du sie gezeichnet hast; mit weniger bleibt sie gerade.",
+    "No room for more points here.": "Hier ist kein Platz für weitere Punkte.",
+    "Points added — drag them to shape the curve.": "Punkte hinzugefügt – zieh sie, um die Kurve zu formen.",
 });

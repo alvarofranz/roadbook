@@ -494,7 +494,8 @@
        A dense stretch that runs straight still draws straight. The stretch is smoothed of jitter
        (Douglas-Peucker), rotated so the road you arrive on points up (the stored bearing_in, like
        every tulip) and scaled so its length along the road is the vignette's fixed road length —
-       73 px in, 63 px out — so a motorbike roadbook and a walking one draw at the same size and the
+       73 px in, 95 px out (longer than the classic 63 px exit, so the bend reads), shrunk only
+       where it would leave the box — so a motorbike roadbook and a walking one draw at the same size and the
        drawing never leaves the box. The points counted are the ones inside the circle of
        TULIP_SHAPE_M around the note — the ring the Editor draws. A shape that would curl back over
        the note (the exit below it, the entry above it) stays classic.
@@ -507,19 +508,21 @@
        straight on), absent where the stored bearings stand. Nothing is ever stored in the roadbook:
        to change a shape, add or move points on the track. */
     const TULIP_SHAPE_M = 30, TULIP_SHAPE_POINTS = 4, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
-    const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_STRAIGHT_M = 2;
+    const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_CURVE_EXIT_PX = 95, TULIP_EDGE_PX = 14, TULIP_STRAIGHT_M = 2;
     const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 5, TULIP_ARROW_LEG_PX = 14, TULIP_BRANCH_CLEAR_PX = 12;
     // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note.
     // `within`: the stretch inside the circle of that radius around the note — exactly the ring the
     // Editor draws, what you see inside it is what counts — ending where the track crosses it (or at
     // the neighbouring note), with how many of the track's own points lie inside. `along`: the first
-    // metres along the track instead (the classic exit's aim).
-    function tulipStretch(rb, i, dir, { within, along }) {
+    // metres along the track instead (the classic exit's aim). `verts` are the track points walked
+    // ({k: track index, s: metres along}) and `beyond` the index the stretch ends towards when it
+    // stops on the circle's edge.
+    function tulipWalk(rb, i, dir, { within, along }) {
         const track = rb.track, notes = rb.notes, n = notes[i], at = n && track && track[n.idx];
         if (!at) return null;
         const stop = notes[i + dir] ? notes[i + dir].idx : (dir > 0 ? track.length - 1 : 0);
-        const proj = planarAround(at), O = proj(at), pts = [{ x: 0, y: 0 }];
-        let len = 0, points = 0;
+        const proj = planarAround(at), O = proj(at), pts = [{ x: 0, y: 0 }], verts = [];
+        let len = 0, points = 0, beyond = null;
         for (let k = n.idx + dir; dir > 0 ? k <= stop : k >= stop; k += dir) {
             const P = proj(track[k]), prev = pts[pts.length - 1];
             const q = { x: P.x - O.x, y: P.y - O.y }, step = Math.hypot(q.x - prev.x, q.y - prev.y);
@@ -534,11 +537,66 @@
                 const dx = q.x - prev.x, dy = q.y - prev.y, a = dx * dx + dy * dy, b = 2 * (prev.x * dx + prev.y * dy), c = prev.x * prev.x + prev.y * prev.y - within * within;
                 const f = Math.max(0, Math.min(1, (-b + Math.sqrt(Math.max(0, b * b - 4 * a * c))) / (2 * a)));
                 const edge = { x: prev.x + dx * f, y: prev.y + dy * f };
-                len += Math.hypot(edge.x - prev.x, edge.y - prev.y); pts.push(edge); break;
+                len += Math.hypot(edge.x - prev.x, edge.y - prev.y); pts.push(edge); beyond = k; break;
             }
-            pts.push(q); len += step; points++;
+            pts.push(q); len += step; points++; verts.push({ k, s: len });
         }
-        return len >= TULIP_MIN_M ? { pts, len, points } : null;
+        return { pts, len, points, verts, beyond };
+    }
+    function tulipStretch(rb, i, dir, opts) {
+        const w = tulipWalk(rb, i, dir, opts);
+        return w && w.len >= TULIP_MIN_M ? w : null;
+    }
+    // How many track points shape each side of note i's tulip — the ones inside the TULIP_SHAPE_M
+    // circle, before it (the road you arrive on) and after it (the one you leave on) — against the
+    // TULIP_SHAPE_POINTS a curve needs. A side with no road drawn in the tulip is null.
+    function tulipPoints(rb, i) {
+        const notes = (rb && rb.notes) || [], n = notes[i];
+        if (!n || !rb.track || !rb.track[n.idx]) return null;
+        const count = (dir) => { const w = tulipWalk(rb, i, dir, { within: TULIP_SHAPE_M }); return w && w.len > 0 ? w.points : null; };
+        return { before: isFirstNote(notes, i) ? null : count(-1), after: isEndNote(notes, i) ? null : count(1), need: TULIP_SHAPE_POINTS };
+    }
+    // Give each side of note i's tulip the TULIP_SHAPE_POINTS points a curve needs, without changing
+    // the route: every new point lies ON the track, spread evenly inside the circle (at 1/5, 2/5…
+    // of the stretch) and skipped where a point already stands within TULIP_POINT_GAP_M. `isOpen(a,
+    // b)` names a segment that must stay as it is (an open cut). The notes after an insertion shift
+    // along. Returns how many points were added.
+    const TULIP_POINT_GAP_M = 1.5;
+    function tulipAddPoints(rb, i, isOpen) {
+        const pts = tulipPoints(rb, i);
+        if (!pts) return 0;
+        let added = 0;
+        [[-1, pts.before], [1, pts.after]].forEach(([dir, have]) => {
+            if (have == null || have >= TULIP_SHAPE_POINTS) return;
+            const first = tulipWalk(rb, i, dir, { within: TULIP_SHAPE_M });
+            const targets = [];
+            for (let j = 1; j <= TULIP_SHAPE_POINTS; j++) targets.push(first.len * j / (TULIP_SHAPE_POINTS + 1));
+            // the free spots first: the ones farthest from the points already there
+            const room = (s, w) => Math.min(s, ...w.verts.map((v) => Math.abs(v.s - s)));
+            targets.sort((x, y) => room(y, first) - room(x, first));
+            for (const target of targets) {
+                const w = tulipWalk(rb, i, dir, { within: TULIP_SHAPE_M }), n = rb.notes[i];
+                if (w.points >= TULIP_SHAPE_POINTS) break;
+                if (room(target, w) < TULIP_POINT_GAP_M) continue;
+                // the stretch of track the target falls on: note → point → … → the circle's edge
+                const anchors = [{ k: n.idx, s: 0 }].concat(w.verts);
+                const j = anchors.findIndex((v, m) => m === anchors.length - 1 || anchors[m + 1].s > target);
+                const from = anchors[j], next = anchors[j + 1], to = next ? next.k : w.beyond;
+                if (to == null) continue;
+                const A = rb.track[from.k], B = rb.track[to];
+                if (isOpen && isOpen(rb.track[Math.min(from.k, to)], rb.track[Math.max(from.k, to)])) continue;
+                const f = Math.min(1, (target - from.s) / ((next ? next.s - from.s : haversineM(A, B)) || 1));
+                const pt = { lat: round6(A.lat + (B.lat - A.lat) * f), lon: round6(A.lon + (B.lon - A.lon) * f) };
+                if (A.ele != null && B.ele != null) pt.ele = Math.round(A.ele + (B.ele - A.ele) * f);
+                if (A.t != null && B.t != null) pt.t = Math.round(A.t + (B.t - A.t) * f);
+                // between the two, next to the far one: past any duplicates of the near one
+                const at = dir > 0 ? to : to + 1;
+                rb.track.splice(at, 0, pt);
+                rb.notes.forEach((m) => { if (m.idx >= at) m.idx++; });
+                added++;
+            }
+        });
+        return added;
     }
     // Douglas-Peucker on a short planar polyline (metres)
     function tulipSimplify(pts, tol) {
@@ -609,13 +667,21 @@
             // the author placed these points: kept as drawn, only a sub-metre wobble smoothed away
             const simple = tulipSimplify(st.pts, 0.5);
             if (simple.length < 3 || stray(simple) < TULIP_STRAIGHT_M) return null; // drawn straight
-            const line = legible(toBox(simple, px / st.len), dir);
+            // shrunk about the note if it would leave the box: the arrowhead stays inside
+            const drawn = toBox(simple, px / st.len);
+            const room = drawn.reduce((f, [x, y]) => {
+                const dx = x - TULIP_CX, dy = y - TULIP_CY;
+                const fx = dx ? (dx > 0 ? 230 - TULIP_EDGE_PX - TULIP_CX : TULIP_CX - TULIP_EDGE_PX) / Math.abs(dx) : Infinity;
+                const fy = dy ? (dy > 0 ? 162 - TULIP_EDGE_PX - TULIP_CY : TULIP_CY - TULIP_EDGE_PX) / Math.abs(dy) : Infinity;
+                return Math.min(f, fx, fy);
+            }, 1);
+            const line = legible(drawn.map(([x, y]) => [TULIP_CX + (x - TULIP_CX) * room, TULIP_CY + (y - TULIP_CY) * room]), dir);
             // the author's own drawing: it may run beside a branch they drew too — only never back over the note
             if (line.length < 3 || curlsBack(line, dir)) return null;
             const rounded = line.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
             return dir < 0 ? rounded.reverse() : rounded; // the entry runs from its far end in to the centre
         };
-        const entry = isFirst ? null : side(-1, TULIP_ENTRY_PX), exit = isEnd ? null : side(1, TULIP_EXIT_PX);
+        const entry = isFirst ? null : side(-1, TULIP_ENTRY_PX), exit = isEnd ? null : side(1, TULIP_CURVE_EXIT_PX);
         if (exit || isEnd) return { entry, exit };
         // the classic straight exit, aimed along the road's first metres
         const aim = tulipStretch(rb, i, 1, { along: TULIP_AIM_M });
@@ -1681,7 +1747,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, tulipShape, tulipContext, TULIP_SHAPE_M, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

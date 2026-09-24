@@ -227,7 +227,7 @@
             'neutral, medium stroke': 'neutre, trait moyen', 'Motorway / paved fast': 'Autoroute / route rapide goudronnée',
             'solid, widest stroke': 'continu, trait le plus large', 'solid, wide stroke': 'continu, trait large',
             'Track / piste': 'Piste', 'solid, medium stroke (default off-road)': 'continu, trait moyen (tout-terrain par défaut)', 'dashed, thinnest stroke': 'pointillé, trait le plus fin',
-            'roadtypes.tulip': "La vignette d’une note est un tulip : la voie par laquelle vous arrivez entre par le bord inférieur jusqu’au centre de la boîte (dessinée selon <code>road_type_in</code>), la voie par laquelle vous repartez quitte le centre avec une flèche, dans le vrai virage (selon <code>road_type_out</code>), et les <a href=\"#junctions\">vecteurs d’embranchement</a> partent du centre. Là où l’auteur a dessiné une voie point par point sur le <code>track</code> autour de la note, cette voie suit la forme dessinée — un virage, un S — déduite au dessin, jamais enregistrée. L’épaisseur du trait indique le type de voie.",
+            'roadtypes.tulip': "La vignette d’une note est un tulip : la voie par laquelle vous arrivez entre par le bord inférieur jusqu’au centre de la boîte (dessinée selon <code>road_type_in</code>), la voie par laquelle vous repartez quitte le centre avec une flèche, dans le vrai virage (selon <code>road_type_out</code>), et les <a href=\"#junctions\">vecteurs d’embranchement</a> partent du centre. Là où l’auteur a dessiné une voie point par point sur le <code>track</code> autour de la note, cette voie suit la forme dessinée — un virage, un S — déduite au dessin, jamais enregistrée. Dans la vignette, chaque voie a la même épaisseur : son type se lit à sa couleur, au pointillé du hors-piste et à la double ligne de l’autoroute.",
             'junctions.h2': 'Vecteurs de carrefour (<code>junctions</code>)',
             'junctions.intro': 'Une note peut dessiner le carrefour lui-même : des vecteurs d\'un <code>pivot</code> à un <code>tip</code>, colorés selon le type de voie.',
             'Vector start (reference units, +y up).': 'Début du vecteur (unités de référence, +y vers le haut).', 'Vector tip / arrow head.': 'Pointe du vecteur / tête de flèche.',
@@ -1670,4 +1670,15 @@ Object.assign(window.RBi18nLangs.fr, {
     "Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.": "Les tulips importés d’OpenRally restent avec leur note : un toucher passe de l’original au vôtre, et ajouter une icône passe au vôtre.",
     "Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.": "Chaque parcours garde la trace que vous avez réellement suivie : voyez-la sur une carte et téléchargez-la en GPX, directement depuis le parcours.",
     "Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.": "Annuler les modifications dans l’Éditeur les annule désormais vraiment, et la carte de la note du Reader s’ouvre plus large.",
+});
+
+/* Editor: the note's rings — detection radius and tulip shape (#945) */
+Object.assign(window.RBi18nLangs.fr, {
+    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "Le rayon de détection de la note : le Reader valide la note dès que le trajet parcouru entre dans ce cercle.",
+    "Metres": "Mètres",
+    "Drawn smaller: the circle never reaches past halfway to the next note.": "Dessiné plus petit : le cercle ne dépasse jamais la moitié du chemin vers la note voisine.",
+    "Tulip shape": "Forme de la tulipe",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Chaque point du tracé dans ce cercle donne sa forme à la flèche de la tulipe. Dessine-en au moins 4 d’un côté et cette route se courbe comme tu l’as dessinée ; avec moins, elle reste droite.",
+    "No room for more points here.": "Pas de place pour d’autres points ici.",
+    "Points added — drag them to shape the curve.": "Points ajoutés : fais-les glisser pour dessiner la courbe.",
 });

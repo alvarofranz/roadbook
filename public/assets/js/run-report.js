@@ -41,7 +41,7 @@
             lines.push(`<li><i class="fa-solid fa-ranking-star icon-accent"></i> ${esc(t('Penalties'))}: <b>${total} ${esc(t('pts'))}</b> <span class="muted small">(${esc(t('Accuracy'))} ${p.acc || 0} · ${esc(t('Skips'))} ${p.skip || 0} · ${esc(t('Extra'))} ${p.extra || 0} · CAP ${p.cap || 0} · ${esc(t('Speed'))} ${p.speed || 0})</span></li>`);
         }
         if (!lines.length) lines.push(`<li><i class="fa-solid fa-circle-check icon-ok"></i> ${esc(t(run.speed_zones ? 'Every note reached and every limit respected.' : 'Every note reached.'))}</li>`);
-        return `<ul class="run-details">${lines.join('')}</ul>`;
+        return `<ul class="status-list">${lines.join('')}</ul>`;
     }
 
     /* ---------- the device queue ---------- */

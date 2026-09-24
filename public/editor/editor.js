@@ -277,8 +277,9 @@
         if (!map.ready || recWatch != null) return; // never edit mid-recording
         const here = { lat: e.lngLat.lat, lon: e.lngLat.lng };
         if (photoPlacing) { placePhotoHere(here); return; } // setting the position of a photo with no EXIF GPS
-        if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts'] }).length) return;
-        if (mapTool === 'point') addPointAtExact(here);
+        if (map.map.queryRenderedFeatures(e.point, { layers: ['rb-wpts', 'rb-photos', 'rb-verts'] }).length) return;
+        if (mapTool === 'pan' || mapTool === 'points') ringInfo(here);
+        else if (mapTool === 'point') addPointAtExact(here);
         else if (mapTool === 'draw') extendRoute(here);
         else if (mapTool === 'cut') cutPoint(here);
         else if (mapTool === 'note') addNoteAtExact(here); // stays in note mode, so notes can be dropped in a row
@@ -1604,6 +1605,55 @@
         const i = n ? rb.notes.indexOf(n) : -1;
         map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);
     }
+    /* A tap inside the open note's rings says what the ring is, and edits it on the spot: the
+       detection radius (the yellow disc) and the stretch of track that shapes the tulip (the dashed
+       circle). Concentric, the smaller one owns its inside and the larger one the band around it;
+       when they coincide, one dialog carries both. */
+    function ringInfo(here) {
+        const n = editorOpen ? rb.notes[sel] : null;
+        if (!n) return;
+        const reach = RB.reachRadius(n, rb.notes[sel + 1], rb.meta), shape = RB.TULIP_SHAPE_M, d = RB.geo.haversineM(n, here);
+        if (d > Math.max(reach, shape)) return;
+        const same = Math.abs(reach - shape) < 1, inner = reach < shape ? 'reach' : 'shape';
+        const which = same ? ['reach', 'shape'] : [d <= Math.min(reach, shape) ? inner : (inner === 'reach' ? 'shape' : 'reach')];
+        const inherited = RB.detectionRadius({ wp_type: n.wp_type }, rb.meta), pts = RB.tulipPoints(rb, sel);
+        const side = (label, count) => count == null ? '' : `<li><i class="fa-solid ${count >= pts.need ? 'fa-circle-check icon-ok' : 'fa-circle-exclamation icon-accent'}"></i> ${esc(t(label))}: <b>${count}</b> / ${pts.need}</li>`;
+        const short = pts && [pts.before, pts.after].some((c) => c != null && c < pts.need);
+        const sections = {
+            reach: `<h3><i class="fa-solid fa-bullseye icon-accent"></i> ${esc(t('Detection radius'))}</h3>
+                <p class="muted small">${esc(t('The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.'))}</p>
+                <label class="muted small" for="ringRadius">${esc(t('Metres'))}</label>
+                <input id="ringRadius" class="modal-in" type="number" min="1" step="1" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}">
+                ${reach < RB.detectionRadius(n, rb.meta) ? `<p class="muted small">${esc(t('Drawn smaller: the circle never reaches past halfway to the next note.'))}</p>` : ''}`,
+            shape: `<h3><i class="fa-solid fa-bezier-curve icon-accent"></i> ${esc(t('Tulip shape'))}</h3>
+                <p class="muted small">${esc(t('Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.'))}</p>
+                <ul class="status-list">${pts ? side('Before the note', pts.before) + side('After the note', pts.after) : ''}</ul>
+                ${short ? `<div class="btnrow"><button class="btn btn-ghost" type="button" id="ringAddPoints"><i class="fa-solid fa-circle-plus"></i> ${esc(t('Add points'))}</button></div>` : ''}`,
+        };
+        const hasRadius = which.includes('reach');
+        const dlg = RBModal(which.map((k) => sections[k]).join('')
+            + `<div class="btnrow end spaced">${hasRadius ? `<button class="btn btn-ghost" type="button" id="ringX">${esc(t('Cancel'))}</button><button class="btn btn-primary" type="button" id="ringGo">${esc(t('Apply'))}</button>`
+                : `<button class="btn btn-primary" type="button" id="ringX">${esc(t('Close'))}</button>`}</div>`, 'narrow');
+        dlg.q('#ringX').onclick = dlg.close;
+        if (hasRadius) {
+            dlg.q('#ringGo').onclick = () => {
+                const v = parseInt(dlg.q('#ringRadius').value, 10);
+                if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;
+                dlg.close(); markDirty(); renderEditor();
+            };
+            dlg.q('#ringRadius').onkeydown = (e) => { if (e.key === 'Enter') dlg.q('#ringGo').click(); };
+        }
+        // the points go ON the track, so the route stays as it is; Move is armed to bend it
+        const add = dlg.q('#ringAddPoints');
+        if (add) add.onclick = () => {
+            const added = RB.tulipAddPoints(rb, sel, (a, b) => gaps.some((g) => samePoint(g.a, a) && samePoint(g.b, b)));
+            dlg.close();
+            if (!added) return toast('No room for more points here.');
+            RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
+            routeChanged(); setMapTool('points');
+            toast('Points added — drag them to shape the curve.');
+        };
+    }
     function toggleNote(i) { if (editorOpen && sel === i) closeEditor(); else select(i); }
     function closeEditor() {
         editorOpen = false; $('noteEditZone').hidden = true; map.setNoteRings(null);
@@ -1625,8 +1675,8 @@
         // reorients — edits/deletes refresh through renderNotes (not select), so they never move
         // the map and you don't lose your place (the concern behind #65).
         const n = rb.notes[i];
-        // a close-up of ~200 m around it, turned so the road you arrive on points up: read like the tulip
-        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0, duration: 450 });
+        // a close-up of ~120 m around it, turned so the road you arrive on points up: read like the tulip
+        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: map.zoomForRadius(120), bearing: n.bearing_in || 0, duration: 450 });
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.

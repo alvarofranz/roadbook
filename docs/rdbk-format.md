@@ -256,8 +256,9 @@ stesso posto (#561):
 
 La vignetta di una nota è un *tulip*: la strada da cui si arriva entra dal basso al centro del
 box (disegnata secondo `road_type_in`), la strada su cui si esce va dal centro a una freccia
-(secondo `road_type_out`), e i vettori di incrocio si diramano dal centro. Lo spessore del tratto
-è indicativo del tipo di strada. Le due strade seguono la forma della traccia attorno alla nota
+(secondo `road_type_out`), e i vettori di incrocio si diramano dal centro, sotto le due strade.
+Nella vignetta ogni strada ha lo stesso spessore: il tipo si legge dal colore, dal tratteggio e
+dalla doppia linea. Le due strade seguono la forma della traccia attorno alla nota
 quando questa curva davvero, altrimenti sono dritte, l'uscita all'angolo
 `bearing_out − bearing_in`; la forma si ricava dalla traccia al momento del render e il file non
 la memorizza (#945).
