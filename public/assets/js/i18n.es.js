@@ -259,7 +259,7 @@
             'No roadbooks yet. Create one in the Editor.': 'Aún no tienes roadbooks. Crea uno en el Editor.', 'Photo updated.': 'Foto actualizada.', 'Profile saved.': 'Perfil guardado.', 'Upload failed.': 'Error al subir.', 'Network error.': 'Error de red.',
             'Roadbook not found.': 'Roadbook no encontrado.', 'This roadbook does not exist or is private.': 'Este roadbook no existe o es privado.',
             'notes': 'notas',
-            'Total': 'Total', 'Partial': 'Parcial', 'Reset': 'Reiniciar', 'Hold to reset.': 'Mantén pulsado para poner a cero.', 'Pause': 'Pausa', 'Max km/h': 'Máx km/h',
+            'Total': 'Total', 'Partial': 'Parcial', 'Reset': 'Reiniciar', 'Pause': 'Pausa', 'Max km/h': 'Máx km/h',
             'Record GPX': 'Grabar GPX', 'Stop recording': 'Detener grabación', 'Speed alert': 'Alerta de velocidad', 'Speed to watch (km/h · 0 = off)': 'Velocidad a vigilar (km/h · 0 = off)', 'Colours': 'Colores',
             'green': 'verde', 'orange': 'naranja', 'red': 'rojo', 'Recorded track': 'Traza grabada', 'points': 'puntos', 'Download GPX': 'Descargar GPX', 'Convert into roadbook': 'Convertir en roadbook', 'Saving…': 'Guardando…', 
             'End the trip and reset everything?': '¿Terminar el viaje y ponerlo todo a cero?', 'Trip reset.': 'Viaje reiniciado.', 'Recording GPX track.': 'Grabando traza GPX.', 'Could not load the recorded trip.': 'No se pudo cargar el trip grabado.',
@@ -1554,7 +1554,7 @@ Object.assign(window.RBi18nLangs.es, {
     "The big number is the distance since the last note.": "El número grande es la distancia desde la última nota.",
     "Stops recording until you resume.": "Detiene la grabación hasta que la reanudes.",
     "Save it as a draft roadbook, or discard it.": "Guárdala como roadbook borrador o descártala.",
-    "Total and partial. ±10 m corrects them; hold ↺ to reset the partial.": "Total y parcial. ±10 m los corrige; mantén ↺ para poner a cero el parcial.",
+    
     "Tap it to set speed alerts.": "Tócala para fijar avisos de velocidad.",
     "Tap to start and stop it.": "Tócalo para iniciarlo y pararlo.",
     "Counts a note and resets the partial.": "Cuenta una nota y pone a cero el parcial.",
@@ -1873,4 +1873,10 @@ Object.assign(window.RBi18nLangs.es, {
     "faq.a6": "Sí. El Editor de RDBK.app importa y exporta OpenRally, y <code>.rdbk</code> escribe los tipos de waypoint con sus códigos OpenRally (WPM, WPN, …), así que un roadbook pasa de una herramienta a otra sin perder su significado. Un GPX simple se convierte en roadbook en pocos clics.",
     "faq.q7": "¿Qué es RDBK.app?",
     "faq.a7": "La suite gratuita para roadbooks digitales construida sobre <code>.rdbk</code>: el Recorder graba una ruta con notas, fotos y notas de voz, el Editor la convierte en roadbook, el Reader la navega con GPS en vivo, el Tripmaster mide el recorrido y las herramientas de eventos clasifican los resultados. En la web, como app instalable y en iOS y Android.",
+});
+
+/* Tripmaster: the partial resets from its tile, hold 2 s (#983) */
+Object.assign(window.RBi18nLangs.es, {
+    "Hold 2 s to reset": "Mantén 2 s: reinicia",
+    "Total and partial. ±10 m corrects them; hold the partial 2 s to reset it.": "Total y parcial. ±10 m los corrige; mantén el parcial 2 s para reiniciarlo.",
 });

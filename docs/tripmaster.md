@@ -101,16 +101,17 @@ roadbook cartaceo.
   totale**. I due odometri sono completamente separati.
 - I correttori sono **clampati a 0** verso il basso (mai negativi); verso l'alto non c'è limite.
 
-### Reset del parziale: hold-to-reset 5 s
+### Reset del parziale: tieni premuta la card 2 s (#983)
 
 Il reset del parziale è protetto contro i tocchi accidentali
 ([tripmaster.js](../public/tripmaster/tripmaster.js)):
 
-- **Pointer**: bisogna **tenere premuto 5 secondi** (`setTimeout` di 5000 ms; la barra
-  `.hold-fill` si riempie via CSS). Un tap-and-release rapido (< 600 ms) non azzera nulla ma
-  mostra il toast "Hold to reset." per spiegare il gesto
-  ([tripmaster.js](../public/tripmaster/tripmaster.js)).
-- **Tastiera** (Enter/Space): l'hold non è raggiungibile senza puntatore, quindi si conferma
+- **Pointer**: si preme **in qualsiasi punto della card del parziale** (`#tmPartialTile`, tranne
+  i ±10 m) e si **tiene premuto 2 secondi** (`HOLD_MS`). Mentre si tiene la card diventa
+  **rossa** (la `.hold-fill` la riempie via CSS), la riga della didascalia mostra "Hold 2 s to
+  reset" e la ↺ si accende: tutto sopra il dito, che di solito sta sul numero. A reset avvenuto
+  la card lampeggia **verde per 500 ms** (`DONE_MS`). Rilasciare prima annulla, senza cambiare nulla.
+- **Tastiera** (Enter/Space sulla ↺): l'hold non è raggiungibile senza puntatore, quindi si conferma
   via `RBConfirm`; il `click` sintetico successivo viene inghiottito per non far partire due
   volte l'azione ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
@@ -252,7 +253,7 @@ La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`)
 ## 11. Limiti e quirk
 
 - **Il parziale può essere azzerato da due gesti diversi** con comportamento incoerente:
-  l'hold-to-reset è protetto a 5 s, ma "Mark note" (§8) lo azzera istantaneamente al primo tap.
+  il reset tenendo premuta la card è protetto a 2 s, ma "Mark note" (§8) lo azzera istantaneamente al primo tap.
   È intenzionale, ma chi non lo sa può perdere il parziale credendo di aver solo contato un
   waypoint.
 - **Rifiutare la ripresa lascia la sessione vecchia su disco** finché non ci si muove: se si

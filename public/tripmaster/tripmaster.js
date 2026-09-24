@@ -1,6 +1,6 @@
 'use strict';
 /* RDBK Tripmaster — a precise GPS trip computer with no roadbook: total and
- * partial odometer (±10 m corrections, hold-to-reset), speed with configurable
+ * partial odometer (±10 m corrections, hold the tile 2 s to reset), speed with configurable
  * alert bands, heading, stopwatch, waypoint counter and crash-safe GPX
  * recording. The session is checkpointed to localStorage on every fix, so a
  * call, a lock screen or an OS tab kill loses nothing. */
@@ -67,7 +67,7 @@
     }
     // The Tripmaster's guided tour (#906): what the dashboard's controls do, once
     const TRIPMASTER_TOUR = [
-        { target: '.tm-odo', title: 'Odometers', text: 'Total and partial. ±10 m corrects them; hold ↺ to reset the partial.' },
+        { target: '.tm-odo', title: 'Odometers', text: 'Total and partial. ±10 m corrects them; hold the partial 2 s to reset it.' },
         { target: '#tmSpeedAlert', title: 'Speed', text: 'Tap it to set speed alerts.' },
         { target: '#tmTimerBtn', title: 'Timer', text: 'Tap to start and stop it.' },
         { target: '#tmNoteBtn', title: 'Mark note', text: 'Counts a note and resets the partial.' },
@@ -131,20 +131,27 @@
     $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
 
 
-    // Reset the partial trip. Pointer: hold 5 s (anti-accidental, browser + PWA);
-    // a quick tap-and-release explains the gesture instead of doing nothing.
-    // Keyboard (Enter/Space): confirm via a dialog, since a hold gesture is
-    // unreachable without a pointer.
+    // Reset the partial trip (#983). Pointer: press anywhere on the partial tile (its ±10 m aside) and
+    // hold 2 s — anti-accidental, and the finger can land on the big number instead of the small ↺, so
+    // the hint and the arrow stay above it. Keyboard (Enter/Space on ↺): a confirm, since a hold gesture
+    // is unreachable without a pointer.
+    const HOLD_MS = 2000, DONE_MS = 500;
     function doReset() { partialM = 0; render(); toast('Trip reset.'); }
     (function holdReset() {
-        const btn = $('tmReset'); let timer = null, heldAt = 0, viaKeyboard = false;
-        const start = (e) => { e.preventDefault(); heldAt = Date.now(); btn.classList.add('holding'); timer = setTimeout(() => { timer = null; btn.classList.remove('holding'); doReset(); }, 5000); };
-        const cancel = () => {
-            if (timer) { clearTimeout(timer); if (Date.now() - heldAt < 600) toast('Hold to reset.'); }
-            timer = null; btn.classList.remove('holding');
+        const tile = $('tmPartialTile'), btn = $('tmReset'); let timer = null, doneTimer = null, viaKeyboard = false;
+        const show = (holding) => { tile.classList.toggle('holding', holding); $('tmHoldHint').hidden = !holding; $('tmPartialCaption').hidden = holding; };
+        const start = (e) => {
+            if (e.button > 0 || e.target.closest('.corr')) return;
+            e.preventDefault(); clearTimeout(doneTimer); tile.classList.remove('done'); show(true);
+            timer = setTimeout(() => {
+                timer = null; show(false); doReset();
+                tile.classList.add('done'); doneTimer = setTimeout(() => tile.classList.remove('done'), DONE_MS);
+            }, HOLD_MS);
         };
-        btn.addEventListener('pointerdown', start);
-        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, cancel));
+        const cancel = () => { if (timer) { clearTimeout(timer); timer = null; show(false); } };
+        tile.addEventListener('pointerdown', start);
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => tile.addEventListener(ev, cancel));
+        tile.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press is the gesture, not a menu
         // Keyboard activation fires keydown then a synthetic click; handle it on
         // keydown and swallow the trailing click so it can't double-fire.
         btn.addEventListener('keydown', (e) => {
