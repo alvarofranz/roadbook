@@ -169,8 +169,8 @@ La mappa compare **solo** quando entrambe le condizioni sono vere:
 a 3 colonne (la 4ª colonna dei bottoni/stato del Reader qui non c'è):
 
 - **distanza**: totale + parziale (`fkm`, metri → km a 2 decimali) + numero nota;
-- **vignetta**: `NoteCanvas.toSVG(n, iconSrc)` — lo stesso render statico usato dalle righe del
-  Reader;
+- **vignetta**: `NoteCanvas.toSVG(n, iconSrc, RB.tulipContext(rb, i))` — lo stesso render statico
+  usato dalle righe del Reader (entrambe le pagine passano da `NoteCanvas.rowsHTML`);
 - **testo**: testo nota, eventuale `CAP <gradi>° · <km>` e le coordinate.
 
 Gli alias delle icone si risolvono con

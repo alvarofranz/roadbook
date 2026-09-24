@@ -227,7 +227,7 @@
             'neutral, medium stroke': 'neutre, trait moyen', 'Motorway / paved fast': 'Autoroute / route rapide goudronnée',
             'solid, widest stroke': 'continu, trait le plus large', 'solid, wide stroke': 'continu, trait large',
             'Track / piste': 'Piste', 'solid, medium stroke (default off-road)': 'continu, trait moyen (tout-terrain par défaut)', 'dashed, thinnest stroke': 'pointillé, trait le plus fin',
-            'roadtypes.tulip': 'La vignette : la voie d\'arrivée entre du bord inférieur jusqu\'au centre (selon <code>road_type_in</code>), la voie de sortie va du centre vers une flèche en haut (selon <code>road_type_out</code>).',
+            'roadtypes.tulip': "La vignette d’une note est un tulip : la voie par laquelle vous arrivez entre par le bord inférieur jusqu’au centre de la boîte (dessinée selon <code>road_type_in</code>), la voie par laquelle vous repartez quitte le centre avec une flèche, dans le vrai virage (selon <code>road_type_out</code>), et les <a href=\"#junctions\">vecteurs d’embranchement</a> partent du centre. Là où la trace tourne vraiment autour de la note, les deux voies suivent sa forme — un virage, un S — déduite de <code>track</code> au dessin, jamais enregistrée. L’épaisseur du trait indique le type de voie.",
             'junctions.h2': 'Vecteurs de carrefour (<code>junctions</code>)',
             'junctions.intro': 'Une note peut dessiner le carrefour lui-même : des vecteurs d\'un <code>pivot</code> à un <code>tip</code>, colorés selon le type de voie.',
             'Vector start (reference units, +y up).': 'Début du vecteur (unités de référence, +y vers le haut).', 'Vector tip / arrow head.': 'Pointe du vecteur / tête de flèche.',
@@ -1654,4 +1654,10 @@ Object.assign(window.RBi18nLangs.fr, {
     
     
     
+});
+
+/* the .rdbk spec: imported tulips (#943) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Facultatif. Le tulip importé de la note (p. ex. depuis OpenRally) : une image opaque qui est toute la vignette, dessinée sur toute la boîte et seule — jamais comme symbole dessus. Il reste avec la note pour de bon.",
+    "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Facultatif, uniquement sur une icône cover : true affiche le tulip propre à l’éditeur (routes, embranchements, symboles) à la place de l’original. Absent = l’original.",
 });

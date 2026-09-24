@@ -253,7 +253,19 @@ Campi editabili di una nota:
   attivandolo calcola heading (`bearingDeg`) e distanza (`haversineM`) verso la nota
   successiva. L'**ultima nota non ha CAP** (manca la nota seguente).
 - **Icone / vignette** — gestite da `NoteCanvas` su `#noteCanvas`
-  ([editor.js](../public/editor/editor.js)); palette in §4.1.
+  ([editor.js](../public/editor/editor.js)); palette in §4.1. Il tronco del tulip segue la forma
+  reale della traccia attorno alla nota (#945, `canvas.setNote(note, RB.tulipContext(rb, i))`,
+  vedi [note-canvas.md](note-canvas.md) §3): per cambiarne la forma si modifica la traccia sulla
+  mappa.
+- **Tulip originale (#943)** — una nota importata con il suo tulip (un'icona `cover`, §7) mostra il
+  pulsante **`#toggleTulip`**, con lo stesso disegno di *Add junction* (`#addJunction`): su desktop
+  *Add junction* sta in alto a sinistra accanto al tulip, il toggle in basso a sinistra, distanze e
+  numero fra i due; su telefono stanno entrambi a destra, la giunzione sopra e il toggle sotto. Il
+  pulsante c'è solo per una nota che ha un tulip originale (`NoteCanvas.originalTulip`,
+  `syncTulipToggle`) ed è acceso mentre l'originale è mostrato; toccarlo mette o toglie `hidden`
+  sull'icona `cover` (`markDirty`). L'originale non si cancella mai: è sempre a un tocco. Ciò che si
+  aggiunge alla vignetta va sul tulip dell'editor, quindi `ownTulip()` passa prima a quello quando
+  l'originale è in vista — aggiungere un'icona (tap nella palette, drop, upload) o una giunzione.
 
 **Drag sulla mappa.** Nel tool **Move** (`points`, default a roadbook caricato) la nota si
 trascina direttamente dal suo marker blu (`onWptDrag`/`onWptCommit` armati via
@@ -294,7 +306,9 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 
 `renderIcons` ([editor.js](../public/editor/editor.js)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook
-(`rb.icons`), le **più recenti per prime** (#855). Un'icona caricata o incollata con una nota aperta
+(`rb.icons`), le **più recenti per prime** (#855). I tulip originali importati (le icone `cover`,
+#943) non sono fra le *Yours*: sono la vignetta della loro nota, raggiunta dal toggle accanto a
+lei, mai un'icona da piazzare, e quindi non hanno un percorso di cancellazione. Un'icona caricata o incollata con una nota aperta
 entra **subito nella sua vignetta**, perché è per quello che la si aggiunge; e un tap sulla vignetta
 della nota aperta apre il tab **Icona** (#856). La galleria è una **striscia di due righe che scorre in orizzontale**: solo icone,
 ogni tile della stessa misura, niente titoli di sezione dentro la striscia — la categoria viaggia
@@ -479,11 +493,13 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 > JSON del roadbook, **sopravvive a save/reimport** (sia `.rdbk` sia profilo server) e viene
 > riemesso all'export.
 >
-> **Tulip importato:** è un'immagine opaca → diventa un'icona **`cover`** che `NoteCanvas.toSVG`
-> rende a tutto-box, da sola (vale anche per Reader e PDF). Nel picker "Tuoi (in questo
-> roadbook)" appare **solo quello della nota corrente**, con tooltip *"Cancellami per esportare
-> il tulip modificato"*: cancellandolo la vignetta torna editabile e l'export emette quella
-> nativa. I controlli/zone di gara strutturati restano un passthrough (non editabili in RDBK);
+> **Tulip importato (#943):** è un'immagine opaca → diventa un'icona **`{ name, cover: true }`**
+> (l'immagine in `rb.icons`) che `NoteCanvas.toSVG` rende a tutto-box, da sola. La nota lo tiene
+> **per sempre**: il toggle `#toggleTulip` accanto alla vignetta passa dal tulip originale a quello
+> dell'editor (`hidden: true` sull'icona) e ritorno, e l'originale non si cancella mai (vedi §4).
+> La scelta è salvata nel JSON del roadbook, quindi Reader, pagina pubblica, PDF ed export
+> OpenRally mostrano quella stessa: l'originale, o il tulip nativo modificato nell'editor.
+> I controlli/zone di gara strutturati restano un passthrough (non editabili in RDBK);
 > la loro modellazione nativa dipende dalle estensioni `.rdbk` proposte in #9.
 
 ### 7.1 Opzioni GPX e naming — issue #34
@@ -597,9 +613,11 @@ cose coerenti:
   il lock lo **rinnova** ogni 4 min (`rb_lock_refresh`) e lo **rilascia** in chiusura via
   `sendBeacon` (`rb_lock_release`); è possibile **forzarlo** (`rb_lock_force`).
 - **Chiudi → landing dell'editor (#166).** `leaveEditor` (pulsante `#closeEditor`) con modifiche
-  non salvate offre *Salva e chiudi · Chiudi senza salvare · Annulla*, poi torna alla **landing
+  non salvate offre *Keep editing · Discard changes · Save & close*, poi torna alla **landing
   dell'editor (la lista dei roadbook)** — `location.pathname` senza il nome file — **non** alla
-  home; ripulisce eventuali `?rb=`/`/<slug>`.
+  home; ripulisce eventuali `?rb=`/`/<slug>`. *Discard changes* mette `dirty = false` prima di
+  uscire: ciò che è stato scartato non è più lavoro non salvato, e così `beforeunload` e
+  `visibilitychange` non riscrivono le modifiche scartate come draft (#943).
 
 ---
 

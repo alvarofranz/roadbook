@@ -167,8 +167,9 @@ inserite come immagini. È l'unico modo per riportare fedelmente le icone-segnal
 marker delle frecce.
 
 Il percorso, per ogni nota ([rb-pdf.js](../public/assets/js/rb-pdf.js)):
-1. `NoteCanvas.toSVG(note, resolver)` ([note-canvas.js](../public/assets/js/note-canvas.js))
-   produce la **stessa vignetta SVG** che il Reader mostra nelle sue righe.
+1. `NoteCanvas.toSVG(note, resolver, RB.tulipContext(rb, i))` ([note-canvas.js](../public/assets/js/note-canvas.js))
+   produce la **stessa vignetta SVG** che il Reader mostra nelle sue righe (stessa forma della
+   traccia, stesso tulip originale o dell'editor).
 2. `svgToPng(svgStr, scale)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)) la converte in
    PNG con sfondo bianco. Forza `width`/`height` sul tag `<svg>` a `230×162 × scale`, la
    disegna su un `<canvas>` (riempito di bianco) via un `Blob`/`Object URL`, e ritorna

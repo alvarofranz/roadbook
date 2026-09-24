@@ -19,8 +19,9 @@ Una sola IIFE espone due superfici pubbliche più alcuni helper privati:
 | Nome | Tipo | Usato da |
 |------|------|----------|
 | `NoteCanvas` (classe) | editor interattivo SVG | Editor |
-| `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
-| `trunkSegments` · `coverIcon` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
+| `NoteCanvas.toSVG(note, resolveIcon, ctx)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
+| `NoteCanvas.originalTulip(note)` | il tulip importato della nota (l'icona `cover`), mostrato o no (§9) | Editor (il toggle del tulip) |
+| `trunkRoads` · `smoothPath` · `coverIcon` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
 
 Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che poi
 `toSVG` ripropone in sola lettura, perciò ciò che si vede nell'Editor è ciò che vede il
@@ -62,36 +63,71 @@ Lo stesso schema si ripete (privato) dentro `toSVG`
 
 ---
 
-## 3. Il tronco del tulip (`trunkSegments`)
+## 3. Il tronco del tulip (`trunkRoads`)
 
-Il "tronco" è la strada disegnata sempre allo stesso modo, derivata dai campi della nota e
-non modificabile a mano ([note-canvas.js](../public/assets/js/note-canvas.js)):
+Il "tronco" è la strada derivata dalla nota e dalla traccia attorno a lei, non modificabile a
+mano ([note-canvas.js](../public/assets/js/note-canvas.js)). `trunkRoads(note, ctx)` restituisce
+le strade come `{ d, color, width, dashed, double, arrow }`, e ognuna si disegna come un
+**`<path>`** (`d`):
 
-- la **provenienza** entra dritta dal bordo inferiore (`cx,154`) fino al centro (`cx,cy`),
-  stilizzata da `road_type_in`;
-- la **strada da seguire** esce dal centro con una freccia (`marker-end`), lunga `L=63`,
-  orientata sulla virata reale — **tranne sulla nota di FINE**, che non ha uscita affatto
-  (#447): oltre l'arrivo non c'è nulla da seguire, quindi la freccia puntava al nulla; in gara
-  quella nota è l'arco d'arrivo. La provenienza si ferma al centro, dove il punto di convalida
-  segna il posto. Chi disegna passa i flag (`trunkSegments(note, isEnd, isFirst)`,
-  `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)`, `setNote(note, isEnd, isFirst)`) e lo ricava da
-  **`RB.isEndNote(notes, i)`** — una regola sola, così Editor, Reader, pagina pubblica ed export
-  PDF concordano su quale sia quella nota (l'ultima del roadbook).
+- la **provenienza** entra dal bordo inferiore fino al centro (`cx,cy`), stilizzata da
+  `road_type_in`;
+- la **strada da seguire** esce dal centro con una freccia (`marker-end`), stilizzata da
+  `road_type_out`.
+
+`ctx` è **`RB.tulipContext(rb, i)`** = `{ isEnd, isFirst, shape }` — dove sta la nota nel
+roadbook e la forma della strada attorno a lei ([roadbook-core.md](roadbook-core.md)). Chi
+disegna lo passa sempre (`trunkRoads(note, ctx)`, `NoteCanvas.toSVG(note, resolveIcon, ctx)`,
+`setNote(note, ctx)`): una chiamata sola per ogni render, così Editor, Reader, pagina pubblica,
+PDF ed export OpenRally disegnano lo stesso tulip. Senza `ctx` la nota si disegna come una nota
+di mezzo, a strade dritte.
+
+- **Prima e ultima nota.** La nota di **FINE** (`isEnd`, da `RB.isEndNote`) non ha uscita
+  affatto (#447): oltre l'arrivo non c'è nulla da seguire, quindi una freccia punterebbe al
+  nulla; in gara quella nota è l'arco d'arrivo. La provenienza si ferma al centro, dove il punto
+  di convalida segna il posto. La nota di **PARTENZA** (`isFirst`, da `RB.isFirstNote`) non ha
+  provenienza (#472).
+
+### La forma reale della traccia (#945)
+Le due strade seguono la **forma reale della traccia** attorno alla nota — una curva, una S,
+l'ingresso in un guado — quando ce l'ha: `ctx.shape` = `RB.tulipShape(rb, i, isEnd, isFirst)` =
+`{ entry, exit }`, ognuna una polilinea già in coordinate viewBox o `null`
+([roadbook-core.js](../public/assets/js/roadbook-core.js)):
+
+- il tratto è la traccia **~80 m prima** (ingresso) e **~80 m dopo** (uscita) la nota, misurati
+  lungo la traccia e **fermati alla nota vicina**, così un tulip non disegna mai la curva della
+  nota successiva;
+- semplificato con **Douglas-Peucker** (via il jitter GPS, resta la curva vera), **ruotato** in
+  modo che `bearing_in` punti dritto in su (come ogni tulip) e **scalato** perché la lunghezza
+  lungo la strada sia quella fissa della vignetta — **73 px** l'ingresso, **63 px** l'uscita:
+  un roadbook in moto e uno a piedi si disegnano della stessa misura, sempre dentro il box;
+- è una curva **solo se la strada curva davvero**: se il tratto si scosta dalla propria corda
+  (la nota → il suo estremo) per più del **12% della sua lunghezza** (mai meno di **6 m**).
+  Altrimenti `null`, e il tronco è la strada dritta classica dai bearing memorizzati: mai curve
+  inutili per una deriva leggera o il rumore GPS;
+- un **tornante** si disegna su un tratto più corto (60 · 45 · 30 m), o in forma classica se
+  curva ancora: il disegno non passa mai sopra la nota (l'uscita resta nella metà alta del box,
+  l'ingresso in quella bassa).
+
+`smoothPath(pts)` fa passare per quei punti una curva liscia (Catmull-Rom come Bézier cubiche):
+passa per ogni punto, quindi la curva **è** la forma della traccia, e finisce lungo il suo ultimo
+segmento — dove punta la freccia. Nel `.rdbk` non si memorizza nulla: la forma si ricava al render.
+Per cambiarla si modifica la traccia sulla mappa.
+
+### La strada dritta
+Dove la traccia va dritta (`shape.entry`/`shape.exit` `null`) l'ingresso è verticale, da
+`cx,154` al centro, e l'uscita, lunga `L=63`, prende l'angolo della **variazione di rotta**
+`(bearing_out − bearing_in)` normalizzata a `0..360`; `θ=0` = dritto in su, senso **orario**
+come una bussola. La punta è quindi `cx + sin(θ)·L`, `cy − cos(θ)·L`, così il diagramma mostra
+già la direzione da prendere (dritto = prosegui, destra = svolta a destra…).
 
 > I bearing arrivano dalla traccia (`RB.deriveBearings`), che **salta i vertici duplicati**: un
 > vicino coincidente dava bearing 0° e quindi una freccia puntata dove capita — una nota dritta
 > disegnata come svolta secca (#452, vedi [roadbook-core.md](roadbook-core.md)).
 
-L'angolo di uscita è la **variazione di rotta** `(bearing_out − bearing_in)` normalizzata a
-`0..360` ([note-canvas.js](../public/assets/js/note-canvas.js)); `θ=0` = dritto in
-su, senso **orario** come una bussola. La punta è quindi
-`cx + sin(θ)·L`, `cy − cos(θ)·L` ([note-canvas.js](../public/assets/js/note-canvas.js)),
-così il diagramma mostra già la direzione da prendere (dritto = prosegui, destra = svolta a
-destra…).
-
 ### Colore
 - Ogni tratto del tronco è colorato **secondo il suo tipo di strada** (`RB.ROAD_TYPES[roadType].color`,
-  la palette del RB System): `trunkSegments` colora così la strada da seguire e la
+  la palette del RB System): `trunkRoads` colora così la strada da seguire e la
   provenienza. La **prima nota** non disegna provenienza affatto (`isFirst`, #472), quindi il
   tronco è sempre su route; restano grigi (`#9aa4b2`) solo i vettori di giunzione (§4).
 
@@ -177,8 +213,8 @@ Le icone arrivano in due modi:
 
 ## 6. Selezione, drag e callback
 
-- `setNote(note, isEnd, isFirst)` ([note-canvas.js](../public/assets/js/note-canvas.js)) carica la
-  nota, normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
+- `setNote(note, ctx)` ([note-canvas.js](../public/assets/js/note-canvas.js)) carica la
+  nota con il suo `ctx` (`RB.tulipContext`, §3), normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
 - `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e ridisegna (con la
   toolbar dell'elemento selezionato); toccare lo sfondo deseleziona
   ([note-canvas.js](../public/assets/js/note-canvas.js)).
@@ -229,20 +265,32 @@ colonna di testo, sia nell'editor sia in `toSVG`.
 
 ## 9. Il render statico `NoteCanvas.toSVG`
 
-### `NoteCanvas.toSVG(note, resolveIcon, isEnd, isFirst)` → stringa SVG
-Render di sola lettura, identico per geometria all'editor: stessi `trunkSegments` (con soppressione
-strada entrante sulla prima nota e uscita sull'ultima, #447/#472), stesse
-giunzioni, stesse icone, stesso pericolo, ma come **stringa** `<svg>…</svg>` da iniettare. È
-quello che mostra ogni riga `.nrow` del Reader, la pagina challenge e l'export PDF. È l'unico
+### `NoteCanvas.toSVG(note, resolveIcon, ctx)` → stringa SVG
+Render di sola lettura, identico per geometria all'editor: stessi `trunkRoads` con lo stesso
+`ctx = RB.tulipContext(rb, i)` (la forma reale della traccia, niente provenienza sulla prima nota
+e niente uscita sull'ultima, #945/#447/#472), stesse giunzioni, stesse icone, stesso pericolo, ma
+come **stringa** `<svg>…</svg>` da iniettare. È quello che mostra ogni riga `.nrow` del Reader e
+della pagina challenge (via `NoteCanvas.rowsHTML`), l'export PDF e l'export OpenRally. È l'unico
 render statico del modulo: la classe interattiva e questa funzione sono le sole superfici
 pubbliche (§1).
 
-> **Icona `cover`**: se la nota ha un'icona con `cover: true` (una tulip importata opaca che
-> **è** l'intera vignetta, es. da OpenRally), `toSVG` va in corto-circuito e rende solo quella
-> a piena scatola — niente tronco/giunzioni/pericolo generati, perché il disegno importato li
-> incorpora già. Il `render()` dell'editor fa lo stesso (`coverIcon(note)`, un solo test per
-> entrambi): la tulip a piena scatola, niente da selezionare né trascinare. Per tornare alla
-> vignetta modificabile si elimina la cover dalla palette ("Yours").
+### Il tulip importato (icona `cover`, #943)
+Una nota importata (es. da OpenRally) conserva il suo **tulip originale**: un'immagine opaca che
+**è** l'intera vignetta, salvata come icona `{ name, cover: true }` con l'immagine in `rb.icons`.
+L'originale non si cancella mai; **`hidden: true`** su quell'icona dice che al suo posto si
+mostra il tulip dell'editor (tronco, giunzioni, icone).
+
+- `NoteCanvas.originalTulip(note)` → l'icona `cover` della nota, mostrata o no (`null` se non ne
+  ha): è ciò che il toggle dell'Editor accende e spegne.
+- `coverIcon(note)` → la stessa, **solo se non è `hidden`**: quando c'è, `toSVG` rende solo lei a
+  piena scatola — niente tronco/giunzioni/pericolo generati, perché il disegno importato li
+  incorpora già — e il `render()` dell'editor fa lo stesso (un solo test per entrambi): niente da
+  selezionare né trascinare.
+- Un'icona `cover` non si disegna **mai** come icona sulla vignetta: il tulip originale è tutta la
+  vignetta o niente.
+
+La scelta (originale o tulip dell'editor) viaggia nel JSON del roadbook, quindi Reader, pagina
+pubblica, PDF ed export OpenRally mostrano quella stessa.
 
 ---
 
@@ -254,8 +302,8 @@ pubbliche (§1).
   è selezionata; non c'è multi-selezione né drag di gruppo.
 - **`size` clampata 10..120, `width` di giunzione 1..10**, `angle` a passi di 15° dai
   pulsanti (drag libero non disponibile per la rotazione).
-- **Lo stile del tronco è fisso**: `road_type_in`/`road_type_out` determinano il disegno,
-  non sono modificabili direttamente dalla vignetta (si cambiano sulla nota).
+- **Il tronco non si edita dalla vignetta**: `road_type_in`/`road_type_out` ne determinano lo
+  stile (si cambiano sulla nota) e la traccia ne determina la forma (si cambia sulla mappa).
 - **La prima nota perde il colore blu in ingresso** per design (nessuna provenienza reale);
   è voluto, ma può sorprendere chi confronta la nota 1 con le altre.
 - **Nessuna palette qui dentro**: la ricerca/elenco icone è responsabilità del chiamante;

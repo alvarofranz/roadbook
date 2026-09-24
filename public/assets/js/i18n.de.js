@@ -228,7 +228,7 @@
             'neutral, medium stroke': 'neutral, mittlere Linie', 'Motorway / paved fast': 'Autobahn / schnell geteerte Straße',
             'solid, widest stroke': 'durchgezogen, breiteste Linie', 'solid, wide stroke': 'durchgezogen, breite Linie',
             'Track / piste': 'Piste', 'solid, medium stroke (default off-road)': 'durchgezogen, mittlere Linie (Standard Gelände)', 'dashed, thinnest stroke': 'gestrichelt, dünnste Linie',
-            'roadtypes.tulip': 'Die Vignette: die Einfahrtsstraße kommt vom unteren Rand bis zur Mitte (gemäß <code>road_type_in</code>), die Ausfahrtsstraße geht zur Pfeilspitze oben (gemäß <code>road_type_out</code>).',
+            'roadtypes.tulip': "Die Vignette einer Notiz ist ein Tulip: Die Straße, aus der du kommst, führt vom unteren Rand bis zur Mitte (gemäß <code>road_type_in</code>), die Straße, auf der du weiterfährst, verlässt die Mitte mit einem Pfeil in der echten Abbiegerichtung (gemäß <code>road_type_out</code>), und <a href=\"#junctions\">Abzweigvektoren</a> gehen von der Mitte aus. Wo der Track um die Notiz wirklich kurvt, folgen beide Straßen seiner Form — eine Kurve, ein S —, beim Zeichnen aus <code>track</code> abgeleitet, nie gespeichert. Die Strichstärke zeigt den Straßentyp an.",
             'junctions.h2': 'Kreuzungsvektoren (<code>junctions</code>)',
             'junctions.intro': 'Eine Notiz kann die Kreuzung selbst zeichnen: Vektoren von einem <code>pivot</code> zu einem <code>tip</code>, farbig nach Straßentyp.',
             'Vector start (reference units, +y up).': 'Vektorstart (Referenzeinheiten, +y nach oben).', 'Vector tip / arrow head.': 'Vektorspitze / Pfeilkopf.',
@@ -1655,4 +1655,10 @@ Object.assign(window.RBi18nLangs.de, {
     
     
     
+});
+
+/* the .rdbk spec: imported tulips (#943) */
+Object.assign(window.RBi18nLangs.de, {
+    "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Optional. Das importierte Tulip der Notiz (z. B. aus OpenRally): ein deckendes Bild, das die ganze Vignette ist, über die volle Box und allein gezeichnet — nie als Symbol darauf. Es bleibt für immer bei der Notiz.",
+    "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Optional, nur bei einem cover-Symbol: true zeigt statt des Originals das eigene Tulip des Editors (Straßen, Abzweigungen, Symbole). Fehlt es = das Original.",
 });

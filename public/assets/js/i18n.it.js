@@ -782,7 +782,7 @@ Object.assign(window.RBi18nLangs.it, {
     'Track / piste': 'Pista / sterrato',
     'solid, medium stroke (default off-road)': 'continuo, tratto medio (predefinito fuoristrada)',
     'dashed, thinnest stroke': 'tratteggiato, il tratto più sottile',
-    'roadtypes.tulip': 'La vignetta di una nota è un tulip: la strada da cui arrivi entra sempre dal bordo inferiore fino al centro del riquadro (disegnata secondo <code>road_type_in</code>), la strada da cui esci va dal centro a una freccia in alto (secondo <code>road_type_out</code>) e i <a href="#junctions">vettori di incrocio</a> partono dal centro. Lo spessore del tratto è indicativo del tipo di strada.',
+    'roadtypes.tulip': "La vignetta di una nota è un tulip: la strada da cui arrivi entra dal bordo inferiore fino al centro del riquadro (disegnata secondo <code>road_type_in</code>), la strada da cui esci parte dal centro con una freccia, alla svolta reale (secondo <code>road_type_out</code>), e i <a href=\"#junctions\">vettori di incrocio</a> partono dal centro. Dove la traccia curva davvero intorno alla nota, entrambe le strade ne seguono la forma — una curva, una S — ricavata da <code>track</code> al momento del disegno, mai salvata. Lo spessore del tratto è indicativo del tipo di strada.",
     'junctions.h2': 'Vettori di incrocio (<code>junctions</code>)',
     'junctions.intro': 'Oltre al testo, una nota può disegnare l’incrocio stesso: uno o più vettori sullo stesso riquadro di 230 × 162. Ognuno va da un <code>pivot</code> a una <code>tip</code> (la punta della freccia), con il colore del tipo di strada e uno spessore di tratto <code>width</code>.',
     'Vector start (reference units, +y up).': 'Origine del vettore (unità di riferimento, +y verso l’alto).',
@@ -1692,4 +1692,10 @@ Object.assign(window.RBi18nLangs.it, {
     
     
     
+});
+
+/* the .rdbk spec: imported tulips (#943) */
+Object.assign(window.RBi18nLangs.it, {
+    "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Facoltativo. Il tulip importato della nota (es. da OpenRally): un’immagine opaca che è l’intera vignetta, disegnata a tutto riquadro e da sola — mai come simbolo su di essa. Resta con la nota per sempre.",
+    "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Facoltativo, solo su un’icona cover: true mostra il tulip dell’editor (strade, bivi, simboli) al posto dell’originale. Assente = l’originale.",
 });

@@ -79,7 +79,7 @@ dimensioni e padding in [index.html](../public/reader/index.html)):
 | Colonna | Classe | Contenuto |
 |---------|--------|-----------|
 | 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota, con accanto il **badge del tipo di waypoint** FIA (`RB.wpBadgeSVG(n.wp_type, 22)`) |
-| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc)`; linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
+| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc, RB.tulipContext(rb, i))` (la forma reale della traccia attorno alla nota, #945); linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
 | 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale (con qualificatore FIA Average/Calculated/Turning in `.note-cap`) · riga **limite di velocità** opzionale (`.note-speed`) · coordinate `lat, lon` |
 
 - La risoluzione icone passa per `iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/')`
