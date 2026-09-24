@@ -19,7 +19,7 @@ describe('the server', () => {
     it('reads and marks only the user’s own', () => {
         expect(fnOf(srv, 'notifications_list')).toContain('WHERE n.user_id = ?');
         const mark = fnOf(srv, 'notifications_read');
-        expect(mark).toContain('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL');
+        expect(mark).toContain("db()->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL')->execute([$uid]);");
         expect(mark).toContain("json_out(['ok' => true, 'unread' => notifications_unread_count($uid)]);"); // every change answers with the new count
     });
     it('a comment tells the roadbook’s owner, and a deleted comment takes its notification with it', () => {
@@ -50,14 +50,16 @@ describe('the client', () => {
         expect(app).toContain("setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);");
         expect(app).toContain("document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });");
     });
-    it('opening one reads it before the page goes where it leads', () => {
-        expect(app).toContain("const r = await RBApi('notifications_read', { ids: [n.id] });");
-        expect(app).toContain("await RBApi('notifications_read', { all: 1 });");
+    it('seeing the list is reading it: no button, everything shown is read, on every device', () => {
+        expect(app).toContain("if (r.unread) { const x = await RBApi('notifications_read', {}); if (x.ok) set(x.unread); } else set(0);");
+        expect(app).not.toContain('Mark all as read');
+        expect(fnOf(srv, 'notifications_read')).not.toContain('ids');
+        expect(css).toContain('.notif-row, .notif-row:hover, .notif-row * { text-decoration: none; }');
     });
     it('the badge on the account icon and the Profile tab, and the entry at the top of the account menu', () => {
         expect(app).toContain('<i class="fa-solid fa-circle-user"></i>${RBNotifications.badgeHTML()}');
         expect(app).toContain("tabProfileBtn.insertAdjacentHTML('beforeend', RBNotifications.badgeHTML());");
-        expect(app).toContain("return `<button id=\"${p}Notifs\">${menuLabel('fa-bell', 'Notifications')} <span class=\"notif-count\" hidden></span></button>`");
+        expect(app).toContain("const mine = `<button id=\"${p}Notifs\">${menuLabel('fa-bell', 'Notifications')} <span class=\"notif-count\" hidden></span></button>`");
         expect(app).toContain("on('Notifs', () => { closeMenu(); RBNotifications.open(); });");
         expect(css).toContain('.notif-badge { position: absolute;');
         expect(css).toContain('.app-tabbar .tabbar-link { position: relative;');

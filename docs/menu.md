@@ -20,7 +20,7 @@ presentazioni con **lo stesso ordine** (#807) — i roadbook prima, il Recorder 
 | **Navigate** (hub `/navigate/`: Reader + Tripmaster) | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
 | **Events** (anche `/event/` e `/ranking/`) | ✅ top bar | ✅ tab bar | ✅ tab bar · ❌ top bar |
 | **Back** | — | ✅ tab bar (prima voce: `history.back()`, altrimenti la home) | ✅ tab bar |
-| **Profile** | controllo account a destra della top bar | ✅ tab bar (apre il menu account in *dropup*) | ✅ |
+| **Profile** | controllo account a destra della top bar | ✅ tab bar (apre il menu account a tutto schermo) | ✅ |
 | Link all'evento (`← Nome evento`) | — | — | ✅ top bar, al posto dei tool |
 
 La top bar in modalità partecipante nasconde i link ai tool (`.nav-tool`) e mette in testa il
@@ -28,13 +28,18 @@ link di ritorno all'evento; la tab bar resta quella di sempre.
 
 ### Il menu account (`accountMenuHTML`)
 
-Una lista sola, resa nel dropdown desktop (`acc…`) e nel dropup della tab bar (`tab…`) — quindi
-identica su ogni superficie. Non autenticato: al suo posto c'è **Sign in** (il tab Profile porta
-al login).
+Una struttura sola (#977), resa in due presentazioni: il **dropdown desktop** (`acc…`, due colonne
+quando c'è l'amministrazione) e il **foglio a tutto schermo** sopra la tab bar (`tab…`, liste
+raggruppate a righe grandi, con la ✕ per chiuderlo; appeso a `<body>`, perché il `backdrop-filter`
+della tab bar farebbe da cornice a un figlio fisso). In testa **chi sei** (avatar, @utente, nome — il
+link al profilo), poi le sezioni **Il tuo account** e **Amministrazione**, e in fondo **Help · App
+Info · Sign out**. Il contatore delle notifiche sta sulla voce *Notifications* e sull'icona. Non
+autenticato: al suo posto c'è **Sign in** (il tab Profile porta al login).
 
 | Voce | Utente | Organizzatore | Admin | Partecipante |
 |---|---|---|---|---|
-| My profile (`/u/<username>`) | ✅ | ✅ | ✅ | ✅ |
+| Testa: il profilo (`/u/<username>`) | ✅ | ✅ | ✅ | ✅ |
+| Notifications (#971) | ✅ | ✅ | ✅ | ✅ |
 | Account settings | ✅ | ✅ | ✅ | ✅ |
 | My roadbooks | ✅ | ✅ | ✅ | ❌ |
 | Public roadbooks | ✅ | ✅ | ✅ | ❌ |

@@ -286,9 +286,9 @@ Durante un evento gli organizzatori vedono dove sono i partecipanti: **`/admin/e
   comunque l'abbia aperto (dall'evento o no) e in qualunque giorno: un giro ricorrente si segue anche
   lui. La domanda si fa **una volta per evento** (`live_status` → chi non ha ancora risposto;
   `live_consent` salva il sì o il no in `event_participants.live_consent`, sul server, uguale su ogni
-  dispositivo), e da lì parte da sola (`RB.liveAllowed`). Mentre condivide mostra la striscia *Live ·
-  gli organizzatori vedono la tua posizione*: un tocco la ferma per quella run. Si ferma per sempre
-  con la run (`live_stop`), e un ping rifiutato la spegne.
+  dispositivo), e da lì parte da sola (`RB.liveAllowed`). L'interruttore **Live** nella barra d'azione
+  del Reader lo mostra e lo cambia: spegnerlo chiede conferma e vale per quella run, riaccenderlo
+  riparte subito (#976). Si ferma per sempre con la run (`live_stop`), e un ping rifiutato la spegne.
 - Chi non è partecipante attivo — un organizzatore, un admin, chiunque navighi il roadbook pubblico —
   lo naviga come sempre ma non è mai seguito: organizzare un evento non è parteciparvi.
 - Invia l'ultima posizione **affidabile** ogni 15 s, o prima dopo 50 m (`RB.liveDue`); un invio

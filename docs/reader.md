@@ -301,10 +301,13 @@ manda quel link insieme all'immagine.
 ### La posizione in diretta per gli organizzatori (#947 · #970)
 All'inizio di ogni run di un roadbook del server, `liveStart` chiede a `live_status` gli eventi di quel
 roadbook dove l'utente è partecipante attivo; se per uno non ha ancora risposto, lo chiede **una volta
-per evento** (`live_consent`, sul server). Con un sì accende la striscia `#liveStrip` e `onFix` passa
-ogni fix affidabile a `liveTick`, che invia quando `RB.liveDue` lo dice (`live_ping`: posizione,
-precisione, velocità, rotta, nota attiva, note raggiunte/saltate, veicolo). Un tocco sulla striscia la
-spegne per quella run; `liveEnd` la spegne con la run (`finalize` · `endRun`). Vedi [events.md](events.md) §8b.
+per evento** (`live_consent`, sul server). L'interruttore **Live** della barra d'azione (`#liveBtn`, #976)
+compare per chi partecipa e lo mostra acceso; `onFix` passa ogni fix affidabile a `liveTick`, che invia
+quando `RB.liveDue` lo dice (`live_ping`: posizione, precisione, velocità, rotta, nota attiva, note
+raggiunte/saltate, veicolo). Spegnerlo chiede prima (vale per quella run); riaccenderlo riparte subito,
+e un no dato all'evento diventa un sì. `liveEnd` la spegne con la run (`finalize` · `endRun`). Con Live la
+barra è Auto · Live · Mappa sopra Pausa · Fine. Le etichette *prog.* e *parz.* stanno accanto ai numeri,
+non sopra (una riga in meno). Vedi [events.md](events.md) §8b.
 
 ### Il pulsante di fine (#968)
 Il report resta sul dispositivo finché il pilota non sceglie **Privato** o **Pubblico** (#460). *Fatto*

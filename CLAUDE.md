@@ -629,7 +629,7 @@ Operational notes:
   (`app/live.php`: `live_status` / `live_consent` / `live_ping` / `live_stop` / `live_list`, table
   `event_live`, purged by cron a day after the event). Organizers and admins are not tracked.
 - **Notifications (#971)** — in-app only (no native push): a badge on the account icon and the app's
-  Profile tab, and a Notifications entry at the top of the account menu (`RBNotifications` in
+  Profile tab, and a Notifications entry at the top of the account menu; seeing the list reads it (`RBNotifications` in
   `app.js`: `KINDS` is the one catalog of how a kind reads and where it leads). The read state lives
   on the server (`app/notifications.php`: `notify()` · `notifications_forget()` · `notifications_list`
   / `notifications_read` / `notifications_unread`, table `notifications`), so the web and the app

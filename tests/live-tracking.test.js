@@ -91,14 +91,24 @@ describe('the Reader', () => {
         expect(reader).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }');
         expect(reader).not.toContain('live.participant');
     });
-    it('sends from trusted fixes only, shows that it does, and stops with the run — or with a tap on the strip', () => {
+    it('sends from trusted fixes only, and stops with the run', () => {
         const onFix = reader.slice(reader.indexOf('function onFix(fix) {'), reader.indexOf('function publishBottomStack'));
         expect(onFix.indexOf('if (!trusted) return;')).toBeLessThan(onFix.indexOf('liveTick('));
-        expect(reader).toContain("$('liveStrip').hidden = !live.on;");
         expect(fnOf(reader, 'endRun')).toContain('liveEnd();');
         expect(fnOf(reader, 'finalize')).toContain('liveEnd();');
-        expect(reader).toContain("$('liveStrip').onclick = () => { liveEnd(); toast('Live position off for this run.'); };");
-        expect(read('public/reader/index.html')).toContain('<button id="liveStrip" class="live-strip" type="button" hidden>');
+    });
+    it('the Live switch in the action bar shows it and changes it: off asks first, on starts again at once (#976)', () => {
+        expect(reader).toContain("const syncLiveBtn = () => { const b = $('liveBtn'); b.hidden = !live.events.length || finished; b.classList.toggle('on', live.on);");
+        expect(reader).toContain("if (!(await RBConfirm(t('Stop sharing your position with the organizers for this run?')))) return;");
+        expect(reader).toContain("await Promise.all(no.map((e) => RBApi('live_consent', { event_id: e.id, consent: 1 })));"); // on again: a no for the event becomes a yes
+        expect(reader).toContain("if (live.on) { toast('Live position on: the organizers see you.'); if (lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); }");
+        const html = read('public/reader/index.html');
+        expect(html).toContain('id="liveBtn" role="switch"');
+        expect(html).not.toContain('liveStrip');
+        expect(read('public/assets/css/app.css')).toContain('.fabrow:has(#liveBtn:not([hidden])) { grid-template-columns: repeat(6, minmax(0, 1fr)); }');
+    });
+    it('the odometer labels sit beside their numbers, a line less (#976)', () => {
+        expect(read('public/reader/index.html')).toContain('.odometer-item { display: flex; align-items: baseline; gap: .4rem; }');
     });
     it('a refused ping ends the sharing; a lost connection only waits', () => {
         expect(reader).toContain("else if (r.error !== 'Network error.') liveEnd(false);");

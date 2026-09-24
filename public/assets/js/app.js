@@ -1457,29 +1457,6 @@
     }
 
     // Management links (admin console + organizer tools) for the header account dropdown (#303).
-    function manageLinks(user, participant) {
-        if (participant || !user) return [];
-        if (user.is_admin) return [
-            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 1 },
-            { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management',        group: 2 },
-            { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings',          group: 2 },
-            { href: 'admin/trash/',        icon: 'fa-trash-can',      label: 'Roadbook trash',         group: 2 },
-            { href: 'admin/logs/',         icon: 'fa-list-check',     label: 'Logs',                   group: 2 },
-        ];
-        if (user.is_organizer || user.manages_events) return [
-            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management',       group: 0 },
-        ];
-        return [];
-    }
-    // Render management links as <a> rows, with a separator between groups.
-    function manageLinksHTML(links) {
-        return links.map((l, i) => (i && l.group !== links[i - 1].group ? '<hr class="menu-sep">' : '')
-            + `<a href="${ROOT}${l.href}">${menuLabel(l.icon, l.label)}</a>`).join('');
-    }
-    /* Every item of the account menu carries its label as a <span data-i18n>, so switching the
-       language re-translates an OPEN menu instead of leaving it in the previous one (#495) —
-       RBt() alone paints the text once and the i18n pass has nothing to find later. */
-    const menuLabel = (icon, label) => `<i class="fa-solid ${icon}"></i> <span data-i18n="${RBesc(label)}">${RBesc(RBt(label))}</span>`;
     /* ---------------- Notifications (#971) ----------------
        What happened for you while you were elsewhere, behind a badge on your account icon (the
        desktop top bar and the app's Profile tab) and at the top of the account menu. The read
@@ -1523,62 +1500,78 @@
                 <span class="grow"><b>${RBesc(k.text(n))}</b>${detail ? `<small>${RBesc(detail)}</small>` : ''}<small class="muted">${RBesc(RBFmtDateTime(n.created_at))}</small></span>
             </a>`;
         };
+        // Seeing them is reading them: the list shows what was new (highlighted) and, once shown, it is
+        // all read — on every device — with no button to press for it
         async function open() {
-            const d = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-bell icon-accent"></i> ${RBesc(RBt('Notifications'))}</h2>
-                    <button class="btn btn-ghost btn-sm" type="button" data-all hidden><i class="fa-solid fa-check-double"></i> ${RBesc(RBt('Mark all as read'))}</button></div>
+            const d = RBModal(`<h2><i class="fa-solid fa-bell icon-accent"></i> ${RBesc(RBt('Notifications'))}</h2>
                 <div class="notif-list"><p class="muted small">${RBesc(RBt('Loading…'))}</p></div>
                 <div class="btnrow" data-more-row hidden><button class="btn btn-ghost" type="button" data-more>${RBesc(RBt('Show more'))}</button></div>`, 'wide');
-            const list = d.q('.notif-list'), allBtn = d.q('[data-all]'), moreRow = d.q('[data-more-row]');
+            const list = d.q('.notif-list'), moreRow = d.q('[data-more-row]');
             let items = [];
             const draw = () => {
                 list.innerHTML = items.length ? items.map(rowHTML).join('') : `<p class="muted">${RBesc(RBt('Nothing new — you will find here the comments on your roadbooks.'))}</p>`;
-                allBtn.hidden = !unread;
-                // opening one reads it, everywhere: marked before the page leaves for where it leads
-                list.querySelectorAll('[data-id]').forEach((a) => a.onclick = async (e) => {
-                    const n = items.find((x) => x.id === +a.dataset.id);
-                    if (!n || n.read) return;
-                    e.preventDefault();
-                    const r = await RBApi('notifications_read', { ids: [n.id] });
-                    if (r.ok) set(r.unread);
-                    location.href = a.href;
-                });
             };
             const load = async () => {
                 const r = await RBApi('notifications_list', { before: items.length ? items[items.length - 1].id : 0 });
                 if (!r.ok) { list.innerHTML = `<p class="muted">${RBesc(RBt(r.error || 'Could not load.'))}</p>`; return; }
-                items = items.concat(r.items); set(r.unread); moreRow.hidden = !r.more; draw();
+                items = items.concat(r.items); moreRow.hidden = !r.more; draw();
+                if (r.unread) { const x = await RBApi('notifications_read', {}); if (x.ok) set(x.unread); } else set(0);
             };
             d.q('[data-more]').onclick = load;
-            allBtn.onclick = async () => {
-                const r = await RBApi('notifications_read', { all: 1 });
-                if (!r.ok) return RBToast(r.error || 'Could not save.');
-                items.forEach((n) => { n.read = true; }); set(r.unread); draw();
-            };
             load();
         }
         return { KINDS, start, refresh, open, badgeHTML, get unread() { return unread; } };
     })();
 
-    /* The account menu is ONE list, rendered into the desktop dropdown and the tab-bar dropup
-       alike; `p` prefixes the ids the wiring below looks for. */
+    function manageLinks(user, participant) {
+        if (participant || !user) return [];
+        if (user.is_admin) return [
+            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management' },
+            { href: 'admin/',              icon: 'fa-users-gear',     label: 'User management' },
+            { href: 'admin/config/',       icon: 'fa-sliders',        label: 'Site settings' },
+            { href: 'admin/trash/',        icon: 'fa-trash-can',      label: 'Roadbook trash' },
+            { href: 'admin/logs/',         icon: 'fa-list-check',     label: 'Logs' },
+        ];
+        if (user.is_organizer || user.manages_events) return [
+            { href: 'admin/events/',       icon: 'fa-flag-checkered', label: 'Event management' },
+        ];
+        return [];
+    }
+    /* Every item of the account menu carries its label as a <span data-i18n>, so switching the
+       language re-translates an OPEN menu instead of leaving it in the previous one (#495) —
+       RBt() alone paints the text once and the i18n pass has nothing to find later. */
+    const menuLabel = (icon, label) => `<i class="fa-solid ${icon}"></i> <span data-i18n="${RBesc(label)}">${RBesc(RBt(label))}</span>`;
+    /* The account menu is ONE structure, rendered into the desktop dropdown and the app's full-screen
+       sheet alike (#977): who you are, then your things and — when you have them — the management
+       pages as two sections (two columns on a desktop, grouped lists on a phone), and the way out at
+       the foot. `p` prefixes the ids the wiring below looks for. */
     function accountMenuHTML(user, participant, p) {
-        return `<button id="${p}Notifs">${menuLabel('fa-bell', 'Notifications')} <span class="notif-count" hidden></span></button>`
-            + `<a href="${RBProfileLink(user.username)}">${menuLabel('fa-circle-user', 'My profile')}</a>`
+        const name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
+        const avatar = user.avatar ? `<img class="acc-avatar" src="${RBesc(RBMediaSrc(user.avatar))}" alt="">` : '<span class="acc-avatar"><i class="fa-solid fa-circle-user"></i></span>';
+        const mine = `<button id="${p}Notifs">${menuLabel('fa-bell', 'Notifications')} <span class="notif-count" hidden></span></button>`
             + `<a href="${ROOT}account/">${menuLabel('fa-gear', 'Account settings')}</a>`
             + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-folder-open', 'My roadbooks')}</a>`
                 + `<a href="${ROOT}roadbooks/">${menuLabel('fa-book-open', 'Public roadbooks')}</a>`) // the only way in on mobile and in the app (#671)
-            + manageLinksHTML(manageLinks(user, participant))
             + `<button id="${p}Activity">${menuLabel('fa-clock-rotate-left', 'My activity')}</button>`
-            + (participant ? `<hr class="menu-sep"><button id="${p}Leave">${menuLabel('fa-up-right-from-square', 'Switch to full mode')}</button>` : '')
-            // Help sits at the foot, just before App Info (#743)
-            + `<hr class="menu-sep"><a href="${ROOT}wiki/">${menuLabel('fa-circle-question', 'Help')}</a>`
-            + `<button id="${p}AppInfo">${menuLabel('fa-circle-info', 'App Info')}</button>`
-            + `<button id="${p}Logout">${menuLabel('fa-right-from-bracket', 'Sign out')}</button>`;
+            + (participant ? `<button id="${p}Leave">${menuLabel('fa-up-right-from-square', 'Switch to full mode')}</button>` : '');
+        const manage = manageLinks(user, participant).map((l) => `<a href="${ROOT}${l.href}">${menuLabel(l.icon, l.label)}</a>`).join('');
+        const section = (title, items) => `<section class="acc-section"><h4 data-i18n="${title}">${RBesc(RBt(title))}</h4><div class="acc-list">${items}</div></section>`;
+        return `<div class="acc-head">
+                <a class="acc-who" href="${RBProfileLink(user.username)}">${avatar}<span><b>@${RBesc(user.username || '')}</b>${name ? `<small>${RBesc(name)}</small>` : ''}<small class="acc-link" data-i18n="My profile">${RBesc(RBt('My profile'))}</small></span></a>
+                <button class="acc-close" id="${p}Close" type="button" aria-label="${RBesc(RBt('Close'))}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="acc-cols${manage ? ' two' : ''}">${section('Your account', mine)}${manage ? section('Administration', manage) : ''}</div>
+            <div class="acc-foot">
+                <a href="${ROOT}wiki/">${menuLabel('fa-circle-question', 'Help')}</a>
+                <button id="${p}AppInfo">${menuLabel('fa-circle-info', 'App Info')}</button>
+                <button id="${p}Logout" class="acc-out">${menuLabel('fa-right-from-bracket', 'Sign out')}</button>
+            </div>`;
     }
     // …and one wiring for both: close the menu, then do the thing.
     function wireAccountMenu(root, p, closeMenu) {
         const on = (id, fn) => { const el = root.querySelector('#' + p + id); if (el) el.onclick = fn; };
         on('Logout', RBSignOut);
+        on('Close', closeMenu);
         on('Notifs', () => { closeMenu(); RBNotifications.open(); });
         on('Activity', () => { closeMenu(); window.RBActivityLog(); });
         on('AppInfo', () => { closeMenu(); showAppInfo(); });
@@ -1662,6 +1655,7 @@
                 const btn = w.querySelector('.account-button'), menu = w.querySelector('.account-menu');
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
+                menu.onclick = (e) => e.stopPropagation(); // between its rows is still inside it
                 wireAccountMenu(w, 'acc', () => { menu.hidden = true; });
                 RBNotifications.start(user);
             }
@@ -1691,7 +1685,7 @@
                 tabMenu.id = 'tabProfileMenu';
                 tabMenu.className = 'tabbar-dropup';
                 tabMenu.hidden = true;
-                tabProfileBtn.parentNode.appendChild(tabMenu);
+                document.body.appendChild(tabMenu); // not inside the tab bar: its backdrop-filter would make the bar the sheet's frame
             }
             if (!user) {
                 tabProfileBtn.onclick = () => { location.href = RBLoginUrl(); };
@@ -1700,6 +1694,7 @@
                 if (!tabProfileBtn.querySelector('.notif-badge')) tabProfileBtn.insertAdjacentHTML('beforeend', RBNotifications.badgeHTML());
                 tabProfileBtn.onclick = (e) => { e.stopPropagation(); tabMenu.hidden = !tabMenu.hidden; };
                 document.addEventListener('click', () => { tabMenu.hidden = true; });
+                tabMenu.onclick = (e) => e.stopPropagation(); // the sheet is the whole screen: a tap on it is not a tap outside
                 wireAccountMenu(tabMenu, 'tab', () => { tabMenu.hidden = true; });
                 RBNotifications.start(user);
             }

@@ -41,7 +41,7 @@ describe('the Reader in navigation (#936)', () => {
         expect(html).not.toContain('id="endBtn"');
         expect(html).not.toContain('id="navGpx"');
         const bar = html.match(/<nav class="fabrow">([\s\S]*?)<\/nav>/)[1];
-        expect([...bar.matchAll(/id="(\w+)"/g)].map((m) => m[1])).toEqual(['autoBtn', 'mapBtn', 'pauseBtn', 'finishBtn']);
+        expect([...bar.matchAll(/id="(\w+)"/g)].map((m) => m[1])).toEqual(['autoBtn', 'liveBtn', 'mapBtn', 'pauseBtn', 'finishBtn']); // Live only for an event's participant (#976)
     });
     it('lays the bar out as two rows of two, Auto taking its row when there is no map', () => {
         const css = read('public/assets/css/app.css');
