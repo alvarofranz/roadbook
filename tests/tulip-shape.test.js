@@ -4,7 +4,7 @@ import NoteCanvas from '../public/assets/js/note-canvas.js';
 globalThis.RB = RB;
 globalThis.RBesc = (s) => String(s);
 
-/* The tulip's roads take the shape the author drew into the track (#945): more than 6 points within
+/* The tulip's roads take the shape the author drew into the track (#945): 3 or more points within
    50 m of the note on one side means that road was drawn on purpose and the tulip follows it; fewer,
    and it is the classic straight road — the exit aimed along the road's first 20 m. Never over the
    note, never over the author's junctions, never stored. */
@@ -39,7 +39,7 @@ describe('RB.tulipShape (#945)', () => {
         expect(s.entry).toBeNull(); expect(s.exit).toBeNull();
     });
 
-    it('more than 6 points after the note: the exit follows them — from the centre, the full length, inside the box', () => {
+    it('3 or more points after the note: the exit follows them — from the centre, the full length, inside the box', () => {
         const { s } = shape([[0, -300], [0, 15], [25, 40], [300, 40]], 4);
         expect(s.exit.length).toBeGreaterThanOrEqual(3);
         expect(s.exit[0]).toEqual([115, 81]);
@@ -48,7 +48,7 @@ describe('RB.tulipShape (#945)', () => {
         expect(inBox(s.exit)).toBe(true);
     });
 
-    it('more than 6 points before the note: the entry follows them, from the bottom into the centre', () => {
+    it('3 or more points before the note: the entry follows them, from the bottom into the centre', () => {
         const { s } = shape([[0, -300], [0, -45], [14, -32], [14, -18], [0, -6], [0, 0], [0, 300]], 3);
         expect(s.entry.length).toBeGreaterThanOrEqual(3);
         expect(s.entry[s.entry.length - 1]).toEqual([115, 81]);
@@ -82,7 +82,7 @@ describe('RB.tulipShape (#945)', () => {
 
     it('the classic exit aims where the road goes over its first 20 m, not over its first metre', () => {
         // arriving north; a clean right turn — but the recorded first metre drifts to the north-east
-        const trk = [at(0, -300), at(0, -150), at(0, 0), at(1, 1.5), at(8, 3), at(20, 3), at(40, 3), at(80, 3), at(300, 3)];
+        const trk = [at(0, -300), at(0, -150), at(0, 0), at(1, 1.5), at(60, 3), at(300, 3)]; // a point or two: no drawn shape
         const rb = roadbook(trk, [0, 2, trk.length - 1]);
         expect(rb.notes[1].bearing_out).toBeLessThan(45); // the stored bearing reads ~34°
         const s = RB.tulipShape(rb, 1, false, false);
@@ -154,7 +154,7 @@ describe('the Editor shows what a note reaches and what shapes its tulip (#945)'
     const editor = fs.readFileSync('public/editor/editor.js', 'utf8'), map = fs.readFileSync('public/assets/js/rbmap.js', 'utf8');
     it('rings the selected note: its detection radius, and the dashed radius whose points shape the tulip', () => {
         expect(editor).toContain('map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);');
-        expect(map).toContain("'line-dasharray': [3, 3]");
+        expect(map).toContain("'line-dasharray': [2.5, 2]");
         expect(RB.TULIP_SHAPE_M).toBe(50);
     });
     it('opens a note on ~200 m around it, turned so the road you arrive on points up', () => {

@@ -489,7 +489,7 @@
     /* The tulip's roads take the shape the author gave the track around the note (#945). The
        signal is the track itself: over TULIP_SHAPE_M on one side of the note (before it for the
        road you arrive on, after it for the one you leave on — along the track, stopping at the
-       neighbouring note), more than TULIP_SHAPE_POINTS points means that road was drawn on purpose,
+       neighbouring note), TULIP_SHAPE_POINTS points or more mean that road was drawn on purpose,
        point by point, and the tulip follows it; fewer, and the road is the classic straight one.
        A dense stretch that runs straight still draws straight. The stretch is smoothed of jitter
        (Douglas-Peucker), rotated so the road you arrive on points up (the stored bearing_in, like
@@ -505,7 +505,7 @@
        the centre outwards, each or null; `turn` the classic exit's angle (degrees clockwise from
        straight on), absent where the stored bearings stand. Nothing is ever stored in the roadbook:
        to change a shape, add or move points on the track. */
-    const TULIP_SHAPE_M = 50, TULIP_SHAPE_POINTS = 6, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
+    const TULIP_SHAPE_M = 50, TULIP_SHAPE_POINTS = 3, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
     const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_STRAIGHT_M = 2;
     const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 8, TULIP_ARROW_LEG_PX = 20, TULIP_BRANCH_CLEAR_PX = 12;
     // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note, up
@@ -595,7 +595,7 @@
         // the shape of one side, when the author drew it
         const side = (dir, px) => {
             const st = tulipStretch(rb, i, dir, TULIP_SHAPE_M);
-            if (!st || st.points <= TULIP_SHAPE_POINTS) return null; // a few points: the classic straight road
+            if (!st || st.points < TULIP_SHAPE_POINTS) return null; // a point or two: the classic straight road
             const simple = tulipSimplify(st.pts, 1);
             if (simple.length < 3 || stray(simple) < TULIP_STRAIGHT_M) return null; // drawn straight
             const line = legible(toBox(simple, px / st.len), dir);

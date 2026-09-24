@@ -202,7 +202,7 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
 - **Gli anelli della nota (#945).** Attorno alla nota selezionata la mappa disegna il suo
   **raggio di rilevamento** (pieno, sabbia: `RB.reachRadius`, quello che valida il Reader) e,
   **tratteggiato e sottile**, il raggio di `RB.TULIP_SHAPE_M` (50 m) i cui punti della traccia
-  danno forma al tulip: più di 6 punti dentro, su un lato, e quella strada del tulip segue la
+  danno forma al tulip: 3 o più punti dentro, su un lato, e quella strada del tulip segue la
   forma disegnata (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a ogni modifica).
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
