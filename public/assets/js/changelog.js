@@ -11,6 +11,13 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.13', date: '2026-09-24',
+        title: 'A note’s rings, at a glance',
+        items: [
+            'Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.',
+        ],
+    },
+    {
         version: '1.9.12', date: '2026-09-24',
         title: 'Events that flow, and a live map',
         items: [

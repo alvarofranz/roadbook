@@ -1713,7 +1713,6 @@ Object.assign(window.RBi18nLangs.it, {
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.it, {
     "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "Il cerchio giallo è il raggio di rilevamento della nota: il Reader convalida la nota appena il percorso fatto ci entra.",
-    "Edit radius": "Modifica raggio",
     "Metres": "Metri",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Disegnato più piccolo: il cerchio non supera mai metà strada verso la nota vicina.",
     "Tulip shape": "Forma della freccia",
@@ -1773,4 +1772,10 @@ Object.assign(window.RBi18nLangs.it, {
 /* Editor: the detection radius floor, in the note's rings dialog */
 Object.assign(window.RBi18nLangs.it, {
     "It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.": "Non è mai inferiore a {m} m: sotto, un punto GPS non può convalidare la nota in modo affidabile.",
+});
+
+/* Release notes 1.9.13 */
+Object.assign(window.RBi18nLangs.it, {
+    "A note’s rings, at a glance": "I cerchi di una nota, a colpo d’occhio",
+    "Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.": "Tocca dentro il cerchio tratteggiato di una nota nell’Editor: la forma della sua freccia e il suo raggio di rilevamento si aprono affiancati — a tutto schermo su un telefono — con il campo del raggio subito lì.",
 });

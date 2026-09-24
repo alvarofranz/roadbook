@@ -206,12 +206,12 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   forma disegnata — ogni lato per conto suo (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a
   ogni modifica). **Un tocco dentro il cerchio tratteggiato** (in Move, fuori da punti, note e foto:
   `ringInfo`) apre **una sola** scheda della nota — così nessun tocco è ambiguo — in due sezioni
-  (`.panel.inset`): la *forma della freccia* conta i punti per lato (`RB.tulipPoints`, x / 4) e, se
+  affiancate (`.modal-card.split` + `.panes`; impilate a tutto schermo su un telefono): la *forma della freccia* conta i punti per lato (`RB.tulipPoints`, x / 4) e, se
   ne mancano, **Aggiungi punti** (`RB.tulipAddPoints`) ne mette 4 per lato **sulla traccia** — la
   rotta non cambia, un taglio aperto resta com'è — e arma Move per piegarli; il *raggio di
   rilevamento* dice che è il cerchio giallo, perché è disegnato diverso dal valore impostato (mai
-  sotto `REACH_MIN_M`, mai oltre metà strada verso la nota vicina) e **Modifica raggio** lo cambia
-  lì (lo stesso `wp_radius` del campo della nota).
+  sotto `REACH_MIN_M`, mai oltre metà strada verso la nota vicina) e il suo campo lo cambia lì
+  (lo stesso `wp_radius` del campo della nota).
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema

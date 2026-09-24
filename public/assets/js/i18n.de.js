@@ -1676,7 +1676,6 @@ Object.assign(window.RBi18nLangs.de, {
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.de, {
     "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "Der gelbe Kreis ist der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in ihn eintritt.",
-    "Edit radius": "Radius bearbeiten",
     "Metres": "Meter",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Kleiner gezeichnet: Der Kreis reicht nie über die halbe Strecke zur Nachbarnotiz hinaus.",
     "Tulip shape": "Form des Pfeils",
@@ -1736,4 +1735,10 @@ Object.assign(window.RBi18nLangs.de, {
 /* Editor: the detection radius floor, in the note's rings dialog */
 Object.assign(window.RBi18nLangs.de, {
     "It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.": "Er ist nie kleiner als {m} m: Darunter kann ein GPS-Punkt die Notiz nicht zuverlässig bestätigen.",
+});
+
+/* Release notes 1.9.13 */
+Object.assign(window.RBi18nLangs.de, {
+    "A note’s rings, at a glance": "Die Kreise einer Notiz auf einen Blick",
+    "Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.": "Tippe im Editor in den gestrichelten Kreis einer Notiz: Die Form ihres Pfeils und ihr Erkennungsradius öffnen sich nebeneinander — auf einem Telefon im ganzen Bildschirm — mit dem Feld für den Radius gleich dort.",
 });
