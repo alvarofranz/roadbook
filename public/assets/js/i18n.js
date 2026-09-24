@@ -8,7 +8,7 @@
     const T = {
         en: {
             'hero.title': 'Digital roadbooks for <span class="accent">your adventures</span>',
-            'hero.lead': 'Build a roadbook from a GPX, follow it with GPS and share it. 4x4, moto, bike, running… any adventure.',
+            'hero.lead': "Turn a GPX into a roadbook, ride it with live GPS and share it — by 4x4, motorbike or bike.",
             'flow.kicker': 'Features', 'flow.title': 'Everything you need',
             'flow.s1': 'Record a route', 'flow.s2': 'Build a roadbook', 'flow.s3': 'Use it with friends', 'flow.s4': 'Run a club event',
             'feat.1.t': 'Roadbook Editor',
@@ -48,7 +48,7 @@
             'seo.terms.title': 'Terms of Use — RDBK.app', 'seo.terms.desc': 'The terms for using RDBK.app, the free digital roadbook suite and the open .rdbk format.',
             'about.title': 'Who we are',
             'about.lead1': 'RDBK.app is a free suite of <b>digital tools</b> for authoring roadbooks and easily using them. Track recording with audio and photo notes helps later editing; in event preparation, the Roadbook Editor is then usable by multiple authors — and much more!',
-            'about.lead2': 'RDBK.app is a one-stop shop for every adventure — 4×4, moto, bike, running — built around the open <b>.rdbk</b> format. It grows out of years of real rally-navigation tooling.',
+            'about.lead2': "RDBK.app is everything a roadbook needs, for 4×4, motorbike and bike alike — built around the open <b>.rdbk</b> format and grown out of years of real rally-navigation tooling.",
             'about.history': 'From Roadbook System to RDBK.app',
             'about.history1': 'RDBK.app is the evolution of <a href="https://www.roadbook-system.com/" target="_blank" rel="noopener"><b>Roadbook System</b></a> — the free, open-source rally-navigation suite created by <b>Massimo Sabattini</b> for 4×4 clubs and non-competitive off-road events. Roadbook System paired a roadbook editor, a mobile reader with tripmaster, real-time event ranking and time-locked GPX-trace protection, under one creed: <span class="creed">Logica, Semplice, Utile</span> — logic, simple, useful.',
             'about.history2': 'RDBK.app carries that spirit onto the modern web. The same core ideas — build a roadbook, follow it with GPS, score an event — rebuilt as a free, installable web app (PWA) plus native iOS and Android apps, around the open <b>.rdbk</b> file format, for any adventure and any device, online or off. The aim is to keep what made Roadbook System loved — clarity, the co-driver\'s craft, free and open — while bringing it to everyone, everywhere.',
@@ -92,7 +92,7 @@
             'terms.s13': 'The Service is offered by <b>Maurizio Andreotti and Álvaro Franz</b>. For information you can write to <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a>.',
             'seo.contact.title': 'Contact — RDBK.app', 'seo.contact.desc': 'Get in touch with the RDBK.app team — questions, feedback or data requests about our free digital roadbook tools.',
             'seo.standard.title': 'The .rdbk standard — RDBK.app', 'seo.standard.desc': 'The open .rdbk format for digital roadbooks: one self-contained JSON file with track, notes and embedded icons. Full specification.',
-            'seo.roadbooks.title': 'Public Roadbooks — RDBK.app', 'seo.roadbooks.desc': 'Browse public roadbooks shared by the community — 4x4, moto, bike and running routes to read, navigate or export.',
+            'seo.roadbooks.title': 'Public Roadbooks — RDBK.app', 'seo.roadbooks.desc': "Browse public roadbooks shared by the community — 4x4, motorbike and bike routes to read, navigate or export.",
             'seo.events.title': 'Events — RDBK.app', 'seo.events.desc': 'Discover roadbook events and rallies: browse upcoming events and their public roadbooks.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Build a digital roadbook from a GPX or record it live — design rally notes, CAP headings, waypoints and icons, then export a self-contained .rdbk.',
             'seo.feat_reader.title': 'Roadbook Reader — RDBK.app', 'seo.feat_reader.desc': 'Navigate any roadbook with GPS: odometer, bearing, live map, CAP direction bar and automatic waypoint validation.',
