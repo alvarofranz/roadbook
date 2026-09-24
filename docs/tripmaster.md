@@ -73,8 +73,9 @@ L'orologio è **solo** quello della status bar: il cruscotto non ne ha un second
 
 **Layout (#721).** Le letture sono un griglia di schede: *velocità* (con campanella: toccarla
 imposta l'allarme, e la scheda mostra "Alert N" quando è attivo) · *CAP* · *max km/h*, poi
-*cronometro* · *note* sulla riga sotto. Le azioni: **Mark note** grande e primario (conta la nota e
-azzera il parziale), poi *Record GPX* · *Fullscreen* · *End*. Da 900 px il cruscotto è a due
+*cronometro* · *note* sulla riga sotto. Le azioni sono una griglia a due colonne: **Mark note**
+grande e primario su tutta la riga (conta la nota e azzera il parziale), poi *Record GPX* · *Leave*.
+Da 900 px il cruscotto è a due
 colonne — odometri e schede a sinistra, azioni in colonna a destra con Mark note la più alta.
 
 > In landscape su schermi bassi (`max-height: 540px`) l'`header.topbar` viene nascosto via CSS
@@ -210,10 +211,10 @@ La registrazione è interamente delegata al modulo condiviso **`RBGpxRecorder`**
 - un callback `onChange(recording)` che trasforma `tmRecBtn` in un inequivocabile pulsante
   rosso di **STOP** quando si registra, e salva la sessione.
 
-Il pulsante avvia il modale impostazioni (`RBGpxRecorder.settings()`) o ferma la registrazione
-(`RBGpxRecorder.stop()`) ([tripmaster.js](../public/tripmaster/tripmaster.js)). I fix
-sono alimentati dentro `onFix` via `RBGpxRecorder.feed(...)`. Settings modal, checkpoint del
-file e recupero post-crash della traccia sono documentati nel doc di `RBGpxRecorder`.
+Il pulsante avvia subito la registrazione (`RBGpxRecorder.begin()`, nome di default data+ora) o
+la ferma (`RBGpxRecorder.stop()`) ([tripmaster.js](../public/tripmaster/tripmaster.js)). I fix
+sono alimentati dentro `onFix` via `RBGpxRecorder.feed(...)`, che campiona da sé ogni `SAMPLE_MS`.
+Checkpoint del file e recupero post-crash della traccia sono documentati nel doc di `RBGpxRecorder`.
 
 ---
 
@@ -243,7 +244,7 @@ La sessione vive in `localStorage` sotto `rb_tripmaster_session` (`SESSION_KEY`)
 > finché la si cancella esplicitamente all'uscita. Una sessione rifiutata che stava registrando
 > offre comunque il recupero del GPX.
 
-- **Uscita**: **End** (`tmExit`, `fa-right-from-bracket` come nel Reader, #645) chiede conferma, poi `clearSession()` e ricarica la
+- **Uscita**: **Leave** (`tmExit`, `fa-right-from-bracket`, #645) chiede conferma, poi `clearSession()` e ricarica la
   pagina ([tripmaster.js](../public/tripmaster/tripmaster.js)).
 
 ---

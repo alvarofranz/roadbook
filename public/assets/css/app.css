@@ -26,6 +26,12 @@
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
+/* No page zoom anywhere (#933): a double tap or a pinch never scales the app — the maps are the
+   only thing that zooms (MapLibre's canvas sets its own touch-action: none, which wins over this).
+   The viewport meta locks the scale where it is honoured; `manipulation` drops the double-tap zoom
+   on every element, since each scroll container starts its own touch-action chain; iOS Safari's
+   pinch, which ignores the meta, is stopped in app.js (gesturestart). */
+* { touch-action: manipulation; }
 body {
     /* room for whatever the shared layer pins to the bottom edge: the cookie notice publishes
        its height so page content can always be scrolled clear of it (#405) */
@@ -123,11 +129,11 @@ h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-
    screen above the dialog reads as one. */
 body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: rgba(14, 17, 22, .86); -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px); z-index: 1000; pointer-events: none; transition: background-color .2s ease; }
 body:has(> .modal:not([hidden]))::before { background: rgba(8, 9, 14, .94); }
-/* fullscreen field mode (active recording / navigation) reclaims the whole screen — bar hidden.
-   `body.rb-fs`/`body.rb-immersive` outweigh the plain-`body` padding rules above on specificity,
-   so no !important is needed. */
-body.rb-fs .app-tabbar, body.rb-immersive .app-tabbar { display: none; }
-body.rb-fs, body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
+/* immersive field mode (active navigation) reclaims the whole screen — bar hidden.
+   `body.rb-immersive` outweighs the plain-`body` padding rules above on specificity, so no
+   !important is needed. */
+body.rb-immersive .app-tabbar { display: none; }
+body.rb-immersive { padding-bottom: var(--notice-h, 0px); }
 /* language switcher — collapsed flag-only trigger that opens a flag + name list */
 .lang { position: relative; display: inline-flex; }
 .lang-trigger { display: inline-flex; align-items: center; gap: .35rem; background: var(--card-2); border: 1px solid var(--line); border-radius: 9px; padding: .3rem .45rem; color: var(--text); cursor: pointer; }
@@ -228,10 +234,10 @@ section.block { padding: 2.4rem 0; }
    on mobile, bottom-right on desktop — independent of the top bar, so they show on every layout */
 .app-chip-stack { position: fixed; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 55; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
 .app-chip-stack:empty { display: none; }
-/* nothing floats during focused field use (Reader navigating / fullscreen): the tool owns the
+/* nothing floats during focused field use (Reader navigating): the tool owns the
    screen, and with the tab bar hidden these chips land straight on its own bars — the language
    chip was sitting on the CAP bar's distance readout while driving (#429) */
-body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
+body.rb-immersive .app-chip-stack { display: none; }
 .native .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
@@ -293,8 +299,6 @@ body.rb-immersive .app-chip-stack, body.rb-fs .app-chip-stack { display: none; }
 .foot-bottom { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.4rem; margin-top: 2.2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: .8rem; }
 .foot-bottom .lang { position: relative; }
 .foot-bottom .lang-menu { top: auto; bottom: calc(100% + 6px); } /* at the page's foot the language menu opens upward */
-/* shared fullscreen mode (Tripmaster, Reader): hide the site chrome for a distraction-free view */
-body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* GPS tool pages (Reader · Recorder · Tripmaster): short landscape gives the dashboard the whole screen */
 @media (orientation: landscape) and (max-height: 540px) { body.gps-tool header.topbar { display: none; } }
 
@@ -448,19 +452,16 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .webgps-banner .webgps-x:hover { color: var(--text); }
 .native .webgps-banner { display: none; }
 
-.fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; gap: .6rem; padding: .7rem 1rem; padding-bottom: calc(.7rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
-.fabrow .btn { flex: 1; justify-content: center; min-width: 0; white-space: nowrap; }
+/* the Reader's action bar (#936): two rows of two big buttons — Auto · Note map, then Pause ·
+   Finish — easy to hit while driving; without a map, Auto takes its whole row */
+.fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding: .6rem .8rem; padding-bottom: calc(.6rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
+.fabrow .btn { justify-content: center; min-width: 0; min-height: 3.1rem; font-size: 1rem; white-space: nowrap; }
+.fabrow:has(#mapBtn[hidden]) #autoBtn { grid-column: 1 / -1; }
 /* wherever the bottom tab bar shows — in the app and at every mobile width — it owns the floor,
    so the row stacks on top of it instead of under it: shared chrome never covers a tool's
    controls (#401). Both rules sit AFTER the base one on purpose — same specificity, last wins. */
 .native .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 @media (max-width: 1024px) { .fabrow { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); } }
-/* phones: the button row must never outgrow the viewport — tighter gaps, compact labels, and
-   content-proportional widths so no button's content ever spills over its neighbour (#250) */
-@media (max-width: 560px) {
-    .fabrow { gap: .3rem; padding: .55rem .45rem calc(.55rem + env(safe-area-inset-bottom)); }
-    .fabrow .btn { flex: 1 1 auto; min-width: 2.4rem; padding: .55rem .3rem; font-size: .8rem; gap: .3rem; }
-}
 
 /* ---------- gallery (home) + demo picker ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
@@ -515,8 +516,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 .nrow .col-distance .num-row .num { margin-top: 0; align-self: center; }
 /* the FIA waypoint-type badge (RB.wpBadgeSVG), wherever it is drawn */
 .wp-badge { display: block; flex-shrink: 0; }
-/* live distance still to run to the ACTIVE note — written by the Reader, empty on every other row */
-.nrow .col-distance .togo { font-weight: 800; color: #1b6bb5; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nrow .col-distance.tight { background: #dbe7f2; } /* the next note is under 50 m ahead: a tight pair */
 .nrow .col-vignette { display: flex; align-items: center; justify-content: center; padding: .15rem; }
 .nrow .col-vignette svg { width: 100%; height: 100%; max-height: 130px; }
@@ -537,9 +536,12 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* the material a note carries (#542): a photo, an advert, a block of text. Never a waypoint to
    drive to — no number, no state colour, nothing to validate. */
 .nrow.block { cursor: default; background: #f5f3ef; border-bottom: 1px dashed #ccc; }
-.nrow.block .col-vignette-empty { display: none; }
-.nrow.block .block-img { width: 100%; height: 100%; max-height: 160px; object-fit: contain; display: block; }
-.nrow.block .col-text-wide { grid-column: 2 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
+/* no counter space (#934): the image spans the counter + vignette columns, or the whole row when
+   it has no text beside it; a text alone spans the whole row. An image is never taller than 40vh. */
+.nrow.block .block-media { grid-column: 1 / 3; display: flex; align-items: center; justify-content: center; padding: .4rem; }
+.nrow.block .block-media.wide { grid-column: 1 / -1; border-right: 0; }
+.nrow.block .block-img { display: block; max-width: 100%; max-height: 40vh; width: auto; height: auto; object-fit: contain; }
+.nrow.block .col-text-wide { grid-column: 1 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
 /* a text block is meant to be read at arm's length: full width, big, as many lines as it needs */
 .nrow.block-text .col-text-wide .text { font-size: 1.15rem; line-height: 1.5; white-space: pre-wrap; }
 .nrow.done { background: #d6f5e0; }     /* light green: reached */
@@ -548,7 +550,6 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* live GPS proximity to the active note (Reader): closing in · inside the validation radius */
 .nrow.near { background: #eaf3ff; }
 .nrow.arriving { background: #bfe3ff; }
-.nrow.arriving .col-distance .togo { color: #0b4d8c; }
 /* FIA danger marks (! !! !!!) inside any vignette render — editor canvas, Reader and challenge rows */
 .vignette-danger { fill: #e01414; font: 900 38px/1 system-ui, -apple-system, sans-serif; letter-spacing: 2px; }
 .gallery-card .gallery-body { padding: .8rem 1rem .95rem; }
@@ -625,8 +626,8 @@ body.rb-fs header.topbar, body.rb-fs footer.foot { display: none; }
 /* the sticky tool bars (Reader odometer · Tripmaster status) pin to the top by default — correct
    wherever there is no top bar (native + every mobile-width view). Only desktop web, which keeps
    the 56px top bar, offsets them below it. */
-/* only desktop web WITH the top bar showing (not fullscreen) offsets the tool bars below it */
-@media (min-width: 1025px) { html:not(.native) body:not(.rb-fs) .odometer-bar, html:not(.native) body:not(.rb-fs) .status-bar { top: 56px; } }
+/* only desktop web, where the top bar shows, offsets the tool bars below it */
+@media (min-width: 1025px) { html:not(.native) .odometer-bar, html:not(.native) .status-bar { top: 56px; } }
 .launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
 .launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
 .launch-tile i { color: var(--sand); font-size: 2rem; }
@@ -687,9 +688,6 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .rb-datefield-native { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .rb-datefield:focus-within .rb-date-display { border-color: var(--sand); outline: 2px solid var(--sand); outline-offset: 1px; }
 /* Record-GPX dialog: the interval field sits inline with its label and stays narrow. */
-.gx-rate-row { display: flex; align-items: center; gap: .6rem; margin: .3rem 0 .6rem; }
-.gx-rate-row label { margin: 0; }
-.gx-rate-in { width: 5rem; margin: 0; }
 /* segmented toggles (Editor visibility · vehicle choice and gallery filter); .fill stretches to full width */
 .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .segmented.fill { display: flex; }

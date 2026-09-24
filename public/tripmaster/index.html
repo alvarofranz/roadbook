@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
     <title>Tripmaster · RDBK.app</title>
     <meta name="robots" content="noindex">
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.9-209">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.9-209">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-210">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-210">
     <style>
         .trip-main { max-width: 560px; padding: 1rem 1.1rem 1.4rem; border-radius: 16px; background: var(--tm-band, transparent); transition: background .35s ease; } /* --tm-band = the speed-alert tint, data-driven */
         .readout .num2 { font-size: 2.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -42,8 +42,8 @@
         .tm-timer:hover { border-color: var(--sand); }
         .tm-timer.running .value { color: var(--sand); }
         .tm-timer-reset { position: absolute; top: .3rem; right: .3rem; padding: .2rem .4rem; }
-        /* the actions: Mark note is the big one (it also resets the partial), then record · fullscreen · end */
-        .tm-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
+        /* the actions: Mark note is the big one (it also resets the partial), then record · end */
+        .tm-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
         .tm-controls .tm-marknote { grid-column: 1 / -1; min-height: clamp(64px, 13dvh, 104px); font-size: 1.15rem; } /* as big as the screen allows, never a scroll (#899) */
         .tm-controls .tm-marknote i { font-size: 1.6rem; }
         .tm-controls .btn { width: 100%; flex-direction: column; gap: .25rem; padding: .6rem .3rem; font-size: .8rem; justify-content: center; }
@@ -139,7 +139,6 @@
         <div class="tm-controls">
             <button class="btn btn-primary tm-marknote" id="tmNoteBtn" type="button"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Mark note">Mark note</span></button>
             <button class="btn btn-ghost" id="tmRecBtn" type="button"><i class="fa-solid fa-circle-dot"></i> <span data-i18n="Record GPX">Record GPX</span></button>
-            <button class="btn btn-ghost" id="tmFs" type="button"><i class="fa-solid fa-expand"></i> <span data-i18n="Fullscreen">Fullscreen</span></button>
             <!-- ending a session looks the same in every GPS tool: fa-right-from-bracket, "End" (#645) -->
             <button class="btn btn-ghost" id="tmExit" type="button"><i class="fa-solid fa-right-from-bracket icon-danger"></i> <span data-i18n="Leave">Leave</span></button>
         </div>
@@ -147,17 +146,17 @@
 </main>
 
 
-<script src="../assets/js/roadbook-core.js?v=1.9.9-209"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.9-209"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.9-209"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.js?v=1.9.9-209"></script>
-<script src="../assets/js/app.js?v=1.9.9-209"></script>
-<script src="../assets/js/status-bar.js?v=1.9.9-209"></script>
-<script src="tripmaster.js?v=1.9.9-209"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.10-210"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.10-210"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.10-210"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.js?v=1.9.10-210"></script>
+<script src="../assets/js/app.js?v=1.9.10-210"></script>
+<script src="../assets/js/status-bar.js?v=1.9.10-210"></script>
+<script src="tripmaster.js?v=1.9.10-210"></script>
 </body>
 </html>

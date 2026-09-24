@@ -2,33 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0e1116">
     <title>Roadbook Reader · RDBK.app</title>
     <meta name="robots" content="noindex">
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.9-209">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-210">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.9-209">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-210">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
            right: bearing · clock on the first line, GPS · speed on the second */
         .odometer-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: .3rem 1rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
-        .odometer-bar > .odo-toprow, .odometer-bar > .odo-ev-bar { grid-column: 1 / -1; }
         .odometer-bar > .ind { justify-self: center; padding-bottom: .2rem; }
         .odometer-bar > .ind.end { justify-self: end; }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-        /* top row of the sticky bar: fullscreen toggle (left) · roadbook title (centre) · event logo (right) */
-        .odo-toprow { display: flex; align-items: center; gap: .6rem; }
-        .odo-title { flex: 1; text-align: center; font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .odo-fs { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 1.05rem; line-height: 1; cursor: pointer; border-radius: 8px; }
-        .odo-fs:hover { color: var(--sand); border-color: var(--sand); }
-        .odo-logo { flex-shrink: 0; max-height: 40px; width: auto; object-fit: contain; }
         /* bearing / clock / GPS / speed indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
         /* bearing indicator: the shared .cap-arrow rotation (0° = up = straight ahead), accented */
@@ -37,18 +30,11 @@
         .qr-image { width: 260px; height: 260px; image-rendering: pixelated; border-radius: 8px; }
         .qr-box { display: flex; justify-content: center; margin: .5rem 0; }
         .qr-code-text { display: block; word-break: break-all; background: var(--card-2); padding: .5rem; border-radius: 8px; margin: .6rem 0; font-size: .72rem; }
-        /* phones: the labelled fabrow buttons drop their decorative icon — the label carries the
-           meaning and the freed width keeps all buttons on one overflow-free row (#250) */
-        @media (max-width: 480px) { #autoBtn > i, #finishBtn > i { display: none; } }
         /* note rows use the shared white "paper" .nrow grid (app.css); the per-note states
            (done/skipped/active + the live near/arriving) are toggled by reader.js */
         #noteList { background: #fff; color: #14110b; }
         /* larger per-note readouts: partial km just under the total, coordinates legible */
         #noteList .col-distance .partial { font-size: 1.6rem; }
-        /* distance still to run to the active note, live from the GPS — sized to keep
-           "1.02 km" on one line inside the narrow distance column */
-        #noteList .col-distance .togo { font-size: 1.15rem; }
-        @media (max-width: 600px) { #noteList .col-distance .togo { font-size: .9rem; } }
         #noteList .col-text .coords { font-size: .9rem; }
         .nmap { position: relative; background: #fff; border-bottom: 1px solid #c9c9c9; padding: 4px; }
         /* the note's number + distance to go, over the map's free top-left corner (#571) */
@@ -170,11 +156,6 @@
     <p id="prNativeHint" class="native-hint" data-i18n="native.better.gps.reader" hidden><i class="fa-solid fa-mobile-screen-button"></i> For uninterrupted GPS navigation and background tracking, use the native iOS or Android app.</p>
     <!-- top odometer bar: prog. over part. on the left (like a note row) · bearing, clock, GPS, speed on the right -->
     <div class="odometer-bar" role="status" aria-live="polite">
-        <div class="odo-toprow">
-            <button class="odo-fs" id="odoFs" type="button" title="Fullscreen" data-i18n-title="Fullscreen" aria-label="Fullscreen" data-i18n-aria="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-            <div class="odo-title" id="navTitle"></div>
-            <img class="odo-logo" id="odoLogo" alt="" hidden>
-        </div>
         <div class="odometer-item"><span class="field-label" data-i18n="prog.">prog.</span><span class="value" id="odoTotal">0.00</span></div>
         <span class="ind"><i class="fa-solid fa-arrow-up cap-arrow" id="odoBrgArrow"></i> <span id="odoBrg">—°</span></span>
         <span class="ind end"><i class="fa-solid fa-clock"></i> <span id="odoClock">--:--</span></span>
@@ -186,31 +167,14 @@
     <div id="noteList"></div>
     <nav class="fabrow">
         <button class="btn btn-ghost rb-switch on" id="autoBtn" role="switch" aria-checked="true" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> <span data-i18n="Auto">Auto</span> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
-        <button class="btn btn-ghost" id="mapBtn" hidden aria-pressed="false" title="Note map" data-i18n-title="Note map" aria-label="Note map" data-i18n-aria="Note map"><i class="fa-solid fa-map-location-dot"></i></button>
-        <button class="btn btn-ghost" id="pauseBtn" title="Pause" data-i18n-title="Pause" aria-label="Pause" data-i18n-aria="Pause"><i class="fa-solid fa-pause"></i></button>
-        <button class="btn btn-ghost" id="navGpx" hidden title="Record GPX" data-i18n-title="Record GPX" aria-label="Record GPX" data-i18n-aria="Record GPX"><i class="fa-solid fa-circle-dot"></i> GPX</button>
+        <button class="btn btn-ghost" id="mapBtn" hidden aria-pressed="false"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="Note map">Note map</span></button>
+        <button class="btn btn-ghost" id="pauseBtn"><i class="fa-solid fa-pause"></i> <span data-i18n="Pause">Pause</span></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
-        <button class="btn btn-ghost" id="endBtn" title="Leave" data-i18n-title="Leave" aria-label="Leave" data-i18n-aria="Leave"><i class="fa-solid fa-right-from-bracket icon-danger"></i></button>
     </nav>
 </div>
 
 <!-- before starting: the run options. The mode is never asked — a scored event roadbook runs in
      competition, anything else as a trip (#617) -->
-<div id="startModal" class="modal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="startTitle">
-        <h2 id="startTitle" data-i18n="Before you start">Before you start</h2>
-        <p class="notice" id="startComp" hidden><i class="fa-solid fa-flag-checkered"></i> <span id="startCompTxt"></span></p>
-        <div class="opt-row">
-            <label class="checkbox-row"><input type="checkbox" id="optGpx"> <span data-i18n="Record a GPX track">Record a GPX track</span></label>
-            <label class="checkbox-row"><input type="checkbox" id="optSound" checked> <span data-i18n="Sound on note">Sound on note</span></label>
-        </div>
-        <div class="btnrow end">
-            <button class="btn btn-ghost" id="startClose" type="button" data-i18n="Close">Close</button>
-            <button class="btn btn-primary" id="startGo" type="button"><i class="fa-solid fa-play"></i> <span data-i18n="Start">Start</span></button>
-        </div>
-    </div>
-</div>
-
 <!-- vehicle number -->
 <div id="teamModal" class="modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
@@ -262,26 +226,26 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.9-209"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.9-209"></script>
-<script src="../assets/js/rbzip.js?v=1.9.9-209"></script>
-<script src="../assets/js/rbmap.js?v=1.9.9-209"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.9-209"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.9-209"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.9-209"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.9-209"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.9-209"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.9-209"></script>
-<script src="../assets/js/challenges.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.9-209"></script>
-<script src="../assets/js/i18n.js?v=1.9.9-209"></script>
-<script src="../assets/js/app.js?v=1.9.9-209"></script>
-<script src="../assets/js/run-report.js?v=1.9.9-209"></script>
-<script src="../assets/js/cover-map.js?v=1.9.9-209"></script>
-<script src="../assets/js/run-card.js?v=1.9.9-209"></script>
-<script src="reader.js?v=1.9.9-209"></script>
+<script src="../assets/js/config.js?v=1.9.10-210"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.10-210"></script>
+<script src="../assets/js/rbzip.js?v=1.9.10-210"></script>
+<script src="../assets/js/rbmap.js?v=1.9.10-210"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.10-210"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.10-210"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.10-210"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.10-210"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.10-210"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.10-210"></script>
+<script src="../assets/js/challenges.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.10-210"></script>
+<script src="../assets/js/i18n.js?v=1.9.10-210"></script>
+<script src="../assets/js/app.js?v=1.9.10-210"></script>
+<script src="../assets/js/run-report.js?v=1.9.10-210"></script>
+<script src="../assets/js/cover-map.js?v=1.9.10-210"></script>
+<script src="../assets/js/run-card.js?v=1.9.10-210"></script>
+<script src="reader.js?v=1.9.10-210"></script>
 </body>
 </html>

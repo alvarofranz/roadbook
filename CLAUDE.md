@@ -152,7 +152,8 @@ DB/Convenzioni rapide below have counterparts there).
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
     `RBShareFile(blob, name, text)` (share a generated file: the OS sheet in the app, Web Share in
-    the browser, a download otherwise, #785), `RBPublicLink(path)` (an absolute, shareable link to a
+    the browser, a download otherwise, #785) — in the app `RBDownload` goes to the same OS sheet, so
+    every file the app makes (GPX, `.rdbk`, CSV, PDF) lets the user choose where it goes, `RBPublicLink(path)` (an absolute, shareable link to a
     site page — the real domain inside the app), `RBRoadbookCard(r, opts)` / `RBEventCard(e)` (the ONE card design of every gallery, on top of
     `RBGalleryCard`; `RBFillRoutes(container)` draws the route of a photo-less roadbook card, #770),
     `RBPagedList({pager, per, source, filter, draw, label})` (ONE filtered, paged list — the
@@ -204,6 +205,10 @@ DB/Convenzioni rapide below have counterparts there).
   breaks (`overflow-wrap: break-word`), a grid item that holds a title carries `min-width: 0`,
   and wide content (tables, code) scrolls INSIDE its own box (#480). Pinned by
   `tests/ui-contracts.test.js`.
+- **The page never zooms — only the maps do (#933).** Every page's viewport meta carries
+  `maximum-scale=1, user-scalable=no`, `app.css` gives every element `touch-action: manipulation`
+  (no double-tap zoom) and `app.js` refuses iOS Safari's pinch (`gesturestart`) outside a MapLibre
+  map. A new page copies the same viewport meta; `tests/simpler-field-tools.test.js` checks them all.
 - **Every translatable label is translated in all five languages — on EVERY page.** The `/standard/`
   spec page shipped fully translated into German and French and untranslated into Spanish and
   Italian for months, because the i18n test only looked at a hand-kept list of pages (#480). It now
@@ -545,9 +550,10 @@ Operational notes:
   Load a `.rdbk`, **one of your saved roadbooks** (signed-in) or a **public roadbook** (the
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
-  you might only want to look; the **"Navigate"** button opens the start dialog (run options: GPX
-  logging, sound, remote). The mode is never asked (#617): a roadbook opened from an event that
-  scores it runs in competition (vehicle number asked), anything else as a trip. Then
+  you might only want to look; **"Navigate" navigates** (#936): no dialog, no options — the run
+  always logs its GPX (ending with it, in the finished-track modal) and always rings. The mode is
+  never asked (#617): a roadbook opened from an event that scores it runs in competition (the
+  vehicle number, the one thing asked), anything else as a trip. Then
   navigation starts (`body.rb-immersive`: the tool owns the screen — `#navScreen` becomes the app
   shell, a fixed flex column whose only scroller is the note list, #429). Advancement
   is automatic by default: the note validates the moment the **driven segment** between two GPS
@@ -557,9 +563,16 @@ Operational notes:
   (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar; with Auto
   off, validation is manual: a tap on the whole active row marks it done (with Auto on, only the
   GPS validates) — or hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
-  (`RBRemote`, switch in the start dialog, #20). Tapping any OTHER row moves the run cursor and
-  always asks first — it leaves notes unvalidated and in competition costs 450 pts each.
-  With sound on, each validation rings `RBSuccess`; the last note plays the arrival fanfare (#843).
+  (`RBRemote`, mapped in the Profile, #20 · #909). Tapping any OTHER row moves the run cursor and
+  always asks first — it leaves notes unvalidated and in competition costs 450 pts each. With Auto
+  on, a missed note never strands the run (#931): once the rider has driven past it and is
+  following the track towards the next ones (`RB.routeResync`: several fixes chained along the
+  route, continuity with where the run is, so a closed circuit's start never reads as its finish),
+  the cursor moves to the first note ahead and the ones passed are skipped — a skipped note is a
+  skipped note, however it was skipped, with the same penalty in competition. No title row: the
+  dashboard is the first row, and the action bar is two rows of two — Auto · Note map, Pause ·
+  **Finish**, the one way out of a run (#936). The live distance to go is on the note map only (#935).
+  Each validation rings `RBSuccess`; the last note plays the arrival fanfare (#843).
   Every run ends with its **report** (#618 — notes reached/skipped, speed-limit zones, time;
   `RBRun`, stored on the device first, then `run_save`): the finish screen leads with the run card,
   Share and a Private/Public switch (sharing before choosing asks to make the run public, #820 ·
@@ -625,7 +638,8 @@ Operational notes:
   phantom kilometres, #383). In the native app it uses RBNative's background-capable watch
   (logging survives a locked screen).
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader · Tripmaster · Recorder):
-  settings modal, localStorage checkpoint with recovery (a declined one is marked, never deleted),
+  starts at once, nothing asked (`begin({ name })`, one point every 2 s — a kept track is named
+  where it is saved), localStorage checkpoint with recovery (a declined one is marked, never deleted),
   finished-track modal (download / convert into a roadbook), `handOver()` for a caller that ends the
   log along with its own work (the Reader's run); the file is written once at the end via `RBDownload`.
 - `rb-remote.js` (`RBRemote`, #20 · #909) — the **remote controller**: any remote that sends keys

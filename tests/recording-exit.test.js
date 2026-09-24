@@ -21,7 +21,7 @@ describe('the crash checkpoint stays on until the recording lands somewhere', ()
         expect(recorder).toContain('RBGpxRecorder.end()');
         expect(recorder).not.toContain('RBGpxRecorder.finish()');
         expect(gpx).not.toMatch(/function finish\(\)/);        // and the clearing variant is gone
-        expect(gpx).toContain('settings, begin, stop, handOver, end, clearCheckpoint,');
+        expect(gpx).toContain('begin, stop, handOver, end, clearCheckpoint,');
     });
 
     it('a track too short to keep clears it, since no modal will offer it', () => {

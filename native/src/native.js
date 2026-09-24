@@ -8,9 +8,9 @@
  *
  * Today it owns the one thing the browser cannot do: keep logging GPS while the
  * screen is locked / the app is backgrounded (a native foreground-service location
- * watch via @capgo/background-geolocation), and save the files the app generates to
- * device storage (the WebView ignores `<a download>` — we write the blob with the
- * native Filesystem plugin and, on iOS, open the OS "Save to Files" sheet). RBGpsMeter
+ * watch via @capgo/background-geolocation), and hand the files the app generates to
+ * the OS share sheet (the WebView ignores `<a download>` — we write the blob with the
+ * native Filesystem plugin and open the sheet: Save to Files / Downloads, open in, send). RBGpsMeter
  * calls RBNative.geo when it is present, so the Reader, Tripmaster and Recorder gain
  * uninterrupted tracking with no change to their own code.
  *
@@ -25,12 +25,10 @@ import { BatteryOptimization } from '@capawesome-team/capacitor-android-battery-
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { FileSharer } from '@capgo/capacitor-file-sharer';
 import { Preferences } from '@capacitor/preferences';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { createMirror } from './durable.js';
 import { parseDeepLink, launchAction } from './deeplink.js';
-import { androidSaveFolder } from './save-target.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -73,42 +71,9 @@ async function blobToBase64(blob) {
 }
 
 const RBNative = {
-    // Save a Blob to device storage. `<a download>` is ignored inside a WebView, so
-    // this is the native path for every download the app generates (GPX, .rdbk, CSV…).
-    // Resolves with where the file went — on Android the folder it landed in ('pictures',
-    // 'downloads'…), on iOS 'share' (handed to the OS share sheet) or 'canceled' (the user
-    // dismissed the sheet) — and throws when nothing could save it; the caller
-    // (RBDownload) owns the user feedback. The two OSes hand the file to a folder in
-    // different ways:
-    //   · Android — the WebView has no folder picker (the File System Access API is
-    //             desktop-Chromium only), so the file-sharer plugin writes the blob through
-    //             MediaStore into a public collection. It lands where the Files / Downloads
-    //             apps can see it and needs no storage permission on any Android version —
-    //             MediaStore is the scoped-storage-safe write path. The blob's own content
-    //             type travels with it and picks the folder (androidSaveFolder), because
-    //             MediaStore rejects a folder that contradicts the collection the type
-    //             selects — which is what made every save fail (#392).
-    //   · iOS   — apps are sandboxed; the only way to reach an arbitrary folder is the
-    //             system share sheet, whose "Save to Files" entry IS the folder chooser.
-    async downloadFile(blob, filename) {
-        const data = await blobToBase64(blob);
-        const contentType = blob.type || 'application/octet-stream';
-        if (Capacitor.getPlatform() === 'android') {
-            const saveDirectory = androidSaveFolder(contentType);
-            await FileSharer.save({ filename, base64Data: data, contentType, android: { saveDirectory } });
-            return saveDirectory;
-        }
-        const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });
-        try { await Share.share({ title: filename, files: [uri] }); }
-        catch (e) {
-            if (/cancel/i.test((e && e.message) || '')) return 'canceled'; // dismissing the sheet is a choice, not an error
-            throw e;
-        }
-        return 'share';
-    },
-
-    // Hand a generated file (the run card, the result QR) to the OS share sheet (#785): written to
-    // the app cache first, since the sheet takes a file URI, not bytes.
+    // Hand a file to the OS share sheet — every file the app saves or shares (#785): Save to
+    // Files / Downloads, open in another app, send. Written to the app cache first, since the
+    // sheet takes a file URI, not bytes. A dismissed sheet rejects with a cancel, which is a choice.
     async shareFile(blob, filename, text) {
         const data = await blobToBase64(blob);
         const { uri } = await Filesystem.writeFile({ path: filename, data, directory: Directory.Cache, recursive: true });

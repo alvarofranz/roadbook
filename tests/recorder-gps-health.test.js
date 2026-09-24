@@ -10,7 +10,7 @@ describe('the Recorder landing', () => {
         expect(rec).toContain("$('recStart').disabled = !(startupDone && ready);");
     });
     it('hands the GPS over to the recording and takes it back after a discard', () => {
-        expect(rec).toMatch(/stopPreview\(\); \/\/ the landing's watch hands over[\s\S]*?RBGpxRecorder\.begin\(\);/);
+        expect(rec).toMatch(/stopPreview\(\); \/\/ the landing's watch hands over[\s\S]*?RBGpxRecorder\.begin\(\{ name: recName\(\) \}\);/);
         expect(rec).toMatch(/function discardRecording\(\) \{[\s\S]*?startPreview\(\);/);
     });
     it('the status bar reads the same scale', () => {

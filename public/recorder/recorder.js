@@ -208,7 +208,7 @@
     /* ---------- start / pause / finish ---------- */
     $('recStart').onclick = async () => {
         if (!(await RBWebGpsConfirm(false))) return; // one-time browser warning: web GPS is unreliable
-        RBGpxRecorder.settings({ defaultName: recName(), nameLabel: t('Roadbook name'), onStart: begin });
+        begin(); // Start records: the route is named in the Editor, when it is saved
     };
 
     function begin() {
@@ -216,7 +216,7 @@
         course = null; lastHeadingPos = null;
         track = []; wpts = []; photos = []; draftId = 0;
         stopPreview(); // the landing's watch hands over to the recording's own
-        RBGpxRecorder.begin(); // checkpoints the track + flips on the header bar / running view via onChange
+        RBGpxRecorder.begin({ name: recName() }); // checkpoints the track + flips on the header bar / running view via onChange
         startMeter(); renderPauseBtn(); refreshMap(); renderBar();
         // a draft roadbook holds the geotagged photos (signed-in only), titled with the
         // chosen date+time name so it never shows as "Recording…" (#148). Best-effort now; if it can't

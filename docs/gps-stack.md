@@ -7,7 +7,7 @@ condivisi che ogni strumento con il GPS riusa invece di reimplementarli:
 | Modulo | Globale | Ruolo |
 |--------|---------|-------|
 | [gps-meter.js](../public/assets/js/gps-meter.js) | `RBGpsMeter` | il **loop GPS**: watch posizione + wake lock, un fix pulito per posizione |
-| [gpx-recorder.js](../public/assets/js/gpx-recorder.js) | `RBGpxRecorder` | il **logger GPX** crash-safe: modal impostazioni, checkpoint, recovery, modal traccia registrata |
+| [gpx-recorder.js](../public/assets/js/gpx-recorder.js) | `RBGpxRecorder` | il **logger GPX** crash-safe: avvio immediato, checkpoint, recovery, modal traccia registrata |
 | [status-bar.js](../public/assets/js/status-bar.js) | `RBStatusBar` | la **barra di stato**: orologio · batteria · qualità del segnale GPS |
 
 > I tre moduli sono indipendenti: la pagina li orchestra. Tipicamente crea un
@@ -20,7 +20,7 @@ condivisi che ogni strumento con il GPS riusa invece di reimplementarli:
 
 | Strumento | `RBGpsMeter` | `RBGpxRecorder` | `RBStatusBar` |
 |-----------|:---:|:---:|:---:|
-| **Reader** (navigazione) | sì | sì (log opzionale) | no¹ |
+| **Reader** (navigazione) | sì | sì (log con ogni run) | no¹ |
 | **Tripmaster** | sì | sì | sì |
 | **Recorder** | sì | sì (è il suo scopo) | sì |
 | **Editor** — "Adjust on the trail" | no² | sì (`add`/`finish`) | no |
@@ -167,9 +167,8 @@ traccia GPX e fa di tutto per non perderla.
 | Membro | Cosa fa |
 |--------|---------|
 | `init({ onChange, toast })` | aggancia i callback della pagina: `onChange(recording)` riflette on/off in UI, `toast` mostra i messaggi |
-| `settings(opts)` | apre il modal impostazioni (intervallo, nome file) e all'OK avvia la registrazione ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
-| `begin(opts)` | avvia la registrazione senza UI e scrive subito il checkpoint vuoto del nuovo log, così un crash prima del primo punto non riprende la traccia di un log precedente (declinato o di un altro tool) ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
-| `feed(coords, here, tnow)` | intake **campionato**: un punto per intervallo, fix scadenti scartati ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `begin(opts)` | avvia subito la registrazione, senza nulla da rispondere (`opts.name`: il nome del log, default data+ora; il Recorder ci passa il nome del suo percorso), e scrive subito il checkpoint vuoto del nuovo log, così un crash prima del primo punto non riprende la traccia di un log precedente (declinato o di un altro tool) ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
+| `feed(coords, here, tnow)` | intake **campionato**: un punto ogni `SAMPLE_MS` (2 s), fix scadenti scartati ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
@@ -183,16 +182,16 @@ traccia GPX e fa di tutto per non perderla.
 
 ### Due modi di alimentarlo: `feed` vs `add`
 
-- **`feed(coords, here, tnow)`** è il modo "telemetro": campiona da sé a `sampleMs`
-  (default 3 s, configurabile) e **scarta** i fix con `accuracy > 35 m`
+- **`feed(coords, here, tnow)`** è il modo "telemetro": campiona da sé ogni `SAMPLE_MS`
+  (2 s, fisso) e **scarta** i fix spazzatura (`RB.recJunkFix`, `accuracy > 35 m`)
   ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)). Lo usano Tripmaster
-  ([tripmaster.js](../public/tripmaster/tripmaster.js)), Recorder
-  ([recorder.js](../public/recorder/recorder.js)) e Reader
+  ([tripmaster.js](../public/tripmaster/tripmaster.js)) e Reader
   ([reader.js](../public/reader/reader.js)), girando direttamente il `coords`,
   `here` e `tnow` del fix di `RBGpsMeter`.
-- **`add(here, tnow)`** salta ogni filtro: registra il punto e basta. Lo usa l'Editor in
-  "Adjust on the trail" ([editor.js](../public/editor/editor.js)), che fa già il
-  suo campionamento per-distanza e l'aliasing dell'accuratezza a monte.
+- **`add(here, tnow)`** salta ogni filtro: registra il punto e basta. Lo usano il Recorder
+  ([recorder.js](../public/recorder/recorder.js)) e l'Editor in "Adjust on the trail"
+  ([editor.js](../public/editor/editor.js)), che fanno già il loro campionamento
+  per-distanza e l'aliasing dell'accuratezza a monte.
 
 ### Persistenza crash-safe
 
@@ -230,14 +229,6 @@ Il modal tiene l'**unica copia** della registrazione, quindi segue il contratto 
 uscita è **Discard** (`#trDiscard`), `btn-danger` col cestino, che chiede conferma nominando la stessa riga di
 riepilogo mostrata nel modal. Il checkpoint anti-crash lo pulisce **solo** un esito reale —
 download, conversione o discard confermato.
-
-### Impostazioni persistite
-
-L'intervallo di campionamento si salva in `localStorage` (chiave `rb_gpx_settings`) e
-viene riletto all'avvio del modulo ([gpx-recorder.js](../public/assets/js/gpx-recorder.js),
-[gpx-recorder.js](../public/assets/js/gpx-recorder.js)). `opts.sampleRate === false`
-nasconde il campo intervallo (per chi campiona a modo suo), e `opts.onStart` sostituisce il
-`begin()` di default ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)).
 
 ---
 

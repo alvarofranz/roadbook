@@ -28,6 +28,11 @@ C'è anche un rilevamento della **shell nativa** Capacitor:
 `native` (safe-area) e viene caricato il bridge `native.bundle.js`. In un browser normale tutto
 questo è inerte.
 
+**Nessuno zoom della pagina (#933).** Un'app non si ingrandisce sotto il dito: il viewport di ogni
+pagina porta `maximum-scale=1, user-scalable=no`, `app.css` mette `touch-action: manipulation` su
+tutto (niente doppio tap che zooma) e, poiché Safari iOS ignora il meta sul pizzico, `app.js`
+rifiuta `gesturestart` ovunque tranne dentro una mappa (`.maplibregl-map`), che resta zoomabile.
+
 ---
 
 ## 2. Header, tab bar e footer globali
@@ -355,10 +360,10 @@ downscaler immagini. Usato dalla coda media condivisa (`RBMediaQueue`) per le vo
 
 #### `RBDownload(data, filename)`
 Scarica un Blob **o** una URL stringa. Nel browser
-crea un `<a download>` e lo clicca; **nell'app** `<a download>` è ignorato dalla WebView, quindi il
-file passa da `RBNative.downloadFile`, che risponde con la cartella in cui è finito e da lì il toast
-("Saved to your Pictures/Downloads folder"). Il `contentType` del blob viaggia col file ed è quello
-che sceglie la cartella su Android — vedi `native/src/save-target.js` (#392).
+crea un `<a download>` e lo clicca; **nell'app** `<a download>` è ignorato dalla WebView, quindi
+ogni file (GPX, `.rdbk`, CSV, PDF…) va al **foglio di condivisione del sistema**
+(`RBNative.shareFile`): salva in File / Download, apri in un'altra app, invia. L'utente vede sempre
+dove va e decide lui — mai un salvataggio silenzioso in una cartella che nessuno trova.
 
 ### Immagini
 
@@ -427,6 +432,12 @@ segue l'interruttore del silenzioso. Il contesto audio parte solo da un gesto de
 che suonerà più tardi senza gesto (la validazione automatica via GPS del Reader) chiama `unlock()`
 dal tap che avvia la sessione, che decodifica anche entrambi i suoni in anticipo.
 
+Si **riprende dalle interruzioni audio di iOS** (#937: una telefonata, Siri, un'altra app che prende
+l'audio): un suono non aspetta mai una ripresa più di `RESUME_WAIT_MS` (400 ms) — se il contesto non
+riparte, quel suono si perde, mai il successivo; ogni tocco (`pointerdown` · `touchend` · `keydown`,
+in fase di capture) mentre il contesto non è `running` lo riprende, e un contesto `interrupted`, che
+iOS spesso non lascia più ripartire, viene chiuso e sostituito da uno nuovo.
+
 #### `RBRequireUser(msgEl, { admin?, account? }) → Promise<user|null>`
 Gate di una pagina di gestione: risolve l'utente loggato, o scrive il messaggio standard in `msgEl`
 e ritorna `null` (con `admin: true` esige anche il ruolo admin).
@@ -440,7 +451,6 @@ e ritorna `null` (con `admin: true` esige anche il ruolo admin).
 | `RBFmtDate(iso)` · `RBDateRange(startIso, endIso)` | data localizzata · intervallo `start – end` |
 | `RBDateField(input)` | rende un input data localizzato |
 | `RBFmtSize(bytes)` | dimensione leggibile (KB/MB), usata dall'uso-spazio |
-| `RBFullscreen(btn)` | toggle fullscreen legato a un pulsante |
 | `RBCopy(text, okMsg?)` | copia negli appunti (vedi sopra) |
 | `RBDebounce(fn, ms = 300)` | `fn` parte `ms` dopo l’ultima chiamata (`.cancel()` la annulla) — le ricerche che interrogano il server, sempre insieme a un contatore di sequenza che scarta le risposte superate |
 | `RBCsv(rows)` | righe (array di celle, intestazione in testa) → Blob CSV con BOM UTF-8 e quoting RFC-4180: l’unico modo in cui un export scrive un CSV (attività, partecipanti, classifica) |

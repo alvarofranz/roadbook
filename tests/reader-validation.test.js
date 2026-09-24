@@ -90,7 +90,8 @@ describe('the navigation bars repeat nothing (#529)', () => {
             expect(html, needle).not.toContain(needle);
             expect(js, needle).not.toContain(needle);
         }
-        expect(js).toContain("row.querySelector('.togo')"); // the live distance, on the active row
+        expect(js).not.toContain('.togo'); // the distance to go lives on the note map alone (#935)
+        expect(read('public/assets/js/note-canvas.js')).not.toContain('class="togo"');
     });
 
     it('reads the current speed where the battery used to be', () => {
