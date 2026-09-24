@@ -93,7 +93,7 @@ Ogni strada del tulip prende la forma che l'autore ha dato alla traccia attorno 
 `ctx.shape` = `RB.tulipShape(rb, i, isEnd, isFirst)` = `{ entry, exit, turn }`
 ([roadbook-core.js](../public/assets/js/roadbook-core.js)).
 
-- **Il segnale è la traccia stessa:** nei **50 m** su un lato della nota (prima per la strada da cui
+- **Il segnale è la traccia stessa:** nei **30 m** su un lato della nota (prima per la strada da cui
   arrivi, dopo per quella da cui esci — lungo la traccia, fermandosi alla nota vicina) **3 o più
   punti** vogliono dire che quella strada è stata disegnata apposta, punto per punto, e il tulip la
   segue; con meno è la strada dritta classica. Per curvare una freccia si aggiungono punti sulla

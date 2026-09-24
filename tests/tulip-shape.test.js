@@ -5,7 +5,7 @@ globalThis.RB = RB;
 globalThis.RBesc = (s) => String(s);
 
 /* The tulip's roads take the shape the author drew into the track (#945): 3 or more points within
-   50 m of the note on one side means that road was drawn on purpose and the tulip follows it; fewer,
+   30 m of the note on one side means that road was drawn on purpose and the tulip follows it; fewer,
    and it is the classic straight road — the exit aimed along the road's first 20 m. Never over the
    note, never over the author's junctions, never stored. */
 const M_PER_DEG_LAT = 111195, LAT0 = 45;
@@ -69,9 +69,17 @@ describe('RB.tulipShape (#945)', () => {
         expect(s.exit[s.exit.length - 1][0]).toBeLessThan(115 - 20);
     });
 
-    it('a hairpin never curls back over the note: it stays classic', () => {
-        const { s } = shape([[0, -300], [0, 12], [6, 18], [12, 12], [12, -300]], 2);
-        expect(s.exit).toBeNull();
+    it('a hairpin never curls back over the note or down over the entry', () => {
+        for (const pts of [[[0, -300], [0, 12], [6, 18], [12, 12], [12, -300]], [[0, -300], [0, 6], [3, 9], [6, 6], [6, -300]]]) {
+            const { s } = shape(pts, 2);
+            if (!s.exit) continue; // too tight to draw: the classic exit
+            let out = false;
+            for (const [x, y] of s.exit.slice(1)) {
+                expect(y).toBeLessThanOrEqual(81 + 6);
+                const d = Math.hypot(x - 115, y - 81);
+                if (d > 22) out = true; else if (out) expect(d).toBeGreaterThanOrEqual(16);
+            }
+        }
     });
 
     it('stops at the neighbouring note: never draws the next one’s curve', () => {
@@ -155,7 +163,7 @@ describe('the Editor shows what a note reaches and what shapes its tulip (#945)'
     it('rings the selected note: its detection radius, and the dashed radius whose points shape the tulip', () => {
         expect(editor).toContain('map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);');
         expect(map).toContain("'line-dasharray': [2.5, 2]");
-        expect(RB.TULIP_SHAPE_M).toBe(50);
+        expect(RB.TULIP_SHAPE_M).toBe(30);
     });
     it('opens a note on ~200 m around it, turned so the road you arrive on points up', () => {
         expect(editor).toContain('zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0');

@@ -73,7 +73,7 @@ Reference box **230×162**, centre `(115, 81)`.
 - **Outgoing** road leaves the centre with an arrow, styled by `road_type_out`.
   The last note has none (#447).
 - **Shape (#945):** each road takes the shape the author drew into the track:
-  within 50 m of the note on its side (before it for the incoming road, after it
+  within 30 m of the note on its side (before it for the incoming road, after it
   for the outgoing one, stopping at the neighbouring note), 3 or more track
   points mean the road was drawn on purpose, and the tulip follows them as a
   smooth `<path>` (`RB.tulipShape` · `trunkRoads`) — simplified, rotated so
