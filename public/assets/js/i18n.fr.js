@@ -1782,3 +1782,8 @@ Object.assign(window.RBi18nLangs.fr, {
     "Event live tracking follows participants whenever they navigate one of the event’s roadbooks, on any day — asked once per event, and a tap on the Live strip stops it for a run.": "Le suivi en direct des événements suit les participants chaque fois qu’ils naviguent l’un de ses roadbooks, n’importe quel jour : demandé une fois par événement, et une touche sur la bande Live l’arrête pour un parcours.",
     "At the end of a run, Done shows you what is left to choose instead of staying greyed out; the admin trash can be searched.": "À la fin d’un parcours, Terminé t’indique ce qu’il reste à choisir au lieu de rester grisé ; la corbeille de l’admin a une recherche.",
 });
+
+/* Comments: the Post button while sending */
+Object.assign(window.RBi18nLangs.fr, {
+    "Posting…": "Publication…",
+});

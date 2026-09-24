@@ -71,3 +71,14 @@ describe('the roadbook page header on a phone (#865)', () => {
         expect(html).toMatch(/\.ch-logo \{[^}]*border-radius: 12px;/);
     });
 });
+
+describe('the Post button', () => {
+    const ch = fs.readFileSync('public/challenge/challenge.js', 'utf8');
+    it('is pressable only with something written, and never twice while a comment is on its way', () => {
+        expect(ch).toContain('const syncSend = () => { send.disabled = sending || !body.value.trim(); };');
+        expect(ch).toContain("sending = true; sendLabel.textContent = t('Posting…');");
+        expect(ch).toContain('const busy = RBBusy(send, { onEnd: syncSend });'); // back from the spinner, still off until new text
+        expect(ch).toContain("if (!text || sending) return body.focus();");
+    });
+});
+

@@ -103,11 +103,18 @@
             $('chCommentCount').textContent = $('chCommentsBtnCount').textContent = comments.length ? `(${comments.length})` : '';
             list.innerHTML = comments.length ? comments.map(commentHTML).join('') : `<p class="muted">${esc(t('No comments yet — be the first.'))}</p>`;
         };
+        // Post is pressable only with something written, and never twice: while a comment is on its
+        // way it says so and stays disabled until the answer comes back
+        const send = $('chCommentSend'), sendLabel = send.querySelector('span');
+        let sending = false;
+        const syncSend = () => { send.disabled = sending || !body.value.trim(); };
         const counter = () => {
             const left = COMMENT_MAX - body.value.length;
             $('chCommentLeft').textContent = left < 200 ? `${left}` : '';
+            syncSend();
         };
         body.addEventListener('input', counter);
+        counter();
         list.addEventListener('click', async (e) => {
             const btn = e.target.closest('[data-delete]');
             if (!btn) return;
@@ -121,10 +128,12 @@
         $('chCommentForm').onsubmit = async (e) => {
             e.preventDefault();
             const text = body.value.trim();
-            if (!text) return body.focus();
-            const busy = RBBusy($('chCommentSend'));
+            if (!text || sending) return body.focus();
+            sending = true; sendLabel.textContent = t('Posting…');
+            const busy = RBBusy(send, { onEnd: syncSend }); // back from the spinner: pressable again only with new text
             const r = await RBApi('comment_add', { slug, body: text, turnstile: turnstile.token() });
             turnstile.reset(); // a token is good for one post
+            sending = false; sendLabel.textContent = t('Post');
             if (!r.ok) { busy.reset(); return RBToast(r.error || 'Could not save.'); }
             busy.ok();
             comments.push(r.comment); render(); body.value = ''; counter();
