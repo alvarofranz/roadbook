@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.9-207">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.9-208">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.9-207">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.9-208">
     <style>
         .auth-card { max-width: 440px; margin: 1.5rem auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.6rem; box-shadow: var(--shadow); }
         .auth-card h1 { font-size: 1.5rem; margin: 0 0 1rem; }
@@ -30,6 +30,9 @@
         .profile-id h1 { font-size: 1.6rem; margin: 0; }
         .profile-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
         .intro-text { margin-top: -.4rem; }
+        .acc-tabs { margin: 1rem 0 .4rem; }
+        .acc-tabs .segment { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-width: 0; }
+        @media (max-width: 480px) { .acc-tabs .segment { flex-direction: column; gap: .2rem; font-size: .82rem; padding: .5rem .3rem; } }
         .profile-form { max-width: none; margin: .4rem 0 0; }
         .pass-wrap { position: relative; }
         .pass-wrap .field { padding-right: 2.8rem; }
@@ -41,8 +44,8 @@
         .acc-links a { color: var(--sand-2); }
         /* the global site footer already carries these links on desktop — show this mobile
            stand-in only below the footer breakpoint (matches .foot hiding ≤1024px), so the
-           About/Privacy/Terms links don't appear twice (#295) */
-        @media (min-width: 1025px) { .acc-links { display: none; } }
+           About/Privacy/Terms links — nor the language picker — appear twice (#295 · #925) */
+        @media (min-width: 1025px) { .acc-links, .acc-lang { display: none; } }
         /* grants recap card (#310) */
         .grants-list { display: flex; flex-wrap: wrap; gap: .4rem; }
         /* the remote controller table (#909): an action, its buttons as chips, and Assign */
@@ -166,6 +169,14 @@
             </div>
         </div>
 
+        <!-- three tabs (#925): who you are · how the tools behave on this device · sign-in and the account itself -->
+        <div class="segmented fill acc-tabs" id="accTabs" role="tablist">
+            <button class="segment" type="button" role="tab" data-tab="profile"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Profile">Profile</span></button>
+            <button class="segment" type="button" role="tab" data-tab="preferences"><i class="fa-solid fa-sliders"></i> <span data-i18n="Preferences">Preferences</span></button>
+            <button class="segment" type="button" role="tab" data-tab="security"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="Security">Security</span></button>
+        </div>
+
+        <div class="acc-pane" id="pane-profile" role="tabpanel">
         <div class="auth-card profile-form">
             <input id="pfAvatar" type="file" accept="image/*" hidden>
             <div class="row2">
@@ -196,16 +207,9 @@
             </select>
             <button class="btn btn-primary" id="pfRunsSave" type="button" data-i18n="Save">Save</button>
         </div>
-        <!-- the remote controller (#909): which of its buttons runs which action, kept on this device -->
-        <div class="auth-card profile-form" id="remoteCard">
-            <h2 data-i18n="Remote controller">Remote controller</h2>
-            <p class="muted small" data-i18n="Connect your remote to this device, then give each action its buttons: tap Assign and press the button.">Connect your remote to this device, then give each action its buttons: tap Assign and press the button.</p>
-            <div class="remote-table" id="remoteTable"></div>
-            <div class="btnrow between">
-                <span class="muted small remote-live" id="remoteLive" aria-live="polite"></span>
-                <button class="btn btn-ghost btn-sm" id="remoteReset" type="button"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Restore defaults">Restore defaults</span></button>
-            </div>
         </div>
+
+        <div class="acc-pane" id="pane-preferences" role="tabpanel" hidden>
         <div class="auth-card profile-form" id="defaultLocation">
             <h2 data-i18n="Default map location">Default map location</h2>
             <p class="muted small" data-i18n="Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.">Centres the map when there’s no GPS fix yet — opening the Recorder or drawing a new route. Tap the map or drag the pin.</p>
@@ -217,6 +221,25 @@
             </div>
             <button class="btn btn-primary" id="pfLocSave" data-i18n="Save location">Save location</button>
         </div>
+        <!-- the guided tours (#906), started over on this device -->
+        <div class="auth-card profile-form">
+            <h2 data-i18n="Guided tours">Guided tours</h2>
+            <p class="muted small" data-i18n="Each tool shows you its main controls the first time you open it. Start them over to see them again.">Each tool shows you its main controls the first time you open it. Start them over to see them again.</p>
+            <button class="btn btn-primary" id="tourReplay" type="button"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Show the tours again">Show the tours again</span></button>
+        </div>
+        <!-- the remote controller (#909), last — the longest card: which of its buttons runs which action, kept on this device -->
+        <div class="auth-card profile-form" id="remoteCard">
+            <h2 data-i18n="Remote controller">Remote controller</h2>
+            <p class="muted small" data-i18n="Connect your remote to this device, then give each action its buttons: tap Assign and press the button.">Connect your remote to this device, then give each action its buttons: tap Assign and press the button.</p>
+            <div class="remote-table" id="remoteTable"></div>
+            <div class="btnrow between">
+                <span class="muted small remote-live" id="remoteLive" aria-live="polite"></span>
+                <button class="btn btn-ghost btn-sm" id="remoteReset" type="button"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="Restore defaults">Restore defaults</span></button>
+            </div>
+        </div>
+        </div>
+
+        <div class="acc-pane" id="pane-security" role="tabpanel" hidden>
 
         <div class="auth-card profile-form">
             <h2 data-i18n="Change email">Change email</h2>
@@ -253,11 +276,10 @@
                 <button class="btn btn-danger" type="submit" data-i18n="Delete account"><i class="fa-solid fa-trash-can"></i> Delete account</button>
             </form>
         </div>
-
-        <div class="btnrow mt-2"><a class="btn btn-primary" href="../myroadbooks/" data-i18n="My roadbooks"><i class="fa-solid fa-book"></i> My roadbooks</a></div>
+        </div>
     </section>
-    <!-- Language is browser-detected by default; this is the one place to change it (no picker in
-         the nav). Sits at the very bottom of the page, in every account view. -->
+    <!-- Language is browser-detected by default and changed from the footer; where the footer is
+         hidden (mobile) this row stands in for it, at the very bottom of every account view. -->
     <div class="acc-lang">
         <span class="muted small" data-i18n="Language">Language</span>
         <div class="lang"></div>
@@ -270,17 +292,17 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.9-207"></script>
-<script src="../assets/js/rbmap.js?v=1.9.9-207"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.9-207"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.9-207"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.9-207"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.9-207"></script>
-<script src="../assets/js/i18n.js?v=1.9.9-207"></script>
-<script src="../assets/js/rbzip.js?v=1.9.9-207"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.9-207"></script>
-<script src="../assets/js/app.js?v=1.9.9-207"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.9-207"></script>
-<script src="account.js?v=1.9.9-207"></script>
+<script src="../assets/js/config.js?v=1.9.9-208"></script>
+<script src="../assets/js/rbmap.js?v=1.9.9-208"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.9-208"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.9-208"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.9-208"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.9-208"></script>
+<script src="../assets/js/i18n.js?v=1.9.9-208"></script>
+<script src="../assets/js/rbzip.js?v=1.9.9-208"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.9-208"></script>
+<script src="../assets/js/app.js?v=1.9.9-208"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.9-208"></script>
+<script src="account.js?v=1.9.9-208"></script>
 </body>
 </html>
