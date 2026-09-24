@@ -6,21 +6,12 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc;
 
-    /* Platform · running · available: the same three answers as the App Info pop-up, straight on
-     * the page, so nobody has to hunt through a menu for the version they are running. */
+    /* What this copy is and whether it is current: the same facts and status as the App Info
+     * pop-up (RBReleaseFacts), straight on the page, so nobody hunts through a menu for them. */
     async function paintApp() {
-        const native = RBIsNativeApp();
-        const [running, live, bundled] = await Promise.all([
-            RBRunningRelease(), RBLiveVersion(), native ? RBLiveVersion(location.origin + '/') : null,
-        ]);
-        const fact = (label, value) => `<div class="fact"><span class="fact-key">${esc(t(label))}</span><span class="fact-value">${esc(value)}</span></div>`;
-        // In the app the semver alone hides the drift: the binary carries the web content of the
-        // day it was built, so name that build too and let the two be compared (#515).
-        $('appFacts').innerHTML =
-            fact('Platform', RBPlatformName())
-            + fact('Running', RBReleaseText(running))
-            + (native ? fact('Web content in this app', RBReleaseText(bundled)) : '')
-            + fact(native ? 'Latest web content' : 'Available', RBReleaseText(live));
+        const { facts, status } = await RBReleaseFacts();
+        const fact = ([label, value]) => `<div class="fact"><span class="fact-key">${esc(t(label))}</span><span class="fact-value">${esc(value)}</span></div>`;
+        $('appFacts').innerHTML = RBReleaseStatusHTML(status) + facts.map(fact).join('');
         const info = $('appInfoOpen');
         info.onclick = () => showAppInfo();
         info.hidden = false;

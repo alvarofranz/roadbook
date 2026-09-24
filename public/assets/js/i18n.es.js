@@ -643,7 +643,7 @@
             'wiki.title.reader': 'Roadbook Reader', 'wiki.title.tripmaster': 'Tripmaster', 'wiki.title.events': 'Gestión de eventos',
             'wiki.cta.title': 'Guía paso a paso', 'wiki.cta.desc': 'Consulta la guía paso a paso para crear tus roadbooks', 'wiki.cta.link': 'Ir a la wiki →',
             'App Info': 'Información de la app', 'Environment': 'Entorno', 'Update': 'Actualizar',
-            'Platform': 'Plataforma', 'Running': 'En ejecución', 'Available': 'Disponible', 'Latest web content': 'Último contenido web',
+            'Platform': 'Plataforma', 
             'iOS app': 'App iOS', 'Android app': 'App Android', 'Web app': 'App web', 'Web app (installed)': 'App web (instalada)',
         });
 
@@ -884,8 +884,8 @@ Object.assign(window.RBi18nLangs.es, {
 
 /* app vs web content, in the app (#515) */
 Object.assign(window.RBi18nLangs.es, {
-    'Web content in this app': 'Contenido web de esta app',
-    'This app was built with older web content, so some newer features are missing. Update it from the store.': 'Esta app se compiló con contenido web anterior, así que le faltan funciones nuevas. Actualízala desde la tienda.',
+    
+    
 });
 
 /* release notes — v1.9.0 */
@@ -1637,4 +1637,19 @@ Object.assign(window.RBi18nLangs.es, {
     "Each tool shows you its main controls the first time you open it. Start them over to see them again.": "Cada herramienta te enseña sus controles principales la primera vez que la abres. Reinícialas para volver a verlas.",
     "Show the tours again": "Volver a ver las visitas",
     "The tours will show again in each tool.": "Las visitas volverán a mostrarse en cada herramienta.",
+});
+
+/* App Info: what this copy is and whether it is current */
+Object.assign(window.RBi18nLangs.es, {
+    "Version": "Versión",
+    "App build": "Build de la app",
+    "Web content": "Contenido web",
+    "Latest release": "Última publicación",
+    "Server": "Servidor",
+    "Could not check for updates. Are you offline?": "No se han podido buscar actualizaciones. ¿Estás sin conexión?",
+    "Version {v} is available. Update the app from the store.": "La versión {v} ya está disponible. Actualiza la app desde la tienda.",
+    "The app is up to date. Some improvements already on the website will reach the app with its next update.": "La app está al día. Algunas mejoras que ya están en la web llegarán a la app con su próxima actualización.",
+    "The app is up to date.": "La app está al día.",
+    "A newer version is available. Refresh to load it.": "Hay una versión más nueva. Actualiza para cargarla.",
+    "You have the latest version.": "Tienes la última versión.",
 });
