@@ -15,6 +15,9 @@ $CFG = [
     'sendgrid_key'   => $_ENV['SENDGRID_KEY'] ?? '',
     'mail_from'      => $_ENV['MAIL_FROM'] ?? 'info@rdbk.app',
     'mail_from_name' => $_ENV['MAIL_FROM_NAME'] ?? 'RDBK.app',
+    // the contact form (/contact/): its recipient, and the addresses copied (comma-separated)
+    'contact_to'     => $_ENV['CONTACT_TO'] ?? 'rdbk.admin@gmail.com',
+    'contact_cc'     => array_values(array_filter(array_map('trim', explode(',', $_ENV['CONTACT_CC'] ?? '')))),
     'base_url'         => rtrim($_ENV['BASE_URL'] ?? 'https://rdbk.app', '/'),
     'app_secret'       => $_ENV['APP_SECRET'] ?? '',
     'turnstile_site'   => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
@@ -51,6 +54,7 @@ require __DIR__ . '/runs.php';
 require __DIR__ . '/comments.php';
 require __DIR__ . '/live.php';
 require __DIR__ . '/notifications.php';
+require __DIR__ . '/contact.php';
 
 // Long-lived, SLIDING session — feels like a native app: stays signed in and
 // the window extends on every use (in the browser and the installed PWA alike).

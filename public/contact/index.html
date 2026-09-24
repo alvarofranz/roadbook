@@ -22,15 +22,67 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.16-237">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.16-237">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.16-238">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.16-238">
+    <style>
+        .contact-card { background: linear-gradient(155deg, var(--card-2), var(--card)); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem 1.4rem 1.4rem; margin: 1.4rem 0 1rem; }
+        .contact-card label { display: block; }
+        .contact-card .field-label:first-child { margin-top: 0; }
+        .contact-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 1rem; }
+        @media (min-width: 620px) { .contact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .contact-grid + .field-label { margin-top: .9rem; }
+        /* the topics: one tap each, the chosen one in sand */
+        .contact-topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); gap: .5rem; margin-bottom: .6rem; }
+        .contact-topics input { position: absolute; opacity: 0; pointer-events: none; }
+        .contact-topics label > span { display: flex; align-items: center; gap: .5rem; height: 100%; padding: .6rem .75rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); cursor: pointer; font-size: .92rem; font-weight: 600; }
+        .contact-topics label > span > i { color: var(--muted); width: 1.1em; text-align: center; }
+        .contact-topics input:checked + span { border-color: var(--sand); background: rgba(232, 176, 89, .12); }
+        .contact-topics input:checked + span > i { color: var(--sand); }
+        .contact-topics input:focus-visible + span { outline: 2px solid var(--sand); }
+        .contact-card textarea.field { resize: vertical; min-height: 9rem; }
+        .contact-meta { display: flex; justify-content: flex-end; min-height: 1.2rem; }
+        .contact-trap { position: absolute; left: -9999px; width: 1px; height: 1px; }
+        .contact-turnstile:not(:empty) { margin: .6rem 0 .2rem; }
+        .contact-done { text-align: center; padding: 2rem 1.4rem; }
+        .contact-done > i { font-size: 2.6rem; color: var(--ok); }
+        .contact-done h2 { margin: .6rem 0 .3rem; }
+    </style>
 </head>
 <body>
 <header class="topbar"></header>
 
-<main class="doc">
+<main class="doc contact-page">
     <h1 data-i18n="contact.title">Contact</h1>
     <p data-i18n="contact.intro">Have a question, feedback, or a request? We'd love to hear from you.</p>
+
+    <!-- the form (Turnstile + an IP rate limit + a honeypot on the server); sent, it gives way to the thanks -->
+    <form class="contact-card" id="contactForm" novalidate>
+        <div class="contact-grid">
+            <label><span class="field-label" data-i18n="Your name">Your name</span><input class="field" id="ctName" name="name" autocomplete="name" maxlength="100" required></label>
+            <label><span class="field-label" data-i18n="Your email">Your email</span><input class="field" id="ctEmail" name="email" type="email" autocomplete="email" maxlength="190" required></label>
+        </div>
+        <span class="field-label" data-i18n="What is it about?">What is it about?</span>
+        <div class="contact-topics" id="ctTopics" role="radiogroup">
+            <label><input type="radio" name="topic" value="question" required><span><i class="fa-solid fa-circle-question"></i> <span data-i18n="Question">Question</span></span></label>
+            <label><input type="radio" name="topic" value="feedback"><span><i class="fa-solid fa-lightbulb"></i> <span data-i18n="Feedback or idea">Feedback or idea</span></span></label>
+            <label><input type="radio" name="topic" value="bug"><span><i class="fa-solid fa-bug"></i> <span data-i18n="Something doesn’t work">Something doesn’t work</span></span></label>
+            <label><input type="radio" name="topic" value="events"><span><i class="fa-solid fa-calendar-check"></i> <span data-i18n="Events and organizers">Events and organizers</span></span></label>
+            <label><input type="radio" name="topic" value="privacy"><span><i class="fa-solid fa-shield-halved"></i> <span data-i18n="Privacy or my data">Privacy or my data</span></span></label>
+            <label><input type="radio" name="topic" value="other"><span><i class="fa-solid fa-ellipsis"></i> <span data-i18n="Other">Other</span></span></label>
+        </div>
+        <label><span class="field-label" data-i18n="Your message">Your message</span><textarea class="field" id="ctMessage" name="message" rows="7" maxlength="5000" required></textarea></label>
+        <div class="contact-meta"><span class="muted small" id="ctLeft"></span></div>
+        <input class="contact-trap" name="website" id="ctWebsite" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="contact-turnstile" id="ctTurnstile"></div>
+        <div class="btnrow start">
+            <button class="btn btn-primary" id="ctSend" type="submit" disabled><i class="fa-solid fa-paper-plane"></i> <span data-i18n="Send message">Send message</span></button>
+        </div>
+    </form>
+    <div class="contact-card contact-done" id="contactDone" hidden>
+        <i class="fa-solid fa-circle-check"></i>
+        <h2 data-i18n="Message sent">Message sent</h2>
+        <p data-i18n="Thank you! We read every message and answer at the email you gave us.">Thank you! We read every message and answer at the email you gave us.</p>
+    </div>
 
     <h2 data-i18n="contact.h.email">Email</h2>
     <p data-i18n-html="contact.email">Write to us at <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a> — we read every message.</p>
@@ -39,12 +91,13 @@
     <p data-i18n-html="contact.more">For data or privacy requests, see our <a href="../privacy/">Privacy Policy</a>. To learn who is behind RDBK.app, visit the <a href="../about/">About</a> page.</p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.16-237"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.16-237"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.16-237"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.16-237"></script>
-<script src="../assets/js/i18n.js?v=1.9.16-237"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.16-237"></script>
-<script src="../assets/js/app.js?v=1.9.16-237"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.16-238"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.16-238"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.16-238"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.16-238"></script>
+<script src="../assets/js/i18n.js?v=1.9.16-238"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.16-238"></script>
+<script src="../assets/js/app.js?v=1.9.16-238"></script>
+<script src="contact.js?v=1.9.16-238"></script>
 </body>
 </html>

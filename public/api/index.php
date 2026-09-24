@@ -28,6 +28,7 @@ try {
         case 'apple_auth':  apple_auth($d); break;
         case 'logout':    logout_user(); break;
         case 'forgot':    forgot_password($d); break;
+        case 'contact_send': contact_send($d); break;
         case 'reset':     reset_password($d); break;
         case 'profile':   update_profile(require_user(), $d); break;
         case 'org_suggest': org_suggest(require_user()); break;

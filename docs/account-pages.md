@@ -300,8 +300,15 @@ documento a sé:
   solo il `<title>`/description lo sono). Porta un `<meta name="terms-version">` machine-readable
   che la registrazione registra come versione accettata (#135, vedi
   [backend-api](backend-api.md)). Email di contatto: `rdbk.admin@gmail.com`.
-- **Contact (`/contact/`)** — pagina contatti (#161): intro + email `rdbk.admin@gmail.com` +
-  rimandi a Privacy e About. Linkata dal footer globale, in sitemap, i18n in tutte e 5 le lingue.
+- **Contact (`/contact/`)** — pagina contatti (#161): intro, il **modulo di contatto**, l'email
+  `rdbk.admin@gmail.com` e i rimandi a Privacy e About. Il modulo ([contact.js](../public/contact/contact.js))
+  chiede nome, email (precompilati se sei loggato), l'argomento (sei pillole: domanda · idea · qualcosa
+  non funziona · eventi · privacy · altro) e il messaggio (10–5000 caratteri); *Invia* si attiva solo a
+  modulo completo e non parte due volte (`RBBusy`). Il server (`contact_send`, [app/contact.php](../app/contact.php))
+  ricontrolla tutto, poi Turnstile, un rate limit per IP (5/ora) e un honeypot (`website`: un bot che
+  lo riempie riceve `ok` e nulla parte); la mail va via SendGrid a `CONTACT_TO` con copia a
+  `CONTACT_CC` (`.env`, separati da virgola) e `Reply-To` = il mittente. Nulla viene salvato. Linkata
+  dal footer globale, in sitemap, i18n in tutte e 5 le lingue.
 - **Standard (`/standard/`)** — la specifica del formato `.rdbk`; documentata a parte in
   [rdbk-format](rdbk-format.md).
 - **Feature pages (`/features/<tool>/`)** — una pagina "How it works" per ogni tool (recorder ·
