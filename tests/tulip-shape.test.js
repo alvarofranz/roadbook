@@ -215,7 +215,8 @@ describe('the Editor edits on a flat map (#945 feedback)', () => {
         expect(editor).toContain('if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;');
         // one dialog, from the dashed circle only: no tap is ever ambiguous
         expect(editor).toContain('if (!n || RB.geo.haversineM(n, here) > RB.TULIP_SHAPE_M) return;');
-        expect(editor).toContain("id=\"ringRadiusOpen\"");
+        expect(editor).toContain('<input id="ringRadius" class="field" type="number"'); // the field right there, no extra tap
+        expect(editor).toContain("</div>`, 'split');"); // side by side, the whole screen on a phone
     });
 });
 

@@ -1675,7 +1675,6 @@ Object.assign(window.RBi18nLangs.fr, {
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.fr, {
     "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "Le cercle jaune est le rayon de détection de la note : le Reader valide la note dès que le trajet parcouru y entre.",
-    "Edit radius": "Modifier le rayon",
     "Metres": "Mètres",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Dessiné plus petit : le cercle ne dépasse jamais la moitié du chemin vers la note voisine.",
     "Tulip shape": "Forme de la flèche",

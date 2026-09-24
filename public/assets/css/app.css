@@ -315,9 +315,6 @@ body.rb-immersive .app-chip-stack { display: none; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
 .panel .head-row h2 { margin: 0; }
 .panel + .panel { margin-top: 1rem; } /* a page of stacked panels (event editor, participants desk, ranking) */
-.panel.inset { background: var(--card-2); padding: .9rem 1rem; margin-top: .8rem; } /* a section inside a dialog */
-.panel.inset > :last-child { margin-bottom: 0; }
-.panel.inset > .btnrow:last-child { margin-top: .6rem; }
 /* A heading with its own actions on the same row: title left, actions right, wrapping when the
    screen is too narrow — the "a destra" layout. ONE pattern for every page (#482 · #642). */
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
@@ -707,6 +704,18 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .modal-card.slim { max-width: 340px; }
 .modal-card.narrow { max-width: 360px; }
 .modal-card.wide { max-width: 520px; }
+/* a dialog of two panes: side by side on a tablet or a desktop, the whole screen on a phone */
+.modal-card.split { max-width: 820px; }
+.panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; }
+.panes > section { display: flex; flex-direction: column; min-width: 0; }
+.panes > section + section { border-left: 1px solid var(--line); padding-left: 1.4rem; }
+.panes > section > :last-child:not(:first-child) { margin-top: auto; padding-top: .6rem; } /* each pane's action sits at its foot, level with its neighbour's */
+.panes .status-list { margin-bottom: 0; }
+@media (max-width: 640px) {
+    .modal-card.split { position: fixed; inset: 0; max-width: none; max-height: none; border: 0; border-radius: 0; padding: calc(1.4rem + env(safe-area-inset-top)) calc(1.1rem + env(safe-area-inset-right)) calc(1.2rem + env(safe-area-inset-bottom)) calc(1.1rem + env(safe-area-inset-left)); }
+    .panes { grid-template-columns: minmax(0, 1fr); }
+    .panes > section + section { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 1.4rem; }
+}
 .modal-card.center { text-align: center; }
 /* top-align on phones: a dialog with an autofocused input would otherwise be centred and the
    on-screen keyboard covers it (e.g. the Record-GPX settings). align-self overrides the grid centring. */
@@ -845,6 +854,10 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
     .toolbar .btn { flex: 1 1 auto; }
     .toolbar > i { display: none; }   /* the decorative magnifier: a lone icon on its own line reads as a glitch */
 }
+/* a row that must stay one row — a value, its unit and its button — at every width, after the phone rules above */
+.toolbar.nowrap { flex-wrap: nowrap; }
+.toolbar.nowrap .field { flex: 1 1 auto; min-width: 0; max-width: none; }
+.toolbar.nowrap .btn { flex: 0 0 auto; }
 .rb-toolbar .rb-search { flex: 1; min-width: 0; margin: 0; border: 0; background: none; padding: .35rem 0; }
 .rb-usage { display: flex; align-items: center; gap: .4rem; margin-bottom: .6rem; } /* My-roadbooks storage indicator */
 /* Admin activity-inspection timeline (#86) */

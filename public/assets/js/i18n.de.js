@@ -1676,7 +1676,6 @@ Object.assign(window.RBi18nLangs.de, {
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.de, {
     "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "Der gelbe Kreis ist der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in ihn eintritt.",
-    "Edit radius": "Radius bearbeiten",
     "Metres": "Meter",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Kleiner gezeichnet: Der Kreis reicht nie über die halbe Strecke zur Nachbarnotiz hinaus.",
     "Tulip shape": "Form des Pfeils",

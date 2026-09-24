@@ -1611,8 +1611,8 @@
     }
     /* A tap inside the open note's dashed circle — the stretch of track that shapes its arrow —
        opens ONE dialog about the note's rings, so no tap is ever ambiguous: the points that shape
-       the arrow, per side, with Add points; and the yellow circle, its detection radius, with Edit
-       radius right there. */
+       the arrow, per side, with Add points; and the yellow circle, its detection radius, with its
+       field right there. Side by side, or stacked on the whole screen of a phone. */
     function ringInfo(here) {
         const n = editorOpen ? rb.notes[sel] : null;
         if (!n || RB.geo.haversineM(n, here) > RB.TULIP_SHAPE_M) return;
@@ -1625,29 +1625,25 @@
         const set = RB.detectionRadius(n, rb.meta);
         const why = reach > set ? t('It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.').replace('{m}', RB.CONST.REACH_MIN_M)
             : reach < set ? t('Drawn smaller: the circle never reaches past halfway to the next note.') : '';
-        const dlg = RBModal(`<h2><i class="fa-solid fa-location-dot icon-accent"></i> ${esc(t('Note'))} ${n.num}</h2>
-            <section class="panel inset">
-                <h2><i class="fa-solid fa-bezier-curve icon-accent"></i> ${esc(t('Tulip shape'))}</h2>
+        const dlg = RBModal(`<div class="panes">
+            <section>
+                <h3><i class="fa-solid fa-bezier-curve icon-accent"></i> ${esc(t('Tulip shape'))}</h3>
                 <p class="muted small">${esc(t('Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.'))}</p>
                 <ul class="status-list">${pts ? side('Before the note', pts.before) + side('After the note', pts.after) : ''}</ul>
-                ${short ? `<div class="btnrow start"><button class="btn btn-ghost btn-sm" type="button" id="ringAddPoints"><i class="fa-solid fa-circle-plus"></i> ${esc(t('Add points'))}</button></div>` : ''}
+                ${short ? `<div class="btnrow start"><button class="btn btn-ghost" type="button" id="ringAddPoints"><i class="fa-solid fa-circle-plus"></i> ${esc(t('Add points'))}</button></div>` : ''}
             </section>
-            <section class="panel inset">
-                <h2><i class="fa-solid fa-bullseye icon-accent"></i> ${esc(t('Detection radius'))} · ${reach} m</h2>
+            <section>
+                <h3><i class="fa-solid fa-bullseye icon-accent"></i> ${esc(t('Detection radius'))} · ${reach} m</h3>
                 <p class="muted small">${esc(t('The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.'))}${why ? ' ' + esc(why) : ''}</p>
-                <div class="btnrow start"><button class="btn btn-ghost btn-sm" type="button" id="ringRadiusOpen"><i class="fa-solid fa-pen"></i> ${esc(t('Edit radius'))}</button></div>
-                <div class="toolbar" id="ringRadiusEdit" hidden>
+                <div class="toolbar nowrap">
                     <input id="ringRadius" class="field" type="number" min="${RB.CONST.REACH_MIN_M}" step="1" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}" aria-label="${esc(t('Metres'))}">
                     <span class="muted">m</span>
                     <button class="btn btn-primary" type="button" id="ringGo"><i class="fa-solid fa-check"></i> ${esc(t('Apply'))}</button>
                 </div>
             </section>
-            <div class="btnrow end spaced"><button class="btn btn-ghost" type="button" id="ringX">${esc(t('Close'))}</button></div>`, 'narrow');
+            </div>
+            <div class="btnrow end spaced"><button class="btn btn-ghost" type="button" id="ringX">${esc(t('Close'))}</button></div>`, 'split');
         dlg.q('#ringX').onclick = dlg.close;
-        dlg.q('#ringRadiusOpen').onclick = () => {
-            dlg.q('#ringRadiusOpen').parentNode.hidden = true; dlg.q('#ringRadiusEdit').hidden = false;
-            dlg.q('#ringRadius').focus();
-        };
         dlg.q('#ringGo').onclick = () => {
             const v = parseInt(dlg.q('#ringRadius').value, 10);
             if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;
