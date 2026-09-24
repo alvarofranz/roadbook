@@ -575,9 +575,16 @@ body.rb-immersive .app-chip-stack { display: none; }
 /* A dialog is what the app is asking you to answer, so it is the TOP layer: above the cookie
    notice and the web-GPS banner, which otherwise drew over its buttons on a short screen — and a
    notice can't be dismissed while a modal is up, since the backdrop swallows the click (#404). */
-.modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: calc(1rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left)); background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); } /* a dialog keeps clear of the notch and the home indicator (#787) */
-.modal-card { width: 100%; max-width: 420px; max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); } /* never taller than the screen: a long card scrolls inside itself (#754) */
+.modal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: calc(1.5rem + env(safe-area-inset-top)) calc(1.5rem + env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) calc(1.5rem + env(safe-area-inset-left)); background: rgba(8, 9, 14, .72); backdrop-filter: blur(5px); } /* a dialog keeps clear of the notch and the home indicator (#787), and of its own corner close */
+.modal-card { width: 100%; max-width: 420px; max-height: calc(100dvh - 2.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1.3rem; box-shadow: var(--shadow); } /* never taller than the screen: a long card scrolls inside itself (#754) */
 .modal-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
+/* A dialog you can leave without deciding anything closes from its corner (RBModalX): a red disc
+   centred ON the card's top-right vertex. It sits outside the scroller, so the card clips nothing
+   and its content scrolls in .modal-body. A dialog that asks for a decision has no corner close. */
+.modal-card.has-x { position: relative; overflow: visible; display: flex; flex-direction: column; padding: 0; }
+.modal-card.has-x > .modal-body { overflow-y: auto; min-height: 0; padding: 1.3rem; border-radius: inherit; }
+.modal-x { position: absolute; top: 0; right: 0; transform: translate(50%, -50%); z-index: 1; width: 2.6rem; height: 2.6rem; padding: 0; border-radius: 50%; border: 2px solid var(--card); background: var(--track); color: #fff; font-size: 1.3rem; display: grid; place-items: center; cursor: pointer; }
+.modal-x:hover, .modal-x:focus-visible { filter: brightness(1.1); }
 /* the throwaway textarea RBCopy falls back to: reachable by the selection, invisible to the eye */
 .copy-shuttle { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
 /* A toast must clear whatever the page has pinned to the bottom edge, or the one message that
@@ -712,7 +719,9 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .panes > section > :last-child:not(:first-child) { margin-top: auto; padding-top: .6rem; } /* each pane's action sits at its foot, level with its neighbour's */
 .panes .status-list { margin-bottom: 0; }
 @media (max-width: 640px) {
-    .modal-card.split { position: fixed; inset: 0; max-width: none; max-height: none; border: 0; border-radius: 0; padding: calc(1.4rem + env(safe-area-inset-top)) calc(1.1rem + env(safe-area-inset-right)) calc(1.2rem + env(safe-area-inset-bottom)) calc(1.1rem + env(safe-area-inset-left)); }
+    .modal-card.split { position: fixed; inset: 0; max-width: none; max-height: none; border: 0; border-radius: 0; }
+    .modal-card.split > .modal-body { flex: 1 1 auto; padding: calc(3.6rem + env(safe-area-inset-top)) calc(1.1rem + env(safe-area-inset-right)) calc(1.2rem + env(safe-area-inset-bottom)) calc(1.1rem + env(safe-area-inset-left)); }
+    .modal-card.split > .modal-x { top: calc(.8rem + env(safe-area-inset-top)); right: calc(.8rem + env(safe-area-inset-right)); transform: none; } /* the whole screen: its corner is the screen's */
     .panes { grid-template-columns: minmax(0, 1fr); }
     .panes > section + section { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 1.4rem; }
 }
@@ -925,7 +934,7 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .u-blocked { background: var(--track); color: #fff; border-color: transparent; }
 .ev-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; }
 .ev-line .meta { flex: 1; min-width: 10rem; overflow-wrap: anywhere; } /* a 40-character handle wraps on a phone */
-.ch-ev-bar, .odo-ev-bar { padding: .4rem .6rem; background: var(--card-2); border-radius: 8px; margin-bottom: .5rem; }
+.ch-ev-bar { padding: .4rem .6rem; background: var(--card-2); border-radius: 8px; margin-bottom: .5rem; }
 .ev-back { color: var(--sand); text-decoration: none; font-weight: 600; font-size: .92rem; display: inline-flex; align-items: center; gap: .4rem; }
 .ev-back:hover { text-decoration: underline; }
 .ev-back i { font-size: .8rem; }

@@ -123,10 +123,8 @@ window.RBGpsMeter = class RBGpsMeter {
             ? 'Battery optimization is on and may stop GPS in the background, leaving gaps in your track.'
             : 'Notifications are off, so background recording may stop with the screen off.')}</p>
             <div class="btnrow end">
-                <button class="btn btn-ghost" data-no>${t('Not now')}</button>
                 <button class="btn btn-primary" data-yes>${t(battery ? 'Open battery settings' : 'Open settings')}</button>
-            </div>`, 'narrow', () => {});
-        m.q('[data-no]').onclick = () => { if (battery) self.snooze('battery', 30); m.close(); };
+            </div>`, 'narrow', () => { if (battery) self.snooze('battery', 30); }); // left from its corner: not now
         m.q('[data-yes]').onclick = () => {
             m.close();
             if (!nativeGeo) return;

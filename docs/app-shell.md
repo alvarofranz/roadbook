@@ -218,12 +218,20 @@ Ogni pagina riusa questi invece di reimplementarli. Firme reali:
 ### Interfaccia
 
 #### `RBModal(cardHtml, cardClass, onDismiss, opts) → { el, q(sel), close }`
-La modale base di **ogni** dialogo. Crea `.modal` > `.modal-card`, inietta `cardHtml`, applica il
-focus-trap e si chiude cliccando sullo sfondo o con Escape (invocando `onDismiss` se passata).
-Con `opts = { dismissable: false }` né lo sfondo né Escape la chiudono (il focus resta intrappolato):
-si esce solo dai suoi pulsanti — la forma di ogni modale che tiene l'unica copia del lavoro
-dell'utente (vedi `CLAUDE.md`, *A modal holding the only copy…*). Ritorna `el` (l'overlay),
-`q(sel)` (query dentro la modale) e `close()`.
+La modale base di **ogni** dialogo. Crea `.modal` > `.modal-card`, inietta `cardHtml` e applica il
+focus-trap. **Due forme, una o l'altra:**
+- **Si può lasciare senza decidere nulla** (il default): la chiude il **cerchio rosso con la ✕
+  bianca centrato sul vertice in alto a destra** (`RBModalX`), lo sfondo o Escape — tutti invocano
+  `onDismiss` se passata. Non porta **mai** un pulsante *Close* / *Cancel* suo: il contenuto
+  scorre in `.modal-body`, fuori dal quale sta la ✕, così la card non la ritaglia.
+- **Chiede una decisione** (`opts = { dismissable: false }`): niente ✕, né sfondo né Escape (il
+  focus resta intrappolato); si esce solo dai suoi pulsanti — `RBConfirm` (No / Sì), il tratto
+  successivo di una catena, la forma di ogni modale che tiene l'unica copia del lavoro
+  dell'utente (vedi `CLAUDE.md`, *A modal holding the only copy…*).
+
+`{ dismissable: false, corner: true }` è un modulo: la ✕ lo lascia, ma un tocco sullo sfondo non
+perde quanto scritto. Ritorna `el` (l'overlay), `q(sel)` (query dentro la modale) e `close()`.
+I dialoghi statici del Reader prendono la stessa ✕ da `openModal(id, onClose)`.
 
 `cardClass` è un **modificatore** della `.modal-card` (definito in `app.css`):
 
@@ -233,6 +241,7 @@ dell'utente (vedi `CLAUDE.md`, *A modal holding the only copy…*). Ritorna `el`
 | `slim`   | card sottile |
 | `wide`   | card larga |
 | `center` | contenuto centrato (es. `narrow center` in `RBNeedAuth`) |
+| `split`  | due pannelli (`.panes`) affiancati su tablet e desktop, impilati a tutto schermo su telefono |
 
 #### `RBFocusTrap(card, onEscape) → release()`
 Gestione del focus per una `.modal-card`: porta
@@ -241,7 +250,7 @@ sgancia il listener e ripristina il focus precedente. Usata da `RBModal` **e** d
 del Reader — una sola casa per la logica.
 
 #### `RBConfirm(msg, danger) → Promise<boolean>`
-Conferma stilizzata costruita su `RBModal` (card `narrow`). Risolve `true`/`false`. `msg` passa per
+Conferma stilizzata costruita su `RBModal` (card `narrow`, una decisione: niente ✕). Risolve `true`/`false`. `msg` passa per
 `RBt` (le chiavi inglesi si traducono, le stringhe già tradotte/composte passano invariate).
 `danger === true` colora il pulsante di conferma come azione distruttiva.
 

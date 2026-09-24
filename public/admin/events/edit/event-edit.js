@@ -62,17 +62,15 @@
 
     /* ---------- save (the form, with the registration confirms) ---------- */
     // Enabling activation with active participants already in: keep them (grandfathered) or send
-    // them back to pending for the QR. Resolves 'keep' | 'reset' | null (No = the save is aborted).
+    // them back to pending for the QR. Resolves 'keep' | 'reset' | null (left from its corner: the save is aborted).
     function confirmEnableActivation(n) {
         return new Promise((resolve) => {
             const d = RBModal(`<p class="modal-text">${n} ${esc(t('participants are already active. Keep them active, or send them back to pending for the QR code?'))}</p>
                 <div class="btnrow end">
-                    <button class="btn btn-ghost" data-x="cancel">${esc(t('Cancel'))}</button>
                     <button class="btn btn-danger" data-x="reset">${esc(t('Require QR code'))}</button>
                     <button class="btn btn-primary" data-x="keep">${esc(t('Keep active'))}</button>
                 </div>`, 'narrow', () => resolve(null));
             const done = (v) => { d.close(); resolve(v); };
-            d.q('[data-x="cancel"]').onclick = () => done(null);
             d.q('[data-x="reset"]').onclick = () => done('reset');
             d.q('[data-x="keep"]').onclick = () => done('keep');
         });
@@ -210,8 +208,7 @@
                 <datalist id="orgSuggest"></datalist>
             </div>
             <div id="orgListModal" class="ev-pick-list"></div>
-            <div class="pager" id="orgPager"></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
+            <div class="pager" id="orgPager"></div>`, 'wide');
         RBOrgDatalist(m.q('#orgSuggest'));
         let q = '', org = '';
         const render = async (page) => {
@@ -237,7 +234,6 @@
         };
         m.q('#orgSearchIn').oninput = () => { q = m.q('#orgSearchIn').value.trim(); render(1); };
         m.q('#orgOrgIn').oninput = () => { org = m.q('#orgOrgIn').value.trim(); render(1); };
-        m.q('[data-cancel]').onclick = m.close;
         render(1);
         m.q('#orgSearchIn').focus();
     };
@@ -304,8 +300,7 @@
         const m = RBModal(`<h2>${esc(t('Add roadbook'))}</h2>
             <p class="muted small">${esc(t('Pick one of your roadbooks to attach to this event.'))}</p>
             <input id="pickSearch" class="field" type="search" placeholder="${esc(t('Filter roadbooks…'))}" aria-label="${esc(t('Filter roadbooks…'))}" autocomplete="off">
-            <div class="ev-pick-list" id="pickList"></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide');
+            <div class="ev-pick-list" id="pickList"></div>`, 'wide');
         const renderPick = (q) => {
             const list = RB.filterByText(mine, q, ['title']);
             m.q('#pickList').innerHTML = list.length ? list.map((x) => `<div class="ev-line">
@@ -321,7 +316,6 @@
         };
         renderPick('');
         m.q('#pickSearch').oninput = (e) => renderPick(e.target.value);
-        m.q('[data-cancel]').onclick = m.close;
     };
 
     /* ---------- headquarters map (#249): built once per page (#594) ---------- */

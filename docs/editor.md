@@ -449,8 +449,8 @@ edita (#767).
 
 ## 7. Export e "Save to profile"
 
-Un unico pulsante **Export** (`#exportBtn`) apre una pop-up (`openExportModal`, `RBModal`) con
-tutti i formati; **Save** (salvataggio sul profilo) resta separato. Ogni voce chiude la pop-up,
+Un unico pulsante **Export** (`#exportBtn`) apre una pop-up (`openExportModal`, `RBModal`, lasciata
+dalla sua ✕ d'angolo) con tutti i formati; **Save** (salvataggio sul profilo) resta separato. Ogni voce chiude la pop-up,
 conferma **una sola volta** i tagli aperti (`confirmOpenCuts`) e ricalcola le metriche prima di
 scrivere — così una scelta GPX multipla non ripete il prompt.
 

@@ -125,11 +125,7 @@
         const d = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-route icon-accent"></i> ${esc(t('Driven track'))}</h2></div>
             <div id="runTrackMap" class="run-track-map"></div>
             <p class="muted small">${track.length} ${esc(t('points'))} · ${RBKm(RB.cumulativeM(track)[track.length - 1] || 0)}</p>
-            <div class="btnrow end">
-                ${download ? `<button class="btn btn-ghost" type="button" data-gpx><i class="fa-solid fa-download"></i> GPX</button>` : ''}
-                <button class="btn btn-primary" type="button" data-close>${esc(t('Close'))}</button>
-            </div>`, 'wide');
-        d.q('[data-close]').onclick = d.close;
+            ${download ? `<div class="btnrow end"><button class="btn btn-ghost" type="button" data-gpx><i class="fa-solid fa-download"></i> GPX</button></div>` : ''}`, 'wide');
         if (download) d.q('[data-gpx]').onclick = () => downloadGpx(track, title);
         try {
             await ensureMap();

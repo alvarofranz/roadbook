@@ -33,7 +33,7 @@ describe('the end of a run (#618)', () => {
         expect(fin.indexOf('RBRun.enqueue(report')).toBeLessThan(fin.indexOf('clearSession()'));
     });
     it('the report modal has no dismiss — its exits are explicit outcomes', () => {
-        expect(reader).toContain("openModal('reportModal', () => {});");
+        expect(reader).toContain("openModal('reportModal'); // an explicit outcome below, never a dismiss");
     });
     it('who sees the run is a Private/Public switch: the first pick saves it, with Remember my choice (#619 · #820)', () => {
         expect(reader).toContain("segment('private', 'fa-lock', 'Private')}${segment('public', 'fa-globe', 'Public')}");

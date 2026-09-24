@@ -62,6 +62,11 @@ DB/Convenzioni rapide below have counterparts there).
   exactly one way to do each thing, and the codebase always reads fresh and clean — as if
   written from scratch today. If a rename/refactor leaves dead code or stale comments, that's
   not done until they're gone.
+- **A dialog is one of two things (#966).** One you can leave without deciding anything closes from
+  the red ✕ disc centred on its top-right corner (`RBModal` adds it — `RBModalX`), the backdrop or
+  Escape, and carries NO Close / Cancel button of its own. One that asks for a decision
+  (`dismissable: false`: a confirm, a choice, the only copy of the user's work) has no ✕ at all.
+  A form whose typing a stray tap must not lose: `{ dismissable: false, corner: true }`.
 - **A confirm answers a question: the buttons are always No / Yes.** `RBConfirm(msg, danger)`
   takes no button label — whatever is specific belongs in the message, which for a deletion must
   name the object anyway. "Cancel" is the wrong word for the negative half of a question (#435).
@@ -144,9 +149,9 @@ DB/Convenzioni rapide below have counterparts there).
   ONE place and are reused everywhere; never re-implement them per page. If you need a
   new cross-cutting helper, add it here, don't copy-paste it.
   - **`app.js`** (global `RB*`, loaded on every page): `RBModal(cardHtml, cardClass, onDismiss, opts)`
-    (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`;
-    `opts.dismissable: false` ignores the backdrop and Escape, for a modal holding the only copy of
-    the user's work; returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
+    (every dialog — `cardClass` is a `.modal-card` modifier like `narrow`/`slim`/`wide`/`center`/`split`;
+    a dismissable one gets the corner ✕, `opts.dismissable: false` makes it a decision — no ✕, no
+    backdrop, no Escape; returns `{el, q(sel), close}`), `RBConfirm`/`RBNeedAuth` (built on RBModal, RBt-translated),
     `RBToast(msg)` (translated toast; the `#toast` element is created on first use), `RBApi(action, body)` (JSON POST
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare

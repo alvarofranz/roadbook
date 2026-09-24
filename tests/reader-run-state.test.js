@@ -88,9 +88,11 @@ describe('Navigate navigates (#936)', () => {
         }
         expect(js).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }'); // the GPX log always runs
     });
-    it('asks only the vehicle number, and only for a scored run; its Cancel goes back to the preview', () => {
+    it('asks only the vehicle number, and only for a scored run; left from its corner, back to the preview', () => {
         expect(js).toContain("if (!comp) return startRun(false);");
-        expect(js).toContain("$('teamCancel').onclick = () => { closeModal('teamModal'); if (legs.length) finalize(); };");
+        expect(js).toContain("function leaveTeam() { closeModal('teamModal'); if (legs.length) finalize(); }");
+        expect(js).toContain("openModal('teamModal', leaveTeam);");
+        expect(html).not.toContain('teamCancel');
     });
 });
 

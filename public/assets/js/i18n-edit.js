@@ -80,7 +80,6 @@
             <div class="i18ne-list">${keys.map(keyBlock).join('')}</div>
             <div class="btnrow end wrap">
                 <button class="btn btn-ghost" data-export><i class="fa-solid fa-file-export"></i> ${t('Export')} (<span data-count>${deltaCount()}</span>)</button>
-                <button class="btn btn-primary" data-close>${t('Done')}</button>
             </div>`, 'wide');
         d.el.querySelectorAll('.i18ne-key').forEach((block) => {
             const key = block.getAttribute('data-k');
@@ -94,7 +93,6 @@
             };
         });
         d.q('[data-export]').onclick = () => { d.close(); exportDelta(); };
-        d.q('[data-close]').onclick = d.close;
     }
 
     function exportDelta() {
@@ -113,7 +111,6 @@
                 <button class="btn btn-ghost" data-copy><i class="fa-solid fa-copy"></i> ${t('Copy')}</button>
                 <button class="btn btn-ghost" data-dl><i class="fa-solid fa-file-arrow-down"></i> ${t('Download')}</button>
                 <button class="btn btn-danger" data-clear><i class="fa-solid fa-trash"></i> ${t('Clear pending')}</button>
-                <button class="btn btn-primary" data-close>${t('Close')}</button>
             </div>`, 'wide');
         d.q('[data-copy]').onclick = () => RBCopy(text, 'Copied.');
         // Prepend a UTF-8 BOM so Windows tools (Notepad, etc.) read the accents correctly instead
@@ -123,7 +120,6 @@
             if (!(await RBConfirmDanger(t('Discard all pending translation edits?')))) return;
             LANGS.forEach((l) => { delta[l] = {}; }); saveDelta(); d.close(); location.reload();
         };
-        d.q('[data-close]').onclick = d.close;
     }
 
     /* ---------- chrome: the edit bar (shown only when mode is on) ---------- */

@@ -37,7 +37,7 @@
             'contact.title': 'Kontakt', 'contact.intro': 'Hast du eine Frage, Feedback oder eine Anfrage? Wir freuen uns, von dir zu hören.',
             'contact.h.email': 'E-Mail', 'contact.email': 'Schreib uns an <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a> — wir lesen jede Nachricht.',
             'contact.h.more': 'Mehr', 'contact.more': 'Für Daten- oder Datenschutzanfragen siehe unsere <a href="../privacy/">Datenschutzerklärung</a>. Wer hinter RDBK.app steht, erfährst du auf der Seite <a href="../about/">Über uns</a>.',
-            'Keep editing': 'Weiter bearbeiten',
+            
             'No race (free)': 'Kein Wettbewerb (frei)', 'Roadbook-suite rules': 'Roadbook-suite-Regeln', 'FIA rules (unavailable)': 'FIA-Regeln (nicht verfügbar)', 'Event management': 'Event-Verwaltung', 'Select date': 'Datum wählen', 'Unsaved changes': 'Ungespeicherte Änderungen', 'Save your changes before closing?': 'Änderungen vor dem Schließen speichern?', 'Save & close': 'Speichern & schließen', 'Change logo': 'Logo ändern', 'In a browser, recording stops when the app is in the background or the screen is off.': 'Im Browser stoppt die Aufzeichnung, wenn die App im Hintergrund ist oder der Bildschirm aus ist.', 'Let others copy this public roadbook': 'Anderen erlauben, dieses öffentliche Roadbook zu kopieren', 'This public roadbook cannot be copied.': 'Dieses öffentliche Roadbook kann nicht kopiert werden.', 'help.reusable': 'Aus (Standard): andere können dieses öffentliche Roadbook lesen und navigieren, aber nicht kopieren. An: sie können es auch in ihr Profil kopieren und bearbeiten — es erscheint in der Suche nach öffentlichen Roadbooks im Editor.',
             /* editor consistency check (#339) */ 'Consistency check': 'Konsistenzprüfung', 'Have a look before saving — none of this stops the roadbook from working:': 'Schau vor dem Speichern kurz drüber — nichts davon hindert das Roadbook am Funktionieren:', 'A speed-controlled zone is never lifted — it starts at note': 'Eine Geschwindigkeitszone wird nie aufgehoben — sie beginnt bei Notiz', 'A speed limit is lifted where no zone is open': 'Ein Tempolimit wird aufgehoben, obwohl keine Zone offen ist', 'Save anyway': 'Trotzdem speichern', 'Let me fix it': 'Ich korrigiere es',
             'Terms of Use': 'Nutzungsbedingungen',
@@ -278,7 +278,7 @@
             'Vehicle number': 'Fahrzeugnummer', 'Identify your team for the ranking.': 'Team für das Klassement identifizieren.',
             'Yes': 'Ja', 'No': 'Nein',
             
-            'Cancel': 'Abbrechen', 'Start': 'Start', 'Close': 'Schließen', 'Share': 'Teilen', 'Save QR': 'QR speichern',
+            'Start': 'Start', 'Close': 'Schließen', 'Share': 'Teilen', 'Save QR': 'QR speichern',
             'Timer': 'Timer',
             'Overall ranking': 'Gesamtklassement', 'Clear': 'Leeren', 'No results yet. Scan or paste a QR.': 'Noch keine Ergebnisse. QR scannen oder einfügen.',
             'Vehicle': 'Fahrzeug', 'Accuracy': 'Genauigkeit', 'Speed': 'Geschwindigkeit', 'Regularity': 'Regelmäßigkeit', 'Final': 'Final',
@@ -1741,4 +1741,12 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "A note’s rings, at a glance": "Die Kreise einer Notiz auf einen Blick",
     "Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.": "Tippe im Editor in den gestrichelten Kreis einer Notiz: Die Form ihres Pfeils und ihr Erkennungsradius öffnen sich nebeneinander — auf einem Telefon im ganzen Bildschirm — mit dem Feld für den Radius gleich dort.",
+});
+
+/* Release notes 1.9.14 */
+Object.assign(window.RBi18nLangs.de, {
+    "Cleaner dialogs": "Aufgeräumtere Dialoge",
+    "A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.": "Ein Fenster, das du ohne Auswahl verlassen kannst, schließt sich über das rote ✕ an seiner Ecke — keine Zeilen mit Schließen oder Abbrechen mehr.",
+    "A question that needs an answer has no ✕: you answer it with its own buttons.": "Eine Frage, die eine Antwort braucht, hat kein ✕: Du beantwortest sie mit ihren eigenen Knöpfen.",
+    "Small clean-ups across the app.": "Kleine Aufräumarbeiten in der ganzen App.",
 });
