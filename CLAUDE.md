@@ -702,9 +702,10 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   hamburger/full-screen menu. "Navigate" covers
   `/tripmaster/` + `/reader/`; "Events" covers `/event/` + `/ranking/` (Ranking has no nav entry of
   its own — it opens per competition roadbook from the event page). The **language is
-  browser-detected** and changed from the flag picker in the desktop footer or at the bottom of
-  the Profile page (no picker in the nav). The site footer is hidden on mobile (its site links move
-  to the Profile page); Install + unsaved-work chips float above the tab bar. Full matrix:
+  browser-detected** and changed from the flag picker in the desktop footer — on mobile, where the
+  footer is hidden, from the bottom of the Profile page (no picker in the nav). The Profile page is
+  three tabs, Profile · Preferences (default map location, guided tours, remote controller) ·
+  Security, `#<tab>` in the address (#925). The site footer's site links move to the Profile page on mobile; Install + unsaved-work chips float above the tab bar. Full matrix:
   `docs/menu.md`.
 - **Auth:** the app signs in with a Bearer token (`migrations/006_api_tokens.sql`, stored
   client-side); the web keeps its httponly session cookie. `RBApi`/`RBUpload` attach the token

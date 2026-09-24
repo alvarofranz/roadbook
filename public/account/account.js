@@ -460,7 +460,7 @@
     };
     // the check: a bound button pressed here lights its row
     window.addEventListener('keydown', (e) => {
-        if (listeningAction || $('vAccount').hidden) return;
+        if (listeningAction || $('vAccount').hidden || $('pane-preferences').hidden) return;
         const action = RBRemote.commandFor(e);
         if (!action) return;
         e.preventDefault();
@@ -470,6 +470,24 @@
         $('remoteLive').textContent = RBRemote.labelOf(RBRemote.keyOf(e)) + ' → ' + t(REMOTE_ACTIONS[action][0]);
     });
     window.addEventListener('rb-lang', () => { if (!$('vAccount').hidden) renderRemote(); });
+
+    /* ---------- the tabs (#925): Profile · Preferences · Security ---------- */
+    const TABS = ['profile', 'preferences', 'security'];
+    function openTab(tab) {
+        if (!TABS.includes(tab)) tab = TABS[0];
+        $('accTabs').querySelectorAll('[data-tab]').forEach((b) => {
+            const on = b.dataset.tab === tab;
+            b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        TABS.forEach((name) => $('pane-' + name).hidden = name !== tab);
+        if (tab !== 'preferences' && listeningAction) { stopListening(); renderRemote(); } // a remote button pressed on another tab assigns nothing
+        else if (locMap) setTimeout(() => locMap.map.resize(), 0); // the map was sized while its pane was hidden
+    }
+    $('accTabs').querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => {
+        openTab(b.dataset.tab);
+        try { history.replaceState(null, '', '#' + b.dataset.tab); } catch (e) {} // a reload stays on the tab
+    });
+    $('tourReplay').onclick = (e) => { RBTour.replay(); RBBusy(e.currentTarget).ok(); RBToast('The tours will show again in each tool.'); };
 
     async function showAccount(user) {
         me = user;
@@ -511,8 +529,11 @@
             RBToast(r.ok ? 'Saved.' : r.error);
         };
         initLocPicker(user.default_lat, user.default_lon);
-        // "Choose on the map" from the first-sign-in prompt lands here (#749)
-        if (location.hash === '#defaultLocation') setTimeout(() => $('defaultLocation').scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+        // the tab in the address (#preferences…) opens; "Choose on the map" from the first-sign-in
+        // prompt lands on the location card inside Preferences (#749)
+        const hash = location.hash.slice(1);
+        openTab(hash === 'defaultLocation' ? 'preferences' : hash);
+        if (hash === 'defaultLocation') setTimeout(() => $('defaultLocation').scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
         $('pfAvatarBtn').onclick = () => $('pfAvatar').click();
         $('pfAvatar').onchange = async () => {
             const f = $('pfAvatar').files[0]; if (!f) return;

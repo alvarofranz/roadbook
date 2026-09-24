@@ -1311,7 +1311,7 @@
     };
     /* Guided tours (#906): the first time a tool opens, its main controls are pointed at one by one —
        the screen dimmed, a hole over the control, a bubble beside it saying what it does. Asked ONCE,
-       ever (No / Yes): a No means no tour anywhere, again. After a Yes each tool's tour runs once, and
+       ever (No / Yes): a No means no tour anywhere, again — until the Profile starts them over. After a Yes each tool's tour runs once, and
        every bubble carries "Skip tutorial" (Escape too), which ends it for good. A tour counts as seen
        from its first step, so an interrupted one (a reload, a crash) never comes back. A step whose
        control is not on screen is left out. steps: [{ target: CSS selector, title, text }] — short English
@@ -1385,6 +1385,8 @@
         requestAnimationFrame(follow);
         nextBtn.focus();
     };
+    // "Show the tours again" (the Profile's Preferences, #925): every tool's tour runs once more, unasked
+    RBTour.replay = () => saveTour({ optin: 'yes', seen: [] });
     // Cloudflare Turnstile: ONE loader for every form that asks for the challenge (the account forms,
     // the roadbook comments #809). RBTurnstile(el, siteKey) renders the widget into `el` and returns
     // { token(), reset() }. Without a site key (not configured) or inside the app it does nothing and

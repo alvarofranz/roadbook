@@ -1628,3 +1628,13 @@ Object.assign(window.RBi18nLangs.it, {
     "Each step of the tutorial brings its control to the middle of the screen, so nothing it points at is ever out of sight.": "Ogni passo del tutorial porta il suo comando al centro dello schermo, così ciò che indica non resta mai fuori vista.",
     "Clearer wording for the tutorial in every language, and simpler settings behind it.": "Testi più chiari per il tutorial in tutte le lingue, e impostazioni più semplici dietro.",
 });
+
+/* the Profile page in tabs (#925) */
+Object.assign(window.RBi18nLangs.it, {
+    "Preferences": "Preferenze",
+    "Security": "Sicurezza",
+    "Guided tours": "Tutorial",
+    "Each tool shows you its main controls the first time you open it. Start them over to see them again.": "Ogni strumento ti mostra i comandi principali la prima volta che lo apri. Riattivali per rivederli.",
+    "Show the tours again": "Riattiva il tutorial",
+    "The tours will show again in each tool.": "Il tutorial verrà mostrato di nuovo in ogni strumento.",
+});

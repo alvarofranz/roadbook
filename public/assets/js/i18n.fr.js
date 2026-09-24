@@ -1590,3 +1590,13 @@ Object.assign(window.RBi18nLangs.fr, {
     "Each step of the tutorial brings its control to the middle of the screen, so nothing it points at is ever out of sight.": "Chaque étape du tutoriel amène sa commande au centre de l’écran, pour que rien de ce qu’elle montre ne reste hors de vue.",
     "Clearer wording for the tutorial in every language, and simpler settings behind it.": "Des textes plus clairs pour le tutoriel dans toutes les langues, et des réglages plus simples derrière.",
 });
+
+/* the Profile page in tabs (#925) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Preferences": "Préférences",
+    "Security": "Sécurité",
+    "Guided tours": "Visites guidées",
+    "Each tool shows you its main controls the first time you open it. Start them over to see them again.": "Chaque outil vous montre ses commandes principales la première fois que vous l’ouvrez. Relancez les visites pour les revoir.",
+    "Show the tours again": "Revoir les visites",
+    "The tours will show again in each tool.": "Les visites s’afficheront à nouveau dans chaque outil.",
+});
