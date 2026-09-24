@@ -505,7 +505,7 @@
        the centre outwards, each or null; `turn` the classic exit's angle (degrees clockwise from
        straight on), absent where the stored bearings stand. Nothing is ever stored in the roadbook:
        to change a shape, add or move points on the track. */
-    const TULIP_SHAPE_M = 30, TULIP_SHAPE_POINTS = 3, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
+    const TULIP_SHAPE_M = 30, TULIP_SHAPE_POINTS = 4, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
     const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_STRAIGHT_M = 2;
     const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 8, TULIP_ARROW_LEG_PX = 20, TULIP_BRANCH_CLEAR_PX = 12;
     // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note, up

@@ -632,7 +632,7 @@ Operational notes:
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
   `deleteNote`, `pendingWork`, `isEndNote` — the last note, whose tulip draws no exit road because
   past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
-  (the shape the author drew into the track around a note — 3 or more points within 30 m on
+  (the shape the author drew into the track around a note — 4 or more points within 30 m on
   a side — derived at render time and never stored, #945),
   `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`

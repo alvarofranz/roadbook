@@ -4,7 +4,7 @@ import NoteCanvas from '../public/assets/js/note-canvas.js';
 globalThis.RB = RB;
 globalThis.RBesc = (s) => String(s);
 
-/* The tulip's roads take the shape the author drew into the track (#945): 3 or more points within
+/* The tulip's roads take the shape the author drew into the track (#945): 4 or more points within
    30 m of the note on one side means that road was drawn on purpose and the tulip follows it; fewer,
    and it is the classic straight road — the exit aimed along the road's first 20 m. Never over the
    note, never over the author's junctions, never stored. */
@@ -39,7 +39,7 @@ describe('RB.tulipShape (#945)', () => {
         expect(s.entry).toBeNull(); expect(s.exit).toBeNull();
     });
 
-    it('3 or more points after the note: the exit follows them — from the centre, the full length, inside the box', () => {
+    it('4 or more points after the note: the exit follows them — from the centre, the full length, inside the box', () => {
         const { s } = shape([[0, -300], [0, 15], [25, 40], [300, 40]], 4);
         expect(s.exit.length).toBeGreaterThanOrEqual(3);
         expect(s.exit[0]).toEqual([115, 81]);
@@ -48,7 +48,7 @@ describe('RB.tulipShape (#945)', () => {
         expect(inBox(s.exit)).toBe(true);
     });
 
-    it('3 or more points before the note: the entry follows them, from the bottom into the centre', () => {
+    it('4 or more points before the note: the entry follows them, from the bottom into the centre', () => {
         const { s } = shape([[0, -300], [0, -45], [14, -32], [14, -18], [0, -6], [0, 0], [0, 300]], 3);
         expect(s.entry.length).toBeGreaterThanOrEqual(3);
         expect(s.entry[s.entry.length - 1]).toEqual([115, 81]);
