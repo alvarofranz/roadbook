@@ -1715,8 +1715,8 @@ Object.assign(window.RBi18nLangs.it, {
     "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "Il raggio di rilevamento della nota: il Reader convalida la nota appena il percorso fatto entra in questo cerchio.",
     "Metres": "Metri",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Disegnato più piccolo: il cerchio non supera mai metà strada verso la nota vicina.",
-    "Tulip shape": "Forma del tulipano",
-    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Ogni punto della traccia dentro questo cerchio dà forma alla freccia del tulipano. Disegnane almeno 4 su un lato e quella strada si curva come l’hai disegnata; con meno, resta dritta.",
+    "Tulip shape": "Forma della freccia",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Ogni punto della traccia dentro questo cerchio dà forma alla freccia della vignetta. Disegnane almeno 4 su un lato e quella strada si curva come l’hai disegnata; con meno, resta dritta.",
     "No room for more points here.": "Qui non c’è spazio per altri punti.",
     "Points added — drag them to shape the curve.": "Punti aggiunti: trascinali per dare forma alla curva.",
 });
