@@ -246,11 +246,31 @@
     const canvas = new NoteCanvas($('noteCanvas'), { toolbarEl: $('noteToolbar'), onChange: () => markDirty(), missingIcon: '../assets/icons/W28_general_danger.svg', resolveIcon: (ic) => RB.iconSrc(ic, rb, '../assets/icons/') });
     // Show note i on the canvas. One place asks whether it is the roadbook's end note, so the
     // tulip there drops its exit arrow exactly like the list rows, the Reader and the PDF (#447).
-    const showOnCanvas = (i) => canvas.setNote(rb.notes[i], RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
-    canvas.onDropIcon((name, pos) => { if (editable()) canvas.addIcon(mkIcon(name, pos)); });
+    const showOnCanvas = (i) => { canvas.setNote(rb.notes[i], RB.tulipContext(rb, i)); syncTulipToggle(rb.notes[i]); };
+    /* The imported tulip (#943): an OpenRally note keeps its original image for good, and one toggle
+       beside the vignette switches between it and the editor's own tulip — which is what an icon
+       or a junction is added to, so adding one while the original shows switches to the editor's
+       first. Nothing is ever deleted: the original is always one tap away. */
+    function syncTulipToggle(n) {
+        const original = n && NoteCanvas.originalTulip(n);
+        $('toggleTulip').hidden = !original;
+        if (original) { $('toggleTulip').classList.toggle('on', !original.hidden); $('toggleTulip').setAttribute('aria-pressed', String(!original.hidden)); }
+    }
+    $('toggleTulip').onclick = () => {
+        const n = rb && rb.notes[sel], original = n && NoteCanvas.originalTulip(n);
+        if (!original || !editable()) return;
+        if (original.hidden) delete original.hidden; else original.hidden = true;
+        showOnCanvas(sel); markDirty();
+    };
+    // the editor's own tulip, for whatever is added to the vignette
+    function ownTulip() {
+        const n = rb && rb.notes[sel], original = n && NoteCanvas.originalTulip(n);
+        if (original && !original.hidden) { original.hidden = true; showOnCanvas(sel); }
+    }
+    canvas.onDropIcon((name, pos) => { if (editable()) { ownTulip(); canvas.addIcon(mkIcon(name, pos)); } });
     // A tap on the open note's vignette means working on its icons (#856): open that tab
     $('noteCanvas').addEventListener('click', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } });
-    $('addJunction').onclick = () => { if (editable()) canvas.addJunction(); };
+    $('addJunction').onclick = () => { if (editable()) { ownTulip(); canvas.addJunction(); } };
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
     if (map.map) map.map.on('click', (e) => {
@@ -1259,7 +1279,10 @@
             if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
         }
         // Read-only under someone else's lock nothing here wrote the checkpoint — it may be a
-        // recovered draft waiting for the lock, so it stays on this device.
+        // recovered draft waiting for the lock, so it stays on this device. What was discarded is no
+        // longer unsaved work: `dirty` goes first, or leaving the page (beforeunload, the page going
+        // hidden) would write the discarded edits straight back as a draft (#943).
+        dirty = false;
         if (!readOnly()) clearDraft();
         location.href = location.pathname.replace(/[^/]*$/, ''); // close → the editor landing (roadbook list), stripping any ?rb / /<slug>
     }
@@ -1552,7 +1575,7 @@
     // reading matter in the one place meant for the note's own words.
     const noteMetaHTML = (n) => `<span class="note-coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</span>`;
     // Every row shows its vignette (static SVG); the open row instead holds the live canvas.
-    const tulipSVG = (n, i) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i));
+    const tulipSVG = (n, i) => NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.tulipContext(rb, i));
     function placeTulips() {
         $('noteList').querySelectorAll('.note-tulip[id^="tulipSlot"]').forEach((slot) => {
             const i = +slot.id.slice(9); // 'tulipSlot'.length
@@ -1588,7 +1611,6 @@
         sel = i; editorOpen = true; selVertex = -1; blockTab = tab || ''; // a note is now the active selection
         openEditZoneAt(i); renderEditor();
         showOnCanvas(i);
-        renderIcons(); // refresh the picker so "Yours" shows only this note's cover tulip
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
         map.select(rb.notes[i], true); // highlight
         // recentre + rotate the map to the note's arrival heading. Only a deliberate selection
@@ -1949,17 +1971,16 @@
         const lib = rb ? rb.icons || {} : {};
         const stdNames = await stdIconNames();
         const custom = Object.keys(lib).filter((n) => !stdNames.has(n.toLowerCase()));
-        // `cover` icons are per-note opaque vignettes (e.g. imported OpenRally tulips), not
-        // shared palette items — list only the current note's, never every note's.
-        const coverAll = new Set();
-        (rb?.notes || []).forEach((n) => (n.icons || []).forEach((ic) => { if (ic.cover && ic.name) coverAll.add(ic.name.toLowerCase()); }));
-        const curCover = new Set(((editorOpen && rb?.notes[sel]?.icons) || []).filter((ic) => ic.cover).map((ic) => (ic.name || '').toLowerCase()));
+        // an imported tulip (#943) is its note's original vignette, reached by the toggle beside it —
+        // never an icon to place on a tulip
+        const originals = new Set();
+        (rb?.notes || []).forEach((n) => (n.icons || []).forEach((ic) => { if (ic.cover && ic.name) originals.add(ic.name.toLowerCase()); }));
         // newest first (#855): rb.icons keeps insertion order, and an upload is always inserted last
-        const yours = custom.filter((n) => { const low = n.toLowerCase(); return coverAll.has(low) ? curCover.has(low) : true; }).reverse();
+        const yours = custom.filter((n) => !originals.has(n.toLowerCase())).reverse();
         // The strip is icons and nothing else: each tile carries its category, and the chips
         // above are what name and filter the groups.
         let html = '';
-        if (yours.length) html += yours.map((n) => iconBtn(n, lib[n], '__yours', true, coverAll.has(n.toLowerCase()) ? t('Delete me to export the edited tulip') : null)).join('');
+        if (yours.length) html += yours.map((n) => iconBtn(n, lib[n], '__yours', true)).join('');
         html += Object.entries(std.categories || {}).map(([cat, files]) => {
             // #94: the Speed dropdown sets the limit (and renders the matching sign), so the S*
             // speed-limit signs are hidden from the palette.
@@ -2001,27 +2022,17 @@
             el.hidden = (iconCat && el.dataset.cat !== iconCat) || (q && !(el.dataset.add || '').toLowerCase().includes(q));
         });
     }
-    const iconBtn = (name, src, cat, rmv, title) =>
-        `<button data-add="${esc(name)}" data-cat="${esc(cat)}" title="${esc(title || name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
+    const iconBtn = (name, src, cat, rmv) =>
+        `<button data-add="${esc(name)}" data-cat="${esc(cat)}" title="${esc(name)}">${rmv ? `<span data-del="${esc(name)}" class="del-badge" role="button" tabindex="0" aria-label="${esc(t('Remove'))}">×</span>` : ''}<img src="${esc(src)}" alt="" loading="lazy"></button>`;
     function addIcon(name) {
         if (!editable()) return;
+        ownTulip();
         canvas.addIcon(mkIcon(name, [0, 0]));
         toast('Icon added — drag it on the vignette');
     }
     async function delCustomIcon(name) {
         if (!editable()) return;
         const low = name.toLowerCase();
-        // A `cover` tulip (imported OpenRally vignette) is meant to be deletable in place: drop it
-        // from its note too, so the vignette reverts to the editable one and export emits that.
-        const hitNotes = rb.notes.filter((n) => (n.icons || []).some((ic) => ic.cover && (ic.name || '').toLowerCase() === low));
-        if (hitNotes.length) {
-            if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '” ' + t('and remove it from its notes?')))) return;
-            rb.notes.forEach((n) => { n.icons = (n.icons || []).filter((ic) => !(ic.cover && (ic.name || '').toLowerCase() === low)); });
-            delete rb.icons[name];
-            markDirty(); renderNotes(); if (editorOpen && rb.notes[sel]) { showOnCanvas(sel); renderEditor(); }
-            renderIcons();
-            return;
-        }
         if (rb.notes.some((n) => (n.icons || []).some((ic) => (ic.name || '').toLowerCase() === low))) return toast('In use; remove it from the notes first.');
         if (!(await RBConfirmDanger(t('Delete icon') + ' “' + esc(name) + '”?'))) return;
         delete rb.icons[name]; markDirty(); renderIcons(); // a change like any other: saved, checkpointed, undoable
@@ -2046,7 +2057,7 @@
             catch (e) { toast('Could not read the image.'); }
         }
         if (!n) return;
-        if (editorOpen && rb.notes[sel]) { added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0]))); markDirty(); await renderIcons(); return toast('Icon added — drag it on the vignette'); }
+        if (editorOpen && rb.notes[sel]) { ownTulip(); added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0]))); markDirty(); await renderIcons(); return toast('Icon added — drag it on the vignette'); }
         markDirty(); await renderIcons();
         toast(n === 1 ? 'Icon added — tap it to place.' : 'Icons added — tap them to place.');
     }

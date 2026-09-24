@@ -140,7 +140,7 @@
             'Draw on the map': 'Auf der Karte zeichnen', 
             
             
-            'Export': 'Exportieren', '.rdbk file': '.rdbk-Datei', 'Include photos & audio in the .rdbk': 'Fotos & Audio in die .rdbk aufnehmen', 'Photos & audio': 'Fotos & Audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Dieses Roadbook enthält Fotos oder Sprachnotizen. Sie bleiben verborgen, bis du es in deinem Profil speicherst.', 'Track line': 'Tracklinie', 'Waypoints (notes)': 'Wegpunkte (Notizen)', 'Garmin icons': 'Garmin-Icons', 'OSMAnd icons': 'OSMAnd-Icons', 'Delete me to export the edited tulip': 'Mich löschen um das bearbeitete Tulip zu exportieren',
+            'Export': 'Exportieren', '.rdbk file': '.rdbk-Datei', 'Include photos & audio in the .rdbk': 'Fotos & Audio in die .rdbk aufnehmen', 'Photos & audio': 'Fotos & Audio', 'This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.': 'Dieses Roadbook enthält Fotos oder Sprachnotizen. Sie bleiben verborgen, bis du es in deinem Profil speicherst.', 'Track line': 'Tracklinie', 'Waypoints (notes)': 'Wegpunkte (Notizen)', 'Garmin icons': 'Garmin-Icons', 'OSMAnd icons': 'OSMAnd-Icons', 
             'Settings': 'Einstellungen', 
             'Identity': 'Identität', 'Visibility & map': 'Sichtbarkeit & Karte',
             'Map access from player': 'Kartenzugriff aus dem Reader', 'Allow the map in the Reader': 'Karte im Reader erlauben',
@@ -411,7 +411,7 @@
                         'Tap <b>Share</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in the bar.': '<b>Teilen</b> <i class="fa-solid fa-arrow-up-from-bracket icon-accent"></i> in der Leiste antippen.',
             'Choose <b>Add to Home Screen</b> <i class="fa-solid fa-square-plus icon-accent"></i>.': '<b>Zum Home-Bildschirm</b> <i class="fa-solid fa-square-plus icon-accent"></i> wählen.',
             'Tap <b>Add</b>. Done!': '<b>Hinzufügen</b> antippen. Fertig!',
-            'Remove': 'Entfernen', 'Delete icon': 'Icon löschen', 'and remove it from its notes?': 'und aus seinen Notes entfernen?', 'Stop': 'Stopp',
+            'Remove': 'Entfernen', 'Delete icon': 'Icon löschen', 'Stop': 'Stopp',
             'Code not recognized.': 'Code nicht erkannt.',
             'Could not read the image.': 'Bild konnte nicht gelesen werden.',
             'In use; remove it from the notes first.': 'In Verwendung; zuerst aus den Notizen entfernen.',
@@ -1641,4 +1641,18 @@ Object.assign(window.RBi18nLangs.de, {
 /* the track a run drove (#936) */
 Object.assign(window.RBi18nLangs.de, {
     "Driven track": "Gefahrene Strecke",
+});
+
+/* the imported tulip, on / off (#943) */
+Object.assign(window.RBi18nLangs.de, {
+    "Toggle original tulip": "Original-Tulip ein/aus",
+});
+
+/* release 1.9.11 notes */
+Object.assign(window.RBi18nLangs.de, {
+    
+    
+    
+    
+    
 });
