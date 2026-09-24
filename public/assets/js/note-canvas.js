@@ -244,12 +244,12 @@ window.NoteCanvas.originalTulip = originalTulip;
 /* FIA-style danger grading: the note's `danger` (1-3) renders as '!' / '!!' /
  * '!!!' in red INSIDE the diagram box (top-left), never in the text column. */
 function dangerMarks(note) { const d = note.danger | 0; return d > 0 ? '!'.repeat(Math.min(d, 3)) : ''; }
-/* The tulip trunk: the road you arrive FROM enters straight from the bottom edge to the box centre
- * (styled by road_type_in); the road you leave ON exits from the centre with an arrow
- * (road_type_out). The exit follows the real shape of the road just past the note when it really
- * bends (RB.tulipShape, #945: a bend, an S) — a smooth curve through the simplified track; where it
- * runs straight the exit is straight, at the real turn (bearing_out − bearing_in), so the diagram
- * always shows the direction to follow. Junction
+/* The tulip trunk: the road you arrive FROM enters from the bottom edge to the box centre (styled
+ * by road_type_in); the road you leave ON exits from the centre with an arrow (road_type_out).
+ * Each takes the shape the author drew into the track around the note (RB.tulipShape, #945: more
+ * than a handful of points there is a road drawn on purpose) — a smooth curve through them; else
+ * it is straight: the entry vertical, the exit at the real turn, so the diagram always shows the
+ * direction to follow. Junction
  * vectors branch from the centre. Widths step up clearly so the road type reads from thickness
  * alone: off-piste = thin dashed, track = medium, asphalt = thick, motorway = thickest DOUBLE line.
  * Colours stay the RB System palette (RB.ROAD_TYPES.color), only the thickness/dash/double encode type. */
@@ -285,13 +285,15 @@ function trunkRoads(note, ctx) {
         // the route to follow is coloured by its road type (default 0 = grey)
         return { d, color: (RB.ROAD_TYPES[roadType] || RB.ROAD_TYPES[0]).color, width: st.width, dashed: st.dashed, double: st.double, arrow };
     };
-    const turn = ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
+    // the classic exit's angle: where the road goes over its first metres (RB.tulipShape), else the
+    // stored bearings
+    const turn = shape.turn != null ? shape.turn : ((((note.bearing_out || 0) - (note.bearing_in || 0)) % 360) + 360) % 360;
     const θ = turn * Math.PI / 180; // 0 = straight up; clockwise like a compass
     const roads = [];
     // incoming (provenance): styled by road_type_in — which normalizeRoadTypes derives from the
     // PREVIOUS note's road_type_out. The roadbook's START draws no incoming road at all: nothing
     // comes before it, so a line from the bottom edge points from nowhere (#472).
-    if (!c.isFirst) roads.push(road(note.road_type_in, `M${cx} 154 L${cx} ${cy}`, false));
+    if (!c.isFirst) roads.push(road(note.road_type_in, shape.entry ? smoothPath(shape.entry) : `M${cx} 154 L${cx} ${cy}`, false));
     // The END note has no exit road and no arrow: past the finish there is nothing to follow, so
     // an arrow leaving the waypoint points at nothing — in a race that note is the finish arch
     // (#447). The incoming road stops at the centre, where the validation dot marks the spot.

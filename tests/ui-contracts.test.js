@@ -155,10 +155,11 @@ describe('the per-note map is a close-up, not the whole route (#427)', () => {
     const readerJs = read('public/reader/reader.js');
     const open = readerJs.match(/function toggleNoteMap\(i\) \{([\s\S]*?)\n {4}\}/)[1];
 
-    it('opens at a detailed zoom on the rider, falling back to the note with no fix', () => {
-        expect(readerJs).toMatch(/NOTE_MAP_ZOOM = 1[5-9]/); // 13 was too coarse to read a junction
+    it('opens on ~500 m around the rider — a kilometre across on any screen — falling back to the note with no fix', () => {
+        expect(readerJs).toContain('const NOTE_MAP_RADIUS_M = 500;');
         expect(open).toContain('lastHere ||');
-        expect(open).toContain('zoom: NOTE_MAP_ZOOM');
+        expect(open).toContain('inlineMap.zoomForRadius(NOTE_MAP_RADIUS_M)');
+        expect(read('public/assets/js/rbmap.js')).toContain('zoomForRadius(radiusM) {');
     });
 
     it('draws that one waypoint, not the roadbook', () => {

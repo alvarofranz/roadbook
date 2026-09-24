@@ -72,16 +72,17 @@ Reference box **230×162**, centre `(115, 81)`.
   `road_type_in`. The first note has none (#472).
 - **Outgoing** road leaves the centre with an arrow, styled by `road_type_out`.
   The last note has none (#447).
-- **Shape (#945):** the outgoing road follows the **real shape of the road just
-  past the note** when it really bends (`RB.tulipShape`, drawn by `trunkRoads` as
-  a smooth `<path>`): ~50 m along the track after the note, stopping at the next
-  note, simplified (Douglas-Peucker), rotated so `bearing_in` points up and scaled
-  so the length along the road is the fixed exit length (63 px). A curve is drawn
-  only when the stretch strays from its own chord by more than 12% of its length
-  (min 5 m); a hairpin is tried over 35 / 25 m so it never crosses the note (the
-  exit stays in the upper half). A note with junctions keeps its classic exit —
-  its branches are drawn against it. The incoming road is always straight: it only
-  says where you come from. Otherwise the exit is the **classic straight** one,
+- **Shape (#945):** each road takes the shape the author drew into the track:
+  within 50 m of the note on its side (before it for the incoming road, after it
+  for the outgoing one, stopping at the neighbouring note), more than 6 track
+  points mean the road was drawn on purpose, and the tulip follows them as a
+  smooth `<path>` (`RB.tulipShape` · `trunkRoads`) — simplified, rotated so
+  `bearing_in` points up, scaled to the fixed length (in 73 px, out 63 px). Never
+  back over the note, never over a junction the author drew. To curve an arrow,
+  add points on the map; to straighten it, remove them. Otherwise the road is the
+  **classic straight** one: the incoming vertical, the outgoing aimed where the
+  road goes over its first 20 m (the stored first-metre bearing is GPS noise on
+  a recorded track) — else
   outgoing **auto-oriented** to the real turn — its angle is
   `bearing_out − bearing_in` (the heading change across previous · note · next),
   so straight-up = carry on, right = turn right…
