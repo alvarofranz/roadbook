@@ -44,8 +44,30 @@ describe('RB.tulipShape (#945)', () => {
         expect(s.exit.length).toBeGreaterThanOrEqual(3);
         expect(s.exit[0]).toEqual([115, 81]);
         expect(s.exit[s.exit.length - 1][0]).toBeGreaterThan(115 + 20); // it ends to the right, where the road goes
-        expect(pathLen(s.exit)).toBeGreaterThan(55); expect(pathLen(s.exit)).toBeLessThan(64);
+        expect(pathLen(s.exit)).toBeGreaterThan(70); expect(pathLen(s.exit)).toBeLessThan(96); // longer than the classic 63 px, so the bend reads — as far as the box allows
         expect(inBox(s.exit)).toBe(true);
+    });
+    it('a curved exit that would leave the box shrinks about the note, its arrowhead inside', () => {
+        const { s } = shape([[0, -300], [0, 8], [0, 16], [0, 24], [3, 32], [3, 300]], 4);
+        if (s.exit) s.exit.forEach(([x, y]) => { expect(y).toBeGreaterThanOrEqual(14 - 0.1); expect(x).toBeLessThanOrEqual(230 - 14 + 0.1); });
+    });
+    it('a note’s rings: the points per side, and Add points puts 4 a side ON the track, spread evenly', () => {
+        const trk = track([[0, -500], [0, 500]], 100), rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
+        const shapeBefore = rb.track.map((p) => [p.lat, p.lon]);
+        expect(RB.tulipPoints(rb, 1)).toEqual({ before: 0, after: 0, need: 4 });
+        expect(RB.tulipPoints(rb, 0).before).toBe(null);
+        expect(RB.tulipPoints(rb, 2).after).toBe(null);
+        expect(RB.tulipAddPoints(rb, 1)).toBe(8);
+        expect(RB.tulipPoints(rb, 1)).toEqual({ before: 4, after: 4, need: 4 });
+        expect(rb.track[rb.notes[1].idx]).toEqual(expect.objectContaining({ lat: shapeBefore[5][0], lon: shapeBefore[5][1] })); // the note kept its point
+        rb.track.forEach((p) => expect(Math.abs(p.lon - shapeBefore[0][1])).toBeLessThan(1e-6)); // all on the straight road
+        expect(RB.tulipAddPoints(rb, 1)).toBe(0); // enough already
+    });
+    it('Add points leaves an open cut as it is', () => {
+        const trk = track([[0, -500], [0, 500]], 100), rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
+        const at = rb.notes[1].idx, a = rb.track[at], b = rb.track[at + 1];
+        RB.tulipAddPoints(rb, 1, (p, q) => p === a && q === b);
+        expect(RB.tulipPoints(rb, 1)).toEqual({ before: 4, after: 0, need: 4 });
     });
 
     it('4 or more points before the note: the entry follows them, from the bottom into the centre', () => {
@@ -173,7 +195,7 @@ describe('the Editor shows what a note reaches and what shapes its tulip (#945)'
         expect(RB.TULIP_SHAPE_M).toBe(30);
     });
     it('opens a note on ~200 m around it, turned so the road you arrive on points up', () => {
-        expect(editor).toContain('zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0');
+        expect(editor).toContain('zoom: map.zoomForRadius(120), bearing: n.bearing_in || 0');
     });
 });
 
@@ -182,5 +204,13 @@ describe('the Editor edits on a flat map (#945 feedback)', () => {
         const fs = require('fs');
         expect(fs.readFileSync('public/editor/editor.js', 'utf8')).toMatch(/new RBMap\('edMap', \{[^}]*terrain: false/);
         expect(fs.readFileSync('public/assets/js/rbmap.js', 'utf8')).toContain('if (!this._terrainOn) return;');
+    });
+    it('a tap inside the rings opens their dialog: the radius edited on the spot, Add points arms Move', () => {
+        const editor = require('fs').readFileSync('public/editor/editor.js', 'utf8');
+        expect(editor).toContain("if (mapTool === 'pan' || mapTool === 'points') ringInfo(here);");
+        expect(editor).toContain("layers: ['rb-wpts', 'rb-photos', 'rb-verts']");
+        expect(editor).toContain('RB.tulipAddPoints(rb, sel, (a, b) => gaps.some(');
+        expect(editor).toContain("routeChanged(); setMapTool('points');");
+        expect(editor).toContain('if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;');
     });
 });

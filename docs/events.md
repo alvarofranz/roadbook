@@ -28,6 +28,7 @@ evolute per alter successive — dettaglio in [backend-api §8](backend-api.md).
 |---|---|---|
 | `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_gate` (`closed`/`code`/`open`), `require_activation` (0/1), `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. `is_public` decide **solo se l'evento è listato** nella galleria: un evento non listato si raggiunge comunque col suo link — pagina, `/go/`, adesione, attivazione (#573). La registrazione è governata da due impostazioni indipendenti (#414): il gate (COME si entra) e `require_activation` (se l'organizzatore deve attivarti con il QR personale). |
 | `event_roadbooks` | `event_id`, `roadbook_id`, `sort`, **`scoring_mode`** | I roadbook associati all'evento, ordinati, ognuno con la propria modalità di punteggio. |
+| `event_rb_next` | `event_id`, `roadbook_id`, `next_roadbook_id`, `label` (≤ 40), `sort` | La **catena** (#944): cosa offre un roadbook dell'evento alla sua ultima nota — i successivi, in ordine, ognuno con un'etichetta breve libera ("A", "Facile"…, unica per tutte le lingue; vuota = il titolo). Entrambe le estremità sono roadbook associati all'evento (FK composte su `event_roadbooks`, `ON DELETE CASCADE`). |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
 | `event_participants` | `event_id`, `user_id`, `status`, `activation_code`, `created_at` | Chi ha aderito: `pending` finché l'organizzatore non lo attiva (QR personale), poi `active` (#163). |
 
@@ -135,6 +136,10 @@ proprietario · Save, #597). `event_manage_get()` fornisce tutto. Due tipi di mo
   - **Roadbook** — `event_rb_add` (solo un roadbook **di cui sei proprietario**; un admin può
     associarne di altrui, #140), `event_rb_remove`, `event_rb_mode`. Ogni riga mostra lo stato reale
     (Draft · Ready · Public) e avvisa che una bozza è invisibile ai partecipanti (#596).
+  - **Catena** (#944) — sotto ogni roadbook, con due o più roadbook: *All'ultima nota, offri* — una
+    casella + un'etichetta breve per ogni altro roadbook dell'evento; ogni modifica salva subito
+    l'intera lista (`event_rb_next_set`, sostituita, mai unita; mai sé stesso). `event_get` porta
+    `next` su ogni roadbook, filtrato ai roadbook che il visitatore vede.
   - **Organizers** (#598) — `user_search` (2+ caratteri, niente email) + `event_org_add` /
     `event_org_remove`, **solo proprietario/admin**; il proprietario non è rimovibile.
   - **Codice** — con registrazione *Invite code* salvata l'evento **ha sempre un codice** (generato
@@ -207,7 +212,8 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 |---|---|
 | Pubbliche (GET) | `events_list`, `event_get` |
 | Gestione | `events_manage`, `event_manage_get`, `event_save`, `event_delete`, `event_logo_remove` |
-| Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode` |
+| Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode`, `event_rb_next_set` (la catena, #944) |
+| Mappa in diretta (#947) | `live_ping`, `live_stop`, `live_list` |
 | Co-organizzatori | `user_search`, `event_org_add`, `event_org_remove` |
 | Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate`, `event_participants_activate_pending` (ammissione massiva, #416) |
 
@@ -270,6 +276,26 @@ Quando il cookie `rb_participant=1` è attivo:
 - La pagina evento nasconde il form di join, il sito organizzatore e la mappa HQ.
 - Il **Ranking** è accessibile solo se l'evento ha almeno un roadbook con
   `scoring_mode ≠ free`.
+
+## 8b. La mappa in diretta degli organizzatori (#947)
+
+Durante un evento gli organizzatori vedono dove sono i partecipanti: **`/admin/events/live/?id=`**
+(il bottone *Mappa in diretta* nell'intestazione dell'evento). La regola di privacy è stretta:
+
+- Il Reader condivide **solo nella run di un roadbook dell'evento**, aperto dall'evento, da un
+  **partecipante attivo** che ha detto **sì** all'inizio di quella run (`RB.liveAllowed`; chiesto a
+  ogni run, un tratto concatenato mantiene la risposta). Mentre condivide mostra la striscia *Live ·
+  gli organizzatori vedono la tua posizione*. Si ferma per sempre con la run (`live_stop`), e un
+  ping rifiutato la spegne.
+- Invia l'ultima posizione **affidabile** ogni 15 s, o prima dopo 50 m (`RB.liveDue`); un invio
+  fallito aspetta il fix successivo (mai prima di 5 s) — niente arretrati: *live* vuol dire adesso.
+- Il server ricontrolla ogni ping (`live_gate`: partecipante attivo · roadbook dell'evento · evento
+  in corso tra le sue date ± 1 giorno) e tiene **una riga per partecipante** (`event_live`), mai uno
+  storico. Il cron (slot 5) la cancella un giorno dopo la fine dell'evento, e mai oltre 3 giorni.
+- La pagina (`live.js`) interroga `live_list` ogni 10 s (in pausa con la scheda nascosta): ogni
+  partecipante è un segnaposto col numero di veicolo (o l'iniziale), colorato per freschezza
+  (`RB.liveFreshness`: < 1 min in diretta · 1–5 min · perso o finito), i roadbook dell'evento sotto,
+  e una lista ordinata per avanzamento. Solo gli organizzatori (e gli admin) la vedono.
 
 ## 9. Limiti e quirk
 

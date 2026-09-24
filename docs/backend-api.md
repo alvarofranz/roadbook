@@ -114,6 +114,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**); lo **slug pubblico segue il titolo finché l'evento non è listato** (#194) e da lì resta fisso, così un rename non rompe i link già condivisi (#578) | richiesta/organizer |
 | `event_delete` | Elimina un evento | richiesta |
 | `event_rb_add`/`event_rb_remove`/`event_rb_mode` | Associa/dissocia un roadbook all'evento; imposta la sua `scoring_mode` | richiesta |
+| `event_rb_next_set` | La catena (#944): cosa offre un roadbook dell'evento alla sua ultima nota — `next: [{id, label}]`, la lista intera sostituita | richiesta |
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
 | `event_join_code` | Genera/rigenera il codice di adesione dell'evento; un codice scelto a mano è 4–16 caratteri `A–Z 0–9`, perché diventa il link `/go/<code>` (#576) | richiesta |
 | `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414). **Idempotente** (#574): chi è già dentro riceve il suo stato attuale senza modifiche. Niente nuove adesioni a evento terminato (#587). Un evento non listato si raggiunge col suo link come uno listato (#573) | richiesta |
@@ -145,6 +146,14 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `comments_list` | I commenti del roadbook, con `can_delete` per chi legge | richiesta |
 | `comment_add` | Nuovo commento (max 2000 caratteri): Turnstile + rate limit 10 ogni 10 min | richiesta |
 | `comment_delete` | Lo cancella l'autore, il proprietario del roadbook o un admin | richiesta |
+
+**Live tracking per gli organizzatori** (`live.php`, #947)
+
+| Action | Cosa fa | Auth |
+|--------|---------|:----:|
+| `live_ping` | L'ultima posizione di un partecipante **attivo**, su un roadbook **dell'evento**, mentre l'evento è in corso (le sue date ± 1 giorno): una riga per partecipante per evento, sovrascritta — mai uno storico. Rate limit 20/min | richiesta |
+| `live_stop` | Fine della run: l'ultima posizione resta, segnata come finita | richiesta |
+| `live_list` | La mappa degli organizzatori (`require_event_manage`): ogni posizione con `age_s` dall'orologio del server; con `tracks` anche il contorno dei roadbook dell'evento | richiesta |
 
 **Roadbook, foto, audio, pubblici** (`roadbooks.php`)
 

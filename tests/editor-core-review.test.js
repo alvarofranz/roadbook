@@ -164,11 +164,21 @@ describe('the live vignette editor', () => {
         expect(img.getAttribute('href')).toBe('RES:or.svg');
         expect(c.svg.querySelectorAll('line')).toHaveLength(0);
     });
-    it('draws the bike lane in its own stroke, not the track’s', () => {
+    it('draws the bike lane in its own colour, as thick as every other road', () => {
         const svg = NoteCanvas.toSVG({ num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 5, road_type_out: 5, icons: [] });
-        expect(svg).toContain('stroke-width="5"');
-        expect(svg).not.toContain('stroke-width="8"');
+        expect(svg).toContain('stroke-width="8"');
         expect(svg).toContain(RB.ROAD_TYPES[5].color);
+    });
+    it('draws the branches under the route, and the route lets taps through to them', () => {
+        const note = { num: 2, bearing_in: 0, bearing_out: 90, road_type_in: 3, road_type_out: 3, icons: [], junctions: [{ pivot: [0, 0], tip: [60, 40], width: 8, road_type: 0 }] };
+        const svg = NoteCanvas.toSVG(note);
+        expect(svg.lastIndexOf('<line')).toBeLessThan(svg.indexOf('stroke="#ff5a45"'));
+        const c = mount(); c.setNote(note);
+        const kids = [...c.svg.children];
+        const line = kids.findIndex((el) => el.tagName === 'line'), road = kids.findIndex((el) => el.tagName === 'path' && el.getAttribute('class') === 'vignette-box-dyn');
+        expect(line).toBeGreaterThan(-1);
+        expect(line).toBeLessThan(road);
+        expect(kids[road].getAttribute('pointer-events')).toBe('none');
     });
     it('has no dead options left', () => {
         expect(canvasJs).not.toContain('onSelect');

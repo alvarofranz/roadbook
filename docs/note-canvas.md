@@ -100,7 +100,9 @@ Ogni strada del tulip prende la forma che l'autore ha dato alla traccia attorno 
   mappa (modo P); per raddrizzarla si tolgono. Un tratto fitto ma dritto resta dritto.
 - Il tratto si ripulisce dal jitter (**Douglas-Peucker**, 0,5 m: i punti dell’autore restano come li ha messi), si **ruota** perché `bearing_in`
   punti in su e si **scala** perché la lunghezza lungo la strada sia quella fissa della vignetta —
-  **73 px** l'ingresso, **63 px** l'uscita — sempre dentro il box.
+  **73 px** l'ingresso, **95 px** l'uscita curva (più lunga dei 63 px dell'uscita dritta classica,
+  perché la curva si legga) — ridotta attorno alla nota solo dove uscirebbe dal box, così la freccia
+  resta sempre dentro, a 14 px dal bordo.
 - I punti contati sono quelli **dentro il cerchio** di 30 m attorno alla nota — l'anello tratteggiato
   dell'Editor: quello che vedi dentro, conta. Una forma che tornerebbe sopra la nota (l'uscita sotto
   il centro, l'ingresso sopra) resta classica; una curva disegnata può passare accanto a un incrocio
@@ -132,18 +134,22 @@ retto letto come 37°; se così passerebbe su un incrocio dell'autore, resta l'a
 
 ### Stile per tipo di strada (`ROAD_STYLE`)
 Il tronco usa una tabella di stile **propria** (`ROAD_STYLE` in note-canvas.js), indipendente
-dalle larghezze di `RB.ROAD_TYPES` usate sulla mappa: solo spessore/tratteggio/doppia
-codificano il tipo, il colore viene invece da `RB.ROAD_TYPES`.
+dalle larghezze di `RB.ROAD_TYPES` usate sulla mappa: **ogni strada ha lo stesso spessore** (8, quello
+della pista rossa); il tipo si legge dal colore (`RB.ROAD_TYPES`), dal tratteggio e dalla doppia linea.
 
 | `road_type` | Resa nel tulip | width | tratteggio | doppia |
 |:-----------:|----------------|:-----:|:----------:|:------:|
-| 0 default | linea media | 6 | no | no |
-| 1 motorway | linea **spessa doppia** | 14 | no | sì |
-| 2 asphalt | linea spessa singola | 11 | no | no |
-| 3 track | linea medio-spessa | 8 | no | no |
-| 4 off-piste | linea sottile **tratteggiata** | 5 | sì | no |
-| 5 bike lane | linea sottile continua (#561) | 5 | no | no |
+| 0 default | linea continua | 8 | no | no |
+| 1 motorway | linea **doppia** | 8 | no | sì |
+| 2 asphalt | linea continua | 8 | no | no |
+| 3 track | linea continua | 8 | no | no |
+| 4 off-piste | linea **tratteggiata** | 8 | sì | no |
+| 5 bike lane | linea continua (#561) | 8 | no | no |
 | altro | fallback su 3 (track) | 8 | no | no |
+
+Le giunzioni (§4) si disegnano **prima**, sotto il tronco: dove coincidono si legge la strada da
+seguire. Nel canvas interattivo il tronco ha `pointer-events: none`, così un tocco arriva comunque
+alla giunzione sotto, e le maniglie della giunzione selezionata stanno sopra entrambi.
 
 L'autostrada è resa "doppia" sovrapponendo una linea bianca centrale di spessore
 `max(3, width·0.3)` sopra la linea spessa (in `NoteCanvas.toSVG` e nel `render()` dell'istanza).

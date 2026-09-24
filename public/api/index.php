@@ -60,6 +60,7 @@ try {
         case 'event_rb_add':    event_rb_add(require_user(), $d); break;
         case 'event_rb_remove': event_rb_remove(require_user(), $d); break;
         case 'event_rb_mode':   event_rb_mode(require_user(), $d); break;
+        case 'event_rb_next_set': event_rb_next_set(require_user(), $d); break; // the chain (#944)
         case 'user_search':     user_search(require_user(), $d); break;
         case 'event_org_add':   event_org_add(require_user(), $d); break;
         case 'event_org_remove': event_org_remove(require_user(), $d); break;
@@ -84,6 +85,10 @@ try {
         case 'comments_list':  comments_list(current_user(), $d); break;
         case 'comment_add':    comment_add(require_user(), $d); break;
         case 'comment_delete': comment_delete(require_user(), $d); break;
+        // live tracking for event organizers (#947)
+        case 'live_ping':      live_ping(require_user(), $d); break;
+        case 'live_stop':      live_stop(require_user(), $d); break;
+        case 'live_list':      live_list(require_user(), $d); break;
         case 'runs_settings':  runs_settings(require_user(), $d); break;
         case 'ranking_list':   ranking_list(require_user(), $d); break;
         case 'ranking_add':    ranking_add(require_user(), $d); break;

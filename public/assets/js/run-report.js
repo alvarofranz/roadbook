@@ -41,8 +41,27 @@
             lines.push(`<li><i class="fa-solid fa-ranking-star icon-accent"></i> ${esc(t('Penalties'))}: <b>${total} ${esc(t('pts'))}</b> <span class="muted small">(${esc(t('Accuracy'))} ${p.acc || 0} · ${esc(t('Skips'))} ${p.skip || 0} · ${esc(t('Extra'))} ${p.extra || 0} · CAP ${p.cap || 0} · ${esc(t('Speed'))} ${p.speed || 0})</span></li>`);
         }
         if (!lines.length) lines.push(`<li><i class="fa-solid fa-circle-check icon-ok"></i> ${esc(t(run.speed_zones ? 'Every note reached and every limit respected.' : 'Every note reached.'))}</li>`);
-        return `<ul class="run-details">${lines.join('')}</ul>`;
+        return `<ul class="status-list">${lines.join('')}</ul>`;
     }
+
+    /* ---------- a chained run (#944) ----------
+       An event may chain its roadbooks: at one's last note the runner picks the next and carries on
+       in the same run. Each roadbook stays its own run on the server (its own completions, its own
+       classification); the report at the end shows them together. */
+    // The legs as one run: what the report's tiles and card show
+    function combine(legs) {
+        const first = legs[0], last = legs[legs.length - 1], sum = (k) => legs.reduce((a, r) => a + (+r[k] || 0), 0);
+        return {
+            title: legs.map((r) => r.title).join(' → '), completed: last.completed, team: legs.map((r) => r.team).find(Boolean) || null,
+            mode: legs.some((r) => r.mode === 'competition') ? 'competition' : 'trip',
+            started_at: first.started_at, ended_at: last.ended_at, duration_s: Math.round(((last.ended_at || 0) - (first.started_at || 0)) / 1000),
+            distance_m: sum('distance_m'), notes_total: sum('notes_total'), notes_reached: sum('notes_reached'),
+            speed_zones: sum('speed_zones'), speed_exceeded: sum('speed_exceeded'), max_over_kmh: Math.max(...legs.map((r) => +r.max_over_kmh || 0)),
+            skipped: [], penalties: null, track: legs.flatMap((r) => r.track || []),
+        };
+    }
+    // Each leg in a line — its roadbook, the notes it reached, what went wrong in it
+    const legsHTML = (legs) => `<ol class="run-legs">${legs.map((r) => `<li><b>${esc(r.title)}</b> <span class="muted small">${r.notes_reached}/${r.notes_total} · ${RBKm(r.distance_m, 1)}</span>${detailsHTML(r)}</li>`).join('')}</ol>`;
 
     /* ---------- the device queue ---------- */
     const read = () => { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { return []; } };
@@ -57,7 +76,9 @@
     }
     // A report whose runner never picked Private or Public (the app closed on the report) would wait
     // forever: at the next start it settles as private — the safe answer, changeable on the profile.
-    function settleAbandoned() { write(read().map((i) => (i.ready ? i : Object.assign(i, { ready: true, visibility: 'private' })))); }
+    // `keep`: the keys of a chained run still going on (#944) — its finished legs wait for its end.
+    function settleAbandoned(keep = []) { write(read().map((i) => (i.ready || keep.includes(i.key) ? i : Object.assign(i, { ready: true, visibility: 'private' })))); }
+    const get = (key) => read().find((i) => i.key === key) || null;
     function update(key, patch) { write(read().map((i) => (i.key === key ? Object.assign(i, patch) : i))); }
     // Upload every ready item; resolves { [key]: saved run id } for what went through. Needs a
     // signed-in user — signed out, the items simply wait for the next flush after sign-in. A call
@@ -130,5 +151,5 @@
         if (b) openTrack(+b.dataset.runTrack);
     });
 
-    window.RBRun = { statsHTML, detailsHTML, shareText, settleAbandoned, fmtDuration, avgKmh, enqueue, update, flush, showTrack, openTrack, downloadGpx };
+    window.RBRun = { statsHTML, detailsHTML, combine, legsHTML, shareText, settleAbandoned, fmtDuration, avgKmh, enqueue, get, update, flush, showTrack, openTrack, downloadGpx };
 })();

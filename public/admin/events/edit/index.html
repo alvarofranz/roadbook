@@ -10,14 +10,19 @@
     <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../../manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.11-222">
-    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.11-222">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.11-223">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.11-223">
     <style>
         /* associated roadbooks: title · participation mode · edit · remove, one grid for header and rows */
         .ev-rb-row { display: grid; grid-template-columns: minmax(0, 1fr) 15rem 2.8rem 2.8rem; gap: .5rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
         .ev-rb-row:last-child { border-bottom: 0; }
         .ev-rb-row .meta { min-width: 0; overflow-wrap: break-word; }
         .ev-rb-row .field { margin: 0; }
+        /* the chain (#944): what the roadbook offers at its last note, under its row */
+        .ev-rb-next { grid-column: 1 / -1; display: flex; flex-direction: column; gap: .3rem; padding: .2rem 0 .3rem .8rem; border-left: 2px solid var(--line); }
+        .ev-next-row { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+        .ev-next-row .grow { min-width: 0; overflow-wrap: break-word; }
+        .ev-next-label { width: 11rem; flex: none; }
         /* the dates: label over input, two columns — one per line on a phone (#597) */
         .ev-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 14rem)); gap: .6rem 1rem; margin: .7rem 0 1rem; }
         .ev-dates .field { margin: 0; }
@@ -41,6 +46,9 @@
         @media (max-width: 640px) {
             .ev-rb-row { grid-template-columns: minmax(0, 1fr) 2.8rem 2.8rem; }
             .ev-rb-row .field { grid-column: 1 / -1; grid-row: 2; }
+            .ev-rb-row .ev-rb-next { grid-row: 3; }
+            .ev-rb-next .field { grid-column: auto; grid-row: auto; }
+            .ev-next-label { width: 7rem; }
             .ev-dates { grid-template-columns: minmax(0, 1fr); }
         }
     </style>
@@ -55,6 +63,7 @@
         <h1 id="evHeading"></h1>
         <div class="btnrow end">
             <a class="btn btn-ghost" id="evView" hidden><i class="fa-solid fa-eye"></i> <span data-i18n="View">View</span></a>
+            <a class="btn btn-ghost" id="evLive" hidden><i class="fa-solid fa-tower-broadcast"></i> <span data-i18n="Live map">Live map</span></a>
             <button class="btn btn-ghost" id="evDelete" type="button" hidden title="Delete event" data-i18n-title="Delete event" aria-label="Delete event" data-i18n-aria="Delete event"><i class="fa-solid fa-trash-can icon-danger"></i></button>
             <button class="btn btn-primary" id="evSave" type="button"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="Save">Save</span></button>
         </div>
@@ -145,17 +154,17 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../../../assets/js/qrcode.min.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/rb-qr.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/config.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/roadbook-core.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/rbmap.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/i18n.es.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/i18n.it.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/i18n.de.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/i18n.fr.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/i18n.js?v=1.9.11-222"></script>
-<script src="../../../assets/js/app.js?v=1.9.11-222"></script>
-<script src="event-edit.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/qrcode.min.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/rb-qr.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/config.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/rbmap.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/i18n.js?v=1.9.11-223"></script>
+<script src="../../../assets/js/app.js?v=1.9.11-223"></script>
+<script src="event-edit.js?v=1.9.11-223"></script>
 </body>
 </html>

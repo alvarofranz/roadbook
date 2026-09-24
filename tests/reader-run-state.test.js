@@ -12,7 +12,7 @@ const fn = (name) => js.match(new RegExp('function ' + name + '\\([^)]*\\) \\{([
 
 describe('a resumed run is the same run', () => {
     it('the checkpoint carries the roadbook slug, the event and what the visit was for', () => {
-        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, competition,');
+        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition,');
         expect(fn('resumeSession')).toContain('rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs;');
     });
     it('the slug is the loaded roadbook’s own, never the last piece of the URL', () => {
@@ -50,7 +50,7 @@ describe('notes passed over', () => {
 
 describe('finishing early', () => {
     it('charges the unreached notes as skipped before the result is signed', () => {
-        const fin = fn('finishRun');
+        const fin = fn('closeLeg');
         expect(fin).toContain('if (competition) pen.skip += RB.skipPenalty(scoredSet, activeIdx, notes.length);');
         expect(fin.indexOf('RB.skipPenalty(')).toBeLessThan(fin.indexOf('await signedResult()'));
         // five scored notes, two reached: three skips — and none once the last note is reached
@@ -58,7 +58,7 @@ describe('finishing early', () => {
         expect(RB.skipPenalty(null, 5, 5)).toBe(0);
     });
     it('the open zone is scored only when the note it ends on is', () => {
-        expect(fn('finishRun')).toContain('closeZone(isScored(Math.min(activeIdx, notes.length - 1)));');
+        expect(fn('closeLeg')).toContain('closeZone(isScored(Math.min(activeIdx, notes.length - 1)));');
     });
 });
 
@@ -86,11 +86,11 @@ describe('Navigate navigates (#936)', () => {
             expect(js, old).not.toContain(old);
             expect(html, old).not.toContain(old);
         }
-        expect(js).toContain('function startRun(comp) { auto = true; startNav(comp); RBGpxRecorder.begin(); }'); // the GPX log always runs
+        expect(js).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }'); // the GPX log always runs
     });
     it('asks only the vehicle number, and only for a scored run; its Cancel goes back to the preview', () => {
         expect(js).toContain("if (!comp) return startRun(false);");
-        expect(js).toContain("$('teamCancel').onclick = () => closeModal('teamModal'); // back to the preview");
+        expect(js).toContain("$('teamCancel').onclick = () => { closeModal('teamModal'); if (legs.length) finalize(); };");
     });
 });
 

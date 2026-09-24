@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.11-222">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.11-223">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.11-222">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.11-223">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -19,6 +19,9 @@
         .odometer-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: .3rem 1rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-bar > .ind { justify-self: center; padding-bottom: .2rem; }
         .odometer-bar > .ind.end { justify-self: end; }
+        /* live tracking on (#947): the runner always sees that the organizers see them */
+        .live-strip { display: flex; align-items: center; justify-content: center; gap: .4rem; margin: 0; padding: .25rem .9rem; font-size: .8rem; font-weight: 700; color: var(--text); background: var(--card-2); border-bottom: 1px solid var(--line); }
+        .live-strip i { color: var(--ok); }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -163,6 +166,7 @@
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind end"><i class="fa-solid fa-gauge-high"></i> <span id="odoSpeed">—</span></span>
     </div>
+    <p id="liveStrip" class="live-strip" hidden><i class="fa-solid fa-tower-broadcast"></i> <span data-i18n="Live · the organizers see your position">Live · the organizers see your position</span></p>
     <!-- 3-column note rows: distances | graphic | indications + coords (no buttons column, #569) -->
     <div id="noteList"></div>
     <nav class="fabrow">
@@ -212,14 +216,8 @@
                     <button class="btn btn-ghost" id="reportTrackView" type="button"><i class="fa-solid fa-route"></i> <span data-i18n="Driven track">Driven track</span></button>
                     <button class="btn btn-ghost" id="reportGpx" type="button"><i class="fa-solid fa-download"></i> GPX</button>
                 </div>
-                <div id="reportQr" hidden>
-                    <div id="qrImg" class="qr-box"></div>
-                    <code id="qrMeta" class="qr-code-text"></code>
-                    <div class="btnrow">
-                        <button class="btn btn-ghost" id="qrShare" type="button"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="Share">Share</span></button>
-                        <button class="btn btn-ghost" id="qrDownload" type="button"><i class="fa-solid fa-download"></i> <span data-i18n="Save QR">Save QR</span></button>
-                    </div>
-                </div>
+                <!-- one signed result per scored leg (#944), filled by the report -->
+                <div id="reportQr" hidden></div>
             </div>
         </div>
         <div class="btnrow end">
@@ -231,26 +229,26 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.11-222"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.11-222"></script>
-<script src="../assets/js/rbzip.js?v=1.9.11-222"></script>
-<script src="../assets/js/rbmap.js?v=1.9.11-222"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.11-222"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.11-222"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.11-222"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.11-222"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.11-222"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.11-222"></script>
-<script src="../assets/js/challenges.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.js?v=1.9.11-222"></script>
-<script src="../assets/js/app.js?v=1.9.11-222"></script>
-<script src="../assets/js/run-report.js?v=1.9.11-222"></script>
-<script src="../assets/js/cover-map.js?v=1.9.11-222"></script>
-<script src="../assets/js/run-card.js?v=1.9.11-222"></script>
-<script src="reader.js?v=1.9.11-222"></script>
+<script src="../assets/js/config.js?v=1.9.11-223"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.11-223"></script>
+<script src="../assets/js/rbzip.js?v=1.9.11-223"></script>
+<script src="../assets/js/rbmap.js?v=1.9.11-223"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.11-223"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.11-223"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.11-223"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.11-223"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.11-223"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.11-223"></script>
+<script src="../assets/js/challenges.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.js?v=1.9.11-223"></script>
+<script src="../assets/js/app.js?v=1.9.11-223"></script>
+<script src="../assets/js/run-report.js?v=1.9.11-223"></script>
+<script src="../assets/js/cover-map.js?v=1.9.11-223"></script>
+<script src="../assets/js/run-card.js?v=1.9.11-223"></script>
+<script src="reader.js?v=1.9.11-223"></script>
 </body>
 </html>

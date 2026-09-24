@@ -39,7 +39,6 @@
     let scoredSet = null; // indices inside a start→finish scored section (null = no markers → whole roadbook is scored)
     let inlineMap = null, inlineMapIdx = -1; // the one interactive per-note map
     let lastHere = null, lastAcc = null;     // last TRUSTED position + its accuracy — what every distance is measured from
-    let lastPayload = '', lastQrUrl = '';
     let meUser = null; // signed in: the reports go up to the profile (a public roadbook opens for anyone, #884)
     let rbSlug = ''; // the server roadbook's slug (none for a file): the event lookup and the result QR's rb prefix
     // Which roadbook this visit is FOR, if any (the friendly slug, ?rb= or ?admin_rb=). The run
@@ -100,6 +99,9 @@
             if (!savedRb || !savedRb.notes) session = null;
         } else session = null;
         if (!session) clearSession(); // an unrecoverable checkpoint is just litter
+        // reports that finished offline or signed out go up now — except the legs of a chained run
+        // that may still be resumed: they wait for its end, where its runner picks who sees it
+        if (meUser) { RBRun.settleAbandoned(session && !session.declined ? (session.legs || []).map((l) => l.key) : []); RBRun.flush(); }
         // A roadbook opened explicitly via the URL (e.g. the challenge "Navigate" button → /reader/<slug>).
         const pub = RBChallenges.publicFromUrl();
         const rbId = +(new URLSearchParams(location.search).get('rb') || 0); // open a personal (private) roadbook by id — owner only (#71)
@@ -147,6 +149,47 @@
 
     let competition = false;
     let eventSlug = new URLSearchParams(location.search).get('event'); // opened from an event: it decides the mode (#155 · #617)
+    /* A chained run (#944): an event may chain its roadbooks — at one's last note the runner picks
+       the next and carries on, in the same run, and sees one report at the very end. Every roadbook
+       stays its own run on the server (its completions, its classification: one result per leg).
+       `chain`: the event's roadbooks ({id, slug, title, scoring_mode, next}), null outside an event ·
+       `legs`: the finished legs ({key, slug} — each report already waiting on the device, its
+       roadbook while in memory) · `chainCache`: the next roadbooks, fetched when a leg starts so the
+       choice at its end works offline. */
+    let chain = null, legs = [], chainCache = {};
+    const chainEntry = () => (chain && chain.find((x) => x.slug === rbSlug)) || null;
+    const isScoredEntry = (er) => !!(er && er.scoring_mode && er.scoring_mode !== 'free');
+    const nextOptions = () => {
+        const er = chainEntry();
+        return er ? (er.next || []).map((n) => { const to = chain.find((x) => x.id === n.id); return to && { label: n.label || to.title, entry: to }; }).filter(Boolean) : [];
+    };
+    /* Live tracking for the event's organizers (#947): only in the run of an event roadbook, by an
+       active participant who said yes when the run started — asked once per run, a chained leg keeps
+       the answer. Then the last trusted position goes up (RB.liveDue); a failed send just waits for
+       the next fix — no backlog. It stops for good with the run. */
+    const live = { participant: false, consent: false, sent: null, tried: null, busy: false, on: false };
+    const liveCtx = () => ({ eventSlug, roadbookId: rbRef, activeParticipant: live.participant, consent: live.consent });
+    function liveStart() { live.on = RB.liveAllowed(liveCtx()); live.sent = null; live.tried = null; $('liveStrip').hidden = !live.on; }
+    async function liveTick(here, coords, speedKmh) {
+        if (!live.on || live.busy || paused || !RB.liveDue(live.sent, live.tried, here, Date.now())) return;
+        live.busy = true; live.tried = Date.now();
+        const skipped = notes.slice(0, activeIdx).filter((n, i) => !reached.has(i)).length;
+        const r = await RBApi('live_ping', {
+            event_slug: eventSlug, roadbook_id: rbRef, team: competition ? team : '', lat: here.lat, lon: here.lon,
+            acc: coords && coords.accuracy, speed: speedKmh, heading: meter && meter.heading, note_idx: activeIdx, notes_total: notes.length, reached: reached.size, skipped,
+        });
+        live.busy = false;
+        if (r.ok) live.sent = { at: Date.now(), lat: here.lat, lon: here.lon };
+        else if (r.error !== 'Network error.') liveEnd(false); // refused (the event is over, not a participant…): never again this run
+    }
+    function liveEnd(tell = true) {
+        if (live.on && tell) RBApi('live_stop', { event_slug: eventSlug, roadbook_id: rbRef });
+        live.on = false; live.consent = false; $('liveStrip').hidden = true;
+    }
+    window.addEventListener('online', () => { if (live.on && lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); });
+    const prefetchNext = () => nextOptions().forEach(({ entry }) => {
+        if (!chainCache[entry.slug]) RBChallenges.loadPublic(entry.slug).then((j) => { chainCache[entry.slug] = j; }).catch(() => {});
+    });
     // `id` + `slug`: the server roadbook it is, so the run report can point at it and a competition
     // result names it — a local file has neither
     function loadRb(r, id, slug) {
@@ -180,25 +223,34 @@
     const ring = (i) => (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)();
     $('navigateBtn').onclick = async (e) => {
         RBSuccess.unlock(); // inside the tap itself: iOS lets a sound play later only after one
+        auto = true; // a fresh run validates by GPS; the runner's switch then holds through every leg
         const busy = RBBusy(e.currentTarget);
-        let comp = false;
-        if (eventSlug) { // does this event score the roadbook?
+        if (eventSlug) { // does this event score the roadbook, and what does it chain it to?
             const j = await RBApi('event_get', { slug: eventSlug });
-            const er = j.ok && (j.roadbooks || []).find((x) => x.slug === rbSlug);
-            comp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');
+            chain = j.ok ? (j.roadbooks || []).map((x) => ({ id: +x.id, slug: x.slug, title: x.title, scoring_mode: x.scoring_mode, next: x.next || [] })) : null;
+            live.participant = !!(j.ok && j.event && j.event.active_participant && chainEntry());
         }
         busy.reset();
+        const comp = isScoredEntry(chainEntry());
         if (!(await RBWebGpsConfirm(comp))) return; // one-time browser warning (stronger for a scored run)
+        // the organizers see a participant only with a yes, asked at the start of every run
+        live.consent = live.participant && await RBConfirm(t('Share your live position with the event’s organizers while you navigate?') + '<br><span class="muted small">' + esc(t('Only the organizers see it, only during this run — its last position, deleted after the event.')) + '</span>');
         if (!comp) return startRun(false);
-        $('teamInput').value = '1';
+        askTeam();
+    };
+    // the vehicle number a scored run needs — asked once per run, a later scored leg keeps it
+    function askTeam() {
+        $('teamInput').value = team !== '0' ? team : '1';
         openModal('teamModal', () => $('teamCancel').click());
         setTimeout(() => $('teamInput').select(), 60);
-    };
+    }
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startRun(true); };
-    $('teamCancel').onclick = () => closeModal('teamModal'); // back to the preview
+    // back to the preview — or, between two legs, the run ends with the legs already driven
+    $('teamCancel').onclick = () => { closeModal('teamModal'); if (legs.length) finalize(); };
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
-    // a fresh run: Auto on, and its GPX log from the first fix (a resumed one restores both)
-    function startRun(comp) { auto = true; startNav(comp); RBGpxRecorder.begin(); }
+    // a roadbook's run: its GPX log from the first fix (a resumed one restores it), and the next
+    // roadbooks of a chain fetched while there is a connection
+    function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
@@ -235,7 +287,7 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter || finished) return; // nothing to checkpoint before a run starts or once it is over
-        const s = { openedAs, rbSlug, eventSlug, competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         RBCheckpoint.write(SESSION_KEY, s);
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -248,11 +300,14 @@
         team = s.team; auto = s.auto;
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         zones = s.zones; rbRef = s.rbRef; rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs; runStartedAt = s.runStartedAt;
+        chain = s.chain || null; legs = s.legs || [];
+        if (s.live) { live.participant = !!s.live.participant; live.consent = !!s.live.consent; }
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
         endedAt = s.endedAt ? new Date(s.endedAt) : null;
         startNav(s.competition);
         if (s.gpxRecording) RBGpxRecorder.resume(s.gpxFileName);
+        prefetchNext(); liveStart();
     }
 
     /* ---------- GPS (RBGpsMeter drives one onFix per position) ---------- */
@@ -268,6 +323,7 @@
         RBGpxRecorder.feed(coords, here, fix.tnow); // the logger applies its own accuracy gate
         if (!trusted) return;
         lastHere = here; lastAcc = coords.accuracy;
+        liveTick(here, coords, speedKmh);
         if (inlineMap && inlineMap.ready) {
             inlineMap.setPosition(here.lat, here.lon, true, meter.heading); // follow: you stay in the middle, the map turns with you
             if (inlineMapIdx >= 0 && notes[inlineMapIdx]) guideTo(inlineMapIdx, here); // the arrow follows the live fix
@@ -676,6 +732,7 @@
     // over it) ends its GPX log too — its checkpoint stays, so the track is offered back (#460).
     function endRun() {
         finished = true;
+        liveEnd();
         if (meter) meter.stop();
         if (RBGpxRecorder.recording) RBGpxRecorder.end();
         clearSession(); window.RB_BUSY = false;
@@ -706,9 +763,26 @@
         });
         return RB.signMeta(meta, (window.RB_CONFIG || {}).signKey);
     }
+    // The end of a roadbook: its leg closes, and then either the next one of the chain starts or
+    // the run ends with its report
     async function finishRun(completed) {
         if (finished) return;
         finished = true;
+        const leg = await closeLeg(completed);
+        legs.push({ key: leg.key, slug: rbSlug, report: leg.report, rb });
+        const options = completed ? nextOptions() : [];
+        while (options.length) {
+            const to = await pickNext(options);
+            if (!to) break;
+            const j = chainCache[to.entry.slug] || await RBChallenges.loadPublic(to.entry.slug).catch(() => null);
+            if (j) return startLeg(j, to.entry);
+            toast(navigator.onLine === false ? 'You are offline — reconnect to load the next roadbook.' : 'Could not load the roadbook.');
+        }
+        finalize();
+    }
+    // A leg's report — its roadbook, its notes, its penalties and signed result, its track — safe on
+    // the device before anything else happens, waiting for the run's end to be made public or private
+    async function closeLeg(completed) {
         closeZone(isScored(Math.min(activeIdx, notes.length - 1))); curLimit = null; // the open zone ends with the run
         if (meter) meter.stop();
         // finished early: the notes not reached count as skipped, exactly as the confirm said
@@ -723,44 +797,101 @@
             speed_zones: zones.count, speed_exceeded: zones.exceeded, max_over_kmh: zones.maxOver,
             penalties: competition ? { acc: Math.round(pen.acc), cap: Math.round(pen.cap), skip: pen.skip, extra: Math.round(pen.extra), speed: pen.speed } : null,
         };
-        if (competition) report.result_meta = lastPayload = await signedResult();
+        if (competition) report.result_meta = await signedResult();
         // the track the run drove belongs to the run (#940): it travels with the report, public or private
         report.track = RBGpxRecorder.recording ? RBGpxRecorder.end().pts : [];
-        // the report is safe on the device before anything else happens — the run is over, the
-        // checkpoints can go (#460: cleared only once the work has reached a safe place). A device
-        // too full to hold it keeps the track's own checkpoint, which the next start offers back.
-        const cfg = await RBConfig();
-        const askFirst = !!(cfg.user && (cfg.user.runs_visibility || 'ask') === 'ask');
-        const { key, stored } = RBRun.enqueue(report, !askFirst);
+        // the checkpoints go only once the report is safe (#460): a device too full to hold it keeps
+        // the track's own checkpoint, which the next start offers back
+        const { key, stored } = RBRun.enqueue(report, false);
         if (stored) RBGpxRecorder.clearCheckpoint();
         clearSession(); window.RB_BUSY = false;
-        showReport(report, key, cfg.user, askFirst);
+        return { key, report };
+    }
+    // At the last note of a chained roadbook: carry on with one of the next, or finish here. An
+    // explicit choice — no backdrop, no Escape — though nothing is lost either way: the leg is safe.
+    function pickNext(options) {
+        return new Promise((resolve) => {
+            const d = RBModal(`<h2><i class="fa-solid fa-flag-checkered icon-accent"></i> ${esc(t('Roadbook completed'))}</h2>
+                <p class="muted small">${esc((rb.meta && rb.meta.title) || t('Roadbook'))} · ${esc(t('Carry on with the next roadbook, or finish the run here.'))}</p>
+                <div class="btnrow stack">${options.map((o, i) => `<button class="btn btn-primary" type="button" data-next="${i}"><i class="fa-solid fa-route"></i> ${esc(o.label)}</button>`).join('')}
+                    <button class="btn btn-ghost" type="button" data-finish><i class="fa-solid fa-circle-stop"></i> ${esc(t('Finish here'))}</button></div>`, 'narrow', null, { dismissable: false });
+            d.q('[data-finish]').onclick = () => { d.close(); resolve(null); };
+            d.el.querySelectorAll('[data-next]').forEach((b) => b.onclick = () => { d.close(); resolve(options[+b.dataset.next]); });
+        });
+    }
+    // The next leg: the same run carries on, on a fresh roadbook — its own notes, odometers and
+    // penalties, its mode from the event, its own GPX log
+    function startLeg(j, entry) {
+        resetRun(); closeInlineMap();
+        rb = RB.importRoadbook(j.roadbook); notes = rb.notes; routeCum = RB.cumulativeM(rb.track || []); rbRef = +j.id; rbSlug = j.slug;
+        toast(t('Next roadbook:') + ' ' + ((rb.meta && rb.meta.title) || entry.title), 3500);
+        const comp = isScoredEntry(entry);
+        if (comp && team === '0') return askTeam();
+        startRun(comp);
+    }
+    // The end of the whole run: one report for every leg
+    async function finalize() {
+        liveEnd();
+        const cfg = await RBConfig();
+        const askFirst = !!(cfg.user && (cfg.user.runs_visibility || 'ask') === 'ask');
+        const done = legs.map((l) => ({ key: l.key, rb: l.rb, report: l.report || (RBRun.get(l.key) || {}).report })).filter((l) => l.report);
+        // the runner's own choice made once: every leg goes up at the runner's preference
+        if (!askFirst) done.forEach((l) => RBRun.update(l.key, { ready: true }));
+        legs = [];
+        showReport(done, cfg.user, askFirst);
+    }
+    // One roadbook for the card of a chained run: every leg's route and notes, in order
+    function chainRoadbook(done) {
+        const withRb = done.filter((l) => l.rb);
+        const notesAll = [], skipped = [];
+        withRb.forEach((l) => l.rb.notes.forEach((n) => {
+            const num = notesAll.length + 1;
+            notesAll.push({ num, lat: n.lat, lon: n.lon });
+            if ((l.report.skipped || []).includes(n.num)) skipped.push(num);
+        }));
+        return {
+            roadbook: { meta: { title: withRb.map((l) => (l.rb.meta && l.rb.meta.title) || '').join(' → '), map_access: withRb.every((l) => !l.rb.meta || l.rb.meta.map_access !== false) }, notes: notesAll, track: withRb.flatMap((l) => l.rb.track || []) },
+            skipped,
+        };
     }
     // The end of the run (#820): the card first with Share under it, then who sees the run — a
     // Private/Public switch that saves at once and can be flipped at any time — then the figures.
-    function showReport(report, key, user, askFirst) {
+    function showReport(done, user, askFirst) {
+        const keys = done.map((l) => l.key), reports = done.map((l) => l.report), chained = reports.length > 1;
+        const report = chained ? RBRun.combine(reports) : reports[0];
+        const card = chained ? chainRoadbook(done) : { roadbook: (done[0] && done[0].rb) || rb, skipped: report.skipped };
+        if (chained) report.skipped = card.skipped;
         $('reportTitle').textContent = t(report.completed ? 'Roadbook completed' : 'Run finished');
         $('reportBadge').classList.toggle('stopped', !report.completed);
         $('reportBadge').innerHTML = `<i class="fa-solid ${report.completed ? 'fa-flag-checkered' : 'fa-circle-stop'}"></i>`;
         $('reportSub').textContent = report.title + ' · ' + RBFmtDate(new Date(report.ended_at).toISOString().slice(0, 10)) + (report.team ? ' · ' + t('Vehicle') + ' ' + report.team : '');
-        $('reportStats').innerHTML = RBRun.statsHTML(report) + RBRun.detailsHTML(report);
+        $('reportStats').innerHTML = RBRun.statsHTML(report) + (chained ? RBRun.legsHTML(reports) : RBRun.detailsHTML(report));
         // the track it drove, on a map and as a GPX — the runner's own, whatever the run's visibility
         $('reportTrack').hidden = report.track.length < 2;
         $('reportTrackView').onclick = () => RBRun.showTrack(report.track, { title: report.title, download: true });
         $('reportGpx').onclick = () => RBRun.downloadGpx(report.track, report.title);
-        $('reportQr').hidden = !report.result_meta;
-        if (report.result_meta) {
-            lastQrUrl = RBQr.dataURL(report.result_meta); // PNG: the name, the declared type and the bytes must agree (#392)
-            $('qrImg').innerHTML = `<img src="${lastQrUrl}" alt="QR" class="qr-image">`;
-            $('qrMeta').textContent = report.result_meta;
-        }
+        // one signed result per scored leg — each enters its own roadbook's classification
+        const results = reports.filter((r) => r.result_meta);
+        $('reportQr').hidden = !results.length;
+        $('reportQr').innerHTML = results.map((r, i) => `<div class="report-qr">
+            ${chained ? `<span class="field-label">${esc(r.title)}</span>` : ''}
+            <div class="qr-box"><img src="${RBQr.dataURL(r.result_meta)}" alt="QR" class="qr-image"></div>
+            <code class="qr-code-text">${esc(r.result_meta)}</code>
+            <div class="btnrow">
+                <button class="btn btn-ghost" data-qr-share="${i}" type="button"><i class="fa-solid fa-share-nodes"></i> ${esc(t('Share'))}</button>
+                <button class="btn btn-ghost" data-qr-save="${i}" type="button"><i class="fa-solid fa-download"></i> ${esc(t('Save QR'))}</button>
+            </div></div>`).join('');
+        // PNG: the name, the declared type and the bytes must agree (#392)
+        const qrName = (r) => 'RB_' + (r.team || team) + '_' + (chained ? RB.slug(r.title) + '_' : '') + RB.ddmmyy(new Date(r.ended_at)) + '.png';
+        $('reportQr').querySelectorAll('[data-qr-save]').forEach((b) => b.onclick = () => { const r = results[+b.dataset.qrSave]; RBDownload(RBQr.dataURL(r.result_meta), qrName(r)); });
+        $('reportQr').querySelectorAll('[data-qr-share]').forEach((b) => b.onclick = async () => { const r = results[+b.dataset.qrShare]; RBShareFile(await (await fetch(RBQr.dataURL(r.result_meta))).blob(), qrName(r), r.result_meta); });
         $('reportProfile').hidden = !user;
         if (user) $('reportProfile').href = RBProfileLink(user.username);
         $('reportDone').onclick = () => leaveRun(eventSlug ? '/event/' + encodeURIComponent(eventSlug) : './'); // a run opened from an event goes back to it (#640)
         openModal('reportModal', () => {}); // an explicit outcome below, never a dismiss
         // the shareable image (#785): made while the runner reads the report; once the run is saved
         // on the profile it goes up with it (best-effort — a card that fails never blocks the report)
-        const cardP = makeCard(report, user);
+        const cardP = makeCard(report, user, card.roadbook);
         const vis = $('reportVis');
         if (!user) {
             // signed out: the report waits on this device and goes to the profile after sign-in
@@ -778,12 +909,13 @@
             await pick('public');
             return true;
         };
+        // `saved`: the runs on the profile, one per leg — all of them, or null while any still waits
         let saved = null, busy = false, carded = false;
         const status = () => {
             if (!choice) return `<i class="fa-solid fa-circle-info"></i> ${esc(t('Choose who sees this run to save it to your profile.'))}`;
             if (busy) return `<i class="fa-solid fa-spinner fa-spin"></i> ${esc(t('Saving…'))}`;
             if (!saved) return `<i class="fa-solid fa-mobile-screen"></i> ${esc(t('Saved on this device — it uploads to your profile as soon as you are online.'))}`;
-            return `<i class="fa-solid fa-circle-check"></i> ${esc(t(saved.is_public ? 'Saved to your profile — public.' : 'Saved to your profile — private.'))}`;
+            return `<i class="fa-solid fa-circle-check"></i> ${esc(t(saved[0].is_public ? 'Saved to your profile — public.' : 'Saved to your profile — private.'))}`;
         };
         const segment = (v, icon, label) => `<button class="segment${choice === v ? ' on' : ''}" data-vis="${v}" type="button" role="radio" aria-checked="${choice === v}"${busy ? ' disabled' : ''}><i class="fa-solid ${icon}"></i> ${esc(t(label))}</button>`;
         const render = () => {
@@ -799,31 +931,34 @@
             $('reportDone').disabled = !choice || busy;
         };
         // the card follows the run: uploaded once it is saved, and Share sends the run's page while it is public (#803)
+        // every leg's run carries the card of the whole run; Share sends the first one's page
         const followCard = async () => {
-            cardLink = saved && saved.is_public ? RBPublicLink('/run/' + saved.id) : null;
+            cardLink = saved && saved[0].is_public ? RBPublicLink('/run/' + saved[0].id) : null;
             const blob = await cardP;
             if (!blob || !saved || carded) return;
             carded = true;
-            await RBUpload({ type: 'run_card', run: String(saved.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
+            for (const run of saved) await RBUpload({ type: 'run_card', run: String(run.id) }, new File([blob], 'run.png', { type: 'image/png' }), 'run.png').catch(() => {});
         };
         const upload = async () => {
             busy = true; render();
             const res = await RBRun.flush();
-            saved = res[key] || null; busy = false;
-            if (saved) { choice = saved.is_public ? 'public' : 'private'; followCard(); }
+            saved = keys.every((k) => res[k]) ? keys.map((k) => res[k]) : null; busy = false;
+            if (saved) { choice = saved[0].is_public ? 'public' : 'private'; followCard(); }
             render();
         };
         async function pick(v) {
             if (v === choice || busy) return;
             const first = !choice;
             choice = v;
-            if (first) { RBRun.update(key, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked }); return upload(); }
-            if (!saved) { RBRun.update(key, { visibility: v }); return render(); } // still on the device: it goes up as chosen
+            if (first) { keys.forEach((k) => RBRun.update(k, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked })); return upload(); }
+            if (!saved) { keys.forEach((k) => RBRun.update(k, { visibility: v })); return render(); } // still on the device: it goes up as chosen
             busy = true; render();
-            const x = await RBApi('run_update', { id: saved.id, is_public: v === 'public' ? 1 : 0 });
+            const xs = await Promise.all(saved.map((run) => RBApi('run_update', { id: run.id, is_public: v === 'public' ? 1 : 0 })));
             busy = false;
-            if (x.ok) { saved.is_public = v === 'public' ? 1 : 0; followCard(); }
-            else { choice = saved.is_public ? 'public' : 'private'; toast(x.error || 'Could not save.'); }
+            const failed = xs.find((x) => !x.ok);
+            saved.forEach((run, i) => { if (xs[i].ok) run.is_public = v === 'public' ? 1 : 0; });
+            if (!failed) followCard();
+            else { choice = saved[0].is_public ? 'public' : 'private'; toast(failed.error || 'Could not save.'); }
             render();
         }
         render();
@@ -831,25 +966,21 @@
     }
     // The run card: rendered once per report, shown, shared and saved from the same Blob.
     let cardBlob = null, cardLink = null, cardReport = null, shareGate = async () => true;
-    async function makeCard(report, user) {
+    async function makeCard(report, user, roadbook) {
         cardBlob = null; cardLink = null; cardReport = report; shareGate = async () => true;
-        try { cardBlob = await RBRunCard.render({ report, roadbook: rb, username: user && user.username }); }
+        try { cardBlob = await RBRunCard.render({ report, roadbook, username: user && user.username }); }
         catch (e) { cardBlob = null; }
         if (cardBlob) { $('reportCardImg').src = URL.createObjectURL(cardBlob); $('reportCardImg').hidden = false; }
         else $('reportCard').hidden = true; // no card, no hero: the figures take the dialog
         $('cardShare').disabled = $('cardSave').disabled = !cardBlob;
         return cardBlob;
     }
-    const cardName = () => 'rdbk-' + RB.slug((rb.meta && rb.meta.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
+    const cardName = () => 'rdbk-' + RB.slug((cardReport && cardReport.title) || 'run') + '-' + RB.ddmmyy(new Date()) + '.png';
     $('cardShare').onclick = async () => {
         if (!cardBlob || !(await shareGate())) return;
         RBShareFile(cardBlob, cardName(), RBRun.shareText(cardReport, cardLink));
     };
     $('cardSave').onclick = () => { if (cardBlob) RBDownload(cardBlob, cardName()); };
-    $('qrDownload').onclick = () => RBDownload(lastQrUrl, 'RB_' + team + '_' + RB.ddmmyy(new Date()) + '.png');
-    $('qrShare').onclick = async () => RBShareFile(await (await fetch(lastQrUrl)).blob(), 'RB_' + team + '.png', lastPayload);
-    // reports that finished offline or signed out go up as soon as the Reader can reach the server
-    cfgReady.then(() => { if (meUser) { RBRun.settleAbandoned(); RBRun.flush(); } });
 
     /* ---------- utils ---------- */
     // An action-bar button that is ON swaps ghost for primary: stacked, .btn-ghost (declared later

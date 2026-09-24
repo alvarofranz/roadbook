@@ -295,13 +295,13 @@
             /* install guide (#333) */ 'seo.install.title': 'Instala RDBK.app — en cualquier dispositivo', 'seo.install.desc': 'Instala RDBK.app en tu móvil, tablet u ordenador — funciona sin conexión, abre ficheros .rdbk y sigue grabando con la pantalla bloqueada.', 'Install RDBK.app': 'Instala RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': '¿Ya la tienes instalada? Abre RDBK desde tu pantalla de inicio o la lista de apps — esta página solo hace falta una vez.', 'Your device': 'Tu dispositivo', 'Install now': 'Instalar ahora', 'Open <b>rdbk.app</b> in Chrome.': 'Abre <b>rdbk.app</b> en Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Toca el menú <b>⋮</b>, arriba a la derecha.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Elige <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Abre <b>rdbk.app</b> en Safari (tiene que ser Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Abre <b>rdbk.app</b> en Chrome o Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Pulsa el icono de <b>instalar</b> <i class="fa-solid fa-circle-down icon-accent"></i> en la barra de direcciones (o el menú ⋮ → <b>Instalar</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirma — RDBK se abrirá en su propia ventana.', 'RDBK is installed — open it from your home screen.': 'RDBK está instalada — ábrela desde tu pantalla de inicio.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Política de privacidad',
-            'priv.updated': "Última actualización: 22 de septiembre de 2026",
+            'priv.updated': "Última actualización: 24 de septiembre de 2026",
             'priv.authoritative': 'La versión en inglés de esta política es la versión de referencia; las traducciones se ofrecen por comodidad.',
             'priv.intro': 'RDBK.app (“RDBK”, “nosotros”) es una suite gratuita para crear y navegar roadbooks digitales, disponible como sitio web, app web instalable (PWA) y apps nativas para Android e iOS. Esta política explica qué datos trata RDBK y por qué. En resumen: <b>tu ubicación se usa en tu dispositivo para navegar y grabar rutas; una cuenta y el almacenamiento en la nube son totalmente opcionales; no mostramos publicidad, no realizamos seguimiento de terceros y nunca vendemos tus datos.</b>',
             'priv.h.location': 'Ubicación',
             'priv.location.1': 'Cuando usas el Reader, el Tripmaster o el Recorder, RDBK lee tu <b>ubicación GPS</b> para mostrar dónde estás, calcular el odómetro/rumbo y seguir el roadbook.',
             'priv.location.2': 'Si grabas una ruta, tu traza se guarda como archivo GPX <b>en tu dispositivo</b>. En la app nativa, la grabación puede continuar con la pantalla bloqueada mediante un servicio en primer plano (mostrado como una notificación permanente), para que la traza no tenga interrupciones.',
-            'priv.location.3': 'Tu ubicación en tiempo real <b>no se envía a nuestros servidores</b>. Una ruta grabada solo sale de tu dispositivo si <i>tú</i> decides guardarla en tu cuenta.',
+            'priv.location.3': "Tu ubicación en tiempo real <b>no se envía a nuestros servidores</b>, salvo en el único caso de abajo, que eliges tú. Una ruta grabada solo sale de tu dispositivo si <i>tú</i> decides guardarla en tu cuenta.",
             'priv.h.account': 'Cuenta (opcional)',
             'priv.account.1': 'Las herramientas principales funcionan sin cuenta. Si creas una, almacenamos tu nombre y apellidos, nombre de usuario y correo, y una contraseña con hash seguro.',
             'priv.account.2': 'Una cuenta te permite guardar roadbooks en tu perfil, adjuntar fotos y publicar roadbooks públicos.',
@@ -316,7 +316,7 @@
             'priv.h.not': 'Lo que NO hacemos',
             'priv.not.1': 'Sin publicidad y sin SDK de publicidad o analítica de terceros.',
             'priv.not.2': 'Sin venta ni alquiler de datos personales.',
-            'priv.not.3': 'Sin recopilación en segundo plano de tu ubicación fuera de una grabación activa iniciada por ti.',
+            'priv.not.3': "Sin recopilación en segundo plano de tu ubicación fuera de una grabación o navegación activa iniciada por ti.",
             'priv.h.cookies': 'Cookies y almacenamiento local',
             'priv.cookies.1': 'RDBK usa una sola <b>cookie esencial</b>: una cookie de sesión httponly que te mantiene conectado tras iniciar sesión. No contiene datos de perfilado y solo se establece una vez que inicias sesión.',
             'priv.cookies.2': 'La app almacena <b>preferencias y datos sin conexión en el almacenamiento local de tu navegador</b> en tu dispositivo (idioma, estilo de mapa y copias a prueba de fallos de grabaciones, recorridos y borradores de roadbook en curso, para que no se pierda nada). Esto nunca sale de tu dispositivo.',
@@ -782,7 +782,7 @@ Object.assign(window.RBi18nLangs.es, {
     'Track / piste': 'Pista / camino',
     'solid, medium stroke (default off-road)': 'continuo, trazo medio (por defecto fuera de asfalto)',
     'dashed, thinnest stroke': 'discontinuo, el trazo más fino',
-    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el autor dibujó una vía punto a punto en el <code>track</code> alrededor de la nota, esa vía sigue la forma dibujada — una curva, una S — calculada al dibujar, nunca guardada. El grosor del trazo es indicativo del tipo de vía.",
+    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el autor dibujó una vía punto a punto en el <code>track</code> alrededor de la nota, esa vía sigue la forma dibujada — una curva, una S — calculada al dibujar, nunca guardada. En la viñeta todas las vías se dibujan con el mismo grosor: el tipo se lee en su color, el trazo discontinuo del fuera de pista y la doble línea de la autopista.",
     'junctions.h2': 'Vectores de cruce (<code>junctions</code>)',
     'junctions.intro': 'Más allá del texto, una nota puede dibujar el cruce en sí: uno o varios vectores sobre la misma caja de 230 × 162. Cada uno va de un <code>pivot</code> a una <code>tip</code> (la punta de flecha), con el color del tipo de vía y un grosor de trazo <code>width</code>.',
     'Vector start (reference units, +y up).': 'Origen del vector (unidades de referencia, +y hacia arriba).',
@@ -1708,4 +1708,53 @@ Object.assign(window.RBi18nLangs.es, {
     "Imported OpenRally tulips stay with their note: one tap switches between the original and your own tulip, and adding an icon switches to yours.": "Las tulips importadas de OpenRally se quedan con su nota: un toque cambia entre la original y la tuya, y al añadir un icono se pasa a la tuya.",
     "Every run keeps the track you actually drove: see it on a map and download it as a GPX, straight from the run.": "Cada recorrido guarda el track que hiciste de verdad: míralo en un mapa y descárgalo como GPX, directamente desde el recorrido.",
     "Discarding changes in the Editor now really discards them, and the Reader’s note map opens wider.": "Descartar los cambios en el Editor ahora los descarta de verdad, y el mapa de la nota del Reader se abre más amplio.",
+});
+
+/* Editor: the note's rings — detection radius and tulip shape (#945) */
+Object.assign(window.RBi18nLangs.es, {
+    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "El radio de detección de la nota: el Reader da la nota por validada en cuanto el recorrido entra en este círculo.",
+    "Metres": "Metros",
+    "Drawn smaller: the circle never reaches past halfway to the next note.": "Se dibuja más pequeño: el círculo nunca pasa de la mitad del camino a la nota vecina.",
+    "Tulip shape": "Forma de la tulipa",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Cada punto del track dentro de este círculo da forma a la flecha de la tulipa. Dibuja al menos 4 en un lado y ese camino se curva tal como lo dibujaste; con menos, queda recto.",
+    "No room for more points here.": "Aquí no caben más puntos.",
+    "Points added — drag them to shape the curve.": "Puntos añadidos: arrástralos para dar forma a la curva.",
+});
+
+/* Chained event roadbooks (#944) */
+Object.assign(window.RBi18nLangs.es, {
+    "At its last note, offer": "En su última nota, ofrecer",
+    "Short label (optional)": "Etiqueta corta (opcional)",
+    "Carry on with the next roadbook, or finish the run here.": "Sigue con el siguiente roadbook o termina aquí el recorrido.",
+    "Finish here": "Terminar aquí",
+    "Next roadbook:": "Siguiente roadbook:",
+    "You are offline — reconnect to load the next roadbook.": "Estás sin conexión: vuelve a conectarte para cargar el siguiente roadbook.",
+});
+
+/* Live tracking for event organizers (#947) */
+Object.assign(window.RBi18nLangs.es, {
+    "1–5 minutes ago": "Hace 1–5 minutos",
+    "A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.": "Un participante aparece aquí solo mientras navega uno de los roadbooks del evento, tras aceptar compartirlo. Se actualiza cada 10 segundos.",
+    "Live (under a minute)": "En directo (menos de un minuto)",
+    "Live map": "Mapa en directo",
+    "Live · the organizers see your position": "En directo · los organizadores ven tu posición",
+    "Lost or finished": "Perdido o terminado",
+    "Finished {t} ago": "Terminó hace {t}",
+    "Updated {t} ago": "Actualizado hace {t}",
+    "{n} skipped": "{n} saltadas",
+    "Nobody is sharing a live position right now.": "Ahora mismo nadie comparte su posición en directo.",
+    "Only the organizers see it, only during this run — its last position, deleted after the event.": "Solo la ven los organizadores, solo durante este recorrido: tu última posición, que se borra después del evento.",
+    "Share your live position with the event’s organizers while you navigate?": "¿Compartir tu posición en directo con los organizadores del evento mientras navegas?",
+});
+
+/* Privacy: event live tracking (#947) */
+Object.assign(window.RBi18nLangs.es, {
+    "priv.location.4": "<b>Seguimiento en directo en eventos.</b> Cuando navegas un roadbook de un evento en el que participas, el Reader te pregunta si quieres compartir tu posición en directo con los <b>organizadores</b> de ese evento. Solo si dices que sí, y solo durante ese recorrido, se envían tu <b>última</b> posición y tu avance en el roadbook cada 15 segundos aproximadamente. Solo la ven los organizadores del evento, nunca se guarda como historial y se detiene al terminar o salir del recorrido.",
+    "priv.retention.live": "Las <b>posiciones en directo</b> compartidas con los organizadores de un evento se borran un día después de que termine el evento, y nunca se guardan más de <b>3 días</b>.",
+});
+
+/* Events guide: chained roadbooks (#944) and the live map (#947) */
+Object.assign(window.RBi18nLangs.es, {
+    "fp.events.prep5": "Para encadenar los recorridos, bajo cada roadbook marca los que ofrece en su <b>última nota</b>, cada uno con una etiqueta corta («A», «Fácil»…): el participante elige uno ahí y sigue en el mismo recorrido, y ve un único informe al final — mientras cada roadbook sigue puntuando por separado.",
+    "fp.events.run2": "Para seguirlos en directo, abre el <span class=\"ev-where\">Mapa en directo</span>: muestra dónde está cada participante mientras navega uno de los roadbooks del evento — solo si aceptó al empezar su recorrido, solo a los organizadores y solo su última posición.",
 });

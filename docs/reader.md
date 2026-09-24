@@ -298,6 +298,30 @@ Mostra la card e le cifre e porta al profilo (`/u/<user>#run-<id>`) e, se pubbli
 privata o inesistente è un 404. Appena la run è salvata pubblica, *Share* nel report — e sul profilo —
 manda quel link insieme all'immagine.
 
+### La posizione in diretta per gli organizzatori (#947)
+Nella run di un roadbook d'evento, da partecipante attivo, *Naviga* chiede se condividere la posizione
+con gli organizzatori (`live.consent`, salvato nel checkpoint). Con un sì `liveStart` accende la
+striscia `#liveStrip` e `onFix` passa ogni fix affidabile a `liveTick`, che invia quando `RB.liveDue`
+lo dice (`live_ping`: posizione, precisione, velocità, rotta, nota attiva, note raggiunte/saltate,
+veicolo). `liveEnd` la spegne con la run (`finalize` · `endRun`). Vedi [events.md](events.md) §8b.
+
+### Roadbook concatenati (#944)
+Un evento può concatenare i suoi roadbook (`event_rb_next`, vedi [events.md](events.md)): il Reader
+riceve la catena con `event_get` (`chain`) e, all'avvio di ogni tratto, scarica già i roadbook
+successivi (`prefetchNext` → `chainCache`), così la scelta funziona anche offline. `finishRun` chiude
+il tratto (`closeLeg`: il report di quel roadbook, col suo risultato firmato se è a punteggio e la sua
+traccia, **subito in coda sul dispositivo**, non ancora pronto) e, **solo se il roadbook è stato
+completato** e offre dei successivi, apre la scelta (`pickNext`: un bottone per etichetta +
+*Termina qui*; niente sfondo né Escape — ma niente va perso comunque). Un successivo riparte con
+`startLeg`: un roadbook fresco (note, odometri, penalità, GPX suoi), la modalità dal suo
+`scoring_mode`, il numero di veicolo chiesto una sola volta per run, e l'interruttore Auto del
+pilota com'era. Solo alla fine (`finalize`) c'è **un report con tutto**: le cifre sommate
+(`RBRun.combine`), una riga per tratto (`RBRun.legsHTML`), un QR per ogni tratto a punteggio, la card
+col percorso intero, e **una** scelta Private/Public che vale per tutti. Sul server ogni tratto resta
+la sua run (`run_save` per roadbook: i suoi completamenti, la sua classifica — un risultato per
+tratto). Il checkpoint porta `chain` e `legs` (`{key, slug}`), quindi una run ripresa sa i suoi tratti
+e all'avvio `settleAbandoned(keep)` li lascia in attesa invece di chiuderli come privati.
+
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
 di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
