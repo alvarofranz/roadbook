@@ -17,6 +17,14 @@ The site is a **client-side i18n PWA**: one URL per page, text swapped by JS fro
 - **`noindex`:** the tools (editor, reader, recorder, tripmaster, ranking), account, myroadbooks and every `/admin/*` page — they are apps, not landing pages.
 - **`robots.txt`** allows everything except `/api/`, and points to `https://rdbk.app/sitemap.xml`.
 
+## Structured data (JSON-LD)
+
+Static English, like the Open Graph tags, and checked by `tests/seo-pages.test.js`:
+
+- **`/`** — `WebApplication` published by the `Organization` (`https://rdbk.app/#organization`), whose founders are the two people of `/about/`.
+- **`/about/`** — `AboutPage`, the `Organization` and one `Person` per founder (`#alvaro-franz`, `#maurizio-andreotti`) with their LinkedIn profiles in `sameAs`.
+- **`/standard/`** — a `TechArticle` about the format and a `FAQPage` whose questions are exactly the page's visible `<details class="faq">` (the same English text; the answers stripped of markup).
+
 ## Dynamic pages (per-content meta)
 
 `/challenge/<slug>` and `/event/<slug>` set their title, description, canonical and og:* at runtime from the loaded roadbook/event via the shared `RBSetMeta({ title, description, canonical })` helper in `public/assets/js/app.js`. Their static HTML carries only a generic fallback description + og basics.
@@ -69,11 +77,11 @@ A public roadbook is public (#884): `/challenge/<slug>` renders it for anyone, s
 
 | Lang | Title | Description |
 |---|---|---|
-| English | The .rdbk standard — RDBK.app | The open .rdbk format for digital roadbooks: a ZIP container holding a self-contained roadbook.json — track, notes and embedded icons — plus optional media. Full specification. |
-| Italiano | Lo standard .rdbk — RDBK.app | Il formato aperto .rdbk per roadbook digitali: un contenitore ZIP con un roadbook.json autosufficiente — traccia, note e icone incorporate — più media opzionali. Specifica completa. |
-| Español | El estándar .rdbk — RDBK.app | El formato abierto .rdbk para roadbooks digitales: un contenedor ZIP con un roadbook.json autónomo — traza, notas e iconos incrustados — más medios opcionales. Especificación completa. |
-| Deutsch | Der .rdbk-Standard — RDBK.app | Das offene .rdbk-Format für digitale Roadbooks: ein ZIP-Container mit einer eigenständigen roadbook.json — Track, Notizen und eingebettete Icons — samt optionalen Medien. Vollständige Spezifikation. |
-| Français | Le standard .rdbk — RDBK.app | Le format ouvert .rdbk pour roadbooks numériques : un conteneur ZIP avec un roadbook.json autonome — tracé, notes et icônes intégrées — plus des médias optionnels. Spécification complète. |
+| English | The .rdbk standard: the open format for digital roadbooks — RDBK.app | The .rdbk format: the open standard for digital roadbooks, used by off-road riders and organizers worldwide. A ZIP with a self-contained roadbook.json — track, notes, tulips, symbols — plus photos and voice notes. Full spec and FAQ. |
+| Italiano | Lo standard .rdbk: il formato aperto per i roadbook digitali — RDBK.app | Il formato .rdbk: lo standard aperto per i roadbook digitali, usato da piloti off-road e organizzatori in tutto il mondo. Uno ZIP con un roadbook.json autosufficiente — traccia, note, vignette, simboli — più foto e note vocali. Specifica completa e FAQ. |
+| Español | El estándar .rdbk: el formato abierto para roadbooks digitales — RDBK.app | El formato .rdbk: el estándar abierto para roadbooks digitales, usado por pilotos off-road y organizadores de todo el mundo. Un ZIP con un roadbook.json autocontenido — traza, notas, viñetas, símbolos — más fotos y notas de voz. Especificación completa y FAQ. |
+| Deutsch | Der .rdbk-Standard: das offene Format für digitale Roadbooks — RDBK.app | Das .rdbk-Format: der offene Standard für digitale Roadbooks, weltweit genutzt von Offroad-Fahrern und Veranstaltern. Ein ZIP mit einer eigenständigen roadbook.json — Track, Notizen, Vignetten, Symbole — plus Fotos und Sprachnotizen. Vollständige Spezifikation und FAQ. |
+| Français | Le standard .rdbk : le format ouvert des roadbooks numériques — RDBK.app | Le format .rdbk : le standard ouvert des roadbooks numériques, utilisé par les pilotes tout-terrain et les organisateurs du monde entier. Un ZIP avec un roadbook.json autonome — trace, notes, vignettes, symboles — plus photos et notes vocales. Spécification complète et FAQ. |
 
 ### `/roadbooks/`
 

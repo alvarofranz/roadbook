@@ -985,8 +985,16 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .doc p, .doc li { color: #c7ccd6; line-height: 1.65; }
 .doc ul { padding-left: 1.2rem; }
 .doc li { margin: .3rem 0; }
-.doc a { color: var(--sand-2); }
+.doc a:not(.btn) { color: var(--sand-2); } /* a button keeps its own colours: sand on sand read as nothing */
 .doc .updated { color: var(--muted); font-size: .9rem; }
+/* a question and its answer, folded: one <details class="faq"> each */
+.faq { border: 1px solid var(--line); border-radius: 12px; background: var(--card); margin: .5rem 0; }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.1rem; font-weight: 700; cursor: pointer; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; flex: none; color: var(--sand); font-size: 1.3rem; line-height: 1; }
+.faq[open] summary::after { content: '−'; }
+.faq[open] { border-color: var(--sand); }
+.faq > p { margin: 0; padding: 0 1.1rem 1rem; }
 /* Public listing pages (Roadbooks · Events): heading + boxed search toolbar */
 /* Admin event pages: one label/value/actions line */
 /* the home teaser's route thumbnail (home.js): colours from the palette, not the markup */
