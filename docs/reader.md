@@ -298,6 +298,13 @@ Mostra la card e le cifre e porta al profilo (`/u/<user>#run-<id>`) e, se pubbli
 privata o inesistente è un 404. Appena la run è salvata pubblica, *Share* nel report — e sul profilo —
 manda quel link insieme all'immagine.
 
+### La posizione in diretta per gli organizzatori (#947)
+Nella run di un roadbook d'evento, da partecipante attivo, *Naviga* chiede se condividere la posizione
+con gli organizzatori (`live.consent`, salvato nel checkpoint). Con un sì `liveStart` accende la
+striscia `#liveStrip` e `onFix` passa ogni fix affidabile a `liveTick`, che invia quando `RB.liveDue`
+lo dice (`live_ping`: posizione, precisione, velocità, rotta, nota attiva, note raggiunte/saltate,
+veicolo). `liveEnd` la spegne con la run (`finalize` · `endRun`). Vedi [events.md](events.md) §8b.
+
 ### Roadbook concatenati (#944)
 Un evento può concatenare i suoi roadbook (`event_rb_next`, vedi [events.md](events.md)): il Reader
 riceve la catena con `event_get` (`chain`) e, all'avvio di ogni tratto, scarica già i roadbook

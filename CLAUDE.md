@@ -41,7 +41,7 @@ DB/Convenzioni rapide below have counterparts there).
   DB schema = `migrations/*.sql` (source of truth): `users`, `roadbooks`, `roadbook_photos`,
   `roadbook_audio`, `roadbook_locks`, `roadbook_runs`, `roadbook_comments`, `api_tokens`,
   `activity_log`, `settings`, plus the events family (`events`, `event_roadbooks`,
-  `event_organizers`, `event_participants`, `event_results`).
+  `event_rb_next`, `event_organizers`, `event_participants`, `event_results`, `event_live`).
 - Repo: GitHub `alvarofranz/roadbook`. License **MIT**.
 - UI languages: **English (default) · Spanish · Italian · German · French**, browser
   auto-detected. English is the source (in `i18n.js`); each other language lives in its own
@@ -614,7 +614,12 @@ Operational notes:
   (categories, organizers, linked roadbooks). Participants join as *pending* and are activated
   by the organizer (QR token or the admin panel); `/go/<code>` is the participant deep link
   (asks to join, then joins + redirects; the app joins through the API). Admin side under `/admin/events/`. Tables: the `events` family in
-  `migrations/`.
+  `migrations/`. **Chained roadbooks (#944):** the organizer says what each event roadbook offers at
+  its last note (`event_rb_next`, a short label each); the Reader offers them there and carries the
+  same run on — every leg its own run on the server, one report at the end. **Live map (#947):**
+  `/admin/events/live/?id=` shows the organizers each participant's LAST position, sent by the Reader
+  only in the run of an event roadbook and only after a yes at its start (`app/live.php`:
+  `live_ping` / `live_stop` / `live_list`, table `event_live`, purged by cron a day after the event).
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,

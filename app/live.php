@@ -84,7 +84,9 @@ function live_list(array $user, array $d): void {
         $rb->execute([(int)$e['id']]);
         $out['tracks'] = [];
         foreach ($rb->fetchAll() as $r) {
-            try { $payload = rb_read_payload($r); } catch (Throwable $ex) { continue; }
+            // an outline is a nicety: a roadbook without its file yet (or any more) is just not drawn
+            if ($r['filename'] === 'pending' || !is_file(rb_dir((int)$r['user_id']) . '/' . $r['filename'])) continue;
+            $payload = rb_read_payload($r);
             $track = $payload['track'] ?? [];
             $step = max(1, (int)ceil(count($track) / 800)); // a light outline: at most ~800 points a roadbook
             $pts = [];

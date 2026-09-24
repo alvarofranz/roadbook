@@ -360,13 +360,13 @@
             /* install guide (#333) */ 'seo.install.title': 'RDBK.app installieren — auf jedem Gerät', 'seo.install.desc': 'Installiere RDBK.app auf Handy, Tablet oder Computer — offline nutzbar, öffnet .rdbk-Dateien und zeichnet bei gesperrtem Bildschirm weiter auf.', 'Install RDBK.app': 'RDBK.app installieren', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Schon installiert? Öffne RDBK über den Startbildschirm oder die App-Liste — diese Seite brauchst du nur einmal.', 'Your device': 'Dein Gerät', 'Install now': 'Jetzt installieren', 'Open <b>rdbk.app</b> in Chrome.': 'Öffne <b>rdbk.app</b> in Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Tippe oben rechts auf das <b>⋮</b>-Menü.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Wähle <b>App installieren</b> (oder <b>Zum Startbildschirm hinzufügen</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Öffne <b>rdbk.app</b> in Safari (es muss Safari sein).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Öffne <b>rdbk.app</b> in Chrome oder Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Klicke auf das <b>Installieren</b>-Symbol <i class="fa-solid fa-circle-down icon-accent"></i> in der Adressleiste (oder ⋮-Menü → <b>Installieren</b>).', 'Confirm — RDBK then opens in its own window.': 'Bestätige — RDBK öffnet sich danach in einem eigenen Fenster.', 'RDBK is installed — open it from your home screen.': 'RDBK ist installiert — öffne sie über den Startbildschirm.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Datenschutzerklärung',
-            'priv.updated': "Zuletzt aktualisiert: 22. September 2026",
+            'priv.updated': "Zuletzt aktualisiert: 24. September 2026",
             'priv.authoritative': 'Maßgeblich ist die englische Fassung dieser Erklärung; Übersetzungen dienen nur der Bequemlichkeit.',
             'priv.intro': 'RDBK.app („RDBK“, „wir“) ist eine kostenlose Suite zum Erstellen und Navigieren digitaler Roadbooks, verfügbar als Website, installierbare Web-App (PWA) und native Apps für Android und iOS. Diese Erklärung beschreibt, welche Daten RDBK verarbeitet und warum. Kurz gesagt: <b>dein Standort wird auf deinem Gerät zum Navigieren und Aufzeichnen von Routen verwendet; ein Konto und Cloud-Speicher sind völlig optional; wir zeigen keine Werbung, betreiben kein Tracking durch Dritte und verkaufen deine Daten niemals.</b>',
             'priv.h.location': 'Standort',
             'priv.location.1': 'Wenn du den Reader, den Tripmaster oder den Recorder verwendest, liest RDBK deinen <b>GPS-Standort</b>, um deine Position anzuzeigen, Kilometerzähler/Richtung zu berechnen und dem Roadbook zu folgen.',
             'priv.location.2': 'Wenn du eine Route aufzeichnest, wird deine Spur als GPX-Datei <b>auf deinem Gerät</b> gespeichert. In der nativen App kann die Aufzeichnung bei gesperrtem Bildschirm über einen Vordergrunddienst (als dauerhafte Benachrichtigung angezeigt) weiterlaufen, damit die Spur keine Lücken hat.',
-            'priv.location.3': 'Dein Live-Standort wird <b>nicht an unsere Server gesendet</b>. Eine aufgezeichnete Route verlässt dein Gerät nur, wenn <i>du</i> sie in deinem Konto speicherst.',
+            'priv.location.3': "Dein Live-Standort wird <b>nicht an unsere Server gesendet</b>, außer in dem einen Fall unten, den du selbst wählst. Eine aufgezeichnete Route verlässt dein Gerät nur, wenn <i>du</i> sie in deinem Konto speicherst.",
             'priv.h.account': 'Konto (optional)',
             'priv.account.1': 'Die Kernwerkzeuge funktionieren ohne Konto. Wenn du eines erstellst, speichern wir deinen Vor- und Nachnamen, Benutzernamen und deine E-Mail sowie ein sicher gehashtes Passwort.',
             'priv.account.2': 'Mit einem Konto kannst du Roadbooks in deinem Profil speichern, Fotos anhängen und öffentliche Roadbooks veröffentlichen.',
@@ -381,7 +381,7 @@
             'priv.h.not': 'Was wir NICHT tun',
             'priv.not.1': 'Keine Werbung und keine Werbe- oder Analyse-SDKs von Drittanbietern.',
             'priv.not.2': 'Kein Verkauf oder Vermietung personenbezogener Daten.',
-            'priv.not.3': 'Keine Hintergrunderfassung deines Standorts außerhalb einer von dir gestarteten aktiven Aufzeichnung.',
+            'priv.not.3': "Keine Hintergrunderfassung deines Standorts außerhalb einer von dir gestarteten aktiven Aufzeichnung oder Navigation.",
             'priv.h.cookies': 'Cookies und lokaler Speicher',
             'priv.cookies.1': 'RDBK verwendet ein einziges <b>essenzielles Cookie</b> — ein httponly-Sitzungscookie, das dich nach dem Login angemeldet hält. Es enthält keine Profiling-Daten und wird erst gesetzt, sobald du dich anmeldest.',
             'priv.cookies.2': 'Die App speichert <b>Einstellungen und Offline-Daten im lokalen Speicher deines Browsers</b> auf deinem Gerät (Sprache, Kartenstil und absturzsichere Kopien laufender Aufzeichnungen, Fahrten und Roadbook-Entwürfe, damit nichts verloren geht). Das verlässt dein Gerät nie.',
@@ -1708,4 +1708,16 @@ Object.assign(window.RBi18nLangs.de, {
     "Nobody is sharing a live position right now.": "Gerade teilt niemand eine Live-Position.",
     "Only the organizers see it, only during this run — its last position, deleted after the event.": "Nur die Veranstalter sehen sie, nur während dieser Fahrt – deine letzte Position, gelöscht nach der Veranstaltung.",
     "Share your live position with the event’s organizers while you navigate?": "Deine Live-Position mit den Veranstaltern teilen, während du navigierst?",
+});
+
+/* Privacy: event live tracking (#947) */
+Object.assign(window.RBi18nLangs.de, {
+    "priv.location.4": "<b>Live-Tracking bei Veranstaltungen.</b> Wenn du ein Roadbook einer Veranstaltung navigierst, an der du teilnimmst, fragt der Reader, ob du deine Live-Position mit den <b>Veranstaltern</b> teilen möchtest. Nur wenn du zustimmst, und nur während dieser Fahrt, werden etwa alle 15 Sekunden deine <b>letzte</b> Position und dein Fortschritt im Roadbook gesendet. Nur die Veranstalter sehen sie, sie wird nie als Verlauf gespeichert und endet, wenn du die Fahrt beendest oder verlässt.",
+    "priv.retention.live": "<b>Live-Positionen</b>, die mit den Veranstaltern geteilt wurden, werden einen Tag nach dem Ende der Veranstaltung gelöscht und nie länger als <b>3 Tage</b> aufbewahrt.",
+});
+
+/* Events guide: chained roadbooks (#944) and the live map (#947) */
+Object.assign(window.RBi18nLangs.de, {
+    "fp.events.prep5": "Um die Strecken zu verketten, hake unter jedem Roadbook die an, die es an seiner <b>letzten Notiz</b> anbietet, jeweils mit einem kurzen Label („A“, „Leicht“…): Der Teilnehmer wählt dort eines, fährt in derselben Fahrt weiter und sieht am Ende einen einzigen Bericht — während jedes Roadbook weiterhin für sich gewertet wird.",
+    "fp.events.run2": "Um sie live zu verfolgen, öffne die <span class=\"ev-where\">Live-Karte</span>: Sie zeigt, wo jeder Teilnehmer ist, während er eines der Roadbooks der Veranstaltung navigiert — nur wenn er zu Beginn seiner Fahrt zugestimmt hat, nur den Veranstaltern und nur seine letzte Position.",
 });

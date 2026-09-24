@@ -147,6 +147,14 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `comment_add` | Nuovo commento (max 2000 caratteri): Turnstile + rate limit 10 ogni 10 min | richiesta |
 | `comment_delete` | Lo cancella l'autore, il proprietario del roadbook o un admin | richiesta |
 
+**Live tracking per gli organizzatori** (`live.php`, #947)
+
+| Action | Cosa fa | Auth |
+|--------|---------|:----:|
+| `live_ping` | L'ultima posizione di un partecipante **attivo**, su un roadbook **dell'evento**, mentre l'evento è in corso (le sue date ± 1 giorno): una riga per partecipante per evento, sovrascritta — mai uno storico. Rate limit 20/min | richiesta |
+| `live_stop` | Fine della run: l'ultima posizione resta, segnata come finita | richiesta |
+| `live_list` | La mappa degli organizzatori (`require_event_manage`): ogni posizione con `age_s` dall'orologio del server; con `tracks` anche il contorno dei roadbook dell'evento | richiesta |
+
 **Roadbook, foto, audio, pubblici** (`roadbooks.php`)
 
 | Action | Cosa fa | Auth |

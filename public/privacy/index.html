@@ -22,15 +22,15 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.11-222">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.11-222">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.11-223">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.11-223">
 </head>
 <body>
 <header class="topbar"></header>
 
 <main class="doc">
     <h1 data-i18n="priv.title">Privacy Policy</h1>
-    <p class="updated" data-i18n-html="priv.updated">Last updated: 22 September 2026</p>
+    <p class="updated" data-i18n-html="priv.updated">Last updated: 24 September 2026</p>
     <p class="updated" data-i18n-html="priv.authoritative">The English version of this policy is the authoritative one; translations are provided for convenience.</p>
 
     <p data-i18n-html="priv.intro">RDBK.app ("RDBK", "we") is a free suite for creating and navigating digital roadbooks,
@@ -46,8 +46,12 @@
         <li data-i18n-html="priv.location.2">If you record a route, your track is logged as a GPX file <b>on your device</b>. In the
         native app, recording can continue with the screen locked via a foreground service (shown
         as an ongoing notification) so the track has no gaps.</li>
-        <li data-i18n-html="priv.location.3">Your live location is <b>not sent to our servers</b>. A recorded route only leaves your
-        device if <i>you</i> choose to save it to your account.</li>
+        <li data-i18n-html="priv.location.3">Your live location is <b>not sent to our servers</b>, except in the one case below, which
+        you choose yourself. A recorded route only leaves your device if <i>you</i> choose to save it to your account.</li>
+        <li data-i18n-html="priv.location.4"><b>Event live tracking.</b> When you navigate a roadbook of an event you take part in,
+        the Reader asks whether to share your live position with that event’s <b>organizers</b>. Only if you say yes, and only
+        during that run, your <b>last</b> position and your progress on the roadbook are sent about every 15 seconds. Only the
+        event’s organizers see it, it is never kept as a history, and it stops when you finish or leave the run.</li>
     </ul>
 
     <h2 data-i18n="priv.h.account">Account (optional)</h2>
@@ -95,7 +99,7 @@
     <ul>
         <li data-i18n-html="priv.not.1">No advertising and no third-party advertising/analytics SDKs.</li>
         <li data-i18n-html="priv.not.2">No selling or renting of personal data.</li>
-        <li data-i18n-html="priv.not.3">No background collection of your location outside an active recording you started.</li>
+        <li data-i18n-html="priv.not.3">No background collection of your location outside an active recording or navigation you started.</li>
     </ul>
 
     <h2 data-i18n="priv.h.cookies">Cookies &amp; local storage</h2>
@@ -124,6 +128,8 @@
         anonymised from the start.</li>
         <li data-i18n-html="priv.retention.3"><b>Bearer tokens</b> used by the native apps to stay signed in are pruned after
         <b>180 days of inactivity</b>.</li>
+        <li data-i18n-html="priv.retention.live"><b>Live positions</b> shared with an event’s organizers are deleted a day after the
+        event ends, and never kept longer than <b>3 days</b>.</li>
         <li data-i18n-html="priv.retention.4"><b>Recording drafts</b> created by the Recorder are deleted automatically after
         <b>2 days</b> if they are never edited and saved.</li>
     </ul>
@@ -165,12 +171,12 @@
     <p data-i18n-html="priv.contact">Questions or data requests: <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a>.</p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.11-222"></script>
-<script src="../assets/js/i18n.js?v=1.9.11-222"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.11-222"></script>
-<script src="../assets/js/app.js?v=1.9.11-222"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.11-223"></script>
+<script src="../assets/js/i18n.js?v=1.9.11-223"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.11-223"></script>
+<script src="../assets/js/app.js?v=1.9.11-223"></script>
 </body>
 </html>

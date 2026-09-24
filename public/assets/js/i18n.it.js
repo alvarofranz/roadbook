@@ -295,13 +295,13 @@
             /* install guide (#333) */ 'seo.install.title': 'Installa RDBK.app — su qualsiasi dispositivo', 'seo.install.desc': 'Installa RDBK.app su telefono, tablet o computer — funziona offline, apre i file .rdbk e continua a registrare a schermo bloccato.', 'Install RDBK.app': 'Installa RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Già installata? Apri RDBK dalla schermata Home o dall’elenco delle app — questa pagina serve una volta sola.', 'Your device': 'Il tuo dispositivo', 'Install now': 'Installa ora', 'Open <b>rdbk.app</b> in Chrome.': 'Apri <b>rdbk.app</b> in Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Tocca il menu <b>⋮</b>, in alto a destra.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Apri <b>rdbk.app</b> in Safari (deve essere Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Apri <b>rdbk.app</b> in Chrome o Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Clicca l’icona <b>installa</b> <i class="fa-solid fa-circle-down icon-accent"></i> nella barra degli indirizzi (o menu ⋮ → <b>Installa</b>).', 'Confirm — RDBK then opens in its own window.': 'Conferma — RDBK si aprirà in una finestra propria.', 'RDBK is installed — open it from your home screen.': 'RDBK è installata — aprila dalla schermata Home.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Informativa sulla privacy',
-            'priv.updated': "Ultimo aggiornamento: 22 settembre 2026",
+            'priv.updated': "Ultimo aggiornamento: 24 settembre 2026",
             'priv.authoritative': 'La versione inglese di questa informativa è quella di riferimento; le traduzioni sono fornite per comodità.',
             'priv.intro': 'RDBK.app (“RDBK”, “noi”) è una suite gratuita per creare e navigare roadbook digitali, disponibile come sito web, web app installabile (PWA) e app native per Android e iOS. Questa informativa spiega quali dati RDBK tratta e perché. In breve: <b>la tua posizione è usata sul tuo dispositivo per navigare e registrare i percorsi; un account e l’archiviazione nel cloud sono del tutto facoltativi; non mostriamo pubblicità, non eseguiamo tracciamento di terze parti e non vendiamo mai i tuoi dati.</b>',
             'priv.h.location': 'Posizione',
             'priv.location.1': 'Quando usi il Reader, il Tripmaster o il Recorder, RDBK legge la tua <b>posizione GPS</b> per mostrare dove sei, calcolare odometro/direzione e seguire il roadbook.',
             'priv.location.2': 'Se registri un percorso, la traccia viene salvata come file GPX <b>sul tuo dispositivo</b>. Nell’app nativa la registrazione può continuare a schermo bloccato tramite un servizio in primo piano (mostrato come notifica permanente), così la traccia non ha interruzioni.',
-            'priv.location.3': 'La tua posizione in tempo reale <b>non viene inviata ai nostri server</b>. Un percorso registrato lascia il tuo dispositivo solo se <i>tu</i> scegli di salvarlo nel tuo account.',
+            'priv.location.3': "La tua posizione in tempo reale <b>non viene inviata ai nostri server</b>, tranne nell’unico caso qui sotto, che scegli tu. Un percorso registrato lascia il tuo dispositivo solo se <i>tu</i> scegli di salvarlo nel tuo account.",
             'priv.h.account': 'Account (facoltativo)',
             'priv.account.1': 'Gli strumenti principali funzionano senza account. Se ne crei uno, memorizziamo nome e cognome, username ed email, e una password con hash sicuro.',
             'priv.account.2': 'Un account ti permette di salvare i roadbook nel tuo profilo, allegare foto e pubblicare roadbook pubblici.',
@@ -316,7 +316,7 @@
             'priv.h.not': 'Cosa NON facciamo',
             'priv.not.1': 'Nessuna pubblicità e nessun SDK pubblicitario o di analisi di terze parti.',
             'priv.not.2': 'Nessuna vendita o noleggio di dati personali.',
-            'priv.not.3': 'Nessuna raccolta in background della tua posizione al di fuori di una registrazione attiva avviata da te.',
+            'priv.not.3': "Nessuna raccolta in background della tua posizione al di fuori di una registrazione o navigazione attiva avviata da te.",
             'priv.h.cookies': 'Cookie e archiviazione locale',
             'priv.cookies.1': 'RDBK usa un solo <b>cookie essenziale</b> — un cookie di sessione httponly che ti mantiene connesso dopo il login. Non contiene dati di profilazione ed è impostato solo dopo l’accesso.',
             'priv.cookies.2': 'L’app memorizza <b>preferenze e dati offline nell’archiviazione locale del browser</b> sul tuo dispositivo (lingua, stile della mappa e copie a prova di crash di registrazioni, prove e bozze di roadbook in corso, così non si perde nulla). Tutto questo non lascia mai il tuo dispositivo.',
@@ -1745,4 +1745,16 @@ Object.assign(window.RBi18nLangs.it, {
     "Nobody is sharing a live position right now.": "Al momento nessuno condivide la posizione in diretta.",
     "Only the organizers see it, only during this run — its last position, deleted after the event.": "La vedono solo gli organizzatori, solo durante questo percorso: l’ultima posizione, cancellata dopo l’evento.",
     "Share your live position with the event’s organizers while you navigate?": "Condividere la tua posizione in diretta con gli organizzatori dell’evento mentre navighi?",
+});
+
+/* Privacy: event live tracking (#947) */
+Object.assign(window.RBi18nLangs.it, {
+    "priv.location.4": "<b>Tracciamento in diretta negli eventi.</b> Quando navighi un roadbook di un evento a cui partecipi, il Reader ti chiede se condividere la tua posizione in diretta con gli <b>organizzatori</b> di quell’evento. Solo se rispondi sì, e solo durante quel percorso, vengono inviati circa ogni 15 secondi la tua <b>ultima</b> posizione e il tuo avanzamento nel roadbook. La vedono solo gli organizzatori dell’evento, non viene mai conservata come cronologia e si ferma quando termini o lasci il percorso.",
+    "priv.retention.live": "Le <b>posizioni in diretta</b> condivise con gli organizzatori di un evento vengono cancellate un giorno dopo la fine dell’evento, e mai conservate più di <b>3 giorni</b>.",
+});
+
+/* Events guide: chained roadbooks (#944) and the live map (#947) */
+Object.assign(window.RBi18nLangs.it, {
+    "fp.events.prep5": "Per concatenare i percorsi, sotto ogni roadbook spunta quelli che propone alla sua <b>ultima nota</b>, ognuno con un’etichetta breve («A», «Facile»…): il partecipante ne sceglie uno lì e prosegue nello stesso percorso, e vede un solo report alla fine — mentre ogni roadbook continua a essere valutato per conto suo.",
+    "fp.events.run2": "Per seguirli in diretta, apri la <span class=\"ev-where\">Mappa in diretta</span>: mostra dove si trova ogni partecipante mentre naviga uno dei roadbook dell’evento — solo se ha accettato all’inizio del percorso, solo agli organizzatori e solo l’ultima posizione.",
 });
