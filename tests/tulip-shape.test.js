@@ -148,3 +148,16 @@ describe('the tulip draws the shape (#945)', () => {
         expect(fs.readFileSync('public/assets/js/rb-pdf.js', 'utf8')).toContain('NoteCanvas.toSVG(rb.notes[i], resolver, RB.tulipContext(rb, i))');
     });
 });
+
+describe('the Editor shows what a note reaches and what shapes its tulip (#945)', () => {
+    const fs = require('fs');
+    const editor = fs.readFileSync('public/editor/editor.js', 'utf8'), map = fs.readFileSync('public/assets/js/rbmap.js', 'utf8');
+    it('rings the selected note: its detection radius, and the dashed radius whose points shape the tulip', () => {
+        expect(editor).toContain('map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);');
+        expect(map).toContain("'line-dasharray': [3, 3]");
+        expect(RB.TULIP_SHAPE_M).toBe(50);
+    });
+    it('opens a note on ~200 m around it, turned so the road you arrive on points up', () => {
+        expect(editor).toContain('zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0');
+    });
+});

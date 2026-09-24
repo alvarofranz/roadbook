@@ -41,6 +41,12 @@ const STYLES = [STYLE_SATELLITE, STYLE_TOPO, STYLE_OSM];
 const STYLE_LABELS = ['Satellite', 'Topo', 'OSM'];
 const STYLE_SHORT = ['SAT', 'TOPO', 'OSM'];          // the compact labels (`layerToggle.short`)
 const STYLE_KEYS = ['satellite', 'terrain', 'osm'];  // the names a remembered choice is stored under
+// great-circle metres between two points (the map's own scale readout, zoomForRadius)
+function haversine(lat1, lon1, lat2, lon2) {
+    const r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) ** 2;
+    return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
 window.RBMap = class RBMap {
     constructor(containerId, opts = {}) {
         this.ready = false; this._pending = null; this._onWpt = null; this._baseCursor = '';
@@ -176,6 +182,7 @@ window.RBMap = class RBMap {
         if (this._lastPhotos) this.setPhotos(this._lastPhotos);
         if (this._vertShow) this._paintVerts(this._vertShow);
         if (this._lastSel) this.select(this._lastSel, true);
+        if (this._lastRings) this.setNoteRings(this._lastRings.note, this._lastRings.reachM, this._lastRings.shapeM);
         if (this._lastPos) this._replayPosition();
         if (this._lastGuide) this.setGuide(this._lastGuide.from, this._lastGuide.to);
     }
@@ -207,6 +214,13 @@ window.RBMap = class RBMap {
         m.addLayer({ id: 'rb-track', type: 'line', source: 'rb-track', paint: { 'line-color': '#ff5a45', 'line-width': 4 } });
         m.addSource('rb-gap', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-gap', type: 'line', source: 'rb-gap', paint: { 'line-color': '#e8b059', 'line-width': 2, 'line-dasharray': [2, 2] } });
+        // the selected note's rings (#945): its detection radius, and — dashed, subtle — the stretch
+        // of track whose points shape its tulip
+        m.addSource('rb-shape-ring', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-shape-ring', type: 'line', source: 'rb-shape-ring', paint: { 'line-color': '#ffffff', 'line-opacity': 0.55, 'line-width': 1.2, 'line-dasharray': [3, 3] } });
+        m.addSource('rb-reach-ring', { type: 'geojson', data: this._empty() });
+        m.addLayer({ id: 'rb-reach-ring-f', type: 'fill', source: 'rb-reach-ring', paint: { 'fill-color': '#e8b059', 'fill-opacity': 0.14 } });
+        m.addLayer({ id: 'rb-reach-ring', type: 'line', source: 'rb-reach-ring', paint: { 'line-color': '#e8b059', 'line-width': 2 } });
         m.addSource('rb-sel', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-sel', type: 'circle', source: 'rb-sel', paint: { 'circle-radius': 11, 'circle-color': 'rgba(232,176,89,.35)', 'circle-stroke-color': '#e8b059', 'circle-stroke-width': 3 } });
         m.addSource('rb-wpts', { type: 'geojson', data: this._empty() });
@@ -329,6 +343,31 @@ window.RBMap = class RBMap {
         this._lastOverlay = pts && pts.length ? pts : null; // remembered: a style switch paints it back (#788)
         if (!this.map || !this.ready) return;
         this.map.getSource('rb-live').setData(pts && pts.length ? { type: 'Feature', geometry: { type: 'LineString', coordinates: pts.map((p) => [p.lon, p.lat]) } } : this._empty());
+    }
+    // The rings around one note (#945): its detection radius (filled) and the radius whose track
+    // points shape its tulip (dashed). A null note clears them.
+    setNoteRings(note, reachM, shapeM) {
+        this._lastRings = note ? { note, reachM, shapeM } : null;
+        if (!this.map || !this.ready) return;
+        const ring = (r) => {
+            const lat0 = note.lat * Math.PI / 180, dLat = r / 111320, dLon = r / (111320 * Math.cos(lat0)), pts = [];
+            for (let k = 0; k <= 64; k++) { const a = k / 64 * 2 * Math.PI; pts.push([note.lon + Math.sin(a) * dLon, note.lat + Math.cos(a) * dLat]); }
+            return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [pts] } };
+        };
+        this.map.getSource('rb-reach-ring').setData(note && reachM ? ring(reachM) : this._empty());
+        this.map.getSource('rb-shape-ring').setData(note && shapeM ? ring(shapeM) : this._empty());
+    }
+    // The zoom that shows `radiusM` metres around the map's centre across its shorter side — the view
+    // a tool opens on, however large the screen (the Editor's note, the Reader's note map). It reads
+    // the scale the map really draws at — two points 100 px apart, unprojected — rather than a
+    // web-mercator formula, which the 3D terrain and the tile size both throw off.
+    zoomForRadius(radiusM) {
+        const m = this.map, el = m.getContainer(), side = Math.max(120, Math.min(el.clientWidth, el.clientHeight));
+        const cx = el.clientWidth / 2, cy = el.clientHeight / 2;
+        const a = m.unproject([cx, cy]), b = m.unproject([cx + 100, cy]);
+        const now = haversine(a.lat, a.lng, b.lat, b.lng) / 100; // metres per pixel at this zoom
+        if (!(now > 0)) return m.getZoom();
+        return Math.max(2, Math.min(19, m.getZoom() + Math.log2(now / ((2 * radiusM) / side))));
     }
     select(note, noEase) {
         this._lastSel = note; // remembered so a style swap can re-highlight

@@ -192,13 +192,18 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   per-punto (tasto destro) offre *nota · punto intermedio · punto · Cancella · immagine* — non
   più "Sposta il punto", visto che Move è il default e si trascina direttamente. Il trascinamento
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
-- **Selezione nota = solo evidenziazione (#65).** Selezionare una nota — dalla riga lista
-  **o** dal marker sulla mappa — la evidenzia (`map.select(note, true)`), apre il suo editor
-  inline e porta la riga in vista, ma **non** ricentra, **non** zooma e **non** ruota la mappa
-  ([editor.js](../public/editor/editor.js)): così editare (e **cancellare**) una nota
-  non fa più "saltare" la vista al punto successivo. L'unico movimento automatico residuo è il
-  ritorno **a nord** alla chiusura dell'editor (`closeEditor`,
-  [editor.js](../public/editor/editor.js)), se la mappa era ruotata.
+- **Selezione nota = primo piano della nota.** Selezionare una nota — dalla riga lista **o** dal
+  marker sulla mappa — la evidenzia (`markOnMap`: `map.select(note, true)` + gli anelli), apre il
+  suo editor inline, porta la riga in vista e porta la mappa su **~200 m attorno alla nota**
+  (`RBMap.zoomForRadius(200)`, misurato sulla scala reale della mappa), **ruotata** su
+  `bearing_in`: la strada da cui arrivi viene dal basso e punta in su, come nel tulip. Solo una
+  selezione voluta muove la vista: modifiche e cancellazioni rinfrescano via `renderNotes`, che
+  non la tocca (#65), e alla chiusura dell'editor (`closeEditor`) la mappa torna **a nord**.
+- **Gli anelli della nota (#945).** Attorno alla nota selezionata la mappa disegna il suo
+  **raggio di rilevamento** (pieno, sabbia: `RB.reachRadius`, quello che valida il Reader) e,
+  **tratteggiato e sottile**, il raggio di `RB.TULIP_SHAPE_M` (50 m) i cui punti della traccia
+  danno forma al tulip: più di 6 punti dentro, su un lato, e quella strada del tulip segue la
+  forma disegnata (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a ogni modifica).
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema

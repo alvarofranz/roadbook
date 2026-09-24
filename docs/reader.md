@@ -325,8 +325,9 @@ Nell'angolo in alto a sinistra `.nmap-togo` mostra numero della nota e distanza 
 percorrere (`paintMapTogo`, aggiornato da `refreshLive` a ogni fix) — l'unico posto dove si legge
 (#935). `toggleNoteMap`
 ([reader.js](../public/reader/reader.js)) apre un `RBMap` nello slot `.nmap` sotto la
-riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
-`NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
+riga come un **primo piano di dove si trova chi guida**: centro su `lastHere`, con uno zoom che
+mostra `NOTE_MAP_RADIUS_M` (500 m) attorno — circa un chilometro di vista su qualsiasi schermo
+(`RBMap.zoomForRadius`); poi si zooma a piacere — e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
 true)`), evidenziato con `select(n, true)` — `noEase` per non spostare il centro dal pilota. Senza
 fix GPS la nota stessa è l'unica posizione nota e diventa il centro. Prima erano l'intera traccia
 e tutti i pin a zoom 13: troppo grosso per leggere un incrocio, e gli altri pin sono rumore

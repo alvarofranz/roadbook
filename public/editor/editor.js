@@ -296,7 +296,7 @@
     function onVertexCommit() {
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); map.refreshVertices(rb.track); renderNotes();
-        if (editorOpen) { renderEditor(); showOnCanvas(sel); map.select(rb.notes[sel], true); }
+        if (editorOpen) { renderEditor(); showOnCanvas(sel); markOnMap(rb.notes[sel]); }
         markDirty();
     }
     // Waypoint drag (default Move): the blue note marker moves its underlying track vertex, so the
@@ -312,7 +312,7 @@
     function onWptCommit() {
         RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
         refreshMap(true); renderNotes();
-        if (editorOpen && sel >= 0) { renderEditor(); showOnCanvas(sel); map.select(rb.notes[sel], true); }
+        if (editorOpen && sel >= 0) { renderEditor(); showOnCanvas(sel); markOnMap(rb.notes[sel]); }
         markDirty();
     }
     // Photo pins drag exactly like waypoints in Move mode (#41): move the pin live, then persist
@@ -895,7 +895,7 @@
         fillSettings();
         refreshMap(true); renderNotes(); renderIcons();
         if (rb.notes.length) { renderEditor(); showOnCanvas(sel); } else { closeEditor(); canvas.setNote(null); } // a routeless snapshot has no note to show
-        map.select(rb.notes[sel] || null, true);
+        markOnMap(rb.notes[sel] || null);
         updateHistBtns();
     }
     function undo() { clearTimeout(histTimer); histPushNow(); if (histPast.length < 2) return; histFuture.push(histPast.pop()); histApply(histPast[histPast.length - 1]); }
@@ -1596,9 +1596,17 @@
         $('noteEditZone').hidden = false;
     }
     function markSelectedRow() { $('noteList').querySelectorAll('.note-mini').forEach((el) => el.classList.toggle('sel', editorOpen && +el.dataset.i === sel)); }
+    // The selected note on the map: highlighted, with its detection radius and — dashed — the radius
+    // whose track points shape its tulip (#945), so what the Reader validates and what the tulip draws
+    // are both in sight
+    function markOnMap(n) { map.select(n, true); paintRings(n); }
+    function paintRings(n) {
+        const i = n ? rb.notes.indexOf(n) : -1;
+        map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);
+    }
     function toggleNote(i) { if (editorOpen && sel === i) closeEditor(); else select(i); }
     function closeEditor() {
-        editorOpen = false; $('noteEditZone').hidden = true;
+        editorOpen = false; $('noteEditZone').hidden = true; map.setNoteRings(null);
         if (map.map && map.ready && map.map.getBearing()) map.map.easeTo({ bearing: 0, duration: 300 }); // back to north-up
         parkEditor(); // park both pieces back so a list rebuild can't destroy them
         placeTulips(); // restore the static vignette in the row the canvas just left
@@ -1612,12 +1620,13 @@
         openEditZoneAt(i); renderEditor();
         showOnCanvas(i);
         markSelectedRow(); placeTulips(); // refill the static vignette in the row the canvas left
-        map.select(rb.notes[i], true); // highlight
+        markOnMap(rb.notes[i]); // highlight
         // recentre + rotate the map to the note's arrival heading. Only a deliberate selection
         // reorients — edits/deletes refresh through renderNotes (not select), so they never move
         // the map and you don't lose your place (the concern behind #65).
         const n = rb.notes[i];
-        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: Math.max(map.map.getZoom(), 14), bearing: n.bearing_in || 0, duration: 450 });
+        // a close-up of ~200 m around it, turned so the road you arrive on points up: read like the tulip
+        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: map.zoomForRadius(200), bearing: n.bearing_in || 0, duration: 450 });
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.
@@ -1740,6 +1749,7 @@
     }
 
     function renderEditor() {
+        if (editorOpen && rb && rb.notes[sel]) paintRings(rb.notes[sel]); // the rings follow the note's radius and position
         const n = rb.notes[sel];
         renderBlockTabs(n);
         // One pane at a time, so each tab shows its own job and nothing else. The tulip canvas is
@@ -2114,7 +2124,7 @@
     function routeChanged(toastMsg) {
         sel = Math.min(sel, rb.notes.length - 1);
         refreshMap(true); renderNotes(); renderEditor(); showOnCanvas(sel); markDirty();
-        map.select(rb.notes[sel], true);
+        markOnMap(rb.notes[sel]);
         if (toastMsg) toast(toastMsg);
     }
 

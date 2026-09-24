@@ -417,7 +417,9 @@
     //
     // Its top-left corner carries the note's number and the distance still to run to it (#571),
     // live from the GPS like the row's own, so it reads without looking away from the map.
-    const NOTE_MAP_ZOOM = 16;
+    // It opens on NOTE_MAP_RADIUS_M around you — about a kilometre across, enough to see the road
+    // ahead and the waypoint in it — whatever the screen; the rider zooms in or out from there.
+    const NOTE_MAP_RADIUS_M = 500;
     function toggleNoteMap(i) {
         if (inlineMapIdx === i) { closeInlineMap(); return; } // tapping the open one closes it
         closeInlineMap();
@@ -429,7 +431,8 @@
         el.hidden = false; inlineMapIdx = i;
         const centre = lastHere || { lat: +n.lat, lon: +n.lon };
         const heading = meter && meter.heading != null ? meter.heading : 0;
-        inlineMap = new RBMap('nmapMap', { zoom: NOTE_MAP_ZOOM, center: [centre.lon, centre.lat], bearing: lastHere ? heading : 0, layerToggle: true, geolocate: true, headingToggle: true });
+        inlineMap = new RBMap('nmapMap', { zoom: 15, center: [centre.lon, centre.lat], bearing: lastHere ? heading : 0, layerToggle: true, geolocate: true, headingToggle: true });
+        if (inlineMap.map) inlineMap.map.jumpTo({ zoom: inlineMap.zoomForRadius(NOTE_MAP_RADIUS_M) }); // sized to the map as laid out
         inlineMap.showRoadbook({ track: [], notes: [n] }, true); // this waypoint alone, no route, no auto-fit
         inlineMap.select(n, true);                               // highlight it (noEase: keep our centre)
         if (lastHere) { inlineMap.setPosition(lastHere.lat, lastHere.lon, true, meter && meter.heading); guideTo(i, lastHere); }
