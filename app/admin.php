@@ -111,7 +111,7 @@ function admin_users(array $user, array $d = []): void {
         $where .= ($where ? ' AND' : ' WHERE') . ' users.organization LIKE ?';
         $args[] = '%' . $orgQ . '%';
     }
-    $st = db()->prepare('SELECT id, first_name, last_name, username, email, organization, avatar, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, created_at
+    $st = db()->prepare('SELECT id, first_name, last_name, username, email, organization, avatar, email_verified, is_admin, is_organizer, must_change_password, blocked, quota_bytes, default_lat, default_lon, created_at
         FROM users' . $where . ' ORDER BY id');
     $st->execute($args);
     $rows = $st->fetchAll();
@@ -156,6 +156,8 @@ function admin_users(array $user, array $d = []): void {
         'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),
         'quota_bytes' => $r['quota_bytes'] !== null ? (int)$r['quota_bytes'] : null, // null = system default
         'quota'      => user_quota_bytes($r),                                         // effective quota (bytes)
+        // the default map location the user set (#939) — admin eyes only, never on a public page
+        'location'   => $r['default_lat'] !== null && $r['default_lon'] !== null ? ['lat' => (float)$r['default_lat'], 'lon' => (float)$r['default_lon']] : null,
         'created_at' => $r['created_at'],
     ], $rows);
     // me_super: whether the caller may act on other admins (admin_target) — the UI hides what the server would refuse

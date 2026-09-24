@@ -1668,3 +1668,14 @@ Object.assign(window.RBi18nLangs.es, {
     "Photos and texts in a roadbook use the full width of the page, and the sound comes back by itself after a call or a locked screen.": "Las fotos y los textos del roadbook ocupan todo el ancho, y el sonido vuelve solo tras una llamada o la pantalla bloqueada.",
     "Every file the app saves opens the share sheet so you choose where it goes, and the app no longer zooms or goes full screen by mistake.": "Cada archivo que guarda la app abre el menú de compartir para que elijas dónde va, y la app ya no hace zoom ni se pone a pantalla completa por error.",
 });
+
+/* the track a run drove (#936) */
+Object.assign(window.RBi18nLangs.es, {
+    "This run has no track.": "Este recorrido no tiene track.",
+    "Map unavailable.": "Mapa no disponible.",
+});
+
+/* the track a run drove (#936) */
+Object.assign(window.RBi18nLangs.es, {
+    "Driven track": "Recorrido real",
+});

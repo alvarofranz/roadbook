@@ -74,8 +74,8 @@ describe('RBRun', () => {
         expect(details).toContain('+8 km/h');
     });
     it('uploads only ready items and removes them once saved', async () => {
-        const waiting = window.RBRun.enqueue(run, false);
-        const ready = window.RBRun.enqueue({ ...run, title: 'Y' }, true);
+        const waiting = window.RBRun.enqueue(run, false).key;
+        const ready = window.RBRun.enqueue({ ...run, title: 'Y' }, true).key;
         const done = await window.RBRun.flush();
         expect(Object.keys(done)).toEqual([ready]);
         expect(queued(waiting)).not.toBeNull();
@@ -86,14 +86,14 @@ describe('RBRun', () => {
         expect(queued(waiting)).toBeNull();
     });
     it('keeps a report that could not reach the server', async () => {
-        const k = window.RBRun.enqueue({ ...run, title: 'offline' }, true);
+        const k = window.RBRun.enqueue({ ...run, title: 'offline' }, true).key;
         await window.RBRun.flush();
         expect(queued(k)).not.toBeNull();
     });
     it('a flush asked for during another one still uploads what became ready meanwhile', async () => {
-        const first = window.RBRun.enqueue(run, true);
+        const first = window.RBRun.enqueue(run, true).key;
         const running = window.RBRun.flush();          // reads the queue now: only `first`
-        const later = window.RBRun.enqueue({ ...run, title: 'Y' }, false);
+        const later = window.RBRun.enqueue({ ...run, title: 'Y' }, false).key;
         window.RBRun.update(later, { ready: true });  // the runner picks while the first upload runs
         const done = await window.RBRun.flush();
         expect(Object.keys(await running)).toEqual([first]);
@@ -137,7 +137,7 @@ describe('a report left without a choice (#460)', () => {
         localStorage.clear();
         window.RBt = (k) => k; window.RBesc = (s) => String(s);
         eval(fs.readFileSync('public/assets/js/run-report.js', 'utf8'));
-        const key = RBRun.enqueue({ title: 'x' }, false);
+        const key = RBRun.enqueue({ title: 'x' }, false).key;
         RBRun.settleAbandoned();
         const item = JSON.parse(localStorage.getItem('rb_pending_runs')).find((i) => i.key === key);
         expect(item).toMatchObject({ ready: true, visibility: 'private' });

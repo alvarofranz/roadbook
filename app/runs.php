@@ -55,6 +55,7 @@ function run_save(array $user, array $d): void {
         mb_substr(trim((string)($d['device'] ?? '')), 0, 80) ?: null, // admins only (#870)
     ]);
     $runId = (int)db()->lastInsertId();
+    run_store_track((int)$user['id'], $runId, $d['track'] ?? null);
     // a competition run of an event roadbook enters its classification at once (#590) — unverified
     // (valid NULL): the result is whatever the device sent, so the Ranking page checks its signature
     // like a scanned QR's before it counts as valid
@@ -80,6 +81,7 @@ function run_delete(array $user, array $d): void {
     run_owned($user, $id = (int)($d['id'] ?? 0));
     db()->prepare('DELETE FROM roadbook_runs WHERE id = ?')->execute([$id]);
     @unlink(run_card_path($id)); // its shareable image goes with it
+    @unlink(run_track_path((int)$user['id'], $id)); // and the track it drove
     json_out(['ok' => true]);
 }
 /* A run's shareable image (#785), made on the runner's device at the end of the run. Its file
@@ -91,6 +93,43 @@ function run_card_url(int $id): ?string {
     $path = run_card_path($id);
     return is_file($path) ? '/run-cards/' . run_card_name($id) . '?v=' . filemtime($path) : null;
 }
+/* The track a run actually drove: every run logs its GPX (#936), and the log belongs to the run (#940),
+   public or private — kept in the runner's private storage (it goes with the account), shown on
+   the run with a map, downloadable as GPX by the runner. A file per run, so nothing in the
+   schema changes; no file = a run without a track (a local .rdbk run from before, or too short). */
+const RUN_TRACK_MAX_POINTS = 30000; // 16 h at one point every 2 s
+function run_track_path(int $uid, int $id): string { global $CFG; return $CFG['storage'] . '/' . $uid . '/runs/' . $id . '.json'; }
+function run_store_track(int $uid, int $id, $track): void {
+    if (!is_array($track)) return;
+    $pts = [];
+    foreach (array_slice($track, 0, RUN_TRACK_MAX_POINTS) as $p) {
+        if (!is_array($p) || !is_numeric($p['lat'] ?? null) || !is_numeric($p['lon'] ?? null)) continue;
+        $lat = (float)$p['lat']; $lon = (float)$p['lon'];
+        if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) continue;
+        $pt = ['lat' => round($lat, 6), 'lon' => round($lon, 6)];
+        if (isset($p['ele']) && is_numeric($p['ele'])) $pt['ele'] = (int)round((float)$p['ele']);
+        if (isset($p['t']) && is_numeric($p['t'])) $pt['t'] = (int)$p['t'];
+        $pts[] = $pt;
+    }
+    if (count($pts) < 2) return;
+    $dir = rb_dir($uid) . '/runs';
+    if (!is_dir($dir)) mkdir($dir, 0700, true);
+    rb_write_file(run_track_path($uid, $id), json_encode($pts)); // best effort: the report is saved either way
+}
+// The track of one run: for anyone when the run is public, for its runner (and admins) always.
+function run_track(array $d): void {
+    $st = db()->prepare('SELECT ru.user_id, ru.is_public, ru.roadbook_title, COALESCE(ru.ended_at, ru.created_at) AS ended_at FROM roadbook_runs ru JOIN users u ON u.id = ru.user_id WHERE ru.id = ? AND u.blocked = 0');
+    $st->execute([$id = (int)($d['id'] ?? 0)]);
+    $run = $st->fetch();
+    $me = current_user();
+    $mine = $me && $run && ((int)$me['id'] === (int)$run['user_id'] || is_admin($me));
+    if (!$run || (!(int)$run['is_public'] && !$mine)) fail('Not found.', 404);
+    $path = run_track_path((int)$run['user_id'], $id);
+    $pts = is_file($path) ? json_decode((string)file_get_contents($path), true) : null;
+    json_out(['ok' => true, 'track' => is_array($pts) ? $pts : [], 'is_mine' => $mine,
+        'title' => $run['roadbook_title'], 'date' => substr((string)$run['ended_at'], 0, 10)]);
+}
+
 // The standing choice for new reports, from the account settings (#619).
 function runs_settings(array $user, array $d): void {
     $v = (string)($d['runs_visibility'] ?? '');
@@ -149,6 +188,7 @@ function profile_get(array $d): void {
             'speed_zones' => (int)$r['speed_zones'], 'speed_exceeded' => (int)$r['speed_exceeded'], 'max_over_kmh' => (int)$r['max_over_kmh'],
             'penalties' => $r['penalties'] ? json_decode($r['penalties'], true) : null, 'is_public' => (int)$r['is_public'],
             'card' => run_card_url((int)$r['id']), // the shareable image, when the run has one (#785)
+            'has_track' => is_file(run_track_path((int)$u['id'], (int)$r['id'])), // the track it drove (#940)
         ], $rows),
     ]);
 }

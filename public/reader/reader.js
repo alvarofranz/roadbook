@@ -138,7 +138,7 @@
             if (meter && !finished) {
                 const what = esc((rb.meta && rb.meta.title) || t('Roadbook')) + ' · ' + activeIdx + '/' + notes.length + ' ' + t('notes');
                 if (!(await RBConfirmDanger(t('Open this file and leave the run in progress? Your progress on the notes will be lost.') + '<br><b>' + what + '</b>'))) return;
-                await endRun();
+                endRun();
                 resetRun();
             }
             try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) { toast('Could not load the roadbook.'); }
@@ -669,18 +669,17 @@
         updatePauseBtn();
     };
     // The run is over: release the GPS explicitly, not via the unload path (#430), drop the run
-    // checkpoint and unblock the version auto-refresh. A GPX log belongs to the run, so it ends
-    // with it and goes to its finished-track modal — whose explicit outcomes are the only way the
-    // track's own checkpoint is cleared (#460) — before anything else happens.
-    async function endRun() {
+    // checkpoint and unblock the version auto-refresh. A run left unfinished (another file opened
+    // over it) ends its GPX log too — its checkpoint stays, so the track is offered back (#460).
+    function endRun() {
         finished = true;
         if (meter) meter.stop();
+        if (RBGpxRecorder.recording) RBGpxRecorder.end();
         clearSession(); window.RB_BUSY = false;
-        if (RBGpxRecorder.recording) await RBGpxRecorder.handOver();
     }
-    async function leaveRun(to) {
-        closeModal('reportModal'); // the report is done with; the track's modal must not open under it
-        await endRun();
+    function leaveRun(to) {
+        closeModal('reportModal');
+        endRun();
         location.href = to;
     }
 
@@ -722,11 +721,15 @@
             penalties: competition ? { acc: Math.round(pen.acc), cap: Math.round(pen.cap), skip: pen.skip, extra: Math.round(pen.extra), speed: pen.speed } : null,
         };
         if (competition) report.result_meta = lastPayload = await signedResult();
+        // the track the run drove belongs to the run (#940): it travels with the report, public or private
+        report.track = RBGpxRecorder.recording ? RBGpxRecorder.end().pts : [];
         // the report is safe on the device before anything else happens — the run is over, the
-        // checkpoint can go (#460: cleared only once the work has reached a safe place)
+        // checkpoints can go (#460: cleared only once the work has reached a safe place). A device
+        // too full to hold it keeps the track's own checkpoint, which the next start offers back.
         const cfg = await RBConfig();
         const askFirst = !!(cfg.user && (cfg.user.runs_visibility || 'ask') === 'ask');
-        const key = RBRun.enqueue(report, !askFirst);
+        const { key, stored } = RBRun.enqueue(report, !askFirst);
+        if (stored) RBGpxRecorder.clearCheckpoint();
         clearSession(); window.RB_BUSY = false;
         showReport(report, key, cfg.user, askFirst);
     }
@@ -738,6 +741,10 @@
         $('reportBadge').innerHTML = `<i class="fa-solid ${report.completed ? 'fa-flag-checkered' : 'fa-circle-stop'}"></i>`;
         $('reportSub').textContent = report.title + ' · ' + RBFmtDate(new Date(report.ended_at).toISOString().slice(0, 10)) + (report.team ? ' · ' + t('Vehicle') + ' ' + report.team : '');
         $('reportStats').innerHTML = RBRun.statsHTML(report) + RBRun.detailsHTML(report);
+        // the track it drove, on a map and as a GPX — the runner's own, whatever the run's visibility
+        $('reportTrack').hidden = report.track.length < 2;
+        $('reportTrackView').onclick = () => RBRun.showTrack(report.track, { title: report.title, download: true });
+        $('reportGpx').onclick = () => RBRun.downloadGpx(report.track, report.title);
         $('reportQr').hidden = !report.result_meta;
         if (report.result_meta) {
             lastQrUrl = RBQr.dataURL(report.result_meta); // PNG: the name, the declared type and the bytes must agree (#392)

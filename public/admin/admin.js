@@ -154,6 +154,8 @@
             <p class="hint">${esc(t('Can create and manage their own events.'))}</p>
             <label class="checkbox-row"><input type="checkbox" id="euAdmin"> <span>${esc(t('Admin'))}</span></label>
             <p class="hint">${esc(t('Full access to users, settings and every event.'))}</p>
+            <span class="field-label">${esc(t('Default map location'))}</span>
+            ${u.location ? '<div id="euLocMap" class="loc-picker-map"></div>' : `<p class="muted small">${esc(t('Not set'))}</p>`}
             <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false });
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
@@ -165,6 +167,11 @@
         m.q('#euOrganizer').checked = !!u.is_organizer;
         m.q('#euAdmin').checked = !!u.is_admin;
         m.q('#euAdmin').disabled = u.locked || u.id === me;
+        // where the user's maps start (#939): the location they set in their profile, shown, not edited
+        if (u.location && window.maplibregl) {
+            const map = new RBMap('euLocMap', { style: RBMap.STYLE_TOPO, zoom: 11, center: [u.location.lon, u.location.lat] });
+            if (map.map) new maplibregl.Marker({ color: RBCssVar('--sand') }).setLngLat([u.location.lon, u.location.lat]).addTo(map.map);
+        }
         m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const busy = RBBusy(m.q('#euSave'));

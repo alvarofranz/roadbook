@@ -2,14 +2,14 @@
 /* /run/<id> — the shareable page of one public run (#803). The link a runner shares: rendered on the
  * server so the Open Graph tags carry the run's card (#785) as og:image — link previews come from
  * crawlers, which never run JavaScript. The page itself shows the card and the run's figures, and
- * leads to the runner's profile and, when it is public, the roadbook. A private or unknown run is a
+ * leads to the runner's profile, the track it drove and, when it is public, the roadbook. A private or unknown run is a
  * plain 404 page: the link says nothing about it. */
 require dirname(__DIR__, 2) . '/app/bootstrap.php';
 require dirname(__DIR__, 2) . '/app/page.php';
 global $CFG;
 
 $id = (int)($_GET['id'] ?? 0);
-$st = db()->prepare('SELECT ru.id, ru.roadbook_title, ru.completed, ru.duration_s, ru.distance_m, ru.notes_total, ru.notes_reached,
+$st = db()->prepare('SELECT ru.id, ru.user_id, ru.roadbook_title, ru.completed, ru.duration_s, ru.distance_m, ru.notes_total, ru.notes_reached,
         COALESCE(ru.ended_at, ru.created_at) AS ended_at, u.username, r.slug AS rb_slug, r.status AS rb_status
     FROM roadbook_runs ru JOIN users u ON u.id = ru.user_id LEFT JOIN roadbooks r ON r.id = ru.roadbook_id
     WHERE ru.id = ? AND ru.is_public = 1 AND u.blocked = 0');
@@ -31,6 +31,7 @@ if ($run) {
     $profile = '/u/' . rawurlencode($run['username']) . '#run-' . (int)$run['id'];
     $roadbook = ($run['rb_status'] === 'public' && $run['rb_slug']) ? '/challenge/' . rawurlencode($run['rb_slug']) : null;
     $when = substr((string)$run['ended_at'], 0, 10);
+    $hasTrack = is_file(run_track_path((int)$run['user_id'], (int)$run['id'])); // the track it drove (#940)
 }
 header('Content-Type: text/html; charset=utf-8');
 ?><!doctype html>
@@ -75,11 +76,13 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="btnrow center">
         <a class="btn btn-primary" href="<?= $h($profile) ?>"><i class="fa-solid fa-circle-user"></i> <span data-i18n="View the profile">View the profile</span></a>
         <?php if ($roadbook): ?><a class="btn btn-ghost" href="<?= $h($roadbook) ?>"><i class="fa-solid fa-book-open"></i> <span data-i18n="Open the roadbook">Open the roadbook</span></a><?php endif; ?>
+        <?php if ($hasTrack): ?><button class="btn btn-ghost" type="button" data-run-track="<?= (int)$run['id'] ?>"><i class="fa-solid fa-route"></i> <span data-i18n="Driven track">Driven track</span></button><?php endif; ?>
     </div>
 <?php else: ?>
     <p class="muted" data-i18n="This run is not public, or no longer exists.">This run is not public, or no longer exists.</p>
 <?php endif; ?>
 </main>
 <?php page_scripts(); ?>
+<script src="/assets/js/run-report.js?v=<?= page_version() ?>"></script>
 </body>
 </html>

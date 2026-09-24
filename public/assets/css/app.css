@@ -544,6 +544,10 @@ body.rb-immersive .app-chip-stack { display: none; }
 .nrow.block .col-text-wide { grid-column: 1 / -1; padding: .8rem .6rem; text-align: center; font-style: italic; color: #555; }
 /* a text block is meant to be read at arm's length: full width, big, as many lines as it needs */
 .nrow.block-text .col-text-wide .text { font-size: 1.15rem; line-height: 1.5; white-space: pre-wrap; }
+/* a map showing one place: the default map location (the account settings, the admin user form #939) */
+.loc-picker-map { height: 220px; border-radius: 12px; overflow: hidden; margin: .5rem 0 .2rem; }
+/* the track a run drove (RBRun.showTrack, #936) */
+.run-track-map { height: min(60vh, 420px); border-radius: 12px; overflow: hidden; margin: .4rem 0 .6rem; }
 .nrow.done { background: #d6f5e0; }     /* light green: reached */
 .nrow.skipped { background: #ff9c9c; }  /* red: passed over without being reached */
 .nrow.active { box-shadow: inset 0 0 0 3px #ff2a2a; }            /* red border: target */

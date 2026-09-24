@@ -6,7 +6,9 @@
  *  · detailsHTML(run) what went wrong: the skipped notes, the exceeded limits, the penalties
  *  · the pending queue: a finished report is stored on the device FIRST and uploaded from there,
  *    so a run is never lost to a dead connection or a signed-out session. An item uploads once it
- *    is `ready` — immediately, or after the runner chose public/private on the report (#619). */
+ *    is `ready` — immediately, or after the runner chose public/private on the report (#619).
+ *  · the track the run drove: every run logs its GPX, and it travels with the report — shown on a
+ *    map (showTrack / openTrack) and downloadable as GPX by the runner (downloadGpx). */
 (function () {
     const t = (k) => RBt(k), esc = RBesc;
     const QUEUE_KEY = 'rb_pending_runs';
@@ -44,12 +46,14 @@
 
     /* ---------- the device queue ---------- */
     const read = () => { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { return []; } };
-    const write = (items) => { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(items.slice(-20))); } catch (e) {} };
+    // true once the queue is on the device — false when storage refused it (full, blocked)
+    const write = (items) => { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(items.slice(-20))); return true; } catch (e) { return false; } };
     // item: { key, report, ready, visibility: 'public'|'private'|null (null = the runner's preference), remember }
+    // Returns { key, stored }: `stored` says whether the report (its track included) is safe on the device.
     function enqueue(report, ready) {
         const key = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-        write(read().concat([{ key, report, ready, visibility: null, remember: false }]));
-        return key;
+        const stored = write(read().concat([{ key, report, ready, visibility: null, remember: false }]));
+        return { key, stored };
     }
     // A report whose runner never picked Private or Public (the app closed on the report) would wait
     // forever: at the next start it settles as private — the safe answer, changeable on the profile.
@@ -80,5 +84,51 @@
     // What a shared run card says (#852): the runner's own words, glad to have done it
     const shareText = (run, link) => [t(run.completed ? 'Check out the roadbook I completed!' : 'Check out my run!'), run.title ? '“' + run.title + '”' : '', link].filter(Boolean).join(' ');
 
-    window.RBRun = { statsHTML, detailsHTML, shareText, settleAbandoned, fmtDuration, avgKmh, enqueue, update, flush };
+    /* ---------- the track the run drove ---------- */
+    const gpxName = (title) => (RB.slug(title || 'run') || 'run') + '.gpx';
+    const downloadGpx = (track, title) => RBDownload(new Blob([RB.gpxDocument(title || 'Run', track)], { type: 'application/gpx+xml' }), gpxName(title));
+    // MapLibre + RBMap load on demand: the pages that show a run carry no map otherwise
+    const ASSETS = (document.currentScript && document.currentScript.src || '').replace(/run-report\.js.*$/, '');
+    const MAPLIBRE = 'https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl';
+    const loadScript = (src) => new Promise((resolve, reject) => { const el = document.createElement('script'); el.src = src; el.onload = resolve; el.onerror = reject; document.head.appendChild(el); });
+    let mapLib = null;
+    const ensureMap = () => mapLib || (mapLib = (async () => {
+        if (!window.maplibregl) {
+            const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = MAPLIBRE + '.css'; document.head.appendChild(css);
+            await loadScript(MAPLIBRE + '.js');
+        }
+        if (!window.RBMap) await loadScript(ASSETS + 'rbmap.js');
+    })().catch((e) => { mapLib = null; throw e; }));
+    // The run's track on a map, with its GPX for the runner (`download`)
+    async function showTrack(track, { title, download } = {}) {
+        const d = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-route icon-accent"></i> ${esc(t('Driven track'))}</h2></div>
+            <div id="runTrackMap" class="run-track-map"></div>
+            <p class="muted small">${track.length} ${esc(t('points'))} · ${RBKm(RB.cumulativeM(track)[track.length - 1] || 0)}</p>
+            <div class="btnrow end">
+                ${download ? `<button class="btn btn-ghost" type="button" data-gpx><i class="fa-solid fa-download"></i> GPX</button>` : ''}
+                <button class="btn btn-primary" type="button" data-close>${esc(t('Close'))}</button>
+            </div>`, 'wide');
+        d.q('[data-close]').onclick = d.close;
+        if (download) d.q('[data-gpx]').onclick = () => downloadGpx(track, title);
+        try {
+            await ensureMap();
+            const map = new RBMap('runTrackMap', { style: RBMap.STYLE_TOPO, layerToggle: true });
+            map.showRoadbook({ track, notes: [] });
+        } catch (e) { d.q('#runTrackMap').innerHTML = `<div class="map-placeholder">${esc(t('Map unavailable.'))}</div>`; }
+    }
+    // A saved run's track, from the server: anyone's when the run is public, always the runner's own
+    async function openTrack(runId) {
+        const j = await RBApi('run_track', { id: runId });
+        if (!j.ok) return RBToast(j.error || 'Could not load.');
+        if (!j.track || j.track.length < 2) return RBToast('This run has no track.');
+        showTrack(j.track, { title: j.title + ' ' + j.date, download: j.is_mine });
+    }
+
+    // any `[data-run-track="<id>"]` button opens that run's track — the profile's runs, the run page
+    document.addEventListener('click', (e) => {
+        const b = e.target.closest && e.target.closest('[data-run-track]');
+        if (b) openTrack(+b.dataset.runTrack);
+    });
+
+    window.RBRun = { statsHTML, detailsHTML, shareText, settleAbandoned, fmtDuration, avgKmh, enqueue, update, flush, showTrack, openTrack, downloadGpx };
 })();
