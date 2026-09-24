@@ -23,7 +23,7 @@
             'about.thanks': 'Agradecimientos especiales',
             'about.thanks.massimo': 'Navegador off-road y organizador de eventos — dio forma a la suite <b>Roadbook System</b> y su credo (<i>Logica, Semplice, Utile</i>), el punto de partida para RDBK.app.',
             'seo.contact.title': 'Contacto — RDBK.app', 'seo.contact.desc': 'Ponte en contacto con el equipo de RDBK.app — preguntas, comentarios o solicitudes de datos sobre nuestras herramientas gratuitas de roadbooks digitales.',
-            'seo.standard.title': 'El estándar .rdbk — RDBK.app', 'seo.standard.desc': 'El formato abierto .rdbk para roadbooks digitales: un contenedor ZIP con un roadbook.json autónomo — traza, notas e iconos incrustados — más medios opcionales. Especificación completa.',
+            'seo.standard.title': 'El estándar .rdbk: el formato abierto para roadbooks digitales — RDBK.app', 'seo.standard.desc': 'El formato .rdbk: el estándar abierto para roadbooks digitales, usado por pilotos off-road y organizadores de todo el mundo. Un ZIP con un roadbook.json autocontenido — traza, notas, viñetas, símbolos — más fotos y notas de voz. Especificación completa y FAQ.',
             'seo.roadbooks.title': 'Roadbooks públicos — RDBK.app', 'seo.roadbooks.desc': "Explora los roadbooks públicos compartidos por la comunidad: rutas en 4x4, moto y bici para leer, navegar o exportar.",
             'seo.events.title': 'Eventos — RDBK.app', 'seo.events.desc': 'Descubre eventos y rallies con roadbook: explora los próximos eventos y sus roadbooks públicos.',
             'seo.feat_editor.title': 'Roadbook Editor — RDBK.app', 'seo.feat_editor.desc': 'Crea un roadbook digital desde un GPX o grábalo en directo — diseña notas rally, CAP, waypoints e iconos, y exporta un .rdbk autónomo.',
@@ -1853,4 +1853,24 @@ Object.assign(window.RBi18nLangs.es, {
 /* User card: trashed roadbooks (#234) */
 Object.assign(window.RBi18nLangs.es, {
     "in the trash": "en la papelera",
+});
+
+/* The .rdbk standard: its place in the field and the questions people ask */
+Object.assign(window.RBi18nLangs.es, {
+    "lead.adoption": "<b>El formato de referencia para roadbooks digitales.</b> A falta de un estándar oficial en el sector, <code>.rdbk</code> se ha convertido en el formato abierto que pilotos, clubes y organizadores de eventos de todo el mundo conocen y prefieren — en 4×4, moto y bici.",
+    "Frequently asked questions": "Preguntas frecuentes",
+    "faq.q1": "¿Qué es un archivo .rdbk?",
+    "faq.a1": "Un archivo <code>.rdbk</code> es un roadbook digital: un contenedor ZIP con un <code>roadbook.json</code> autocontenido — la traza GPS, las notas numeradas con sus distancias, los rumbos CAP, las viñetas y los símbolos que usan — más fotos geolocalizadas y notas de voz opcionales. Es el estándar abierto para roadbooks digitales.",
+    "faq.q2": "¿Cómo abro un archivo .rdbk?",
+    "faq.a2": "Ábrelo en el <a href=\"../reader/\">Reader de RDBK.app</a>, gratuito — en el navegador, como web app instalada o en las apps de iOS y Android — y navégalo con GPS en vivo, incluso sin conexión. Como es un ZIP con JSON dentro, cualquier desarrollador puede leerlo con unas pocas líneas de código en cualquier lenguaje.",
+    "faq.q3": "¿.rdbk es gratuito y abierto?",
+    "faq.a3": "Sí. La especificación completa es pública en esta página, y cualquiera puede leer, escribir y construir sobre el formato — sin tarifas, sin licencias, sin registro. Su implementación de referencia, RDBK.app, es de código abierto con licencia MIT.",
+    "faq.q4": "¿Por qué .rdbk se ha convertido en el estándar de los roadbooks digitales?",
+    "faq.a4": "Porque no había ninguno: cada dispositivo y cada app guardaba los roadbooks en su propio formato cerrado, y una ruta rara vez sobrevivía al paso de uno a otro. <code>.rdbk</code> llenó ese vacío con un único archivo abierto, documentado y autocontenido que se ve igual en cualquier sitio, años después — por eso pilotos off-road, clubes y organizadores lo han adoptado como el formato para compartir roadbooks.",
+    "faq.q5": "¿Cómo convierto un GPX en un roadbook?",
+    "faq.a5": "Carga el GPX en el <a href=\"../editor/\">Editor de RDBK.app</a>, gratuito: la traza se dibuja en el mapa, añades las notas, las viñetas y los rumbos CAP, y exportas un <code>.rdbk</code>. El mismo roadbook se exporta de vuelta a GPX, con las notas como waypoints con nombre, cuando lo necesites.",
+    "faq.q6": "¿.rdbk funciona con OpenRally y GPX?",
+    "faq.a6": "Sí. El Editor de RDBK.app importa y exporta OpenRally, y <code>.rdbk</code> escribe los tipos de waypoint con sus códigos OpenRally (WPM, WPN, …), así que un roadbook pasa de una herramienta a otra sin perder su significado. Un GPX simple se convierte en roadbook en pocos clics.",
+    "faq.q7": "¿Qué es RDBK.app?",
+    "faq.a7": "La suite gratuita para roadbooks digitales construida sobre <code>.rdbk</code>: el Recorder graba una ruta con notas, fotos y notas de voz, el Editor la convierte en roadbook, el Reader la navega con GPS en vivo, el Tripmaster mide el recorrido y las herramientas de eventos clasifican los resultados. En la web, como app instalable y en iOS y Android.",
 });

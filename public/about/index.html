@@ -22,26 +22,47 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.16-235">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.16-235">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.16-236">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.16-236">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
+        {"@type":"AboutPage","@id":"https://rdbk.app/about/","url":"https://rdbk.app/about/","name":"Who we are — RDBK.app","about":{"@id":"https://rdbk.app/#organization"}},
+        {"@type":"Organization","@id":"https://rdbk.app/#organization","name":"RDBK.app","url":"https://rdbk.app/","logo":"https://rdbk.app/assets/logo.png","email":"info@rdbk.app","sameAs":["https://github.com/alvarofranz/roadbook"],"founder":[{"@id":"https://rdbk.app/about/#alvaro-franz"},{"@id":"https://rdbk.app/about/#maurizio-andreotti"}]},
+        {"@type":"Person","@id":"https://rdbk.app/about/#alvaro-franz","name":"Álvaro Franz","jobTitle":"Developer, RDBK.app","url":"https://alvarofranz.com/","sameAs":["https://www.linkedin.com/in/alvaro-franz/","https://alvarofranz.com/","https://github.com/alvarofranz"],"worksFor":{"@id":"https://rdbk.app/#organization"}},
+        {"@type":"Person","@id":"https://rdbk.app/about/#maurizio-andreotti","name":"Maurizio Andreotti","jobTitle":"Product & design, RDBK.app","sameAs":["https://www.linkedin.com/in/maurizioandreotti/","https://eleven-stars.jimdosite.com/"],"worksFor":{"@id":"https://rdbk.app/#organization"}}
+    ]}</script>
     <style>
-        .about-hero { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: center; }
-        .about-hero .about-figure img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
-        @media (min-width: 760px) { .about-hero { grid-template-columns: 1.3fr 1fr; } }
-        .about-gallery { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1.2rem; }
-        .about-gallery img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 3 / 2; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
-        @media (min-width: 620px) { .about-gallery { grid-template-columns: 1fr 1fr; } }
-        .about-sec { margin-top: 2.4rem; }
-        .about-sec h2 { font-size: 1.4rem; letter-spacing: -.01em; margin: 0 0 .6rem; }
-        .about-sec p { color: var(--text); max-width: 68ch; }
-        .about-sec p + p { margin-top: .7rem; }
+        /* the hero: the words beside the photo, the photo filling its column */
+        .about-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.4rem; align-items: stretch; margin-bottom: .6rem; }
+        .about-intro h1 { margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -.02em; }
+        .about-intro .lead { color: var(--text); font-size: clamp(1.02rem, 1.6vw, 1.14rem); line-height: 1.65; margin: 0; }
+        .about-intro .lead + .lead { margin-top: .9rem; padding-left: 1rem; border-left: 3px solid var(--sand); color: #c7ccd6; }
+        .about-hero figure, .about-gallery figure { margin: 0; }
+        .about-figure img, .about-gallery img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); display: block; }
+        .about-figure img { aspect-ratio: 4 / 3; }
+        @media (min-width: 820px) {
+            .about-hero { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 2.4rem; align-items: center; }
+            .about-figure img { aspect-ratio: 5 / 4; }
+        }
+        .about-gallery { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 1.4rem; }
+        .about-gallery img { aspect-ratio: 3 / 2; }
+        @media (min-width: 620px) { .about-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .about-sec { margin-top: 3rem; padding-top: 2.2rem; border-top: 1px solid var(--line); }
+        .about-sec h2 { font-size: 1.45rem; letter-spacing: -.01em; margin: 0 0 .7rem; }
+        .about-sec p { color: var(--text); max-width: 68ch; line-height: 1.65; }
+        .about-sec p + p { margin-top: .8rem; }
         .creed { color: var(--sand); font-weight: 700; font-style: italic; }
-        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .team-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; }
-        .team-card h3 { margin: 0; font-size: 1.1rem; }
-        .team-card .role { color: var(--sand); font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin: .15rem 0 .6rem; }
-        .team-card p { color: var(--muted); margin: 0; }
-        .team-card .team-link { margin-top: .7rem; font-size: .85rem; }
+        /* people: an initials badge beside the name, the links as chips at the foot of the card */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1rem; margin-top: 1rem; }
+        .team-card { display: flex; flex-direction: column; background: linear-gradient(155deg, var(--card-2), var(--card)); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem 1.3rem 1.1rem; }
+        .team-head { display: flex; align-items: center; gap: .9rem; margin-bottom: .8rem; }
+        .team-initials { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--sand); color: var(--on-sand); font-weight: 800; letter-spacing: .02em; }
+        .team-card h3 { margin: 0; font-size: 1.12rem; }
+        .team-card .role { color: var(--sand); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-top: .15rem; }
+        .team-card p { color: #c7ccd6; margin: 0; line-height: 1.6; }
+        .team-card .team-link { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: auto; padding-top: 1rem; font-size: .84rem; }
+        .team-link a { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .7rem; border: 1px solid var(--line); border-radius: 999px; color: var(--text); text-decoration: none; }
+        .team-link a:hover { border-color: var(--sand); color: var(--sand-2); }
+        .team-link i { font-size: .75em; color: var(--muted); }
         .about-sec .head-row h2 { margin: 0; }   /* the shared row centres it; .about-sec h2 would push it up */
         /* "The app": what this copy is — platform, the release it runs, the release available */
         .app-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-top: 1rem; }
@@ -56,10 +77,12 @@
 <header class="topbar"></header>
 
 <main class="wrap page-col">
-    <h1 data-i18n="about.title">Who we are</h1>
     <div class="about-hero">
+        <div class="about-intro">
+        <h1 data-i18n="about.title">Who we are</h1>
         <p class="lead" data-i18n-html="about.lead1">RDBK.app is a free suite of <b>digital tools</b> for authoring roadbooks and easily using them. Track recording with audio and photo notes helps later editing; in event preparation, the Roadbook Editor is then usable by multiple authors — and much more!</p>
         <p class="lead" data-i18n-html="about.lead2">RDBK.app is everything a roadbook needs, for 4×4, motorbike and bike alike — built around the open <b>.rdbk</b> format and grown out of years of real rally-navigation tooling.</p>
+        </div>
         <figure class="about-figure"><img src="../assets/about-hero.jpg" alt="Printed roadbooks on clipboards at a rally event"></figure>
     </div>
 
@@ -95,20 +118,18 @@
         </div>
     </section>
 
-    <section class="about-sec">
+    <section class="about-sec" id="team">
         <h2 data-i18n="about.team">The team</h2>
         <div class="team-grid">
             <div class="team-card">
-                <h3>Maurizio Andreotti</h3>
-                <div class="role">RDBK.app · product &amp; design</div>
+                <div class="team-head"><span class="team-initials" aria-hidden="true">MA</span><div><h3>Maurizio Andreotti</h3><div class="role">RDBK.app · product &amp; design</div></div></div>
                 <p data-i18n-html="about.team.maurizio">He shaped RDBK.app's tools — editor, reader, ranking and secure traces — and its design, then pushed the boundaries further: capturing voice notes and geotagged photos while recording a track, OpenRally import &amp; export, the event management, and setting up the online community.</p>
-                <p class="team-link"><a href="https://www.linkedin.com/in/maurizioandreotti/" target="_blank" rel="noopener">LinkedIn <i class="fa-solid fa-arrow-up-right-from-square"></i></a> · <a href="https://eleven-stars.jimdosite.com/" target="_blank" rel="noopener">eleven-stars <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+                <p class="team-link"><a href="https://www.linkedin.com/in/maurizioandreotti/" target="_blank" rel="noopener">LinkedIn <i class="fa-solid fa-arrow-up-right-from-square"></i></a> <a href="https://eleven-stars.jimdosite.com/" target="_blank" rel="noopener">eleven-stars <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
             </div>
             <div class="team-card">
-                <h3>Álvaro Franz</h3>
-                <div class="role">RDBK.app · development</div>
+                <div class="team-head"><span class="team-initials" aria-hidden="true">ÁF</span><div><h3>Álvaro Franz</h3><div class="role">RDBK.app · development</div></div></div>
                 <p data-i18n-html="about.team.alvaro">The developer behind RDBK.app — the web suite, the open <b>.rdbk</b> format, the PHP/MariaDB back-end and the native iOS &amp; Android apps. A maker of mobile and remote-coding tools, he brought Roadbook System's ideas to the modern web.</p>
-                <p class="team-link"><a href="https://alvarofranz.com/" target="_blank" rel="noopener">alvarofranz.com <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
+                <p class="team-link"><a href="https://www.linkedin.com/in/alvaro-franz/" target="_blank" rel="noopener">LinkedIn <i class="fa-solid fa-arrow-up-right-from-square"></i></a> <a href="https://alvarofranz.com/" target="_blank" rel="noopener">alvarofranz.com <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
             </div>
         </div>
     </section>
@@ -117,8 +138,7 @@
         <h2 data-i18n="about.thanks">Special thanks</h2>
         <div class="team-grid">
             <div class="team-card">
-                <h3>Massimo Sabattini</h3>
-                <div class="role">Roadbook System</div>
+                <div class="team-head"><span class="team-initials" aria-hidden="true">MS</span><div><h3>Massimo Sabattini</h3><div class="role">Roadbook System</div></div></div>
                 <p data-i18n-html="about.thanks.massimo">Off-road navigator and event organiser — he shaped the <b>Roadbook System</b> suite and its creed (<i>Logica, Semplice, Utile</i>), the starting point for RDBK.app.</p>
                 <p class="team-link"><a href="https://www.roadbook-system.com/" target="_blank" rel="noopener">roadbook-system.com <i class="fa-solid fa-arrow-up-right-from-square"></i></a></p>
             </div>
@@ -126,12 +146,12 @@
     </section>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.16-235"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.16-235"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.16-235"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.16-235"></script>
-<script src="../assets/js/i18n.js?v=1.9.16-235"></script>
-<script src="../assets/js/app.js?v=1.9.16-235"></script>
-<script src="about.js?v=1.9.16-235"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.16-236"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.16-236"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.16-236"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.16-236"></script>
+<script src="../assets/js/i18n.js?v=1.9.16-236"></script>
+<script src="../assets/js/app.js?v=1.9.16-236"></script>
+<script src="about.js?v=1.9.16-236"></script>
 </body>
 </html>
