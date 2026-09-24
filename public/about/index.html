@@ -47,6 +47,7 @@
         .app-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-top: 1rem; }
         .app-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem 1.4rem; }
         .fact { display: flex; flex-direction: column; gap: .15rem; }
+        .app-facts .release-status { grid-column: 1 / -1; margin: 0; } /* the status line spans the facts */
         .fact-key { color: var(--muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
         .fact-value { font-weight: 700; font-size: 1.05rem; }
     </style>

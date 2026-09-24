@@ -86,9 +86,8 @@ describe('the About page keeps the app panel and teasers the changelog (#478)', 
     });
 
     it('asks the shared helpers what this copy is, instead of fetching version.json again', () => {
-        expect(js).toContain('RBRunningRelease()');
-        expect(js).toContain('RBLiveVersion()');
-        expect(js).toContain('RBPlatformName()');
+        expect(js).toContain('await RBReleaseFacts()'); // the same facts and status as App Info
+        expect(js).toContain('RBReleaseStatusHTML(status)');
         expect(js).not.toContain('version.json');
         expect(js).not.toContain('relList');
     });

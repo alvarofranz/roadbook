@@ -160,7 +160,7 @@
             'wiki.cta.title': 'Step-by-step guide', 'wiki.cta.desc': 'Follow the step-by-step guide to build your roadbooks', 'wiki.cta.link': 'Go to the wiki →',
             // App Info · About
             'App Info': 'App Info', 'Environment': 'Environment', 'Update': 'Update',
-            'Platform': 'Platform', 'Running': 'Running', 'Available': 'Available', 'Latest web content': 'Latest web content',
+            'Platform': 'Platform',
             'iOS app': 'iOS app', 'Android app': 'Android app', 'Web app': 'Web app', 'Web app (installed)': 'Web app (installed)',
             // the site banner’s level (admin Site settings): its own key, as the icon palette’s “Warning” is the danger-sign category
             'banner.level.warning': 'Warning',

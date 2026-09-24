@@ -260,37 +260,40 @@ describe('GPS readiness alerts (#443-446)', () => {
     });
 });
 
-describe('app info pop-up states running vs available (#474, #478)', () => {
+describe('app info says honestly what this copy is and whether it is current (#474 · #478 · #515)', () => {
     const app = read('public/assets/js/app.js');
     const fn = app.match(/window\.showAppInfo = (?:async )?function \(\) \{([\s\S]*?)modal\.q\('\.modal-close'\)\.onclick = \(\) => modal\.close\(\);\s*\};/)[1];
+    const facts = app.match(/window\.RBReleaseFacts = async \(\) => \{[\s\S]*?\n {4}\};/)[0];
+    const status = new Function('window', app.match(/window\.RBReleaseStatus = [\s\S]*?\n {4}\};/)[0] + '; return window.RBReleaseStatus;')({});
+    const rel = (version, build) => ({ version, build });
 
-    it('asks the shared helpers every time it opens, never the stale footer text', () => {
-        expect(fn).toContain('RBRunningRelease()');
-        expect(fn).toContain('RBLiveVersion()');
+    it('reads the releases fresh every time it opens, never the stale footer text', () => {
+        expect(fn).toContain('await RBReleaseFacts()');
+        expect(facts).toContain('RBRunningRelease(), RBLiveVersion()');
         expect(fn).not.toContain('appVersion');
     });
 
-    it('names platform, running and available rows, with the web-content reference in-app', () => {
-        for (const k of ["row('Platform'", "row('Running'", "'Available'", "'Latest web content'"]) {
-            expect(fn, k).toContain(k);
-        }
+    it('names each number for what it is, and the server — never the WebView-local origin', () => {
+        for (const k of ["['Version'", "['App build'", "['Web content'", "['Latest release'", "['Server', host]", "['Environment'"]) expect(facts, k).toContain(k);
+        expect(facts).toContain("API_ROOT === PROD_ROOT ? 'Production' : 'Development'");
+        expect(facts).not.toContain('ROOT.replace(/\\/+$/');
+        expect(read('public/about/about.js')).toContain('await RBReleaseFacts()'); // one source for both
     });
 
-    it('offers Update only when something is actually newer', () => {
-        expect(fn).toContain('live.build > bundled.build');                               // app: the store, live web content ahead of the binary
-        expect(fn).toContain('live.version !== running.version || live.build !== running.build'); // web: a shell refresh
+    it('in the app: the store only when a newer version is out, web-only changes said as such', () => {
+        expect(status({ native: true, running: rel('1.9.9', 10909), bundled: rel('1.9.9', 207), live: rel('1.9.9', 208) }).kind).toBe('pending');
+        expect(status({ native: true, running: rel('1.9.9', 10909), bundled: rel('1.9.9', 207), live: rel('1.9.9', 207) }).kind).toBe('ok');
+        const out = status({ native: true, running: rel('1.9.9', 10909), bundled: rel('1.9.9', 207), live: rel('1.10.0', 230) });
+        expect(out).toMatchObject({ kind: 'store', version: '1.10.0' });
+        expect(status({ native: true, running: rel('1.10.0', 11000), bundled: rel('1.10.0', 230), live: rel('1.9.9', 208) }).kind).toBe('ok'); // 1.10 > 1.9, numerically
+        expect(fn).toContain("status.kind === 'store' ? RBStore");
     });
 
-    it('names the web content the app carries, and says when it is behind (#515)', () => {
-        // "1.8.2" in the app and "1.8.2" on the web can be sixteen builds apart: the semver does
-        // not move between store releases, so the BUNDLED build is the number that explains a
-        // missing feature.
-        expect(fn).toContain("row('Web content in this app', RBReleaseText(bundled))");
-        expect(fn).toContain('const behind = isNativeApp() && live && bundled && live.build > bundled.build');
-        expect(fn).toContain('This app was built with older web content');
-        const about = read('public/about/about.js');
-        expect(about).toContain("fact('Web content in this app', RBReleaseText(bundled))");
-        expect(about).not.toContain('const rel ='); // the one release format, RBReleaseText
+    it('on the web: a refresh when the page is behind the server, and offline said as offline', () => {
+        expect(status({ native: false, running: rel('1.9.9', 207), live: rel('1.9.9', 208) }).kind).toBe('refresh');
+        expect(status({ native: false, running: rel('1.9.9', 208), live: rel('1.9.9', 208) }).kind).toBe('ok');
+        expect(status({ native: false, running: rel('1.9.9', 208), live: null }).kind).toBe('unknown');
+        expect(fn).toContain("status.kind === 'refresh'");
     });
 
     it('links what changed and the official site', () => {

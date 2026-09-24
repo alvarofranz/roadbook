@@ -264,42 +264,62 @@
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 
     /* ---------------- App info pop-up (account menus, #335, #474, #478) ----------------
-       Refreshed every time it opens (never the stale footer text): Running is what this
-       page booted with — the native binary there —, Available is the live version.json.
-       The Update control appears only when Available is newer: a shell refresh on web,
-       the store listing in the app (a reload cannot update the binary). What CHANGED in
-       those releases is one link away, on the About page. */
+       What this copy of RDBK.app is and whether it is current, in words a rider understands.
+       In the app three numbers exist and each is named for what it is (#515): the VERSION (the one
+       semver, the same on every surface), the APP BUILD (the store's own counter — Android's
+       versionCode, iOS's build) and the WEB CONTENT bundled into the binary the day it was built.
+       The web deploys between store releases without moving the version, so the server's content
+       can be ahead of the app's while the store has nothing newer: that is said as it is, never as
+       "update from the store". The server row is the backend this copy talks to — in the app the
+       page itself is served from a WebView-local origin, which is no environment at all. */
+    // Where this copy stands, pure: { kind, text, version? } — kind: ok · pending (web content ahead
+    // of the app, arriving with its next store release) · store (a newer version is out) · refresh
+    // (the web page is behind the server) · unknown (offline)
+    window.RBReleaseStatus = ({ native, running, bundled, live }) => {
+        const newer = (a, b) => {
+            const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+            for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+            return false;
+        };
+        if (!live || !running) return { kind: 'unknown', text: 'Could not check for updates. Are you offline?' };
+        if (native) {
+            if (newer(live.version, running.version)) return { kind: 'store', text: 'Version {v} is available. Update the app from the store.', version: live.version };
+            if (bundled && live.build > bundled.build) return { kind: 'pending', text: 'The app is up to date. Some improvements already on the website will reach the app with its next update.' };
+            return { kind: 'ok', text: 'The app is up to date.' };
+        }
+        if (live.version !== running.version || live.build !== running.build) return { kind: 'refresh', text: 'A newer version is available. Refresh to load it.' };
+        return { kind: 'ok', text: 'You have the latest version.' };
+    };
+    // The facts App Info and the About page both show: [label, value] rows and the status above
+    window.RBReleaseFacts = async () => {
+        const native = isNativeApp();
+        const [running, live, bundled] = await Promise.all([RBRunningRelease(), RBLiveVersion(), native ? RBLiveVersion(ROOT) : null]);
+        const host = API_ROOT.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+        const facts = [['Platform', RBPlatformName()]];
+        if (native) facts.push(
+            ['Version', running ? 'v' + running.version : '—'],
+            ['App build', running ? String(running.build) : '—'],
+            ['Web content', bundled ? 'build ' + bundled.build : '—']);
+        else facts.push(['Version', RBReleaseText(running)]);
+        facts.push(
+            ['Latest release', RBReleaseText(live)],
+            ['Server', host],
+            ['Environment', RBt(API_ROOT === PROD_ROOT ? 'Production' : 'Development')]);
+        return { facts, status: RBReleaseStatus({ native, running, bundled, live }) };
+    };
+    const STATUS_ICON = { ok: 'fa-circle-check', pending: 'fa-circle-info', store: 'fa-circle-arrow-up', refresh: 'fa-circle-arrow-up', unknown: 'fa-wifi' };
+    window.RBReleaseStatusHTML = (status) => `<p class="release-status ${status.kind}"><i class="fa-solid ${STATUS_ICON[status.kind]}"></i> <span>${RBesc(RBt(status.text).replace('{v}', status.version || ''))}</span></p>`;
     window.showAppInfo = async function () {
-        const siteUrl = ROOT.replace(/\/+$/, '');
-        // Production is the one host that serves real users; every other copy (DDEV, a dev clone,
-        // localhost) is a development one — the URL row right above says WHICH.
-        const env = RBt(siteUrl === PROD_ROOT.replace(/\/+$/, '') ? 'Production' : 'Development');
-        const [running, live, bundled] = await Promise.all([
-            RBRunningRelease(), RBLiveVersion(), isNativeApp() ? RBLiveVersion(ROOT) : null,
-        ]);
-        /* An installed app carries the web content of the day its binary was built, and the app's
-           VERSION is the semver — which does not move between store releases. So "1.8.2" in the
-           app and "1.8.2" on the web can be sixteen builds apart, which is exactly how a missing
-           button goes unexplained (#515). The panel therefore names the BUNDLED build too, and
-           says plainly when it is behind; only the store can move it. */
-        const behind = isNativeApp() && live && bundled && live.build > bundled.build;
-        const storeUrl = behind ? RBStore[RBDevice() === 'ios' ? 'ios' : 'android'] : null;
-        const webUpdate = !isNativeApp() && live && running && (live.version !== running.version || live.build !== running.build);
-        const row = (label, value) => `<tr><td>${RBesc(RBt(label))}</td><td>${RBesc(value)}</td></tr>`;
+        const { facts, status } = await RBReleaseFacts();
+        const storeUrl = status.kind === 'store' ? RBStore[RBDevice() === 'ios' ? 'ios' : 'android'] : null;
+        const row = ([label, value]) => `<tr><td>${RBesc(RBt(label))}</td><td>${RBesc(value)}</td></tr>`;
         const modal = RBModal(`<div class="app-info-card">
             <h2><i class="fa-solid fa-circle-info"></i> ${RBt('App Info')}</h2>
-            <table class="app-info-table">
-                ${row('Platform', RBPlatformName())}
-                ${row('Running', RBReleaseText(running))}
-                ${isNativeApp() ? row('Web content in this app', RBReleaseText(bundled)) : ''}
-                ${row(isNativeApp() ? 'Latest web content' : 'Available', RBReleaseText(live))}
-                ${row('URL', siteUrl)}
-                ${row('Environment', env)}
-            </table>
-            ${behind ? `<p class="app-info-behind"><i class="fa-solid fa-triangle-exclamation"></i> ${RBesc(RBt('This app was built with older web content, so some newer features are missing. Update it from the store.'))}</p>` : ''}
+            ${RBReleaseStatusHTML(status)}
+            <table class="app-info-table">${facts.map(row).join('')}</table>
             <div class="btnrow spaced">
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
-                ${webUpdate ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
+                ${status.kind === 'refresh' ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
                 <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('What’s new')}</a>
                 <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
