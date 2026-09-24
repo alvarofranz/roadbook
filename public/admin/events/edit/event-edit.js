@@ -255,10 +255,14 @@
             <select class="field" data-rbmode="${r.id}" aria-label="${esc(t('Participation mode'))}">${modeOptions(r.scoring_mode || 'free')}</select>
             <a class="btn btn-ghost" href="/editor/?rb=${r.id}" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}"><i class="fa-solid fa-pen"></i></a>
             <button class="btn btn-ghost" data-rbdel="${r.id}" data-title="${esc(r.title)}" title="${esc(t('Remove from event'))}" aria-label="${esc(t('Remove from event'))}"><i class="fa-solid fa-trash-can icon-danger"></i></button>
+            ${nextHTML(r)}
         </div>`).join('') : `<p class="muted small">${esc(t('No roadbooks attached yet.'))}</p>`;
         $('rbList').querySelectorAll('[data-rbmode]').forEach((s) => s.onchange = async () => {
             const x = await api('event_rb_mode', { event_id: id, roadbook_id: +s.dataset.rbmode, scoring_mode: s.value });
             if (x.ok) toast('Saved.'); else { toast(x.error || 'Could not save.'); refresh(); }
+        });
+        $('rbList').querySelectorAll('.ev-rb-next').forEach((box) => {
+            box.querySelectorAll('input').forEach((inp) => inp.onchange = () => saveNext(box));
         });
         $('rbList').querySelectorAll('[data-rbdel]').forEach((b) => b.onclick = async () => {
             // removing only detaches it from the event — the roadbook itself is never deleted
@@ -266,6 +270,31 @@
             const x = await api('event_rb_remove', { event_id: id, roadbook_id: +b.dataset.rbdel });
             if (x.ok) refresh(); else toast(x.error || 'Could not remove.');
         });
+    }
+    /* The chain (#944): what a roadbook offers when its last note is reached — the other roadbooks of
+       the event the participant may carry on with, in the same run, each with an optional short
+       label ("A", "Facile"…; the title when empty). Only with two roadbooks or more; saved at once. */
+    function nextHTML(r) {
+        const others = ev.roadbooks.filter((x) => x.id !== r.id);
+        if (!others.length) return '';
+        const on = new Map((r.next || []).map((n) => [n.id, n.label || '']));
+        return `<div class="ev-rb-next" data-from="${r.id}">
+            <span class="field-label">${esc(t('At its last note, offer'))}</span>
+            ${others.map((x) => `<label class="ev-next-row">
+                <input type="checkbox" data-next="${x.id}"${on.has(x.id) ? ' checked' : ''}>
+                <span class="grow">${esc(x.title)}</span>
+                <input class="field ev-next-label" data-label="${x.id}" maxlength="40" value="${esc(on.get(x.id) || '')}" placeholder="${esc(t('Short label (optional)'))}" aria-label="${esc(t('Short label (optional)'))}">
+            </label>`).join('')}
+        </div>`;
+    }
+    async function saveNext(box) {
+        const from = +box.dataset.from;
+        const next = [...box.querySelectorAll('[data-next]')].filter((c) => c.checked)
+            .map((c) => ({ id: +c.dataset.next, label: box.querySelector(`[data-label="${c.dataset.next}"]`).value.trim() }));
+        const x = await api('event_rb_next_set', { event_id: id, roadbook_id: from, next });
+        if (!x.ok) { toast(x.error || 'Could not save.'); return refresh(); }
+        ev.roadbooks.find((r) => r.id === from).next = x.next;
+        toast('Saved.');
     }
     // "Add roadbook": a picker over YOUR roadbooks only (#140) — not public ones, not other users'.
     $('rbAdd').onclick = async () => {

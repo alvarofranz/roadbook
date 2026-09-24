@@ -60,6 +60,7 @@ try {
         case 'event_rb_add':    event_rb_add(require_user(), $d); break;
         case 'event_rb_remove': event_rb_remove(require_user(), $d); break;
         case 'event_rb_mode':   event_rb_mode(require_user(), $d); break;
+        case 'event_rb_next_set': event_rb_next_set(require_user(), $d); break; // the chain (#944)
         case 'user_search':     user_search(require_user(), $d); break;
         case 'event_org_add':   event_org_add(require_user(), $d); break;
         case 'event_org_remove': event_org_remove(require_user(), $d); break;

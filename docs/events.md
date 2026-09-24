@@ -28,6 +28,7 @@ evolute per alter successive — dettaglio in [backend-api §8](backend-api.md).
 |---|---|---|
 | `events` | `id`, `slug` (unico), `title`, `description`, `starts_on`/`ends_on`, `is_public`, `join_gate` (`closed`/`code`/`open`), `require_activation` (0/1), `join_code` (unico), `logo`, **`organizer_id`** | L'evento + la sua pagina di presentazione; `organizer_id` = **proprietario**. `is_public` decide **solo se l'evento è listato** nella galleria: un evento non listato si raggiunge comunque col suo link — pagina, `/go/`, adesione, attivazione (#573). La registrazione è governata da due impostazioni indipendenti (#414): il gate (COME si entra) e `require_activation` (se l'organizzatore deve attivarti con il QR personale). |
 | `event_roadbooks` | `event_id`, `roadbook_id`, `sort`, **`scoring_mode`** | I roadbook associati all'evento, ordinati, ognuno con la propria modalità di punteggio. |
+| `event_rb_next` | `event_id`, `roadbook_id`, `next_roadbook_id`, `label` (≤ 40), `sort` | La **catena** (#944): cosa offre un roadbook dell'evento alla sua ultima nota — i successivi, in ordine, ognuno con un'etichetta breve libera ("A", "Facile"…, unica per tutte le lingue; vuota = il titolo). Entrambe le estremità sono roadbook associati all'evento (FK composte su `event_roadbooks`, `ON DELETE CASCADE`). |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
 | `event_participants` | `event_id`, `user_id`, `status`, `activation_code`, `created_at` | Chi ha aderito: `pending` finché l'organizzatore non lo attiva (QR personale), poi `active` (#163). |
 
@@ -135,6 +136,10 @@ proprietario · Save, #597). `event_manage_get()` fornisce tutto. Due tipi di mo
   - **Roadbook** — `event_rb_add` (solo un roadbook **di cui sei proprietario**; un admin può
     associarne di altrui, #140), `event_rb_remove`, `event_rb_mode`. Ogni riga mostra lo stato reale
     (Draft · Ready · Public) e avvisa che una bozza è invisibile ai partecipanti (#596).
+  - **Catena** (#944) — sotto ogni roadbook, con due o più roadbook: *All'ultima nota, offri* — una
+    casella + un'etichetta breve per ogni altro roadbook dell'evento; ogni modifica salva subito
+    l'intera lista (`event_rb_next_set`, sostituita, mai unita; mai sé stesso). `event_get` porta
+    `next` su ogni roadbook, filtrato ai roadbook che il visitatore vede.
   - **Organizers** (#598) — `user_search` (2+ caratteri, niente email) + `event_org_add` /
     `event_org_remove`, **solo proprietario/admin**; il proprietario non è rimovibile.
   - **Codice** — con registrazione *Invite code* salvata l'evento **ha sempre un codice** (generato
@@ -207,7 +212,7 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 |---|---|
 | Pubbliche (GET) | `events_list`, `event_get` |
 | Gestione | `events_manage`, `event_manage_get`, `event_save`, `event_delete`, `event_logo_remove` |
-| Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode` |
+| Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode`, `event_rb_next_set` (la catena, #944) |
 | Co-organizzatori | `user_search`, `event_org_add`, `event_org_remove` |
 | Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate`, `event_participants_activate_pending` (ammissione massiva, #416) |
 

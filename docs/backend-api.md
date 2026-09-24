@@ -114,6 +114,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `event_save` | Crea/aggiorna un evento (creare esige il ruolo **organizer**); lo **slug pubblico segue il titolo finché l'evento non è listato** (#194) e da lì resta fisso, così un rename non rompe i link già condivisi (#578) | richiesta/organizer |
 | `event_delete` | Elimina un evento | richiesta |
 | `event_rb_add`/`event_rb_remove`/`event_rb_mode` | Associa/dissocia un roadbook all'evento; imposta la sua `scoring_mode` | richiesta |
+| `event_rb_next_set` | La catena (#944): cosa offre un roadbook dell'evento alla sua ultima nota — `next: [{id, label}]`, la lista intera sostituita | richiesta |
 | `event_org_add`/`event_org_remove` | Aggiunge/rimuove un co-organizzatore (`event_organizers`) | richiesta |
 | `event_join_code` | Genera/rigenera il codice di adesione dell'evento; un codice scelto a mano è 4–16 caratteri `A–Z 0–9`, perché diventa il link `/go/<code>` (#576) | richiesta |
 | `event_join`/`event_leave` | Adesione (`event_participants`): il gate decide come si entra (`closed` blocca, `code` richiede il codice, `open` a un click); `require_activation=1` atterra in `pending` con QR personale, `=0` attiva subito (#414). **Idempotente** (#574): chi è già dentro riceve il suo stato attuale senza modifiche. Niente nuove adesioni a evento terminato (#587). Un evento non listato si raggiunge col suo link come uno listato (#573) | richiesta |

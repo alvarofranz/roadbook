@@ -157,6 +157,7 @@ function event_manage_get(array $user, array $d): void {
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status <> \'deleted\' ORDER BY er.sort, er.roadbook_id');
     $rb->execute([$id]);
+    $next = event_rb_next_map($id);
     // The participants themselves come from the paged event_participants_list (#144) — the
     // page only needs the total here, for the section header.
     $pp = db()->prepare('SELECT COUNT(*) FROM event_participants WHERE event_id = ?');
@@ -171,7 +172,8 @@ function event_manage_get(array $user, array $d): void {
         'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'organization' => $x['organization']], $org->fetchAll()),
         'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
-            'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username']], $rb->fetchAll()),
+            'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username'],
+            'next' => $next[(int)$x['id']] ?? []], $rb->fetchAll()),
         'participant_count' => (int)$pp->fetchColumn(), 'pending_count' => (int)$pend->fetchColumn(),
     ]]);
 }
@@ -323,6 +325,40 @@ function event_rb_mode(array $user, array $d): void {
     db()->prepare('UPDATE event_roadbooks SET scoring_mode = ? WHERE event_id = ? AND roadbook_id = ?')
         ->execute([event_scoring_mode($d['scoring_mode'] ?? 'free'), (int)$e['id'], (int)($d['roadbook_id'] ?? 0)]);
     json_out(['ok' => true]);
+}
+
+/* ---- chained roadbooks (#944) ---- */
+// What each of the event's roadbooks offers when its last note is reached: roadbook id → the next
+// ones in the organizer's order, each with its short label (null = the roadbook's own title).
+function event_rb_next_map(int $eventId): array {
+    $st = db()->prepare('SELECT roadbook_id, next_roadbook_id, label FROM event_rb_next WHERE event_id = ? ORDER BY roadbook_id, sort, next_roadbook_id');
+    $st->execute([$eventId]);
+    $map = [];
+    foreach ($st->fetchAll() as $r) $map[(int)$r['roadbook_id']][] = ['id' => (int)$r['next_roadbook_id'], 'label' => $r['label'] !== null && $r['label'] !== '' ? $r['label'] : null];
+    return $map;
+}
+// Set what one roadbook offers at its end: the whole list at once, in order — replaced, not merged.
+// Only the event's own roadbooks, never the roadbook itself; a label is one short free text.
+function event_rb_next_set(array $user, array $d): void {
+    $e = require_event_manage($user, (int)($d['event_id'] ?? 0));
+    $eid = (int)$e['id']; $rid = (int)($d['roadbook_id'] ?? 0);
+    $st = db()->prepare('SELECT roadbook_id FROM event_roadbooks WHERE event_id = ?'); $st->execute([$eid]);
+    $attached = array_flip(array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN)));
+    if (!isset($attached[$rid])) fail('Not found.', 404);
+    $rows = [];
+    foreach ((array)($d['next'] ?? []) as $n) {
+        $nid = (int)(is_array($n) ? ($n['id'] ?? 0) : $n);
+        if ($nid === $rid || !isset($attached[$nid]) || isset($rows[$nid])) continue;
+        $label = is_array($n) ? mb_substr(trim((string)($n['label'] ?? '')), 0, 40) : '';
+        $rows[$nid] = $label !== '' ? $label : null;
+    }
+    db()->beginTransaction();
+    db()->prepare('DELETE FROM event_rb_next WHERE event_id = ? AND roadbook_id = ?')->execute([$eid, $rid]);
+    $ins = db()->prepare('INSERT INTO event_rb_next (event_id, roadbook_id, next_roadbook_id, label, sort) VALUES (?,?,?,?,?)');
+    $sort = 0;
+    foreach ($rows as $nid => $label) $ins->execute([$eid, $rid, $nid, $label, $sort++]);
+    db()->commit();
+    json_out(['ok' => true, 'next' => event_rb_next_map($eid)[$rid] ?? []]);
 }
 
 /* ---- co-organizers (#123) ---- */
@@ -630,6 +666,11 @@ function event_public_get(array $d): void {
         WHERE er.event_id = ? AND r.status IN ($statuses) ORDER BY er.sort, er.roadbook_id");
     $rb->execute([$e['id']]);
     $roadbooks = array_map(fn($r) => rb_card_fields($r) + ['category' => $r['category'], 'status' => $r['status'], 'scoring_mode' => $r['scoring_mode']], $rb->fetchAll());
+    // the chain (#944): what each roadbook offers at its last note — only roadbooks this visitor sees
+    $next = event_rb_next_map((int)$e['id']);
+    $seen = array_flip(array_map(fn($r) => (int)$r['id'], $roadbooks));
+    foreach ($roadbooks as &$r) $r['next'] = array_values(array_filter($next[(int)$r['id']] ?? [], fn($n) => isset($seen[$n['id']])));
+    unset($r);
     json_out(['ok' => true, 'event' => [
         'id' => (int)$e['id'], 'slug' => $e['slug'], 'title' => $e['title'], 'description' => $e['description'],
         'organizer_website' => $e['organizer_website'], 'hq_lat' => $e['hq_lat'], 'hq_lon' => $e['hq_lon'],

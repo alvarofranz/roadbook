@@ -18,6 +18,11 @@
         .ev-rb-row:last-child { border-bottom: 0; }
         .ev-rb-row .meta { min-width: 0; overflow-wrap: break-word; }
         .ev-rb-row .field { margin: 0; }
+        /* the chain (#944): what the roadbook offers at its last note, under its row */
+        .ev-rb-next { grid-column: 1 / -1; display: flex; flex-direction: column; gap: .3rem; padding: .2rem 0 .3rem .8rem; border-left: 2px solid var(--line); }
+        .ev-next-row { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+        .ev-next-row .grow { min-width: 0; overflow-wrap: break-word; }
+        .ev-next-label { width: 11rem; flex: none; }
         /* the dates: label over input, two columns — one per line on a phone (#597) */
         .ev-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 14rem)); gap: .6rem 1rem; margin: .7rem 0 1rem; }
         .ev-dates .field { margin: 0; }
@@ -41,6 +46,9 @@
         @media (max-width: 640px) {
             .ev-rb-row { grid-template-columns: minmax(0, 1fr) 2.8rem 2.8rem; }
             .ev-rb-row .field { grid-column: 1 / -1; grid-row: 2; }
+            .ev-rb-row .ev-rb-next { grid-row: 3; }
+            .ev-rb-next .field { grid-column: auto; grid-row: auto; }
+            .ev-next-label { width: 7rem; }
             .ev-dates { grid-template-columns: minmax(0, 1fr); }
         }
     </style>

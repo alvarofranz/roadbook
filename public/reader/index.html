@@ -212,14 +212,8 @@
                     <button class="btn btn-ghost" id="reportTrackView" type="button"><i class="fa-solid fa-route"></i> <span data-i18n="Driven track">Driven track</span></button>
                     <button class="btn btn-ghost" id="reportGpx" type="button"><i class="fa-solid fa-download"></i> GPX</button>
                 </div>
-                <div id="reportQr" hidden>
-                    <div id="qrImg" class="qr-box"></div>
-                    <code id="qrMeta" class="qr-code-text"></code>
-                    <div class="btnrow">
-                        <button class="btn btn-ghost" id="qrShare" type="button"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="Share">Share</span></button>
-                        <button class="btn btn-ghost" id="qrDownload" type="button"><i class="fa-solid fa-download"></i> <span data-i18n="Save QR">Save QR</span></button>
-                    </div>
-                </div>
+                <!-- one signed result per scored leg (#944), filled by the report -->
+                <div id="reportQr" hidden></div>
             </div>
         </div>
         <div class="btnrow end">

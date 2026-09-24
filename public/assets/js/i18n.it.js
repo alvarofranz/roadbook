@@ -1720,3 +1720,13 @@ Object.assign(window.RBi18nLangs.it, {
     "No room for more points here.": "Qui non c’è spazio per altri punti.",
     "Points added — drag them to shape the curve.": "Punti aggiunti: trascinali per dare forma alla curva.",
 });
+
+/* Chained event roadbooks (#944) */
+Object.assign(window.RBi18nLangs.it, {
+    "At its last note, offer": "All’ultima nota, proponi",
+    "Short label (optional)": "Etichetta breve (facoltativa)",
+    "Carry on with the next roadbook, or finish the run here.": "Prosegui con il prossimo roadbook o termina qui il percorso.",
+    "Finish here": "Termina qui",
+    "Next roadbook:": "Prossimo roadbook:",
+    "You are offline — reconnect to load the next roadbook.": "Sei offline: riconnettiti per caricare il prossimo roadbook.",
+});

@@ -12,7 +12,8 @@ describe('the mode comes from the context (#617)', () => {
         expect(html).not.toMatch(/id="modeTrip"|modeGrid|modeLocked|Competition mode/);
     });
     it('a scored event roadbook runs in competition, everything else as a trip', () => {
-        expect(reader).toContain("comp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');");
+        expect(reader).toContain("const isScoredEntry = (er) => !!(er && er.scoring_mode && er.scoring_mode !== 'free');");
+        expect(reader).toContain('const comp = isScoredEntry(chainEntry());');
         expect(reader).toContain('if (!comp) return startRun(false);');
     });
 });
@@ -27,7 +28,7 @@ describe('the end of a run (#618)', () => {
         expect(reader.match(/if \(activeIdx >= notes\.length\) finishRun\(true\);/g).length).toBeGreaterThanOrEqual(3);
     });
     it('the report reaches the device queue BEFORE the session checkpoint goes (#460)', () => {
-        const fin = reader.match(/async function finishRun\(completed\) \{([\s\S]*?)\n {4}\}/)[1];
+        const fin = reader.match(/async function closeLeg\(completed\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(fin.indexOf('RBRun.enqueue(report')).toBeGreaterThan(-1);
         expect(fin.indexOf('RBRun.enqueue(report')).toBeLessThan(fin.indexOf('clearSession()'));
     });
@@ -36,10 +37,10 @@ describe('the end of a run (#618)', () => {
     });
     it('who sees the run is a Private/Public switch: the first pick saves it, with Remember my choice (#619 · #820)', () => {
         expect(reader).toContain("segment('private', 'fa-lock', 'Private')}${segment('public', 'fa-globe', 'Public')}");
-        expect(reader).toContain("if (first) { RBRun.update(key, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked }); return upload(); }");
+        expect(reader).toContain("if (first) { keys.forEach((k) => RBRun.update(k, { ready: true, visibility: v, remember: !!(vis.querySelector('#reportRemember') || {}).checked })); return upload(); }");
     });
     it('a saved run flips visibility from the same switch, and an unpicked one cannot be left behind (#820 · #460)', () => {
-        expect(reader).toContain("const x = await RBApi('run_update', { id: saved.id, is_public: v === 'public' ? 1 : 0 });");
+        expect(reader).toContain("saved.map((run) => RBApi('run_update', { id: run.id, is_public: v === 'public' ? 1 : 0 }))");
         expect(reader).toContain("$('reportDone').disabled = !choice || busy;"); // and never mid-save: that sends it twice
     });
     it('the card is the hero, Share under it, with a placeholder at its size while it renders (#820)', () => {
@@ -141,6 +142,10 @@ describe('a report left without a choice (#460)', () => {
         RBRun.settleAbandoned();
         const item = JSON.parse(localStorage.getItem('rb_pending_runs')).find((i) => i.key === key);
         expect(item).toMatchObject({ ready: true, visibility: 'private' });
-        expect(fs.readFileSync('public/reader/reader.js', 'utf8')).toContain('RBRun.settleAbandoned(); RBRun.flush();');
+        expect(fs.readFileSync('public/reader/reader.js', 'utf8')).toContain("RBRun.settleAbandoned(session && !session.declined ? (session.legs || []).map((l) => l.key) : []); RBRun.flush();");
+        // the legs of a chained run that may still resume wait for its end (#944)
+        const leg = RBRun.enqueue({ title: 'leg' }, false).key;
+        RBRun.settleAbandoned([leg]);
+        expect(JSON.parse(localStorage.getItem('rb_pending_runs')).find((i) => i.key === leg)).toMatchObject({ ready: false });
     });
 });

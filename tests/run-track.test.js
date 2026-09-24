@@ -14,7 +14,7 @@ const hasPhp = spawnSync('php', ['-v']).status === 0;
 describe('the report carries the track', () => {
     it('ends the log into the report, and clears its checkpoint only once the report is on the device', () => {
         expect(reader).toContain('report.track = RBGpxRecorder.recording ? RBGpxRecorder.end().pts : [];');
-        expect(reader).toContain('const { key, stored } = RBRun.enqueue(report, !askFirst);');
+        expect(reader).toContain('const { key, stored } = RBRun.enqueue(report, false);');
         expect(reader).toContain('if (stored) RBGpxRecorder.clearCheckpoint();');
         expect(rr).toContain('return { key, stored };');
     });
