@@ -1601,6 +1601,7 @@
     // whose track points shape its tulip (#945), so what the Reader validates and what the tulip draws
     // are both in sight
     function markOnMap(n) { map.select(n, true); paintRings(n); }
+    const NOTE_ZOOM_RADIUS_M = 50; // what a selected note shows around it: its 30 m rings and a little road beyond
     function paintRings(n) {
         const i = n ? rb.notes.indexOf(n) : -1;
         map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);
@@ -1675,8 +1676,9 @@
         // reorients — edits/deletes refresh through renderNotes (not select), so they never move
         // the map and you don't lose your place (the concern behind #65).
         const n = rb.notes[i];
-        // a close-up of ~120 m around it, turned so the road you arrive on points up: read like the tulip
-        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: map.zoomForRadius(120), bearing: n.bearing_in || 0, duration: 450 });
+        // a close-up of NOTE_ZOOM_RADIUS_M around it — its rings fill the view — centred on it and
+        // turned so the road you arrive on points up: read like the tulip
+        if (map.map && map.ready) map.map.easeTo({ center: [n.lon, n.lat], zoom: map.zoomForRadius(NOTE_ZOOM_RADIUS_M), bearing: n.bearing_in || 0, duration: 450 });
         // bring the selection into view: the list row on desktop (side column), the just-opened
         // editor on the stacked mobile/tablet layout — so clicking a note on the map jumps the list
         // to its line.

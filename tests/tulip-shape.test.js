@@ -195,7 +195,8 @@ describe('the Editor shows what a note reaches and what shapes its tulip (#945)'
         expect(RB.TULIP_SHAPE_M).toBe(30);
     });
     it('opens a note on ~200 m around it, turned so the road you arrive on points up', () => {
-        expect(editor).toContain('zoom: map.zoomForRadius(120), bearing: n.bearing_in || 0');
+        expect(editor).toContain('zoom: map.zoomForRadius(NOTE_ZOOM_RADIUS_M), bearing: n.bearing_in || 0');
+        expect(editor).toContain('const NOTE_ZOOM_RADIUS_M = 50;');
     });
 });
 

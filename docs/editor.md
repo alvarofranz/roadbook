@@ -194,8 +194,8 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   resta invariato (un drag non apre il menu; `_vertMoved` distingue tap da drag).
 - **Selezione nota = primo piano della nota.** Selezionare una nota — dalla riga lista **o** dal
   marker sulla mappa — la evidenzia (`markOnMap`: `map.select(note, true)` + gli anelli), apre il
-  suo editor inline, porta la riga in vista e porta la mappa su **~120 m attorno alla nota**
-  (`RBMap.zoomForRadius(120)`, misurato sulla scala reale della mappa), **ruotata** su
+  suo editor inline, porta la riga in vista e porta la mappa su **~50 m attorno alla nota**
+  (`RBMap.zoomForRadius(NOTE_ZOOM_RADIUS_M)`, misurato sulla scala reale della mappa), **ruotata** su
   `bearing_in`: la strada da cui arrivi viene dal basso e punta in su, come nel tulip. Solo una
   selezione voluta muove la vista: modifiche e cancellazioni rinfrescano via `renderNotes`, che
   non la tocca (#65), e alla chiusura dell'editor (`closeEditor`) la mappa torna **a nord**.
