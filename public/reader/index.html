@@ -19,6 +19,9 @@
         .odometer-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: .3rem 1rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-bar > .ind { justify-self: center; padding-bottom: .2rem; }
         .odometer-bar > .ind.end { justify-self: end; }
+        /* live tracking on (#947): the runner always sees that the organizers see them */
+        .live-strip { display: flex; align-items: center; justify-content: center; gap: .4rem; margin: 0; padding: .25rem .9rem; font-size: .8rem; font-weight: 700; color: var(--text); background: var(--card-2); border-bottom: 1px solid var(--line); }
+        .live-strip i { color: var(--ok); }
         .odometer-item { display: flex; flex-direction: column; }
         .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -163,6 +166,7 @@
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind end"><i class="fa-solid fa-gauge-high"></i> <span id="odoSpeed">—</span></span>
     </div>
+    <p id="liveStrip" class="live-strip" hidden><i class="fa-solid fa-tower-broadcast"></i> <span data-i18n="Live · the organizers see your position">Live · the organizers see your position</span></p>
     <!-- 3-column note rows: distances | graphic | indications + coords (no buttons column, #569) -->
     <div id="noteList"></div>
     <nav class="fabrow">

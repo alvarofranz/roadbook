@@ -18,7 +18,8 @@ tasks never overlap. Configured as a system `* * * * *` cron entry.
 | 2 | **Purge trashed roadbooks** | [purge-trashed-roadbooks.php](../cron/purge-trashed-roadbooks.php) | Hard‑delete roadbooks in `deleted` status past `TRASH_DAYS` retention (#187) |
 | 3 | **Rename legacy covers** | [rename-legacy-covers.php](../cron/rename-legacy-covers.php) | Rename old `_map.avif` covers to random filenames (protection against enumeration, #206) |
 | 4 | **Prune stale tokens** | [prune-stale-tokens.php](../cron/prune-stale-tokens.php) | Delete Bearer tokens unused for 180 days (#213) |
-| 5–9 | *Reserved* | — | Future tasks |
+| 5 | **Purge live positions** | [purge-event-live.php](../cron/purge-event-live.php) | Delete event live positions a day after the event ends, and any older than 3 days (#947) |
+| 6–9 | *Reserved* | — | Future tasks |
 
 Each task runs a **bounded batch** per invocation (e.g. 500 drafts, 5000 log rows,
 200 trashed roadbooks) so a single run never holds the DB for too long.
@@ -71,6 +72,14 @@ rows from web logins (they never carry a `last_used_at` — falls back to
 `created_at`).
 
 - **Guard**: `COALESCE(last_used_at, created_at) < NOW() - 180 DAY`
+
+### Slot 5 — Purge live positions (`purge-event-live.php`)
+
+The organizers' live map (#947) keeps only each participant's **last** position
+(`event_live`). It is only useful while the event runs, so a row goes **a day after
+the event ends**, and none is ever older than **3 days** (an event without an end date).
+
+- **Guard**: `e.ends_on < CURDATE() - 1 DAY OR l.updated_at < NOW() - 3 DAY`
 
 ---
 

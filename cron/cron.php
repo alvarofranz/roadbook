@@ -39,7 +39,12 @@ try {
             $r = pruneStaleTokens();
             echo "prune-stale-tokens: deleted {$r['deleted']}\n";
             break;
-        // 5..9 reserved for future tasks
+        case 5:
+            require_once __DIR__ . '/purge-event-live.php';
+            $r = purgeEventLive();
+            echo "purge-event-live: deleted {$r['deleted']}\n";
+            break;
+        // 6..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title>Live map · RDBK.app</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../../../manifest.json">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css?v=1.9.11-222">
+    <link rel="stylesheet" href="../../../assets/css/app.css?v=1.9.11-222">
+    <style>
+        .live-map { width: 100%; height: 62vh; min-height: 380px; border-radius: 12px; border: 1px solid var(--line); }
+        /* a participant on the map: the vehicle number (or initial), coloured by how fresh it is */
+        .live-pin { min-width: 2rem; height: 2rem; padding: 0 .45rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .85rem; color: #0b0e13; border: 2px solid #fff; cursor: pointer; }
+        .live-pin.live { background: var(--ok); }
+        .live-pin.stale { background: var(--warn); }
+        .live-pin.lost, .live-pin.ended { background: var(--muted); }
+        .live-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin: .6rem 0; font-size: .85rem; }
+        .live-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+        .live-legend .live-pin { min-width: .9rem; height: .9rem; padding: 0; border-width: 1px; cursor: default; }
+        .live-list { margin-top: 1rem; }
+        .live-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .8rem; align-items: center; padding: .55rem 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+        .live-row .meta { min-width: 0; overflow-wrap: break-word; }
+        /* MapLibre popups are white: text in ink */
+        .live-pop { color: #111; font-size: .85rem; line-height: 1.4; }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="wrap admin-wrap">
+    <p><a href="../" id="backLink"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="Back to events">Back to events</span></a></p>
+    <div class="head-row">
+        <h1><span data-i18n="Live map">Live map</span> <span class="muted" id="liveCount"></span></h1>
+        <a class="btn btn-ghost" id="liveEditLink" hidden><i class="fa-solid fa-pen"></i> <span data-i18n="Edit event">Edit event</span></a>
+    </div>
+    <div class="muted small" id="liveEventTitle"></div>
+    <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
+
+    <div id="liveBody" hidden>
+        <p class="muted small" data-i18n="A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.">A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.</p>
+        <div class="live-legend">
+            <span><span class="live-pin live"></span> <span data-i18n="Live (under a minute)">Live (under a minute)</span></span>
+            <span><span class="live-pin stale"></span> <span data-i18n="1–5 minutes ago">1–5 minutes ago</span></span>
+            <span><span class="live-pin lost"></span> <span data-i18n="Lost or finished">Lost or finished</span></span>
+        </div>
+        <div id="liveMap" class="live-map"></div>
+        <div id="liveList" class="live-list"></div>
+    </div>
+</main>
+
+
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="../../../assets/js/config.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/roadbook-core.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/rbmap.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/i18n.es.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/i18n.it.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/i18n.de.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/i18n.fr.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/i18n.js?v=1.9.11-222"></script>
+<script src="../../../assets/js/app.js?v=1.9.11-222"></script>
+<script src="live.js?v=1.9.11-222"></script>
+</body>
+</html>

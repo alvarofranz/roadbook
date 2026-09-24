@@ -31,7 +31,7 @@ describe('the chain on the server', () => {
 describe('the chain in the Reader', () => {
     it('comes with the event, and the next roadbooks are fetched when a leg starts, for an offline choice', () => {
         expect(reader).toContain("chain = j.ok ? (j.roadbooks || []).map((x) => ({ id: +x.id, slug: x.slug, title: x.title, scoring_mode: x.scoring_mode, next: x.next || [] })) : null;");
-        expect(reader).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); }');
+        expect(reader).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }');
         expect(fn('resumeSession')).toContain('prefetchNext();');
     });
     it('closes each leg to the device first, then offers the next — only after a completed roadbook', () => {

@@ -732,6 +732,25 @@
     const gpsHealth = (acc) => (acc == null || !isFinite(acc) ? 'none' : acc <= CONST.GPS_GOOD_M ? 'good' : acc <= CONST.FIX_ACC_MAX_M ? 'fair' : 'weak');
     const recStepM = (acc) => Math.max(2.5, (acc || 10) * 0.35);
 
+    /* Live tracking for event organizers (#947). The Reader shares its position only in the run
+       of an EVENT roadbook, by an ACTIVE participant who said yes when that run started (liveAllowed)
+       — never before, never after. Then it sends its last trusted position every LIVE_EVERY_MS, or
+       sooner once it moved LIVE_MOVE_M, never retrying a failed send sooner than LIVE_RETRY_MS: live
+       means now, so there is no backlog, just the latest position once the connection is back
+       (liveDue). The organizers' map reads how fresh each one is (liveFreshness). */
+    const LIVE_EVERY_MS = 15000, LIVE_MOVE_M = 50, LIVE_RETRY_MS = 5000, LIVE_FRESH_S = 60, LIVE_STALE_S = 300;
+    const liveAllowed = (ctx) => !!(ctx && ctx.eventSlug && ctx.roadbookId && ctx.activeParticipant && ctx.consent);
+    // sent: {at, lat, lon} of the last position that went through (null: none yet) · tried: when the
+    // last attempt was made, successful or not
+    function liveDue(sent, tried, here, now) {
+        if (!here) return false;
+        if (tried != null && now - tried < LIVE_RETRY_MS) return false;
+        if (!sent) return true;
+        return now - sent.at >= LIVE_EVERY_MS || haversineM(sent, here) >= LIVE_MOVE_M;
+    }
+    const liveFreshness = (ageS, stopped) => (stopped ? 'ended' : ageS < LIVE_FRESH_S ? 'live' : ageS <= LIVE_STALE_S ? 'stale' : 'lost');
+
+
     /* Odometer intake (the Reader's and Tripmaster's travelled distance, #383). A phone's
        position stream is not a trajectory: it interleaves usable fixes with cell/wifi ones
        hundreds of metres off, a cached position from wherever the phone last was, and — while
@@ -1747,7 +1766,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, liveAllowed, liveDue, liveFreshness, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

@@ -117,8 +117,8 @@
     function renderHead() {
         $('evHead').hidden = false;
         $('evHeading').textContent = ev ? ev.title : t('New event');
-        $('evView').hidden = !ev;
-        if (ev) $('evView').href = '/event/' + ev.slug;
+        $('evView').hidden = $('evLive').hidden = !ev;
+        if (ev) { $('evView').href = '/event/' + ev.slug; $('evLive').href = '../live/?id=' + id; } // the participants live, for the organizers (#947)
         $('evDelete').hidden = !(ev && isOwner()); // deleting stays with the owner (or an admin)
     }
     $('evDelete').onclick = async () => {

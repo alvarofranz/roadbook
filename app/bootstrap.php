@@ -49,6 +49,7 @@ require __DIR__ . '/settings.php';
 require __DIR__ . '/events.php';
 require __DIR__ . '/runs.php';
 require __DIR__ . '/comments.php';
+require __DIR__ . '/live.php';
 
 // Long-lived, SLIDING session — feels like a native app: stays signed in and
 // the window extends on every use (in the browser and the installed PWA alike).

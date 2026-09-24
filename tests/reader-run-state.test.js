@@ -12,7 +12,7 @@ const fn = (name) => js.match(new RegExp('function ' + name + '\\([^)]*\\) \\{([
 
 describe('a resumed run is the same run', () => {
     it('the checkpoint carries the roadbook slug, the event and what the visit was for', () => {
-        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, chain, legs: legs.map(({ key, slug }) => ({ key, slug })), competition,');
+        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition,');
         expect(fn('resumeSession')).toContain('rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs;');
     });
     it('the slug is the loaded roadbook’s own, never the last piece of the URL', () => {
@@ -86,7 +86,7 @@ describe('Navigate navigates (#936)', () => {
             expect(js, old).not.toContain(old);
             expect(html, old).not.toContain(old);
         }
-        expect(js).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); }'); // the GPX log always runs
+        expect(js).toContain('function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }'); // the GPX log always runs
     });
     it('asks only the vehicle number, and only for a scored run; its Cancel goes back to the preview', () => {
         expect(js).toContain("if (!comp) return startRun(false);");

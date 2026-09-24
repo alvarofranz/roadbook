@@ -163,6 +163,30 @@
         const er = chainEntry();
         return er ? (er.next || []).map((n) => { const to = chain.find((x) => x.id === n.id); return to && { label: n.label || to.title, entry: to }; }).filter(Boolean) : [];
     };
+    /* Live tracking for the event's organizers (#947): only in the run of an event roadbook, by an
+       active participant who said yes when the run started — asked once per run, a chained leg keeps
+       the answer. Then the last trusted position goes up (RB.liveDue); a failed send just waits for
+       the next fix — no backlog. It stops for good with the run. */
+    const live = { participant: false, consent: false, sent: null, tried: null, busy: false, on: false };
+    const liveCtx = () => ({ eventSlug, roadbookId: rbRef, activeParticipant: live.participant, consent: live.consent });
+    function liveStart() { live.on = RB.liveAllowed(liveCtx()); live.sent = null; live.tried = null; $('liveStrip').hidden = !live.on; }
+    async function liveTick(here, coords, speedKmh) {
+        if (!live.on || live.busy || paused || !RB.liveDue(live.sent, live.tried, here, Date.now())) return;
+        live.busy = true; live.tried = Date.now();
+        const skipped = notes.slice(0, activeIdx).filter((n, i) => !reached.has(i)).length;
+        const r = await RBApi('live_ping', {
+            event_slug: eventSlug, roadbook_id: rbRef, team: competition ? team : '', lat: here.lat, lon: here.lon,
+            acc: coords && coords.accuracy, speed: speedKmh, heading: meter && meter.heading, note_idx: activeIdx, notes_total: notes.length, reached: reached.size, skipped,
+        });
+        live.busy = false;
+        if (r.ok) live.sent = { at: Date.now(), lat: here.lat, lon: here.lon };
+        else if (r.error !== 'Network error.') liveEnd(false); // refused (the event is over, not a participant…): never again this run
+    }
+    function liveEnd(tell = true) {
+        if (live.on && tell) RBApi('live_stop', { event_slug: eventSlug, roadbook_id: rbRef });
+        live.on = false; live.consent = false; $('liveStrip').hidden = true;
+    }
+    window.addEventListener('online', () => { if (live.on && lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); });
     const prefetchNext = () => nextOptions().forEach(({ entry }) => {
         if (!chainCache[entry.slug]) RBChallenges.loadPublic(entry.slug).then((j) => { chainCache[entry.slug] = j; }).catch(() => {});
     });
@@ -204,10 +228,13 @@
         if (eventSlug) { // does this event score the roadbook, and what does it chain it to?
             const j = await RBApi('event_get', { slug: eventSlug });
             chain = j.ok ? (j.roadbooks || []).map((x) => ({ id: +x.id, slug: x.slug, title: x.title, scoring_mode: x.scoring_mode, next: x.next || [] })) : null;
+            live.participant = !!(j.ok && j.event && j.event.active_participant && chainEntry());
         }
         busy.reset();
         const comp = isScoredEntry(chainEntry());
         if (!(await RBWebGpsConfirm(comp))) return; // one-time browser warning (stronger for a scored run)
+        // the organizers see a participant only with a yes, asked at the start of every run
+        live.consent = live.participant && await RBConfirm(t('Share your live position with the event’s organizers while you navigate?') + '<br><span class="muted small">' + esc(t('Only the organizers see it, only during this run — its last position, deleted after the event.')) + '</span>');
         if (!comp) return startRun(false);
         askTeam();
     };
@@ -223,7 +250,7 @@
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     // a roadbook's run: its GPX log from the first fix (a resumed one restores it), and the next
     // roadbooks of a chain fetched while there is a connection
-    function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); }
+    function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
@@ -260,7 +287,7 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter || finished) return; // nothing to checkpoint before a run starts or once it is over
-        const s = { openedAs, rbSlug, eventSlug, chain, legs: legs.map(({ key, slug }) => ({ key, slug })), competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         RBCheckpoint.write(SESSION_KEY, s);
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -274,12 +301,13 @@
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         zones = s.zones; rbRef = s.rbRef; rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs; runStartedAt = s.runStartedAt;
         chain = s.chain || null; legs = s.legs || [];
+        if (s.live) { live.participant = !!s.live.participant; live.consent = !!s.live.consent; }
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
         endedAt = s.endedAt ? new Date(s.endedAt) : null;
         startNav(s.competition);
         if (s.gpxRecording) RBGpxRecorder.resume(s.gpxFileName);
-        prefetchNext();
+        prefetchNext(); liveStart();
     }
 
     /* ---------- GPS (RBGpsMeter drives one onFix per position) ---------- */
@@ -295,6 +323,7 @@
         RBGpxRecorder.feed(coords, here, fix.tnow); // the logger applies its own accuracy gate
         if (!trusted) return;
         lastHere = here; lastAcc = coords.accuracy;
+        liveTick(here, coords, speedKmh);
         if (inlineMap && inlineMap.ready) {
             inlineMap.setPosition(here.lat, here.lon, true, meter.heading); // follow: you stay in the middle, the map turns with you
             if (inlineMapIdx >= 0 && notes[inlineMapIdx]) guideTo(inlineMapIdx, here); // the arrow follows the live fix
@@ -703,6 +732,7 @@
     // over it) ends its GPX log too — its checkpoint stays, so the track is offered back (#460).
     function endRun() {
         finished = true;
+        liveEnd();
         if (meter) meter.stop();
         if (RBGpxRecorder.recording) RBGpxRecorder.end();
         clearSession(); window.RB_BUSY = false;
@@ -801,6 +831,7 @@
     }
     // The end of the whole run: one report for every leg
     async function finalize() {
+        liveEnd();
         const cfg = await RBConfig();
         const askFirst = !!(cfg.user && (cfg.user.runs_visibility || 'ask') === 'ask');
         const done = legs.map((l) => ({ key: l.key, rb: l.rb, report: l.report || (RBRun.get(l.key) || {}).report })).filter((l) => l.report);

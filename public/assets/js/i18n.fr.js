@@ -1692,3 +1692,19 @@ Object.assign(window.RBi18nLangs.fr, {
     "Next roadbook:": "Roadbook suivant :",
     "You are offline — reconnect to load the next roadbook.": "Tu es hors ligne : reconnecte-toi pour charger le roadbook suivant.",
 });
+
+/* Live tracking for event organizers (#947) */
+Object.assign(window.RBi18nLangs.fr, {
+    "1–5 minutes ago": "Il y a 1 à 5 minutes",
+    "A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.": "Un participant n’apparaît ici que pendant qu’il navigue l’un des roadbooks de l’événement, après avoir accepté de le partager. Mis à jour toutes les 10 secondes.",
+    "Live (under a minute)": "En direct (moins d’une minute)",
+    "Live map": "Carte en direct",
+    "Live · the organizers see your position": "En direct · les organisateurs voient ta position",
+    "Lost or finished": "Perdu ou terminé",
+    "Finished {t} ago": "Terminé il y a {t}",
+    "Updated {t} ago": "Mis à jour il y a {t}",
+    "{n} skipped": "{n} sautées",
+    "Nobody is sharing a live position right now.": "Personne ne partage sa position en direct pour le moment.",
+    "Only the organizers see it, only during this run — its last position, deleted after the event.": "Seuls les organisateurs la voient, seulement pendant ce parcours : ta dernière position, effacée après l’événement.",
+    "Share your live position with the event’s organizers while you navigate?": "Partager ta position en direct avec les organisateurs de l’événement pendant que tu navigues ?",
+});

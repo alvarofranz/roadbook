@@ -85,6 +85,10 @@ try {
         case 'comments_list':  comments_list(current_user(), $d); break;
         case 'comment_add':    comment_add(require_user(), $d); break;
         case 'comment_delete': comment_delete(require_user(), $d); break;
+        // live tracking for event organizers (#947)
+        case 'live_ping':      live_ping(require_user(), $d); break;
+        case 'live_stop':      live_stop(require_user(), $d); break;
+        case 'live_list':      live_list(require_user(), $d); break;
         case 'runs_settings':  runs_settings(require_user(), $d); break;
         case 'ranking_list':   ranking_list(require_user(), $d); break;
         case 'ranking_add':    ranking_add(require_user(), $d); break;
