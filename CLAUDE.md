@@ -156,6 +156,7 @@ DB/Convenzioni rapide below have counterparts there).
     to the API), `RBConfig()` (the `config` call with an **offline fallback** — caches the signed-in
     user so the account menu + capture buttons survive no connectivity; use it, not a bare
     `RBApi('config')`, wherever sign-in state drives the UI), `RBImg.toBlob/toDataURL` (client-side image downscale before upload/embed),
+    `RBNotifications` (the in-app notifications: `start(user)` · `refresh()` · `open()` · `KINDS`, #971),
     `RBShareFile(blob, name, text)` (share a generated file: the OS sheet in the app, Web Share in
     the browser, a download otherwise, #785) — in the app `RBDownload` goes to the same OS sheet, so
     every file the app makes (GPX, `.rdbk`, CSV, PDF) lets the user choose where it goes, `RBPublicLink(path)` (an absolute, shareable link to a
@@ -621,10 +622,20 @@ Operational notes:
   (asks to join, then joins + redirects; the app joins through the API). Admin side under `/admin/events/`. Tables: the `events` family in
   `migrations/`. **Chained roadbooks (#944):** the organizer says what each event roadbook offers at
   its last note (`event_rb_next`, a short label each); the Reader offers them there and carries the
-  same run on — every leg its own run on the server, one report at the end. **Live map (#947):**
+  same run on — every leg its own run on the server, one report at the end. **Live map (#947 · #970):**
   `/admin/events/live/?id=` shows the organizers each participant's LAST position, sent by the Reader
-  only in the run of an event roadbook and only after a yes at its start (`app/live.php`:
-  `live_ping` / `live_stop` / `live_list`, table `event_live`, purged by cron a day after the event).
+  whenever an active participant navigates one of the event's roadbooks (any day, however opened),
+  once they said yes — asked once per event, kept in `event_participants.live_consent`
+  (`app/live.php`: `live_status` / `live_consent` / `live_ping` / `live_stop` / `live_list`, table
+  `event_live`, purged by cron a day after the event). Organizers and admins are not tracked.
+- **Notifications (#971)** — in-app only (no native push): a badge on the account icon and the app's
+  Profile tab, and a Notifications entry at the top of the account menu (`RBNotifications` in
+  `app.js`: `KINDS` is the one catalog of how a kind reads and where it leads). The read state lives
+  on the server (`app/notifications.php`: `notify()` · `notifications_forget()` · `notifications_list`
+  / `notifications_read` / `notifications_unread`, table `notifications`), so the web and the app
+  agree; every page refreshes its badge on load, each minute while visible and on coming back. The
+  first kind: a comment on one of your roadbooks. A new kind = one name in `NOTIFY_KINDS`, one entry
+  in `KINDS`, one `notify()` where it happens.
 
 ## Shared front-end (`public/assets/js/`)
 - `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,

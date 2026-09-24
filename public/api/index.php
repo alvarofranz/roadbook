@@ -18,6 +18,7 @@ try {
             $u = current_user();
             // a plain user who co-organizes an event still needs the Events entry point (#123)
             if ($u && !is_admin($u) && empty($u['is_organizer'])) $u['manages_events'] = user_manages_events((int)$u['id']) ? 1 : 0;
+            if ($u) $u['notifications'] = notifications_unread_count((int)$u['id']); // the badge, from the first paint (#971)
             json_out(['ok' => true, 'turnstile' => $CFG['turnstile_site'], 'google_client' => $CFG['google_client_ids'][0] ?? '', 'apple_client' => $CFG['apple_service_id'], 'user' => $u, 'participant' => participant_context(), 'banner' => site_banner()]);
             break;
         case 'register':  register_user($d); break;
@@ -85,7 +86,13 @@ try {
         case 'comments_list':  comments_list(current_user(), $d); break;
         case 'comment_add':    comment_add(require_user(), $d); break;
         case 'comment_delete': comment_delete(require_user(), $d); break;
+        // in-app notifications (#971): read state on the server, so web and app agree
+        case 'notifications_unread': notifications_unread(require_user()); break;
+        case 'notifications_list':   notifications_list(require_user(), $d); break;
+        case 'notifications_read':   notifications_read(require_user(), $d); break;
         // live tracking for event organizers (#947)
+        case 'live_status':    live_status(require_user(), $d); break;
+        case 'live_consent':   live_consent(require_user(), $d); break;
         case 'live_ping':      live_ping(require_user(), $d); break;
         case 'live_stop':      live_stop(require_user(), $d); break;
         case 'live_list':      live_list(require_user(), $d); break;

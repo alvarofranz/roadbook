@@ -146,7 +146,7 @@
             'Identity': 'Identità', 'Visibility & map': 'Visibilità e mappa',
             'Map access from player': 'Accesso alla mappa dal player', 'Allow the map in the Reader': 'Consenti la mappa nel Reader',
             'Route': 'Percorso', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Invertire tutto il percorso? Partenza e arrivo si scambiano e ogni vignetta viene ricalcolata.',
-            'Map style': 'Stile mappa', 'Page': 'Pagina', 'of': 'di', 'Generating PDF…': 'Generazione PDF…',
+            'Map style': 'Stile mappa', 'Page': 'Pagina', 'of': 'di', 
             'No photos yet.': 'Ancora nessuna foto.', 'No icons.': 'Nessuna icona.',
             'Delete this voice note?': 'Eliminare questa nota vocale?',
             
@@ -1743,20 +1743,20 @@ Object.assign(window.RBi18nLangs.it, {
     "Updated {t} ago": "Aggiornato {t} fa",
     "{n} skipped": "{n} saltate",
     "Nobody is sharing a live position right now.": "Al momento nessuno condivide la posizione in diretta.",
-    "Only the organizers see it, only during this run — its last position, deleted after the event.": "La vedono solo gli organizzatori, solo durante questo percorso: l’ultima posizione, cancellata dopo l’evento.",
-    "Share your live position with the event’s organizers while you navigate?": "Condividere la tua posizione in diretta con gli organizzatori dell’evento mentre navighi?",
+    
+    
 });
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.it, {
-    "priv.location.4": "<b>Tracciamento in diretta negli eventi.</b> Quando navighi un roadbook di un evento a cui partecipi, il Reader ti chiede se condividere la tua posizione in diretta con gli <b>organizzatori</b> di quell’evento. Solo se rispondi sì, e solo durante quel percorso, vengono inviati circa ogni 15 secondi la tua <b>ultima</b> posizione e il tuo avanzamento nel roadbook. La vedono solo gli organizzatori dell’evento, non viene mai conservata come cronologia e si ferma quando termini o lasci il percorso.",
+    "priv.location.4": "<b>Tracciamento in diretta negli eventi.</b> Quando partecipi a un evento e navighi uno dei suoi roadbook, il Reader ti chiede una sola volta per quell’evento se condividere la tua posizione in diretta con i suoi <b>organizzatori</b>, e ricorda la tua risposta. Solo se hai detto sì, e solo mentre navighi uno dei suoi roadbook, vengono inviati circa ogni 15 secondi la tua <b>ultima</b> posizione e il tuo avanzamento nel roadbook. La vedono solo gli organizzatori dell’evento, non viene mai conservata come cronologia e un tocco sulla striscia «Live» la ferma per quel percorso.",
     "priv.retention.live": "Le <b>posizioni in diretta</b> condivise con gli organizzatori di un evento vengono cancellate un giorno dopo la fine dell’evento, e mai conservate più di <b>3 giorni</b>.",
 });
 
 /* Events guide: chained roadbooks (#944) and the live map (#947) */
 Object.assign(window.RBi18nLangs.it, {
     "fp.events.prep5": "Per concatenare i percorsi, sotto ogni roadbook spunta quelli che propone alla sua <b>ultima nota</b>, ognuno con un’etichetta breve («A», «Facile»…): il partecipante ne sceglie uno lì e prosegue nello stesso percorso, e vede un solo report alla fine — mentre ogni roadbook continua a essere valutato per conto suo.",
-    "fp.events.run2": "Per seguirli in diretta, apri la <span class=\"ev-where\">Mappa in diretta</span>: mostra dove si trova ogni partecipante mentre naviga uno dei roadbook dell’evento — solo se ha accettato all’inizio del percorso, solo agli organizzatori e solo l’ultima posizione.",
+    "fp.events.run2": "Per seguirli in diretta, apri la <span class=\"ev-where\">Mappa in diretta</span>: mostra dove si trova ogni partecipante ogni volta che naviga uno dei roadbook dell’evento, in qualunque giorno — solo se ha accettato (chiesto una volta per evento), solo agli organizzatori e solo l’ultima posizione.",
 });
 
 /* Release notes 1.9.12 */
@@ -1786,4 +1786,37 @@ Object.assign(window.RBi18nLangs.it, {
     "A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.": "Una finestra che puoi lasciare senza scegliere nulla si chiude con la ✕ rossa nel suo angolo: niente più righe Chiudi o Annulla.",
     "A question that needs an answer has no ✕: you answer it with its own buttons.": "Una domanda che richiede una risposta non ha la ✕: si risponde con i suoi pulsanti.",
     "Small clean-ups across the app.": "Piccole pulizie in tutta l’app.",
+});
+
+/* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
+Object.assign(window.RBi18nLangs.it, {
+    "Search by title, author or date…": "Cerca per titolo, autore o data…",
+    "Tap to stop": "Tocca per fermare",
+    "Mark all as read": "Segna tutto come letto",
+    "Nothing new — you will find here the comments on your roadbooks.": "Niente di nuovo: qui troverai i commenti ai tuoi roadbook.",
+    "Notifications": "Notifiche",
+    "Show more": "Mostra altro",
+    "Someone": "Qualcuno",
+    "{user} commented on “{title}”": "{user} ha commentato «{title}»",
+    "Cover": "Copertina",
+    "For this PDF only.": "Solo per questo PDF.",
+    "Generate PDF": "Genera PDF",
+    "It becomes the roadbook’s image.": "Diventa l’immagine del roadbook.",
+    "No image yet.": "Ancora nessuna immagine.",
+    "Page margins": "Margini della pagina",
+    "The same on the cover and on every page.": "Gli stessi sulla copertina e su ogni pagina.",
+    "What goes behind the route on the first page.": "Cosa va dietro il percorso nella prima pagina.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Te lo chiediamo una sola volta per evento. La vedono solo i suoi organizzatori, solo mentre navighi: la tua ultima posizione. Tocca la striscia Live per fermarla in un percorso.",
+    "Choose Private or Public to finish.": "Scegli Privato o Pubblico per finire.",
+    "Live position off for this run.": "Posizione in diretta disattivata per questo percorso.",
+    "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Condividere la tua posizione in diretta con gli organizzatori di {events} mentre navighi i suoi roadbook?",
+});
+
+/* Release notes 1.9.15 */
+Object.assign(window.RBi18nLangs.it, {
+    "Notifications, and a PDF your way": "Notifiche e un PDF su misura",
+    "Notifications: a badge on your profile tells you when someone comments on one of your roadbooks. Read them on the web or in the app — they clear everywhere.": "Notifiche: un badge sul tuo profilo ti avvisa quando qualcuno commenta uno dei tuoi roadbook. Leggile sul web o nell’app: spariscono ovunque.",
+    "The PDF opens a generator first: choose the page margins, put the image or the map behind the cover, and add or change the roadbook’s image right there.": "Il PDF apre prima un generatore: scegli i margini, metti l’immagine o la mappa dietro la copertina, e aggiungi o cambia l’immagine del roadbook lì stesso.",
+    "Event live tracking follows participants whenever they navigate one of the event’s roadbooks, on any day — asked once per event, and a tap on the Live strip stops it for a run.": "Il tracciamento in diretta degli eventi segue i partecipanti ogni volta che navigano uno dei loro roadbook, in qualunque giorno: lo si chiede una volta per evento, e un tocco sulla striscia Live lo ferma per un percorso.",
+    "At the end of a run, Done shows you what is left to choose instead of staying greyed out; the admin trash can be searched.": "Alla fine di un percorso, Fatto ti indica cosa resta da scegliere invece di restare grigio; il cestino dell’admin ha la ricerca.",
 });

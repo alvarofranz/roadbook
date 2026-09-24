@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.15', date: '2026-09-24',
+        title: 'Notifications, and a PDF your way',
+        items: [
+            'Notifications: a badge on your profile tells you when someone comments on one of your roadbooks. Read them on the web or in the app — they clear everywhere.',
+            'The PDF opens a generator first: choose the page margins, put the image or the map behind the cover, and add or change the roadbook’s image right there.',
+            'Event live tracking follows participants whenever they navigate one of the event’s roadbooks, on any day — asked once per event, and a tap on the Live strip stops it for a run.',
+            'At the end of a run, Done shows you what is left to choose instead of staying greyed out; the admin trash can be searched.',
+        ],
+    },
+    {
         version: '1.9.14', date: '2026-09-24',
         title: 'Cleaner dialogs',
         items: [

@@ -213,7 +213,7 @@ Tutte in `events.php`, instradate da `index.php`; `events_list` ed `event_get` s
 | Pubbliche (GET) | `events_list`, `event_get` |
 | Gestione | `events_manage`, `event_manage_get`, `event_save`, `event_delete`, `event_logo_remove` |
 | Associazioni roadbook | `event_rb_add`, `event_rb_remove`, `event_rb_mode`, `event_rb_next_set` (la catena, #944) |
-| Mappa in diretta (#947) | `live_ping`, `live_stop`, `live_list` |
+| Mappa in diretta (#947 · #970) | `live_status`, `live_consent`, `live_ping`, `live_stop`, `live_list` |
 | Co-organizzatori | `user_search`, `event_org_add`, `event_org_remove` |
 | Partecipanti | `event_join_code`, `event_join`, `event_leave`, `event_participant_remove`, `event_participant_add`, `event_participants_list`, `event_activate_by_code`, `participant_activate`, `event_participants_activate_pending` (ammissione massiva, #416) |
 
@@ -277,21 +277,26 @@ Quando il cookie `rb_participant=1` è attivo:
 - Il **Ranking** è accessibile solo se l'evento ha almeno un roadbook con
   `scoring_mode ≠ free`.
 
-## 8b. La mappa in diretta degli organizzatori (#947)
+## 8b. La mappa in diretta degli organizzatori (#947 · #970)
 
 Durante un evento gli organizzatori vedono dove sono i partecipanti: **`/admin/events/live/?id=`**
 (il bottone *Mappa in diretta* nell'intestazione dell'evento). La regola di privacy è stretta:
 
-- Il Reader condivide **solo nella run di un roadbook dell'evento**, aperto dall'evento, da un
-  **partecipante attivo** che ha detto **sì** all'inizio di quella run (`RB.liveAllowed`; chiesto a
-  ogni run, un tratto concatenato mantiene la risposta). Mentre condivide mostra la striscia *Live ·
-  gli organizzatori vedono la tua posizione*. Si ferma per sempre con la run (`live_stop`), e un
-  ping rifiutato la spegne.
+- Il Reader condivide **solo nella run di un roadbook dell'evento**, da un **partecipante attivo** —
+  comunque l'abbia aperto (dall'evento o no) e in qualunque giorno: un giro ricorrente si segue anche
+  lui. La domanda si fa **una volta per evento** (`live_status` → chi non ha ancora risposto;
+  `live_consent` salva il sì o il no in `event_participants.live_consent`, sul server, uguale su ogni
+  dispositivo), e da lì parte da sola (`RB.liveAllowed`). Mentre condivide mostra la striscia *Live ·
+  gli organizzatori vedono la tua posizione*: un tocco la ferma per quella run. Si ferma per sempre
+  con la run (`live_stop`), e un ping rifiutato la spegne.
+- Chi non è partecipante attivo — un organizzatore, un admin, chiunque navighi il roadbook pubblico —
+  lo naviga come sempre ma non è mai seguito: organizzare un evento non è parteciparvi.
 - Invia l'ultima posizione **affidabile** ogni 15 s, o prima dopo 50 m (`RB.liveDue`); un invio
   fallito aspetta il fix successivo (mai prima di 5 s) — niente arretrati: *live* vuol dire adesso.
-- Il server ricontrolla ogni ping (`live_gate`: partecipante attivo · roadbook dell'evento · evento
-  in corso tra le sue date ± 1 giorno) e tiene **una riga per partecipante** (`event_live`), mai uno
-  storico. Il cron (slot 5) la cancella un giorno dopo la fine dell'evento, e mai oltre 3 giorni.
+- Il server ricontrolla ogni ping (`live_targets`: gli eventi del roadbook dove l'utente è
+  partecipante attivo e ha detto sì — nessuno, e il ping è rifiutato senza salvare nulla) e tiene
+  **una riga per partecipante per evento** (`event_live`), mai uno storico. Il cron (slot 5) la
+  cancella un giorno dopo la fine dell'evento, e mai oltre 3 giorni.
 - La pagina (`live.js`) interroga `live_list` ogni 10 s (in pausa con la scheda nascosta): ogni
   partecipante è un segnaposto col numero di veicolo (o l'iniziale), colorato per freschezza
   (`RB.liveFreshness`: < 1 min in diretta · 1–5 min · perso o finito), i roadbook dell'evento sotto,

@@ -45,14 +45,28 @@ Editor / challenge ──▶ RBPdf.generate(rb, opts)
 
 ---
 
-## 2. L'API `RBPdf.generate(rb, opts)`
+## 2. Il generatore `RBPdf.open(rb, opts)` e `RBPdf.generate(rb, opts)`
 
-Funzione `async` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
+Si parte sempre dal **generatore** (#973): `open()` apre un dialogo `split` (due pannelli affiancati su
+tablet e desktop, a tutto schermo su un telefono) con
+- **Copertina**: cosa sta dietro il percorso — l'**immagine** del roadbook (il default), la **mappa**
+  (disattivata se il roadbook la nasconde) o **nulla** — e l'immagine stessa, aggiunta o cambiata lì.
+  Nell'Editor (`opts.onImage`) diventa l'immagine del roadbook (`meta.logo`, 256 px, e la bozza è da
+  salvare); altrove vale solo per quel PDF (1600 px).
+- **Margini della pagina** in cm (0,5–4; di default 1,5 · 1,2 · 1,2 · 1,5 — alto · basso · destro ·
+  sinistro), uguali sulla copertina e su ogni pagina, con un'anteprima dal vivo della pagina.
+
+Le scelte restano sul dispositivo (`rb_pdf_prefs`) per il PDF successivo. **Genera PDF** chiama
+`generate()`, funzione `async` ([rb-pdf.js](../public/assets/js/rb-pdf.js)):
 
 | Parametro          | Tipo   | Significato                                                        |
 |--------------------|--------|-------------------------------------------------------------------|
 | `rb`               | object | Il roadbook (`rb.notes`, `rb.track`, `rb.meta`, `rb.icons`).      |
 | `opts.iconBasePath`| string | Cartella delle icone della palette standard. Default `'../assets/icons/'`. |
+| `opts.link`        | string | L'URL della pagina pubblica (o dell'evento) per il QR dell'intestazione. |
+| `opts.margins`     | object | `{top, right, bottom, left}` in mm (`geometry()` li riporta nei limiti). |
+| `opts.backdrop`    | string | `'image'` (default) · `'map'` · `'none'`.                          |
+| `opts.image`       | string | L'immagine dietro il percorso; di default `rb.meta.logo`.          |
 
 Comportamento:
 - Se `rb` non ha note (`!rb.notes.length`) lancia `Error('Nothing to export.')`
@@ -60,8 +74,8 @@ Comportamento:
 - Attende `ensureJsPDF()` (vedi §3), poi risolve `basePath` da `opts.iconBasePath`
   ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 - Pre-rasterizza **tutte** le vignette in PNG (vedi §5) prima di impaginare.
-- Chiama `buildDoc(...)` passando il logo da `rb.meta.logo` (o `null`)
-  ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
+- Prepara lo sfondo (`coverBackdrop`: l'immagine, oppure la mappa di `RBCoverMap` — caricato su
+  richiesta, come jsPDF — o niente) e chiama `buildDoc(...)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 Non restituisce nulla di utile: nell'app il PDF si apre nel **foglio di sistema** (`RBShareFile`: anteprima, apri in…, salva in File, invia), perché un download dentro la WebView non si vede da nessuna parte (#904); sul web si scarica. Il nome del file è
 `RB.slug(title) + '.pdf'` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
@@ -90,42 +104,38 @@ da `ensureJsPDF()` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 ## 4. Impaginazione A4 (`buildDoc`)
 
-`buildDoc(jsPDF, rb, tulips, logo, username)` ([rb-pdf.js](../public/assets/js/rb-pdf.js))
-crea il documento (`unit: 'mm', format: 'a4', compress: true`) e disegna pagina per pagina.
+`buildDoc(jsPDF, rb, tulips, backdrop, link, margins)` ([rb-pdf.js](../public/assets/js/rb-pdf.js))
+crea il documento (`unit: 'mm', format: 'a4', compress: true`), gli dà le sue **proprietà** (titolo,
+autore, soggetto, creatore *RDBK.app*: un documento qualunque dice cos'è) e disegna pagina per pagina.
 
 ### Geometria della pagina (in mm)
-Costanti in [rb-pdf.js](../public/assets/js/rb-pdf.js):
-
-| Costante         | Valore | Note                                                      |
-|------------------|:------:|-----------------------------------------------------------|
-| `PW` × `PH`      | 210×297| A4.                                                       |
-| `LEFT`           | 30     | Margine sinistro ampio: bordo di **rilegatura**.          |
-| `TOP`/`RIGHT`/`BOTTOM` | 20/12/12 |                                                      |
-| `CW`             | 168    | Larghezza contenuto (`PW − LEFT − RIGHT`).                |
-| `CB`             | 285    | Fondo contenuto (`PH − BOTTOM`).                           |
-| `HEADER_H`       | 18     | Altezza dell'intestazione, identica su ogni pagina.       |
-| `ROWS`           | 6      | Righe per pagina, la prima compresa.                      |
+`geometry(margins)` ([rb-pdf.js](../public/assets/js/rb-pdf.js), pura, coperta da `tests/pdf.test.js`)
+dà `{top, right, bottom, left, width, bottomY}` dai margini scelti (`MARGIN_MM` di default: 15 · 12 · 12 ·
+15, stretti fra 5 e 40 mm). A4 = `PW` × `PH` = 210 × 297; `HEADER_H` = 18 (l'intestazione, identica su
+ogni pagina); `ROWS` = 6 righe per pagina, la prima compresa.
 
 Il numero di pagine-tabella è `ceil(righe / ROWS)` (`paginate`), più la copertina.
 
 ### Intestazione (#810)
 Una sola intestazione, `header`, uguale su **ogni** pagina-tabella — la prima non ha un'intestazione
 propria: a sinistra il **QR** verso la versione digitale del roadbook (quando c'è un `opts.link`),
-disegnato a quadratini vettoriali dalla matrice di `RBQr.matrix` — nitido in stampa; al centro il
+**un'unica immagine** (`RBQr.dataURL`) riusata su ogni pagina — un codice disegnato a migliaia di
+quadratini è quello che certe euristiche antivirus scambiano per un PDF di *QR phishing*; al centro il
 **titolo** (`rb.meta.title`, fallback `'Roadbook'`, rimpicciolito finché entra); a destra
 "Page X of Y" (etichette tradotte via `RBt`). **Nessuna linea sotto**: la tabella ha già il suo bordo.
 I km sono formattati da `km(m) = (m/1000).toFixed(2)`.
 
 ### Copertina, niente footer, niente chiusura (#784 · #810)
 
-La **copertina** — `drawCover` — è centrata su una pagina simmetrica (non si rilega): titolo
+La **copertina** — `drawCover` — sta fra gli stessi margini delle pagine: titolo
 (max 2 righe), descrizione (max 3), il **percorso** disegnato come vettore (`drawRoute`:
 equirettangolare con la longitudine scalata per cos(lat), su un riquadro chiaro, pallino verde alla
 partenza e scuro all'arrivo — saltato se il roadbook nasconde la mappa, `map_access:false`), poi tre
-colonne **distanza · note · data** e la riga autore · organizzazione. Nient'altro. L'immagine del
-roadbook (`meta.logo`) non compare come immagine: è lo **sfondo del riquadro del percorso**
-(`drawBackdrop` — riempie il riquadro, ritagliata ai suoi angoli arrotondati, sotto un velo color
-carta al 86 %), così resta solo una traccia di colore dietro la linea.
+colonne **distanza · note · data** e la riga autore · organizzazione. Nient'altro. Dietro il percorso,
+lo **sfondo** scelto nel generatore (`drawImageBox`, ritagliato agli angoli arrotondati del riquadro):
+l'immagine del roadbook sotto un velo color carta al 86 %, così resta solo una traccia di colore dietro
+la linea; oppure la **mappa** su cui corre il percorso — l'immagine di `RBCoverMap`, percorso compreso,
+senza velo e senza nulla sopra; oppure niente.
 
 Le pagine-tabella **non hanno footer** e dopo l'ultima nota **non c'è nulla**: niente "generato da",
 niente nome del file, niente blocco finale. `paginate(count)` (pura, esportata per Node e coperta da

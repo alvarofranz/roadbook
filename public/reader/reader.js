@@ -169,29 +169,47 @@
         const er = chainEntry();
         return er ? (er.next || []).map((n) => { const to = chain.find((x) => x.id === n.id); return to && { label: n.label || to.title, entry: to }; }).filter(Boolean) : [];
     };
-    /* Live tracking for the event's organizers (#947): only in the run of an event roadbook, by an
-       active participant who said yes when the run started — asked once per run, a chained leg keeps
-       the answer. Then the last trusted position goes up (RB.liveDue); a failed send just waits for
-       the next fix — no backlog. It stops for good with the run. */
-    const live = { participant: false, consent: false, sent: null, tried: null, busy: false, on: false };
-    const liveCtx = () => ({ eventSlug, roadbookId: rbRef, activeParticipant: live.participant, consent: live.consent });
-    function liveStart() { live.on = RB.liveAllowed(liveCtx()); live.sent = null; live.tried = null; $('liveStrip').hidden = !live.on; }
+    /* Live tracking for the event's organizers (#947 · #970): a participant of an event shares their
+       last position whenever they navigate one of its roadbooks — opened from the event or not, on
+       its dates or any other day. Whether they want to is asked ONCE per event and kept on the
+       server (live_status · live_consent); the Live strip shows it the whole run, and a tap on it
+       stops it for that run. The last trusted position goes up (RB.liveDue); a failed send just
+       waits for the next fix — no backlog. It stops for good with the run. */
+    const live = { events: [], sent: null, tried: null, busy: false, on: false };
+    async function liveStart() {
+        live.on = false; live.sent = null; live.tried = null; $('liveStrip').hidden = true;
+        if (!meUser || !rbRef) return;
+        const r = await RBApi('live_status', { roadbook_id: rbRef });
+        if (!r.ok) return;
+        live.events = r.events || [];
+        const ask = live.events.filter((e) => e.consent === null);
+        if (ask.length) {
+            const yes = await RBConfirm(t('Share your live position with the organizers of {events} while you navigate its roadbooks?').replace('{events}', ask.map((e) => '<b>' + esc(e.title) + '</b>').join(', '))
+                + '<br><span class="muted small">' + esc(t('Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.')) + '</span>');
+            await Promise.all(ask.map((e) => RBApi('live_consent', { event_id: e.id, consent: yes ? 1 : 0 })));
+            ask.forEach((e) => { e.consent = yes ? 1 : 0; });
+        }
+        live.on = !finished && RB.liveAllowed(live.events);
+        $('liveStrip').hidden = !live.on;
+    }
     async function liveTick(here, coords, speedKmh) {
         if (!live.on || live.busy || paused || !RB.liveDue(live.sent, live.tried, here, Date.now())) return;
         live.busy = true; live.tried = Date.now();
         const skipped = notes.slice(0, activeIdx).filter((n, i) => !reached.has(i)).length;
         const r = await RBApi('live_ping', {
-            event_slug: eventSlug, roadbook_id: rbRef, team: competition ? team : '', lat: here.lat, lon: here.lon,
+            roadbook_id: rbRef, team: competition ? team : '', lat: here.lat, lon: here.lon,
             acc: coords && coords.accuracy, speed: speedKmh, heading: meter && meter.heading, note_idx: activeIdx, notes_total: notes.length, reached: reached.size, skipped,
         });
         live.busy = false;
         if (r.ok) live.sent = { at: Date.now(), lat: here.lat, lon: here.lon };
-        else if (r.error !== 'Network error.') liveEnd(false); // refused (the event is over, not a participant…): never again this run
+        else if (r.error !== 'Network error.') liveEnd(false); // refused (no longer a participant…): never again this run
     }
     function liveEnd(tell = true) {
-        if (live.on && tell) RBApi('live_stop', { event_slug: eventSlug, roadbook_id: rbRef });
-        live.on = false; live.consent = false; $('liveStrip').hidden = true;
+        if (live.on && tell) RBApi('live_stop', { roadbook_id: rbRef });
+        live.on = false; $('liveStrip').hidden = true;
     }
+    // a tap on the strip: not this run
+    $('liveStrip').onclick = () => { liveEnd(); toast('Live position off for this run.'); };
     window.addEventListener('online', () => { if (live.on && lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); });
     const prefetchNext = () => nextOptions().forEach(({ entry }) => {
         if (!chainCache[entry.slug]) RBChallenges.loadPublic(entry.slug).then((j) => { chainCache[entry.slug] = j; }).catch(() => {});
@@ -234,13 +252,10 @@
         if (eventSlug) { // does this event score the roadbook, and what does it chain it to?
             const j = await RBApi('event_get', { slug: eventSlug });
             chain = j.ok ? (j.roadbooks || []).map((x) => ({ id: +x.id, slug: x.slug, title: x.title, scoring_mode: x.scoring_mode, next: x.next || [] })) : null;
-            live.participant = !!(j.ok && j.event && j.event.active_participant && chainEntry());
         }
         busy.reset();
         const comp = isScoredEntry(chainEntry());
         if (!(await RBWebGpsConfirm(comp))) return; // one-time browser warning (stronger for a scored run)
-        // the organizers see a participant only with a yes, asked at the start of every run
-        live.consent = live.participant && await RBConfirm(t('Share your live position with the event’s organizers while you navigate?') + '<br><span class="muted small">' + esc(t('Only the organizers see it, only during this run — its last position, deleted after the event.')) + '</span>');
         if (!comp) return startRun(false);
         askTeam();
     };
@@ -293,7 +308,7 @@
     /* ---------- session checkpoint: survive reloads and OS tab kills ---------- */
     function saveSession() {
         if (!meter || finished) return; // nothing to checkpoint before a run starts or once it is over
-        const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
+        const s = { openedAs, rbSlug, eventSlug, chain, legs: legs.map(({ key, slug }) => ({ key, slug })), competition, team, auto, gpxRecording: RBGpxRecorder.recording, gpxFileName: RBGpxRecorder.fileName, activeIdx, reached: [...reached], totalM: tripTotalM, partialM: tripPartialM, pen, zones, rbRef, runStartedAt, curLimit, maxSpdSeg, extraAccum, armed, startedAt: startedAt ? startedAt.getTime() : null, endedAt: endedAt ? endedAt.getTime() : null };
         RBCheckpoint.write(SESSION_KEY, s);
     }
     function clearSession() { try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_RB_KEY); } catch (e) {} }
@@ -307,7 +322,6 @@
         activeIdx = s.activeIdx; reached = new Set(s.reached); pen = s.pen; curLimit = s.curLimit; maxSpdSeg = s.maxSpdSeg;
         zones = s.zones; rbRef = s.rbRef; rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs; runStartedAt = s.runStartedAt;
         chain = s.chain || null; legs = s.legs || [];
-        if (s.live) { live.participant = !!s.live.participant; live.consent = !!s.live.consent; }
         extraAccum = s.extraAccum; armed = s.armed;
         startedAt = s.startedAt ? new Date(s.startedAt) : null;
         endedAt = s.endedAt ? new Date(s.endedAt) : null;
@@ -893,7 +907,9 @@
         $('reportQr').querySelectorAll('[data-qr-share]').forEach((b) => b.onclick = async () => { const r = results[+b.dataset.qrShare]; RBShareFile(await (await fetch(RBQr.dataURL(r.result_meta))).blob(), qrName(r), r.result_meta); });
         $('reportProfile').hidden = !user;
         if (user) $('reportProfile').href = RBProfileLink(user.username);
-        $('reportDone').onclick = () => leaveRun(eventSlug ? '/event/' + encodeURIComponent(eventSlug) : './'); // a run opened from an event goes back to it (#640)
+        const leave = () => leaveRun(eventSlug ? '/event/' + encodeURIComponent(eventSlug) : './'); // a run opened from an event goes back to it (#640)
+        $('reportDone').disabled = false;
+        $('reportDone').onclick = leave;
         openModal('reportModal'); // an explicit outcome below, never a dismiss
         // the shareable image (#785): made while the runner reads the report; once the run is saved
         // on the profile it goes up with it (best-effort — a card that fails never blocks the report)
@@ -932,9 +948,18 @@
                 <p class="muted small report-vis-status">${status()}</p>
             </div>`;
             vis.querySelectorAll('[data-vis]').forEach((b) => b.onclick = () => pick(b.dataset.vis));
-            // an unpicked report would never leave the device (#460), and leaving mid-save would send it
-            // twice: the upload lands, but the page is gone before the queue can drop it
-            $('reportDone').disabled = !choice || busy;
+            // leaving mid-save would send it twice: the upload lands, but the page is gone before the queue can drop it
+            $('reportDone').disabled = busy;
+        };
+        // An unpicked report would never leave the device (#460), so Done asks for the choice first
+        // (#968): it stays pressable and points at the Private / Public switch, instead of sitting
+        // greyed out with nothing to say why.
+        $('reportDone').onclick = () => {
+            if (choice) return leave();
+            const box = vis.querySelector('.report-vis');
+            box.classList.remove('attention'); void box.offsetWidth; box.classList.add('attention'); // replay the nudge on every tap
+            box.querySelector('.report-vis-status').innerHTML = `<i class="fa-solid fa-hand-point-up"></i> ${esc(t('Choose Private or Public to finish.'))}`;
+            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
         // the card follows the run: uploaded once it is saved, and Share sends the run's page while it is public (#803)
         // every leg's run carries the card of the whole run; Share sends the first one's page

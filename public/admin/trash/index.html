@@ -9,8 +9,8 @@
     <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
     <link rel="manifest" href="../../manifest.json">
-    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.9.14-230">
-    <link rel="stylesheet" href="../../assets/css/app.css?v=1.9.14-230">
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css?v=1.9.15-231">
+    <link rel="stylesheet" href="../../assets/css/app.css?v=1.9.15-231">
 </head>
 <body>
 <header class="topbar"></header>
@@ -18,17 +18,25 @@
 <main class="wrap admin-wrap">
     <h1 data-i18n="Roadbook trash">Roadbook trash</h1>
     <div id="adminMsg" class="muted" data-i18n="Loading…">Loading…</div>
-    <div id="trashList" hidden></div>
+    <div id="trashBody" hidden>
+        <p class="muted small" id="trashNote"></p>
+        <div class="head-row">
+            <div class="rb-toolbar grow"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="trashSearch" placeholder="Search by title, author or date…" data-i18n-ph="Search by title, author or date…" aria-label="Search by title, author or date…" data-i18n-aria="Search by title, author or date…" autocomplete="off" spellcheck="false"></div>
+            <button class="btn btn-danger" id="trashPurgeExpired" type="button" hidden><i class="fa-solid fa-trash-can"></i> <span data-i18n="Delete expired">Delete expired</span> <span id="trashPurgeExpiredCount"></span></button>
+        </div>
+        <div id="trashList"></div>
+        <div class="pager" id="trashPager"></div>
+    </div>
 </main>
 
 
-<script src="../../assets/js/roadbook-core.js?v=1.9.14-230"></script>
-<script src="../../assets/js/i18n.es.js?v=1.9.14-230"></script>
-<script src="../../assets/js/i18n.it.js?v=1.9.14-230"></script>
-<script src="../../assets/js/i18n.de.js?v=1.9.14-230"></script>
-<script src="../../assets/js/i18n.fr.js?v=1.9.14-230"></script>
-<script src="../../assets/js/i18n.js?v=1.9.14-230"></script>
-<script src="../../assets/js/app.js?v=1.9.14-230"></script>
-<script src="admin-trash.js?v=1.9.14-230"></script>
+<script src="../../assets/js/roadbook-core.js?v=1.9.15-231"></script>
+<script src="../../assets/js/i18n.es.js?v=1.9.15-231"></script>
+<script src="../../assets/js/i18n.it.js?v=1.9.15-231"></script>
+<script src="../../assets/js/i18n.de.js?v=1.9.15-231"></script>
+<script src="../../assets/js/i18n.fr.js?v=1.9.15-231"></script>
+<script src="../../assets/js/i18n.js?v=1.9.15-231"></script>
+<script src="../../assets/js/app.js?v=1.9.15-231"></script>
+<script src="admin-trash.js?v=1.9.15-231"></script>
 </body>
 </html>

@@ -144,7 +144,7 @@
             'Identity': 'Identité', 'Visibility & map': 'Visibilité et carte',
             'Map access from player': 'Accès à la carte depuis le lecteur', 'Allow the map in the Reader': 'Autoriser la carte dans le lecteur',
             'Route': 'Itinéraire', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Inverser tout l\'itinéraire ? Départ et arrivée s\'échangent, toutes les vignettes sont recalculées.',
-            'Map style': 'Style de carte', 'Page': 'Page', 'of': 'sur', 'Generating PDF…': 'Génération du PDF…',
+            'Map style': 'Style de carte', 'Page': 'Page', 'of': 'sur', 
             'No photos yet.': 'Pas encore de photos.', 'No icons.': 'Pas d\'icônes.',
             'Delete this voice note?': 'Supprimer cette note vocale ?',
             
@@ -1705,20 +1705,20 @@ Object.assign(window.RBi18nLangs.fr, {
     "Updated {t} ago": "Mis à jour il y a {t}",
     "{n} skipped": "{n} sautées",
     "Nobody is sharing a live position right now.": "Personne ne partage sa position en direct pour le moment.",
-    "Only the organizers see it, only during this run — its last position, deleted after the event.": "Seuls les organisateurs la voient, seulement pendant ce parcours : ta dernière position, effacée après l’événement.",
-    "Share your live position with the event’s organizers while you navigate?": "Partager ta position en direct avec les organisateurs de l’événement pendant que tu navigues ?",
+    
+    
 });
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.fr, {
-    "priv.location.4": "<b>Suivi en direct des événements.</b> Quand vous naviguez un roadbook d’un événement auquel vous participez, le Reader vous demande si vous voulez partager votre position en direct avec les <b>organisateurs</b> de cet événement. Seulement si vous acceptez, et seulement pendant ce parcours, votre <b>dernière</b> position et votre progression dans le roadbook sont envoyées environ toutes les 15 secondes. Seuls les organisateurs de l’événement la voient, elle n’est jamais conservée comme historique et s’arrête quand vous terminez ou quittez le parcours.",
+    "priv.location.4": "<b>Suivi en direct des événements.</b> Quand tu participes à un événement et navigues l’un de ses roadbooks, le Reader te demande une seule fois pour cet événement si tu veux partager ta position en direct avec ses <b>organisateurs</b>, et se souvient de ta réponse. Seulement si tu as dit oui, et seulement pendant que tu navigues l’un de ses roadbooks, ta <b>dernière</b> position et ta progression dans le roadbook sont envoyées environ toutes les 15 secondes. Seuls les organisateurs de l’événement la voient, elle n’est jamais conservée comme historique et une touche sur la bande « Live » l’arrête pour ce parcours.",
     "priv.retention.live": "Les <b>positions en direct</b> partagées avec les organisateurs d’un événement sont supprimées un jour après la fin de l’événement, et jamais conservées plus de <b>3 jours</b>.",
 });
 
 /* Events guide: chained roadbooks (#944) and the live map (#947) */
 Object.assign(window.RBi18nLangs.fr, {
     "fp.events.prep5": "Pour enchaîner les parcours, sous chaque roadbook coche ceux qu’il propose à sa <b>dernière note</b>, chacun avec un libellé court (« A », « Facile »…) : le participant en choisit un à cet endroit et continue dans le même parcours, et voit un seul rapport à la fin — tandis que chaque roadbook reste noté séparément.",
-    "fp.events.run2": "Pour les suivre en direct, ouvre la <span class=\"ev-where\">Carte en direct</span> : elle montre où se trouve chaque participant pendant qu’il navigue l’un des roadbooks de l’événement — seulement s’il a accepté au début de son parcours, seulement aux organisateurs et seulement sa dernière position.",
+    "fp.events.run2": "Pour les suivre en direct, ouvre la <span class=\"ev-where\">Carte en direct</span> : elle montre où se trouve chaque participant chaque fois qu’il navigue l’un des roadbooks de l’événement, n’importe quel jour — seulement s’il a accepté (demandé une fois par événement), seulement aux organisateurs et seulement sa dernière position.",
 });
 
 /* Release notes 1.9.12 */
@@ -1748,4 +1748,37 @@ Object.assign(window.RBi18nLangs.fr, {
     "A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.": "Une fenêtre que tu peux quitter sans rien choisir se ferme avec le ✕ rouge de son coin : fini les lignes Fermer ou Annuler.",
     "A question that needs an answer has no ✕: you answer it with its own buttons.": "Une question qui attend une réponse n’a pas de ✕ : tu y réponds avec ses propres boutons.",
     "Small clean-ups across the app.": "De petits nettoyages dans toute l’application.",
+});
+
+/* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Search by title, author or date…": "Rechercher par titre, auteur ou date…",
+    "Tap to stop": "Touche pour arrêter",
+    "Mark all as read": "Tout marquer comme lu",
+    "Nothing new — you will find here the comments on your roadbooks.": "Rien de nouveau : tu trouveras ici les commentaires sur tes roadbooks.",
+    "Notifications": "Notifications",
+    "Show more": "Voir plus",
+    "Someone": "Quelqu’un",
+    "{user} commented on “{title}”": "{user} a commenté « {title} »",
+    "Cover": "Couverture",
+    "For this PDF only.": "Pour ce PDF uniquement.",
+    "Generate PDF": "Générer le PDF",
+    "It becomes the roadbook’s image.": "Elle devient l’image du roadbook.",
+    "No image yet.": "Pas encore d’image.",
+    "Page margins": "Marges de la page",
+    "The same on the cover and on every page.": "Les mêmes sur la couverture et sur chaque page.",
+    "What goes behind the route on the first page.": "Ce qui se trouve derrière l’itinéraire sur la première page.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Demandé une seule fois par événement. Seuls ses organisateurs la voient, seulement pendant que tu navigues : ta dernière position. Touche la bande Live pour l’arrêter le temps d’un parcours.",
+    "Choose Private or Public to finish.": "Choisis Privé ou Public pour terminer.",
+    "Live position off for this run.": "Position en direct désactivée pour ce parcours.",
+    "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Partager ta position en direct avec les organisateurs de {events} pendant que tu navigues ses roadbooks ?",
+});
+
+/* Release notes 1.9.15 */
+Object.assign(window.RBi18nLangs.fr, {
+    "Notifications, and a PDF your way": "Des notifications et un PDF à ta façon",
+    "Notifications: a badge on your profile tells you when someone comments on one of your roadbooks. Read them on the web or in the app — they clear everywhere.": "Notifications : un badge sur ton profil t’indique quand quelqu’un commente l’un de tes roadbooks. Lis-les sur le web ou dans l’appli : elles disparaissent partout.",
+    "The PDF opens a generator first: choose the page margins, put the image or the map behind the cover, and add or change the roadbook’s image right there.": "Le PDF ouvre d’abord un générateur : choisis les marges, mets l’image ou la carte derrière la couverture, et ajoute ou change l’image du roadbook sur place.",
+    "Event live tracking follows participants whenever they navigate one of the event’s roadbooks, on any day — asked once per event, and a tap on the Live strip stops it for a run.": "Le suivi en direct des événements suit les participants chaque fois qu’ils naviguent l’un de ses roadbooks, n’importe quel jour : demandé une fois par événement, et une touche sur la bande Live l’arrête pour un parcours.",
+    "At the end of a run, Done shows you what is left to choose instead of staying greyed out; the admin trash can be searched.": "À la fin d’un parcours, Terminé t’indique ce qu’il reste à choisir au lieu de rester grisé ; la corbeille de l’admin a une recherche.",
 });

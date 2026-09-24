@@ -44,7 +44,12 @@ try {
             $r = purgeEventLive();
             echo "purge-event-live: deleted {$r['deleted']}\n";
             break;
-        // 6..9 reserved for future tasks
+        case 6:
+            require_once __DIR__ . '/purge-notifications.php';
+            $r = purgeNotifications();
+            echo "purge-notifications: deleted {$r['deleted']}\n";
+            break;
+        // 7..9 reserved for future tasks
     }
 } catch (Throwable $e) {
     echo 'ERROR: ' . $e->getMessage() . "\n";
