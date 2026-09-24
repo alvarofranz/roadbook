@@ -1712,7 +1712,8 @@ Object.assign(window.RBi18nLangs.es, {
 
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.es, {
-    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "El radio de detección de la nota: el Reader da la nota por validada en cuanto el recorrido entra en este círculo.",
+    "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "El círculo amarillo es el radio de detección de la nota: el Reader da la nota por validada en cuanto el recorrido entra en él.",
+    "Edit radius": "Editar radio",
     "Metres": "Metros",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Se dibuja más pequeño: el círculo nunca pasa de la mitad del camino a la nota vecina.",
     "Tulip shape": "Forma de la flecha",
@@ -1757,4 +1758,19 @@ Object.assign(window.RBi18nLangs.es, {
 Object.assign(window.RBi18nLangs.es, {
     "fp.events.prep5": "Para encadenar los recorridos, bajo cada roadbook marca los que ofrece en su <b>última nota</b>, cada uno con una etiqueta corta («A», «Fácil»…): el participante elige uno ahí y sigue en el mismo recorrido, y ve un único informe al final — mientras cada roadbook sigue puntuando por separado.",
     "fp.events.run2": "Para seguirlos en directo, abre el <span class=\"ev-where\">Mapa en directo</span>: muestra dónde está cada participante mientras navega uno de los roadbooks del evento — solo si aceptó al empezar su recorrido, solo a los organizadores y solo su última posición.",
+});
+
+/* Release notes 1.9.12 */
+Object.assign(window.RBi18nLangs.es, {
+    "Events that flow, and a live map": "Eventos que fluyen y un mapa en directo",
+    "Chained roadbooks: at the last note of an event roadbook, pick the next one and carry on in the same run, with one report for all of it at the end.": "Roadbooks encadenados: en la última nota de un roadbook de evento, elige el siguiente y sigue en el mismo recorrido, con un único informe de todo al final.",
+    "Organizers see a live map of the participants — only of those who agree, only while they navigate one of the event’s roadbooks.": "Los organizadores ven un mapa en directo de los participantes: solo de quienes aceptan y solo mientras navegan uno de los roadbooks del evento.",
+    "Tap a note’s rings in the Editor to change its detection radius, or to add the points that shape its arrow without changing the route.": "Toca los círculos de una nota en el Editor para cambiar su radio de detección o para añadir los puntos que dan forma a su flecha sin cambiar la ruta.",
+    "Clearer arrows: every road the same width, junctions under the route, curved exits drawn longer and the arrowhead reaching the very end.": "Flechas más claras: todas las vías con el mismo grosor, los cruces debajo de la ruta, las salidas curvas más largas y la punta de la flecha hasta el final.",
+    "The Editor zooms in close on the note you pick, and tapping an icon on the vignette opens its tools.": "El Editor se acerca mucho a la nota que eliges, y tocar un icono de la viñeta abre sus herramientas.",
+});
+
+/* Editor: the detection radius floor, in the note's rings dialog */
+Object.assign(window.RBi18nLangs.es, {
+    "It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.": "Nunca es menor de {m} m: por debajo, un punto GPS no puede validar la nota con fiabilidad.",
 });

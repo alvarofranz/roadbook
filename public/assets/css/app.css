@@ -315,6 +315,9 @@ body.rb-immersive .app-chip-stack { display: none; }
 .panel h2 { margin: 0 0 .8rem; font-size: 1.05rem; }
 .panel .head-row h2 { margin: 0; }
 .panel + .panel { margin-top: 1rem; } /* a page of stacked panels (event editor, participants desk, ranking) */
+.panel.inset { background: var(--card-2); padding: .9rem 1rem; margin-top: .8rem; } /* a section inside a dialog */
+.panel.inset > :last-child { margin-bottom: 0; }
+.panel.inset > .btnrow:last-child { margin-top: .6rem; }
 /* A heading with its own actions on the same row: title left, actions right, wrapping when the
    screen is too narrow — the "a destra" layout. ONE pattern for every page (#482 · #642). */
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
