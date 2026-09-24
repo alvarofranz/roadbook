@@ -72,15 +72,16 @@ Reference box **230×162**, centre `(115, 81)`.
   `road_type_in`. The first note has none (#472).
 - **Outgoing** road leaves the centre with an arrow, styled by `road_type_out`.
   The last note has none (#447).
-- **Shape (#945):** both roads follow the **real shape of the track** around the
-  note (`RB.tulipShape`, drawn by `trunkRoads` as smooth `<path>`s): ~80 m along
-  the track before / after the note, stopping at a neighbouring note, simplified
-  (Douglas-Peucker), rotated so `bearing_in` points up and scaled so the length
-  along the road is the fixed vignette length (entry 73 px, exit 63 px). A curve
-  is drawn only when the stretch strays from its own chord by more than 12% of
-  its length (min 6 m); a hairpin is tried over 60 / 45 / 30 m so it never
-  crosses the note (the exit stays in the upper half, the entry in the lower).
-  Otherwise the road is the **classic straight** one: the incoming vertical, the
+- **Shape (#945):** the outgoing road follows the **real shape of the road just
+  past the note** when it really bends (`RB.tulipShape`, drawn by `trunkRoads` as
+  a smooth `<path>`): ~50 m along the track after the note, stopping at the next
+  note, simplified (Douglas-Peucker), rotated so `bearing_in` points up and scaled
+  so the length along the road is the fixed exit length (63 px). A curve is drawn
+  only when the stretch strays from its own chord by more than 12% of its length
+  (min 5 m); a hairpin is tried over 35 / 25 m so it never crosses the note (the
+  exit stays in the upper half). A note with junctions keeps its classic exit —
+  its branches are drawn against it. The incoming road is always straight: it only
+  says where you come from. Otherwise the exit is the **classic straight** one,
   outgoing **auto-oriented** to the real turn — its angle is
   `bearing_out − bearing_in` (the heading change across previous · note · next),
   so straight-up = carry on, right = turn right…
