@@ -221,7 +221,7 @@ window.RBMap = class RBMap {
         // the selected note's rings (#945): its detection radius, and — dashed, subtle — the stretch
         // of track whose points shape its tulip
         m.addSource('rb-shape-ring', { type: 'geojson', data: this._empty() });
-        m.addLayer({ id: 'rb-shape-ring', type: 'line', source: 'rb-shape-ring', paint: { 'line-color': '#ffffff', 'line-opacity': 0.9, 'line-width': 2, 'line-dasharray': [2.5, 2] } });
+        m.addLayer({ id: 'rb-shape-ring', type: 'line', source: 'rb-shape-ring', paint: { 'line-color': '#ffffff', 'line-opacity': 0.45, 'line-width': 1.5, 'line-dasharray': [2.5, 2] } });
         m.addSource('rb-reach-ring', { type: 'geojson', data: this._empty() });
         m.addLayer({ id: 'rb-reach-ring-f', type: 'fill', source: 'rb-reach-ring', paint: { 'fill-color': '#e8b059', 'fill-opacity': 0.14 } });
         m.addLayer({ id: 'rb-reach-ring', type: 'line', source: 'rb-reach-ring', paint: { 'line-color': '#e8b059', 'line-width': 2 } });

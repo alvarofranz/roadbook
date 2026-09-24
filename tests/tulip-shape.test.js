@@ -100,13 +100,20 @@ describe('RB.tulipShape (#945)', () => {
         expect(RB.tulipShape(rb, 1, false, false).turn).toBeUndefined(); // then the stored angle stays
     });
 
-    it('a drawn curve keeps clear of the author’s branches, or stays classic', () => {
+    it('a drawn curve is drawn even beside a branch the author drew too — their drawing rules', () => {
         const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]], 4);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        rb.notes[1].junctions = [{ pivot: [0, 0], tip: [-45, 30], width: 6, road_type: 3 }]; // off to the left
-        expect(RB.tulipShape(rb, 1, false, false).exit).not.toBeNull();
         rb.notes[1].junctions = [{ pivot: [0, 0], tip: [30, 40], width: 6, road_type: 3 }]; // where the curve goes
-        expect(RB.tulipShape(rb, 1, false, false).exit).toBeNull();
+        expect(RB.tulipShape(rb, 1, false, false).exit).not.toBeNull();
+    });
+
+    it('counts the points inside the drawn circle, not along the track', () => {
+        // a hairpin-ish detour: 4 points inside 30 m of the note, but more than 30 m of track to reach them
+        const pts = [at(0, -200), at(0, -60), at(0, 0), at(4, 10), at(12, 18), at(22, 18), at(26, 8), at(200, 8)];
+        const rb = roadbook(pts, [0, 2, pts.length - 1]);
+        const inside = pts.slice(3, 7).every((p) => RB.geo.haversineM(p, pts[2]) < 30);
+        expect(inside).toBe(true);
+        expect(RB.tulipShape(rb, 1, false, false).exit).not.toBeNull();
     });
 
     it('the start has no entry and the end no exit (#472 · #447)', () => {

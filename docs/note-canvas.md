@@ -101,8 +101,10 @@ Ogni strada del tulip prende la forma che l'autore ha dato alla traccia attorno 
 - Il tratto si ripulisce dal jitter (**Douglas-Peucker**, 0,5 m: i punti dell’autore restano come li ha messi), si **ruota** perché `bearing_in`
   punti in su e si **scala** perché la lunghezza lungo la strada sia quella fissa della vignetta —
   **73 px** l'ingresso, **63 px** l'uscita — sempre dentro il box.
-- Una forma che tornerebbe sopra la nota (l'uscita sotto il centro, l'ingresso sopra) o che
-  passerebbe su un **incrocio** disegnato dall'autore (campionata lungo ogni segmento) resta classica.
+- I punti contati sono quelli **dentro il cerchio** di 30 m attorno alla nota — l'anello tratteggiato
+  dell'Editor: quello che vedi dentro, conta. Una forma che tornerebbe sopra la nota (l'uscita sotto
+  il centro, l'ingresso sopra) resta classica; una curva disegnata può passare accanto a un incrocio
+  dell'autore (il disegno è suo). Solo l'uscita dritta automatica evita gli incroci.
 - Nessun segmento troppo corto da leggere (≥ 5 px), e l'ultimo dell'uscita — dove punta la freccia —
   di almeno 14 px.
 

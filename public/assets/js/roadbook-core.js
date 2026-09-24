@@ -495,8 +495,9 @@
        (Douglas-Peucker), rotated so the road you arrive on points up (the stored bearing_in, like
        every tulip) and scaled so its length along the road is the vignette's fixed road length —
        73 px in, 63 px out — so a motorbike roadbook and a walking one draw at the same size and the
-       drawing never leaves the box. A shape that would curl back over the note (the exit below it,
-       the entry above it) or run over a junction the author drew stays classic.
+       drawing never leaves the box. The points counted are the ones inside the circle of
+       TULIP_SHAPE_M around the note — the ring the Editor draws. A shape that would curl back over
+       the note (the exit below it, the entry above it) stays classic.
        The classic straight exit aims where the road goes over its first TULIP_AIM_M — not over its
        first metre (the stored bearing_out), which on a recorded track is GPS noise: a clean right
        angle read as 37° — unless that aim would run over a branch, where the stored angle stays.
@@ -508,10 +509,12 @@
     const TULIP_SHAPE_M = 30, TULIP_SHAPE_POINTS = 4, TULIP_MIN_M = 12, TULIP_AIM_M = 20;
     const TULIP_ENTRY_PX = 73, TULIP_EXIT_PX = 63, TULIP_STRAIGHT_M = 2;
     const TULIP_CX = 115, TULIP_CY = 81, TULIP_GUARD_PX = 16, TULIP_OVERLAP_PX = 6, TULIP_LEG_PX = 5, TULIP_ARROW_LEG_PX = 14, TULIP_BRANCH_CLEAR_PX = 12;
-    // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note, up
-    // to maxM or the neighbouring note — the last step cut to fit exactly — and how many of the
-    // track's own points it passes.
-    function tulipStretch(rb, i, dir, maxM) {
+    // The track from note i along `dir` (+1 forward, -1 back), as metres east/north of the note.
+    // `within`: the stretch inside the circle of that radius around the note — exactly the ring the
+    // Editor draws, what you see inside it is what counts — ending where the track crosses it (or at
+    // the neighbouring note), with how many of the track's own points lie inside. `along`: the first
+    // metres along the track instead (the classic exit's aim).
+    function tulipStretch(rb, i, dir, { within, along }) {
         const track = rb.track, notes = rb.notes, n = notes[i], at = n && track && track[n.idx];
         if (!at) return null;
         const stop = notes[i + dir] ? notes[i + dir].idx : (dir > 0 ? track.length - 1 : 0);
@@ -521,10 +524,17 @@
             const P = proj(track[k]), prev = pts[pts.length - 1];
             const q = { x: P.x - O.x, y: P.y - O.y }, step = Math.hypot(q.x - prev.x, q.y - prev.y);
             if (step < 0.01) continue; // a duplicate vertex (#452)
-            if (len + step >= maxM) {
-                const f = (maxM - len) / step;
+            if (along != null && len + step >= along) {
+                const f = (along - len) / step;
                 pts.push({ x: prev.x + (q.x - prev.x) * f, y: prev.y + (q.y - prev.y) * f });
-                len = maxM; break;
+                len = along; break;
+            }
+            if (within != null && Math.hypot(q.x, q.y) > within) {
+                // out of the circle: the stretch ends on its edge (the segment's crossing point)
+                const dx = q.x - prev.x, dy = q.y - prev.y, a = dx * dx + dy * dy, b = 2 * (prev.x * dx + prev.y * dy), c = prev.x * prev.x + prev.y * prev.y - within * within;
+                const f = Math.max(0, Math.min(1, (-b + Math.sqrt(Math.max(0, b * b - 4 * a * c))) / (2 * a)));
+                const edge = { x: prev.x + dx * f, y: prev.y + dy * f };
+                len += Math.hypot(edge.x - prev.x, edge.y - prev.y); pts.push(edge); break;
             }
             pts.push(q); len += step; points++;
         }
@@ -594,20 +604,21 @@
         };
         // the shape of one side, when the author drew it
         const side = (dir, px) => {
-            const st = tulipStretch(rb, i, dir, TULIP_SHAPE_M);
+            const st = tulipStretch(rb, i, dir, { within: TULIP_SHAPE_M });
             if (!st || st.points < TULIP_SHAPE_POINTS) return null; // a point or two: the classic straight road
             // the author placed these points: kept as drawn, only a sub-metre wobble smoothed away
             const simple = tulipSimplify(st.pts, 0.5);
             if (simple.length < 3 || stray(simple) < TULIP_STRAIGHT_M) return null; // drawn straight
             const line = legible(toBox(simple, px / st.len), dir);
-            if (line.length < 3 || curlsBack(line, dir) || nearBranch(line)) return null;
+            // the author's own drawing: it may run beside a branch they drew too — only never back over the note
+            if (line.length < 3 || curlsBack(line, dir)) return null;
             const rounded = line.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
             return dir < 0 ? rounded.reverse() : rounded; // the entry runs from its far end in to the centre
         };
         const entry = isFirst ? null : side(-1, TULIP_ENTRY_PX), exit = isEnd ? null : side(1, TULIP_EXIT_PX);
         if (exit || isEnd) return { entry, exit };
         // the classic straight exit, aimed along the road's first metres
-        const aim = tulipStretch(rb, i, 1, TULIP_AIM_M);
+        const aim = tulipStretch(rb, i, 1, { along: TULIP_AIM_M });
         if (!aim) return { entry, exit: null };
         const end = aim.pts[aim.pts.length - 1];
         const turn = ((((Math.atan2(end.x, end.y) * 180 / Math.PI) - (n.bearing_in || 0)) % 360) + 360) % 360;
