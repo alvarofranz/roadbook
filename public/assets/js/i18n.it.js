@@ -295,7 +295,7 @@
             /* install guide (#333) */ 'seo.install.title': 'Installa RDBK.app — su qualsiasi dispositivo', 'seo.install.desc': 'Installa RDBK.app su telefono, tablet o computer — funziona offline, apre i file .rdbk e continua a registrare a schermo bloccato.', 'Install RDBK.app': 'Installa RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Già installata? Apri RDBK dalla schermata Home o dall’elenco delle app — questa pagina serve una volta sola.', 'Your device': 'Il tuo dispositivo', 'Install now': 'Installa ora', 'Open <b>rdbk.app</b> in Chrome.': 'Apri <b>rdbk.app</b> in Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Tocca il menu <b>⋮</b>, in alto a destra.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Apri <b>rdbk.app</b> in Safari (deve essere Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Apri <b>rdbk.app</b> in Chrome o Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Clicca l’icona <b>installa</b> <i class="fa-solid fa-circle-down icon-accent"></i> nella barra degli indirizzi (o menu ⋮ → <b>Installa</b>).', 'Confirm — RDBK then opens in its own window.': 'Conferma — RDBK si aprirà in una finestra propria.', 'RDBK is installed — open it from your home screen.': 'RDBK è installata — aprila dalla schermata Home.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Informativa sulla privacy',
-            'priv.updated': "Ultimo aggiornamento: 24 settembre 2026",
+            'priv.updated': "Ultimo aggiornamento: 25 settembre 2026",
             'priv.authoritative': 'La versione inglese di questa informativa è quella di riferimento; le traduzioni sono fornite per comodità.',
             'priv.intro': 'RDBK.app (“RDBK”, “noi”) è una suite gratuita per creare e navigare roadbook digitali, disponibile come sito web, web app installabile (PWA) e app native per Android e iOS. Questa informativa spiega quali dati RDBK tratta e perché. In breve: <b>la tua posizione è usata sul tuo dispositivo per navigare e registrare i percorsi; un account e l’archiviazione nel cloud sono del tutto facoltativi; non mostriamo pubblicità, non eseguiamo tracciamento di terze parti e non vendiamo mai i tuoi dati.</b>',
             'priv.h.location': 'Posizione',
@@ -1879,4 +1879,33 @@ Object.assign(window.RBi18nLangs.it, {
 Object.assign(window.RBi18nLangs.it, {
     "Hold 2 s to reset": "Tieni 2 s per azzerare",
     "Total and partial. ±10 m corrects them; hold the partial 2 s to reset it.": "Totale e parziale. ±10 m li corregge; tieni premuto il parziale 2 s per azzerarlo.",
+});
+
+/* The contact form (/contact/) */
+Object.assign(window.RBi18nLangs.it, {
+    "Your name": "Il tuo nome",
+    "What is it about?": "Di cosa si tratta?",
+    "Question": "Domanda",
+    "Feedback or idea": "Suggerimento o idea",
+    "Something doesn’t work": "Qualcosa non funziona",
+    "Events and organizers": "Eventi e organizzatori",
+    "Privacy or my data": "Privacy o i miei dati",
+    "Other": "Altro",
+    "Your message": "Il tuo messaggio",
+    "Send message": "Invia messaggio",
+    "Message sent": "Messaggio inviato",
+    "Thank you! We read every message and answer at the email you gave us.": "Grazie! Leggiamo ogni messaggio e rispondiamo all’email che ci hai lasciato.",
+    "Could not send.": "Invio non riuscito.",
+    "Please enter your name.": "Inserisci il tuo nome.",
+    "Please enter a valid email.": "Inserisci un’email valida.",
+    "Choose what it is about.": "Scegli di cosa si tratta.",
+    "Tell us a little more.": "Raccontaci qualcosa in più.",
+    "That message is too long.": "Il messaggio è troppo lungo.",
+    "The message could not be sent. Please try again later, or write to us by email.": "Impossibile inviare il messaggio. Riprova più tardi o scrivici per email.",
+});
+
+/* Privacy: the contact form */
+Object.assign(window.RBi18nLangs.it, {
+    "priv.h.contactform": "Modulo di contatto",
+    "priv.contactform": "Quando ci scrivi con il <a href=\"../contact/\">modulo di contatto</a>, il tuo nome, la tua email, l’argomento e il messaggio vengono inviati per email al nostro team (tramite il nostro fornitore di email, SendGrid) per poterti rispondere. Non li conserviamo sul nostro server; il modulo è protetto dallo spam con Cloudflare Turnstile.",
 });

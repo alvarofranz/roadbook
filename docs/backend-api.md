@@ -65,7 +65,7 @@ switch ci sono i guard di metodo e di origine.
 
 Le action sono definite in `app/auth.php` (account), `app/admin.php` + `app/settings.php` (admin),
 `app/roadbooks.php` (roadbook/foto/audio/pubblici), `app/events.php` (eventi), `app/runs.php` (run,
-profili, classifiche) e `app/comments.php` (commenti). Colonna **Auth**: *nessuna* = anonima · *opzionale*
+profili, classifiche), `app/comments.php` (commenti) e `app/contact.php` (modulo di contatto). Colonna **Auth**: *nessuna* = anonima · *opzionale*
 = `current_user()` (funziona da anonimo, eleva i permessi se loggato) · *richiesta* =
 `require_user()` (401 senza sessione né Bearer token) · *admin* = `require_admin()` ·
 *organizer* = ruolo organizer (o admin).
@@ -77,6 +77,7 @@ profili, classifiche) e `app/comments.php` (commenti). Colonna **Auth**: *nessun
 | `config` | Bootstrap del front-end: chiave Turnstile (sito), **`google_client`** (id OAuth Web per il pulsante GIS, #46), **`apple_client`** (Services ID per il pulsante Apple sul web, #370 — vuoto = pulsante nascosto), utente corrente (con `manages_events` per chi co-organizza un evento) e il **banner** di sito | nessuna |
 | `register` | Crea l'account (richiede `password_confirm` **e** `accept_terms`, timbra `terms_accepted_at`/`terms_version`) e invia la mail di verifica | nessuna |
 | `verify` | Verifica l'email tramite token | nessuna |
+| `contact_send` | Il modulo di `/contact/` ([contact.php](../app/contact.php)): nome, email, argomento (`CONTACT_TOPICS`), messaggio 10–5000 caratteri; honeypot `website`, rate limit 5/ora per IP, Turnstile; manda la mail al team (`CONTACT_TO`, copia `CONTACT_CC`, `Reply-To` il mittente). Nulla viene salvato | nessuna |
 | `login` | Login (email **o** username), rigenera la sessione; un Bearer token **solo** a un Origin app (#213) — il web usa il cookie | nessuna |
 | `google_auth` | **Google Sign-In (#46)**: verifica l'ID token Google (tokeninfo: firma/`iss`/`exp`, `aud` ∈ `GOOGLE_CLIENT_IDS`), poi passa l'identità a `social_auth` | nessuna |
 | `apple_auth` | **Sign in with Apple (#370)** — richiesto dalla guideline 4.8 dell'App Store accanto a Google. Verifica l'identity token in casa: JWT RS256 controllato contro le chiavi pubbliche Apple (`appleid.apple.com/auth/keys`, `kid` dall'header, `alg` MAI preso dal token), più `iss`/`exp` e `aud` ∈ `APPLE_SERVICE_ID` (web) o `APPLE_APP_ID` (app iOS). L'email può essere l'indirizzo relay di *Hide My Email* — Apple la attesta comunque; il nome arriva dal client, perché Apple lo rivela solo alla PRIMA autorizzazione e mai nel token. Poi passa l'identità a `social_auth` | nessuna |
@@ -212,6 +213,7 @@ se manca) e costruisce l'array `$CFG`:
 |---------------|------------------|-----|
 | `db.*` | `DB_HOST` / `DB_NAME` / `DB_USER` / `DB_PASS` | connessione PDO |
 | `sendgrid_key`, `mail_from`, `mail_from_name` | `SENDGRID_KEY`, `MAIL_FROM`, `MAIL_FROM_NAME` | invio email |
+| `contact_to`, `contact_cc` | `CONTACT_TO` (default `rdbk.admin@gmail.com`), `CONTACT_CC` (separati da virgola) | destinatari del modulo di contatto |
 | `base_url` | `BASE_URL` | link nelle email |
 | `app_secret` | `APP_SECRET` | pepper per l'hashing dei token |
 | `turnstile_site`, `turnstile_secret` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` | Cloudflare Turnstile |
@@ -477,7 +479,7 @@ vocali non passano da qui: l'audio è conservato tal quale.
 ## 7. Email (mail.php)
 
 [`send_mail`](../app/mail.php) invia HTML tramite la **SendGrid v3 API** (cURL, Bearer
-key). Se la chiave non è configurata logga e ritorna `false` (in locale le mail semplicemente
+key), con copie (`$cc`, esclusa la ripetizione del destinatario che SendGrid rifiuta) e `Reply-To` opzionali. Se la chiave non è configurata logga e ritorna `false` (in locale le mail semplicemente
 non partono, il resto funziona). [`mail_account`](../app/mail.php) compone le tre mail
 dell'account (`verify` · `reset` · `change`) in **un solo template a tabelle con stili inline** —
 l'unico HTML che Gmail, Outlook, Apple Mail e Windows Mail rendono uguale (#748): card chiara col

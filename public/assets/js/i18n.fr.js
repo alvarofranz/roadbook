@@ -359,7 +359,7 @@
             /* install guide (#333) */ 'seo.install.title': 'Installer RDBK.app — sur n’importe quel appareil', 'seo.install.desc': 'Installez RDBK.app sur votre téléphone, tablette ou ordinateur — fonctionne hors ligne, ouvre les fichiers .rdbk et continue d’enregistrer écran verrouillé.', 'Install RDBK.app': 'Installer RDBK.app', 'Already installed? Open RDBK from your home screen or app list — this page is only needed once.': 'Déjà installée ? Ouvrez RDBK depuis votre écran d’accueil ou la liste des applications — cette page ne sert qu’une fois.', 'Your device': 'Votre appareil', 'Install now': 'Installer maintenant', 'Open <b>rdbk.app</b> in Chrome.': 'Ouvrez <b>rdbk.app</b> dans Chrome.', 'Tap the <b>⋮</b> menu, top right.': 'Touchez le menu <b>⋮</b>, en haut à droite.', 'Choose <b>Install app</b> (or <b>Add to Home screen</b>).': 'Choisissez <b>Installer l’application</b> (ou <b>Ajouter à l’écran d’accueil</b>).', 'Open <b>rdbk.app</b> in Safari (it has to be Safari).': 'Ouvrez <b>rdbk.app</b> dans Safari (ce doit être Safari).', 'Open <b>rdbk.app</b> in Chrome or Edge.': 'Ouvrez <b>rdbk.app</b> dans Chrome ou Edge.', 'Click the <b>install</b> icon <i class="fa-solid fa-circle-down icon-accent"></i> in the address bar (or the ⋮ menu → <b>Install</b>).': 'Cliquez sur l’icône <b>installer</b> <i class="fa-solid fa-circle-down icon-accent"></i> dans la barre d’adresse (ou menu ⋮ → <b>Installer</b>).', 'Confirm — RDBK then opens in its own window.': 'Confirmez — RDBK s’ouvre ensuite dans sa propre fenêtre.', 'RDBK is installed — open it from your home screen.': 'RDBK est installée — ouvrez-la depuis votre écran d’accueil.',
             // Privacy policy (the English version in privacy/index.html is authoritative)
             'priv.title': 'Politique de confidentialité',
-            'priv.updated': "Dernière mise à jour : 24 septembre 2026",
+            'priv.updated': "Dernière mise à jour : 25 septembre 2026",
             'priv.authoritative': 'La version anglaise de cette politique fait foi ; les traductions sont fournies pour votre commodité.',
             'priv.intro': 'RDBK.app (« RDBK », « nous ») est une suite gratuite pour créer et naviguer des roadbooks numériques, disponible en site web, application web installable (PWA) et applications natives pour Android et iOS. Cette politique explique quelles données RDBK traite et pourquoi. En bref : <b>votre position est utilisée sur votre appareil pour naviguer et enregistrer des itinéraires ; un compte et le stockage dans le cloud sont entièrement facultatifs ; nous n’affichons aucune publicité, n’effectuons aucun suivi tiers et ne vendons jamais vos données.</b>',
             'priv.h.location': 'Position',
@@ -1841,4 +1841,33 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Hold 2 s to reset": "Maintiens 2 s : RAZ",
     "Total and partial. ±10 m corrects them; hold the partial 2 s to reset it.": "Total et partiel. ±10 m les corrige ; maintiens le partiel 2 s pour le remettre à zéro.",
+});
+
+/* The contact form (/contact/) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Your name": "Votre nom",
+    "What is it about?": "De quoi s’agit-il ?",
+    "Question": "Question",
+    "Feedback or idea": "Avis ou idée",
+    "Something doesn’t work": "Quelque chose ne marche pas",
+    "Events and organizers": "Événements et organisateurs",
+    "Privacy or my data": "Confidentialité ou mes données",
+    "Other": "Autre",
+    "Your message": "Votre message",
+    "Send message": "Envoyer le message",
+    "Message sent": "Message envoyé",
+    "Thank you! We read every message and answer at the email you gave us.": "Merci ! Nous lisons chaque message et répondons à l’e-mail que vous nous avez donné.",
+    "Could not send.": "Envoi impossible.",
+    "Please enter your name.": "Indiquez votre nom.",
+    "Please enter a valid email.": "Saisissez un e-mail valide.",
+    "Choose what it is about.": "Choisissez le sujet.",
+    "Tell us a little more.": "Dites-nous-en un peu plus.",
+    "That message is too long.": "Ce message est trop long.",
+    "The message could not be sent. Please try again later, or write to us by email.": "Le message n’a pas pu être envoyé. Réessayez plus tard ou écrivez-nous par e-mail.",
+});
+
+/* Privacy: the contact form */
+Object.assign(window.RBi18nLangs.fr, {
+    "priv.h.contactform": "Formulaire de contact",
+    "priv.contactform": "Lorsque vous nous écrivez via le <a href=\"../contact/\">formulaire de contact</a>, votre nom, votre e-mail, le sujet et votre message sont envoyés par e-mail à notre équipe (via notre fournisseur d’e-mail, SendGrid) afin que nous puissions vous répondre. Nous ne les conservons pas sur notre serveur ; le formulaire est protégé contre le spam par Cloudflare Turnstile.",
 });

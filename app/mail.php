@@ -1,14 +1,19 @@
 <?php
-// Send an HTML email through the SendGrid v3 API.
-function send_mail(string $toEmail, string $toName, string $subject, string $html): bool {
+// Send an HTML email through the SendGrid v3 API. `$cc` copies more addresses (SendGrid refuses one
+// that repeats the recipient, so those are dropped); `$replyTo` = ['email' => …, 'name' => …].
+function send_mail(string $toEmail, string $toName, string $subject, string $html, array $cc = [], ?array $replyTo = null): bool {
     global $CFG;
     if (!$CFG['sendgrid_key']) { error_log('SendGrid key not configured'); return false; }
+    $personalization = ['to' => [['email' => $toEmail, 'name' => $toName]]];
+    $cc = array_values(array_unique(array_filter($cc, fn($e) => strcasecmp($e, $toEmail) !== 0)));
+    if ($cc) $personalization['cc'] = array_map(fn($e) => ['email' => $e], $cc);
     $payload = [
-        'personalizations' => [['to' => [['email' => $toEmail, 'name' => $toName]]]],
+        'personalizations' => [$personalization],
         'from'    => ['email' => $CFG['mail_from'], 'name' => $CFG['mail_from_name']],
         'subject' => $subject,
         'content' => [['type' => 'text/html', 'value' => $html]],
     ];
+    if ($replyTo) $payload['reply_to'] = $replyTo;
     $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
