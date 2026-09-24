@@ -321,13 +321,11 @@
                 ${storeUrl ? `<a class="btn btn-primary" href="${storeUrl}" target="_blank" rel="noopener"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</a>` : ''}
                 ${status.kind === 'refresh' ? `<button class="btn btn-primary" id="appInfoUpdate"><i class="fa-solid fa-rotate"></i> ${RBt('Update')}</button>` : ''}
                 <a class="btn btn-ghost" href="${ROOT}changelog/"><i class="fa-solid fa-clock-rotate-left"></i> ${RBt('What’s new')}</a>
-                <button class="btn btn-ghost modal-close">${RBt('Close')}</button>
             </div>
             <div class="muted small app-info-foot"><a href="https://rdbk.app" target="_blank" rel="noopener">rdbk.app</a> · © ${new Date().getFullYear()} RDBK.app</div>
         </div>`, 'narrow');
         const up = modal.q('#appInfoUpdate');
         if (up) up.onclick = () => { modal.close(); hardRefresh(); };
-        modal.q('.modal-close').onclick = () => modal.close();
     };
 
     /* ---------------- Activity log modal (#448): the same timeline for everyone, filtered by
@@ -352,9 +350,7 @@
                 <button class="btn btn-ghost btn-sm" id="myActMe" type="button" hidden>${RBesc(RBt('Me'))}</button></div>` : ''}
             <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" id="myActSearch" placeholder="${RBesc(RBt('Search the activity…'))}" aria-label="${RBesc(RBt('Search the activity…'))}" autocomplete="off" spellcheck="false"></div>
             <div id="myActBody" class="muted small">${RBesc(RBt('Loading…'))}</div>
-            <div class="pager" id="myActPager"></div>
-            <div class="btnrow end"><button class="btn btn-ghost modal-close" type="button">${RBesc(RBt('Close'))}</button></div>`, 'wide');
-        m.q('.modal-close').onclick = m.close;
+            <div class="pager" id="myActPager"></div>`, 'wide');
         const fetchPage = (page, perPage) => (isAdmin && target)
             ? RBApi('admin_activity', { id: target.id, page, per_page: perPage, q: actQuery })
             : RBApi('activity_mine', { page, per_page: perPage, q: actQuery });
@@ -537,10 +533,12 @@
 
     /* ---------------- Shared UI primitives (the one home for these) ----------------
        Every page reuses these instead of re-implementing them — see CLAUDE.md. */
-    // Overlay modal. Pass the card's inner HTML (+ optional card style + backdrop-dismiss
-    // callback + options). Options: { dismissable } — set dismissable:false for data-entry
-    // forms, so a stray backdrop click or Escape can't discard what you typed (close only via
-    // the dialog's own buttons). Returns { el, q(sel), close }.
+    // Overlay modal. Pass the card's inner HTML (+ optional card style + dismiss callback +
+    // options). A dialog you can leave without deciding anything is dismissable: Escape, a
+    // backdrop click or its corner close (RBModalX) leave it, and it carries no Close / Cancel
+    // button of its own. `dismissable: false` is a dialog that asks for a decision — only its own
+    // buttons leave it. `corner: true` with it: a form whose typed input a stray backdrop tap must
+    // not lose, left deliberately from the corner. Returns { el, q(sel), close }.
     // Dialog focus management for a `.modal-card`: moves focus in, cycles Tab
     // inside, Escape → onEscape; returns release() (detaches + restores focus).
     // Reused by RBModal AND the Reader's static dialogs — one home for the logic.
@@ -559,8 +557,20 @@
         setTimeout(() => { const f = focusable(); (f[0] || card).focus(); }, 0); // move focus into the dialog
         return () => { document.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
     };
+    // The corner close of a dialog card (RBModal's, and the Reader's static ones): the card's
+    // content moves into a scrolling .modal-body, and the red disc sits on its top-right vertex.
+    window.RBModalX = (card, onClose) => {
+        if (card.classList.contains('has-x')) return;
+        const body = document.createElement('div'); body.className = 'modal-body';
+        while (card.firstChild) body.appendChild(card.firstChild);
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'modal-x'; x.title = RBt('Close'); x.setAttribute('aria-label', RBt('Close'));
+        x.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        x.onclick = onClose;
+        card.append(body, x); card.classList.add('has-x');
+    };
     window.RBModal = (cardHtml, cardClass, onDismiss, opts) => {
-        const dismissable = !(opts && opts.dismissable === false);
+        const dismissable = !(opts && opts.dismissable === false), corner = dismissable || !!(opts && opts.corner);
         const m = document.createElement('div'); m.className = 'modal';
         const card = document.createElement('div');
         card.className = 'modal-card' + (cardClass ? ' ' + cardClass : '');
@@ -570,10 +580,12 @@
         document.body.appendChild(m);
         let release;
         const close = () => { if (release) release(); m.remove(); };
-        // dismissable dialogs close on Escape and on a backdrop click; a non-dismissable form
-        // ignores both and is closed only by its own buttons (Escape still traps focus, no close).
-        release = RBFocusTrap(card, dismissable ? () => { close(); if (onDismiss) onDismiss(); } : null);
-        if (dismissable) m.addEventListener('click', (e) => { if (e.target === m) { close(); if (onDismiss) onDismiss(); } });
+        const dismiss = () => { close(); if (onDismiss) onDismiss(); };
+        if (corner) RBModalX(card, dismiss);
+        // a dismissable dialog also leaves on Escape and a backdrop click; a decision ignores both
+        // and is left only through its own buttons (Escape still traps focus)
+        release = RBFocusTrap(card, dismissable ? dismiss : null);
+        if (dismissable) m.addEventListener('click', (e) => { if (e.target === m) dismiss(); });
         return { el: m, q: (s) => m.querySelector(s), close };
     };
     // Metres → "12.34 km", the one distance format (#732); `digits` for the precision the place needs.
@@ -736,8 +748,7 @@
         const modal = RBModal(`<h2><i class="fa-solid ${icon} icon-accent"></i> ${RBesc(RBt(title))}</h2>
             ${lead ? `<p class="muted small">${RBesc(RBt(lead))}</p>` : ''}
             ${searchable ? `<div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="rb-search" placeholder="${RBesc(RBt('Search…'))}" aria-label="${RBesc(RBt('Search…'))}" autocomplete="off" spellcheck="false"></div>` : ''}
-            <div class="challenge-list"></div>
-            <div class="btnrow end spaced"><button class="btn btn-ghost modal-close">${RBesc(RBt('Close'))}</button></div>`, card);
+            <div class="challenge-list"></div>`, card);
         const list = modal.q('.challenge-list'), search = modal.q('.rb-search');
         const draw = (q) => {
             let shown = q ? RB.filterByText(items, q, fields) : items;
@@ -749,7 +760,6 @@
         if (!items.length) list.innerHTML = `<p class="muted small">${RBesc(RBt(empty))}</p>`;
         else draw('');
         if (search) { search.oninput = () => draw(search.value); setTimeout(() => search.focus(), 50); }
-        modal.q('.modal-close').onclick = modal.close;
         return modal;
     };
     // An event's date range for a meta line: "start – end", the single date, or '' when undated.
@@ -1261,7 +1271,7 @@
             <div class="btnrow end">
                 <button class="btn btn-ghost" data-no>${RBt('No')}</button>
                 ${ok}
-            </div>`, 'narrow', () => resolve(false));
+            </div>`, 'narrow', null, { dismissable: false }); // a question: No or Yes, nothing else
         const done = (v) => { d.close(); resolve(v); };
         d.q('[data-yes]').onclick = () => done(true);
         d.q('[data-no]').onclick = () => done(false);
@@ -1426,10 +1436,8 @@
         const d = RBModal(`<h2><i class="fa-solid fa-circle-user icon-accent"></i> ${RBt('Sign in')}</h2>
             <p class="muted">${RBt(msg || 'Create a free account to save and share your roadbooks.')}</p>
             <div class="btnrow center spaced">
-                <button class="btn btn-ghost" data-no>${RBt('Not now')}</button>
                 <a class="btn btn-primary" href="${RBLoginUrl()}"><i class="fa-solid fa-right-to-bracket"></i> ${RBt('Sign in / Create account')}</a>
             </div>`, 'narrow center');
-        d.q('[data-no]').onclick = d.close;
     };
 
     // Site-wide announcement banner (#103): rendered under the header from the config payload.
@@ -1503,8 +1511,8 @@
     /* A new account is asked once where it rides (#749): the default location centres the Recorder
        and the Editor before the first fix, and puts the rider on the users map. Asked on the first
        page that has room for it — never over the account page (it has the picker), a tool that owns
-       the screen, or another dialog — and "Not now" is remembered on this device, so it does not
-       come back (#436). */
+       the screen, or another dialog — and leaving it without an answer (its corner close) is
+       remembered on this device as a "not now", so it does not come back (#436). */
     function askForLocation(user) {
         const key = 'rb_location_asked_' + user.id;
         try { if (user.default_lat != null || localStorage.getItem(key)) return; } catch (e) { return; }
@@ -1513,12 +1521,10 @@
             const dialog = RBModal(`<h2><i class="fa-solid fa-location-dot icon-accent"></i> ${RBesc(RBt('Where do you usually ride?'))}</h2>
                 <p>${RBesc(RBt('Set your default location: the Recorder and the Editor open the map there until the GPS has a fix. You can change it any time in Account settings.'))}</p>
                 <div class="btnrow end">
-                    <button class="btn btn-ghost" data-act="later" type="button">${RBesc(RBt('Not now'))}</button>
                     <a class="btn btn-ghost" href="${ROOT}account/#defaultLocation"><i class="fa-solid fa-map-location-dot"></i> ${RBesc(RBt('Choose on the map'))}</a>
                     <button class="btn btn-primary" data-act="here" type="button"><i class="fa-solid fa-location-crosshairs"></i> ${RBesc(RBt('Use my location'))}</button>
                 </div>`, 'narrow', () => remember());
             const remember = () => { try { localStorage.setItem(key, '1'); } catch (e) {} };
-            dialog.q('[data-act="later"]').onclick = () => { remember(); dialog.close(); };
             dialog.q('a').onclick = () => remember();
             dialog.q('[data-act="here"]').onclick = (e) => {
                 if (!navigator.geolocation) return RBToast('Could not get your location.');
@@ -1745,7 +1751,7 @@
                 <p class="modal-text">${RBt(comp ? 'web.gps.comp.warn' : 'web.gps.warn')}</p>
                 <p class="muted small"><i class="fa-solid fa-mobile-screen-button"></i> ${RBt('web.gps.alt')}</p>
                 <p class="modal-text"><b>${RBt('Continue in the browser anyway?')}</b></p>
-                <div class="btnrow end"><button class="btn btn-ghost" data-no>${RBt('No')}</button><button class="btn btn-primary" data-yes>${RBt('Yes')}</button></div>`, 'narrow', () => resolve(false));
+                <div class="btnrow end"><button class="btn btn-ghost" data-no>${RBt('No')}</button><button class="btn btn-primary" data-yes>${RBt('Yes')}</button></div>`, 'narrow', null, { dismissable: false });
             // a question answers No / Yes (#435), and No answers too — an await must never hang (#669)
             d.q('[data-no]').onclick = () => { d.close(); resolve(false); };
             d.q('[data-yes]').onclick = () => { try { localStorage.setItem('rb_web_gps_ok_' + (comp ? 'comp' : 'nav'), '1'); } catch (e) {} d.close(); resolve(true); };

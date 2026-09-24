@@ -39,7 +39,7 @@
        listPublic ({ reusable: true } = only the copyable ones, #106); onPick(answer, slug) gets the
        whole public_get answer — the roadbook with its reusable flag and vehicles. */
     async function pick(onPick, opts) {
-        const loading = RBModal(`<h2>${RBt('Public roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide');
+        const loading = RBModal(`<h2>${RBt('Public roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide', null, { dismissable: false }); // a moment, not a dialog: it closes itself
         const rbs = await listPublic(opts);
         loading.close();
         if (rbs === null) { RBToast('Could not load.'); return; } // a failed call is not an empty list (#218)

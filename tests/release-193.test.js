@@ -76,10 +76,11 @@ describe('the Editor groups the note blocks (#747)', () => {
 
 describe('a new account is asked where it rides (#749)', () => {
     const app = read('public/assets/js/app.js');
-    it('asks once, only when no default location is set, and remembers "Not now"', () => {
+    it('asks once, only when no default location is set, and remembers being left unanswered', () => {
         expect(app).toContain('if (user && !participant && !cfg.offline) askForLocation(user);');
         expect(app).toMatch(/user\.default_lat != null \|\| localStorage\.getItem\(key\)\) return;/);
-        expect(app).toContain("dialog.q('[data-act=\"later\"]').onclick = () => { remember(); dialog.close(); };");
+        expect(app).toContain("</div>`, 'narrow', () => remember());"); // its corner close (or Escape / the backdrop) is the "not now"
+        expect(app).not.toContain('data-act="later"');
     });
     it('stays off the account page, full-screen tools and other dialogs', () => {
         expect(app).toMatch(/\\\/account\\\/\?\$\/\.test\(location\.pathname\) \|\| document\.body\.classList\.contains\('rb-immersive'\) \|\| document\.querySelector\('\.modal'\)/);

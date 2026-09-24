@@ -446,7 +446,7 @@
                 <div class="btnrow center wrap">
                     <button class="btn btn-ghost" id="ckFix">${t('Let me fix it')}</button>
                     <button class="btn btn-primary" id="ckSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save anyway')}</button>
-                </div>`, 'slim', () => resolve(false));
+                </div>`, 'slim', null, { dismissable: false });
             d.q('#ckSave').onclick = () => { resolve(true); d.close(); };
             d.q('#ckFix').onclick = () => { resolve(false); d.close(); };
         });
@@ -499,9 +499,7 @@
             + sec('Track point', [['Turn this point into a note', 'N'], ['Add intermediate point', 'I'], ['Add track point here', 'P'], ['Delete point', 'Del']])
             + sec('Note', [['Turn this note into a track point', 'T'], ['Delete note', 'Del']])
             + sec('Anywhere', [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']]) + '</div>'
-            + `<p class="muted small">${esc(t('Right-click opens the menu — long-press on touch.'))}</p>`
-            + `<div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'wide');
-        m.q('.modal-close').onclick = m.close;
+            + `<p class="muted small">${esc(t('Right-click opens the menu — long-press on touch.'))}</p>`, 'wide');
     }
     $('toolShortcuts').onclick = () => { $('mapMenuPanel').hidden = true; shortcutSheet(); };
     // translated hover tooltips (refreshed on language switch)
@@ -737,8 +735,7 @@
             <label class="muted small">${t('Tolerance (metres) — higher removes more points')}</label>
             <input id="simpTol" class="modal-in" type="number" min="0.5" max="50" step="0.5" value="2" inputmode="decimal">
             <p class="muted small">${rb.track.length} ${t('points')}</p>
-            <div class="btnrow end spaced"><button class="btn btn-ghost" id="simpX">${t('Cancel')}</button><button class="btn btn-primary" id="simpGo">${t('Apply')}</button></div>`, 'narrow');
-        d.q('#simpX').onclick = d.close;
+            <div class="btnrow end spaced"><button class="btn btn-primary" id="simpGo">${t('Apply')}</button></div>`, 'narrow');
         d.q('#simpGo').onclick = () => {
             const tolerance = Math.max(0.5, Math.min(50, parseFloat(d.q('#simpTol').value) || 2));
             const before = rb.track.length;
@@ -797,9 +794,7 @@
             resetIdentity(); pendingMedia = b.media; setRoadbook(j);
             if (pendingMedia.length) { // the bundle carries photos/audio → they only appear once re-uploaded on save (#162)
                 const d = RBModal(`<h3><i class="fa-solid fa-images icon-accent"></i> ${esc(t('Photos & audio'))}</h3>
-                    <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>
-                    <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
-                d.q('.modal-close').onclick = d.close;
+                    <p class="muted">${esc(t('This roadbook includes photos or voice notes. They stay hidden until you save it to your profile.'))}</p>`, 'narrow');
             }
         }
         catch (err) { toast('This file is not a roadbook.'); }
@@ -1271,13 +1266,11 @@
                 const d = RBModal(`<h3>${t('Unsaved changes')}</h3>
                     <p class="muted">“${esc(rb.meta.title || t('Roadbook'))}” — ${t('Save your changes before closing?')}</p>
                     <div class="btnrow center wrap">
-                        <button class="btn btn-ghost" id="ccCancel">${t('Keep editing')}</button>
                         <button class="btn btn-danger" id="ccDiscard"><i class="fa-solid fa-trash-can"></i> ${t('Discard changes')}</button>
                         <button class="btn btn-primary" id="ccSave"><i class="fa-solid fa-floppy-disk"></i> ${t('Save & close')}</button>
-                    </div>`, 'slim center', () => resolve('cancel'));
+                    </div>`, 'slim center', () => resolve('cancel')); // its corner close: keep editing
                 d.q('#ccSave').onclick = () => { resolve('save'); d.close(); };
                 d.q('#ccDiscard').onclick = () => { resolve('discard'); d.close(); };
-                d.q('#ccCancel').onclick = () => { resolve('cancel'); d.close(); };
             });
             if (choice === 'cancel') return;
             if (choice === 'save') { await saveRoadbook(); if (dirty) return; } // save needs sign-in / could fail → stay open
@@ -1641,9 +1634,7 @@
                     <button class="btn btn-primary" type="button" id="ringGo"><i class="fa-solid fa-check"></i> ${esc(t('Apply'))}</button>
                 </div>
             </section>
-            </div>
-            <div class="btnrow end spaced"><button class="btn btn-ghost" type="button" id="ringX">${esc(t('Close'))}</button></div>`, 'split');
-        dlg.q('#ringX').onclick = dlg.close;
+            </div>`, 'split');
         dlg.q('#ringGo').onclick = () => {
             const v = parseInt(dlg.q('#ringRadius').value, 10);
             if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;
@@ -2151,7 +2142,7 @@
                 <figure><img src="${original}" alt=""><figcaption>${esc(t('Original'))}</figcaption></figure>
                 <figure><img src="${cleaned}" alt=""><figcaption>${esc(t('Without background'))}</figcaption></figure>
             </div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-no>${esc(t('No'))}</button><button class="btn btn-primary" data-yes>${esc(t('Yes'))}</button></div>`, 'narrow', () => resolve(false));
+            <div class="btnrow end"><button class="btn btn-ghost" data-no>${esc(t('No'))}</button><button class="btn btn-primary" data-yes>${esc(t('Yes'))}</button></div>`, 'narrow', null, { dismissable: false });
         d.q('[data-no]').onclick = () => { d.close(); resolve(false); };
         d.q('[data-yes]').onclick = () => { d.close(); resolve(true); };
     });
@@ -2270,7 +2261,7 @@
     }
     // Export (#699): one list, one row per format, each named and described — the choice is the
     // format, so no format outranks another. GPX carries its options right under it; the source
-    // view (JSON / GPX, to inspect and copy) is the last row. Close is the way out.
+    // view (JSON / GPX, to inspect and copy) is the last row; its corner close is the way out.
     function openExportModal() {
         if (!rb) return toast('Nothing to export.');
         const row = (x, icon, title, desc) => `<button class="load-card row" data-x="${x}"><i class="fa-solid ${icon}"></i><span><b>${esc(t(title))}</b><small>${esc(t(desc))}</small></span></button>`;
@@ -2289,12 +2280,10 @@
                 ${row('openrally', 'fa-flag-checkered', 'OpenRally', 'The rally GPX format')}
                 ${row('kmz', 'fa-earth-americas', 'KMZ', 'To view in Google Earth')}
                 ${row('source', 'fa-code', 'View source', 'The roadbook as JSON or GPX, to inspect and copy')}
-            </div>
-            <div class="btnrow end"><button class="btn btn-ghost modal-close">${esc(t('Close'))}</button></div>`, 'narrow');
+            </div>`, 'narrow');
         const cb = (g) => m.q(`[data-g="${g}"]`);
         const syncIcons = () => { const on = cb('wpt').checked; ['grm', 'osm'].forEach((g) => { cb(g).disabled = !on; }); }; // icons need waypoints; just enable/disable, keep the checked state
         cb('wpt').onchange = syncIcons; syncIcons();
-        m.q('.modal-close').onclick = m.close;
         const run = (x, fn) => { m.q(`[data-x="${x}"]`).onclick = async () => { const opts = { media: !!(m.q('[data-media]') && m.q('[data-media]').checked), track: cb('track').checked, wpt: cb('wpt').checked, grm: cb('grm').checked, osm: cb('osm').checked }; m.close(); if (x === 'source' || await confirmOpenCuts()) await fn(opts); }; };
         run('rdbk', (o) => exportRdbk(o.media));
         run('pdf', () => exportPdf());
@@ -2336,11 +2325,9 @@
             <textarea id="rawJson" class="raw-edit" spellcheck="false" readonly></textarea>
             <p id="rawMsg" class="small"></p>
             <div class="btnrow end">
-                <button class="btn btn-ghost" data-x="close">${esc(t('Close'))}</button>
                 <button class="btn btn-ghost" data-x="gpx">${esc(t('View GPX'))}</button>
                 <button class="btn btn-primary" data-x="copy"><i class="fa-solid fa-copy"></i> ${esc(t('Copy'))}</button>
             </div>`, 'wide');
-        m.q('[data-x="close"]').onclick = m.close;
         const ta = m.q('#rawJson'), msg = m.q('#rawMsg'), gpxBtn = m.q('[data-x="gpx"]');
         let gpxMode = false;
         ta.value = jsonText();

@@ -37,7 +37,7 @@ describe('editor review (#695–#701)', () => {
         expect(toolbar).toContain('id="saveAccount"');
         expect(html).not.toContain('rawJsonBtn');
         expect(editor).toContain("row('source', 'fa-code', 'View source'");
-        expect(editor).toMatch(/function openExportModal\(\)[\s\S]*?modal-close[\s\S]*?m\.q\('\.modal-close'\)\.onclick = m\.close;/);
+        expect(editor).toContain("its corner close is the way out"); // the Export list leaves from its corner (RBModal)
     });
 
     it('messages are translatable, not concatenated raw errors (#700)', () => {

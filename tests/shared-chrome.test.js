@@ -305,8 +305,8 @@ describe('nothing sits under the status bar (#787)', () => {
         expect(css).toContain('body:has(> .modal:not([hidden]))::before { background: rgba(8, 9, 14, .94); }');
     });
     it('pads every dialog by the safe areas and keeps its card within them', () => {
-        expect(css).toMatch(/\.modal \{[^}]*padding: calc\(1rem \+ env\(safe-area-inset-top\)\)/);
-        expect(css).toMatch(/\.modal-card \{[^}]*max-height: calc\(100dvh - 2rem - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
+        expect(css).toMatch(/\.modal \{[^}]*padding: calc\(1\.5rem \+ env\(safe-area-inset-top\)\)/); // room for the corner close too
+        expect(css).toMatch(/\.modal-card \{[^}]*max-height: calc\(100dvh - 2\.5rem - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/);
     });
     it('hides the status bar only on Android, where it gives its strip back', () => {
         expect(fs.readFileSync('native/src/native.js', 'utf8')).toContain("if (Capacitor.getPlatform() !== 'android') return;");

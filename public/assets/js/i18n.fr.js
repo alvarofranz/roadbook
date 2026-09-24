@@ -37,7 +37,7 @@
             'contact.title': 'Contact', 'contact.intro': 'Une question, un retour ou une demande ? Nous serions ravis d’avoir de vos nouvelles.',
             'contact.h.email': 'E-mail', 'contact.email': 'Écrivez-nous à <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a> — nous lisons chaque message.',
             'contact.h.more': 'Plus', 'contact.more': 'Pour les demandes de données ou de confidentialité, consultez notre <a href="../privacy/">Politique de confidentialité</a>. Pour savoir qui est derrière RDBK.app, visitez la page <a href="../about/">À propos</a>.',
-            'Keep editing': 'Continuer à modifier',
+            
             'No race (free)': 'Pas de compétition (libre)', 'Roadbook-suite rules': 'Règles Roadbook-suite', 'FIA rules (unavailable)': 'Règles FIA (non disponible)', 'Event management': 'Gestion des événements', 'Select date': 'Choisir une date', 'Unsaved changes': 'Modifications non enregistrées', 'Save your changes before closing?': 'Enregistrer les modifications avant de fermer ?', 'Save & close': 'Enregistrer et fermer', 'Change logo': 'Changer le logo', 'In a browser, recording stops when the app is in the background or the screen is off.': 'Dans le navigateur, l\'enregistrement s\'arrête quand l\'app est en arrière-plan ou l\'écran éteint.', 'Let others copy this public roadbook': 'Autoriser les autres à copier ce roadbook public', 'This public roadbook cannot be copied.': 'Ce roadbook public ne peut pas être copié.', 'help.reusable': 'Désactivé (par défaut) : les autres peuvent lire et naviguer ce roadbook public mais pas le copier. Activé : ils peuvent aussi le copier dans leur profil pour le modifier — il apparaît dans la recherche de roadbooks publics de l’Éditeur.',
             /* editor consistency check (#339) */ 'Consistency check': 'Contrôle de cohérence', 'Have a look before saving — none of this stops the roadbook from working:': 'Jetez un œil avant d’enregistrer — rien de tout cela n’empêche le roadbook de fonctionner :', 'A speed-controlled zone is never lifted — it starts at note': 'Une zone à vitesse contrôlée n’est jamais levée — elle commence à la note', 'A speed limit is lifted where no zone is open': 'Une limitation de vitesse est levée alors qu’aucune zone n’est ouverte', 'Save anyway': 'Enregistrer quand même', 'Let me fix it': 'Je préfère corriger',
             'Terms of Use': 'Conditions d’utilisation',
@@ -277,7 +277,7 @@
             'Vehicle number': 'Numéro de véhicule', 'Identify your team for the ranking.': 'Identifiez votre équipe pour le classement.',
             'Yes': 'Oui', 'No': 'Non',
             
-            'Cancel': 'Annuler', 'Start': 'Départ', 'Close': 'Fermer', 'Share': 'Partager', 'Save QR': 'Sauvegarder QR',
+            'Start': 'Départ', 'Close': 'Fermer', 'Share': 'Partager', 'Save QR': 'Sauvegarder QR',
             'Timer': 'Chronomètre',
             'Overall ranking': 'Classement général', 'Clear': 'Vider', 'No results yet. Scan or paste a QR.': 'Pas encore de résultats. Scannez ou collez un QR.',
             'Vehicle': 'Véhicule', 'Accuracy': 'Précision', 'Speed': 'Vitesse', 'Regularity': 'Régularité', 'Final': 'Final',
@@ -1740,4 +1740,12 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "A note’s rings, at a glance": "Les cercles d’une note, d’un coup d’œil",
     "Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.": "Touche l’intérieur du cercle pointillé d’une note dans l’Éditeur : la forme de sa flèche et son rayon de détection s’ouvrent côte à côte — en plein écran sur un téléphone — avec le champ du rayon juste là.",
+});
+
+/* Release notes 1.9.14 */
+Object.assign(window.RBi18nLangs.fr, {
+    "Cleaner dialogs": "Des fenêtres plus nettes",
+    "A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.": "Une fenêtre que tu peux quitter sans rien choisir se ferme avec le ✕ rouge de son coin : fini les lignes Fermer ou Annuler.",
+    "A question that needs an answer has no ✕: you answer it with its own buttons.": "Une question qui attend une réponse n’a pas de ✕ : tu y réponds avec ses propres boutons.",
+    "Small clean-ups across the app.": "De petits nettoyages dans toute l’application.",
 });

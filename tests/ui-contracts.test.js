@@ -268,7 +268,7 @@ describe('GPS readiness alerts (#443-446)', () => {
 
 describe('app info says honestly what this copy is and whether it is current (#474 · #478 · #515)', () => {
     const app = read('public/assets/js/app.js');
-    const fn = app.match(/window\.showAppInfo = (?:async )?function \(\) \{([\s\S]*?)modal\.q\('\.modal-close'\)\.onclick = \(\) => modal\.close\(\);\s*\};/)[1];
+    const fn = app.match(/window\.showAppInfo = (?:async )?function \(\) \{([\s\S]*?)\n {4}\};/)[1];
     const facts = app.match(/window\.RBReleaseFacts = async \(\) => \{[\s\S]*?\n {4}\};/)[0];
     const status = new Function('window', app.match(/window\.RBReleaseStatus = [\s\S]*?\n {4}\};/)[0] + '; return window.RBReleaseStatus;')({});
     const rel = (version, build) => ({ version, build });
@@ -608,19 +608,32 @@ describe('modal confirm order + dismiss paths (#490)', () => {
         }
     });
 
-    it('the QR scanner stops the camera on every dismiss path, and Close is wired', () => {
-        expect(parts).toContain('() => stopStream()'); // onDismiss: backdrop + Escape
-        expect(parts).toContain('const close = () => { stopStream(); modal.close(); };'); // buttons + a successful scan
-        expect(parts).toContain("modal.q('.modal-close').onclick = close;");
+    it('the QR scanner stops the camera on every way out', () => {
+        expect(parts).toContain('() => stopStream()'); // onDismiss: its corner close, the backdrop, Escape
+        expect(parts).toContain('const close = () => { stopStream(); modal.close(); };'); // a successful scan
         expect(parts).toContain('document.body.contains(modal.el)'); // the scan loop ends too
     });
 
-    it('the reader roadbook picker has an explicit Close row', () => {
-        // the picker itself is the shared RBRowPicker now (#493) — it owns the Close row, so every
-        // picker built on it keeps the explicit exit this contract was written for
+    it('the reader roadbook picker is the shared RBRowPicker, left from its corner', () => {
         expect(reader).toContain("title: 'My roadbooks'");
         expect(read('public/assets/js/app.js')).toContain('window.RBRowPicker = ');
-        expect(read('public/assets/js/app.js')).toContain('<button class="btn btn-ghost modal-close">${RBesc(RBt(\'Close\'))}</button>');
+    });
+});
+
+describe('a dialog you can leave closes from its corner; a decision has no close', () => {
+    const app = read('public/assets/js/app.js'), css = read('public/assets/css/app.css');
+    it('RBModal gives every dismissable dialog the corner close, and a decision none', () => {
+        expect(app).toContain("const dismissable = !(opts && opts.dismissable === false), corner = dismissable || !!(opts && opts.corner);");
+        expect(app).toContain('if (corner) RBModalX(card, dismiss);');
+        expect(css).toContain('.modal-x { position: absolute; top: 0; right: 0; transform: translate(50%, -50%);'); // centred on the vertex
+        expect(css).toMatch(/\.modal-x \{[^}]*background: var\(--track\); color: #fff;/); // a red disc, a white cross
+    });
+    it('a question is a decision: No or Yes, nothing else', () => {
+        expect(app).toMatch(/window\.RBConfirm = [\s\S]*?'narrow', null, \{ dismissable: false \}\);/);
+    });
+    it('no dialog carries a Close or Cancel button of its own any more', () => {
+        const offenders = firstPartySources().filter((p) => /\b(?:RBt|t)\('(?:Close|Cancel)'\)\}?<\/button>|data-i18n="(?:Close|Cancel)"|modal-close|data-cancel/.test(read(p)));
+        expect(offenders).toEqual([]);
     });
 });
 

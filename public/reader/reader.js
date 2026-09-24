@@ -10,10 +10,16 @@
     const t = RBt, esc = RBesc, toast = RBToast; // shared helpers (app.js / i18n.js)
     const C = RB.CONST;
 
-    // The Reader's dialogs are static markup; give them the shared focus trap
-    // (focus in · Tab confined · Escape → the dialog's own cancel/close action).
+    // The Reader's dialogs are static markup; give them the shared focus trap (focus in · Tab
+    // confined). One that can be left without deciding anything takes `onClose`: its corner close
+    // (RBModalX) and Escape run it. Without it the dialog is a decision — nothing but its own
+    // buttons leave it.
     let modalTrap = null;
-    function openModal(id, onEscape) { const el = $(id); el.hidden = false; if (modalTrap) modalTrap(); modalTrap = RBFocusTrap(el.querySelector('.modal-card'), onEscape || (() => {})); }
+    function openModal(id, onClose) {
+        const el = $(id), card = el.querySelector('.modal-card');
+        if (onClose) RBModalX(card, onClose);
+        el.hidden = false; if (modalTrap) modalTrap(); modalTrap = RBFocusTrap(card, onClose || null);
+    }
     function closeModal(id) { $(id).hidden = true; if (modalTrap) { modalTrap(); modalTrap = null; } }
 
     let rb = null, notes = [], activeIdx = 0, team = '0';
@@ -241,12 +247,12 @@
     // the vehicle number a scored run needs — asked once per run, a later scored leg keeps it
     function askTeam() {
         $('teamInput').value = team !== '0' ? team : '1';
-        openModal('teamModal', () => $('teamCancel').click());
+        openModal('teamModal', leaveTeam);
         setTimeout(() => $('teamInput').select(), 60);
     }
     $('teamOk').onclick = () => { team = ($('teamInput').value || '1').replace(/\D/g, '').slice(0, 3) || '1'; closeModal('teamModal'); startRun(true); };
-    // back to the preview — or, between two legs, the run ends with the legs already driven
-    $('teamCancel').onclick = () => { closeModal('teamModal'); if (legs.length) finalize(); };
+    // left without a number: back to the preview — or, between two legs, the run ends with the legs already driven
+    function leaveTeam() { closeModal('teamModal'); if (legs.length) finalize(); }
     $('teamInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('teamOk').click(); });
     // a roadbook's run: its GPX log from the first fix (a resumed one restores it), and the next
     // roadbooks of a chain fetched while there is a connection
@@ -888,7 +894,7 @@
         $('reportProfile').hidden = !user;
         if (user) $('reportProfile').href = RBProfileLink(user.username);
         $('reportDone').onclick = () => leaveRun(eventSlug ? '/event/' + encodeURIComponent(eventSlug) : './'); // a run opened from an event goes back to it (#640)
-        openModal('reportModal', () => {}); // an explicit outcome below, never a dismiss
+        openModal('reportModal'); // an explicit outcome below, never a dismiss
         // the shareable image (#785): made while the runner reads the report; once the run is saved
         // on the profile it goes up with it (best-effort — a card that fails never blocks the report)
         const cardP = makeCard(report, user, card.roadbook);

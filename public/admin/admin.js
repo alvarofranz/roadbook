@@ -91,11 +91,7 @@
             </div>
             <p class="muted small u-sheet-dates"><i class="fa-regular fa-calendar"></i> ${esc(t('Joined'))} ${esc(RBFmtDate(String(u.created_at).slice(0, 10)))} · <i class="fa-regular fa-clock"></i> ${esc(t('Last active'))}: ${esc(whenText(u.last_active))}</p>
             <div class="u-sheet-actions">${acts}</div>
-            <div class="btnrow between u-sheet-foot">
-                ${manage && !u.locked && !self ? action('delete', 'fa-trash-can', 'Delete user', 'btn-danger') : '<span></span>'}
-                <button class="btn btn-ghost" type="button" data-close>${esc(t('Close'))}</button>
-            </div>`, 'wide u-sheet');
-        m.q('[data-close]').onclick = m.close;
+            ${manage && !u.locked && !self ? `<div class="btnrow start u-sheet-foot">${action('delete', 'fa-trash-can', 'Delete user', 'btn-danger')}</div>` : ''}`, 'wide u-sheet');
         const on = (id, fn) => { const b = m.q(`[data-act="${id}"]`); if (b) b.onclick = () => fn(b); };
         on('edit', () => { m.close(); editUser(u); });
         on('roadbooks', () => { m.close(); viewRoadbooks(u); });
@@ -156,7 +152,7 @@
             <p class="hint">${esc(t('Full access to users, settings and every event.'))}</p>
             <span class="field-label">${esc(t('Default map location'))}</span>
             ${u.location ? '<div id="euLocMap" class="loc-picker-map"></div>' : `<p class="muted small">${esc(t('Not set'))}</p>`}
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false });
+            <div class="btnrow end"><button class="btn btn-primary" id="euSave">${esc(t('Save'))}</button></div>`, 'wide', null, { dismissable: false, corner: true }); // a form: left from its corner, never by a stray tap
         m.q('#euFirst').value = u.first_name || '';
         m.q('#euLast').value = u.last_name || '';
         m.q('#euUser').value = u.username || '';
@@ -172,7 +168,6 @@
             const map = new RBMap('euLocMap', { style: RBMap.STYLE_TOPO, zoom: 11, center: [u.location.lon, u.location.lat] });
             if (map.map) new maplibregl.Marker({ color: RBCssVar('--sand') }).setLngLat([u.location.lon, u.location.lat]).addTo(map.map);
         }
-        m.q('[data-cancel]').onclick = m.close;
         m.q('#euSave').onclick = async () => {
             const busy = RBBusy(m.q('#euSave'));
             const x = await api('admin_update', {
@@ -198,9 +193,7 @@
 
     // A user's runs, as only an admin sees them (#870): the device each one was made on, public or private
     async function viewRuns(u) {
-        const m = RBModal(`<h2>${esc(t('Runs'))} · @${esc(u.username)}</h2><div id="runsBody" class="muted small">${esc(t('Loading…'))}</div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-close type="button">${esc(t('Close'))}</button></div>`, 'wide');
-        m.q('[data-close]').onclick = m.close;
+        const m = RBModal(`<h2>${esc(t('Runs'))} · @${esc(u.username)}</h2><div id="runsBody" class="muted small">${esc(t('Loading…'))}</div>`, 'wide');
         const r = await api('admin_user_runs', { user_id: u.id });
         const box = m.q('#runsBody');
         if (!r.ok) { box.textContent = t(r.error || 'Could not load.'); return; }
@@ -232,9 +225,7 @@
             <div id="rbsPager" class="pager"></div>
             </div>
             <div class="rb-map-pane"><div id="rbsMap"><p class="muted small">${esc(t('Select a roadbook to preview it on the map.'))}</p></div><p id="rbsMapTitle" class="muted small"></p></div>
-            </div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Close'))}</button></div>`, 'wide rb-list-map', finish);
-        m.q('[data-cancel]').onclick = () => { m.close(); finish(); };
+            </div>`, 'wide rb-list-map', finish);
         let rbPage = 1, rbQuery = '', rbSeq = 0; // only the latest request paints: a slow answer to an older search is dropped
         const render = () => { const seq = ++rbSeq; return api('admin_user_roadbooks', { user_id: u.id, page: rbPage, q: rbQuery }).then((r) => {
             if (seq !== rbSeq) return;
@@ -416,9 +407,8 @@
             <label class="field-label" for="cuPass">${esc(t('Password'))}</label>
             <input id="cuPass" type="text" class="field" autocomplete="off" placeholder="${esc(t('Temporary password'))}">
             <p class="hint">${esc(t('The user must change this at first login.'))}</p>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel>${esc(t('Cancel'))}</button><button class="btn btn-primary" id="cuSave">${esc(t('Create'))}</button></div>`, 'narrow', null, { dismissable: false });
+            <div class="btnrow end"><button class="btn btn-primary" id="cuSave">${esc(t('Create'))}</button></div>`, 'narrow', null, { dismissable: false, corner: true }); // a form: left from its corner, never by a stray tap
         RBOrgDatalist(m.q('#cuOrgSuggest'));
-        m.q('[data-cancel]').onclick = m.close;
         m.q('#cuSave').onclick = async () => {
             const first = m.q('#cuFirst').value.trim();
             const last = m.q('#cuLast').value.trim();

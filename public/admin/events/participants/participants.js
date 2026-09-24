@@ -97,13 +97,11 @@
     $('ppScanQr').onclick = async () => {
         let stream = null;
         const stopStream = () => { if (stream) { stream.getTracks().forEach((tr) => tr.stop()); stream = null; } };
-        // every exit (buttons, backdrop, Escape) ends the camera exactly once
+        // every exit (its corner close, the backdrop, Escape, a code read) ends the camera exactly once
         const modal = RBModal(`<div class="pp-scanner"><p class="muted small">${esc(t('Point the camera at the participant’s QR code.'))}</p>
             <video id="ppScannerVideo" class="pp-scan-video" autoplay playsinline></video>
-            <p class="muted small" id="ppScanStatus">${esc(t('Waiting for QR code…'))}</p>
-            <div class="btnrow"><button class="btn btn-ghost modal-close" type="button">${esc(t('Close'))}</button></div></div>`, '', () => stopStream());
+            <p class="muted small" id="ppScanStatus">${esc(t('Waiting for QR code…'))}</p></div>`, '', () => stopStream());
         const close = () => { stopStream(); modal.close(); };
-        modal.q('.modal-close').onclick = close;
         const video = modal.q('#ppScannerVideo');
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
@@ -125,8 +123,7 @@
     $('ppAdd').onclick = () => {
         const modal = RBModal(`<h2>${esc(t('Add participant'))}</h2>
             <div class="rb-toolbar"><i class="fa-solid fa-magnifying-glass"></i><input class="rb-search" id="ppAddSearch" placeholder="${esc(t('Search users…'))}" aria-label="${esc(t('Search users…'))}" autocomplete="off"></div>
-            <div id="ppAddResults" class="ev-pick-list"><p class="muted small">${esc(t('Type at least 2 characters to search.'))}</p></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel type="button">${esc(t('Close'))}</button></div>`, 'wide', () => searchSoon.cancel());
+            <div id="ppAddResults" class="ev-pick-list"><p class="muted small">${esc(t('Type at least 2 characters to search.'))}</p></div>`, 'wide', () => searchSoon.cancel());
         const results = modal.q('#ppAddResults');
         const search = async (term) => {
             const seq = ++addSeq;
@@ -150,7 +147,6 @@
         const inp = modal.q('#ppAddSearch');
         const searchSoon = RBDebounce(search);
         inp.oninput = () => searchSoon(inp.value.trim());
-        modal.q('[data-cancel]').onclick = modal.close;
         inp.focus();
     };
 
@@ -164,7 +160,7 @@
             <textarea class="field" rows="6" data-text placeholder="${esc(t('…or paste the emails here'))}"></textarea>
             <p class="muted small" data-count></p>
             <div data-report></div>
-            <div class="btnrow end"><button class="btn btn-ghost" data-cancel type="button">${esc(t('Close'))}</button><button class="btn btn-primary" data-go type="button" disabled><i class="fa-solid fa-user-plus"></i> ${esc(t('Enrol'))}</button></div>`, 'wide');
+            <div class="btnrow end"><button class="btn btn-primary" data-go type="button" disabled><i class="fa-solid fa-user-plus"></i> ${esc(t('Enrol'))}</button></div>`, 'wide');
         const text = modal.q('[data-text]'), count = modal.q('[data-count]'), go = modal.q('[data-go]');
         let emails = [];
         const scan = () => {
@@ -175,7 +171,6 @@
         text.oninput = scan;
         modal.q('[data-file]').onclick = () => modal.q('[data-input]').click();
         modal.q('[data-input]').onchange = async (e) => { const f = e.target.files[0]; if (f) { text.value = await f.text(); scan(); } };
-        modal.q('[data-cancel]').onclick = modal.close;
         go.onclick = async () => {
             const busy = RBBusy(go);
             const x = await api('event_participants_import', { event_id: id, emails });

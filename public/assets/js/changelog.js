@@ -11,6 +11,15 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.14', date: '2026-09-24',
+        title: 'Cleaner dialogs',
+        items: [
+            'A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.',
+            'A question that needs an answer has no ✕: you answer it with its own buttons.',
+            'Small clean-ups across the app.',
+        ],
+    },
+    {
         version: '1.9.13', date: '2026-09-24',
         title: 'A note’s rings, at a glance',
         items: [
