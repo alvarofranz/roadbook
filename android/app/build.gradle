@@ -13,14 +13,21 @@ android {
         applicationId "app.rdbk"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Local builds keep 4 / 1.0.3; the Android-release CI overrides both via -P properties
-        // (versionCode from the run number, versionName from the android-<x> tag). Resolve into
-        // locals first — `versionCode (expr).toInteger()` would otherwise chain the conversion
-        // onto the setter's (null) return instead of the value.
-        def rdbkVc = (project.findProperty('rdbkVersionCode') ?: 4).toString().toInteger()
-        def rdbkVn = (project.findProperty('rdbkVersionName') ?: '1.0.3').toString()
+        // versionName + versionCode come from public/version.json — the one source of truth, read
+        // here so every build (CI or local) gets the same numbers. versionCode encodes the semver
+        // as MAJOR·1 000 000 + MINOR·1 000 + PATCH: strictly increasing with the version and
+        // collision-free while MINOR and PATCH stay ≤ 999 (the stamp refuses more, and so does this).
+        // Every code it gives is above the 11 000 the older scheme (MAJOR·10 000 + MINOR·100 +
+        // PATCH) reached with 1.9.10, the last upload made with it — Play only accepts a higher one.
+        def rdbkVersion = new groovy.json.JsonSlurper().parse(rootProject.file('../public/version.json')).version.toString()
+        def rdbkParts = rdbkVersion.tokenize('.')
+        if (rdbkParts.size() != 3 || !rdbkParts.every { it ==~ /\d+/ }) throw new GradleException("public/version.json: '${rdbkVersion}' is not MAJOR.MINOR.PATCH")
+        def (rdbkMajor, rdbkMinor, rdbkPatch) = rdbkParts.collect { it.toInteger() }
+        if (rdbkMinor > 999 || rdbkPatch > 999 || rdbkMajor > 2099) throw new GradleException("public/version.json: '${rdbkVersion}' does not fit the versionCode (MINOR and PATCH ≤ 999)")
+        def rdbkVc = rdbkMajor * 1000000 + rdbkMinor * 1000 + rdbkPatch
+        if (rdbkVc <= 11000) throw new GradleException("versionCode ${rdbkVc} is not above the 11000 already on Play")
         versionCode rdbkVc
-        versionName rdbkVn
+        versionName rdbkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

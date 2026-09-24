@@ -8,7 +8,7 @@ $action = (string)($d['action'] ?? '');
 
 // Only these read-only actions may use GET; everything that changes state needs POST
 // (blocks CSRF via top-level GET navigation with a Lax session cookie).
-$readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get', 'profile_get'];
+$readOnly = ['config', 'public_list', 'public_get', 'events_list', 'event_get', 'profile_get', 'run_track'];
 if ($method !== 'POST' && !in_array($action, $readOnly, true)) fail('POST required.', 405);
 if ($method === 'POST') require_same_origin(); // state-changing requests must come from our own pages
 
@@ -79,6 +79,7 @@ try {
         case 'run_save':       run_save(require_user(), $d); break;
         case 'run_update':     run_update(require_user(), $d); break;
         case 'run_delete':     run_delete(require_user(), $d); break;
+        case 'run_track':      run_track($d); break;      // a run's driven track: public run → anyone, else its runner
         case 'roadbook_completions': roadbook_completions($d); break;
         case 'comments_list':  comments_list(current_user(), $d); break;
         case 'comment_add':    comment_add(require_user(), $d); break;

@@ -82,8 +82,10 @@
         // the run's shareable image (#785) is for sharing, not for the profile (#867): the runner shares it from here
         const cardSrc = r.card ? RBMediaSrc(r.card) : '';
         const share = cardSrc && data.is_me ? `<button class="btn btn-ghost btn-sm" data-share-card="${esc(cardSrc)}" data-run-id="${r.id}" data-public="${r.is_public ? 1 : 0}" type="button" title="${esc(t('Share'))}" aria-label="${esc(t('Share'))}"><i class="fa-solid fa-share-nodes"></i></button>` : '';
+        // the track it drove (#940): on a map for whoever sees the run, as a GPX for its runner
+        const track = r.has_track ? `<button class="btn btn-ghost btn-sm" data-run-track="${r.id}" type="button" title="${esc(t('Driven track'))}" aria-label="${esc(t('Driven track'))}"><i class="fa-solid fa-route"></i></button>` : '';
         return `<div class="pf-run" id="run-${r.id}">
-            <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${share}${own}</div>
+            <div class="pf-run-head"><span class="grow"><i class="fa-regular fa-calendar"></i> ${esc(when)} ${badges}</span>${track}${share}${own}</div>
             ${RBRun.statsHTML(r)}${RBRun.detailsHTML(r)}
         </div>`;
     }

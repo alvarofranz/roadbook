@@ -172,7 +172,7 @@ traccia GPX e fa di tutto per non perderla.
 | `add(here, tnow)` | intake **diretto**: il chiamante ha già deciso che il punto va salvato ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `end()` | chiude il log e **ritorna** la traccia, senza UI e **tenendo il checkpoint**: da lì in poi quella è l'unica copia, e a pulirlo è il chiamante quando arriva a destinazione ([gpx-recorder.js](../public/assets/js/gpx-recorder.js)) |
 | `clearCheckpoint()` | la traccia è al sicuro (scaricata, salvata, convertita): la rete di sicurezza si spegne |
-| `handOver()` | chiude il log (`end()`) e lo affida al modal "traccia registrata"; risolve quando il modal ha finito (Download o Scarta confermato — Converti lascia la pagina). Una traccia sotto i 2 punti non ha modal: "Track too short", checkpoint pulito. Lo usa il Reader alla fine di una run |
+| `handOver()` | chiude il log (`end()`) e lo affida al modal "traccia registrata"; risolve quando il modal ha finito (Download o Scarta confermato — Converti lascia la pagina). Una traccia sotto i 2 punti non ha modal: "Track too short", checkpoint pulito. Lo usa lo Stop del Tripmaster; il Reader invece chiude con `end()` e mette i punti nel report della run (#936) |
 | `stop()` | lo Stop dell'utente: chiede conferma, poi `handOver()` |
 | `resume(savedName, fromPts?)` | riprende un log: dopo un reload dal checkpoint, oppure dai punti che `end()` aveva reso (`fromPts`, più freschi dell'ultimo checkpoint da 3 s) |
 | `decline()` | l'utente ha detto No a riprendere: il checkpoint viene **marcato** `declined`, mai cancellato (#436), e `offerRecovery` non lo propone più |

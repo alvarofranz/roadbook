@@ -26,6 +26,12 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
     console.error('Usage: node source/stamp-version.mjs <MAJOR.MINOR.PATCH>  (e.g. 1.1.0)');
     process.exit(1);
 }
+// Android's versionCode is MAJOR·1 000 000 + MINOR·1 000 + PATCH (android/app/build.gradle):
+// past 999 a minor or a patch would collide with the next number up, so the stamp refuses it.
+if (version.split('.').slice(1).some((n) => +n > 999)) {
+    console.error(`${version}: MINOR and PATCH must stay ≤ 999 (the Android versionCode encodes them in three digits).`);
+    process.exit(1);
+}
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const versionFile = join(publicDir, 'version.json');

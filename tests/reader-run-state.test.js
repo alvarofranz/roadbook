@@ -63,11 +63,11 @@ describe('finishing early', () => {
 });
 
 describe('ending a run ends its GPX log (#460)', () => {
-    it('Done and Leave both go through endRun, which hands the log to its finished-track modal', () => {
-        expect(fn('endRun')).toContain('if (RBGpxRecorder.recording) await RBGpxRecorder.handOver();');
+    it('the log ends into the report (#936), and a run left unfinished ends it keeping its checkpoint', () => {
+        expect(fn('endRun')).toContain('if (RBGpxRecorder.recording) RBGpxRecorder.end();');
         const leave = fn('leaveRun');
-        expect(leave.indexOf("closeModal('reportModal');")).toBeLessThan(leave.indexOf('await endRun();'));
-        expect(leave.indexOf('await endRun();')).toBeLessThan(leave.indexOf('location.href = to;'));
+        expect(leave.indexOf("closeModal('reportModal');")).toBeLessThan(leave.indexOf('endRun();'));
+        expect(leave.indexOf('endRun();')).toBeLessThan(leave.indexOf('location.href = to;'));
     });
     it('the recorder’s handOver resolves when its modal is done, and Stop is handOver after a question', () => {
         expect(gpx).toContain('if (r.pts.length >= 2) return new Promise((done) => finishedModal(r.pts, r.name, done));');

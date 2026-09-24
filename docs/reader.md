@@ -269,12 +269,14 @@ disegna), Share subito sotto, poi l'interruttore, le cifre e il QR di gara. Una 
 classifica condivisa. **Done** torna alla pagina dell'evento quando la run è stata aperta da un
 evento (`eventSlug`, #640), altrimenti alla landing del Reader.
 
-**Il log GPX finisce con la run.** **Done** passa per `endRun`, che —
-se `RBGpxRecorder.recording` — chiude il log e apre il modal "traccia registrata"
-(`RBGpxRecorder.handOver`) **dopo** aver chiuso il report: il report non è congedabile, quindi i
-due modal sono in sequenza, mai sovrapposti. Solo gli esiti espliciti del modal (Download ·
-Converti · Scarta confermato) cancellano il checkpoint della traccia (#460); si lascia la pagina
-quando il modal ha finito. Una run del Reader non lascia quindi mai un checkpoint GPX orfano.
+**Il log GPX appartiene alla run (#940).** `finishRun` chiude il log (`RBGpxRecorder.end()`) e ne
+mette i punti nel report (`report.track`), che va in coda sul dispositivo e poi al server con
+`run_save`: pubblica o privata, la run porta la traccia percorsa. Il checkpoint della traccia si
+cancella solo quando il report è davvero sul dispositivo (`RBRun.enqueue` → `stored`); un dispositivo
+troppo pieno per tenerlo conserva il checkpoint, che il prossimo avvio offre di recuperare (#460). Nel
+report **Traccia percorsa** la mostra su una mappa e **GPX** la scarica (`RBRun.showTrack` ·
+`RBRun.downloadGpx`) — nessuna seconda finestra dopo il report. Una run lasciata a metà (un altro
+file aperto sopra) chiude il log con `endRun`, tenendone il checkpoint.
 
 Il checkpoint della run (`rb_session`, via `RBCheckpoint`) porta anche `rbSlug`, `eventSlug` e
 `openedAs`: una run ripresa dopo un crash firma col prefisso del roadbook giusto e resta legata al

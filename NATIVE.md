@@ -375,8 +375,9 @@ Releases build in the cloud — no local archive step. The pipeline is
 `.github/workflows/android-release.yml`: it rehydrates the gitignored client assets from the live
 site (config.js + FontAwesome, public by design), builds the native bridge, `cap sync android`,
 restores the signing keystore from secrets, `bundleRelease` (versionName from
-`public/version.json`, versionCode = `MAJOR*10000 + MINOR*100 + PATCH` from that semver so it always
-climbs above the last upload), and uploads the `.aab` to the **Closed testing (alpha)** track via the
+`public/version.json`, versionCode = `MAJOR*1000000 + MINOR*1000 + PATCH` from that semver — both
+computed by `android/app/build.gradle` itself, which refuses a MINOR/PATCH over 999 or a code not
+above the 11000 already on Play), and uploads the `.aab` to the **Closed testing (alpha)** track via the
 service account. It fires on a push to `main` that **bumps the version in `public/version.json`**
 (a merge without a bump skips the build), so it ships together with the web deploy and the iOS tag.
 

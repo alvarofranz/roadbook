@@ -457,8 +457,10 @@ the Android `versionName` and the iOS `MARKETING_VERSION`. You bump it deliberat
 each surface keeps a **build number that only ever grows** (the stores require it): `version.json`
 carries `{version, build}` where `stamp-version.mjs` auto-increments `build` every run (it drives
 the web cache-buster + the PWA force-refresh, so a same-version redeploy still refreshes clients);
-Android's `versionCode` = `MAJOR*10000 + MINOR*100 + PATCH` (so it climbs with the semver, always
-above the last upload); iOS's `CFBundleVersion` = Xcode Cloud's monotonic `CI_BUILD_NUMBER`. Never
+Android's `versionCode` = `MAJOR*1000000 + MINOR*1000 + PATCH`, computed by `android/app/build.gradle`
+from `version.json` itself (so it climbs with the semver and never collides: MINOR and PATCH stay
+≤ 999 — the stamp and the build both refuse more — and every code is above the 11000 already on
+Play); iOS's `CFBundleVersion` = Xcode Cloud's monotonic `CI_BUILD_NUMBER`. Never
 lower the semver, never reset a build counter.
 
 **Native releases fan out automatically with the web deploy — all three ship together, gated on a
@@ -470,7 +472,7 @@ no native build (which also avoids a duplicate Play `versionCode`, which Play re
 whole release flow for anyone (incl. Maurizio) is: `node source/stamp-version.mjs <X.Y.Z>` → commit
 → branch → PR → merge. That single merge emits web + Android + iOS at the same semver.** No tags to
 push by hand. (`version.json` is the single source of truth: Android reads `versionName`/`versionCode`
-from it — `MAJOR*10000+MINOR*100+PATCH` for the code; iOS's `ci_pre_xcodebuild.sh` reads the semver
+from it in `build.gradle` — `MAJOR*1000000+MINOR*1000+PATCH` for the code; iOS's `ci_pre_xcodebuild.sh` reads the semver
 from the `ios-<version>` tag and takes `CFBundleVersion` from `CI_BUILD_NUMBER`.) A manual override
 is still possible — push an `android-<X.Y.Z>` / `ios-<X.Y.Z>` tag, or run the Android workflow via
 `workflow_dispatch` — to re-cut a build without a fresh bump. The Android build then appears under
@@ -551,7 +553,8 @@ Operational notes:
   landing shows the "Open from" chooser + the public gallery inline). Opening one shows a
   **read-only preview** first (`body.rb-preview`: the note list, no GPS, tab bar still visible) —
   you might only want to look; **"Navigate" navigates** (#936): no dialog, no options — the run
-  always logs its GPX (ending with it, in the finished-track modal) and always rings. The mode is
+  always logs its GPX, which belongs to the run (the report carries it: *Driven track* on a map and
+  a GPX download for the runner, public or private run alike — no second window) and always rings. The mode is
   never asked (#617): a roadbook opened from an event that scores it runs in competition (the
   vehicle number, the one thing asked), anything else as a trip. Then
   navigation starts (`body.rb-immersive`: the tool owns the screen — `#navScreen` becomes the app
@@ -578,7 +581,10 @@ Operational notes:
   Share and a Private/Public switch (sharing before choosing asks to make the run public, #820 ·
   #852), and a public run shows on the runner's profile `/u/<username>` (#619/#620); a competition run also enters the event's shared
   ranking (`event_results`, #590). The run also stores the device it was made on
-  (`RBDeviceLabel`), which only admins see, in user management's Runs view (#870).
+  (`RBDeviceLabel`), which only admins see, in user management's Runs view (#870), and the track it
+  drove: `storage/users/<uid>/runs/<id>.json`, sent with the report (`run_save` `track`), read back by
+  `run_track` (anyone for a public run, the runner always) — `RBRun.showTrack`/`openTrack` draw it on
+  the report, the profile and `/run/<id>`, through one `[data-run-track]` button.
   Competition validates with penalties + an HMAC-signed result QR (its 100 m proximity gate is
   widened by the fix's own accuracy).
   Opens `.rdbk` from the OS on installed PWAs.
@@ -640,8 +646,10 @@ Operational notes:
 - `gpx-recorder.js` (`RBGpxRecorder`) — crash-safe GPX logging (Reader · Tripmaster · Recorder):
   starts at once, nothing asked (`begin({ name })`, one point every 2 s — a kept track is named
   where it is saved), localStorage checkpoint with recovery (a declined one is marked, never deleted),
-  finished-track modal (download / convert into a roadbook), `handOver()` for a caller that ends the
-  log along with its own work (the Reader's run); the file is written once at the end via `RBDownload`.
+  finished-track modal (download / convert into a roadbook) for the Tripmaster's log (`stop()` →
+  `handOver()`), `end()` for a caller that keeps the points itself (the Recorder's route, the
+  Reader's run — whose points go into its report);
+  the file is written once at the end via `RBDownload`.
 - `rb-remote.js` (`RBRemote`, #20 · #909) — the **remote controller**: any remote that sends keys
   (page-turner pedals, handlebar rally controllers, clickers) drives the hands-free tools, so the
   whole transport is `keydown` — no permissions, no plugin, identical in the browser, the PWA and
