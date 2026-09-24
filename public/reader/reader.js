@@ -169,15 +169,17 @@
         const er = chainEntry();
         return er ? (er.next || []).map((n) => { const to = chain.find((x) => x.id === n.id); return to && { label: n.label || to.title, entry: to }; }).filter(Boolean) : [];
     };
-    /* Live tracking for the event's organizers (#947 · #970): a participant of an event shares their
-       last position whenever they navigate one of its roadbooks — opened from the event or not, on
-       its dates or any other day. Whether they want to is asked ONCE per event and kept on the
-       server (live_status · live_consent); the Live strip shows it the whole run, and a tap on it
-       stops it for that run. The last trusted position goes up (RB.liveDue); a failed send just
-       waits for the next fix — no backlog. It stops for good with the run. */
+    /* Live tracking for the event's organizers (#947 · #970 · #976): a participant of an event shares
+       their last position whenever they navigate one of its roadbooks — opened from the event or not,
+       on its dates or any other day. Whether they want to is asked ONCE per event and kept on the
+       server (live_status · live_consent). The Live switch in the action bar shows it the whole run
+       and changes it: off asks first and holds for this run; on starts sending at once (and turns a
+       no given for the event into a yes). The last trusted position goes up (RB.liveDue); a failed
+       send just waits for the next fix — no backlog. It stops for good with the run. */
     const live = { events: [], sent: null, tried: null, busy: false, on: false };
+    const syncLiveBtn = () => { const b = $('liveBtn'); b.hidden = !live.events.length || finished; b.classList.toggle('on', live.on); b.setAttribute('aria-checked', String(live.on)); };
     async function liveStart() {
-        live.on = false; live.sent = null; live.tried = null; $('liveStrip').hidden = true;
+        live.on = false; live.events = []; live.sent = null; live.tried = null; syncLiveBtn();
         if (!meUser || !rbRef) return;
         const r = await RBApi('live_status', { roadbook_id: rbRef });
         if (!r.ok) return;
@@ -185,12 +187,12 @@
         const ask = live.events.filter((e) => e.consent === null);
         if (ask.length) {
             const yes = await RBConfirm(t('Share your live position with the organizers of {events} while you navigate its roadbooks?').replace('{events}', ask.map((e) => '<b>' + esc(e.title) + '</b>').join(', '))
-                + '<br><span class="muted small">' + esc(t('Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.')) + '</span>');
+                + '<br><span class="muted small">' + esc(t('Asked once for this event. Only its organizers see it, only while you navigate — your last position. The Live switch turns it off for a run.')) + '</span>');
             await Promise.all(ask.map((e) => RBApi('live_consent', { event_id: e.id, consent: yes ? 1 : 0 })));
             ask.forEach((e) => { e.consent = yes ? 1 : 0; });
         }
         live.on = !finished && RB.liveAllowed(live.events);
-        $('liveStrip').hidden = !live.on;
+        syncLiveBtn();
     }
     async function liveTick(here, coords, speedKmh) {
         if (!live.on || live.busy || paused || !RB.liveDue(live.sent, live.tried, here, Date.now())) return;
@@ -204,12 +206,26 @@
         if (r.ok) live.sent = { at: Date.now(), lat: here.lat, lon: here.lon };
         else if (r.error !== 'Network error.') liveEnd(false); // refused (no longer a participant…): never again this run
     }
+    // Sharing stops: its last position stays with the organizers, marked as the end
     function liveEnd(tell = true) {
         if (live.on && tell) RBApi('live_stop', { roadbook_id: rbRef });
-        live.on = false; $('liveStrip').hidden = true;
+        live.on = false; syncLiveBtn();
     }
-    // a tap on the strip: not this run
-    $('liveStrip').onclick = () => { liveEnd(); toast('Live position off for this run.'); };
+    // The Live switch (#976): off asks first — the organizers lose sight of you — and holds for this
+    // run; on starts again at once, the next fix already on its way
+    $('liveBtn').onclick = async () => {
+        if (live.on) {
+            if (!(await RBConfirm(t('Stop sharing your position with the organizers for this run?')))) return;
+            liveEnd(); toast('Live position off for this run.');
+            return;
+        }
+        const no = live.events.filter((e) => e.consent !== 1);
+        await Promise.all(no.map((e) => RBApi('live_consent', { event_id: e.id, consent: 1 })));
+        no.forEach((e) => { e.consent = 1; });
+        live.on = !finished && RB.liveAllowed(live.events); live.sent = null; live.tried = null;
+        syncLiveBtn();
+        if (live.on) { toast('Live position on: the organizers see you.'); if (lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); }
+    };
     window.addEventListener('online', () => { if (live.on && lastHere) liveTick(lastHere, { accuracy: lastAcc }, 0); });
     const prefetchNext = () => nextOptions().forEach(({ entry }) => {
         if (!chainCache[entry.slug]) RBChallenges.loadPublic(entry.slug).then((j) => { chainCache[entry.slug] = j; }).catch(() => {});

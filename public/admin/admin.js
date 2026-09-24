@@ -90,8 +90,15 @@
                 ${figure('Disk', `${fmtSize(u.bytes)}<small>/ ${fmtSize(u.quota)}</small>`)}
             </div>
             <p class="muted small u-sheet-dates"><i class="fa-regular fa-calendar"></i> ${esc(t('Joined'))} ${esc(RBFmtDate(String(u.created_at).slice(0, 10)))} · <i class="fa-regular fa-clock"></i> ${esc(t('Last active'))}: ${esc(whenText(u.last_active))}</p>
+            ${u.location ? '<div class="u-sheet-map" id="uSheetMap"></div>' : ''}
             <div class="u-sheet-actions">${acts}</div>
             ${manage && !u.locked && !self ? `<div class="btnrow start u-sheet-foot">${action('delete', 'fa-trash-can', 'Delete user', 'btn-danger')}</div>` : ''}`, 'wide u-sheet');
+        // where they usually ride (their default location), when they gave one — no location, no map
+        if (u.location && window.maplibregl) {
+            const at = [u.location.lon, u.location.lat], sheetMap = new RBMap('uSheetMap', { zoom: 10, center: at });
+            const pin = () => new maplibregl.Marker({ color: RBCssVar('--info') }).setLngLat(at).addTo(sheetMap.map);
+            if (sheetMap.map) { if (sheetMap.ready) pin(); else sheetMap.map.on('load', pin); }
+        }
         const on = (id, fn) => { const b = m.q(`[data-act="${id}"]`); if (b) b.onclick = () => fn(b); };
         on('edit', () => { m.close(); editUser(u); });
         on('roadbooks', () => { m.close(); viewRoadbooks(u); });

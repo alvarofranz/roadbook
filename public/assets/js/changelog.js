@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.16', date: '2026-09-25',
+        title: 'A tidier profile menu',
+        items: [
+            'The profile menu is laid out in sections: two columns on a computer, a clean full screen in the app.',
+            'While navigating an event roadbook, the Live switch sits in the action bar: off asks first, on starts again at once.',
+            'The odometer labels sit beside their numbers, and the notifications count as read as soon as you see them.',
+            'In user management, a user’s card shows where they ride.',
+        ],
+    },
+    {
         version: '1.9.15', date: '2026-09-24',
         title: 'Notifications, and a PDF your way',
         items: [

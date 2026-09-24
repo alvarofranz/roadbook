@@ -153,7 +153,7 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 |--------|---------|:----:|
 | `notifications_unread` | Il numero del badge (arriva già con `config` come `user.notifications`) | richiesta |
 | `notifications_list` | Una pagina delle proprie notifiche, dalla più recente (`before`: l'ultimo id già mostrato) | richiesta |
-| `notifications_read` | Segna lette le `ids` date, o tutte (`all`) — solo le proprie; risponde col nuovo conteggio | richiesta |
+| `notifications_read` | Vedere la lista è leggerla: segna lette tutte le proprie; risponde col nuovo conteggio | richiesta |
 
 Una notifica nasce da `notify(user, kind, subject, actor, data)` (mai per ciò che si è fatto da sé) e
 se ne va con il suo soggetto (`notifications_forget`). Il primo tipo: `comment`, un commento su un

@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.15-232">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.16-233">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.15-232">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.16-233">
     <style>
         /* top bar, laid out like a note row (#567): the distances in the LEFT column — prog. with
            part. right under it, as every row shows total over partial — and the indicators to the
@@ -19,11 +19,9 @@
         .odometer-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: .3rem 1rem; background: var(--card-2); border-bottom: 1px solid var(--line); padding: .45rem .9rem; }
         .odometer-bar > .ind { justify-self: center; padding-bottom: .2rem; }
         .odometer-bar > .ind.end { justify-self: end; }
-        /* live tracking on (#947): the runner always sees that the organizers see them */
-        .live-strip { display: flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; margin: 0; padding: .3rem .9rem; font: inherit; font-size: .8rem; font-weight: 700; color: var(--text); background: var(--card-2); border: 0; border-bottom: 1px solid var(--line); cursor: pointer; }
-        .live-strip i { color: var(--ok); }
-        .odometer-item { display: flex; flex-direction: column; }
-        .odometer-item .field-label { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+        /* the label beside its number, not above it (#976): the bar keeps its figures and loses a line */
+        .odometer-item { display: flex; align-items: baseline; gap: .4rem; }
+        .odometer-item .field-label { min-width: 2.3em; margin: 0; font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
         .odometer-item .value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
         /* bearing / clock / GPS / speed indicators, at the km value font size */
         .odometer-bar .ind { display: inline-flex; align-items: center; gap: .3rem; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -170,11 +168,11 @@
         <span class="ind"><span id="gpsDot" class="gps-dot" aria-hidden="true"></span> <span id="gpsTxt" data-i18n="GPS…">GPS…</span></span>
         <span class="ind end"><i class="fa-solid fa-gauge-high"></i> <span id="odoSpeed">—</span></span>
     </div>
-    <button id="liveStrip" class="live-strip" type="button" hidden><i class="fa-solid fa-tower-broadcast"></i> <span data-i18n="Live · the organizers see your position">Live · the organizers see your position</span> <span class="muted" data-i18n="Tap to stop">Tap to stop</span></button>
     <!-- 3-column note rows: distances | graphic | indications + coords (no buttons column, #569) -->
     <div id="noteList"></div>
     <nav class="fabrow">
         <button class="btn btn-ghost rb-switch on" id="autoBtn" role="switch" aria-checked="true" title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done." data-i18n-title="Auto: notes are validated by GPS as you reach them. Off: tap to mark each note done."><i class="fa-solid fa-robot"></i> <span data-i18n="Auto">Auto</span> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
+        <button class="btn btn-ghost rb-switch" id="liveBtn" role="switch" aria-checked="false" hidden aria-label="Live tracking" data-i18n-aria="Live tracking" title="Live tracking: the event’s organizers see your position while you navigate." data-i18n-title="Live tracking: the event’s organizers see your position while you navigate."><i class="fa-solid fa-tower-broadcast"></i> <span class="rb-switch-track" aria-hidden="true"><span class="rb-switch-knob"></span></span></button>
         <button class="btn btn-ghost" id="mapBtn" hidden aria-pressed="false"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="Note map">Note map</span></button>
         <button class="btn btn-ghost" id="pauseBtn"><i class="fa-solid fa-pause"></i> <span data-i18n="Pause">Pause</span></button>
         <button class="btn btn-ghost" id="finishBtn"><i class="fa-solid fa-flag-checkered"></i> <span data-i18n="Finish">Finish</span></button>
@@ -232,26 +230,26 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.15-232"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.15-232"></script>
-<script src="../assets/js/rbzip.js?v=1.9.15-232"></script>
-<script src="../assets/js/rbmap.js?v=1.9.15-232"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.15-232"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.15-232"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.15-232"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.15-232"></script>
-<script src="../assets/js/qrcode.min.js?v=1.9.15-232"></script>
-<script src="../assets/js/rb-qr.js?v=1.9.15-232"></script>
-<script src="../assets/js/challenges.js?v=1.9.15-232"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.15-232"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.15-232"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.15-232"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.15-232"></script>
-<script src="../assets/js/i18n.js?v=1.9.15-232"></script>
-<script src="../assets/js/app.js?v=1.9.15-232"></script>
-<script src="../assets/js/run-report.js?v=1.9.15-232"></script>
-<script src="../assets/js/cover-map.js?v=1.9.15-232"></script>
-<script src="../assets/js/run-card.js?v=1.9.15-232"></script>
-<script src="reader.js?v=1.9.15-232"></script>
+<script src="../assets/js/config.js?v=1.9.16-233"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.16-233"></script>
+<script src="../assets/js/rbzip.js?v=1.9.16-233"></script>
+<script src="../assets/js/rbmap.js?v=1.9.16-233"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.16-233"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.16-233"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.16-233"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.16-233"></script>
+<script src="../assets/js/qrcode.min.js?v=1.9.16-233"></script>
+<script src="../assets/js/rb-qr.js?v=1.9.16-233"></script>
+<script src="../assets/js/challenges.js?v=1.9.16-233"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.16-233"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.16-233"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.16-233"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.16-233"></script>
+<script src="../assets/js/i18n.js?v=1.9.16-233"></script>
+<script src="../assets/js/app.js?v=1.9.16-233"></script>
+<script src="../assets/js/run-report.js?v=1.9.16-233"></script>
+<script src="../assets/js/cover-map.js?v=1.9.16-233"></script>
+<script src="../assets/js/run-card.js?v=1.9.16-233"></script>
+<script src="reader.js?v=1.9.16-233"></script>
 </body>
 </html>

@@ -1737,7 +1737,7 @@ Object.assign(window.RBi18nLangs.it, {
     "A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.": "Un partecipante compare qui solo mentre naviga uno dei roadbook dell’evento, dopo aver accettato di condividerlo. Si aggiorna ogni 10 secondi.",
     "Live (under a minute)": "In diretta (meno di un minuto)",
     "Live map": "Mappa in diretta",
-    "Live · the organizers see your position": "In diretta · gli organizzatori vedono la tua posizione",
+    
     "Lost or finished": "Perso o terminato",
     "Finished {t} ago": "Terminato {t} fa",
     "Updated {t} ago": "Aggiornato {t} fa",
@@ -1749,7 +1749,7 @@ Object.assign(window.RBi18nLangs.it, {
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.it, {
-    "priv.location.4": "<b>Tracciamento in diretta negli eventi.</b> Quando partecipi a un evento e navighi uno dei suoi roadbook, il Reader ti chiede una sola volta per quell’evento se condividere la tua posizione in diretta con i suoi <b>organizzatori</b>, e ricorda la tua risposta. Solo se hai detto sì, e solo mentre navighi uno dei suoi roadbook, vengono inviati circa ogni 15 secondi la tua <b>ultima</b> posizione e il tuo avanzamento nel roadbook. La vedono solo gli organizzatori dell’evento, non viene mai conservata come cronologia e un tocco sulla striscia «Live» la ferma per quel percorso.",
+    "priv.location.4": "<b>Tracciamento in diretta negli eventi.</b> Quando partecipi a un evento e navighi uno dei suoi roadbook, il Reader ti chiede una sola volta per quell’evento se condividere la tua posizione in diretta con i suoi <b>organizzatori</b>, e ricorda la tua risposta. Solo se hai detto sì, e solo mentre navighi uno dei suoi roadbook, vengono inviati circa ogni 15 secondi la tua <b>ultima</b> posizione e il tuo avanzamento nel roadbook. La vedono solo gli organizzatori dell’evento, non viene mai conservata come cronologia e l’interruttore «Live» sullo schermo la spegne per quel percorso.",
     "priv.retention.live": "Le <b>posizioni in diretta</b> condivise con gli organizzatori di un evento vengono cancellate un giorno dopo la fine dell’evento, e mai conservate più di <b>3 giorni</b>.",
 });
 
@@ -1791,8 +1791,8 @@ Object.assign(window.RBi18nLangs.it, {
 /* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
 Object.assign(window.RBi18nLangs.it, {
     "Search by title, author or date…": "Cerca per titolo, autore o data…",
-    "Tap to stop": "Tocca per fermare",
-    "Mark all as read": "Segna tutto come letto",
+    
+    
     "Nothing new — you will find here the comments on your roadbooks.": "Niente di nuovo: qui troverai i commenti ai tuoi roadbook.",
     "Notifications": "Notifiche",
     "Show more": "Mostra altro",
@@ -1806,7 +1806,7 @@ Object.assign(window.RBi18nLangs.it, {
     "Page margins": "Margini della pagina",
     "The same on the cover and on every page.": "Gli stessi sulla copertina e su ogni pagina.",
     "What goes behind the route on the first page.": "Cosa va dietro il percorso nella prima pagina.",
-    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Te lo chiediamo una sola volta per evento. La vedono solo i suoi organizzatori, solo mentre navighi: la tua ultima posizione. Tocca la striscia Live per fermarla in un percorso.",
+    
     "Choose Private or Public to finish.": "Scegli Privato o Pubblico per finire.",
     "Live position off for this run.": "Posizione in diretta disattivata per questo percorso.",
     "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Condividere la tua posizione in diretta con gli organizzatori di {events} mentre navighi i suoi roadbook?",
@@ -1824,4 +1824,28 @@ Object.assign(window.RBi18nLangs.it, {
 /* Comments: the Post button while sending */
 Object.assign(window.RBi18nLangs.it, {
     "Posting…": "Pubblicazione…",
+});
+
+/* Reader: the Live switch (#976) */
+Object.assign(window.RBi18nLangs.it, {
+    "Live tracking": "Tracciamento in diretta",
+    "Live tracking: the event’s organizers see your position while you navigate.": "Tracciamento in diretta: gli organizzatori dell’evento vedono la tua posizione mentre navighi.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. The Live switch turns it off for a run.": "Te lo chiediamo una sola volta per evento. La vedono solo i suoi organizzatori, solo mentre navighi: la tua ultima posizione. L’interruttore Live la spegne per un percorso.",
+    "Stop sharing your position with the organizers for this run?": "Smettere di condividere la tua posizione con gli organizzatori per questo percorso?",
+    "Live position on: the organizers see you.": "Posizione in diretta attiva: gli organizzatori ti vedono.",
+});
+
+/* Account menu sections (#977) */
+Object.assign(window.RBi18nLangs.it, {
+    "Your account": "Il tuo account",
+    "Administration": "Amministrazione",
+});
+
+/* Release notes 1.9.16 */
+Object.assign(window.RBi18nLangs.it, {
+    "A tidier profile menu": "Un menu del profilo più ordinato",
+    "The profile menu is laid out in sections: two columns on a computer, a clean full screen in the app.": "Il menu del profilo è organizzato per sezioni: due colonne sul computer, uno schermo intero pulito nell’app.",
+    "While navigating an event roadbook, the Live switch sits in the action bar: off asks first, on starts again at once.": "Mentre navighi un roadbook d’evento, l’interruttore Live è nella barra delle azioni: spegnerlo chiede conferma, riaccenderlo riparte subito.",
+    "The odometer labels sit beside their numbers, and the notifications count as read as soon as you see them.": "Le etichette dell’odometro stanno accanto ai numeri, e le notifiche contano come lette appena le vedi.",
+    "In user management, a user’s card shows where they ride.": "Nella gestione utenti, la scheda di ogni utente mostra dove guida di solito.",
 });

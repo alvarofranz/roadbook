@@ -1700,7 +1700,7 @@ Object.assign(window.RBi18nLangs.de, {
     "A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.": "Ein Teilnehmer erscheint hier nur, während er eines der Roadbooks der Veranstaltung navigiert und dem Teilen zugestimmt hat. Aktualisiert alle 10 Sekunden.",
     "Live (under a minute)": "Live (unter einer Minute)",
     "Live map": "Live-Karte",
-    "Live · the organizers see your position": "Live · die Veranstalter sehen deine Position",
+    
     "Lost or finished": "Verloren oder beendet",
     "Finished {t} ago": "Beendet vor {t}",
     "Updated {t} ago": "Aktualisiert vor {t}",
@@ -1712,7 +1712,7 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.de, {
-    "priv.location.4": "<b>Live-Tracking bei Veranstaltungen.</b> Wenn du an einer Veranstaltung teilnimmst und eines ihrer Roadbooks navigierst, fragt dich der Reader einmal für diese Veranstaltung, ob du deine Live-Position mit ihren <b>Veranstaltern</b> teilen möchtest, und merkt sich deine Antwort. Nur wenn du zugestimmt hast, und nur während du eines ihrer Roadbooks navigierst, werden etwa alle 15 Sekunden deine <b>letzte</b> Position und dein Fortschritt im Roadbook gesendet. Nur die Veranstalter sehen sie, sie wird nie als Verlauf gespeichert, und ein Tipp auf den „Live“-Streifen beendet sie für diese Fahrt.",
+    "priv.location.4": "<b>Live-Tracking bei Veranstaltungen.</b> Wenn du an einer Veranstaltung teilnimmst und eines ihrer Roadbooks navigierst, fragt dich der Reader einmal für diese Veranstaltung, ob du deine Live-Position mit ihren <b>Veranstaltern</b> teilen möchtest, und merkt sich deine Antwort. Nur wenn du zugestimmt hast, und nur während du eines ihrer Roadbooks navigierst, werden etwa alle 15 Sekunden deine <b>letzte</b> Position und dein Fortschritt im Roadbook gesendet. Nur die Veranstalter sehen sie, sie wird nie als Verlauf gespeichert, und der „Live“-Schalter auf dem Bildschirm schaltet sie für diese Fahrt aus.",
     "priv.retention.live": "<b>Live-Positionen</b>, die mit den Veranstaltern geteilt wurden, werden einen Tag nach dem Ende der Veranstaltung gelöscht und nie länger als <b>3 Tage</b> aufbewahrt.",
 });
 
@@ -1754,8 +1754,8 @@ Object.assign(window.RBi18nLangs.de, {
 /* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
 Object.assign(window.RBi18nLangs.de, {
     "Search by title, author or date…": "Nach Titel, Autor oder Datum suchen…",
-    "Tap to stop": "Zum Beenden tippen",
-    "Mark all as read": "Alles als gelesen markieren",
+    
+    
     "Nothing new — you will find here the comments on your roadbooks.": "Nichts Neues – hier findest du die Kommentare zu deinen Roadbooks.",
     "Notifications": "Benachrichtigungen",
     "Show more": "Mehr anzeigen",
@@ -1769,7 +1769,7 @@ Object.assign(window.RBi18nLangs.de, {
     "Page margins": "Seitenränder",
     "The same on the cover and on every page.": "Gleich auf der Titelseite und auf jeder Seite.",
     "What goes behind the route on the first page.": "Was auf der ersten Seite hinter der Route liegt.",
-    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Nur einmal pro Veranstaltung gefragt. Nur ihre Veranstalter sehen sie, nur während du navigierst – deine letzte Position. Tippe auf den Live-Streifen, um sie für eine Fahrt zu beenden.",
+    
     "Choose Private or Public to finish.": "Wähle Privat oder Öffentlich, um abzuschließen.",
     "Live position off for this run.": "Live-Position für diese Fahrt ausgeschaltet.",
     "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Deine Live-Position mit den Veranstaltern von {events} teilen, während du ihre Roadbooks navigierst?",
@@ -1787,4 +1787,28 @@ Object.assign(window.RBi18nLangs.de, {
 /* Comments: the Post button while sending */
 Object.assign(window.RBi18nLangs.de, {
     "Posting…": "Wird veröffentlicht…",
+});
+
+/* Reader: the Live switch (#976) */
+Object.assign(window.RBi18nLangs.de, {
+    "Live tracking": "Live-Tracking",
+    "Live tracking: the event’s organizers see your position while you navigate.": "Live-Tracking: Die Veranstalter sehen deine Position, während du navigierst.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. The Live switch turns it off for a run.": "Nur einmal pro Veranstaltung gefragt. Nur ihre Veranstalter sehen sie, nur während du navigierst – deine letzte Position. Der Live-Schalter schaltet sie für eine Fahrt aus.",
+    "Stop sharing your position with the organizers for this run?": "Deine Position für diese Fahrt nicht mehr mit den Veranstaltern teilen?",
+    "Live position on: the organizers see you.": "Live-Position an: Die Veranstalter sehen dich.",
+});
+
+/* Account menu sections (#977) */
+Object.assign(window.RBi18nLangs.de, {
+    "Your account": "Dein Konto",
+    "Administration": "Verwaltung",
+});
+
+/* Release notes 1.9.16 */
+Object.assign(window.RBi18nLangs.de, {
+    "A tidier profile menu": "Ein aufgeräumteres Profilmenü",
+    "The profile menu is laid out in sections: two columns on a computer, a clean full screen in the app.": "Das Profilmenü ist in Abschnitte gegliedert: zwei Spalten am Computer, ein aufgeräumter Vollbildschirm in der App.",
+    "While navigating an event roadbook, the Live switch sits in the action bar: off asks first, on starts again at once.": "Beim Navigieren eines Veranstaltungs-Roadbooks sitzt der Live-Schalter in der Aktionsleiste: Ausschalten fragt nach, Einschalten startet sofort wieder.",
+    "The odometer labels sit beside their numbers, and the notifications count as read as soon as you see them.": "Die Beschriftungen des Kilometerzählers stehen neben ihren Zahlen, und Benachrichtigungen gelten als gelesen, sobald du sie siehst.",
+    "In user management, a user’s card shows where they ride.": "In der Benutzerverwaltung zeigt die Karte eines Nutzers, wo er unterwegs ist.",
 });

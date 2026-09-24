@@ -1699,7 +1699,7 @@ Object.assign(window.RBi18nLangs.fr, {
     "A participant shows here only while navigating one of the event’s roadbooks, after agreeing to share it. Updated every 10 seconds.": "Un participant n’apparaît ici que pendant qu’il navigue l’un des roadbooks de l’événement, après avoir accepté de le partager. Mis à jour toutes les 10 secondes.",
     "Live (under a minute)": "En direct (moins d’une minute)",
     "Live map": "Carte en direct",
-    "Live · the organizers see your position": "En direct · les organisateurs voient ta position",
+    
     "Lost or finished": "Perdu ou terminé",
     "Finished {t} ago": "Terminé il y a {t}",
     "Updated {t} ago": "Mis à jour il y a {t}",
@@ -1711,7 +1711,7 @@ Object.assign(window.RBi18nLangs.fr, {
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.fr, {
-    "priv.location.4": "<b>Suivi en direct des événements.</b> Quand tu participes à un événement et navigues l’un de ses roadbooks, le Reader te demande une seule fois pour cet événement si tu veux partager ta position en direct avec ses <b>organisateurs</b>, et se souvient de ta réponse. Seulement si tu as dit oui, et seulement pendant que tu navigues l’un de ses roadbooks, ta <b>dernière</b> position et ta progression dans le roadbook sont envoyées environ toutes les 15 secondes. Seuls les organisateurs de l’événement la voient, elle n’est jamais conservée comme historique et une touche sur la bande « Live » l’arrête pour ce parcours.",
+    "priv.location.4": "<b>Suivi en direct des événements.</b> Quand tu participes à un événement et navigues l’un de ses roadbooks, le Reader te demande une seule fois pour cet événement si tu veux partager ta position en direct avec ses <b>organisateurs</b>, et se souvient de ta réponse. Seulement si tu as dit oui, et seulement pendant que tu navigues l’un de ses roadbooks, ta <b>dernière</b> position et ta progression dans le roadbook sont envoyées environ toutes les 15 secondes. Seuls les organisateurs de l’événement la voient, elle n’est jamais conservée comme historique et l’interrupteur « Live » à l’écran l’éteint pour ce parcours.",
     "priv.retention.live": "Les <b>positions en direct</b> partagées avec les organisateurs d’un événement sont supprimées un jour après la fin de l’événement, et jamais conservées plus de <b>3 jours</b>.",
 });
 
@@ -1753,8 +1753,8 @@ Object.assign(window.RBi18nLangs.fr, {
 /* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
 Object.assign(window.RBi18nLangs.fr, {
     "Search by title, author or date…": "Rechercher par titre, auteur ou date…",
-    "Tap to stop": "Touche pour arrêter",
-    "Mark all as read": "Tout marquer comme lu",
+    
+    
     "Nothing new — you will find here the comments on your roadbooks.": "Rien de nouveau : tu trouveras ici les commentaires sur tes roadbooks.",
     "Notifications": "Notifications",
     "Show more": "Voir plus",
@@ -1768,7 +1768,7 @@ Object.assign(window.RBi18nLangs.fr, {
     "Page margins": "Marges de la page",
     "The same on the cover and on every page.": "Les mêmes sur la couverture et sur chaque page.",
     "What goes behind the route on the first page.": "Ce qui se trouve derrière l’itinéraire sur la première page.",
-    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Demandé une seule fois par événement. Seuls ses organisateurs la voient, seulement pendant que tu navigues : ta dernière position. Touche la bande Live pour l’arrêter le temps d’un parcours.",
+    
     "Choose Private or Public to finish.": "Choisis Privé ou Public pour terminer.",
     "Live position off for this run.": "Position en direct désactivée pour ce parcours.",
     "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Partager ta position en direct avec les organisateurs de {events} pendant que tu navigues ses roadbooks ?",
@@ -1786,4 +1786,28 @@ Object.assign(window.RBi18nLangs.fr, {
 /* Comments: the Post button while sending */
 Object.assign(window.RBi18nLangs.fr, {
     "Posting…": "Publication…",
+});
+
+/* Reader: the Live switch (#976) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Live tracking": "Suivi en direct",
+    "Live tracking: the event’s organizers see your position while you navigate.": "Suivi en direct : les organisateurs de l’événement voient ta position pendant que tu navigues.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. The Live switch turns it off for a run.": "Demandé une seule fois par événement. Seuls ses organisateurs la voient, seulement pendant que tu navigues : ta dernière position. L’interrupteur Live l’éteint le temps d’un parcours.",
+    "Stop sharing your position with the organizers for this run?": "Arrêter de partager ta position avec les organisateurs pour ce parcours ?",
+    "Live position on: the organizers see you.": "Position en direct activée : les organisateurs te voient.",
+});
+
+/* Account menu sections (#977) */
+Object.assign(window.RBi18nLangs.fr, {
+    "Your account": "Ton compte",
+    "Administration": "Administration",
+});
+
+/* Release notes 1.9.16 */
+Object.assign(window.RBi18nLangs.fr, {
+    "A tidier profile menu": "Un menu de profil mieux rangé",
+    "The profile menu is laid out in sections: two columns on a computer, a clean full screen in the app.": "Le menu de profil est organisé en sections : deux colonnes sur ordinateur, un plein écran épuré dans l’appli.",
+    "While navigating an event roadbook, the Live switch sits in the action bar: off asks first, on starts again at once.": "Pendant que tu navigues un roadbook d’événement, l’interrupteur Live est dans la barre d’actions : l’éteindre demande confirmation, le rallumer repart aussitôt.",
+    "The odometer labels sit beside their numbers, and the notifications count as read as soon as you see them.": "Les libellés de l’odomètre sont à côté de leurs chiffres, et les notifications comptent comme lues dès que tu les vois.",
+    "In user management, a user’s card shows where they ride.": "Dans la gestion des utilisateurs, la fiche de chacun montre où il roule.",
 });

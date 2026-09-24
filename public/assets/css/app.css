@@ -248,20 +248,53 @@ body.rb-immersive .app-chip-stack { display: none; }
 .tabbar-link .notif-badge { top: .35rem; left: calc(50% + .25rem); }
 .notif-count { margin-left: auto; min-width: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--track); color: #fff; font-size: .72rem; font-weight: 800; text-align: center; }
 .notif-list { display: flex; flex-direction: column; gap: .3rem; margin-top: .6rem; }
-.notif-row { display: flex; align-items: flex-start; gap: .7rem; padding: .7rem .8rem; border-radius: 10px; color: var(--text); text-decoration: none; border: 1px solid var(--line); }
+.notif-row, .notif-row:hover, .notif-row * { text-decoration: none; }
+.notif-row { display: flex; align-items: flex-start; gap: .7rem; padding: .7rem .8rem; border-radius: 10px; color: var(--text); border: 1px solid var(--line); }
 .notif-row:hover { background: var(--card-2); }
 .notif-row.unread { background: var(--card-2); border-color: var(--sand); }
 .notif-row > i { margin-top: .15rem; }
 .notif-row .grow { display: flex; flex-direction: column; gap: .15rem; min-width: 0; overflow-wrap: break-word; }
-.account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
-.account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; /* the dropdown widens to its longest label — no two-line entries (#243) */ }
-.account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
-.account-menu .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
-/* Tab-bar profile dropup (mobile, #303 → #310): positioned above the fixed bottom tab bar. */
-.tabbar-dropup { position: fixed; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 6px); right: max(.5rem, env(safe-area-inset-right)); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: 0 -4px 20px rgba(0,0,0,.18); min-width: 185px; z-index: 61; display: flex; flex-direction: column; gap: .15rem; }
-.tabbar-dropup a, .tabbar-dropup button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; }
-.tabbar-dropup a:hover, .tabbar-dropup button:hover { background: var(--card-2); text-decoration: none; }
-.tabbar-dropup .menu-sep { border: 0; border-top: 1px solid var(--line); margin: .3rem .35rem; width: auto; }
+/* The account menu (#977): ONE structure (accountMenuHTML) in two presentations — a two-column
+   dropdown on a desktop, a full-screen sheet of grouped lists above the app's tab bar. Head: who
+   you are (your profile link) · sections: your account, and administration when you have it ·
+   foot: help, app info, sign out. */
+.account-menu, .tabbar-dropup { background: var(--card); color: var(--text); z-index: 60; }
+.account-menu a, .account-menu button, .tabbar-dropup a, .tabbar-dropup button { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; }
+.account-menu a:hover, .account-menu button:hover, .tabbar-dropup a:hover, .tabbar-dropup button:hover { background: var(--card-2); text-decoration: none; }
+.account-menu i, .tabbar-dropup i { width: 1.15rem; text-align: center; color: var(--muted); }
+.acc-head { display: flex; align-items: center; gap: .6rem; }
+.account-menu .acc-who, .tabbar-dropup .acc-who { flex: 1; min-width: 0; gap: .75rem; padding: .5rem .6rem; }
+.acc-who > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.acc-who b, .acc-who small { overflow: hidden; text-overflow: ellipsis; }
+.acc-who small { color: var(--muted); font-weight: 500; font-size: .8rem; }
+.acc-who .acc-link { color: var(--sand); }
+.acc-avatar { width: 2.6rem; height: 2.6rem; flex: none; border-radius: 50%; object-fit: cover; background: var(--card-2); display: grid; place-items: center; font-size: 1.6rem; }
+.acc-avatar i { width: auto; color: var(--muted); }
+.account-menu .acc-close { display: none; } /* a dropdown closes by a click anywhere else */
+.acc-section h4 { margin: .2rem .7rem .35rem; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.acc-list { display: flex; flex-direction: column; gap: .1rem; }
+.acc-list .notif-count { margin-left: auto; }
+.acc-foot { display: flex; gap: .2rem; border-top: 1px solid var(--line); }
+.account-menu .acc-out, .tabbar-dropup .acc-out { margin-left: auto; }
+.acc-out:hover, .acc-out:hover i { color: var(--track); }
+/* desktop: a dropdown under your name, two columns when there is administration */
+.account-menu { position: absolute; top: calc(100% + 8px); right: 0; width: max-content; max-width: min(560px, calc(100vw - 2rem)); padding: .5rem; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.account-menu .acc-head { padding-bottom: .4rem; margin-bottom: .5rem; border-bottom: 1px solid var(--line); }
+.account-menu .acc-cols { display: grid; gap: .3rem 1rem; }
+.account-menu .acc-cols.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.account-menu .acc-foot { margin-top: .5rem; padding-top: .5rem; }
+/* the app and every phone: the whole screen above the tab bar, grouped lists with big rows */
+.tabbar-dropup { position: fixed; top: 0; left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); z-index: 61; overflow-y: auto; overscroll-behavior: contain; padding: calc(1rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right)) 1.2rem calc(1rem + env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 1.1rem; }
+.tabbar-dropup > * { flex: none; } /* every part keeps its height; the sheet scrolls */
+.tabbar-dropup .acc-head { padding: 0 0 .2rem; }
+.tabbar-dropup .acc-close { display: grid; place-items: center; flex: none; width: 2.6rem; height: 2.6rem; padding: 0; border-radius: 50%; background: var(--track); font-size: 1.3rem; }
+.tabbar-dropup .acc-close i { width: auto; color: #fff; }
+.tabbar-dropup .acc-cols { display: flex; flex-direction: column; gap: 1.1rem; }
+.tabbar-dropup .acc-list, .tabbar-dropup .acc-foot { gap: 0; background: var(--card-2); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.tabbar-dropup .acc-foot { flex-direction: column; }
+.tabbar-dropup .acc-list > *, .tabbar-dropup .acc-foot > * { padding: .95rem 1rem; border-radius: 0; font-size: 1.02rem; }
+.tabbar-dropup .acc-list > * + *, .tabbar-dropup .acc-foot > * + * { border-top: 1px solid var(--line); }
+.tabbar-dropup .acc-out { margin-left: 0; }
 /* Hidden above the breakpoint ON THE WEB ONLY: the app shows its tab bar at every width, so on
    an iPad in landscape (≥1025 px) the profile menu must stay reachable (#484). Same
    `html:not(.native)` guard the odometer bar uses. */
@@ -468,6 +501,12 @@ body.rb-immersive .app-chip-stack { display: none; }
 .fabrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; padding: .6rem .8rem; padding-bottom: calc(.6rem + env(safe-area-inset-bottom)); background: rgba(14, 17, 22, .95); border-top: 1px solid var(--line); }
 .fabrow .btn { justify-content: center; min-width: 0; min-height: 3.1rem; font-size: 1rem; white-space: nowrap; }
 .fabrow:has(#mapBtn[hidden]) #autoBtn { grid-column: 1 / -1; }
+/* with the Live switch (#976): Auto · Live · Note map over Pause · Finish — or Auto · Live when there is no map */
+.fabrow:has(#liveBtn:not([hidden])) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.fabrow:has(#liveBtn:not([hidden])) > .btn { grid-column: span 3; }
+.fabrow:has(#liveBtn:not([hidden])) > #autoBtn, .fabrow:has(#liveBtn:not([hidden])) > #liveBtn, .fabrow:has(#liveBtn:not([hidden])) > #mapBtn { grid-column: span 2; padding-left: .5rem; padding-right: .5rem; gap: .35rem; }
+.fabrow:has(#liveBtn:not([hidden])):has(#mapBtn[hidden]) > #autoBtn, .fabrow:has(#liveBtn:not([hidden])):has(#mapBtn[hidden]) > #liveBtn { grid-column: span 3; }
+.fabrow:has(#liveBtn:not([hidden])) > #mapBtn { white-space: normal; line-height: 1.15; font-size: .92rem; text-align: left; } /* a third of the width: its name may take two lines */
 /* wherever the bottom tab bar shows — in the app and at every mobile width — it owns the floor,
    so the row stacks on top of it instead of under it: shared chrome never covers a tool's
    controls (#401). Both rules sit AFTER the base one on purpose — same specificity, last wins. */

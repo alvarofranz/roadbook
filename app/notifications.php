@@ -52,17 +52,9 @@ function notifications_list(array $me, array $d): void {
     json_out(['ok' => true, 'items' => $items, 'more' => $more, 'unread' => notifications_unread_count((int)$me['id'])]);
 }
 
-// Mark read: the given ids, or all of them — only ever the user's own
+// Seeing the list is reading it: every unread one of the user's own is marked read
 function notifications_read(array $me, array $d): void {
     $uid = (int)$me['id'];
-    if (!empty($d['all'])) {
-        db()->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL')->execute([$uid]);
-    } else {
-        $ids = array_values(array_filter(array_map('intval', (array)($d['ids'] ?? [])), fn($i) => $i > 0));
-        if ($ids) {
-            $in = implode(',', array_fill(0, count($ids), '?'));
-            db()->prepare("UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL AND id IN ($in)")->execute(array_merge([$uid], $ids));
-        }
-    }
+    db()->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL')->execute([$uid]);
     json_out(['ok' => true, 'unread' => notifications_unread_count($uid)]);
 }
