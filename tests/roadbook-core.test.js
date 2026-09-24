@@ -1068,18 +1068,19 @@ describe('isFirstNote — which note the roadbook starts from (#472)', () => {
 
 describe('the end note\'s tulip has no exit road (#447)', () => {
     const note = (num) => ({ num, road_type_in: 2, road_type_out: 2, bearing_in: 0, bearing_out: 90, icons: [] });
+    const roads = (svg) => svg.match(/<path d="[^"]*" fill="none" stroke="#[0-9a-f]{6}"/gi) || []; // the coloured roads, not the markers or the white motorway centre
 
     it('a middle note draws the exit segment with its arrow', () => {
-        const svg = NoteCanvas.toSVG(note(2), (ic) => ic.name, false);
-        expect(svg.match(/<line /g)).toHaveLength(2);          // incoming + exit
+        const svg = NoteCanvas.toSVG(note(2), (ic) => ic.name, { isEnd: false, isFirst: false });
+        expect(roads(svg)).toHaveLength(2);          // incoming + exit
         expect(svg).toContain('marker-end="url(#vig-arr)"');
     });
 
     it('the end note draws only the incoming road — no exit, no arrow', () => {
         // past the finish there is nothing to follow, so the arrow pointed at nothing; the
         // validation dot at the centre is the end of the road
-        const svg = NoteCanvas.toSVG(note(9), (ic) => ic.name, true);
-        expect(svg.match(/<line /g)).toHaveLength(1);
+        const svg = NoteCanvas.toSVG(note(9), (ic) => ic.name, { isEnd: true });
+        expect(roads(svg)).toHaveLength(1);
         expect(svg).not.toContain('marker-end="url(#vig-arr)"');
         expect(svg).toContain('<circle');                       // the centre dot stays
     });
@@ -1087,8 +1088,8 @@ describe('the end note\'s tulip has no exit road (#447)', () => {
     it('the first note draws only the exit road — no incoming line from nowhere', () => {
         // nothing comes before the start, so a line from the bottom edge pointed from nowhere;
         // the validation dot at the centre is all that stays
-        const svg = NoteCanvas.toSVG(note(1), (ic) => ic.name, false, true);
-        expect(svg.match(/<line /g)).toHaveLength(1);
+        const svg = NoteCanvas.toSVG(note(1), (ic) => ic.name, { isFirst: true });
+        expect(roads(svg)).toHaveLength(1);
         expect(svg).toContain('marker-end="url(#vig-arr)"');    // the exit keeps its arrow
         expect(svg).toContain('<circle');                       // the centre dot stays
     });

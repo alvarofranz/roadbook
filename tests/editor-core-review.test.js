@@ -125,7 +125,7 @@ describe('the Editor asks before it loses anything', () => {
     it('a custom icon’s name is escaped in its delete confirm', () => {
         const del = fn(editor, 'async function delCustomIcon(');
         expect(del).not.toMatch(/' “' \+ name \+/);
-        expect(del.match(/esc\(name\)/g)).toHaveLength(2);
+        expect(del.match(/esc\(name\)/g)).toHaveLength(1); // the one confirm: an imported tulip is never deleted here (#943)
     });
 });
 

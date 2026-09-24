@@ -6,7 +6,7 @@ const js = fs.readFileSync('public/editor/editor.js', 'utf8');
 
 describe('an icon added while a note is open', () => {
     it('goes straight into its vignette', () => {
-        expect(js).toContain("if (editorOpen && rb.notes[sel]) { added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0])));");
+        expect(js).toContain("if (editorOpen && rb.notes[sel]) { ownTulip(); added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0])));"); // onto the editor's own tulip (#943)
     });
     it('shows first in the gallery: re-inserted last, listed newest first', () => {
         expect(js).toContain('delete rb.icons[name]; rb.icons[name] = data;');

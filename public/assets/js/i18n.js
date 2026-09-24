@@ -102,7 +102,7 @@
             'Keyboard shortcuts': 'Keyboard shortcuts', 'Modes': 'Modes', 'Track point': 'Track point', 'Note': 'Note', 'Anywhere': 'Anywhere', 'Back to Move': 'Back to Move', 'Undo': 'Undo', 'Redo': 'Redo',
             'Right-click opens the menu — long-press on touch.': 'Right-click opens the menu — long-press on touch.',
             'Cut (tap two points) — C': 'Cut (tap two points) — C',
-            'Delete icon': 'Delete icon', 'and remove it from its notes?': 'and remove it from its notes?',
+            'Delete icon': 'Delete icon', 
             
             'No GPS fixes yet — check that location is turned on.': 'No GPS fixes yet — check that location is turned on.',
             'Position too coarse for a reliable track — grant precise location.': 'Position too coarse for a reliable track — grant precise location.',

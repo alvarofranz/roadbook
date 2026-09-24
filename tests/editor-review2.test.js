@@ -37,10 +37,10 @@ describe('a recovered draft waiting for someone else’s lock survives Close', (
 
 describe('read-only means the vignette does not drag either', () => {
     it('the canvas and the junction button take no input under the lock', () => {
-        expect(html).toContain('body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction { pointer-events: none; }');
+        expect(html).toContain('body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction, body.rb-readonly #toggleTulip { pointer-events: none; }');
     });
     it('a palette drop and the photo pill go through the gate', () => {
-        expect(editor).toContain('canvas.onDropIcon((name, pos) => { if (editable()) canvas.addIcon(mkIcon(name, pos)); });');
+        expect(editor).toContain('canvas.onDropIcon((name, pos) => { if (editable()) { ownTulip(); canvas.addIcon(mkIcon(name, pos)); } });');
         expect(fn(editor, 'async function photoToExtra(')).toContain("if (photo && !blockOf(n, 'photo') && !readOnly())");
     });
 });

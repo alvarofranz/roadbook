@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-211">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-212">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-211">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-212">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -241,6 +241,10 @@
         .add-junction { position: absolute; right: calc(100% + 10px); top: 14px; z-index: 4; width: 26px; height: 26px; font-size: .7rem; border-radius: 7px; border: 1px solid var(--sand); background: var(--card-2); color: var(--sand); cursor: pointer; }
         .add-junction::after { content: ''; position: absolute; left: 100%; top: 50%; width: 11px; height: 1px; background: var(--sand); }
         .add-junction:hover { background: var(--sand); color: var(--on-sand); }
+        /* the original-tulip toggle (#943): Add junction's twin, at the tulip's bottom-left — the note
+           number sits between the two — and lit while the original is the one shown */
+        .tulip-toggle { top: auto; bottom: 14px; }
+        .tulip-toggle.on { background: var(--sand); color: var(--on-sand); }
         .vignette-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
         .vignette-toolbar { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; max-width: 360px; margin: 0 auto .5rem; padding: 5px 6px; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; }
         .vignette-toolbar:empty { display: none; }
@@ -275,7 +279,7 @@
         body.rb-readonly #noteEditZone, body.rb-readonly .note-del, body.rb-readonly .del-badge,
         body.rb-readonly #rbLogoBtn, body.rb-readonly #rbLogoClr, body.rb-readonly #rbLogoPrev { pointer-events: none; opacity: .5; }
         /* the open note's vignette reads, but no icon or junction on it drags */
-        body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction { pointer-events: none; }
+        body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction, body.rb-readonly #toggleTulip { pointer-events: none; }
         /* the Editor owns the screen while a roadbook is open: no floating chip on its controls */
         body:has(#mapEditor:not([hidden])) .app-chip-stack { display: none; }
         .note-edit-zone { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: .6rem .7rem; }
@@ -382,6 +386,9 @@
             /* the phone row puts the distances left of the tulip: the button moves to its free right side */
             .add-junction { right: auto; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); } /* centred on the tulip's side */
             .add-junction::after { left: auto; right: 100%; }
+            /* with the original-tulip toggle too, the two share the right side: junction above, toggle below */
+            #canvasWrap:has(.tulip-toggle:not([hidden])) .add-junction:not(.tulip-toggle) { top: 32%; }
+            .tulip-toggle { top: 68%; bottom: auto; }
             .mode-rail { flex-direction: row; max-width: calc(100% - 20px); } /* a short map: the modes run along the bottom, */
             .mode-rail.show-name .mode-btn.on .mode-name { left: 0; top: auto; bottom: calc(100% + 10px); transform: none; } /* named above the lit one */
             .map-ctx { min-width: 0; }
@@ -540,6 +547,8 @@
             <div id="canvasWrap" hidden>
                 <div id="noteCanvas"></div>
                 <button class="add-junction" id="addJunction" aria-label="Add junction" data-i18n-aria="Add junction" title="Add junction" data-i18n-title="Add junction"><i class="fa-solid fa-code-fork"></i></button>
+                <!-- an imported note's original tulip, on / off (#943) — shown only for a note that has one -->
+                <button class="add-junction tulip-toggle" id="toggleTulip" type="button" hidden aria-pressed="false" aria-label="Toggle original tulip" data-i18n-aria="Toggle original tulip" title="Toggle original tulip" data-i18n-title="Toggle original tulip"><i class="fa-solid fa-image"></i></button>
             </div>
         </div><!-- /#rbPanel -->
     </section>
@@ -621,21 +630,21 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.10-211"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.10-211"></script>
-<script src="../assets/js/rbzip.js?v=1.9.10-211"></script>
-<script src="../assets/js/rbmap.js?v=1.9.10-211"></script>
-<script src="../assets/js/cover-map.js?v=1.9.10-211"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.10-211"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.10-211"></script>
-<script src="../assets/js/challenges.js?v=1.9.10-211"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.10-211"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.10-211"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.10-211"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.10-211"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.10-211"></script>
-<script src="../assets/js/i18n.js?v=1.9.10-211"></script>
-<script src="../assets/js/app.js?v=1.9.10-211"></script>
-<script src="editor.js?v=1.9.10-211"></script>
+<script src="../assets/js/config.js?v=1.9.10-212"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.10-212"></script>
+<script src="../assets/js/rbzip.js?v=1.9.10-212"></script>
+<script src="../assets/js/rbmap.js?v=1.9.10-212"></script>
+<script src="../assets/js/cover-map.js?v=1.9.10-212"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.10-212"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.10-212"></script>
+<script src="../assets/js/challenges.js?v=1.9.10-212"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.js?v=1.9.10-212"></script>
+<script src="../assets/js/app.js?v=1.9.10-212"></script>
+<script src="editor.js?v=1.9.10-212"></script>
 </body>
 </html>

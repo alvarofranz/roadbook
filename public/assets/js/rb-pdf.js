@@ -284,7 +284,7 @@
         const iconMap = await resolveIcons(rb, basePath);
         const resolver = (ic) => iconMap[ic.name] || RB.iconSrc(ic, rb, basePath);
         const tulips = [];
-        for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.isEndNote(rb.notes, i), RB.isFirstNote(rb.notes, i)), 3));
+        for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.tulipContext(rb, i)), 3));
         const doc = buildDoc(window.jspdf.jsPDF, rb, tulips, (rb.meta && rb.meta.logo) || null, opts.link || null);
         const title = (rb.meta && rb.meta.title) || 'Roadbook', name = RB.slug(title) + '.pdf';
         if (RBIsNativeApp()) await RBShareFile(doc.output('blob'), name, title);
