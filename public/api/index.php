@@ -132,7 +132,7 @@ try {
         case 'ph_move':     ph_move(require_user(), $d); break;
         case 'audio_list':   audio_list(require_user(), $d); break;
         case 'audio_delete': audio_delete(require_user(), $d); break;
-        case 'public_list': public_list($d); break;
+        case 'public_list': public_list(); break;
         case 'public_get':  public_get($d); break;
         case 'events_list': events_public_list(); break;
         case 'event_get':   event_public_get($d); break;

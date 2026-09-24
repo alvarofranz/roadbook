@@ -27,8 +27,7 @@ La schermata iniziale (`#loadScreen`) offre tre ingressi:
   `loadRb`.
 - **Carica uno dei tuoi RB** — `#pickMine`, visibile solo da loggati: un picker dei roadbook
   salvati sul profilo.
-- **Carica da roadbook pubblici** — `#pickChallenge` apre il picker DB-backed
-  (`RBChallenges.pick`).
+- **Roadbook pubblici** — la galleria pubblica sotto la scelta (la stessa di `/roadbooks/`).
 
 **Nessun login per un roadbook pubblico (#884)**: dal picker o da `/reader/<slug>` si apre e si
 naviga per chiunque. `meUser` dice solo se il report della run sale al profilo; da non loggati resta

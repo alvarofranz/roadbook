@@ -43,12 +43,16 @@ standard usate (via `RB.urlToDataURL`): la UI renderizza subito e si ridisegna q
 arrivano; l'arte aggiornata di un segnale sostituisce una copia vecchia embeddata in un
 roadbook datato, mentre un'icona custom (fetch fallito) mantiene la sua (#174).
 
+La schermata iniziale offre **quattro modi**, in quest'ordine (#979): **Registra una traccia** (il
+Recorder) · **GPX** · **Disegna sulla mappa** · **.rdbk** — le card condivise del sito (`.choice-card`
+in `app.css`: l'icona in un quadrato tinto, titolo, una riga di cosa fa, la freccia).
+
 | Sorgente            | Handler | Cosa fa |
 |---------------------|---------|---------|
 | **GPX** (`+ .wpt`)  | `$('gpxFile').onchange` | `RB.parseGPX` (+ `RB.parseWPT` se manca) → `RB.buildRoadbook` |
 | **Draw on the map** | `$('drawRoute').onclick` | apre la mappa in modalità `draw`; i primi due tap creano il roadbook |
 | **.rdbk**           | `$('jsonFile').onchange` | `JSON.parse`, valida `track`+`notes`, `setRoadbook` — dettaglio e fedeltà per il Ranking in **§9** |
-| **Roadbook pubblico** | `$('pickChallenge').onclick` | `RBChallenges.pick(…, { reusable: true })` → fork come **nuovo** roadbook (solo i pubblici riusabili, #106: il picker elenca solo quelli e la callback rifiuta comunque una risposta con `!j.reusable`), coi `vehicles` dell'originale |
+| **Roadbook pubblico** | `/editor/<slug>` (dal roadbook stesso) | fork come **nuovo** roadbook, solo se il proprietario lo lascia copiare (#106, rifiuta con `!j.reusable`), coi `vehicles` dell'originale — la schermata iniziale non lo offre (#979) |
 
 Le sorgenti che importano contenuto *fresco* (GPX, .rdbk, pubblico) chiamano prima
 `resetIdentity()`: azzera `currentRbId`, rimette lo stato a `draft` + `reusable` a false, e

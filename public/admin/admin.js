@@ -86,7 +86,7 @@
         const m = RBModal(`<div class="u-sheet-head">${avatarHtml(u, 'avatar-sm')}<div class="u-id"><h2>${esc(u.name || u.username)}</h2>
                 <div class="u-handle">@${esc(u.username)} · ${esc(u.email)}${u.organization ? ' · ' + esc(u.organization) : ''}</div><div>${badgesHtml(u)}</div></div></div>
             <div class="stat-grid u-sheet-stats">
-                ${figure('Roadbooks', u.roadbooks || 0)}${figure('Runs', u.runs || 0)}
+                ${figure('Roadbooks', `${u.roadbooks || 0}${u.trashed ? `<small><a href="trash/?q=${encodeURIComponent(u.username)}">+${u.trashed} ${esc(t('in the trash'))}</a></small>` : ''}`)}${figure('Runs', u.runs || 0)}
                 ${figure('Disk', `${fmtSize(u.bytes)}<small>/ ${fmtSize(u.quota)}</small>`)}
             </div>
             <p class="muted small u-sheet-dates"><i class="fa-regular fa-calendar"></i> ${esc(t('Joined'))} ${esc(RBFmtDate(String(u.created_at).slice(0, 10)))} · <i class="fa-regular fa-clock"></i> ${esc(t('Last active'))}: ${esc(whenText(u.last_active))}</p>

@@ -18,8 +18,11 @@ describe('the app screens', () => {
         expect(html).toContain('<ul class="rec-points">');
         expect(html).toContain('<button class="btn btn-primary rec-start" id="recStart">');
     });
-    it('the Editor’s odd last way to start spans the width on a phone', () => {
-        expect(read('public/editor/index.html')).toContain('.load-opts > :last-child:nth-child(odd) { grid-column: 1 / -1; }');
+    it('the ways in are one card design across the site: the Editor, the Navigate hub, the app home (#979)', () => {
+        expect(read('public/editor/index.html')).toContain('<div class="choice-grid">');
+        expect(read('public/navigate/index.html')).toContain('<nav class="choice-grid"');
+        expect(read('public/index.html')).toContain('class="choice-card center compact"');
+        expect(read('public/editor/editor.js')).toContain('<div class="choice-grid stack">'); // the Export list, as rows
     });
     it('the Reader’s two ways in share one row', () => {
         expect(read('public/reader/index.html')).toContain('<div class="btnrow split mt-2">');
