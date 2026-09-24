@@ -27,3 +27,14 @@ describe('the trash search (#969)', () => {
         expect(js).toContain('if (rb.graveyard) return restoreToUser(rb);');
     });
 });
+
+describe('a user card says where the rest of their roadbooks are (#234)', () => {
+    const admin = fs.readFileSync('app/admin.php', 'utf8'), card = fs.readFileSync('public/admin/admin.js', 'utf8');
+    it('counts the trashed ones apart, and links to the trash searched for that user', () => {
+        expect(admin).toContain("SUM(status <> 'deleted') live, SUM(status = 'deleted') trashed FROM roadbooks GROUP BY user_id");
+        expect(admin).toContain("'trashed'    => $rbTrashed[(int)$r['id']] ?? 0,");
+        expect(card).toContain('<a href="trash/?q=${encodeURIComponent(u.username)}">+${u.trashed} ${esc(t(\'in the trash\'))}</a>');
+        expect(js).toContain("let items = [], days = 30, q = (new URLSearchParams(location.search).get('q') || '').trim();");
+    });
+});
+

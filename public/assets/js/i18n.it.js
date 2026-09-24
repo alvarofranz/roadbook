@@ -1158,8 +1158,8 @@ Object.assign(window.RBi18nLangs.it, {
     "Add note text…": "Aggiungi il testo della nota…",
     "Pick the track line, the waypoints or both.": "Scegli la traccia, i waypoint o entrambi.",
     "View source": "Vedi sorgente",
-    "Copy a public roadbook": "Copia un roadbook pubblico",
-    "Start from one shared by others": "Parti da uno condiviso da altri",
+    
+    
     "Roadbook settings": "Impostazioni del roadbook",
     
     "Back to the map": "Torna alla mappa",
@@ -1848,4 +1848,9 @@ Object.assign(window.RBi18nLangs.it, {
     "While navigating an event roadbook, the Live switch sits in the action bar: off asks first, on starts again at once.": "Mentre navighi un roadbook d’evento, l’interruttore Live è nella barra delle azioni: spegnerlo chiede conferma, riaccenderlo riparte subito.",
     "The odometer labels sit beside their numbers, and the notifications count as read as soon as you see them.": "Le etichette dell’odometro stanno accanto ai numeri, e le notifiche contano come lette appena le vedi.",
     "In user management, a user’s card shows where they ride.": "Nella gestione utenti, la scheda di ogni utente mostra dove guida di solito.",
+});
+
+/* User card: trashed roadbooks (#234) */
+Object.assign(window.RBi18nLangs.it, {
+    "in the trash": "nel cestino",
 });

@@ -516,7 +516,6 @@ body.rb-immersive .app-chip-stack { display: none; }
 /* ---------- gallery (home) + demo picker ---------- */
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .gallery-card { position: relative; display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: border-color .15s, transform .1s; }
-.launch-tile:hover { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
 /* a card never moves or zooms (#790): on a pointer that hovers, its border warms and its media
    brightens a little; on touch nothing happens at all */
 .gallery-card:hover { text-decoration: none; }
@@ -689,11 +688,29 @@ body.rb-immersive .app-chip-stack { display: none; }
    the 56px top bar, offsets them below it. */
 /* only desktop web, where the top bar shows, offsets the tool bars below it */
 @media (min-width: 1025px) { html:not(.native) .odometer-bar, html:not(.native) .status-bar { top: 56px; } }
-.launcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
-.launch-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .25rem; padding: 1.7rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); transition: border-color .15s, transform .1s; }
-.launch-tile i { color: var(--sand); font-size: 2rem; }
-.launch-tile .launch-name { font-weight: 800; font-size: 1.12rem; margin-top: .3rem; }
-.launch-tile .launch-sub { color: var(--muted); font-size: .82rem; }
+/* An option card (#979): one of a few ways in — the Editor's ways to start and its Export list,
+   the app home's quick tiles, the Navigate hub. One design across the site: the icon in a tinted
+   square, a title, a line saying what it does, and an arrow that leans in on hover. `.row` is a
+   full-width list row (in a dialog), `.center` a centred tile, `.compact` a small one. */
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }
+.choice-grid.stack { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+.choice-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; min-width: 0; padding: 1.15rem 1.15rem 1.05rem; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(155deg, var(--card-2), var(--card)); color: var(--text); font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: border-color .15s ease, transform .15s ease; }
+.choice-card:hover, .choice-card:focus-visible { border-color: var(--sand); transform: translateY(-2px); text-decoration: none; }
+.choice-card > i:first-child { display: inline-grid; place-items: center; flex: none; width: 3rem; height: 3rem; margin-bottom: .5rem; border-radius: 14px; font-size: 1.3rem; color: var(--sand); background: rgba(232, 176, 89, .12); border: 1px solid rgba(232, 176, 89, .28); transition: background .15s ease, border-color .15s ease; }
+.choice-card:hover > i:first-child { background: rgba(232, 176, 89, .22); border-color: var(--sand); }
+.choice-card b { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; overflow-wrap: break-word; }
+.choice-card small { color: var(--muted); font-size: .84rem; line-height: 1.35; overflow-wrap: break-word; }
+.choice-card::after { content: '\f061'; font: var(--fa-font-solid); position: absolute; top: 1.2rem; right: 1.15rem; font-size: .85rem; color: var(--muted); transition: transform .15s ease, color .15s ease; }
+.choice-card:hover::after { color: var(--sand); transform: translateX(3px); }
+.choice-card.row { flex-direction: row; align-items: center; gap: .9rem; width: 100%; padding: .8rem 2.7rem .8rem .85rem; }
+.choice-card.row > i:first-child { width: 2.5rem; height: 2.5rem; margin: 0; font-size: 1.1rem; border-radius: 12px; }
+.choice-card.row > span { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.choice-card.row::after { top: 50%; margin-top: -.55em; }
+.choice-card.center { align-items: center; text-align: center; padding: 1.5rem 1rem 1.3rem; }
+.choice-card.center::after { content: none; }
+.choice-card.compact { padding: 1rem .4rem .9rem; gap: .15rem; }
+.choice-card.compact > i:first-child { width: 2.6rem; height: 2.6rem; font-size: 1.15rem; margin-bottom: .35rem; }
+.choice-card.compact b { font-size: .92rem; }
 
 /* The app home (#720): an app's opening screen — who you are, the one big action (record), quick
    ways in, your own roadbooks, then the public ones as a sideways carousel. */
@@ -709,9 +726,6 @@ body.rb-immersive .app-chip-stack { display: none; }
 .app-signin small { display: block; color: var(--muted); }
 .app-primary:hover, .app-signin:hover { text-decoration: none; }
 .app-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .7rem; }
-.app-quick .launch-tile { padding: 1rem .4rem; }
-.app-quick .launch-tile i { font-size: 1.5rem; }
-.app-quick .launch-tile .launch-name { font-size: .9rem; margin-top: .15rem; }
 .app-section { margin-top: 1.4rem; }
 .app-section h3 { margin: 0; font-size: 1.05rem; }
 /* the app home's two rows of cards — your roadbooks (#895) and the public ones — slide sideways */

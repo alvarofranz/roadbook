@@ -184,7 +184,7 @@ proprio roadbook. Il cron (slot 6) cancella le lette dopo 90 giorni, tutte dopo 
 | `rb_delete` | **Cestina** un proprio roadbook (soft-delete → `status='deleted'`, #187): sparisce dalle viste utente, i file restano 30gg per il ripristino (proprio, #238, o admin) | richiesta |
 | `ph_list` / `ph_delete` / `ph_move` | Elenca / elimina / sposta il geotag di una foto — tutte per chi può **editare** il roadbook (proprietario o co-editor di evento, `rb_require_edit`): la galleria non è mai pubblica (#316) | richiesta |
 | `audio_list` / `audio_delete` | Elenca / elimina una nota vocale — stesso gate | richiesta |
-| `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) (con `reusable=1` filtra i clonabili, #106) | nessuna |
+| `public_list` | Galleria pubblica: ultimi 60 `status='public'`, ognuno con i suoi `vehicles` per il filtro della galleria (#713) | nessuna |
 
 Ogni lista che disegna una card di roadbook (`public_list`, `profile_get`, `event_get`) seleziona le
 stesse colonne con **`RB_CARD_SQL`** e le modella con **`rb_card_fields`** (`roadbooks.php`): il
@@ -418,7 +418,6 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
 ### Endpoint pubblici (challenge / community)
 - `public_list`: join `roadbooks ⨝ users`, solo `status = 'public'` con slug, ultimi 60, con una
   thumbnail (prima foto della galleria, che è la cover a `sort -1` se presente).
-  `reusable=1` nel body filtra i soli clonabili (la ricerca di fork dell'Editor, #106).
 - `public_get`: carica un roadbook via **slug**. È servito se `public`, **o** al proprietario, **o**
   — se `ready` — ai **partecipanti/organizzatori dell'evento** a cui è associato (#25,
   `event_grants_read`); altrimenti `403`. Include il `.rdbk`, la sola `cover` (galleria e note

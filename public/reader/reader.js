@@ -83,7 +83,7 @@
         RBRowPicker({
             title: 'My roadbooks', icon: 'fa-folder-open', items: r.roadbooks || [], fields: ['title'],
             empty: 'No roadbooks yet. Create one in the Editor.',
-            rowHTML: (rb, i) => RBChallenges.pickerRow(rb, i, false), // the same rows as every roadbook picker (#639)
+            rowHTML: (rb, i) => RBChallenges.pickerRow(rb, i), // the shared picker row (#639)
             onPick: async (rb, modal) => {
                 modal.close();
                 const j = await RBApi('rb_get', { id: +rb.id });

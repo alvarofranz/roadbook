@@ -10,10 +10,10 @@
        token RBApi attaches is the only proof of identity. Without it the server saw an anonymous
        visitor — and a READY event roadbook is invisible to one, so it answered "private" and the
        app could not open a roadbook the same user opened fine on the web (#426). */
-    async function listPublic(opts) {
+    async function listPublic() {
         // null = the call FAILED (offline/network/refused): callers show an error, never
         // "no roadbooks yet" (#218). RBApi never throws — it reports {ok:false} instead.
-        const j = await RBApi('public_list', opts && opts.reusable ? { reusable: 1 } : {});
+        const j = await RBApi('public_list', {});
         return (j && j.ok === false) ? null : (j.roadbooks || []);
     }
     async function loadPublic(slug) {
@@ -27,32 +27,12 @@
         return m ? m[1] : null;
     };
 
-    // One picker row for every roadbook picker (public roadbooks here, the Reader's own ones, #639):
-    // thumbnail or placeholder, title, then the owner (when it is someone's) and the summary.
-    const pickerRow = (r, i, withOwner) => `<button type="button" class="challenge-row" data-pick="${i}">
+    // One picker row for a roadbook picker (the Reader's "My roadbooks", #639): thumbnail or
+    // placeholder, title, then the summary.
+    const pickerRow = (r, i) => `<button type="button" class="challenge-row" data-pick="${i}">
                 ${r.thumb ? `<img src="${RBesc(RBMediaSrc(r.thumb))}" alt="" loading="lazy">` : `<span class="challenge-row-placeholder"><i class="fa-solid fa-map-location-dot"></i></span>`}
-                <span><b>${RBesc(r.title)}</b><small>${withOwner ? '@' + RBesc(r.username) + ' · ' : ''}${RBSummary(r.total_distance, r.note_count)}</small></span>
+                <span><b>${RBesc(r.title)}</b><small>${RBSummary(r.total_distance, r.note_count)}</small></span>
             </button>`;
-
-    /* The public-roadbook picker (the Editor's "copy a public roadbook"): the shared row picker
-       draws it, so it gets the same rows and the same search box as the Reader's. `opts` go to
-       listPublic ({ reusable: true } = only the copyable ones, #106); onPick(answer, slug) gets the
-       whole public_get answer — the roadbook with its reusable flag and vehicles. */
-    async function pick(onPick, opts) {
-        const loading = RBModal(`<h2>${RBt('Public roadbooks')}</h2><p class="muted">${RBt('Loading…')}</p>`, 'wide', null, { dismissable: false }); // a moment, not a dialog: it closes itself
-        const rbs = await listPublic(opts);
-        loading.close();
-        if (rbs === null) { RBToast('Could not load.'); return; } // a failed call is not an empty list (#218)
-        RBRowPicker({
-            title: 'Public roadbooks', icon: 'fa-book-open', items: rbs, fields: ['title', 'username'],
-            empty: 'No public roadbooks yet.',
-            rowHTML: (r, i) => pickerRow(r, i, true),
-            onPick: async (r, modal) => {
-                modal.close();
-                try { const j = await loadPublic(r.slug); onPick(j, r.slug); } catch (e) { console.error(e); RBToast('Could not load the roadbook.'); }
-            },
-        });
-    }
 
     /* The public-roadbook gallery (#636) — ONE for the /roadbooks/ page and the Reader's load
        screen: cards with the copy-link control, search, pager, a failed load told apart from an
@@ -86,5 +66,5 @@
         return { remove: (id) => { all = all.filter((r) => String(r.id) !== String(id)); list.render(); } };
     }
 
-    window.RBChallenges = { listPublic, loadPublic, publicFromUrl, pick, gallery, pickerRow, ROOT };
+    window.RBChallenges = { listPublic, loadPublic, publicFromUrl, gallery, pickerRow, ROOT };
 })();

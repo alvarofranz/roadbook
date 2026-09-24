@@ -121,9 +121,12 @@ function admin_users(array $user, array $d = []): void {
     $rbByUser = [];
     foreach (db()->query('SELECT user_id, id FROM roadbooks')->fetchAll() as $r) $rbByUser[(int)$r['user_id']][] = (int)$r['id'];
     // The per-user count instead hides trashed roadbooks, agreeing with the per-user list
-    // which excludes them (#441).
-    $rbCount = [];
-    foreach (db()->query("SELECT user_id, COUNT(*) c FROM roadbooks WHERE status <> 'deleted' GROUP BY user_id")->fetchAll() as $r) $rbCount[(int)$r['user_id']] = (int)$r['c'];
+    // which excludes them (#441) — and the trashed ones are counted on their own, so a card that
+    // reads "0 roadbooks" with disk in use says where the rest are (#234: a deleted user's go there).
+    $rbCount = []; $rbTrashed = [];
+    foreach (db()->query("SELECT user_id, SUM(status <> 'deleted') live, SUM(status = 'deleted') trashed FROM roadbooks GROUP BY user_id")->fetchAll() as $r) {
+        $rbCount[(int)$r['user_id']] = (int)$r['live']; $rbTrashed[(int)$r['user_id']] = (int)$r['trashed'];
+    }
     // One set for the manages-events flag: event owners + co-organizers (same rule as
     // user_manages_events, #442) — cheaper than a per-user check.
     // what the admin reads at a glance (#910): how many runs, and when the user was last active
@@ -151,6 +154,7 @@ function admin_users(array $user, array $d = []): void {
         'locked'     => is_locked_admin($r['email']) ? 1 : 0, // .env admin: can't demote/block/delete
         'system'     => $r['username'] === GRAVEYARD_USERNAME ? 1 : 0, // the deleted-user account: no actions (#702)
         'roadbooks'  => $rbCount[(int)$r['id']] ?? 0,
+        'trashed'    => $rbTrashed[(int)$r['id']] ?? 0,
         'runs'       => $runCount[(int)$r['id']] ?? 0,
         'last_active' => $lastActive[(int)$r['id']] ?? null,
         'bytes'      => user_disk_bytes((int)$r['id'], $rbByUser[(int)$r['id']] ?? []),

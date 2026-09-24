@@ -182,7 +182,9 @@ DB/Convenzioni rapide below have counterparts there).
     GPS loop and crash-safe GPX logging (Reader · Tripmaster · Editor recording).
     **`rb-media-queue.js`** (`RBMediaQueue`): offline-first buffering of geotagged photos (blobs
     in IndexedDB) with deferred upload + retry (Recorder + the Editor's Adjust on the trail).
-  - **`app.css`**: shared design system — buttons (`.btn*`), modals (`.modal`/`.modal-card`
+  - **`app.css`**: shared design system — option cards (`.choice-grid` / `.choice-card`, `.row` ·
+    `.center` · `.compact`: every "ways in" — the Editor's start and Export, the app home, the
+    Navigate hub, #979), buttons (`.btn*`), modals (`.modal`/`.modal-card`
     + modifiers/`.modal-in`), `.btnrow` + alignment modifiers, `.head-row` (a heading with its
     actions on the same row — title left, actions right, stacking on a phone), `.toolbar` (a
     wrapping control row), `.icon-accent`/`.icon-danger`, `.field-grid`, `.btn-group`, `.grow`,

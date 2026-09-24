@@ -121,7 +121,7 @@ describe('public-roadbook calls carry who is asking (#426)', () => {
 
     it('still tell a failed call apart from an empty list (#218)', () => {
         // null = the call failed → callers show an error; [] = there are genuinely none
-        const list = challenges.match(/async function listPublic\(opts\) \{([\s\S]*?)\n {4}\}/)[1];
+        const list = challenges.match(/async function listPublic\(\) \{([\s\S]*?)\n {4}\}/)[1];
         expect(list).toContain('ok === false');
         expect(list).toContain('null');
         expect(list).toContain('roadbooks || []');
@@ -739,7 +739,7 @@ describe('an open menu follows a language switch (#495)', () => {
     it('the app home tiles name themselves through i18n (#720)', () => {
         const home = read('public/index.html');
         expect(home).toContain('<b data-i18n="Record a route">Record a route</b>');
-        expect(home).toContain('<span class="launch-name" data-i18n="Editor">Editor</span>');
+        expect(home).toContain('<a class="choice-card center compact" href="editor/"><i class="fa-solid fa-pen-ruler"></i><b data-i18n="Editor">Editor</b></a>');
         expect(home).toContain('data-i18n-aria="RDBK sections"');
     });
 });
@@ -751,7 +751,6 @@ describe('one picker, one pager, one empty-state vocabulary (#493)', () => {
         expect(app).toContain('window.RBRowPicker = ');
         for (const [file, title] of [
             ['public/reader/reader.js', "title: 'My roadbooks'"],
-            ['public/assets/js/challenges.js', "title: 'Public roadbooks'"],
             ['public/admin/trash/admin-trash.js', "title: 'Restore'"],
             ['public/admin/admin.js', "title: 'Move'"],
         ]) {

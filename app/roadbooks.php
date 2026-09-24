@@ -394,13 +394,10 @@ function rb_card_fields(array $r): array {
         'thumb' => $r['thumb'] ? '/photos/' . (int)$r['id'] . '/' . $r['thumb'] : null];
 }
 
-function public_list(array $d = []): void {
-    // #106: the Editor's fork search passes reusable=1 to show only copyable roadbooks; the
-    // read-only listings (gallery, home, Reader picker) pass nothing and see every public one.
-    $filter = !empty($d['reusable']) ? ' AND r.reusable = 1' : '';
+function public_list(): void {
     $st = db()->query('SELECT ' . RB_CARD_SQL . ", u.username
         FROM roadbooks r JOIN users u ON u.id = r.user_id
-        WHERE r.status = 'public' AND r.slug IS NOT NULL" . $filter . " ORDER BY r.updated_at DESC LIMIT 60");
+        WHERE r.status = 'public' AND r.slug IS NOT NULL ORDER BY r.updated_at DESC LIMIT 60");
     $rows = array_map('rb_card_fields', $st->fetchAll()); // vehicles drive the gallery filter (#713)
     json_out(['ok' => true, 'roadbooks' => $rows]);
 }

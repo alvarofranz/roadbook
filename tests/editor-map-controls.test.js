@@ -113,9 +113,12 @@ describe('one base-map toggle, RBMap’s own', () => {
     });
 });
 
-describe('the Editor start offers five ways, on one row (#808)', () => {
-    it('adds Record a track, linking to the Recorder', () => {
-        expect(html).toContain('<a class="load-card" href="../recorder/"><i class="fa-solid fa-circle-dot"></i><b data-i18n="Record a track">');
-        expect(html).toContain('.load-opts:not(.stack) { grid-template-columns: repeat(5, minmax(0, 1fr)); }');
+describe('the Editor start offers four ways, recording first (#808 · #979)', () => {
+    it('Record · GPX · Draw · .rdbk, as the site’s option cards', () => {
+        const ways = [...html.matchAll(/<(?:a|button) class="choice-card"[^>]*?(?:href="([^"]+)"|id="(\w+)")/g)].map((m) => m[1] || m[2]);
+        expect(ways).toEqual(['../recorder/', 'loadGpx', 'drawRoute', 'loadJson']);
+        const css = read('public/assets/css/app.css');
+        expect(css).toContain('.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }');
+        expect(css).toContain('.choice-card > i:first-child { display: inline-grid; place-items: center;'); // the icon in its tinted square
     });
 });

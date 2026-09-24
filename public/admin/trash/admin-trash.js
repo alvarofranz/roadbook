@@ -8,7 +8,9 @@
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast;
 
-    let items = [], days = 30, q = '';
+    // ?q= opens it already searched: a user's card links here with their name (#234)
+    let items = [], days = 30, q = (new URLSearchParams(location.search).get('q') || '').trim();
+    $('trashSearch').value = q;
     async function load() {
         const r = await RBApi('admin_trash_list');
         if (!r.ok) { $('adminMsg').hidden = false; $('adminMsg').textContent = t(r.error || 'Could not load the trash.'); return; }

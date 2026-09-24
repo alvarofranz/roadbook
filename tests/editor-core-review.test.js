@@ -106,13 +106,11 @@ describe('a recovered draft is the whole working state', () => {
 });
 
 describe('copying a public roadbook respects its owner (#106)', () => {
-    it('lists only the copyable ones and refuses the rest, taking the vehicles along', () => {
-        const at = editor.indexOf("$('pickChallenge').onclick");
-        const pick = editor.slice(at, editor.indexOf('};\n', at));
-        expect(pick).toContain('}, { reusable: true });');
-        expect(pick).toContain("if (!j.reusable) return toast('This public roadbook cannot be copied.');");
-        expect(pick).toContain('vehicles = j.vehicles;');
-        expect(read('public/assets/js/challenges.js')).toContain('onPick(j, r.slug);');
+    it('copies from the roadbook itself (/editor/<slug>), refusing one its owner keeps, taking the vehicles along', () => {
+        expect(editor).toContain("if (!j.reusable) { toast(t('This public roadbook cannot be copied.')); return; } currentRbId = 0; setStatus('draft'); reusable = false; vehicles = j.vehicles;");
+        // not from the Editor's opening screen: a list of anyone's roadbooks from anywhere there said nothing (#979)
+        expect(read('public/editor/index.html')).not.toContain('pickChallenge');
+        expect(read('public/assets/js/challenges.js')).not.toContain('async function pick(');
     });
 });
 

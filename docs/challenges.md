@@ -73,24 +73,15 @@ errore. Ritorna l'oggetto grezzo dell'API: `{ slug, roadbook, cover, owner, ... 
 
 ---
 
-## 3. Il picker
+## 3. La riga del picker
 
-`pick(onPick, opts)` ([challenges.js](../public/assets/js/challenges.js)) è il selettore
-condiviso "apri una sfida pubblica nel tool corrente". Flusso:
+`pickerRow(r, i)` ([challenges.js](../public/assets/js/challenges.js)) è la riga di un picker di
+roadbook (il *My roadbooks* del Reader, #639): un `<button class="challenge-row">` con thumbnail (o
+placeholder `fa-map-location-dot`), titolo e il riassunto `RBSummary(total_distance, note_count)`.
 
-1. apre subito un `RBModal` `wide` con uno stato di caricamento;
-2. chiama `listPublic()` e **riscrive** l'`innerHTML` della `.modal-card` con le righe;
-3. ogni riga è un `<button class="challenge-row">` con thumbnail (o placeholder
-   `fa-map-location-dot`), titolo, `@username` e il riassunto `RBSummary(total_distance,
-   note_count)` (`app.js`, formato "X.X km · N notes");
-4. al click di una riga chiude il modale, fa `loadPublic(slug)` e invoca
-   `onPick(j, slug)` — l'intera risposta di `public_get`.
-
-Chi lo usa: l'**Editor** (*Copia un roadbook pubblico*), con
-`pick((j) => { … }, { reusable: true })` — elenca solo i roadbook che il proprietario lascia
-copiare (#106), rifiuta comunque una risposta con `!j.reusable`, e il fork **azzera l'identità**,
-prende i `vehicles` dell'originale e parte come roadbook NUOVO (il salvataggio ne creerà uno
-proprio).
+Copiare un roadbook pubblico non passa da un picker: si fa dal roadbook stesso (`/editor/<slug>`),
+e solo se il proprietario lo lascia copiare (#106). La schermata iniziale dell'Editor non elenca i
+roadbook pubblici (#979): una lista di roadbook di chiunque e di ovunque lì non diceva niente.
 
 > Tutti i campi di testo passano per `RBesc` prima di finire nell'HTML; le righe sono
 > costruite via `innerHTML`, quindi `RBesc` è l'unica barriera contro l'injection.

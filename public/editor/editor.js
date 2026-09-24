@@ -749,19 +749,10 @@
     /* ---------- loading ---------- */
     // The opening screen is interactive immediately, while startup() is still running its async
     // crash-recovery prompts. Once the user picks a source here, suppress those prompts so a
-    // recovery confirm can't pop on top of (e.g.) the public-challenge picker (#68).
+    // recovery confirm can't pop on top of the file picker or the drawing it starts (#68).
     let loadStarted = false;
     $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
-    // Copy a public roadbook: only the ones their owner lets others copy (#106), as a new roadbook
-    // for the same vehicles.
-    $('pickChallenge').onclick = () => {
-        loadStarted = true;
-        RBChallenges.pick((j) => {
-            if (!j.reusable) return toast('This public roadbook cannot be copied.');
-            resetIdentity(); vehicles = j.vehicles; paintVehicles(); setRoadbook(j.roadbook);
-        }, { reusable: true });
-    };
     $('gpxFile').onchange = async (e) => {
         const files = Array.from(e.target.files); e.target.value = ''; // picking the same file again must fire again (#659)
         const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
@@ -2263,9 +2254,9 @@
     // view (JSON / GPX, to inspect and copy) is the last row; its corner close is the way out.
     function openExportModal() {
         if (!rb) return toast('Nothing to export.');
-        const row = (x, icon, title, desc) => `<button class="load-card row" data-x="${x}"><i class="fa-solid ${icon}"></i><span><b>${esc(t(title))}</b><small>${esc(t(desc))}</small></span></button>`;
+        const row = (x, icon, title, desc) => `<button class="choice-card row" type="button" data-x="${x}"><i class="fa-solid ${icon}"></i><span><b>${esc(t(title))}</b><small>${esc(t(desc))}</small></span></button>`;
         const m = RBModal(`<h2><i class="fa-solid fa-file-export icon-accent"></i> ${esc(t('Export'))}</h2>
-            <div class="load-opts stack">
+            <div class="choice-grid stack">
                 ${row('rdbk', 'fa-file-zipper', '.rdbk file', 'The whole roadbook, to open again or share')}
                 ${(notePhotos.length || noteAudio.length) ? `<label class="checkbox-row export-opts"><input type="checkbox" data-media checked> ${esc(t('Include photos & audio in the .rdbk'))}</label>` : ''}
                 ${row('pdf', 'fa-file-pdf', 'PDF', 'To print or read on paper')}
