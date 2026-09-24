@@ -1,39 +1,56 @@
 'use strict';
-/* Admin · Roadbook trash (#187). Lists every soft-deleted roadbook (any owner) and lets an admin
- * restore it (→ draft) or delete it permanently now. Deleted roadbooks are auto-purged after the
- * retention window by the cron. Gated to admins. */
+/* Admin · Roadbook trash (#187). Lists every soft-deleted roadbook (any owner), searchable by title,
+ * author and deletion date (#969), and lets an admin restore it (→ draft) or delete it permanently
+ * now. A roadbook whose author deleted their account belongs to the graveyard user: restoring it
+ * asks who gets it. Deleted roadbooks are auto-purged after the retention window by the cron.
+ * Gated to admins. */
 (function () {
     const $ = (id) => document.getElementById(id);
     const t = RBt, esc = RBesc, toast = RBToast;
 
+    let items = [], days = 30, q = '';
     async function load() {
         const r = await RBApi('admin_trash_list');
         if (!r.ok) { $('adminMsg').hidden = false; $('adminMsg').textContent = t(r.error || 'Could not load the trash.'); return; }
-        render(r.roadbooks, r.trash_days || 30);
+        // what the search reads (#969): the title, the author and the day it was deleted, as shown and as ISO
+        items = r.roadbooks.map((rb) => Object.assign(rb, { deleted_day: String(rb.deleted_at || '').slice(0, 10) + ' ' + RBFmtDate(String(rb.deleted_at || '').slice(0, 10)) }));
+        days = r.trash_days || 30;
+        $('adminMsg').hidden = true; $('trashBody').hidden = false;
+        paged.reset();
     }
+    const paged = RBPagedList({
+        pager: $('trashPager'), per: 24,
+        source: () => items,
+        filter: (list) => (q ? RB.filterByText(list, q, ['title', 'username', 'deleted_day']) : list),
+        draw: (page, total) => render(page, total),
+    });
 
-    function render(list, days) {
+    function render(page, total) {
         const box = $('trashList');
-        $('adminMsg').hidden = true; box.hidden = false;
-        if (!list.length) { box.innerHTML = `<p class="muted">${esc(t('The trash is empty.'))}</p>`; return; }
-        const expired = list.filter((rb) => (rb.days_left || 0) <= 0).length;
-        box.innerHTML = `<p class="muted small">${esc(RBTrashNote(days))}</p>`
-            + (expired > 0 ? `<div class="btnrow end"><button class="btn btn-danger" id="trashPurgeExpired"><i class="fa-solid fa-trash-can"></i> ${esc(t('Delete expired'))} (${expired})</button></div>` : '')
-            + '<div class="rb-grid">' + list.map((rb) => RBTrashRowHTML(rb, true)).join('') + '</div>';
-        if (expired > 0) $('trashPurgeExpired').onclick = async (e) => {
-            if (!(await RBConfirmDanger(expired + ' ' + t('roadbooks past retention will be permanently deleted. Continue?')))) return;
-            const busy = RBBusy(e.currentTarget);
-            const x = await RBApi('admin_trash_purge_expired', {});
-            busy.reset();
-            if (!x.ok) return toast(x.error || 'Could not delete.');
-            toast(t('Permanently deleted.') + ' ' + (x.deleted || 0) + (x.remaining > 0 ? ' · ' + x.remaining + ' ' + t('remaining — run again.') : ''));
-            load();
-        };
-        list.forEach((rb) => {
+        const expired = items.filter((rb) => (rb.days_left || 0) <= 0).length;
+        $('trashNote').textContent = RBTrashNote(days);
+        $('trashPurgeExpired').hidden = !expired;
+        $('trashPurgeExpiredCount').textContent = expired ? `(${expired})` : '';
+        if (!items.length) { box.innerHTML = `<p class="muted">${esc(t('The trash is empty.'))}</p>`; return; }
+        if (!total) { box.innerHTML = `<p class="muted">${esc(t('Nothing matches that search.'))}</p>`; return; }
+        box.innerHTML = '<div class="rb-grid">' + page.map((rb) => RBTrashRowHTML(rb, true)).join('') + '</div>';
+        page.forEach((rb) => {
             box.querySelector(`[data-restore="${rb.id}"]`).onclick = (e) => restore(rb, e.currentTarget);
             box.querySelector(`[data-purge="${rb.id}"]`).onclick = (e) => purge(rb, e.currentTarget);
         });
     }
+    const searchSoon = RBDebounce(() => { q = $('trashSearch').value.trim(); paged.reset(); }, 200);
+    $('trashSearch').oninput = searchSoon;
+    $('trashPurgeExpired').onclick = async (e) => {
+        const expired = items.filter((rb) => (rb.days_left || 0) <= 0).length;
+        if (!(await RBConfirmDanger(expired + ' ' + t('roadbooks past retention will be permanently deleted. Continue?')))) return;
+        const busy = RBBusy(e.currentTarget);
+        const x = await RBApi('admin_trash_purge_expired', {});
+        busy.reset();
+        if (!x.ok) return toast(x.error || 'Could not delete.');
+        toast(t('Permanently deleted.') + ' ' + (x.deleted || 0) + (x.remaining > 0 ? ' · ' + x.remaining + ' ' + t('remaining — run again.') : ''));
+        load();
+    };
 
     async function restore(rb, btn) {
         // A graveyard roadbook (its "owner" is the deleted-user account, which can never log

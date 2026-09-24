@@ -1480,10 +1480,90 @@
        language re-translates an OPEN menu instead of leaving it in the previous one (#495) —
        RBt() alone paints the text once and the i18n pass has nothing to find later. */
     const menuLabel = (icon, label) => `<i class="fa-solid ${icon}"></i> <span data-i18n="${RBesc(label)}">${RBesc(RBt(label))}</span>`;
+    /* ---------------- Notifications (#971) ----------------
+       What happened for you while you were elsewhere, behind a badge on your account icon (the
+       desktop top bar and the app's Profile tab) and at the top of the account menu. The read
+       state lives on the server — reading one here clears it on every other device — and every
+       open page keeps its badge in step: on load (the config answer carries the count), every
+       minute while visible, and whenever the page comes back into view.
+       KINDS is the one catalog: how each kind reads and where it leads. A new kind is one entry
+       here plus one name in NOTIFY_KINDS and one notify() on the server. */
+    window.RBNotifications = (() => {
+        const KINDS = {
+            comment: {
+                icon: 'fa-comment',
+                text: (n) => RBt('{user} commented on “{title}”').replace('{user}', '@' + (n.actor || RBt('Someone'))).replace('{title}', n.data.title || ''),
+                detail: (n) => n.data.excerpt || '',
+                href: (n) => '/challenge/' + encodeURIComponent(n.data.slug || '') + '#chComments', // the galleries' link, the same in the app
+            },
+        };
+        const POLL_MS = 60000;
+        let unread = 0, started = false;
+        const paint = () => {
+            document.querySelectorAll('.notif-badge').forEach((b) => { b.hidden = !unread; b.textContent = unread > 99 ? '99+' : String(unread); });
+            document.querySelectorAll('.notif-count').forEach((c) => { c.hidden = !unread; c.textContent = String(unread); });
+        };
+        const set = (n) => { unread = Math.max(0, +n || 0); paint(); };
+        const refresh = async () => { const r = await RBApi('notifications_unread'); if (r.ok) set(r.unread); };
+        // the badge for an icon: an absolutely placed count on its button
+        const badgeHTML = () => '<span class="notif-badge" hidden></span>';
+        function start(user) {
+            set(user.notifications);
+            if (started) return;
+            started = true;
+            setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+        }
+        const rowHTML = (n) => {
+            const k = KINDS[n.kind];
+            if (!k) return ''; // a kind this copy of the app does not know yet: left for a newer one
+            const detail = k.detail(n);
+            return `<a class="notif-row${n.read ? '' : ' unread'}" href="${RBesc(k.href(n))}" data-id="${n.id}">
+                <i class="fa-solid ${k.icon} icon-accent"></i>
+                <span class="grow"><b>${RBesc(k.text(n))}</b>${detail ? `<small>${RBesc(detail)}</small>` : ''}<small class="muted">${RBesc(RBFmtDateTime(n.created_at))}</small></span>
+            </a>`;
+        };
+        async function open() {
+            const d = RBModal(`<div class="head-row"><h2><i class="fa-solid fa-bell icon-accent"></i> ${RBesc(RBt('Notifications'))}</h2>
+                    <button class="btn btn-ghost btn-sm" type="button" data-all hidden><i class="fa-solid fa-check-double"></i> ${RBesc(RBt('Mark all as read'))}</button></div>
+                <div class="notif-list"><p class="muted small">${RBesc(RBt('Loading…'))}</p></div>
+                <div class="btnrow" data-more-row hidden><button class="btn btn-ghost" type="button" data-more>${RBesc(RBt('Show more'))}</button></div>`, 'wide');
+            const list = d.q('.notif-list'), allBtn = d.q('[data-all]'), moreRow = d.q('[data-more-row]');
+            let items = [];
+            const draw = () => {
+                list.innerHTML = items.length ? items.map(rowHTML).join('') : `<p class="muted">${RBesc(RBt('Nothing new — you will find here the comments on your roadbooks.'))}</p>`;
+                allBtn.hidden = !unread;
+                // opening one reads it, everywhere: marked before the page leaves for where it leads
+                list.querySelectorAll('[data-id]').forEach((a) => a.onclick = async (e) => {
+                    const n = items.find((x) => x.id === +a.dataset.id);
+                    if (!n || n.read) return;
+                    e.preventDefault();
+                    const r = await RBApi('notifications_read', { ids: [n.id] });
+                    if (r.ok) set(r.unread);
+                    location.href = a.href;
+                });
+            };
+            const load = async () => {
+                const r = await RBApi('notifications_list', { before: items.length ? items[items.length - 1].id : 0 });
+                if (!r.ok) { list.innerHTML = `<p class="muted">${RBesc(RBt(r.error || 'Could not load.'))}</p>`; return; }
+                items = items.concat(r.items); set(r.unread); moreRow.hidden = !r.more; draw();
+            };
+            d.q('[data-more]').onclick = load;
+            allBtn.onclick = async () => {
+                const r = await RBApi('notifications_read', { all: 1 });
+                if (!r.ok) return RBToast(r.error || 'Could not save.');
+                items.forEach((n) => { n.read = true; }); set(r.unread); draw();
+            };
+            load();
+        }
+        return { KINDS, start, refresh, open, badgeHTML, get unread() { return unread; } };
+    })();
+
     /* The account menu is ONE list, rendered into the desktop dropdown and the tab-bar dropup
        alike; `p` prefixes the ids the wiring below looks for. */
     function accountMenuHTML(user, participant, p) {
-        return `<a href="${RBProfileLink(user.username)}">${menuLabel('fa-circle-user', 'My profile')}</a>`
+        return `<button id="${p}Notifs">${menuLabel('fa-bell', 'Notifications')} <span class="notif-count" hidden></span></button>`
+            + `<a href="${RBProfileLink(user.username)}">${menuLabel('fa-circle-user', 'My profile')}</a>`
             + `<a href="${ROOT}account/">${menuLabel('fa-gear', 'Account settings')}</a>`
             + (participant ? '' : `<a href="${ROOT}myroadbooks/">${menuLabel('fa-folder-open', 'My roadbooks')}</a>`
                 + `<a href="${ROOT}roadbooks/">${menuLabel('fa-book-open', 'Public roadbooks')}</a>`) // the only way in on mobile and in the app (#671)
@@ -1499,6 +1579,7 @@
     function wireAccountMenu(root, p, closeMenu) {
         const on = (id, fn) => { const el = root.querySelector('#' + p + id); if (el) el.onclick = fn; };
         on('Logout', RBSignOut);
+        on('Notifs', () => { closeMenu(); RBNotifications.open(); });
         on('Activity', () => { closeMenu(); window.RBActivityLog(); });
         on('AppInfo', () => { closeMenu(); showAppInfo(); });
         on('Leave', async () => {
@@ -1573,7 +1654,7 @@
             if (!user) {
                 w.innerHTML = `<a class="nav-link" href="${RBLoginUrl()}"><i class="fa-solid fa-circle-user"></i> <span data-i18n="Sign in">${RBt('Sign in')}</span></a>`;
             } else {
-                w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i> <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
+                w.innerHTML = `<button class="nav-link account-button"><i class="fa-solid fa-circle-user"></i>${RBNotifications.badgeHTML()} <span>${RBesc(user.username || '') || RBt('Account')}</span></button>
                     <div class="account-menu" hidden>${accountMenuHTML(user, participant, 'acc')}</div>`;
             }
             slot.appendChild(w);
@@ -1582,6 +1663,7 @@
                 btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; };
                 document.addEventListener('click', () => { menu.hidden = true; });
                 wireAccountMenu(w, 'acc', () => { menu.hidden = true; });
+                RBNotifications.start(user);
             }
             if (participant) {
                 const n = document.querySelector('#topnav');
@@ -1615,9 +1697,11 @@
                 tabProfileBtn.onclick = () => { location.href = RBLoginUrl(); };
             } else {
                 tabMenu.innerHTML = accountMenuHTML(user, participant, 'tab');
+                if (!tabProfileBtn.querySelector('.notif-badge')) tabProfileBtn.insertAdjacentHTML('beforeend', RBNotifications.badgeHTML());
                 tabProfileBtn.onclick = (e) => { e.stopPropagation(); tabMenu.hidden = !tabMenu.hidden; };
                 document.addEventListener('click', () => { tabMenu.hidden = true; });
                 wireAccountMenu(tabMenu, 'tab', () => { tabMenu.hidden = true; });
+                RBNotifications.start(user);
             }
         }
         const tabBackBtn = document.getElementById('tabBackBtn');

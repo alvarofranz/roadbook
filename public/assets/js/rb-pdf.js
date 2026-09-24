@@ -7,10 +7,14 @@
  * traffic-sign icons and arrowhead markers across.
  *
  * Layout (the printer binds the top + left edges):
- *   Cover: title · description · the route drawn as a line, over the roadbook's image as a faint
- *   backdrop · distance / notes / date · author and organization — nothing else (#784 · #810).
- *   Content: A4 · 20 mm top · 30 mm left · the same header on every page (QR to the digital
- *   copy · title · page) · 6 note rows. No footer, nothing after the last note (#810). */
+ *   Cover: title · description · the route in its box, over a backdrop — the roadbook's image as
+ *   a faint wash (the default), the map it runs on, or nothing · distance / notes / date · author
+ *   and organization — nothing else (#784 · #810).
+ *   Content: A4 · the chosen margins (cm, the cover's too) · the same header on every page (QR to
+ *   the digital copy · title · page) · 6 note rows. No footer, nothing after the last note (#810).
+ *
+ * open() is the generator dialog (#973): the cover's backdrop, the roadbook's image (added or
+ * changed right there) and the page margins, with a live page preview; generate() builds it. */
 (function () {
     // jsPDF lives next to this file; load it from our own directory, on demand.
     const SELF_SRC = (document.currentScript && document.currentScript.src) || '';
@@ -71,9 +75,17 @@
     }
 
     /* ---------- page geometry (mm) ---------- */
-    const PW = 210, PH = 297, LEFT = 30, TOP = 20, RIGHT = 12, BOTTOM = 12;
-    const CW = PW - LEFT - RIGHT;   // content width 168
-    const CB = PH - BOTTOM;         // content bottom 285
+    // The page is A4; its margins are the reader's choice (the generator dialog, in cm), the same on
+    // the cover and on every content page. MARGIN_MM is where they start and MARGIN_RANGE_MM what they may be.
+    const PW = 210, PH = 297;
+    const MARGIN_MM = { top: 15, right: 12, bottom: 12, left: 15 };
+    const MARGIN_RANGE_MM = [5, 40];
+    const clampMargin = (v, fallback) => (Number.isFinite(+v) ? Math.max(MARGIN_RANGE_MM[0], Math.min(MARGIN_RANGE_MM[1], +v)) : fallback);
+    function geometry(margins) {
+        const m = margins || {}, top = clampMargin(m.top, MARGIN_MM.top), right = clampMargin(m.right, MARGIN_MM.right);
+        const bottom = clampMargin(m.bottom, MARGIN_MM.bottom), left = clampMargin(m.left, MARGIN_MM.left);
+        return { top, right, bottom, left, width: PW - left - right, bottomY: PH - bottom };
+    }
     const HEADER_H = 18;            // the running header, identical on every content page
     const ROWS = 6;                 // sheet rows per content page
     const km = (m) => ((m || 0) / 1000).toFixed(2);
@@ -89,26 +101,30 @@
     function fmtDate(d) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
-    // The cover (#784): the roadbook as a whole, calm and centred on a symmetric page — no
-    // bind margin here, it is never punched. The route is the roadbook's own line, drawn as a
-    // vector (equirectangular, lon scaled by cos(lat) so the shape is not stretched); a roadbook
-    // that hides its map (map_access:false) keeps its route to itself.
-    // The roadbook's image as the route box's backdrop (#810): cover-fitted, clipped to the
-    // rounded box and washed out under a strong paper-coloured veil, so it only tints the page.
-    function drawBackdrop(doc, image, x, y, w, h) {
+    // The cover (#784): the roadbook as a whole, calm and centred between the chosen margins. The
+    // route is the roadbook's own line, drawn as a vector (equirectangular, lon scaled by cos(lat)
+    // so the shape is not stretched); a roadbook that hides its map (map_access:false) keeps its
+    // route to itself. Behind it, the backdrop (#810 · #973): the roadbook's image cover-fitted and
+    // washed out under a paper-coloured veil so it only tints the page, or the map the route runs
+    // on (RBCoverMap's own picture, route included), or nothing.
+    function drawImageBox(doc, image, x, y, w, h, veil) {
         try {
             const p = doc.getImageProperties(image), scale = Math.max(w / p.width, h / p.height);
             const iw = p.width * scale, ih = p.height * scale;
             doc.saveGraphicsState();
             doc.roundedRect(x, y, w, h, 4, 4, null); doc.clip(); doc.discardPath();
             doc.addImage(image, p.fileType || 'PNG', x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
-            doc.setGState(new doc.GState({ opacity: 0.86 }));
-            doc.setFillColor(246, 244, 239); doc.rect(x, y, w, h, 'F');
+            if (veil) { doc.setGState(new doc.GState({ opacity: veil })); doc.setFillColor(246, 244, 239); doc.rect(x, y, w, h, 'F'); }
             doc.restoreGraphicsState();
-        } catch (e) { /* unreadable image — the plain box stays */ }
+            return true;
+        } catch (e) { return false; } // unreadable image — the plain box stays
     }
-    const COVER_MARGIN = 20, COVER_W = PW - 2 * COVER_MARGIN;
+    const COVER_BOX_H = 118;
     function drawRoute(doc, track, x, y, w, h, backdrop) {
+        doc.setFillColor(246, 244, 239); doc.roundedRect(x, y, w, h, 4, 4, 'F');
+        // the map is its own picture of the route: nothing more is drawn over it
+        if (backdrop && backdrop.map && drawImageBox(doc, backdrop.map, x, y, w, h, 0)) return;
+        if (backdrop && backdrop.image) drawImageBox(doc, backdrop.image, x, y, w, h, 0.86);
         let pts = track;
         if (pts.length > 1500) { const step = Math.ceil(pts.length / 1500); pts = track.filter((_, i) => i % step === 0 || i === track.length - 1); }
         const k = Math.cos((pts.reduce((sum, p) => sum + (+p.lat), 0) / pts.length) * Math.PI / 180) || 1;
@@ -118,8 +134,6 @@
         const scale = Math.min((w - 2 * pad) / spanX, (h - 2 * pad) / spanY);
         const offX = x + (w - spanX * scale) / 2, offY = y + (h - spanY * scale) / 2;
         const at = (i) => [offX + (X[i] - minX) * scale, offY + (Y[i] - minY) * scale];
-        doc.setFillColor(246, 244, 239); doc.roundedRect(x, y, w, h, 4, 4, 'F');
-        if (backdrop) drawBackdrop(doc, backdrop, x, y, w, h);
         doc.setDrawColor(201, 128, 28); doc.setLineWidth(0.9); doc.setLineCap('round'); doc.setLineJoin('round');
         const segs = []; for (let i = 1; i < pts.length; i++) { const [ax, ay] = at(i - 1), [bx, by] = at(i); segs.push([bx - ax, by - ay]); }
         const [sx, sy] = at(0); doc.lines(segs, sx, sy, [1, 1], 'S', false);
@@ -127,35 +141,37 @@
         doc.setFillColor(34, 160, 90); doc.circle(sx, sy, 1.6, 'F');   // start
         doc.setFillColor(20, 20, 20); doc.circle(ex, ey, 1.6, 'F');    // finish
     }
-    function drawCover(doc, rb, logo, when) {
-        const meta = rb.meta || {}, cx = PW / 2;
+    function drawCover(doc, rb, backdrop, when, g) {
+        const meta = rb.meta || {}, cx = g.left + g.width / 2;
         const title = meta.title || 'Roadbook';
-        let y = 30;
+        let y = g.top + 10;
         doc.setFont('helvetica', 'bold'); doc.setTextColor(20); doc.setFontSize(26);
-        const titleLines = doc.splitTextToSize(title, COVER_W).slice(0, 2);
+        const titleLines = doc.splitTextToSize(title, g.width).slice(0, 2);
         doc.text(titleLines, cx, y + 8, { align: 'center' }); y += 8 + titleLines.length * 10;
         if (meta.description) {
             doc.setFont('helvetica', 'italic'); doc.setFontSize(11); doc.setTextColor(95);
-            const lines = doc.splitTextToSize(String(meta.description), COVER_W - 20).slice(0, 3);
+            const lines = doc.splitTextToSize(String(meta.description), g.width - 20).slice(0, 3);
             doc.text(lines, cx, y + 2, { align: 'center' }); y += lines.length * 5 + 4;
         }
         const track = rb.track || [];
+        // the figures stay clear of the bottom margin, the box between them and the text
+        const statsY = g.bottomY - 49, boxH = Math.max(60, Math.min(COVER_BOX_H, statsY - 20 - Math.max(y + 6, g.top + 72)));
         if (meta.map_access !== false && track.length >= 2) {
-            const boxTop = Math.max(y + 6, 92);
-            drawRoute(doc, track, COVER_MARGIN, boxTop, COVER_W, 118, logo);
-            y = boxTop + 118;
+            const boxTop = Math.max(y + 6, g.top + 72);
+            drawRoute(doc, track, g.left, boxTop, g.width, boxH, backdrop);
+            y = boxTop + boxH;
         }
         // the three figures, as columns: distance · notes · date
         const total = meta.total_distance || ((rb.notes || [])[rb.notes.length - 1] || {}).distance || 0;
         const stats = [[RBt('Distance'), km(total) + ' km'], [RBt('Notes'), String((rb.notes || []).length)], [RBt('Date'), meta.modified || fmtDate(when)]];
-        const sy = Math.max(y + 16, 236), colW = COVER_W / stats.length;
+        const sy = Math.max(y + 16, statsY), colW = g.width / stats.length;
         stats.forEach(([label, value], i) => {
-            const colX = COVER_MARGIN + colW * i + colW / 2;
+            const colX = g.left + colW * i + colW / 2;
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120);
             doc.text(label.toUpperCase(), colX, sy, { align: 'center', charSpace: 0.6 });
             doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20);
             doc.text(value, colX, sy + 9, { align: 'center' });
-            if (i) { doc.setDrawColor(215); doc.setLineWidth(0.3); doc.line(COVER_MARGIN + colW * i, sy - 4, COVER_MARGIN + colW * i, sy + 11); }
+            if (i) { doc.setDrawColor(215); doc.setLineWidth(0.3); doc.line(g.left + colW * i, sy - 4, g.left + colW * i, sy + 11); }
         });
         const credit = [meta.author, meta.organization].filter(Boolean).join(' · ');
         if (credit) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(95); doc.text(credit, cx, sy + 26, { align: 'center' }); }
@@ -169,27 +185,28 @@
         return pages;
     }
 
-    function buildDoc(jsPDF, rb, tulips, logo, link) {
+    function buildDoc(jsPDF, rb, tulips, backdrop, link, margins) {
         const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         const when = new Date(); // one instant for the whole document
-        const notes = rb.notes;
+        const notes = rb.notes, g = geometry(margins);
         const title = (rb.meta && rb.meta.title) || 'Roadbook';
+        const CW = g.width;
+        // an ordinary document says what it is: its title, who made it, what made it
+        doc.setProperties({ title, subject: RBt('Roadbook'), author: [rb.meta && rb.meta.author, rb.meta && rb.meta.organization].filter(Boolean).join(' · ') || 'RDBK.app', creator: 'RDBK.app', keywords: 'roadbook' });
 
         // The header every content page shares (#810): the QR to the roadbook's digital copy
         // top-left (inside the bind margin's reach), the title, the page count. No rule under it —
         // the sheet's own border closes it.
+        // The QR is ONE picture, placed on every page: a code drawn as thousands of tiny squares is
+        // what some antivirus heuristics take for a QR-phishing document.
         const QR_SIZE = 16;
-        const qr = link ? RBQr.matrix(link) : null;
+        const qr = link ? RBQr.dataURL(link, 256) : null;
         function header(pageNum) {
-            if (qr) {
-                const cell = QR_SIZE / qr.modules, qy = TOP - 3;
-                doc.setFillColor(20, 20, 20);
-                for (let r = 0; r < qr.modules; r++) for (let c = 0; c < qr.modules; c++) if (qr.isDark(r, c)) doc.rect(LEFT + c * cell, qy + r * cell, cell + 0.02, cell + 0.02, 'F');
-            }
+            if (qr) doc.addImage(qr, 'PNG', g.left, g.top - 3, QR_SIZE, QR_SIZE, 'rdbk-qr'); // one image object, reused by alias
             doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-            centeredFit(doc, title, PW / 2, TOP + 6, 13, CW - 2 * (QR_SIZE + 6));
+            centeredFit(doc, title, g.left + CW / 2, g.top + 6, 13, CW - 2 * (QR_SIZE + 6));
             doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(60);
-            doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - RIGHT, TOP + 6, { align: 'right' });
+            doc.text(`${RBt('Page')} ${pageNum} ${RBt('of')} ${totalPages}`, PW - g.right, g.top + 6, { align: 'right' });
         }
 
         // A piece of the material a note carries (#542): a picture fills the diagram column
@@ -249,7 +266,7 @@
             doc.text(`${(+n.lat).toFixed(6)}°  ${(+n.lon).toFixed(6)}°`, x + CW - pad, y + h - 3, { align: 'right' });
         }
 
-        drawCover(doc, rb, logo, when);
+        drawCover(doc, rb, backdrop, when, g);
         // The printed sequence: each note, with the material it carries on the side it sits on.
         const sheet = [];
         notes.forEach((n, i) => {
@@ -261,11 +278,11 @@
         pages.forEach((pg, p) => {
             doc.addPage();
             header(p + 2);
-            const top = TOP + HEADER_H, rowH = (CB - top) / ROWS;
+            const top = g.top + HEADER_H, rowH = (g.bottomY - top) / ROWS;
             for (let i = pg.from; i < pg.to; i++) {
                 const row = sheet[i], y = top + (i - pg.from) * rowH;
-                if (row.block) drawBlock(row.block, LEFT, y, rowH);
-                else drawRow(row.note, row.tulip, row.close, LEFT, y, rowH);
+                if (row.block) drawBlock(row.block, g.left, y, rowH);
+                else drawRow(row.note, row.tulip, row.close, g.left, y, rowH);
             }
         });
         return doc;
@@ -274,8 +291,10 @@
     // Public: build the PDF on the device and hand it over. Mutates nothing. In the app it opens in
     // the system sheet (RBShareFile: the PDF preview, open in…, save to Files, send) — a download
     // inside the WebView goes nowhere you can see (#904); on the web it downloads.
-    // opts.link: the absolute URL of the roadbook's public page (or its event's), for the header
-    // QR; without one the header carries just the title and the page count.
+    // opts: link (the absolute URL of the roadbook's public page, or its event's, for the header QR;
+    // without one the header carries just the title and the page count) · margins ({top, right,
+    // bottom, left} in mm) · backdrop ('image' | 'map' | 'none') · image (the picture behind the
+    // cover's route; the roadbook's own by default).
     async function generate(rb, opts = {}) {
         if (!rb || !rb.notes || !rb.notes.length) throw new Error('Nothing to export.');
         await ensureJsPDF();
@@ -285,15 +304,105 @@
         const resolver = (ic) => iconMap[ic.name] || RB.iconSrc(ic, rb, basePath);
         const tulips = [];
         for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.tulipContext(rb, i)), 3));
-        const doc = buildDoc(window.jspdf.jsPDF, rb, tulips, (rb.meta && rb.meta.logo) || null, opts.link || null);
+        const backdrop = await coverBackdrop(rb, opts);
+        const doc = buildDoc(window.jspdf.jsPDF, rb, tulips, backdrop, opts.link || null, opts.margins);
         const title = (rb.meta && rb.meta.title) || 'Roadbook', name = RB.slug(title) + '.pdf';
         if (RBIsNativeApp()) await RBShareFile(doc.output('blob'), name, title);
         else doc.save(name);
     }
+    // What goes behind the cover's route: { image } · { map } · null
+    async function coverBackdrop(rb, opts) {
+        const kind = opts.backdrop || 'image';
+        if (kind === 'image') { const image = opts.image || (rb.meta && rb.meta.logo); return image ? { image } : null; }
+        if (kind !== 'map' || !rb.track || rb.track.length < 2) return null;
+        if (!window.RBCoverMap) await loadScript(ASSETS_DIR + 'cover-map.js');
+        const canvas = await window.RBCoverMap.render(rb.track, { width: 1800, height: 1180, pad: 150 });
+        return canvas ? { map: canvas.toDataURL('image/jpeg', 0.86) } : null; // no tile answered: the plain box
+    }
+
+    /* ---------- the generator dialog (#973) ----------
+       Before the PDF is made: what goes behind the cover (the roadbook's image — the default —, the
+       map, or nothing), the image itself (added or changed right there) and the page margins in cm,
+       with a live preview of the page. Two panes side by side on a tablet or a desktop, the whole
+       screen on a phone (.modal-card.split). The choices are kept on this device for the next PDF.
+       opts: link, iconBasePath — as generate() — and onImage(dataUrl): where a new image goes (the
+       Editor makes it the roadbook's own); without it the image is for this PDF only. */
+    const PREFS_KEY = 'rb_pdf_prefs';
+    const readPrefs = () => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { return {}; } };
+    const savePrefs = (p) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch (e) {} };
+    const cm = (mm) => (mm / 10).toFixed(1);
+    function open(rb, opts = {}) {
+        const t = RBt, esc = RBesc, prefs = readPrefs();
+        const mapOk = !(rb.meta && rb.meta.map_access === false) && (rb.track || []).length >= 2;
+        let backdrop = ['image', 'map', 'none'].includes(prefs.backdrop) ? prefs.backdrop : 'image';
+        if (backdrop === 'map' && !mapOk) backdrop = 'image';
+        let image = (rb.meta && rb.meta.logo) || null;
+        const margins = geometry(prefs.margins);
+        const seg = (v, icon, label) => `<button class="segment" type="button" data-backdrop="${v}"${v === 'map' && !mapOk ? ' disabled' : ''}><i class="fa-solid ${icon}"></i> ${esc(t(label))}</button>`;
+        const field = (k, label) => `<label class="prop-field"><span>${esc(t(label))}</span><span class="toolbar nowrap"><input class="field" type="number" data-margin="${k}" min="${MARGIN_RANGE_MM[0] / 10}" max="${MARGIN_RANGE_MM[1] / 10}" step="0.1" inputmode="decimal" value="${cm(margins[k])}"><span class="muted">cm</span></span></label>`;
+        const d = RBModal(`<div class="panes">
+            <section>
+                <h3><i class="fa-solid fa-image icon-accent"></i> ${esc(t('Cover'))}</h3>
+                <p class="muted small">${esc(t('What goes behind the route on the first page.'))}</p>
+                <div class="segmented fill" role="group">${seg('image', 'fa-image', 'Image')}${seg('map', 'fa-map', 'Map')}${seg('none', 'fa-ban', 'None')}</div>
+                <div class="pdf-image" data-image-pane>
+                    <img class="pdf-image-thumb" alt="" hidden>
+                    <p class="muted small" data-no-image>${esc(t('No image yet.'))}</p>
+                    <button class="btn btn-ghost" type="button" data-pick-image><i class="fa-solid fa-upload"></i> <span></span></button>
+                    <p class="muted small">${esc(t(opts.onImage ? 'It becomes the roadbook’s image.' : 'For this PDF only.'))}</p>
+                    <input type="file" accept="image/*" hidden data-image-file>
+                </div>
+            </section>
+            <section>
+                <h3><i class="fa-solid fa-ruler-combined icon-accent"></i> ${esc(t('Page margins'))}</h3>
+                <p class="muted small">${esc(t('The same on the cover and on every page.'))}</p>
+                <div class="pdf-margins">
+                    <div class="field-grid">${field('top', 'Top')}${field('bottom', 'Bottom')}${field('left', 'Left')}${field('right', 'Right')}</div>
+                    <div class="pdf-page" aria-hidden="true"><div class="pdf-page-area"><span></span><span></span><span></span></div></div>
+                </div>
+            </section>
+            </div>
+            <div class="btnrow end spaced"><button class="btn btn-primary" type="button" data-go><i class="fa-solid fa-file-pdf"></i> ${esc(t('Generate PDF'))}</button></div>`, 'split');
+        const paint = () => {
+            d.el.querySelectorAll('[data-backdrop]').forEach((b) => b.classList.toggle('on', b.dataset.backdrop === backdrop));
+            d.q('[data-image-pane]').hidden = backdrop !== 'image';
+            const thumb = d.q('.pdf-image-thumb');
+            thumb.hidden = !image; if (image) thumb.src = image;
+            d.q('[data-no-image]').hidden = !!image;
+            d.q('[data-pick-image] span').textContent = t(image ? 'Change image' : 'Add image');
+            // the preview: the page, and the printed area inside the margins (percent of A4)
+            const area = d.q('.pdf-page-area');
+            area.style.setProperty('--m-top', (margins.top / PH * 100) + '%'); area.style.setProperty('--m-bottom', (margins.bottom / PH * 100) + '%');
+            area.style.setProperty('--m-left', (margins.left / PW * 100) + '%'); area.style.setProperty('--m-right', (margins.right / PW * 100) + '%');
+        };
+        d.el.querySelectorAll('[data-backdrop]').forEach((b) => b.onclick = () => { backdrop = b.dataset.backdrop; paint(); });
+        d.el.querySelectorAll('[data-margin]').forEach((inp) => inp.oninput = () => {
+            const k = inp.dataset.margin, v = parseFloat(String(inp.value).replace(',', '.')) * 10;
+            margins[k] = clampMargin(v, MARGIN_MM[k]); paint();
+        });
+        d.q('[data-pick-image]').onclick = () => d.q('[data-image-file]').click();
+        d.q('[data-image-file]').onchange = async (e) => {
+            const f = e.target.files[0]; e.target.value = '';
+            if (!f) return;
+            try {
+                image = await RBImg.toDataURL(f, opts.onImage ? 256 : 1600); // the roadbook's own image keeps the Editor's size
+                if (opts.onImage) opts.onImage(image);
+                paint();
+            } catch (err) { RBToast('Could not read the image.'); }
+        };
+        d.q('[data-go]').onclick = async (e) => {
+            const busy = RBBusy(e.currentTarget);
+            const chosen = { top: margins.top, right: margins.right, bottom: margins.bottom, left: margins.left };
+            savePrefs({ backdrop, margins: chosen });
+            try { await generate(rb, { iconBasePath: opts.iconBasePath, link: opts.link, margins: chosen, backdrop, image }); busy.ok(); d.close(); }
+            catch (err) { busy.reset(); RBToast(err.message || 'Could not export the PDF.'); }
+        };
+        paint();
+    }
 
     // `paginate` is pure and unit-tested; the browser reaches it through the global, Node (the
     // test runner) imports the same object.
-    const RBPdf = { generate, paginate };
+    const RBPdf = { open, generate, paginate, geometry };
     if (typeof window !== 'undefined') window.RBPdf = RBPdf;
     if (typeof module !== 'undefined' && module.exports) module.exports = RBPdf;
 })();

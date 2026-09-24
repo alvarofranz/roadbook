@@ -298,12 +298,18 @@ Mostra la card e le cifre e porta al profilo (`/u/<user>#run-<id>`) e, se pubbli
 privata o inesistente è un 404. Appena la run è salvata pubblica, *Share* nel report — e sul profilo —
 manda quel link insieme all'immagine.
 
-### La posizione in diretta per gli organizzatori (#947)
-Nella run di un roadbook d'evento, da partecipante attivo, *Naviga* chiede se condividere la posizione
-con gli organizzatori (`live.consent`, salvato nel checkpoint). Con un sì `liveStart` accende la
-striscia `#liveStrip` e `onFix` passa ogni fix affidabile a `liveTick`, che invia quando `RB.liveDue`
-lo dice (`live_ping`: posizione, precisione, velocità, rotta, nota attiva, note raggiunte/saltate,
-veicolo). `liveEnd` la spegne con la run (`finalize` · `endRun`). Vedi [events.md](events.md) §8b.
+### La posizione in diretta per gli organizzatori (#947 · #970)
+All'inizio di ogni run di un roadbook del server, `liveStart` chiede a `live_status` gli eventi di quel
+roadbook dove l'utente è partecipante attivo; se per uno non ha ancora risposto, lo chiede **una volta
+per evento** (`live_consent`, sul server). Con un sì accende la striscia `#liveStrip` e `onFix` passa
+ogni fix affidabile a `liveTick`, che invia quando `RB.liveDue` lo dice (`live_ping`: posizione,
+precisione, velocità, rotta, nota attiva, note raggiunte/saltate, veicolo). Un tocco sulla striscia la
+spegne per quella run; `liveEnd` la spegne con la run (`finalize` · `endRun`). Vedi [events.md](events.md) §8b.
+
+### Il pulsante di fine (#968)
+Il report resta sul dispositivo finché il pilota non sceglie **Privato** o **Pubblico** (#460). *Fatto*
+è sempre premibile: senza una scelta non esce, ma fa vibrare il selettore e dice *Scegli Privato o
+Pubblico per finire* — invece di restare grigio senza spiegare perché.
 
 ### Roadbook concatenati (#944)
 Un evento può concatenare i suoi roadbook (`event_rb_next`, vedi [events.md](events.md)): il Reader

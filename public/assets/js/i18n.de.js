@@ -145,7 +145,7 @@
             'Identity': 'Identität', 'Visibility & map': 'Sichtbarkeit & Karte',
             'Map access from player': 'Kartenzugriff aus dem Reader', 'Allow the map in the Reader': 'Karte im Reader erlauben',
             'Route': 'Route', 'Reverse the whole route? Start and finish swap, and every vignette is recomputed.': 'Gesamte Route umkehren? Start und Ziel tauschen und alle Vignetten werden neu berechnet.',
-            'Map style': 'Kartenstil', 'Page': 'Seite', 'of': 'von', 'Generating PDF…': 'PDF wird erstellt…',
+            'Map style': 'Kartenstil', 'Page': 'Seite', 'of': 'von', 
             'No photos yet.': 'Noch keine Fotos.', 'No icons.': 'Keine Icons.',
             'Delete this voice note?': 'Diese Sprachnotiz löschen?',
             
@@ -1706,20 +1706,20 @@ Object.assign(window.RBi18nLangs.de, {
     "Updated {t} ago": "Aktualisiert vor {t}",
     "{n} skipped": "{n} übersprungen",
     "Nobody is sharing a live position right now.": "Gerade teilt niemand eine Live-Position.",
-    "Only the organizers see it, only during this run — its last position, deleted after the event.": "Nur die Veranstalter sehen sie, nur während dieser Fahrt – deine letzte Position, gelöscht nach der Veranstaltung.",
-    "Share your live position with the event’s organizers while you navigate?": "Deine Live-Position mit den Veranstaltern teilen, während du navigierst?",
+    
+    
 });
 
 /* Privacy: event live tracking (#947) */
 Object.assign(window.RBi18nLangs.de, {
-    "priv.location.4": "<b>Live-Tracking bei Veranstaltungen.</b> Wenn du ein Roadbook einer Veranstaltung navigierst, an der du teilnimmst, fragt der Reader, ob du deine Live-Position mit den <b>Veranstaltern</b> teilen möchtest. Nur wenn du zustimmst, und nur während dieser Fahrt, werden etwa alle 15 Sekunden deine <b>letzte</b> Position und dein Fortschritt im Roadbook gesendet. Nur die Veranstalter sehen sie, sie wird nie als Verlauf gespeichert und endet, wenn du die Fahrt beendest oder verlässt.",
+    "priv.location.4": "<b>Live-Tracking bei Veranstaltungen.</b> Wenn du an einer Veranstaltung teilnimmst und eines ihrer Roadbooks navigierst, fragt dich der Reader einmal für diese Veranstaltung, ob du deine Live-Position mit ihren <b>Veranstaltern</b> teilen möchtest, und merkt sich deine Antwort. Nur wenn du zugestimmt hast, und nur während du eines ihrer Roadbooks navigierst, werden etwa alle 15 Sekunden deine <b>letzte</b> Position und dein Fortschritt im Roadbook gesendet. Nur die Veranstalter sehen sie, sie wird nie als Verlauf gespeichert, und ein Tipp auf den „Live“-Streifen beendet sie für diese Fahrt.",
     "priv.retention.live": "<b>Live-Positionen</b>, die mit den Veranstaltern geteilt wurden, werden einen Tag nach dem Ende der Veranstaltung gelöscht und nie länger als <b>3 Tage</b> aufbewahrt.",
 });
 
 /* Events guide: chained roadbooks (#944) and the live map (#947) */
 Object.assign(window.RBi18nLangs.de, {
     "fp.events.prep5": "Um die Strecken zu verketten, hake unter jedem Roadbook die an, die es an seiner <b>letzten Notiz</b> anbietet, jeweils mit einem kurzen Label („A“, „Leicht“…): Der Teilnehmer wählt dort eines, fährt in derselben Fahrt weiter und sieht am Ende einen einzigen Bericht — während jedes Roadbook weiterhin für sich gewertet wird.",
-    "fp.events.run2": "Um sie live zu verfolgen, öffne die <span class=\"ev-where\">Live-Karte</span>: Sie zeigt, wo jeder Teilnehmer ist, während er eines der Roadbooks der Veranstaltung navigiert — nur wenn er zu Beginn seiner Fahrt zugestimmt hat, nur den Veranstaltern und nur seine letzte Position.",
+    "fp.events.run2": "Um sie live zu verfolgen, öffne die <span class=\"ev-where\">Live-Karte</span>: Sie zeigt, wo jeder Teilnehmer ist, wann immer er eines der Roadbooks der Veranstaltung navigiert, an jedem Tag — nur wenn er zugestimmt hat (einmal pro Veranstaltung gefragt), nur den Veranstaltern und nur seine letzte Position.",
 });
 
 /* Release notes 1.9.12 */
@@ -1749,4 +1749,37 @@ Object.assign(window.RBi18nLangs.de, {
     "A window you can leave without choosing anything closes from the red ✕ on its corner — no more Close or Cancel rows.": "Ein Fenster, das du ohne Auswahl verlassen kannst, schließt sich über das rote ✕ an seiner Ecke — keine Zeilen mit Schließen oder Abbrechen mehr.",
     "A question that needs an answer has no ✕: you answer it with its own buttons.": "Eine Frage, die eine Antwort braucht, hat kein ✕: Du beantwortest sie mit ihren eigenen Knöpfen.",
     "Small clean-ups across the app.": "Kleine Aufräumarbeiten in der ganzen App.",
+});
+
+/* 1.9.15: notifications (#971), live consent per event (#970), Reader finish (#968), trash search (#969), PDF generator (#973) */
+Object.assign(window.RBi18nLangs.de, {
+    "Search by title, author or date…": "Nach Titel, Autor oder Datum suchen…",
+    "Tap to stop": "Zum Beenden tippen",
+    "Mark all as read": "Alles als gelesen markieren",
+    "Nothing new — you will find here the comments on your roadbooks.": "Nichts Neues – hier findest du die Kommentare zu deinen Roadbooks.",
+    "Notifications": "Benachrichtigungen",
+    "Show more": "Mehr anzeigen",
+    "Someone": "Jemand",
+    "{user} commented on “{title}”": "{user} hat „{title}“ kommentiert",
+    "Cover": "Titelseite",
+    "For this PDF only.": "Nur für dieses PDF.",
+    "Generate PDF": "PDF erstellen",
+    "It becomes the roadbook’s image.": "Sie wird zum Bild des Roadbooks.",
+    "No image yet.": "Noch kein Bild.",
+    "Page margins": "Seitenränder",
+    "The same on the cover and on every page.": "Gleich auf der Titelseite und auf jeder Seite.",
+    "What goes behind the route on the first page.": "Was auf der ersten Seite hinter der Route liegt.",
+    "Asked once for this event. Only its organizers see it, only while you navigate — your last position. Tap the Live strip to stop it for a run.": "Nur einmal pro Veranstaltung gefragt. Nur ihre Veranstalter sehen sie, nur während du navigierst – deine letzte Position. Tippe auf den Live-Streifen, um sie für eine Fahrt zu beenden.",
+    "Choose Private or Public to finish.": "Wähle Privat oder Öffentlich, um abzuschließen.",
+    "Live position off for this run.": "Live-Position für diese Fahrt ausgeschaltet.",
+    "Share your live position with the organizers of {events} while you navigate its roadbooks?": "Deine Live-Position mit den Veranstaltern von {events} teilen, während du ihre Roadbooks navigierst?",
+});
+
+/* Release notes 1.9.15 */
+Object.assign(window.RBi18nLangs.de, {
+    "Notifications, and a PDF your way": "Benachrichtigungen und ein PDF nach deinem Geschmack",
+    "Notifications: a badge on your profile tells you when someone comments on one of your roadbooks. Read them on the web or in the app — they clear everywhere.": "Benachrichtigungen: Ein Abzeichen an deinem Profil zeigt dir, wenn jemand eines deiner Roadbooks kommentiert. Lies sie im Web oder in der App – sie verschwinden überall.",
+    "The PDF opens a generator first: choose the page margins, put the image or the map behind the cover, and add or change the roadbook’s image right there.": "Das PDF öffnet zuerst einen Generator: Wähle die Seitenränder, lege das Bild oder die Karte hinter die Titelseite und füge das Bild des Roadbooks gleich dort hinzu oder ändere es.",
+    "Event live tracking follows participants whenever they navigate one of the event’s roadbooks, on any day — asked once per event, and a tap on the Live strip stops it for a run.": "Das Live-Tracking von Veranstaltungen folgt den Teilnehmern, wann immer sie eines ihrer Roadbooks navigieren, an jedem Tag – einmal pro Veranstaltung gefragt, und ein Tipp auf den Live-Streifen beendet es für eine Fahrt.",
+    "At the end of a run, Done shows you what is left to choose instead of staying greyed out; the admin trash can be searched.": "Am Ende einer Fahrt zeigt dir Fertig, was noch zu wählen ist, statt ausgegraut zu bleiben; der Admin-Papierkorb ist durchsuchbar.",
 });

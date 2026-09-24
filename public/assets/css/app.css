@@ -106,7 +106,7 @@ h1, h2, h3, h4, p, li, dt, dd, td, th, figcaption, .lead { overflow-wrap: break-
     background: rgba(14, 17, 22, .96); backdrop-filter: blur(14px);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
 /* Back and Profile are <button>s among links: reset the browser's button box so every tab looks alike */
-.app-tabbar .tabbar-link { flex: 1; display: flex; align-items: center; justify-content: center;
+.app-tabbar .tabbar-link { position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
     padding: .85rem 0; color: var(--muted); font-size: 1.6rem; text-decoration: none;
     background: none; border: 0; border-radius: 0; font-family: inherit; cursor: pointer;
     transition: color .12s ease, transform .08s ease; }
@@ -242,6 +242,17 @@ body.rb-immersive .app-chip-stack { display: none; }
 @media (max-width: 1024px) { .app-chip-stack { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + .7rem); } }
 .account-control { position: relative; order: 99; display: flex; }
 .account-button span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* notifications (#971): the unread count on the account icon and the app's Profile tab, and the list */
+.notif-badge { position: absolute; top: -.35rem; left: .55rem; min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; border-radius: 999px; background: var(--track); color: #fff; font-size: .68rem; font-weight: 800; line-height: 1.15rem; text-align: center; pointer-events: none; }
+.account-button span.notif-badge { max-width: none; overflow: visible; }
+.tabbar-link .notif-badge { top: .35rem; left: calc(50% + .25rem); }
+.notif-count { margin-left: auto; min-width: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--track); color: #fff; font-size: .72rem; font-weight: 800; text-align: center; }
+.notif-list { display: flex; flex-direction: column; gap: .3rem; margin-top: .6rem; }
+.notif-row { display: flex; align-items: flex-start; gap: .7rem; padding: .7rem .8rem; border-radius: 10px; color: var(--text); text-decoration: none; border: 1px solid var(--line); }
+.notif-row:hover { background: var(--card-2); }
+.notif-row.unread { background: var(--card-2); border-color: var(--sand); }
+.notif-row > i { margin-top: .15rem; }
+.notif-row .grow { display: flex; flex-direction: column; gap: .15rem; min-width: 0; overflow-wrap: break-word; }
 .account-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .4rem; box-shadow: var(--shadow); min-width: 175px; z-index: 60; display: flex; flex-direction: column; gap: .15rem; }
 .account-menu a, .account-menu button { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: left; white-space: nowrap; /* the dropdown widens to its longest label — no two-line entries (#243) */ }
 .account-menu a:hover, .account-menu button:hover { background: var(--card-2); text-decoration: none; }
@@ -718,6 +729,17 @@ select.modal-in { width: auto; margin: 0; padding: .4rem; border-radius: 8px; }
 .panes > section + section { border-left: 1px solid var(--line); padding-left: 1.4rem; }
 .panes > section > :last-child:not(:first-child) { margin-top: auto; padding-top: .6rem; } /* each pane's action sits at its foot, level with its neighbour's */
 .panes .status-list { margin-bottom: 0; }
+/* the PDF generator (#973): the cover's image, the margins and a live page preview */
+.pdf-image { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; margin-top: .9rem; }
+.pdf-image-thumb { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.pdf-margins { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: 1rem; align-items: center; }
+.pdf-margins .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pdf-margins .prop-field .toolbar .field { width: 100%; }
+.pdf-page { position: relative; aspect-ratio: 210 / 297; background: #f6f4ef; border-radius: 4px; box-shadow: 0 0 0 1px var(--line); }
+.pdf-page-area { position: absolute; top: var(--m-top, 5%); bottom: var(--m-bottom, 4%); left: var(--m-left, 7%); right: var(--m-right, 6%); border: 1px dashed #b9772a; display: flex; flex-direction: column; gap: 6%; padding: 8% 6%; }
+.pdf-page-area span { display: block; height: 8%; background: #d9d4c8; border-radius: 2px; }
+.pdf-page-area span:first-child { width: 60%; align-self: center; background: #b9b3a5; }
+.pdf-page-area span:nth-child(2) { flex: 1; background: #e6e1d6; }
 @media (max-width: 640px) {
     .modal-card.split { position: fixed; inset: 0; max-width: none; max-height: none; border: 0; border-radius: 0; }
     .modal-card.split > .modal-body { flex: 1 1 auto; padding: calc(3.6rem + env(safe-area-inset-top)) calc(1.1rem + env(safe-area-inset-right)) calc(1.2rem + env(safe-area-inset-bottom)) calc(1.1rem + env(safe-area-inset-left)); }

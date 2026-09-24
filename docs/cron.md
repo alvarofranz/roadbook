@@ -19,7 +19,8 @@ tasks never overlap. Configured as a system `* * * * *` cron entry.
 | 3 | **Rename legacy covers** | [rename-legacy-covers.php](../cron/rename-legacy-covers.php) | Rename old `_map.avif` covers to random filenames (protection against enumeration, #206) |
 | 4 | **Prune stale tokens** | [prune-stale-tokens.php](../cron/prune-stale-tokens.php) | Delete Bearer tokens unused for 180 days (#213) |
 | 5 | **Purge live positions** | [purge-event-live.php](../cron/purge-event-live.php) | Delete event live positions a day after the event ends, and any older than 3 days (#947) |
-| 6–9 | *Reserved* | — | Future tasks |
+| 6 | **Purge notifications** | [purge-notifications.php](../cron/purge-notifications.php) | Delete read notifications after 90 days, any after a year (#971) |
+| 7–9 | *Reserved* | — | Future tasks |
 
 Each task runs a **bounded batch** per invocation (e.g. 500 drafts, 5000 log rows,
 200 trashed roadbooks) so a single run never holds the DB for too long.

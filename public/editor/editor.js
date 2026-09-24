@@ -2208,14 +2208,13 @@
         RBDownload(await RBZip.write(files), RB.slug(rb.meta?.title) + '_' + stamp() + '.rdbk');
         exported = true; clearDraft();
     }
-    // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js
-    async function exportPdf() {
+    // A4 PDF, generated on the device (jsPDF, lazy-loaded) — see rb-pdf.js. The generator asks for
+    // the cover, the image and the margins first (#973); an image added there is the roadbook's own.
+    function exportPdf() {
         stampMeta(); RB.recomputeMetrics(rb); RB.recomputeCaps(rb);
-        toast('Generating PDF…');
         // a public roadbook's PDF carries a QR to its page in the header of every page (#810)
         const link = status === 'public' && publicSlug ? RBPublicLink('/challenge/' + encodeURIComponent(publicSlug)) : null;
-        try { await RBPdf.generate(rb, { iconBasePath: '../assets/icons/', link }); }
-        catch (e) { toast(e.message || 'Could not generate the PDF.'); }
+        RBPdf.open(rb, { iconBasePath: '../assets/icons/', link, onImage: (image) => { rb.meta.logo = image; setLogoPreview(image); markDirty(); } });
     }
     // One GPX per the chosen options (#34): track on/off · waypoints on/off · Garmin/OSMAnd
     // icons on the waypoints. The filename carries synthetic suffixes for the content.

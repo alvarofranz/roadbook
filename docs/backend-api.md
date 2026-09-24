@@ -147,11 +147,25 @@ ruoli, verifica/blocco, log attività, banner/impostazioni, e moderazione roadbo
 | `comment_add` | Nuovo commento (max 2000 caratteri): Turnstile + rate limit 10 ogni 10 min | richiesta |
 | `comment_delete` | Lo cancella l'autore, il proprietario del roadbook o un admin | richiesta |
 
-**Live tracking per gli organizzatori** (`live.php`, #947)
+**Notifiche nell'app** (`notifications.php`, #971)
 
 | Action | Cosa fa | Auth |
 |--------|---------|:----:|
-| `live_ping` | L'ultima posizione di un partecipante **attivo**, su un roadbook **dell'evento**, mentre l'evento è in corso (le sue date ± 1 giorno): una riga per partecipante per evento, sovrascritta — mai uno storico. Rate limit 20/min | richiesta |
+| `notifications_unread` | Il numero del badge (arriva già con `config` come `user.notifications`) | richiesta |
+| `notifications_list` | Una pagina delle proprie notifiche, dalla più recente (`before`: l'ultimo id già mostrato) | richiesta |
+| `notifications_read` | Segna lette le `ids` date, o tutte (`all`) — solo le proprie; risponde col nuovo conteggio | richiesta |
+
+Una notifica nasce da `notify(user, kind, subject, actor, data)` (mai per ciò che si è fatto da sé) e
+se ne va con il suo soggetto (`notifications_forget`). Il primo tipo: `comment`, un commento su un
+proprio roadbook. Il cron (slot 6) cancella le lette dopo 90 giorni, tutte dopo un anno.
+
+**Live tracking per gli organizzatori** (`live.php`, #947 · #970)
+
+| Action | Cosa fa | Auth |
+|--------|---------|:----:|
+| `live_status` | Gli eventi di un roadbook dove l'utente è partecipante attivo, con la sua risposta (`consent`: null · 1 · 0) | richiesta |
+| `live_consent` | La risposta per un evento, chiesta una volta sola | richiesta |
+| `live_ping` | L'ultima posizione, per ogni evento del roadbook dove l'utente è partecipante attivo e ha detto sì — in qualunque giorno: una riga per partecipante per evento, sovrascritta, mai uno storico. Rate limit 20/min | richiesta |
 | `live_stop` | Fine della run: l'ultima posizione resta, segnata come finita | richiesta |
 | `live_list` | La mappa degli organizzatori (`require_event_manage`): ogni posizione con `age_s` dall'orologio del server; con `tracks` anche il contorno dei roadbook dell'evento | richiesta |
 

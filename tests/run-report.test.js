@@ -41,7 +41,10 @@ describe('the end of a run (#618)', () => {
     });
     it('a saved run flips visibility from the same switch, and an unpicked one cannot be left behind (#820 · #460)', () => {
         expect(reader).toContain("saved.map((run) => RBApi('run_update', { id: run.id, is_public: v === 'public' ? 1 : 0 }))");
-        expect(reader).toContain("$('reportDone').disabled = !choice || busy;"); // and never mid-save: that sends it twice
+        expect(reader).toContain("$('reportDone').disabled = busy;"); // never mid-save: that sends it twice
+        // an unpicked report would never leave the device: Done points at the switch instead (#968)
+        expect(reader).toContain("if (choice) return leave();");
+        expect(reader).toContain("t('Choose Private or Public to finish.')");
     });
     it('the card is the hero, Share under it, with a placeholder at its size while it renders (#820)', () => {
         const html = fs.readFileSync('public/reader/index.html', 'utf8');

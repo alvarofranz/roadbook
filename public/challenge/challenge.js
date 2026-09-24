@@ -46,12 +46,10 @@
     // Owner: Edit. Non-owner: a public roadbook can be read here, navigated and exported to PDF,
     // but not forked or downloaded.
     if (j.is_owner) { $('chEdit').hidden = false; $('chEdit').href = '/editor/?rb=' + j.id; }
-    $('chPdf').onclick = async (e) => {
-        const busy = RBBusy(e.currentTarget);
+    $('chPdf').onclick = () => {
         // the header QR points at this page when it is public, else at the event it was opened from (#784 · #810)
         const link = j.status === 'public' ? RBPublicLink('/challenge/' + encodeURIComponent(slug)) : (evParam ? RBPublicLink('/event/' + encodeURIComponent(evParam)) : null);
-        try { await RBPdf.generate(rb, { iconBasePath: '/assets/icons/', link }); busy.ok(); }
-        catch (err) { busy.reset(); RBToast('Could not export the PDF.'); }
+        RBPdf.open(rb, { iconBasePath: '/assets/icons/', link }); // the generator: cover, image, margins (#973)
     };
 
     // Photos and audio are editor-only working material — not shown here (#316).
@@ -139,6 +137,8 @@
         // the way down to them, next to Navigate · PDF · Edit (#853)
         $('chCommentsBtn').hidden = false;
         $('chCommentsBtn').onclick = (e) => { e.preventDefault(); $('chComments').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+        // a comment notification leads here (#971): the section only exists now, so the page goes to it itself
+        if (location.hash === '#chComments') $('chComments').scrollIntoView({ block: 'start' });
         window.addEventListener('rb-lang', render);
 
         // Completed by (#869): every public completed run — runner, notes, date, a link to the run —

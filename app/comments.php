@@ -7,7 +7,7 @@ const COMMENT_MAX = 2000;
 
 // The public roadbook a comment belongs to — comments exist only where everyone can read.
 function comment_roadbook(string $slug): array {
-    $st = db()->prepare("SELECT id, user_id FROM roadbooks WHERE slug = ? AND status = 'public'");
+    $st = db()->prepare("SELECT id, user_id, slug, title FROM roadbooks WHERE slug = ? AND status = 'public'");
     $st->execute([$slug]);
     $row = $st->fetch();
     if (!$row) fail('This roadbook does not exist or is private.', 404);
@@ -40,6 +40,8 @@ function comment_add(array $me, array $d): void {
     db()->prepare('INSERT INTO roadbook_comments (roadbook_id, user_id, body) VALUES (?,?,?)')->execute([$rb['id'], $me['id'], $body]);
     $id = (int)db()->lastInsertId();
     log_activity((int)$me['id'], 'comment_add', 'roadbook ' . $rb['id']);
+    // the roadbook's owner hears about it (#971) — unless they wrote it themselves
+    notify((int)$rb['user_id'], 'comment', $id, (int)$me['id'], ['slug' => $rb['slug'], 'title' => $rb['title'], 'excerpt' => mb_substr($body, 0, 140)]);
     $st = db()->prepare('SELECT c.id, c.user_id, c.body, c.created_at, u.username, u.avatar FROM roadbook_comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?');
     $st->execute([$id]);
     json_out(['ok' => true, 'comment' => comment_shape($st->fetch(), $me, (int)$rb['user_id'])]);
@@ -52,6 +54,7 @@ function comment_delete(array $me, array $d): void {
     if (!$c) fail('Not found.', 404);
     if ((int)$c['user_id'] !== (int)$me['id'] && (int)$c['owner_id'] !== (int)$me['id'] && !is_admin($me)) fail('Not allowed.', 403);
     db()->prepare('DELETE FROM roadbook_comments WHERE id = ?')->execute([$c['id']]);
+    notifications_forget('comment', (int)$c['id']); // a comment gone is no news
     log_activity((int)$me['id'], 'comment_delete', 'roadbook ' . $c['roadbook_id']);
     json_out(['ok' => true]);
 }

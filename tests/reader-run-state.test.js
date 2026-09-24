@@ -12,7 +12,7 @@ const fn = (name) => js.match(new RegExp('function ' + name + '\\([^)]*\\) \\{([
 
 describe('a resumed run is the same run', () => {
     it('the checkpoint carries the roadbook slug, the event and what the visit was for', () => {
-        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, chain, live: { participant: live.participant, consent: live.consent }, legs: legs.map(({ key, slug }) => ({ key, slug })), competition,');
+        expect(fn('saveSession')).toContain('const s = { openedAs, rbSlug, eventSlug, chain, legs: legs.map(({ key, slug }) => ({ key, slug })), competition,');
         expect(fn('resumeSession')).toContain('rbSlug = s.rbSlug; eventSlug = s.eventSlug; openedAs = s.openedAs;');
     });
     it('the slug is the loaded roadbook’s own, never the last piece of the URL', () => {

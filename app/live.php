@@ -1,61 +1,72 @@
 <?php
-/* Live tracking for event organizers (#947). While a participant navigates one of an event's
- * roadbooks in the Reader — and agreed to share it when that run started — the Reader pings its
- * last position; the event's organizers see every participant on a map. One row per participant
- * per event (event_live), overwritten by each ping: the last position, never a history. Nothing is
- * taken outside such a run, and the rows go with the event (cron/purge-event-live.php). */
+/* Live tracking for event organizers (#947 · #970). A participant of an event shares their last
+ * position with its organizers whenever they navigate one of its roadbooks — opened from the event
+ * or not, on the event's dates or any other day (a recurring ride) — once they said yes, which is
+ * asked once per event (event_participants.live_consent). The Reader pings its last position; the
+ * organizers see every participant on a map. One row per participant per event (event_live),
+ * overwritten by each ping: the last position, never a history. Nothing is taken outside such a
+ * run, and the rows go with the event (cron/purge-event-live.php). */
 
-// The days around an event's dates a ping is still taken: a stage that starts early or runs late
-const LIVE_MARGIN_DAYS = 1;
-
-// Is the event running today (its dates, with the margin)? An event with no dates is always open.
-function live_event_running(array $e): bool {
-    $today = date('Y-m-d');
-    $from = !empty($e['starts_on']) ? date('Y-m-d', strtotime($e['starts_on'] . ' -' . LIVE_MARGIN_DAYS . ' day')) : null;
-    $to = !empty($e['ends_on']) ? date('Y-m-d', strtotime($e['ends_on'] . ' +' . LIVE_MARGIN_DAYS . ' day')) : null;
-    return (!$from || $today >= $from) && (!$to || $today <= $to);
+// The events of a roadbook the user takes part in (an ACTIVE participant), with their answer to
+// sharing: consent null = not asked yet, 1 = yes, 0 = no
+function live_events(int $userId, int $roadbookId): array {
+    $st = db()->prepare("SELECT e.id, e.slug, e.title, ep.live_consent AS consent
+        FROM event_roadbooks er JOIN events e ON e.id = er.event_id
+        JOIN event_participants ep ON ep.event_id = e.id AND ep.user_id = ? AND ep.status = 'active'
+        WHERE er.roadbook_id = ? ORDER BY e.id");
+    $st->execute([$userId, $roadbookId]);
+    return array_map(fn($r) => ['id' => (int)$r['id'], 'slug' => $r['slug'], 'title' => $r['title'], 'consent' => $r['consent'] === null ? null : (int)$r['consent']], $st->fetchAll());
 }
 
-// The one gate every ping and stop goes through: an ACTIVE participant, on a roadbook of this
-// event, while it runs. Anything else is refused and nothing is stored.
-function live_gate(array $user, array $d): array {
-    $st = db()->prepare('SELECT id, starts_on, ends_on FROM events WHERE slug = ?');
-    $st->execute([(string)($d['event_slug'] ?? '')]);
-    $e = $st->fetch();
-    if (!$e) fail('Not found.', 404);
-    $p = db()->prepare("SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ? AND status = 'active'");
-    $p->execute([(int)$e['id'], (int)$user['id']]);
-    if (!$p->fetch()) fail('Not allowed.', 403);
+// What the Reader asks when a run starts: which events would see this run, and who has answered
+function live_status(array $user, array $d): void {
+    json_out(['ok' => true, 'events' => live_events((int)$user['id'], (int)($d['roadbook_id'] ?? 0))]);
+}
+
+// The participant's answer for one event — asked once, kept until they change it
+function live_consent(array $user, array $d): void {
+    $st = db()->prepare("UPDATE event_participants SET live_consent = ? WHERE event_id = ? AND user_id = ? AND status = 'active'");
+    $st->execute([!empty($d['consent']) ? 1 : 0, (int)($d['event_id'] ?? 0), (int)$user['id']]);
+    if (!$st->rowCount() && !live_is_participant((int)$user['id'], (int)($d['event_id'] ?? 0))) fail('Not allowed.', 403);
+    json_out(['ok' => true]);
+}
+function live_is_participant(int $userId, int $eventId): bool {
+    $st = db()->prepare("SELECT 1 FROM event_participants WHERE event_id = ? AND user_id = ? AND status = 'active'");
+    $st->execute([$eventId, $userId]);
+    return (bool)$st->fetch();
+}
+
+// The events a ping goes to: those of this roadbook where the user is an active participant who said yes
+function live_targets(array $user, array $d): array {
     $rid = (int)($d['roadbook_id'] ?? 0);
-    $r = db()->prepare('SELECT 1 FROM event_roadbooks WHERE event_id = ? AND roadbook_id = ?');
-    $r->execute([(int)$e['id'], $rid]);
-    if (!$r->fetch()) fail('Not allowed.', 403);
-    if (!live_event_running($e)) fail('The event is not running.', 403);
-    return ['event_id' => (int)$e['id'], 'roadbook_id' => $rid];
+    $ids = array_map(fn($e) => $e['id'], array_filter(live_events((int)$user['id'], $rid), fn($e) => $e['consent'] === 1));
+    if (!$ids) fail('Not allowed.', 403); // refused and nothing stored
+    return [$rid, array_values($ids)];
 }
 
 function live_ping(array $user, array $d): void {
     rate_limit('live:' . (int)$user['id'], 20, 60); // one ping per 15 s, with room for a reconnect
-    $g = live_gate($user, $d);
+    [$rid, $events] = live_targets($user, $d);
     $lat = (float)($d['lat'] ?? 999); $lon = (float)($d['lon'] ?? 999);
     if (abs($lat) > 90 || abs($lon) > 180) fail('Invalid position.');
     $small = fn($k, $max = 65535) => isset($d[$k]) && is_numeric($d[$k]) ? max(0, min($max, (int)round((float)$d[$k]))) : null;
     $team = preg_replace('/\D/', '', (string)($d['team'] ?? ''));
-    db()->prepare('INSERT INTO event_live (event_id, user_id, roadbook_id, team, lat, lon, acc, speed, heading, note_idx, notes_total, reached, skipped, updated_at, stopped_at)
+    $ins = db()->prepare('INSERT INTO event_live (event_id, user_id, roadbook_id, team, lat, lon, acc, speed, heading, note_idx, notes_total, reached, skipped, updated_at, stopped_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NULL)
         ON DUPLICATE KEY UPDATE roadbook_id = VALUES(roadbook_id), team = VALUES(team), lat = VALUES(lat), lon = VALUES(lon), acc = VALUES(acc),
             speed = VALUES(speed), heading = VALUES(heading), note_idx = VALUES(note_idx), notes_total = VALUES(notes_total),
-            reached = VALUES(reached), skipped = VALUES(skipped), updated_at = NOW(), stopped_at = NULL')
-        ->execute([$g['event_id'], (int)$user['id'], $g['roadbook_id'], $team !== '' ? substr($team, 0, 8) : null,
-            round($lat, 6), round($lon, 6), $small('acc'), $small('speed', 999), $small('heading', 359),
-            $small('note_idx') ?? 0, $small('notes_total') ?? 0, $small('reached') ?? 0, $small('skipped') ?? 0]);
+            reached = VALUES(reached), skipped = VALUES(skipped), updated_at = NOW(), stopped_at = NULL');
+    foreach ($events as $eid) $ins->execute([$eid, (int)$user['id'], $rid, $team !== '' ? substr($team, 0, 8) : null,
+        round($lat, 6), round($lon, 6), $small('acc'), $small('speed', 999), $small('heading', 359),
+        $small('note_idx') ?? 0, $small('notes_total') ?? 0, $small('reached') ?? 0, $small('skipped') ?? 0]);
     json_out(['ok' => true]);
 }
 
 // The run is over: its last position stays for the organizers, marked as the end
 function live_stop(array $user, array $d): void {
-    $g = live_gate($user, $d);
-    db()->prepare('UPDATE event_live SET stopped_at = NOW() WHERE event_id = ? AND user_id = ?')->execute([$g['event_id'], (int)$user['id']]);
+    [$rid, $events] = live_targets($user, $d);
+    $in = implode(',', array_fill(0, count($events), '?'));
+    db()->prepare("UPDATE event_live SET stopped_at = NOW() WHERE user_id = ? AND event_id IN ($in)")->execute(array_merge([(int)$user['id']], $events));
     json_out(['ok' => true]);
 }
 
