@@ -38,7 +38,7 @@
             'contact.h.email': 'E-Mail', 'contact.email': 'Schreib uns an <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a> — wir lesen jede Nachricht.',
             'contact.h.more': 'Mehr', 'contact.more': 'Für Daten- oder Datenschutzanfragen siehe unsere <a href="../privacy/">Datenschutzerklärung</a>. Wer hinter RDBK.app steht, erfährst du auf der Seite <a href="../about/">Über uns</a>.',
             'Keep editing': 'Weiter bearbeiten',
-            'No race (free)': 'Kein Wettbewerb (frei)', 'Roadbook-suite rules': 'Roadbook-suite-Regeln', 'FIA rules (unavailable)': 'FIA-Regeln (nicht verfügbar)', 'Fullscreen': 'Vollbild', 'Event management': 'Event-Verwaltung', 'Select date': 'Datum wählen', 'Unsaved changes': 'Ungespeicherte Änderungen', 'Save your changes before closing?': 'Änderungen vor dem Schließen speichern?', 'Save & close': 'Speichern & schließen', 'Change logo': 'Logo ändern', 'In a browser, recording stops when the app is in the background or the screen is off.': 'Im Browser stoppt die Aufzeichnung, wenn die App im Hintergrund ist oder der Bildschirm aus ist.', 'Let others copy this public roadbook': 'Anderen erlauben, dieses öffentliche Roadbook zu kopieren', 'This public roadbook cannot be copied.': 'Dieses öffentliche Roadbook kann nicht kopiert werden.', 'help.reusable': 'Aus (Standard): andere können dieses öffentliche Roadbook lesen und navigieren, aber nicht kopieren. An: sie können es auch in ihr Profil kopieren und bearbeiten — es erscheint in der Suche nach öffentlichen Roadbooks im Editor.',
+            'No race (free)': 'Kein Wettbewerb (frei)', 'Roadbook-suite rules': 'Roadbook-suite-Regeln', 'FIA rules (unavailable)': 'FIA-Regeln (nicht verfügbar)', 'Event management': 'Event-Verwaltung', 'Select date': 'Datum wählen', 'Unsaved changes': 'Ungespeicherte Änderungen', 'Save your changes before closing?': 'Änderungen vor dem Schließen speichern?', 'Save & close': 'Speichern & schließen', 'Change logo': 'Logo ändern', 'In a browser, recording stops when the app is in the background or the screen is off.': 'Im Browser stoppt die Aufzeichnung, wenn die App im Hintergrund ist oder der Bildschirm aus ist.', 'Let others copy this public roadbook': 'Anderen erlauben, dieses öffentliche Roadbook zu kopieren', 'This public roadbook cannot be copied.': 'Dieses öffentliche Roadbook kann nicht kopiert werden.', 'help.reusable': 'Aus (Standard): andere können dieses öffentliche Roadbook lesen und navigieren, aber nicht kopieren. An: sie können es auch in ihr Profil kopieren und bearbeiten — es erscheint in der Suche nach öffentlichen Roadbooks im Editor.',
             /* editor consistency check (#339) */ 'Consistency check': 'Konsistenzprüfung', 'Have a look before saving — none of this stops the roadbook from working:': 'Schau vor dem Speichern kurz drüber — nichts davon hindert das Roadbook am Funktionieren:', 'A speed-controlled zone is never lifted — it starts at note': 'Eine Geschwindigkeitszone wird nie aufgehoben — sie beginnt bei Notiz', 'A speed limit is lifted where no zone is open': 'Ein Tempolimit wird aufgehoben, obwohl keine Zone offen ist', 'Save anyway': 'Trotzdem speichern', 'Let me fix it': 'Ich korrigiere es',
             'Terms of Use': 'Nutzungsbedingungen',
             'terms.title': 'Nutzungsbedingungen',
@@ -121,7 +121,7 @@
             'Too many attempts. Please wait a moment.': 'Zu viele Versuche. Bitte warte einen Moment.', 'Try again in': 'Erneut versuchen in',
             'Read': 'Lesen', 'View': 'Anzeigen', 'Search roadbooks…': 'Roadbooks suchen…',
             'Search users…': 'Nutzer suchen…', 'Search participants…': 'Teilnehmer suchen…', 'Remove the event logo?': 'Das Logo der Veranstaltung entfernen?', 'All events': 'Alle Veranstaltungen', 'Export CSV': 'CSV exportieren', 'Only the owner can change the visibility.': 'Nur der Inhaber kann die Sichtbarkeit ändern.', 'From your events': 'Aus deinen Veranstaltungen', 'is editing this roadbook — read-only.': 'bearbeitet dieses Roadbook gerade — nur Lesen.', 'Force unlock': 'Entsperren erzwingen', 'Force unlock? The other editor may lose unsaved changes.': 'Entsperren erzwingen? Ungespeicherte Änderungen des anderen Editors können verloren gehen.', 'This roadbook is being edited by someone else.': 'Dieses Roadbook wird gerade von jemand anderem bearbeitet.', 'users': 'Nutzer',
-            'Roadbook name': 'Roadbook-Name', 'Recorded trip': 'Aufgezeichnete Fahrt',
+            'Recorded trip': 'Aufgezeichnete Fahrt',
             'Elapsed': 'Zeit', 'No GPS': 'Kein GPS', 'Resume the recording in progress?': 'Laufende Aufnahme fortsetzen?', 'Finish the recording?': 'Aufnahme beenden?', 
             'Adjust on the trail (live GPS)': 'Auf der Strecke anpassen (Live-GPS)',
             'Title': 'Titel', 'Description': 'Beschreibung', 'Shown on the public roadbook page': 'Auf der öffentlichen Roadbook-Seite angezeigt',
@@ -328,8 +328,8 @@
             'Record GPX': 'GPX aufzeichnen', 'Stop recording': 'Aufnahme stoppen', 'Speed alert': 'Geschwindigkeitsalarm', 'Speed to watch (km/h · 0 = off)': 'Zu überwachende Geschwindigkeit (km/h · 0 = aus)', 'Colours': 'Farben',
             'green': 'grün', 'orange': 'orange', 'red': 'rot', 'Recorded track': 'Aufgezeichneter Track', 'points': 'Punkte', 'Download GPX': 'GPX herunterladen', 'Convert into roadbook': 'In Roadbook umwandeln', 'Saving…': 'Speichern…', 
             'End the trip and reset everything?': 'Fahrt beenden und alles zurücksetzen?', 'Trip reset.': 'Fahrt zurückgesetzt.', 'Recording GPX track.': 'GPX-Track wird aufgezeichnet.', 'Could not load the recorded trip.': 'Aufgezeichnete Fahrt konnte nicht geladen werden.',
-            'Sample every (seconds)': 'Intervall (Sekunden)', 'Suggested: 3s car/rally · 5s bike · 10s walking': 'Empfohlen: 3s Auto/Rallye · 5s Fahrrad · 10s zu Fuß', 'File name': 'Dateiname', 'Saved to your Pictures folder': 'Im Ordner „Bilder" gespeichert', 'Saved to your Downloads folder': 'Im Ordner „Download" gespeichert', 'Saved to your device': 'Auf dem Gerät gespeichert', 'Could not save the file.': 'Die Datei konnte nicht gespeichert werden.', 'Latitude': 'Breitengrad', 'Longitude': 'Längengrad', 'Profile': 'Profil', 'Language': 'Sprache', 'Sections': 'Bereiche', 'Public roadbooks': 'Öffentliche Roadbooks', 'Set up an event with its roadbooks, participants and rankings.': 'Richte ein Event mit Roadbooks, Teilnehmern und Ranglisten ein.', 'Open from a file or your roadbooks, or pick a public one below.': 'Aus einer Datei oder deinen Roadbooks öffnen, oder unten ein öffentliches wählen.', 'seo.navigate.title': 'Navigieren — RDBK.app', 'seo.navigate.desc': 'Live-GPS-Modi: der Tripmaster-Reisecomputer und der Roadbook Reader.', 'Stop recording?': 'Aufzeichnung beenden?', 'Discard this recording?': 'Diese Aufzeichnung verwerfen?', 'You are offline — reconnect to see your roadbooks.': 'Du bist offline — verbinde dich erneut, um deine Roadbooks zu sehen.', 'Track too short.': 'Track zu kurz.',
-                       'Auto-saved while recording, recovered if the app closes.': 'Wird während der Aufnahme automatisch gespeichert; wiederhergestellt wenn die App geschlossen wird.',
+            'Could not save the file.': 'Die Datei konnte nicht gespeichert werden.', 'Latitude': 'Breitengrad', 'Longitude': 'Längengrad', 'Profile': 'Profil', 'Language': 'Sprache', 'Sections': 'Bereiche', 'Public roadbooks': 'Öffentliche Roadbooks', 'Set up an event with its roadbooks, participants and rankings.': 'Richte ein Event mit Roadbooks, Teilnehmern und Ranglisten ein.', 'Open from a file or your roadbooks, or pick a public one below.': 'Aus einer Datei oder deinen Roadbooks öffnen, oder unten ein öffentliches wählen.', 'seo.navigate.title': 'Navigieren — RDBK.app', 'seo.navigate.desc': 'Live-GPS-Modi: der Tripmaster-Reisecomputer und der Roadbook Reader.', 'Stop recording?': 'Aufzeichnung beenden?', 'Discard this recording?': 'Diese Aufzeichnung verwerfen?', 'You are offline — reconnect to see your roadbooks.': 'Du bist offline — verbinde dich erneut, um deine Roadbooks zu sehen.', 'Track too short.': 'Track zu kurz.',
+                       
             'Recover unsaved GPX recording?': 'Nicht gespeicherte GPX-Aufnahme wiederherstellen?', 
             'Resume the run in progress?': 'Laufende Fahrt fortsetzen?', 'Resume': 'Fortsetzen',
             'Unsaved work': 'Nicht gespeicherte Arbeit', 'Work left in progress in other tools. Resume it, or discard it.': 'Arbeit in anderen Tools in Bearbeitung. Fortsetzen oder verwerfen.', 'Discarded.': 'Verworfen.', 'Untitled': 'Ohne Titel',
@@ -341,7 +341,7 @@
             'Check point': 'Kontrollpunkt', 'Passage control': 'Durchgangskontrolle',
             'Paused': 'Pausiert', 
             'You left unsaved changes here. Continue from them?': 'Du hast hier nicht gespeicherte Änderungen hinterlassen. Damit fortfahren?',
-            'Record a GPX track': 'GPX-Track aufzeichnen', 'Sound on note': 'Ton bei Notiz',
+            
             /* external remote (#20) */             
             'No GPS fixes yet — check that location is turned on.': 'Noch keine GPS-Fixes — prüfe, ob Standort aktiviert ist.',
             'Position too coarse for a reliable track — grant precise location.': 'Position zu ungenau für einen verlässlichen Track — genauen Standort erlauben.',
@@ -945,10 +945,10 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* Reader: the mode comes from the context, and every run ends with its report (#617 · #618 · #619) */
 Object.assign(window.RBi18nLangs.de, {
-    "Before you start": "Bevor du startest",
-    "Scored in the event": "Gewertet in der Veranstaltung",
-    "you will be asked your vehicle number, and the result goes to the event ranking.": "du wirst nach deiner Fahrzeugnummer gefragt, und das Ergebnis geht in die Wertung der Veranstaltung.",
-    "Leave the run without a report? Your progress on the notes will be lost.": "Ohne Bericht beenden? Dein Fortschritt bei den Notizen geht verloren.",
+    
+    
+    
+    
     "Finish the run now? The notes you have not reached count as skipped.": "Jetzt beenden? Nicht erreichte Notizen zählen als ausgelassen.",
     "Roadbook completed": "Roadbook abgeschlossen",
     "Run finished": "Fahrt beendet",
@@ -1501,14 +1501,14 @@ Object.assign(window.RBi18nLangs.de, {
     "Take a quick tour? Each tool shows you its main controls once, the first time you open it.": "Ein kurzes Tutorial? Jedes Werkzeug zeigt dir einmal seine wichtigsten Bedienelemente – beim ersten Öffnen.",
     "Skip tutorial": "Tour überspringen",
     "The roadbook": "Das Roadbook",
-    "The next note always sits on top; the blue box shows what is left along the track.": "Die nächste Notiz steht immer oben; das blaue Feld zeigt, was entlang des Tracks noch fehlt.",
+    
     "Odometers": "Kilometerzähler",
     "Total and partial: they line up with the roadbook at every note.": "Gesamt und Teilstrecke: Sie gleichen sich an jeder Notiz dem Roadbook an.",
     "On, the GPS validates each note as you reach it. Off, tap the note yourself.": "An: Das GPS bestätigt jede Notiz, sobald du sie erreichst. Aus: Du tippst sie selbst an.",
     "A map of where you are, with an arrow pointing at the next note.": "Eine Karte deiner Position, mit einem Pfeil zur nächsten Notiz.",
     "Stops the clock and the odometers.": "Hält Uhr und Kilometerzähler an.",
     "Ends the run and shows your report.": "Beendet die Fahrt und zeigt deinen Bericht.",
-    "Exits without a report.": "Beendet ohne Bericht.",
+    
     "One tap drops a note right where you are.": "Ein Tipp setzt eine Notiz genau dort, wo du bist.",
     "Pinned to the track at your position.": "Wird an deiner Position an den Track geheftet.",
     "Undo note": "Notiz rückgängig",
@@ -1615,4 +1615,19 @@ Object.assign(window.RBi18nLangs.de, {
     "The app is up to date.": "Die App ist aktuell.",
     "A newer version is available. Refresh to load it.": "Eine neuere Version ist verfügbar. Aktualisiere, um sie zu laden.",
     "You have the latest version.": "Du hast die neueste Version.",
+});
+
+/* the Reader's roadbook tour (#935) */
+Object.assign(window.RBi18nLangs.de, {
+    "The next note always sits on top, and turns blue as you close in.": "Die nächste Notiz steht immer oben und wird blau, wenn du dich näherst.",
+});
+
+/* release 1.9.10 notes */
+Object.assign(window.RBi18nLangs.de, {
+    "Navigate and go": "Navigieren und los",
+    "Navigate starts straight away: no options to answer, the GPX track is always recorded and the sound is always on.": "Navigieren startet sofort: keine Optionen, der GPX-Track wird immer aufgezeichnet und der Ton ist immer an.",
+    "With Auto on, a missed note no longer stops the run: once you are following the track again, the next note takes over.": "Mit Auto hält eine verpasste Notiz die Fahrt nicht mehr an: Sobald du wieder dem Track folgst, übernimmt die nächste Notiz.",
+    "A cleaner Reader: no title row, four big buttons on two rows, and Finish as the one way out.": "Ein aufgeräumter Reader: keine Titelzeile, vier große Tasten in zwei Reihen und Beenden als einziger Ausgang.",
+    "Photos and texts in a roadbook use the full width of the page, and the sound comes back by itself after a call or a locked screen.": "Fotos und Texte im Roadbook nutzen die volle Breite, und der Ton kommt nach einem Anruf oder gesperrtem Bildschirm von selbst zurück.",
+    "Every file the app saves opens the share sheet so you choose where it goes, and the app no longer zooms or goes full screen by mistake.": "Jede Datei, die die App speichert, öffnet das Teilen-Menü, damit du wählst, wohin sie geht, und die App zoomt nicht mehr und geht nicht mehr versehentlich in den Vollbildmodus.",
 });

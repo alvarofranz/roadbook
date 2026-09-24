@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.10', date: '2026-09-24',
+        title: 'Navigate and go',
+        items: [
+            'Navigate starts straight away: no options to answer, the GPX track is always recorded and the sound is always on.',
+            'With Auto on, a missed note no longer stops the run: once you are following the track again, the next note takes over.',
+            'A cleaner Reader: no title row, four big buttons on two rows, and Finish as the one way out.',
+            'Photos and texts in a roadbook use the full width of the page, and the sound comes back by itself after a call or a locked screen.',
+            'Every file the app saves opens the share sheet so you choose where it goes, and the app no longer zooms or goes full screen by mistake.',
+        ],
+    },
+    {
         version: '1.9.9', date: '2026-09-23',
         title: 'The finishing touches',
         items: [

@@ -147,9 +147,9 @@ describe('the cookie notice reserves its own room (#405)', () => {
     });
 
     it('is reserved by the body padding in every mode', () => {
-        // plain, mobile (on top of the tab bar) and the immersive/fullscreen tools, which zero
-        // the tab-bar padding and would otherwise reserve nothing
-        for (const rule of [ruleOf('body'), mobileRuleOf('body'), ruleOf('body.rb-fs, body.rb-immersive')]) {
+        // plain, mobile (on top of the tab bar) and the immersive Reader, which zeroes the
+        // tab-bar padding and would otherwise reserve nothing
+        for (const rule of [ruleOf('body'), mobileRuleOf('body'), ruleOf('body.rb-immersive')]) {
             expect(declOf(rule, 'padding-bottom')).toContain('var(--notice-h, 0px)');
         }
     });

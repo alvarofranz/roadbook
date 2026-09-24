@@ -2,7 +2,7 @@
 
 Il **Reader** è il navigatore — il copilota digitale. Apre un roadbook (file `.rdbk` o
 sfida pubblica) e lo trasforma in una tabella di note stile cartaceo guidata dal GPS:
-nota attiva centrata, odometro vivo, bussola CAP, validazione manuale o automatica e, alla fine,
+nota attiva in cima alla lista, odometro vivo, bussola CAP, validazione manuale o automatica e, alla fine,
 il **report della run** (#618) — con, in gara, penalità e QR firmato col risultato. Una sessione in corso viene
 *checkpointata* in `localStorage` a ogni fix, così una telefonata, un blocco schermo o la
 chiusura della scheda da parte del sistema non perdono nulla.
@@ -38,7 +38,8 @@ sul dispositivo finché non si accede.
 `RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
 roadbook senza note, legge il flag roadbook-level `map_access` (`mapAllowed`,
 [reader.js](../public/reader/reader.js)) che decide se il Reader ha una mappa (§6), e
-apre il **modal di modalità** (§5).
+mostra l'**anteprima** in sola lettura (`showPreview`): da lì **Navigate** avvia la run (§5). Anche
+un roadbook aperto da un evento (`?event=<slug>`) parte dall'anteprima, mai da una finestra.
 
 ### Altri ingressi (oltre al picker manuale)
 All'avvio una IIFE asincrona ([reader.js](../public/reader/reader.js)) decide in
@@ -116,7 +117,7 @@ vero è in `app.css`.
 | Stato | Classe | Quando | Aspetto |
 |-------|--------|--------|---------|
 | **Raggiunta** | `.done` | `reached.has(i)` — validata davvero | verde |
-| **Materiale** | `.block` (`.block-photo` · `.block-ad` · `.block-text`) | una foto, una pubblicità o un testo che la nota porta con sé (`RB.noteBlocks`, #542): disegnata prima o dopo la riga della nota, senza numero né stato — non è un waypoint | carta, testo a tutta larghezza |
+| **Materiale** | `.block` (`.block-photo` · `.block-ad` · `.block-text`) | una foto, una pubblicità o un testo che la nota porta con sé (`RB.noteBlocks`, #542): disegnata prima o dopo la riga della nota, senza numero né stato — non è un waypoint | carta; l'immagine (`.block-media`) occupa le colonne contatore + vignetta con il testo accanto nell'ultima, o tutta la riga (`.wide`) senza testo; un testo da solo (`.col-text-wide`) prende tutta la riga; nessuna immagine supera 40vh (#934) |
 | **Saltata** | `.skipped` | `i < activeIdx` ma non in `reached` (superata senza validare) | **rossa** — un rosa pallido si leggeva come "fatta" (#529) |
 | **Attiva** | `.active` | `i === activeIdx` | bordo rosso |
 | **Imminente** | (nessuna) | nota futura | bianco |
@@ -129,8 +130,9 @@ Distinzioni chiave:
   nota oltrepassata che non è dentro `reached` è considerata saltata.
 - `.near` e `.arriving` sono gli **unici stati guidati dal GPS in tempo reale** (`paintApproach`,
   chiamata da `refreshLive` a ogni fix affidabile): appartengono solo alla nota attiva e
-  vengono ripuliti dalle altre righe da `updateNoteStates`. La riga attiva porta anche il
-  readout `.togo` con la distanza che resta da percorrere (#387).
+  vengono ripuliti dalle altre righe da `updateNoteStates` (`paintApproach(dist)` colora e basta).
+  La riga attiva porta solo totale, +parziale, numero e badge come ogni altra (#935): la distanza
+  che resta da percorrere si legge sulla mappa della nota (`.nmap-togo`, §6).
 - Lo stato **`.tight`** è agganciato alla `partial_distance` della nota *seguente*, non al GPS
   — è una proprietà statica del roadbook (una coppia di note a meno di 50 m), non dice nulla
   su dove si trovi chi guida.
@@ -139,8 +141,8 @@ Distinzioni chiave:
 
 ## 4. La barra odometro in alto
 
-`.odometer-bar` si vede solo in navigazione (l'anteprima la nasconde), dove è una riga del guscio
-applicativo (sotto) — non è mai posizionata. È una griglia
+`.odometer-bar` si vede solo in navigazione (l'anteprima la nasconde), dove è la **prima** riga del
+guscio applicativo (sotto) — nessuna riga titolo sopra, #936 — e non è mai posizionata. È una griglia
 disegnata come una riga nota (#567): nella colonna **sinistra** prog. con part. subito sotto —
 come ogni nota mostra totale sopra parziale, così il parziale live si legge allineato a quello
 delle note — e a destra bussola · ora sulla prima riga, GPS · velocità sulla seconda. I readout
@@ -149,7 +151,6 @@ si aggiornano a ogni fix in `onFix`
 
 | Elemento | ID | Sorgente |
 |----------|-----|----------|
-| Titolo roadbook | `#navTitle` | `rb.meta.title`, riga full-width |
 | **Totale** (prog.) | `#odoTotal` | `tripTotalM/1000`, 2 decimali |
 | **Parziale** (part.) | `#odoPartial` | `tripPartialM/1000`, 2 decimali |
 | **Bussola + freccia** | `#odoBrg` / `#odoBrgArrow` | rilevamento alla prossima nota (`RB.geo.bearingDeg`), altrimenti `meter.heading`; freccia ruotata *relativa* al proprio heading (0° = su = dritto) |
@@ -191,7 +192,7 @@ Conseguenze da tenere a mente:
   della lista (`list.scrollTop`);
 - `#noteList` non ha più `padding-bottom` a fare da segnaposto per l'altezza delle barre;
 - niente di condiviso può galleggiarci sopra: chip di lingua e chip flottanti sono nascosti in
-  `body.rb-immersive`/`body.rb-fs` (il chip lingua stava sui pulsanti d'azione mentre si guidava),
+  `body.rb-immersive` (il chip lingua stava sui pulsanti d'azione mentre si guidava),
   e il banner GPS-web pure — la partenza è già stata filtrata dalla sua modale.
 
 Resta una sola variabile CSS, `--bottom-stack`, pubblicata da `publishBottomStack()`: l'altezza
@@ -211,31 +212,34 @@ deriva GPS e traiettorie diverse, ripartendo "pulito" a ogni nota; il parziale a
 
 ---
 
-## 5. Il modal di avvio
+## 5. Navigate avvia la run (#936)
 
-**Navigate** (o l'apertura da un evento) apre la finestra di avvio `#startModal`
-(`openStartDialog`) con le opzioni di sessione, lette da `readStartOpts`:
-
-- **Registra una traccia GPX** (`#optGpx`) — se attivo, `RBGpxRecorder.begin()` parte dopo lo
-  start ([reader.js](../public/reader/reader.js)).
-- **Suono su nota** (`#optSound`, default attivo) — quando una nota viene raggiunta/validata
-  (sia trip `markReached` sia competition `validateAt`, auto o manuale) suona il **campanello di
-  successo** (`RBSuccess.ring()`, `assets/sounds/success.mp3`, #768) — lo stesso della nota nel
-  Recorder; l'**ultima** nota suona invece la fanfara dell'arrivo (`RBSuccess.fanfare()`, #843). Il
-  tap di avvio li sblocca (`RBSuccess.unlock()`, un gesto utente) così possono suonare anche su una
-  convalida GPS automatica. Si mescolano con la musica di un'altra app, senza fermarla (#842).
+**Navigate** (`#navigateBtn`, nell'anteprima) naviga: nessuna opzione da rispondere prima. Il tap
+sblocca subito il suono (`RBSuccess.unlock()`, dentro il gesto stesso: iOS lascia suonare più tardi
+solo dopo un tap), così il **campanello di successo** (`RBSuccess.ring()`, `assets/sounds/success.mp3`,
+#768 — lo stesso della nota nel Recorder) suona a ogni nota validata (trip `markReached` e competition
+`validateAt`, auto o manuale) e l'**ultima** nota suona la fanfara dell'arrivo (`RBSuccess.fanfare()`,
+#843), anche su una convalida GPS automatica. Il suono è sempre attivo e si mescola con la musica di
+un'altra app, senza fermarla (#842).
 
 **La modalità non si sceglie** (#617): la gara esiste per la classifica di un evento, quindi
-`openStartDialog` chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel
+Navigate chiede `event_get` solo quando il Reader è aperto con `?event=<slug>` e, se quel
 roadbook (cercato per lo **slug del roadbook caricato**, quello che restituiscono `public_get` /
 `rb_get` / `admin_rb_get` — mai l'ultimo pezzo dell'URL) ha `scoring_mode ≠ free`, la run è in
-**competition** — `#startGo` apre `#teamModal` per il **numero veicolo** (`team`, 1–999, solo cifre)
-e poi `startNav(true)`; il modal lo dice in `#startComp`. *Cancel* sul numero veicolo torna alla
-finestra di avvio (Esc la chiude). Tutto il resto parte subito come **trip** (`startNav(false)`). Il punteggio è in
-[ranking-model.md](./ranking-model.md).
+**competition**: l'unica domanda è il **numero veicolo** (`#teamModal`, `team`, 1–999, solo cifre),
+che il risultato firmato richiede; *Cancel* torna all'anteprima. Tutto il resto parte subito come
+**trip**. Il punteggio è in [ranking-model.md](./ranking-model.md).
 
-`auto` parte sempre `true` e si commuta durante la corsa con l'interruttore Auto nella barra di
-navigazione (`#autoBtn`).
+`startRun(comp)` è l'avvio di una run nuova: `auto = true`, `startNav(comp)` e
+`RBGpxRecorder.begin()` — **il log GPX gira sempre** con ogni run del Reader, dal primo fix, e
+finisce con lei (sotto). Una run ripresa ripristina entrambi dal checkpoint. `auto` si commuta
+durante la corsa con l'interruttore Auto nella barra d'azione (`#autoBtn`).
+
+### La barra d'azione
+`.fabrow` è una griglia 2×2: **Auto** · **Note map** sulla prima riga, **Pause** · **Finish** sulla
+seconda; senza mappa (`#mapBtn` nascosto) Auto prende tutta la sua riga. Pause mostra solo
+"Pause"/"Resume". Non c'è un'uscita a parte: **Finish** è l'unico modo di chiudere una run, e finisce
+sempre col report.
 
 ### Fine della run e report (#618 · #619)
 **Finish** è nella barra d'azione in ogni run (prima dell'ultima nota chiede conferma: le note
@@ -262,9 +266,10 @@ solo finché è pubblica. Share prima di aver scelto chiede prima (#852): la car
 nulla. Il testo condiviso è `RBRun.shareText` (*"Guarda il roadbook che ho completato!"* + titolo +
 link), lo stesso del profilo. Una run senza zone con limite non dice nulla sui limiti (#848). Il report parte dalla card (con un segnaposto della sua misura mentre si
 disegna), Share subito sotto, poi l'interruttore, le cifre e il QR di gara. Una run di gara di un roadbook di evento entra da sola nella
-classifica condivisa. **End** (esci) resta l'uscita *senza* report, confermata.
+classifica condivisa. **Done** torna alla pagina dell'evento quando la run è stata aperta da un
+evento (`eventSlug`, #640), altrimenti alla landing del Reader.
 
-**Il log GPX finisce con la run.** Sia **Done** sul report sia **End** passano per `endRun`, che —
+**Il log GPX finisce con la run.** **Done** passa per `endRun`, che —
 se `RBGpxRecorder.recording` — chiude il log e apre il modal "traccia registrata"
 (`RBGpxRecorder.handOver`) **dopo** aver chiuso il report: il report non è congedabile, quindi i
 due modal sono in sequenza, mai sovrapposti. Solo gli esiti espliciti del modal (Download ·
@@ -315,7 +320,8 @@ attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga.
 `updateNoteStates` chiama `moveNoteMap`, che ri-aggancia **la stessa** mappa GL sotto la nuova riga
 (zoom, layer e heading-up restano) e la ri-punta sul suo waypoint; dopo l'ultima nota si chiude.
 Nell'angolo in alto a sinistra `.nmap-togo` mostra numero della nota e distanza ancora da
-percorrere (`paintMapTogo`, aggiornato da `refreshLive` a ogni fix). `toggleNoteMap`
+percorrere (`paintMapTogo`, aggiornato da `refreshLive` a ogni fix) — l'unico posto dove si legge
+(#935). `toggleNoteMap`
 ([reader.js](../public/reader/reader.js)) apre un `RBMap` nello slot `.nmap` sotto la
 riga come un **primo piano di dove si trova chi guida**: centro su `lastHere` a
 `NOTE_MAP_ZOOM` (16) e **solo il waypoint di quella nota** (`showRoadbook({track: [], notes: [n]},
@@ -358,7 +364,7 @@ GPS corrente (`rb-pos`, cerchio azzurro `#5aa9ff`) aggiornato a ogni fix:
   (`rotationAlignment: 'map'`), quindi con la mappa girata sulla tua rotta punta alla nota rispetto a
   dove sei rivolto. Sotto i 5 m sparisce (sei arrivato).
 - **Distanze** (#846 · #847): ogni distanza si legge come la scrive il roadbook, in km con due
-  decimali. Il "mancano" della riga attiva e della mappa è misurato **lungo il percorso**
+  decimali. Il "mancano" della mappa è misurato **lungo il percorso**
   (`RB.leftToNote` su `RB.routeAhead`: il fix proiettato sulla traccia tra la nota precedente e la
   successiva), così il parziale fatto + quello che manca = il parziale della nota — ma **mai meno
   della linea retta** al waypoint: il percorso non può essere più corto, e chi non è sul tratto
@@ -407,6 +413,19 @@ Conseguenze del design:
   successiva è lei a essere validata e la mancata resta *saltata* — **rossa** sul roadbook — con
   il prezzo che un salto ha già (`RB.skipPenalty` in competizione, tramite `autoValidate`). Senza
   questo la corsa restava ferma per sempre su un waypoint in cui non si sarebbe più entrati.
+- **Si ri-sincronizza su dove sei** (`RB.routeResync`, #931): quando `RB.autoReachedIdx` non trova
+  niente, `resyncFrom(here, acc, disp)` tiene una scia degli ultimi fix in movimento (azzerata a
+  ogni cambio della nota attiva) e chiede al core se chi guida ha **saltato** la nota attiva e sta
+  **seguendo la traccia** verso le successive: gli ultimi `RESYNC_FIXES` (4) fix devono proiettarsi
+  sul percorso (dalla nota validata per ultima, entro `RESYNC_ON_ROUTE_M` + accuratezza),
+  concatenarsi in avanti di non più di quanto il terreno fra loro spieghi e coprire almeno
+  `RESYNC_FOLLOW_M` (80 m) di traccia; fra le catene valide vince quella che parte prima (su un
+  circuito chiuso la partenza non si legge mai come l'arrivo), e deve stare oltre la nota attiva
+  (distanza + reach). Nessuna finestra fissa di note. Se torna una nota più avanti, il cursore ci si
+  sposta: le note passate restano **saltate** (in competizione con la stessa penalità di un salto
+  manuale, `RB.skipPenalty`, e i loro limiti passati con `passOver`) e **nulla viene validato** —
+  risparmia solo il tap. Un singolo fix, uno spike o una strada che incrocia soltanto il percorso
+  non spostano niente; oltre l'ultima nota la run la chiude chi guida, mai il re-sync.
 
 `auto` è commutabile a metà sessione col pulsante `#autoBtn` — ed è l'**unica** autorità mentre è
 acceso: in auto la validazione manuale è rifiutata (vedi sotto).
@@ -466,15 +485,12 @@ che addebita il salto quando la nota raggiunta non è quella attiva e poi chiama
 
 Il pulsante `#pauseBtn` ([reader.js](../public/reader/reader.js)) ferma il watch GPS
 (`meter.stop()`) e rilascia il **wake lock** per risparmiare batteria (es. sosta pranzo);
-mostra "Paused" e pallino GPS spento. Il `resume` riavvia lo stesso meter. Mentre è in pausa
+il pulsante diventa "Resume" e il readout GPS mostra "Paused" col pallino spento. Il `resume` riavvia lo stesso meter. Mentre è in pausa
 l'odometro non avanza, e nemmeno dopo: `stop()` azzera l'ancora dell'odometro, la traccia della
 rotta e l'ultima posizione di velocità, quindi il primo fix dopo Resume riparte da lì (`disp` 0,
 `from` null) — la strada fatta in pausa non entra in un solo passo e non valida note lungo una
 linea retta. Il watch GPS e il wake lock
 sono gestiti internamente da `RBGpsMeter` — vedi quel modulo.
-
-Il pulsante `#endBtn` esce dalla navigazione previa conferma (il progresso note va perso):
-`endRun` (sessione cancellata, GPX al suo modal) e poi torna alla home.
 
 ---
 
@@ -538,5 +554,5 @@ ne aveva una copia propria).
 - **Rifiutare la ripresa non cancella la sessione**: è un comportamento voluto (anti
   tap-accidentale), ma significa che una sessione vecchia può ripresentarsi finché non si
   avvia una nuova corsa o si esce esplicitamente.
-- **`endBtn` scarta il progresso note senza salvarlo**: l'unico modo per conservare un
-  risultato è `Finish` (Competition) → QR.
+- **Non c'è un'uscita senza report**: ogni run si chiude con `Finish`, e il report (col QR in
+  Competition) è l'unico modo in cui una run lascia la navigazione.

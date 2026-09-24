@@ -68,8 +68,9 @@ recorded track has no gaps. The browser PWA cannot do this; the app can.
   World Imagery) · topo (OpenTopoMap) · OSM, cycled by the layer toggle — and free 3D terrain (AWS
   Terrarium). `RB_CONFIG.styleSatellite` / `styleTopo` / `styleOsm` swap in a licensed provider (§4).
 - **Camera & share** — photo capture is a file input (opens the OS camera/picker, through the
-  webview), and a generated file — the result QR, the run card — goes through `RBShareFile`, which
-  in the app hands it to `RBNative.shareFile` (the OS share sheet). Only the iOS usage-description
+  webview), and every generated file — GPX, `.rdbk`, CSV, PDF, the result QR, the run card — goes
+  in the app to `RBNative.shareFile`, the OS share sheet (Save to Files / Downloads, open in, send),
+  through `RBDownload` and `RBShareFile` alike. Only the iOS usage-description
   keys are needed (§4).
 - **Navigation** — `public/index.html` is the one contextual home (marketing landing on the web,
   app home in the app). The bottom tab bar carries back + **Roadbooks · Editor · Recorder ·

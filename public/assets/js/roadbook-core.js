@@ -949,6 +949,61 @@
         }
         return { atM: at.atM, offRouteM: at.dist };
     }
+    /* Re-sync the run to where the rider actually is (#931). With Auto on, a note missed by the GPS
+       (a gap, a radius too small, another line through the junction) used to strand the run: it
+       sat on that note while the rider drove on. This says which note should be active instead —
+       only when the rider has demonstrably SKIPPED the active one and is FOLLOWING the track
+       towards the next ones. There are no fixed windows (no "next 10 notes"): the answer comes from
+       where the recent fixes lie on the route and whether they keep following it.
+       - Where on the route: every fix is projected onto the track from the last validated note
+         on; each segment within the fix's tolerance (RESYNC_ON_ROUTE_M + its accuracy) is a place
+         it may be. A fix with none is off the route, and nothing is decided.
+       - Following it: the last RESYNC_FIXES fixes must chain along the route — each one ahead of
+         the one before, by no more than the ground between them explains — and together cover at
+         least RESYNC_FOLLOW_M of track. One fix is never enough: a GPS spike or a road that only
+         crosses the route moves nothing.
+       - Of every chain that holds, the one that starts earliest on the route wins: continuity with
+         where the run is, so on a closed circuit the start never reads as the finish.
+       - Skipped: the chain's position is past the active note (its distance on the route plus its
+         radius). On the route but still heading to it, nothing changes.
+       Returns the first note not yet behind that position — the notes before it are skipped — or
+       -1 for "no change". `trail`: the recent moving fixes, oldest first, { lat, lon, acc }; each
+       caches its candidates on itself (`cands`, keyed by the search start) so a fix is projected
+       once. `radiusOf(i)` is the Reader's reach radius. */
+    const RESYNC_FIXES = 4, RESYNC_FOLLOW_M = 80, RESYNC_ON_ROUTE_M = 25, RESYNC_STRETCH = 1.5;
+    function routeResync(rb, cum, activeIdx, trail, radiusOf) {
+        const track = rb.track, notes = rb.notes, active = notes && notes[activeIdx];
+        if (!active || !trail || trail.length < RESYNC_FIXES || !track || track.length < 2 || !cum || cum.length !== track.length) return -1;
+        const fromK = Math.max(0, Math.min(activeIdx > 0 ? notes[activeIdx - 1].idx : 0, track.length - 2));
+        const recent = trail.slice(-RESYNC_FIXES);
+        for (const p of recent) {
+            if (p.cands && p.fromK === fromK) continue;
+            const tol = RESYNC_ON_ROUTE_M + (p.acc || 0), proj = planarAround(p), P = proj(p), cands = [];
+            for (let k = fromK; k < track.length - 1; k++) {
+                const seg = onSegment(P, proj(track[k]), proj(track[k + 1]));
+                if (seg.dist <= tol) cands.push(cum[k] + (cum[k + 1] - cum[k]) * seg.t);
+            }
+            p.cands = cands; p.fromK = fromK;
+        }
+        let best = null;
+        for (const start of recent[0].cands) {
+            let at = start;
+            for (let j = 1; j < recent.length && at != null; j++) {
+                const step = haversineM(recent[j - 1], recent[j]), tol = RESYNC_ON_ROUTE_M + (recent[j].acc || 0);
+                let next = null;
+                for (const c of recent[j].cands) {
+                    if (c < at - tol || c - at > step * RESYNC_STRETCH + tol) continue; // backwards, or a leap no drive explains
+                    if (next == null || Math.abs(c - at - step) < Math.abs(next - at - step)) next = c;
+                }
+                at = next;
+            }
+            if (at == null || at - start < RESYNC_FOLLOW_M) continue;
+            if (!best || start < best.start) best = { start, at };
+        }
+        if (!best || best.at <= active.distance + radiusOf(activeIdx)) return -1;
+        for (let j = activeIdx + 1; j < notes.length; j++) if (notes[j].distance + radiusOf(j) > best.at) return j;
+        return -1; // past the last note: the run is finished by the rider, never by a re-sync
+    }
     // What is left to note i (#847): along the route like the roadbook's own partials, so the partial
     // driven plus what is left add up to the note's partial — but never less than the straight line
     // to the waypoint. The route can only be longer than that, and a driver who is not on the
@@ -1481,7 +1536,7 @@
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
         recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, leftToNote, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
         roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,

@@ -681,30 +681,13 @@
         });
         refresh();
     };
+    // iOS Safari zooms the page on a pinch whatever the viewport meta says (#933): its own gesture
+    // events are refused everywhere but on a map, which zooms itself.
+    document.addEventListener('gesturestart', (e) => { if (!(e.target.closest && e.target.closest('.maplibregl-map'))) e.preventDefault(); }, { passive: false });
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('input[type="date"]').forEach((inp) => { try { RBDateField(inp); } catch (e) {} });
     });
 
-    // Shared fullscreen toggle for the field tools (Tripmaster, Reader): hides the site header +
-    // footer for a distraction-free view and uses the browser Fullscreen API where available. Pass
-    // the toggle button; its <i> icon swaps expand/compress. Leaving browser fullscreen (Esc)
-    // restores everything. Page CSS offsets any sticky bar via `body.rb-fs`.
-    window.RBFullscreen = (btn) => {
-        if (!btn) return;
-        const set = (on) => {
-            document.body.classList.toggle('rb-fs', on);
-            const i = btn.querySelector('i'); if (i) i.className = on ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
-        };
-        btn.addEventListener('click', () => {
-            const on = !document.body.classList.contains('rb-fs');
-            set(on);
-            try {
-                if (on) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); }
-                else if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-            } catch (e) {}
-        });
-        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) set(false); });
-    };
     // The one chevron pager (‹ page/pages ›, plus an optional trailing label): empty on a single
     // page (the label alone stays, e.g. a result count). onGo(page) fires already clamped.
     window.RBPager = (el, page, pages, onGo, label) => {
@@ -912,28 +895,48 @@
     // (navigator.audioSession, WebKit 16.4+), a mixable session — so the context can simply stay
     // running between sounds, and a GPS validation minutes after the last tap still rings. A
     // mixable iOS session follows the silent switch.
+    // iOS INTERRUPTS the context whenever something else touches the audio session — the screen
+    // locking, a notification, Siri, a call, another app — and only a touch may resume it (#937).
+    // So a sound never waits on a resume that may never come (it is dropped after RESUME_WAIT_MS),
+    // and every touch while the context is not running resumes it — or, interrupted, replaces it —
+    // so one tap anywhere brings the sound back for the rest of the run.
     window.RBSuccess = (function () {
-        let context = null;
-        const buffers = {};
+        const RESUME_WAIT_MS = 400;
+        let context = null, buffers = {};
         const audio = () => {
-            if (context) return context;
+            if (context && context.state !== 'closed') return context;
             const Context = window.AudioContext || window.webkitAudioContext;
             if (!Context) return null;
             try { if (navigator.audioSession) navigator.audioSession.type = 'transient'; } catch (e) {}
-            context = new Context();
+            context = new Context(); buffers = {}; // decoded sounds belong to the context that made them
             return context;
         };
         const load = (name) => buffers[name] || (buffers[name] = fetch(ROOT + 'assets/sounds/' + name + '.mp3')
             .then((r) => r.arrayBuffer())
             .then((bytes) => new Promise((resolve, reject) => audio().decodeAudioData(bytes, resolve, reject)))
             .catch((e) => { delete buffers[name]; throw e; }));
+        const settle = (promise) => Promise.race([promise.catch(() => {}), new Promise((r) => setTimeout(r, RESUME_WAIT_MS))]);
+        // a touch while the sound is down, all inside the touch (iOS counts nothing after an await): a
+        // suspended context resumes; an interrupted one, which iOS often never lets run again, is
+        // replaced by a fresh one with the sounds decoded anew
+        function revive() {
+            if (!context || context.state === 'running') return;
+            if (context.state === 'interrupted') { try { context.close(); } catch (e) {} context = null; }
+            const c = audio();
+            if (!c) return;
+            c.resume().catch(() => {});
+            load('success').catch(() => {}); load('fanfare').catch(() => {});
+        }
+        ['pointerdown', 'touchend', 'keydown'].forEach((type) => document.addEventListener(type, revive, { capture: true, passive: true }));
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && context) context.resume().catch(() => {}); });
         async function play(name) {
             const c = audio();
             if (!c) return;
             try {
                 const resumed = c.state === 'running' ? null : c.resume(); // before any await: inside the tap that asked
                 const buffer = await load(name);
-                await resumed;
+                if (resumed) await settle(resumed);
+                if (c.state !== 'running') return; // interrupted, and no touch yet to bring it back: this one is lost, never the next
                 const source = c.createBufferSource();
                 source.buffer = buffer; source.connect(c.destination);
                 source.start();
@@ -1195,21 +1198,10 @@
         for (let i = 0; i < 40 && isNativeApp() && !window.RBNative; i++) await new Promise((r) => setTimeout(r, 50));
         return window.RBNative || null;
     };
-    // Trigger a download from a Blob or a URL. On the web: an `<a download>` click. The app's
-    // WebView ignores that trick, so there the file goes through the native bridge (Android →
-    // public Documents, iOS → the "Save to Files" share sheet) and the outcome is ALWAYS
-    // surfaced — a save that silently does nothing is a bug.
-    const SAVED_IN = { pictures: 'Saved to your Pictures folder', downloads: 'Saved to your Downloads folder' };
     // Share a generated file (the run card, the result QR): the OS share sheet in the app, the Web
     // Share sheet where the browser can share files, a download everywhere else (#785).
     window.RBShareFile = async (blob, filename, text) => {
-        if (isNativeApp()) {
-            const native = await RBNativeReady();
-            if (!native || !native.shareFile) return RBDownload(blob, filename);
-            try { await native.shareFile(blob, filename, text); }
-            catch (e) { if (!/cancel/i.test((e && e.message) || '')) RBToast('Could not share.'); } // dismissing the sheet is a choice
-            return;
-        }
+        if (isNativeApp()) return nativeShare(blob, filename, text);
         const file = new File([blob], filename, { type: blob.type });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             // a dismissed sheet is a choice; a refused one (the tap is long gone after an upload,
@@ -1219,22 +1211,22 @@
         }
         return RBDownload(blob, filename);
     };
-    window.RBDownload = async (data, filename) => {
-        if (isNativeApp()) {
-            try {
-                const blob = (typeof data === 'string') ? await (await fetch(data)).blob() : data;
-                const native = await RBNativeReady();
-                if (!native) throw new Error('native bridge unavailable');
-                const saved = await native.downloadFile(blob, filename);
-                // Android answers with the folder it filed the download in; iOS answers 'share'
-                // or 'canceled', where the OS sheet has already told the user what happened.
-                if (SAVED_IN[saved]) RBToast(SAVED_IN[saved]);
-                else if (saved && saved !== 'share' && saved !== 'canceled') RBToast('Saved to your device');
-            } catch (e) {
-                RBToast(RBt('Could not save the file.') + ((e && e.message) ? ' (' + e.message + ')' : ''));
-            }
-            return;
+    // Save a generated file (GPX, .rdbk, CSV…) from a Blob or a URL. On the web: an `<a download>`
+    // click. The app's WebView ignores that trick, so there every file goes to the OS share sheet —
+    // Save to Files / Downloads, open in another app, send — exactly like the PDF: the user always
+    // sees where it goes and decides, never a silent save into a folder nobody finds.
+    async function nativeShare(data, filename, text) {
+        try {
+            const blob = (typeof data === 'string') ? await (await fetch(data)).blob() : data;
+            const native = await RBNativeReady();
+            if (!native) throw new Error('native bridge unavailable');
+            await native.shareFile(blob, filename, text);
+        } catch (e) {
+            if (!/cancel/i.test((e && e.message) || '')) RBToast(RBt('Could not save the file.') + ((e && e.message) ? ' (' + e.message + ')' : '')); // dismissing the sheet is a choice
         }
+    }
+    window.RBDownload = async (data, filename) => {
+        if (isNativeApp()) return nativeShare(data, filename);
         const url = (typeof data === 'string') ? data : URL.createObjectURL(data);
         const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); a.remove();

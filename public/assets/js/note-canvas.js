@@ -292,8 +292,7 @@ function r1(n) { return Math.round(n); }
 function clampIconSize(n) { return Math.max(10, Math.min(120, n)); }
 
 /* The paper note rows of a roadbook — ONE renderer for the Reader and the public roadbook page
-   (#635): distance column (total · partial · the live distance-to-go slot · number + FIA waypoint
-   badge), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
+   (#635): distance column (total · partial · number + FIA waypoint badge), the vignette, and the comments with the CAP (+ its FIA qualifier), the speed limit and
    the coordinates; the material a note carries (#542) is drawn around its row. Only note rows
    carry data-i, so a tap on a photo or text block is never taken for a note.
    opts: iconBase (the standard palette's path), rowClass(i) → extra classes (the Reader's run
@@ -303,11 +302,13 @@ window.NoteCanvas.rowsHTML = function (rb, opts) {
     const o = opts || {}, notes = rb.notes, t = window.RBt, esc = window.RBesc;
     const km = (m) => ((m ?? 0) / 1000).toFixed(2);
     const iconSrc = (ic) => RB.iconSrc(ic, rb, o.iconBase || '../assets/icons/');
-    const blocks = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => `<div class="nrow block block-${RB.blockType(b).id}">
-            <div class="col-distance"></div>
-            <div class="col-vignette${b.image ? '' : ' col-vignette-empty'}">${b.image ? `<img class="block-img" src="${esc(b.image)}" alt="">` : ''}</div>
-            <div class="col-text${b.image ? '' : ' col-text-wide'}"><div class="text">${esc(b.text || '')}</div></div>
-        </div>`).join('');
+    // A block is no waypoint, so it has no distances to show (#934): its image spans the counter and
+    // vignette columns (the whole row when there is no text), and a text alone spans the whole row.
+    const blocks = (n, at) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
+        const img = b.image ? `<div class="block-media${b.text ? '' : ' wide'}"><img class="block-img" src="${esc(b.image)}" alt=""></div>` : '';
+        const text = b.text ? `<div class="${b.image ? 'col-text' : 'col-text-wide'}"><div class="text">${esc(b.text)}</div></div>` : '';
+        return `<div class="nrow block block-${RB.blockType(b).id}">${img}${text}</div>`;
+    }).join('');
     return notes.map((n, i) => {
         // the next note under 50 m away: a tight pair — a property of the roadbook, not of the run
         const tight = notes[i + 1] && (notes[i + 1].partial_distance ?? 1e9) < 50 ? ' tight' : '';
@@ -316,7 +317,7 @@ window.NoteCanvas.rowsHTML = function (rb, opts) {
         const speed = n.speed_limit != null ? `<div class="note-speed">${n.speed_limit === 0 ? `<span class="lim lifted">${esc(t('END'))}</span>` : `<span class="lim">${n.speed_limit}</span>`}</div>` : '';
         const extra = o.rowClass ? o.rowClass(i) : '';
         return `${blocks(n, 'before')}<div class="nrow${extra ? ' ' + extra : ''}" data-i="${i}">
-                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="partial">+${km(n.partial_distance)}</div><div class="togo"></div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
+                <div class="col-distance${tight}"><div class="total">${km(n.distance)}</div><div class="partial">+${km(n.partial_distance)}</div><div class="num-row"><span class="num">${n.num}</span>${RB.wpBadgeSVG(n.wp_type, 22)}</div></div>
                 <div class="col-vignette">${window.NoteCanvas.toSVG(n, iconSrc, RB.isEndNote(notes, i), RB.isFirstNote(notes, i))}</div>
                 <div class="col-text"><div class="text">${esc(n.text || '')}</div>${cap}${speed}<div class="coords">${(+n.lat).toFixed(5)}, ${(+n.lon).toFixed(5)}</div></div>
             </div>${blocks(n, 'after')}${o.after ? o.after(i) : ''}`;

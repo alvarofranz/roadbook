@@ -12,7 +12,8 @@ describe('the Reader distances', () => {
     it('measures what is left along the route, the straight line only for the radius', () => {
         expect(js).toContain('const toGoM = (i, here) => RB.leftToNote(rb, routeCum, i, here, tripTotalM);');
         expect(js).toContain('RB.routeAhead(rb, routeCum, i, here, tripTotalM)'); // the odometer tells the passes of an out-and-back apart
-        expect(js).toContain('paintApproach(live ? RB.geo.haversineM(lastHere, an) : null, live ? toGoM(activeIdx, lastHere) : null);');
+        expect(js).toContain('paintApproach(live ? RB.geo.haversineM(lastHere, an) : null);'); // the radius: straight line
+        expect(js).toContain('fmtKm(toGoM(inlineMapIdx, lastHere))'); // what is left: along the route, on the note map (#935)
     });
     it('re-anchors the odometers on the route whenever the cursor moves', () => {
         expect(js).toContain('if (a) { tripTotalM = a.atM; tripPartialM = a.atM - (prev ? prev.distance : 0); return; }');

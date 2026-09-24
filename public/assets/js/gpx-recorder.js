@@ -1,17 +1,18 @@
 'use strict';
 /* RBGpxRecorder — crash-safe GPX track logging, shared by the Tripmaster, the
- * Reader (optional log while navigating) and the Recorder (the route it records). Owns the settings modal (sample
- * rate, file name), a localStorage checkpoint recovered after a crash, and the
- * finished-track modal (download · convert into a roadbook in the Editor). The
+ * Reader (the log every run keeps) and the Recorder (the route it records). It starts at once —
+ * no settings to answer: one point every SAMPLE_MS, a date-and-time name — and owns a
+ * localStorage checkpoint recovered after a crash, and the finished-track modal (download ·
+ * convert into a roadbook in the Editor, which is where a kept track gets its name). The
  * page reflects on/off state via init({ onChange }) and feeds GPS fixes with feed().
  * Crash safety is the localStorage checkpoint — always available, on every platform;
  * the file itself is written once at the end via RBDownload. */
 window.RBGpxRecorder = (() => {
-    const CHECKPOINT_KEY = 'rb_trip_gpx', SETTINGS_KEY = 'rb_gpx_settings';
-    let on = false, pts = [], lastT = 0, sampleMs = 3000, fileName = '';
+    // one point every 2 s: dense enough for a car at speed, light enough for a day on a bike
+    const CHECKPOINT_KEY = 'rb_trip_gpx', SAMPLE_MS = 2000;
+    let on = false, pts = [], lastT = 0, fileName = '';
     let useCheckpoint = true, lastPersist = 0;
     let onChange = () => {}, toast = () => {};
-    try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (s && s.freq) sampleMs = s.freq; } catch (e) {}
 
     const pad2 = RB.pad2; // shared zero-pad (roadbook-core)
     const defaultName = () => {
@@ -32,14 +33,16 @@ window.RBGpxRecorder = (() => {
     // Editor's route recording does), so this one stays out of its way.
     // The new log's checkpoint is written at once: until its first point, the one left by an
     // earlier log (declined, or another tool's) would otherwise be what a crash resumes from.
+    // opts.name: the log's name (default: date and time) — the Recorder names its route with it
     function begin(opts = {}) {
+        fileName = opts.name || defaultName();
         on = true; pts = []; lastT = 0; lastPersist = 0; useCheckpoint = opts.checkpoint !== false;
         if (useCheckpoint) RBCheckpoint.write(CHECKPOINT_KEY, { pts, name: fileName });
         onChange(true); toast('Recording GPX track.');
     }
     // sampled intake (Tripmaster + Reader): one point per interval, junk fixes dropped
     function feed(coords, here, tnow) {
-        if (!on || RB.recJunkFix(coords.accuracy) || tnow - lastT < sampleMs) return;
+        if (!on || RB.recJunkFix(coords.accuracy) || tnow - lastT < SAMPLE_MS) return;
         pts.push({ lat: here.lat, lon: here.lon, ele: (coords.altitude != null && isFinite(coords.altitude)) ? coords.altitude : null, t: tnow });
         lastT = tnow; persist(tnow); // crash-safe: the localStorage checkpoint
     }
@@ -89,35 +92,6 @@ window.RBGpxRecorder = (() => {
         if (await RBConfirm(t('Recover unsaved GPX recording?') + ' (' + saved.pts.length + ' ' + t('points') + ')')) return finishedModal(saved.pts, saved.name || defaultName());
         decline();
     }
-    // opts.sampleRate: false hides the interval field (the Editor samples by
-    // distance itself) · opts.onStart replaces the default begin()
-    function settings(opts = {}) {
-        const t = RBt;
-        // Callers can override the name field — the Recorder names the roadbook here, not a GPX file.
-        const startName = opts.defaultName || defaultName(), nameLabel = opts.nameLabel || t('File name');
-        const rateField = opts.sampleRate === false ? '' : `<div class="gx-rate-row"><label class="muted small">${t('Sample every (seconds)')}</label>
-            <input id="gxFreq" class="modal-in gx-rate-in" type="number" min="1" max="60" inputmode="numeric" value="${Math.round(sampleMs / 1000)}"></div>
-            <p class="muted small">${t('Suggested: 3s car/rally · 5s bike · 10s walking')}</p>`;
-        const d = RBModal(`<h3>${t('Record GPX')}</h3>
-            ${rateField}
-            <label class="muted small">${nameLabel}</label>
-            <input id="gxName" class="modal-in" type="text" value="${RBesc(startName)}">
-            <div class="btnrow end">
-                <span class="btn-group"><button class="btn btn-ghost" id="gxX">${t('Cancel')}</button><button class="btn btn-primary" id="gxGo"><i class="fa-solid fa-circle-dot"></i> ${t('Start')}</button></span>
-            </div>
-            <p class="muted small">${t('Auto-saved while recording, recovered if the app closes.')}</p>
-            ${document.documentElement.classList.contains('native') ? '' : `<p class="muted small">${t('In a browser, recording stops when the app is in the background or the screen is off.')}</p>`}`, 'narrow top', null, { dismissable: false });
-        d.q('#gxX').onclick = d.close;
-        d.q('#gxGo').onclick = () => {
-            const freqInput = d.q('#gxFreq');
-            if (freqInput) {
-                sampleMs = Math.max(1, Math.min(60, parseInt(freqInput.value, 10) || 3)) * 1000;
-                try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ freq: sampleMs })); } catch (e) {}
-            }
-            fileName = (d.q('#gxName').value || startName).trim();
-            d.close(); (opts.onStart || begin)();
-        };
-    }
     // onDone: called once the modal has closed on an outcome that stays on the page
     function finishedModal(finished, name, onDone = () => {}) {
         const t = RBt;
@@ -141,7 +115,7 @@ window.RBGpxRecorder = (() => {
     }
 
     return {
-        settings, begin, stop, handOver, end, clearCheckpoint, decline, feed, add, resume, offerRecovery,
+        begin, stop, handOver, end, clearCheckpoint, decline, feed, add, resume, offerRecovery,
         get recording() { return on; },
         get fileName() { return fileName; },
         init(opts) { onChange = opts.onChange || onChange; toast = opts.toast || toast; },

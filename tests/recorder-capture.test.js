@@ -54,9 +54,9 @@ describe('the success cue (#768)', () => {
     });
     it('rings in the Reader on every validated note, unlocked by the start tap', () => {
         const reader = read('public/reader/reader.js');
-        expect(reader).toContain('const ring = (i) => { if (sound) (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)(); };');
+        expect(reader).toContain('const ring = (i) => (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)();'); // always on (#936)
         expect(reader.match(/reached\.add\(i\); reanchor\(i \+ 1, [^)]*\); ring\(i\);/g)).toHaveLength(2);
-        expect(reader).toContain('if (sound) RBSuccess.unlock();');
+        expect(reader).toContain('RBSuccess.unlock(); // inside the tap itself');
         expect(reader).not.toMatch(/AudioContext|beep\(/);
     });
     it('also marks a note dropped in the Editor’s Adjust on the trail', () => {

@@ -8,13 +8,12 @@ const reader = read('public/reader/reader.js');
 const html = read('public/reader/index.html');
 
 describe('the mode comes from the context (#617)', () => {
-    it('the start dialog asks no mode', () => {
+    it('nothing asks the mode', () => {
         expect(html).not.toMatch(/id="modeTrip"|modeGrid|modeLocked|Competition mode/);
-        expect(html).toContain('id="startGo"');
     });
     it('a scored event roadbook runs in competition, everything else as a trip', () => {
-        expect(reader).toContain("runComp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');");
-        expect(reader).toContain('if (!runComp) { startNav(false);');
+        expect(reader).toContain("comp = !!(er && er.scoring_mode && er.scoring_mode !== 'free');");
+        expect(reader).toContain('if (!comp) return startRun(false);');
     });
 });
 

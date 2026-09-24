@@ -130,7 +130,6 @@
     $('tmTimerReset').onclick = () => { timerOn = false; timerAcc = 0; renderTimer(); saveSession(); };
     $('tmExit').onclick = async () => { if (await RBConfirmDanger(t('End the trip and reset everything?'))) { clearSession(); window.RB_BUSY = false; location.reload(); } }; // unblock the version auto-refresh before leaving
 
-    RBFullscreen($('tmFs')); // shared: hides header + footer, uses the Fullscreen API (app.js)
 
     // Reset the partial trip. Pointer: hold 5 s (anti-accidental, browser + PWA);
     // a quick tap-and-release explains the gesture instead of doing nothing.
@@ -189,6 +188,6 @@
             saveSession();
         },
     });
-    $('tmRecBtn').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.settings(); };
+    $('tmRecBtn').onclick = () => { if (RBGpxRecorder.recording) RBGpxRecorder.stop(); else RBGpxRecorder.begin(); };
 
 })();

@@ -202,16 +202,21 @@ describe('the roadbook\'s icon library is not a cache (#454)', () => {
 });
 
 describe('a note\'s material spans the description area (#463)', () => {
-    // .col-vignette-empty is display:none, which removes the cell from the grid — without an
-    // explicit span the caption auto-placed into the narrow vignette column instead of the
-    // description area (flex is inert in grid, so flex:1 never did anything there).
+    // A block is no waypoint: it reserves no counter space (#934). Without an explicit span a cell
+    // auto-places into the narrow counter column (flex is inert in grid, so flex:1 never helps).
     const app = read('public/assets/css/app.css');
+    const rule = (sel) => app.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{([^}]*)\\}'));
 
-    it('pins the wide caption across the vacated columns', () => {
-        const rule = app.match(/\.nrow\.block \.col-text-wide \{([^}]*)\}/);
-        expect(rule, 'app.css has no .col-text-wide rule').not.toBeNull();
-        expect(rule[1]).toMatch(/grid-column\s*:\s*2\s*\/\s*-1/);
-        expect(rule[1]).not.toMatch(/flex\s*:/);
+    it('spans the text across the whole row, and the image across counter + vignette', () => {
+        expect(rule('.nrow.block .col-text-wide')[1]).toMatch(/grid-column\s*:\s*1\s*\/\s*-1/);
+        expect(rule('.nrow.block .col-text-wide')[1]).not.toMatch(/flex\s*:/);
+        expect(rule('.nrow.block .block-media')[1]).toMatch(/grid-column\s*:\s*1\s*\/\s*3/);
+        expect(rule('.nrow.block .block-media.wide')[1]).toMatch(/grid-column\s*:\s*1\s*\/\s*-1/);
+    });
+
+    it('never lets an image grow taller than 40vh', () => {
+        expect(rule('.nrow.block .block-img')[1]).toContain('max-height: 40vh');
+        expect(read('public/assets/js/note-canvas.js')).not.toContain('<div class="col-distance"></div>');
     });
 
     // The Reader and the public roadbook page render the SAME paper roadbook, and each used to

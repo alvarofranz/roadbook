@@ -30,7 +30,6 @@
     "@capacitor/status-bar": "^8.0.2",
     "@capawesome-team/capacitor-android-battery-optimization": "^8.0.1",
     "@capgo/background-geolocation": "^8.0.42",
-    "@capgo/capacitor-file-sharer": "^8.1.8",
     "@capgo/capacitor-social-login": "^8.3.33"
   },
   "devDependencies": {

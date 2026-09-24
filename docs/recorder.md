@@ -43,15 +43,15 @@ la registrazione.
 ## 2. La registrazione live
 
 ### Avvio
-*Start recording* apre prima il modale impostazioni di `RBGpxRecorder`
-(`RBGpxRecorder.settings`), pre-riempito con un **nome roadbook di default** = data+ora
-`YYYY-MM-DD HH-MM` (`recName()`, #148); solo alla conferma chiama `begin()`.
+*Start recording* registra subito (#936): superato l'avviso GPS-web una tantum
+(`RBWebGpsConfirm`), chiama `begin()` senza chiedere nulla. Il percorso prende come nome data+ora
+`YYYY-MM-DD HH-MM` (`recName()`, #148); il roadbook si intitola nell'Editor, quando si salva.
 
 `begin()` azzera tutto lo stato (`recordedM`, `track`, `wpts`, `photos`, contatore tempo),
-avvia il logging crash-safe con `RBGpxRecorder.begin()` — che a sua volta accende, via
+avvia il logging crash-safe con `RBGpxRecorder.begin({ name: recName() })` — che a sua volta accende, via
 callback `onChange`, la barra di stato e la vista *running* — poi fa partire il meter GPS,
-ridisegna la mappa e (solo se loggato) crea il **draft** per le foto, **intitolandolo col
-nome scelto** (`rb_draft` con `name`, #148) così non appare mai come "Recording…".
+ridisegna la mappa e (solo se loggato) crea il **draft** per le foto, **intitolandolo con quel
+nome** (`rb_draft` con `name`, #148) così non appare mai come "Recording…".
 
 ### Campionamento consapevole dell'accuratezza
 Ogni fix GPS arriva a `onFix(fix)`, che usa gli **stessi helper condivisi del core**

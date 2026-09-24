@@ -80,24 +80,24 @@ describe('ending a run ends its GPX log (#460)', () => {
     });
 });
 
-describe('the start dialog', () => {
-    it('is named for what it is', () => {
-        for (const old of ['modeModal', 'openModeModal', 'readModeOpts', 'modeStart', 'modeClose', 'modeComp']) {
-            expect(js).not.toContain(old);
-            expect(html).not.toContain(old);
+describe('Navigate navigates (#936)', () => {
+    it('opens no dialog: no options, no GPX question, no sound switch', () => {
+        for (const old of ['startModal', 'openStartDialog', 'readStartOpts', 'startGo', 'optGpx', 'optSound', 'modeModal']) {
+            expect(js, old).not.toContain(old);
+            expect(html, old).not.toContain(old);
         }
-        expect(html).toContain('<div id="startModal" class="modal" hidden>');
+        expect(js).toContain('function startRun(comp) { auto = true; startNav(comp); RBGpxRecorder.begin(); }'); // the GPX log always runs
     });
-    it('Escape still closes it when it comes back from the vehicle number', () => {
-        expect(js).toContain("$('teamCancel').onclick = () => { closeModal('teamModal'); openModal('startModal', () => closeModal('startModal')); };");
+    it('asks only the vehicle number, and only for a scored run; its Cancel goes back to the preview', () => {
+        expect(js).toContain("if (!comp) return startRun(false);");
+        expect(js).toContain("$('teamCancel').onclick = () => closeModal('teamModal'); // back to the preview");
     });
 });
 
-describe('the event back-link', () => {
-    it('shows only for the event this run was opened from', () => {
-        const start = fn('startNav');
-        expect(start).toContain('if (eventSlug && evCtx && evCtx.event_slug === eventSlug) {');
-        expect(start).toContain('href="/event/${encodeURIComponent(eventSlug)}"');
+describe('the way back to the event', () => {
+    it('is the end of the run: the report returns to the event it was opened from', () => {
+        expect(fn('startNav')).not.toContain('odo-ev-bar'); // no link to leave a run halfway (#936)
+        expect(js).toContain("leaveRun(eventSlug ? '/event/' + encodeURIComponent(eventSlug) : './')");
     });
 });
 
