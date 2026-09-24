@@ -1736,3 +1736,9 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.": "Er ist nie kleiner als {m} m: Darunter kann ein GPS-Punkt die Notiz nicht zuverlässig bestätigen.",
 });
+
+/* Release notes 1.9.13 */
+Object.assign(window.RBi18nLangs.de, {
+    "A note’s rings, at a glance": "Die Kreise einer Notiz auf einen Blick",
+    "Tap inside a note’s dashed circle in the Editor: the shape of its arrow and its detection radius open side by side — the whole screen on a phone — with the radius field right there.": "Tippe im Editor in den gestrichelten Kreis einer Notiz: Die Form ihres Pfeils und ihr Erkennungsradius öffnen sich nebeneinander — auf einem Telefon im ganzen Bildschirm — mit dem Feld für den Radius gleich dort.",
+});

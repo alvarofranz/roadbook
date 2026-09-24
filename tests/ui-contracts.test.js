@@ -375,7 +375,8 @@ describe('a responsive override is never killed by the rule written below it (#4
 
 describe('the saved-roadbook card is readable on a phone (#476)', () => {
     const css = read('public/assets/css/app.css');
-    const mobile = css.match(/@media \(max-width: 640px\) \{([\s\S]*?)\n\}/)[1];
+    // the phone block that holds the card's rules — app.css has several 640 px blocks, one per component
+    const mobile = [...css.matchAll(/@media \(max-width: 640px\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).find((b) => b.includes('.roadbook-row'));
 
     it('gives the title + summary a full-width row of their own', () => {
         expect(mobile).toContain('.roadbook-row .meta { min-width: 100%; }');
