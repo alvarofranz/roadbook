@@ -222,3 +222,12 @@ describe('the arrowhead (#945 feedback)', () => {
         expect(canvas).not.toContain('refX="8"');
     });
 });
+
+describe('the words for it', () => {
+    it('the diagram is the vignette and its arrow the arrow, in every language — never a translated flower', () => {
+        for (const l of ['es', 'it', 'de', 'fr']) {
+            const dict = require('fs').readFileSync(`public/assets/js/i18n.${l}.js`, 'utf8');
+            expect(dict, l).not.toMatch(/tulipan|\btulipa\b|\bTulpe\b|\btulipe\b/i);
+        }
+    });
+});

@@ -1678,8 +1678,8 @@ Object.assign(window.RBi18nLangs.de, {
     "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "Der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in diesen Kreis eintritt.",
     "Metres": "Meter",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Kleiner gezeichnet: Der Kreis reicht nie über die halbe Strecke zur Nachbarnotiz hinaus.",
-    "Tulip shape": "Form der Tulpe",
-    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Jeder Trackpunkt in diesem Kreis formt den Pfeil der Tulpe. Zeichne mindestens 4 auf einer Seite, und diese Straße biegt sich so, wie du sie gezeichnet hast; mit weniger bleibt sie gerade.",
+    "Tulip shape": "Form des Pfeils",
+    "Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.": "Jeder Trackpunkt in diesem Kreis formt den Pfeil der Vignette. Zeichne mindestens 4 auf einer Seite, und diese Straße biegt sich so, wie du sie gezeichnet hast; mit weniger bleibt sie gerade.",
     "No room for more points here.": "Hier ist kein Platz für weitere Punkte.",
     "Points added — drag them to shape the curve.": "Punkte hinzugefügt – zieh sie, um die Kurve zu formen.",
 });
