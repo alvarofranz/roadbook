@@ -205,6 +205,8 @@ visualizzazione.
 | `size`   | number   | Lato del box in unità di riferimento (quadrato).            |
 | `angle`  | number   | Rotazione, gradi orari.                                     |
 | `flip_x` | boolean  | Specchiatura orizzontale.                                   |
+| `cover`  | boolean  | Opzionale. Il **tulip importato** della nota (es. da OpenRally): un'immagine opaca che è l'intera vignetta, disegnata a tutto-box e da sola — mai come icona sulla vignetta. Resta con la nota per sempre. |
+| `hidden` | boolean  | Opzionale, solo su un'icona `cover`: `true` = si mostra il tulip dell'editor (tronco, giunzioni, icone) al posto dell'originale. Assente = l'originale. |
 
 ### La regola self-contained
 
@@ -252,10 +254,13 @@ stesso posto (#561):
 | `4` | Off-piste             | **tratteggiato**, tratto più sottile       |
 | `5` | Bike lane (ciclabile) | continuo, tratto sottile (viola `#532b78`) |
 
-La vignetta di una nota è un *tulip*: la strada da cui si arriva entra sempre dal bordo
-inferiore al centro del box (disegnata secondo `road_type_in`), la strada su cui si esce va
-dal centro a una freccia in alto (secondo `road_type_out`), e i vettori di incrocio si
-diramano dal centro. Lo spessore del tratto è indicativo del tipo di strada.
+La vignetta di una nota è un *tulip*: la strada da cui si arriva entra dal basso al centro del
+box (disegnata secondo `road_type_in`), la strada su cui si esce va dal centro a una freccia
+(secondo `road_type_out`), e i vettori di incrocio si diramano dal centro. Lo spessore del tratto
+è indicativo del tipo di strada. Le due strade seguono la forma della traccia attorno alla nota
+quando questa curva davvero, altrimenti sono dritte, l'uscita all'angolo
+`bearing_out − bearing_in`; la forma si ricava dalla traccia al momento del render e il file non
+la memorizza (#945).
 
 ---
 

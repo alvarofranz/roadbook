@@ -68,16 +68,29 @@ compliance work (icons + data model) is tracked in
 ## 3. Trunk (the main tulip line)
 
 Reference box **230×162**, centre `(115, 81)`.
-- **Incoming** segment enters straight from the bottom edge to the centre, styled
-  by `road_type_in`.
-- **Outgoing** segment leaves the centre with an arrow, **auto-oriented** to the
-  real turn — its angle is `bearing_out − bearing_in` (the heading change across
-  previous · note · next), so straight-up = carry on, right = turn right…  Styled
-  by `road_type_out`.
-- Colour: both segments are coloured by their **road type** (`road_type_in` /
-  `road_type_out`) — this is *the route to follow*. The first note's incoming has
-  no provenance and is drawn **grey**. Width/dash/double come from `ROAD_STYLE`.
-- **Validation point:** a small open white circle where the two segments meet (the
+- **Incoming** road enters from the bottom edge to the centre, styled by
+  `road_type_in`. The first note has none (#472).
+- **Outgoing** road leaves the centre with an arrow, styled by `road_type_out`.
+  The last note has none (#447).
+- **Shape (#945):** both roads follow the **real shape of the track** around the
+  note (`RB.tulipShape`, drawn by `trunkRoads` as smooth `<path>`s): ~80 m along
+  the track before / after the note, stopping at a neighbouring note, simplified
+  (Douglas-Peucker), rotated so `bearing_in` points up and scaled so the length
+  along the road is the fixed vignette length (entry 73 px, exit 63 px). A curve
+  is drawn only when the stretch strays from its own chord by more than 12% of
+  its length (min 6 m); a hairpin is tried over 60 / 45 / 30 m so it never
+  crosses the note (the exit stays in the upper half, the entry in the lower).
+  Otherwise the road is the **classic straight** one: the incoming vertical, the
+  outgoing **auto-oriented** to the real turn — its angle is
+  `bearing_out − bearing_in` (the heading change across previous · note · next),
+  so straight-up = carry on, right = turn right…
+- Nothing of the shape is stored in the `.rdbk`: it is derived at render time
+  (`RB.tulipContext`), so the Editor, the Reader, the public page, the PDF and
+  the OpenRally export draw the same tulip. To change a shape, edit the track.
+- Colour: both roads are coloured by their **road type** (`road_type_in` /
+  `road_type_out`) — this is *the route to follow*. Width/dash/double come from
+  `ROAD_STYLE`.
+- **Validation point:** a small open white circle where the two roads meet (the
   note's exact spot).
 
 ## 4. Junctions (bivi)

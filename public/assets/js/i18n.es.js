@@ -782,7 +782,7 @@ Object.assign(window.RBi18nLangs.es, {
     'Track / piste': 'Pista / camino',
     'solid, medium stroke (default off-road)': 'continuo, trazo medio (por defecto fuera de asfalto)',
     'dashed, thinnest stroke': 'discontinuo, el trazo más fino',
-    'roadtypes.tulip': 'La viñeta de una nota es un tulipa: la vía por la que llegas entra siempre desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales va del centro a una flecha en la parte superior (según <code>road_type_out</code>) y los <a href="#junctions">vectores de cruce</a> salen del centro. El grosor del trazo es indicativo del tipo de vía.',
+    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el track se curva de verdad alrededor de la nota, las dos vías siguen su forma — una curva, una S — calculada desde <code>track</code> al dibujar, nunca guardada. El grosor del trazo es indicativo del tipo de vía.",
     'junctions.h2': 'Vectores de cruce (<code>junctions</code>)',
     'junctions.intro': 'Más allá del texto, una nota puede dibujar el cruce en sí: uno o varios vectores sobre la misma caja de 230 × 162. Cada uno va de un <code>pivot</code> a una <code>tip</code> (la punta de flecha), con el color del tipo de vía y un grosor de trazo <code>width</code>.',
     'Vector start (reference units, +y up).': 'Origen del vector (unidades de referencia, +y hacia arriba).',
@@ -1692,4 +1692,10 @@ Object.assign(window.RBi18nLangs.es, {
     
     
     
+});
+
+/* the .rdbk spec: imported tulips (#943) */
+Object.assign(window.RBi18nLangs.es, {
+    "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Opcional. El tulip importado de la nota (p. ej. de OpenRally): una imagen opaca que es toda la viñeta, dibujada a caja completa y sola — nunca como símbolo sobre ella. Se queda con la nota para siempre.",
+    "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Opcional, solo en un icono cover: true muestra el tulip propio del editor (carreteras, cruces, símbolos) en lugar del original. Ausente = el original.",
 });

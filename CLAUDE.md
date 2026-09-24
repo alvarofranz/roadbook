@@ -631,9 +631,14 @@ Operational notes:
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
   `deleteNote`, `pendingWork`, `isEndNote` — the last note, whose tulip draws no exit road because
-  past the finish there is nothing to follow, #447 — and `isFirstNote`), `CONST`, `ROAD_TYPES`.
+  past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
+  (the real shape of the track around a note, derived at render time and never stored, #945),
+  `CONST`, `ROAD_TYPES`.
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
-  (the vignette, used by both the Reader rows and the challenge page).
+  (the vignette, used by the Reader rows, the challenge page, the PDF and the OpenRally export).
+  Every render takes `ctx = RB.tulipContext(rb, i)` (`toSVG(note, resolveIcon, ctx)` ·
+  `setNote(note, ctx)`), so the tulip's roads (`<path>`s) follow the track the same everywhere;
+  an imported tulip is a `cover` icon, shown unless `hidden` (`NoteCanvas.originalTulip`, #943).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker, satellite → topo → OSM layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
@@ -781,7 +786,9 @@ The `roadbook.json` schema:
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
     "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|…); on disk (.rdbk/server) written as its OpenRally cap code (WPM, WPN…), normalized to internal ids on import (wpTypeByCap/importRoadbook) and re-emitted by roadbookForExport; editor badge + GPX sym
     "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
-    "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool } ],
+    "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool,
+                 "cover"?: bool,   // an imported (OpenRally) tulip: the whole vignette, kept for good
+                 "hidden"?: bool } ], // on a cover: show the editor's own tulip instead (#943)
     "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..5 } ],
     "blocks"?: [ { "type": "photo"|"ad"|"text", "at": "before"|"after", "image"?: str /* data: URI */, "text"?: str } ]
                                                               // RB.NOTE_BLOCKS: material shown before/after the note; never a waypoint (not numbered, mapped, scored or exported to GPX)

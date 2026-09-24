@@ -22,8 +22,8 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-212">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-212">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.10-213">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.10-213">
     <style>
         /* on top of the shared .doc base: a wider column and bigger, anchor-friendly headings */
         .doc { max-width: 880px; }
@@ -179,6 +179,8 @@
         <tr><td><code>size</code></td><td>number</td><td data-i18n="Box size in reference units (square).">Box size in reference units (square).</td></tr>
         <tr><td><code>angle</code></td><td>number</td><td data-i18n="Rotation, degrees clockwise.">Rotation, degrees clockwise.</td></tr>
         <tr><td><code>flip_x</code></td><td>boolean</td><td data-i18n="Horizontal mirror.">Horizontal mirror.</td></tr>
+        <tr><td><code>cover</code></td><td>boolean</td><td data-i18n="Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.">Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.</td></tr>
+        <tr><td><code>hidden</code></td><td>boolean</td><td data-i18n="Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.">Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.</td></tr>
     </table>
     <p data-i18n-html="icons.embedded">The symbols themselves live <b>inside the file</b> in <code>icons</code>, a map from symbol name to a data URI. This is what makes a <code>.rdbk</code> portable: every symbol it draws is embedded.</p>
     <pre><code>"icons": {
@@ -197,7 +199,7 @@
         <tr><td><code>4</code></td><td data-i18n="Off-piste">Off-piste</td><td data-i18n="dashed, thinnest stroke">dashed, thinnest stroke</td></tr>
         <tr><td><code>5</code></td><td data-i18n="Bike lane">Bike lane</td><td data-i18n="solid, thin stroke">solid, thin stroke</td></tr>
     </table>
-    <p data-i18n-html="roadtypes.tulip">A note's vignette is a tulip: the road you arrive from always enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre to an arrow at the top (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Stroke width is indicative of the road type.</p>
+    <p data-i18n-html="roadtypes.tulip">A note’s vignette is a tulip: the road you arrive from enters from the bottom edge to the box centre (drawn per <code>road_type_in</code>), the road you leave on exits from the centre with an arrow, at the real turn (per <code>road_type_out</code>), and <a href="#junctions">junction vectors</a> branch from the centre. Where the track really bends around the note, both roads follow its shape — a bend, an S — derived from <code>track</code> when drawn, never stored. Stroke width is indicative of the road type.</p>
 
     <h2 id="junctions" data-i18n-html="junctions.h2">Junction vectors (<code>junctions</code>)</h2>
     <p data-i18n-html="junctions.intro">Beyond text, a note can draw the junction itself: one or more vectors on the same 230 × 162 box. Each goes from a <code>pivot</code> to a <code>tip</code> (arrow head), colored by road type and drawn with a stroke <code>width</code>.</p>
@@ -272,12 +274,12 @@
     <p class="cta-row"><a class="btn btn-primary" href="../reader/" data-i18n="Open a .rdbk in the Reader"><i class="fa-solid fa-compass"></i> Open a .rdbk in the Reader</a></p>
 </main>
 
-<script src="../assets/js/i18n.es.js?v=1.9.10-212"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.10-212"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.10-212"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.10-212"></script>
-<script src="../assets/js/i18n.js?v=1.9.10-212"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.10-212"></script>
-<script src="../assets/js/app.js?v=1.9.10-212"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.10-213"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.10-213"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.10-213"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.10-213"></script>
+<script src="../assets/js/i18n.js?v=1.9.10-213"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.10-213"></script>
+<script src="../assets/js/app.js?v=1.9.10-213"></script>
 </body>
 </html>
