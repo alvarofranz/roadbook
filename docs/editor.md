@@ -204,13 +204,14 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   **tratteggiato e sottile**, il raggio di `RB.TULIP_SHAPE_M` (30 m) i cui punti della traccia
   danno forma al tulip: 4 o più punti dentro, su un lato, e quella strada del tulip segue la
   forma disegnata — ogni lato per conto suo (`RBMap.setNoteRings`, rinfrescati da `renderEditor` a
-  ogni modifica). **Un tocco dentro un anello** (in Move, fuori da punti, note e foto: `ringInfo`)
-  apre la sua scheda: il cerchio pieno spiega il raggio di rilevamento e lo modifica lì (lo stesso
-  `wp_radius` del campo della nota); quello tratteggiato conta i punti per lato (`RB.tulipPoints`,
-  x / 4) e, se ne mancano, **Aggiungi punti** (`RB.tulipAddPoints`) ne mette 4 per lato **sulla
-  traccia** — la rotta non cambia, un taglio aperto resta com'è — e arma Move per piegarli.
-  Concentrici: il più piccolo possiede il suo interno, il più grande la corona attorno; se
-  coincidono (30 m e 30 m), una scheda sola con entrambe le parti.
+  ogni modifica). **Un tocco dentro il cerchio tratteggiato** (in Move, fuori da punti, note e foto:
+  `ringInfo`) apre **una sola** scheda della nota — così nessun tocco è ambiguo — in due sezioni
+  (`.panel.inset`): la *forma della freccia* conta i punti per lato (`RB.tulipPoints`, x / 4) e, se
+  ne mancano, **Aggiungi punti** (`RB.tulipAddPoints`) ne mette 4 per lato **sulla traccia** — la
+  rotta non cambia, un taglio aperto resta com'è — e arma Move per piegarli; il *raggio di
+  rilevamento* dice che è il cerchio giallo, perché è disegnato diverso dal valore impostato (mai
+  sotto `REACH_MIN_M`, mai oltre metà strada verso la nota vicina) e **Modifica raggio** lo cambia
+  lì (lo stesso `wp_radius` del campo della nota).
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema

@@ -16,6 +16,8 @@ describe('an icon added while a note is open', () => {
 
 describe('the vignette', () => {
     it('opens the Icons tab when tapped on the open note', () => {
-        expect(js).toContain("$('noteCanvas').addEventListener('click', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } });");
+        // on the press, in the capture phase: picking an icon redraws the vignette, so a click never arrives (#963)
+        expect(js).toContain("$('noteCanvas').addEventListener('pointerdown', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } }, true);");
+        expect(js).not.toContain("$('noteCanvas').addEventListener('click'");
     });
 });

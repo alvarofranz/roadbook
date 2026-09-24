@@ -11,6 +11,17 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.12', date: '2026-09-24',
+        title: 'Events that flow, and a live map',
+        items: [
+            'Chained roadbooks: at the last note of an event roadbook, pick the next one and carry on in the same run, with one report for all of it at the end.',
+            'Organizers see a live map of the participants — only of those who agree, only while they navigate one of the event’s roadbooks.',
+            'Tap a note’s rings in the Editor to change its detection radius, or to add the points that shape its arrow without changing the route.',
+            'Clearer arrows: every road the same width, junctions under the route, curved exits drawn longer and the arrowhead reaching the very end.',
+            'The Editor zooms in close on the note you pick, and tapping an icon on the vignette opens its tools.',
+        ],
+    },
+    {
         version: '1.9.11', date: '2026-09-24',
         title: 'Tulips that bend with the road',
         items: [

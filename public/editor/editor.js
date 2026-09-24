@@ -268,8 +268,11 @@
         if (original && !original.hidden) { original.hidden = true; showOnCanvas(sel); }
     }
     canvas.onDropIcon((name, pos) => { if (editable()) { ownTulip(); canvas.addIcon(mkIcon(name, pos)); } });
-    // A tap on the open note's vignette means working on its icons (#856): open that tab
-    $('noteCanvas').addEventListener('click', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } });
+    // A tap on the open note's vignette means working on its icons (#856 · #963): open that tab,
+    // whatever tab was open, so the selected icon's tools (zoom, rotate, flip) are right there. On
+    // the press, in the capture phase: the vignette redraws as an icon is picked, so the element
+    // pressed is gone before a `click` could ever reach this container.
+    $('noteCanvas').addEventListener('pointerdown', () => { if (editorOpen && blockTab !== 'icon') { blockTab = 'icon'; renderEditor(); } }, true);
     $('addJunction').onclick = () => { if (editable()) { ownTulip(); canvas.addJunction(); } };
 
     map.onWaypoint((i) => { if (mapTool === 'pan' || mapTool === 'points') select(i); }); // Move/Pan: tap a note to open it (a drag moves it); other tools keep you on the map
@@ -1606,44 +1609,51 @@
         const i = n ? rb.notes.indexOf(n) : -1;
         map.setNoteRings(i >= 0 ? n : null, i >= 0 ? RB.reachRadius(n, rb.notes[i + 1], rb.meta) : 0, RB.TULIP_SHAPE_M);
     }
-    /* A tap inside the open note's rings says what the ring is, and edits it on the spot: the
-       detection radius (the yellow disc) and the stretch of track that shapes the tulip (the dashed
-       circle). Concentric, the smaller one owns its inside and the larger one the band around it;
-       when they coincide, one dialog carries both. */
+    /* A tap inside the open note's dashed circle — the stretch of track that shapes its arrow —
+       opens ONE dialog about the note's rings, so no tap is ever ambiguous: the points that shape
+       the arrow, per side, with Add points; and the yellow circle, its detection radius, with Edit
+       radius right there. */
     function ringInfo(here) {
         const n = editorOpen ? rb.notes[sel] : null;
-        if (!n) return;
-        const reach = RB.reachRadius(n, rb.notes[sel + 1], rb.meta), shape = RB.TULIP_SHAPE_M, d = RB.geo.haversineM(n, here);
-        if (d > Math.max(reach, shape)) return;
-        const same = Math.abs(reach - shape) < 1, inner = reach < shape ? 'reach' : 'shape';
-        const which = same ? ['reach', 'shape'] : [d <= Math.min(reach, shape) ? inner : (inner === 'reach' ? 'shape' : 'reach')];
+        if (!n || RB.geo.haversineM(n, here) > RB.TULIP_SHAPE_M) return;
         const inherited = RB.detectionRadius({ wp_type: n.wp_type }, rb.meta), pts = RB.tulipPoints(rb, sel);
+        const reach = RB.reachRadius(n, rb.notes[sel + 1], rb.meta);
         const side = (label, count) => count == null ? '' : `<li><i class="fa-solid ${count >= pts.need ? 'fa-circle-check icon-ok' : 'fa-circle-exclamation icon-accent'}"></i> ${esc(t(label))}: <b>${count}</b> / ${pts.need}</li>`;
         const short = pts && [pts.before, pts.after].some((c) => c != null && c < pts.need);
-        const sections = {
-            reach: `<h3><i class="fa-solid fa-bullseye icon-accent"></i> ${esc(t('Detection radius'))}</h3>
-                <p class="muted small">${esc(t('The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.'))}</p>
-                <label class="muted small" for="ringRadius">${esc(t('Metres'))}</label>
-                <input id="ringRadius" class="modal-in" type="number" min="1" step="1" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}">
-                ${reach < RB.detectionRadius(n, rb.meta) ? `<p class="muted small">${esc(t('Drawn smaller: the circle never reaches past halfway to the next note.'))}</p>` : ''}`,
-            shape: `<h3><i class="fa-solid fa-bezier-curve icon-accent"></i> ${esc(t('Tulip shape'))}</h3>
+        // what the yellow circle really is, when it is not the radius set: a GPS fix can't validate
+        // a smaller one reliably, and it never reaches past halfway to the next note
+        const set = RB.detectionRadius(n, rb.meta);
+        const why = reach > set ? t('It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.').replace('{m}', RB.CONST.REACH_MIN_M)
+            : reach < set ? t('Drawn smaller: the circle never reaches past halfway to the next note.') : '';
+        const dlg = RBModal(`<h2><i class="fa-solid fa-location-dot icon-accent"></i> ${esc(t('Note'))} ${n.num}</h2>
+            <section class="panel inset">
+                <h2><i class="fa-solid fa-bezier-curve icon-accent"></i> ${esc(t('Tulip shape'))}</h2>
                 <p class="muted small">${esc(t('Every track point inside this circle shapes the tulip’s arrow. Draw at least 4 on a side and that road curves the way you drew it; fewer, and it stays straight.'))}</p>
                 <ul class="status-list">${pts ? side('Before the note', pts.before) + side('After the note', pts.after) : ''}</ul>
-                ${short ? `<div class="btnrow"><button class="btn btn-ghost" type="button" id="ringAddPoints"><i class="fa-solid fa-circle-plus"></i> ${esc(t('Add points'))}</button></div>` : ''}`,
-        };
-        const hasRadius = which.includes('reach');
-        const dlg = RBModal(which.map((k) => sections[k]).join('')
-            + `<div class="btnrow end spaced">${hasRadius ? `<button class="btn btn-ghost" type="button" id="ringX">${esc(t('Cancel'))}</button><button class="btn btn-primary" type="button" id="ringGo">${esc(t('Apply'))}</button>`
-                : `<button class="btn btn-primary" type="button" id="ringX">${esc(t('Close'))}</button>`}</div>`, 'narrow');
+                ${short ? `<div class="btnrow start"><button class="btn btn-ghost btn-sm" type="button" id="ringAddPoints"><i class="fa-solid fa-circle-plus"></i> ${esc(t('Add points'))}</button></div>` : ''}
+            </section>
+            <section class="panel inset">
+                <h2><i class="fa-solid fa-bullseye icon-accent"></i> ${esc(t('Detection radius'))} · ${reach} m</h2>
+                <p class="muted small">${esc(t('The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.'))}${why ? ' ' + esc(why) : ''}</p>
+                <div class="btnrow start"><button class="btn btn-ghost btn-sm" type="button" id="ringRadiusOpen"><i class="fa-solid fa-pen"></i> ${esc(t('Edit radius'))}</button></div>
+                <div class="toolbar" id="ringRadiusEdit" hidden>
+                    <input id="ringRadius" class="field" type="number" min="${RB.CONST.REACH_MIN_M}" step="1" inputmode="numeric" value="${n.wp_radius != null ? n.wp_radius : ''}" placeholder="${inherited}" aria-label="${esc(t('Metres'))}">
+                    <span class="muted">m</span>
+                    <button class="btn btn-primary" type="button" id="ringGo"><i class="fa-solid fa-check"></i> ${esc(t('Apply'))}</button>
+                </div>
+            </section>
+            <div class="btnrow end spaced"><button class="btn btn-ghost" type="button" id="ringX">${esc(t('Close'))}</button></div>`, 'narrow');
         dlg.q('#ringX').onclick = dlg.close;
-        if (hasRadius) {
-            dlg.q('#ringGo').onclick = () => {
-                const v = parseInt(dlg.q('#ringRadius').value, 10);
-                if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;
-                dlg.close(); markDirty(); renderEditor();
-            };
-            dlg.q('#ringRadius').onkeydown = (e) => { if (e.key === 'Enter') dlg.q('#ringGo').click(); };
-        }
+        dlg.q('#ringRadiusOpen').onclick = () => {
+            dlg.q('#ringRadiusOpen').parentNode.hidden = true; dlg.q('#ringRadiusEdit').hidden = false;
+            dlg.q('#ringRadius').focus();
+        };
+        dlg.q('#ringGo').onclick = () => {
+            const v = parseInt(dlg.q('#ringRadius').value, 10);
+            if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;
+            dlg.close(); markDirty(); renderEditor();
+        };
+        dlg.q('#ringRadius').onkeydown = (e) => { if (e.key === 'Enter') dlg.q('#ringGo').click(); };
         // the points go ON the track, so the route stays as it is; Move is armed to bend it
         const add = dlg.q('#ringAddPoints');
         if (add) add.onclick = () => {

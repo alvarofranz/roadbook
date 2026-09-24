@@ -1675,7 +1675,8 @@ Object.assign(window.RBi18nLangs.de, {
 
 /* Editor: the note's rings — detection radius and tulip shape (#945) */
 Object.assign(window.RBi18nLangs.de, {
-    "The note’s detection radius: the Reader validates the note the moment the route driven enters this circle.": "Der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in diesen Kreis eintritt.",
+    "The yellow circle is the note’s detection radius: the Reader validates the note the moment the route driven enters it.": "Der gelbe Kreis ist der Erkennungsradius der Notiz: Der Reader bestätigt die Notiz, sobald die gefahrene Strecke in ihn eintritt.",
+    "Edit radius": "Radius bearbeiten",
     "Metres": "Meter",
     "Drawn smaller: the circle never reaches past halfway to the next note.": "Kleiner gezeichnet: Der Kreis reicht nie über die halbe Strecke zur Nachbarnotiz hinaus.",
     "Tulip shape": "Form des Pfeils",
@@ -1720,4 +1721,19 @@ Object.assign(window.RBi18nLangs.de, {
 Object.assign(window.RBi18nLangs.de, {
     "fp.events.prep5": "Um die Strecken zu verketten, hake unter jedem Roadbook die an, die es an seiner <b>letzten Notiz</b> anbietet, jeweils mit einem kurzen Label („A“, „Leicht“…): Der Teilnehmer wählt dort eines, fährt in derselben Fahrt weiter und sieht am Ende einen einzigen Bericht — während jedes Roadbook weiterhin für sich gewertet wird.",
     "fp.events.run2": "Um sie live zu verfolgen, öffne die <span class=\"ev-where\">Live-Karte</span>: Sie zeigt, wo jeder Teilnehmer ist, während er eines der Roadbooks der Veranstaltung navigiert — nur wenn er zu Beginn seiner Fahrt zugestimmt hat, nur den Veranstaltern und nur seine letzte Position.",
+});
+
+/* Release notes 1.9.12 */
+Object.assign(window.RBi18nLangs.de, {
+    "Events that flow, and a live map": "Veranstaltungen im Fluss und eine Live-Karte",
+    "Chained roadbooks: at the last note of an event roadbook, pick the next one and carry on in the same run, with one report for all of it at the end.": "Verkettete Roadbooks: An der letzten Notiz eines Veranstaltungs-Roadbooks wählst du das nächste und fährst in derselben Fahrt weiter, mit einem einzigen Bericht über alles am Ende.",
+    "Organizers see a live map of the participants — only of those who agree, only while they navigate one of the event’s roadbooks.": "Veranstalter sehen eine Live-Karte der Teilnehmer — nur von denen, die zustimmen, und nur während sie eines der Roadbooks der Veranstaltung navigieren.",
+    "Tap a note’s rings in the Editor to change its detection radius, or to add the points that shape its arrow without changing the route.": "Tippe im Editor auf die Kreise einer Notiz, um ihren Erkennungsradius zu ändern oder die Punkte hinzuzufügen, die ihren Pfeil formen, ohne die Route zu ändern.",
+    "Clearer arrows: every road the same width, junctions under the route, curved exits drawn longer and the arrowhead reaching the very end.": "Klarere Pfeile: alle Straßen gleich breit, Abzweigungen unter der Route, gebogene Ausfahrten länger gezeichnet und die Pfeilspitze bis ganz ans Ende.",
+    "The Editor zooms in close on the note you pick, and tapping an icon on the vignette opens its tools.": "Der Editor zoomt nah an die gewählte Notiz heran, und ein Tipp auf ein Symbol der Vignette öffnet seine Werkzeuge.",
+});
+
+/* Editor: the detection radius floor, in the note's rings dialog */
+Object.assign(window.RBi18nLangs.de, {
+    "It is never smaller than {m} m: below that a GPS fix can’t validate the note reliably.": "Er ist nie kleiner als {m} m: Darunter kann ein GPS-Punkt die Notiz nicht zuverlässig bestätigen.",
 });
