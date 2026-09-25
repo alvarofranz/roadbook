@@ -19,6 +19,8 @@ Ouvrez **Editor** (`/editor/`). La page d'accueil (`#loadFrom`) propose 4 cartes
 | **.rdbk** | Touchez « .rdbk » → choisissez un fichier ZIP/JSON | Importe un roadbook complet (médias dans `pendingMedia`, voir ci-dessous) |
 | **Roadbook public** | Touchez « Roadbook public » → sélecteur de challenge | **Fork** d'un roadbook `public` + `reusable` → nouveau roadbook privé vous appartenant |
 
+**Depuis l'app** : dans l'app RDBK (Android et iOS), vous pouvez aussi simplement ouvrir un `.gpx` ou un `.rdbk` depuis Fichiers, un téléchargement ou une discussion et choisir RDBK — un GPX s'ouvre dans l'Editor, un `.rdbk` dans le Reader.
+
 **Sources automatiques** (au démarrage, par priorité) :
 1. `?trip=1` → trace/waypoint/photo depuis Recorder/Tripmaster via `sessionStorage`
 2. Brouillon non sauvegardé dans `localStorage` (`rb_editor_draft`) → confirmation de récupération
@@ -124,7 +126,7 @@ Colonne de droite : lignes `.note-mini`. Tap sur une ligne → **l'éditeur en l
 | **Titre** | Un bloc de texte, avant ou après la note |
 | **Note vocale** | Un son, joué tout seul avant la note pendant la navigation |
 
-**Note vocale** : **Enregistrer** allume le micro, **Arrêter** termine l'enregistrement, **Réenregistrer** la remplace ; le lecteur la fait réécouter. **Jouer avant la note (m)** indique combien de mètres avant la note le Reader la joue tout seul — 100 si vous ne le fixez pas. **Supprimer** l'enlève (après confirmation). Seul le son est gardé, dans le roadbook — aucune transcription. Une note vocale enregistrée en maintenant le bouton du Recorder arrive déjà dans l'onglet **Note vocale** de sa note.
+**Note vocale** : **Enregistrer** allume le micro, **Arrêter** termine l'enregistrement, **Réenregistrer** la remplace ; le lecteur la fait réécouter. Un enregistrement de moins de 2 secondes n'est pas gardé : *Enregistrez au moins 2 secondes d’audio pour l’associer à la note.* **Jouer avant la note (m)** indique combien de mètres avant la note le Reader la joue tout seul — 100 si vous ne le fixez pas. **Supprimer** l'enlève (après confirmation). Seul le son est gardé, dans le roadbook — aucune transcription. Une note vocale enregistrée en maintenant le bouton du Recorder arrive déjà dans l'onglet **Note vocale** de sa note.
 
 ### Glisser sur la carte (outil Déplacer)
 La note se fait glisser depuis le marqueur bleu → déplace **le sommet de trace** dessous → la ligne le suit. La note bouge comme un point de trace.

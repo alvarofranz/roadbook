@@ -136,7 +136,7 @@ describe('photos waiting to upload survive a crash and the sign-in return (#792)
         expect(fn('withExtras')).toContain('await photoBlob(p)');
     });
     it('a photo the device could not keep is said and marked failed', () => {
-        expect(rec).toMatch(/RBMediaQueue\.add\('photo', f, fields, 'photo\.jpg', token\)\.catch\(\(\) => \{\s+pin\.pending = false; pin\.failed = true; saveSession\(\);\s+toast\('Could not save\.'\);/);
+        expect(rec).toContain("try { await RBMediaQueue.add('photo', f, fields, 'photo.jpg', token); }\n        catch (err) { pin.pending = false; pin.failed = true; saveSession(); return toast('Could not save.'); }");
     });
 });
 

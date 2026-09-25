@@ -19,6 +19,8 @@ Abre **Editor** (`/editor/`). La landing (`#loadFrom`) ofrece 4 tarjetas + 2 fue
 | **.rdbk** | Tap ".rdbk" → elige archivo ZIP/JSON | Importa roadbook completo (media en `pendingMedia`, ver abajo) |
 | **Roadbook público** | Tap "Roadbook público" → picker de challenge | **Fork** de un roadbook `public` + `reusable` → nuevo roadbook privado tuyo |
 
+**Desde la app**: en la app RDBK (Android e iOS) también puedes abrir sin más un `.gpx` o un `.rdbk` desde Archivos, una descarga o un chat y elegir RDBK — un GPX se abre en el Editor, un `.rdbk` en el Reader.
+
 **Fuentes automáticas** (al arrancar, prioridad):
 1. `?trip=1` → trazada/waypoint/fotos desde Recorder/Tripmaster vía `sessionStorage`
 2. Draft no guardado en `localStorage` (`rb_editor_draft`) → confirmar recuperación
@@ -124,7 +126,7 @@ Junto a las pestañas **Nota** e **Icono**, una pestaña por cada extra — el m
 | **Encabezado** | Un bloque de texto, antes o después de la nota |
 | **Nota de voz** | Un sonido, que suena solo antes de la nota al navegar |
 
-**Nota de voz**: **Grabar** enciende el micrófono, **Detener** termina la grabación, **Grabar de nuevo** la sustituye; el reproductor te la deja escuchar. **Suena antes de la nota (m)** indica cuántos metros antes de la nota la reproduce sola el Reader — 100 si no lo fijas. **Borrar** la elimina (pregunta antes). Solo se guarda el sonido, dentro del roadbook — sin transcripción. Una nota de voz grabada manteniendo pulsado el botón en el Recorder llega ya en la pestaña **Nota de voz** de su nota.
+**Nota de voz**: **Grabar** enciende el micrófono, **Detener** termina la grabación, **Grabar de nuevo** la sustituye; el reproductor te la deja escuchar. Una grabación de menos de 2 segundos no se guarda: *Graba mínimo 2 segundos de audio para asignarlo a la nota.* **Suena antes de la nota (m)** indica cuántos metros antes de la nota la reproduce sola el Reader — 100 si no lo fijas. **Borrar** la elimina (pregunta antes). Solo se guarda el sonido, dentro del roadbook — sin transcripción. Una nota de voz grabada manteniendo pulsado el botón en el Recorder llega ya en la pestaña **Nota de voz** de su nota.
 
 ### Drag en el mapa (herramienta Mover)
 La nota se arrastra desde el marcador azul → mueve **vértice de trazada** de debajo → la línea lo sigue. La nota se mueve como un punto de trazada.

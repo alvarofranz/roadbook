@@ -220,13 +220,15 @@ ogni nota validata, automatica o manuale.
 
 Non c'è annulla sul percorso: una nota toccata per sbaglio si cancella in un attimo nell'Editor.
 
-**Nota vocale (#992).** Si **tiene premuto** il microfono: al `pointerdown` cade una nota lì (come
-*Note*) e `RBVoice.start` apre il microfono (il pulsante diventa rosso con i secondi); al rilascio
-(`pointerup`/`pointercancel`/`pointerleave`) la registrazione si ferma — al massimo `RBVoice.MAX_S`
-(60 s). Si tiene solo il suono, senza trascrizione: il data URI finisce su `note.voice` (nel checkpoint
-di crash) e al salvataggio diventa l'extra **Voice note** della nota (`withExtras` →
-`{ type: 'voice', audio }`), che il Reader riproduce prima della nota. Finire con una nota vocale in
-corso la tiene. Il pulsante manca dove il browser non sa registrare (`RBVoice.supported`).
+**Nota vocale (#992).** Si **tiene premuto** il microfono: al `pointerdown` `markSpot()` prende il
+punto (posizione, ora, odometro) e `RBVoice.start` apre il microfono (il pulsante diventa rosso con i
+secondi); al rilascio (`pointerup`/`pointercancel`/`pointerleave`) la registrazione si ferma — al
+massimo `RBVoice.MAX_S` (60 s). Solo allora, e solo se dura almeno `RBVoice.MIN_S` (2 s), la nota cade
+nel punto della pressione (`dropWaypoint(spot)`, al suo posto lungo il percorso) con campanello e
+check (#998); più corta non succede nulla e un toast dice di registrare almeno 2 secondi. Si tiene solo
+il suono, senza trascrizione: il data URI finisce su `note.voice` (nel checkpoint di crash) e al
+salvataggio diventa l'extra **Voice note** della nota (`withExtras` → `{ type: 'voice', audio }`), che
+il Reader riproduce prima della nota. Finire con una nota vocale in corso la tiene se è abbastanza lunga. Il pulsante manca dove il browser non sa registrare (`RBVoice.supported`).
 
 ---
 
@@ -242,9 +244,12 @@ Il flusso:
   lat, lon, local: true, pending: true }`), la mappa si ridisegna e la sessione si salva. Quando
   l'upload va a buon fine, `onDone` **riconcilia** quella voce con `{ id, url }` del server
   (via `token`) e revoca l'`objectURL`.
-- Una foto con posizione lascia **sempre** anche una nota alla sua posizione (#282), con il
-  campanello e il check di una nota normale (§5); la nota ricorda la sua foto (`photo: token`) e al
-  salvataggio la porta come extra *Photo* (#792) — letta dal blob in coda se non è ancora caricata.
+- Una foto con posizione lascia **sempre** anche una nota (#282), nel punto in cui si è premuto
+  *Photo* (`markSpot()` al tap), e il campanello e il check di una nota normale (§5) arrivano solo
+  quando la foto è in coda sul dispositivo (#998): una fotocamera chiusa senza scatto non lascia
+  nulla, una foto che il dispositivo non riesce a tenere lo dice e non lascia la nota. La nota ricorda
+  la sua foto (`photo: token`) e al salvataggio la porta come extra *Photo* (#792) — letta dal blob in
+  coda se non è ancora caricata.
 
 ---
 

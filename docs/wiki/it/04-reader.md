@@ -18,6 +18,8 @@ Apri il Reader (`/reader/`). La schermata iniziale offre:
 
 **Da un link**: `/reader/<slug>` apre un roadbook pubblico, `?rb=<id>` uno dei tuoi.
 
+**Dall'app**: nell'app RDBK (Android e iOS), apri un `.rdbk` da File, da un download o da una chat e scegli RDBK — si apre qui.
+
 > Per aprire un roadbook pubblico devi aver fatto l'accesso.
 
 Un roadbook si apre prima in **anteprima di sola lettura**: la lista delle note, senza GPS. Magari vuoi solo guardarlo. Tocca **Naviga** per partire.

@@ -154,6 +154,14 @@
         const gapNext = (nextNote && nextNote.partial_distance != null) ? nextNote.partial_distance : Infinity;
         return Math.max(CONST.REACH_MIN_M, Math.min(base, Math.min(gapPrev, gapNext) / 2));
     }
+    /* The accept list a file picker inside the native app is given (#996). Android's WebView turns
+       each `.ext` into a MIME type through the OS table, which knows neither `.gpx`, `.wpt` nor
+       `.rdbk`: the picker then filtered on nothing useful and offered only images. So an accept that
+       names an extension opens every file (the page reads the file and says if it is not one it
+       takes); a MIME-only accept (`image/*`) keeps its filter and the camera. */
+    function pickerAccept(accept) {
+        return String(accept || '').split(',').some((type) => type.trim().startsWith('.')) ? '*/*' : accept;
+    }
     /* Is note i the roadbook's END — the last one you navigate to? Its tulip draws no exit road: past the finish there is nothing to follow, and in a race
        that note is the finish arch (#447). One rule, so the Editor, the Reader, the public page
        and the PDF all agree about which note that is. */
@@ -1908,7 +1916,7 @@
         simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, liveAllowed, liveDue, liveFreshness, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, blankNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, symbolSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
+        NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote, pickerAccept,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, distanceChars, deleteNote, pendingWork,
         cumulativeM, deriveBearings, recJunkFix, gpsHealth, recStepM, odometerStep,
         eventLink,

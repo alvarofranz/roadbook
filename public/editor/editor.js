@@ -755,10 +755,16 @@
     let loadStarted = false;
     $('loadGpx').onclick = () => { loadStarted = true; $('gpxFile').click(); };
     $('loadJson').onclick = () => { loadStarted = true; $('jsonFile').click(); };
-    $('gpxFile').onchange = async (e) => {
+    $('gpxFile').onchange = (e) => {
         const files = Array.from(e.target.files); e.target.value = ''; // picking the same file again must fire again (#659)
-        const g = files.find((f) => /\.gpx$/i.test(f.name)); if (!g) return;
+        importGpx(files);
+    };
+    // A GPX (and its optional .wpt) → a new roadbook. Any file other than a .wpt is read as the GPX:
+    // the app's picker offers every file (RB.pickerAccept, #996) and a GPX handed over by the OS
+    // may have no extension at all, so a wrong one is said instead of silently ignored.
+    async function importGpx(files) {
         const w = files.find((f) => /\.wpt$/i.test(f.name));
+        const g = files.find((f) => f !== w); if (!g) return;
         try {
             const text = await g.text();
             if (/openrally/i.test(text)) { // OpenRally GPX (openrally: extensions) → dedicated importer
@@ -778,9 +784,11 @@
             setRoadbook(RB.buildRoadbook({ name: p.name || g.name.replace(/\.gpx$/i, ''), trkpts, wpts: p.wpts }));
             if (fromWpts) toast('No track in the GPX — built a route through the waypoints; redraw or refine it as needed.');
         } catch (err) { toast('Could not read this GPX file.'); }
+    }
+    $('jsonFile').onchange = (e) => {
+        const f = e.target.files[0]; e.target.value = ''; if (f) importRdbk(f);
     };
-    $('jsonFile').onchange = async (e) => {
-        const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    async function importRdbk(f) {
         try {
             const b = await RBZip.readBundle(f);
             resetIdentity(); pendingMedia = b.media; setRoadbook(RB.readRoadbook(b.roadbook));
@@ -790,7 +798,7 @@
             }
         }
         catch (err) { toast(err.report ? 'This file is not a valid .rdbk roadbook.' : 'This file is not a roadbook.'); }
-    };
+    }
     // Toggle between the opening screen (ways to start a new roadbook) and the
     // editing surface (the map + tool bar). The map is built up front but stays
     // hidden until there's a roadbook to edit, so the editor never opens on a
@@ -1752,11 +1760,11 @@
             if (!editable()) return;
             if (editorVoice) {
                 const { rec, note } = editorVoice; editorVoice = null;
-                let audio = null;
-                try { audio = await (await rec).stop(); } catch (e) { return renderEditor(); }
-                if (!audio) { toast(t('No audio captured.')); return renderEditor(); }
+                let clip = null;
+                try { clip = await (await rec).stop(); } catch (e) { return renderEditor(); }
+                if (!clip || clip.seconds < RBVoice.MIN_S) { toast(t('Record at least 2 seconds of audio to attach it to the note.')); return renderEditor(); }
                 const slot = blockOf(note, 'voice') || (note.blocks = note.blocks || [], note.blocks[note.blocks.push({ type: 'voice' }) - 1]);
-                slot.audio = audio;
+                slot.audio = clip.audio;
                 markDirty(); renderEditor(); renderNotes();
                 return;
             }
@@ -2452,6 +2460,15 @@
                 sessionStorage.removeItem('rb_trip_track');
                 if (pts && pts.length >= 2) { setRoadbook(RB.buildRoadbook({ name: t('Recorded trip'), trkpts: pts, wpts: [] })); markDirty(); }
             } catch (e) { toast('Could not load the recorded trip.'); }
+            if (rb) return;
+        }
+        // ?open=file → a GPX the OS opened with the app (#996), kept for this page by the native bridge
+        if (new URLSearchParams(location.search).get('open') === 'file') {
+            loadStarted = true; // an explicit target: no recovery prompt over it
+            try { history.replaceState(null, '', location.pathname); } catch (e) {} // a refresh must not look for it again
+            const opened = window.RBNative && await RBNative.takeOpenedFile();
+            if (!opened) toast('Could not open the file.');
+            else await (opened.kind === 'gpx' ? importGpx([opened.file]) : importRdbk(opened.file));
             if (rb) return;
         }
         // Explicit open target: a public-challenge fork or a saved ?rb=id. The session-recovery

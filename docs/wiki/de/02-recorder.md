@@ -52,8 +52,8 @@ Die Erfassungsreihe hat drei gleich hohe Spalten: die große **Notiz** (40 %), d
 | Button | Aktion | Bedienung |
 |--------|--------|-----------|
 | **📍 Notiz** | Setzt eine Notiz an deiner GPS-Position | Tippen: Die Notiz wird sofort gesetzt. Eine Erfolgsglocke ertönt und ein großes grünes Häkchen erscheint für weniger als eine Sekunde. Es gibt nichts zu tippen — den Text der Notiz schreibst du später im Editor |
-| **📷 Foto** | Macht ein geotaggtes Foto | Öffnet die Rückkamera. Das Foto wird an deine Position gehängt und setzt dort immer auch eine Notiz |
-| **🎤 Sprachnotiz** | Nimmt eine Sprachnotiz auf | **Gedrückt halten**, während du sprichst — genau dort wird eine Notiz gesetzt, und der Button wird rot und zählt die Sekunden; **loslassen** beendet sie (höchstens eine Minute). Behalten wird nur der Ton, ohne Transkription: Er wird zum Extra **Sprachnotiz** der Notiz und spielt beim Navigieren des roadbook von selbst, bevor du die Notiz erreichst (100 m vorher oder in dem Abstand, den der Autor im Editor festlegt) |
+| **📷 Foto** | Macht ein geotaggtes Foto | Öffnet die Rückkamera. Die Notiz wird dort gesetzt, wo du warst, als du **Foto** gedrückt hast, und das Foto wird dort angehängt; Glocke und großes grünes Häkchen kommen, sobald das Foto auf dem Gerät gesichert ist. Schließt du die Kamera ohne Aufnahme, wird nichts gesetzt |
+| **🎤 Sprachnotiz** | Nimmt eine Sprachnotiz auf | **Gedrückt halten**, während du sprichst — der Button wird rot und zählt die Sekunden; **loslassen** beendet sie (höchstens eine Minute). Die Notiz wird dort gesetzt, wo du beim Drücken warst; Glocke und großes grünes Häkchen kommen beim Loslassen, wenn der Ton gespeichert ist. Eine Aufnahme unter 2 Sekunden (oder ein kurzes Antippen) setzt nichts und meldet *Nimm mindestens 2 Sekunden Ton auf, um ihn der Notiz zuzuordnen.* Behalten wird nur der Ton, ohne Transkription: Er wird zum Extra **Sprachnotiz** der Notiz und spielt beim Navigieren des roadbook von selbst, bevor du die Notiz erreichst (100 m vorher oder in dem Abstand, den der Autor im Editor festlegt) |
 | **🗺 Kartenstil** | Wechselt die Basiskarte | Satellit ↔ topografisch |
 | **➤ In Fahrtrichtung** | Kartenausrichtung | Die Karte dreht sich mit deinem Kurs (leuchtet) oder bleibt genordet |
 
@@ -64,7 +64,7 @@ Die untere Leiste enthält die anderen beiden:
 | **⏸ Pause** | Unterbricht die Aufzeichnung (Stopps, Wartezeiten). Erneut tippen zum Fortsetzen |
 | **🏁 Beenden** | Beendet die Aufzeichnung (Schritt 6) |
 
-> **Tipp**: Tippe an jeder Kreuzung, Gefahr oder jedem Straßenwechsel auf **Notiz**, ohne den Blick von der Straße zu nehmen, und ergänze die Worte später im Editor. Halte **Sprachnotiz** gedrückt, wenn ein paar Worte es besser sagen — du hörst sie auf der Strecke wieder. Unterwegs gibt es kein Rückgängig: Eine versehentlich gesetzte Notiz ist im Editor in einer Sekunde gelöscht.
+> **Tipp**: Tippe an jeder Kreuzung, Gefahr oder jedem Straßenwechsel auf **Notiz**, ohne den Blick von der Straße zu nehmen, und ergänze die Worte später im Editor. Halte **Sprachnotiz** mindestens 2 Sekunden gedrückt, wenn ein paar Worte es besser sagen — du hörst sie auf der Strecke wieder. **Foto** und **Sprachnotiz** setzen ihre Notiz dort, wo du gedrückt hast, auch wenn du schon weiter bist, bis Foto oder Ton gespeichert sind. Unterwegs gibt es kein Rückgängig: Eine versehentlich gesetzte Notiz ist im Editor in einer Sekunde gelöscht.
 
 ---
 

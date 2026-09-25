@@ -18,6 +18,8 @@ Der **Reader** ist der digitale Beifahrer: Er lädt ein Roadbook und macht darau
 
 **Über einen Link**: `/reader/<slug>` öffnet ein öffentliches Roadbook, `?rb=<id>` eines deiner eigenen.
 
+**Aus der App**: In der RDBK-App (Android und iOS) öffnest du eine `.rdbk`-Datei aus Dateien, einem Download oder einem Chat und wählst RDBK — sie öffnet sich hier.
+
 > Um ein öffentliches Roadbook zu öffnen, musst du angemeldet sein.
 
 Ein Roadbook öffnet sich zuerst als **schreibgeschützte Vorschau**: die Notenliste, ohne GPS. Vielleicht willst du es nur ansehen. Tippe auf **Navigieren**, um zu starten.

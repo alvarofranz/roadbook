@@ -52,8 +52,8 @@ La fila de captura tiene tres columnas, de la misma altura: la gran **Nota** (40
 | Botón | Acción | Cómo se usa |
 |-------|--------|-------------|
 | **📍 Nota** | Coloca una nota en tu posición GPS | Toca: la nota se coloca al instante. Suena una campanilla de éxito y aparece un gran check verde durante menos de un segundo. No hay nada que escribir — el texto de la nota se escribe después en el Editor |
-| **📷 Foto** | Hace una foto geotaggeada | Abre la cámara trasera. La foto se engancha a tu posición y siempre coloca también una nota allí |
-| **🎤 Nota de voz** | Graba una nota de voz | **Mantenlo pulsado** mientras hablas — se coloca una nota justo ahí y el botón se pone rojo con los segundos; **suéltalo** y se detiene (como mucho un minuto). Solo se guarda el sonido, sin transcripción: se convierte en el extra **Nota de voz** de la nota y, cuando navegas el roadbook, suena sola antes de que llegues a la nota (100 m antes, o la distancia que el autor fije en el Editor) |
+| **📷 Foto** | Hace una foto geotaggeada | Abre la cámara trasera. La nota se coloca donde estabas al pulsar **Foto**, y la foto se engancha allí; la campanilla y el gran check verde llegan cuando la foto queda guardada en el dispositivo. Si cierras la cámara sin hacer la foto, no se coloca nada |
+| **🎤 Nota de voz** | Graba una nota de voz | **Mantenlo pulsado** mientras hablas — el botón se pone rojo con los segundos; **suéltalo** y se detiene (como mucho un minuto). La nota se coloca donde estabas al pulsarlo; la campanilla y el gran check verde llegan al soltarlo, cuando el sonido queda guardado. Una grabación de menos de 2 segundos (o una pulsación corta) no coloca nada y avisa *Graba mínimo 2 segundos de audio para asignarlo a la nota.* Solo se guarda el sonido, sin transcripción: se convierte en el extra **Nota de voz** de la nota y, cuando navegas el roadbook, suena sola antes de que llegues a la nota (100 m antes, o la distancia que el autor fije en el Editor) |
 | **🗺 Estilo de mapa** | Cambia el mapa base | Satélite ↔ topográfico |
 | **➤ Rumbo arriba** | Orientación del mapa | El mapa gira con tu rumbo (encendido) o se queda con el norte arriba |
 
@@ -64,7 +64,7 @@ La barra inferior contiene los otros dos:
 | **⏸ Pausa** | Suspende la grabación (paradas, esperas). Toca otra vez para reanudar |
 | **🏁 Terminar** | Termina la grabación (paso 6) |
 
-> **Consejo**: toca **Nota** en cada cruce, peligro o cambio de carretera sin apartar la vista del camino, y añade las palabras después en el Editor. Mantén pulsado **Nota de voz** cuando unas pocas palabras lo digan mejor — las volverás a oír en la carretera. En ruta no hay deshacer: una nota colocada por error se borra en un segundo en el Editor.
+> **Consejo**: toca **Nota** en cada cruce, peligro o cambio de carretera sin apartar la vista del camino, y añade las palabras después en el Editor. Mantén pulsado **Nota de voz** al menos 2 segundos cuando unas pocas palabras lo digan mejor — las volverás a oír en la carretera. **Foto** y **Nota de voz** colocan la nota donde las pulsaste, aunque cuando la foto o el sonido quedan guardados ya estés más adelante. En ruta no hay deshacer: una nota colocada por error se borra en un segundo en el Editor.
 
 ---
 

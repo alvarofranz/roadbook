@@ -56,6 +56,12 @@
             navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
             if (window.caches) caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
         }
+        // Every file picker opens through RB.pickerAccept (#996), set the moment before it opens — a
+        // capture-phase click reaches the input first, whether a person or a script clicked it.
+        document.addEventListener('click', (e) => {
+            const input = e.target;
+            if (input instanceof HTMLInputElement && input.type === 'file' && input.accept && window.RB) input.accept = RB.pickerAccept(input.accept);
+        }, true);
         const nativeBridge = document.createElement('script');
         nativeBridge.src = ROOT + 'assets/js/native.bundle.js';
         document.head.appendChild(nativeBridge);

@@ -543,7 +543,9 @@ Operational notes:
   vectors); searchable icon palette.
 - **Recorder** — THE live-GPS route recorder (accuracy-aware sampling, pause/resume,
   crash-safe GPX, one-tap notes confirmed by a bell + a big check (`RBSuccess`), geotagged photos,
-  **voice notes held down to record** (#992 — only the sound, saved as the note's Voice note extra),
+  **voice notes held down to record** (#992 — only the sound, saved as the note's Voice note extra;
+  under `RBVoice.MIN_S` = 2 s it is nothing). A photo's or a voice note's note sits where its button
+  was PRESSED and is checked only once the shot or the sound is kept (#998),
   the distance since the last note on the map; no undo on the trail — that is the Editor's job; an
   admin may start with no usable GPS to test on a computer, #993); signed-in, it saves the
   route as a draft roadbook to edit later. Recording a new route lives here only; the
@@ -670,7 +672,7 @@ Operational notes:
   `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `symbolSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
-  `deleteNote`, `pendingWork` (a checkpoint holding a roadbook counts only at the current `rdbk_version`), `isEndNote` — the last note, whose tulip draws no exit road because
+  `deleteNote`, `pickerAccept` (inside the app a file input that names an extension opens every file — Android's picker knows no `.gpx`/`.rdbk`, #996), `pendingWork` (a checkpoint holding a roadbook counts only at the current `rdbk_version`), `isEndNote` — the last note, whose tulip draws no exit road because
   past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
   (the shape the author drew into the track around a note — 4 or more points within 30 m on
   a side — derived at render time and never stored, #945),
@@ -719,7 +721,8 @@ Operational notes:
   can, a signed-out capture stays queued on the device. Pure `createQueue` core
   (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
 - `rb-voice.js` (`RBVoice`, #992) — records a voice note into an audio `data:` URI (mono, 24 kbit/s,
-  at most `MAX_S` = 60 s): `supported` · `start({ onTick })` → `{ stop() → Promise<dataURI|null> }`.
+  at most `MAX_S` = 60 s; a clip under `MIN_S` = 2 s is refused by both callers): `supported` ·
+  `start({ onTick })` → `{ stop() → Promise<{ audio, seconds }|null> }`.
   The Recorder (hold the microphone) and the Editor (the Voice note extra) share it.
 - `rbzip.js` (`RBZip`) — the dependency-free ZIP codec of the `.rdbk` container (native
   `deflate-raw`): `write(files)` · `read(blob)` · `inspect(file)` → `{ container, names, files, doc,
@@ -803,6 +806,14 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   app; for a fresh user the web `/go/` join persists on the account). `assetlinks.json` carries
   the Play App Signing + upload-key SHA-256; the iOS App ID must have Associated Domains (and Sign
   in with Apple) enabled, or the build fails at signing — see `NATIVE.md` §4.
+- **Files from the OS (#996):** tapping a `.gpx` or a `.rdbk` in Files, a download or a chat offers
+  the app (Android: `VIEW` intent-filters by type — `application/gpx+xml`, `application/x-roadbook`,
+  `application/octet-stream` — and by name; iOS: `CFBundleDocumentTypes` for `app.rdbk.roadbook`
+  (exported) and `com.topografix.gpx`, copied into the Inbox, not opened in place). The URL arrives
+  like a link (`parseDeepLink` → `{ file }`); the bridge reads it through `Capacitor.convertFileSrc`,
+  judges it by its first bytes (`openedFileKind`: a ZIP or a JSON object is a roadbook → the Reader,
+  a GPX → the Editor, at `?open=file`), and the page takes it with `RBNative.takeOpenedFile()`. The
+  app's own pickers open every file when their `accept` names an extension (`RB.pickerAccept`).
 - **Projects:** `android/` and `ios/` are both committed (build artifacts git-ignored), so a fresh
   clone needs only `npm run sync`; iOS builds on a Mac with Xcode (or in Xcode Cloud).
 

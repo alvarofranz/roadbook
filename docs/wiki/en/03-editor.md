@@ -19,6 +19,8 @@ Open **Editor** (`/editor/`). The landing (`#loadFrom`) offers 4 cards + 2 hidde
 | **.rdbk** | Tap ".rdbk" → choose ZIP/JSON file | Imports a complete roadbook (media in `pendingMedia`, see below) |
 | **Public roadbook** | Tap "Public roadbook" → challenge picker | **Fork** of a `public` + `reusable` roadbook → new private roadbook of yours |
 
+**From the app**: in the RDBK app (Android and iOS) you can also just open a `.gpx` or `.rdbk` from Files, a download or a chat and choose RDBK — a GPX opens in the Editor, a `.rdbk` in the Reader.
+
 **Automatic sources** (at startup, priority):
 1. `?trip=1` → track/waypoint/photos from Recorder/Tripmaster via `sessionStorage`
 2. Unsaved draft in `localStorage` (`rb_editor_draft`) → confirm recovery
@@ -124,7 +126,7 @@ Next to the **Note** and **Icon** tabs, one tab per extra — the material that 
 | **Heading** | A block of text, before or after the note |
 | **Voice note** | A sound, played by itself before the note while navigating |
 
-**Voice note**: **Record** turns on the microphone, **Stop** ends the recording, **Record again** replaces it; the player plays it back. **Play before the note (m)** is how many metres before the note the Reader plays it by itself — 100 unless you set it. **Delete** removes it (after asking). Only the sound is kept, inside the roadbook — no transcription. A voice note held in the Recorder arrives already in its note's **Voice note** tab.
+**Voice note**: **Record** turns on the microphone, **Stop** ends the recording, **Record again** replaces it; the player plays it back. A recording under 2 seconds is not kept: *Record at least 2 seconds of audio to attach it to the note.* **Play before the note (m)** is how many metres before the note the Reader plays it by itself — 100 unless you set it. **Delete** removes it (after asking). Only the sound is kept, inside the roadbook — no transcription. A voice note held in the Recorder arrives already in its note's **Voice note** tab.
 
 ### Drag on map (Move tool)
 Note is dragged from the blue marker → moves the **track vertex** underneath → line follows. Note moves like a track point.
