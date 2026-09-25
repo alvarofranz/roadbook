@@ -36,6 +36,39 @@
                 <data android:pathPrefix="/reader/" />
                 <data android:pathPrefix="/editor/" />
             </intent-filter>
+
+            <!-- Files (#996): a .gpx or a .rdbk tapped in Files, a download or a chat opens in the app
+                 (the bridge reads its first bytes: a roadbook → the Reader, a GPX → the Editor). By
+                 type — Android names neither extension, so most senders say octet-stream — and, for
+                 the ones that pass a path, by name. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/gpx+xml" />
+                <data android:mimeType="application/gpx" />
+                <data android:mimeType="application/x-gpx+xml" />
+                <data android:mimeType="application/x-roadbook" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <!-- pathPattern stops at the first dot it meets, so a name with more dots needs its own -->
+                <data android:pathPattern=".*\\.gpx" />
+                <data android:pathPattern=".*\\..*\\.gpx" />
+                <data android:pathPattern=".*\\..*\\..*\\.gpx" />
+                <data android:pathPattern=".*\\.rdbk" />
+                <data android:pathPattern=".*\\..*\\.rdbk" />
+                <data android:pathPattern=".*\\..*\\..*\\.rdbk" />
+            </intent-filter>
         </activity>
 
         <provider

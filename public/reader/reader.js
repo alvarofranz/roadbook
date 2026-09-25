@@ -57,6 +57,7 @@
         if (pub) return 'slug:' + pub;
         if (+(q.get('rb') || 0) > 0) return 'rb:' + q.get('rb');
         if (+(q.get('admin_rb') || 0) > 0) return 'admin:' + q.get('admin_rb');
+        if (q.get('open') === 'file') return 'file'; // a .rdbk the OS opened with the app (#996)
         return '';
     })();
     // session checkpoint: live counters (small, written constantly) + the roadbook (written once at start)
@@ -119,6 +120,12 @@
                 RBApi('rb_get', { id: rbId }).then((j) => { if (j.ok && j.roadbook) { loadRb(j.roadbook, j.id, j.slug); } else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
             } else if (adminRbId > 0) {
                 RBApi('admin_rb_get', { id: adminRbId }).then((j) => { if (j.ok && j.roadbook) loadRb(j.roadbook, j.id, j.slug); else toast(j.error || 'Could not load the roadbook.'); }).catch(() => toast('Could not load the roadbook.'));
+            } else if (openedAs === 'file') { // kept for this page by the native bridge; a refresh must not look for it again
+                try { history.replaceState(null, '', location.pathname); } catch (e) {}
+                (window.RBNative ? RBNative.takeOpenedFile() : Promise.resolve(null)).then(async (opened) => {
+                    if (!opened) return toast('Could not open the file.');
+                    try { loadRb(await RBZip.readRdbk(opened.file)); } catch (e) { toast(e.report ? 'This file is not a valid .rdbk roadbook.' : 'Could not load the roadbook.'); }
+                });
             }
         };
         // Worth asking about only when this visit has no target of its own, or when the saved run

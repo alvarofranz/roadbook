@@ -19,6 +19,8 @@ Apri **Editor** (`/editor/`). La landing (`#loadFrom`) offre 4 carte + 2 sorgent
 | **.rdbk** | Tap ".rdbk" → scegli file ZIP/JSON | Importa roadbook completo (media in `pendingMedia`, vedi sotto) |
 | **Roadbook pubblico** | Tap "Roadbook pubblico" → picker challenge | **Fork** di un roadbook `public` + `reusable` → nuovo roadbook privato tuo |
 
+**Dall'app**: nell'app RDBK (Android e iOS) puoi anche semplicemente aprire un `.gpx` o un `.rdbk` da File, da un download o da una chat e scegliere RDBK — un GPX si apre nell'Editor, un `.rdbk` nel Reader.
+
 **Sorgenti automatiche** (all'avvio, priorità):
 1. `?trip=1` → traccia/waypoint/foto da Recorder/Tripmaster via `sessionStorage`
 2. Draft non salvato in `localStorage` (`rb_editor_draft`) → conferma recupero
@@ -124,7 +126,7 @@ Accanto alle schede **Nota** e **Icona**, una scheda per ogni extra — il mater
 | **Intestazione** | Un blocco di testo, prima o dopo la nota |
 | **Nota vocale** | Un suono, che si riproduce da solo prima della nota in navigazione |
 
-**Nota vocale**: **Registra** accende il microfono, **Ferma** chiude la registrazione, **Registra di nuovo** la sostituisce; il player la fa riascoltare. **Suona prima della nota (m)** indica quanti metri prima della nota il Reader la riproduce da solo — 100 se non lo imposti. **Elimina** la rimuove (chiede prima). Si conserva solo il suono, dentro il roadbook — nessuna trascrizione. Una nota vocale registrata tenendo premuto il pulsante nel Recorder arriva già nella scheda **Nota vocale** della sua nota.
+**Nota vocale**: **Registra** accende il microfono, **Ferma** chiude la registrazione, **Registra di nuovo** la sostituisce; il player la fa riascoltare. Una registrazione sotto i 2 secondi non viene conservata: *Registra almeno 2 secondi di audio per assegnarlo alla nota.* **Suona prima della nota (m)** indica quanti metri prima della nota il Reader la riproduce da solo — 100 se non lo imposti. **Elimina** la rimuove (chiede prima). Si conserva solo il suono, dentro il roadbook — nessuna trascrizione. Una nota vocale registrata tenendo premuto il pulsante nel Recorder arriva già nella scheda **Nota vocale** della sua nota.
 
 ### Drag sulla mappa (tool Sposta)
 Nota si trascina dal marker blu → sposta **vertice traccia** sotto → linea la segue. Nota mobile come un punto traccia.

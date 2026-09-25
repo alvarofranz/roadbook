@@ -19,7 +19,7 @@ describe('the Recorder while riding (#768)', () => {
     it('records a voice note while the button is held, and stops when it is let go (#992)', () => {
         expect(rec).toContain("$('recVoice').addEventListener('pointerdown', (e) => {");
         expect(rec).toContain("['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));");
-        expect(rec).toContain('note.voice = audio; saveSession();');
+        expect(rec).toContain('dropWaypoint(spot).voice = clip.audio; saveSession();');
         expect(html).toContain('<script src="../assets/js/rb-voice.js');
     });
     it('lets an admin start with no usable GPS, fixes of any accuracy kept (#993)', () => {
@@ -28,7 +28,20 @@ describe('the Recorder while riding (#768)', () => {
         expect(rec).toContain('if (blindStart && map && map.map) { const c = map.map.getCenter(); return { lat: c.lat, lon: c.lng }; }');
     });
     it('drops a note at once, with the bell and the big check', () => {
-        expect(rec).toMatch(/function dropWaypoint\(lat, lon\) \{[\s\S]*?RBSuccess\.flash\(\);/);
+        expect(rec).toMatch(/function dropWaypoint\(spot\) \{[\s\S]*?RBSuccess\.flash\(\);/);
+    });
+    it('a photo or a voice note drops where its button was pressed, checked only once it is kept (#998)', () => {
+        expect(rec).toContain('photoSpot = markSpot();');
+        expect(rec).toMatch(/try \{ await RBMediaQueue\.add\('photo'[\s\S]*?return toast\('Could not save\.'\); \}\s*[\s\S]*?if \(spot\) \{ dropWaypoint\(spot\)\.photo = token;/);
+        expect(rec).toMatch(/const spot = markSpot\(\); if \(!spot\) return toast\(t\('Waiting for a GPS fix…'\)\);\s*voice = \{ spot, rec: RBVoice\.start/);
+        expect(rec).toContain("return at ? { lat: at.lat, lon: at.lon, t: lastFixT || null, at_m: recordedM } : null;"); // taken at the press
+        expect(rec).toContain('wpts.splice(at < 0 ? wpts.length : at, 0, note);'); // in its place along the route
+    });
+    it('a voice note shorter than RBVoice.MIN_S (2 s) is nothing, and says so — in the Editor too (#998)', () => {
+        expect(read('public/assets/js/rb-voice.js')).toContain('const MIN_S = 2, MAX_S = 60, VOICE_BITRATE = 24000;');
+        const refuse = "if (!clip || clip.seconds < RBVoice.MIN_S)";
+        expect(rec).toContain(refuse + " return toast(t('Record at least 2 seconds of audio to attach it to the note.'));");
+        expect(read('public/editor/editor.js')).toContain(refuse + " { toast(t('Record at least 2 seconds of audio to attach it to the note.'));");
     });
     it('has no undo on the trail: notes are deleted in the Editor (#992)', () => {
         expect(rec).not.toContain('recUndo');

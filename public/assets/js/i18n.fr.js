@@ -2054,8 +2054,8 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "Voice note": "Note vocale",
     "Microphone unavailable.": "Micro indisponible.",
-    "No audio captured.": "Aucun son enregistré.",
-    "Voice note saved.": "Note vocale enregistrée.",
+    
+    
     
     
     
@@ -2084,4 +2084,15 @@ Object.assign(window.RBi18nLangs.fr, {
 Object.assign(window.RBi18nLangs.fr, {
     "s1.lead": "<b>Un fichier, le roadbook entier.</b> Un <code>.rdbk</code> contient l’itinéraire, ses notes et tout ce qu’elles dessinent, pour que n’importe quelle app puisse l’ouvrir, le suivre et le garder — hors ligne, sur n’importe quel appareil, des années plus tard.",
     "See an example": "Voir un exemple",
+});
+
+/* #998 — a voice note needs at least 2 seconds */
+Object.assign(window.RBi18nLangs.fr, {
+    "Record at least 2 seconds of audio to attach it to the note.": "Enregistrez au moins 2 secondes d’audio pour l’associer à la note.",
+});
+
+/* #996 — a file the OS opens with the app */
+Object.assign(window.RBi18nLangs.fr, {
+    "Could not open the file.": "Impossible d’ouvrir le fichier.",
+    "This file is neither a GPX track nor a .rdbk roadbook.": "Ce fichier n’est ni une trace GPX ni un roadbook .rdbk.",
 });

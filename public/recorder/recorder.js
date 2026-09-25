@@ -313,7 +313,7 @@
     $('recStop').onclick = async () => {
         if (!(await RBConfirm(t('Finish the recording?')))) return;
         elapsedAcc = elapsed(); segStart = 0; // the clock stops here (and a No below resumes it from here)
-        stopVoice(); // a voice note still recording is kept, like every other capture
+        await stopVoice(); // a voice note still recording is kept (when long enough), like every other capture — its note lands before the track ends
         stopMeter();
         // end() stops logging and hands over the track but KEEPS the crash checkpoint: from here
         // until the finish options land it somewhere, this is the only copy of the recording, so
@@ -337,13 +337,22 @@
     // copy used only to draw the live map. After a resume it starts empty and refills.
     function refreshMap() { if (map) map.setLiveTrack(track, wpts, photos); }
 
-    // A note drops the instant it is tapped — no prompt, nothing to read or type while riding
-    // (#768): the bell and the big check say it is done, and its words come later in the Editor.
-    // `at_m` is the odometer when it dropped, for the distance since the last note on the map.
-    function dropWaypoint(lat, lon) {
-        // stamp when it was dropped so the Editor can anchor it on the track by time (#158)
-        const note = { lat, lon, name: 'wpt' + (wpts.length + 1), num: wpts.length + 1, text: '', t: lastFixT || null, at_m: recordedM };
-        wpts.push(note); refreshMap(); saveSession(); renderBar();
+    // A note drops where its button was pressed (#998): `markSpot()` takes the place, the time and
+    // the odometer (`at_m`, for the distance since the last note on the map) at the press, and
+    // `dropWaypoint(spot)` lands it — at once for a tap on Note, only once its photo or its voice is
+    // kept for the other two. So the bell and the big check (#768) always mean it is done; nothing to
+    // read or type while riding, its words come later in the Editor.
+    function markSpot() {
+        const at = notePosition();
+        return at ? { lat: at.lat, lon: at.lon, t: lastFixT || null, at_m: recordedM } : null; // `t` anchors it on the track (#158)
+    }
+    function dropWaypoint(spot) {
+        const note = { lat: spot.lat, lon: spot.lon, text: '', t: spot.t, at_m: spot.at_m };
+        // a photo or a voice note lands after the press: in its place along the route, not at the end
+        const at = wpts.findIndex((w) => w.at_m > note.at_m);
+        wpts.splice(at < 0 ? wpts.length : at, 0, note);
+        wpts.forEach((w, i) => { w.num = i + 1; w.name = 'wpt' + (i + 1); });
+        refreshMap(); saveSession(); renderBar();
         RBSuccess.flash();
         return note;
     }
@@ -355,15 +364,17 @@
         return null;
     }
     $('recWpt').onclick = () => {
-        const at = notePosition(); if (!at) return toast(t('Waiting for a GPS fix…'));
-        dropWaypoint(at.lat, at.lon);
+        const spot = markSpot(); if (!spot) return toast(t('Waiting for a GPS fix…'));
+        dropWaypoint(spot);
     };
-    /* A voice note (#992): HOLD the button — a note drops right here and the microphone records;
-       let go and it stops (RBVoice: at most RBVoice.MAX_S). Only the sound is kept, no transcription:
-       it rides with its note (`voice`, a data: URI kept in the crash checkpoint) and becomes the note's
-       Voice note extra when the roadbook is saved — the Reader plays it before the note. */
+    /* A voice note (#992): HOLD the button and the microphone records; let go and it stops (RBVoice:
+       at most RBVoice.MAX_S). Only a clip of RBVoice.MIN_S or more becomes a note, dropped where the
+       button was pressed — a shorter one is nothing, and says so. Only the sound is kept, no
+       transcription: it rides with its note (`voice`, a data: URI kept in the crash checkpoint) and
+       becomes the note's Voice note extra when the roadbook is saved — the Reader plays it before
+       the note. */
     $('recVoice').hidden = !RBVoice.supported;
-    let voice = null; // { rec, note } while held; rec settles once the microphone is open
+    let voice = null; // { rec, spot } while held; rec settles once the microphone is open
     const paintVoice = (s) => {
         $('recVoice').classList.toggle('recording', s != null);
         $('recVoiceTime').hidden = s == null;
@@ -372,23 +383,21 @@
     $('recVoice').addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (voice) return;
-        const at = notePosition(); if (!at) return toast(t('Waiting for a GPS fix…'));
-        const note = dropWaypoint(at.lat, at.lon);
-        voice = { note, rec: RBVoice.start({ onTick: paintVoice }) };
+        const spot = markSpot(); if (!spot) return toast(t('Waiting for a GPS fix…'));
+        voice = { spot, rec: RBVoice.start({ onTick: paintVoice }) };
         voice.rec.catch(() => { voice = null; paintVoice(null); toast(t('Microphone unavailable.')); });
     });
     const releaseVoice = async () => {
         if (!voice) return;
-        const { note, rec } = voice; voice = null;
-        let audio = null;
-        try { audio = await (await rec).stop(); } catch (e) { return; } // the microphone never opened: already said
+        const { spot, rec } = voice; voice = null;
+        let clip = null;
+        try { clip = await (await rec).stop(); } catch (e) { return; } // the microphone never opened: already said
         paintVoice(null);
-        if (!audio) return toast(t('No audio captured.'));
-        note.voice = audio; saveSession();
-        toast(t('Voice note saved.'));
+        if (!clip || clip.seconds < RBVoice.MIN_S) return toast(t('Record at least 2 seconds of audio to attach it to the note.'));
+        dropWaypoint(spot).voice = clip.audio; saveSession();
     };
     ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));
-    function stopVoice() { releaseVoice(); }
+    function stopVoice() { return releaseVoice(); }
     // the map's own switches, big enough to hit on the move: base style · course-up
     $('recLayer').onclick = () => { if (map) map.toggleBaseStyle(); };
     const paintHeading = () => $('recHeading').classList.toggle('on', !!(map && map.headingUp()));
@@ -429,12 +438,16 @@
     });
 
     /* ---------- photos (camera → queued; uploaded when signed in, kept locally otherwise) ---------- */
+    // The note drops where Photo was pressed, once the shot is kept on the device (#998): a camera
+    // closed without a shot drops nothing.
+    let photoSpot = null;
     $('recPhoto').onclick = () => {
+        photoSpot = markSpot();
         $('recPhotoFile').click(); // open to everyone — the shot is queued; no draft/login needed (#147 F3)
     };
-    $('recPhotoFile').onchange = (e) => {
-        const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-        const at = notePosition(), lat = at ? at.lat : null, lon = at ? at.lon : null;
+    $('recPhotoFile').onchange = async (e) => {
+        const f = e.target.files[0], spot = photoSpot; e.target.value = ''; photoSpot = null; if (!f) return;
+        const lat = spot ? spot.lat : null, lon = spot ? spot.lon : null;
         const fields = { type: 'photo' };
         if (draftId) fields.roadbook = String(draftId); // else resolved at flush time
         if (lat != null) { fields.lat = lat; fields.lon = lon; }
@@ -444,15 +457,13 @@
         const pin = { token, url: localUrl, lat, lon, local: true, pending: true };
         photos.push(pin);
         refreshMap(); saveSession(); renderBar();
-        // The device could not keep it (storage full, private mode): say so. The pin is marked
-        // failed — it lives in this page only, and a reload cannot bring it back.
-        RBMediaQueue.add('photo', f, fields, 'photo.jpg', token).catch(() => {
-            pin.pending = false; pin.failed = true; saveSession();
-            toast('Could not save.');
-        });
-        // A photo is ALWAYS a waypoint (#282): drop one automatically so the note carries the photo
-        // when the roadbook is edited later — no "convert to waypoint?" prompt, no extra confirm step.
-        if (lat != null) { dropWaypoint(lat, lon).photo = token; saveSession(); } // the note knows its photo (#792)
+        // The device could not keep it (storage full, private mode): say so, and drop no note. The pin
+        // is marked failed — it lives in this page only, and a reload cannot bring it back.
+        try { await RBMediaQueue.add('photo', f, fields, 'photo.jpg', token); }
+        catch (err) { pin.pending = false; pin.failed = true; saveSession(); return toast('Could not save.'); }
+        // A photo is ALWAYS a note (#282): the note carries the photo when the roadbook is edited
+        // later — no "convert to waypoint?" prompt, no extra confirm step.
+        if (spot) { dropWaypoint(spot).photo = token; saveSession(); } // the note knows its photo (#792)
     };
 
     /* ---------- finish: Save (into the draft, then the Editor) or Discard ---------- */

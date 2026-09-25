@@ -19,6 +19,8 @@ Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur 
 | **.rdbk** | Tap „.rdbk" → ZIP/JSON-Datei wählen | Importiert vollständiges roadbook (Medien in `pendingMedia`, siehe unten) |
 | **Roadbook pubblico** | Tap „Roadbook pubblico" → challenge-Picker | **Fork** eines `public` + `reusable` roadbook → neues privates roadbook von dir |
 
+**Aus der App**: In der RDBK-App (Android und iOS) kannst du eine `.gpx`- oder `.rdbk`-Datei auch einfach aus Dateien, einem Download oder einem Chat öffnen und RDBK wählen — ein GPX öffnet sich im Editor, ein `.rdbk` im Reader.
+
 **Automatische Quellen** (beim Start, Priorität):
 1. `?trip=1` → Spur/Waypoint/Foto von Recorder/Tripmaster via `sessionStorage`
 2. Nicht gespeicherter draft in `localStorage` (`rb_editor_draft`) → Wiederherstellung bestätigen
@@ -124,7 +126,7 @@ Neben den Tabs **Notiz** und **Icon** gibt es einen Tab pro Extra — das Materi
 | **Überschrift** | Ein Textblock, vor oder nach der Notiz |
 | **Sprachnotiz** | Ein Ton, der beim Navigieren von selbst vor der Notiz spielt |
 
-**Sprachnotiz**: **Aufnehmen** schaltet das Mikrofon ein, **Stopp** beendet die Aufnahme, **Neu aufnehmen** ersetzt sie; der Player spielt sie ab. **Vor der Notiz abspielen (m)** sagt, wie viele Meter vor der Notiz der Reader sie von selbst abspielt — 100, solange du nichts anderes einstellst. **Löschen** entfernt sie (nach einer Rückfrage). Behalten wird nur der Ton, im roadbook selbst — keine Transkription. Eine im Recorder per Gedrückthalten aufgenommene Sprachnotiz ist bereits im Tab **Sprachnotiz** ihrer Notiz.
+**Sprachnotiz**: **Aufnehmen** schaltet das Mikrofon ein, **Stopp** beendet die Aufnahme, **Neu aufnehmen** ersetzt sie; der Player spielt sie ab. Eine Aufnahme unter 2 Sekunden wird nicht behalten: *Nimm mindestens 2 Sekunden Ton auf, um ihn der Notiz zuzuordnen.* **Vor der Notiz abspielen (m)** sagt, wie viele Meter vor der Notiz der Reader sie von selbst abspielt — 100, solange du nichts anderes einstellst. **Löschen** entfernt sie (nach einer Rückfrage). Behalten wird nur der Ton, im roadbook selbst — keine Transkription. Eine im Recorder per Gedrückthalten aufgenommene Sprachnotiz ist bereits im Tab **Sprachnotiz** ihrer Notiz.
 
 ### Ziehen auf der Karte (Tool Verschieben)
 Notiz wird vom blauen Marker gezogen → verschiebt den **Spur-Eckpunkt** darunter → Linie folgt. Notiz bewegt sich wie ein Spur-Punkt.

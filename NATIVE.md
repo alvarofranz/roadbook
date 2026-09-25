@@ -213,6 +213,27 @@ provider instead, set its style in your `public/assets/js/config.js`, e.g.:
 styleSatellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAPTILER_KEY'
 ```
 
+### Files opened from the OS (#996)
+
+A `.gpx` or a `.rdbk` tapped in Files, a download, Mail or a chat offers RDBK and opens in it.
+- **Android** (`AndroidManifest.xml`, `MainActivity`): two `VIEW` intent-filters on `content`/`file` —
+  one by MIME type (`application/gpx+xml`, `application/gpx`, `application/x-gpx+xml`,
+  `application/x-roadbook`, `application/octet-stream`: Android's type table names neither extension,
+  so most senders say octet-stream), one by name (`pathPattern` `.*\\.gpx` / `.*\\.rdbk`, repeated
+  for names with more dots, because a pattern stops at the first dot it meets).
+- **iOS** (`Info.plist`): `CFBundleDocumentTypes` for `app.rdbk.roadbook` (declared in
+  `UTExportedTypeDeclarations`, extension `rdbk`, `application/x-roadbook`, rank Owner) and
+  `com.topografix.gpx` (`UTImportedTypeDeclarations`, rank Alternate);
+  `LSSupportsOpeningDocumentsInPlace` = false, so iOS copies the file into the app's Inbox and it is
+  readable without a security-scoped bookmark.
+- **Both**: the file URL reaches the bridge like a link (`appUrlOpen` / `getLaunchUrl`,
+  `parseDeepLink` → `{ file }`). `openFile` reads it through the WebView's own server
+  (`Capacitor.convertFileSrc`), judges it by its first bytes (`openedFileKind`) and opens the Reader
+  (a roadbook) or the Editor (a GPX) at `?open=file`, where the page takes it with
+  `RBNative.takeOpenedFile()`. The app's `<input type=file>` pickers open every file whenever their
+  `accept` names an extension (`RB.pickerAccept`): Android's picker turned `.gpx` into nothing and
+  offered only images.
+
 ### Deep links — Universal Links / App Links (#268)
 
 The bridge follows the link the app was **launched** with **once per session**, and never onto the page

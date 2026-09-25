@@ -28,7 +28,7 @@ import { Share } from '@capacitor/share';
 import { Preferences } from '@capacitor/preferences';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { createMirror } from './durable.js';
-import { parseDeepLink, launchAction } from './deeplink.js';
+import { parseDeepLink, launchAction, openedFileKind, openedFileName, OPENED_FILE_PAGE } from './deeplink.js';
 
 // The app's Google OAuth clients (all public). The WEB client is the token audience the backend
 // verifies (#46) and Android's serverClientId; the iOS client drives the on-device iOS picker.
@@ -219,9 +219,37 @@ async function consumePendingJoin() {
     if (cfg && cfg.user) await joinEvent(code);
 }
 
+/* A file the OS opens with the app (#996): a .rdbk goes to the Reader, a GPX to the Editor. Its URL
+ * is read through the WebView's own file server (Capacitor.convertFileSrc — content:// on Android,
+ * file:// on iOS), sniffed by its first bytes, and kept for the page it opens, which takes it with
+ * RBNative.takeOpenedFile(). */
+const OPENED_FILE = 'rb_opened_file';
+const readOpened = async (url) => {
+    const res = await fetch(Capacitor.convertFileSrc(url));
+    if (!res.ok) throw new Error('unreadable');
+    return res.blob();
+};
+async function openFile(url) {
+    let kind = null;
+    try { kind = openedFileKind(new Uint8Array(await (await readOpened(url)).slice(0, 4096).arrayBuffer())); }
+    catch (e) { await whenAppReady(); window.RBToast('Could not open the file.'); return; }
+    if (!kind) { await whenAppReady(); window.RBToast('This file is neither a GPX track nor a .rdbk roadbook.'); return; }
+    localStorage.setItem(OPENED_FILE, JSON.stringify({ url, kind, name: openedFileName(url, kind) }));
+    window.location.href = OPENED_FILE_PAGE[kind];
+}
+// → { kind, file } once, for the page it opened (null when there is none or it cannot be read)
+RBNative.takeOpenedFile = async () => {
+    let opened = null; try { opened = JSON.parse(localStorage.getItem(OPENED_FILE) || 'null'); } catch (e) {}
+    localStorage.removeItem(OPENED_FILE);
+    if (!opened) return null;
+    try { const blob = await readOpened(opened.url); return { kind: opened.kind, file: new File([blob], opened.name, { type: blob.type }) }; }
+    catch (e) { return null; }
+};
+
 function runDeepLink(action) {
     if (!action) return;
     if (action.join) joinEvent(action.join);
+    else if (action.file) openFile(action.file);
     else window.location.href = action.navigate;
 }
 

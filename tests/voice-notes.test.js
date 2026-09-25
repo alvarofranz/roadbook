@@ -46,7 +46,7 @@ describe('a voice note is a note’s extra, inside the roadbook (#992)', () => {
     });
     it('one recorder for both: a speech-sized clip, at most a minute', () => {
         const voice = read('public/assets/js/rb-voice.js');
-        expect(voice).toContain('const MAX_S = 60, VOICE_BITRATE = 24000;');
+        expect(voice).toContain('const MIN_S = 2, MAX_S = 60, VOICE_BITRATE = 24000;');
         expect(voice).toContain('new MediaRecorder(stream, { audioBitsPerSecond: VOICE_BITRATE })');
     });
 });

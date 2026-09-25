@@ -52,8 +52,8 @@ The capture row has three columns, as tall as each other: the big **Note** (40%)
 | Button | Action | How to use |
 |--------|--------|------------|
 | **📍 Note** | Drops a note at your GPS position | Tap: the note drops instantly. A success bell sounds and a big green check appears for under a second. Nothing to type — the note's text is written later in the Editor |
-| **📷 Photo** | Takes a geotagged photo | Opens the rear camera. The photo is pinned to your position and always drops a note there too |
-| **🎤 Voice note** | Records a voice note | **Hold it down** while you speak — a note drops right there and the button turns red with the seconds; **let go** and it stops (at most a minute). Only the sound is kept, no transcription: it becomes the note's **Voice note** extra and, when you navigate the roadbook, it plays by itself before you reach the note (100 m before, or the distance the author sets in the Editor) |
+| **📷 Photo** | Takes a geotagged photo | Opens the rear camera. The note is placed where you were when you pressed **Photo**, and the photo is pinned there; the bell and the big green check come once the photo is kept on the device. Close the camera without a shot and nothing drops |
+| **🎤 Voice note** | Records a voice note | **Hold it down** while you speak — the button turns red with the seconds; **let go** and it stops (at most a minute). The note is placed where you were when you pressed; the bell and the big green check come when you let go and the sound is saved. A clip under 2 seconds (or a short press) drops nothing and says *Record at least 2 seconds of audio to attach it to the note.* Only the sound is kept, no transcription: it becomes the note's **Voice note** extra and, when you navigate the roadbook, it plays by itself before you reach the note (100 m before, or the distance the author sets in the Editor) |
 | **🗺 Map style** | Switches the base map | Satellite ↔ topographic |
 | **➤ Heading up** | Map orientation | The map turns with your course (lit) or stays north up |
 
@@ -64,7 +64,7 @@ The bottom bar holds the other two:
 | **⏸ Pause** | Suspends the recording (stops, waits). Tap again to resume |
 | **🏁 End** | Ends the recording (step 6) |
 
-> **Tip**: tap **Note** at every junction, hazard or change of road without taking your eyes off the road, and add the words later in the Editor. Hold **Voice note** when a few words say it better — they will play back to you on the road. There is no undo on the trail: a note dropped by mistake is deleted in a second in the Editor.
+> **Tip**: tap **Note** at every junction, hazard or change of road without taking your eyes off the road, and add the words later in the Editor. Hold **Voice note** for at least 2 seconds when a few words say it better — they will play back to you on the road. **Photo** and **Voice note** place their note where you pressed, even if you have moved on by the time the photo or the sound is saved. There is no undo on the trail: a note dropped by mistake is deleted in a second in the Editor.
 
 ---
 

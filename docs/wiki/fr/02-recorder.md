@@ -52,8 +52,8 @@ La rangée de capture comporte trois colonnes de même hauteur : la grande **Not
 | Bouton | Action | Comment l'utiliser |
 |--------|--------|--------------------|
 | **📍 Note** | Pose une note à votre position GPS | Touchez : la note est posée instantanément. Une clochette de réussite retentit et une grande coche verte apparaît pendant moins d'une seconde. Rien à écrire — le texte de la note se rédige plus tard dans l'Editor |
-| **📷 Photo** | Prend une photo géolocalisée | Ouvre l'appareil photo arrière. La photo est rattachée à votre position et y pose toujours aussi une note |
-| **🎤 Note vocale** | Enregistre une note vocale | **Maintenez-le** pendant que vous parlez — une note se pose à cet endroit et le bouton passe au rouge avec les secondes ; **relâchez** et il s'arrête (une minute au plus). Seul le son est gardé, sans transcription : il devient l'extra **Note vocale** de la note et, quand vous naviguez le roadbook, il se joue tout seul avant que vous n'atteigniez la note (100 m avant, ou la distance que l'auteur fixe dans l'Editor) |
+| **📷 Photo** | Prend une photo géolocalisée | Ouvre l'appareil photo arrière. La note est posée là où vous étiez quand vous avez appuyé sur **Photo**, et la photo y est rattachée ; la clochette et la grande coche verte arrivent une fois la photo conservée sur l'appareil. Fermez l'appareil photo sans prendre de cliché et rien n'est posé |
+| **🎤 Note vocale** | Enregistre une note vocale | **Maintenez-le** pendant que vous parlez — le bouton passe au rouge avec les secondes ; **relâchez** et il s'arrête (une minute au plus). La note est posée là où vous étiez quand vous avez appuyé ; la clochette et la grande coche verte arrivent quand vous relâchez et que le son est enregistré. Un enregistrement de moins de 2 secondes (ou un appui bref) ne pose rien et affiche *Enregistrez au moins 2 secondes d’audio pour l’associer à la note.* Seul le son est gardé, sans transcription : il devient l'extra **Note vocale** de la note et, quand vous naviguez le roadbook, il se joue tout seul avant que vous n'atteigniez la note (100 m avant, ou la distance que l'auteur fixe dans l'Editor) |
 | **🗺 Style de carte** | Change le fond de carte | Satellite ↔ topographique |
 | **➤ Cap en haut** | Orientation de la carte | La carte tourne avec votre cap (allumé) ou reste nord en haut |
 
@@ -64,7 +64,7 @@ La barre du bas contient les deux autres :
 | **⏸ Pause** | Suspend l'enregistrement (arrêts, attentes). Touchez à nouveau pour reprendre |
 | **🏁 Terminer** | Termine l'enregistrement (étape 6) |
 
-> **Conseil** : touchez **Note** à chaque carrefour, danger ou changement de route sans quitter la route des yeux, et ajoutez les mots plus tard dans l'Editor. Maintenez **Note vocale** quand quelques mots le disent mieux — vous les réentendrez sur la route. Il n'y a pas d'annulation sur le parcours : une note posée par erreur se supprime en une seconde dans l'Editor.
+> **Conseil** : touchez **Note** à chaque carrefour, danger ou changement de route sans quitter la route des yeux, et ajoutez les mots plus tard dans l'Editor. Maintenez **Note vocale** au moins 2 secondes quand quelques mots le disent mieux — vous les réentendrez sur la route. **Photo** et **Note vocale** posent leur note là où vous avez appuyé, même si vous êtes déjà plus loin quand la photo ou le son est enregistré. Il n'y a pas d'annulation sur le parcours : une note posée par erreur se supprime en une seconde dans l'Editor.
 
 ---
 

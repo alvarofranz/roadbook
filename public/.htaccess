@@ -7,7 +7,7 @@ ErrorDocument 500 /500.html
 # filenames, and an autoindex would hand the whole list to anyone (#210).
 Options -Indexes
 
-# RDBK.app — MIME type for roadbook files (.rdbk = JSON).
+# RDBK.app — MIME type for roadbook files (.rdbk, a ZIP container).
 AddType application/x-roadbook .rdbk
 
 # Uploaded media (photos/covers/avatars/event logos) is re-encoded to AVIF; without an explicit

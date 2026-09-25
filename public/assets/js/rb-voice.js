@@ -1,11 +1,12 @@
 'use strict';
 /* RBVoice — records a voice note into a data: URI, the `audio` of a note's `voice` block (#992):
  * the Recorder (hold the button), the Editor (the Voice note extra). One small, speech-sized clip:
- * mono at VOICE_BITRATE, at most MAX_S seconds, so a roadbook carries its voice notes inside it.
- * RBVoice.supported · RBVoice.start({ onTick(seconds) }) → Promise<{ stop() → Promise<dataURI|null> }>
+ * mono at VOICE_BITRATE, at most MAX_S seconds, so a roadbook carries its voice notes inside it; a
+ * clip under MIN_S seconds is not a voice note (a slip of the finger), and both callers refuse it.
+ * RBVoice.supported · RBVoice.start({ onTick(seconds) }) → Promise<{ stop() → Promise<{ audio, seconds }|null> }>
  * (rejects when there is no microphone or it is refused). */
 (function () {
-    const MAX_S = 60, VOICE_BITRATE = 24000;
+    const MIN_S = 2, MAX_S = 60, VOICE_BITRATE = 24000;
     const supported = !!(typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== 'undefined');
     const toDataURL = (blob) => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(blob); });
     async function start({ onTick } = {}) {
@@ -19,9 +20,10 @@
             recorder.onstop = async () => {
                 stream.getTracks().forEach((tr) => tr.stop());
                 clearInterval(timer);
+                const seconds = (Date.now() - started) / 1000;
                 if (!chunks.length) return resolve(null);
                 const blob = new Blob(chunks, { type: (recorder.mimeType || 'audio/webm').split(';')[0] });
-                try { resolve(await toDataURL(blob)); } catch (e) { resolve(null); }
+                try { resolve({ audio: await toDataURL(blob), seconds }); } catch (e) { resolve(null); }
             };
         });
         const stop = () => { if (recorder.state !== 'inactive') recorder.stop(); return finished; };
@@ -34,5 +36,5 @@
         if (onTick) onTick(0);
         return { stop, started };
     }
-    window.RBVoice = { supported, start, MAX_S };
+    window.RBVoice = { supported, start, MIN_S, MAX_S };
 })();

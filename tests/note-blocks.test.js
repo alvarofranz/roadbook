@@ -209,7 +209,7 @@ describe('a photo becomes its note’s Photo extra (#792)', () => {
     });
     it('the Recorder attaches each photo to the note it dropped', () => {
         const rec = fsx.readFileSync('public/recorder/recorder.js', 'utf8');
-        expect(rec).toContain('dropWaypoint(lat, lon).photo = token;');
+        expect(rec).toContain('dropWaypoint(spot).photo = token;');
         expect(rec).toContain('wpts: await withExtras(wpts)');
     });
     it('the Editor turns a note’s gallery photo into its extra instead of a viewer over the map', () => {

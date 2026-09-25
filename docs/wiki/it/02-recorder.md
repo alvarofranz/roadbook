@@ -52,8 +52,8 @@ La riga di cattura ha tre colonne, alte uguali: la grande **Nota** (40%), le cat
 | Pulsante | Azione | Come si usa |
 |----------|--------|-------------|
 | **📍 Nota** | Piazza una nota alla tua posizione GPS | Tocca: la nota viene piazzata all'istante. Suona un campanello di conferma e compare un grande check verde per meno di un secondo. Non c'è niente da scrivere — il testo della nota si scrive dopo nell'Editor |
-| **📷 Foto** | Scatta una foto geotaggata | Apre la fotocamera posteriore. La foto viene agganciata alla tua posizione e piazza sempre anche una nota lì |
-| **🎤 Nota vocale** | Registra una nota vocale | **Tienilo premuto** mentre parli — una nota viene piazzata proprio lì e il pulsante diventa rosso con i secondi; **rilascialo** e si ferma (al massimo un minuto). Si conserva solo il suono, senza trascrizione: diventa l'extra **Nota vocale** della nota e, quando navighi il roadbook, si riproduce da sola prima che tu arrivi alla nota (100 m prima, o la distanza che l'autore imposta nell'Editor) |
+| **📷 Foto** | Scatta una foto geotaggata | Apre la fotocamera posteriore. La nota viene piazzata dove eri quando hai premuto **Foto**, e la foto viene agganciata lì; il campanello e il grande check verde arrivano quando la foto è conservata sul dispositivo. Se chiudi la fotocamera senza scattare, non viene piazzato niente |
+| **🎤 Nota vocale** | Registra una nota vocale | **Tienilo premuto** mentre parli — il pulsante diventa rosso con i secondi; **rilascialo** e si ferma (al massimo un minuto). La nota viene piazzata dove eri quando l'hai premuto; il campanello e il grande check verde arrivano quando lo rilasci e il suono è salvato. Una registrazione sotto i 2 secondi (o una pressione breve) non piazza niente e avvisa *Registra almeno 2 secondi di audio per assegnarlo alla nota.* Si conserva solo il suono, senza trascrizione: diventa l'extra **Nota vocale** della nota e, quando navighi il roadbook, si riproduce da sola prima che tu arrivi alla nota (100 m prima, o la distanza che l'autore imposta nell'Editor) |
 | **🗺 Stile mappa** | Cambia la mappa di base | Satellite ↔ topografica |
 | **➤ Direzione in alto** | Orientamento della mappa | La mappa ruota con la tua rotta (acceso) o resta con il nord in alto |
 
@@ -64,7 +64,7 @@ La barra in basso contiene gli altri due:
 | **⏸ Pausa** | Sospende la registrazione (soste, attese). Tocca di nuovo per riprendere |
 | **🏁 Termina** | Termina la registrazione (passo 6) |
 
-> **Consiglio**: tocca **Nota** a ogni incrocio, pericolo o cambio di strada senza staccare gli occhi dalla strada, e aggiungi le parole dopo nell'Editor. Tieni premuto **Nota vocale** quando poche parole lo dicono meglio — te le risentirai sulla strada. Sul percorso non c'è un annulla: una nota piazzata per sbaglio si elimina in un secondo nell'Editor.
+> **Consiglio**: tocca **Nota** a ogni incrocio, pericolo o cambio di strada senza staccare gli occhi dalla strada, e aggiungi le parole dopo nell'Editor. Tieni premuto **Nota vocale** per almeno 2 secondi quando poche parole lo dicono meglio — te le risentirai sulla strada. **Foto** e **Nota vocale** piazzano la nota dove le hai premute, anche se quando la foto o il suono è salvato sei già più avanti. Sul percorso non c'è un annulla: una nota piazzata per sbaglio si elimina in un secondo nell'Editor.
 
 ---
 
