@@ -670,7 +670,7 @@ Operational notes:
   `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
   `signMeta`/`verifyMeta` (HMAC-SHA256), `symbolSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
-  `deleteNote`, `pendingWork` (a checkpoint holding a roadbook counts only at the current `rdbk_version`), `isEndNote` — the last note, whose tulip draws no exit road because
+  `deleteNote`, `pickerAccept` (inside the app a file input that names an extension opens every file — Android's picker knows no `.gpx`/`.rdbk`, #996), `pendingWork` (a checkpoint holding a roadbook counts only at the current `rdbk_version`), `isEndNote` — the last note, whose tulip draws no exit road because
   past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
   (the shape the author drew into the track around a note — 4 or more points within 30 m on
   a side — derived at render time and never stored, #945),
