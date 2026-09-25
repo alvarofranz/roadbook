@@ -289,8 +289,32 @@
     // a roadbook's run: its GPX log from the first fix (a resumed one restores it), and the next
     // roadbooks of a chain fetched while there is a connection
     function startRun(comp) { startNav(comp); RBGpxRecorder.begin(); prefetchNext(); liveStart(); }
+    /* Voice notes (#992): a note's `voice` blocks play by themselves as the rider approaches it —
+       each at its own RB.voiceLead(block) metres before the note, along the route (100 unless the
+       author chose) — once per run, one after the other when several are due. They are part of the
+       roadbook, so every rider of it hears them. */
+    let voicePlayed = new Set(), voiceQueue = [], voicePlayer = null;
+    function stopVoiceNotes() { voiceQueue = []; if (voicePlayer) { voicePlayer.pause(); voicePlayer = null; } }
+    function playNextVoice() {
+        if (voicePlayer || !voiceQueue.length) return;
+        voicePlayer = new Audio(voiceQueue.shift());
+        const done = () => { voicePlayer = null; playNextVoice(); };
+        voicePlayer.onended = done;
+        voicePlayer.play().catch(done); // a clip that will not play never blocks the next
+    }
+    function voiceTick(here) {
+        const n = notes[activeIdx];
+        if (!n) return;
+        const left = toGoM(activeIdx, here);
+        RB.noteBlocks(n).forEach((b, k) => {
+            const key = activeIdx + ':' + k;
+            if (b.type !== 'voice' || !b.audio || voicePlayed.has(key) || left > RB.voiceLead(b)) return;
+            voicePlayed.add(key); voiceQueue.push(b.audio); playNextVoice();
+        });
+    }
     function startNav(comp) {
         competition = comp; window.RB_BUSY = true; // don't auto-refresh mid-run
+        voicePlayed = new Set(); // a new run hears every voice note again
         preview = false; document.body.classList.remove('rb-preview'); // leaving the read-only look
         scoredSet = RB.scoredNoteSet(notes);
         $('loadScreen').hidden = true; $('navScreen').hidden = false;
@@ -384,6 +408,7 @@
                 if (hit >= 0) autoValidate(hit, here);
                 else resyncFrom(here, coords.accuracy, disp);
             }
+            voiceTick(here);
         }
         // top odometer bar
         odoEls.total.textContent = (tripTotalM / 1000).toFixed(2);
@@ -769,7 +794,7 @@
     // over it) ends its GPX log too — its checkpoint stays, so the track is offered back (#460).
     function endRun() {
         finished = true;
-        liveEnd();
+        liveEnd(); stopVoiceNotes();
         if (meter) meter.stop();
         if (RBGpxRecorder.recording) RBGpxRecorder.end();
         clearSession(); window.RB_BUSY = false;

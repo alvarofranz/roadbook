@@ -26,12 +26,7 @@ Un roadbook si apre prima in **anteprima di sola lettura**: la lista delle note,
 
 ## 2. Avviare un percorso
 
-**Naviga** apre il dialogo di avvio:
-
-| Opzione | Descrizione |
-|---------|-------------|
-| **Registra una traccia GPX** | Registra la traccia GPS del percorso (a prova di crash) |
-| **Suono su nota** | Un campanello a ogni nota validata, una fanfara sull'ultima. Suona sopra la tua musica invece di fermarla |
+**Naviga** avvia subito la navigazione: nessun dialogo, nessuna opzione. Il percorso registra sempre la sua traccia GPS (a prova di crash): la traccia appartiene al percorso e il suo report la porta con sé, come mappa della *Traccia percorsa* e GPX da scaricare. Un campanello suona a ogni nota validata e una fanfara sull'ultima, sopra la tua musica invece di fermarla.
 
 Non c'è una modalità da scegliere: un roadbook aperto da un evento che lo **punteggia** gira in **competizione** (ti viene chiesto il numero del veicolo, si applicano le penalità, il risultato firmato va nella classifica dell'evento); tutto il resto gira come **viaggio**.
 
@@ -41,9 +36,9 @@ Non c'è una modalità da scegliere: un roadbook aperto da un evento che lo **pu
 
 Il Reader occupa tutto lo schermo:
 
-1. **Barra odometro** in alto: titolo, totale (*prog.*) sopra il parziale (*parz.*), direzione, ora, stato del GPS e velocità
+1. **Cruscotto odometro** come prima riga (senza titolo): totale (*prog.*) sopra il parziale (*parz.*), direzione, ora, stato del GPS e velocità
 2. **Lista delle note**: una riga per nota, in tre colonne — distanza totale e parziale con il numero della nota (e il suo tipo di waypoint, se c'è) · la vignetta · il testo, il CAP, il limite di velocità e le coordinate
-3. **Barra delle azioni** in basso: interruttore **Auto** · **Mappa della nota** · **Pausa** · GPX · **Termina** · **Esci**
+3. **Barra delle azioni** in basso, due righe da due: interruttore **Auto** · **Mappa della nota**, poi **Pausa** · **Termina**
 
 Stati delle note: **raggiunta** (verde) · **saltata** (rosa) · **attiva** (bordo rosso) · da fare (bianca). Avvicinandoti alla nota attiva diventa **blu** e mostra la distanza che manca, in km con due decimali.
 
@@ -51,6 +46,9 @@ Quando una nota viene validata, la successiva sale **in cima alla lista**: la st
 
 ### Distanze lungo il percorso
 La distanza che manca si misura **lungo la strada**, come i parziali del roadbook stesso, non in linea d'aria: il parziale percorso più la distanza che manca è sempre uguale al parziale della nota. A ogni cambio di nota entrambi gli odometri si riallineano sul percorso, così il parziale segna 0.00 esattamente alla nota.
+
+### Note vocali
+Una nota può portare una **nota vocale** (tenuta premuta nel Recorder o registrata nell'Editor). In navigazione si riproduce da sola mentre ti avvicini alla nota — alla distanza scelta dal suo autore, 100 m prima per default, misurata lungo il percorso. Ognuna suona una volta per percorso; se ne arrivano diverse insieme, suonano una dopo l'altra.
 
 ---
 
@@ -89,19 +87,18 @@ Solo se il roadbook consente la mappa: **Mappa della nota** nella barra delle az
 
 ---
 
-## 6. Pausa, termina, esci
+## 6. Pausa e termina
 
 | Pulsante | Cosa fa |
 |----------|---------|
 | **Pausa** | Ferma il GPS e il blocco dello schermo acceso per risparmiare batteria (una sosta pranzo); gli odometri non avanzano in pausa |
-| **Termina** | Chiude il percorso e apre il report. Prima dell'ultima nota chiede conferma: le note non raggiunte contano come saltate |
-| **Esci** (l'icona di uscita) | Abbandona il percorso senza report, dopo una conferma |
+| **Termina** | L'unica uscita da un percorso: lo chiude e apre il report. Prima dell'ultima nota chiede conferma: le note non raggiunte contano come saltate |
 
 ---
 
 ## 7. Il report del percorso
 
-Ogni percorso finisce con il suo **report**: note raggiunte e saltate, zone con limite di velocità, tempo e distanza. In testa c'è la card del percorso, sotto il pulsante **Condividi** e un solo interruttore per tenerlo **Privato** o renderlo **Pubblico** (visibile sul tuo profilo `/u/<username>`). Condividere prima di aver scelto chiede conferma, perché condividere rende pubblico il percorso.
+Ogni percorso finisce con il suo **report**: note raggiunte e saltate, zone con limite di velocità, tempo e distanza, più la **Traccia percorsa** su una mappa con il suo GPX da scaricare. In testa c'è la card del percorso, sotto il pulsante **Condividi** e un solo interruttore per tenerlo **Privato** o renderlo **Pubblico** (visibile sul tuo profilo `/u/<username>`). Condividere prima di aver scelto chiede conferma, perché condividere rende pubblico il percorso.
 
 Il report si salva prima sul dispositivo e si carica appena c'è connessione.
 
@@ -112,7 +109,7 @@ Un percorso in competizione produce anche un **risultato firmato HMAC** (un QR d
 
 ## 8. Recupero di una sessione interrotta
 
-Il percorso si salva da solo sul dispositivo. Se viene interrotto (una chiamata, un crash, il telefono che chiude l'app), alla visita successiva il Reader chiede **Riprendere il percorso in corso?** e continua esattamente da dove eri. Una traccia GPX in registrazione si recupera allo stesso modo.
+Il percorso si salva da solo sul dispositivo. Se viene interrotto (una chiamata, un crash, il telefono che chiude l'app), alla visita successiva il Reader chiede **Riprendere il percorso in corso?** e continua esattamente da dove eri. La traccia registrata fin lì si recupera insieme al percorso.
 
 > Rifiutare non cancella nulla, e la domanda non torna per quel percorso. Non viene mai posta quando il link indica un altro roadbook.
 

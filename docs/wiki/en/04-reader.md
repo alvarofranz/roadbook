@@ -26,12 +26,7 @@ A roadbook first opens as a **read-only preview**: the note list, no GPS. You ma
 
 ## 2. Start a run
 
-**Navigate** opens the start dialog:
-
-| Option | Description |
-|--------|-------------|
-| **Record a GPX track** | Logs the GPS track of the run (crash-safe) |
-| **Sound on note** | A bell on every validated note, a fanfare on the last one. It plays over your music instead of stopping it |
+**Navigate** starts navigation straight away: no dialog, no options. The run always logs its GPS track (crash-safe): the track belongs to the run and its report carries it, as a *Driven track* map and a GPX download. A bell rings on every validated note and a fanfare on the last one, playing over your music instead of stopping it.
 
 There is no mode to choose: a roadbook opened from an event that **scores** it runs as a **competition** (your vehicle number is asked, penalties apply, the signed result goes to the event ranking); anything else runs as a **trip**.
 
@@ -41,9 +36,9 @@ There is no mode to choose: a roadbook opened from an event that **scores** it r
 
 The Reader takes the whole screen:
 
-1. **Odometer bar** at the top: title, total (*prog.*) over partial (*part.*), heading, clock, GPS status and speed
+1. **Odometer dashboard** as the first row (no title): total (*prog.*) over partial (*part.*), heading, clock, GPS status and speed
 2. **Note list**: one row per note, in three columns — total and partial distance with the note number (and its waypoint type, if any) · the vignette · the text, CAP, speed limit and coordinates
-3. **Action bar** at the bottom: **Auto** switch · **Note map** · **Pause** · GPX · **Finish** · **End**
+3. **Action bar** at the bottom, two rows of two: **Auto** switch · **Note map**, then **Pause** · **Finish**
 
 Note states: **reached** (green) · **skipped** (pink) · **active** (red border) · upcoming (white). As you close in on the active note it turns **blue** and shows the distance still to run, in km with two decimals.
 
@@ -51,6 +46,9 @@ When a note is validated, the next one moves to the **top of the list**: the roa
 
 ### Distances along the route
 The distance still to run is measured **along the road**, like the roadbook's own partials, not as the crow flies: the partial you have driven plus the distance left always equals the note's partial. At every change of note both odometers are re-anchored on the route, so the partial reads 0.00 exactly at the note.
+
+### Voice notes
+A note can carry a **voice note** (held in the Recorder or recorded in the Editor). While you navigate, it plays by itself as you approach the note — at the distance its author chose, 100 m before it by default, measured along the route. Each one plays once per run; when several come due, they play one after another.
 
 ---
 
@@ -89,19 +87,18 @@ Only when the roadbook allows a map: **Note map** in the action bar opens a mini
 
 ---
 
-## 6. Pause, finish, end
+## 6. Pause and finish
 
 | Button | What it does |
 |--------|--------------|
 | **Pause** | Stops the GPS and the screen wake lock to save battery (a lunch stop); the odometers don't move while paused |
-| **Finish** | Ends the run and opens its report. Before the last note it asks first: the notes not reached count as skipped |
-| **End** (the exit icon) | Leaves the run without a report, after a confirmation |
+| **Finish** | The one way out of a run: ends it and opens its report. Before the last note it asks first: the notes not reached count as skipped |
 
 ---
 
 ## 7. The run report
 
-Every run ends with its **report**: notes reached and skipped, speed-limit zones, time and distance. It leads with your run card, **Share** right under it and one switch to keep the run **Private** or make it **Public** (shown on your profile `/u/<username>`). Sharing before you have chosen asks first, because sharing makes the run public.
+Every run ends with its **report**: notes reached and skipped, speed-limit zones, time and distance, plus the **Driven track** on a map with its GPX to download. It leads with your run card, **Share** right under it and one switch to keep the run **Private** or make it **Public** (shown on your profile `/u/<username>`). Sharing before you have chosen asks first, because sharing makes the run public.
 
 The report is stored on the device first and uploaded as soon as there is a connection.
 
@@ -112,7 +109,7 @@ A competition run also produces an **HMAC-signed result** (a QR you can share or
 
 ## 8. Interrupted session recovery
 
-The run checkpoints itself on the device. If it is interrupted (a call, a crash, the phone closing the app), the next visit asks **Resume the run in progress?** and continues exactly where you were. A GPX being logged is recovered the same way.
+The run checkpoints itself on the device. If it is interrupted (a call, a crash, the phone closing the app), the next visit asks **Resume the run in progress?** and continues exactly where you were. The track logged so far is recovered with it.
 
 > Declining does not delete anything, and the question does not come back for that run. It is never asked when the link names a different roadbook.
 

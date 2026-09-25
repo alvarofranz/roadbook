@@ -1,6 +1,6 @@
 # Editor — Creare e modificare un roadbook
 
-L'**Editor** è l'hub di creazione: qui trasformi una traccia grezza (o un foglio bianco) in un roadbook completo con note, CAP, danger, tipi strada, icone, vignette tulip.
+L'**Editor** è l'hub di creazione: qui trasformi una traccia grezza (o un foglio bianco) in un roadbook completo con note, CAP, danger, tipi strada, icone, vignette.
 
 > **Funziona offline** per editing puro. Serve connessione per: login, caricare/salvare sul profilo, upload foto/audio, importare challenge pubbliche, export PDF/GPX (usa librerie lazy-loaded).
 
@@ -99,7 +99,7 @@ Un taglio interno lascia un **buco reale** (non un segmento). Memorizzato come c
 
 ## Lista note + Editor inline
 
-Colonna destra: righe `.note-mini`. Tap riga → **editor inline si sposta** sotto quella riga (unico `#noteEditZone` fisicamente spostato). Canvas vignette (`#canvasWrap`) si sposta DENTRO la cella tulip.
+Colonna destra: righe `.note-mini`. Tap riga → **editor inline si sposta** sotto quella riga (unico `#noteEditZone` fisicamente spostato). Canvas vignette (`#canvasWrap`) si sposta DENTRO la cella della vignetta.
 
 > 📸 *Screenshot: pannello note con editor inline aperto su una nota*
 
@@ -112,6 +112,19 @@ Colonna destra: righe `.note-mini`. Tap riga → **editor inline si sposta** sot
 | **Danger** | Select `—` / `!` / `!!` / `!!!` → `n.danger` | 0 = rimuove |
 | **CAP** | Toggle riga → calcola `bearingDeg` + `haversineM` verso nota successiva | Ultima nota: niente CAP |
 | **Icone / Vignette** | `NoteCanvas` su `#noteCanvas` | Palette standard + custom embeddate (vedi § sotto) |
+
+### Gli extra della nota
+
+Accanto alle schede **Nota** e **Icona**, una scheda per ogni extra — il materiale che accompagna la nota. Una scheda che contiene già qualcosa è accesa.
+
+| Scheda | Cosa contiene |
+|--------|---------------|
+| **Foto** | Un'immagine con didascalia, **Prima della nota** o **Dopo la nota** |
+| **Pubblicità** | L'immagine di uno sponsor con didascalia, prima o dopo la nota |
+| **Intestazione** | Un blocco di testo, prima o dopo la nota |
+| **Nota vocale** | Un suono, che si riproduce da solo prima della nota in navigazione |
+
+**Nota vocale**: **Registra** accende il microfono, **Ferma** chiude la registrazione, **Registra di nuovo** la sostituisce; il player la fa riascoltare. **Suona prima della nota (m)** indica quanti metri prima della nota il Reader la riproduce da solo — 100 se non lo imposti. **Elimina** la rimuove (chiede prima). Si conserva solo il suono, dentro il roadbook — nessuna trascrizione. Una nota vocale registrata tenendo premuto il pulsante nel Recorder arriva già nella scheda **Nota vocale** della sua nota.
 
 ### Drag sulla mappa (tool Sposta)
 Nota si trascina dal marker blu → sposta **vertice traccia** sotto → linea la segue. Nota mobile come un punto traccia.
@@ -169,7 +182,7 @@ Seconda vista (`showView('config')`), tab `#viewConfig`:
 
 ### Lightbox
 Tap pin / miniatura → visore a pieno schermo (copre solo mappa, **non** pannello note → continui a editare). Frecce ‹/›, `←`/`→`, `Esc`. Azioni:
-- **Waypoint** → crea waypoint sulla posizione foto
+- **Nota** → crea una nota sulla posizione foto
 - **Sposta sulla mappa** → modalità *posiziona* → prossimo tap aggiorna coord via `ph_move`
 - **Delete** → `ph_delete` (con conferma) + aggiorna lightbox + pin
 

@@ -26,7 +26,7 @@
         return `<div class="stat-grid">
             ${tile('fa-route', RBKm(run.distance_m, 1), 'Distance')}
             ${tile('fa-stopwatch', fmtDuration(run.duration_s), 'Time')}
-            ${tile('fa-gauge-high', avgKmh(run) + ' km/h', 'Average speed')}
+            ${tile('fa-gauge', avgKmh(run) + ' km/h', 'Average speed')}
             ${tile('fa-flag-checkered', `${run.notes_reached}/${run.notes_total}`, 'Notes reached', run.notes_reached < run.notes_total ? 'warn' : 'ok')}
             ${run.speed_zones ? tile('fa-circle-exclamation', `${run.speed_zones - run.speed_exceeded}/${run.speed_zones}`, 'Speed limits respected', run.speed_exceeded ? 'warn' : 'ok') : ''}
         </div>`;
@@ -34,7 +34,7 @@
     function detailsHTML(run) {
         const lines = [];
         if ((run.skipped || []).length) lines.push(`<li><i class="fa-solid fa-forward icon-danger"></i> ${esc(t('Skipped notes:'))} ${run.skipped.map((n) => '<b>' + esc(n) + '</b>').join(', ')}</li>`);
-        if (run.speed_exceeded) lines.push(`<li><i class="fa-solid fa-gauge-high icon-danger"></i> ${esc(t('Speed limit exceeded in'))} ${run.speed_exceeded} ${esc(t(run.speed_exceeded === 1 ? 'zone' : 'zones'))} · ${esc(t('worst'))} +${run.max_over_kmh} km/h</li>`);
+        if (run.speed_exceeded) lines.push(`<li><i class="fa-solid fa-gauge icon-danger"></i> ${esc(t('Speed limit exceeded in'))} ${run.speed_exceeded} ${esc(t(run.speed_exceeded === 1 ? 'zone' : 'zones'))} · ${esc(t('worst'))} +${run.max_over_kmh} km/h</li>`);
         const p = run.penalties;
         if (p) {
             const total = Object.values(p).reduce((a, b) => a + (+b || 0), 0);

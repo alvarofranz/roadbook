@@ -44,9 +44,9 @@ describe('the validator page', () => {
         expect(js).not.toMatch(/RBApi|RBUpload|fetch\(/); // nothing leaves the device
         expect(page).toContain('<script src="../assets/js/rbzip.js');
     });
-    it('is linked from the footer, the standard and the sitemap', () => {
-        expect(read('public/assets/js/app.js')).toContain("path: 'validator/', icon: 'fa-file-circle-check', label: '.rdbk validator'");
-        expect(read('public/standard/index.html')).toContain('href="../validator/"');
+    it('is linked from the standard’s landing and the sitemap, not the footer', () => {
+        expect(read('public/assets/js/app.js')).not.toContain("path: 'validator/'");
+        expect(read('public/standard/index.html')).toContain('<a class="btn btn-primary" href="../validator/" data-i18n="Validate a .rdbk">');
         expect(read('public/sitemap.xml')).toContain('https://rdbk.app/validator/');
     });
 });

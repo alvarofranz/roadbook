@@ -26,12 +26,7 @@ Un roadbook se abre primero en **vista previa de solo lectura**: la lista de not
 
 ## 2. Empezar un recorrido
 
-**Navegar** abre el diálogo de inicio:
-
-| Opción | Descripción |
-|--------|-------------|
-| **Grabar una traza GPX** | Registra la traza GPS del recorrido (a prueba de cierres) |
-| **Sonido en cada nota** | Una campanilla en cada nota validada, una fanfarria en la última. Suena por encima de tu música en lugar de pararla |
+**Navegar** empieza la navegación enseguida: sin diálogo, sin opciones. El recorrido graba siempre su traza GPS (a prueba de cierres): la traza pertenece al recorrido y su informe la lleva consigo, como mapa del *Recorrido real* y GPX para descargar. Una campanilla suena en cada nota validada y una fanfarria en la última, por encima de tu música en lugar de pararla.
 
 No hay modo que elegir: un roadbook abierto desde un evento que lo **puntúa** va en **competición** (se pide tu número de vehículo, se aplican penalizaciones, el resultado firmado va a la clasificación del evento); todo lo demás va como **viaje**.
 
@@ -41,9 +36,9 @@ No hay modo que elegir: un roadbook abierto desde un evento que lo **puntúa** v
 
 El Reader ocupa toda la pantalla:
 
-1. **Barra del odómetro** arriba: título, total (*prog.*) sobre el parcial (*parc.*), rumbo, hora, estado del GPS y velocidad
+1. **Panel del odómetro** como primera fila (sin título): total (*prog.*) sobre el parcial (*parc.*), rumbo, hora, estado del GPS y velocidad
 2. **Lista de notas**: una fila por nota, en tres columnas — distancia total y parcial con el número de la nota (y su tipo de waypoint, si lo tiene) · la viñeta · el texto, el CAP, el límite de velocidad y las coordenadas
-3. **Barra de acciones** abajo: interruptor **Auto** · **Mapa de la nota** · **Pausa** · GPX · **Finalizar** · **Terminar**
+3. **Barra de acciones** abajo, dos filas de dos: interruptor **Auto** · **Mapa de la nota**, luego **Pausa** · **Finalizar**
 
 Estados de las notas: **alcanzada** (verde) · **saltada** (rosa) · **activa** (borde rojo) · pendiente (blanca). Al acercarte a la nota activa se vuelve **azul** y muestra la distancia que falta, en km con dos decimales.
 
@@ -51,6 +46,9 @@ Cuando se valida una nota, la siguiente sube **arriba del todo en la lista**: la
 
 ### Distancias a lo largo de la ruta
 La distancia que falta se mide **a lo largo de la carretera**, como los parciales del propio roadbook, no en línea recta: el parcial recorrido más la distancia que falta es siempre igual al parcial de la nota. En cada cambio de nota los dos odómetros se reajustan sobre la ruta, así que el parcial marca 0.00 justo en la nota.
+
+### Notas de voz
+Una nota puede llevar una **nota de voz** (grabada manteniendo pulsado el botón en el Recorder o grabada en el Editor). Mientras navegas, suena sola al acercarte a la nota — a la distancia que eligió su autor, 100 m antes por defecto, medida a lo largo de la ruta. Cada una suena una vez por recorrido; si tocan varias a la vez, suenan una tras otra.
 
 ---
 
@@ -89,19 +87,18 @@ Solo si el roadbook permite el mapa: **Mapa de la nota** en la barra de acciones
 
 ---
 
-## 6. Pausa, finalizar, terminar
+## 6. Pausa y finalizar
 
 | Botón | Qué hace |
 |-------|----------|
 | **Pausa** | Detiene el GPS y el bloqueo de pantalla encendida para ahorrar batería (una parada para comer); los odómetros no avanzan en pausa |
-| **Finalizar** | Cierra el recorrido y abre su informe. Antes de la última nota pregunta antes: las notas no alcanzadas cuentan como saltadas |
-| **Terminar** (el icono de salida) | Abandona el recorrido sin informe, tras una confirmación |
+| **Finalizar** | La única salida de un recorrido: lo cierra y abre su informe. Antes de la última nota pregunta antes: las notas no alcanzadas cuentan como saltadas |
 
 ---
 
 ## 7. El informe del recorrido
 
-Cada recorrido termina con su **informe**: notas alcanzadas y saltadas, zonas con límite de velocidad, tiempo y distancia. Arriba está la tarjeta del recorrido, debajo el botón **Compartir** y un solo interruptor para dejarlo **Privado** o hacerlo **Público** (visible en tu perfil `/u/<username>`). Compartir antes de elegir pregunta antes, porque compartir hace público el recorrido.
+Cada recorrido termina con su **informe**: notas alcanzadas y saltadas, zonas con límite de velocidad, tiempo y distancia, además del **Recorrido real** en un mapa con su GPX para descargar. Arriba está la tarjeta del recorrido, debajo el botón **Compartir** y un solo interruptor para dejarlo **Privado** o hacerlo **Público** (visible en tu perfil `/u/<username>`). Compartir antes de elegir pregunta antes, porque compartir hace público el recorrido.
 
 El informe se guarda primero en el dispositivo y se sube en cuanto hay conexión.
 
@@ -112,7 +109,7 @@ Un recorrido en competición produce además un **resultado firmado con HMAC** (
 
 ## 8. Recuperar una sesión interrumpida
 
-El recorrido se guarda solo en el dispositivo. Si se interrumpe (una llamada, un cierre inesperado, el teléfono que cierra la app), en la siguiente visita el Reader pregunta **¿Reanudar el recorrido en curso?** y sigue exactamente donde estabas. Una traza GPX que se estaba grabando se recupera igual.
+El recorrido se guarda solo en el dispositivo. Si se interrumpe (una llamada, un cierre inesperado, el teléfono que cierra la app), en la siguiente visita el Reader pregunta **¿Reanudar el recorrido en curso?** y sigue exactamente donde estabas. La traza grabada hasta ese momento se recupera con él.
 
 > Rechazar no borra nada, y la pregunta no vuelve para ese recorrido. Nunca se hace cuando el enlace indica otro roadbook.
 

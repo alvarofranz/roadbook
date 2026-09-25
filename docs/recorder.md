@@ -26,9 +26,10 @@ La pagina ha due stati esclusivi, commutati via attributo `hidden` dal callback 
   deciso** (§2 "Autosave e recovery").
 - **`recRunning`** — dashboard live (#768), pensata per chi guida e guarda solo di sfuggita:
   - quattro readout (tempo trascorso, velocità, numero note, km registrati);
-  - la **riga di cattura**: un grande pulsante **Note** a sinistra e, alla sua destra, una griglia
-    2×2 di icone alta quanto lui — **Photo** · **Annulla l'ultima nota** (chiede conferma
-    nominandola) · **stile mappa** (`toggleBaseStyle`) · **course-up** (`headingUp`/`setHeadingUp`);
+  - la **riga di cattura** (#992), tre colonne alte uguali: il grande **Note** (40 %), le catture
+    (40 %: **Photo** sopra **Voice note**) e i due interruttori della mappa (20 %: **stile mappa**
+    `toggleBaseStyle` sopra **course-up** `headingUp`/`setHeadingUp`) — `.rec-capture` `2fr 2fr 1fr`,
+    colonne `.rec-col`. Non c'è annulla sul percorso: una nota sbagliata si cancella nell'Editor;
   - la **mappa live**, con in alto a sinistra, grande e senza etichetta, la **distanza dall'ultima
     nota** (`#recSince`, km con due decimali: `recordedM` meno l'`at_m` salvato sulla nota);
   - la barra **Pause · End** (50 % ciascuno). Su un telefono (≤1024 px, dove c'è la tab bar)
@@ -217,8 +218,15 @@ campanello di successo (`assets/sounds/success.mp3`) e un grande check a schermo
 secondo. Il testo della nota si scrive dopo, nell'Editor. Lo stesso campanello suona nel Reader a
 ogni nota validata, automatica o manuale.
 
-Una nota toccata per sbaglio si toglie con **Annulla l'ultima nota** della griglia, che chiede
-conferma nominandola.
+Non c'è annulla sul percorso: una nota toccata per sbaglio si cancella in un attimo nell'Editor.
+
+**Nota vocale (#992).** Si **tiene premuto** il microfono: al `pointerdown` cade una nota lì (come
+*Note*) e `RBVoice.start` apre il microfono (il pulsante diventa rosso con i secondi); al rilascio
+(`pointerup`/`pointercancel`/`pointerleave`) la registrazione si ferma — al massimo `RBVoice.MAX_S`
+(60 s). Si tiene solo il suono, senza trascrizione: il data URI finisce su `note.voice` (nel checkpoint
+di crash) e al salvataggio diventa l'extra **Voice note** della nota (`withExtras` →
+`{ type: 'voice', audio }`), che il Reader riproduce prima della nota. Finire con una nota vocale in
+corso la tiene. Il pulsante manca dove il browser non sa registrare (`RBVoice.supported`).
 
 ---
 
@@ -327,6 +335,11 @@ registrato), `weak` oltre, cioè un fix che la registrazione scarterebbe, e `non
 scala che legge la barra di stato. **Avvia** si sblocca solo a fine avvio e con un fix fresco (non più
 vecchio di 10 s) almeno `fair`, così una registrazione non parte mai alla cieca. Il watch passa alla
 registrazione quando parte (`stopPreview`) e torna dopo uno Scarta.
+
+**Un admin può partire alla cieca (#993)** — su un computer non c'è GPS: *Avvia* resta attivo con
+*"Admin: start without waiting for the GPS"*, e per quella registrazione (`blindStart`) ogni fix si
+tiene qualunque sia la precisione e una nota o una foto senza fix cade al centro della mappa
+(`notePosition()`).
 
 Il blocco vale **solo per partire**. Durante la registrazione un segnale perso non la ferma mai: i fix
 cattivi vengono saltati (`recJunkFix`), un avviso dice che la registrazione continua, e la traccia

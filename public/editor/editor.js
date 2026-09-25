@@ -1486,19 +1486,8 @@
         parkEditor(); // park the editor + tulip before wiping the list (innerHTML would destroy moved elements)
         // geotagged media belongs to its nearest note (within 80 m): photos → an IMG pill under the
         // km, voice notes → an inline player on that row
-        const byNearestNote = (items) => {
-            const buckets = {};
-            if (!rb.notes.length) return buckets;
-            items.forEach((it) => {
-                if (it.lat == null) return;
-                const pt = { lat: +it.lat, lon: +it.lon };
-                const best = RB.nearestIdx(rb.notes, pt);
-                if (RB.geo.haversineM(rb.notes[best], pt) <= 80) (buckets[best] = buckets[best] || []).push(it);
-            });
-            return buckets;
-        };
-        const photosByNote = byNearestNote(notePhotos);
-        const audioByNote = byNearestNote(noteAudio);
+        const photosByNote = RB.mediaByNote(rb.notes, notePhotos);
+        const audioByNote = RB.mediaByNote(rb.notes, noteAudio);
         // The material a note carries, drawn on the side it sits on, so the author reads the
         // roadbook the way it will be read. A tap opens that note's editor, where it is edited.
         const blockRowsHTML = (n, at, i) => RB.noteBlocks(n, at).filter((b) => b.image || b.text).map((b) => {
@@ -1714,6 +1703,7 @@
     function renderBlockPanel(n) {
         const kind = RB.NOTE_BLOCKS.find((k) => k.id === blockTab);
         const b = blockOf(n, kind.id);
+        if (kind.audio) return renderVoicePanel(n, kind, b);
         const placement = b ? (b.placement === 'before' ? 'before' : 'after') : 'after';
         const side = ['before', 'after'].map((v) =>
             `<label><input type="radio" name="blockAt" value="${v}"${v === placement ? ' checked' : ''}> ${esc(t(v === 'before' ? 'Before the note' : 'After the note'))}</label>`).join('');
@@ -1740,6 +1730,48 @@
         [$('blockPick'), $('blockPickBtn')].forEach((el) => { if (el) el.onclick = () => pickBlockImage(n, kind); });
         if ($('blockDel')) $('blockDel').onclick = () => deleteBlock(n, b, kind);
     }
+    /* The Voice note extra (#992): record it here (or hold the Recorder's button on the trail), hear it
+       back, and say how many metres before the note the Reader plays it (RB.VOICE_LEAD_M unless set).
+       Only the sound is kept, inside the roadbook — no transcription. */
+    let editorVoice = null; // the recording in progress: { rec, note }
+    function renderVoicePanel(n, kind, b) {
+        const recording = editorVoice && editorVoice.note === n;
+        $('blockPanel').innerHTML = `<div class="block-card">
+            <div class="block-head">
+                <span class="muted small">${esc(t('Played by itself before the note while navigating.'))}</span>
+                ${b ? `<button type="button" class="btn btn-ghost block-del" id="blockDel"><i class="fa-solid fa-trash-can icon-danger"></i> <span>${esc(t('Delete'))}</span></button>` : ''}
+            </div>
+            <div class="block-voice-row">
+                ${b && b.audio ? `<audio class="block-voice" controls preload="metadata" src="${esc(b.audio)}"></audio>` : ''}
+                <button type="button" class="btn ${recording ? 'btn-danger' : 'btn-ghost'}" id="blockRec"><i class="fa-solid ${recording ? 'fa-stop' : 'fa-microphone'}"></i> <span id="blockRecLabel">${esc(t(recording ? 'Stop' : b && b.audio ? 'Record again' : 'Record'))}</span></button>
+            </div>
+            ${b ? `<label class="prop-field"><span>${esc(t('Play before the note (m)'))}</span><input class="field" id="blockLead" type="number" min="1" step="1" inputmode="numeric" value="${RB.voiceLead(b)}"></label>` : ''}
+        </div>`;
+        if (!RBVoice.supported) { $('blockRec').disabled = true; $('blockRec').title = t('Microphone unavailable.'); }
+        $('blockRec').onclick = async () => {
+            if (!editable()) return;
+            if (editorVoice) {
+                const { rec, note } = editorVoice; editorVoice = null;
+                let audio = null;
+                try { audio = await (await rec).stop(); } catch (e) { return renderEditor(); }
+                if (!audio) { toast(t('No audio captured.')); return renderEditor(); }
+                const slot = blockOf(note, 'voice') || (note.blocks = note.blocks || [], note.blocks[note.blocks.push({ type: 'voice' }) - 1]);
+                slot.audio = audio;
+                markDirty(); renderEditor(); renderNotes();
+                return;
+            }
+            editorVoice = { note: n, rec: RBVoice.start({ onTick: (sec) => { const l = $('blockRecLabel'); if (l && editorVoice && editorVoice.note === n) l.textContent = t('Stop') + ' · ' + Math.floor(sec / 60) + ':' + RB.pad2(sec % 60); } }) };
+            editorVoice.rec.catch(() => { editorVoice = null; toast(t('Microphone unavailable.')); renderEditor(); });
+            renderEditor();
+        };
+        if ($('blockLead')) $('blockLead').onchange = (e) => {
+            const v = parseInt(e.target.value, 10);
+            if (isFinite(v) && v > 0 && v !== RB.VOICE_LEAD_M) b.lead_distance = v; else delete b.lead_distance;
+            e.target.value = RB.voiceLead(b);
+            markDirty();
+        };
+        if ($('blockDel')) $('blockDel').onclick = () => deleteBlock(n, b, kind);
+    }
     // The slot's block, created the moment there is something to put in it. `placement` comes from the
     // radios, which are answered before anything exists.
     function slotBlock(n, kind) {
@@ -1751,10 +1783,11 @@
         }
         return b;
     }
-    // A slot with neither picture nor words is not material — drop it, so nothing empty is saved.
+    // A slot with nothing in it (no picture, no words, no sound) is not material — drop it, so nothing
+    // empty is saved.
     function pruneBlocks(n) {
         if (!n.blocks) return;
-        n.blocks = n.blocks.filter((b) => b.image || b.text);
+        n.blocks = n.blocks.filter(RB.blockHasContent);
         if (!n.blocks.length) delete n.blocks;
     }
     // Words update the model and patch the row in place. Rebuilding the list would move the

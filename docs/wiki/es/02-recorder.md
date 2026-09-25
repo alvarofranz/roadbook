@@ -1,8 +1,8 @@
 # Roadbook Recorder — Grabar una trazada GPS en vivo
 
-El **Recorder** es la herramienta que usar **en el terreno**. Registra la trazada GPS y te permite dejar notas y fotos geotaggeadas por el camino. El resultado es un draft que pasa al Editor para la creación del roadbook definitivo.
+El **Recorder** es la herramienta que usar **en el terreno**. Graba la trazada GPS y te permite dejar notas, fotos geotaggeadas y notas de voz por el camino. El resultado es un draft que pasa al Editor para convertirse en el roadbook definitivo.
 
-> Funciona **offline** al 100% para GPS + waypoint + media. Los media se quedan en cola local hasta que haya red. Se necesita conexión solo para: login inicial, subida diferida, guardado en el perfil.
+> Funciona **100% offline** para el GPS, las notas, las fotos y las notas de voz. Las fotos se quedan en una cola local hasta que haya red. Solo se necesita conexión para iniciar sesión, subir las fotos y guardar en tu perfil.
 
 ---
 
@@ -10,63 +10,61 @@ El **Recorder** es la herramienta que usar **en el terreno**. Registra la trazad
 
 ### 1. Abre el Recorder
 
-Abre el **Recorder** desde el menú principal o ve directamente a `/recorder/`.
+Abre el **Recorder** desde la barra de pestañas (el icono ⏺) o ve directamente a `/recorder/`.
 
-> ![Recorder start](../assets/screenshots/rec01.jpg)
+> ![Inicio del Recorder](../assets/screenshots/rec01.jpg)
 
-Verás la pantalla inicial con el botón **Start recording**. Si no has iniciado sesión, aparece un aviso: *"Sin sesión: la ruta y sus fotos esperan en este dispositivo, y Guardar te pide iniciar sesión."* — puedes grabar igualmente.
+La pantalla inicial explica lo que hace el Recorder y muestra en vivo el **estado del GPS**: *Buscando GPS…*, *GPS demasiado débil para grabar* o *GPS listo* con su precisión (±m). **Empezar a grabar** solo se activa cuando el GPS es lo bastante bueno para grabar, así que una grabación nunca empieza a ciegas. Si no has iniciado sesión, un aviso te dice que la ruta y sus fotos esperan en tu dispositivo y que **Guardar** te pedirá iniciar sesión — puedes grabar igualmente.
+
+> Los **admins** pueden empezar sin esperar al GPS (el botón lo indica) — útil en un ordenador, que no tiene: se guarda cada fix sea cual sea su precisión, y una nota sin ningún fix se coloca donde está centrado el mapa.
 
 ---
 
-### 2. Inicia una nueva grabación
+### 2. Empieza
 
-Toca **Start recording**.
-
-> ![Nombre de sesión](../assets/screenshots/rec02.jpg)
-
-Se abre un modal para el **nombre** de la sesión (por defecto: fecha/hora `YYYY-MM-DD HH-MM`). Puedes cambiarlo. Toca **Confirma**.
+Toca **Empezar a grabar**. La grabación empieza al instante: no hay nada que rellenar — el roadbook recibe su nombre más tarde, en el Editor.
 
 ---
 
 ### 3. Dashboard live — la grabación está en curso
 
-Durante la grabación, la pantalla muestra arriba cuatro indicadores:
-
 > ![Dashboard de grabación](../assets/screenshots/rec03a.jpg)
 
+Arriba, la barra de estado (hora · batería · precisión GPS) y cuatro indicadores:
+
 | Elemento | Qué ves |
-|----------|-----------|
-| **Tiempo** | Duración de la grabación (excluidas pausas) |
+|----------|---------|
+| **Tiempo** | Duración de la grabación (sin contar las pausas) |
 | **km/h** | Velocidad actual |
 | **Notas** | Número de notas colocadas |
 | **km** | Distancia recorrida |
 
-Debajo están los botones de captura (paso 4) y el mapa live (paso 5). **Pause** y **End** están en una barra abajo, cada uno a media anchura; en el móvil esa barra flota justo encima de la barra de pestañas inferior.
+Debajo están los botones de captura (paso 4) y el mapa live (paso 5). **Pausa** y **Terminar** están en una barra abajo, cada uno a media anchura; en el móvil esa barra flota justo encima de la barra de pestañas.
 
 ---
 
 ### 4. Enriquece la trazada durante el recorrido
 
-La fila de captura tiene un botón grande **Nota** a la izquierda y, a su derecha, una cuadrícula 2×2 de botones con icono de su misma altura:
+> ![Botones de captura](../assets/screenshots/rec04a.jpg)
+
+La fila de captura tiene tres columnas, de la misma altura: la gran **Nota** (40%), las capturas (40%: **Foto** encima de **Nota de voz**) y los dos interruptores del mapa (20%: **Estilo de mapa** encima de **Rumbo arriba**).
 
 | Botón | Acción | Cómo se usa |
-|----------|--------|-------------|
-| **📍 Nota** | Coloca una nota en la posición GPS actual | Toca: la nota se coloca al instante (requiere fix GPS). Suena una campanilla de éxito y aparece en pantalla un gran check verde durante menos de un segundo. No hay nada que escribir: el texto de la nota se escribe después en el Editor |
-| **📷 Foto** | Dispara una foto geotag | Abre la cámara trasera. La foto se engancha a la posición GPS actual y siempre coloca también una nota allí |
-| **↩ Deshacer última nota** | Elimina la última nota | Pide confirmación antes, nombrando la nota que elimina |
-| **🗺 Estilo del mapa** | Cambia el mapa base | Satélite ↔ topográfico |
-| **🧭 Heading up** | Orientación del mapa | El mapa gira con tu rumbo (heading up) o se queda con el norte arriba |
+|-------|--------|-------------|
+| **📍 Nota** | Coloca una nota en tu posición GPS | Toca: la nota se coloca al instante. Suena una campanilla de éxito y aparece un gran check verde durante menos de un segundo. No hay nada que escribir — el texto de la nota se escribe después en el Editor |
+| **📷 Foto** | Hace una foto geotaggeada | Abre la cámara trasera. La foto se engancha a tu posición y siempre coloca también una nota allí |
+| **🎤 Nota de voz** | Graba una nota de voz | **Mantenlo pulsado** mientras hablas — se coloca una nota justo ahí y el botón se pone rojo con los segundos; **suéltalo** y se detiene (como mucho un minuto). Solo se guarda el sonido, sin transcripción: se convierte en el extra **Nota de voz** de la nota y, cuando navegas el roadbook, suena sola antes de que llegues a la nota (100 m antes, o la distancia que el autor fije en el Editor) |
+| **🗺 Estilo de mapa** | Cambia el mapa base | Satélite ↔ topográfico |
+| **➤ Rumbo arriba** | Orientación del mapa | El mapa gira con tu rumbo (encendido) o se queda con el norte arriba |
 
 La barra inferior contiene los otros dos:
 
 | Botón | Acción |
-|----------|--------|
-| **⏸ Pause** | Suspende GPS y cronómetro (paradas, esperas). Toca otra vez para reanudar |
-| **🏁 End** | Termina la grabación (paso 6) |
+|-------|--------|
+| **⏸ Pausa** | Suspende la grabación (paradas, esperas). Toca otra vez para reanudar |
+| **🏁 Terminar** | Termina la grabación (paso 6) |
 
-> ![Botones de waypoint y media](../assets/screenshots/rec04a.jpg)
-
-> **Consejo**: toca **Nota** en cada cruce, peligro o cambio de carretera sin apartar la vista del camino, y añade las palabras después en el Editor. Usa **Foto** para señales y puntos visuales.
+> **Consejo**: toca **Nota** en cada cruce, peligro o cambio de carretera sin apartar la vista del camino, y añade las palabras después en el Editor. Mantén pulsado **Nota de voz** cuando unas pocas palabras lo digan mejor — las volverás a oír en la carretera. En ruta no hay deshacer: una nota colocada por error se borra en un segundo en el Editor.
 
 ---
 
@@ -82,52 +80,44 @@ La barra inferior contiene los otros dos:
 
 ---
 
-### 6. Fin de la grabación
+### 6. Termina la grabación
 
-Toca **End** (barra inferior) y confirma para terminar la grabación.
+Toca **Terminar** (barra inferior) y confirma.
 
-> ![Resumen de grabación](../assets/screenshots/rec06a.jpeg)
+> ![Fin de la grabación](../assets/screenshots/rec06a.jpg)
 
 Un diálogo muestra un breve resumen (km · notas · fotos) y hace una sola pregunta, con dos botones:
 
 | Botón | Qué sucede |
-|--------|--------------|
-| **💾 Guardar** | Con sesión iniciada: la grabación se guarda como **draft** de roadbook (con sus fotos) y el **Editor se abre** sobre él al instante. Sin sesión: te lleva a la página de inicio de sesión y, una vez dentro, vuelves y se guarda del mismo modo; luego se abre el Editor |
+|-------|------------|
+| **💾 Guardar** | Con sesión iniciada: la grabación se guarda como **draft** de roadbook (con sus fotos y notas de voz) y el **Editor se abre** sobre ella al instante. Sin sesión: te lleva a la página de inicio de sesión y, una vez dentro, vuelves y se guarda del mismo modo; luego se abre el Editor |
 | **🗑 Descartar** | Pide confirmación, nombrando lo que se perdería (trazada, notas, fotos), y luego descarta la grabación |
 
 Aquí no hay botones de exportación: exportar (GPX, `.rdbk`, PDF…) se hace después desde el Editor.
 
-> El diálogo no se cierra tocando fuera de él. Hasta que guardes o descartes, la grabación está a salvo: aunque la app se cierre de golpe, se te vuelve a ofrecer en la siguiente visita.
+> El diálogo no se cierra tocando fuera de él. Hasta que guardes o descartes, la grabación está a salvo — aunque la app se cierre de golpe, se te vuelve a ofrecer en la siguiente visita.
 
 ---
 
 ### 7. En el Editor
 
-El Editor se abre con la trazada, las notas y las fotos ya cargadas: ponle nombre al roadbook, escribe el texto de las notas y expórtalo si quieres. El draft queda guardado y lo recuperas también en **Mis roadbooks** desde el menú principal.
+El Editor se abre con la trazada, las notas, las fotos y las notas de voz ya en su sitio: ponle nombre al roadbook, escribe el texto de las notas, escucha una nota de voz en la pestaña **Nota de voz** de su nota (y fija cuántos metros antes de la nota suena) y expórtalo si quieres. El draft queda guardado y también lo encuentras en **Mis roadbooks**.
 
 ## Comportamiento offline
 
-| Qué | Logueado + online | Logueado + offline | Sin login |
-|------|------------------|-------------------|----------|
+| Qué | Con sesión + online | Con sesión + offline | Sin sesión |
+|-----|---------------------|----------------------|------------|
 | Trazada GPS | ✅ local + checkpoint | ✅ local + checkpoint | ✅ local + checkpoint |
-| Notas | ✅ local | ✅ local | ✅ local |
-| Foto | ✅ cola → subida | ✅ cola local | ✅ cola local |
-| Draft servidor | creado/actualizado live | creado en el primer flush | creado al pulsar **Guardar**, tras iniciar sesión |
-| Recuperación post-crash | ✅ automática | ✅ automática | ✅ automática |
+| Notas y notas de voz | ✅ local | ✅ local | ✅ local |
+| Fotos | ✅ cola → subida | ✅ cola local | ✅ cola local |
+| Draft en el servidor | creado/actualizado en vivo | creado en la primera subida | creado al pulsar **Guardar**, tras iniciar sesión |
+| Recuperación tras un cierre | ✅ automática | ✅ automática | ✅ automática |
 
 ---
 
-## Recuperación de sesión interrumpida
+## Recuperación de una sesión interrumpida
 
-El Recorder guarda la sesión en tiempo real. Si la app se cierra (llamada, crash, batería), al siguiente arranque te propone:
-
-1. **Resume** — reanuda la grabación desde donde la dejaste
-2. **Recupero GPX** — si la sesión se perdió, recupera la trazada GPX huérfana
-3. **Partir limpio** — ignora y recomienza
-
-> 📸 *Screenshot: modal de recuperación de sesión interrumpida*
-
-> Rechazar el resume **no borra** la sesión: se sobrescribe solo cuando inicias una nueva grabación o sales con "End the trip".
+El Recorder guarda la sesión en tiempo real. Si la app se cierra (una llamada, un cierre inesperado, la batería), en el siguiente arranque te propone **reanudar** la grabación donde la dejaste. Rechazarlo **no la borra**: la grabación se queda en el dispositivo y solo se sustituye cuando empiezas una nueva.
 
 ---
 

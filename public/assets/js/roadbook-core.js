@@ -41,11 +41,19 @@
        scoring, GPS validation or the GPX export: there is nothing of theirs in the sequence of
        waypoints. The catalog below is what the editor builds its controls from and what every
        renderer asks how to draw a block, so a fourth kind of material is one entry here. */
+    // A `voice` block is a voice note: its `audio` (a data: URI) is heard, not shown — the Reader
+    // plays it by itself `lead_distance` metres before the note (VOICE_LEAD_M unless the author set
+    // another), so it has no side and no row of its own.
     const NOTE_BLOCKS = [
         { id: 'photo', name: 'Photo', icon: 'fa-image',        image: true, imageMax: 1024 },
         { id: 'ad',    name: 'Ad',    icon: 'fa-rectangle-ad', image: true, imageMax: 512 },
         { id: 'text',  name: 'Heading', icon: 'fa-heading' },
+        { id: 'voice', name: 'Voice note', icon: 'fa-microphone', audio: true },
     ];
+    const VOICE_LEAD_M = 100;
+    const voiceLead = (b) => (b && b.lead_distance != null ? b.lead_distance : VOICE_LEAD_M);
+    // A block holds something: its picture, its words or its sound.
+    const blockHasContent = (b) => !!(b && (b.image || b.text || b.audio));
     const NOTE_BLOCK_BY_ID = Object.fromEntries(NOTE_BLOCKS.map((b) => [b.id, b]));
     // How to draw a block; material of a type this version does not know still reads as text.
     const blockType = (b) => (b && NOTE_BLOCK_BY_ID[b.type]) || NOTE_BLOCK_BY_ID.text;
@@ -999,8 +1007,15 @@
                     else n.blocks.forEach((bl, j) => {
                         const bp = path + '.blocks[' + j + ']';
                         if (!isObj(bl)) return err(bp, 'Must be an object.');
+                        if (!NOTE_BLOCK_BY_ID[bl.type]) return err(bp + '.type', 'Must be one of: {values}.', NOTE_BLOCKS.map((x) => x.id).join(', '));
+                        if (bl.type === 'voice') { // a sound, played before the note: no side, no picture, no words
+                            unknown(bl, ['type', 'audio', 'lead_distance'], bp);
+                            if (!(isDataUri(bl.audio) && /^data:audio\//.test(bl.audio))) err(bp + '.audio', 'Must be an audio data: URI.');
+                            if (bl.lead_distance !== undefined && !(isInt(bl.lead_distance) && bl.lead_distance > 0)) err(bp + '.lead_distance', 'Must be a positive integer (metres).');
+                            if (bl.lead_distance === VOICE_LEAD_M) warn(bp + '.lead_distance', 'Default value: leave it out.');
+                            return;
+                        }
                         unknown(bl, ['type', 'placement', 'image', 'text'], bp);
-                        if (!NOTE_BLOCK_BY_ID[bl.type]) err(bp + '.type', 'Must be one of: {values}.', NOTE_BLOCKS.map((x) => x.id).join(', '));
                         if (!['before', 'after'].includes(bl.placement)) err(bp + '.placement', 'Must be one of: {values}.', 'before, after');
                         if (bl.image !== undefined && !isDataUri(bl.image)) err(bp + '.image', 'Must be a data: URI.');
                         if (bl.text !== undefined && typeof bl.text !== 'string') err(bp + '.text', 'Must be a string.');
@@ -1103,7 +1118,8 @@
             });
             if (junctions.length) o.junctions = junctions;
             if (n.imported_tulip) o.imported_tulip = n.imported_tulip.shown === false ? { image: n.imported_tulip.image, shown: false } : { image: n.imported_tulip.image };
-            const blocks = (n.blocks || []).filter((b) => b && (b.image || b.text)).map((b) => {
+            const blocks = (n.blocks || []).filter(blockHasContent).map((b) => {
+                if (b.type === 'voice') { const v = { type: 'voice', audio: b.audio }; if (b.lead_distance != null && b.lead_distance !== VOICE_LEAD_M) v.lead_distance = b.lead_distance; return v; }
                 const q = { type: b.type, placement: b.placement === 'before' ? 'before' : 'after' };
                 if (b.image) q.image = b.image;
                 if (b.text) q.text = b.text;
@@ -1581,6 +1597,20 @@
         const m = String(name).match(/^S\d{2}_(\d{1,3})km/i);
         return m ? parseInt(m[1], 10) : null;
     }
+    /* A roadbook's geotagged media (photos, voice notes: [{lat, lon, …}]) by the note each belongs
+       to — the nearest one, within MEDIA_NOTE_M — as { noteIndex: [items] }. The Editor lists them on
+       their note rows, the Reader plays a note's voice notes as it approaches it. */
+    const MEDIA_NOTE_M = 80;
+    function mediaByNote(notes, items) {
+        const buckets = {};
+        if (!notes || !notes.length) return buckets;
+        (items || []).forEach((it) => {
+            if (it.lat == null || it.lon == null) return;
+            const pt = { lat: +it.lat, lon: +it.lon }, best = nearestIdx(notes, pt);
+            if (haversineM(notes[best], pt) <= MEDIA_NOTE_M) (buckets[best] = buckets[best] || []).push(it);
+        });
+        return buckets;
+    }
     // The limit a note imposes (km/h; 0 = limit lifted), or null.
     const speedLimitOfNote = (note) => (note && note.speed_limit_kmh != null ? note.speed_limit_kmh : null);
 
@@ -1874,7 +1904,7 @@
         FORMAT_VERSION, ROAD_TYPES, ROAD_WIDTH, DOUBLE_GAP, DEFAULT_ROAD_TYPE, roadType, CAP_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
         parseGPX, parseWPT, buildRoadbook, readRoadbook, writeRoadbook, validateRoadbook, validateMedia, newRoadbook, trackPoint, trackFixes, parseOpenRally,
-        recomputeMetrics, recomputeCaps, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, gpxCompatibility, tulipToDataURL,
+        recomputeMetrics, recomputeCaps, speedLimitOfNote, mediaByNote, voiceLead, VOICE_LEAD_M, blockHasContent, speedLimitFromName, consistencyReport, appwptFromImport, gpxCompatibility, tulipToDataURL,
         simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, liveAllowed, liveDue, liveFreshness, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, blankNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
         buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, symbolSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,

@@ -543,7 +543,9 @@ Operational notes:
   vectors); searchable icon palette.
 - **Recorder** — THE live-GPS route recorder (accuracy-aware sampling, pause/resume,
   crash-safe GPX, one-tap notes confirmed by a bell + a big check (`RBSuccess`), geotagged photos,
-  the distance since the last note on the map); signed-in, it saves the
+  **voice notes held down to record** (#992 — only the sound, saved as the note's Voice note extra),
+  the distance since the last note on the map; no undo on the trail — that is the Editor's job; an
+  admin may start with no usable GPS to test on a computer, #993); signed-in, it saves the
   route as a draft roadbook to edit later. Recording a new route lives here only; the
   Editor's recording bar serves just "Adjust on the trail".
 - **Reader** — the navigator. Paper-style white roadbook table drawn by the shared
@@ -586,7 +588,9 @@ Operational notes:
   skipped note, however it was skipped, with the same penalty in competition. No title row: the
   dashboard is the first row, and the action bar is two rows of two — Auto · Note map, Pause ·
   **Finish**, the one way out of a run (#936). The live distance to go is on the note map only (#935).
-  Each validation rings `RBSuccess`; the last note plays the arrival fanfare (#843).
+  Each validation rings `RBSuccess`; the last note plays the arrival fanfare (#843). A note's voice
+  notes (`voice` blocks) play by themselves `RB.voiceLead(block)` metres before it (100 by default),
+  once per run (#992).
   Every run ends with its **report** (#618 — notes reached/skipped, speed-limit zones, time;
   `RBRun`, stored on the device first, then `run_save`): the finish screen leads with the run card,
   Share and a Private/Public switch (sharing before choosing asks to make the run public, #820 ·
@@ -619,8 +623,8 @@ Operational notes:
   **Validator:** `/validator/` checks a `.rdbk` (or a bare `roadbook.json`) in the browser with the
   same functions every surface reads one with (`RBZip.inspect` · `RB.validateRoadbook` ·
   `RB.validateMedia`) — nothing is uploaded or stored — and shows the verdict, the file's facts and
-  the first 100 errors and warnings, each with its exact path. Linked from the footer (*Resources*,
-  `fa-file-circle-check`) and from `/standard`.
+  the first 100 errors and warnings, each with its exact path. Linked from the `/standard` landing
+  (its first button) and its conformance list.
   **Completed by (#869):** under the comments, the public completed runs (runner, notes, date, link
   to `/run/<id>`) and only a count of the private ones (`roadbook_completions`). Every roadbook card
   carries the same number as a *Times completed* pill (#868): `rb_card_fields($row)` is the one card
@@ -714,6 +718,9 @@ Operational notes:
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in), and until it
   can, a signed-out capture stays queued on the device. Pure `createQueue` core
   (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
+- `rb-voice.js` (`RBVoice`, #992) — records a voice note into an audio `data:` URI (mono, 24 kbit/s,
+  at most `MAX_S` = 60 s): `supported` · `start({ onTick })` → `{ stop() → Promise<dataURI|null> }`.
+  The Recorder (hold the microphone) and the Editor (the Voice note extra) share it.
 - `rbzip.js` (`RBZip`) — the dependency-free ZIP codec of the `.rdbk` container (native
   `deflate-raw`): `write(files)` · `read(blob)` · `inspect(file)` → `{ container, names, files, doc,
   docError, manifest, manifestError }` (what a file holds, unjudged — the validator's input) ·
@@ -839,7 +846,8 @@ schema:
     "symbols"?: [ { "name": "x.svg", "position": [x,y], "size": n, "angle"?: deg, "mirrored"?: true } ],
     "junctions"?: [ { "from": [x,y], "to": [x,y], "road_type"?: 1..5 } ],
     "imported_tulip"?: { "image": str /* data: URI */, "shown"?: false }, // e.g. OpenRally's; while shown it is the whole vignette (#943)
-    "blocks"?: [ { "type": "photo"|"ad"|"text", "placement": "before"|"after", "image"?: str, "text"?: str } ],
+    "blocks"?: [ { "type": "photo"|"ad"|"text", "placement": "before"|"after", "image"?: str, "text"?: str }
+                 | { "type": "voice", "audio": str /* audio data: URI */, "lead_distance"?: int /* m, default 100 */ } ],
                                                               // RB.NOTE_BLOCKS: material around the note; never a waypoint
     "compatibility"?: { "openrally"?: [...], "gpx"?: { "sym", "osmand_icon", "osmand_color" } }
   } ],
@@ -874,9 +882,10 @@ schema:
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
   used standard symbols embedded in a roadbook on open and on save/export (#174), so art
   updates propagate to older roadbooks; custom (user-uploaded) symbols are never touched.
-- Photos and voice notes live **server-side** (geotagged, per roadbook) and travel in the
-  `.rdbk` ZIP only as the **optional** `photos/`/`audio/` + `media.json` bundle — never
-  inside `roadbook.json` itself.
+- The roadbook's geotagged **photos** and its server-side audio clips (`roadbook_audio`) live
+  **server-side** (per roadbook) and travel in the `.rdbk` ZIP only as the **optional**
+  `photos/`/`audio/` + `media.json` bundle — never inside `roadbook.json`. A note's **voice note** is part
+  of the note itself: a `voice` block whose `audio` is a `data:` URI inside `roadbook.json` (#992).
 
 ## Conventions
 - Tool pages are one level deep → relative `../assets/…`; the challenge page uses
@@ -892,7 +901,7 @@ schema:
 - **Icon consistency — one canonical FontAwesome icon per tool, everywhere.** A tool must use
   the SAME icon across the home workflow step, its Features card, its `/features/<tool>/` page
   and the native launcher — never a different glyph for the same tool. Canonical set: **Roadbook
-  Recorder** `fa-circle-dot` · **Roadbook Editor** `fa-pen-ruler` · **Roadbook Reader**
+  Recorder** `fa-circle-dot` · **Roadbook Editor** `fa-pen` · **Roadbook Reader**
   `fa-compass` · **Tripmaster** `fa-gauge-high` · **Event classification (Ranking)**
   `fa-ranking-star`. The nav sections add **Navigate** `fa-location-arrow` (the Reader +
   Tripmaster hub) · **Events** `fa-calendar-check` · **Profile** `fa-circle-user`. The two-level-deep

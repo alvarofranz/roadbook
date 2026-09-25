@@ -1,6 +1,6 @@
 # Editor — Ein Roadbook erstellen und bearbeiten
 
-Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur (oder ein leeres Blatt) in ein vollständiges roadbook mit Notizen, CAP, danger, Straßentypen, Icons und Tulpen-Vignetten.
+Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur (oder ein leeres Blatt) in ein vollständiges roadbook mit Notizen, CAP, danger, Straßentypen, Icons und Vignetten.
 
 > **Funktioniert offline** für die reine Bearbeitung. Eine Verbindung wird benötigt für: Login, Laden/Speichern im Profil, Upload von Foto/Audio, Import öffentlicher challenge, Export PDF/GPX (nutzt lazy-geladene Bibliotheken).
 
@@ -99,7 +99,7 @@ Ein innerer Schnitt hinterlässt eine **echte Lücke** (kein Segment). Gespeiche
 
 ## Notizenliste + Inline-Editor
 
-Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt sich** unter diese Zeile (einziges physisch verschobenes `#noteEditZone`). Vignetten-Canvas (`#canvasWrap`) verschiebt sich IN die Tulpen-Zelle.
+Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt sich** unter diese Zeile (einziges physisch verschobenes `#noteEditZone`). Vignetten-Canvas (`#canvasWrap`) verschiebt sich IN die Zelle der Vignette.
 
 > 📸 *Screenshot: Notiz-Panel mit geöffnetem Inline-Editor auf einer Notiz*
 
@@ -112,6 +112,19 @@ Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt
 | **Danger** | Select `—` / `!` / `!!` / `!!!` → `n.danger` | 0 = entfernt |
 | **CAP** | Zeilen-Toggle → berechnet `bearingDeg` + `haversineM` zur nächsten Notiz | Letzte Notiz: kein CAP |
 | **Icone / Vignette** | `NoteCanvas` auf `#noteCanvas` | Standard-Palette + eingebettete Custom-Icons (siehe § unten) |
+
+### Die Extras der Notiz
+
+Neben den Tabs **Notiz** und **Icon** gibt es einen Tab pro Extra — das Material, das zur Notiz gehört. Ein Tab, der schon etwas enthält, leuchtet.
+
+| Tab | Was er enthält |
+|-----|----------------|
+| **Foto** | Ein Bild mit Bildunterschrift, **Vor der Notiz** oder **Nach der Notiz** |
+| **Werbung** | Das Bild eines Sponsors mit Bildunterschrift, vor oder nach der Notiz |
+| **Überschrift** | Ein Textblock, vor oder nach der Notiz |
+| **Sprachnotiz** | Ein Ton, der beim Navigieren von selbst vor der Notiz spielt |
+
+**Sprachnotiz**: **Aufnehmen** schaltet das Mikrofon ein, **Stopp** beendet die Aufnahme, **Neu aufnehmen** ersetzt sie; der Player spielt sie ab. **Vor der Notiz abspielen (m)** sagt, wie viele Meter vor der Notiz der Reader sie von selbst abspielt — 100, solange du nichts anderes einstellst. **Löschen** entfernt sie (nach einer Rückfrage). Behalten wird nur der Ton, im roadbook selbst — keine Transkription. Eine im Recorder per Gedrückthalten aufgenommene Sprachnotiz ist bereits im Tab **Sprachnotiz** ihrer Notiz.
 
 ### Ziehen auf der Karte (Tool Verschieben)
 Notiz wird vom blauen Marker gezogen → verschiebt den **Spur-Eckpunkt** darunter → Linie folgt. Notiz bewegt sich wie ein Spur-Punkt.
@@ -169,7 +182,7 @@ Zweite Ansicht (`showView('config')`), Tab `#viewConfig`:
 
 ### Lightbox
 Tap auf Pin / Miniatur → Vollbild-Betrachter (deckt nur die Karte ab, **nicht** das Notiz-Panel → du bearbeitest weiter). Pfeile ‹/›, `←`/`→`, `Esc`. Aktionen:
-- **Waypoint** → erstellt Waypoint auf der Foto-Position
+- **Notiz** → erstellt eine Notiz auf der Foto-Position
 - **Auf Karte verschieben** → *posiziona*-Modus → nächster Tap aktualisiert Koordinaten via `ph_move`
 - **Delete** → `ph_delete` (mit Bestätigung) + Lightbox + Pin aktualisieren
 

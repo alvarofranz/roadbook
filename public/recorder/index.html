@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.17-239">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.17-240">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.17-239">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.17-240">
     <style>
         .rec-main { max-width: 560px; padding-top: 1rem; }
         /* the landing (#896): three short points, then one big, inviting Start */
@@ -41,13 +41,19 @@
         /* speed is the at-a-glance number while riding: bigger and accented */
         .rec-readouts .mini.speed .value { font-size: 1.75rem; color: var(--sand); }
         .rec-dash { display: flex; flex-direction: column; gap: .55rem; }
-        /* the capture row (#768): one big Note — the button pressed while riding — and a 2×2 grid
-           of icon buttons as tall as it */
-        .rec-capture { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; height: 7.2rem; }
-        .rec-note { height: 100%; justify-content: center; font-size: 1.6rem; font-weight: 800; border-radius: 16px; }
-        .rec-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: .45rem; }
-        .rec-grid .btn { height: 100%; min-width: 0; padding: 0; justify-content: center; font-size: 1.15rem; border-radius: 12px; }
-        .rec-grid .btn.on { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
+        /* the capture row (#768 · #992): the big Note (40%) — the button pressed while riding —, the
+           captures beside it (40%: Photo over Voice note) and the map's two switches (20%: style over
+           course-up), every column as tall as the Note */
+        .rec-capture { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: .45rem; height: 7.2rem; }
+        .rec-note { height: 100%; min-width: 0; justify-content: center; font-size: 1.6rem; font-weight: 800; border-radius: 16px; }
+        .rec-col { display: grid; grid-template-rows: 1fr 1fr; gap: .45rem; min-width: 0; }
+        .rec-col .btn { height: 100%; min-width: 0; padding: 0; justify-content: center; font-size: 1.15rem; border-radius: 12px; }
+        .rec-col .btn.on { background: var(--sand); color: var(--on-sand); border-color: var(--sand); }
+        /* the voice note is held down to record: red and pulsing while it records, its seconds beside it */
+        #recVoice { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+        .rec-col .btn.recording { background: var(--track); color: #fff; border-color: var(--track); animation: recpulse 1.2s infinite; gap: .4rem; }
+        .rec-voice-time { font-size: .95rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        @keyframes recpulse { 50% { opacity: .65; } }
         /* the live map: the recorded track, the notes and the photos */
         .rec-map-wrap { position: relative; }
         .rec-map { height: 46vh; min-height: 220px; padding: 0; overflow: hidden; border-radius: 14px; margin: 0; }
@@ -87,7 +93,7 @@
             <h1 data-i18n="fp.tool.recorder">Roadbook Recorder</h1>
             <a class="tool-help" href="../features/recorder/"><i class="fa-solid fa-circle-info"></i> <span data-i18n="Help">Help</span></a>
         </div>
-        <p class="muted" data-i18n="Record a Roadbook with geotagged notes and photos.">Record a Roadbook with geotagged notes and photos.</p>
+        <p class="muted" data-i18n="Record a Roadbook with geotagged notes, photos and voice notes.">Record a Roadbook with geotagged notes, photos and voice notes.</p>
         <p id="recNativeHint" class="native-hint" data-i18n="native.better.gps.recorder" hidden><i class="fa-solid fa-mobile-screen-button"></i> For background GPS recording and better accuracy, use the native iOS or Android app.</p>
         <p id="recLoginHint" class="muted small" data-i18n="Not signed in: the route and its photos wait on this device, and Save asks you to sign in." hidden>Not signed in: the route and its photos wait on this device, and Save asks you to sign in.</p>
         <p id="recBgHint" class="muted small" data-i18n="In a browser, recording stops when the app is in the background or the screen is off." hidden>In a browser, recording stops when the app is in the background or the screen is off.</p>
@@ -95,7 +101,8 @@
         <ul class="rec-points">
             <li><i class="fa-solid fa-location-dot"></i> <span data-i18n="One big button drops a note right where you are.">One big button drops a note right where you are.</span></li>
             <li><i class="fa-solid fa-camera"></i> <span data-i18n="Photos are pinned to the track as you ride.">Photos are pinned to the track as you ride.</span></li>
-            <li><i class="fa-solid fa-pen-ruler"></i> <span data-i18n="At the end it becomes a draft roadbook to finish in the Editor.">At the end it becomes a draft roadbook to finish in the Editor.</span></li>
+            <li><i class="fa-solid fa-microphone"></i> <span data-i18n="Hold the microphone for a voice note: it plays before its note when you navigate.">Hold the microphone for a voice note: it plays before its note when you navigate.</span></li>
+            <li><i class="fa-solid fa-pen"></i> <span data-i18n="At the end it becomes a draft roadbook to finish in the Editor.">At the end it becomes a draft roadbook to finish in the Editor.</span></li>
         </ul>
         <!-- the GPS before the start (#901): its health, live — Start opens only on a fix good enough to record -->
         <div class="gps-health" id="recGps" data-health="none" role="status" aria-live="polite">
@@ -119,9 +126,11 @@
             </div>
             <div class="rec-capture">
                 <button class="btn btn-primary rec-note" id="recWpt" type="button"><i class="fa-solid fa-location-dot"></i> <span data-i18n="Note">Note</span></button>
-                <div class="rec-grid">
+                <div class="rec-col">
                     <button class="btn btn-ghost" id="recPhoto" type="button" title="Photo" data-i18n-title="Photo" aria-label="Photo" data-i18n-aria="Photo"><i class="fa-solid fa-camera"></i></button>
-                    <button class="btn btn-ghost" id="recUndo" type="button" disabled title="Delete the last note" data-i18n-title="Delete the last note" aria-label="Delete the last note" data-i18n-aria="Delete the last note"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="btn btn-ghost" id="recVoice" type="button" title="Hold to record a voice note" data-i18n-title="Hold to record a voice note" aria-label="Hold to record a voice note" data-i18n-aria="Hold to record a voice note"><i class="fa-solid fa-microphone"></i><span class="rec-voice-time" id="recVoiceTime" hidden></span></button>
+                </div>
+                <div class="rec-col">
                     <button class="btn btn-ghost" id="recLayer" type="button" title="Map style" data-i18n-title="Map style" aria-label="Map style" data-i18n-aria="Map style"><i class="fa-solid fa-layer-group"></i></button>
                     <button class="btn btn-ghost" id="recHeading" type="button" title="Heading up" data-i18n-title="Heading up" aria-label="Heading up" data-i18n-aria="Heading up"><i class="fa-solid fa-location-arrow"></i></button>
                 </div>
@@ -143,20 +152,21 @@
 <input id="recPhotoFile" type="file" accept="image/*" capture="environment" hidden>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.17-239"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.17-239"></script>
-<script src="../assets/js/rbmap.js?v=1.9.17-239"></script>
-<script src="../assets/js/gps-meter.js?v=1.9.17-239"></script>
-<script src="../assets/js/rb-remote.js?v=1.9.17-239"></script>
-<script src="../assets/js/gpx-recorder.js?v=1.9.17-239"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.17-239"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.17-239"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.17-239"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.17-239"></script>
-<script src="../assets/js/i18n.js?v=1.9.17-239"></script>
-<script src="../assets/js/app.js?v=1.9.17-239"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.17-239"></script>
-<script src="../assets/js/status-bar.js?v=1.9.17-239"></script>
-<script src="recorder.js?v=1.9.17-239"></script>
+<script src="../assets/js/config.js?v=1.9.17-240"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.17-240"></script>
+<script src="../assets/js/rbmap.js?v=1.9.17-240"></script>
+<script src="../assets/js/gps-meter.js?v=1.9.17-240"></script>
+<script src="../assets/js/rb-remote.js?v=1.9.17-240"></script>
+<script src="../assets/js/gpx-recorder.js?v=1.9.17-240"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.17-240"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.17-240"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.17-240"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.17-240"></script>
+<script src="../assets/js/i18n.js?v=1.9.17-240"></script>
+<script src="../assets/js/app.js?v=1.9.17-240"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.17-240"></script>
+<script src="../assets/js/status-bar.js?v=1.9.17-240"></script>
+<script src="../assets/js/rb-voice.js?v=1.9.17-240"></script>
+<script src="recorder.js?v=1.9.17-240"></script>
 </body>
 </html>

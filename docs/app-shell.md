@@ -63,7 +63,7 @@ alla home.
 
 **Footer (#729).** `renderChrome` crea anche il `<footer class="foot">`: il brand con il claim e
 i badge degli store (`[data-get-app="stores"]`), tre colonne — *Product* (`WEB_NAV`), *Resources*
-e *Legal* (da `SITE_LINKS`: Help · Install · The .rdbk standard · .rdbk validator · What’s new · About · Privacy ·
+e *Legal* (da `SITE_LINKS`: Help · Install · The .rdbk standard · What’s new · About · Privacy ·
 Terms of Use · Contact) — e una riga in basso con il selettore lingua (`.lang`, costruito da
 `i18n.js`), il copyright e la versione (`#appVersion`, §5). Il footer è nascosto su mobile: la
 pagina Profile ripete gli stessi link (`RBSiteLinksHTML()` in `#accSiteLinks`) e ha il proprio

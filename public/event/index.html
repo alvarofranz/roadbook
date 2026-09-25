@@ -17,13 +17,16 @@
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.17-239">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.17-239">
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=1.9.17-240">
+    <link rel="stylesheet" href="/assets/css/app.css?v=1.9.17-240">
     <style>
         .ev-head { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
         .ev-head h1 { margin: .2rem 0 .3rem; font-size: 1.8rem; }
         .ev-head-text { min-width: 0; flex: 1; }
         .ev-head .btn { flex: none; }
+        /* on a phone the organizer's Manage button takes its own row: beside the logo it left the title a
+           column a letter wide (#989) */
+        @media (max-width: 640px) { .ev-head { flex-wrap: wrap; } .ev-head .btn { flex-basis: 100%; justify-content: center; } }
         /* the event logo (#151): boxed like an avatar, never squeezing the title */
         .ev-desc { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
         /* per-card status chip on an event roadbook: sand = reserved to entrants (#25), green = public (#251) */
@@ -91,17 +94,17 @@
 </main>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="/assets/js/config.js?v=1.9.17-239"></script>
-<script src="/assets/js/roadbook-core.js?v=1.9.17-239"></script>
-<script src="/assets/js/rbmap.js?v=1.9.17-239"></script>
-<script src="/assets/js/i18n.es.js?v=1.9.17-239"></script>
-<script src="/assets/js/i18n.it.js?v=1.9.17-239"></script>
-<script src="/assets/js/i18n.de.js?v=1.9.17-239"></script>
-<script src="/assets/js/i18n.fr.js?v=1.9.17-239"></script>
-<script src="/assets/js/i18n.js?v=1.9.17-239"></script>
-<script src="/assets/js/qrcode.min.js?v=1.9.17-239"></script>
-<script src="/assets/js/rb-qr.js?v=1.9.17-239"></script>
-<script src="/assets/js/app.js?v=1.9.17-239"></script>
-<script src="event.js?v=1.9.17-239"></script>
+<script src="/assets/js/config.js?v=1.9.17-240"></script>
+<script src="/assets/js/roadbook-core.js?v=1.9.17-240"></script>
+<script src="/assets/js/rbmap.js?v=1.9.17-240"></script>
+<script src="/assets/js/i18n.es.js?v=1.9.17-240"></script>
+<script src="/assets/js/i18n.it.js?v=1.9.17-240"></script>
+<script src="/assets/js/i18n.de.js?v=1.9.17-240"></script>
+<script src="/assets/js/i18n.fr.js?v=1.9.17-240"></script>
+<script src="/assets/js/i18n.js?v=1.9.17-240"></script>
+<script src="/assets/js/qrcode.min.js?v=1.9.17-240"></script>
+<script src="/assets/js/rb-qr.js?v=1.9.17-240"></script>
+<script src="/assets/js/app.js?v=1.9.17-240"></script>
+<script src="event.js?v=1.9.17-240"></script>
 </body>
 </html>
