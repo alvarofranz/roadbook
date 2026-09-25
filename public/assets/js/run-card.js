@@ -3,7 +3,7 @@
  * run: a 1080×1350 PNG (4:5, what the social feeds show whole). The whole route over the map with
  * every note on it — reached green, skipped pink — darkened towards the foot, where the roadbook's
  * title, who ran it and when, and the run's figures sit. A roadbook that hides its map
- * (map_access:false) keeps its route to itself: the card then carries the figures alone.
+ * (map_allowed:false) keeps its route to itself: the card then carries the figures alone.
  *
  * render({ report, roadbook, username }) → Promise<Blob|null>. RBRun supplies the figures'
  * formatting (so run-report.js loads first), RBCoverMap the map. */
@@ -36,7 +36,7 @@
         const t = RBt, font = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
         const meta = (roadbook && roadbook.meta) || {}, notes = (roadbook && roadbook.notes) || [], track = (roadbook && roadbook.track) || [];
         const skipped = new Set(report.skipped || []);
-        const showMap = meta.map_access !== false && track.length >= 2;
+        const showMap = meta.map_allowed !== false && track.length >= 2;
         const mapOpts = {
             width: W, height: H, pad: { top: 120, right: SIDE, bottom: 560, left: SIDE },
             markers: notes.map((n) => ({ lat: n.lat, lon: n.lon, color: skipped.has(n.num) ? SKIPPED : REACHED })),

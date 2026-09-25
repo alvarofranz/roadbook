@@ -22,17 +22,17 @@ describe('joining a GPX keeps its times and elevations, at either end', () => {
         const rb = route(), before = rb.track.length;
         RB.joinTrack(rb, piece, true);
         expect(rb.track).toHaveLength(before + 2); // the meeting point is not duplicated
-        expect(rb.track.map((p) => p.t)).toEqual([1000, 2000, 3000, 4000, 5000]);
-        expect(rb.track.map((p) => p.ele)).toEqual([8, 9, 10, 11, 12]);
-        expect(rb.notes[0].idx).toBe(0);           // a new start note rides the new tip
+        expect(rb.track.map((p) => p.time_ms)).toEqual([1000, 2000, 3000, 4000, 5000]);
+        expect(rb.track.map((p) => p.elevation)).toEqual([8, 9, 10, 11, 12]);
+        expect(rb.notes[0].track_index).toBe(0);           // a new start note rides the new tip
         expect(rb.notes[0].distance).toBe(0);
         expect(rb.notes.map((n) => n.num)).toEqual(rb.notes.map((_, i) => i + 1));
     });
     it('at the finish it is appended the same way', () => {
         const rb = route();
         RB.joinTrack(rb, [{ lat: 0, lon: 0.012 }, { lat: 0, lon: 0.013, ele: 13, t: 6000 }], false);
-        expect(rb.track.map((p) => p.t)).toEqual([3000, 4000, 5000, 6000]);
-        expect(rb.notes[rb.notes.length - 1].idx).toBe(3);
+        expect(rb.track.map((p) => p.time_ms)).toEqual([3000, 4000, 5000, 6000]);
+        expect(rb.notes[rb.notes.length - 1].track_index).toBe(3);
     });
     it('the old notes keep their own vertices', () => {
         const rb = route(), oldStart = { ...rb.track[0] };
@@ -49,12 +49,11 @@ describe('joining a GPX keeps its times and elevations, at either end', () => {
 describe('editing the track keeps each point’s elevation and time', () => {
     it('a splice (Adjust, detour) copies them', () => {
         const splice = fn(editor, 'function spliceByIndex(');
-        expect(splice).toContain('if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;');
-        expect(splice).toContain('if (p.t != null) q.t = p.t;');
+        expect(splice).toContain('const piece = newTrk.map(RB.trackPoint);'); // a GPS fix → a track point, elevation and time kept
     });
     it('a drag moves only the position', () => {
         expect(fn(editor, 'function onVertexDrag(')).toContain('Object.assign(rb.track[i], { lat: RB.round6(lat), lon: RB.round6(lon) });');
-        expect(fn(editor, 'function onWptDrag(')).toContain('Object.assign(rb.track[n.idx], { lat: RB.round6(lat), lon: RB.round6(lon) });');
+        expect(fn(editor, 'function onWptDrag(')).toContain('Object.assign(rb.track[n.track_index], { lat: RB.round6(lat), lon: RB.round6(lon) });');
     });
 });
 
@@ -65,7 +64,7 @@ describe('someone else’s lock makes the Editor read-only for real', () => {
     it('opening the roadbook keeps the route tools off', () => {
         const open = fn(editor, 'function setRoadbook(');
         expect(open).toContain("['toolAddGpx', 'toolSimplify', 'toolAdjust'].forEach((id) => $(id).disabled = readOnly());");
-        expect(editor).toContain('setLock(r.lock); setRoadbook(r.roadbook);'); // the lock is known first
+        expect(editor).toContain('setLock(r.lock); setRoadbook(r.roadbook ? RB.readRoadbook(r.roadbook) : RB.newRoadbook(r.title, [], []));'); // the lock is known first
     });
     it('every tool that changes the roadbook asks editable()', () => {
         for (const head of ["$('toolAddGpx').onclick", "$('addGpxFile').onchange", "$('cfgReverse').onclick", "$('toolSimplify').onclick", "$('toolAdjust').onclick", "$('addJunction').onclick", 'function addIcon(', 'async function addIconFiles(', 'async function delCustomIcon(']) {
@@ -153,30 +152,38 @@ describe('the live vignette editor', () => {
         host.append(box, bar); document.body.append(host);
         return new NoteCanvas(box, { toolbarEl: bar, resolveIcon: (ic) => 'RES:' + ic.name });
     };
-    it('draws a cover tulip full-box, like toSVG', () => {
+    it('draws a shown imported tulip full-box, like toSVG', () => {
         const c = mount();
-        c.setNote({ num: 2, icons: [{ name: 'or.svg', cover: true }], junctions: null });
+        c.setNote({ num: 2, symbols: [], junctions: [], imported_tulip: { image: 'data:image/svg+xml,OR', shown: true } });
         const img = c.svg.querySelector('image');
         expect(img.getAttribute('width')).toBe('230');
         expect(img.getAttribute('height')).toBe('162');
-        expect(img.getAttribute('href')).toBe('RES:or.svg');
-        expect(c.svg.querySelectorAll('line')).toHaveLength(0);
+        expect(img.getAttribute('href')).toBe('data:image/svg+xml,OR');
+        expect(c.svg.querySelectorAll('path.vignette-box-dyn')).toHaveLength(0);
     });
     it('draws the bike lane in its own colour, as thick as every other road', () => {
-        const svg = NoteCanvas.toSVG({ num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 5, road_type_out: 5, icons: [] });
+        const svg = NoteCanvas.toSVG({ num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 5, road_type: 5, symbols: [] });
         expect(svg).toContain('stroke-width="8"');
-        expect(svg).toContain(RB.ROAD_TYPES[5].color);
+        expect(svg).toContain(RB.roadType(5).color);
     });
     it('draws the branches under the route, and the route lets taps through to them', () => {
-        const note = { num: 2, bearing_in: 0, bearing_out: 90, road_type_in: 3, road_type_out: 3, icons: [], junctions: [{ pivot: [0, 0], tip: [60, 40], width: 8, road_type: 0 }] };
+        const note = { num: 2, bearing_in: 0, bearing_out: 90, road_type_in: 2, road_type: 2, symbols: [], junctions: [{ from: [0, 0], to: [60, 40], road_type: 2 }] };
         const svg = NoteCanvas.toSVG(note);
-        expect(svg.lastIndexOf('<line')).toBeLessThan(svg.indexOf('stroke="#ff5a45"'));
+        expect(svg.indexOf('stroke="#9aa4b2"')).toBeLessThan(svg.indexOf('stroke="#ff5a45"'));
         const c = mount(); c.setNote(note);
         const kids = [...c.svg.children];
-        const line = kids.findIndex((el) => el.tagName === 'line'), road = kids.findIndex((el) => el.tagName === 'path' && el.getAttribute('class') === 'vignette-box-dyn');
-        expect(line).toBeGreaterThan(-1);
-        expect(line).toBeLessThan(road);
+        const branch = kids.findIndex((el) => (el.getAttribute('class') || '').includes('vignette-box-junctions')), road = kids.findIndex((el) => el.tagName === 'path' && el.getAttribute('class') === 'vignette-box-dyn' && el.getAttribute('stroke') === '#ff5a45');
+        expect(branch).toBeGreaterThan(-1);
+        expect(branch).toBeLessThan(road);
         expect(kids[road].getAttribute('pointer-events')).toBe('none');
+    });
+    it('draws every road with its FIA stroke: tarmac double, low-visible long–short, off track short dashes', () => {
+        const draw = (rt) => NoteCanvas.toSVG({ num: 2, bearing_in: 0, bearing_out: 0, road_type_in: rt, road_type: rt, symbols: [], junctions: [] });
+        expect(draw(1)).toContain('stroke="#fff" stroke-width="2"'); // the white centre that splits the double line
+        expect(draw(2)).not.toContain('stroke-dasharray');
+        expect(draw(3)).toContain('stroke-dasharray="24 8 8 8"');
+        expect(draw(4)).toContain('stroke-dasharray="8 8"');
+        expect(RB.ROAD_TYPES.map((r) => r.id)).toEqual([1, 2, 3, 4, 5]);
     });
     it('has no dead options left', () => {
         expect(canvasJs).not.toContain('onSelect');

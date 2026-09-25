@@ -59,7 +59,7 @@ La distancia que falta se mide **a lo largo de la carretera**, como los parciale
 ### Automático (por defecto)
 La nota activa se valida en cuanto entras en su **radio de validación**.
 
-- El radio viene de la nota (`wp_radius`), luego del valor por defecto del roadbook, luego de su tipo de waypoint, luego 30 m; nunca baja de 18 m, por encima del ruido del GPS
+- El radio viene de la nota (`validation_radius`), luego del valor por defecto del roadbook, luego de su tipo de waypoint, luego 30 m; nunca baja de 18 m, por encima del ruido del GPS
 - Se comprueba el **tramo recorrido entre dos posiciones GPS**, no solo las posiciones: a velocidad un teléfono avanza 25 m entre dos de ellas, y un waypoint estrecho se colaría entre medias
 - Una posición de la que el teléfono no está seguro (poca precisión) se ignora: no puede validar una nota ni sumar distancia
 

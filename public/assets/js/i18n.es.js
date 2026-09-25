@@ -35,8 +35,8 @@
             'About': 'Acerca de',
             'Contact': 'Contacto',
             'contact.title': 'Contacto', 'contact.intro': '¿Tienes una pregunta, un comentario o una solicitud? Nos encantaría saber de ti.',
-            'contact.h.email': 'Correo', 'contact.email': 'Escríbenos a <a href="mailto:rdbk.admin@gmail.com">rdbk.admin@gmail.com</a> — leemos todos los mensajes.',
-            'contact.h.more': 'Más', 'contact.more': 'Para solicitudes de datos o privacidad, consulta nuestra <a href="../privacy/">Política de privacidad</a>. Para saber quién está detrás de RDBK.app, visita la página <a href="../about/">Acerca de</a>.',
+            
+            'contact.more': 'Para solicitudes de datos o privacidad, consulta nuestra <a href="../privacy/">Política de privacidad</a>. Para saber quién está detrás de RDBK.app, visita la página <a href="../about/">Acerca de</a>.',
             
             'No race (free)': 'Sin competición (libre)', 'Roadbook-suite rules': 'Reglas Roadbook-suite', 'FIA rules (unavailable)': 'Reglas FIA (no disponible)', 'Event management': 'Gestión de eventos', 'Select date': 'Seleccionar fecha', 'Unsaved changes': 'Cambios sin guardar', 'Save your changes before closing?': '¿Guardar los cambios antes de cerrar?', 'Save & close': 'Guardar y cerrar', 'Change logo': 'Cambiar logo', 'In a browser, recording stops when the app is in the background or the screen is off.': 'En el navegador, la grabación se detiene cuando la app está en segundo plano o la pantalla apagada.', 'Let others copy this public roadbook': 'Permitir que otros copien este roadbook público', 'This public roadbook cannot be copied.': 'Este roadbook público no se puede copiar.', 'help.reusable': 'Desactivado (predeterminado): otros pueden leer y navegar este roadbook público pero no copiarlo. Activado: también pueden copiarlo a su perfil para editarlo — aparece en la búsqueda de roadbooks públicos del Editor.',
             /* editor consistency check (#339) */ 'Consistency check': 'Comprobación de coherencia', 'Have a look before saving — none of this stops the roadbook from working:': 'Échale un ojo antes de guardar — nada de esto impide que el roadbook funcione:', 'A speed-controlled zone is never lifted — it starts at note': 'Una zona de velocidad controlada nunca se levanta — empieza en la nota', 'A speed limit is lifted where no zone is open': 'Se levanta un límite de velocidad donde no hay ninguna zona abierta', 'Save anyway': 'Guardar de todos modos', 'Let me fix it': 'Prefiero corregirlo',
@@ -87,7 +87,7 @@
             'events.t': 'Eventos', 'events.d': 'Organiza eventos en torno a tus propios roadbooks — invita equipos, corre el rally y publica los resultados.', 'route map': 'mapa de ruta',
             'gallery.kicker': 'Galería', 'gallery.title': 'Roadbooks públicos', 'gallery.loading': 'Cargando…', 'gallery.empty': 'Aún no hay roadbooks públicos.',
             // Ayudas de los campos del editor (issue #89)
-            'help.road': 'La superficie por la que continúas desde esta nota (predeterminada, asfalto, pista, campo a través); se mantiene hasta que una nota posterior la cambie.',
+            'help.road': 'La vía por la que sales de esta nota (asfalto, pista, pista poco visible, fuera de pista, carril bici); sigue vigente hasta que una nota posterior la cambie.',
             'help.danger': 'Gradación de peligro FIA, mostrada como ! / !! / !!! en la viñeta: a mayor grado, más precaución exige el punto.',
             'help.speed': 'Un límite de velocidad declarativo (km/h) vigente desde esta nota; “Fin de límite” lo levanta. Fijar un límite también marca la nota como zona controlada.',
             'help.capType': 'Califica el rumbo CAP de la nota (FIA): Salida, Medio, Calculado o de Giro. Se activa cuando la nota lleva un CAP.',
@@ -137,7 +137,7 @@
             'Warning': 'Peligro', 'Priority': 'Prioridad', 'Prohibitions': 'Prohibiciones', 'Mandatory': 'Obligación',
             'Terrain': 'Terreno', 'Info': 'Info', 'References': 'Referencias',
             'Road': 'Vía', 'Danger': 'Peligro', 'CAP type': 'Tipo CAP', 'Exit': 'Salida', 'Average': 'Medio', 'Calculated': 'Calculado', 'Turning': 'Que gira', 'End of limit': 'Fin de límite', 'END': 'FIN',
-            'Default': 'Normal', 'Motorway': 'Autopista', 'Asphalt': 'Asfalto', 'Track': 'Pista', 'Off-piste': 'Fuera de pista',
+            'Default': 'Normal', 'Track': 'Pista', 
             'Draw on the map': 'Dibujar en el mapa', 
             
             
@@ -163,7 +163,7 @@
             'Add result': 'Añadir resultado', 'Target average speed': 'Velocidad media objetivo', 
             '…or paste the code (META) here': '…o pega aquí el código (META)', 'Added vehicle': 'Vehículo añadido', 'Invalid signature': 'Firma no válida', 'Could not open the camera': 'No se pudo abrir la cámara', 'Remove vehicle': 'Eliminar vehículo',
             'Reset the partial trip?': '¿Poner a cero el parcial?', 'Colour for the band {band}': 'Color para la banda {band}', 'Show password': 'Mostrar contraseña', 'Hide password': 'Ocultar contraseña', 'photo': 'foto', 'Roadbook': 'Roadbook', 'Rank': 'Pos.',
-            'Smaller': 'Más pequeño', 'Bigger': 'Más grande', 'Rotate left': 'Girar a la izquierda', 'Rotate right': 'Girar a la derecha', 'Flip': 'Voltear', 'Thinner': 'Más fino', 'Thicker': 'Más grueso', 'Road type': 'Tipo de vía', 'Reset timer': 'Reiniciar cronómetro',
+            'Smaller': 'Más pequeño', 'Bigger': 'Más grande', 'Rotate left': 'Girar a la izquierda', 'Rotate right': 'Girar a la derecha', 'Flip': 'Voltear', 'Road type': 'Tipo de vía', 'Reset timer': 'Reiniciar cronómetro',
             'Add image': 'Añadir imagen', 'Change image': 'Cambiar imagen', 
             'Add junction': 'Añadir bifurcación', 'Remove logo': 'Quitar logo', 'GPS lost': 'GPS perdido', 'Too far from note': 'Demasiado lejos de la nota', 'Could not load the roadbook.': 'No se pudo cargar el roadbook.',
             'Skip it and continue?': '¿Saltarla y continuar?', 
@@ -268,7 +268,7 @@
             'Recover unsaved GPX recording?': '¿Recuperar la grabación GPX sin guardar?', 
             'Resume the run in progress?': '¿Reanudar el recorrido en curso?', 'Resume': 'Reanudar',
             'Unsaved work': 'Trabajo sin guardar', 'Work left in progress in other tools. Resume it, or discard it.': 'Trabajo dejado a medias en otras herramientas. Reanúdalo o descártalo.', 'Discarded.': 'Descartado.', 'Untitled': 'Sin título',
-            'Unsaved draft': 'Borrador sin guardar', 'Recording in progress': 'Grabación en curso', 'Tripmaster run': 'Recorrido en Tripmaster', 'Run in progress': 'Recorrido en curso', 'Every note now validates at this radius.': 'Ahora todas las notas se validan con este radio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Anuncio', '(caption)': '(pie de foto)', 'Text': 'Texto', 'Icon': 'Icono', 'Before the note': 'Antes de la nota', 'After the note': 'Después de la nota', 'Add': 'Añadir', '(text)': '(texto)', 'Delete this from note {n}?': '¿Eliminar esto de la nota {n}?', 'Compass (CAP)': 'Brújula (CAP)', 'On': 'Activado', 'Off': 'Desactivado', 'The last note has no note to head toward.': 'La última nota no tiene ninguna nota hacia la que apuntar.', 'solid, thin stroke': 'continuo, trazo fino', 'Bike lane': 'Carril bici', 'help.cap': 'Si esta nota lleva un CAP: el rumbo que hay que mantener DESPUÉS de ella, calculado hacia la nota siguiente junto con la distancia en línea recta. Desactivarlo borra también el tipo de CAP.', 'Detection radius': 'Radio de detección', 'Roadbook type': 'Tipo de roadbook', 'Basic (adventure)': 'Básico (aventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Radio de detección por defecto (m)', 
+            'Unsaved draft': 'Borrador sin guardar', 'Recording in progress': 'Grabación en curso', 'Tripmaster run': 'Recorrido en Tripmaster', 'Run in progress': 'Recorrido en curso', 'Every note now validates at this radius.': 'Ahora todas las notas se validan con este radio.', 'Note': 'Nota', 'Photo': 'Foto', 'Ad': 'Anuncio', '(caption)': '(pie de foto)', 'Text': 'Texto', 'Icon': 'Icono', 'Before the note': 'Antes de la nota', 'After the note': 'Después de la nota', 'Add': 'Añadir', '(text)': '(texto)', 'Delete this from note {n}?': '¿Eliminar esto de la nota {n}?', 'Compass (CAP)': 'Brújula (CAP)', 'On': 'Activado', 'Off': 'Desactivado', 'The last note has no note to head toward.': 'La última nota no tiene ninguna nota hacia la que apuntar.', 'Bike lane': 'Carril bici', 'help.cap': 'Si esta nota lleva un CAP: el rumbo que hay que mantener DESPUÉS de ella, calculado hacia la nota siguiente junto con la distancia en línea recta. Desactivarlo borra también el tipo de CAP.', 'Detection radius': 'Radio de detección', 'Roadbook type': 'Tipo de roadbook', 'Basic (adventure)': 'Básico (aventura)', 'Rally (FIA)': 'Rally (FIA)', 'Default detection radius (m)': 'Radio de detección por defecto (m)', 
             'Selective section start': 'Inicio sección selectiva', 'Selective section end': 'Fin sección selectiva',
             'Navigation WP': 'WP de navegación', 'Masked WP': 'WP oculto', 'Eclipse WP': 'WP eclipse', 'Control WP': 'WP de control', 'Security WP': 'WP de seguridad', 'Precise WP': 'WP preciso', 'Visible WP': 'WP visible',
             'Difficult-overtaking zone start': 'Inicio zona de adelantamiento difícil', 'Difficult-overtaking zone end': 'Fin zona de adelantamiento difícil',
@@ -721,94 +721,94 @@ Object.assign(window.RBi18nLangs.es, {
     'why.mapready': '<b>Listo para el mapa.</b> El track GPS completo viaja con las notas, así que cualquier lector puede dibujar la ruta y situarte en ella.',
     'why.symbols': '<b>Los símbolos son de primera clase.</b> Cada nota puede llevar pictogramas colocados, rotados y escalables y vectores de cruce en color — no solo una línea de texto.',
     'Container (the file)': 'Contenedor (el archivo)',
-    'container.intro': 'Un archivo <code>.rdbk</code> es un contenedor <b>ZIP</b>. Dentro, <code>roadbook.json</code> guarda el roadbook — el esquema descrito abajo, con los símbolos incrustados en su <code>icons</code> — junto a medios opcionales:',
+    
     'container.media': 'Las fotos y las notas de voz son <b>opcionales</b>: solo viajan si quien exporta las incluye. El tipo MIME del archivo sigue siendo <code>application/x-roadbook</code>.',
     'Document structure': 'Estructura del documento',
-    'structure.intro': '<code>roadbook.json</code> es un único objeto JSON con cuatro claves de primer nivel:',
-    'structure.units': 'Las coordenadas son grados decimales WGS-84. <b>Las distancias son metros enteros.</b> Los rumbos son grados en sentido horario desde el norte verdadero (0–360). Los ángulos de los símbolos son grados en sentido horario.',
+    
+    
     'Field': 'Campo',
     'Type': 'Tipo',
     'Meaning': 'Significado',
-    'Human-readable roadbook title.': 'Título del roadbook, legible por personas.',
+    
     'meta.total_distance': 'Longitud total de la ruta en metros (derivada del <code>track</code>).',
-    'Number of navigational notes (comment notes are not counted).': 'Número de notas de navegación (las notas de comentario no se cuentan).',
+    
     'Optional. Free text shown on the public roadbook page.': 'Opcional. Texto libre que se muestra en la página pública del roadbook.',
     'Optional. Name of the roadbook author.': 'Opcional. Nombre del autor del roadbook.',
     'Optional. Organizing club / event organizer.': 'Opcional. Club organizador / organizador del evento.',
     'meta.modified': 'Opcional. Fecha de última modificación, ISO <code>YYYY-MM-DD</code>.',
     'meta.logo': 'Opcional. Logo del evento como URI <code>data:</code> en base64 (incrustado y autocontenido, como los símbolos de <code>icons</code>).',
-    'meta.map_access': 'Opcional. Si un lector puede mostrar un mapa de la ruta mientras se navega. Ausente o <code>true</code> = permitido; <code>false</code> oculta el mapa (p. ej. competiciones donde leer el mapa sería hacer trampa).',
-    'meta.profile': 'Opcional. Acota el vocabulario de tipos de waypoint que ofrece un editor: <code>basic</code> (por defecto, solo los marcadores esenciales) o <code>rally</code> (el conjunto FIA completo). Ausente = basic. Es solo editorial: no cambia cómo interpreta el archivo un lector.',
-    'meta.default_wp_radius': 'Opcional. Radio de validación por defecto (en metros) para todo el roadbook, aplicado a los waypoints que no llevan su propio <code>wp_radius</code>.',
-    'track.intro': 'Un array ordenado de puntos que describe la polilínea de la ruta. Las notas lo referencian por índice. Cada punto puede llevar un <code>ele</code> opcional — la altitud en metros enteros — y una <code>t</code> opcional — el instante de la posición en milisegundos epoch (UTC), conservado de una grabación para que las herramientas puedan ordenar los puntos o casarlos por tiempo.',
     
-    '1-based note number (display order).': 'Número de nota empezando por 1 (orden de presentación).',
-    'notes.idx': 'Índice dentro de <code>track</code> donde se sitúa esta nota.',
-    'Note position (decimal degrees).': 'Posición de la nota (grados decimales).',
-    'Cumulative distance from the start (metres).': 'Distancia acumulada desde la salida (metros).',
-    'Distance from the previous note (metres).': 'Distancia desde la nota anterior (metros).',
-    'The instruction / comment.': 'La instrucción / el comentario.',
-    'CAP — the heading in degrees (0–360) to hold to the next note, when shown.': 'CAP — el rumbo en grados (0–360) que hay que mantener hasta la nota siguiente, cuando se indica.',
-    'Straight-line distance to hold that heading (metres).': 'Distancia en línea recta durante la que se mantiene ese rumbo (metros).',
-    'Optional. Qualifies the CAP: exit (default), average, calculated or turning.': 'Opcional. Matiza el CAP: salida (por defecto), medio, calculado o de giro.',
-    'Track bearing arriving at the note (degrees).': 'Rumbo del track al llegar a la nota (grados).',
-    'Track bearing leaving the note (degrees).': 'Rumbo del track al salir de la nota (grados).',
-    'notes.road_type_in': 'Superficie de llegada — ver <a href="#roadtypes">tipos de vía</a>.',
-    'Surface leaving.': 'Superficie de salida.',
-    'Optional. Declarative speed limit (km/h) in force from this note; 0 = limit lifted. Preferred over a limit encoded in a symbol name.': 'Opcional. Límite de velocidad declarativo (km/h) en vigor desde esta nota; 0 = límite levantado. Tiene preferencia sobre un límite codificado en el nombre de un símbolo.',
-    'notes.danger': 'Graduación de peligro al estilo FIA. Se dibuja como <span class="danger-marks">!</span> / <span class="danger-marks">!!</span> / <span class="danger-marks">!!!</span> en rojo dentro de la viñeta (nunca en la columna de texto). Ausente o 0 = sin peligro.',
-    'notes.wp_type': 'Opcional. Tipo de waypoint FIA: los siete tipos enmascarado / control / seguridad / navegación / preciso / visible / eclipse, más los marcadores de salida y llegada, de sector selectivo, de zona y de control. En un archivo .rdbk guardado el valor se escribe con su código del estándar OpenRally (WPM, WPN, WPE, WPS, WPC, WPP, WPV, DSS, ASS, DZ, FZ, DN, FN, DT, FT, CP, PC, STOP), que un lector vuelve a mapear a estos tipos al importar. Se dibuja como una chapa de color con el acrónimo junto al número de nota y se convierte en un símbolo Garmin/OSMAnd al exportar a GPX.',
-    'notes.wp_radius': 'Opcional. Radio de validación de esta nota (metros). Si falta, se usa <code>meta.default_wp_radius</code> y luego el valor por defecto del tipo.',
-    'notes.icons': 'Símbolos colocados — ver <a href="#icons">símbolos</a>.',
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     'notes.junctions': 'Vectores de cruce — ver <a href="#junctions">cruces</a>.',
-    'notes.blocks': 'Opcional. Material extra que lleva esta nota —una foto, un anuncio, un bloque de texto—, cada uno colocado antes o después de la nota; ninguno, uno o varios. Los bloques nunca son waypoints: no se numeran, no se sitúan en el mapa, no se puntúan y no se exportan como waypoints GPX/KMZ. Cada uno es <code>{ "type": "photo" | "ad" | "text", "at": "before" | "after", "image"?: data URI, "text"?: string }</code>; un <code>type</code> que el lector no conozca se muestra como texto.',
-    'notes.blocks.intro': 'Una nota lleva su material en <code>blocks</code>: el pie (o el mensaje entero) en <code>text</code>, la imagen incrustada en <code>image</code>.',
-    'icons.h2': 'Símbolos (los <code>icons</code> de una nota + la biblioteca <code>icons</code> del archivo)',
-    'icons.intro': 'El array <code>icons</code> de una nota coloca pictogramas sobre una caja de referencia fija de <b>230 × 162</b>. El origen es el centro de la caja; <code>+y</code> apunta <b>hacia arriba</b>. Así la nota se dibuja igual a cualquier tamaño de pantalla.',
-    'icons.name': 'Clave del símbolo; se busca en <code>icons</code>.',
-    'Centre position in reference units, from box centre, +y up.': 'Posición del centro en unidades de referencia, desde el centro de la caja, +y hacia arriba.',
-    'Box size in reference units (square).': 'Tamaño de la caja en unidades de referencia (cuadrada).',
-    'Rotation, degrees clockwise.': 'Rotación, en grados y sentido horario.',
-    'Horizontal mirror.': 'Espejo horizontal.',
-    'icons.embedded': 'Los símbolos viven <b>dentro del archivo</b>, en <code>icons</code>, un mapa de nombre de símbolo a URI de datos. Eso es lo que hace portable un <code>.rdbk</code>: cada símbolo que dibuja va incrustado.',
-    'icons.resolution': 'Orden de resolución de un símbolo: un URI <code>data:</code> en línea en el icono → los <code>icons</code> del archivo (sin distinguir mayúsculas) → el juego de símbolos del programa. Una nota también puede llevar un límite de velocidad codificado en el nombre de un símbolo (por ejemplo <code>S03_30km</code> ⇒ 30 km/h; <code>S99_end</code> lo levanta).',
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     'Road types': 'Tipos de vía',
     'id': 'id',
     'Rendering': 'Dibujo',
-    'neutral, medium stroke': 'neutro, trazo medio',
-    'Motorway / paved fast': 'Autopista / asfalto rápido',
-    'solid, widest stroke': 'continuo, el trazo más ancho',
-    'solid, wide stroke': 'continuo, trazo ancho',
-    'Track / piste': 'Pista / camino',
-    'solid, medium stroke (default off-road)': 'continuo, trazo medio (por defecto fuera de asfalto)',
-    'dashed, thinnest stroke': 'discontinuo, el trazo más fino',
-    'roadtypes.tulip': "La viñeta de una nota es un tulip: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (dibujada según <code>road_type_in</code>), la vía por la que sales parte del centro con una flecha, en el giro real (según <code>road_type_out</code>), y los <a href=\"#junctions\">vectores de cruce</a> salen del centro. Donde el autor dibujó una vía punto a punto en el <code>track</code> alrededor de la nota, esa vía sigue la forma dibujada — una curva, una S — calculada al dibujar, nunca guardada. En la viñeta todas las vías se dibujan con el mismo grosor: el tipo se lee en su color, el trazo discontinuo del fuera de pista y la doble línea de la autopista.",
-    'junctions.h2': 'Vectores de cruce (<code>junctions</code>)',
-    'junctions.intro': 'Más allá del texto, una nota puede dibujar el cruce en sí: uno o varios vectores sobre la misma caja de 230 × 162. Cada uno va de un <code>pivot</code> a una <code>tip</code> (la punta de flecha), con el color del tipo de vía y un grosor de trazo <code>width</code>.',
-    'Vector start (reference units, +y up).': 'Origen del vector (unidades de referencia, +y hacia arriba).',
-    'Vector tip / arrow head.': 'Punta del vector / cabeza de flecha.',
-    'Stroke thickness.': 'Grosor del trazo.',
-    'Road type → vector color.': 'Tipo de vía → color del vector.',
-    'Result token (optional, for events)': 'Token de resultado (opcional, para eventos)',
-    'result.intro': 'Cuando un roadbook se recorre en competición, un lector puede emitir un token de resultado compacto de anchura fija, de <b>49 caracteres</b> (apto para un código QR). Es una secuencia de campos numéricos rellenos de ceros y no contiene datos personales:',
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     'Width': 'Anchura',
-    'Vehicle number.': 'Número del vehículo.',
-    'Date DDMMYY.': 'Fecha DDMMAA.',
-    'Start time HHMMSS.': 'Hora de salida HHMMSS.',
-    'End time HHMMSS.': 'Hora de llegada HHMMSS.',
-    'Accuracy penalty.': 'Penalización de precisión.',
-    'Skipped-note penalty.': 'Penalización por notas saltadas.',
-    'Overshoot penalty.': 'Penalización por pasarse.',
-    'Heading penalty.': 'Penalización de rumbo.',
-    'Speed penalty.': 'Penalización de velocidad.',
-    'Distance, deci-km.': 'Distancia, en deci-km.',
-    'Average speed, deci-km/h.': 'Velocidad media, en deci-km/h.',
-    'result.sig': 'Al token se le puede añadir <code>-&lt;sig&gt;</code>, un HMAC truncado sobre el propio token, para detectar manipulaciones entre el lector y quien puntúa.',
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     'Conformance': 'Conformidad',
     'conformance.files': 'Un <code>.rdbk</code> es un contenedor ZIP con un <code>roadbook.json</code> UTF-8 dentro; extensión <code>.rdbk</code>, tipo de medio <code>application/x-roadbook</code>.',
-    'conformance.reader': 'Un <b>lector</b> conforme DEBE leer <code>roadbook.json</code> del contenedor, dibujar <code>track</code> y <code>notes</code> en orden y resolver los símbolos primero desde <code>icons</code>.',
-    'conformance.writer': 'Un <b>escritor</b> conforme DEBE incrustar en <code>icons</code> todos los símbolos que use cualquier nota, para que <code>roadbook.json</code> sea autocontenido.',
-    'Unknown fields MUST be preserved on round-trip and ignored if not understood (forward-compatibility).': 'Los campos desconocidos DEBEN conservarse al leer y volver a escribir, e ignorarse si no se entienden (compatibilidad hacia adelante).',
+    
+    
+    
     'conformance.blocks': 'Un lector conforme DEBE mostrar los <code>blocks</code> de una nota a su alrededor —antes o después, en orden— y NO DEBE numerarlos, situarlos en el mapa, puntuarlos ni exportarlos como waypoints GPX/KMZ.',
     'Full minimal example': 'Ejemplo mínimo completo',
     'Open a .rdbk in the Reader': 'Abrir un .rdbk en el Reader',
@@ -860,7 +860,7 @@ Object.assign(window.RBi18nLangs.es, {
     
     'Note type': 'Tipo de nota',
     'Turn this note into a plain track point? Its text and symbols will be removed.': '¿Convertir esta nota en un simple punto del track? Se perderán su texto y sus símbolos.',
-    'The heart of a roadbook: an ordered list of notes, each with an instruction, heading and symbols. A reader highlights the active note and validates progress against the GPS track.': 'El corazón de un roadbook: una lista ordenada de notas, cada una con su instrucción, su rumbo y sus símbolos. Un lector resalta la nota activa y valida el avance contra el track GPS.',
+    
 });
 
 /* one empty-state vocabulary + the shared row picker (#493) */
@@ -1696,8 +1696,8 @@ Object.assign(window.RBi18nLangs.es, {
 
 /* the .rdbk spec: imported tulips (#943) */
 Object.assign(window.RBi18nLangs.es, {
-    "Optional. The note’s imported tulip (e.g. from OpenRally): an opaque image that is the whole vignette, drawn full-box and alone — never as a symbol on it. It stays with the note for good.": "Opcional. El tulip importado de la nota (p. ej. de OpenRally): una imagen opaca que es toda la viñeta, dibujada a caja completa y sola — nunca como símbolo sobre ella. Se queda con la nota para siempre.",
-    "Optional, on a cover icon only: true shows the editor’s own tulip (roads, junctions, symbols) instead of the original. Absent = the original.": "Opcional, solo en un icono cover: true muestra el tulip propio del editor (carreteras, cruces, símbolos) en lugar del original. Ausente = el original.",
+    
+    
 });
 
 /* release 1.9.11 notes */
@@ -1799,9 +1799,9 @@ Object.assign(window.RBi18nLangs.es, {
     "Someone": "Alguien",
     "{user} commented on “{title}”": "{user} ha comentado en «{title}»",
     "Cover": "Portada",
-    "For this PDF only.": "Solo para este PDF.",
+    
     "Generate PDF": "Generar PDF",
-    "It becomes the roadbook’s image.": "Pasa a ser la imagen del roadbook.",
+    
     "No image yet.": "Todavía no hay imagen.",
     "Page margins": "Márgenes de página",
     "The same on the cover and on every page.": "Los mismos en la portada y en todas las páginas.",
@@ -1870,7 +1870,7 @@ Object.assign(window.RBi18nLangs.es, {
     "faq.q5": "¿Cómo convierto un GPX en un roadbook?",
     "faq.a5": "Carga el GPX en el <a href=\"../editor/\">Editor de RDBK.app</a>, gratuito: la traza se dibuja en el mapa, añades las notas, las viñetas y los rumbos CAP, y exportas un <code>.rdbk</code>. El mismo roadbook se exporta de vuelta a GPX, con las notas como waypoints con nombre, cuando lo necesites.",
     "faq.q6": "¿.rdbk funciona con OpenRally y GPX?",
-    "faq.a6": "Sí. El Editor de RDBK.app importa y exporta OpenRally, y <code>.rdbk</code> escribe los tipos de waypoint con sus códigos OpenRally (WPM, WPN, …), así que un roadbook pasa de una herramienta a otra sin perder su significado. Un GPX simple se convierte en roadbook en pocos clics.",
+    "faq.a6": "Sí. El Editor de RDBK.app importa y exporta OpenRally, y lo que OpenRally dice y <code>.rdbk</code> no tiene campo para ello viaja en el bloque <code>compatibility</code> de la nota, así que un roadbook pasa de una herramienta a otra sin perder nada. Un GPX simple se convierte en roadbook en pocos clics.",
     "faq.q7": "¿Qué es RDBK.app?",
     "faq.a7": "La suite gratuita para roadbooks digitales construida sobre <code>.rdbk</code>: el Recorder graba una ruta con notas, fotos y notas de voz, el Editor la convierte en roadbook, el Reader la navega con GPS en vivo, el Tripmaster mide el recorrido y las herramientas de eventos clasifican los resultados. En la web, como app instalable y en iOS y Android.",
 });
@@ -1908,4 +1908,176 @@ Object.assign(window.RBi18nLangs.es, {
 Object.assign(window.RBi18nLangs.es, {
     "priv.h.contactform": "Formulario de contacto",
     "priv.contactform": "Cuando nos escribes con el <a href=\"../contact/\">formulario de contacto</a>, tu nombre, tu email, el tema y tu mensaje se envían por email a nuestro equipo (a través de nuestro proveedor de email, SendGrid) para poder responderte. No los guardamos en nuestro servidor; el formulario está protegido contra el spam por Cloudflare Turnstile.",
+});
+
+/* .rdbk 1: the FIA road types and an invalid file (#986) */
+Object.assign(window.RBi18nLangs.es, {
+    "Tarmac": "Asfalto",
+    "Low-visible track": "Pista poco visible",
+    "Off track": "Fuera de pista",
+    "This file is not a valid .rdbk roadbook.": "Este archivo no es un roadbook .rdbk válido.",
+});
+
+/* PDF generator: the cover map preview */
+Object.assign(window.RBi18nLangs.es, {
+    "Drawing the map…": "Dibujando el mapa…",
+    "The map could not be drawn: the cover will be plain.": "No se pudo dibujar el mapa: la portada quedará lisa.",
+});
+
+/* The .rdbk validator (#986) */
+Object.assign(window.RBi18nLangs.es, {
+    ".rdbk validator": "Validador .rdbk",
+    "seo.validator.title": "Validador .rdbk — RDBK.app",
+    "seo.validator.desc": "Comprueba que un roadbook .rdbk sigue el estándar abierto: cada error en su lugar exacto, en tu navegador — el archivo nunca se sube.",
+    "The .rdbk validator": "El validador .rdbk",
+    "validator.intro": "Comprueba que un roadbook sigue el <a href=\"../standard/\">estándar .rdbk</a> — cada error en su lugar exacto del archivo. Funciona en tu navegador: el archivo nunca sale de tu dispositivo.",
+    "Drop a .rdbk here, or choose one": "Suelta aquí un .rdbk o elige uno",
+    "A .rdbk container or a bare roadbook.json": "Un contenedor .rdbk o un roadbook.json suelto",
+    "Errors": "Errores",
+    "Warnings": "Avisos",
+    "A warning never makes a file invalid.": "Un aviso nunca invalida un archivo.",
+    "A valid .rdbk 1 roadbook": "Un roadbook .rdbk 1 válido",
+    "Not a valid .rdbk roadbook": "No es un roadbook .rdbk válido",
+    "Container": "Contenedor",
+    "Track points": "Puntos de la traza",
+    "Symbols": "Símbolos",
+    "Voice notes": "Notas de voz",
+    "The file could not be read: it is neither a .rdbk container nor JSON.": "No se pudo leer el archivo: no es ni un contenedor .rdbk ni JSON.",
+    "No roadbook.json in the .rdbk container.": "No hay roadbook.json en el contenedor .rdbk.",
+    "roadbook.json is not valid JSON.": "roadbook.json no es JSON válido.",
+    "media.json is not valid JSON.": "media.json no es JSON válido.",
+    "Default value: leave it out.": "Valor por defecto: omítelo.",
+    "Must be 1, 2 or 3.": "Debe ser 1, 2 o 3.",
+    "Must be 1: the version of the .rdbk standard this file follows.": "Debe ser 1: la versión del estándar .rdbk que sigue este archivo.",
+    "Must be a data: URI.": "Debe ser una URI data:.",
+    "Must be a date written YYYY-MM-DD.": "Debe ser una fecha escrita AAAA-MM-DD.",
+    "Must be a latitude from -90 to 90.": "Debe ser una latitud de -90 a 90.",
+    "Must be a longitude from -180 to 180.": "Debe ser una longitud de -180 a 180.",
+    "Must be a list of at least 1 note.": "Debe ser una lista de al menos 1 nota.",
+    "Must be a list of at least 2 points.": "Debe ser una lista de al menos 2 puntos.",
+    "Must be a list.": "Debe ser una lista.",
+    "Must be a non-empty string.": "Debe ser un texto no vacío.",
+    "Must be a number.": "Debe ser un número.",
+    "Must be a positive integer (metres).": "Debe ser un entero positivo (metros).",
+    "Must be a positive number.": "Debe ser un número positivo.",
+    "Must be a road type from 1 to 5.": "Debe ser un tipo de vía de 1 a 5.",
+    "Must be a string.": "Debe ser un texto.",
+    "Must be an integer (metres).": "Debe ser un entero (metros).",
+    "Must be an integer (milliseconds since 1970, UTC).": "Debe ser un entero (milisegundos desde 1970, UTC).",
+    "Must be an integer heading from 0 to 359.": "Debe ser un rumbo entero de 0 a 359.",
+    "Must be an integer, 0 or more (0 lifts the limit).": "Debe ser un entero, 0 o más (0 levanta el límite).",
+    "Must be an object.": "Debe ser un objeto.",
+    "Must be embedded in symbols: a .rdbk carries every symbol it draws.": "Debe estar incrustado en symbols: un .rdbk lleva cada símbolo que dibuja.",
+    "Must be false when present: a map is allowed unless the file says so.": "Debe ser false si aparece: el mapa se permite salvo que el archivo diga lo contrario.",
+    "Must be false when present: an imported tulip is shown unless the file says so.": "Debe ser false si aparece: una viñeta importada se muestra salvo que el archivo diga lo contrario.",
+    "Must be greater than the previous note’s: notes follow the track.": "Debe ser mayor que el de la nota anterior: las notas siguen la traza.",
+    "Must be one of: {values}.": "Debe ser uno de: {values}.",
+    "Must be the index of a point of track.": "Debe ser el índice de un punto de track.",
+    "Must be true or false.": "Debe ser true o false.",
+    "Must be two numbers [x, y].": "Debe ser dos números [x, y].",
+    "Must carry an image, a text or both.": "Debe llevar una imagen, un texto o ambos.",
+    "Only with a cap.": "Solo con un cap.",
+    "Unknown key: readers ignore it.": "Clave desconocida: los lectores la ignoran.",
+    "Must be a path inside {values}.": "Debe ser una ruta dentro de {values}.",
+    "Must be a file inside the container.": "Debe ser un archivo del contenedor.",
+    "Not listed in media.json: it has no position.": "No figura en media.json: no tiene posición.",
+    "Unknown entry: readers ignore it.": "Entrada desconocida: los lectores la ignoran.",
+});
+
+/* The .rdbk 1 specification (/standard/, #986) */
+Object.assign(window.RBi18nLangs.es, {
+    "derived values": "valores derivados",
+    "Derived values": "Valores derivados",
+    "Validate a .rdbk": "Validar un .rdbk",
+    "Value": "Valor",
+    "Stroke": "Trazo",
+    "double line": "línea doble",
+    "solid line (the default)": "línea continua (por defecto)",
+    "long–short dashes 24 · 8 · 8 · 8": "trazos largos y cortos 24 · 8 · 8 · 8",
+    "short square dashes 8 · 8": "trazos cortos cuadrados 8 · 8",
+    "solid line (the format’s own; the FIA knows no bicycles)": "línea continua (propia del formato; la FIA no contempla bicicletas)",
+    "Required. Human-readable roadbook title.": "Obligatorio. Título legible del roadbook.",
+    "Optional. The program that wrote the file.": "Opcional. El programa que escribió el archivo.",
+    "The instruction.": "La instrucción.",
+    "The note’s position in the list, from 1.": "La posición de la nota en la lista, desde 1.",
+    "The track point the note sits on.": "El punto de la traza en el que está la nota.",
+    "Metres along the track from its first point.": "Metros a lo largo de la traza desde su primer punto.",
+    "Metres along the track from the previous note (0 for the first).": "Metros a lo largo de la traza desde la nota anterior (0 para la primera).",
+    "The track’s heading arriving at and leaving the note, from the nearest point at least 1 m away.": "El rumbo de la traza al llegar a la nota y al salir de ella, desde el punto más cercano a 1 m o más.",
+    "The road the note arrives on: the previous note’s road type (the first arrives on its own).": "La vía por la que llega la nota: el tipo de vía de la nota anterior (la primera llega por la suya).",
+    "With a CAP: the straight-line metres to the next note.": "Con un CAP: los metros en línea recta hasta la nota siguiente.",
+    "length, note count": "longitud, número de notas",
+    "The track’s length and the number of notes.": "La longitud de la traza y el número de notas.",
+    "Required. Centre position in reference units, from box centre, +y up.": "Obligatorio. Posición del centro en unidades de referencia, desde el centro de la caja, +y hacia arriba.",
+    "Required. Box size in reference units (square).": "Obligatorio. Tamaño de la caja en unidades de referencia (cuadrada).",
+    "Rotation, degrees clockwise. Default 0.": "Rotación, grados en sentido horario. Por defecto 0.",
+    "Mirrored left to right. Default false.": "Reflejado de izquierda a derecha. Por defecto false.",
+    "s1.container": "Un archivo <code>.rdbk</code> es un contenedor <b>ZIP</b>. Dentro, <code>roadbook.json</code> contiene el roadbook — el documento descrito abajo, con cada símbolo que dibuja incrustado — junto a medios opcionales:",
+    "s1.structure": "<code>roadbook.json</code> es un único objeto JSON. Contiene <b>lo que decidió el autor y nada que se pueda calcular</b>: cada distancia, rumbo y recuento lo deriva de la traza quien lo lee, así que un archivo nunca se contradice.",
+    "s1.units": "Las coordenadas son grados decimales WGS-84 con 6 decimales como máximo. <b>Las distancias son metros enteros.</b> Los rumbos son grados en sentido horario desde el norte verdadero (0–359). Un valor en su valor por defecto — un texto vacío, la vía de pista, sin rotación — <b>se omite</b>: hay una sola manera de escribir cada cosa.",
+    "s1.meta.logo": "Opcional. La imagen del roadbook como URI <code>data:</code>, incrustada como los símbolos.",
+    "s1.meta.map_allowed": "Opcional. <code>false</code> oculta el mapa al navegar (p. ej. competiciones donde leer el mapa sería trampa). Ausente = se permite un mapa.",
+    "s1.meta.radius": "Opcional. El radio de validación (metros) de cada nota sin <code>validation_radius</code> propio.",
+    "s1.track": "Un array ordenado de al menos dos puntos: la ruta. Las notas están sobre sus puntos, por índice. Un punto puede llevar su <code>elevation</code> (metros enteros) y su <code>time_ms</code> (la hora del fix, milisegundos desde 1970 UTC), conservados de una grabación.",
+    "s1.notes": "El corazón de un roadbook: al menos una nota, cada una sobre un punto de la traza, en orden de traza (cada <code>track_index</code> mayor que el anterior).",
+    "s1.notes.track_index": "Obligatorio. El punto de <code>track</code> sobre el que está la nota.",
+    "s1.notes.road_type": "La vía por la que sales de la nota — ver <a href=\"#roadtypes\">tipos de vía</a>. Por defecto <code>2</code>, una pista. Sigue vigente hasta que una nota posterior la cambie.",
+    "s1.notes.cap": "CAP — el rumbo de brújula a mantener después de la nota, tal como lo fijó el autor.",
+    "s1.notes.cap_type": "Solo con un <code>cap</code>: <code>average</code>, <code>calculated</code> o <code>turning</code>. Por defecto <code>exit</code>.",
+    "s1.notes.speed": "El límite de velocidad vigente desde la nota, km/h; <code>0</code> lo levanta.",
+    "s1.notes.waypoint_type": "El tipo de waypoint FIA, por su nombre: <code>masked</code> · <code>control</code> · <code>security</code> · <code>navigation</code> · <code>precise</code> · <code>visible</code> · <code>eclipse</code>, los marcadores <code>start</code> · <code>finish</code> · <code>ss_start</code> · <code>ss_end</code>, las zonas <code>dz</code>/<code>fz</code> · <code>dn</code>/<code>fn</code> · <code>dt</code>/<code>ft</code> y los controles <code>cp</code> · <code>pc</code> · <code>stop</code>.",
+    "s1.notes.radius": "El radio de validación de la nota (metros). Sin él: <code>meta.default_validation_radius</code>, luego el del tipo, luego 30 m.",
+    "s1.notes.symbols": "Símbolos posicionados — ver <a href=\"#icons\">símbolos</a>.",
+    "s1.notes.imported_tulip": "Una viñeta importada de otro formato (p. ej. OpenRally): <code>{ \"image\": URI data, \"shown\"?: false }</code>. Mientras se muestra es toda la viñeta; <code>\"shown\": false</code> dibuja la viñeta propia de la nota, conservando la original.",
+    "s1.notes.blocks": "Material que lleva la nota — una foto, un anuncio, un texto — antes o después de ella: <code>{ \"type\": \"photo\" | \"ad\" | \"text\", \"placement\": \"before\" | \"after\", \"image\"?: URI data, \"text\"?: texto }</code>. Nunca es un waypoint: ni se numera, ni va al mapa, ni puntúa, ni se exporta como tal.",
+    "s1.notes.compatibility": "Lo que otro formato decía de esta nota — ver <a href=\"#compatibility\">compatibility</a>.",
+    "s1.derived": "Nunca se escriben, siempre se calculan — igual en cada lector, así que dos apps muestran los mismos números. Las distancias son haversine sobre una esfera de radio <b>6 371 000 m</b>, redondeadas a metros enteros.",
+    "s1.symbols.h2": "Símbolos (<code>symbols</code>)",
+    "s1.symbols.intro": "Los <code>symbols</code> de una nota colocan pictogramas sobre una caja de referencia fija de <b>230 × 162</b>. El origen es el centro de la caja; <code>+y</code> apunta <b>hacia arriba</b>. Así la nota se ve igual a cualquier tamaño.",
+    "s1.symbols.name": "Obligatorio. Su imagen: la clave en la biblioteca <code>symbols</code> de primer nivel.",
+    "s1.symbols.library": "Las imágenes viven <b>dentro del archivo</b>, en el <code>symbols</code> de primer nivel: un mapa de nombre a URI <code>data:</code>. Cada nombre que usa una nota DEBE estar ahí — eso hace portable un <code>.rdbk</code>. La biblioteca puede tener más: los símbolos propios del autor, guardados para más tarde.",
+    "s1.roadtypes.intro": "Los trazos son los del <b>léxico de roadbook de la FIA</b> (Cross Country, 2026). En la viñeta cada vía mide 8 unidades de ancho; los patrones de trazos van en las mismas unidades.",
+    "s1.roadtypes.tulip": "La viñeta de una nota: la vía por la que llegas entra desde el borde inferior hasta el centro de la caja (su <code>road_type_in</code>), la vía por la que sales sale del centro con una flecha en el giro real (su <code>road_type</code>), y los cruces salen del centro. Donde el autor dibujó una vía punto a punto en la traza alrededor de la nota, sigue esa forma — derivada al dibujar, nunca guardada. Los colores los elige el lector; el trazo es el estándar.",
+    "s1.junctions.h2": "Vectores de cruce (<code>junctions</code>)",
+    "s1.junctions.intro": "Una nota puede dibujar las otras vías de su cruce: vectores sobre la misma caja de 230 × 162, de <code>from</code> a <code>to</code>, cada uno con su <code>road_type</code> (por defecto <code>2</code>) y el trazo que le corresponde.",
+    "s1.compatibility": "Un objeto opcional, en el primer nivel y en una nota, con <b>un bloque por cada otro formato</b>, con su nombre — <code>openrally</code>, <code>gpx</code>. Guarda lo que dijo ese formato y el .rdbk no tiene campo para ello, así que el viaje de vuelta no pierde nada. Un lector que no conoce un bloque lo ignora; un escritor DEBE conservarlo.",
+    "s1.media": "Dónde se tomó cada archivo incluido: <code>{ \"photos\": [ { \"file\": \"photos/…\", \"lat\"?, \"lon\"? } ], \"audio\": [ … ] }</code>. Cada <code>file</code> es una entrada del contenedor.",
+    "s1.conformance.reader": "Un <b>lector</b> conforme DEBE rechazar un archivo cuyo <code>rdbk_version</code> no conoce, calcular los <a href=\"#derived\">valores derivados</a> como los define esta página y dibujar cada vía con su trazo.",
+    "s1.conformance.writer": "Un <b>escritor</b> conforme DEBE incrustar cada símbolo que usan sus notas, NO DEBE escribir ningún valor derivado y DEBERÍA omitir cada valor en su valor por defecto.",
+    "s1.conformance.unknown": "Una clave que un lector no conoce se ignora; los bloques <code>compatibility</code> se conservan en un viaje de ida y vuelta.",
+    "s1.conformance.validator": "El <a href=\"../validator/\">validador .rdbk</a> comprueba un archivo con cada regla de esta página, en el navegador.",
+});
+
+/* The .rdbk validator: long reports */
+Object.assign(window.RBi18nLangs.es, {
+    "And {n} more.": "Y {n} más.",
+});
+
+/* Editor: a roadbook that cannot be written as .rdbk */
+Object.assign(window.RBi18nLangs.es, {
+    "This roadbook cannot be written as a .rdbk yet": "Este roadbook aún no se puede escribir como .rdbk",
+});
+
+/* Changelog 1.9.17 */
+Object.assign(window.RBi18nLangs.es, {
+    "The .rdbk 1 standard": "El estándar .rdbk 1",
+    "The .rdbk format is now a finished standard: every file says its version, holds only what the author decided and computes the rest the same way everywhere.": "El formato .rdbk es ya un estándar terminado: cada archivo dice su versión, guarda solo lo que decidió el autor y el resto se calcula igual en todas partes.",
+    "Roads are drawn with the FIA strokes: tarmac as a double line, the low-visible track in long and short dashes, off track in short dashes.": "Las vías se dibujan con los trazos de la FIA: el asfalto con línea doble, la pista poco visible con trazos largos y cortos, el fuera de pista con trazos cortos.",
+    "A new .rdbk validator checks any roadbook in your browser and points at every error — nothing is uploaded.": "Un nuevo validador .rdbk comprueba cualquier roadbook en tu navegador y señala cada error — no se sube nada.",
+    "The PDF generator shows the map before you print it, and changes the roadbook’s image right there; the contact page is shorter.": "El generador de PDF muestra el mapa antes de imprimirlo y cambia la imagen del roadbook ahí mismo; la página de contacto es más breve.",
+});
+
+/* PDF generator: the cover choices and the margins */
+Object.assign(window.RBi18nLangs.es, {
+    "Image": "Imagen",
+    "Map": "Mapa",
+    "Top": "Arriba",
+    "Bottom": "Abajo",
+    "Left": "Izquierda",
+    "Right": "Derecha",
+});
+
+/* The .rdbk 1 specification: danger */
+Object.assign(window.RBi18nLangs.es, {
+    "s1.notes.danger": "Gradación de peligro al estilo FIA. Se muestra como <span class=\"danger-marks\">!</span> / <span class=\"danger-marks\">!!</span> / <span class=\"danger-marks\">!!!</span> en rojo dentro de la caja del diagrama (nunca en la columna del texto). Ausente = sin peligro.",
 });

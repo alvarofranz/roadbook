@@ -21,8 +21,8 @@ le pagine e le action.
 ## 1. Il modello dati
 
 Quattro tabelle vive (`events`, `event_roadbooks`, `event_organizers`, `event_participants`),
-evolute per alter successive — dettaglio in [backend-api §8](backend-api.md). Le categorie
-(`event_categories`) sono state droppate: vivono sul singolo roadbook (`roadbooks.category`, #248).
+evolute per alter successive — dettaglio in [backend-api §8](backend-api.md). Un evento non ha
+categorie: ciò che distingue i suoi roadbook è il titolo e la modalità di punteggio.
 
 | Tabella | Campi chiave | Ruolo |
 |---|---|---|
@@ -31,9 +31,6 @@ evolute per alter successive — dettaglio in [backend-api §8](backend-api.md).
 | `event_rb_next` | `event_id`, `roadbook_id`, `next_roadbook_id`, `label` (≤ 40), `sort` | La **catena** (#944): cosa offre un roadbook dell'evento alla sua ultima nota — i successivi, in ordine, ognuno con un'etichetta breve libera ("A", "Facile"…, unica per tutte le lingue; vuota = il titolo). Entrambe le estremità sono roadbook associati all'evento (FK composte su `event_roadbooks`, `ON DELETE CASCADE`). |
 | `event_organizers` | `event_id`, `user_id` | I **co-organizzatori** (il proprietario è sempre incluso). |
 | `event_participants` | `event_id`, `user_id`, `status`, `activation_code`, `created_at` | Chi ha aderito: `pending` finché l'organizzatore non lo attiva (QR personale), poi `active` (#163). |
-
-Le categorie/classi vivono sul singolo roadbook (`roadbooks.category`, #248), non più
-sull'evento.
 
 - **Proprietà vs gestione:** il proprietario è `events.organizer_id`; le righe `event_organizers`
   concedono ad altri utenti i diritti di **gestione dei contenuti** dello stesso evento. La

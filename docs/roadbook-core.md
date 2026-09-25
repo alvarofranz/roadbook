@@ -2,7 +2,7 @@
 
 Il modulo condiviso da **tutte** le pagine di RDBK.app. È un'unica IIFE che espone il globale
 `window.RB` (e, per i test Node, `module.exports`). Dentro ci sono il modello dati del
-roadbook, la matematica geografica, il parsing di GPX/WPT, la costruzione del roadbook, i
+roadbook e il formato `.rdbk` (lettura, scrittura, validazione), la matematica geografica, il parsing di GPX/WPT, la costruzione del roadbook, i
 ricalcoli delle metriche, le operazioni sulla traccia, la serializzazione GPX/OpenRally, i
 limiti di velocità, la tipizzazione dei waypoint (FIA), lo stato di pubblicazione, e —
 condivise tra Reader e Ranking — il **motore di punteggio** (sezioni, penalità, `rankEntry`),
@@ -21,25 +21,27 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 
 | Chiave            | Cosa contiene |
 |-------------------|---------------|
-| `ROAD_TYPES`      | tabella dei 6 tipi di strada (§2) |
+| `FORMAT_VERSION`  | la versione del formato `.rdbk` che il codice legge e scrive (`1`) |
+| `ROAD_TYPES`, `ROAD_WIDTH`, `DOUBLE_GAP`, `DEFAULT_ROAD_TYPE`, `roadType` | i 5 tipi di strada e i loro tratti (§2) |
+| `CAP_TYPES`       | i qualificatori del CAP (`exit` · `average` · `calculated` · `turning`) |
 | `CONST`           | costanti di punteggio e larghezze META (§2) |
 | `geo`             | `{ haversineM, bearingDeg, destPoint }` (§3) |
 | `parseGPX`, `parseWPT`, `parseOpenRally` | parser di import (§4) |
-| `buildRoadbook`, `importRoadbook` | costruzione/normalizzazione del roadbook (§5) |
-| `recomputeMetrics`, `recomputeCaps`, `normalizeRoadTypes` | ricalcoli (§6) |
+| `buildRoadbook`, `newRoadbook`, `blankNote`, `trackPoint`, `trackFixes` | costruzione del roadbook, di una nota e dei punti di traccia (§5) |
+| `readRoadbook`, `writeRoadbook`, `validateRoadbook`, `validateMedia` | il formato `.rdbk`: lettura, scrittura canonica, validazione (§5 · [rdbk-format.md](rdbk-format.md)) |
+| `recomputeMetrics`, `recomputeCaps` | ricalcoli (§6) |
 | `cumulativeM`, `deriveBearings` | distanza cumulativa / bearing in-out a un indice (§5-6) |
-| `repairDegenerateBearings(rb)` | ripara **solo** i bearing derivati da un vertice duplicato — vedi sotto (#452). Chiamata da `importRoadbook` |
-| `speedLimitOfNote`, `speedLimitFromName` | limite di velocità in vigore / da nome icona (§8) |
-| `simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`, `nearestOnTrack`, `routeAhead`, `leftToNote` | operazioni traccia (§7) |
+| `speedLimitOfNote`, `speedLimitFromName` | limite di velocità di una nota / di un cartello dal suo nome (§8) |
+| `simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `nearestOnTrack`, `routeAhead`, `leftToNote` | operazioni traccia (§7) |
 | `gpxDocument`, `kmlDocument`, `openRallyDocument`, `appWaypointSymbol` | serializzatori GPX / KML / OpenRally (§7) |
-| `WP_TYPES`, `wpType`, `wpTypeByCap`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius`, `appwptFromImport` | tipizzazione waypoint FIA + raggio di rilevamento + mapping tipi da OpenRally (`openrally:type` → `wp_type`) |
+| `WP_TYPES`, `wpType`, `wpTypeByCap`, `wpTypesForProfile`, `wpBadgeSVG`, `detectionRadius` | tipizzazione waypoint FIA (`waypoint_type`) + raggio di rilevamento; `wpTypeByCap` traduce un codice OpenRally (`WPM`, `DZ`…) nel tipo, per l'import OpenRally |
+| `appwptFromImport`, `gpxCompatibility` | l'icona Garmin/OSMAnd di un waypoint GPX importato: riportata a un simbolo RDBK, o conservata in `note.compatibility.gpx` = `{ sym, osmand_icon, osmand_color }` |
 | `ROADBOOK_STATUSES`, `roadbookStatus` | stato di pubblicazione (draft/ready/public) |
 | **scoring** — `scoredNoteSet`, `isScoredIdx`, `validationPenalties`, `speedPenalty`, `skipPenalty`, `rankEntry`, `speedBand` | motore di punteggio condiviso Reader↔Ranking (vedi [ranking-model.md](ranking-model.md)) |
 | `hhmmss`, `ddmmyy`, `parseHms` | codec orari del payload META |
 | `buildMeta`, `parseMeta`, `signMeta`, `verifyMeta` | payload e firma del risultato (§9) |
-| `iconSrc`         | risoluzione sorgente di un'icona (§10) |
+| `symbolSrc`       | l'immagine di un simbolo (§11) |
 | `tulipToDataURL`  | converte il tulip SVG di una nota in data URI PNG (usato per esportazione/embedding) |
-| `roadbookForExport` | deep-clona il roadbook sostituendo gli ID interni di `wp_type` con i codici OpenRally standard (WPM, WPN, …) — usato prima di serializzare .rdbk / salvare sul server |
 | `filterByText`, `filterRoadbooks` | filtro testuale generico / di una lista di roadbook (§11) |
 | `deleteNote` | elimina una nota e il suo vertice di traccia (§11) |
 | `pendingWork` | scansione del lavoro non salvato tra i tool (§11) |
@@ -48,33 +50,35 @@ Tutto ciò che è pubblico passa da `window.RB`. Le funzioni geo stanno in un so
 | `isEndNote(notes, i)` | la nota di **fine** del roadbook: l'ultima nota. Il suo tulip non disegna la strada d'uscita (#447) |
 | `tulipShape(rb, i, isEnd, isFirst)` | la forma che l'autore ha dato alla traccia attorno alla nota (#945): `{ entry, exit, turn }`. Nei 30 m su un lato (prima = ingresso, dopo = uscita, fermandosi alla nota vicina) 4 o più punti = strada disegnata apposta: una polilinea nel box 230×162 (ruotata su `bearing_in`, scalata a 73 px l'ingresso e 95 px l'uscita curva lungo la strada, ridotta solo per restare nel box); meno = `null`, la strada dritta classica. `turn`: l'angolo dell'uscita dritta, dove va la strada nei primi 20 m. Mai sopra la nota né sugli incroci dell'autore; mai memorizzata (vedi [note-canvas.md](note-canvas.md) §3) |
 | `tulipPoints(rb, i)` | i punti della traccia dentro i 30 m della nota, per lato: `{ before, after, need }` (`null` per il lato senza strada nel tulip: prima della prima nota, dopo l'ultima) — la scheda dell'anello tratteggiato dell'Editor |
-| `tulipAddPoints(rb, i, isOpen?)` | porta ogni lato a 4 punti **sulla traccia** (a 1/5, 2/5… del tratto nel cerchio, saltando dove un punto c'è già entro 1,5 m): la rotta non cambia, gli `idx` delle note si spostano, i segmenti per cui `isOpen(a, b)` (un taglio aperto) restano intatti. Ritorna quanti punti ha aggiunto |
+| `tulipAddPoints(rb, i, isOpen?)` | porta ogni lato a 4 punti **sulla traccia** (a 1/5, 2/5… del tratto nel cerchio, saltando dove un punto c'è già entro 1,5 m): la rotta non cambia, i `track_index` delle note si spostano, i segmenti per cui `isOpen(a, b)` (un taglio aperto) restano intatti. Ritorna quanti punti ha aggiunto |
 | `tulipContext(rb, i)` | tutto ciò che serve a un render del tulip oltre alla nota: `{ isEnd, isFirst, shape }` — il `ctx` di `NoteCanvas.toSVG` e `setNote`, una chiamata per ogni renderer |
 | `noteReached` | il gate di convalida automatica del Reader: la nota è raggiunta se il **segmento** percorso fra due fix entra nel raggio |
 | `manualGate` | il gate della convalida **manuale**: `null` se è permessa (nessun fix, o dentro i 100 m allargati dall'accuratezza), altrimenti la distanza — che il Reader usa per dire quanto sei lontano e offrire di saltare la nota (#431) |
 | `nearestIdx`, `nearestIdxByTime`, `resolveIdx`, `round6`, `slug`, `urlToDataURL`, `pad2` | helper vari (§5, §11) |
 
-Quasi tutte le funzioni di mutazione (`recompute*`, `simplify*`, `reverse*`, `importRoadbook`,
-`normalizeRoadTypes`) **modificano l'oggetto `rb` in-place** e lo restituiscono per
+Quasi tutte le funzioni di mutazione (`recompute*`, `simplify*`, `reverse*`, `joinTrack`)
+**modificano l'oggetto `rb` in-place** e lo restituiscono per
 concatenazione: non producono una copia.
 
 ---
 
 ## 2. Costanti (`ROAD_TYPES`, `CONST`)
 
-`ROAD_TYPES` è la tabella dei 6 tipi di strada, usata per disegnare (colore del tratto nella
-vignetta e dell'accento della riga nota; `width` è il tratto di riferimento del tipo) e come `id`
-nel modello nota (`road_type_in` / `road_type_out`). Le larghezze del *tulip* sono invece in
-`ROAD_STYLE` di note-canvas (§ nota).
+`ROAD_TYPES` è il catalogo dei 5 tipi di strada, voci `{ id, name, color, dash, double }`: i tratti
+del FIA Road Book Lexicon (Cross Country, 2026), i colori della palette dell'app, il nome che ogni
+controllo mostra (tradotto). È l'`id` del `road_type` di una nota e di una giunzione; `roadType(id)`
+ritorna la voce (il default per un id sconosciuto), `DEFAULT_ROAD_TYPE` = `2`. Ogni strada della
+vignetta è larga `ROAD_WIDTH` (8); `dash` è il tratteggio SVG nelle stesse unità, `double` divide il
+tratto in due linee con un centro bianco largo `DOUBLE_GAP` (2). Il renderer è `roadMarkup` di
+[note-canvas.md](note-canvas.md).
 
-| id | tipo       | colore     | tratteggiato |
-|:--:|------------|------------|:------------:|
-| 0  | default    | `#9aa4b2`  | no  |
-| 1  | autostrada | `#3b82f6`  | no  |
-| 2  | asfalto    | `#22c55e`  | no  |
-| 3  | sterrato   | `#ff5a45`  | no  |
-| 4  | fuoripista | `#ff5a45`  | **sì** |
-| 5  | pista ciclabile | `#532b78` (viola) | no (#561) |
+| id | nome | colore | tratto |
+|:--:|------|--------|--------|
+| 1 | Tarmac | `#22c55e` | doppia linea |
+| 2 | Track (default) | `#ff5a45` | continuo |
+| 3 | Low-visible track | `#ff5a45` | `24 8 8 8` |
+| 4 | Off track | `#ff5a45` | `8 8` |
+| 5 | Bike lane | `#532b78` (viola) | continuo (#561) |
 
 `CONST` raccoglie le costanti che **Reader e Ranking devono condividere** per essere d'accordo
 sul punteggio:
@@ -85,7 +89,7 @@ sul punteggio:
 | `MIN_DISP_M`       | 5      | spostamento minimo considerato — pavimento del rumore quando l'accuratezza è ignota |
 | `FIX_ACC_MAX_M`    | 35     | oltre questa accuratezza un fix è spazzatura: né registrato né contato |
 | `MAX_SPEED_MS`     | 70     | 252 km/h: un passo più veloce di così non è mai successo (fix in cache) |
-| `REACH_DEFAULT_M`  | 50     | raggio di rilevamento di default (geofence del Reader). Era 30: troppo stretto come punto di partenza, un waypoint si mancava facilmente se non passandoci piano e preciso (#439). `buildRoadbook` lo scrive anche in `meta.default_wp_radius`, così il file dice quello che vale invece di lasciarlo implicito |
+| `REACH_DEFAULT_M`  | 30     | raggio di rilevamento di default (geofence del Reader). `newRoadbook` lo scrive anche in `meta.default_validation_radius`, così il file dice quello che vale invece di lasciarlo implicito |
 | `REACH_MIN_M`      | 18     | pavimento del reach: sotto si chiederebbe al GPS una precisione che non ha |
 | `P_SKIP`           | 450    | penalità per nota saltata |
 | `P_SPEED_PER_KMH`  | 10     | penalità per km/h di eccesso |
@@ -119,7 +123,8 @@ Helper interni non esportati: `toRad`, `toDeg`, `normDeg`.
 [`parseGPX(text)`](../public/assets/js/roadbook-core.js) usa `DOMParser` e lancia se l'XML
 è malformato. Estrae:
 - il `name` (da `trk > name` o `metadata > name`);
-- i `trkpts` (ognuno con `lat`, `lon`, `ele` se finito, `time`, `cmt`);
+- i `trkpts` — fix GPS con le parole del GPX (`lat`, `lon`, `ele` se finito, `t`, `cmt`), che
+  `trackPoint` converte in punti di traccia (`elevation`, `time_ms`);
 - i `wpts`: i `<wpt>` veri e propri **oppure**, se non ce ne sono, ogni `<trkpt>` il cui `<cmt>`
   inizia per `wpt` (caso comune in alcuni esportatori).
 
@@ -137,93 +142,97 @@ Due helper sul nome del waypoint:
 
 ---
 
-## 5. Costruzione del roadbook (`buildRoadbook`)
+## 5. Costruzione del roadbook (`buildRoadbook`, `newRoadbook`, `blankNote`)
 
-`buildRoadbook({ name, trkpts, wpts })` trasforma traccia + waypoint nel JSON canonico del
-roadbook. Lancia se i punti traccia sono meno di 2.
+`buildRoadbook({ name, trkpts, wpts })` trasforma traccia + waypoint in un roadbook. Lancia se i punti
+traccia sono meno di 2.
 
 Passaggi:
-1. `cumulativeM(trkpts)` calcola la distanza cumulativa (metri) ad ogni punto; l'ultima è
-   `total_distance`.
-2. **Garantisce una nota di partenza e una di arrivo**: se nessun waypoint cade sul primo
-   punto traccia ne aggiunge uno `start`/`num 0`, idem per l'ultimo (`end`/`num 9999`).
-3. Risolve l'indice traccia di ogni waypoint con `resolveIdx(trkpts, pt)` — **il punto più
+1. **Garantisce una nota di partenza e una di arrivo**: se nessun waypoint cade sul primo
+   punto traccia ne aggiunge uno `start`, idem per l'ultimo (`end`).
+2. Risolve l'indice traccia di ogni waypoint con `resolveIdx(trkpts, pt)` — **il punto più
    vicino nel TEMPO** quando sia il waypoint sia la traccia portano un timestamp (`t`),
    altrimenti il più vicino per posizione (`nearestIdx`, haversine) — poi li **ordina** per
-   `idx` e **deduplica** i waypoint che cadono sullo stesso indice. (La stessa `resolveIdx`
-   individua anche start/end.)
-4. Per ogni nota deriva `num` (riprogressivo), `distance`, `partial_distance`, `lat`/`lon` dal
-   punto traccia, `bearing_in`/`bearing_out` (via `deriveBearings`), e il testo via `wptText`.
+   `track_index` e **deduplica** i waypoint che cadono sullo stesso indice (una nota per punto).
+3. Ogni nota nasce da `blankNote(trackIndex, DEFAULT_ROAD_TYPE)` con il testo di `wptText`, il
+   simbolo riconosciuto (`symbols`), il `danger` recuperato da un `special_marker`, l'icona GPX non
+   mappata in `compatibility.gpx` e il materiale (`blocks`) del waypoint.
+4. `newRoadbook(name, trkpts.map(trackPoint), notes)` e `recomputeMetrics` derivano il resto.
+
+- **`newRoadbook(title, track, notes)`** — un roadbook in memoria: `{ rdbk_version: 1, meta: { title,
+  default_validation_radius: CONST.REACH_DEFAULT_M }, track, notes, symbols: {} }`. Ogni roadbook nuovo,
+  qualunque sia la sua origine, parte da qui (anche lo scheletro vuoto di una bozza di registrazione:
+  `newRoadbook(title, [], [])`).
+- **`blankNote(trackIndex, roadType)`** — i campi autoriali di una nota ai loro default
+  (`{ track_index, text: '', road_type, cap: null, symbols: [], junctions: [] }`): la forma da cui
+  parte ogni strumento che aggiunge una nota; `recomputeMetrics` deriva il resto.
+- **`trackPoint(fix)` / `trackFixes(track)`** — il confine tra i fix GPS (`{lat, lon, ele, t}`, le
+  parole del GPX, usate dai parser, dai logger e dalle tracce delle run) e i punti di traccia del
+  roadbook (`{lat, lon, elevation?, time_ms?}`, coordinate a 6 decimali). I serializzatori GPX/KML
+  scrivono `trackFixes(rb.track)`.
+
+### Il formato `.rdbk` (`readRoadbook`, `writeRoadbook`, `validateRoadbook`)
+
+Il riferimento completo è [rdbk-format.md](rdbk-format.md). In breve:
+- `validateRoadbook(doc)` → `{ valid, errors, warnings }` (ogni voce `{ path, message, values? }`): il
+  solo giudice di un documento, per Reader, Editor, validatore e test.
+- `readRoadbook(doc)` rifiuta ciò che il validatore rifiuta (lancia, con `error.report`), completa in
+  memoria i default omessi e chiama `recomputeMetrics`. Un file Roadbook Suite (il JSON di un altro
+  programma: chiavi italiane, chilometri, `bivio`) viene invece importato da `importSuiteRoadbook`:
+  `bivio → junctions` con flip dell'asse y, ancoraggio/asse dei simboli, remap via
+  `SUITE_ICON_ALIASES`, i codici strada della suite → i tipi FIA, e il limite letto dal cartello →
+  `speed_limit_kmh` + `waypoint_type` `dz`/`fz` (#94). Richiede una traccia.
+- `writeRoadbook(rb)` scrive la forma canonica: solo i campi autoriali, default omessi, chiavi in
+  ordine fisso, coordinate a 6 decimali, `meta.generator = "RDBK.app"`, l'intera libreria `symbols`.
+- `validateMedia(manifest, names)` giudica il `media.json` di un contenitore contro le sue voci.
 
 ### Bearing e vertici duplicati (#452)
 
 Un bearing ha bisogno di due punti **distinti**: `bearingDeg(p, p)` è `0` (`atan2(0,0)`). Un vertice
 **duplicato** accanto a una nota — si disegna sopra un punto esistente, una coppia GPS senza
-movimento, un ricongiungimento — dava quindi a quella nota un bearing di 0°, e siccome l'angolo
+movimento, un ricongiungimento — darebbe a quella nota un bearing di 0°, e siccome l'angolo
 d'uscita del tulip è `bearing_out − bearing_in`, un solo valore falso sposta la freccia dove
-capita: una nota che va **dritto** veniva disegnata come **svolta secca a destra**.
+capita: una nota che va **dritto** disegnata come **svolta secca a destra**.
 
-Quindi `deriveBearings` non guarda più il vicino immediato ma **cammina verso l'esterno fino al
+Quindi `deriveBearings` non guarda il vicino immediato ma **cammina verso l'esterno fino al
 primo vertice abbastanza lontano** (`BEARING_MIN_M = 1 m`) da portare una direzione. La soglia è
-piccola di proposito: sistema i vicini degeneri, non prova a smussare il jitter GPS — farlo
-cambierebbe l'angolo di tulip che non sono rotti.
+piccola di proposito: sistema i vicini degeneri, non prova a smussare il jitter GPS. I bearing sono
+valori **derivati**: nessun file li porta, ogni reader li calcola così.
 
-I bearing sono **salvati** nel `.rdbk`, e Reader, pagina pubblica ed export PDF li leggono così
-come sono: un roadbook già salvato continuerebbe a puntare male finché qualcuno non lo ri-salva
-dall'Editor. Per questo `importRoadbook` chiama `repairDegenerateBearings`, che ri-deriva
-**soltanto** i bearing il cui vicino è degenere e lascia intatto ogni valore autorato o importato
-(un file OpenRally può portarsi i bearing suoi, e una nota posizionata per distanza ha un `idx`
-approssimativo: ri-derivare tutto potrebbe peggiorare le cose). Solo in memoria — il file cambia
-quando si salva. Sul roadbook del report: 5 note corrette, 34 su 39 intatte.
+Il **modello nota in memoria** (dopo `recomputeMetrics`):
 
-Il **modello nota** prodotto:
-
-| Campo | Origine in `buildRoadbook` |
-|-------|----------------------------|
+| Campo | Origine |
+|-------|---------|
+| `track_index` | indice nel `track[]` (autoriale) |
 | `num` | `i + 1` (progressivo dopo l'ordinamento) |
-| `idx` | indice nel `track[]` |
-| `distance` | `cum[idx]` arrotondato (metri dal via) |
-| `partial_distance` | distanza dalla nota precedente (`max(0, …)`, metri) |
 | `lat`, `lon` | dal punto traccia, `round6` |
-| `text` | `wptText(w)` |
-| `cap`, `cap_distance` | `null` (il CAP è autoriale, non dedotto in costruzione) |
-| `bearing_in` | rilevamento dal punto precedente (o successivo per la nota 0) |
-| `bearing_out` | rilevamento verso il punto successivo (o = `bearing_in` all'ultimo) |
-| `road_type_in`, `road_type_out` | **3 (sterrato) di default** |
-| `junctions`, `icons` | `null` / `[]` |
+| `distance` | `cum[track_index]` arrotondato (metri dal via) |
+| `partial_distance` | distanza dalla nota precedente (`max(0, …)`, metri) |
+| `bearing_in` | rilevamento in arrivo (o = `bearing_out` all'inizio della traccia) |
+| `bearing_out` | rilevamento in uscita (o = `bearing_in` alla fine) |
+| `road_type` | autoriale; **2 (Track) di default** |
+| `road_type_in` | il `road_type` della nota precedente (la prima: il proprio) |
+| `cap`, `cap_distance` | `cap` autoriale (`null` = nessun CAP); `cap_distance` solo con un CAP |
+| `symbols`, `junctions` | array (vuoti di default) |
 
-Il `track[]` salvato porta `ele` (intero) solo dove l'elevazione è finita.
+## 6. Ricalcoli (`recomputeMetrics`, `recomputeCaps`)
 
-`importRoadbook(rb)` normalizza un file appena caricato nello schema canonico. È un **importer
-permanente e intenzionale** (non back-compat cruft): oltre a rinominare le chiavi italiane
-(`titolo → title`, `km_totali → total_distance` in km → metri, `testo → text`) e a riempire i
-default strutturali (`meta`, `icons`, `junctions: null`), fa la **conversione completa dei file
-Roadbook Suite**: `bivio → junctions` con flip dell'asse y, flip di ancoraggio/asse delle icone,
-remap via `SUITE_ICON_ALIASES`, conversione di `km_prog/km_parz/cap_hdr/cap_km`, `recomputeMetrics`
-per i file Suite, e il tagging del limite di velocità → `speed_limit`/`wp_type` (#94). È
-**idempotente**: un file già canonico passa invariato.
-
----
-
-## 6. Ricalcoli (`recomputeMetrics`, `recomputeCaps`, `normalizeRoadTypes`)
-
-Da eseguire dopo ogni modifica/splice perché le metriche derivate restino coerenti con la traccia.
+Da eseguire dopo ogni modifica/splice perché i valori derivati restino coerenti con la traccia.
 
 [`recomputeMetrics(rb)`](../public/assets/js/roadbook-core.js):
-- riordina le note per `idx`;
-- per ogni nota ricalcola `num`, clampa `idx` ai limiti della traccia, riallinea `lat`/`lon`,
+- riordina le note per `track_index`;
+- per ogni nota clampa `track_index` ai limiti della traccia e ricalcola `num`, `lat`/`lon`,
   `distance`, `partial_distance` e i bearing **dalla traccia**;
-- richiama `normalizeRoadTypes`;
+- deriva `road_type_in`: **sempre il `road_type` della nota precedente** (la prima nota arriva sulla
+  strada da cui parte). Solo `road_type` è autoriale: la strada "continua" finché una nota non la
+  cambia;
+- `cap_distance` = linea retta fino alla nota successiva, solo dove c'è un CAP;
 - aggiorna `meta.total_distance` e `meta.note_count`.
 
-[`normalizeRoadTypes(rb)`](../public/assets/js/roadbook-core.js) impone l'invariante:
-**`road_type_in` è sempre il `road_type_out` della nota precedente** (la prima nota arriva sulla
-strada da cui parte). Solo `road_type_out` è autoriale per nota: la strada "continua" finché una
-nota non la cambia.
-
-[`recomputeCaps(rb)`](../public/assets/js/roadbook-core.js) ricalcola il CAP rosso **solo
-dove è già attivo** (`cap != null` ed esiste la nota successiva): `cap` = rilevamento verso la
-nota seguente, `cap_distance` = distanza in linea d'aria in metri. Non *crea* CAP dove non c'è.
+[`recomputeCaps(rb)`](../public/assets/js/roadbook-core.js) (Editor) ripropone il CAP **solo
+dove è già attivo** (`cap != null`): `cap` = rilevamento verso la nota seguente, `cap_distance` =
+distanza in linea d'aria; l'ultima nota non ha una nota a cui puntare e perde il CAP. Non *crea* CAP
+dove non c'è.
 
 ---
 
@@ -235,24 +244,21 @@ di ricorsione) su una proiezione equirettangolare locale; ritorna la maschera de
 Gli indici elencati in `keepIdx` (le ancore delle note) e i due estremi **sopravvivono sempre**.
 
 [`simplifyRoadbook(rb, toleranceM)`](../public/assets/js/roadbook-core.js) — semplifica
-`rb.track` con quella maschera proteggendo gli `idx` delle note, ri-mappa ogni nota
+`rb.track` con quella maschera proteggendo i `track_index` delle note, ri-mappa ogni nota
 **esattamente** sul proprio vertice (#216) e richiama `recomputeMetrics` + `recomputeCaps`.
 
 [`reverseRoadbook(rb)`](../public/assets/js/roadbook-core.js) — inverte il senso di marcia:
-ribalta la traccia, ri-mappa ogni `idx` (`last - idx`), scambia `road_type_out ← road_type_in`,
-poi ricalcola metriche e CAP (che `normalizeRoadTypes` rideriva `road_type_in`). Toglie gli
-orari (`t`): letti al contrario non descrivono più una registrazione.
+ribalta la traccia, ri-mappa ogni `track_index` (`last - track_index`), dà a ogni nota come
+`road_type` il suo `road_type_in`, poi ricalcola metriche e CAP (`recomputeMetrics` rideriva
+`road_type_in`). Toglie gli orari (`time_ms`): letti al contrario non descrivono più una
+registrazione.
 
 `joinTrack(rb, piece, atStart)` — allunga la rotta con un'altra traccia (l'*Add GPX* dell'Editor).
 `piece` è orientato col **primo** punto sull'estremità a cui si aggancia: accodato dopo l'arrivo,
 o — `atStart` — anteposto alla partenza, verso di essa. Un primo punto che cade **sull'estremità**
-(< 1 m) non si duplica; uno solo vicino resta, e la rotta lo raggiunge. Ogni punto aggiunto **tiene `ele` e `t`** (#158; un doppio reverse li perdeva), le note esistenti
+(< 1 m) non si duplica; uno solo vicino resta, e la rotta lo raggiunge. Ogni punto aggiunto passa per `trackPoint` e **tiene `elevation` e `time_ms`** (#158), le note esistenti
 restano sui loro vertici (indici spostati, non ri-ancorate nello spazio) e una nuova nota di
 estremità cavalca la nuova punta.
-
-`bareNote(rb, idx, roadType)` — la nota nuda ancorata all'indice `idx` (`num: 0`, testo vuoto,
-nessuna icona): la forma da cui parte ogni strumento che aggiunge una nota; `recomputeMetrics`
-riempie il resto.
 
 [`nearestOnTrack(trkpts, pt)`](../public/assets/js/roadbook-core.js) — posizione più vicina
 **sulla polilinea** (non solo su un vertice): ritorna il segmento `i`, la frazione `t` lungo di
@@ -265,19 +271,20 @@ passaggio giusto. `leftToNote(rb, cum, i, here, hintM)` — quanto manca alla no
 mai meno della linea retta. Usate dal Reader (§ Distanze in [reader.md](reader.md)).
 
 [`gpxDocument(name, pts, wpts)`](../public/assets/js/roadbook-core.js) — serializza un GPX
-1.1 (`creator="RDBK.app"`): una `<trk>` (i punti possono portare `ele` e `t` → `<time>` ISO) più
+1.1 (`creator="RDBK.app"`): una `<trk>` di fix (possono portare `ele` e `t` → `<time>` ISO; per un
+roadbook `trackFixes(rb.track)`) più
 eventuali `<wpt>` con nome. Tutto il testo è XML-escaped. Usato anche dal logger GPX del Reader.
 
 ---
 
 ## 8. Limiti di velocità (`speedLimitFromName`, `speedLimitOfNote`)
 
-Il limite è **dichiarativo** sul campo `note.speed_limit`, con le icone come fallback:
-- `speedLimitFromName(name)` — `S99_end` → `0` (limite revocato); `S01_10km`/`S03_30km`/… → il
-  numero (`10`, `30`, …); altrimenti `null`.
-- `speedLimitOfNote(note)` — ritorna prima `note.speed_limit` se presente (`0` = revocato),
-  altrimenti scorre le icone della nota e ritorna l'ultimo limite trovato (`null` = nessuno).
-  Entrambe sono esportate.
+Il limite è **dichiarativo** e vive solo nel campo `note.speed_limit_kmh`:
+- `speedLimitOfNote(note)` — `note.speed_limit_kmh` (`0` = revocato), `null` se assente.
+- `speedLimitFromName(name)` — il limite che mostra un cartello dal suo nome: `S99_end` → `0`;
+  `S01_10km`/`S03_30km`/… → il numero; altrimenti `null`. Lo usa l'Editor, che quando si imposta un
+  limite tiene tra i simboli della nota esattamente un cartello `S…` corrispondente, e l'import di
+  Roadbook Suite, che legge il limite dai cartelli.
 
 ---
 
@@ -318,13 +325,12 @@ La chiave (`signKey`) vive nel client (`config.js`): la firma protegge da manomi
 
 ---
 
-## 11. Risoluzione icone, costanti, helper
+## 11. Risoluzione dei simboli, helper
 
-[`iconSrc(ic, rb, basePath)`](../public/assets/js/roadbook-core.js) risolve la sorgente di
-un'icona nell'ordine che realizza la **regola self-contained** del formato `.rdbk`:
-1. `data:` URI inline → restituito così com'è;
-2. la libreria embedded del roadbook (`rb.icons`, lookup **case-insensitive** sul solo basename);
-3. la palette standard sotto `basePath` (`assets/icons/`).
+[`symbolSrc(symbol, rb, basePath)`](../public/assets/js/roadbook-core.js) — l'immagine di un simbolo
+di nota: la libreria del roadbook (`rb.symbols[name]`) — dove sta ogni simbolo di un file `.rdbk` —
+altrimenti, mentre un roadbook è in modifica e un simbolo della palette non è ancora stato
+incorporato, la palette standard sotto `basePath` (`assets/icons/`).
 
 Helper finali:
 - [`round3`](../public/assets/js/roadbook-core.js) / [`round6`](../public/assets/js/roadbook-core.js)
@@ -334,7 +340,7 @@ Helper finali:
 - [`pad2(n)`](../public/assets/js/roadbook-core.js) — zero-padding a due cifre (nomi file
   con timestamp).
 - [`urlToDataURL(url)`](../public/assets/js/roadbook-core.js) — fetch (same-origin) →
-  data: URI, `null` in caso di errore; serve a incorporare asset self-contained (icone nel
+  data: URI, `null` in caso di errore; serve a incorporare asset self-contained (simboli nel
   `.rdbk` / nel PDF).
 - [`filterByText(list, query, fields)`](../public/assets/js/roadbook-core.js) — filtro
   generico: tiene gli item dove **uno qualsiasi** dei `fields` contiene `query`
@@ -350,7 +356,8 @@ Helper finali:
   **lavoro non salvato** tra i tool: prende lo snapshot già parsato delle chiavi
   `localStorage` di checkpoint e ritorna un descrittore per ciascun lavoro recuperabile
   (`{ tool, url, keys[], kind, title?, noteCount?, distanceM?, noteIdx?, noteTotal? }`),
-  applicando lo stesso guard "è recuperabile?" di ogni tool. Funzione pura, senza i18n: il
+  applicando lo stesso guard "è recuperabile?" di ogni tool — un checkpoint con un roadbook
+  (`rb_editor_draft`, `rb_session_roadbook`) conta solo se `rdbk_version === FORMAT_VERSION`. Funzione pura, senza i18n: il
   guscio formatta etichetta/dettaglio. Usata dalla pillola "Unsaved work" del guscio (vedi
   `docs/app-shell.md` §7).
 
@@ -358,8 +365,8 @@ Helper finali:
 
 ## 12. Limiti e quirk
 
-- **Mutazione in-place.** `recompute*`, `simplify*`, `reverse*`, `importRoadbook`,
-  `normalizeRoadTypes` modificano l'oggetto `rb` ricevuto. Chi ha bisogno di preservare
+- **Mutazione in-place.** `recompute*`, `simplify*`, `reverse*`, `joinTrack` modificano l'oggetto
+  `rb` ricevuto (`readRoadbook` invece lavora su una copia del documento). Chi ha bisogno di preservare
   l'originale deve clonarlo prima.
 - **Modello sferico.** `haversineM`/`bearingDeg`/`destPoint` assumono una Terra sferica
   (raggio fisso 6371 km); va benissimo per le distanze di un roadbook, ma non è geodetico.
@@ -368,13 +375,13 @@ Helper finali:
   scala di roadbook è trascurabile.
 - **`nearestIdx` è O(n)** su tutta la traccia ad ogni chiamata: `buildRoadbook` e
   `simplifyRoadbook` lo invocano per ogni waypoint/nota, quindi il costo è O(note × punti).
-- **`road_type` default = 3 (sterrato).** Ogni roadbook costruito da GPX nasce "sterrato"
-  finché l'autore non cambia i tipi.
+- **`road_type` default = 2 (Track).** Ogni roadbook costruito da GPX nasce "pista" finché l'autore
+  non cambia i tipi.
 - **Payload META a larghezza fissa (55 caratteri).** Ogni nuovo campo va aggiunto a `META_KEYS`
   + `META_WIDTHS` insieme (allarga il payload) e va adeguato sia il Reader che il Ranking — è il
   vincolo chiave per estensioni future (vedi [docs/ranking-model.md §8](ranking-model.md)). Il
   campo `rb` è **stringa** (riempita con spazi), non numerico: `verifyMeta` NON deve fare trim del
   META, altrimenti il padding del campo `rb` sparisce prima del ricalcolo HMAC e ogni firma fallisce.
 - **La firma è solo anti-manomissione casuale**: la chiave è nel client.
-- **`importRoadbook` non valida** la struttura oltre alle rinomine: un file con `notes`/`track`
-  incoerenti passa comunque (saranno i `recompute*`/il rendering a doverci convivere).
+- **Nessun importer di altre forme `.rdbk`.** `readRoadbook` legge solo `rdbk_version: 1` (e i file
+  Roadbook Suite); qualsiasi altro documento è rifiutato con il rapporto del validatore.

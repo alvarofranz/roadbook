@@ -153,7 +153,7 @@ function event_manage_get(array $user, array $d): void {
     $org = db()->prepare('SELECT u.id, u.username, u.organization FROM event_organizers eo JOIN users u ON u.id = eo.user_id
         WHERE eo.event_id = ? ORDER BY u.username');
     $org->execute([$id]);
-    $rb = db()->prepare('SELECT r.id, r.title, r.category, r.status, er.scoring_mode, u.id AS owner_id, u.username
+    $rb = db()->prepare('SELECT r.id, r.title, r.status, er.scoring_mode, u.id AS owner_id, u.username
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status <> \'deleted\' ORDER BY er.sort, er.roadbook_id');
     $rb->execute([$id]);
@@ -171,7 +171,7 @@ function event_manage_get(array $user, array $d): void {
         'join_gate' => event_join_gate($e['join_gate'] ?? null), 'require_activation' => (int)($e['require_activation'] ?? 1),
         'join_code' => $e['join_code'], 'owner_id' => (int)$e['organizer_id'], 'logo' => $e['logo'],
         'organizers' => array_map(fn($x) => ['id' => (int)$x['id'], 'username' => $x['username'], 'organization' => $x['organization']], $org->fetchAll()),
-        'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'category' => $x['category'], 'status' => $x['status'],
+        'roadbooks' => array_map(fn($x) => ['id' => (int)$x['id'], 'title' => $x['title'], 'status' => $x['status'],
             'scoring_mode' => $x['scoring_mode'], 'owner_id' => (int)$x['owner_id'], 'username' => $x['username'],
             'next' => $next[(int)$x['id']] ?? []], $rb->fetchAll()),
         'participant_count' => (int)$pp->fetchColumn(), 'pending_count' => (int)$pend->fetchColumn(),
@@ -661,11 +661,11 @@ function event_public_get(array $d): void {
     $statuses = "'public'";
     if ($joined || $orgRead) $statuses .= ",'ready'";
     if ($orgRead) $statuses .= ",'draft'";
-    $rb = db()->prepare('SELECT ' . RB_CARD_SQL . ", r.category, r.status, u.username, er.scoring_mode
+    $rb = db()->prepare('SELECT ' . RB_CARD_SQL . ", r.status, u.username, er.scoring_mode
         FROM event_roadbooks er JOIN roadbooks r ON r.id = er.roadbook_id JOIN users u ON u.id = r.user_id
         WHERE er.event_id = ? AND r.status IN ($statuses) ORDER BY er.sort, er.roadbook_id");
     $rb->execute([$e['id']]);
-    $roadbooks = array_map(fn($r) => rb_card_fields($r) + ['category' => $r['category'], 'status' => $r['status'], 'scoring_mode' => $r['scoring_mode']], $rb->fetchAll());
+    $roadbooks = array_map(fn($r) => rb_card_fields($r) + ['status' => $r['status'], 'scoring_mode' => $r['scoring_mode']], $rb->fetchAll());
     // the chain (#944): what each roadbook offers at its last note — only roadbooks this visitor sees
     $next = event_rb_next_map((int)$e['id']);
     $seen = array_flip(array_map(fn($r) => (int)$r['id'], $roadbooks));

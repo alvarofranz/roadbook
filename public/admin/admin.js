@@ -272,7 +272,7 @@
                     const d = new Date(), p = RB.pad2;
                     const base = RB.slug((j.roadbook.meta && j.roadbook.meta.title) || j.title)
                         + '_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
-                    await RBDownload(await RBZip.write({ 'roadbook.json': JSON.stringify(RB.roadbookForExport(j.roadbook)) }), base + '.rdbk');
+                    await RBDownload(await RBZip.write({ 'roadbook.json': JSON.stringify(j.roadbook) }), base + '.rdbk');
                     busy.ok();
                 } catch (e) { busy.reset(); toast('Could not export.'); }
             });
@@ -298,7 +298,7 @@
             try { j = await api('admin_rb_get', { id }); } catch (e) { j = null; }
             if (my !== previewId) return; // a newer preview won the race
             if (!j || !j.ok || !j.roadbook) { if (mapTitle) mapTitle.textContent = (j && j.error) || t('Could not load.'); return; }
-            const rb = j.roadbook;
+            const rb = RB.readRoadbook(j.roadbook);
             if (!rb.track || !rb.track.length) { if (mapTitle) mapTitle.textContent = `${title || ''} — ${t('No route yet.')}`.trim(); return; }
             rbMap.showRoadbook(rb);
             if (rbMap.map) setTimeout(() => rbMap.map.resize(), 50); // the dialog just laid out: force the GL canvas to its box

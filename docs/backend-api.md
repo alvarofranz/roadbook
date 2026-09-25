@@ -381,8 +381,14 @@ vecchio flag binario `is_public`. La migrazione 029 (#187) aggiunge lo stato **`
   giorni per un eventuale ripristino su richiesta, poi il purge definitivo del cron.
 
 ### Salvataggio (`rb_save`)
-`rb_save` valida che il payload abbia `notes` e `track`, deriva titolo/distanza/conteggio note dal
-`meta`, normalizza `status` (`rb_clean_status`) e `reusable`, e:
+`rb_save` accetta solo un documento `.rdbk` 1 strutturalmente valido (`rb_valid_document`:
+`rdbk_version` 1, `meta.title` non vuoto, `track` di almeno 2 punti con coordinate reali, `notes`
+non vuota con `track_index` crescenti dentro la traccia, `symbols` una mappa) — altrimenti fallisce
+con `This file is not a valid .rdbk roadbook.`; la validazione completa la fa il client con
+`RB.validateRoadbook` prima di salvare. Prende il titolo da `meta.title`, **calcola da sé**
+`total_distance` (`rb_track_length`: la stessa haversine su 6 371 000 m di ogni reader, perché il
+file non porta valori derivati) e `note_count`, conserva il documento **così come l'ha ricevuto**,
+normalizza `status` (`rb_clean_status`) e `reusable`, e:
 - **con `id > 0`:** aggiorna la riga e riscrive il file **nello storage del proprietario**;
   l'accesso passa da `rb_require_edit` (proprietario **o** co-editor di evento, #123). Un
   **co-editor non cambia** `status`/`reusable` (restano quelli del proprietario); la prima salvata
@@ -405,11 +411,13 @@ bozze mai finite vengono ripulite dal cron round-robin (`cron/cron.php` → `cle
   (file `.rdbk` + foto + audio). `rb_coedit_list`: i roadbook **altrui** (non cestinati) che puoi
   co-editare tramite un tuo evento (ognuno nomina l'evento di provenienza).
 - `rb_get`, `public_get` e `admin_rb_get` leggono il payload con lo stesso `rb_read_payload` (path
-  nello storage del proprietario, decodifica, `rb_shape_maps`; una bozza `pending` è uno scheletro).
+  nello storage del proprietario, decodifica): il documento `.rdbk` salvato, o `null` per una bozza
+  `pending` che non ha ancora un file.
 - `rb_get`: via `rb_require_edit` legge il `.rdbk` di un roadbook che puoi editare (proprietario
-  **o** co-editor). Restituisce `status`, `reusable`, `is_owner`/`owner` (che pilotano la UI di
-  co-editing) e, **se il chiamante lo chiede** (`lock`), acquisisce il soft lock — l'Editor lo
-  chiede, il Reader no. Per una bozza senza file torna uno scheletro vuoto da disegnare.
+  **o** co-editor). Restituisce `title`, `status`, `reusable`, `is_owner`/`owner` (che pilotano la
+  UI di co-editing) e, **se il chiamante lo chiede** (`lock`), acquisisce il soft lock — l'Editor lo
+  chiede, il Reader no. Per una bozza senza file `roadbook` è `null`, e l'Editor parte da
+  `RB.newRoadbook(title, [], [])` per disegnarne la rotta.
 - `rb_duplicate`: controlla prima la quota (`rb_assert_quota` con la dimensione di file + foto +
   audio), poi in **una singola transazione** copia file `.rdbk`, riga DB, intera galleria foto
   **e le note vocali** (file + righe) in un nuovo roadbook; un errore a metà fa rollback (niente
@@ -538,6 +546,7 @@ loro somma.
 | [040_drop_voice_lang.sql](../migrations/040_drop_voice_lang.sql) | drop di `users.voice_lang` (dettatura e trascrizione non esistono più, #773) |
 | [041_roadbook_comments.sql](../migrations/041_roadbook_comments.sql) | tabella `roadbook_comments` (commenti pubblici sotto un roadbook pubblico, #809) |
 | [042_run_device.sql](../migrations/042_run_device.sql) | `roadbook_runs.device` (modello/OS del dispositivo della run, solo per gli admin, #870) |
+| [046_drop_roadbook_category.sql](../migrations/046_drop_roadbook_category.sql) | drop di `roadbooks.category`: il formato .rdbk non ha una categoria (#986) |
 
 **Tabelle:** `users`, `roadbooks`, `roadbook_photos`, `roadbook_audio`, `roadbook_locks`,
 `roadbook_runs`, `roadbook_comments`, `api_tokens`, `activity_log`, `settings`, `events`,

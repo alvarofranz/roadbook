@@ -50,23 +50,33 @@
     // How to draw a block; material of a type this version does not know still reads as text.
     const blockType = (b) => (b && NOTE_BLOCK_BY_ID[b.type]) || NOTE_BLOCK_BY_ID.text;
     // A note's blocks, optionally just the ones on one side ('before' | 'after'; default after).
-    const noteBlocks = (n, at) => ((n && Array.isArray(n.blocks)) ? n.blocks : [])
-        .filter((b) => b && (!at || (b.at === 'before' ? 'before' : 'after') === at));
+    const noteBlocks = (n, placement) => ((n && Array.isArray(n.blocks)) ? n.blocks : [])
+        .filter((b) => b && (!placement || (b.placement === 'before' ? 'before' : 'after') === placement));
+
+    /* ---------------- the .rdbk format ---------------- */
+    // The version of the .rdbk standard this code reads and writes (`rdbk_version` in every file).
+    const FORMAT_VERSION = 1;
 
     /* ---------------- road types ---------------- */
-    // The .rdbk format's own vocabulary of surfaces — not a FIA or OpenRally standard. Each entry
-    // carries its NAME as well as its stroke, so the editor and the vignette toolbar name them
-    // from one place; a type a reader does not know falls back to the track style.
-    // `width` is the type's reference stroke, indicative of the road (motorway widest, off-piste
-    // thinnest); the tulip draws its own, bolder strokes from it (ROAD_STYLE in note-canvas.js).
+    // The road a note leaves on (`road_type`) and the road a junction branch shows. The strokes are
+    // the FIA Road Book Lexicon's (Cross Country, 2026): tarmac a DOUBLE line, a track a solid one, a
+    // low-visible track long–short dashes, off track short square dashes. The bike lane is the
+    // format's own addition — the FIA knows no bicycles (#561). Every road is ROAD_WIDTH wide in the
+    // 230×162 vignette box; `dash` is its SVG dash pattern in the same units, `double` splits the
+    // stroke into two lines with a DOUBLE_GAP-wide white centre. The colour is how the app tells them
+    // apart at a glance. Each entry carries its NAME, so every control names the types from one place.
+    const ROAD_WIDTH = 8, DOUBLE_GAP = 2;
     const ROAD_TYPES = [
-        { id: 0, name: 'Default',   color: '#9aa4b2', width: 5, dashed: false },
-        { id: 1, name: 'Motorway',  color: '#3b82f6', width: 9, dashed: false },
-        { id: 2, name: 'Asphalt',   color: '#22c55e', width: 7, dashed: false },
-        { id: 3, name: 'Track',     color: '#ff5a45', width: 5, dashed: false },
-        { id: 4, name: 'Off-piste', color: '#ff5a45', width: 4, dashed: true },
-        { id: 5, name: 'Bike lane', color: '#532b78', width: 4, dashed: false }, // #561
+        { id: 1, name: 'Tarmac',            color: '#22c55e', dash: '',         double: true },
+        { id: 2, name: 'Track',             color: '#ff5a45', dash: '',         double: false },
+        { id: 3, name: 'Low-visible track', color: '#ff5a45', dash: '24 8 8 8', double: false },
+        { id: 4, name: 'Off track',         color: '#ff5a45', dash: '8 8',      double: false },
+        { id: 5, name: 'Bike lane',         color: '#532b78', dash: '',         double: false },
     ];
+    // A road that says nothing else is a track.
+    const DEFAULT_ROAD_TYPE = 2;
+    const ROAD_TYPE_BY_ID = Object.fromEntries(ROAD_TYPES.map((r) => [r.id, r]));
+    const roadType = (id) => ROAD_TYPE_BY_ID[id] || ROAD_TYPE_BY_ID[DEFAULT_ROAD_TYPE];
 
     /* A roadbook's publication lifecycle (#96): draft (in progress, private) → ready
        (done, private) → public (visible to anyone). The DB `status` column mirrors this
@@ -76,14 +86,13 @@
     const roadbookStatus = (s) => ROADBOOK_STATUSES.includes(s) ? s : 'draft';
 
     /* ---------------- waypoint types (FIA characterization, #63) ----------------
-       One optional per-note `wp_type`, profile-scoped in the editor (`tier`: core shows in
-       every roadbook, rally only when meta.profile === 'rally'). A "zone" is a start note +
-       an end note — there is no zones[] structure. `cap` is the badge acronym (or `glyph` for
-       the flag markers); `color` follows the FIA roadbook convention (orange = zone start,
-       green = zone end/finish, yellow = control). `radius` is the default validation radius
-       (metres) prefilled in the editor. `sym`/`osm` map the type to a Garmin <sym> / OSMAnd
-       icon so the type carries into the GPX export. Verified against the FIA Road Book Lexicon
-       (Appendix III, 2026). */
+       One optional per-note `waypoint_type`, its `id` written as it is. The editor offers a scope
+       (`tier`: core in every roadbook, rally with the full FIA set). A "zone" is a start note +
+       an end note — there is no zones[] structure. `cap` is the badge acronym and the OpenRally
+       code the OpenRally import/export translates to; `color` follows the FIA roadbook convention
+       (orange = zone start, green = zone end/finish, yellow = control). `radius` is the default
+       validation radius (metres). `sym`/`osm` map the type to a Garmin <sym> / OSMAnd icon so the
+       type carries into the GPX export. Verified against the FIA Road Book Lexicon (2026). */
     const WP_TYPES = [
         // core tier — offered in every roadbook
         { id: 'start',    tier: 'core',  cap: 'ST',  name: 'Start',  color: '#57bb63', sym: 'Flag, Green',     osm: 'special_flag_start' },
@@ -114,17 +123,17 @@
     const WP_TYPE_BY_CAP = {}; WP_TYPES.forEach((w) => { if (w.cap) WP_TYPE_BY_CAP[w.cap] = w; });
     // Look up a type by id (null when unset/unknown). The badge label is its acronym or glyph.
     function wpType(id) { return (id && WP_TYPE_BY_ID[id]) || null; }
-    // Look up a type by its OpenRally cap code (e.g. 'WPM' → masked).
+    // Look up a type by its OpenRally code (e.g. 'WPM' → masked) — the OpenRally import.
     function wpTypeByCap(cap) { return (cap && WP_TYPE_BY_CAP[cap]) || null; }
-    // The types offered for a roadbook profile: core always; rally adds the full FIA set.
+    // The types the editor offers in a scope: core always; rally adds the full FIA set.
     function wpTypesForProfile(profile) { return WP_TYPES.filter((w) => w.tier === 'core' || profile === 'rally'); }
     // The geofence radius (metres) for auto-validating a note. Precedence: the note's own
-    // wp_radius → the roadbook default → the type's default → the system default. The Reader
-    // still caps this by neighbour spacing and floors it for GPS noise.
+    // validation_radius → the roadbook default → the type's default → the system default. The
+    // Reader still caps this by neighbour spacing and floors it for GPS noise.
     function detectionRadius(note, meta) {
-        if (note && note.wp_radius != null) return note.wp_radius;
-        if (meta && meta.default_wp_radius != null) return meta.default_wp_radius;
-        const w = note && wpType(note.wp_type);
+        if (note && note.validation_radius != null) return note.validation_radius;
+        if (meta && meta.default_validation_radius != null) return meta.default_validation_radius;
+        const w = note && wpType(note.waypoint_type);
         if (w && w.radius != null) return w.radius;
         return CONST.REACH_DEFAULT_M;
     }
@@ -302,7 +311,7 @@
 
     // OpenRally GPX import (github.com/openrally/openrally): GPX 1.1 + openrally: extensions.
     // Each <wpt> becomes a note (distance·cap·danger·tulip). The tulip is an opaque drawing →
-    // imported as ONE full-box icon (it can't be decomposed into RDBK icons/junctions).
+    // kept as the note's `imported_tulip` (it can't be decomposed into symbols/junctions).
     // Three geometry cases: a real <trk>; else real <wpt> coords → a track through them; else a
     // distance-only roadbook (the official example: wpts at 0,0 with only a distance) → a
     // placeholder line spaced by openrally:distance, flagged so the author re-draws it on the
@@ -339,7 +348,7 @@
         const trkpts = [];
         doc.querySelectorAll('trkpt').forEach((p) => {
             const lat = parseFloat(p.getAttribute('lat')), lon = parseFloat(p.getAttribute('lon'));
-            if (isFinite(lat) && isFinite(lon)) { const ele = parseFloat(p.querySelector('ele')?.textContent); trkpts.push({ lat, lon, ele: isFinite(ele) ? ele : null }); }
+            if (isFinite(lat) && isFinite(lon)) { const ele = parseFloat(p.querySelector('ele')?.textContent); trkpts.push(isFinite(ele) ? { lat, lon, elevation: Math.round(ele) } : { lat, lon }); }
         });
         const raws = [];
         doc.querySelectorAll('wpt').forEach((w) => {
@@ -365,42 +374,36 @@
             const nearestByDist = (distM) => { if (distM == null) return 0; let best = 0, bd = Infinity; cum.forEach((c, i) => { const d = Math.abs(c - distM); if (d < bd) { bd = d; best = i; } }); return best; };
             idxOf = (r) => realCoords(r) ? nearestIdx(track, r) : nearestByDist(r.distM);
         } else if (raws.some(realCoords)) {
-            track = raws.map((r) => ({ lat: r.lat, lon: r.lon, ele: null }));
+            track = raws.map((r) => ({ lat: r.lat, lon: r.lon }));
             idxOf = (r, i) => i;
             warnings.push('builtTrackFromWaypoints');
         } else {
             // distance-only: a placeholder line east of (0,0) spaced by cumulative distance (~m → lon°)
             let prev = -1;
             const dists = raws.map((r) => { let d = r.distM == null ? prev + 1 : r.distM; if (d <= prev) d = prev + 1; prev = d; return d; });
-            track = dists.map((d) => ({ lat: 0, lon: d / 111320, ele: null }));
+            track = dists.map((d) => ({ lat: 0, lon: d / 111320 }));
             idxOf = (r, i) => i;
             warnings.push('placeholderTrack');
         }
 
-        const icons = {};
         const notes = raws.map((r, i) => {
-            const note = {
-                num: i + 1, idx: idxOf(r, i), lat: r.lat, lon: r.lon,
-                distance: r.distM != null ? r.distM : 0, partial_distance: 0,
-                text: wptText({ name: r.name }),
-                cap: r.cap != null ? Math.round(r.cap) : null, cap_distance: null,
-                bearing_in: 0, bearing_out: 0, road_type_in: 0, road_type_out: 0,
-                icons: [], junctions: null,
-            };
+            const note = blankNote(idxOf(r, i), DEFAULT_ROAD_TYPE);
+            note.text = wptText({ name: r.name });
+            if (r.cap != null) note.cap = Math.round(normDeg(r.cap)) % 360;
             if (r.danger >= 1 && r.danger <= 3) note.danger = Math.round(r.danger);
             const orPass = r.or.filter((e) => {
-                if (e.tag === 'wptType') { const w = wpType(e.text) || wpTypeByCap(e.text); if (w) { note.wp_type = w.id; return false; } }
+                if (e.tag === 'wptType') { const w = wpType(e.text) || wpTypeByCap(e.text); if (w) { note.waypoint_type = w.id; return false; } }
                 return true;
             });
-            if (orPass.length) note.openrally = orPass;
-            const t = tulipToDataURL(r.tulip);
-            // The tulip is the whole vignette → a `cover` icon (NoteCanvas renders it full-box, alone).
-            if (t) { const key = 'tulip-' + (i + 1) + (/^data:image\/png/i.test(t) ? '.png' : '.svg'); icons[key] = t; note.icons.push({ name: key, cover: true }); }
+            // every other openrally: parameter travels untouched, for the OpenRally export
+            if (orPass.length) note.compatibility = { openrally: orPass };
+            const image = tulipToDataURL(r.tulip);
+            if (image) note.imported_tulip = { image, shown: true }; // the whole vignette, kept for good (#943)
             return note;
         });
 
-        const rb = { meta: { title: name }, track, notes, icons };
-        recomputeMetrics(rb); // fills num/idx/lat/lon/distance/partial/bearings/road_type from the track; leaves cap (OpenRally-authored) untouched — no recomputeCaps
+        const rb = newRoadbook(name, track, notes);
+        recomputeMetrics(rb); // the cap stays the one OpenRally wrote — no recomputeCaps
         return { rb, warnings };
     }
     // A waypoint's name (street, landmark…) is real content and becomes the note
@@ -518,12 +521,12 @@
     // ({k: track index, s: metres along}) and `beyond` the index the stretch ends towards when it
     // stops on the circle's edge.
     function tulipWalk(rb, i, dir, { within, along }) {
-        const track = rb.track, notes = rb.notes, n = notes[i], at = n && track && track[n.idx];
+        const track = rb.track, notes = rb.notes, n = notes[i], at = n && track && track[n.track_index];
         if (!at) return null;
-        const stop = notes[i + dir] ? notes[i + dir].idx : (dir > 0 ? track.length - 1 : 0);
+        const stop = notes[i + dir] ? notes[i + dir].track_index : (dir > 0 ? track.length - 1 : 0);
         const proj = planarAround(at), O = proj(at), pts = [{ x: 0, y: 0 }], verts = [];
         let len = 0, points = 0, beyond = null;
-        for (let k = n.idx + dir; dir > 0 ? k <= stop : k >= stop; k += dir) {
+        for (let k = n.track_index + dir; dir > 0 ? k <= stop : k >= stop; k += dir) {
             const P = proj(track[k]), prev = pts[pts.length - 1];
             const q = { x: P.x - O.x, y: P.y - O.y }, step = Math.hypot(q.x - prev.x, q.y - prev.y);
             if (step < 0.01) continue; // a duplicate vertex (#452)
@@ -552,7 +555,7 @@
     // TULIP_SHAPE_POINTS a curve needs. A side with no road drawn in the tulip is null.
     function tulipPoints(rb, i) {
         const notes = (rb && rb.notes) || [], n = notes[i];
-        if (!n || !rb.track || !rb.track[n.idx]) return null;
+        if (!n || !rb.track || !rb.track[n.track_index]) return null;
         const count = (dir) => { const w = tulipWalk(rb, i, dir, { within: TULIP_SHAPE_M }); return w && w.len > 0 ? w.points : null; };
         return { before: isFirstNote(notes, i) ? null : count(-1), after: isEndNote(notes, i) ? null : count(1), need: TULIP_SHAPE_POINTS };
     }
@@ -579,7 +582,7 @@
                 if (w.points >= TULIP_SHAPE_POINTS) break;
                 if (room(target, w) < TULIP_POINT_GAP_M) continue;
                 // the stretch of track the target falls on: note → point → … → the circle's edge
-                const anchors = [{ k: n.idx, s: 0 }].concat(w.verts);
+                const anchors = [{ k: n.track_index, s: 0 }].concat(w.verts);
                 const j = anchors.findIndex((v, m) => m === anchors.length - 1 || anchors[m + 1].s > target);
                 const from = anchors[j], next = anchors[j + 1], to = next ? next.k : w.beyond;
                 if (to == null) continue;
@@ -587,12 +590,12 @@
                 if (isOpen && isOpen(rb.track[Math.min(from.k, to)], rb.track[Math.max(from.k, to)])) continue;
                 const f = Math.min(1, (target - from.s) / ((next ? next.s - from.s : haversineM(A, B)) || 1));
                 const pt = { lat: round6(A.lat + (B.lat - A.lat) * f), lon: round6(A.lon + (B.lon - A.lon) * f) };
-                if (A.ele != null && B.ele != null) pt.ele = Math.round(A.ele + (B.ele - A.ele) * f);
-                if (A.t != null && B.t != null) pt.t = Math.round(A.t + (B.t - A.t) * f);
+                if (A.elevation != null && B.elevation != null) pt.elevation = Math.round(A.elevation + (B.elevation - A.elevation) * f);
+                if (A.time_ms != null && B.time_ms != null) pt.time_ms = Math.round(A.time_ms + (B.time_ms - A.time_ms) * f);
                 // between the two, next to the far one: past any duplicates of the near one
                 const at = dir > 0 ? to : to + 1;
                 rb.track.splice(at, 0, pt);
-                rb.notes.forEach((m) => { if (m.idx >= at) m.idx++; });
+                rb.notes.forEach((m) => { if (m.track_index >= at) m.track_index++; });
                 added++;
             }
         });
@@ -621,8 +624,8 @@
             return pts.reduce((m, p) => Math.max(m, Math.abs(p.x * end.y - p.y * end.x) / len), 0);
         };
         // the author's junction vectors, in the box (model +y up → viewBox y down)
-        const branches = (n.junctions || []).filter((b) => b && b.pivot && b.tip)
-            .map((b) => [[TULIP_CX + b.pivot[0], TULIP_CY - b.pivot[1]], [TULIP_CX + b.tip[0], TULIP_CY - b.tip[1]]]);
+        const branches = (n.junctions || []).filter((b) => b && b.from && b.to)
+            .map((b) => [[TULIP_CX + b.from[0], TULIP_CY - b.from[1]], [TULIP_CX + b.to[0], TULIP_CY - b.to[1]]]);
         // does a drawing run over a branch? sampled along every leg, past the note's own circle
         const nearBranch = (line) => {
             if (!branches.length) return false;
@@ -697,31 +700,6 @@
         const notes = (rb && rb.notes) || [], isEnd = isEndNote(notes, i), isFirst = isFirstNote(notes, i);
         return { isEnd, isFirst, shape: tulipShape(rb, i, isEnd, isFirst) };
     }
-    // Is the vertex a note sits on cut off from its neighbour on that side by duplicates?
-    const degenerateSide = (trkpts, idx, dir) => {
-        const j = idx + dir;
-        return j >= 0 && j < trkpts.length && haversineM(trkpts[idx], trkpts[j]) < BEARING_MIN_M;
-    };
-    /* Bearings are STORED in the .rdbk, and the Reader, the public page and the PDF read them as
-       they are — so a roadbook saved with a poisoned bearing would keep pointing the wrong way
-       until someone re-saved it in the Editor. Repair, on load, exactly the ones that are provably
-       broken: those derived from a degenerate neighbour. Every authored or imported value is left
-       alone (an OpenRally file may carry bearings its own way, and a note placed by distance has
-       an approximate `idx` — re-deriving everything could be worse than what is there). In memory
-       only: the file itself changes when something is saved. */
-    function repairDegenerateBearings(rb) {
-        if (!rb || !Array.isArray(rb.track) || rb.track.length < 2) return rb;
-        (rb.notes || []).forEach((n) => {
-            const i = n.idx;
-            if (i == null || !rb.track[i]) return;
-            const badIn = degenerateSide(rb.track, i, -1), badOut = degenerateSide(rb.track, i, 1);
-            if (!badIn && !badOut) return;
-            const b = deriveBearings(rb.track, i);
-            if (badIn) n.bearing_in = b.bIn;
-            if (badOut) n.bearing_out = b.bOut;
-        });
-        return rb;
-    }
     // Live-recording intake (Recorder · the Editor's record/adjust · the GPX logger): a fix
     // worse than FIX_ACC_MAX_M is junk; the sampling step scales with the accuracy — dense
     // detail with a good fix, no jitter with a weak one.
@@ -782,11 +760,26 @@
     }
 
     // Build the roadbook JSON from a track + waypoints.
+    // A roadbook in memory: the .rdbk document plus the values every reader derives from it
+    // (hydrate). New roadbooks start here, whatever they are made from.
+    function newRoadbook(title, track, notes) {
+        return { rdbk_version: FORMAT_VERSION, meta: { title: title || 'roadbook', default_validation_radius: CONST.REACH_DEFAULT_M }, track, notes, symbols: {} };
+    }
+    // A note's authored fields at their defaults, anchored at track index `trackIndex` — the one
+    // shape every tool that adds a note starts from; recomputeMetrics derives the rest.
+    const blankNote = (trackIndex, road) => ({ track_index: trackIndex, text: '', road_type: road || DEFAULT_ROAD_TYPE, cap: null, symbols: [], junctions: [] });
+    // A GPS fix ({lat, lon, ele, t} — GPX's own words) → a point of a roadbook's track.
+    function trackPoint(p) {
+        const tp = { lat: round6(p.lat), lon: round6(p.lon) };
+        if (p.ele != null && isFinite(p.ele)) tp.elevation = Math.round(p.ele);
+        if (p.t != null && isFinite(p.t)) tp.time_ms = Math.round(p.t);
+        return tp;
+    }
+    // A roadbook's track as GPS fixes again — what the GPX and KML serializers write.
+    const trackFixes = (track) => (track || []).map((p) => ({ lat: p.lat, lon: p.lon, ele: p.elevation, t: p.time_ms }));
+
     function buildRoadbook({ name, trkpts, wpts }) {
         if (!trkpts || trkpts.length < 2) throw new Error('The GPX track has too few points.');
-        const cum = cumulativeM(trkpts);
-        const totalM = cum[cum.length - 1];
-
         // guarantee a start note and an end note
         const pts = (wpts && wpts.length) ? wpts.slice() : [];
         const hasStart = pts.some((w) => resolveIdx(trkpts, w) === 0);
@@ -795,59 +788,30 @@
         if (!hasEnd) pts.push({ lat: trkpts[trkpts.length - 1].lat, lon: trkpts[trkpts.length - 1].lon, name: 'end', num: 9999 });
 
         // resolve each waypoint's track index (by time when available) and order along the track
-        const withIdx = pts.map((w) => ({ ...w, idx: resolveIdx(trkpts, w) }))
-            .sort((a, b) => a.idx - b.idx)
-            .filter((w, i, arr) => i === 0 || w.idx !== arr[i - 1].idx); // dedup by idx
+        const placed = pts.map((w) => ({ ...w, track_index: resolveIdx(trkpts, w) }))
+            .sort((a, b) => a.track_index - b.track_index)
+            .filter((w, i, arr) => i === 0 || w.track_index !== arr[i - 1].track_index); // one note per point
 
-        const notes = withIdx.map((w, i) => {
-            const idx = w.idx;
-            const prevIdx = i > 0 ? withIdx[i - 1].idx : null;
-            const tp = trkpts[idx];
-            const { bIn, bOut } = deriveBearings(trkpts, idx);
-            const note = {
-                num: i + 1, idx,
-                distance: Math.round(cum[idx]),
-                partial_distance: Math.round(prevIdx == null ? 0 : Math.max(0, cum[idx] - cum[prevIdx])),
-                lat: round6(tp.lat), lon: round6(tp.lon),
-                text: wptText(w),
-                cap: null, cap_distance: null,
-                bearing_in: round3(bIn), bearing_out: round3(bOut),
-                road_type_in: 3, road_type_out: 3, // track by default
-                junctions: null,
-                icons: w.icon ? [{ name: w.icon, pos: [0, 0], angle: 0, size: 40, flip_x: false }] : [],
-            };
+        const notes = placed.map((w) => {
+            const note = blankNote(w.track_index, DEFAULT_ROAD_TYPE);
+            note.text = wptText(w);
+            if (w.icon) note.symbols.push({ name: w.icon, position: [0, 0], size: 40, angle: 0, mirrored: false });
             if (w.danger) note.danger = w.danger;       // recovered from an imported special_marker
-            if (w.appwpt) note.appwpt = w.appwpt;        // unmapped Garmin/OSMAnd icon, re-emitted verbatim
+            if (w.appwpt) note.compatibility = { gpx: gpxCompatibility(w.appwpt) }; // an unmapped Garmin/OSMAnd icon, re-emitted by the GPX export as it came
             if (w.blocks && w.blocks.length) note.blocks = w.blocks; // its material, e.g. the Recorder's photo (#792)
             return note;
         });
-
-        return {
-            // default_wp_radius is written out rather than left implicit: the organizer sees the
-            // number they are working with in the editor instead of an em-dash, and the file says
-            // what it means without the reader having to know the system fallback (#439).
-            meta: { title: name || 'roadbook', total_distance: Math.round(totalM), note_count: notes.length, default_wp_radius: CONST.REACH_DEFAULT_M },
-            track: trkpts.map((p) => {
-                const tp = { lat: round6(p.lat), lon: round6(p.lon) };
-                if (p.ele != null && isFinite(p.ele)) tp.ele = Math.round(p.ele);
-                if (p.t != null && isFinite(p.t)) tp.t = p.t; // optional per-point time (epoch ms), preserved from the recording/GPX
-                return tp;
-            }),
-            notes,
-        };
+        return recomputeMetrics(newRoadbook(name, trkpts.map(trackPoint), notes));
     }
 
-    // Import a just-loaded roadbook into the canonical schema. RDBK's pre-standard files
-    // used Italian field names (titolo / km_totali / testo); we deliberately keep opening
-    // them, so this is a permanent, intentional importer — not back-compat cruft. It renames
-    // those keys to the English standard and drops the originals, then fills in the structural
-    // defaults (meta, icons, per-note junctions) a hand-made or foreign file may omit.
-    // Idempotent: a file already in the standard shape passes through unchanged.
-    // Roadbook Suite pictograms that map 1:1 to a differently-named palette icon.
-    // Speed-limit signs (S0x_*km / S99_end) are handled by rule in the loop below: the
-    // suite ships them as PNG, the palette as SVG. Names with no palette equivalent at
-    // all (p24_cassonetto, the generic *_icona placeholders, …) are left untouched and
-    // flagged in the Editor instead. See docs/editor.md §9.5.
+    /* ---------------- Roadbook Suite import ----------------
+       Roadbook System's editor (Roadbook Suite) writes its own JSON: Italian keys, kilometres, `bivio`
+       junctions in a +y-down box, symbols anchored at their top-left corner. It is another program's
+       format, imported like GPX or OpenRally: every field is translated into a .rdbk roadbook.
+       Roadbook Suite pictograms that map 1:1 to a differently-named palette symbol are aliased;
+       speed-limit signs (S0x_*km / S99_end) are handled by rule — the suite ships them as PNG, the
+       palette as SVG. Names with no palette equivalent are left as they are and flagged in the Editor
+       (docs/editor.md §9.5). */
     const SUITE_ICON_ALIASES = {
         'p36_gruppo_case.png': 'P02_gruppo_case.png',
         'p14_lago.png': 'P14_estanque.png',
@@ -869,179 +833,341 @@
         's25_trattori.png': 'W27_agricultural_vehicles.svg',
         'Trattori.png': 'W27_agricultural_vehicles.svg',
     };
-    // Normalize a roadbook into the canonical .rdbk schema in place. Besides the
-    // structural defaults, this is where pre-standard files exported by Roadbook
-    // Suite (Italian keys, km units, `bivio` junctions, +y-down geometry) are
-    // translated — so they open identically in the Editor and the Reader. Each legacy
-    // key is mapped by presence and then dropped, leaving a clean canonical object.
-    /* Older files carried their photos, adverts and captions as ROWS of their own
-       (`note_kind: "comment" | "photo" | "ad"`). It is the same material, so it folds onto the
-       note it sat beside: after that note, or before the first one when it opened the roadbook.
-       A row that had a place on the route was a note wearing a kind — it becomes a note again and
-       keeps its picture as a block. A note holds ONE block of each type, so a second advert (two
-       sponsor rows in a row) goes to the nearest note whose slot of that type is free, and only
-       when there is nowhere at all do its words join the ones already there. Runs on import, so
-       nothing downstream ever meets a row that is not a note. */
-    function foldInfoRows(rb) {
-        const rows = rb.notes || [];
-        if (!rows.some((n) => n && n.note_kind && n.note_kind !== 'note')) return rb;
-        const out = [], waiting = [];
-        const blockFrom = (n, at) => {
-            const block = { type: n.note_kind === 'photo' ? 'photo' : (n.image ? 'ad' : 'text'), at };
-            if (n.image) block.image = n.image;
-            if (n.text) block.text = n.text;
-            return block;
-        };
-        const slotFree = (host, type) => !(host.blocks || []).some((b) => b.type === type);
-        const put = (host, block, at) => { block.at = at; (host.blocks = host.blocks || []).push(block); };
-        for (const n of rows) {
-            if (!n.note_kind || n.note_kind === 'note') { out.push(n); continue; }
-            if (n.idx != null && n.lat != null) { // a note that had been switched to a kind
-                const block = blockFrom(n, 'after');
-                delete block.text; // its words are the note's own text, not a caption of them
-                delete n.note_kind; delete n.image;
-                out.push(n);
-                if (block.image) put(n, block, 'after');
-            } else waiting.push({ block: blockFrom(n, 'after'), host: out.length - 1 }); // -1 = it opened the roadbook
-        }
-        for (const item of waiting) {
-            const type = item.block.type;
-            const from = Math.max(0, item.host);
-            let placed = false;
-            for (let i = from; i < out.length && !placed; i++) {
-                if (slotFree(out[i], type)) { put(out[i], item.block, i === item.host ? 'after' : 'before'); placed = true; }
-            }
-            for (let i = from - 1; i >= 0 && !placed; i--) {
-                if (slotFree(out[i], type)) { put(out[i], item.block, 'after'); placed = true; }
-            }
-            if (!placed && out.length) { // every slot taken: keep the words with the ones already there
-                const host = out[Math.max(0, item.host)];
-                const b = (host.blocks || []).find((x) => x.type === type);
-                if (b && item.block.text) b.text = [b.text, item.block.text].filter(Boolean).join('\n');
-            }
-        }
-        rb.notes = out;
-        return rb;
+    // The suite's road codes (its RB System palette) → the FIA road types.
+    const SUITE_ROAD_TYPES = { 0: 2, 1: 1, 2: 1, 3: 2, 4: 4, 5: 5 };
+    const suiteRoad = (rt) => SUITE_ROAD_TYPES[rt] || DEFAULT_ROAD_TYPE;
+    function isSuiteRoadbook(doc) {
+        const meta = (doc && doc.meta) || {};
+        return !!doc && doc.rdbk_version == null && (meta.titolo != null || meta.km_totali != null ||
+            (doc.notes || []).some((n) => n && ('testo' in n || 'bivio' in n || 'cap_hdr' in n || 'km_prog' in n || 'km_parz' in n)));
     }
-    function importRoadbook(rb) {
-        const meta = rb.meta || (rb.meta = {});
-        // A Roadbook Suite file is detected by any of its legacy markers; only then do
-        // we apply suite-specific conversions (axis flip, metric recompute) so canonical
-        // .rdbk files are never touched.
-        const suite = meta.titolo != null || meta.km_totali != null ||
-            (rb.notes || []).some((n) => 'testo' in n || 'bivio' in n || 'cap_hdr' in n || 'km_prog' in n || 'km_parz' in n);
-        if (meta.titolo != null) meta.title ??= meta.titolo;
-        if (meta.km_totali != null && isFinite(parseFloat(meta.km_totali))) meta.total_distance ??= Math.round(parseFloat(meta.km_totali) * 1000);
-        delete meta.titolo; delete meta.km_totali;
-        delete meta.logo_path; // server-side path from the suite — not embeddable, not part of the format
-        rb.notes = (rb.notes || []).map((n) => {
-            // Normalize wp_type: accept both internal IDs (masked, navigation…) and
-            // OpenRally cap codes (WPM, WPN…) from third-party .rdbk files.
-            if (n.wp_type) { const w = wpType(n.wp_type) || wpTypeByCap(n.wp_type); if (w) n.wp_type = w.id; }
-            if ('testo' in n) { n.text ??= n.testo; delete n.testo; }
-            if ('km_prog' in n) { n.distance ??= Math.round((n.km_prog || 0) * 1000); delete n.km_prog; }
-            if ('km_parz' in n) { n.partial_distance ??= Math.round((n.km_parz || 0) * 1000); delete n.km_parz; }
-            if ('cap_hdr' in n) { n.cap ??= (n.cap_hdr == null ? null : Math.round(n.cap_hdr)); delete n.cap_hdr; }
-            if ('cap_km' in n) { n.cap_distance ??= (n.cap_km == null ? null : Math.round(n.cap_km * 1000)); delete n.cap_km; }
-            delete n.cap_small; delete n.hide_cap_btm; // suite-only CAP display fields, no canonical equivalent
-            // bivio[] {punta, th, rt} → junctions[] {tip, width, road_type}; suite y is
-            // screen-down, the vignette box is +y-up, so the y of every vector is flipped.
-            if ('bivio' in n) {
-                if (n.junctions == null) n.junctions = Array.isArray(n.bivio)
-                    ? n.bivio.map((b) => ({ pivot: [b.pivot[0], -b.pivot[1]], tip: [b.punta[0], -b.punta[1]], width: b.th, road_type: b.rt }))
-                    : null;
-                delete n.bivio;
-            }
-            if (n.junctions === undefined) n.junctions = null;
-            (n.icons || []).forEach((ic) => { // pre-standard icon keys: file (path) / flipX → name / flip_x
-                if (ic.name == null && ic.file) ic.name = String(ic.file).split('/').pop();
-                if ('flipX' in ic) { ic.flip_x ??= !!ic.flipX; delete ic.flipX; }
-                delete ic.file;
-                if (suite && Array.isArray(ic.pos) && typeof ic.pos[0] === 'number' && typeof ic.pos[1] === 'number') {
-                    // suite anchors a symbol at its TOP-LEFT corner in a +y-down box; RDBK centers it
-                    // in a +y-up box — so flip y and shift the anchor to the centre (half a symbol).
-                    const half = (typeof ic.size === 'number' ? ic.size : 32) / 2;
-                    ic.pos = [ic.pos[0] + half, -ic.pos[1] - half];
-                }
-                if (suite && typeof ic.size === 'number') { // suite symbols import a touch small; start/finish markers want extra presence
-                    const startFinish = ['i01_arrivo.png', 'i02_partenza.png'].includes((ic.name || '').toLowerCase());
-                    ic.size = Math.min(120, Math.round(ic.size * (startFinish ? 3 : 1.5)));
-                }
-                if (ic.name) { // Roadbook Suite icon names → standard palette (safe 1:1 only)
-                    if (/^S0\d_\d{1,3}km\.png$/i.test(ic.name) || /^S99_end\.png$/i.test(ic.name)) ic.name = ic.name.replace(/\.png$/i, '.svg');
-                    else if (SUITE_ICON_ALIASES[ic.name.toLowerCase()]) ic.name = SUITE_ICON_ALIASES[ic.name.toLowerCase()];
-                }
+    function importSuiteRoadbook(doc) {
+        const meta = doc.meta || {};
+        const track = (doc.track || []).filter((p) => p && isFinite(p.lat) && isFinite(p.lon)).map((p) => trackPoint({ lat: +p.lat, lon: +p.lon, ele: p.ele }));
+        if (track.length < 2) throw new Error('The GPX track has too few points.');
+        const symbolsLib = {};
+        const notes = (doc.notes || []).map((n) => {
+            const note = blankNote(Math.max(0, Math.min(track.length - 1, n.idx | 0)), suiteRoad(n.road_type_out));
+            note.text = String(n.testo ?? n.text ?? '');
+            if (n.cap_hdr != null) note.cap = Math.round(normDeg(n.cap_hdr)) % 360;
+            if (n.danger >= 1 && n.danger <= 3) note.danger = n.danger | 0;
+            note.junctions = (Array.isArray(n.bivio) ? n.bivio : []).map((b) => ({ from: [b.pivot[0], -b.pivot[1]], to: [b.punta[0], -b.punta[1]], road_type: suiteRoad(b.rt) }));
+            note.symbols = (n.icons || []).map((ic) => {
+                let name = ic.name != null ? String(ic.name) : String(ic.file || '').split('/').pop();
+                if (/^S0\d_\d{1,3}km\.png$/i.test(name) || /^S99_end\.png$/i.test(name)) name = name.replace(/\.png$/i, '.svg');
+                else if (SUITE_ICON_ALIASES[name.toLowerCase()]) name = SUITE_ICON_ALIASES[name.toLowerCase()];
+                const startFinish = ['i01_arrivo.png', 'i02_partenza.png'].includes(name.toLowerCase());
+                const raw = typeof ic.size === 'number' ? ic.size : 32;
+                // the suite anchors a symbol at its TOP-LEFT corner in a +y-down box; the vignette
+                // centres it in a +y-up box — so flip y and shift the anchor to the centre
+                const pos = Array.isArray(ic.pos) ? [ic.pos[0] + raw / 2, -ic.pos[1] - raw / 2] : [0, 0];
+                // suite symbols import a touch small; start/finish markers want extra presence
+                return { name, position: pos, size: Math.min(120, Math.round(raw * (startFinish ? 3 : 1.5))), angle: ic.angle || 0, mirrored: !!(ic.flipX ?? ic.flip_x) };
             });
-            return n;
+            // a speed-limit sign is a speed-controlled zone (#94): its start (DZ) or its end (FZ)
+            let limit = null;
+            note.symbols.forEach((ic) => { const v = speedLimitFromName(ic.name); if (v != null) limit = v; });
+            if (limit != null) { note.speed_limit_kmh = limit; note.waypoint_type = limit === 0 ? 'fz' : 'dz'; }
+            return note;
+        }).sort((a, b) => a.track_index - b.track_index)
+            .filter((n, i, arr) => i === 0 || n.track_index !== arr[i - 1].track_index);
+        Object.entries(doc.icons && !Array.isArray(doc.icons) ? doc.icons : {}).forEach(([k, v]) => { if (/^data:/.test(v)) symbolsLib[k] = v; });
+        const rb = newRoadbook(meta.titolo ?? meta.title, track, notes);
+        rb.symbols = symbolsLib;
+        return recomputeMetrics(rb);
+    }
+
+    /* ---------------- reading, writing and validating a .rdbk ----------------
+       The file holds what the author decided and nothing that can be computed. validateRoadbook is
+       the one judge of a document — the Reader, the Editor, the validator page and the tests all ask
+       it; readRoadbook refuses what it rejects and hydrates the rest (the derived values below);
+       writeRoadbook writes the one canonical shape back: defaults left out, keys in a fixed order,
+       coordinates at 6 decimals. */
+    const CAP_TYPES = ['exit', 'average', 'calculated', 'turning'];
+    const META_FIELDS = ['title', 'description', 'author', 'organization', 'modified', 'logo', 'map_allowed', 'default_validation_radius', 'generator'];
+    const NOTE_FIELDS = ['track_index', 'text', 'road_type', 'cap', 'cap_type', 'speed_limit_kmh', 'danger', 'waypoint_type', 'validation_radius', 'symbols', 'junctions', 'imported_tulip', 'blocks', 'compatibility'];
+    const ROOT_FIELDS = ['rdbk_version', 'meta', 'track', 'notes', 'symbols', 'compatibility'];
+    const GENERATOR = 'RDBK.app';
+    const isObj = (v) => v != null && typeof v === 'object' && !Array.isArray(v);
+    const isInt = (v) => Number.isInteger(v);
+    const isNum = (v) => typeof v === 'number' && isFinite(v);
+    const isDataUri = (v) => typeof v === 'string' && /^data:[^,]*,/.test(v);
+    const isPair = (v) => Array.isArray(v) && v.length === 2 && isNum(v[0]) && isNum(v[1]);
+    function validateRoadbook(doc) {
+        const errors = [], warnings = [];
+        const err = (path, message, values) => errors.push(values ? { path, message, values } : { path, message });
+        const warn = (path, message, values) => warnings.push(values ? { path, message, values } : { path, message });
+        const unknown = (obj, allowed, base) => Object.keys(obj).forEach((k) => { if (!allowed.includes(k)) warn(base ? base + '.' + k : k, 'Unknown key: readers ignore it.'); });
+        const compatibility = (v, path) => { if (v !== undefined && !isObj(v)) err(path, 'Must be an object.'); };
+        if (!isObj(doc)) { err('', 'Must be an object.'); return { valid: false, errors, warnings }; }
+        if (doc.rdbk_version !== FORMAT_VERSION) err('rdbk_version', 'Must be 1: the version of the .rdbk standard this file follows.');
+        unknown(doc, ROOT_FIELDS, '');
+        // meta
+        const meta = doc.meta;
+        if (!isObj(meta)) err('meta', 'Must be an object.');
+        else {
+            unknown(meta, META_FIELDS, 'meta');
+            if (typeof meta.title !== 'string' || !meta.title.trim()) err('meta.title', 'Must be a non-empty string.');
+            ['description', 'author', 'organization', 'generator'].forEach((k) => { if (meta[k] !== undefined && typeof meta[k] !== 'string') err('meta.' + k, 'Must be a string.'); });
+            if (meta.modified !== undefined && !(typeof meta.modified === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(meta.modified))) err('meta.modified', 'Must be a date written YYYY-MM-DD.');
+            if (meta.logo !== undefined && !isDataUri(meta.logo)) err('meta.logo', 'Must be a data: URI.');
+            if (meta.map_allowed !== undefined && meta.map_allowed !== false) err('meta.map_allowed', 'Must be false when present: a map is allowed unless the file says so.');
+            if (meta.default_validation_radius !== undefined && !(isInt(meta.default_validation_radius) && meta.default_validation_radius > 0)) err('meta.default_validation_radius', 'Must be a positive integer (metres).');
+        }
+        // track
+        const track = doc.track;
+        if (!Array.isArray(track) || track.length < 2) err('track', 'Must be a list of at least 2 points.');
+        else track.forEach((p, i) => {
+            const path = 'track[' + i + ']';
+            if (!isObj(p)) return err(path, 'Must be an object.');
+            unknown(p, ['lat', 'lon', 'elevation', 'time_ms'], path);
+            if (!isNum(p.lat) || p.lat < -90 || p.lat > 90) err(path + '.lat', 'Must be a latitude from -90 to 90.');
+            if (!isNum(p.lon) || p.lon < -180 || p.lon > 180) err(path + '.lon', 'Must be a longitude from -180 to 180.');
+            if (p.elevation !== undefined && !isInt(p.elevation)) err(path + '.elevation', 'Must be an integer (metres).');
+            if (p.time_ms !== undefined && !isInt(p.time_ms)) err(path + '.time_ms', 'Must be an integer (milliseconds since 1970, UTC).');
         });
-        // `icons` is a MAP. A file (or a server round trip through PHP, #523) can hand us an
-        // empty ARRAY instead — and named keys written onto an array vanish on JSON.stringify,
-        // taking every icon the author added with them. Normalise the shape once, here.
-        rb.icons = (rb.icons && !Array.isArray(rb.icons)) ? rb.icons : {};
-        foldInfoRows(rb);
-        // The suite's bearings use a different reference (e.g. the start note's bogus
-        // bearing_in points the trunk arrow backwards); the track is authoritative, so
-        // re-derive bearings/distances/road-types from it — exactly as buildRoadbook does.
-        if (suite && Array.isArray(rb.track) && rb.track.length >= 2) recomputeMetrics(rb);
-        // #94: a note carrying a speed-limit sign is a speed-controlled zone. Surface the limit as
-        // the declarative field and tag the note as a zone start/end (DZ / FZ) — only filling gaps,
-        // so a file that already declares speed_limit / wp_type is left untouched.
-        rb.notes.forEach((n) => {
-            let sp = null;
-            (n.icons || []).forEach((ic) => { const v = speedLimitFromName((ic.name || '').split('/').pop()); if (v != null) sp = v; });
-            if (sp != null) {
-                if (n.speed_limit == null) n.speed_limit = sp;
-                if (n.wp_type == null) n.wp_type = sp === 0 ? 'fz' : 'dz';
+        // symbols library
+        const library = doc.symbols;
+        if (library !== undefined && !isObj(library)) err('symbols', 'Must be an object.');
+        const lib = isObj(library) ? library : {};
+        Object.entries(lib).forEach(([k, v]) => { if (!isDataUri(v)) err('symbols.' + k, 'Must be a data: URI.'); });
+        // notes
+        const notes = doc.notes, points = Array.isArray(track) ? track.length : 0;
+        if (!Array.isArray(notes) || !notes.length) err('notes', 'Must be a list of at least 1 note.');
+        else {
+            let prev = -1;
+            notes.forEach((n, i) => {
+                const path = 'notes[' + i + ']';
+                if (!isObj(n)) return err(path, 'Must be an object.');
+                unknown(n, NOTE_FIELDS, path);
+                if (!isInt(n.track_index) || n.track_index < 0 || (points && n.track_index >= points)) err(path + '.track_index', 'Must be the index of a point of track.');
+                else if (n.track_index <= prev) err(path + '.track_index', 'Must be greater than the previous note’s: notes follow the track.');
+                if (isInt(n.track_index)) prev = n.track_index;
+                if (n.text !== undefined && typeof n.text !== 'string') err(path + '.text', 'Must be a string.');
+                if (n.text === '') warn(path + '.text', 'Default value: leave it out.');
+                if (n.road_type !== undefined && !ROAD_TYPE_BY_ID[n.road_type]) err(path + '.road_type', 'Must be a road type from 1 to 5.');
+                if (n.road_type === DEFAULT_ROAD_TYPE) warn(path + '.road_type', 'Default value: leave it out.');
+                if (n.cap !== undefined && !(isInt(n.cap) && n.cap >= 0 && n.cap < 360)) err(path + '.cap', 'Must be an integer heading from 0 to 359.');
+                if (n.cap_type !== undefined) {
+                    if (!CAP_TYPES.includes(n.cap_type)) err(path + '.cap_type', 'Must be one of: {values}.', CAP_TYPES.join(', '));
+                    else if (n.cap === undefined) err(path + '.cap_type', 'Only with a cap.');
+                    else if (n.cap_type === 'exit') warn(path + '.cap_type', 'Default value: leave it out.');
+                }
+                if (n.speed_limit_kmh !== undefined && !(isInt(n.speed_limit_kmh) && n.speed_limit_kmh >= 0)) err(path + '.speed_limit_kmh', 'Must be an integer, 0 or more (0 lifts the limit).');
+                if (n.danger !== undefined && ![1, 2, 3].includes(n.danger)) err(path + '.danger', 'Must be 1, 2 or 3.');
+                if (n.waypoint_type !== undefined && !wpType(n.waypoint_type)) err(path + '.waypoint_type', 'Must be one of: {values}.', WP_TYPES.map((w) => w.id).join(', '));
+                if (n.validation_radius !== undefined && !(isInt(n.validation_radius) && n.validation_radius > 0)) err(path + '.validation_radius', 'Must be a positive integer (metres).');
+                if (n.symbols !== undefined) {
+                    if (!Array.isArray(n.symbols)) err(path + '.symbols', 'Must be a list.');
+                    else n.symbols.forEach((ic, j) => {
+                        const sp = path + '.symbols[' + j + ']';
+                        if (!isObj(ic)) return err(sp, 'Must be an object.');
+                        unknown(ic, ['name', 'position', 'size', 'angle', 'mirrored'], sp);
+                        if (typeof ic.name !== 'string' || !ic.name) err(sp + '.name', 'Must be a non-empty string.');
+                        else if (!lib[ic.name]) err(sp + '.name', 'Must be embedded in symbols: a .rdbk carries every symbol it draws.');
+                        if (!isPair(ic.position)) err(sp + '.position', 'Must be two numbers [x, y].');
+                        if (!(isNum(ic.size) && ic.size > 0)) err(sp + '.size', 'Must be a positive number.');
+                        if (ic.angle !== undefined && !isNum(ic.angle)) err(sp + '.angle', 'Must be a number.');
+                        if (ic.angle === 0) warn(sp + '.angle', 'Default value: leave it out.');
+                        if (ic.mirrored !== undefined && typeof ic.mirrored !== 'boolean') err(sp + '.mirrored', 'Must be true or false.');
+                        if (ic.mirrored === false) warn(sp + '.mirrored', 'Default value: leave it out.');
+                    });
+                }
+                if (n.junctions !== undefined) {
+                    if (!Array.isArray(n.junctions)) err(path + '.junctions', 'Must be a list.');
+                    else n.junctions.forEach((b, j) => {
+                        const jp = path + '.junctions[' + j + ']';
+                        if (!isObj(b)) return err(jp, 'Must be an object.');
+                        unknown(b, ['from', 'to', 'road_type'], jp);
+                        if (!isPair(b.from)) err(jp + '.from', 'Must be two numbers [x, y].');
+                        if (!isPair(b.to)) err(jp + '.to', 'Must be two numbers [x, y].');
+                        if (b.road_type !== undefined && !ROAD_TYPE_BY_ID[b.road_type]) err(jp + '.road_type', 'Must be a road type from 1 to 5.');
+                        if (b.road_type === DEFAULT_ROAD_TYPE) warn(jp + '.road_type', 'Default value: leave it out.');
+                    });
+                }
+                if (n.imported_tulip !== undefined) {
+                    const t = n.imported_tulip, tp = path + '.imported_tulip';
+                    if (!isObj(t)) err(tp, 'Must be an object.');
+                    else {
+                        unknown(t, ['image', 'shown'], tp);
+                        if (!isDataUri(t.image)) err(tp + '.image', 'Must be a data: URI.');
+                        if (t.shown !== undefined && t.shown !== false) err(tp + '.shown', 'Must be false when present: an imported tulip is shown unless the file says so.');
+                    }
+                }
+                if (n.blocks !== undefined) {
+                    if (!Array.isArray(n.blocks)) err(path + '.blocks', 'Must be a list.');
+                    else n.blocks.forEach((bl, j) => {
+                        const bp = path + '.blocks[' + j + ']';
+                        if (!isObj(bl)) return err(bp, 'Must be an object.');
+                        unknown(bl, ['type', 'placement', 'image', 'text'], bp);
+                        if (!NOTE_BLOCK_BY_ID[bl.type]) err(bp + '.type', 'Must be one of: {values}.', NOTE_BLOCKS.map((x) => x.id).join(', '));
+                        if (!['before', 'after'].includes(bl.placement)) err(bp + '.placement', 'Must be one of: {values}.', 'before, after');
+                        if (bl.image !== undefined && !isDataUri(bl.image)) err(bp + '.image', 'Must be a data: URI.');
+                        if (bl.text !== undefined && typeof bl.text !== 'string') err(bp + '.text', 'Must be a string.');
+                        if (bl.image === undefined && !bl.text) err(bp, 'Must carry an image, a text or both.');
+                    });
+                }
+                compatibility(n.compatibility, path + '.compatibility');
+            });
+        }
+        compatibility(doc.compatibility, 'compatibility');
+        return { valid: !errors.length, errors, warnings };
+    }
+    // A .rdbk container's media.json against the entries the ZIP really holds: { files: [...] } →
+    // { valid, errors, warnings }, the same report as validateRoadbook. Absent, there is no media.
+    function validateMedia(manifest, names) {
+        const errors = [], warnings = [], listed = new Set();
+        const err = (path, message, values) => errors.push(values ? { path, message, values } : { path, message }), warn = (path, message) => warnings.push({ path, message });
+        if (manifest != null) {
+            if (!isObj(manifest)) err('media.json', 'Must be an object.');
+            else {
+                Object.keys(manifest).forEach((k) => { if (!['photos', 'audio'].includes(k)) warn('media.json.' + k, 'Unknown key: readers ignore it.'); });
+                ['photos', 'audio'].forEach((kind) => {
+                    const list = manifest[kind];
+                    if (list === undefined) return;
+                    if (!Array.isArray(list)) return err('media.json.' + kind, 'Must be a list.');
+                    list.forEach((m, i) => {
+                        const path = 'media.json.' + kind + '[' + i + ']';
+                        if (!isObj(m)) return err(path, 'Must be an object.');
+                        const dir = kind === 'photos' ? 'photos/' : 'audio/';
+                        if (typeof m.file !== 'string' || !m.file.startsWith(dir)) err(path + '.file', 'Must be a path inside {values}.', dir);
+                        else if (!names.includes(m.file)) err(path + '.file', 'Must be a file inside the container.');
+                        else listed.add(m.file);
+                        if (m.lat !== undefined && !(isNum(m.lat) && Math.abs(m.lat) <= 90)) err(path + '.lat', 'Must be a latitude from -90 to 90.');
+                        if (m.lon !== undefined && !(isNum(m.lon) && Math.abs(m.lon) <= 180)) err(path + '.lon', 'Must be a longitude from -180 to 180.');
+                    });
+                });
             }
+        }
+        names.filter((n) => /^(photos|audio)\//.test(n) && !/\/$/.test(n) && !listed.has(n)).forEach((n) => warn(n, 'Not listed in media.json: it has no position.'));
+        names.filter((n) => !/^(photos|audio)\//.test(n) && !['roadbook.json', 'media.json'].includes(n)).forEach((n) => warn(n, 'Unknown entry: readers ignore it.'));
+        return { valid: !errors.length, errors, warnings };
+    }
+    // A .rdbk document → a roadbook in memory (a Roadbook Suite file is imported instead). Throws
+    // on a document validateRoadbook rejects, the report attached for whoever wants to show it.
+    function readRoadbook(doc) {
+        if (isSuiteRoadbook(doc)) return importSuiteRoadbook(doc);
+        const report = validateRoadbook(doc);
+        if (!report.valid) {
+            const e = new Error('This file is not a valid .rdbk roadbook.');
+            e.report = report;
+            throw e;
+        }
+        const rb = JSON.parse(JSON.stringify(doc));
+        rb.symbols = rb.symbols || {};
+        rb.notes.forEach((n) => {
+            if (n.text == null) n.text = '';
+            if (n.road_type == null) n.road_type = DEFAULT_ROAD_TYPE;
+            if (n.cap == null) n.cap = null;
+            n.symbols = (n.symbols || []).map((ic) => ({ ...ic, angle: ic.angle || 0, mirrored: !!ic.mirrored }));
+            n.junctions = (n.junctions || []).map((b) => ({ ...b, road_type: b.road_type || DEFAULT_ROAD_TYPE }));
+            if (n.imported_tulip) n.imported_tulip.shown = n.imported_tulip.shown !== false;
         });
-        repairDegenerateBearings(rb); // a bearing taken from a duplicate vertex is meaningless (#452)
-        return rb;
+        return recomputeMetrics(rb);
+    }
+    // A roadbook in memory → its .rdbk document: the authored fields only, in the canonical shape.
+    function writeRoadbook(rb) {
+        const m = rb.meta || {}, meta = { title: String(m.title || '').trim() || 'roadbook' };
+        ['description', 'author', 'organization'].forEach((k) => { const v = typeof m[k] === 'string' ? m[k].trim() : ''; if (v) meta[k] = v; });
+        if (m.modified) meta.modified = m.modified;
+        if (m.logo) meta.logo = m.logo;
+        if (m.map_allowed === false) meta.map_allowed = false;
+        if (m.default_validation_radius != null) meta.default_validation_radius = m.default_validation_radius;
+        meta.generator = GENERATOR;
+        const track = rb.track.map((p) => {
+            const q = { lat: round6(p.lat), lon: round6(p.lon) };
+            if (p.elevation != null) q.elevation = Math.round(p.elevation);
+            if (p.time_ms != null) q.time_ms = Math.round(p.time_ms);
+            return q;
+        });
+        const notes = rb.notes.map((n) => {
+            const o = { track_index: n.track_index };
+            if (n.text) o.text = n.text;
+            if (n.road_type != null && n.road_type !== DEFAULT_ROAD_TYPE) o.road_type = n.road_type;
+            if (n.cap != null) { o.cap = Math.round(normDeg(n.cap)) % 360; if (n.cap_type && n.cap_type !== 'exit') o.cap_type = n.cap_type; }
+            if (n.speed_limit_kmh != null) o.speed_limit_kmh = n.speed_limit_kmh;
+            if (n.danger) o.danger = n.danger;
+            if (n.waypoint_type) o.waypoint_type = n.waypoint_type;
+            if (n.validation_radius != null) o.validation_radius = n.validation_radius;
+            const symbols = (n.symbols || []).map((ic) => {
+                const q = { name: ic.name, position: [ic.position[0], ic.position[1]], size: ic.size };
+                if (ic.angle) q.angle = ic.angle;
+                if (ic.mirrored) q.mirrored = true;
+                return q;
+            });
+            if (symbols.length) o.symbols = symbols;
+            const junctions = (n.junctions || []).map((b) => {
+                const q = { from: [b.from[0], b.from[1]], to: [b.to[0], b.to[1]] };
+                if (b.road_type != null && b.road_type !== DEFAULT_ROAD_TYPE) q.road_type = b.road_type;
+                return q;
+            });
+            if (junctions.length) o.junctions = junctions;
+            if (n.imported_tulip) o.imported_tulip = n.imported_tulip.shown === false ? { image: n.imported_tulip.image, shown: false } : { image: n.imported_tulip.image };
+            const blocks = (n.blocks || []).filter((b) => b && (b.image || b.text)).map((b) => {
+                const q = { type: b.type, placement: b.placement === 'before' ? 'before' : 'after' };
+                if (b.image) q.image = b.image;
+                if (b.text) q.text = b.text;
+                return q;
+            });
+            if (blocks.length) o.blocks = blocks;
+            if (n.compatibility && Object.keys(n.compatibility).length) o.compatibility = JSON.parse(JSON.stringify(n.compatibility));
+            return o;
+        });
+        const doc = { rdbk_version: FORMAT_VERSION, meta, track, notes };
+        const symbols = {};
+        Object.keys(rb.symbols || {}).sort().forEach((k) => { symbols[k] = rb.symbols[k]; }); // the roadbook's library, every custom symbol included (#454)
+        if (Object.keys(symbols).length) doc.symbols = symbols;
+        if (rb.compatibility && Object.keys(rb.compatibility).length) doc.compatibility = JSON.parse(JSON.stringify(rb.compatibility));
+        return doc;
     }
 
     /* ---------------- metric recomputation (after edit/splice) ---------------- */
-    // The road you ARRIVE on at a note is the road the previous note LEAVES on, so
-    // road_type_in is always derived from the previous note's road_type_out (the
-    // first note has no predecessor, so it arrives on the road it leaves on). Only
-    // road_type_out is authored per note — the road simply continues until a note
-    // changes it. Run after every edit so the invariant always holds.
-    function normalizeRoadTypes(rb) {
-        let prev = null;
-        rb.notes.forEach((n) => {
-            n.road_type_in = prev ? prev.road_type_out : n.road_type_out;
-            prev = n;
-        });
-        return rb;
-    }
-    // Recomputes num, clamped idx, lat/lon, distance/partial_distance and bearings from the track.
+    /* The DERIVED values — never in the file, computed by every reader from the track, the same way
+       everywhere (distances: haversine on a 6 371 000 m sphere, rounded to whole metres):
+         note.num               its position in the list, from 1
+         note.lat / note.lon    the track point it sits on
+         note.distance          metres along the track from its first point
+         note.partial_distance  metres along the track from the previous note (0 for the first)
+         note.bearing_in / out  the track's bearing arriving / leaving (deriveBearings)
+         note.road_type_in      the road it arrives on: the previous note's road_type (the first
+                                note arrives on the road it leaves on)
+         note.cap_distance      with a CAP: the straight-line metres to the next note
+         meta.total_distance    the track's length · meta.note_count  the number of notes
+       Run after every edit, so the invariants always hold. */
     function recomputeMetrics(rb) {
         const cum = cumulativeM(rb.track);
-        // Every row is a waypoint (a note's photos, adverts and texts hang off the note itself),
-        // so the list is simply the notes in track order, renumbered from 1.
-        rb.notes.sort((a, b) => a.idx - b.idx);
+        rb.notes.sort((a, b) => a.track_index - b.track_index);
         rb.notes.forEach((n, i) => {
-            const idx = Math.max(0, Math.min(rb.track.length - 1, n.idx | 0));
-            n.idx = idx;
-            const tp = rb.track[idx];
+            const k = Math.max(0, Math.min(rb.track.length - 1, n.track_index | 0));
+            n.track_index = k;
+            const tp = rb.track[k];
             n.lat = round6(tp.lat); n.lon = round6(tp.lon);
-            n.distance = Math.round(cum[idx]);
-            n.partial_distance = Math.round(i === 0 ? 0 : Math.max(0, cum[idx] - cum[rb.notes[i - 1].idx]));
-            const { bIn, bOut } = deriveBearings(rb.track, idx);
+            n.distance = Math.round(cum[k]);
+            n.partial_distance = Math.round(i === 0 ? 0 : Math.max(0, cum[k] - cum[rb.notes[i - 1].track_index]));
+            const { bIn, bOut } = deriveBearings(rb.track, k);
             n.bearing_in = round3(bIn); n.bearing_out = round3(bOut);
+            n.road_type_in = i === 0 ? n.road_type : rb.notes[i - 1].road_type;
             n.num = i + 1;
         });
-        normalizeRoadTypes(rb);
+        rb.notes.forEach((n, i) => {
+            const next = rb.notes[i + 1];
+            if (n.cap == null) delete n.cap_distance;
+            else n.cap_distance = next ? Math.round(haversineM(n, next)) : null;
+        });
         rb.meta.total_distance = Math.round(cum[cum.length - 1] || 0);
         rb.meta.note_count = rb.notes.length;
         return rb;
     }
-    // Recompute the red CAP (heading + straight-line distance in metres to the next note) where active.
+    // The Editor keeps every CAP on the straight bearing to the next note it points at: after an
+    // edit each one is proposed afresh; the last note has nothing to point at and loses its CAP.
     function recomputeCaps(rb) {
         const notes = rb.notes;
-        for (let i = 0; i < notes.length; i++) {
-            const n = notes[i], nx = notes[i + 1];
-            if (n.cap != null && nx) { n.cap = Math.round(bearingDeg(n, nx)); n.cap_distance = Math.round(haversineM(n, nx)); }
-            else if (n.cap != null) { n.cap = null; n.cap_distance = null; } // target note was deleted → clear stale cap
-        }
+        notes.forEach((n, i) => {
+            if (n.cap == null) return;
+            const next = notes[i + 1];
+            if (next) { n.cap = Math.round(bearingDeg(n, next)) % 360; n.cap_distance = Math.round(haversineM(n, next)); }
+            else { n.cap = null; delete n.cap_type; delete n.cap_distance; }
+        });
         return rb;
     }
     /* ---------------- route operations (editor tools) ---------------- */
@@ -1161,8 +1287,8 @@
         const track = rb.track, notes = rb.notes, n = notes && notes[i];
         if (!n || !here || !track || track.length < 2) return null;
         const last = track.length - 1;
-        const from = Math.max(0, Math.min(i > 0 ? notes[i - 1].idx : 0, last - 1));
-        const to = Math.max(from + 1, Math.min(notes[i + 1] ? notes[i + 1].idx : last, last));
+        const from = Math.max(0, Math.min(i > 0 ? notes[i - 1].track_index : 0, last - 1));
+        const to = Math.max(from + 1, Math.min(notes[i + 1] ? notes[i + 1].track_index : last, last));
         const proj = planarAround(here), P = proj(here), passes = [];
         let best = null;
         for (let k = from; k < to; k++) {
@@ -1205,7 +1331,7 @@
     function routeResync(rb, cum, activeIdx, trail, radiusOf) {
         const track = rb.track, notes = rb.notes, active = notes && notes[activeIdx];
         if (!active || !trail || trail.length < RESYNC_FIXES || !track || track.length < 2 || !cum || cum.length !== track.length) return -1;
-        const fromK = Math.max(0, Math.min(activeIdx > 0 ? notes[activeIdx - 1].idx : 0, track.length - 2));
+        const fromK = Math.max(0, Math.min(activeIdx > 0 ? notes[activeIdx - 1].track_index : 0, track.length - 2));
         const recent = trail.slice(-RESYNC_FIXES);
         for (const p of recent) {
             if (p.cands && p.fromK === fromK) continue;
@@ -1248,7 +1374,7 @@
     }
     // Simplify rb.track (notes' anchor points always survive), then remap and recompute.
     function simplifyRoadbook(rb, toleranceM) {
-        const keep = simplifyKeepMask(rb.track, toleranceM, rb.notes.map((n) => n.idx));
+        const keep = simplifyKeepMask(rb.track, toleranceM, rb.notes.map((n) => n.track_index));
         if (keep) {
             // Exact old→new index remap: every note's own vertex is in the mask, so its new
             // index is the count of kept vertices before it. Never re-anchor spatially here —
@@ -1258,27 +1384,24 @@
             let k = 0;
             for (let i = 0; i < keep.length; i++) newIdx[i] = keep[i] ? k++ : -1;
             rb.track = rb.track.filter((_, i) => keep[i]);
-            rb.notes.forEach((n) => { n.idx = newIdx[n.idx] >= 0 ? newIdx[n.idx] : nearestIdx(rb.track, n); });
+            rb.notes.forEach((n) => { n.track_index = newIdx[n.track_index] >= 0 ? newIdx[n.track_index] : nearestIdx(rb.track, n); });
         }
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
     // Reverse the direction of travel: track flipped, notes re-anchored and
     // re-ordered. The road a note now LEAVES on is the one it used to arrive on,
-    // so road_type_out becomes the old road_type_in; recomputeMetrics re-derives
+    // so its road_type becomes the old road_type_in; recomputeMetrics re-derives
     // road_type_in (and bearings/CAPs follow).
     function reverseRoadbook(rb) {
         rb.track.reverse();
         const last = rb.track.length - 1;
-        rb.track.forEach((p) => { delete p.t; });
-        rb.notes.forEach((n) => { n.idx = last - n.idx; n.road_type_out = n.road_type_in; });
+        rb.track.forEach((p) => { delete p.time_ms; });
+        rb.notes.forEach((n) => { n.track_index = last - n.track_index; n.road_type = n.road_type_in; });
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
     }
-    // A bare note anchored at track index `idx` — recomputeMetrics fills in the rest. The one
-    // shape every tool that adds a note starts from.
-    const bareNote = (rb, idx, roadType) => ({ num: 0, idx, distance: 0, partial_distance: 0, lat: rb.track[idx].lat, lon: rb.track[idx].lon, text: '', cap: null, cap_distance: null, bearing_in: 0, bearing_out: 0, road_type_in: roadType, road_type_out: roadType, junctions: null, icons: [] });
-    // Lengthen the route with another track (the Editor's Add GPX). `piece` is oriented so its
+    // Lengthen the route with another track (the Editor's Add GPX): `piece` is GPS fixes, oriented so its
     // FIRST point meets the joined end: after the finish, or — `atStart` — before the start,
     // running into it. A first point ON the joined end is not duplicated; one merely near it is
     // kept, the route bridging to it. Every joined point keeps its elevation and time (#158) so a
@@ -1286,21 +1409,16 @@
     // new end note rides the new tip.
     function joinTrack(rb, piece, atStart) {
         const end = atStart ? rb.track[0] : rb.track[rb.track.length - 1];
-        const pts = piece.slice(haversineM(end, piece[0]) < 1 ? 1 : 0).map((p) => {
-            const q = { lat: p.lat, lon: p.lon };
-            if (p.ele != null && isFinite(p.ele)) q.ele = p.ele;
-            if (p.t != null) q.t = p.t;
-            return q;
-        });
+        const pts = piece.slice(haversineM(end, piece[0]) < 1 ? 1 : 0).map(trackPoint);
         if (atStart) {
             const first = rb.notes[0];
             rb.track = pts.reverse().concat(rb.track);
-            rb.notes.forEach((n) => { n.idx += pts.length; });
-            rb.notes.push(bareNote(rb, 0, first ? first.road_type_out : 3));
+            rb.notes.forEach((n) => { n.track_index += pts.length; });
+            rb.notes.push(blankNote(0, first ? first.road_type : DEFAULT_ROAD_TYPE));
         } else {
             const last = rb.notes[rb.notes.length - 1];
             rb.track = rb.track.concat(pts);
-            rb.notes.push(bareNote(rb, rb.track.length - 1, last ? last.road_type_out : 3));
+            rb.notes.push(blankNote(rb.track.length - 1, last ? last.road_type : DEFAULT_ROAD_TYPE));
         }
         recomputeMetrics(rb); recomputeCaps(rb);
         return rb;
@@ -1367,10 +1485,10 @@
     const APP_WPT_LC = {}; for (const [k, v] of Object.entries(APP_WPT)) APP_WPT_LC[k.toLowerCase()] = v;
     function appWaypointSymbol(note) {
         // A declared waypoint type wins — it carries the FIA characterization into the export.
-        const wt = wpType(note.wp_type);
+        const wt = wpType(note.waypoint_type);
         if (wt) return { sym: wt.sym, osmandIcon: wt.osm, color: wt.color };
         let m = null;
-        for (const ic of (note.icons || [])) { const k = (ic.name || '').split('/').pop().toLowerCase(); if (APP_WPT_LC[k]) { m = APP_WPT_LC[k]; break; } }
+        for (const ic of (note.symbols || [])) { const k = (ic.name || '').split('/').pop().toLowerCase(); if (APP_WPT_LC[k]) { m = APP_WPT_LC[k]; break; } }
         if (!m) m = note.danger ? APP_DANGER : APP_DEFAULT;
         const colorName = note.danger ? 'red' : m.color; // a danger note is always red
         return { sym: m.sym, osmandIcon: m.osmandIcon, color: APP_COLOR_HEX[colorName] || '' };
@@ -1397,6 +1515,14 @@
     // writes in <osmand:color>. Garmin's gpxx carries no colour tag — the sym name holds it.
     const SYM_COLOR = { green: '#00842b', red: '#d00d0d', blue: '#1010a0' };
     const colorFromSym = (sym) => SYM_COLOR[(sym.split(',').pop() || '').trim().toLowerCase()] || null;
+    // An imported waypoint's Garmin/OSMAnd icon as the note keeps it (`compatibility.gpx`).
+    function gpxCompatibility(appwpt) {
+        const gpx = {};
+        if (appwpt.sym) gpx.sym = appwpt.sym;
+        if (appwpt.osmandIcon) gpx.osmand_icon = appwpt.osmandIcon;
+        if (appwpt.color) gpx.osmand_color = appwpt.color;
+        return gpx;
+    }
     function appwptFromImport(sym, osmandIcon, color) {
         const oi = (osmandIcon || '').trim(), sy = (sym || '').trim();
         if (oi === 'special_marker' || sy === 'Dangerous Area') return { danger: 3 };
@@ -1423,13 +1549,14 @@
             const at = Object.entries(e.attrs || {}).map(([k, v]) => ` ${k}="${x(v)}"`).join('');
             return e.text ? `<openrally:${e.tag}${at}><![CDATA[${e.text}]]></openrally:${e.tag}>` : `<openrally:${e.tag}${at}/>`;
         };
-        const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? '<ele>' + Math.round(p.ele) + '</ele>' : ''}</trkpt>`).join('');
+        const trkpts = (rb.track || []).map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.elevation != null ? '<ele>' + Math.round(p.elevation) + '</ele>' : ''}</trkpt>`).join('');
         const wpts = (rb.notes || []).map((n, i) => {
             const ext = [`<openrally:distance>${((n.distance || 0) / 1000).toFixed(3)}</openrally:distance>`];
-            if (n.wp_type) { const w = wpType(n.wp_type); ext.push(`<openrally:wptType>${x(w ? w.cap : n.wp_type)}</openrally:wptType>`); }
-            if (Array.isArray(n.openrally) && n.openrally.length) {
-                // imported note: re-emit every preserved param verbatim (cap·danger·speed·wp types·zones·…)
-                n.openrally.forEach((e) => ext.push(emitOr(e)));
+            if (n.waypoint_type) { const w = wpType(n.waypoint_type); if (w) ext.push(`<openrally:wptType>${x(w.cap)}</openrally:wptType>`); }
+            const kept = n.compatibility && n.compatibility.openrally;
+            if (Array.isArray(kept) && kept.length) {
+                // imported note: re-emit every preserved param verbatim (cap·danger·speed·zones·…)
+                kept.forEach((e) => ext.push(emitOr(e)));
             } else {
                 // RDBK-native note: the computed set
                 if (n.cap != null) ext.push(`<openrally:cap>${Math.round(n.cap)}</openrally:cap>`);
@@ -1446,32 +1573,16 @@
             + `${wpts}<trk><name>${x(name)}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
     }
 
-    // Deep-clone the roadbook with OpenRally cap codes in place of internal wp_type
-    // IDs, so .rdbk export / server save carry interoperable codes (WPM, WPN, …)
-    // instead of internal ones (masked, navigation, …). The clone leaves rb unchanged.
-    function roadbookForExport(rb) {
-        const out = JSON.parse(JSON.stringify(rb));
-        (out.notes || []).forEach((n) => {
-            if (n.wp_type) { const w = wpType(n.wp_type); if (w && w.cap) n.wp_type = w.cap; }
-        });
-        return out;
-    }
-
-    // speed limit encoded in a symbol name (S01_10km → 10; S99_end → 0 = limit lifted)
+    // The speed limit a traffic-sign symbol shows (S01_10km → 10; S99_end → 0 = limit lifted): the
+    // Editor proposes it when the sign is placed, the Roadbook Suite import reads it.
     function speedLimitFromName(name) {
         if (!name) return null;
         if (/S99_end/i.test(name)) return 0;
         const m = String(name).match(/^S\d{2}_(\d{1,3})km/i);
         return m ? parseInt(m[1], 10) : null;
     }
-    // limit in force at a note (0 = limit lifted). The declarative speed_limit field is the
-    // source of truth; a limit encoded in an icon name (imported roadbooks) is the fallback.
-    function speedLimitOfNote(note) {
-        if (note.speed_limit != null) return note.speed_limit;
-        let lim = null;
-        (note.icons || []).forEach((ic) => { const v = speedLimitFromName(ic.name); if (v != null) lim = v; });
-        return lim;
-    }
+    // The limit a note imposes (km/h; 0 = limit lifted), or null.
+    const speedLimitOfNote = (note) => (note && note.speed_limit_kmh != null ? note.speed_limit_kmh : null);
 
     /* ---------------- consistency report (#339) ---------------- */
     // What is probably a mistake in a roadbook but is NOT something the editor can fix on its own,
@@ -1514,11 +1625,11 @@
     // start/finish icon. Returns null when the roadbook has no start marker — all notes scored.
     const START_ICON = 'I02_partenza.png', FINISH_ICON = 'I01_arrivo.png';
     function scoredNoteSet(notes) {
-        // A stage opens on the FIA selective-section start (wp_type 'ss_start' = DSS) or the
-        // start icon, and closes on 'ss_end' (ASS) or the finish icon (#215).
-        const has = (n, name) => (n.icons || []).some((ic) => ic.name === name);
-        const opens = (n) => n.wp_type === 'ss_start' || has(n, START_ICON);
-        const closes = (n) => n.wp_type === 'ss_end' || has(n, FINISH_ICON);
+        // A stage opens on the FIA selective-section start (waypoint_type 'ss_start' = DSS) or the
+        // start symbol, and closes on 'ss_end' (ASS) or the finish symbol (#215).
+        const has = (n, name) => (n.symbols || []).some((ic) => ic.name === name);
+        const opens = (n) => n.waypoint_type === 'ss_start' || has(n, START_ICON);
+        const closes = (n) => n.waypoint_type === 'ss_end' || has(n, FINISH_ICON);
         if (!notes.some(opens)) return null;
         const set = new Set();
         let inStage = false;
@@ -1631,19 +1742,14 @@
         catch (e) { return { meta, valid: false }; }
     }
 
-    /* ---------------- icon resolution ---------------- */
-    // Source for a note icon: direct data: URI, the roadbook's embedded library
-    // (rb.icons, case-insensitive) or the standard palette under basePath.
-    function iconSrc(ic, rb, basePath) {
-        const name = ic.name || '';
-        if (/^data:/.test(name)) return name;
-        const base = name.split('/').pop();
-        if (rb && rb.icons) {
-            if (rb.icons[base]) return rb.icons[base];
-            const k = Object.keys(rb.icons).find((x) => x.toLowerCase() === base.toLowerCase());
-            if (k) return rb.icons[k];
-        }
-        return (basePath || '') + base;
+    /* ---------------- symbol resolution ---------------- */
+    // The image of a note's symbol: the roadbook's own library (rb.symbols) — every symbol of a
+    // .rdbk file is there — else, while a roadbook is being edited and a palette symbol has not been
+    // embedded yet, the standard palette under basePath.
+    function symbolSrc(symbol, rb, basePath) {
+        const name = symbol.name || '';
+        if (rb && rb.symbols && rb.symbols[name]) return rb.symbols[name];
+        return (basePath || '') + name;
     }
 
     /* ---------------- rounding ---------------- */
@@ -1668,13 +1774,13 @@
     // vertex was kept / nothing was deleted. (The Editor's "Transform" keeps the point instead.)
     function deleteNote(rb, i) {
         if (!rb || i < 0 || i >= rb.notes.length) return -1;
-        const idx = rb.notes[i].idx;
+        const k = rb.notes[i].track_index;
         rb.notes.splice(i, 1);
         let removed = -1;
         if (rb.track.length > 2) {
-            rb.track.splice(idx, 1);
-            rb.notes.forEach((n) => { if (n.idx > idx) n.idx -= 1; });
-            removed = idx;
+            rb.track.splice(k, 1);
+            rb.notes.forEach((n) => { if (n.track_index > k) n.track_index -= 1; });
+            removed = k;
         }
         recomputeMetrics(rb); recomputeCaps(rb);
         return removed;
@@ -1724,8 +1830,10 @@
         // a checkpoint the user declined stays on the device but is never offered again (#436)
         snap = Object.fromEntries(Object.entries(snap || {}).filter(([, v]) => !(v && v.declined)));
         const out = [];
+        // a checkpoint holds a roadbook in memory; one of another .rdbk version is not work to resume
+        const current = (rb) => !!rb && rb.rdbk_version === FORMAT_VERSION && !!rb.meta && Array.isArray(rb.notes);
         const draft = snap.rb_editor_draft;
-        if (draft && draft.rb && draft.rb.meta && Array.isArray(draft.rb.notes)) {
+        if (draft && current(draft.rb)) {
             out.push({ tool: 'editor', url: 'editor/', keys: ['rb_editor_draft'], kind: 'draft',
                 title: draft.rb.meta.title || '', noteCount: draft.rb.notes.length });
         }
@@ -1746,7 +1854,7 @@
                 distanceM: tm.totalM || 0 });
         }
         const nav = snap.rb_session, navRb = snap.rb_session_roadbook;
-        if (nav && nav.pen && navRb && Array.isArray(navRb.notes)) {
+        if (nav && nav.pen && current(navRb)) {
             out.push({ tool: 'reader', url: 'reader/', keys: ['rb_session', 'rb_session_roadbook'], kind: 'navigation',
                 title: (navRb.meta && navRb.meta.title) || '', distanceM: nav.totalM || 0,
                 noteIdx: nav.activeIdx || 0, noteTotal: navRb.notes.length });
@@ -1763,16 +1871,16 @@
         return root + '/go/' + code;
     }
     const RB = {
-        ROAD_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
+        FORMAT_VERSION, ROAD_TYPES, ROAD_WIDTH, DOUBLE_GAP, DEFAULT_ROAD_TYPE, roadType, CAP_TYPES, CONST, WP_TYPES, ROADBOOK_STATUSES, roadbookStatus, wpType, wpTypeByCap, wpTypesForProfile, wpBadgeSVG, detectionRadius, reachRadius, noteReached, notePassed, autoReachedIdx, courseFrom, courseTrail, manualGate,
         geo: { haversineM, bearingDeg, destPoint },
-        parseGPX, parseWPT, buildRoadbook, importRoadbook, parseOpenRally,
-        recomputeMetrics, recomputeCaps, normalizeRoadTypes, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, tulipToDataURL,
-        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, liveAllowed, liveDue, liveFreshness, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, bareNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
-        buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, iconSrc,
+        parseGPX, parseWPT, buildRoadbook, readRoadbook, writeRoadbook, validateRoadbook, validateMedia, newRoadbook, trackPoint, trackFixes, parseOpenRally,
+        recomputeMetrics, recomputeCaps, speedLimitOfNote, speedLimitFromName, consistencyReport, appwptFromImport, gpxCompatibility, tulipToDataURL,
+        simplifyRoadbook, reverseRoadbook, joinTrack, routeAhead, routeResync, leftToNote, liveAllowed, liveDue, liveFreshness, tulipShape, tulipContext, tulipPoints, tulipAddPoints, TULIP_SHAPE_M, TULIP_SHAPE_POINTS, blankNote, iconBackground, removeIconBackground, gpxDocument, kmlDocument, openRallyDocument, appWaypointSymbol, nearestOnTrack,
+        buildMeta, parseMeta, metaRbPrefix, signMeta, verifyMeta, metaOf, symbolSrc,
         scoredNoteSet, isScoredIdx, validationPenalties, speedPenalty, skipPenalty, rankEntry, speedBand, hhmmss, ddmmyy, parseHms,
-        roadbookForExport, NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
+        NOTE_BLOCKS, blockType, noteBlocks, isEndNote, isFirstNote,
         nearestIdx, nearestIdxByTime, resolveIdx, round6, slug, urlToDataURL, pad2, filterByText, filterRoadbooks, filterByVehicles, VEHICLES, parseEmailList, distanceChars, deleteNote, pendingWork,
-        cumulativeM, deriveBearings, repairDegenerateBearings, recJunkFix, gpsHealth, recStepM, odometerStep,
+        cumulativeM, deriveBearings, recJunkFix, gpsHealth, recStepM, odometerStep,
         eventLink,
     };
     // The browser uses the global; Node (the test runner) imports the same object.

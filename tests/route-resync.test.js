@@ -23,7 +23,7 @@ function roadbook(corners, noteMs) {
     const track = trackThrough(corners), cum = RB.cumulativeM(track);
     const notes = noteMs.map((m, i) => {
         const idx = cum.findIndex((c) => c >= m - 0.5);
-        return { num: i + 1, idx, lat: track[idx].lat, lon: track[idx].lon, distance: Math.round(cum[idx]) };
+        return { num: i + 1, track_index: idx, lat: track[idx].lat, lon: track[idx].lon, distance: Math.round(cum[idx]) };
     });
     return { rb: { track, notes }, cum };
 }

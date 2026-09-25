@@ -29,10 +29,10 @@ function rb_vehicle_list(string $set): array { return explode(',', rb_clean_vehi
 function rb_list(array $user): void {
     global $CFG;
     // every roadbook as the shared card (rb_card_fields — the app home draws them, #895), plus what
-    // My roadbooks lists: its category, status, last change and disk usage
-    $st = db()->prepare("SELECT " . RB_CARD_SQL . ", r.category, r.status, r.updated_at, r.filename FROM roadbooks r WHERE r.user_id = ? AND r.status <> 'deleted' ORDER BY r.updated_at DESC");
+    // My roadbooks lists: its status, last change and disk usage
+    $st = db()->prepare("SELECT " . RB_CARD_SQL . ", r.status, r.updated_at, r.filename FROM roadbooks r WHERE r.user_id = ? AND r.status <> 'deleted' ORDER BY r.updated_at DESC");
     $st->execute([$user['id']]);
-    $rbs = array_map(fn($r) => rb_card_fields($r) + ['category' => $r['category'], 'status' => $r['status'], 'updated_at' => $r['updated_at'], 'filename' => $r['filename']], $st->fetchAll());
+    $rbs = array_map(fn($r) => rb_card_fields($r) + ['status' => $r['status'], 'updated_at' => $r['updated_at'], 'filename' => $r['filename']], $st->fetchAll());
     // Per-roadbook disk usage: the .rdbk file + photos + audio (#246)
     foreach ($rbs as &$rb) {
         $rid = (int)$rb['id'];
@@ -113,7 +113,7 @@ function rb_get(array $user, array $d): void {
     // The soft edit lock (#154) is taken only when the caller ASKS for it (the Editor does;
     // the Reader reads the same roadbooks without blocking anyone's editing).
     $lock = !empty($d['lock']) ? rb_lock_acquire($id, (int)$user['id']) : null;
-    json_out(['ok' => true, 'id' => $id, 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'vehicles' => rb_vehicle_list($row['vehicles']), 'slug' => $row['slug'],
+    json_out(['ok' => true, 'id' => $id, 'title' => $row['title'], 'status' => $row['status'], 'reusable' => (int)$row['reusable'], 'vehicles' => rb_vehicle_list($row['vehicles']), 'slug' => $row['slug'],
         'is_owner' => $isOwner, 'owner' => $row['owner'], 'lock' => $lock, 'roadbook' => $rb]);
 }
 
@@ -171,33 +171,58 @@ function rb_assert_quota(int $ownerId, int $prevBytes, int $newBytes): void {
     if (user_disk_bytes($ownerId) - $prevBytes + $newBytes > $quota) fail('Storage limit reached — free up space or ask an admin for more.', 413);
 }
 
-/* `icons` is a MAP (symbol name → data URI), and PHP does not distinguish an empty map from an
-   empty list: json_decode(..., true) turns `{}` into `[]` and json_encode writes `[]` back. The
-   editor then sets named keys on what JavaScript sees as an ARRAY, and JSON.stringify serialises
-   only its indexed elements — so every icon the user added was silently dropped on the way back
-   here (#523). Forcing the empty case to an object keeps the shape the .rdbk format defines. */
-function rb_shape_maps(array $rb): array {
-    if (!isset($rb['icons']) || $rb['icons'] === [] || $rb['icons'] === null) $rb['icons'] = new stdClass();
-    return $rb;
-}
-
-// The roadbook payload of a row (user_id, filename, title), read from the owner's storage in the
-// .rdbk shape — the one read shared by rb_get, public_get and admin_rb_get. A recording draft that
-// never got a route has no file yet (filename 'pending'): it reads as an empty skeleton, so the
-// Editor can open it and draw the route (the first save writes the file).
-function rb_read_payload(array $row): array {
-    if ($row['filename'] === 'pending') return ['meta' => ['title' => $row['title']], 'track' => [], 'notes' => []];
+// The roadbook payload of a row (user_id, filename, title): its .rdbk 1 document, as stored — the
+// one read shared by rb_get, public_get and admin_rb_get. A recording draft that never got a route
+// has no file yet (filename 'pending'): it has no document at all (null), and the Editor starts one
+// from its title.
+function rb_read_payload(array $row): ?array {
+    if ($row['filename'] === 'pending') return null;
     $path = rb_dir((int)$row['user_id']) . '/' . $row['filename'];
     if (!is_file($path)) fail('File missing.', 404);
-    return rb_shape_maps((array)json_decode((string)file_get_contents($path), true));
+    return (array)json_decode((string)file_get_contents($path), true);
+}
+
+// Is this a .rdbk 1 document the other surfaces can read? The client validates a roadbook fully
+// (RB.validateRoadbook) before it saves; the server checks the structure every reader relies on —
+// the version, a title, a track of real points, notes in track order — and refuses anything else.
+function rb_valid_document($rb): bool {
+    if (!is_array($rb) || ($rb['rdbk_version'] ?? null) !== 1) return false;
+    if (!is_array($rb['meta'] ?? null) || trim((string)($rb['meta']['title'] ?? '')) === '') return false;
+    $track = $rb['track'] ?? null;
+    if (!is_array($track) || !array_is_list($track) || count($track) < 2) return false;
+    foreach ($track as $p) {
+        if (!is_array($p) || !is_numeric($p['lat'] ?? null) || !is_numeric($p['lon'] ?? null)) return false;
+        if (abs((float)$p['lat']) > 90 || abs((float)$p['lon']) > 180) return false;
+    }
+    $notes = $rb['notes'] ?? null;
+    if (!is_array($notes) || !array_is_list($notes) || !$notes) return false;
+    $prev = -1;
+    foreach ($notes as $n) {
+        $k = $n['track_index'] ?? null;
+        if (!is_int($k) || $k <= $prev || $k >= count($track)) return false;
+        $prev = $k;
+    }
+    return !isset($rb['symbols']) || (is_array($rb['symbols']) && !array_is_list($rb['symbols']));
+}
+
+// The length of a track in whole metres — the same haversine on a 6 371 000 m sphere every reader
+// derives a roadbook's distances with.
+function rb_track_length(array $track): int {
+    $m = 0.0;
+    for ($i = 1, $n = count($track); $i < $n; $i++) {
+        [$a, $b] = [$track[$i - 1], $track[$i]];
+        $dLat = deg2rad($b['lat'] - $a['lat']); $dLon = deg2rad($b['lon'] - $a['lon']);
+        $h = sin($dLat / 2) ** 2 + cos(deg2rad($a['lat'])) * cos(deg2rad($b['lat'])) * sin($dLon / 2) ** 2;
+        $m += 2 * 6371000 * asin(min(1, sqrt($h)));
+    }
+    return (int)round($m);
 }
 
 function rb_save(array $user, array $d): void {
     $rb = $d['roadbook'] ?? null;
-    if (!is_array($rb) || empty($rb['notes']) || empty($rb['track'])) fail('Invalid roadbook.');
-    $title = mb_substr(trim((string)($rb['meta']['title'] ?? '')) ?: 'Untitled', 0, 200);
-    $category = mb_substr(trim((string)($rb['meta']['category'] ?? '')), 0, 100) ?: null;
-    $dist = (int)($rb['meta']['total_distance'] ?? 0);
+    if (!rb_valid_document($rb)) fail('This file is not a valid .rdbk roadbook.');
+    $title = mb_substr(trim((string)$rb['meta']['title']), 0, 200);
+    $dist = rb_track_length($rb['track']);
     $nc = count($rb['notes']);
     $status = rb_clean_status($d['status'] ?? null);
     $reusable = !empty($d['reusable']) ? 1 : 0; // #106: may others copy this public roadbook?
@@ -219,20 +244,20 @@ function rb_save(array $user, array $d): void {
         $dir = rb_dir((int)$row['user_id']);
         $slug = $row['slug'] ?: unique_slug('roadbooks', $title, 'roadbook', $id); // every roadbook gets a slug (view page works private too)
         $fn = $row['filename'] === 'pending' ? $id . '.rdbk' : $row['filename']; // first save of a recording draft gets its real file
-        $json = json_encode(rb_shape_maps($rb));
+        $json = json_encode($rb);
         $path = $dir . '/' . $fn;
         rb_assert_quota((int)$row['user_id'], is_file($path) ? (int)filesize($path) : 0, strlen($json));
         if (!rb_write_file($path, $json)) fail('Could not write the roadbook file.', 500);
-        db()->prepare('UPDATE roadbooks SET title = ?, category = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, vehicles = ?, slug = ?, filename = ? WHERE id = ?')
-            ->execute([$title, $category, $dist, $nc, $status, $reusable, $vehicles, $slug, $fn, $id]);
+        db()->prepare('UPDATE roadbooks SET title = ?, total_distance = ?, note_count = ?, status = ?, reusable = ?, vehicles = ?, slug = ?, filename = ? WHERE id = ?')
+            ->execute([$title, $dist, $nc, $status, $reusable, $vehicles, $slug, $fn, $id]);
         rb_lock_acquire($id, (int)$user['id']); // saving keeps (or takes) the lock, heartbeat included
     } else {
         $dir = rb_dir((int)$user['id']); // a brand-new roadbook is always the saver's own
         $vehicles = $vehicles ?? 'car';
-        $json = json_encode(rb_shape_maps($rb));
+        $json = json_encode($rb);
         rb_assert_quota((int)$user['id'], 0, strlen($json));
-        db()->prepare('INSERT INTO roadbooks (user_id, title, category, total_distance, note_count, status, reusable, vehicles, filename) VALUES (?,?,?,?,?,?,?,?,?)')
-            ->execute([$user['id'], $title, $category, $dist, $nc, $status, $reusable, $vehicles, 'pending']);
+        db()->prepare('INSERT INTO roadbooks (user_id, title, total_distance, note_count, status, reusable, vehicles, filename) VALUES (?,?,?,?,?,?,?,?)')
+            ->execute([$user['id'], $title, $dist, $nc, $status, $reusable, $vehicles, 'pending']);
         $id = (int)db()->lastInsertId();
         $fn = $id . '.rdbk';
         $slug = unique_slug('roadbooks', $title, 'roadbook', $id);

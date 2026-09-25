@@ -56,7 +56,7 @@ I link di gestione vengono da `manageLinks(user, participant)` (#303).
 - **Home** (`public/index.html`): landing marketing sul web, home dell'app nell'app nativa (#720).
   In modalità partecipante reindirizza a `/event/<slug>`.
 - **Footer** (solo desktop — nascosto su mobile): colonna *Product* (le voci di `WEB_NAV`),
-  *Resources* (Help · Install · The .rdbk standard · What’s new · About) e *Legal* (Privacy ·
+  *Resources* (Help · Install · The .rdbk standard · .rdbk validator · What’s new · About) e *Legal* (Privacy ·
   Terms of Use · Contact), da `SITE_LINKS`; nella riga in basso il selettore di lingua, © e la
   versione. Su mobile la pagina Profile ripete gli stessi `SITE_LINKS` (`RBSiteLinksHTML`) e ha il
   selettore di lingua in fondo.

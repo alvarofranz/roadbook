@@ -34,7 +34,7 @@ mostra `.app-only`.
 La galleria è l'unico pezzo dinamico. [home.js](../public/assets/js/home.js) chiama
 `RBChallenges.listPublic()` e disegna un **teaser di 6** roadbook pubblici con la card condivisa
 `RBRoadbookCard` (veicoli, distanza, note, `@autore`); ogni card linka a `challenge/<slug>`. Una card
-**senza foto** riceve la **forma della rotta** (`RBFillRoutes`, saltata se `map_access:false`). La lista è **in cache**
+**senza foto** riceve la **forma della rotta** (`RBFillRoutes`, saltata se `map_allowed:false`). La lista è **in cache**
 (`cards`) così un cambio lingua ri-disegna senza rifare la fetch (evento `rb-lang`). La lista
 completa e ricercabile vive su `/roadbooks`.
 
@@ -300,17 +300,22 @@ documento a sé:
   solo il `<title>`/description lo sono). Porta un `<meta name="terms-version">` machine-readable
   che la registrazione registra come versione accettata (#135, vedi
   [backend-api](backend-api.md)). Email di contatto: `rdbk.admin@gmail.com`.
-- **Contact (`/contact/`)** — pagina contatti (#161): intro, il **modulo di contatto**, l'email
-  `rdbk.admin@gmail.com` e i rimandi a Privacy e About. Il modulo ([contact.js](../public/contact/contact.js))
+- **Contact (`/contact/`)** — pagina contatti (#161): intro, il **modulo di contatto** e, subito
+  sotto, una riga (`.contact-legal`) con i rimandi a Privacy e About. Il modulo ([contact.js](../public/contact/contact.js))
   chiede nome, email (precompilati se sei loggato), l'argomento (sei pillole: domanda · idea · qualcosa
-  non funziona · eventi · privacy · altro) e il messaggio (10–5000 caratteri); *Invia* si attiva solo a
+  non funziona · eventi · privacy · altro — 2 × 3 su un telefono, 3 × 2 da 620 px) e il messaggio (10–5000 caratteri); *Invia* si attiva solo a
   modulo completo e non parte due volte (`RBBusy`). Il server (`contact_send`, [app/contact.php](../app/contact.php))
   ricontrolla tutto, poi Turnstile, un rate limit per IP (5/ora) e un honeypot (`website`: un bot che
   lo riempie riceve `ok` e nulla parte); la mail va via SendGrid a `CONTACT_TO` con copia a
   `CONTACT_CC` (`.env`, separati da virgola) e `Reply-To` = il mittente. Nulla viene salvato. Linkata
   dal footer globale, in sitemap, i18n in tutte e 5 le lingue.
-- **Standard (`/standard/`)** — la specifica del formato `.rdbk`; documentata a parte in
-  [rdbk-format](rdbk-format.md).
+- **Standard (`/standard/`)** — la specifica del formato `.rdbk` (versione 1); documentata a parte
+  in [rdbk-format](rdbk-format.md).
+- **Validator (`/validator/`)** — si trascina o si sceglie un `.rdbk` (o un `roadbook.json`) e lo si
+  valida nel browser con le stesse funzioni del resto dell'app (`RBZip.inspect` · `RB.validateRoadbook`
+  · `RB.validateMedia`): nulla viene caricato né salvato. Mostra il verdetto, i dati del file e i
+  primi 100 errori e warning col loro percorso. Linkato dal footer e da `/standard`, in sitemap;
+  documentato in [rdbk-format](rdbk-format.md) §13.
 - **Feature pages (`/features/<tool>/`)** — una pagina "How it works" per ogni tool (recorder ·
   editor · reader · tripmaster · ranking): marketing + spiegazione, con SEO dedicato e le stringhe
   `fp.*` tradotte in tutte le lingue (parità garantita dal test i18n, vedi [i18n](i18n.md)). I nomi

@@ -6,7 +6,7 @@ import RBZip from '../public/assets/js/rbzip.js';
    plain-JSON .rdbk (backward compatible). */
 describe('RBZip — .rdbk v2 container', () => {
     it('round-trips files through write → read (stored, deflated and binary entries)', async () => {
-        const rb = { meta: { title: 'X' }, track: [{ lat: 1, lon: 2 }], notes: [{ num: 1 }], icons: {} };
+        const rb = { meta: { title: 'X' }, track: [{ lat: 1, lon: 2 }], notes: [{ num: 1 }], symbols: {} };
         const bin = new Uint8Array([0, 1, 2, 3, 255, 128, 7, 42]);
         const big = 'roadbook '.repeat(500); // compressible → exercises the deflate/inflate path
         const zip = await RBZip.write({ 'roadbook.json': JSON.stringify(rb), 'photos/a.avif': bin, 'big.txt': big });

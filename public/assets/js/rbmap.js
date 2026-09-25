@@ -305,18 +305,18 @@ window.RBMap = class RBMap {
             type: 'FeatureCollection',
             features: rb.notes.map((n, i) => ({ type: 'Feature', properties: { num: String(n.num), i: String(i) }, geometry: { type: 'Point', coordinates: [n.lon, n.lat] } })),
         });
-        this._noteIdx = new Set(rb.notes.map((n) => n.idx)); // points carrying a note get the blue marker, not a white vertex dot
+        this._noteIdx = new Set(rb.notes.map((n) => n.track_index)); // points carrying a note get the blue marker, not a white vertex dot
         if (this._vertShow) { this._vertShow = rb.track; this._paintVerts(rb.track); } // the dots follow the track shown — an undo or a join replaces the array, and a style swap repaints from it
         this._lastNotes = rb.notes; this._paintWpIcons(); // refresh the WP-type icon overlay when it's on
         if (!noFit) this._fit(rb);
     }
-    // WP-type badge overlay (`wpIcons`): each note carrying a wp_type shows its colour badge over
+    // WP-type badge overlay (`wpIcons`): each note carrying a waypoint_type shows its colour badge over
     // its dot (visual only — pointer-events:none, so clicks/drag still reach the marker layer).
     _paintWpIcons() {
         this._wpMarkers.forEach((mk) => mk.remove()); this._wpMarkers = [];
         if (!this._wpIcons || !this.map || !this._lastNotes || !window.RB || !RB.wpBadgeSVG) return;
         this._lastNotes.forEach((n) => {
-            const svg = RB.wpBadgeSVG(n.wp_type, 30); if (!svg) return;
+            const svg = RB.wpBadgeSVG(n.waypoint_type, 30); if (!svg) return;
             const el = document.createElement('div'); el.className = 'rb-wp-badge'; el.innerHTML = svg;
             this._wpMarkers.push(new maplibregl.Marker({ element: el }).setLngLat([n.lon, n.lat]).addTo(this.map));
         });

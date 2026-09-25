@@ -50,7 +50,7 @@ describe('what the PDF says (#784)', () => {
         expect(src).toContain("</div>`, 'split');"); // the generator: side by side, the whole screen on a phone
     });
     it('draws the route on the cover unless the roadbook hides its map', () => {
-        expect(src).toContain("if (meta.map_access !== false && track.length >= 2) {");
+        expect(src).toContain("if (meta.map_allowed !== false && track.length >= 2) {");
         expect(src).not.toContain('Roadbook produced with RDBK.app');
     });
     it('points the QR at the public page, or at the event it was opened from', () => {

@@ -43,7 +43,7 @@
         const canOpen = r.status !== 'ready' || e.active_participant || e.org_read;
         return RBRoadbookCard(r, {
             href: canOpen ? '/challenge/' + encodeURIComponent(r.slug) + '?event=' + encodeURIComponent(slug) : null,
-            category: r.category, body: statusBadge(r, e),
+            body: statusBadge(r, e),
             overlays: r.status === 'public' ? RBCopyLinkOverlay(r.slug) : '', // public ones are shareable (#493)
         });
     };

@@ -512,8 +512,9 @@ Operational notes:
 - **Editor** — the creation hub. Load from **GPX**, **Draw on the map** (sketch a
   route from scratch), **`.rdbk`** or a public **roadbook** — a finished Recorder session arrives
   as its saved draft (`?rb=<id>`), a GPX logged in the Reader/Tripmaster via `?trip=1`. Edit notes (text, road
-  type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`wp_type`) + validation
-  radius**, declarative **speed limit** — which also tags the note a controlled zone, icons);
+  type, FIA danger grading `!`/`!!`/`!!!`, CAP, **waypoint type (`waypoint_type`) + validation
+  radius**, declarative **speed limit** (`speed_limit_kmh`) — which also tags the note a controlled
+  zone and places the matching sign, icons);
   drag a note on the map to
   reposition. **The GPX is edited ON the map.** The four everyday modes have their own
   rail bottom-left, one letter each, the active one lit and — for 3 s after a change — named (#692 · #754): *M move (drag any
@@ -529,11 +530,13 @@ Operational notes:
   undo/redo (debounced snapshots, Ctrl+Z/Y)*. Whatever the source pieces, the route
   is always ONE continuous track. Title, description,
   author, organization, event logo (downscaled, embedded) and a photo gallery; uploaded or
-  pasted **custom icons live in the roadbook's own library (`rb.icons`) and are offered to
+  pasted **custom icons live in the roadbook's own library (`rb.symbols`) and are offered to
   every note** — only unused *standard* art is pruned on export, since a custom icon has no
   other copy (#454); one on a flat backdrop is offered a browser-side background removal
   (`RB.iconBackground`/`removeIconBackground`, No / Yes with a before/after preview, #694);
-  **Export `.rdbk`** (self-contained), **Export GPX** (track + notes as named
+  **Export `.rdbk`** (self-contained, written by `RB.writeRoadbook` and refused with the validator's
+  errors when it would not pass `RB.validateRoadbook` — Save goes through the same check),
+  **Export GPX** (track + notes as named
   waypoints) and **Save to profile** (public/private — saving pins `?rb=<id>` to the
   URL so re-saves update the same roadbook; importing fresh content starts a new
   one). Vignette editor in `note-canvas.js` (drag/scale/rotate/flip icons + junction
@@ -545,7 +548,7 @@ Operational notes:
   Editor's recording bar serves just "Adjust on the trail".
 - **Reader** — the navigator. Paper-style white roadbook table drawn by the shared
   `NoteCanvas.rowsHTML` (#635): each note is a 3-column `.nrow` (total/partial + number with its
-  FIA waypoint-type badge (`wp_type`) · vignette via `NoteCanvas.toSVG` · text, CAP, speed limit,
+  FIA waypoint-type badge (`waypoint_type`) · vignette via `NoteCanvas.toSVG` · text, CAP, speed limit,
   coordinates) with no buttons on the row (#569), colour-coded by state (reached green · skipped
   pink · active red border · upcoming white) — and the ACTIVE row alone takes the live GPS
   proximity state (blue as you close in, with the distance still to run). Advancing puts the next
@@ -569,8 +572,8 @@ Operational notes:
   shell, a fixed flex column whose only scroller is the note list, #429). Advancement
   is automatic by default: the note validates the moment the **driven segment** between two GPS
   fixes enters its **detection radius** (`RB.noteReached` — testing the single fix let a waypoint
-  slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `wp_radius` →
-  `meta.default_wp_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
+  slip between two of them at speed; the radius is `RB.detectionRadius`: per-note `validation_radius` →
+  `meta.default_validation_radius` → the type default → the system default `CONST.REACH_DEFAULT_M`
   (30 m), floored at `REACH_MIN_M`). There's a live Auto on/off switch in the nav bar; with Auto
   off, validation is manual: a tap on the whole active row marks it done (with Auto on, only the
   GPS validates) — or hands-free from an **external remote**, a Bluetooth pedal/clicker that pairs as a keyboard
@@ -613,6 +616,11 @@ Operational notes:
   the roadbook's owner or an admin may delete one. A **Comments** button beside Navigate · PDF ·
   Edit, with the count, scrolls down to them (#853). Table `roadbook_comments`; API
   `comments_list` / `comment_add` / `comment_delete` (`app/comments.php`).
+  **Validator:** `/validator/` checks a `.rdbk` (or a bare `roadbook.json`) in the browser with the
+  same functions every surface reads one with (`RBZip.inspect` · `RB.validateRoadbook` ·
+  `RB.validateMedia`) — nothing is uploaded or stored — and shows the verdict, the file's facts and
+  the first 100 errors and warnings, each with its exact path. Linked from the footer (*Resources*,
+  `fa-file-circle-check`) and from `/standard`.
   **Completed by (#869):** under the comments, the public completed runs (runner, notes, date, link
   to `/run/<id>`) and only a count of the private ones (`roadbook_completions`). Every roadbook card
   carries the same number as a *Times completed* pill (#868): `rb_card_fields($row)` is the one card
@@ -640,29 +648,35 @@ Operational notes:
   in `KINDS`, one `notify()` where it happens.
 
 ## Shared front-end (`public/assets/js/`)
-- `roadbook-core.js` (`window.RB`) — backbone: geo math, `parseGPX`/`parseWPT`,
-  `buildRoadbook`, `recomputeMetrics`/`recomputeCaps`, route ops
-  (`simplifyRoadbook`, `reverseRoadbook`, `joinTrack`, `bareNote`), `routeAhead` (the live fix
+- `roadbook-core.js` (`window.RB`) — backbone: the **`.rdbk` format** (`FORMAT_VERSION` ·
+  `validateRoadbook` → `{ valid, errors, warnings }` · `readRoadbook` (validates, hydrates the derived
+  values; also imports a Roadbook Suite file) · `writeRoadbook` (the canonical document) ·
+  `validateMedia`), geo math, `parseGPX`/`parseWPT`, `buildRoadbook`/`newRoadbook`/`blankNote`,
+  `trackPoint`/`trackFixes` (GPS fix `{ele, t}` ⇄ track point `{elevation, time_ms}`),
+  `recomputeMetrics` (every derived value)/`recomputeCaps`, route ops
+  (`simplifyRoadbook`, `reverseRoadbook`, `joinTrack`), `routeAhead` (the live fix
   projected onto the route around a note: the along-route position, the road left to the note and
   how far off the route the fix is — the Reader's distances and its note-map guide),
   `gpxDocument` (GPX 1.1 serializer, also used by the Reader's GPX logger),
-  `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitFromName`/`speedLimitOfNote`),
-  the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypesForProfile`/`wpBadgeSVG` ·
+  `parseOpenRally`/`openRallyDocument`, speed-limit helpers (`speedLimitOfNote` reads
+  `speed_limit_kmh`; `speedLimitFromName` reads a sign's name), `gpxCompatibility`,
+  the FIA **waypoint-type** system (`WP_TYPES` catalog · `wpType`/`wpTypeByCap` (OpenRally codes)/`wpTypesForProfile`/`wpBadgeSVG` ·
   `detectionRadius` — the Reader's geofence radius), the live-GPS gates `odometerStep` (what may
   count as distance travelled) and `noteReached` (auto-validation on the driven segment),
   `buildMeta`/`parseMeta` (55-char QR,
   incl. the `rb` roadbook slug-prefix field), `metaRbPrefix`,
-  `signMeta`/`verifyMeta` (HMAC-SHA256), `iconSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
-  `deleteNote`, `pendingWork`, `isEndNote` — the last note, whose tulip draws no exit road because
+  `signMeta`/`verifyMeta` (HMAC-SHA256), `symbolSrc`, generic helpers (`filterByText`/`filterRoadbooks`,
+  `deleteNote`, `pendingWork` (a checkpoint holding a roadbook counts only at the current `rdbk_version`), `isEndNote` — the last note, whose tulip draws no exit road because
   past the finish there is nothing to follow, #447 — and `isFirstNote`), `tulipShape`/`tulipContext`
   (the shape the author drew into the track around a note — 4 or more points within 30 m on
   a side — derived at render time and never stored, #945),
-  `CONST`, `ROAD_TYPES`.
+  `CONST`, `ROAD_TYPES` (+ `ROAD_WIDTH`, `DOUBLE_GAP`, `DEFAULT_ROAD_TYPE`, `roadType`).
 - `note-canvas.js` — `NoteCanvas` (vignette editor) + the static render `NoteCanvas.toSVG`
   (the vignette, used by the Reader rows, the challenge page, the PDF and the OpenRally export).
   Every render takes `ctx = RB.tulipContext(rb, i)` (`toSVG(note, resolveIcon, ctx)` ·
   `setNote(note, ctx)`), so the tulip's roads (`<path>`s) follow the drawn track the same everywhere;
-  an imported tulip is a `cover` icon, shown unless `hidden` (`NoteCanvas.originalTulip`, #943).
+  `roadMarkup()` is the one road renderer (trunk and junctions: each type's FIA stroke, junctions
+  grey); a note's `imported_tulip` is drawn full-box while shown (#943).
 - `rbmap.js` (`RBMap`) — MapLibre GL helper (track, waypoints, live recording, photo
   pins, draggable edit marker, satellite → topo → OSM layer toggle). Used by the **Editor**
   (full editing) and the **Reader** (the interactive per-note map).
@@ -700,6 +714,11 @@ Operational notes:
   `resolveRoadbook` hook supplies one at flush (draft created lazily, signed-in), and until it
   can, a signed-out capture stays queued on the device. Pure `createQueue` core
   (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
+- `rbzip.js` (`RBZip`) — the dependency-free ZIP codec of the `.rdbk` container (native
+  `deflate-raw`): `write(files)` · `read(blob)` · `inspect(file)` → `{ container, names, files, doc,
+  docError, manifest, manifestError }` (what a file holds, unjudged — the validator's input) ·
+  `readBundle(file)` → `{ roadbook, media }` · `readRdbk(file)`; the document they return is raw,
+  the caller passes it to `RB.readRoadbook`.
 - `changelog.js` (`RBChangelog`) — the release notes, one entry per release, newest first;
   rendered on `/changelog/` by `public/changelog/changelog.js` and linked from App Info. See
   **Releasing**.
@@ -781,50 +800,70 @@ Build/test/release steps are in `NATIVE.md`. Toolchain: Node ≥22 + JDK 21 (Cap
   clone needs only `npm run sync`; iOS builds on a Mac with Xcode (or in Xcode Cloud).
 
 ## The `.rdbk` format (open standard, documented at /standard)
-A **ZIP container** (MIME `application/x-roadbook`) holding `roadbook.json` — the
-self-contained roadbook — plus optional geotagged media: `media.json`, `photos/…`,
-`audio/…` (bundled only when the exporter includes them; #162). A reader detects the ZIP
-by its `PK` magic; a bare JSON file is still read as a naked `roadbook.json`. Server-side
-storage stays JSON — the ZIP is the export/import artifact. **All distances are integer
-metres.** Spec page: `public/standard/index.html`; full reference: `docs/rdbk-format.md`.
-The `roadbook.json` schema:
+**Version 1** (`"rdbk_version": 1`, `RB.FORMAT_VERSION`). A **ZIP container** (MIME
+`application/x-roadbook`) holding `roadbook.json` — the self-contained roadbook — plus optional
+geotagged media: `media.json` (`{ photos: [{ file: "photos/…", lat?, lon? }], audio: [...] }`),
+`photos/…`, `audio/…` (bundled only when the exporter includes them; #162). A reader detects the ZIP
+by its `PK` magic; a bare JSON file is read as a naked `roadbook.json`. Server-side storage is JSON
+— the document as the client sent it; the ZIP is the export/import artifact. Spec page:
+`public/standard/index.html`; full reference: `docs/rdbk-format.md`; in-browser checker:
+`/validator/`.
+
+**The file holds only authored data.** Every derived value is computed by the reader
+(`RB.recomputeMetrics`; haversine on a 6 371 000 m sphere, integer metres) and NEVER written: note
+`num`, `lat`/`lon` (its track point), `distance`, `partial_distance`, `bearing_in`/`bearing_out`,
+`road_type_in` (the previous note's `road_type`; the first arrives on its own), `cap_distance` (with a
+CAP: straight-line metres to the next note), `meta.total_distance`, `meta.note_count`. In memory the
+app keeps them (`RB.readRoadbook` hydrates). A value at its default is left out; keys in a fixed
+order; coordinates at most 6 decimals. **All distances are integer metres.** The `roadbook.json`
+schema:
 ```jsonc
 {
-  "meta":  { "title": str, "total_distance": int, "note_count": int, "description"?: str,
-             "author"?: str, "organization"?: str, "modified"?: str /* YYYY-MM-DD */,
-             "logo"?: str /* base64 data: URI, embedded like the icons */,
-             "map_access"?: bool /* may the Reader show a map? absent/true = yes, false = hidden */,
-             "profile"?: "basic"|"rally" /* waypoint-type vocabulary scope; absent = basic */,
-             "default_wp_radius"?: int /* roadbook-wide default validation radius (m) for waypoints without their own */ },
-  "track": [ { "lat": float, "lon": float, "ele"?: int, "t"?: int /* fix time epoch ms UTC, kept from a recording */ } ], // ordered polyline
-  "notes": [ {
-    "num": int, "idx": int,                                   // idx → index into track[]
-    "lat": float, "lon": float,
-    "distance": int, "partial_distance": int,                 // metres
-    "text": str,
-    "cap": int|null, "cap_distance": int|null,                // CAP heading (deg) + metres
-    "cap_type"?: "exit"|"average"|"calculated"|"turning",     // FIA CAP qualifier (exit = default); rendered next to the CAP
-    "bearing_in": float, "bearing_out": float,
-    "road_type_in": 0..5, "road_type_out": 0..5,
-    "speed_limit"?: int,                                      // declarative limit km/h (0 = lifted); preferred over an S*km symbol name
+  "rdbk_version": 1,
+  "meta":  { "title": str, "description"?: str, "author"?: str, "organization"?: str,
+             "modified"?: str /* YYYY-MM-DD */, "logo"?: str /* data: URI */,
+             "map_allowed"?: false /* the Reader may not show a map; absent = allowed */,
+             "default_validation_radius"?: int /* m, for notes without their own */,
+             "generator"?: str /* RDBK.app writes "RDBK.app" */ },
+  "track": [ { "lat": float, "lon": float, "elevation"?: int, "time_ms"?: int /* fix time epoch ms UTC */ } ], // ≥ 2 points
+  "notes": [ {                                                // ≥ 1, track_index strictly increasing
+    "track_index": int,                                       // the track point the note sits on
+    "text"?: str,
+    "road_type"?: 1..5,                                       // the road the note leaves on (default 2, track)
+    "cap"?: 0..359,                                           // authored CAP heading
+    "cap_type"?: "average"|"calculated"|"turning",           // only with a cap (default exit)
+    "speed_limit_kmh"?: int,                                  // in force from this note; 0 = lifted
     "danger"?: 1..3,                                          // FIA grading → red ! / !! / !!! in the vignette
-    "wp_type"?: str,                                          // FIA waypoint type (RB.WP_TYPES: masked|control|…); on disk (.rdbk/server) written as its OpenRally cap code (WPM, WPN…), normalized to internal ids on import (wpTypeByCap/importRoadbook) and re-emitted by roadbookForExport; editor badge + GPX sym
-    "wp_radius"?: int,                                        // per-note validation radius (m); falls back to meta.default_wp_radius then the type default (the Reader's detection radius, #87)
-    "icons": [ { "name": "x.svg", "pos": [x,y], "angle": deg, "size": n, "flip_x": bool,
-                 "cover"?: bool,   // an imported (OpenRally) tulip: the whole vignette, kept for good
-                 "hidden"?: bool } ], // on a cover: show the editor's own tulip instead (#943)
-    "junctions": null | [ { "pivot": [x,y], "tip": [x,y], "width": n, "road_type": 0..5 } ],
-    "blocks"?: [ { "type": "photo"|"ad"|"text", "at": "before"|"after", "image"?: str /* data: URI */, "text"?: str } ]
-                                                              // RB.NOTE_BLOCKS: material shown before/after the note; never a waypoint (not numbered, mapped, scored or exported to GPX)
+    "waypoint_type"?: str,                                    // RB.WP_TYPES id (masked|navigation|dz|…), written as it is
+    "validation_radius"?: int,                                // m; else meta.default_validation_radius → type default → 30 m
+    "symbols"?: [ { "name": "x.svg", "position": [x,y], "size": n, "angle"?: deg, "mirrored"?: true } ],
+    "junctions"?: [ { "from": [x,y], "to": [x,y], "road_type"?: 1..5 } ],
+    "imported_tulip"?: { "image": str /* data: URI */, "shown"?: false }, // e.g. OpenRally's; while shown it is the whole vignette (#943)
+    "blocks"?: [ { "type": "photo"|"ad"|"text", "placement": "before"|"after", "image"?: str, "text"?: str } ],
+                                                              // RB.NOTE_BLOCKS: material around the note; never a waypoint
+    "compatibility"?: { "openrally"?: [...], "gpx"?: { "sym", "osmand_icon", "osmand_color" } }
   } ],
-  "icons": { "x.png": "data:image/png;base64,…" }             // EVERY used symbol, embedded
+  "symbols"?: { "x.png": "data:image/png;base64,…" },        // the library: EVERY used symbol (custom ones kept, #454)
+  "compatibility"?: { … }                                     // one block per other format, kept on round trip
 }
 ```
+- `RB.validateRoadbook(doc)` is the one judge (`{ valid, errors, warnings }`, each `{ path, message,
+  values? }`; a default present or an unknown key is a warning). `RB.readRoadbook` throws
+  (`error.report`) on an invalid document; there is no importer of other `.rdbk` shapes, only of
+  Roadbook Suite files (another program's JSON). `RB.writeRoadbook` writes the canonical document.
+  `rb_save` accepts only a structurally valid version-1 document (`rb_valid_document`) and computes
+  `total_distance` (`rb_track_length`) and `note_count` itself.
 - Symbols sit on a **230×162** box; origin = centre, **+y up**; `angle` clockwise.
-- **Self-contained rule:** a writer MUST embed every used symbol in top-level `icons`.
-  `RB.iconSrc` resolves: inline `data:` → `rb.icons` → `assets/icons/` (standard palette).
-- ROAD_TYPES: 0 default · 1 motorway · 2 asphalt · 3 track · 4 off-piste (dashed) · 5 bike lane (#561).
-  Speed limits encoded in symbol names (`S03_30km` ⇒ 30, `S99_end` clears).
+- **Self-contained rule:** every symbol a note uses MUST be in top-level `symbols`.
+  `RB.symbolSrc(symbol, rb, basePath)` resolves: `rb.symbols` → the standard palette under
+  `basePath` (a palette symbol not embedded yet, while editing).
+- ROAD_TYPES (FIA Road Book Lexicon strokes, app colours; every road `RB.ROAD_WIDTH` = 8 wide):
+  1 Tarmac (double line, 2-wide white centre, green) · 2 Track (solid, default) · 3 Low-visible track
+  (dash `24 8 8 8`) · 4 Off track (dash `8 8`) · 5 Bike lane (solid purple, #561). Junctions draw grey
+  with their type's stroke.
+- The waypoint-type scope (basic / rally) is not stored: the Editor infers it (a rally-tier type in
+  use ⇒ rally). OpenRally codes (`WPM`, `WPN`…) exist only in the OpenRally import/export
+  (`wpTypeByCap`, `WP_TYPES[].cap`).
 - Standard palette (`public/assets/icons/` + `index.json`): roadbook pictograms (PNG)
   plus a Vienna-Convention EU traffic-sign set (SVG: warning `W*`, priority `B*`,
   prohibitory `C*`/`S*`, mandatory `D*`). The sign set was produced by a generator script
@@ -833,8 +872,8 @@ The `roadbook.json` schema:
   share), so a fresh
   clone doesn't have it: edit the committed SVGs directly, keeping the change minimal and
   the set stylistically consistent. The palette is **canonical**: the Editor refreshes the
-  used standard icons embedded in a roadbook on open and on save/export (#174), so art
-  updates propagate to older roadbooks; custom (user-uploaded) icons are never touched.
+  used standard symbols embedded in a roadbook on open and on save/export (#174), so art
+  updates propagate to older roadbooks; custom (user-uploaded) symbols are never touched.
 - Photos and voice notes live **server-side** (geotagged, per roadbook) and travel in the
   `.rdbk` ZIP only as the **optional** `photos/`/`audio/` + `media.json` bundle — never
   inside `roadbook.json` itself.

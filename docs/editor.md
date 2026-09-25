@@ -14,8 +14,9 @@ editing delle note.
 
 ## 1. Scopo e struttura della pagina
 
-L'Editor produce **un unico roadbook in memoria** (`rb`) con la forma del formato `.rdbk`
-(`meta` · `track` · `notes` · `icons`) e lo edita finché non viene esportato o salvato.
+L'Editor produce **un unico roadbook in memoria** (`rb`) — il documento `.rdbk` 1 (`rdbk_version` ·
+`meta` · `track` · `notes` · `symbols`) più i valori derivati che `RB.recomputeMetrics` tiene
+aggiornati — e lo edita finché non viene esportato o salvato, scritto da `RB.writeRoadbook`.
 Invariante chiave del codice: **qualunque siano i pezzi di origine, la rotta è sempre UNA
 traccia continua** (commento di testa, [editor.js](../public/editor/editor.js)).
 
@@ -37,11 +38,12 @@ selezionata), `dirty`/`exported` (per il pulsante Save e il prompt di uscita), `
 ## 2. Le sorgenti di creazione
 
 La landing (`#loadFrom`) offre quattro carte; le altre due sorgenti (record/trip) arrivano
-dal flusso di startup (§7). Tutte passano per `setRoadbook(r)`, che normalizza con
-`RB.importRoadbook`, **pre-carica e rinfresca in modo asincrono** le icone della palette
+dal flusso di startup (§7). Tutte passano per `setRoadbook(r)` con un roadbook in memoria (quello di
+`RB.readRoadbook`, di un builder come `RB.buildRoadbook`/`RB.parseOpenRally`, o un draft recuperato),
+che **pre-carica e rinfresca in modo asincrono** i simboli della palette
 standard usate (via `RB.urlToDataURL`): la UI renderizza subito e si ridisegna quando le icone
 arrivano; l'arte aggiornata di un segnale sostituisce una copia vecchia embeddata in un
-roadbook datato, mentre un'icona custom (fetch fallito) mantiene la sua (#174).
+roadbook datato in `rb.symbols`, mentre un'icona custom (fetch fallito) mantiene la sua (#174).
 
 La schermata iniziale offre **quattro modi**, in quest'ordine (#979): **Registra una traccia** (il
 Recorder) · **GPX** · **Disegna sulla mappa** · **.rdbk** — le card condivise del sito (`.choice-card`
@@ -144,7 +146,7 @@ le estremità del pezzo toccano la rotta (entro 200 m) offre la **sostituzione d
 intermedio (`spliceByIndex`); altrimenti unisce il pezzo all'estremità più vicina (nel tempo, se
 rotta e pezzo hanno orari che non si sovrappongono, #158; altrimenti nello spazio),
 auto-orientandolo, con **`RB.joinTrack(rb, pezzo, inTesta)`**: in coda lo accoda, in testa lo
-antepone — mai un doppio `reverseRoadbook`, che cancella ogni `t`. In ogni caso la rotta resta
+antepone — mai un doppio `reverseRoadbook`, che cancella ogni `time_ms`. In ogni caso la rotta resta
 una sola traccia, e ogni punto aggiunto (join, splice, adjust) **tiene quota e orario**; un
 trascinamento sposta solo `lat`/`lon`.
 
@@ -215,7 +217,7 @@ La mappa è l'helper condiviso `RBMap` ([rbmap.js](../public/assets/js/rbmap.js)
   rotta non cambia, un taglio aperto resta com'è — e arma Move per piegarli; il *raggio di
   rilevamento* dice che è il cerchio giallo, perché è disegnato diverso dal valore impostato (mai
   sotto `REACH_MIN_M`, mai oltre metà strada verso la nota vicina) e il suo campo lo cambia lì
-  (lo stesso `wp_radius` del campo della nota).
+  (lo stesso `validation_radius` del campo della nota).
 - **Cerchietto di convalida.** Ogni vignetta (`NoteCanvas.toSVG` e canvas interattivo) disegna
   un cerchio aperto al centro del box, dove i due segmenti blu si incontrano (il punto della nota).
 - **Menu contestuale (tasto destro, pressione lunga su touch, #693).** Una card del tema
@@ -261,26 +263,26 @@ Campi editabili di una nota:
 
 - **Testo** — `textarea` editata in place nella riga; aggiorna solo il modello senza rebuild
   (mantiene il focus) ([editor.js](../public/editor/editor.js)).
-- **Road type** — select "Road" che imposta `road_type_out`; solo la strada che si **lascia**
-  è autorizzata, l'arrivo deriva dal `road_out` della nota precedente
-  (`renderEditor` + `RB.normalizeRoadTypes`, [editor.js](../public/editor/editor.js)).
+- **Road type** — select "Road" (i nomi di `RB.ROAD_TYPES`) che imposta `road_type`; solo la strada
+  che si **lascia** è autoriale, l'arrivo (`road_type_in`) deriva dal `road_type` della nota
+  precedente (`RB.recomputeMetrics`, [editor.js](../public/editor/editor.js)).
 - **Danger** — select FIA `—`/`!`/`!!`/`!!!` → `n.danger` (cancellato se 0)
   ([editor.js](../public/editor/editor.js)).
 - **CAP** — toggle nella riga (`toggleCapAt`, [editor.js](../public/editor/editor.js)):
-  attivandolo calcola heading (`bearingDeg`) e distanza (`haversineM`) verso la nota
-  successiva. L'**ultima nota non ha CAP** (manca la nota seguente).
+  attivandolo calcola heading (`bearingDeg`, intero 0–359) e distanza (`haversineM`) verso la nota
+  successiva, e `RB.recomputeCaps` lo ripropone dopo ogni modifica. L'**ultima nota non ha CAP**
+  (manca la nota seguente).
 - **Icone / vignette** — gestite da `NoteCanvas` su `#noteCanvas`
   ([editor.js](../public/editor/editor.js)); palette in §4.1. Il tronco del tulip segue la forma
   reale della traccia attorno alla nota (#945, `canvas.setNote(note, RB.tulipContext(rb, i))`,
   vedi [note-canvas.md](note-canvas.md) §3): per cambiarne la forma si modifica la traccia sulla
   mappa.
-- **Tulip originale (#943)** — una nota importata con il suo tulip (un'icona `cover`, §7) mostra il
+- **Tulip originale (#943)** — una nota importata con il suo tulip (`imported_tulip`, §7) mostra il
   pulsante **`#toggleTulip`**, con lo stesso disegno di *Add junction* (`#addJunction`): su desktop
   *Add junction* sta in alto a sinistra accanto al tulip, il toggle in basso a sinistra, distanze e
   numero fra i due; su telefono stanno entrambi a destra, la giunzione sopra e il toggle sotto. Il
-  pulsante c'è solo per una nota che ha un tulip originale (`NoteCanvas.originalTulip`,
-  `syncTulipToggle`) ed è acceso mentre l'originale è mostrato; toccarlo mette o toglie `hidden`
-  sull'icona `cover` (`markDirty`). L'originale non si cancella mai: è sempre a un tocco. Ciò che si
+  pulsante c'è solo per una nota che ha un tulip originale (`syncTulipToggle`) ed è acceso mentre
+  l'originale è mostrato; toccarlo inverte `imported_tulip.shown` (`markDirty`). L'originale non si cancella mai: è sempre a un tocco. Ciò che si
   aggiunge alla vignetta va sul tulip dell'editor, quindi `ownTulip()` passa prima a quello quando
   l'originale è in vista — aggiungere un'icona (tap nella palette, drop, upload) o una giunzione.
 
@@ -297,14 +299,12 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 
 ### 4.1 Palette icone
 
-> **`rb.icons` è una libreria, non una cache** (#454). Le icone standard che nessuna nota usa si
-> possono buttare — si rifanno da `assets/icons/` — ma di un'icona **custom** `rb.icons` è l'**unica
-> copia**: è l'immagine che l'utente ha caricato. `embedUsed` (export e save) prunava tutto ciò che
-> non era referenziato, quindi un'icona caricata e non ancora piazzata veniva **distrutta al primo
-> salvataggio**, spariva da *Yours (in this roadbook)* e le note che la referenziavano finivano su
-> un nome che `RB.iconSrc` risolveva in `assets/icons/<nome>` → 404 → immagine rotta. Ora il prune
-> tocca **solo i nomi della palette standard** (`stdIconNames()`), e la libreria custom resta
-> disponibile a **tutte** le note, che è il suo scopo.
+> **`rb.symbols` è una libreria, non una cache** (#454). I simboli standard che nessuna nota usa si
+> possono buttare — si rifanno da `assets/icons/` — ma di un'icona **custom** `rb.symbols` è
+> l'**unica copia**: è l'immagine che l'utente ha caricato. Per questo il prune di `embedUsed`
+> (export e save) tocca **solo i nomi della palette standard** (`stdIconNames()`): un'icona caricata
+> e non ancora piazzata resta nel file, in *Yours (in this roadbook)*, disponibile a **tutte** le
+> note, che è il suo scopo.
 >
 > `addIconFiles(files, pasted)` è l'unico ingresso: file picker o **paste** (#455). Fa `markDirty`
 > — senza, un upload non finiva nel checkpoint e un crash lo perdeva — e a un'immagine incollata dà
@@ -323,7 +323,7 @@ Riordino/cancellazione: frecce ↑/↓ (`select` di indice ±1) e `delNote`
 
 `renderIcons` ([editor.js](../public/editor/editor.js)) fonde la palette standard
 (`assets/icons/index.json`, caricata da `loadStd`) con le icone custom embedded nel roadbook
-(`rb.icons`), le **più recenti per prime** (#855). I tulip originali importati (le icone `cover`,
+(`rb.symbols`), le **più recenti per prime** (#855). I tulip originali importati (`imported_tulip`,
 #943) non sono fra le *Yours*: sono la vignetta della loro nota, raggiunta dal toggle accanto a
 lei, mai un'icona da piazzare, e quindi non hanno un percorso di cancellazione. Un'icona caricata o incollata con una nota aperta
 entra **subito nella sua vignetta**, perché è per quello che la si aggiunge; e un tap sulla vignetta
@@ -383,17 +383,20 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
   pubblica il roadbook nell'elenco pubblico; `draft`/`ready` restano privati.
 - **Riutilizzabile** — checkbox `cfgReusable` → `reusable`: marca un roadbook pubblico come
   clonabile/riusabile da altri (#106). Ha senso solo quando lo stato è `public`.
-- **Profilo waypoint** — select `cfgProfile` → `meta.profile` (`basic`|`rally`): sceglie il
-  vocabolario dei tipi di waypoint FIA offerti nell'editor di nota.
-- **Raggio di rilevamento di default** — campo `cfgWpRadius` → `meta.default_wp_radius`: il
-  raggio (m) usato dal Reader per le note senza `wp_radius` proprio. Nell'editor di nota il campo
+- **Tipo di roadbook** — select `cfgProfile` (`basic`|`rally`): sceglie il vocabolario dei tipi di
+  waypoint FIA offerti nell'editor di nota (`RB.wpTypesForProfile`). Non è nel file: all'apertura
+  l'Editor lo deduce (`wpScopeOf` — un roadbook che usa un tipo del livello rally è rally), e
+  passare a Basic chiede conferma nominando le note che perdono il loro tipo rally (#697).
+- **Raggio di rilevamento di default** — campo `cfgWpRadius` → `meta.default_validation_radius`: il
+  raggio (m) usato dal Reader per le note senza `validation_radius` proprio. Nell'editor di nota il campo
   si chiama **Detection radius** e il suo **segnaposto è il numero in vigore** quando la nota non
   ne ha uno suo (`RB.detectionRadius`, un'unica catena per runtime e UI: nota → roadbook → tipo →
   sistema, #530). Cambiare il default **chiede** se applicarlo a tutte le note del roadbook
   ("Also replace all current notes in this roadbook to {v} m?"): con Sì ogni nota-waypoint prende
   quel raggio, con No nessuna nota viene toccata — e nessun raggio viene più riscritto in
   silenzio (#532).
-- **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_access`.
+- **Accesso mappa nel Reader** — checkbox `cfgMapAccess` → `meta.map_allowed` (scritto nel file solo
+  come `false`).
 - **Foto** — galleria sulla mappa + upload geolocalizzato + lightbox: vedi §6.1.
 - **Cancella roadbook (#81)** — una sezione *danger* (`#deleteSection`) col pulsante
   *Delete roadbook* (`#deleteRb`) compare **solo per un roadbook salvato** (`currentRbId > 0`,
@@ -460,14 +463,18 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 
 | Formato | Funzione | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | contenitore ZIP (`RBZip.write`): `roadbook.json` auto-contenuto (`embedUsed` embedda ogni icona usata e pota le inutilizzate); con `includeMedia`, aggiunge `photos/`/`audio/` presi dalla gallery + `media.json` con i geotag |
+| **.rdbk** | `exportRdbk(includeMedia)` | contenitore ZIP (`RBZip.write`): `roadbook.json` = `RB.writeRoadbook(rb)` validato (`rdbkDocument`), auto-contenuto (`embedUsed` embedda ogni simbolo usato e pota i simboli standard inutilizzati); con `includeMedia`, aggiunge `photos/`/`audio/` presi dalla gallery + `media.json` con i geotag |
 | **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | un set di checkbox componibili (vedi §7.1) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto); file `…_OR.gpx` |
 | **KMZ** | `exportKmz` | `RB.kmlDocument` + `RBZip.write({ 'doc.kml': kml })` → `.kmz` (vedi §7.2) |
 
 `embedUsed` garantisce la regola auto-contenuta del formato: ogni simbolo usato finisce in
-`rb.icons` come data-URI; le icone non più referenziate vengono rimosse.
+`rb.symbols` come data-URI; dei non referenziati si tolgono solo quelli della palette standard.
+Poi `rdbkDocument()` scrive il documento (`RB.writeRoadbook`) e lo giudica con
+`RB.validateRoadbook`: se non passa (un simbolo che non si è potuto incorporare, una rotta di un
+solo punto…) l'Editor mostra i primi errori, col loro percorso, e non scrive nulla — niente esce
+dall'Editor che un'altra app non potrebbe aprire. Save ed export passano entrambi da qui.
 
 > **Contenitore `.rdbk` e media (#162).** Il file `.rdbk` è sempre un contenitore ZIP
 > (`RBZip`). L'export mostra una spunta **includi foto e audio**: se attiva, `exportRdbk` scarica
@@ -487,37 +494,37 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 >
 > **Export** (`RB.openRallyDocument`): traccia come `<trk>`, ogni nota come `<wpt>`; `distance`
 > in km (+ il totale a livello `<metadata>`) e la vignette rigenerata da `NoteCanvas.toSVG` in
-> `<openrally:tulip>`. Per una nota **importata** i parametri OpenRally sono riemessi *verbatim*
-> dal passthrough; per una nota **nativa** si emette il set calcolato (`cap`/`danger`/`speed`).
+> `<openrally:tulip>`, `openrally:wptType` = il codice OpenRally del `waypoint_type` (il `cap` di
+> `WP_TYPES`). Per una nota **importata** i parametri OpenRally sono riemessi *verbatim*
+> da `note.compatibility.openrally`; per una nota **nativa** si emette il set calcolato (`cap`/`danger`/`speed`).
 >
 > **Import** (`RB.parseOpenRally`): l'handler GPX rileva il namespace `openrally:` e instrada
 > qui. Geometria: `<trk>` reale → usata; coordinate `<wpt>` reali → traccia costruita da esse;
 > **solo-distanza** (l'example ufficiale, wpt a 0,0) → **traccia segnaposto** spaziata per
 > `openrally:distance`, con avviso a ridisegnarla sulla mappa.
 >
-> **Mappatura `wp_type` (Phase-2, #13):** i codici OpenRally standard (`WPM`, `WPN`, `WPE`,
-> `WPS`, `WPC`, `WPP`, `WPV`, `DSS`, `ASS`, `DZ`, `FZ`, `DN`, `FN`, `DT`, `FT`, `CP`, `PC`,
-> `STOP`) sono riconosciuti all'import e tradotti negli ID interni RDBK (`masked`, `navigation`,
-> ecc.) tramite `wpTypeByCap()`. All'export avviene la conversione inversa: gli ID interni sono
-> emessi come codici standard. Il campo `note.wp_type` viene quindi popolato correttamente →
-> badge colore, raggio FIA predefinito e comportamento nel Reader. I codici non riconosciuti
-> passano ancora verbatim in `note.openrally`.
+> **Tipi di waypoint (#13):** i codici OpenRally standard (`WPM`, `WPN`, `WPE`, `WPS`, `WPC`, `WPP`,
+> `WPV`, `DSS`, `ASS`, `DZ`, `FZ`, `DN`, `FN`, `DT`, `FT`, `CP`, `PC`, `STOP`) sono riconosciuti
+> all'import e tradotti nei tipi RDBK (`masked`, `navigation`, …) tramite `wpTypeByCap()`; l'export
+> fa la conversione inversa. I codici esistono solo in questo import/export: il `.rdbk` scrive
+> `waypoint_type` con l'id descrittivo. Il tipo dà badge colore, raggio FIA predefinito e
+> comportamento nel Reader. Un codice non riconosciuto passa verbatim in `compatibility.openrally`.
 >
 > **Passthrough (elementi non mappati):** ogni elemento `openrally:` del wpt **tranne**
-> `distance`/`tulip` (rigenerati) e `wptType` (ora mappato) è conservato verbatim in
-> **`note.openrally`** — `cap`, `danger`, `speed`, zone (`dss/ass/dz/fz/dt/ft/fn/checkpoint/
-> stop/timecontrol/neutralization/fuel/reset`), `show_coordinates`, `notes`. Essendo dentro il
-> JSON del roadbook, **sopravvive a save/reimport** (sia `.rdbk` sia profilo server) e viene
-> riemesso all'export.
+> `distance`/`tulip` (rigenerati) è conservato verbatim in **`note.compatibility.openrally`**
+> (`{ tag, attrs, text }`) — `cap`, `danger`, `speed`, zone (`dss/ass/dz/fz/dt/ft/fn/checkpoint/
+> stop/timecontrol/neutralization/fuel/reset`), `show_coordinates`, `notes`. Il blocco
+> `compatibility` è parte del formato (un writer lo conserva), quindi **sopravvive a save/reimport**
+> (sia `.rdbk` sia profilo server) e viene riemesso all'export.
 >
-> **Tulip importato (#943):** è un'immagine opaca → diventa un'icona **`{ name, cover: true }`**
-> (l'immagine in `rb.icons`) che `NoteCanvas.toSVG` rende a tutto-box, da sola. La nota lo tiene
-> **per sempre**: il toggle `#toggleTulip` accanto alla vignetta passa dal tulip originale a quello
-> dell'editor (`hidden: true` sull'icona) e ritorno, e l'originale non si cancella mai (vedi §4).
+> **Tulip importato (#943):** è un'immagine opaca → diventa **`note.imported_tulip = { image, shown }`**,
+> che `NoteCanvas.toSVG` rende a tutto-box, da solo, finché è mostrato. La nota lo tiene **per
+> sempre**: il toggle `#toggleTulip` accanto alla vignetta passa dal tulip originale a quello
+> dell'editor (`shown: false`) e ritorno, e l'originale non si cancella mai (vedi §4).
 > La scelta è salvata nel JSON del roadbook, quindi Reader, pagina pubblica, PDF ed export
 > OpenRally mostrano quella stessa: l'originale, o il tulip nativo modificato nell'editor.
-> I controlli/zone di gara strutturati restano un passthrough (non editabili in RDBK);
-> la loro modellazione nativa dipende dalle estensioni `.rdbk` proposte in #9.
+> I controlli/zone di gara strutturati oltre ai tipi di waypoint restano un passthrough (non
+> editabili in RDBK).
 
 ### 7.1 Opzioni GPX e naming — issue #34
 
@@ -597,7 +604,8 @@ molti navigatori GPS.
 > usa il generico, perché non ha un equivalente diretto in Garmin/OSMAnd.
 
 **Save to profile.** `doSave` ([editor.js](../public/editor/editor.js)) timbra il
-meta, ricalcola, embedda le icone e fa `RBApi('rb_save', …)`. Al successo registra
+meta, ricalcola, embedda i simboli, scrive e valida il documento (`rdbkDocument`) e fa
+`RBApi('rb_save', { roadbook: doc, … })`. Al successo registra
 `currentRbId`, azzera `dirty`, pulisce il draft e **fissa `?rb=<id>` nell'URL** via
 `history.replaceState` — così un reload (o l'auto-refresh di versione) continua a editare lo
 stesso roadbook, e i successivi save aggiornano la stessa entità. `$('saveAccount')` richiede
@@ -690,44 +698,44 @@ Risolta la sorgente, due rifiniture finali della startup:
 
 ---
 
-## 9. Importazione di file `.rdbk` predisposti da RB Suite
+## 9. Importazione di un `.rdbk` (e dei file Roadbook Suite)
 
-Un `.rdbk` è un contenitore ZIP con dentro `roadbook.json`: un roadbook UTF-8 auto-contenuto con
-`meta` · `track` · `notes` · `icons` (lo schema completo è in [rdbk-format.md](rdbk-format.md)),
-più — opzionalmente — foto/note vocali. Questo capitolo documenta cosa succede quando se ne
-**importa uno nell'Editor** e — punto chiave — **se sopravvivono le informazioni che serviranno
-poi al Ranking**.
+Un `.rdbk` è un contenitore ZIP con dentro `roadbook.json`: il documento `.rdbk` 1 auto-contenuto
+(`rdbk_version` · `meta` · `track` · `notes` · `symbols`; lo schema completo è in
+[rdbk-format.md](rdbk-format.md)), più — opzionalmente — foto/note vocali. Questo capitolo
+documenta cosa succede quando se ne **importa uno nell'Editor** e — punto chiave — **se
+sopravvivono le informazioni che serviranno poi al Ranking**.
 
 ### 9.1 Il percorso di import
 La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
 ([editor.js](../public/editor/editor.js)):
 
 1. `RBZip.readBundle(file)` — sniffa il magic `PK`: se è un ZIP estrae `roadbook.json` e
-   raccoglie i media (`photos/`/`audio/`, geotaggati da `media.json`); un `.rdbk` JSON puro
-   pre-container è letto come roadbook nudo, con media vuoti;
-2. validazione minima: devono esserci `track` **e** `notes`, altrimenti `throw 'Not a roadbook'`;
-3. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
-4. `setRoadbook(roadbook)` ([editor.js](../public/editor/editor.js)); gli eventuali
-   media confluiscono in `pendingMedia` e un popup avvisa che saranno visibili solo dopo il
-   salvataggio sul profilo (caricati al primo `doSave` da `flushImportedMedia`, §7).
+   raccoglie i media (`photos/`/`audio/`, geotaggati da `media.json`); un JSON nudo è letto come
+   `roadbook.json` da solo, con media vuoti;
+2. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
+3. `setRoadbook(…)` ([editor.js](../public/editor/editor.js)); gli eventuali media confluiscono in
+   `pendingMedia` e un popup avvisa che saranno visibili solo dopo il salvataggio sul profilo
+   (caricati al primo `doSave` da `flushImportedMedia`, §7).
 
-`setRoadbook` passa per [`RB.importRoadbook`](../public/assets/js/roadbook-core.js), che
-porta il file allo schema canonico. Per un `.rdbk` **già canonico** non tocca nulla. Per un
-file **Roadbook Suite** (riconosciuto da un marcatore legacy: `titolo`, `testo`, `bivio`,
-`cap_hdr`, `km_prog`…) applica le conversioni specifiche:
+Un file che il validatore rifiuta si ferma con il toast *This file is not a valid .rdbk roadbook.*
 
-- chiavi italiane → canoniche (`titolo→title`, `testo→text`, `km_totali/km_prog/km_parz` in
-  metri, `cap_hdr/cap_km→cap/cap_distance`);
-- `bivio[]→junctions[]` con **flip dell'asse Y** (la Suite usa +y verso il basso, la vignetta
-  +y verso l'alto); le **icone** oltre al flip Y vengono **ri-centrate** (la Suite le ancora
-  all'angolo in alto a sinistra, RDBK al centro) e **ingrandite** ×1.5 (×3 per `partenza`/`arrivo`);
-- **ricalcolo metriche dalla traccia** (`recomputeMetrics`): bearing, distanze e tipi-strada
-  vengono ri-derivati dalla polilinea, che è la fonte autorevole. Questo raddrizza, fra
-  l'altro, la freccia della **nota di partenza** (la Suite vi mette un `bearing_in` placeholder
-  che, con la resa a *svolta relativa*, punterebbe all'indietro).
+Il documento passa per [`RB.readRoadbook`](../public/assets/js/roadbook-core.js): un `.rdbk` 1
+valido viene clonato, i default omessi completati in memoria e i valori derivati calcolati dalla
+traccia (`recomputeMetrics`). Un file **Roadbook Suite** — il JSON di un altro programma,
+riconosciuto dalle sue chiavi (`titolo`, `testo`, `bivio`, `cap_hdr`, `km_prog`…) e senza
+`rdbk_version` — viene invece tradotto da `importSuiteRoadbook`:
 
-Per un `.rdbk` canonico, invece, **in import non gira alcun ricalcolo**: i campi restano
-identici al file.
+- chiavi italiane → campi `.rdbk` (`titolo→title`, `testo→text`, `cap_hdr→cap`), i codici strada
+  della suite → i tipi FIA;
+- `bivio[]→junctions[]` (`pivot`/`punta` → `from`/`to`) con **flip dell'asse Y** (la Suite usa +y
+  verso il basso, la vignetta +y verso l'alto); i **simboli** oltre al flip Y vengono
+  **ri-centrati** (la Suite li ancora all'angolo in alto a sinistra, RDBK al centro) e
+  **ingranditi** ×1.5 (×3 per `partenza`/`arrivo`);
+- un cartello di limite diventa `speed_limit_kmh` + `waypoint_type` `dz`/`fz` (#94);
+- distanze, bearing e tipi-strada in arrivo sono **derivati dalla traccia** (`recomputeMetrics`), che
+  è la fonte autorevole — anche la freccia della **nota di partenza** esce dalla traccia, non da un
+  valore del file. Serve una traccia di almeno 2 punti.
 
 ### 9.2 Fedeltà dei dati per il Ranking
 Il Ranking non legge il `.rdbk`: legge la stringa META firmata che il **Reader** produce a
@@ -737,11 +745,11 @@ campo:
 
 | Dato usato dal Ranking (via Reader) | A cosa serve | Importato dall'Editor? |
 |---|---|---|
-| `lat` / `lon` | penalità *accuracy* ed *extra* | ✅ preservati in import; in export agganciati alla traccia da [`recomputeMetrics`](../public/assets/js/roadbook-core.js) |
-| `cap` / `cap_distance` | penalità *CAP* (proiezione `destPoint` dalla nota precedente) | ✅ preservati; [`recomputeCaps`](../public/assets/js/roadbook-core.js) ricalcola **solo dove `cap != null`**, mantenendo il flag |
-| `distance` / `partial_distance` | `km`, raggio di reach, sezione | ✅ ricalcolati dalla traccia importata (intatta) |
-| `icons` con `I02_partenza` / `I01_arrivo` | delimitano la **sezione a punteggio** (`scoredSet`) | ✅ array `icons` per-nota preservato; in export embeddato da [`embedUsed`](../public/editor/editor.js) |
-| `icons` con limiti `Sxx_*` | penalità *speed* (`speedLimitOfNote`) | ✅ stesso percorso delle icone |
+| `lat` / `lon` | penalità *accuracy* ed *extra* | ✅ derivati dal punto di traccia (`track_index`) da [`recomputeMetrics`](../public/assets/js/roadbook-core.js) |
+| `cap` / `cap_distance` | penalità *CAP* (proiezione `destPoint` dalla nota precedente) | ✅ `cap` preservato, `cap_distance` derivato; [`recomputeCaps`](../public/assets/js/roadbook-core.js) ripropone il CAP **solo dove `cap != null`** |
+| `distance` / `partial_distance` | `km`, raggio di reach, sezione | ✅ derivati dalla traccia importata (intatta) |
+| `waypoint_type` `ss_start`/`ss_end`, o `symbols` con `I02_partenza` / `I01_arrivo` | delimitano la **sezione a punteggio** (`scoredSet`) | ✅ campo e array `symbols` per-nota preservati; in export embeddati da [`embedUsed`](../public/editor/editor.js) |
+| `speed_limit_kmh` | penalità *speed* (`speedLimitOfNote`) | ✅ preservato |
 
 `danger` non è usato dal Ranking. La stringa META (team, tempi, penalità) **non** è nel
 `.rdbk`: nasce nel Reader al `Finish`, quindi non è oggetto dell'import.
@@ -750,30 +758,31 @@ campo:
 Ranking vengono importate e preservate.
 
 ### 9.3 Cosa cambia in export/save (e perché è coerente)
-A differenza dell'import, **export e Save ricalcolano** prima di scrivere
-([editor.js](../public/editor/editor.js)): `recomputeMetrics` aggancia ogni nota al
-punto-traccia più vicino (`idx`) — `lat/lon`, `distance`, `partial_distance` e bearing
-derivano dalla traccia — e `recomputeCaps` riallinea heading/distanza-CAP alla geometria dove
-il CAP è attivo. Le note **stanno sulla traccia per definizione**, quindi questo non perde
-nulla di rilevante per il punteggio: rende solo i valori internamente coerenti.
+Export e Save ricalcolano prima di scrivere ([editor.js](../public/editor/editor.js)):
+`recomputeMetrics` rideriva dalla traccia `lat/lon`, `distance`, `partial_distance` e bearing di
+ogni nota (dal suo `track_index`) e `recomputeCaps` riallinea il CAP alla geometria dove è attivo;
+poi `RB.writeRoadbook` scrive solo i campi autoriali. Le note **stanno sulla traccia per
+definizione**, quindi questo non perde nulla di rilevante per il punteggio.
 
 ### 9.4 Condizione sul contenuto del file
-Sezione cronometrata e penalità velocità esistono **solo se** il file contiene davvero le
-icone di partenza/arrivo e i cartelli di limite. Un `.rdbk` privo dell'icona di partenza fa
+Sezione cronometrata e penalità velocità esistono **solo se** il file contiene davvero l'apertura
+della sezione (`ss_start` o il simbolo di partenza) e i limiti (`speed_limit_kmh`). Un `.rdbk` senza
+apertura di sezione fa
 considerare al Reader **l'intero roadbook** come a punteggio (`scoredSet = null`, vedi §3 di
-[ranking-model.md](ranking-model.md)); senza cartelli di limite non c'è penalità velocità. È
+[ranking-model.md](ranking-model.md)); senza limiti non c'è penalità velocità. È
 una proprietà del contenuto del file, non una perdita in fase di import.
 
 ### 9.5 Mappatura delle icone
 I nomi-icona di Roadbook Suite spesso differiscono da quelli della palette standard. La
 traduzione avviene in due punti.
 
-**(a) Rinomine 1:1** — in [`importRoadbook`](../public/assets/js/roadbook-core.js)
-(quindi valgono sia Editor sia Reader):
+**(a) Rinomine 1:1** — in `importSuiteRoadbook` (`SUITE_ICON_ALIASES`,
+[roadbook-core.js](../public/assets/js/roadbook-core.js)), chiamata da `RB.readRoadbook` (quindi
+valgono sia Editor sia Reader):
 
 | Roadbook Suite | → Palette | Regola |
 |---|---|---|
-| `S01_10km.png` … `S09_90km.png`, `S99_end.png` | `…​.svg` | limiti di velocità: la Suite li esporta PNG, la palette li ha SVG (la penalità velocità funziona comunque, va per nome) |
+| `S01_10km.png` … `S09_90km.png`, `S99_end.png` | `…​.svg` | limiti di velocità: la Suite li esporta PNG, la palette li ha SVG; il limite finisce anche in `speed_limit_kmh` |
 | `p36_gruppo_case.png` | `P02_gruppo_case.png` | stesso soggetto, numero diverso |
 | `p14_lago.png` | `P14_estanque.png` | lago ≈ estanque |
 | `S10_stop.png` | `B02_stop.svg` | cartello: stop |
@@ -798,17 +807,16 @@ traduzione avviene in due punti.
 > regola dei limiti è ristretta a `S0x` (un solo zero), così non si toccano a vicenda. Tutti i
 > cartelli della Suite trovano un equivalente del set Vienna in palette (`W*`/`B*`/`C*`/`D*`).
 
-**(b) Icone senza file → fallback + nota** — in [`flagUnresolvedIcons`](../public/editor/editor.js)
-(solo Editor, dopo `loadStd`): per ogni icona il cui **file non esiste** su disco si sostituisce
-il nome con un segnaposto (`W28_general_danger.svg`) e si **aggiunge al testo della nota**
-`Nota: aggiungere icona <nome originale>`, così l'autore sa cosa rimpiazzare. L'esistenza è
-verificata con un `HEAD` su `assets/icons/<nome>` (deduplicato), **non** con `index.json`:
-così un file realmente presente ma non listato nel picker renderizza comunque e **non** viene
-flaggato. È idempotente (il nome originale sparisce dopo lo swap; la nota si aggiunge una volta
-sola). *(Le icone di superficie del terreno — `T01`/`T02`/`T05`/`t03`/`t04`/`t06` — sono ora
-anche nella palette ricercabile, categoria Terrain.)*
+**(b) Icone senza file → segnalate** — in [`reportUnresolvedIcons`](../public/editor/editor.js)
+(solo Editor, dopo `loadStd`): i nomi che non si risolvono né nella palette né nella libreria del
+roadbook sono verificati con un `HEAD` su `assets/icons/<nome>` (deduplicato), **non** con
+`index.json` — così un file realmente presente ma non listato nel picker renderizza comunque — e
+quelli che mancano davvero sono **nominati in un toast** perché l'autore sappia cosa ri-aggiungere
+(#521). Il dato resta come l'ha scritto l'autore: la vignetta disegna un segnaposto dove sta il
+simbolo, e nulla marca il roadbook come modificato. *(Le icone di superficie del terreno —
+`T01`/`T02`/`T05`/`t03`/`t04`/`t06` — sono anche nella palette ricercabile, categoria Terrain.)*
 
-**Senza alcun equivalente** (ricadono nel fallback (b) finché non si aggiungono le icone):
+**Senza alcun equivalente** (segnalate da (b) finché non si aggiungono le icone):
 `p24_cassonetto`, `p26_estatua_monumento`, `p44_campo_coltivo`, e i segnaposto generici della
 Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
 
@@ -816,9 +824,9 @@ Suite `*_icona` (`p02_icona`, `s01_icona`, `i03_icona`, …).
 
 ## 10. Limiti e quirk da segnalare
 
-- **`RB.bareNote` non emette il campo `num`.** `RB.bareNote` crea `num: 0`; la numerazione corretta arriva solo dopo
+- **`RB.blankNote` non porta i valori derivati.** `num`, distanze e bearing arrivano solo con
   `RB.recomputeMetrics`. Le righe che inseriscono note lo chiamano subito, quindi in pratica è
-  coerente — ma una nota appena creata e mostrata prima del recompute apparirebbe come `0`.
+  coerente — ma una nota appena creata e mostrata prima del recompute non avrebbe numero.
 - **L'autore di default può sovrascrivere il campo vuoto al login.** In startup, se l'utente
   arriva dopo il render, l'autore viene riempito solo se `meta.author` e il campo sono vuoti
   ([editor.js](../public/editor/editor.js)) — corretto, ma dipende dall'ordine di

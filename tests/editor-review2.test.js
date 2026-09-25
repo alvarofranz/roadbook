@@ -23,7 +23,7 @@ describe('joining a GPX never drops the piece’s first point', () => {
         const rb = route();
         RB.joinTrack(rb, [{ lat: 0, lon: 0.009 }, { lat: 0, lon: 0.008 }], true);
         expect(rb.track.map((p) => p.lon)).toEqual([0.008, 0.009, 0.010, 0.011, 0.012]);
-        expect(rb.notes[0].idx).toBe(0);
+        expect(rb.notes[0].track_index).toBe(0);
     });
 });
 
@@ -40,14 +40,14 @@ describe('read-only means the vignette does not drag either', () => {
         expect(html).toContain('body.rb-readonly #noteCanvas svg, body.rb-readonly #addJunction, body.rb-readonly #toggleTulip { pointer-events: none; }');
     });
     it('a palette drop and the photo pill go through the gate', () => {
-        expect(editor).toContain('canvas.onDropIcon((name, pos) => { if (editable()) { ownTulip(); canvas.addIcon(mkIcon(name, pos)); } });');
+        expect(editor).toContain('canvas.onDropIcon((name, position) => { if (editable()) { ownTulip(); canvas.addIcon(mkIcon(name, position)); } });');
         expect(fn(editor, 'async function photoToExtra(')).toContain("if (photo && !blockOf(n, 'photo') && !readOnly())");
     });
 });
 
 describe('undo holes', () => {
     it('deleting an unused custom icon is a change: dirty, checkpointed, undoable', () => {
-        expect(fn(editor, 'async function delCustomIcon(')).toContain('delete rb.icons[name]; markDirty(); renderIcons();');
+        expect(fn(editor, 'async function delCustomIcon(')).toContain('delete rb.symbols[name]; markDirty(); renderIcons();');
     });
     it('an undo drops a half-done cut, a selected vertex and a draw seed', () => {
         expect(fn(editor, 'function histApply(')).toContain('cutFromIdx = -1; drawSeed = []; selVertex = -1; map.setPin(null); map.setSelectedVertex(null);');

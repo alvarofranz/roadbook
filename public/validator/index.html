@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0e1116">
+    <title data-i18n="seo.validator.title">.rdbk validator — RDBK.app</title>
+    <meta name="description" data-i18n-content="seo.validator.desc" content="Check that a .rdbk roadbook follows the open standard: every error with its exact place, in your browser — the file is never uploaded.">
+    <link rel="canonical" href="https://rdbk.app/validator/">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RDBK.app">
+    <meta property="og:title" content=".rdbk validator — RDBK.app">
+    <meta property="og:description" content="Check that a .rdbk roadbook follows the open standard: every error with its exact place, in your browser — the file is never uploaded.">
+    <meta property="og:url" content="https://rdbk.app/validator/">
+    <meta property="og:image" content="https://rdbk.app/assets/mockup.png">
+    <meta property="og:locale" content="en">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content=".rdbk validator — RDBK.app">
+    <meta name="twitter:description" content="Check that a .rdbk roadbook follows the open standard: every error with its exact place, in your browser — the file is never uploaded.">
+    <meta name="twitter:image" content="https://rdbk.app/assets/mockup.png">
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.17-239">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.17-239">
+    <style>
+        .drop-zone { display: flex; flex-direction: column; align-items: center; gap: .6rem; margin: 1.4rem 0; padding: 2.2rem 1.2rem; border: 2px dashed var(--line); border-radius: var(--radius); background: var(--card); text-align: center; cursor: pointer; transition: border-color .15s, background-color .15s; }
+        .drop-zone:hover, .drop-zone.over { border-color: var(--sand); background: var(--card-2); }
+        .drop-zone > i { font-size: 2.4rem; color: var(--sand); }
+        .drop-zone strong { font-size: 1.1rem; }
+        .verdict { display: flex; gap: 1rem; align-items: flex-start; padding: 1.1rem 1.2rem; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+        .verdict > i { font-size: 2rem; margin-top: .1rem; }
+        .verdict.valid { border-color: var(--ok); } .verdict.valid > i { color: var(--ok); }
+        .verdict.invalid { border-color: var(--track); } .verdict.invalid > i { color: var(--track); }
+        .verdict > div { flex: 1; min-width: 0; }
+        .verdict h2 { margin: 0 0 .3rem; font-size: 1.25rem; }
+        .verdict p { margin: 0; }
+        .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: .6rem 1.2rem; margin: 1rem 0 0; }
+        .facts div { display: flex; flex-direction: column; gap: .1rem; }
+        .facts dt { color: var(--muted); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+        .facts dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+        .findings { list-style: none; padding: 0; margin: .6rem 0 0; display: flex; flex-direction: column; gap: .4rem; }
+        .findings li { display: flex; flex-direction: column; gap: .15rem; padding: .6rem .8rem; border-radius: 10px; background: var(--card); border-left: 3px solid var(--track); }
+        .findings.warnings li { border-left-color: var(--warn); }
+        .findings code { color: var(--sand-2); overflow-wrap: anywhere; }
+        .findings li.more { border-left-color: var(--line); color: var(--muted); }
+    </style>
+</head>
+<body>
+<header class="topbar"></header>
+
+<main class="doc">
+    <h1 data-i18n="The .rdbk validator">The .rdbk validator</h1>
+    <p data-i18n-html="validator.intro">Check that a roadbook follows the <a href="../standard/">.rdbk standard</a> — every error with its exact place in the file. It runs in your browser: the file never leaves your device.</p>
+
+    <label class="drop-zone" id="dropZone">
+        <i class="fa-solid fa-file-circle-check"></i>
+        <strong data-i18n="Drop a .rdbk here, or choose one">Drop a .rdbk here, or choose one</strong>
+        <span class="muted small" data-i18n="A .rdbk container or a bare roadbook.json">A .rdbk container or a bare roadbook.json</span>
+        <input type="file" id="rdbkFile" accept=".rdbk,.json,application/json,application/zip" hidden>
+    </label>
+
+    <section id="result" hidden>
+        <div class="verdict" id="verdict"></div>
+        <div id="errorsBox" hidden>
+            <h2><span data-i18n="Errors">Errors</span> · <span id="errorsCount"></span></h2>
+            <ul class="findings" id="errorsList"></ul>
+        </div>
+        <div id="warningsBox" hidden>
+            <h2><span data-i18n="Warnings">Warnings</span> · <span id="warningsCount"></span></h2>
+            <p class="muted small" data-i18n="A warning never makes a file invalid.">A warning never makes a file invalid.</p>
+            <ul class="findings warnings" id="warningsList"></ul>
+        </div>
+    </section>
+</main>
+
+<script src="../assets/js/i18n.es.js?v=1.9.17-239"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.17-239"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.17-239"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.17-239"></script>
+<script src="../assets/js/i18n.js?v=1.9.17-239"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.17-239"></script>
+<script src="../assets/js/rbzip.js?v=1.9.17-239"></script>
+<script src="../assets/js/app.js?v=1.9.17-239"></script>
+<script src="validator.js?v=1.9.17-239"></script>
+</body>
+</html>

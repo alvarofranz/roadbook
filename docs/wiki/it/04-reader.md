@@ -59,7 +59,7 @@ La distanza che manca si misura **lungo la strada**, come i parziali del roadboo
 ### Automatico (default)
 La nota attiva si valida appena entri nel suo **raggio di validazione**.
 
-- Il raggio viene dalla nota (`wp_radius`), poi dal default del roadbook, poi dal tipo di waypoint, poi 30 m; non scende mai sotto i 18 m, sopra il rumore del GPS
+- Il raggio viene dalla nota (`validation_radius`), poi dal default del roadbook, poi dal tipo di waypoint, poi 30 m; non scende mai sotto i 18 m, sopra il rumore del GPS
 - Si controlla la **strada percorsa tra due fix GPS**, non solo i fix: in velocità un telefono si sposta di 25 m tra due posizioni, e un waypoint stretto altrimenti ci scivolerebbe in mezzo
 - Una posizione di cui il telefono non è sicuro (scarsa precisione) viene ignorata: non può né validare una nota né aggiungere distanza
 

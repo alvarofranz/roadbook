@@ -51,10 +51,10 @@
     // SVG loaded as an <image> only renders inline data, never external URLs.
     async function resolveIcons(rb, basePath) {
         const map = {}, used = new Set();
-        rb.notes.forEach((n) => (n.icons || []).forEach((ic) => used.add(ic.name)));
+        rb.notes.forEach((n) => n.symbols.forEach((ic) => used.add(ic.name)));
         for (const name of used) {
             if (!name) continue;
-            const src = RB.iconSrc({ name }, rb, basePath);
+            const src = RB.symbolSrc({ name }, rb, basePath);
             map[name] = /^data:/.test(src) ? src : (await RB.urlToDataURL(src) || src);
         }
         return map;
@@ -103,7 +103,7 @@
     }
     // The cover (#784): the roadbook as a whole, calm and centred between the chosen margins. The
     // route is the roadbook's own line, drawn as a vector (equirectangular, lon scaled by cos(lat)
-    // so the shape is not stretched); a roadbook that hides its map (map_access:false) keeps its
+    // so the shape is not stretched); a roadbook that hides its map (map_allowed:false) keeps its
     // route to itself. Behind it, the backdrop (#810 · #973): the roadbook's image cover-fitted and
     // washed out under a paper-coloured veil so it only tints the page, or the map the route runs
     // on (RBCoverMap's own picture, route included), or nothing.
@@ -156,7 +156,7 @@
         const track = rb.track || [];
         // the figures stay clear of the bottom margin, the box between them and the text
         const statsY = g.bottomY - 49, boxH = Math.max(60, Math.min(COVER_BOX_H, statsY - 20 - Math.max(y + 6, g.top + 72)));
-        if (meta.map_access !== false && track.length >= 2) {
+        if (meta.map_allowed !== false && track.length >= 2) {
             const boxTop = Math.max(y + 6, g.top + 72);
             drawRoute(doc, track, g.left, boxTop, g.width, boxH, backdrop);
             y = boxTop + boxH;
@@ -301,7 +301,7 @@
         if (opts.link) await ensureQr();
         const basePath = opts.iconBasePath || '../assets/icons/';
         const iconMap = await resolveIcons(rb, basePath);
-        const resolver = (ic) => iconMap[ic.name] || RB.iconSrc(ic, rb, basePath);
+        const resolver = (ic) => iconMap[ic.name] || RB.symbolSrc(ic, rb, basePath);
         const tulips = [];
         for (let i = 0; i < rb.notes.length; i++) tulips.push(await svgToPng(NoteCanvas.toSVG(rb.notes[i], resolver, RB.tulipContext(rb, i)), 3));
         const backdrop = await coverBackdrop(rb, opts);
@@ -314,10 +314,16 @@
     async function coverBackdrop(rb, opts) {
         const kind = opts.backdrop || 'image';
         if (kind === 'image') { const image = opts.image || (rb.meta && rb.meta.logo); return image ? { image } : null; }
-        if (kind !== 'map' || !rb.track || rb.track.length < 2) return null;
+        if (kind !== 'map') return null;
+        const map = opts.map || await coverMap(rb);
+        return map ? { map } : null; // no tile answered: the plain box
+    }
+    // The route over the map, as the cover shows it (a JPEG data URI), or null
+    async function coverMap(rb) {
+        if (!rb.track || rb.track.length < 2) return null;
         if (!window.RBCoverMap) await loadScript(ASSETS_DIR + 'cover-map.js');
         const canvas = await window.RBCoverMap.render(rb.track, { width: 1800, height: 1180, pad: 150 });
-        return canvas ? { map: canvas.toDataURL('image/jpeg', 0.86) } : null; // no tile answered: the plain box
+        return canvas ? canvas.toDataURL('image/jpeg', 0.86) : null;
     }
 
     /* ---------- the generator dialog (#973) ----------
@@ -325,15 +331,16 @@
        map, or nothing), the image itself (added or changed right there) and the page margins in cm,
        with a live preview of the page. Two panes side by side on a tablet or a desktop, the whole
        screen on a phone (.modal-card.split). The choices are kept on this device for the next PDF.
-       opts: link, iconBasePath — as generate() — and onImage(dataUrl): where a new image goes (the
-       Editor makes it the roadbook's own); without it the image is for this PDF only. */
+       opts: link, iconBasePath — as generate() — and onImage(dataUrl): the roadbook's image changes
+       there (the Editor passes it; without it the image cannot be changed here). The Map choice shows
+       the cover's map, drawn once and handed to the PDF as it is. */
     const PREFS_KEY = 'rb_pdf_prefs';
     const readPrefs = () => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { return {}; } };
     const savePrefs = (p) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch (e) {} };
     const cm = (mm) => (mm / 10).toFixed(1);
     function open(rb, opts = {}) {
         const t = RBt, esc = RBesc, prefs = readPrefs();
-        const mapOk = !(rb.meta && rb.meta.map_access === false) && (rb.track || []).length >= 2;
+        const mapOk = !(rb.meta && rb.meta.map_allowed === false) && (rb.track || []).length >= 2;
         let backdrop = ['image', 'map', 'none'].includes(prefs.backdrop) ? prefs.backdrop : 'image';
         if (backdrop === 'map' && !mapOk) backdrop = 'image';
         let image = (rb.meta && rb.meta.logo) || null;
@@ -347,9 +354,8 @@
                 <div class="segmented fill" role="group">${seg('image', 'fa-image', 'Image')}${seg('map', 'fa-map', 'Map')}${seg('none', 'fa-ban', 'None')}</div>
                 <div class="pdf-image" data-image-pane>
                     <img class="pdf-image-thumb" alt="" hidden>
-                    <p class="muted small" data-no-image>${esc(t('No image yet.'))}</p>
-                    <button class="btn btn-ghost" type="button" data-pick-image><i class="fa-solid fa-upload"></i> <span></span></button>
-                    <p class="muted small">${esc(t(opts.onImage ? 'It becomes the roadbook’s image.' : 'For this PDF only.'))}</p>
+                    <p class="muted small" data-preview-note></p>
+                    <button class="btn btn-ghost" type="button" data-pick-image hidden><i class="fa-solid fa-upload"></i> <span></span></button>
                     <input type="file" accept="image/*" hidden data-image-file>
                 </div>
             </section>
@@ -363,12 +369,23 @@
             </section>
             </div>
             <div class="btnrow end spaced"><button class="btn btn-primary" type="button" data-go><i class="fa-solid fa-file-pdf"></i> ${esc(t('Generate PDF'))}</button></div>`, 'split');
+        let map = null, mapState = 'idle'; // idle · drawing · done · failed
+        const drawMap = () => {
+            if (mapState !== 'idle') return;
+            mapState = 'drawing';
+            coverMap(rb).then((m) => { map = m; mapState = m ? 'done' : 'failed'; }).catch(() => { mapState = 'failed'; }).then(paint);
+        };
         const paint = () => {
             d.el.querySelectorAll('[data-backdrop]').forEach((b) => b.classList.toggle('on', b.dataset.backdrop === backdrop));
-            d.q('[data-image-pane]').hidden = backdrop !== 'image';
-            const thumb = d.q('.pdf-image-thumb');
-            thumb.hidden = !image; if (image) thumb.src = image;
-            d.q('[data-no-image]').hidden = !!image;
+            if (backdrop === 'map') drawMap();
+            d.q('[data-image-pane]').hidden = backdrop === 'none';
+            // the preview: the roadbook's image, or the cover's map
+            const shown = backdrop === 'map' ? map : image, thumb = d.q('.pdf-image-thumb');
+            thumb.hidden = !shown; if (shown) thumb.src = shown;
+            const note = backdrop === 'map' ? { drawing: 'Drawing the map…', failed: 'The map could not be drawn: the cover will be plain.' }[mapState] : (image ? '' : 'No image yet.');
+            d.q('[data-preview-note]').textContent = note ? t(note) : '';
+            d.q('[data-preview-note]').hidden = !note;
+            d.q('[data-pick-image]').hidden = backdrop !== 'image' || !opts.onImage;
             d.q('[data-pick-image] span').textContent = t(image ? 'Change image' : 'Add image');
             // the preview: the page, and the printed area inside the margins (percent of A4)
             const area = d.q('.pdf-page-area');
@@ -385,8 +402,8 @@
             const f = e.target.files[0]; e.target.value = '';
             if (!f) return;
             try {
-                image = await RBImg.toDataURL(f, opts.onImage ? 256 : 1600); // the roadbook's own image keeps the Editor's size
-                if (opts.onImage) opts.onImage(image);
+                image = await RBImg.toDataURL(f, 256); // the roadbook's own image, at the Editor's size
+                opts.onImage(image);
                 paint();
             } catch (err) { RBToast('Could not read the image.'); }
         };
@@ -394,7 +411,7 @@
             const busy = RBBusy(e.currentTarget);
             const chosen = { top: margins.top, right: margins.right, bottom: margins.bottom, left: margins.left };
             savePrefs({ backdrop, margins: chosen });
-            try { await generate(rb, { iconBasePath: opts.iconBasePath, link: opts.link, margins: chosen, backdrop, image }); busy.ok(); d.close(); }
+            try { await generate(rb, { iconBasePath: opts.iconBasePath, link: opts.link, margins: chosen, backdrop, image, map }); busy.ok(); d.close(); }
             catch (err) { busy.reset(); RBToast(err.message || 'Could not export the PDF.'); }
         };
         paint();

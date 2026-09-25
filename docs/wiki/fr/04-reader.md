@@ -59,7 +59,7 @@ La distance restante se mesure **le long de la route**, comme les partiels du ro
 ### Automatique (par défaut)
 La note active se valide dès que vous entrez dans son **rayon de validation**.
 
-- Le rayon vient de la note (`wp_radius`), puis du défaut du roadbook, puis de son type de waypoint, sinon 30 m ; il ne descend jamais sous 18 m, au-dessus du bruit GPS
+- Le rayon vient de la note (`validation_radius`), puis du défaut du roadbook, puis de son type de waypoint, sinon 30 m ; il ne descend jamais sous 18 m, au-dessus du bruit GPS
 - C'est le **trajet parcouru entre deux positions GPS** qui est testé, pas seulement les positions : à vitesse, un téléphone avance de 25 m entre deux positions, et un waypoint serré passerait sinon entre les deux
 - Une position dont le téléphone n'est pas sûr (précision faible) est ignorée : elle ne peut ni valider une note ni ajouter de distance
 

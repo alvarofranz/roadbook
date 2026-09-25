@@ -332,9 +332,7 @@
         for (const rbMeta of list.roadbooks) {
             const r = await api('rb_get', { id: rbMeta.id });
             if (!r.ok || !r.roadbook) continue;
-            const rb = r.roadbook;
-            if (!rb.meta) rb.meta = {}; if (!rb.meta.title) rb.meta.title = rbMeta.title;
-            const innerFiles = { 'roadbook.json': JSON.stringify(RB.roadbookForExport(rb)) };
+            const innerFiles = { 'roadbook.json': JSON.stringify(r.roadbook) }; // the server keeps each roadbook as its .rdbk document
             const media = { photos: [], audio: [] };
             const ph = await api('ph_list', { roadbook: rbMeta.id });
             if (ph.ok && ph.photos) {
@@ -349,7 +347,7 @@
                 }
             }
             if (media.photos.length || media.audio.length) innerFiles['media.json'] = JSON.stringify(media);
-            const slug = (RB.slug(rb.meta.title) || 'roadbook') + '_' + rbMeta.id;
+            const slug = (RB.slug(r.roadbook.meta.title) || 'roadbook') + '_' + rbMeta.id;
             outerFiles[slug + '.rdbk'] = new Uint8Array(await (await RBZip.write(innerFiles)).arrayBuffer());
         }
         RBDownload(await RBZip.write(outerFiles), 'rdbk-export_' + (me ? me.username : 'user') + '.zip');
