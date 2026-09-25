@@ -31,8 +31,8 @@ e una sezione onesta di limiti/quirk.
 - [i18n-edit](i18n-edit.md) — editor di traduzione in-context (solo admin).
 - [label-mgmt](label-mgmt.md) — come si traducono le label con l'editor in-context e come arrivano in produzione.
 - [menu](menu.md) — la matrice delle voci di menu per superficie (web, PWA, app, partecipante).
-- [rbzip](rbzip.md) — `RBZip`: codec ZIP lato browser (container .rdbk e foto/audio).
-- [rb-media-queue](rb-media-queue.md) — `RBMediaQueue`: coda offline-first per upload di foto/audio.
+- [rbzip](rbzip.md) — `RBZip`: codec ZIP lato browser (container .rdbk e le sue foto).
+- [rb-media-queue](rb-media-queue.md) — `RBMediaQueue`: coda offline-first per upload di foto.
 - [challenges](challenges.md) — `RBChallenges`: sfide pubbliche DB-backed e URL amichevoli.
 - [pdf](pdf.md) — `RBPdf`: generazione PDF A4 del roadbook sul dispositivo.
 
@@ -44,7 +44,7 @@ e una sezione onesta di limiti/quirk.
   statiche/marketing (about, terms, contact, feature pages).
 
 ## Backend
-- [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto/audio,
+- [backend-api](backend-api.md) — l'API PHP (`public/api/` + `app/`): account, storage, foto,
   roadbook pubblici, **eventi + co-editing**, schema DB (tutte le `migrations/*.sql`).
 - [events](events.md) — il sottosistema **Eventi** (`public/events/`, `public/event/`,
   `public/admin/events/` + `app/events.php`): modello dati, ruoli/co-organizzatori, partecipanti +

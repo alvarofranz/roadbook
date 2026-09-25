@@ -9,9 +9,9 @@
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
     <link rel="manifest" href="../manifest.json">
-    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-243">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.min.css?v=1.9.18-244">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-243">
+    <link rel="stylesheet" href="../assets/css/app.css?v=1.9.18-244">
     <style>
         .ed-row { display: flex; gap: .5rem; align-items: center; margin: .25rem 0; flex-wrap: wrap; }
         /* soft edit lock (#154): the read-only strip above the actions */
@@ -157,13 +157,6 @@
         .del-badge { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; line-height: 16px; text-align: center; background: var(--track); color: #fff; border: 0; padding: 0; border-radius: 50%; font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
         .photo-thumb { position: relative; }
         .photo-thumb img { width: 100%; height: 84px; object-fit: cover; border-radius: 8px; cursor: pointer; } /* sized for the photo grid, not the icon grid */
-        /* voice-note rows: nearest-note label · audio player · delete */
-        .audio-item { display: flex; align-items: center; gap: .5rem; }
-        .audio-item audio { flex: 1; min-width: 0; height: 34px; }
-        .audio-item .del-badge { position: static; width: 22px; height: 22px; line-height: 22px; flex-shrink: 0; }
-        /* a note's voice note(s): the recorded clip shown ON the note row, under its text */
-        .note-audio { display: flex; flex-direction: column; gap: .3rem; margin-top: .35rem; }
-        .note-audio audio { height: 30px; }
         #edMap { height: 60vh; min-height: 360px; }
         body.placing-photo #edMap { cursor: crosshair; }
         /* the gallery viewer is the whole screen, never an overlay on the map area (#792) */
@@ -614,22 +607,22 @@
 
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="../assets/js/config.js?v=1.9.18-243"></script>
-<script src="../assets/js/roadbook-core.js?v=1.9.18-243"></script>
-<script src="../assets/js/rbzip.js?v=1.9.18-243"></script>
-<script src="../assets/js/rbmap.js?v=1.9.18-243"></script>
-<script src="../assets/js/cover-map.js?v=1.9.18-243"></script>
-<script src="../assets/js/note-canvas.js?v=1.9.18-243"></script>
-<script src="../assets/js/rb-pdf.js?v=1.9.18-243"></script>
-<script src="../assets/js/challenges.js?v=1.9.18-243"></script>
-<script src="../assets/js/rb-media-queue.js?v=1.9.18-243"></script>
-<script src="../assets/js/i18n.es.js?v=1.9.18-243"></script>
-<script src="../assets/js/i18n.it.js?v=1.9.18-243"></script>
-<script src="../assets/js/i18n.de.js?v=1.9.18-243"></script>
-<script src="../assets/js/i18n.fr.js?v=1.9.18-243"></script>
-<script src="../assets/js/i18n.js?v=1.9.18-243"></script>
-<script src="../assets/js/app.js?v=1.9.18-243"></script>
-<script src="../assets/js/rb-voice.js?v=1.9.18-243"></script>
-<script src="editor.js?v=1.9.18-243"></script>
+<script src="../assets/js/config.js?v=1.9.18-244"></script>
+<script src="../assets/js/roadbook-core.js?v=1.9.18-244"></script>
+<script src="../assets/js/rbzip.js?v=1.9.18-244"></script>
+<script src="../assets/js/rbmap.js?v=1.9.18-244"></script>
+<script src="../assets/js/cover-map.js?v=1.9.18-244"></script>
+<script src="../assets/js/note-canvas.js?v=1.9.18-244"></script>
+<script src="../assets/js/rb-pdf.js?v=1.9.18-244"></script>
+<script src="../assets/js/challenges.js?v=1.9.18-244"></script>
+<script src="../assets/js/rb-media-queue.js?v=1.9.18-244"></script>
+<script src="../assets/js/i18n.es.js?v=1.9.18-244"></script>
+<script src="../assets/js/i18n.it.js?v=1.9.18-244"></script>
+<script src="../assets/js/i18n.de.js?v=1.9.18-244"></script>
+<script src="../assets/js/i18n.fr.js?v=1.9.18-244"></script>
+<script src="../assets/js/i18n.js?v=1.9.18-244"></script>
+<script src="../assets/js/app.js?v=1.9.18-244"></script>
+<script src="../assets/js/rb-voice.js?v=1.9.18-244"></script>
+<script src="editor.js?v=1.9.18-244"></script>
 </body>
 </html>

@@ -50,18 +50,19 @@ esterno. Le sue quattro proprietà di design:
 ## 2. Contenitore (il file)
 
 Un file `.rdbk` è un **contenitore ZIP**. Al suo interno, `roadbook.json` contiene il roadbook — il
-documento descritto sotto, con ogni simbolo che disegna incorporato — insieme a media opzionali:
+documento descritto sotto, con ogni simbolo che disegna e ogni nota vocale incorporati — insieme a
+foto opzionali:
 
 ```
 il-mio-roadbook.rdbk   (ZIP)
 ├─ roadbook.json     // il roadbook — il documento qui sotto
 ├─ media.json        // opzionale — dove è stato preso ogni file incluso
-├─ photos/…          // opzionale — foto geotaggate
-└─ audio/…           // opzionale — note vocali
+└─ photos/…          // opzionale — foto geotaggate
 ```
 
-Foto e note vocali sono **opzionali**: viaggiano solo quando chi esporta le include (nell'Editor,
-la spunta *includi foto e audio*). Senza media, lo ZIP contiene solo `roadbook.json`. Un reader
+Le foto sono **opzionali**: viaggiano solo quando chi esporta le include (nell'Editor, la spunta
+*includi le foto*). Senza foto, lo ZIP contiene solo `roadbook.json`. Le note vocali non sono voci
+del contenitore: sono blocchi `voice` delle note (§6), dentro `roadbook.json`. Un reader
 riconosce lo ZIP dal magic number `PK`; un file JSON nudo si legge come un `roadbook.json` da solo
 (`RBZip.inspect` riporta `container: 'zip' | 'json'`).
 
@@ -72,8 +73,9 @@ ritorna `{ roadbook, media }` e `readRdbk(file)` il solo documento: in entrambi 
 **grezzo**, che il chiamante passa a `RB.readRoadbook`.
 
 Lo **storage lato server è JSON**: il server conserva il `roadbook.json` così come lo riceve, e lo
-ZIP è l'artefatto di export/import. Foto e note vocali vivono sul server per roadbook
-(`public/photos/<id>/`, `public/audio/<id>/`) e nello ZIP solo quando incluse.
+ZIP è l'artefatto di export/import. Le foto vivono sul server per roadbook (`public/photos/<id>/`)
+e nello ZIP solo quando incluse; le note vocali restano nel documento, fino a 60 MB
+(`RB_MAX_BYTES`).
 
 ---
 
@@ -363,20 +365,19 @@ I blocchi che RDBK.app usa:
 
 ## 12. `media.json`
 
-Dove è stato preso ogni file incluso nel contenitore:
+Dove è stata scattata ogni foto inclusa nel contenitore:
 
 ```jsonc
 {
-  "photos": [ { "file": "photos/IMG_0001.jpg", "lat": 45.8301, "lon": 9.4132 } ],
-  "audio":  [ { "file": "audio/nota-1.webm" } ]
+  "photos": [ { "file": "photos/IMG_0001.jpg", "lat": 45.8301, "lon": 9.4132 } ]
 }
 ```
 
-Ogni `file` è un percorso dentro `photos/` (o `audio/`) ed è una voce del contenitore; `lat`/`lon`
+Ogni `file` è un percorso dentro `photos/` ed è una voce del contenitore; `lat`/`lon`
 sono opzionali. `RB.validateMedia(manifest, names)` confronta il manifest con le voci reali dello
-ZIP: un file elencato che non c'è è un errore; un file in `photos/`/`audio/` non elencato (senza
-posizione) o una voce sconosciuta nello ZIP è un *warning*. Senza `media.json` non ci sono media
-geotaggati.
+ZIP: un file elencato che non c'è è un errore; un file in `photos/` non elencato (senza posizione),
+una chiave diversa da `photos` o una voce sconosciuta nello ZIP è un *warning*. Senza `media.json`
+non ci sono foto geotaggate.
 
 ---
 
@@ -480,9 +481,9 @@ della prima nota), `cap_distance` in linea retta fino alla terza, e `meta.note_c
 ## 17. Cosa NON contiene `roadbook.json`
 
 - **Nessun valore derivato** (§7): né distanze, né rilevamenti, né numeri di nota, né conteggi.
-- **Nessun media.** Foto geotaggate e note vocali sono voci del contenitore (`photos/`, `audio/` +
-  `media.json`), incluse solo quando chi esporta le sceglie. (Le immagini dei `blocks`, il `logo` e
-  i simboli sono invece data URI dentro il documento.)
+- **Nessuna foto della galleria.** Le foto geotaggate sono voci del contenitore (`photos/` +
+  `media.json`), incluse solo quando chi esporta le sceglie. (Le immagini e l'audio dei `blocks`, il
+  `logo` e i simboli sono invece data URI dentro il documento.)
 - **Nessun dato personale** oltre a ciò che l'autore scrive in `meta.author`/`organization`.
 - **Nessun risultato di gara.** Il token risultato firmato che il Reader emette in competizione non
   fa parte del file: è documentato in [ranking-model.md](ranking-model.md).
@@ -493,8 +494,8 @@ della prima nota), `cap_distance` in linea retta fino alla terza, e `meta.note_c
 
 - **Nessun importer di altre forme `.rdbk`.** Un documento senza `rdbk_version: 1` (e che non sia un
   file Roadbook Suite) è rifiutato con il rapporto del validatore: l'app non legge altre versioni.
-- **I media viaggiano solo se inclusi all'export**, e solo con le coordinate: `media.json` non lega
-  una foto o una nota vocale a una nota specifica, né porta didascalie o orari.
+- **Le foto viaggiano solo se incluse all'export**, e solo con le coordinate: `media.json` non lega
+  una foto a una nota specifica, né porta didascalie o orari.
 - **Il server controlla solo la struttura.** `rb_valid_document` verifica versione, titolo, traccia,
   ordine delle note e forma di `symbols`; la validazione completa (domini dei valori, simboli
   incorporati) la fa il client con `RB.validateRoadbook` prima di salvare.

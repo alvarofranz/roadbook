@@ -245,12 +245,15 @@ elementi spostati.
 
 **La nota e il materiale attorno a lei: le tab (#542).** Ogni riga è una **nota**. Con una nota
 aperta, in testa all'editor ci sono le tab: **Note** (la nota stessa: tulip, icone, parametri) e
-una per ogni tipo di materiale in `RB.NOTE_BLOCKS` — **Photo**, **Ad**, **Text** — con il numero
-di elementi già presenti. Una tab di materiale apre il suo pannello (`renderBlockPanel`): una
+una per ogni tipo di materiale in `RB.NOTE_BLOCKS` — **Photo**, **Ad**, **Heading**, **Voice note** —
+con il numero di elementi già presenti. Una tab di materiale apre il suo pannello (`renderBlockPanel`): una
 **card per elemento**, con i radio **Before the note / After the note**, il selettore d'immagine
 (o l'area di testo) e **Delete**, più il pulsante che ne aggiunge un altro. Nessuno, uno o più:
 una nota può avere due foto e un testo, o niente. Le card e le tab sono costruite dal catalogo
 del core, quindi un quarto tipo di materiale è **una voce lì e basta**.
+La **Voice note** non ha lato né riga propria: si registra lì (`RBVoice` — *Record* / *Stop* /
+*Record again*, sotto i 2 s non si tiene), si riascolta, e *Play before the note (m)* ne fissa il
+`lead_distance`; il suono resta dentro la nota come blocco `voice` (data URI audio), niente trascrizione.
 
 Il testo di un blocco si scrive **senza ricostruire la lista**: `setBlockText` aggiorna il
 modello e **ritocca la riga**, perché l'editor vive dentro la lista e spostarlo porterebbe via il
@@ -405,10 +408,11 @@ organizzazione sono legati con handler `oninput` che fanno `markDirty`
   riporta a *My roadbooks*. I roadbook non ancora salvati non hanno nulla da cancellare lato
   server, quindi il pulsante non c'è.
 
-> Le foto e le note vocali vivono **lato server** (feature dell'app); non stanno mai in
-> `roadbook.json`. Viaggiano solo come **media del contenitore** — cartelle `photos/`/`audio/`
-> accanto a `roadbook.json` nel ZIP `.rdbk` — quando l'export ha la spunta *includi foto e
-> audio* (§7). Coerente con lo standard.
+> Le foto della galleria vivono **lato server** (feature dell'app); non stanno mai in
+> `roadbook.json`. Viaggiano solo come **media del contenitore** — la cartella `photos/`
+> accanto a `roadbook.json` nel ZIP `.rdbk` — quando l'export ha la spunta *includi le foto*
+> (§7). Coerente con lo standard. Una **nota vocale** invece fa parte della sua nota: un blocco
+> `voice` (l'extra *Voice note*) con l'audio in data URI dentro `roadbook.json` (#992).
 
 ### 6.1 Foto: galleria sulla mappa, upload geolocalizzato, lightbox
 Le foto sono **server-side, geotaggate, legate al roadbook** (tabella `roadbook_photos`, API
@@ -446,12 +450,6 @@ Frecce ‹/›, `←`/`→` e `Esc`, più una riga azioni:
   aggiorna le coordinate della foto via l'endpoint **`ph_move`** ([roadbooks.php](../app/roadbooks.php), `UPDATE … SET lat,lon`, con check proprietà);
 - **Delete** — elimina la foto (`ph_delete`, con conferma) e aggiorna lightbox + pin.
 
-### 6.2 Note vocali: player sulla riga
-Le note vocali già registrate sono server-side (tabella `roadbook_audio`, `audio_list`/`audio_delete`)
-e compaiono come **player audio sulla riga della nota più vicina** (entro 80 m), con la × per
-eliminarle (conferma che nomina la nota). Non c'è trascrizione: il testo della nota lo scrive chi
-edita (#767).
-
 ---
 
 ## 7. Export e "Save to profile"
@@ -463,7 +461,7 @@ scrivere — così una scelta GPX multipla non ripete il prompt.
 
 | Formato | Funzione | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | contenitore ZIP (`RBZip.write`): `roadbook.json` = `RB.writeRoadbook(rb)` validato (`rdbkDocument`), auto-contenuto (`embedUsed` embedda ogni simbolo usato e pota i simboli standard inutilizzati); con `includeMedia`, aggiunge `photos/`/`audio/` presi dalla gallery + `media.json` con i geotag |
+| **.rdbk** | `exportRdbk(includeMedia)` | contenitore ZIP (`RBZip.write`): `roadbook.json` = `RB.writeRoadbook(rb)` validato (`rdbkDocument`), auto-contenuto (`embedUsed` embedda ogni simbolo usato e pota i simboli standard inutilizzati); con `includeMedia`, aggiunge `photos/` presi dalla gallery + `media.json` con i geotag; le note vocali sono già dentro `roadbook.json` |
 | **PDF** | `exportPdf` | A4 sul device via `RBPdf.generate` (jsPDF lazy-loaded, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | un set di checkbox componibili (vedi §7.1) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` (vedi sotto); file `…_OR.gpx` |
@@ -477,12 +475,12 @@ solo punto…) l'Editor mostra i primi errori, col loro percorso, e non scrive n
 dall'Editor che un'altra app non potrebbe aprire. Save ed export passano entrambi da qui.
 
 > **Contenitore `.rdbk` e media (#162).** Il file `.rdbk` è sempre un contenitore ZIP
-> (`RBZip`). L'export mostra una spunta **includi foto e audio**: se attiva, `exportRdbk` scarica
-> le foto/note vocali dalla gallery del roadbook e le impacchetta in `photos/`/`audio/` con un
-> `media.json` che ne porta i geotag; se spenta, il ZIP contiene solo `roadbook.json`. In
-> **import** (`RBZip.readBundle`) i media inclusi finiscono in `pendingMedia`: subito dopo il
-> caricamento un popup avvisa che foto/audio non saranno visibili finché non si salva sul
-> proprio profilo, e `flushImportedMedia()` li carica al primo `doSave` (poi `resetIdentity`
+> (`RBZip`). L'export mostra una spunta **includi le foto** (solo se la galleria ne ha): se attiva,
+> `exportRdbk` scarica le foto dalla gallery del roadbook e le impacchetta in `photos/` con un
+> `media.json` che ne porta i geotag; se spenta, il ZIP contiene solo `roadbook.json` (che porta
+> comunque le note vocali, blocchi `voice`). In **import** (`RBZip.readBundle`) le foto incluse
+> finiscono in `pendingMedia`: subito dopo il caricamento un popup avvisa che non saranno visibili
+> finché non si salva sul proprio profilo, e `flushImportedMedia()` li carica al primo `doSave` (poi `resetIdentity`
 > azzera `pendingMedia`). Lo storage lato server resta JSON: il ZIP è solo l'artefatto di
 > export/import.
 
@@ -702,7 +700,7 @@ Risolta la sorgente, due rifiniture finali della startup:
 
 Un `.rdbk` è un contenitore ZIP con dentro `roadbook.json`: il documento `.rdbk` 1 auto-contenuto
 (`rdbk_version` · `meta` · `track` · `notes` · `symbols`; lo schema completo è in
-[rdbk-format.md](rdbk-format.md)), più — opzionalmente — foto/note vocali. Questo capitolo
+[rdbk-format.md](rdbk-format.md); le note vocali sono blocchi `voice` delle note), più — opzionalmente — le foto della galleria. Questo capitolo
 documenta cosa succede quando se ne **importa uno nell'Editor** e — punto chiave — **se
 sopravvivono le informazioni che serviranno poi al Ranking**.
 
@@ -711,8 +709,8 @@ La carta **.rdbk** della landing è gestita da `$('jsonFile').onchange`
 ([editor.js](../public/editor/editor.js)):
 
 1. `RBZip.readBundle(file)` — sniffa il magic `PK`: se è un ZIP estrae `roadbook.json` e
-   raccoglie i media (`photos/`/`audio/`, geotaggati da `media.json`); un JSON nudo è letto come
-   `roadbook.json` da solo, con media vuoti;
+   raccoglie le foto (`photos/`, geotaggate da `media.json`); un JSON nudo è letto come
+   `roadbook.json` da solo, senza foto;
 2. `resetIdentity()` — l'import è un **nuovo** roadbook (azzera `?rb=`, torna privato, §2);
 3. `setRoadbook(…)` ([editor.js](../public/editor/editor.js)); gli eventuali media confluiscono in
    `pendingMedia` e un popup avvisa che saranno visibili solo dopo il salvataggio sul profilo

@@ -70,7 +70,7 @@ curl -sS -X POST -H "X-Admin-Key: $VPS_KEY" https://alvarofranz.com/api/projects
 ```
 - **Schema prima del codice**: una nuova colonna/tabella deve esistere in prod PRIMA che il codice che la usa venga deployato.
 - **Chiave DB/produzione**: in `DB.md` (gitignored).
-- **Aggiornare il DDEV locale con i dati di produzione = DUE passi, DB *e* file.** Il dump del pannello contiene SOLO il DB: i payload dei roadbook stanno su disco (`storage/users/<user_id>/<id>.rdbk`, più `public/photos/<id>/` e `public/audio/<id>/`). Importato il solo dump, ogni roadbook risponde `{"ok":false,"error":"File missing."}`. Procedura completa (dump → `ddev import-db` → recupero dei file dei roadbook pubblici → cancellazione del dump, che contiene email e hash reali) in `CLAUDE.md` § *Production DB*.
+- **Aggiornare il DDEV locale con i dati di produzione = DUE passi, DB *e* file.** Il dump del pannello contiene SOLO il DB: i payload dei roadbook stanno su disco (`storage/users/<user_id>/<id>.rdbk`, note vocali comprese, più `public/photos/<id>/`). Importato il solo dump, ogni roadbook risponde `{"ok":false,"error":"File missing."}`. Procedura completa (dump → `ddev import-db` → recupero dei file dei roadbook pubblici → cancellazione del dump, che contiene email e hash reali) in `CLAUDE.md` § *Production DB*.
 
 ## Convenzioni rapide
 

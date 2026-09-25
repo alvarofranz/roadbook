@@ -39,7 +39,7 @@
     // The store listings — where an app update comes from, and where the site sends a visitor who
     // wants the native app. Published so the pages that link them never hard-code an id.
     window.RBStore = { ios: 'https://apps.apple.com/app/rdbk/id6787167327', android: 'https://play.google.com/store/apps/details?id=app.rdbk' };
-    // API-served media path (/photos/… /audio/… /avatars/… /event-logos/…) → a URL that loads
+    // API-served media path (/photos/… /avatars/… /event-logos/… /run-cards/…) → a URL that loads
     // everywhere: same-origin on the web, the backend host inside the native app — whose WebView
     // origin has no backend, so a root-relative src renders a broken image there (#232).
     window.RBMediaSrc = (p) => (typeof p === 'string' && p.startsWith('/') ? API_ROOT.replace(/\/+$/, '') + p : p);
@@ -1248,8 +1248,7 @@
         document.body.appendChild(a); a.click(); a.remove();
         if (typeof data !== 'string') setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
-    // POST a multipart upload to upload.php (`fields` = extra form fields). Photos go through the
-    // image downscale; voice notes upload the recorded blob as-is.
+    // POST a multipart upload to upload.php (`fields` = extra form fields), the image downscaled first.
     const rbPostUpload = async (fields, fieldName, blob, name) => {
         const fd = new FormData();
         for (const k in fields) fd.append(k, fields[k]);
@@ -1258,10 +1257,6 @@
         catch (e) { return { ok: false, error: 'Upload failed.' }; }
     };
     window.RBUpload = async (fields, file, name) => rbPostUpload(fields, 'photo', await RBImg.toBlob(file), name || 'photo.jpg');
-    // A voice note's filename extension follows its MIME (the MediaRecorder container varies by
-    // browser), so the server stores it under a type it can serve back (#657).
-    const audioExt = (mime) => ({ 'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav' })[(mime || '').split(';')[0]] || 'webm';
-    window.RBUploadAudio = async (fields, blob, name) => rbPostUpload(fields, 'audio', blob, name || ('audio.' + audioExt(blob.type)));
 
     /* ---------------- Styled confirm + auth prompt (built on RBModal) ---------------- */
     // msg runs through RBt: a plain English key translates, a composed string falls through.

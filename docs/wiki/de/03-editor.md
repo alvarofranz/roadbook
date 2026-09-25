@@ -2,7 +2,7 @@
 
 Der **Editor** ist die Erstellungs-Zentrale: hier verwandelst du eine rohe Spur (oder ein leeres Blatt) in ein vollständiges roadbook mit Notizen, CAP, danger, Straßentypen, Icons und Vignetten.
 
-> **Funktioniert offline** für die reine Bearbeitung. Eine Verbindung wird benötigt für: Login, Laden/Speichern im Profil, Upload von Foto/Audio, Import öffentlicher challenge, Export PDF/GPX (nutzt lazy-geladene Bibliotheken).
+> **Funktioniert offline** für die reine Bearbeitung. Eine Verbindung wird benötigt für: Login, Laden/Speichern im Profil, Upload von Fotos, Import öffentlicher challenge, Export PDF/GPX (nutzt lazy-geladene Bibliotheken).
 
 ---
 
@@ -190,12 +190,6 @@ Tap auf Pin / Miniatur → Vollbild-Betrachter (deckt nur die Karte ab, **nicht*
 
 ---
 
-## Sprachnotizen — Player
-
-Bereits aufgenommene Sprachnotizen werden server-seitig gespeichert (`roadbook_audio`, `audio_list`/`audio_delete`). Jede erscheint als **Audio-Player** auf der nächstgelegenen Notizzeile (≤80m), mit einem **×** zum Löschen (die Bestätigung nennt die Notiz).
-
----
-
 ## Export & Save to profile
 
 Button **Export** → Pop-up mit allen Formaten. **Save** (Profil-Speichern) separat. Jeder Export schließt das Pop-up, bestätigt offene Schnitte **einmal**, berechnet Metriken neu.
@@ -204,7 +198,7 @@ Button **Export** → Pop-up mit allen Formaten. **Save** (Profil-Speichern) sep
 
 | Format | Funktion | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: selbst-enthaltenes `roadbook.json`, geschrieben von `RB.writeRoadbook` und geprüft von `RB.validateRoadbook` (`embedUsed` bettet genutzte Symbole ein, entfernt ungenutzte Standard-Symbole) + optionales `photos/`/`audio/`/`media.json` |
+| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: selbst-enthaltenes `roadbook.json`, geschrieben von `RB.writeRoadbook` und geprüft von `RB.validateRoadbook` (`embedUsed` bettet genutzte Symbole ein, entfernt ungenutzte Standard-Symbole) + optionales `photos/` + `media.json` |
 | **PDF** | `exportPdf` | A4 via `RBPdf.generate` (lazy jsPDF, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | Kombinierbare Checkboxen (Spur / Waypoint / Garmin-Icons / OSMAnd-Icons / separate OpenRally-Datei) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` → `…_OR.gpx` (GPX 1.1 + Namespace `openrally:`) |

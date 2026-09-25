@@ -40,7 +40,6 @@ $CFG = [
     'event_logos_dir'  => $ROOT . '/public/event-logos', // public event logos (web: /event-logos/)
     'run_cards_dir'    => $ROOT . '/public/run-cards',   // shareable run images (web: /run-cards/, #785)
     'photos_dir'       => $ROOT . '/public/photos',   // public photos (web: /photos/)
-    'audio_dir'        => $ROOT . '/public/audio',    // public voice notes (web: /audio/)
 ];
 
 require __DIR__ . '/db.php';
@@ -80,7 +79,15 @@ function json_out($data, int $code = 200): void {
     echo json_encode($data);
     exit;
 }
-function json_in(): array { $d = json_decode(file_get_contents('php://input'), true); return is_array($d) ? $d : []; }
+// A roadbook document may be up to RB_MAX_BYTES, its photos and voice notes inside; the FPM pool's
+// post_max_size (64M) leaves room for the rest of the request. A body past that reaches PHP empty,
+// so it is refused by its declared length, with the reason instead of "not a roadbook".
+const RB_MAX_BYTES = 60 * 1024 * 1024;
+function json_in(): array {
+    if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > RB_MAX_BYTES + 4 * 1024 * 1024) fail('This roadbook is too large (60 MB at most).', 413);
+    $d = json_decode(file_get_contents('php://input'), true);
+    return is_array($d) ? $d : [];
+}
 function fail(string $msg, int $code = 400): void { json_out(['ok' => false, 'error' => $msg], $code); }
 
 // Light rate limit. APCu is the fast path; where it isn't loaded a file-based counter keeps the

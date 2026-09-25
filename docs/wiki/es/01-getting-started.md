@@ -2,7 +2,7 @@
 
 ¡Bienvenido! RDBK.app es una PWA (Progressive Web App) para crear, compartir y seguir roadbook digitales. Funciona **íntegramente en el navegador** — nada que instalar, pero también puedes "instalarla" como app en el teléfono.
 
-La app funciona **offline** para registro, edición y navegación. Se necesita conexión solo para: login, guardado en el perfil, subida de fotos/audio, páginas públicas.
+La app funciona **offline** para registro, edición y navegación. Se necesita conexión solo para: login, guardado en el perfil, subida de fotos, páginas públicas.
 
 ---
 
@@ -60,7 +60,7 @@ El login te permite guardar tus roadbook en la nube y recuperarlos en cualquier 
 |----------|----------------|
 | **Estado roadbook** | `draft` = borrador privado · `ready` = listo pero privado · `public` = visible para todos en la galería |
 | **Guardado local vs cloud** | En el Editor: **Export .rdbk** = archivo ZIP en tu dispositivo (offline, portable). **Save to profile** = guardado en el servidor, lo recuperas desde cualquier dispositivo con login |
-| **Fotos y notas de voz** | No entran en el `.rdbk` a menos que marques "Incluir fotos y audio" en el export. Viven en el servidor (hace falta login). Sin login quedan en el dispositivo y van al `.rdbk` local |
+| **Fotos y notas de voz** | Una nota de voz forma parte de su nota, así que viaja siempre dentro del `.rdbk`. Las fotos entran en el `.rdbk` solo si marcas "Incluir las fotos en el .rdbk" en el export. Viven en el servidor (hace falta login). Sin login quedan en el dispositivo y van al `.rdbk` local |
 | **Join code de eventos** | Código corto (ej. `DA2C09`) que te da el organizador. Abre `/go/DA2C09` → entras en el evento y ves los roadbook `ready` reservados a los participantes |
 | **Puntuación de carrera (Ranking)** | Solo en modo **Competition** en el Reader. Genera un QR firmado de 55 caracteres al final de la prueba.
 
