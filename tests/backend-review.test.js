@@ -69,7 +69,7 @@ describe('roadbook media and storage', () => {
     });
     it('rb_list counts the .rdbk file in total_bytes, then drops its storage name', () => {
         const body = fn(roadbooks, 'rb_list');
-        expect(body).toContain('r.category, r.status, r.updated_at, r.filename FROM roadbooks r');
+        expect(body).toContain('r.status, r.updated_at, r.filename FROM roadbooks r');
         expect(body).toContain("unset($rb['filename']);");
     });
     it('co-editing never lists a trashed roadbook', () => {

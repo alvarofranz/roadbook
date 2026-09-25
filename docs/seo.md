@@ -13,7 +13,7 @@ The site is a **client-side i18n PWA**: one URL per page, text swapped by JS fro
 
 ## Indexing policy
 
-- **Indexed + in `sitemap.xml`:** home, about, privacy, terms, standard, roadbooks, events, and the five `/features/*` pages.
+- **Indexed + in `sitemap.xml`:** home, about, privacy, terms, standard, validator, roadbooks, events, and the five `/features/*` pages.
 - **`noindex`:** the tools (editor, reader, recorder, tripmaster, ranking), account, myroadbooks and every `/admin/*` page — they are apps, not landing pages.
 - **`robots.txt`** allows everything except `/api/`, and points to `https://rdbk.app/sitemap.xml`.
 
@@ -82,6 +82,16 @@ A public roadbook is public (#884): `/challenge/<slug>` renders it for anyone, s
 | Español | El estándar .rdbk: el formato abierto para roadbooks digitales — RDBK.app | El formato .rdbk: el estándar abierto para roadbooks digitales, usado por pilotos off-road y organizadores de todo el mundo. Un ZIP con un roadbook.json autocontenido — traza, notas, viñetas, símbolos — más fotos y notas de voz. Especificación completa y FAQ. |
 | Deutsch | Der .rdbk-Standard: das offene Format für digitale Roadbooks — RDBK.app | Das .rdbk-Format: der offene Standard für digitale Roadbooks, weltweit genutzt von Offroad-Fahrern und Veranstaltern. Ein ZIP mit einer eigenständigen roadbook.json — Track, Notizen, Vignetten, Symbole — plus Fotos und Sprachnotizen. Vollständige Spezifikation und FAQ. |
 | Français | Le standard .rdbk : le format ouvert des roadbooks numériques — RDBK.app | Le format .rdbk : le standard ouvert des roadbooks numériques, utilisé par les pilotes tout-terrain et les organisateurs du monde entier. Un ZIP avec un roadbook.json autonome — trace, notes, vignettes, symboles — plus photos et notes vocales. Spécification complète et FAQ. |
+
+### `/validator/`
+
+| Lang | Title | Description |
+|---|---|---|
+| English | .rdbk validator — RDBK.app | Check that a .rdbk roadbook follows the open standard: every error with its exact place, in your browser — the file is never uploaded. |
+| Italiano | Validatore .rdbk — RDBK.app | Verifica che un roadbook .rdbk segua lo standard aperto: ogni errore nel suo punto esatto, nel tuo browser — il file non viene mai caricato. |
+| Español | Validador .rdbk — RDBK.app | Comprueba que un roadbook .rdbk sigue el estándar abierto: cada error en su lugar exacto, en tu navegador — el archivo nunca se sube. |
+| Deutsch | .rdbk-Validator — RDBK.app | Prüfe, ob ein .rdbk-Roadbook dem offenen Standard folgt: jeder Fehler an seiner genauen Stelle, in deinem Browser — die Datei wird nie hochgeladen. |
+| Français | Validateur .rdbk — RDBK.app | Vérifiez qu’un roadbook .rdbk suit le standard ouvert : chaque erreur à son endroit exact, dans votre navigateur — le fichier n’est jamais envoyé. |
 
 ### `/roadbooks/`
 

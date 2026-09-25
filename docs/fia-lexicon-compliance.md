@@ -34,11 +34,11 @@ in parte modellato come dati (danger, cap, road_type) e in parte non rappresenta
 | Segnali stradali (stop, precedenza, divieti, pericoli, limiti) | **Alta** — set Vienna `W*/B*/C*/D*` + `S*` limiti |
 | Terreno / altimetria / superficie | **Alta** — `A*` + `T*/t*` |
 | Riferimenti ambientali (case, alberi, acqua, ferrovia…) | **Media** — `P*`, mancano molti elementi desertici |
-| Direzione / tipo strada | **⊘ dati** — `junctions[]` + `road_type` 0–4 |
+| Direzione / tipo strada | **⊘ dati** — `junctions[]` + `road_type` 1–5 (i tratti FIA: Tarmac doppia linea · Track · Low-visible track · Off track, più la ciclabile) |
 | Pericolo / CAP | **⊘ dati** — campo `danger` 1–3, `cap`/`cap_distance` (+ `cap_type`) |
-| Tipi di waypoint (Masked/Control/Security/…) | **⊘ dati** — campo `wp_type` su `RB.WP_TYPES` (7 tipi FIA + start/finish, zone, controlli), con `wp_radius` |
+| Tipi di waypoint (Masked/Control/Security/…) | **⊘ dati** — campo `waypoint_type` su `RB.WP_TYPES` (7 tipi FIA + start/finish, zone, controlli), con `validation_radius` |
 | Dune / sabbia (cuvette, dunette, livelli) | **Nessuna** (solo sabbia/guado generici) |
-| Controlli di gara (SS, CP, zone DZ/FZ…) | **⊘ dati parziale** — `wp_type` copre SS start/end, CP/PC/STOP e le zone; TC/neutralizzazioni/transfer/assistenza ancora assenti |
+| Controlli di gara (SS, CP, zone DZ/FZ…) | **⊘ dati parziale** — `waypoint_type` copre SS start/end, CP/PC/STOP e le zone; TC/neutralizzazioni/transfer/assistenza ancora assenti |
 
 ---
 
@@ -48,12 +48,12 @@ in parte modellato come dati (danger, cap, road_type) e in parte non rappresenta
 |---|---|---|
 | Danger Level 1 / 2 / 3 | campo `danger` 1–3 → `!` / `!!` / `!!!` nella vignette | ⊘ ✓ |
 | Global danger in the note | `W28_general_danger.svg` | ✓ |
-| Speed limit (start) | `S01_10km`…`S12_120km` `.svg` | ✓ |
-| Speed limit (finish) | `S99_end.svg` | ✓ |
+| Speed limit (start) | campo `speed_limit_kmh` + cartello `S01_10km`…`S12_120km` `.svg` | ⊘ ✓ |
+| Speed limit (finish) | `speed_limit_kmh: 0` + cartello `S99_end.svg` | ⊘ ✓ |
 | Stop | `B02_stop.svg` | ✓ |
 | Give way / precedenza | `B01_give_way.svg` | ✓ |
 | Red line under km = danger 2 | campo `danger=2` (resa testuale, non grafica identica) | ≈ |
-| Start / Finish Difficult Overtaking Zone (DZ/FZ) | `wp_type` `dz`/`fz` | ⊘ ✓ |
+| Start / Finish Difficult Overtaking Zone (DZ/FZ) | `waypoint_type` `dz`/`fz` | ⊘ ✓ |
 
 Pericoli stradali (dal set Vienna, ora tutti raggiungibili anche dai file Suite via alias):
 strettoia `W07`, curva dx/sx `W01`/`W02`, strada tortuosa `W03`, sdrucciolevole `W11`,
@@ -117,11 +117,11 @@ solo parzialmente dal modello dati.
 
 | Area FIA | Elementi | RDBK |
 |---|---|---|
-| **Tipi di WP** | Masked · Control · Security · Navigation · Precise · Visible · Eclipse · WP number | ⊘ ✓ — `wp_type` su `RB.WP_TYPES` (i 7 tipi FIA), badge nell'editor/Reader e `sym` nel GPX |
+| **Tipi di WP** | Masked · Control · Security · Navigation · Precise · Visible · Eclipse · WP number | ⊘ ✓ — `waypoint_type` su `RB.WP_TYPES` (i 7 tipi FIA), badge nell'editor/Reader e `sym` nel GPX |
 | **CAPS** | Exit cap · Average cap · Calculated cap (HP) · Cap that turns | ⊘ parziale — `cap`/`cap_distance` + `cap_type` (exit/average/calculated/turning) |
 | **Dune / sabbia** | Sandy plain · Big bowl "cuvette" · Sand spit · Dune · Broken dune · Many dunes · Small dune "dunette" · Dunes difficulty level · Concrete pass | ✗ |
-| **On-track / direttive** | Principal/Parallel track · Sight driving! · Off track forbidden · Follow principal/road · Low-visible track | ✗ (il *tipo* strada è `road_type` 0–4, non i glifi direttivi) |
-| **Controlli di gara** | Start/Arrival SS · Check point · Neutralisation · Transfer · Time control · Assistance · Tyre/Fuel zone · End zone | ⊘ parziale — `wp_type` copre SS start/end, CP/PC/STOP e le zone (DZ/FZ ecc.); neutralizzazioni/transfer/TC/assistenza ancora assenti |
+| **On-track / direttive** | Principal/Parallel track · Sight driving! · Off track forbidden · Follow principal/road · Low-visible track | ≈ Low-visible track è un `road_type` (3, tratteggio lungo–corto); gli altri glifi direttivi ✗ |
+| **Controlli di gara** | Start/Arrival SS · Check point · Neutralisation · Transfer · Time control · Assistance · Tyre/Fuel zone · End zone | ⊘ parziale — `waypoint_type` copre SS start/end, CP/PC/STOP e le zone (DZ/FZ ecc.); neutralizzazioni/transfer/TC/assistenza ancora assenti |
 | **Abbreviazioni** | VG, L/R, KpL, ET, NBX, BIG/SMALL, … (testo) | ✗ (testo libero nella nota) |
 
 ---
@@ -132,9 +132,10 @@ solo parzialmente dal modello dati.
 acqua, animali, riferimenti edilizi principali. I cartelli della Roadbook Suite trovano ora
 **tutti** un equivalente (vedi [editor.md §9.5](editor.md)).
 
-**Già coperto a livello di modello dati:** la **tipizzazione dei waypoint** (`wp_type` su
+**Già coperto a livello di modello dati:** la **tipizzazione dei waypoint** (`waypoint_type` su
 `RB.WP_TYPES`: i 7 tipi FIA + start/finish SS, zone DZ/FZ, controlli CP/PC/STOP) con
-`wp_radius`, e il **qualificatore CAP** (`cap_type`). Vedi lo standard su `/standard`.
+`validation_radius`, il **qualificatore CAP** (`cap_type`), il **limite di velocità**
+(`speed_limit_kmh`) e i **tratti delle strade** del Road Book Lexicon (`road_type` 1–4). Vedi lo standard su `/standard`.
 
 **Gap principali verso la piena compliance FIA**, in ordine di utilità:
 1. **Pittogrammi ambientali desertici/rally** mancanti (recinzioni, pali/linee elettriche,

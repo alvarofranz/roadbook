@@ -77,13 +77,14 @@ Note di codifica (in [buildMeta](../public/assets/js/roadbook-core.js)):
 La valorizzazione delle penalità nasce durante la navigazione, non nel ranking.
 
 ### Sezione a punteggio
-Le penalità maturano **solo dentro la sezione cronometrata**. La sezione è delimitata dalle
-icone speciali nelle note ([reader.js](../public/reader/reader.js)):
-- inizio = `I02_partenza.png`, fine = `I01_arrivo.png`;
+Le penalità maturano **solo dentro la sezione cronometrata**. La sezione è delimitata dal tipo di
+waypoint o dai simboli speciali delle note (`RB.scoredNoteSet`):
+- inizio = `waypoint_type` `ss_start` (DSS) o il simbolo `I02_partenza.png`; fine = `ss_end` (ASS) o
+  `I01_arrivo.png`;
 - `scoredSet` contiene tutte le note tra una partenza (inclusa) e il primo arrivo successivo;
-- **se nessuna nota ha l'icona di partenza, l'intero roadbook è a punteggio** (`scoredSet = null`).
+- **se nessuna nota apre una sezione, l'intero roadbook è a punteggio** (`scoredSet = null`).
 
-> Implicazione: le sezioni cronometrate sono delimitate da icone START→FINISH
+> Implicazione: le sezioni cronometrate sono delimitate da START→FINISH (tipo o simbolo)
 > (`RB.scoredNoteSet`) e possono essere **più d'una** (start/finish multipli); le formule qui
 > sotto vivono nel core e il Reader le richiama accumulando in `pen`.
 
@@ -107,7 +108,7 @@ Quando si entra nel raggio di `MANUAL_RADIUS_M = 100 m` dalla nota attiva, il co
 accumulato (`extraAccum += disp` → `pen.extra` alla validazione) — **1 punto per metro**.
 
 ### `speed` — eccesso di velocità
-Quando è in vigore un limite (`speedLimitOfNote`, dichiarativo o dai nomi-icona) e la velocità
+Quando è in vigore un limite (`speedLimitOfNote`: il `speed_limit_kmh` dichiarato dalla nota) e la velocità
 massima nel segmento lo supera, si pagano `P_SPEED_PER_KMH = 10` punti per ogni km/h di
 eccesso, una volta per segmento (`RB.speedPenalty(maxKmh, limit)`).
 
@@ -202,7 +203,7 @@ reg      = early + max(0, late - REG_GRACE_S)   // REG_GRACE_S = 59 s
   Ranking. Attenzione: `rb` è **testo** riempito con spazi, quindi `verifyMeta` **non deve fare
   trim** del META (il padding fa parte della stringa firmata). È il vincolo chiave da tenere
   presente per estensioni tipo cronometraggio FIA per-settore.
-- **Il raggio di convalida per-nota** è dato da `RB.detectionRadius` (`wp_radius` → default del
+- **Il raggio di convalida per-nota** è dato da `RB.detectionRadius` (`validation_radius` → default del
   roadbook → default del tipo → 30 m di sistema), poi ristretto dai vicini in `reachRadius`: non è un
   valore uniforme fisso, ma non esistono raggi `open`/`clear` distinti per tipo di controllo.
 - Le penalità posizionali (accuracy/CAP/extra) **dipendono dal GPS**: una prova manuale senza

@@ -11,7 +11,7 @@ describe('the app screens', () => {
     });
     it('the app home draws my roadbooks as the shared cards', () => {
         expect(read('public/assets/js/home.js')).toContain('mine.slice(0, 6).map((rb) => RBRoadbookCard(rb, {');
-        expect(read('app/roadbooks.php')).toContain('rb_card_fields($r) + [\'category\' => $r[\'category\'], \'status\' => $r[\'status\']');
+        expect(read('app/roadbooks.php')).toContain('rb_card_fields($r) + [\'status\' => $r[\'status\']');
     });
     it('the Recorder starts from one big button after three short points', () => {
         const html = read('public/recorder/index.html');

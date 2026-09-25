@@ -30,11 +30,9 @@ describe('a note is a note — the kinds are gone (#542)', () => {
         expect(readerJs).toContain('RB.autoReachedIdx(notes, activeIdx, activeIdx + 1,');
     });
 
-    it('older files keep their material: the rows fold onto the note they sat beside', () => {
-        expect(core).toContain('function foldInfoRows(rb)');
-        expect(core).toContain('foldInfoRows(rb);');   // called from importRoadbook
-        // the public page reads the same canonical shape as the Reader
-        expect(read('public/challenge/challenge.js')).toContain('RB.importRoadbook(j.roadbook)');
+    it('the public page reads the roadbook exactly like the Reader', () => {
+        expect(read('public/challenge/challenge.js')).toContain('RB.readRoadbook(j.roadbook)');
+        expect(readerJs).toContain('const r = RB.readRoadbook(doc);');
     });
 });
 
@@ -124,7 +122,7 @@ describe('every surface draws the material the same way (#542)', () => {
     it('the Reader and the public page put it around the note it belongs to', () => {
         // one renderer for both (#635): NoteCanvas.rowsHTML draws the blocks around their note
         const canvas = read('public/assets/js/note-canvas.js');
-        expect(canvas).toContain("RB.noteBlocks(n, at)");
+        expect(canvas).toContain("RB.noteBlocks(n, placement)");
         expect(canvas).toContain("RB.blockType(b)");
         expect(canvas).toContain("${blocks(n, 'before')}");
         expect(canvas).toContain("${blocks(n, 'after')}");
@@ -154,22 +152,22 @@ describe('export and import keep the material, and the other formats unharmed (#
     // which is all those formats know about — is exactly the notes, in order.
     const RB = require('../public/assets/js/roadbook-core.js');
     const track = Array.from({ length: 12 }, (_, i) => ({ lat: 45 + i * 0.0001, lon: 9 + i * 0.0001 }));
-    const withMaterial = () => RB.importRoadbook({
-        meta: { title: 'Round trip' }, icons: {}, track,
+    const withMaterial = () => RB.readRoadbook({
+        rdbk_version: 1, meta: { title: 'Round trip' }, track,
         notes: [
-            { idx: 0, num: 1, road_type_out: 2, text: 'Start', blocks: [{ type: 'text', at: 'before', text: 'Briefing at 8' }] },
-            { idx: 6, num: 2, road_type_out: 3, text: 'Fork', wp_type: 'masked', blocks: [{ type: 'ad', at: 'after', image: 'data:img', text: 'ACME' }] },
-            { idx: 11, num: 3, road_type_out: 2, text: 'Finish' },
+            { track_index: 0, road_type: 1, text: 'Start', blocks: [{ type: 'text', placement: 'before', text: 'Briefing at 8' }] },
+            { track_index: 6, text: 'Fork', waypoint_type: 'masked', blocks: [{ type: 'ad', placement: 'after', image: 'data:image/png;base64,AA', text: 'ACME' }] },
+            { track_index: 11, road_type: 1, text: 'Finish' },
         ],
     });
 
     it('a .rdbk round trip keeps every block exactly as it was', () => {
-        const out = RB.roadbookForExport(withMaterial());
-        const back = RB.importRoadbook(JSON.parse(JSON.stringify(out)));
+        const out = RB.writeRoadbook(withMaterial());
+        const back = RB.readRoadbook(JSON.parse(JSON.stringify(out)));
         expect(back.notes.length).toBe(3);
-        expect(RB.noteBlocks(back.notes[0], 'before')[0]).toMatchObject({ type: 'text', text: 'Briefing at 8' });
-        expect(RB.noteBlocks(back.notes[1], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:img', text: 'ACME' });
-        expect(back.notes[1].wp_type, 'the FIA type survives the cap-code round trip').toBe('masked');
+        expect(RB.noteBlocks(back.notes[0], 'before')[0]).toEqual({ type: 'text', placement: 'before', text: 'Briefing at 8' });
+        expect(RB.noteBlocks(back.notes[1], 'after')[0]).toEqual({ type: 'ad', placement: 'after', image: 'data:image/png;base64,AA', text: 'ACME' });
+        expect(back.notes[1].waypoint_type).toBe('masked');
     });
 
     it('the OpenRally export emits every note as a waypoint — no row to skip any more', () => {
@@ -189,22 +187,13 @@ describe('export and import keep the material, and the other formats unharmed (#
         expect(back.notes.some((n) => n.blocks), 'OpenRally carries no material').toBe(false);
     });
 
-    it('a Roadbook Suite file still opens, and its sponsor rows become material', () => {
-        // the suite's own field names, plus the information ROW shape older RDBK files used
-        const suite = RB.importRoadbook({
-            meta: { titolo: 'Giro', km_totali: 1.2 },
-            track,
-            notes: [
-                { idx: 0, testo: 'Partenza', km_prog: 0, km_parz: 0, road_type_out: 2 },
-                { note_kind: 'comment', text: 'Con il supporto di ACME', image: 'data:logo' },
-                { idx: 11, testo: 'Arrivo', km_prog: 1.2, km_parz: 1.2, road_type_out: 2 },
-            ],
-            icons: {},
+    it('a Roadbook Suite file still opens', () => {
+        const suite = RB.readRoadbook({
+            meta: { titolo: 'Giro', km_totali: 1.2 }, track,
+            notes: [{ idx: 0, testo: 'Partenza', km_prog: 0 }, { idx: 11, testo: 'Arrivo', km_prog: 1.2 }],
         });
         expect(suite.meta.title).toBe('Giro');
-        expect(suite.notes.length, 'the sponsor row is no longer a row').toBe(2);
         expect(suite.notes.map((n) => n.text)).toEqual(['Partenza', 'Arrivo']);
-        expect(RB.noteBlocks(suite.notes[0], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:logo' });
     });
 });
 

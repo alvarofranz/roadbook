@@ -50,9 +50,13 @@ Editor / challenge ──▶ RBPdf.generate(rb, opts)
 Si parte sempre dal **generatore** (#973): `open()` apre un dialogo `split` (due pannelli affiancati su
 tablet e desktop, a tutto schermo su un telefono) con
 - **Copertina**: cosa sta dietro il percorso — l'**immagine** del roadbook (il default), la **mappa**
-  (disattivata se il roadbook la nasconde) o **nulla** — e l'immagine stessa, aggiunta o cambiata lì.
-  Nell'Editor (`opts.onImage`) diventa l'immagine del roadbook (`meta.logo`, 256 px, e la bozza è da
-  salvare); altrove vale solo per quel PDF (1600 px).
+  (disattivata se il roadbook la nasconde) o **nulla**. Il pannello mostra un'anteprima di ciò che
+  si è scelto: l'immagine del roadbook, oppure la mappa della copertina — disegnata una volta sola
+  alla prima scelta di *Mappa* (`coverMap(rb)`, con "Drawing the map…" mentre arriva, e un avviso
+  se nessuna tile risponde: la copertina resta semplice) e passata a `generate` così com'è
+  (`opts.map`). Nell'Editor (`opts.onImage`) l'immagine si aggiunge o si cambia lì, e cambiare
+  l'immagine cambia l'immagine del roadbook (`meta.logo`, 256 px, e la bozza è da salvare); senza
+  `onImage` il pulsante per cambiarla non c'è.
 - **Margini della pagina** in cm (0,5–4; di default 1,5 · 1,2 · 1,2 · 1,5 — alto · basso · destro ·
   sinistro), uguali sulla copertina e su ogni pagina, con un'anteprima dal vivo della pagina.
 
@@ -61,12 +65,13 @@ Le scelte restano sul dispositivo (`rb_pdf_prefs`) per il PDF successivo. **Gene
 
 | Parametro          | Tipo   | Significato                                                        |
 |--------------------|--------|-------------------------------------------------------------------|
-| `rb`               | object | Il roadbook (`rb.notes`, `rb.track`, `rb.meta`, `rb.icons`).      |
+| `rb`               | object | Il roadbook in memoria (`rb.notes`, `rb.track`, `rb.meta`, `rb.symbols`). |
 | `opts.iconBasePath`| string | Cartella delle icone della palette standard. Default `'../assets/icons/'`. |
 | `opts.link`        | string | L'URL della pagina pubblica (o dell'evento) per il QR dell'intestazione. |
 | `opts.margins`     | object | `{top, right, bottom, left}` in mm (`geometry()` li riporta nei limiti). |
 | `opts.backdrop`    | string | `'image'` (default) · `'map'` · `'none'`.                          |
 | `opts.image`       | string | L'immagine dietro il percorso; di default `rb.meta.logo`.          |
+| `opts.map`         | string | La mappa della copertina già disegnata dal generatore (data URI JPEG); senza, `generate` la disegna. |
 
 Comportamento:
 - Se `rb` non ha note (`!rb.notes.length`) lancia `Error('Nothing to export.')`
@@ -74,8 +79,8 @@ Comportamento:
 - Attende `ensureJsPDF()` (vedi §3), poi risolve `basePath` da `opts.iconBasePath`
   ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 - Pre-rasterizza **tutte** le vignette in PNG (vedi §5) prima di impaginare.
-- Prepara lo sfondo (`coverBackdrop`: l'immagine, oppure la mappa di `RBCoverMap` — caricato su
-  richiesta, come jsPDF — o niente) e chiama `buildDoc(...)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
+- Prepara lo sfondo (`coverBackdrop`: l'immagine, oppure `opts.map` o la mappa di `coverMap(rb)` —
+  `RBCoverMap`, caricato su richiesta come jsPDF — o niente) e chiama `buildDoc(...)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 Non restituisce nulla di utile: nell'app il PDF si apre nel **foglio di sistema** (`RBShareFile`: anteprima, apri in…, salva in File, invia), perché un download dentro la WebView non si vede da nessuna parte (#904); sul web si scarica. Il nome del file è
 `RB.slug(title) + '.pdf'` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
@@ -130,7 +135,7 @@ I km sono formattati da `km(m) = (m/1000).toFixed(2)`.
 La **copertina** — `drawCover` — sta fra gli stessi margini delle pagine: titolo
 (max 2 righe), descrizione (max 3), il **percorso** disegnato come vettore (`drawRoute`:
 equirettangolare con la longitudine scalata per cos(lat), su un riquadro chiaro, pallino verde alla
-partenza e scuro all'arrivo — saltato se il roadbook nasconde la mappa, `map_access:false`), poi tre
+partenza e scuro all'arrivo — saltato se il roadbook nasconde la mappa, `map_allowed:false`), poi tre
 colonne **distanza · note · data** e la riga autore · organizzazione. Nient'altro. Dietro il percorso,
 lo **sfondo** scelto nel generatore (`drawImageBox`, ritagliato agli angoli arrotondati del riquadro):
 l'immagine del roadbook sotto un velo color carta al 86 %, così resta solo una traccia di colore dietro
@@ -159,7 +164,7 @@ Dettagli fedeli al Reader:
 - Il commento è spezzato in righe con `doc.splitTextToSize` e **troncato a 4 righe**
   (`lines.slice(0, 4)`), centrato verticalmente nello spazio sopra la linea di base
   ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
-- La linea di base mostra `bearing_out` arrotondato (es. `123°`) a sinistra e
+- La linea di base mostra `bearing_out` (derivato dalla traccia) arrotondato (es. `123°`) a sinistra e
   `lat°  lon°` a 6 decimali a destra ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 ### Il loop di pagina
@@ -188,15 +193,16 @@ Il percorso, per ogni nota ([rb-pdf.js](../public/assets/js/rb-pdf.js)):
 
 ### Risoluzione delle icone
 `resolveIcons(rb, basePath)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)) prepara una
-mappa `nome → data: URI` per ogni icona usata dalle note, **senza mutare il roadbook**:
-- Per ogni icona risolve il sorgente con `RB.iconSrc({ name }, rb, basePath)`; se è già un
+mappa `nome → data: URI` per ogni simbolo usato dalle note (`note.symbols`), **senza mutare il
+roadbook**:
+- Per ogni simbolo risolve il sorgente con `RB.symbolSrc({ name }, rb, basePath)`; se è già un
   `data:` URI lo usa così com'è, altrimenti lo converte con `RB.urlToDataURL`
   ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 - Questo è necessario perché un SVG caricato come `<image>` renderizza **solo dati inline**,
   mai URL esterni: ogni icona deve essere un `data:` URI prima di entrare nella vignetta.
 
 Il `resolver` passato a `NoteCanvas.toSVG` legge dalla mappa, con fallback a
-`RB.iconSrc(ic, rb, basePath)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
+`RB.symbolSrc(ic, rb, basePath)` ([rb-pdf.js](../public/assets/js/rb-pdf.js)).
 
 ---
 
@@ -217,6 +223,6 @@ Il `resolver` passato a `NoteCanvas.toSVG` legge dalla mappa, con fallback a
 - **jsPDF caricato dalla cartella di `rb-pdf.js`**: se l'asset manca o la rete fallisce,
   `generate` rigetta e la pagina chiamante mostra un toast; nessun fallback offline oltre al retry implicito.
 - **Dipende da `NoteCanvas`, `RB`, `RBt` e `RBConfig`**: `rb-pdf.js` presuppone che
-  `note-canvas.js`, `roadbook-core.js` (per `iconSrc`, `urlToDataURL`, `slug`), `i18n.js` e
+  `note-canvas.js`, `roadbook-core.js` (per `symbolSrc`, `urlToDataURL`, `slug`), `i18n.js` e
   `app.js` siano già caricati nella pagina. Entrambe le pagine chiamanti li caricano tutti, e i global
   sono letti solo al momento della generazione, non al load del modulo.

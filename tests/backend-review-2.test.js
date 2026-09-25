@@ -23,7 +23,7 @@ describe('the roadbook card (RB_CARD_SQL + rb_card_fields)', () => {
             expect(src).toContain("'SELECT ' . RB_CARD_SQL . ");
         }
         expect(fn(roadbooks, 'public_list')).toContain("'SELECT ' . RB_CARD_SQL . \", u.username");
-        expect(fn(events, 'event_public_get')).toContain("'SELECT ' . RB_CARD_SQL . \", r.category, r.status, u.username, er.scoring_mode");
+        expect(fn(events, 'event_public_get')).toContain("'SELECT ' . RB_CARD_SQL . \", r.status, u.username, er.scoring_mode");
     });
     it.skipIf(!hasPhp)('shapes a row into the card the client draws', () => {
         const lift = (re) => roadbooks.match(re)[0];

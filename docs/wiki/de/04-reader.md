@@ -59,7 +59,7 @@ Die verbleibende Distanz wird **entlang der Straße** gemessen, wie die Teilstre
 ### Automatisch (Standard)
 Die aktive Notiz wird validiert, sobald du in ihren **Validierungsradius** fährst.
 
-- Der Radius kommt von der Notiz (`wp_radius`), dann vom Standard des Roadbooks, dann von ihrem Wegpunkttyp, sonst 30 m; er fällt nie unter 18 m, über dem GPS-Rauschen
+- Der Radius kommt von der Notiz (`validation_radius`), dann vom Standard des Roadbooks, dann von ihrem Wegpunkttyp, sonst 30 m; er fällt nie unter 18 m, über dem GPS-Rauschen
 - Geprüft wird die **gefahrene Strecke zwischen zwei GPS-Fixes**, nicht nur die Fixes: Bei Tempo bewegt sich ein Handy 25 m zwischen zwei Positionen, und ein enger Wegpunkt würde sonst dazwischen durchrutschen
 - Eine Position, bei der sich das Handy nicht sicher ist (schlechte Genauigkeit), wird ignoriert: Sie kann weder eine Notiz validieren noch Distanz hinzufügen
 

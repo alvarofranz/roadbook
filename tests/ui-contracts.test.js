@@ -173,13 +173,11 @@ describe('the roadbook\'s icon library is not a cache (#454)', () => {
     const prune = editor.match(/async function embedUsed\(r\) \{([\s\S]*?)\n {4}\}/)[1];
 
     it('only deletes icons the standard palette can give back', () => {
-        // rb.icons is the ONLY copy of a custom icon: pruning it destroyed uploads and left notes
+        // rb.symbols is the ONLY copy of a custom icon: pruning it destroyed uploads and left notes
         // pointing at a name that resolves to a 404 — the broken image in the report
         expect(prune).toContain('stdIconNames()');
-        expect(prune).toMatch(/if \(stdNames\.has\(low\)\) delete r\.icons\[k\]/);
-        // the unconditional prune is gone (the other `delete` in there resolves a case collision
-        // on a name that IS in use, which is a different thing)
-        expect(prune).not.toMatch(/if \(!\[\.\.\.used\]\.some[^)]*\)\) delete r\.icons\[k\]/);
+        expect(prune).toContain('if (stdNames.has(k.toLowerCase())) delete r.symbols[k];'); // unused and recoverable
+        expect(prune).toContain('if (used.has(k)) return;');
     });
 
     it('an upload is checkpointed, so a crash cannot lose it', () => {
@@ -696,8 +694,8 @@ describe('the app keeps its tab-bar chrome at every width (#484)', () => {
 });
 
 describe('the UI says "note"; only the data keeps wp_* (#494)', () => {
-    // A nota IS a GPX waypoint, so the user-facing word is "note" everywhere — while `wp_type`,
-    // `wp_radius` and the GPX/OpenRally vocabulary stay exactly as they are, on disk and in the
+    // A nota IS a GPX waypoint, so the user-facing word is "note" everywhere — while `waypoint_type`,
+    // `validation_radius` and the GPX/OpenRally vocabulary stay exactly as they are, on disk and in the
     // export dialogs that talk about the GPX file itself.
     it('no control is labelled Waypoint any more', () => {
         for (const file of firstPartySources()) {
@@ -716,7 +714,7 @@ describe('the UI says "note"; only the data keeps wp_* (#494)', () => {
 
     it('the format keys are untouched', () => {
         const core = read('public/assets/js/roadbook-core.js');
-        for (const key of ['wp_type', 'wp_radius', 'default_wp_radius']) expect(core, key).toContain(key);
+        for (const key of ['waypoint_type', 'validation_radius', 'default_validation_radius']) expect(core, key).toContain(key);
     });
 });
 
@@ -899,19 +897,16 @@ describe('the editor never edits what the author wrote (#521)', () => {
 describe('a map-shaped field is stored as an object (#523)', () => {
     const php = read('app/roadbooks.php');
 
-    it('the server shapes the icon map on the way in and on the way out', () => {
-        expect(php).toContain('function rb_shape_maps(array $rb): array');
-        expect(php).toContain("$rb['icons'] = new stdClass();");
-        // both save branches go through it, and every read goes through the one payload reader
-        expect(php.match(/json_encode\(rb_shape_maps\(\$rb\)\)/g).length).toBe(2);
-        expect(php.match(/rb_shape_maps\(\(array\)json_decode/g).length).toBe(1);
+    it('the server refuses a symbol library written as a list, and every read goes through the one payload reader', () => {
+        expect(php).toContain("return !isset($rb['symbols']) || (is_array($rb['symbols']) && !array_is_list($rb['symbols']));");
+        expect(php.match(/json_encode\(\$rb\)/g).length).toBe(2); // both save branches store the document as it came
         expect(read('app/admin.php')).toContain("'roadbook' => rb_read_payload($row)");
         expect(php.match(/rb_read_payload\(\$row\)/g).length).toBe(2); // rb_get + public_get
     });
 
     it('the editor never writes an icon onto a list', () => {
-        expect(read('public/editor/editor.js')).toContain('if (Array.isArray(rb.icons) || !rb.icons) rb.icons = {};');
-        expect(read('public/assets/js/roadbook-core.js')).toContain('rb.icons = (rb.icons && !Array.isArray(rb.icons)) ? rb.icons : {};');
+        expect(read('public/editor/editor.js')).toContain('if (Array.isArray(rb.symbols) || !rb.symbols) rb.symbols = {};');
+        expect(read('public/assets/js/roadbook-core.js')).toContain("if (library !== undefined && !isObj(library)) err('symbols', 'Must be an object.');");
     });
 });
 
@@ -1007,20 +1002,20 @@ describe('changing the roadbook default offers to apply it to every note (#532)'
         expect(handler).toContain("RBConfirm(t('Set every note’s radius to {v} m? {n} notes have their own.')");
         expect(handler).toContain("replace('{v}', v)");
         // asked only when some note would actually change (#701)
-        expect(handler).toContain('const differing = rb.notes.filter((n) => n.wp_radius != null && n.wp_radius !== v).length;');
+        expect(handler).toContain('const differing = rb.notes.filter((n) => n.validation_radius != null && n.validation_radius !== v).length;');
     });
 
     it('never touches a note without a Yes', () => {
         const apply = handler.slice(handler.indexOf('RBConfirm'));
-        expect(apply).toContain('n.wp_radius = v');
+        expect(apply).toContain('n.validation_radius = v');
         // the old silent fill wrote the value into every note with none, unasked
-        expect(handler, 'a silent fill is back').not.toContain('if (n.wp_radius == null) n.wp_radius = v');
-        expect(handler.indexOf('n.wp_radius = v')).toBeGreaterThan(handler.indexOf('RBConfirm'));
+        expect(handler, 'a silent fill is back').not.toContain('if (n.validation_radius == null) n.validation_radius = v');
+        expect(handler.indexOf('n.validation_radius = v')).toBeGreaterThan(handler.indexOf('RBConfirm'));
     });
 
     it('clearing the field just drops the default', () => {
-        expect(handler).toContain("delete rb.meta.default_wp_radius");
-        expect(handler.indexOf('delete rb.meta.default_wp_radius')).toBeLessThan(handler.indexOf('RBConfirm'));
+        expect(handler).toContain("delete rb.meta.default_validation_radius");
+        expect(handler.indexOf('delete rb.meta.default_validation_radius')).toBeLessThan(handler.indexOf('RBConfirm'));
     });
 
     it('is translated everywhere', () => {
@@ -1038,7 +1033,7 @@ describe('the note says which detection radius applies (#530)', () => {
     const html = read('public/editor/index.html');
 
     it('asks the runtime for the inherited value instead of re-implementing the chain', () => {
-        expect(editor).toContain('RB.detectionRadius({ wp_type: n.wp_type }, rb.meta)');
+        expect(editor).toContain('RB.detectionRadius({ waypoint_type: n.waypoint_type }, rb.meta)');
     });
 
     it('shows the number in force as the placeholder, with no prose under the field', () => {
@@ -1135,8 +1130,8 @@ describe('the CAP is a setting, not reading matter (#560)', () => {
     });
 
     it('names the surfaces from one catalog, Bike lane included (#561)', () => {
-        expect(editor).toContain('const RT = RB.ROAD_TYPES.map((r) => r.name);');
-        expect(read('public/assets/js/note-canvas.js')).toContain('const rtLabelOf = (k) =>');
+        expect(editor).toContain('RB.ROAD_TYPES.map((r) => `<option value="${r.id}"');
+        expect(read('public/assets/js/note-canvas.js')).toContain('RB.ROAD_TYPES.map((r) => `<option value="${r.id}"');
         expect(read('public/assets/js/note-canvas.js'), 'a second list of names is back').not.toContain('RT_LABELS');
         for (const lang of ['es', 'it', 'de', 'fr']) {
             const dict = read(`public/assets/js/i18n.${lang}.js`);

@@ -33,9 +33,9 @@ La schermata iniziale (`#loadScreen`) offre tre ingressi:
 naviga per chiunque. `meUser` dice solo se il report della run sale al profilo; da non loggati resta
 sul dispositivo finché non si accede.
 
-`loadRb` normalizza lo schema con
-`RB.importRoadbook` (così aprono anche i vecchi file italiani pre-standard), rifiuta i
-roadbook senza note, legge il flag roadbook-level `map_access` (`mapAllowed`,
+`loadRb(doc, id, slug)` legge il documento `.rdbk` con `RB.readRoadbook` (che valida, calcola i
+valori derivati e importa anche un file Roadbook Suite), rifiuta i roadbook senza note, legge il
+flag roadbook-level `map_allowed` (`mapAllowed`,
 [reader.js](../public/reader/reader.js)) che decide se il Reader ha una mappa (§6), e
 mostra l'**anteprima** in sola lettura (`showPreview`): da lì **Navigate** avvia la run (§5). Anche
 un roadbook aperto da un evento (`?event=<slug>`) parte dall'anteprima, mai da una finestra.
@@ -45,7 +45,8 @@ All'avvio una IIFE asincrona ([reader.js](../public/reader/reader.js)) decide in
 ordine di priorità:
 
 1. **Ripresa di una sessione interrotta** — se in `localStorage` c'è un checkpoint valido
-   (chiavi `rb_session` + `rb_session_roadbook`), chiede conferma con `RBConfirm` e, se
+   (chiavi `rb_session` + `rb_session_roadbook`, quest'ultimo con `rdbk_version ===
+   RB.FORMAT_VERSION`: un roadbook di un'altra versione non è una run da riprendere), chiede conferma con `RBConfirm` e, se
    accettata, fa `resumeSession`. Rifiutare **non** cancella la sessione (un tap sbagliato
    non deve distruggere una gara): viene sostituita all'avvio di una nuova corsa o cancellata
    solo all'uscita esplicita.
@@ -77,15 +78,14 @@ dimensioni e padding in [index.html](../public/reader/index.html)):
 
 | Colonna | Classe | Contenuto |
 |---------|--------|-----------|
-| 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota, con accanto il **badge del tipo di waypoint** FIA (`RB.wpBadgeSVG(n.wp_type, 22)`) |
-| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, iconSrc, RB.tulipContext(rb, i))` (la forma reale della traccia attorno alla nota, #945); linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
+| 1 — Distanze + numero | `.col-distance` | totale `distance` · parziale `+partial_distance` (km, 2 decimali) · numero nota, con accanto il **badge del tipo di waypoint** FIA (`RB.wpBadgeSVG(n.waypoint_type, 22)`) |
+| 2 — Vignetta | `.col-vignette` | il pittogramma renderizzato da `NoteCanvas.toSVG(n, symbolSrc, RB.tulipContext(rb, i))` (la forma reale della traccia attorno alla nota, #945); linee strada più marcate e un **cerchietto di convalida** al centro (dove i due segmenti si incontrano); su telefono (≤600px) la colonna è più larga e il tulip più grande |
 | 3 — Indicazioni | `.col-text` | testo nota · riga CAP opzionale (con qualificatore FIA Average/Calculated/Turning in `.note-cap`) · riga **limite di velocità** opzionale (`.note-speed`) · coordinate `lat, lon` |
 
-- La risoluzione icone passa per `iconSrc = (ic) => RB.iconSrc(ic, rb, '../assets/icons/')`
-  ([reader.js](../public/reader/reader.js)): inline `data:` → `rb.icons` → palette
-  standard.
-- La riga CAP (`.note-cap`) appare solo se la nota ha un `cap`, mostrando `CAP n°` ed
-  eventualmente la `cap_distance` in km ([reader.js](../public/reader/reader.js)).
+- Le immagini dei simboli si risolvono con `RB.symbolSrc(ic, rb, '../assets/icons/')`
+  (dentro `NoteCanvas.rowsHTML`): la libreria del roadbook, `rb.symbols`.
+- La riga CAP (`.note-cap`) appare solo se la nota ha un `cap`, mostrando `CAP n°` e la
+  `cap_distance` derivata in km (assente sull'ultima nota) ([reader.js](../public/reader/reader.js)).
 - Non c'è una colonna pulsanti (#569): la sua larghezza va al testo. La riga attiva intera è il
   bersaglio della validazione manuale e la mappa è un solo pulsante nella barra d'azione (§6).
 - Sotto ogni riga c'è un contenitore `.nmap` nascosto, slot per la mappa per-nota (§6).
@@ -332,8 +332,8 @@ e all'avvio `settleAbandoned(keep)` li lascia in attesa invece di chiuderli come
 
 ### Il reach adattivo (`reachRadius`)
 Il raggio entro cui una nota è "in portata" non è fisso. `reachRadius(i)` parte dal **raggio
-di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `wp_radius` per-nota →
-`meta.default_wp_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (30 m) — poi
+di rilevamento della nota** — `RB.detectionRadius(note, meta)`, cioè `validation_radius` per-nota →
+`meta.default_validation_radius` → default del tipo di waypoint → `CONST.REACH_DEFAULT_M` (30 m) — poi
 lo limita a **metà del gap along-track più piccolo** verso un vicino (usando `partial_distance`,
 così i reach di due note non si sovrappongono) e lo *flooring* sopra il rumore GPS:
 
@@ -347,7 +347,7 @@ Note rally fitte ottengono un gate stretto; note distanziate arrivano al raggio 
 
 ## 6. La mappa interattiva per-nota
 
-Solo se il roadbook la permette (`mapAllowed()`, `meta.map_access`), una mappa per volta. La
+Solo se il roadbook la permette (`mapAllowed()`, `meta.map_allowed`), una mappa per volta. La
 apre e la chiude **un solo pulsante nella barra d'azione** (`#mapBtn`, #569), per la nota
 attiva, acceso mentre una mappa è aperta; nel preview si apre toccando la riga. La mappa
 **appartiene alla nota attiva** (#571): quando la nota cambia (validazione auto o manuale, salto)
@@ -571,7 +571,7 @@ ne aveva una copia propria).
 
 ## 11. Limiti e quirk
 
-- **Settori cronometrati** delimitati da icone START→FINISH (`RB.scoredNoteSet`): più settori
+- **Settori cronometrati** delimitati da START→FINISH (`ss_start`/`ss_end` o i simboli di partenza/arrivo, `RB.scoredNoteSet`): più settori
   selettivi separati SONO rappresentabili (start/finish multipli) — vedi
   [ranking-model.md](./ranking-model.md) §8.
 - **`reachRadius` usa `partial_distance` along-track, non la distanza geometrica** verso il
@@ -582,7 +582,7 @@ ne aveva una copia propria).
 - **Un buco GPS lungo scavalca più note**: un solo fix valida una sola nota (vedi §7), quindi
   le altre restano "saltate". Voluto: validarle dalla posizione attuale costerebbe penalità di
   accuratezza enormi.
-- **Il floor del reach è 18 m** (`REACH_MIN_M`): un `wp_radius` più stretto nel roadbook non
+- **Il floor del reach è 18 m** (`REACH_MIN_M`): un `validation_radius` più stretto nel roadbook non
   rende il gate più fine di così, perché sotto quella soglia si chiederebbe al GPS una
   precisione che non ha. La convalida automatica resta comunque affidabile perché il test è
   sull'attraversamento del segmento, non sul singolo fix (§7).

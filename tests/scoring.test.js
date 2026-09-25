@@ -26,7 +26,7 @@ describe('META time codecs', () => {
 });
 
 describe('scoredNoteSet / isScoredIdx', () => {
-    const N = (icons) => ({ lat: 0, lon: 0, icons });
+    const N = (symbols) => ({ lat: 0, lon: 0, symbols });
     it('no START marker → null → every note is scored', () => {
         const set = RB.scoredNoteSet([N(), N(), N()]);
         expect(set).toBeNull();
@@ -48,21 +48,21 @@ describe('scoredNoteSet / isScoredIdx', () => {
         expect([...set].sort()).toEqual([0, 1, 3, 4]);
         expect(set.has(2)).toBe(false);
     });
-    it('FIA wp_type markers (ss_start/ss_end) bound the stage like the legacy icons (#215)', () => {
-        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+    it('FIA waypoint_type markers (ss_start/ss_end) bound the stage like the legacy icons (#215)', () => {
+        const W = (wp) => ({ lat: 0, lon: 0, waypoint_type: wp });
         const set = RB.scoredNoteSet([N(), W('ss_start'), N(), W('ss_end'), N()]);
         expect([...set].sort()).toEqual([1, 2, 3]);
         expect(RB.isScoredIdx(set, 0)).toBe(false);
         expect(RB.isScoredIdx(set, 4)).toBe(false);
     });
-    it('legacy icons and wp_type markers mix freely (#215)', () => {
-        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+    it('legacy icons and waypoint_type markers mix freely (#215)', () => {
+        const W = (wp) => ({ lat: 0, lon: 0, waypoint_type: wp });
         const set = RB.scoredNoteSet([W('ss_start'), N(), N([{ name: 'I01_arrivo.png' }]), N()]);
         expect([...set].sort()).toEqual([0, 1, 2]);
         expect(set.has(3)).toBe(false);
     });
     it('the plain start/finish wp_types do not open a stage — only the selective-section pair does', () => {
-        const W = (wp) => ({ lat: 0, lon: 0, wp_type: wp });
+        const W = (wp) => ({ lat: 0, lon: 0, waypoint_type: wp });
         expect(RB.scoredNoteSet([W('start'), N(), W('finish')])).toBeNull();
     });
 });
@@ -141,9 +141,9 @@ describe('producer → consumer: a scored run through META and back', () => {
     it('the Reader-side accruals survive buildMeta/parseMeta and rankEntry agrees', () => {
         // Stage: START at n0 → n1 (1 km east, CAP 90° 1000 m from n0) → FINISH at n2.
         const notes = [
-            { lat: 0, lon: 0, cap: 90, cap_distance: 1000, icons: [{ name: 'I02_partenza.png' }] },
-            { ...east(1000), icons: [] },
-            { ...east(1500), icons: [{ name: 'I01_arrivo.png' }] },
+            { lat: 0, lon: 0, cap: 90, cap_distance: 1000, symbols: [{ name: 'I02_partenza.png' }] },
+            { ...east(1000), symbols: [] },
+            { ...east(1500), symbols: [{ name: 'I01_arrivo.png' }] },
         ];
         const scoredSet = RB.scoredNoteSet(notes);
         // Validate n1 from 50 m short: accuracy ≈ 50, CAP ≈ 50 (target is n1 itself here).
@@ -184,15 +184,12 @@ describe('speedBand (Tripmaster alert bands)', () => {
 });
 
 describe('direct coverage for transitively-tested exports', () => {
-    it('ROAD_TYPES: the surfaces the format knows, each naming and drawing itself (#561)', () => {
-        expect(RB.ROAD_TYPES.map((rt) => rt.name)).toEqual(['Default', 'Motorway', 'Asphalt', 'Track', 'Off-piste', 'Bike lane']);
-        RB.ROAD_TYPES.forEach((rt, i) => {
-            expect(rt.id).toBe(i);                    // the id IS the index: it is what the file stores
-            expect(rt.color).toMatch(/^#/);
-            expect(rt.width).toBeGreaterThan(0);
-        });
-        expect(RB.ROAD_TYPES[4].dashed, 'off-piste is the dashed one').toBe(true);
-        expect(RB.ROAD_TYPES.filter((rt) => rt.dashed)).toHaveLength(1);
+    it('ROAD_TYPES: the FIA surfaces and the bike lane, each naming and drawing itself (#561)', () => {
+        expect(RB.ROAD_TYPES.map((rt) => [rt.id, rt.name])).toEqual([[1, 'Tarmac'], [2, 'Track'], [3, 'Low-visible track'], [4, 'Off track'], [5, 'Bike lane']]);
+        RB.ROAD_TYPES.forEach((rt) => expect(rt.color).toMatch(/^#/));
+        expect(RB.ROAD_TYPES.filter((rt) => rt.double).map((rt) => rt.id), 'tarmac is the double line').toEqual([1]);
+        expect(RB.roadType(4).dash).toBe('8 8');
+        expect(RB.roadType(99).id, 'a road that says nothing else is a track').toBe(RB.DEFAULT_ROAD_TYPE);
     });
     it('nearestIdx returns the closest track point', () => {
         const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }];
@@ -200,9 +197,10 @@ describe('direct coverage for transitively-tested exports', () => {
         expect(RB.nearestIdx(track, { lat: 0, lon: 0.01 })).toBe(2);
         expect(RB.nearestIdx(track, { lat: 0, lon: -1 })).toBe(0);
     });
-    it('normalizeRoadTypes chains each note\'s road_type_in from the previous road_type_out', () => {
-        const rb = { notes: [{ road_type_out: 2 }, { road_type_out: 3 }, { road_type_out: 0 }] };
-        RB.normalizeRoadTypes(rb);
+    it('recomputeMetrics chains each note\'s road_type_in from the previous road_type', () => {
+        const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }];
+        const rb = { meta: {}, track, notes: [{ track_index: 0, road_type: 2 }, { track_index: 1, road_type: 3 }, { track_index: 2, road_type: 1 }] };
+        RB.recomputeMetrics(rb);
         expect(rb.notes[0].road_type_in).toBe(2); // the first note continues its own surface
         expect(rb.notes[1].road_type_in).toBe(2);
         expect(rb.notes[2].road_type_in).toBe(3);

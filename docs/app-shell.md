@@ -63,7 +63,7 @@ alla home.
 
 **Footer (#729).** `renderChrome` crea anche il `<footer class="foot">`: il brand con il claim e
 i badge degli store (`[data-get-app="stores"]`), tre colonne — *Product* (`WEB_NAV`), *Resources*
-e *Legal* (da `SITE_LINKS`: Help · Install · The .rdbk standard · What’s new · About · Privacy ·
+e *Legal* (da `SITE_LINKS`: Help · Install · The .rdbk standard · .rdbk validator · What’s new · About · Privacy ·
 Terms of Use · Contact) — e una riga in basso con il selettore lingua (`.lang`, costruito da
 `i18n.js`), il copyright e la versione (`#appVersion`, §5). Il footer è nascosto su mobile: la
 pagina Profile ripete gli stessi link (`RBSiteLinksHTML()` in `#accSiteLinks`) e ha il proprio
@@ -420,7 +420,7 @@ Le pagine non la chiamano direttamente, ma tramite due builder:
 Una card roadbook **senza foto** parte con un placeholder `data-route`: **`RBFillRoutes(container)`**
 (chiamata da chi disegna) carica il roadbook una sola volta per slug (`public_get`, direttamente —
 non serve `challenges.js` sulla pagina) e lo sostituisce con un SVG
-statico della **forma della rotta** (nessuna basemap). Chi nasconde la mappa (`map_access:false`)
+statico della **forma della rotta** (nessuna basemap). Chi nasconde la mappa (`map_allowed:false`)
 resta sull'icona.
 
 #### `RBPager(el, page, pages, onGo, label?)`

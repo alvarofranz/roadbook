@@ -96,6 +96,7 @@
         { group: 'Resources', path: 'wiki/',      icon: 'fa-circle-question', label: 'Help' },
         { group: 'Resources', path: 'install/',   icon: 'fa-circle-down',     label: 'Install' },
         { group: 'Resources', path: 'standard/',  icon: 'fa-file-code',       label: 'The .rdbk standard' },
+        { group: 'Resources', path: 'validator/', icon: 'fa-file-circle-check', label: '.rdbk validator' },
         { group: 'Resources', path: 'changelog/', icon: 'fa-clock-rotate-left', label: 'What’s new' },
         { group: 'Resources', path: 'about/',     icon: 'fa-circle-info',     label: 'About' },
         { group: 'Legal',     path: 'privacy/',   icon: 'fa-shield-halved',   label: 'Privacy' },
@@ -781,12 +782,12 @@
         + '</div>'
         + `<div class="gallery-body"><h3>${RBesc(title)}</h3>${meta ? `<div class="gallery-meta">${meta}</div>` : ''}${body}</div>`
         + (href ? '</a>' : '</div>');
-    // A roadbook's card: what it suits and its event category on the media, its length and notes at
-    // the foot, its author below. No photo → the route's own shape (RBFillRoutes), never a stock icon.
-    window.RBRoadbookCard = (r, { href, overlays = '', body = '', category = '' } = {}) => RBGalleryCard({
+    // A roadbook's card: what it suits and a chip (e.g. its status) on the media, its length and notes
+    // at the foot, its author below. No photo → the route's own shape (RBFillRoutes), never a stock icon.
+    window.RBRoadbookCard = (r, { href, overlays = '', body = '', chip = '' } = {}) => RBGalleryCard({
         href, thumb: r.thumb, title: r.title, overlays, body,
         placeholder: `<div class="thumb thumb-placeholder" data-route="${RBesc(r.slug || '')}"><i class="fa-solid fa-route"></i></div>`,
-        badges: RBVehicleIcons(r.vehicles) + (category ? `<span class="card-chip">${RBesc(category)}</span>` : ''),
+        badges: RBVehicleIcons(r.vehicles) + (chip ? `<span class="card-chip">${RBesc(chip)}</span>` : ''),
         stats: [['fa-route', RBKm(r.total_distance, 1), RBt('Distance')], ['fa-location-dot', String(r.note_count), RBt('Notes')]]
             .concat(r.completions ? [['fa-flag-checkered', r.completions + '×', RBt('Times completed')]] : []), // #868
         meta: r.username ? `<i class="fa-solid fa-circle-user"></i> @${RBesc(r.username)}` : '',
@@ -808,7 +809,7 @@
     };
     /* A photo-less roadbook card shows its route: the track is fetched once per roadbook and drawn
        as a static SVG fit to the media box (equirectangular, lon scaled by cos(lat)). A roadbook
-       that hides its map (map_access:false) keeps the icon — its shape is not revealed. */
+       that hides its map (map_allowed:false) keeps the icon — its shape is not revealed. */
     const routeShapes = {}; // slug → SVG ('' once known to have none), so each is fetched once
     function routeSvg(track) {
         if (!Array.isArray(track) || track.length < 2) return '';
@@ -833,7 +834,7 @@
             routeShapes[slug] = ''; // in flight: never fetched twice
             RBApi('public_get', { slug }).then((j) => {
                 const m = j.ok && j.roadbook && j.roadbook.meta;
-                const svg = (!m || m.map_access === false) ? '' : routeSvg(j.roadbook.track);
+                const svg = (!m || m.map_allowed === false) ? '' : routeSvg(j.roadbook.track);
                 routeShapes[slug] = svg;
                 if (svg) document.querySelectorAll(`.thumb-placeholder[data-route="${CSS.escape(slug)}"]`).forEach((cur) => { cur.outerHTML = svg; });
             });

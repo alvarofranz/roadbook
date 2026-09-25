@@ -12,7 +12,7 @@ describe('the card itself', () => {
         for (const label of ["t('Distance')", "t('Time')", "t('Average speed')", "t('Notes reached')"]) expect(card).toContain(label);
     });
     it('keeps a hidden map hidden, and falls back to a tile-less route offline', () => {
-        expect(card).toContain("const showMap = meta.map_access !== false && track.length >= 2;");
+        expect(card).toContain("const showMap = meta.map_allowed !== false && track.length >= 2;");
         expect(card).toContain('Object.assign({}, mapOpts, { tiles: false })');
     });
     it('draws on the shared tile renderer, which now also takes markers and a padded box', () => {

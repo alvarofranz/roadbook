@@ -23,7 +23,7 @@ function track(points, step = 5) {
 }
 // a roadbook with notes on the given track indices, metrics as the Editor computes them
 function roadbook(trk, idxs) {
-    const rb = { meta: { title: 't' }, track: trk, notes: idxs.map((idx) => ({ idx, icons: [], junctions: null, road_type_in: 3, road_type_out: 3 })) };
+    const rb = { meta: { title: 't' }, track: trk, notes: idxs.map((idx) => ({ track_index: idx, symbols: [], junctions: [], road_type: 2 })) };
     RB.recomputeMetrics(rb);
     return rb;
 }
@@ -59,13 +59,13 @@ describe('RB.tulipShape (#945)', () => {
         expect(RB.tulipPoints(rb, 2).after).toBe(null);
         expect(RB.tulipAddPoints(rb, 1)).toBe(8);
         expect(RB.tulipPoints(rb, 1)).toEqual({ before: 4, after: 4, need: 4 });
-        expect(rb.track[rb.notes[1].idx]).toEqual(expect.objectContaining({ lat: shapeBefore[5][0], lon: shapeBefore[5][1] })); // the note kept its point
+        expect(rb.track[rb.notes[1].track_index]).toEqual(expect.objectContaining({ lat: shapeBefore[5][0], lon: shapeBefore[5][1] })); // the note kept its point
         rb.track.forEach((p) => expect(Math.abs(p.lon - shapeBefore[0][1])).toBeLessThan(1e-6)); // all on the straight road
         expect(RB.tulipAddPoints(rb, 1)).toBe(0); // enough already
     });
     it('Add points leaves an open cut as it is', () => {
         const trk = track([[0, -500], [0, 500]], 100), rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        const at = rb.notes[1].idx, a = rb.track[at], b = rb.track[at + 1];
+        const at = rb.notes[1].track_index, a = rb.track[at], b = rb.track[at + 1];
         RB.tulipAddPoints(rb, 1, (p, q) => p === a && q === b);
         expect(RB.tulipPoints(rb, 1)).toEqual({ before: 4, after: 0, need: 4 });
     });
@@ -118,14 +118,14 @@ describe('RB.tulipShape (#945)', () => {
         const s = RB.tulipShape(rb, 1, false, false);
         expect(s.exit).toBeNull();
         expect(s.turn).toBeGreaterThan(75); expect(s.turn).toBeLessThan(95); // drawn as the right turn it is
-        rb.notes[1].junctions = [{ pivot: [0, 0], tip: [60, 0], width: 6, road_type: 3 }]; // a branch just there
+        rb.notes[1].junctions = [{ from: [0, 0], to: [60, 0], width: 6, road_type: 3 }]; // a branch just there
         expect(RB.tulipShape(rb, 1, false, false).turn).toBeUndefined(); // then the stored angle stays
     });
 
     it('a drawn curve is drawn even beside a branch the author drew too — their drawing rules', () => {
         const trk = track([[0, -300], [0, 15], [25, 40], [300, 40]], 4);
         const rb = roadbook(trk, [0, idxNear(trk, 0, 0), trk.length - 1]);
-        rb.notes[1].junctions = [{ pivot: [0, 0], tip: [30, 40], width: 6, road_type: 3 }]; // where the curve goes
+        rb.notes[1].junctions = [{ from: [0, 0], to: [30, 40], width: 6, road_type: 3 }]; // where the curve goes
         expect(RB.tulipShape(rb, 1, false, false).exit).not.toBeNull();
     });
 
@@ -180,8 +180,8 @@ describe('the tulip draws the shape (#945)', () => {
     it('every renderer passes the same context: Editor, Reader/public rows and the PDF', () => {
         const fs = require('fs');
         expect(fs.readFileSync('public/editor/editor.js', 'utf8')).toContain('canvas.setNote(rb.notes[i], RB.tulipContext(rb, i))');
-        expect(fs.readFileSync('public/editor/editor.js', 'utf8')).toContain("NoteCanvas.toSVG(n, (ic) => RB.iconSrc(ic, rb, '../assets/icons/'), RB.tulipContext(rb, i))");
-        expect(fs.readFileSync('public/assets/js/note-canvas.js', 'utf8')).toContain('window.NoteCanvas.toSVG(n, iconSrc, RB.tulipContext(rb, i))');
+        expect(fs.readFileSync('public/editor/editor.js', 'utf8')).toContain("NoteCanvas.toSVG(n, (ic) => RB.symbolSrc(ic, rb, '../assets/icons/'), RB.tulipContext(rb, i))");
+        expect(fs.readFileSync('public/assets/js/note-canvas.js', 'utf8')).toContain('window.NoteCanvas.toSVG(n, symbolSrc, RB.tulipContext(rb, i))');
         expect(fs.readFileSync('public/assets/js/rb-pdf.js', 'utf8')).toContain('NoteCanvas.toSVG(rb.notes[i], resolver, RB.tulipContext(rb, i))');
     });
 });
@@ -212,7 +212,7 @@ describe('the Editor edits on a flat map (#945 feedback)', () => {
         expect(editor).toContain("layers: ['rb-wpts', 'rb-photos', 'rb-verts']");
         expect(editor).toContain('RB.tulipAddPoints(rb, sel, (a, b) => gaps.some(');
         expect(editor).toContain("routeChanged(); setMapTool('points');");
-        expect(editor).toContain('if (isFinite(v) && v > 0) n.wp_radius = v; else delete n.wp_radius;');
+        expect(editor).toContain('if (isFinite(v) && v > 0) n.validation_radius = v; else delete n.validation_radius;');
         // one dialog, from the dashed circle only: no tap is ever ambiguous
         expect(editor).toContain('if (!n || RB.geo.haversineM(n, here) > RB.TULIP_SHAPE_M) return;');
         expect(editor).toContain('<input id="ringRadius" class="field" type="number"'); // the field right there, no extra tap

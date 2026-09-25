@@ -59,7 +59,7 @@ The distance still to run is measured **along the road**, like the roadbook's ow
 ### Automatic (default)
 The active note validates as soon as you drive into its **validation radius**.
 
-- The radius comes from the note (`wp_radius`), then the roadbook's default, then its waypoint type, then 30 m; it never goes below 18 m, above GPS noise
+- The radius comes from the note (`validation_radius`), then the roadbook's default, then its waypoint type, then 30 m; it never goes below 18 m, above GPS noise
 - What is tested is the **road driven between two GPS fixes**, not just the fixes: at speed a phone can move 25 m between two positions, and a tight waypoint would otherwise slip between them
 - A position the phone is not sure about (poor accuracy) is ignored: it can neither validate a note nor add distance
 

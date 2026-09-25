@@ -19,7 +19,7 @@
     try { j = await RBChallenges.loadPublic(slug); }
     catch (e) { $('chLoading').textContent = t(e.message === 'Network error.' ? 'You are offline — reconnect to load this page.' : 'This roadbook does not exist or is private.'); return; }
 
-    const rb = RB.importRoadbook(j.roadbook), o = j.owner || {}, m = rb.meta || {}; // canonical schema, like the Reader's
+    const rb = RB.readRoadbook(j.roadbook), o = j.owner || {}, m = rb.meta || {}; // canonical schema, like the Reader's
     $('chLoading').hidden = true; $('chContent').hidden = false;
     const title = m.title || t('Roadbook');
     $('chTitle').textContent = title;
@@ -60,10 +60,10 @@
     renderRows();
     window.addEventListener('rb-lang', renderRows);
 
-    // The route + note markers — unless the roadbook hides the map (map_access:false, e.g. a
+    // The route + note markers — unless the roadbook hides the map (map_allowed:false, e.g. a
     // competition that keeps the route secret). A marker scrolls to ITS note row: rows are found
     // by data-i, never by position, since the material blocks sit between them (#634).
-    if (m.map_access !== false && rb.track && rb.track.length >= 2) {
+    if (m.map_allowed !== false && rb.track && rb.track.length >= 2) {
         $('chMap').hidden = false;
         const map = new RBMap('chMap', { style: RBMap.STYLE_TOPO });
         map.showRoadbook(rb);

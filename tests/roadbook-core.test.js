@@ -109,10 +109,10 @@ describe('track-point timestamps (#158)', () => {
         ];
         const wpts = [{ lat: 0, lon: 1, t: 300, name: 'return' }];
         const rb = RB.buildRoadbook({ name: 'T', trkpts, wpts });
-        expect(rb.track[0].t).toBe(0);                 // times preserved into the .rdbk track
-        expect(rb.track[4].t).toBe(400);
-        const note = rb.notes.find((n) => n.text === 'return' || n.idx === 3);
-        expect(note.idx).toBe(3);                       // the return-leg point (t=300), not the outbound idx 1
+        expect(rb.track[0].time_ms).toBe(0);           // times preserved into the .rdbk track
+        expect(rb.track[4].time_ms).toBe(400);
+        const note = rb.notes.find((n) => n.text === 'return' || n.track_index === 3);
+        expect(note.track_index).toBe(3);                       // the return-leg point (t=300), not the outbound idx 1
     });
 });
 
@@ -149,10 +149,10 @@ describe('buildRoadbook', () => {
         const rb = RB.buildRoadbook({ name: 'T', trkpts });
         expect(rb.meta.title).toBe('T');
         expect(rb.notes).toHaveLength(2);
-        expect(rb.notes[0].idx).toBe(0);
+        expect(rb.notes[0].track_index).toBe(0);
         expect(rb.notes[0].distance).toBe(0);
         expect(rb.notes[0].partial_distance).toBe(0);
-        expect(rb.notes[1].idx).toBe(2);
+        expect(rb.notes[1].track_index).toBe(2);
         const total = RB.geo.haversineM(trkpts[0], trkpts[1]) + RB.geo.haversineM(trkpts[1], trkpts[2]);
         expect(rb.notes[1].distance).toBe(Math.round(total));
         expect(rb.meta.total_distance).toBe(Math.round(total));
@@ -165,19 +165,19 @@ describe('buildRoadbook', () => {
 });
 
 describe('recomputeMetrics & normalizeRoadTypes', () => {
-    it('road_type_in follows the previous note road_type_out; the first note arrives on its own', () => {
+    it('road_type_in follows the previous note road_type; the first note arrives on its own', () => {
         const rb = {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
             notes: [
-                { idx: 0, road_type_out: 2 },
-                { idx: 2, road_type_out: 4 },
+                { track_index: 0, road_type: 2 },
+                { track_index: 2, road_type: 4 },
             ],
         };
         RB.recomputeMetrics(rb);
         expect(rb.notes[0].road_type_in).toBe(2); // first note: in == out
         expect(rb.notes[1].road_type_in).toBe(2); // inherits previous note's out
-        expect(rb.notes[1].road_type_out).toBe(4);
+        expect(rb.notes[1].road_type).toBe(4);
         expect(rb.notes[0].num).toBe(1);
         expect(rb.meta.note_count).toBe(2);
         expect(rb.meta.total_distance).toBeGreaterThan(0);
@@ -187,7 +187,7 @@ describe('recomputeMetrics & normalizeRoadTypes', () => {
         const rb = {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }], // due east
-            notes: [{ idx: 1, road_type_out: 2 }],
+            notes: [{ track_index: 1, road_type: 2 }],
         };
         RB.recomputeMetrics(rb);
         // editor.js select() eases the map to note.bearing_in; if this regresses the map stops rotating.
@@ -202,8 +202,8 @@ describe('recomputeCaps', () => {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.002 }],
             notes: [
-                { idx: 0, lat: 0, lon: 0, cap: 0, cap_distance: 0 },
-                { idx: 1, lat: 0, lon: 0.002, cap: null },
+                { track_index: 0, lat: 0, lon: 0, cap: 0, cap_distance: 0 },
+                { track_index: 1, lat: 0, lon: 0.002, cap: null },
             ],
         };
         RB.recomputeCaps(rb);
@@ -232,8 +232,8 @@ describe('note blocks — the material around a note (#542)', () => {
         meta: {},
         track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
         notes: [
-            { idx: 0, road_type_out: 2, blocks: [{ type: 'text', at: 'before', text: 'Read me first' }] },
-            { idx: 2, road_type_out: 2, blocks: [{ type: 'ad', at: 'after', image: 'data:x', text: 'ACME' }] },
+            { track_index: 0, road_type: 2, blocks: [{ type: 'text', placement: 'before', text: 'Read me first' }] },
+            { track_index: 2, road_type: 2, blocks: [{ type: 'ad', placement: 'after', image: 'data:x', text: 'ACME' }] },
         ],
     });
 
@@ -254,7 +254,7 @@ describe('note blocks — the material around a note (#542)', () => {
         expect(RB.noteBlocks(n).length).toBe(1);
         expect(RB.noteBlocks(n, 'before').length).toBe(1);
         expect(RB.noteBlocks(n, 'after').length).toBe(0);
-        // no `at` means after — the side a block ends up on is never undefined
+        // no `placement` means after — the side a block ends up on is never undefined
         expect(RB.noteBlocks({ blocks: [{ type: 'text' }] }, 'after').length).toBe(1);
         expect(RB.noteBlocks({}).length).toBe(0);
         expect(RB.noteBlocks(null).length).toBe(0);
@@ -279,36 +279,6 @@ describe('note blocks — the material around a note (#542)', () => {
         expect(rb.notes.flatMap((n) => RB.noteBlocks(n)).map((b) => b.type).sort()).toEqual(['ad', 'text']);
     });
 
-    it('folds the information ROWS of older files onto the note they sat beside', () => {
-        const track = Array.from({ length: 10 }, (_, i) => ({ lat: 0, lon: i * 0.0009 }));
-        const rb = RB.importRoadbook({
-            meta: { title: 't' },
-            track,
-            notes: [
-                { note_kind: 'comment', text: 'Opening words' },
-                { idx: 0, num: 1, lat: 0, lon: 0, text: 'Note 1', road_type_out: 2 },
-                { note_kind: 'comment', text: 'ACME', image: 'data:image/png;base64,AA' },
-                { idx: 5, num: 2, lat: 0, lon: 0.0045, text: 'Note 2', road_type_out: 2, note_kind: 'photo', image: 'data:image/png;base64,BB' },
-            ],
-            icons: {},
-        });
-        expect(rb.notes.length, 'the rows are gone, the notes remain').toBe(2);
-        expect(rb.notes.some((n) => n.note_kind)).toBe(false);
-        // the caption that opened the roadbook now sits BEFORE the first note
-        expect(RB.noteBlocks(rb.notes[0], 'before')).toEqual([{ type: 'text', at: 'before', text: 'Opening words' }]);
-        // the sponsor logo hangs off the note it followed
-        expect(RB.noteBlocks(rb.notes[0], 'after')[0]).toMatchObject({ type: 'ad', image: 'data:image/png;base64,AA', text: 'ACME' });
-        // a note that had been switched to a kind is a note again, with its picture attached
-        expect(rb.notes[1].text).toBe('Note 2');
-        expect(RB.noteBlocks(rb.notes[1], 'after')[0]).toMatchObject({ type: 'photo', image: 'data:image/png;base64,BB' });
-    });
-
-    it('leaves a roadbook that never had information rows exactly as it is', () => {
-        const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }];
-        const rb = RB.importRoadbook({ meta: {}, track, notes: [{ idx: 0, num: 1, road_type_out: 2 }, { idx: 1, num: 2, road_type_out: 2 }], icons: {} });
-        expect(rb.notes.length).toBe(2);
-        expect(rb.notes.some((n) => n.blocks)).toBe(false);
-    });
 });
 
 describe('simplifyRoadbook', () => {
@@ -321,7 +291,7 @@ describe('simplifyRoadbook', () => {
         expect(rb.track.length).toBeLessThan(before);
         expect(rb.track.length).toBeGreaterThanOrEqual(2);
         // every note still resolves to a valid track index
-        rb.notes.forEach((n) => expect(n.idx).toBeLessThan(rb.track.length));
+        rb.notes.forEach((n) => expect(n.track_index).toBeLessThan(rb.track.length));
     });
     it('keeps the significant corner between waypoints, drops the collinear runs', () => {
         const trkpts = [
@@ -345,8 +315,8 @@ describe('simplifyRoadbook', () => {
         for (let i = 9; i >= 0; i--) track.push({ lat: 0, lon: i * 0.0001 });           // return
         const iBack = track.length - 3; // return leg, same coords as an outbound vertex
         const notes = [
-            { num: 1, idx: 2, lat: track[2].lat, lon: track[2].lon, text: 'out', distance: 0, partial_distance: 0 },
-            { num: 2, idx: iBack, lat: track[iBack].lat, lon: track[iBack].lon, text: 'back', distance: 0, partial_distance: 0 },
+            { num: 1, track_index: 2, lat: track[2].lat, lon: track[2].lon, text: 'out', distance: 0, partial_distance: 0 },
+            { num: 2, track_index: iBack, lat: track[iBack].lat, lon: track[iBack].lon, text: 'back', distance: 0, partial_distance: 0 },
         ];
         const rb = { meta: { title: 'T', total_distance: 0, note_count: 2 }, track, notes };
         RB.simplifyRoadbook(rb, 5);
@@ -354,7 +324,7 @@ describe('simplifyRoadbook', () => {
         // ~85% of the ~222 m round trip, not the ~33 m of the outbound pass it must NOT snap to
         expect(rb.notes[0].text).toBe('out');
         expect(rb.notes[1].text).toBe('back');
-        expect(rb.notes[1].idx).toBeGreaterThan(rb.notes[0].idx);
+        expect(rb.notes[1].track_index).toBeGreaterThan(rb.notes[0].track_index);
         expect(rb.notes[1].distance).toBeGreaterThan(100);
     });
 });
@@ -389,16 +359,10 @@ describe('gpxDocument round-trips through parseGPX', () => {
 });
 
 describe('speed limits', () => {
-    it('reads the limit encoded in a note icon name', () => {
-        expect(RB.speedLimitOfNote({ icons: [{ name: 'S03_30km.svg' }] })).toBe(30);
-        expect(RB.speedLimitOfNote({ icons: [{ name: 'S99_end.svg' }] })).toBe(0);
-        expect(RB.speedLimitOfNote({ icons: [{ name: 'W01_curve_right.svg' }] })).toBeNull();
-        expect(RB.speedLimitOfNote({ icons: [] })).toBeNull();
-    });
-    it('prefers the declarative speed_limit field over the icon name (0 = lifted)', () => {
-        expect(RB.speedLimitOfNote({ speed_limit: 50, icons: [{ name: 'S03_30km.svg' }] })).toBe(50);
-        expect(RB.speedLimitOfNote({ speed_limit: 0, icons: [{ name: 'S03_30km.svg' }] })).toBe(0);
-        expect(RB.speedLimitOfNote({ speed_limit: 90, icons: [] })).toBe(90);
+    it('a note imposes the limit it declares (0 = lifted), and nothing else', () => {
+        expect(RB.speedLimitOfNote({ speed_limit_kmh: 50, symbols: [{ name: 'S03_30km.svg' }] })).toBe(50);
+        expect(RB.speedLimitOfNote({ speed_limit_kmh: 0, symbols: [] })).toBe(0);
+        expect(RB.speedLimitOfNote({ symbols: [{ name: 'S03_30km.svg' }] }), 'a sign is a drawing, the limit is the field').toBeNull();
     });
     it('parses the limit straight from a symbol name (speedLimitFromName)', () => {
         expect(RB.speedLimitFromName('S03_30km.svg')).toBe(30);
@@ -475,78 +439,48 @@ describe('QR signing (HMAC-SHA256)', () => {
     });
 });
 
-describe('iconSrc resolution', () => {
-    it('returns a data: URI as-is', () => {
-        expect(RB.iconSrc({ name: 'data:image/png;base64,AAAA' })).toBe('data:image/png;base64,AAAA');
-    });
-    it('resolves from the embedded library case-insensitively, else the base path', () => {
-        const rb = { icons: { 'Foo.png': 'data:embedded' } };
-        expect(RB.iconSrc({ name: 'foo.png' }, rb, 'assets/')).toBe('data:embedded');
-        expect(RB.iconSrc({ name: 'dir/bar.png' }, rb, 'assets/icons/')).toBe('assets/icons/bar.png');
+describe('symbolSrc resolution', () => {
+    it('the roadbook\'s own library first, by its exact name; else the palette under the base path', () => {
+        const rb = { symbols: { 'Foo.png': 'data:embedded' } };
+        expect(RB.symbolSrc({ name: 'Foo.png' }, rb, 'assets/')).toBe('data:embedded');
+        expect(RB.symbolSrc({ name: 'bar.png' }, rb, 'assets/icons/')).toBe('assets/icons/bar.png');
     });
 });
 
-describe('importRoadbook (legacy Roadbook Suite → canonical)', () => {
-    it('renames Italian keys, converts km to metres and flips junction geometry', () => {
-        const rb = RB.importRoadbook({
-            meta: { titolo: 'Giro', km_totali: 1.5 },
-            notes: [{ testo: 'bivio a destra', km_prog: 0.5, km_parz: 0.2, bivio: [{ pivot: [1, 2], punta: [3, 4], th: 5, rt: 2 }] }],
+describe('Roadbook Suite import (another program\'s format, translated)', () => {
+    const track = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }];
+    it('translates the Italian keys, the road codes and the +y-down junction geometry', () => {
+        const rb = RB.readRoadbook({
+            meta: { titolo: 'Giro', km_totali: 1.5 }, track,
+            notes: [{ idx: 0, testo: 'bivio a destra', km_prog: 0, road_type_out: 3, bivio: [{ pivot: [1, 2], punta: [3, 4], th: 5, rt: 2 }] }, { idx: 2, testo: 'fine' }],
         });
+        expect(rb.rdbk_version).toBe(1);
         expect(rb.meta.title).toBe('Giro');
-        expect(rb.meta.total_distance).toBe(1500);
-        expect(rb.meta.titolo).toBeUndefined();
         const n = rb.notes[0];
         expect(n.text).toBe('bivio a destra');
-        expect(n.distance).toBe(500);
-        expect(n.partial_distance).toBe(200);
-        expect(n.testo).toBeUndefined();
-        expect(n.bivio).toBeUndefined();
-        // +y-down (suite) → +y-up (rdbk): the y of pivot and tip is negated
-        expect(n.junctions).toEqual([{ pivot: [1, -2], tip: [3, -4], width: 5, road_type: 2 }]);
+        expect(n.road_type).toBe(2); // the suite's track → the FIA track
+        expect(n.junctions).toEqual([{ from: [1, -2], to: [3, -4], road_type: 1 }]); // asphalt → tarmac; y negated
+        expect(rb.notes[1].distance).toBe(rb.meta.total_distance); // distances come from the track
+        expect(RB.validateRoadbook(RB.writeRoadbook(rb)).valid).toBe(true);
     });
-
-    it('is idempotent on a file already in the canonical shape', () => {
-        const canonical = {
-            meta: { title: 'Done', total_distance: 1000, note_count: 1 },
-            notes: [{ num: 1, idx: 0, text: 'start', distance: 0, junctions: null, icons: [] }],
-            track: [{ lat: 0, lon: 0 }],
-            icons: {},
-        };
-        const once = RB.importRoadbook(JSON.parse(JSON.stringify(canonical)));
-        // a canonical file has no suite markers, so nothing is renamed or recomputed
-        expect(once.meta).toEqual(canonical.meta);
-        expect(once.notes[0].num).toBe(1);
-        expect(once.notes[0].distance).toBe(0);
-        expect(once.notes[0].text).toBe('start');
-        expect(once.notes[0].junctions).toBeNull();
-    });
-
-    it('tags a note carrying a speed-limit sign as a speed-controlled zone (#94)', () => {
-        const rb = RB.importRoadbook({
-            meta: { title: 'T' },
+    it('a speed-limit sign is a speed-controlled zone (#94)', () => {
+        const rb = RB.readRoadbook({
+            meta: { titolo: 'T' }, track,
             notes: [
-                { num: 1, idx: 0, junctions: null, icons: [{ name: 'S03_30km.svg' }] }, // 30 km/h sign
-                { num: 2, idx: 1, junctions: null, icons: [{ name: 'S99_end.svg' }] },   // end of limit
-                { num: 3, idx: 2, junctions: null, icons: [{ name: 'I02_partenza.png' }] }, // no speed sign
+                { idx: 0, testo: 'a', icons: [{ file: 'icons/S03_30km.png', pos: [0, 0], size: 32 }] },
+                { idx: 1, testo: 'b', icons: [{ file: 'S99_end.png', pos: [0, 0], size: 32 }] },
+                { idx: 2, testo: 'c', icons: [{ name: 'I02_partenza.png', pos: [0, 0], size: 32 }] },
             ],
-            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }, { lat: 0, lon: 0.002 }],
         });
-        expect(rb.notes[0].speed_limit).toBe(30);
-        expect(rb.notes[0].wp_type).toBe('dz');   // a positive limit → zone start
-        expect(rb.notes[1].speed_limit).toBe(0);
-        expect(rb.notes[1].wp_type).toBe('fz');   // end of limit → zone end
-        expect(rb.notes[2].speed_limit).toBeUndefined();
-        expect(rb.notes[2].wp_type).toBeUndefined();
+        expect(rb.notes[0].symbols[0].name).toBe('S03_30km.svg');
+        expect(rb.notes[0].speed_limit_kmh).toBe(30);
+        expect(rb.notes[0].waypoint_type).toBe('dz');
+        expect(rb.notes[1].speed_limit_kmh).toBe(0);
+        expect(rb.notes[1].waypoint_type).toBe('fz');
+        expect(rb.notes[2].speed_limit_kmh).toBeUndefined();
     });
-
-    it('does not override a speed_limit / wp_type a file already declares', () => {
-        const rb = RB.importRoadbook({
-            meta: { title: 'T' },
-            notes: [{ num: 1, idx: 0, junctions: null, speed_limit: 50, wp_type: 'masked', icons: [{ name: 'S03_30km.svg' }] }],
-            track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.001 }],
-        });
-        expect(rb.notes[0].speed_limit).toBe(50);      // kept
-        expect(rb.notes[0].wp_type).toBe('masked');    // kept
+    it('a Suite file without a track cannot become a roadbook', () => {
+        expect(() => RB.readRoadbook({ meta: { titolo: 'T' }, notes: [{ testo: 'x' }] })).toThrow();
     });
 });
 
@@ -579,10 +513,10 @@ describe('filterRoadbooks (My roadbooks search)', () => {
 });
 
 describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
-    const draft = { rb_editor_draft: { rb: { meta: { title: 'My route' }, notes: [{}, {}, {}] } } };
+    const draft = { rb_editor_draft: { rb: { rdbk_version: 1, meta: { title: 'My route' }, notes: [{}, {}, {}] } } };
     const rec = { rb_recorder_session: { recording: true, recordedM: 3210 } };
     const tm = { rb_tripmaster_session: { totalM: 5120, waypoints: 0, timerOn: false, timerAcc: 0 } };
-    const nav = { rb_session: { pen: {}, activeIdx: 4, totalM: 8300 }, rb_session_roadbook: { meta: { title: 'Rally X' }, notes: new Array(20) } };
+    const nav = { rb_session: { pen: {}, activeIdx: 4, totalM: 8300 }, rb_session_roadbook: { rdbk_version: 1, meta: { title: 'Rally X' }, notes: new Array(20) } };
 
     it('returns [] for an empty / all-null snapshot', () => {
         expect(RB.pendingWork({})).toEqual([]);
@@ -597,6 +531,8 @@ describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
     it('describes an unsaved editor draft (title + note count)', () => {
         const [d] = RB.pendingWork(draft);
         expect(d).toMatchObject({ tool: 'editor', url: 'editor/', kind: 'draft', title: 'My route', noteCount: 3, keys: ['rb_editor_draft'] });
+        // a roadbook of another .rdbk version is not work this version can resume
+        expect(RB.pendingWork({ rb_editor_draft: { rb: { meta: { title: 'x' }, notes: [] } } })).toEqual([]);
     });
     it('lists a finished recording waiting for Save / Discard, resumable only (#460)', () => {
         expect(RB.pendingWork({ rb_recorder_session: { finishing: true, recordedM: 900 } })).toEqual([{ tool: 'recorder', url: 'recorder/', keys: [], kind: 'finished', resumeOnly: true, distanceM: 900 }]);
@@ -625,34 +561,34 @@ describe('pendingWork (cross-tool unsaved-work scan, #73)', () => {
 
 describe('appWaypointSymbol (Garmin/OSMAnd mapping for GPX export, #34)', () => {
     it('maps a known RDBK icon to its Garmin sym + OSMAnd icon + colour', () => {
-        const r = RB.appWaypointSymbol({ icons: [{ name: 'I07_acqua_potabile.png' }] });
+        const r = RB.appWaypointSymbol({ symbols: [{ name: 'I07_acqua_potabile.png' }] });
         expect(r.sym).toBe('Drinking Water');
         expect(r.osmandIcon).toBe('drinking_water');
         expect(r.color).toBe('#3a8dff'); // blue
     });
     it('matches the icon name case-insensitively and ignores any path prefix', () => {
-        const r = RB.appWaypointSymbol({ icons: [{ name: 'sub/dir/I10_STAZIONE_servizio.PNG' }] });
+        const r = RB.appWaypointSymbol({ symbols: [{ name: 'sub/dir/I10_STAZIONE_servizio.PNG' }] });
         expect(r.sym).toBe('Gas Station');
         expect(r.osmandIcon).toBe('fuel');
     });
     it('keeps a recognised icon’s sym but forces red on a danger note', () => {
-        const r = RB.appWaypointSymbol({ danger: 3, icons: [{ name: 'I07_acqua_potabile.png' }] });
+        const r = RB.appWaypointSymbol({ danger: 3, symbols: [{ name: 'I07_acqua_potabile.png' }] });
         expect(r.sym).toBe('Drinking Water'); // the icon still wins for the sym
         expect(r.color).toBe('#e01414');      // danger only overrides the colour → red
     });
     it('uses the Dangerous Area marker for a danger note with no recognised icon', () => {
-        const r = RB.appWaypointSymbol({ danger: 2, icons: [] });
+        const r = RB.appWaypointSymbol({ danger: 2, symbols: [] });
         expect(r.sym).toBe('Dangerous Area');
         expect(r.color).toBe('#e01414');
     });
     it('falls back to the default blue flag for a note with no recognised icon', () => {
-        const r = RB.appWaypointSymbol({ icons: [] });
+        const r = RB.appWaypointSymbol({ symbols: [] });
         expect(r.sym).toBe('Flag, Blue');
         expect(r.osmandIcon).toBe('special_point');
         expect(r.color).toBe('#3a8dff'); // blue
     });
-    it('a declared wp_type wins over the icon and carries its sym/icon/colour', () => {
-        const r = RB.appWaypointSymbol({ wp_type: 'masked', icons: [{ name: 'I07_acqua_potabile.png' }] });
+    it('a declared waypoint_type wins over the icon and carries its sym/icon/colour', () => {
+        const r = RB.appWaypointSymbol({ waypoint_type: 'masked', symbols: [{ name: 'I07_acqua_potabile.png' }] });
         expect(r.sym).toBe('Flag, Blue');        // the masked-WP sym, not Drinking Water
         expect(r.osmandIcon).toBe('special_marker');
         expect(r.color).toBe('#a855f7');         // the type colour
@@ -695,28 +631,28 @@ describe('WP_TYPES catalog (waypoint characterization, #63)', () => {
         expect(RB.wpType('dz').radius).toBeUndefined();
     });
     it('detectionRadius follows the precedence: note → roadbook → type → system', () => {
-        const meta = { default_wp_radius: 60 };
-        expect(RB.detectionRadius({ wp_radius: 40, wp_type: 'precise' }, meta)).toBe(40);
-        expect(RB.detectionRadius({ wp_type: 'precise' }, meta)).toBe(60);
-        expect(RB.detectionRadius({ wp_type: 'precise' }, {})).toBe(30); // the type's own default
+        const meta = { default_validation_radius: 60 };
+        expect(RB.detectionRadius({ validation_radius: 40, waypoint_type: 'precise' }, meta)).toBe(40);
+        expect(RB.detectionRadius({ waypoint_type: 'precise' }, meta)).toBe(60);
+        expect(RB.detectionRadius({ waypoint_type: 'precise' }, {})).toBe(30); // the type's own default
         expect(RB.detectionRadius({}, {})).toBe(RB.CONST.REACH_DEFAULT_M);
         expect(RB.detectionRadius(null, null)).toBe(RB.CONST.REACH_DEFAULT_M);
         expect(RB.CONST.REACH_DEFAULT_M).toBe(30); // system default when the roadbook defines nothing (#439 · #753)
     });
     it('reachRadius = detection radius, capped to half the smaller neighbour gap, floored above GPS noise (#87)', () => {
-        const wide = { wp_radius: 40, partial_distance: 1000 };
+        const wide = { validation_radius: 40, partial_distance: 1000 };
         // gaps large on both sides → the note's own radius wins
         expect(RB.reachRadius(wide, { partial_distance: 1000 }, {})).toBe(40);
         // last note (no next) → forward gap is infinite, radius still wins
         expect(RB.reachRadius(wide, null, {})).toBe(40);
         // a tight previous gap caps the reach to half that gap
-        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 50 }, { partial_distance: 1000 }, {})).toBe(25);
+        expect(RB.reachRadius({ validation_radius: 40, partial_distance: 50 }, { partial_distance: 1000 }, {})).toBe(25);
         // a tight forward gap caps it too (uses the smaller of the two)
-        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 1000 }, { partial_distance: 30 }, {})).toBe(RB.CONST.REACH_MIN_M); // 15 → floored to 18
+        expect(RB.reachRadius({ validation_radius: 40, partial_distance: 1000 }, { partial_distance: 30 }, {})).toBe(RB.CONST.REACH_MIN_M); // 15 → floored to 18
         // a very tight cluster is floored, never demanding sub-GPS precision
-        expect(RB.reachRadius({ wp_radius: 40, partial_distance: 20 }, { partial_distance: 20 }, {})).toBe(RB.CONST.REACH_MIN_M);
+        expect(RB.reachRadius({ validation_radius: 40, partial_distance: 20 }, { partial_distance: 20 }, {})).toBe(RB.CONST.REACH_MIN_M);
         // no per-note radius → falls back through detectionRadius (roadbook default here), then capped
-        expect(RB.reachRadius({ partial_distance: 1000 }, { partial_distance: 1000 }, { default_wp_radius: 50 })).toBe(50);
+        expect(RB.reachRadius({ partial_distance: 1000 }, { partial_distance: 1000 }, { default_validation_radius: 50 })).toBe(50);
     });
     it('wpBadgeSVG renders a solid roundel with the acronym, and is empty when unset', () => {
         const svg = RB.wpBadgeSVG('dz', 26);
@@ -772,47 +708,32 @@ describe('OpenRally round-trip (openRallyDocument → parseOpenRally)', () => {
         expect(back.rb.notes[1].lat).toBeCloseTo(rb.notes[1].lat, 5);
         expect(back.rb.notes[1].lon).toBeCloseTo(rb.notes[1].lon, 5);
     });
-    it('emits <openrally:wptType> when a note has wp_type', () => {
+    it('emits <openrally:wptType> when a note has waypoint_type', () => {
         const track = [{ lat: 45, lon: 9 }, { lat: 45, lon: 9.001 }, { lat: 45.001, lon: 9.002 }];
         const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
-        rb.notes[0].wp_type = 'masked';
+        rb.notes[0].waypoint_type = 'masked';
         const xml = RB.openRallyDocument(rb, { tulips: [] });
         expect(xml).toContain('<openrally:wptType>WPM</openrally:wptType>');
         expect(xml.split('<openrally:wptType>').length - 1).toBe(1);
     });
-    it('does not emit wptType for notes without wp_type', () => {
+    it('does not emit wptType for notes without waypoint_type', () => {
         const track = [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }];
         const rb = RB.buildRoadbook({ name: 'src', trkpts: track, wpts: [] });
         const xml = RB.openRallyDocument(rb, { tulips: [] });
         expect(xml).not.toContain('wptType');
     });
-    it('roadbookForExport replaces internal wp_type with cap codes', () => {
-        const rb = { track: [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }], notes: [{ wp_type: 'masked' }, { wp_type: 'dz' }, {}] };
-        const out = RB.roadbookForExport(rb);
-        expect(out.notes[0].wp_type).toBe('WPM');
-        expect(out.notes[1].wp_type).toBe('DZ');
-        expect(out.notes[2].wp_type).toBeUndefined();
-        expect(rb.notes[0].wp_type).toBe('masked'); // original unchanged
-    });
-    it('importRoadbook normalises cap codes to internal IDs', () => {
-        const rb = { track: [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }],
-            notes: [{ wp_type: 'WPM', num: 1, icons: [] }, { wp_type: 'DZ', num: 2, icons: [] }, { wp_type: 'masked', num: 3, icons: [] }],
-            meta: {} };
-        const imp = RB.importRoadbook(rb);
-        expect(imp.notes[0].wp_type).toBe('masked');
-        expect(imp.notes[1].wp_type).toBe('dz');
-        expect(imp.notes[2].wp_type).toBe('masked'); // internal ID kept as-is
-    });
-    it('importRoadbook leaves unknown wp_type untouched', () => {
-        const rb = { track: [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }],
-            notes: [{ wp_type: 'BOGUS', num: 1, icons: [] }], meta: {} };
-        const imp = RB.importRoadbook(rb);
-        expect(imp.notes[0].wp_type).toBe('BOGUS');
+    it('the .rdbk writes a waypoint type by its own name; OpenRally codes stay in the OpenRally file', () => {
+        const rb = RB.buildRoadbook({ name: 'src', trkpts: [{ lat: 45, lon: 9 }, { lat: 45.001, lon: 9.001 }], wpts: [] });
+        rb.notes[0].waypoint_type = 'masked';
+        expect(RB.writeRoadbook(rb).notes[0].waypoint_type).toBe('masked');
+        const doc = RB.writeRoadbook(rb);
+        doc.notes[0].waypoint_type = 'WPM';
+        expect(RB.validateRoadbook(doc).errors.map((e) => e.path)).toEqual(['notes[0].waypoint_type']);
     });
 });
 
 describe('NoteCanvas.toSVG (vignette render)', () => {
-    const baseNote = { num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 3, road_type_out: 3, icons: [], junctions: null };
+    const baseNote = { num: 2, bearing_in: 0, bearing_out: 0, road_type_in: 2, road_type: 2, symbols: [], junctions: [] };
     it('renders an <svg> with the central validation circle and an exit arrow', () => {
         const s = NoteCanvas.toSVG(baseNote);
         expect(s.startsWith('<svg')).toBe(true);
@@ -823,21 +744,21 @@ describe('NoteCanvas.toSVG (vignette render)', () => {
     it('draws the validation circle ON TOP of junctions and icons so they never hide it (#142)', () => {
         const s = NoteCanvas.toSVG({
             ...baseNote,
-            icons: [{ name: 'S03_30km.svg', pos: [0, 0], size: 64 }], // centre-placed icon (e.g. auto speed symbol)
-            junctions: [{ pivot: [0, 0], tip: [45, 25], width: 8, road_type: 3 }],
+            symbols: [{ name: 'S03_30km.svg', position: [0, 0], size: 64 }], // centre-placed icon (e.g. auto speed symbol)
+            junctions: [{ from: [0, 0], to: [45, 25], road_type: 2 }],
         }, (ic) => ic.name);
         const circle = s.indexOf('<circle cx="115" cy="81" r="6"');
         expect(circle).toBeGreaterThan(s.lastIndexOf('marker-end="url(#vig-tick)"')); // after every junction
         expect(circle).toBeGreaterThan(s.lastIndexOf('<image'));                      // after every icon
     });
-    it('renders a cover icon full-box and nothing else (no trunk/validation circle)', () => {
-        const s = NoteCanvas.toSVG({ icons: [{ name: 'or.svg', cover: true }] }, (ic) => 'DATA:' + ic.name);
-        expect(s).toContain('width="230" height="162" href="DATA:or.svg"');
+    it('renders a shown imported tulip full-box and nothing else (no trunk/validation circle)', () => {
+        const s = NoteCanvas.toSVG({ symbols: [], imported_tulip: { image: 'data:image/svg+xml,OR', shown: true } });
+        expect(s).toContain('width="230" height="162" href="data:image/svg+xml,OR"');
         expect(s).not.toContain('#vig-arr');
         expect(s).not.toContain('r="6"');
     });
     it('resolves placed-icon hrefs through resolveIcon', () => {
-        const s = NoteCanvas.toSVG({ ...baseNote, icons: [{ name: 'a.png', pos: [0, 0], size: 32 }] }, (ic) => 'RES:' + ic.name);
+        const s = NoteCanvas.toSVG({ ...baseNote, symbols: [{ name: 'a.png', position: [0, 0], size: 32 }] }, (ic) => 'RES:' + ic.name);
         expect(s).toContain('href="RES:a.png"');
     });
     it('shows FIA danger marks (!!) for a danger-2 note', () => {
@@ -848,8 +769,8 @@ describe('NoteCanvas.toSVG (vignette render)', () => {
         // A malicious roadbook (e.g. a public one rendered on /challenge/<slug>) could set an
         // icon name with a quote to inject an onerror handler into the <image> element.
         const evil = 'a" onerror="alert(1)';
-        const placed = NoteCanvas.toSVG({ ...baseNote, icons: [{ name: evil, pos: [0, 0], size: 32 }] }, (ic) => ic.name);
-        const cover = NoteCanvas.toSVG({ icons: [{ name: evil, cover: true }] }, (ic) => ic.name);
+        const placed = NoteCanvas.toSVG({ ...baseNote, symbols: [{ name: evil, position: [0, 0], size: 32 }] }, (ic) => ic.name);
+        const cover = NoteCanvas.toSVG({ symbols: [], imported_tulip: { image: evil, shown: true } });
         expect(placed).not.toContain('onerror="'); // no live event-handler attribute
         expect(cover).not.toContain('onerror="');
         expect(placed).toContain('href="a&quot; onerror=&quot;alert(1)"'); // quote neutralised
@@ -861,19 +782,19 @@ describe('deleteNote (remove a note and its track vertex, #65)', () => {
         const rb = {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }, { lat: 0, lon: 2 }, { lat: 0, lon: 3 }],
-            notes: [{ idx: 0, road_type_out: 3 }, { idx: 1, road_type_out: 3 }, { idx: 3, road_type_out: 3 }],
+            notes: [{ track_index: 0, road_type: 3 }, { track_index: 1, road_type: 3 }, { track_index: 3, road_type: 3 }],
         };
         RB.recomputeMetrics(rb);
         const removed = RB.deleteNote(rb, 1); // delete the middle note (sits on vertex idx 1)
         expect(removed).toBe(1);
         expect(rb.track.map((p) => p.lon)).toEqual([0, 2, 3]); // the lon=1 vertex is gone — route straightened
-        expect(rb.notes.map((n) => n.idx)).toEqual([0, 2]);    // the note that was at idx 3 shifted to 2
+        expect(rb.notes.map((n) => n.track_index)).toEqual([0, 2]);    // the note that was at idx 3 shifted to 2
     });
     it('keeps the vertex (note-only removal) when the track would fall below 2 points', () => {
         const rb = {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }],
-            notes: [{ idx: 0, road_type_out: 3 }, { idx: 1, road_type_out: 3 }],
+            notes: [{ track_index: 0, road_type: 3 }, { track_index: 1, road_type: 3 }],
         };
         RB.recomputeMetrics(rb);
         const removed = RB.deleteNote(rb, 0);
@@ -885,12 +806,12 @@ describe('deleteNote (remove a note and its track vertex, #65)', () => {
         const rb = {
             meta: {},
             track: [{ lat: 0, lon: 0 }, { lat: 0, lon: 1 }, { lat: 0, lon: 2 }],
-            notes: [{ idx: 0, road_type_out: 3 }, { idx: 2, road_type_out: 3 }],
+            notes: [{ track_index: 0, road_type: 3 }, { track_index: 2, road_type: 3 }],
         };
         RB.recomputeMetrics(rb);
         RB.deleteNote(rb, 1); // delete the note at idx 2 (the end)
         expect(rb.track.map((p) => p.lon)).toEqual([0, 1]); // lon=2 removed; earlier points untouched
-        expect(rb.notes.map((n) => n.idx)).toEqual([0]);
+        expect(rb.notes.map((n) => n.track_index)).toEqual([0]);
     });
 });
 
@@ -1024,7 +945,7 @@ describe('parseOpenRally — fallback paths and tulipToDataURL', () => {
 
     // OpenRally export emits an <openrally:wptType> element; DOM round-trips fine.
     // The import side capture of non-standard openrally: elements (captureOr) is covered by
-    // the existing wp_type round-trip test above — it exercises the namespace parsing + emitOr
+    // the existing waypoint_type round-trip test above — it exercises the namespace parsing + emitOr
     // passthrough path through openRallyDocument.
 });
 
@@ -1067,7 +988,7 @@ describe('isFirstNote — which note the roadbook starts from (#472)', () => {
 });
 
 describe('the end note\'s tulip has no exit road (#447)', () => {
-    const note = (num) => ({ num, road_type_in: 2, road_type_out: 2, bearing_in: 0, bearing_out: 90, icons: [] });
+    const note = (num) => ({ num, road_type_in: 2, road_type: 2, bearing_in: 0, bearing_out: 90, symbols: [] });
     const roads = (svg) => svg.match(/<path d="[^"]*" fill="none" stroke="#[0-9a-f]{6}"/gi) || []; // the coloured roads, not the markers or the white motorway centre
 
     it('a middle note draws the exit segment with its arrow', () => {
@@ -1129,100 +1050,91 @@ describe('bearings survive a duplicate track vertex (#452)', () => {
     });
 });
 
-describe('repairDegenerateBearings — fix the broken ones, touch nothing else (#452)', () => {
-    const north = (m) => ({ lat: m / M_PER_DEG, lon: 0 });
-    const west = (m) => ({ lat: 100 / M_PER_DEG, lon: -m / M_PER_DEG });
-    const track = [north(0), north(50), north(100), north(100), west(50), west(100)];
-
-    it('re-derives only the side that came from a duplicate', () => {
-        // stored: out = 0 (poisoned by the duplicate), in = 0 (genuinely north) — the real case
-        const rb = { track, notes: [{ num: 3, idx: 2, bearing_in: 0, bearing_out: 0 }] };
-        RB.repairDegenerateBearings(rb);
-        expect(rb.notes[0].bearing_in).toBeCloseTo(0, 0);    // was fine, left alone
-        expect(rb.notes[0].bearing_out).toBeCloseTo(270, 0); // was garbage, re-derived
+describe('the .rdbk 1 document: authored data only, one shape', () => {
+    const trkpts = [{ lat: 45, lon: 9, ele: 300, t: 1000 }, { lat: 45, lon: 9.001, ele: 305, t: 2000 }, { lat: 45.001, lon: 9.002, t: 3000 }];
+    const built = () => {
+        const rb = RB.buildRoadbook({ name: 'Loop', trkpts, wpts: [] });
+        rb.symbols['I01_arrivo.png'] = 'data:image/png;base64,AA';
+        rb.notes[1].symbols.push({ name: 'I01_arrivo.png', position: [0, 0], size: 40, angle: 0, mirrored: false });
+        return rb;
+    };
+    it('writes the version, the authored fields and nothing that can be computed', () => {
+        const doc = RB.writeRoadbook(built());
+        expect(doc.rdbk_version).toBe(1);
+        expect(Object.keys(doc)).toEqual(['rdbk_version', 'meta', 'track', 'notes', 'symbols']);
+        expect(doc.meta).toEqual({ title: 'Loop', default_validation_radius: 30, generator: 'RDBK.app' });
+        expect(doc.track[0]).toEqual({ lat: 45, lon: 9, elevation: 300, time_ms: 1000 });
+        expect(doc.track[2]).toEqual({ lat: 45.001, lon: 9.002, time_ms: 3000 });
+        // the start note says nothing but where it is: text '', the track road, no CAP — all defaults
+        expect(doc.notes[0]).toEqual({ track_index: 0 });
+        expect(doc.notes[1]).toEqual({ track_index: 2, symbols: [{ name: 'I01_arrivo.png', position: [0, 0], size: 40 }] });
+        for (const k of ['num', 'lat', 'lon', 'distance', 'partial_distance', 'bearing_in', 'bearing_out', 'road_type_in', 'cap_distance']) expect(doc.notes[1]).not.toHaveProperty(k);
+        expect(doc.meta).not.toHaveProperty('total_distance');
+        expect(doc.meta).not.toHaveProperty('note_count');
+        expect(RB.validateRoadbook(doc)).toEqual({ valid: true, errors: [], warnings: [] });
     });
-
-    it('leaves a note with healthy neighbours exactly as authored', () => {
-        // an imported roadbook may carry bearings of its own, and a note placed by distance has an
-        // approximate idx — re-deriving those could be worse than what is in the file
-        const rb = { track, notes: [{ num: 2, idx: 1, bearing_in: 123, bearing_out: 456 }] };
-        RB.repairDegenerateBearings(rb);
-        expect(rb.notes[0]).toMatchObject({ bearing_in: 123, bearing_out: 456 });
+    it('reading derives every computed value, and writing it again gives back the same file', () => {
+        const doc = RB.writeRoadbook(built());
+        const rb = RB.readRoadbook(doc);
+        expect(rb.notes.map((n) => n.num)).toEqual([1, 2]);
+        expect(rb.notes[1].distance).toBe(rb.meta.total_distance);
+        expect(rb.notes[1].lat).toBe(45.001);
+        expect(rb.notes[1].road_type_in).toBe(2);
+        expect(rb.meta.note_count).toBe(2);
+        expect(RB.writeRoadbook(rb)).toEqual(doc);
     });
-
-    it('survives a degenerate roadbook', () => {
-        expect(() => RB.repairDegenerateBearings({ track: [north(0)], notes: [{ idx: 0 }] })).not.toThrow();
-        expect(() => RB.repairDegenerateBearings(null)).not.toThrow();
+    it('a CAP is authored: the heading is stored, its distance derived', () => {
+        const rb = built();
+        rb.notes[0].cap = 45; rb.notes[0].cap_type = 'average';
+        const doc = RB.writeRoadbook(rb);
+        expect(doc.notes[0]).toEqual({ track_index: 0, cap: 45, cap_type: 'average' });
+        const back = RB.readRoadbook(doc);
+        expect(back.notes[0].cap).toBe(45);
+        expect(back.notes[0].cap_distance).toBe(Math.round(RB.geo.haversineM(back.notes[0], back.notes[1])));
     });
-
-    it('runs on import, so a stored roadbook is corrected on every surface', () => {
-        // the Reader, the public page and the PDF read the stored bearings as they are: without
-        // this they would keep pointing the wrong way until someone re-saved in the Editor
-        const rb = RB.importRoadbook({ meta: {}, track, notes: [{ num: 3, idx: 2, bearing_in: 0, bearing_out: 0 }] });
-        expect(rb.notes[0].bearing_out).toBeCloseTo(270, 0);
+    it('keeps the whole symbol library — a custom symbol has no other copy (#454)', () => {
+        const rb = built();
+        rb.symbols['mine.png'] = 'data:image/png;base64,BB';
+        expect(Object.keys(RB.writeRoadbook(rb).symbols)).toEqual(['I01_arrivo.png', 'mine.png']);
     });
-});
-
-describe('the icon library is a map, never a list (#523)', () => {
-    // PHP cannot tell an empty map from an empty list: `{}` decoded and re-encoded comes back as
-    // `[]`. Named keys written onto a JS array are dropped by JSON.stringify, so every icon the
-    // author added vanished on the way back to the server. importRoadbook heals the shape.
-    it('an icon added after a round trip survives serialisation', () => {
-        const rb = RB.importRoadbook({
-            meta: { title: 'round trip' },
-            track: [{ lat: 41.4, lon: 2.1 }, { lat: 41.41, lon: 2.11 }],
-            notes: [{ num: 1, idx: 0, lat: 41.4, lon: 2.1, text: '', icons: [], junctions: null }],
-            icons: [],                                   // what a PHP round trip hands back
-        });
-        expect(Array.isArray(rb.icons), 'the library is still a list').toBe(false);
-        rb.icons['pasted-1-0.png'] = 'data:image/png;base64,AAAA';
-        const wire = JSON.parse(JSON.stringify(rb));
-        expect(Object.keys(wire.icons)).toEqual(['pasted-1-0.png']);
-        expect(wire.icons['pasted-1-0.png']).toBe('data:image/png;base64,AAAA');
+    it('carries the compatibility blocks untouched, at the root and on a note', () => {
+        const rb = built();
+        rb.compatibility = { openrally: { units: 'metric' } };
+        rb.notes[0].compatibility = { openrally: [{ tag: 'speed', attrs: {}, text: '50' }] };
+        const doc = RB.writeRoadbook(rb);
+        expect(doc.compatibility).toEqual({ openrally: { units: 'metric' } });
+        expect(RB.readRoadbook(doc).notes[0].compatibility.openrally[0].text).toBe('50');
     });
-
-    it('an existing library is left exactly as it is', () => {
-        const rb = RB.importRoadbook({
-            meta: { title: 'keeps its icons' },
-            track: [{ lat: 41.4, lon: 2.1 }, { lat: 41.41, lon: 2.11 }],
-            notes: [{ num: 1, idx: 0, lat: 41.4, lon: 2.1, text: '', icons: [], junctions: null }],
-            icons: { 'mine.png': 'data:image/png;base64,BBBB' },
-        });
-        expect(rb.icons).toEqual({ 'mine.png': 'data:image/png;base64,BBBB' });
+    it('refuses what is not a .rdbk 1, saying where and why', () => {
+        const doc = RB.writeRoadbook(built());
+        const bad = JSON.parse(JSON.stringify(doc));
+        delete bad.rdbk_version;
+        bad.notes[1].track_index = 0;
+        bad.notes[1].symbols[0].name = 'missing.png';
+        bad.notes[1].road_type = 7;
+        const report = RB.validateRoadbook(bad);
+        expect(report.valid).toBe(false);
+        expect(report.errors.map((e) => e.path)).toEqual(['rdbk_version', 'notes[1].track_index', 'notes[1].road_type', 'notes[1].symbols[0].name']);
+        let thrown = null;
+        try { RB.readRoadbook(bad); } catch (e) { thrown = e; }
+        expect(thrown.report.errors.length).toBe(4);
     });
-});
-
-describe('folding older files into one slot per type (#547)', () => {
-    const track = Array.from({ length: 10 }, (_, i) => ({ lat: 0, lon: i * 0.0009 }));
-    const nav = (idx, num) => ({ idx, num, lat: 0, lon: idx * 0.0009, text: 'Note ' + num, road_type_out: 2 });
-
-    it('a second advert goes to the next note whose slot is free — nothing is lost', () => {
-        const rb = RB.importRoadbook({
-            meta: {}, icons: {}, track,
-            notes: [
-                nav(0, 1),
-                { note_kind: 'comment', text: 'First sponsor', image: 'data:1' },
-                { note_kind: 'comment', text: 'Second sponsor', image: 'data:2' },
-                nav(5, 2),
-                nav(9, 3),
-            ],
-        });
-        expect(rb.notes.length).toBe(3);
-        expect(RB.noteBlocks(rb.notes[0]).map((b) => b.image)).toEqual(['data:1']);
-        expect(RB.noteBlocks(rb.notes[1]).map((b) => b.image)).toEqual(['data:2']); // the free slot next door
-        expect(RB.noteBlocks(rb.notes[1])[0].at).toBe('before');
+    it('the symbol library is a map, never a list: PHP turns an empty {} into [] (#523)', () => {
+        const doc = RB.writeRoadbook(RB.buildRoadbook({ name: 'x', trkpts, wpts: [] }));
+        expect(doc).not.toHaveProperty('symbols'); // nothing to write, so nothing a round trip could turn into []
+        expect(RB.validateRoadbook({ ...doc, symbols: [] }).errors[0]).toEqual({ path: 'symbols', message: 'Must be an object.' });
     });
-
-    it('with every slot taken the words join the ones already there, instead of vanishing', () => {
-        const rb = RB.importRoadbook({
-            meta: {}, icons: {}, track,
-            notes: [nav(0, 1), { note_kind: 'comment', text: 'One' }, { note_kind: 'comment', text: 'Two' }],
-        });
-        expect(rb.notes.length).toBe(1);
-        const texts = RB.noteBlocks(rb.notes[0]).map((b) => b.text);
-        expect(texts.length).toBe(1);
-        expect(texts[0]).toContain('One');
-        expect(texts[0]).toContain('Two');
+    it('defaults written out are allowed, and the validator says to leave them out', () => {
+        const doc = RB.writeRoadbook(built());
+        doc.notes[0].text = ''; doc.notes[0].road_type = 2;
+        const r = RB.validateRoadbook(doc);
+        expect(r.valid).toBe(true);
+        expect(r.warnings.map((w) => w.path)).toEqual(['notes[0].text', 'notes[0].road_type']);
+    });
+    it('an unknown key is ignored by readers, and reported', () => {
+        const doc = RB.writeRoadbook(built());
+        doc.meta.category = 'x';
+        expect(RB.validateRoadbook(doc).warnings).toEqual([{ path: 'meta.category', message: 'Unknown key: readers ignore it.' }]);
     });
 });
 
@@ -1237,7 +1149,7 @@ describe('RB.distanceChars (#730)', () => {
 describe('routeAhead: where the driver is along the route (#847)', () => {
     // a straight east-west road with notes at its 2nd and 4th vertex, ~111 m between vertices
     const track = [0, 1, 2, 3, 4, 5].map((k) => ({ lat: 45, lon: 9 + k * 0.001414 }));
-    const rb = RB.recomputeMetrics({ meta: {}, track, notes: [RB.bareNote({ track, notes: [] }, 1, 3), RB.bareNote({ track, notes: [] }, 3, 3)] });
+    const rb = RB.recomputeMetrics({ meta: {}, track, notes: [RB.blankNote(1, 2), RB.blankNote(3, 2)] });
     const cum = RB.cumulativeM(track);
 
     it('measures what is left to the note along the track, in the notes’ own metres', () => {
@@ -1259,7 +1171,7 @@ describe('routeAhead: where the driver is along the route (#847)', () => {
         const out = [0, 1, 2, 3, 4].map((k) => ({ lat: 45, lon: 9 + k * 0.001414 }));
         const back = [3, 2, 1, 0].map((k) => ({ lat: 45.00003, lon: 9 + k * 0.001414 }));
         const spur = out.concat(back, [{ lat: 45.002, lon: 9 }]);
-        const srb = RB.recomputeMetrics({ meta: {}, track: spur, notes: [RB.bareNote({ track: spur, notes: [] }, 0, 3), RB.bareNote({ track: spur, notes: [] }, 4, 3), RB.bareNote({ track: spur, notes: [] }, spur.length - 1, 3)] });
+        const srb = RB.recomputeMetrics({ meta: {}, track: spur, notes: [RB.blankNote(0, 2), RB.blankNote(4, 2), RB.blankNote(spur.length - 1, 2)] });
         const scum = RB.cumulativeM(spur);
         const here = { lat: 45.00002, lon: 9 + 1.5 * 0.001414 }; // driving out, the fix a touch nearer the way back
         expect(RB.routeAhead(srb, scum, 1, here).atM).toBeGreaterThan(srb.notes[1].distance); // geometry alone: the wrong pass

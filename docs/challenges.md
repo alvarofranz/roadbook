@@ -151,7 +151,7 @@ nota corrispondente (`map.onWaypoint(i)` → `chNotes.children[i].scrollIntoView
 
 La mappa compare **solo** quando entrambe le condizioni sono vere:
 
-- il roadbook **consente la mappa**: `meta.map_access !== false` — un roadbook che la nasconde
+- il roadbook **consente la mappa**: `meta.map_allowed !== false` — un roadbook che la nasconde
   (es. una gara che tiene segreto il percorso) non mostra alcuna anteprima;
 - c'è una **traccia reale** (`rb.track.length >= 2`); senza percorso vero la mappa è saltata.
 
@@ -160,13 +160,13 @@ La mappa compare **solo** quando entrambe le condizioni sono vere:
 a 3 colonne (la 4ª colonna dei bottoni/stato del Reader qui non c'è):
 
 - **distanza**: totale + parziale (`fkm`, metri → km a 2 decimali) + numero nota;
-- **vignetta**: `NoteCanvas.toSVG(n, iconSrc, RB.tulipContext(rb, i))` — lo stesso render statico
+- **vignetta**: `NoteCanvas.toSVG(n, symbolSrc, RB.tulipContext(rb, i))` — lo stesso render statico
   usato dalle righe del Reader (entrambe le pagine passano da `NoteCanvas.rowsHTML`);
 - **testo**: testo nota, eventuale `CAP <gradi>° · <km>` e le coordinate.
 
-Gli alias delle icone si risolvono con
-`RB.iconSrc(ic, rb, '/assets/icons/')` ([challenge.js](../public/challenge/challenge.js)),
-rispettando la regola self-contained del formato (inline → `rb.icons` → palette standard).
+Il roadbook ricevuto da `public_get` passa per `RB.readRoadbook` (come nel Reader), e le immagini
+dei simboli si risolvono con `RB.symbolSrc(ic, rb, '/assets/icons/')`: la libreria del roadbook
+(`rb.symbols`), dove la regola self-contained del formato mette ogni simbolo usato.
 
 ### I bottoni d'azione
 Per tutti:

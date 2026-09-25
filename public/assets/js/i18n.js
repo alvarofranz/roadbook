@@ -20,7 +20,7 @@
             'foot.claim': 'Digital roadbooks for any adventure — free, with the open .rdbk format.', 'install.lead': 'RDBK is a native app on iPhone, iPad and Android, and an installable web app on computers. Installed, it opens from your home screen, works offline and opens .rdbk files straight from your files. Pick your device below — we highlight the one you are on.', 
             'gallery.kicker': 'Gallery', 'gallery.title': 'Public roadbooks', 'gallery.loading': 'Loading…', 'gallery.empty': 'No public roadbooks yet.',
             // Editor field help tooltips (issue #89)
-            'help.road': 'The road surface you continue on from this note (default, asphalt, track, off-piste); it stays in force until a later note changes it.',
+            'help.road': 'The road you leave this note on (tarmac, track, low-visible track, off track, bike lane); it stays in force until a later note changes it.',
             'help.danger': 'FIA danger grading, shown as ! / !! / !!! in the vignette — the higher the grade, the more caution the spot demands.',
             'help.speed': 'A declarative speed limit (km/h) in force from this note; “End of limit” lifts it. Setting a limit also marks the note a controlled zone.',
             'help.capType': 'Qualifies the note’s CAP heading (FIA): Exit, Average, Calculated or Turning. Enabled once the note carries a CAP.',

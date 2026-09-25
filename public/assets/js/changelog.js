@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.17', date: '2026-09-25',
+        title: 'The .rdbk 1 standard',
+        items: [
+            'The .rdbk format is now a finished standard: every file says its version, holds only what the author decided and computes the rest the same way everywhere.',
+            'Roads are drawn with the FIA strokes: tarmac as a double line, the low-visible track in long and short dashes, off track in short dashes.',
+            'A new .rdbk validator checks any roadbook in your browser and points at every error — nothing is uploaded.',
+            'The PDF generator shows the map before you print it, and changes the roadbook’s image right there; the contact page is shorter.',
+        ],
+    },
+    {
         version: '1.9.16', date: '2026-09-25',
         title: 'A tidier profile menu',
         items: [

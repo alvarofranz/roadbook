@@ -31,7 +31,7 @@
         // Navigate / Edit live; one still private says so on the card, a draft with no page opens the Editor
         list.innerHTML = mine.length ? mine.slice(0, 6).map((rb) => RBRoadbookCard(rb, {
                 href: rb.slug ? `${ROOT}challenge/${encodeURIComponent(rb.slug)}` : `${ROOT}editor/?rb=${rb.id}`,
-                category: rb.status === 'public' ? '' : t(RBStatusLabel[rb.status]),
+                chip: rb.status === 'public' ? '' : t(RBStatusLabel[rb.status]),
             })).join('')
             : `<p class="muted small">${esc(t(r.ok ? 'No roadbooks yet — record a route or draw one in the Editor.' : 'Could not load.'))}</p>`;
         RBFillRoutes(list);

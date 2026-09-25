@@ -9,8 +9,8 @@ describe('an icon added while a note is open', () => {
         expect(js).toContain("if (editorOpen && rb.notes[sel]) { ownTulip(); added.forEach((name) => canvas.addIcon(mkIcon(name, [0, 0])));"); // onto the editor's own tulip (#943)
     });
     it('shows first in the gallery: re-inserted last, listed newest first', () => {
-        expect(js).toContain('delete rb.icons[name]; rb.icons[name] = data;');
-        expect(js).toMatch(/const yours = custom\.filter\([\s\S]*?\)\.reverse\(\);/);
+        expect(js).toContain('delete rb.symbols[name]; rb.symbols[name] = data;');
+        expect(js).toContain('const yours = custom.reverse();');
     });
 });
 

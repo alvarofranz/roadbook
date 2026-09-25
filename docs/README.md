@@ -62,9 +62,11 @@ e una sezione onesta di limiti/quirk.
   Open Graph, canonical, policy di indicizzazione).
 
 ## Il formato
-- [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` e la pagina `/standard`.
+- [rdbk-format](rdbk-format.md) — lo standard aperto `.rdbk` (versione 1), la pagina `/standard`,
+  il validatore `/validator/` e le funzioni che leggono, scrivono e validano un file.
 - [roadbook-specs](roadbook_specs.md) — convenzioni di resa del roadbook (tulip) e decisioni
-  di design: colori RB System, tipi strada per colore (dash/double, spessore unico), trunk, bivi, CAP, danger.
+  di design: i tratti FIA dei tipi strada (doppia linea, tratteggi, spessore unico) coi colori
+  dell'app, trunk, bivi, CAP, danger.
 - [fia-lexicon-compliance](fia-lexicon-compliance.md) — confronto col lexicon roadbook FIA
   cross-country (issue #9): cosa copriamo come icona, come dato, o non ancora.
 

@@ -434,7 +434,7 @@
         return Promise.all(list.map(async (w) => {
             const p = w.photo && photos.find((x) => x.token === w.photo);
             if (!p || !p.url) return w;
-            try { return Object.assign({}, w, { blocks: [{ type: 'photo', at: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }] }); }
+            try { return Object.assign({}, w, { blocks: [{ type: 'photo', placement: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }] }); }
             catch (e) { return w; }
         }));
     }
@@ -443,7 +443,7 @@
         try { roadbook = RB.buildRoadbook({ name: nm, trkpts: pts, wpts: await withPhotos(wpts) }); }
         catch (e) { toast(t('Route too short to save.')); return null; }
         const id = await ensureDraft(); // the draft the queued photos also attach to
-        const r = await RBApi('rb_save', { id: id || 0, status: 'draft', roadbook: RB.roadbookForExport(roadbook) });
+        const r = await RBApi('rb_save', { id: id || 0, status: 'draft', roadbook: RB.writeRoadbook(roadbook) });
         if (!r.ok) { toast(r.error || t('Could not save.')); return null; }
         draftId = r.id;
         try { RBMediaQueue.flush(); } catch (e) {} // push any still-buffered media into this draft

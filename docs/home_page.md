@@ -40,7 +40,7 @@ Flusso ([home.js](../public/assets/js/home.js)):
   senza foto), si disegna al volo un SVG leggero della **sola** polilinea della rotta
   (`RBFillRoutes` in `app.js`, condiviso da ogni galleria): nessuna tile, nessun basemap. La traccia
   viene presa caricando il roadbook una sola volta, lazy e cache-ata per slug.
-- Se il roadbook nasconde la mappa (`meta.map_access === false`) il fallback **non** rivela la
+- Se il roadbook nasconde la mappa (`meta.map_allowed === false`) il fallback **non** rivela la
   forma della rotta: resta l'icona segnaposto.
 
 > La home **non** decide cosa è pubblico: elenca solo ciò che `public_list` ritorna, che filtra

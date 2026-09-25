@@ -108,7 +108,7 @@ Rechte Spalte: Zeilen `.note-mini`. Tap auf Zeile → **Inline-Editor verschiebt
 | Feld | Bearbeitung | Hinweis |
 |-------|---------------|------|
 | **Testo** | `textarea` direkt (behält Fokus) | Aktualisiert Modell ohne Rebuild |
-| **Road type** | Select „Road" → setzt `road_type_out` | Nur die Straße, die du **verlässt**, ist zulässig; Ankunft leitet sich aus `road_out` der vorigen Notiz ab |
+| **Road type** | Select „Road" → setzt `road_type` | Nur die Straße, die du **verlässt**, wird festgelegt; die Ankunft (`road_type_in`) leitet sich aus dem `road_type` der vorigen Notiz ab |
 | **Danger** | Select `—` / `!` / `!!` / `!!!` → `n.danger` | 0 = entfernt |
 | **CAP** | Zeilen-Toggle → berechnet `bearingDeg` + `haversineM` zur nächsten Notiz | Letzte Notiz: kein CAP |
 | **Icone / Vignette** | `NoteCanvas` auf `#noteCanvas` | Standard-Palette + eingebettete Custom-Icons (siehe § unten) |
@@ -125,13 +125,13 @@ Pfeile ↑/↓ (ändert `sel` ±1), `Del` → `delNote` (Minimum 2 Notizen). **Z
 
 `renderIcons` verschmilzt:
 - **Standard** (`assets/icons/index.json` → `loadStd`)
-- **Custom** eingebettet im roadbook (`rb.icons`)
+- **Custom** eingebettet im roadbook (`rb.symbols`)
 
 > 📸 *Screenshot: Icon-Palette mit Kategorien und Live-Suche*
 
 Kategorie-Chips + Live-Suche (`filterIcons`). Tap oder **Drag&Drop** auf Vignette zum Hinzufügen. Custom: hochladen (`#iconFile`) oder einfügen → data-URI. Liegt das Icon auf einem einfarbigen Hintergrund (z. B. Foto eines weißen Blatts), fragt der Editor **„Hintergrund entfernen?"** (Nein / Ja) und zeigt Original und Ergebnis nebeneinander — das läuft komplett im Browser, und die Icon-Bibliothek des roadbook behält nur die gewählte Version. ×-Badge zum Löschen (gesperrt, wenn in Verwendung).
 
-> Beim Import .rdbk Roadbook Suite: Icons 1:1 umbenannt (Tabelle in `editor.md` §9.5), Y-Flip + zentriert + ×1,5 (×3 Start/Ziel). Icons ohne Datei → Fallback `W28_general_danger.svg` + Hinweis im Text *„Nota: aggiungere icona <nome>"* (Hinweis: Icon <Name> hinzufügen).
+> Beim Import einer Roadbook-Suite-Datei (deren eigenes JSON, gelesen von `RB.readRoadbook`): Icons 1:1 umbenannt (Tabelle in `editor.md` §9.5), Y-Flip + zentriert + ×1,5 (×3 Start/Ziel). Icons, die sich nicht auflösen lassen, werden in einer Meldung genannt (die Vignette zeigt einen Platzhalter), damit du weißt, was neu hinzuzufügen ist.
 
 ---
 
@@ -147,9 +147,9 @@ Zweite Ansicht (`showView('config')`), Tab `#viewConfig`:
 | **Logo evento** | `RBImg.toDataURL(f, 256)` → data-URI in `meta.logo` (selbst-enthalten) |
 | **Stato** | `setStatus()`: **draft · ready · public** (nicht mehr binär). Nur `public` veröffentlicht in Galerie |
 | **Riutilizzabile** | `cfgReusable` → `reusable` (nur wenn `public`) — erlaubt Fork durch andere (#106) |
-| **Profilo waypoint** | `cfgProfile` → `meta.profile`: `basic` (Standard) oder `rally` (vollständiges FIA-Vokabular) |
-| **Raggio validazione default** | `cfgWpRadius` → `meta.default_wp_radius` (m) für Notizen ohne eigenes `wp_radius` |
-| **Accesso mappa nel Reader** | `cfgMapAccess` → `meta.map_access` (false = Karte verstecken, z. B. bei Rennen) |
+| **Roadbook-Typ** | `cfgProfile`: `basic` oder `rally` (vollständiges FIA-Vokabular). Nicht in der Datei gespeichert: ein Roadbook mit einem Rally-Wegpunkttyp öffnet als Rally |
+| **Raggio validazione default** | `cfgWpRadius` → `meta.default_validation_radius` (m) für Notizen ohne eigenes `validation_radius` |
+| **Accesso mappa nel Reader** | `cfgMapAccess` → `meta.map_allowed` (false = Karte verstecken, z. B. bei Rennen) |
 | **Foto** | Galerie auf Karte + geolokalisierter Upload + Lightbox (siehe unten) |
 | **Cancella roadbook** | Nur wenn `currentRbId > 0` (gespeichert). `RBConfirmDanger` nennt den Titel → `rb_delete` (Papierkorb 30 Tage) |
 
@@ -189,20 +189,20 @@ Button **Export** → Pop-up mit allen Formaten. **Save** (Profil-Speichern) sep
 
 | Format | Funktion | Output |
 |---------|----------|--------|
-| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: selbst-enthaltenes `roadbook.json` (`embedUsed` bettet genutzte Icons ein, entfernt ungenutzte) + optionales `photos/`/`audio/`/`media.json` |
+| **.rdbk** | `exportRdbk(includeMedia)` | ZIP: selbst-enthaltenes `roadbook.json`, geschrieben von `RB.writeRoadbook` und geprüft von `RB.validateRoadbook` (`embedUsed` bettet genutzte Symbole ein, entfernt ungenutzte Standard-Symbole) + optionales `photos/`/`audio/`/`media.json` |
 | **PDF** | `exportPdf` | A4 via `RBPdf.generate` (lazy jsPDF, `rb-pdf.js`) |
 | **GPX** | `exportCustomGpx` | Kombinierbare Checkboxen (Spur / Waypoint / Garmin-Icons / OSMAnd-Icons / separate OpenRally-Datei) |
 | **OpenRally** | `exportOpenRally` | `RB.openRallyDocument` → `…_OR.gpx` (GPX 1.1 + Namespace `openrally:`) |
 | **KMZ** | `exportKmz` | `RB.kmlDocument` + `RBZip.write({ 'doc.kml': kml })` → `.kmz` |
 
 ### embedUsed (selbst-enthaltene Regel)
-Jedes genutzte Symbol landet als data-URI in `rb.icons`; nicht referenzierte → entfernt. Garantiert Portabilität.
+Jedes genutzte Symbol landet als data-URI in `rb.symbols`; nicht referenzierte Standard-Symbole → entfernt, eigene bleiben. Garantiert Portabilität.
 
 ### GPX-Optionen (Issue #34)
 Checkboxen: **Spur** (Pflicht für Garmin/OSMAnd), **Waypoint**, **Garmin-Icons**, **OSMAnd-Icons**, **OpenRally**. Garmin + OSMAnd koexistieren in einer Datei. Namensgebung: `slug_data_WPT_grm_osm_OR.gpx`.
 
 ### Save to profile
-`doSave` → stempelt Meta, berechnet neu, bettet Icons ein → `RBApi('rb_save')`. Erfolg: setzt `currentRbId`, leert `dirty`, räumt draft auf, setzt `?rb=<id>` in der URL (Reload bearbeitet dasselbe weiter). **„Save as"** → setzt Identität zurück, fügt „(copy)" hinzu, speichert neue private Entität.
+`doSave` → stempelt Meta, berechnet neu, bettet Symbole ein, schreibt und validiert das Dokument → `RBApi('rb_save')`. Erfolg: setzt `currentRbId`, leert `dirty`, räumt draft auf, setzt `?rb=<id>` in der URL (Reload bearbeitet dasselbe weiter). **„Save as"** → setzt Identität zurück, fügt „(copy)" hinzu, speichert neue private Entität.
 
 ---
 
@@ -226,22 +226,22 @@ Checkboxen: **Spur** (Pflicht für Garmin/OSMAnd), **Waypoint**, **Garmin-Icons*
 
 ## Import .rdbk Roadbook Suite — Treue für Ranking
 
-`RB.importRoadbook` konvertiert: italienische Schlüssel → kanonische, `bivio[]→junctions[]` (Y-Flip), Icons Y-Flip + zentriert + ×1,5, **Metrik-Neuberechnung aus Spur** (bearing, Distanzen, Straßentypen). Für kanonisches `.rdbk`: **keine Neuberechnung beim Import** (identische Felder).
+`RB.readRoadbook` liest ein `.rdbk` (validiert; Distanzen, bearing und Ankunfts-Straßentypen werden aus der Spur abgeleitet) und konvertiert eine Roadbook-Suite-Datei: italienische Schlüssel → `.rdbk`-Felder, `bivio[]→junctions[]` (Y-Flip), Symbole Y-Flip + zentriert + ×1,5, Tempolimit-Schilder → `speed_limit_kmh`.
 
 **Erhaltene Ranking-Felder beim Import:**
 - `lat/lon` (accuracy/extra) ✅
 - `cap/cap_distance` (CAP-Strafe) ✅ — `recomputeCaps` berechnet nur neu, wo `cap!=null`
 - `distance/partial_distance` (km, reach) ✅
-- `icons` I02_partenza / I01_arrivo (Punktestand-Bereich) ✅
-- `icons` Sxx_* (Geschwindigkeitslimits) ✅
+- `waypoint_type` `ss_start`/`ss_end` oder Symbole I02_partenza / I01_arrivo (Punktestand-Bereich) ✅
+- `speed_limit_kmh` (Geschwindigkeitslimits) ✅
 
-Bei **Export/Save**: `recomputeMetrics` hängt Notizen an Spur (lat/lon, distance, bearing), `recomputeCaps` richtet aktive CAP aus. Kohärent für Punktestand.
+Bei **Export/Save**: `recomputeMetrics` leitet lat/lon, distance und bearing aus dem `track_index` jeder Notiz ab, `recomputeCaps` richtet aktive CAP aus. Kohärent für Punktestand.
 
 ---
 
 ## Grenzen & Eigenheiten
 
-- `RB.bareNote` gibt `num: 0` aus → korrekte Nummerierung nach `recomputeMetrics` (die Zeilen rufen es sofort auf)
+- `RB.blankNote` trägt keine abgeleiteten Werte → Nummerierung nach `recomputeMetrics` (die Zeilen rufen es sofort auf)
 - Standard-Autor kann leeres Feld beim Login überschreiben (hängt von Promise-Reihenfolge `account` ab)
 - `spliceByIndex` hängt alle Notizen mit `nearestIdx` neu an → kann Notiz unintuitiv verschieben, wenn Variante nahe an „alter" Notiz vorbeiführt
 - Offene Schnitte → gerade geschlossen (vorausgehend `confirmOpenCuts`)

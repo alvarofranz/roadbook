@@ -5,7 +5,7 @@ tronco della strada, i vettori di giunzione, le icone trascinabili e la gradazio
 pericolo. Documento di riferimento per il modulo
 [note-canvas.js](../public/assets/js/note-canvas.js).
 
-> Una vignetta è **icone + giunzioni su un box di riferimento 230×162**, con origine al
+> Una vignetta è **simboli + giunzioni su un box di riferimento 230×162**, con origine al
 > **centro** e asse **+y verso l'alto**, angoli **orari** — esattamente il modello del
 > formato `.rdbk`. Il modulo offre UN editor interattivo (`NoteCanvas`) e UN render
 > statico di sola lettura (`NoteCanvas.toSVG`).
@@ -20,8 +20,8 @@ Una sola IIFE espone due superfici pubbliche più alcuni helper privati:
 |------|------|----------|
 | `NoteCanvas` (classe) | editor interattivo SVG | Editor |
 | `NoteCanvas.toSVG(note, resolveIcon, ctx)` | render statico → stringa SVG | Reader, pagina challenge, PDF |
-| `NoteCanvas.originalTulip(note)` | il tulip importato della nota (l'icona `cover`), mostrato o no (§9) | Editor (il toggle del tulip) |
-| `trunkRoads` · `smoothPath` · `coverIcon` · `dangerMarks` · `ROAD_STYLE` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
+| `NoteCanvas.rowsHTML(rb, opts)` | le righe "carta" del roadbook (distanze · vignetta · testo) | Reader, pagina challenge |
+| `trunkRoads` · `roadMarkup` · `smoothPath` · `shownTulip` · `dangerMarks` · `svg` · `r1` · `clampIconSize` | helper privati | condivisi tra editor e render |
 
 Tutto è SVG (auto-scala). L'editor disegna esattamente la stessa geometria che poi
 `toSVG` ripropone in sola lettura, perciò ciò che si vede nell'Editor è ciò che vede il
@@ -67,13 +67,13 @@ Lo stesso schema si ripete (privato) dentro `toSVG`
 
 Il "tronco" è la strada derivata dalla nota e dalla traccia attorno a lei, non modificabile a
 mano ([note-canvas.js](../public/assets/js/note-canvas.js)). `trunkRoads(note, ctx)` restituisce
-le strade come `{ d, color, width, dashed, double, arrow }`, e ognuna si disegna come un
-**`<path>`** (`d`):
+le strade come `{ d, roadType, arrow }`, e ognuna si disegna con `roadMarkup` (§3, *Tratto per tipo
+di strada*) come uno o due **`<path>`** (`d`):
 
 - la **provenienza** entra dal bordo inferiore fino al centro (`cx,cy`), stilizzata da
   `road_type_in`;
 - la **strada da seguire** esce dal centro con una freccia (`marker-end`), stilizzata da
-  `road_type_out`.
+  `road_type`.
 
 `ctx` è **`RB.tulipContext(rb, i)`** = `{ isEnd, isFirst, shape }` — dove sta la nota nel
 roadbook e la forma della strada attorno a lei ([roadbook-core.md](roadbook-core.md)). Chi
@@ -126,72 +126,65 @@ retto letto come 37°; se così passerebbe su un incrocio dell'autore, resta l'a
 > vicino coincidente dava bearing 0° e quindi una freccia puntata dove capita — una nota dritta
 > disegnata come svolta secca (#452, vedi [roadbook-core.md](roadbook-core.md)).
 
-### Colore
-- Ogni tratto del tronco è colorato **secondo il suo tipo di strada** (`RB.ROAD_TYPES[roadType].color`,
-  la palette del RB System): `trunkRoads` colora così la strada da seguire e la
-  provenienza. La **prima nota** non disegna provenienza affatto (`isFirst`, #472), quindi il
-  tronco è sempre su route; restano grigi (`#9aa4b2`) solo i vettori di giunzione (§4).
+### Tratto per tipo di strada (`roadMarkup`)
+`roadMarkup(roadType, d, ink, marker)` è **l'unico renderer** delle strade — tronco e giunzioni,
+nell'editor e in `toSVG` — e restituisce gli attributi SVG di una strada come lista (una doppia linea
+è il suo tratto più un centro bianco). Legge `RB.roadType(id)` (`RB.ROAD_TYPES`, i tratti del FIA Road
+Book Lexicon): **ogni strada è larga `RB.ROAD_WIDTH` (8)**, il tipo si legge dal tratto e dal colore.
 
-### Stile per tipo di strada (`ROAD_STYLE`)
-Il tronco usa una tabella di stile **propria** (`ROAD_STYLE` in note-canvas.js), indipendente
-dalle larghezze di `RB.ROAD_TYPES` usate sulla mappa: **ogni strada ha lo stesso spessore** (8, quello
-della pista rossa); il tipo si legge dal colore (`RB.ROAD_TYPES`), dal tratteggio e dalla doppia linea.
+| `road_type` | Resa nel tulip | tratteggio | doppia | colore del tronco |
+|:-----------:|----------------|:----------:|:------:|-------------------|
+| 1 Tarmac | linea **doppia**: 8 con un centro bianco da `RB.DOUBLE_GAP` (2) | no | sì | verde `#22c55e` |
+| 2 Track (default) | linea continua | no | no | `#ff5a45` |
+| 3 Low-visible track | trattini lungo–corto `24 8 8 8` | sì | no | `#ff5a45` |
+| 4 Off track | trattini corti `8 8` | sì | no | `#ff5a45` |
+| 5 Bike lane | linea continua (#561) | no | no | viola `#532b78` |
+| altro | come 2 (`RB.roadType` ricade sul default) | no | no | `#ff5a45` |
 
-| `road_type` | Resa nel tulip | width | tratteggio | doppia |
-|:-----------:|----------------|:-----:|:----------:|:------:|
-| 0 default | linea continua | 8 | no | no |
-| 1 motorway | linea **doppia** | 8 | no | sì |
-| 2 asphalt | linea continua | 8 | no | no |
-| 3 track | linea continua | 8 | no | no |
-| 4 off-piste | linea **tratteggiata** | 8 | sì | no |
-| 5 bike lane | linea continua (#561) | 8 | no | no |
-| altro | fallback su 3 (track) | 8 | no | no |
+Le strade tratteggiate usano estremità `butt` (le estremità tonde a questo spessore mangerebbero i
+vuoti). Il tronco prende il colore del suo tipo (`ink` assente); le giunzioni passano `ink` = grigio
+`#9aa4b2` (§4). La **prima nota** non disegna provenienza affatto (`isFirst`, #472).
 
 Le giunzioni (§4) si disegnano **prima**, sotto il tronco: dove coincidono si legge la strada da
 seguire. Nel canvas interattivo il tronco ha `pointer-events: none`, così un tocco arriva comunque
 alla giunzione sotto, e le maniglie della giunzione selezionata stanno sopra entrambi.
 
-L'autostrada è resa "doppia" sovrapponendo una linea bianca centrale di spessore
-`max(3, width·0.3)` sopra la linea spessa (in `NoteCanvas.toSVG` e nel `render()` dell'istanza).
-
 ---
 
-## 4. Le giunzioni (vettori pivot/tip/width/road_type)
+## 4. Le giunzioni (vettori from/to/road_type)
 
 Le giunzioni sono i rami che partono dal centro per indicare incroci/diramazioni da NON
-prendere. Ogni giunzione è `{ pivot:[x,y], tip:[x,y], width, road_type }` in coordinate
-modello. Vengono disegnate in grigio (`#9aa4b2`) con un **tick** terminale, prendendo
-spessore/tratteggio dal loro tipo di strada via `roadStyle` (`ROAD_STYLE` di note-canvas):
-off-piste = tratteggiata, autostrada = **doppia linea** (come il tronco).
+prendere. Ogni giunzione è `{ from:[x,y], to:[x,y], road_type }` in coordinate modello. Vengono
+disegnate in grigio (`#9aa4b2`) con un **tick** terminale e il tratto del loro tipo di strada via
+`roadMarkup` (§3): off track = tratteggiata, tarmac = **doppia linea**, come il tronco. Lo spessore è
+quello di ogni strada: non è un campo.
 
-`addJunction()` ne crea una con default `pivot:[0,0]`, `tip:[45,25]`, ereditando `road_type`
-da `road_type_out` della nota (fallback 3) e la `width` da `roadStyle(road_type)` (la tabella
-`ROAD_STYLE` di note-canvas, non `RB.ROAD_TYPES`).
+`addJunction()` ne crea una con `from:[0,0]`, `to:[45,25]` e il `road_type` della nota.
 
 Quando una giunzione è selezionata compaiono **due maniglie** di drag
 ([note-canvas.js](../public/assets/js/note-canvas.js)):
-- una sul **pivot**;
-- una appena **oltre la punta** (spostata di 11 px lungo la direzione del vettore) così il
+- una su **`from`**;
+- una appena **oltre `to`** (spostata di 11 px lungo la direzione del vettore) così il
   dito non copre il tick mentre si trascina; lo spostamento viene poi sottratto per
-  riportare il valore reale in `tip`.
+  riportare il valore reale in `to`.
 
 La toolbar di una giunzione ([note-canvas.js](../public/assets/js/note-canvas.js))
-offre: un `<select>` per il **tipo di strada**, `−`/`+` per la **width** (clampata 1..10) e
-il cestino per eliminare.
+offre solo un `<select>` per il **tipo di strada** (i nomi di `RB.ROAD_TYPES`, tradotti) e il
+cestino per eliminarla.
 
 ---
 
-## 5. Le icone — drag / scale / rotate / flip
+## 5. I simboli — drag / scale / rotate / flip
 
-Ogni icona è `{ name, pos:[x,y], angle, size, flip_x }`. Sono trascinabili e si renderizzano
+Ogni simbolo (`note.symbols[]`) è `{ name, position:[x,y], angle, size, mirrored }`. Sono trascinabili e si renderizzano
 come `<image>` dentro un `<g>` ruotato attorno al loro centro
 ([note-canvas.js](../public/assets/js/note-canvas.js)):
 
-- **posizione** (`pos`): trascinando il gruppo si aggiorna `ic.pos` via `toM`
+- **posizione** (`position`): trascinando il gruppo si aggiorna `ic.position` via `toM`
   ([note-canvas.js](../public/assets/js/note-canvas.js));
 - **rotazione** (`angle`): `transform="rotate(angle cx cy)"` — orario, di passo 15° dai
   pulsanti;
-- **flip orizzontale** (`flip_x`): `translate(2·cx) scale(-1 1)` sull'`<image>`
+- **specchiatura** (`mirrored`): `translate(2·cx) scale(-1 1)` sull'`<image>`
   ([note-canvas.js](../public/assets/js/note-canvas.js));
 - **dimensione** (`size`): box quadrato `size×size` centrato.
 
@@ -219,7 +212,8 @@ Le icone arrivano in due modi:
 ## 6. Selezione, drag e callback
 
 - `setNote(note, ctx)` ([note-canvas.js](../public/assets/js/note-canvas.js)) carica la
-  nota con il suo `ctx` (`RB.tulipContext`, §3), normalizza `icons` (array) e `junctions` (array o `null`), deseleziona e ridisegna.
+  nota con il suo `ctx` (`RB.tulipContext`, §3), deseleziona e ridisegna. La nota arriva già nella
+  forma in memoria (`RB.readRoadbook`/`RB.blankNote`: `symbols` e `junctions` sempre array).
 - `select(sel)` imposta la selezione `{type:'icon'|'junctions', i}` e ridisegna (con la
   toolbar dell'elemento selezionato); toccare lo sfondo deseleziona
   ([note-canvas.js](../public/assets/js/note-canvas.js)).
@@ -236,21 +230,15 @@ risolve, #521).
 
 ---
 
-## 7. Risoluzione delle icone (`resolveIcon`)
+## 7. Risoluzione dei simboli (`resolveIcon`)
 
-NoteCanvas **non sa** dove stanno i file delle icone: riceve dal chiamante un resolver
+NoteCanvas **non sa** dove stanno le immagini dei simboli: riceve dal chiamante un resolver
 `resolveIcon(ic) → href`, con default banale `ic => ic.name`
-([note-canvas.js](../public/assets/js/note-canvas.js)). In pratica l'Editor, il
-Reader e la pagina challenge passano `RB.iconSrc`, che risolve in ordine
-([roadbook-core.js](../public/assets/js/roadbook-core.js)):
-
-1. `data:` inline nel nome → usato così com'è;
-2. icona embeddata in `rb.icons[base]` (match esatto, poi case-insensitive);
-3. fallback al percorso della palette standard (`assets/icons/`).
-
-Questo è ciò che rende il render coerente sia per un `.rdbk` self-contained (icone
-embeddate) sia per le note costruite dalla palette standard. `toSVG` accetta lo stesso
-resolver come secondo argomento.
+([note-canvas.js](../public/assets/js/note-canvas.js)). In pratica l'Editor, il Reader e la pagina
+challenge passano `RB.symbolSrc(ic, rb, basePath)` ([roadbook-core.js](../public/assets/js/roadbook-core.js)):
+la libreria del roadbook (`rb.symbols[name]`) — dove sta ogni simbolo di un `.rdbk` — altrimenti,
+mentre un simbolo della palette non è ancora incorporato, la palette standard sotto `basePath`
+(`assets/icons/`). `toSVG` accetta lo stesso resolver come secondo argomento.
 
 ---
 
@@ -279,23 +267,19 @@ della pagina challenge (via `NoteCanvas.rowsHTML`), l'export PDF e l'export Open
 render statico del modulo: la classe interattiva e questa funzione sono le sole superfici
 pubbliche (§1).
 
-### Il tulip importato (icona `cover`, #943)
+### Il tulip importato (`imported_tulip`, #943)
 Una nota importata (es. da OpenRally) conserva il suo **tulip originale**: un'immagine opaca che
-**è** l'intera vignetta, salvata come icona `{ name, cover: true }` con l'immagine in `rb.icons`.
-L'originale non si cancella mai; **`hidden: true`** su quell'icona dice che al suo posto si
-mostra il tulip dell'editor (tronco, giunzioni, icone).
+**è** l'intera vignetta, salvata sulla nota come `imported_tulip = { image: data URI, shown }` (nel
+file `shown` compare solo come `false`). L'originale non si cancella mai; con `shown: false` si
+mostra il tulip dell'editor (tronco, giunzioni, simboli).
 
-- `NoteCanvas.originalTulip(note)` → l'icona `cover` della nota, mostrata o no (`null` se non ne
-  ha): è ciò che il toggle dell'Editor accende e spegne.
-- `coverIcon(note)` → la stessa, **solo se non è `hidden`**: quando c'è, `toSVG` rende solo lei a
-  piena scatola — niente tronco/giunzioni/pericolo generati, perché il disegno importato li
-  incorpora già — e il `render()` dell'editor fa lo stesso (un solo test per entrambi): niente da
-  selezionare né trascinare.
-- Un'icona `cover` non si disegna **mai** come icona sulla vignetta: il tulip originale è tutta la
-  vignetta o niente.
+- `shownTulip(note)` → l'immagine, **solo se è mostrata**: quando c'è, `toSVG` la rende da sola a
+  tutto box — niente tronco/giunzioni/pericolo generati, perché il disegno importato li incorpora
+  già — e il `render()` dell'editor fa lo stesso: niente da selezionare né trascinare.
+- Il toggle dell'Editor inverte `imported_tulip.shown` (vedi [editor.md](editor.md)).
 
-La scelta (originale o tulip dell'editor) viaggia nel JSON del roadbook, quindi Reader, pagina
-pubblica, PDF ed export OpenRally mostrano quella stessa.
+La scelta (originale o tulip dell'editor) viaggia nel roadbook, quindi Reader, pagina pubblica, PDF
+ed export OpenRally mostrano quella stessa.
 
 ---
 
@@ -303,16 +287,16 @@ pubblica, PDF ed export OpenRally mostrano quella stessa.
 
 - **Massimo 3 livelli di pericolo**: `danger` oltre 3 viene clampato; non c'è gradazione
   più fine.
-- **Una sola giunzione per gesto**: le maniglie pivot/tip esistono solo quando la giunzione
+- **Una sola giunzione per gesto**: le maniglie from/to esistono solo quando la giunzione
   è selezionata; non c'è multi-selezione né drag di gruppo.
-- **`size` clampata 10..120, `width` di giunzione 1..10**, `angle` a passi di 15° dai
+- **`size` clampata 10..120**, `angle` a passi di 15° dai
   pulsanti (drag libero non disponibile per la rotazione).
-- **Il tronco non si edita dalla vignetta**: `road_type_in`/`road_type_out` ne determinano lo
+- **Il tronco non si edita dalla vignetta**: `road_type_in`/`road_type` ne determinano lo
   stile (si cambiano sulla nota) e la traccia ne determina la forma (si cambia sulla mappa).
-- **La prima nota perde il colore blu in ingresso** per design (nessuna provenienza reale);
+- **La prima nota non ha strada in ingresso** per design (nessuna provenienza reale);
   è voluto, ma può sorprendere chi confronta la nota 1 con le altre.
-- **Nessuna palette qui dentro**: la ricerca/elenco icone è responsabilità del chiamante;
+- **Nessuna palette qui dentro**: la ricerca/elenco simboli è responsabilità del chiamante;
   NoteCanvas riceve solo nomi già scelti.
-- **`toSVG` non valida la nota**: campi mancanti vengono trattati con default (`pos:[0,0]`,
-  `size:32`, `angle:0`); un `name` icona non risolvibile produce un `<image>` con `href`
+- **`toSVG` non valida la nota**: la validazione è di `RB.validateRoadbook`; `toSVG` tratta i campi
+  opzionali mancanti con default (`size:32`, `angle:0`, niente incroci né simboli); un `name` non risolvibile produce un `<image>` con `href`
   rotto, non un placeholder.

@@ -66,7 +66,7 @@
     $('pickRb').onclick = () => $('rbFile').click();
     // the "use the app" recommendation, in a browser only (as in the Recorder)
     $('rdNativeHint').hidden = $('prNativeHint').hidden = document.documentElement.classList.contains('native');
-    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast('Could not load the roadbook.'); } };
+    $('rbFile').onchange = async (e) => { const f = e.target.files[0]; if (f) try { loadRb(await RBZip.readRdbk(f)); } catch (err) { toast(err.report ? 'This file is not a valid .rdbk roadbook.' : 'Could not load the roadbook.'); } };
     // The public roadbook gallery on the load screen — the same one as /roadbooks/ (#636). A card
     // links to /reader/<slug> — the deep link the Navigate button uses — so opening one navigates
     // here with the slug, where the startup below loads it (sign-in gate included).
@@ -102,7 +102,7 @@
         let savedRb = null;
         if (session && session.pen) {
             savedRb = RBCheckpoint.read(SESSION_RB_KEY);
-            if (!savedRb || !savedRb.notes) session = null;
+            if (!savedRb || savedRb.rdbk_version !== RB.FORMAT_VERSION) session = null; // a roadbook of another .rdbk version is no run to resume
         } else session = null;
         if (!session) clearSession(); // an unrecoverable checkpoint is just litter
         // reports that finished offline or signed out go up now — except the legs of a chained run
@@ -149,7 +149,7 @@
                 endRun();
                 resetRun();
             }
-            try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) { toast('Could not load the roadbook.'); }
+            try { loadRb(await RBZip.readRdbk(await params.files[0].getFile())); } catch (e) { toast(e.report ? 'This file is not a valid .rdbk roadbook.' : 'Could not load the roadbook.'); }
         });
     }
 
@@ -232,8 +232,9 @@
     });
     // `id` + `slug`: the server roadbook it is, so the run report can point at it and a competition
     // result names it — a local file has neither
-    function loadRb(r, id, slug) {
-        r = RB.importRoadbook(r); // canonical schema (so pre-standard Italian files open here too)
+    // `doc`: a .rdbk document, from a file or the server
+    function loadRb(doc, id, slug) {
+        const r = RB.readRoadbook(doc);
         if (!r.notes.length) return toast('Roadbook has no notes.');
         rb = r; notes = r.notes; routeCum = RB.cumulativeM(rb.track || []); rbRef = id ? +id : null; rbSlug = slug || '';
         showPreview();
@@ -257,7 +258,7 @@
     // asked — and everything else runs as a trip.
     // "Map access from player" is a roadbook-level setting (default allowed when absent): it decides
     // whether the Reader has a map at all — the action-bar toggle and the preview's tap-to-map (#569).
-    const mapAllowed = () => !(rb && rb.meta && rb.meta.map_access === false);
+    const mapAllowed = () => !(rb && rb.meta && rb.meta.map_allowed === false);
     // The success bell when a note is validated, auto or manual (#768) — the same bell the Recorder
     // rings on a note — and the fanfare on the last one: the roadbook is completed (#843).
     const ring = (i) => (i === notes.length - 1 ? RBSuccess.fanfare : RBSuccess.ring)();
@@ -859,7 +860,7 @@
     // penalties, its mode from the event, its own GPX log
     function startLeg(j, entry) {
         resetRun(); closeInlineMap();
-        rb = RB.importRoadbook(j.roadbook); notes = rb.notes; routeCum = RB.cumulativeM(rb.track || []); rbRef = +j.id; rbSlug = j.slug;
+        rb = RB.readRoadbook(j.roadbook); notes = rb.notes; routeCum = RB.cumulativeM(rb.track || []); rbRef = +j.id; rbSlug = j.slug;
         toast(t('Next roadbook:') + ' ' + ((rb.meta && rb.meta.title) || entry.title), 3500);
         const comp = isScoredEntry(entry);
         if (comp && team === '0') return askTeam();
@@ -886,7 +887,7 @@
             if ((l.report.skipped || []).includes(n.num)) skipped.push(num);
         }));
         return {
-            roadbook: { meta: { title: withRb.map((l) => (l.rb.meta && l.rb.meta.title) || '').join(' → '), map_access: withRb.every((l) => !l.rb.meta || l.rb.meta.map_access !== false) }, notes: notesAll, track: withRb.flatMap((l) => l.rb.track || []) },
+            roadbook: { meta: { title: withRb.map((l) => (l.rb.meta && l.rb.meta.title) || '').join(' → '), map_allowed: withRb.every((l) => !l.rb.meta || l.rb.meta.map_allowed !== false) }, notes: notesAll, track: withRb.flatMap((l) => l.rb.track || []) },
             skipped,
         };
     }
