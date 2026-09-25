@@ -213,6 +213,14 @@ provider instead, set its style in your `public/assets/js/config.js`, e.g.:
 styleSatellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_MAPTILER_KEY'
 ```
 
+### Microphone (voice notes, #992)
+
+The Recorder and the Editor record voice notes through the WebView (`getUserMedia`), so both apps
+declare the microphone: iOS `NSMicrophoneUsageDescription` in `Info.plist` (without it iOS kills the
+app the moment the page opens the microphone), Android `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS` in
+`AndroidManifest.xml` (Capacitor's `BridgeWebChromeClient` asks for both at run time; one missing and
+the recording is refused).
+
 ### Files opened from the OS (#996)
 
 A `.gpx` or a `.rdbk` tapped in Files, a download, Mail or a chat offers RDBK and opens in it.

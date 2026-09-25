@@ -226,8 +226,11 @@ secondi); al rilascio (`pointerup`/`pointercancel`/`pointerleave`) la registrazi
 massimo `RBVoice.MAX_S` (60 s). Solo allora, e solo se dura almeno `RBVoice.MIN_S` (2 s), la nota cade
 nel punto della pressione (`dropWaypoint(spot)`, al suo posto lungo il percorso) con campanello e
 check (#998); più corta non succede nulla e un toast dice di registrare almeno 2 secondi. Si tiene solo
-il suono, senza trascrizione: il data URI finisce su `note.voice` (nel checkpoint di crash) e al
-salvataggio diventa l'extra **Voice note** della nota (`withExtras` → `{ type: 'voice', audio }`), che
+il suono, senza trascrizione: il clip aspetta sul dispositivo in IndexedDB (`RBVoice.keep` → token,
+che `note.voice` porta nel checkpoint di crash — mai il data URI: il checkpoint in localStorage è
+piccolo e si riscrive ogni secondo), e al salvataggio (`RBVoice.clip`) diventa l'extra **Voice note**
+della nota, dentro il documento del roadbook sul server; salvata o scartata la registrazione,
+`RBVoice.forget` libera i clip (`withExtras` → `{ type: 'voice', audio }`), che
 il Reader riproduce prima della nota. Finire con una nota vocale in corso la tiene se è abbastanza lunga. Il pulsante manca dove il browser non sa registrare (`RBVoice.supported`).
 
 ---

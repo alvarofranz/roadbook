@@ -2134,3 +2134,11 @@ Object.assign(window.RBi18nLangs.it, {
     "Could not open the file.": "Impossibile aprire il file.",
     "This file is neither a GPX track nor a .rdbk roadbook.": "Questo file non è né una traccia GPX né un roadbook .rdbk.",
 });
+
+/* Changelog 1.9.18 */
+Object.assign(window.RBi18nLangs.it, {
+    "Voice notes: hold the microphone in the Recorder to record one, or add it in the Editor as a note’s extra. The Reader plays it by itself before you reach the note — 100 m before, or the distance you choose.": "Note vocali: tieni premuto il microfono nel Recorder per registrarne una, oppure aggiungila nell’Editor come extra di una nota. Il Reader la riproduce da sola prima di arrivare alla nota: 100 m prima, o la distanza che scegli.",
+    "A photo or a voice note lands where you pressed the button, and the check comes once it is saved. A voice note needs at least 2 seconds.": "Una foto o una nota vocale resta dove hai premuto il pulsante, e la spunta arriva quando è salvata. Una nota vocale richiede almeno 2 secondi.",
+    "Open a .gpx or a .rdbk straight from Files, a download or a chat: a GPX opens in the Editor, a roadbook in the Reader. The app’s file picker shows every file.": "Apri un .gpx o un .rdbk direttamente da File, da un download o da una chat: un GPX si apre nell’Editor, un roadbook nel Reader. Il selettore di file dell’app mostra tutti i file.",
+    "Admins can start the Recorder without GPS, and the event page fits a phone.": "Gli amministratori possono avviare il Recorder senza GPS, e la pagina dell’evento si adatta al telefono.",
+});

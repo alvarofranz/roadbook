@@ -11,6 +11,16 @@
    fails a release whose version.json is ahead of this list. */
 window.RBChangelog = [
     {
+        version: '1.9.18', date: '2026-09-25',
+        title: 'Voice notes',
+        items: [
+            'Voice notes: hold the microphone in the Recorder to record one, or add it in the Editor as a note’s extra. The Reader plays it by itself before you reach the note — 100 m before, or the distance you choose.',
+            'A photo or a voice note lands where you pressed the button, and the check comes once it is saved. A voice note needs at least 2 seconds.',
+            'Open a .gpx or a .rdbk straight from Files, a download or a chat: a GPX opens in the Editor, a roadbook in the Reader. The app’s file picker shows every file.',
+            'Admins can start the Recorder without GPS, and the event page fits a phone.',
+        ],
+    },
+    {
         version: '1.9.17', date: '2026-09-25',
         title: 'The .rdbk 1 standard',
         items: [

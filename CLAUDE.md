@@ -722,7 +722,12 @@ Operational notes:
   (module.exports) is unit-tested; used by the Recorder and the Editor's Adjust on the trail.
 - `rb-voice.js` (`RBVoice`, #992) — records a voice note into an audio `data:` URI (mono, 24 kbit/s,
   at most `MAX_S` = 60 s; a clip under `MIN_S` = 2 s is refused by both callers): `supported` ·
-  `start({ onTick })` → `{ stop() → Promise<{ audio, seconds }|null> }`.
+  `start({ onTick })` → `{ stop() → Promise<{ audio, seconds }|null> }`. A Recorder clip waits on the
+  device in IndexedDB (`keep(audio)` → token · `clip(token)` · `forget(tokens)`), never in the
+  localStorage checkpoint, which is small and rewritten every second; saved, it is the note's `voice`
+  block inside the roadbook document (`storage/users/<uid>/<id>.rdbk`, outside the web root, served
+  only through the roadbook's own access checks). Both apps declare the microphone
+  (`NSMicrophoneUsageDescription` · `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS`).
   The Recorder (hold the microphone) and the Editor (the Voice note extra) share it.
 - `rbzip.js` (`RBZip`) — the dependency-free ZIP codec of the `.rdbk` container (native
   `deflate-raw`): `write(files)` · `read(blob)` · `inspect(file)` → `{ container, names, files, doc,

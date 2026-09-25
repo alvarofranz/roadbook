@@ -77,8 +77,10 @@
         window.RB_BUSY = true;
         saveSession();
     }
-    // The recording reached its destination (saved) or was discarded: every copy of it goes.
+    // The recording reached its destination (saved) or was discarded: every copy of it goes — its
+    // voice clips too, now inside the saved roadbook or thrown away with it.
     function clearRecording() {
+        RBVoice.forget(wpts.filter((w) => w.voice).map((w) => w.voice)).catch(() => {});
         RBGpxRecorder.clearCheckpoint(); clearSession();
         try { localStorage.removeItem(PENDING_SAVE); } catch (e) {}
         finished = null; window.RB_BUSY = false;
@@ -219,6 +221,9 @@
     };
 
     function begin() {
+        // a declined recording is replaced by this one: its voice clips go with it
+        const replaced = RBCheckpoint.read(SESSION_KEY);
+        if (replaced && replaced.wpts) RBVoice.forget(replaced.wpts.filter((w) => w.voice).map((w) => w.voice)).catch(() => {});
         recordedM = 0; paused = false; lastAcc = null; here = null; lastSampled = null; elapsedAcc = 0;
         course = null; lastHeadingPos = null;
         track = []; wpts = []; photos = []; draftId = 0;
@@ -370,9 +375,9 @@
     /* A voice note (#992): HOLD the button and the microphone records; let go and it stops (RBVoice:
        at most RBVoice.MAX_S). Only a clip of RBVoice.MIN_S or more becomes a note, dropped where the
        button was pressed — a shorter one is nothing, and says so. Only the sound is kept, no
-       transcription: it rides with its note (`voice`, a data: URI kept in the crash checkpoint) and
-       becomes the note's Voice note extra when the roadbook is saved — the Reader plays it before
-       the note. */
+       transcription: the clip waits on the device (RBVoice.keep — IndexedDB, the note holds its token
+       in the crash checkpoint) and becomes the note's Voice note extra when the roadbook is saved —
+       the Reader plays it before the note. */
     $('recVoice').hidden = !RBVoice.supported;
     let voice = null; // { rec, spot } while held; rec settles once the microphone is open
     const paintVoice = (s) => {
@@ -394,7 +399,9 @@
         try { clip = await (await rec).stop(); } catch (e) { return; } // the microphone never opened: already said
         paintVoice(null);
         if (!clip || clip.seconds < RBVoice.MIN_S) return toast(t('Record at least 2 seconds of audio to attach it to the note.'));
-        dropWaypoint(spot).voice = clip.audio; saveSession();
+        let token;
+        try { token = await RBVoice.keep(clip.audio); } catch (e) { return toast('Could not save.'); } // the device could not keep it: no note
+        dropWaypoint(spot).voice = token; saveSession();
     };
     ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));
     function stopVoice() { return releaseVoice(); }
@@ -487,7 +494,8 @@
             const blocks = [];
             const p = w.photo && photos.find((x) => x.token === w.photo);
             if (p && p.url) { try { blocks.push({ type: 'photo', placement: 'after', image: await RBImg.toDataURL(await photoBlob(p), PHOTO_MAX) }); } catch (e) { /* the note keeps its place without it */ } }
-            if (w.voice) blocks.push({ type: 'voice', audio: w.voice }); // the voice note recorded at it (#992)
+            const audio = w.voice && await RBVoice.clip(w.voice).catch(() => null); // the voice note recorded at it (#992)
+            if (audio) blocks.push({ type: 'voice', audio });
             return blocks.length ? Object.assign({}, w, { blocks }) : w;
         }));
     }

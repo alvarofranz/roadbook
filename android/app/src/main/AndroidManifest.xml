@@ -85,6 +85,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Camera: QR code scanning for the event participants page (#311). -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Microphone: the voice notes of the Recorder and the Editor (#992). The WebView asks for both
+         when a page opens the microphone; one missing and the recording is refused. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- A Google Play Services library auto-merges the advertising-ID permission; RDBK shows no
          ads and declares no ad-ID use in Play, so strip it or Play rejects the release. -->
