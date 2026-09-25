@@ -57,6 +57,8 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>RDBK records the voice notes you attach to the notes of a roadbook.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>RDBK uses the camera to add geotagged photos and scan result QR codes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

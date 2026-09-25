@@ -18,8 +18,4 @@ describe('review 2 leftovers', () => {
     it('a run links only a roadbook its runner may read', () => {
         expect(read('app/runs.php')).toContain("if ($row && ($row['status'] === 'public' || (int)$row['user_id'] === (int)$user['id'] || event_grants_read($user, (int)$row['id']))) $rbId = (int)$row['id'];");
     });
-    it('the apps ask for no microphone any more', () => {
-        expect(read('android/app/src/main/AndroidManifest.xml')).not.toContain('RECORD_AUDIO');
-        expect(read('ios/App/App/Info.plist')).not.toContain('NSMicrophoneUsageDescription');
-    });
 });

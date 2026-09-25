@@ -19,7 +19,7 @@ describe('the Recorder while riding (#768)', () => {
     it('records a voice note while the button is held, and stops when it is let go (#992)', () => {
         expect(rec).toContain("$('recVoice').addEventListener('pointerdown', (e) => {");
         expect(rec).toContain("['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => $('recVoice').addEventListener(ev, releaseVoice));");
-        expect(rec).toContain('dropWaypoint(spot).voice = clip.audio; saveSession();');
+        expect(rec).toContain('dropWaypoint(spot).voice = token; saveSession();');
         expect(html).toContain('<script src="../assets/js/rb-voice.js');
     });
     it('lets an admin start with no usable GPS, fixes of any accuracy kept (#993)', () => {

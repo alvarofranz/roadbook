@@ -4,7 +4,10 @@
  * mono at VOICE_BITRATE, at most MAX_S seconds, so a roadbook carries its voice notes inside it; a
  * clip under MIN_S seconds is not a voice note (a slip of the finger), and both callers refuse it.
  * RBVoice.supported · RBVoice.start({ onTick(seconds) }) → Promise<{ stop() → Promise<{ audio, seconds }|null> }>
- * (rejects when there is no microphone or it is refused). */
+ * (rejects when there is no microphone or it is refused).
+ * A clip waiting on the device (the Recorder's, until the recording is saved into its roadbook) lives
+ * in IndexedDB, never in a localStorage checkpoint — that one is small (~5 MB) and rewritten every
+ * second: RBVoice.keep(audio) → token · RBVoice.clip(token) → audio · RBVoice.forget(tokens). */
 (function () {
     const MIN_S = 2, MAX_S = 60, VOICE_BITRATE = 24000;
     const supported = !!(typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== 'undefined');
@@ -36,5 +39,29 @@
         if (onTick) onTick(0);
         return { stop, started };
     }
-    window.RBVoice = { supported, start, MIN_S, MAX_S };
+    const STORE = 'clips';
+    let opening = null;
+    const open = () => opening || (opening = new Promise((resolve, reject) => {
+        const req = indexedDB.open('rb_voice', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => { opening = null; reject(req.error); };
+    }));
+    // one transaction; resolves with the request's result once it is committed
+    async function inStore(mode, work) {
+        const db = await open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE, mode), req = work(tx.objectStore(STORE));
+            tx.oncomplete = () => resolve(req ? req.result : undefined);
+            tx.onerror = tx.onabort = () => reject(tx.error);
+        });
+    }
+    async function keep(audio) {
+        const token = 'v' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        await inStore('readwrite', (store) => store.put(audio, token));
+        return token;
+    }
+    const clip = (token) => inStore('readonly', (store) => store.get(token));
+    const forget = (tokens) => inStore('readwrite', (store) => { tokens.forEach((token) => store.delete(token)); });
+    window.RBVoice = { supported, start, MIN_S, MAX_S, keep, clip, forget };
 })();

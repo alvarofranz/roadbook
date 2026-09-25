@@ -71,3 +71,20 @@ describe('the rest of the round', () => {
         for (const p of ['public/index.html', 'public/features/editor/index.html', 'public/wiki/index.html']) expect(read(p), p).not.toContain('fa-pen-ruler');
     });
 });
+
+describe('voice notes on the device and on the phones (1.9.18)', () => {
+    it('a Recorder clip waits in IndexedDB, never in the checkpoint rewritten every second', () => {
+        const rec = read('public/recorder/recorder.js'), voice = read('public/assets/js/rb-voice.js');
+        expect(voice).toContain("const req = indexedDB.open('rb_voice', 1);");
+        expect(voice).toContain('window.RBVoice = { supported, start, MIN_S, MAX_S, keep, clip, forget };');
+        expect(rec).toContain('try { token = await RBVoice.keep(clip.audio); } catch (e) { return toast(\'Could not save.\'); }');
+        expect(rec).toContain('RBVoice.forget(wpts.filter((w) => w.voice).map((w) => w.voice)).catch(() => {});'); // saved or discarded: gone
+        expect(rec).toContain('if (replaced && replaced.wpts) RBVoice.forget(');
+    });
+    it('both apps may use the microphone', () => {
+        expect(read('ios/App/App/Info.plist')).toContain('<key>NSMicrophoneUsageDescription</key>');
+        const manifest = read('android/app/src/main/AndroidManifest.xml');
+        expect(manifest).toContain('<uses-permission android:name="android.permission.RECORD_AUDIO" />');
+        expect(manifest).toContain('<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />');
+    });
+});

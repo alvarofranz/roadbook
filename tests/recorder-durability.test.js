@@ -154,7 +154,7 @@ describe('small Recorder fixes', () => {
     it('keeps no live file, and a voice note rides with its note instead of the upload queue (#992)', () => {
         expect(rec).not.toMatch(/live file/);
         expect(rec).not.toContain("RBMediaQueue.add('audio'");
-        expect(rec).toContain("if (w.voice) blocks.push({ type: 'voice', audio: w.voice });");
+        expect(rec).toContain('const audio = w.voice && await RBVoice.clip(w.voice).catch(() => null);');
     });
     it('a lost GPS signal never stops the recording, and says so in every language (#901)', () => {
         expect(rec).toContain("meter = new RBGpsMeter(onFix, () => toast(t('GPS signal lost — the recording carries on and picks up when it returns.'), 4000));");
